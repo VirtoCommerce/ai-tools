@@ -252,41 +252,58 @@ const COMMANDS = {
     return (d.value || []).map((s) => ({ name: s.name, category: s.category }));
   },
 
+  // Field-building mirrors AzureTracker.createWorkItem (trackers/azure-tracker.ts) — same
+  // endpoint, same JSON-Patch shape. Kept as an independent implementation (CLI script vs
+  // TS tracker class, same split as every other op below), so keep them in sync when either
+  // changes: field list, tag normalization, and any new optional field.
   async "create-workitem"(args) {
-    for (const k of ["type", "title"]) if (!args[k]) fail(`--${k} required`);
+    // `str()` guards every optional flag against parseArgs's boolean-`true` coercion
+    // (a flag with no following value, or immediately followed by another `--flag`,
+    // parses to `true` rather than a string). Without this, e.g. `--title` swallowed
+    // by an adjacent flag would pass the truthy required-field check below and get
+    // written to ADO as the literal string "true".
+    const str = (v) => (typeof v === "string" ? v : "");
+    for (const k of ["type", "title"])
+      if (!str(args[k])) fail(`--${k} required (with a value)`);
     // Body is a JSON-Patch array (op "add" per field). Description/repro can be a file
     // (never inline prose with em-dashes — same grabli as create-pr) or a raw string.
     const description = args["description-file"]
       ? readFileSync(resolve(args["description-file"]), "utf-8")
-      : args.description || "";
+      : str(args.description);
     const repro = args["repro-file"]
       ? readFileSync(resolve(args["repro-file"]), "utf-8")
-      : args.repro || "";
-    const fields = [{ op: "add", path: "/fields/System.Title", value: String(args.title) }];
+      : str(args.repro);
+    const fields = [{ op: "add", path: "/fields/System.Title", value: str(args.title) }];
     if (description) fields.push({ op: "add", path: "/fields/System.Description", value: String(description) });
     if (repro) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: String(repro) });
-    if (args.severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: String(args.severity) });
+    const severity = str(args.severity);
+    if (severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: severity });
     if (args.priority !== undefined && args.priority !== true)
       fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: Number(args.priority) });
     // ADO stores tags ";"-separated — accept comma or semicolon input and normalize.
-    if (args.tags) {
-      const tags = String(args.tags).split(/[,;]/).map((s) => s.trim()).filter(Boolean).join("; ");
+    const tagsInput = str(args.tags);
+    if (tagsInput) {
+      const tags = tagsInput.split(/[,;]/).map((s) => s.trim()).filter(Boolean).join("; ");
       if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
     }
     // The leading `$` before the type is literal + required by the ADO create endpoint.
+    // Reuse the SAME resolved base for both the create call and the returned URL — building
+    // the URL from a separately-recomputed org/project (as opposed to the apiBase actually
+    // used above) risks a stale/mismatched link if tracker.azure.apiBase and
+    // tracker.azure.organization/project ever drift (they're written independently by
+    // gen-profile.mjs).
+    const apiUrl = base(args, "tracker");
     const d = await call(
       "POST",
-      `${base(args, "tracker")}/_apis/wit/workitems/$${enc(args.type)}?${V}`,
+      `${apiUrl}/_apis/wit/workitems/$${enc(args.type)}?${V}`,
       { body: fields, contentType: "application/json-patch+json" },
     );
-    const org = args.org || trackerAZ().organization;
-    const project = args.project || trackerAZ().project;
     return {
       id: d.id,
       type: d.fields?.["System.WorkItemType"],
       title: d.fields?.["System.Title"],
       state: d.fields?.["System.State"],
-      url: `https://dev.azure.com/${org}/${enc(project)}/_workitems/edit/${d.id}`,
+      url: `${apiUrl}/_workitems/edit/${d.id}`,
     };
   },
 

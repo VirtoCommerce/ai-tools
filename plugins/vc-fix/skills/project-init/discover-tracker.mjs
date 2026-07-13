@@ -108,7 +108,9 @@ export function deriveRoleStates(states) {
   // "Tested on QA"-style state is claimed by `tested`, leaving the plain "On QA" for
   // `testing`; both are resolved BEFORE `done` so a "QA Done" state isn't swallowed by
   // done's broad /done/. Claim-once makes the testing-vs-ready-for-test dedup automatic too.
-  const tested = pick(/\btested\b|qa (passed|done)|verified/i);
+  // `\bverified\b` is word-bounded — an unbounded /verified/i would also match an unrelated
+  // state like "Unverified" (a common early-triage name, not a QA-pass milestone).
+  const tested = pick(/\btested\b|qa (passed|done)|\bverified\b/i);
   const testing = pick(/\btesting\b|on qa|in test|qa in progress/i);
   // reopen: keep patterns anchored to review/QA-rejection wording; `\brejected\b` /
   // `\bfailed\b` are word-bounded to reduce false-positives on unrelated custom states.
@@ -199,6 +201,11 @@ async function main() {
   // enablement and affect the native /qa-fix flow (which only needs the 4 fix roles).
   const QA_ROLES = ["testing", "tested", "reopen"];
   const missingQaRoles = QA_ROLES.filter((r) => !roleStates[r]);
+  // Separate completeness signal for the QA-side roles, so a caller (gen-profile.mjs,
+  // /qa-verify-fix) can gate QA-specific "auto" transitions on QA-role confidence WITHOUT
+  // touching `roleStatesComplete` (fix-side only) — a heuristic mismatch on `testing`/
+  // `tested`/`reopen` must never silently ride along on the fix-side completeness signal.
+  const qaRoleStatesComplete = missingQaRoles.length === 0;
 
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
@@ -215,6 +222,9 @@ async function main() {
     // "auto" transitions (a partial map — e.g. no distinct review state — should keep
     // asking, not guess).
     roleStatesComplete: missingRoles.length === 0,
+    // QA-side counterpart, consumed only by the QA-side auto-transition gate (never mixed
+    // into roleStatesComplete — see the comment on QA_ROLES above).
+    qaRoleStatesComplete,
   };
   console.error(
     `[discover-tracker] scanned ${Object.keys(workItemTypes).length} type(s); roleStates(${primary}): ` +

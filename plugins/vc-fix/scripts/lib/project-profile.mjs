@@ -30,7 +30,8 @@
  *   projectId:string, stateMap:Record<string,string>,
  *   workItemTypes:Record<string,object>,
  *   roleStates:Record<"in-progress"|"in-review"|"ready-for-test"|"testing"|"tested"|"reopen"|"done", string>,
- *   transitionPolicy:"auto"|"confirm-once"|"ask"}}} tracker
+ *   transitionPolicy:"auto"|"confirm-once"|"ask",
+ *   qaRoleStatesComplete:boolean}}} tracker
  * @property {{clientHost:"github"|"azure-repos", clientOrg:string,
  *   azure:{organization:string, project:string}, auth:"gh-cli"|"pat"|"az-login"}} vcs
  * @property {{host:"github", org:string, fileIssues:boolean,
@@ -136,6 +137,13 @@ export const PROFILE_DEFAULTS = {
       // "auto" = transition silently by role (log only); "confirm-once" = one upfront ok;
       // "ask" = ask before each transition (the original conservative behaviour).
       transitionPolicy: "ask",
+      // Independent completeness signal for the QA-side roles (testing/tested/reopen —
+      // used only by /qa-verify-fix). Deliberately SEPARATE from transitionPolicy: a
+      // deployment can be fix-side "auto" (all 4 /qa-fix roles found) while its QA roles
+      // are still unconfirmed. Defaults false (conservative) — /qa-verify-fix must treat
+      // its own role→state transitions as "ask" until /project-init's discover-tracker
+      // scan confirms testing/tested/reopen were all found.
+      qaRoleStatesComplete: false,
     },
   },
   vcs: {

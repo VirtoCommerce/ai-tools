@@ -182,6 +182,12 @@ function main() {
       // was found) must keep "ask" — /qa-fix would otherwise transition a missing role
       // silently (writing "undefined" or a wrong-but-plausible alias) with no one noticing.
       if (t.roleStatesComplete === true) set("tracker.azure.transitionPolicy", "auto");
+      // Separate QA-side completeness signal for /qa-verify-fix (testing/tested/reopen).
+      // Deliberately NOT folded into roleStatesComplete/transitionPolicy above — a
+      // heuristic mismatch on a QA-only role must never ride along on the fix-side
+      // completeness that unlocks "auto". Bake it so /qa-verify-fix can gate its OWN
+      // auto-transition behavior on QA-role confidence, independent of the fix-side policy.
+      if (t.qaRoleStatesComplete !== undefined) set("tracker.azure.qaRoleStatesComplete", t.qaRoleStatesComplete);
     } catch (err) {
       fail(`--tracker-json: cannot read ${args["tracker-json"]}: ${err.message}`);
     }

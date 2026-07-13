@@ -81,6 +81,13 @@ them. Always resolve the *destination status* by role, then map it to the live w
    - `confirm-once` ⇒ one upfront confirmation of the whole role→state plan, then silent.
    - `ask` ⇒ confirm before each transition (the original conservative behaviour; Jira, or an unscanned
      map, defaults here).
+   - **QA-side transitions (`/qa-verify-fix`) additionally require `tracker.azure.qaRoleStatesComplete
+     === true`.** `transitionPolicy` is unlocked to `"auto"` from the **fix-side** roles alone
+     (`in-progress`/`in-review`/`ready-for-test`/`done`) — a deployment can be fix-side "auto" while its
+     `testing`/`tested`/`reopen` states are still unconfirmed. So even when `transitionPolicy` reads
+     `"auto"`/`"confirm-once"`, `/qa-verify-fix` treats each QA-side transition as `ask` until
+     `qaRoleStatesComplete` is `true` — do not apply the fix-side policy to a QA-side transition without
+     checking this flag first.
 
 ## 3. Which git/PR mechanism? — from `contributionPlan(repo)`
 

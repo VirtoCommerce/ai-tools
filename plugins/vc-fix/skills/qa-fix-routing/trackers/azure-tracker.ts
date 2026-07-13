@@ -165,6 +165,10 @@ export class AzureTracker implements Tracker {
     if (!res.ok) this.log(`ADO: transition ${key} → ${targetState} failed — ${res.status}`);
   }
 
+  // Field-building mirrors `ado.mjs`'s `create-workitem` command (same endpoint, same
+  // JSON-Patch shape) — the two are maintained independently (CLI script vs TS tracker
+  // class, same split as every other op in this file), so keep them in sync when either
+  // changes: field list, tag normalization, and any new optional field.
   async createWorkItem(
     input: CreateWorkItemInput,
   ): Promise<{ key: string; url: string } | null> {
@@ -181,7 +185,17 @@ export class AzureTracker implements Tracker {
     if (input.reproSteps) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: input.reproSteps });
     if (input.severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: input.severity });
     if (input.priority !== undefined) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: input.priority });
-    if (input.labels?.length) fields.push({ op: "add", path: "/fields/System.Tags", value: input.labels.join("; ") });
+    // ADO stores tags ";"-separated — normalize the same way ado.mjs's CLI path does, in
+    // case a caller passes a label containing a comma (each `labels[]` entry is expected
+    // to be one tag, but this guards against a caller splitting on the wrong delimiter).
+    if (input.labels?.length) {
+      const tags = input.labels
+        .flatMap((l) => l.split(/[,;]/))
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join("; ");
+      if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
+    }
     const res = await this.req(
       "POST",
       `/_apis/wit/workitems/$${encodeURIComponent(input.type)}?api-version=${API_VERSION}`,
