@@ -29,7 +29,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ROOT, BACK_URL, STORE_ID, DRY_RUN, VERBOSE, TEARDOWN,
-  log, verbose, assertSafeTarget, auth, api, loadAliases, loadCsv,
+  log, verbose, assertSafeTarget, auth, api, loadAliases,
 } from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);
@@ -62,19 +62,66 @@ function resolveUser(arg) {
   return { email: arg, password, balanceUserId: null, source: 'raw email' };
 }
 
-/** Pick the highest-factor earning SKU from program-factors.csv (rough — the live winning program decides). */
-function pickEarningFactor() {
-  try {
-    const rows = loadCsv('test-data/loyalty/program-factors.csv');
-    const ranked = rows.map((r) => ({ sku: r.sku, factor: Number(r.factor) || 0 })).filter((r) => r.sku && r.factor > 0).sort((a, b) => b.factor - a.factor);
-    return ranked[0] || { sku: 'LT-001', factor: 1 };
-  } catch { return { sku: 'LT-001', factor: 1 }; }
+/** The target user's customer groups — loyalty eligibility is group-scoped. */
+async function getUserGroups(email) {
+  const r = await api('POST', '/api/members/search', { searchPhrase: email, take: 10 }, { expectStatus: [200, 201] });
+  const results = r?.results || [];
+  const contact = results.find((m) => (m.emails || []).some((e) => String(e).toLowerCase() === email.toLowerCase())) || results[0];
+  return contact?.groups || [];
+}
+
+/** Collect a program's group gate from its condition tree — walk SELECTED `children` only (not availableChildren). */
+function programGroupGate(program) {
+  let all = false; const groups = new Set();
+  const walk = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (node.id === 'AnyUserGroupCondition') all = true;
+    if (node.id === 'UserGroupIsCondition') (node.groups || []).forEach((g) => groups.add(g));
+    (node.children || []).forEach(walk);
+  };
+  walk(program.dynamicExpression);
+  return { all, groups };
+}
+
+/** Is this a ProductPoints program that WINS for the user right now: active + in-window + group-eligible. */
+function isCandidate(p, userGroups, now = new Date()) {
+  if (p.programType !== 'ProductPoints' || !p.isActive) return false;
+  if (p.startDate && new Date(p.startDate) > now) return false;
+  if (p.endDate && new Date(p.endDate) < now) return false;
+  const gate = programGroupGate(p);
+  return gate.all || userGroups.some((g) => gate.groups.has(g));
+}
+
+/**
+ * Resolve the SKU that actually EARNS for THIS user: the buyable factor SKU of the winning ProductPoints
+ * program (highest-priority eligible+active+in-window). Only the single global winner earns its factor, so
+ * we take candidates in priority order and use the FIRST whose factor SKU is buyable+priced for the user
+ * (that also proves it is linked into the user's virtual catalog). Returns unitPrice + stock too, because
+ * points = factor × unit price × qty (NOT factor × qty) and qty must respect available inventory.
+ */
+async function resolveWinningEarning(userToken, userGroups) {
+  const progs = (await api('POST', '/api/loyalty-programs/search', { take: 500 }, { expectStatus: [200, 201] }))?.results || [];
+  const candidates = progs.filter((p) => isCandidate(p, userGroups)).sort((a, b) => (b.priority || 0) - (a.priority || 0));
+  if (!candidates.length) throw new Error(`no eligible+active+in-window ProductPoints program for groups [${userGroups.join(',')}]`);
+  const allFactors = (await api('POST', '/api/loyalty-program-product-factors/search', { take: 1000 }, { expectStatus: [200, 201] }))?.results || [];
+  for (const prog of candidates) {
+    const factors = allFactors.filter((f) => f.loyaltyProgramId === prog.id && Number(f.factor) > 0);
+    for (const f of factors) {
+      const d = await gql(userToken, `query { product(id: "${f.productId}" storeId: "${STORE_ID}") { code availabilityData { isBuyable isAvailable availableQuantity } price { actual { amount } } } }`, 'winner_product').catch(() => null);
+      const p = d?.product; const unitPrice = Number(p?.price?.actual?.amount || 0);
+      if (p?.availabilityData?.isBuyable && p?.availabilityData?.isAvailable && unitPrice > 0) {
+        if (prog !== candidates[0]) log(`⚠ top winner "${candidates[0].name}" has no buyable factor SKU — falling back to eligible program "${prog.name}" (pri ${prog.priority}).`);
+        return { programId: prog.id, programName: prog.name, priority: prog.priority, sku: p.code, productId: f.productId, factor: Number(f.factor), unitPrice, availableQuantity: Number(p.availabilityData.availableQuantity ?? 0) };
+      }
+    }
+  }
+  throw new Error('eligible winning program(s) have no buyable+priced factor SKU for this user — cannot earn via script');
 }
 
 async function userToken(email, password) {
   const res = await fetch(`${BACK_URL}/connect/token`, {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', username: email, password, scope: 'offline_access' }),
+    body: new URLSearchParams({ grant_type: 'password', username: email, password, scope: 'offline_access', storeId: STORE_ID }),
   });
   if (!res.ok) throw new Error(`user auth failed for ${email}: ${res.status} ${(await res.text().catch(() => '')).slice(0, 160)}`);
   return (await res.json()).access_token;
@@ -114,63 +161,66 @@ async function placeEarnOrder(token, userId, productId, qty) {
   return order?.createOrderFromCart?.number || '(unknown)';
 }
 
+/** Live storefront availability for a product as the user (stock decrements per order). */
+async function currentAvailability(token, productId) {
+  const d = await gql(token, `query { product(id: "${productId}" storeId: "${STORE_ID}") { availabilityData { availableQuantity } } }`, 'availability').catch(() => null);
+  return Number(d?.product?.availabilityData?.availableQuantity ?? 0);
+}
+
 async function run() {
   const { email, password, balanceUserId, source } = resolveUser(USER_ARG);
   if (!email || !password) { console.error(`ABORT: could not resolve email+password for "${USER_ARG}" (${source}). Set the alias' *_env vars in .env.local.`); process.exit(2); }
-  const earn = pickEarningFactor();
 
   log(`Target user: ${email} (${source})`);
-  log(`Earning SKU: ${earn.sku} (factor ${earn.factor})`);
   log(`Cap: --max-orders ${MAX_ORDERS} | LINE_ITEM_LIMIT qty < ${LINE_ITEM_LIMIT + 1}`);
 
-  // Admin token (seed-common auth) for the balance read + safety context.
-  const startBalance = balanceUserId ? await readBalance(balanceUserId).catch(() => 0) : 0;
+  // Auth as the user (read-only until an order is placed) so the WINNING program + its live price/stock are
+  // resolved from the user's own storefront context — eligibility and earning both depend on the user.
+  const token = await userToken(email, password);
+  const userId = (await gql(token, `query { me { id } }`, 'me'))?.me?.id || balanceUserId;
+  if (!userId) throw new Error('could not resolve userId (me.id) for the target user');
+  const userGroups = await getUserGroups(email);
+  const earn = await resolveWinningEarning(token, userGroups);
+  const perUnit = earn.factor * earn.unitPrice;   // points = factor × unit price × qty (measured, not factor × qty)
+  log(`User groups: [${userGroups.join(', ')}]`);
+  log(`Winning program: "${earn.programName}" (pri ${earn.priority}) → earn SKU ${earn.sku} (factor ${earn.factor} × $${earn.unitPrice} = ${perUnit} PTS/unit, stock ${earn.availableQuantity})`);
+  if (perUnit <= 0) throw new Error(`winning SKU ${earn.sku} earns 0 PTS/unit (factor ${earn.factor} × price ${earn.unitPrice}) — cannot reach a points target`);
+
+  const startBalance = await readBalance(userId).catch(() => 0);
   const target = TARGET_POINTS != null ? TARGET_POINTS : null;
-  log(`Current balance: ${balanceUserId ? startBalance : '(unknown — no securityAccountId on alias)'} PTS`);
+  log(`Current balance: ${startBalance} PTS`);
   if (target != null) log(`Points target: ${target} PTS (remaining ≈ ${Math.max(0, target - startBalance)})`);
   if (TARGET_ORDERS != null) log(`Orders target: ${TARGET_ORDERS} (capped at ${MAX_ORDERS})`);
 
-  // Per-order quantity: approach the remaining target in as few orders as possible, bounded by the
-  // line-item limit. Points earned per unit are decided by the LIVE winning program (polled after each
-  // order), so this is only an opening estimate; the loop re-reads the real balance and stops at target.
-  const perUnitEst = Math.max(1, earn.factor);
-  const remaining = target != null ? Math.max(0, target - startBalance) : perUnitEst * 100;
-  const qty = Math.min(LINE_ITEM_LIMIT, Math.max(1, Math.ceil(remaining / perUnitEst)));
-  const estOrders = TARGET_ORDERS != null ? TARGET_ORDERS : Math.max(1, Math.ceil(remaining / (perUnitEst * qty)));
+  // Per-order qty approaches the remaining target, bounded by the line-item limit AND live inventory.
+  const remaining = target != null ? Math.max(0, target - startBalance) : perUnit * 100;
+  const qtyFor = (avail) => Math.max(1, Math.min(LINE_ITEM_LIMIT, avail || LINE_ITEM_LIMIT, Math.ceil(remaining / perUnit)));
 
   if (DRY_RUN) {
-    log(`[DRY] PLAN: place ~${estOrders} order(s) of ${earn.sku} × qty ${qty} (est ${perUnitEst}×/unit) → approach ${target ?? '(orders mode)'} PTS.`);
-    if (estOrders > MAX_ORDERS) log(`[DRY] ⚠ estimated ${estOrders} orders EXCEEDS --max-orders ${MAX_ORDERS} — target not reachable in one run. Lower --points, raise --max-orders, or make the redemption cases balance-relative (LOY_SKU_PTS_UNIT).`);
-    log('[DRY] No orders placed. Earn points are decided by the live winning program and polled at runtime.');
+    const q = qtyFor(earn.availableQuantity);
+    const estOrders = TARGET_ORDERS != null ? TARGET_ORDERS : Math.max(1, Math.ceil(remaining / (perUnit * q)));
+    log(`[DRY] PLAN: ~${estOrders} order(s) of ${earn.sku} × qty ${q} (${perUnit} PTS/unit) → approach ${target ?? '(orders mode)'} PTS.`);
+    if (estOrders > MAX_ORDERS) log(`[DRY] ⚠ estimated ${estOrders} orders EXCEEDS --max-orders ${MAX_ORDERS} — lower --points or raise --max-orders.`);
+    if (target != null && earn.availableQuantity > 0 && remaining > perUnit * earn.availableQuantity * MAX_ORDERS) log(`[DRY] ⚠ target may exceed what ${MAX_ORDERS} orders × stock ${earn.availableQuantity} can earn.`);
+    log('[DRY] No orders placed.');
     return;
   }
 
   // ⚠ LIVE: places real orders.
-  const token = await userToken(email, password);
-  const meData = await gql(token, `query { me { id } }`, 'me');
-  const userId = meData?.me?.id || balanceUserId;
-  if (!userId) throw new Error('could not resolve userId (me.id) for the target user');
-
-  let placed = 0; let balance = balanceUserId ? startBalance : await readBalance(userId);
+  let placed = 0; let balance = startBalance;
   const done = () => (target != null ? balance >= target : placed >= TARGET_ORDERS);
   while (!done() && placed < MAX_ORDERS) {
-    const num = await placeEarnOrder(token, userId, /* productId resolved just-in-time */ await resolveProductId(earn.sku), qty);
+    const avail = await currentAvailability(token, earn.productId);   // re-read: stock decrements as we buy
+    if (avail <= 0) { log(`⚠ ${earn.sku} out of stock (availableQuantity ${avail}) — stopping after ${placed} order(s).`); break; }
+    const qty = qtyFor(avail);
+    const num = await placeEarnOrder(token, userId, earn.productId, qty);
     placed++;
-    // Earn settles asynchronously (ProcessOrdersAsync Hangfire ~10s) — poll a few times before re-reading.
-    for (let i = 0; i < 6; i++) { await sleep(5000); const b = await readBalance(userId); if (b !== balance) { balance = b; break; } balance = b; }
-    log(`  order ${placed}: ${num} → balance ${balance} PTS`);
+    // Earn settles asynchronously (ProcessOrdersAsync Hangfire ~10s) — poll before re-reading.
+    for (let i = 0; i < 8; i++) { await sleep(5000); const b = await readBalance(userId); if (b !== balance) { balance = b; break; } balance = b; }
+    log(`  order ${placed}: ${num} (${earn.sku} ×${qty}) → balance ${balance} PTS`);
   }
-  if (target != null && balance < target) log(`⚠ stopped at ${balance}/${target} PTS after ${placed} order(s) (hit --max-orders ${MAX_ORDERS}). Re-run to continue, or lower the target.`);
+  if (target != null && balance < target) log(`⚠ stopped at ${balance}/${target} PTS after ${placed} order(s) (hit --max-orders ${MAX_ORDERS} or stock). Re-run to continue, or lower the target.`);
   else log(`✓ done: ${placed} order(s) placed, balance now ${balance} PTS.`);
-}
-
-/** Resolve an earning product's productId by SKU (admin catalog search). */
-async function resolveProductId(sku) {
-  const r = await api('POST', '/api/catalog/search/products', { searchPhrase: `code:"${sku}"`, take: 5, responseGroup: 'ItemInfo' }, { expectStatus: [200, 201] });
-  const items = r?.items || [];
-  const id = (items.find((i) => i.code === sku) || items[0])?.id;
-  if (!id) throw new Error(`earning SKU "${sku}" not found — seed standard products first (npm run seed:products)`);
-  return id;
 }
 
 (async () => {
