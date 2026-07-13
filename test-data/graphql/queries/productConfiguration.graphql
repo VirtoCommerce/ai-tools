@@ -6,7 +6,7 @@
 # optional-vars: USER_ID (String), CULTURE_NAME (String, default "en-US"), CURRENCY_CODE (String, default "USD")
 # return-type: ConfigurationQueryResponseType → configurationSections: [ConfigurationSectionType]
 #   section.options: [ConfigurationLineItemType]   (NOT ConfigurationOptionType — that type does not exist)
-# last-validated: 2026-05-27 (live introspection + live query against vcst-qa B2B-store / CFG-013 dd56d770-…)
+# last-validated: 2026-07-13
 # known-issues:
 #   - Argument descriptions in the live schema are swapped:
 #       cultureName.description = "Currency code (\"USD\")"

@@ -5,7 +5,7 @@ applicability_rationale: "xAPI GraphQL schema reference. The schema SHAPE is uni
 
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-07)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-13)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -370,7 +370,7 @@ Fields: `id`, `code`, `catalogId`, `productType`, `minQuantity`, `maxQuantity`, 
 
 ### VariationType
 
-Fields: `id`, `name`, `code`, `productType`, `minQuantity`, `maxQuantity`, `packSize`, `availabilityData`, `images`, `price`, `prices`, `properties`, `assets`, `outlines`, `slug`, `vendor`, `rating`
+Fields: `id`, `name`, `code`, `productType`, `minQuantity`, `maxQuantity`, `packSize`, `availabilityData`, `images`, `price`, `prices`, `properties`, `assets`, `outlines`, `slug`, `vendor`, `rating`, `associations`
 
 ### CouponType
 
