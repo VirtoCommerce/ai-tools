@@ -22,6 +22,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from "
 import { join, resolve, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { parse as parseCsv } from "csv-parse/sync";
 
 type Verdict = "PASS" | "FAIL" | "SKIPPED" | "BLOCKED" | "PENDING" | "EMPTY" | "UNKNOWN";
 
@@ -108,6 +109,13 @@ interface Args {
   sinceDays: number;
 }
 
+/** parseInt with a fallback that only kicks in on an actual parse failure — a
+ *  legitimate 0 (or any other falsy-but-valid number) must not be discarded. */
+function parseIntArg(raw: string | undefined, fallback: number): number {
+  const n = parseInt(raw ?? "", 10);
+  return Number.isNaN(n) ? fallback : n;
+}
+
 function parseArgs(argv: string[]): Args {
   const args: Args = {
     openInBrowser: false,
@@ -127,10 +135,10 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--embed-images") args.embedImages = true;
     else if (a === "--watch") args.watch = true;
     else if (a === "--overview") args.overview = true;
-    else if (a === "--since-days") args.sinceDays = Math.max(1, parseInt(argv[++i], 10) || 14);
-    else if (a.startsWith("--since-days=")) args.sinceDays = Math.max(1, parseInt(a.slice("--since-days=".length), 10) || 14);
-    else if (a === "--interval") args.intervalSec = Math.max(2, parseInt(argv[++i], 10) || 10);
-    else if (a.startsWith("--interval=")) args.intervalSec = Math.max(2, parseInt(a.slice("--interval=".length), 10) || 10);
+    else if (a === "--since-days") args.sinceDays = Math.max(1, parseIntArg(argv[++i], 14));
+    else if (a.startsWith("--since-days=")) args.sinceDays = Math.max(1, parseIntArg(a.slice("--since-days=".length), 14));
+    else if (a === "--interval") args.intervalSec = Math.max(2, parseIntArg(argv[++i], 10));
+    else if (a.startsWith("--interval=")) args.intervalSec = Math.max(2, parseIntArg(a.slice("--interval=".length), 10));
     else if (a === "--help" || a === "-h") {
       console.log(
         [
@@ -254,30 +262,6 @@ function suiteFileMap(): Map<string, string> {
   return _suiteFileMap;
 }
 
-/** Minimal RFC-4180 CSV reader (handles quoted fields, embedded commas/newlines, "" escapes). */
-function parseCsvRecords(text: string): string[][] {
-  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1); // strip BOM
-  const rows: string[][] = [];
-  let field = "";
-  let row: string[] = [];
-  let inQ = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (inQ) {
-      if (ch === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else inQ = false;
-      } else field += ch;
-    } else if (ch === '"') inQ = true;
-    else if (ch === ",") { row.push(field); field = ""; }
-    else if (ch === "\r") { /* ignore */ }
-    else if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
-    else field += ch;
-  }
-  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
-  return rows;
-}
-
 const _titleCache = new Map<string, Map<string, string>>();
 function loadCaseTitles(suiteId: string): Map<string, string> {
   const cached = _titleCache.get(suiteId);
@@ -286,18 +270,16 @@ function loadCaseTitles(suiteId: string): Map<string, string> {
   const file = suiteFileMap().get(suiteId);
   if (file && existsSync(file)) {
     try {
-      const rows = parseCsvRecords(readFileSync(file, "utf-8"));
-      if (rows.length >= 2) {
-        const header = rows[0].map((h) => h.trim().toLowerCase());
-        const idIdx = header.indexOf("id");
-        const titleIdx = header.indexOf("title");
-        if (idIdx !== -1 && titleIdx !== -1) {
-          for (let r = 1; r < rows.length; r++) {
-            const id = (rows[r][idIdx] ?? "").trim();
-            const title = (rows[r][titleIdx] ?? "").trim();
-            if (id) map.set(id, title);
-          }
-        }
+      const records = parseCsv(readFileSync(file, "utf-8"), {
+        columns: (header: string[]) => header.map((h) => h.trim().toLowerCase()),
+        skip_empty_lines: true,
+        relax_column_count: true,
+        bom: true,
+      }) as Record<string, string>[];
+      for (const rec of records) {
+        const id = (rec.id ?? "").trim();
+        const title = (rec.title ?? "").trim();
+        if (id) map.set(id, title);
       }
     } catch {
       /* CSV unreadable → leave titles blank */
@@ -700,7 +682,7 @@ function renderSuiteRow(s: NormSuite, runDir: string, embed: boolean, openByDefa
         ? `<span class="live-count">${doneCount}/${s.totalCases} cases</span>`
         : "";
     return `
-    <tr class="suite-row placeholder${isRunning ? " running" : ""}" data-suite="${s.suiteId}" data-category="${s.category}" data-rate="-1">
+    <tr class="suite-row placeholder${isRunning ? " running" : ""}" data-suite="${s.suiteId}" data-category="${s.category}" data-rate="-1" data-fail="${s.failed}" data-blocked="${s.blocked}">
       <td></td>
       <td class="mono">${s.suiteId}</td>
       <td><span class="cat-pill cat-${s.category.toLowerCase()}">${s.category}</span></td>
@@ -729,7 +711,7 @@ function renderSuiteRow(s: NormSuite, runDir: string, embed: boolean, openByDefa
     ? `<td class="num live-rate">${liveBadge("running")}<span class="live-count">${doneCount}/${s.totalCases}</span></td>`
     : `<td class="num ${rateClass}"><strong>${rate.toFixed(1)}%</strong></td>`;
   return `
-    <tr class="suite-row${isRunning ? " running" : ""}" data-suite="${s.suiteId}" data-category="${s.category}" data-rate="${isRunning ? -1 : rate}">
+    <tr class="suite-row${isRunning ? " running" : ""}" data-suite="${s.suiteId}" data-category="${s.category}" data-rate="${isRunning ? -1 : rate}" data-fail="${s.failed}" data-blocked="${s.blocked}">
       <td><button class="toggle${openCls}" aria-label="Expand">▶</button></td>
       <td class="mono">${s.suiteId}</td>
       <td><span class="cat-pill cat-${s.category.toLowerCase()}">${s.category}</span></td>
@@ -1263,9 +1245,14 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
     document.querySelectorAll('tr.suite-row').forEach(row => {
       const text = row.textContent.toLowerCase();
       const rate = parseFloat(row.dataset.rate);
+      const fail = parseInt(row.dataset.fail || '0', 10);
+      const blocked = parseInt(row.dataset.blocked || '0', 10);
       const matchQ = !q || text.includes(q);
       const matchCat = !cat || row.dataset.category === cat;
-      const matchFail = !onlyFailed || rate < 100;
+      // passRate is computed against decided (pass+fail) cases only, so a suite
+      // that is all-blocked/all-pending can read 100% — check fail/blocked counts
+      // directly rather than relying on rate alone.
+      const matchFail = !onlyFailed || rate < 100 || fail > 0 || blocked > 0;
       const show = matchQ && matchCat && matchFail;
       row.style.display = show ? '' : 'none';
       const detail = document.querySelector('tr.suite-detail[data-detail-for="' + row.dataset.suite + '"]');
@@ -1657,7 +1644,16 @@ async function main(): Promise<void> {
     console.log(`[overview watch] refresh ${args.intervalSec}s — Ctrl+C to stop`);
     let opened = false;
     for (;;) {
-      const live = writeOverview();
+      let live: boolean;
+      try {
+        live = writeOverview();
+      } catch (e) {
+        // A suite-*-results.json can be mid-write (runner agents now rewrite it
+        // after every case) — skip this tick rather than killing the watcher.
+        console.error(`[overview watch] ${(e as Error).message}`);
+        await sleep(args.intervalSec * 1000);
+        continue;
+      }
       if (args.openInBrowser && !opened) { openInBrowser(outPath); opened = true; }
       if (!live) {
         console.log(`[overview watch] no run in progress — final overview written, exiting.`);
