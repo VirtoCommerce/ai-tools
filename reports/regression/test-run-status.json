@@ -3,19 +3,19 @@
   "selection": "sprint26-13 (scoped) — suites 012,013,081,039,028,030",
   "startedAt": "2026-07-13T15:42:25Z",
   "windowStartUtc": "2026-07-13T15:42:25Z",
-  "finishedAt": null,
+  "finishedAt": "2026-07-13T19:16:36Z",
   "env": "vcst-qa",
   "build": {"platform": "3.1043.0", "theme": "2.53.0-pr-2368-997c", "xcart": "3.1026.0", "skyflow": "3.1003.0", "cybersource": "3.1002.0"},
-  "status": "in_progress",
+  "status": "completed",
   "mode": "standard",
   "outputDir": "reports/regression/REG-2026-07-13-1542/",
   "note": "Sprint26-13 regression scoped to checkout/cart/payment suites. Batch1: 039,013,030. Batch2: 028,012,081. Firefox reserved for cart-merge/shipping-popup (payment-dropdown quirk).",
   "suites": [
-    {"id": "039", "name": "Payment — CyberSource", "status": "done", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "priority": "P0", "batch": 1, "testCount": 23, "pass": 12, "fail": 7, "blocked": 3, "skipped": 0, "bugs": ["BUG_039_001","BUG_039_002","BUG_039_003","BUG_039_004","BUG_039_005"], "cleanup": "order 1f384a2b-5f9a-472f-a324-003c9e622857 pending — needs admin cancel"},
+    {"id": "039", "name": "Payment — CyberSource", "status": "done", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "priority": "P0", "batch": 1, "testCount": 23, "pass": 13, "fail": 7, "blocked": 3, "skipped": 0, "bugs": ["BUG_039_001","BUG_039_002","BUG_039_003","BUG_039_004","BUG_039_005"], "cleanup": "order 1f384a2b-5f9a-472f-a324-003c9e622857 pending — needs admin cancel"},
     {"id": "013", "name": "Checkout — B2B", "status": "done", "browser": "playwright-edge", "agent": "qa-frontend-expert", "priority": "P1", "batch": 1, "testCount": 12, "pass": 3, "fail": 3, "blocked": 5, "skipped": 1, "bugs": ["BUG_013_001"]},
-    {"id": "030", "name": "Cart — Merge", "status": "running", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "priority": "P1", "batch": 1, "testCount": 17, "pass": 5, "fail": 1, "blocked": 11, "skipped": 0, "attempts": [{"browser": "playwright-firefox", "result": "attempt1: 1P/16B — MCP connection dropped"}, {"browser": "playwright-firefox", "result": "attempt2 (reconnected): 5P/1F/11B — worked ~75min then instability recurred CART-063+ (long-session flakiness); found BUG_030_001/002 (High, cart-merge)"}], "bugs": ["BUG_030_001 (High, merge qty math)","BUG_030_002 (High, persisted cart lost on re-login)"], "completionPass": "CART-063..073 (11 blocked) on Chrome"},
+    {"id": "030", "name": "Cart — Merge", "status": "done", "browser": "playwright-firefox", "agent": "qa-frontend-expert", "priority": "P1", "batch": 1, "testCount": 17, "pass": 5, "fail": 1, "blocked": 11, "skipped": 0, "attempts": [{"browser": "playwright-firefox", "result": "attempt1: 1P/16B — MCP connection dropped"}, {"browser": "playwright-firefox", "result": "attempt2 (reconnected): 5P/1F/11B — worked ~75min then instability recurred CART-063+ (long-session flakiness); found BUG_030_001/002 (High, cart-merge)"}, {"browser": "playwright-chrome", "result": "attempt3 (completion pass CART-063..073): FAILED early — API session limit; no cases re-executed, file unchanged"}], "bugs": ["BUG_030_001 (High, merge qty math)","BUG_030_002 (High, persisted cart lost on re-login)"], "note": "11 BLOCKED (CART-063..073) not completed — Chrome fallback pass hit session limit; carry to next run"},
     {"id": "028", "name": "Cart — Core", "status": "done", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "priority": "P1", "batch": 2, "testCount": 48, "pass": 35, "fail": 4, "blocked": 8, "skipped": 1, "bugs": ["BUG_028_001","BUG_028_002","BUG_028_003"]},
     {"id": "012", "name": "Checkout — Guest", "status": "done", "browser": "playwright-edge", "agent": "qa-frontend-expert", "priority": "P1", "batch": 2, "testCount": 12, "pass": 5, "fail": 5, "blocked": 0, "skipped": 2, "bugs": ["BUG_012_001","BUG_012_002","BUG_012_003"]},
-    {"id": "081", "name": "Checkout — Select Shipping Address Popup", "status": "done", "browser": "playwright-edge", "agent": "qa-frontend-expert", "priority": "P1", "batch": 2, "testCount": 30, "pass": 9, "fail": 0, "blocked": 21, "skipped": 0, "bugs": [], "note": "21 BLOCKED = test-data drift (VCST-4710 address seed degraded), not defects; verified via GraphQL"}
+    {"id": "081", "name": "Checkout — Select Shipping Address Popup", "status": "done", "browser": "playwright-edge", "agent": "qa-frontend-expert", "priority": "P1", "batch": 2, "testCount": 30, "pass": 10, "fail": 0, "blocked": 20, "skipped": 0, "bugs": [], "note": "21 BLOCKED = test-data drift (VCST-4710 address seed degraded), not defects; verified via GraphQL"}
   ]
 }

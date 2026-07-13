@@ -289,34 +289,73 @@ function loadCaseTitles(suiteId: string): Map<string, string> {
   return map;
 }
 
-function buildScreenshotIndex(runDir: string): Map<string, string[]> {
-  // Returns: suiteId -> [relative paths] and case-id -> [relative paths]
-  // Files like "039-PAY-CS-001-foo.png" → keyed under "039" and "PAY-CS-001"
-  const idx = new Map<string, string[]>();
-  const add = (k: string, v: string) => {
-    const arr = idx.get(k) ?? [];
-    arr.push(v);
-    idx.set(k, arr);
-  };
+const IMG_RE = /\.(png|jpe?g|gif|webp)$/i;
+
+/** Every image under the run's evidence/ and screenshots/ dirs, as run-dir-relative paths. */
+function listAllShots(runDir: string): string[] {
+  const shots: string[] = [];
   for (const dir of ["evidence", "screenshots"]) {
     const dirPath = join(runDir, dir);
     if (!existsSync(dirPath)) continue;
     for (const f of readdirSync(dirPath)) {
-      if (!/\.(png|jpe?g|gif|webp)$/i.test(f)) continue;
-      const rel = `${dir}/${f}`;
-      const m = f.match(/^(\d+[a-z0-9]*)-(.+)\.(png|jpe?g|gif|webp)$/i);
-      if (!m) {
-        add("_orphan", rel);
-        continue;
-      }
-      const suiteId = m[1];
-      add(`suite:${suiteId}`, rel);
-      // Extract a case-like ID anywhere in the remainder
-      const caseMatch = m[2].match(/[A-Z][A-Z0-9]+-[A-Z0-9]+(?:-\d+)?/);
-      if (caseMatch) add(`case:${caseMatch[0]}`, rel);
+      if (IMG_RE.test(f)) shots.push(`${dir}/${f}`);
     }
   }
-  return idx;
+  return shots;
+}
+
+function shotBasename(rel: string): string {
+  return (rel.split("/").pop() ?? rel).replace(IMG_RE, "");
+}
+
+/**
+ * Screenshots whose filename is the case ID or is prefixed by "<caseId>-".
+ * The runner names evidence by CASE id (CART-036-FAIL-…, PAY-CS-004-…), and a
+ * file may embed a leading suite id too (039-PAY-CS-001-…) — both are matched.
+ * The "<caseId>-" boundary keeps CART-036 from claiming CART-0361's shots.
+ */
+function shotsForCase(caseId: string, allShots: string[]): string[] {
+  const cid = caseId.trim().toUpperCase();
+  if (!cid) return [];
+  return allShots.filter((rel) => {
+    const b = shotBasename(rel).toUpperCase();
+    return b === cid || b.startsWith(`${cid}-`) || b.includes(`-${cid}-`) || b.endsWith(`-${cid}`);
+  });
+}
+
+/** Screenshots keyed by leading numeric suite id (e.g. "039-…"), used for the suite-level catch-all. */
+function shotsForSuite(suiteId: string, allShots: string[]): string[] {
+  const sid = suiteId.trim().toLowerCase();
+  if (!sid) return [];
+  return allShots.filter((rel) => shotBasename(rel).toLowerCase().startsWith(`${sid}-`));
+}
+
+/**
+ * Normalize a stored screenshot path (which the runner writes repo-root-relative,
+ * e.g. "reports/regression/REG-…/screenshots/foo.png") to a path relative to the
+ * run dir, so it resolves against the HTML report sitting inside that dir.
+ */
+function toRunRelPath(p: string, runId: string): string {
+  let s = String(p).replace(/\\/g, "/").trim();
+  const marker = `${runId}/`;
+  const i = s.indexOf(marker);
+  if (i >= 0) return s.slice(i + marker.length);
+  // Fallback: keep only the last evidence/screenshots segment onward.
+  const m = s.match(/(?:^|\/)((?:evidence|screenshots)\/.+)$/i);
+  return m ? m[1] : s;
+}
+
+/** Pull explicit per-case screenshot paths from any of the shapes the runner emits. */
+function explicitCaseShots(c: any, runId: string): string[] {
+  const out: string[] = [];
+  const push = (v: unknown) => {
+    if (typeof v === "string" && v.trim()) out.push(toRunRelPath(v, runId));
+    else if (Array.isArray(v)) for (const x of v) if (typeof x === "string" && x.trim()) out.push(toRunRelPath(x, runId));
+  };
+  push(c?.screenshot);
+  push(c?.screenshots);
+  push(c?.evidenceScreenshots);
+  return out;
 }
 
 /** Tally verdicts from the recorded case list (excludes the synthetic _suite row). */
@@ -336,10 +375,16 @@ function countByVerdict(cases: NormCase[]) {
   return c;
 }
 
-function normalizeSuite(raw: any, screenshotIdx: Map<string, string[]>): NormSuite {
+function normalizeSuite(raw: any, allShots: string[], runId: string): NormSuite {
   const suiteId = String(raw.suiteId ?? "??");
   const cases: NormCase[] = [];
-  const suiteShots = screenshotIdx.get(`suite:${suiteId}`) ?? [];
+  const suiteShots = shotsForSuite(suiteId, allShots);
+
+  // Screenshots for a case = its explicitly recorded paths + any file named after
+  // the case id (deduped). The explicit field is authoritative; the name match
+  // catches evidence the runner captured but didn't record on the case row.
+  const caseShots = (c: any): string[] =>
+    [...new Set([...explicitCaseShots(c, runId), ...shotsForCase(String(c.id ?? ""), allShots)])];
 
   if (Array.isArray(raw.cases)) {
     // Smoke shape: cases[{id, title, status|verdict, expected?, actual?, evidence?, notes?}]
@@ -353,7 +398,7 @@ function normalizeSuite(raw: any, screenshotIdx: Map<string, string[]>): NormSui
         status: normalizeStatus(c.verdict ?? c.status),
         evidenceText: parts.join(" — "),
         evidenceFile: null,
-        screenshots: screenshotIdx.get(`case:${c.id}`) ?? [],
+        screenshots: caseShots(c),
         consoleErrors: Array.isArray(c.consoleErrors) ? c.consoleErrors : [],
       });
     }
@@ -370,7 +415,7 @@ function normalizeSuite(raw: any, screenshotIdx: Map<string, string[]>): NormSui
         status: normalizeStatus(c.status),
         evidenceText,
         evidenceFile,
-        screenshots: screenshotIdx.get(`case:${c.id}`) ?? [],
+        screenshots: caseShots(c),
         consoleErrors: Array.isArray(c.consoleErrors) ? c.consoleErrors : [],
       });
     }
@@ -446,7 +491,8 @@ function normalizeSuite(raw: any, screenshotIdx: Map<string, string[]>): NormSui
 }
 
 function loadAllSuites(runDir: string): NormSuite[] {
-  const shotIdx = buildScreenshotIndex(runDir);
+  const allShots = listAllShots(runDir);
+  const runId = runDir.replace(/[\\/]+$/, "").split(/[\\/]/).pop() ?? "";
   // Broadened to catch browser-suffixed files (suite-072b-…-results-chrome.json)
   // as well as the canonical suite-{ID}-results.json.
   const files = readdirSync(runDir).filter((f) => /^suite-.*results.*\.json$/.test(f));
@@ -456,7 +502,7 @@ function loadAllSuites(runDir: string): NormSuite[] {
   const bySuite = new Map<string, { suite: NormSuite; cases: number; mtime: number }>();
   for (const f of files) {
     const full = join(runDir, f);
-    const suite = normalizeSuite(JSON.parse(readFileSync(full, "utf-8")), shotIdx);
+    const suite = normalizeSuite(JSON.parse(readFileSync(full, "utf-8")), allShots, runId);
     const cases = suite.cases.length;
     const mtime = statSync(full).mtimeMs;
     const prev = bySuite.get(suite.suiteId);
