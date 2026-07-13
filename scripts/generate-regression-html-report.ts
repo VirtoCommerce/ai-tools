@@ -1093,10 +1093,11 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
   .cases th { background: transparent; border-bottom: 1px solid var(--border); }
   .cases th, .cases td { vertical-align: top; }
   /* Fixed column widths so ID/Status/Title line up across every row. */
-  .cases th:nth-child(1), .cases td:nth-child(1) { width: 88px; white-space: nowrap; }
+  .cases th:nth-child(1), .cases td:nth-child(1) { width: 116px; overflow-wrap: anywhere; word-break: break-word; }
   .cases th:nth-child(2), .cases td:nth-child(2) { width: 30%; }
   .cases th:nth-child(3), .cases td:nth-child(3) { width: 96px; white-space: nowrap; }
   .cases td:nth-child(2) { overflow-wrap: anywhere; }
+  .cases td:nth-child(1) { padding-right: 12px; }
   .ev { max-width: 600px; }
   .ev-text { color: var(--text-dim); font-size: 12px; margin-bottom: 6px; line-height: 1.45; }
   .ev-link { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; margin-bottom: 6px; }
