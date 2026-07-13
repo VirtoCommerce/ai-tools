@@ -1,6 +1,6 @@
 ---
 description: "Run regression test suites in parallel. Supports scope selection: smoke, critical, sprint, full, frontend, backend, or comma-separated suite IDs. Correlates App Insights logs for the run window. Optional --seed=<profile> pre-seeds test data; --teardown removes AGENT-TEST-* entities after run."
-argument-hint: "[smoke|critical|sprint|sprint:XX-YY|full|frontend|backend|01,04,06] [--autonomous] [--seed=...] [--teardown] [--no-plan]"
+argument-hint: "[smoke|critical|sprint|sprint:XX-YY|full|frontend|backend|01,04,06] [--autonomous] [--seed=...] [--teardown] [--no-plan] [--frontend|--backend]"
 disable-model-invocation: true
 ---
 
@@ -13,8 +13,11 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression                             # Default: smoke (Suite 042)
 /qa-regression smoke                       # Suite 042 only (~15 min)
 /qa-regression critical                    # P0 suites: 042, 039, 044, 049
-/qa-regression sprint                      # Reads vc/shared/docs/Sprint plans/ for the current sprint plan and runs Section 5.1 suites; falls back to static group if no plan
-/qa-regression sprint:26-09                # Pin to a specific sprint plan (reads vc/shared/docs/Sprint plans/sprint-26-09-summary.json)
+/qa-regression sprint                      # Reads vc/shared/docs/Sprint plans/ for the current sprint plan and runs ALL Section 5.1 suites (5.1.1 Frontend + 5.1.2 Backend); falls back to static group if no plan
+/qa-regression sprint --frontend           # Run only the plan's §5.1.1 Frontend suites (regression/suites/Frontend/)
+/qa-regression sprint --backend            # Run only the plan's §5.1.2 Backend suites (regression/suites/Backend/)
+/qa-regression sprint:XX-YY                # Pin to a specific sprint plan
+/qa-regression sprint:XX-YY --frontend     # Pin to a plan AND scope to its §5.1.1 Frontend suites
 /qa-regression sprint --no-plan            # Force static `sprint` selection group from test-suites.json (skip plan lookup)
 /qa-regression full                        # All 99 suites (production release)
 /qa-regression frontend                    # All Frontend/ suites
@@ -39,6 +42,7 @@ When `--autonomous` is specified, delegate to `autonomous-regression-orchestrato
 - **`--seed=<profile>`** — Pre-seed test data via `/qa-seed-data <profile>` **before** the regression run begins. Valid profiles: `minimal`, `catalog`, `b2b`, `pricing`, `full`. Executes as Step 0.5 (see pipeline below). Skip if already seeded for the same session.
 - **`--teardown`** — After the regression run completes (pass or fail), invoke `/qa-seed-data teardown` to remove all `AGENT-TEST-*` entities. Use with short-lived seed data; skip if other agents are sharing the seeded entities.
 - **`--no-plan`** — Only meaningful with `sprint` selection. Skips the sprint plan lookup and falls back to the static `sprint` selection group from `config/test-suites.json`. Use when running a generic sprint-scope regression that's not tied to a specific Done sprint plan.
+- **`--frontend` / `--backend`** — Only meaningful with `sprint` / `sprint:XX-YY` selection. After resolving the plan's `suitesActivated[]`, keep only the suites in that layer — `--frontend` → the plan's §5.1.1 Frontend suites (`regression/suites/Frontend/`), `--backend` → its §5.1.2 Backend suites (`regression/suites/Backend/`). Classified by the layer directory each suite's CSV lives under in `config/test-suites.json`. Mutually exclusive; omit both to run the full plan. (These are sprint-scope **modifiers** — distinct from the top-level `frontend`/`backend` selections, which run *all* suites in a layer regardless of any sprint plan.)
 
 **Do NOT use `--seed` with `smoke`** — suite 042 validates infrastructure/login paths only and gains nothing from seeding (adds 5-15 min with no coverage benefit). Warn the user and proceed without seeding.
 
@@ -102,6 +106,8 @@ Resolution order:
 
 3. **Read** `summary.json` and extract `suitesActivated[]` — these are the suite IDs to run. Validate every ID exists in `test-suites.json` (warn and drop unknowns rather than failing).
 
+3a. **Layer filter** (only if `--frontend` or `--backend` is set) — narrow `suitesActivated[]` to the requested layer by classifying each suite against the layer directory its CSV lives under in `config/test-suites.json` (`regression/suites/Frontend/` vs `Backend/`) — this matches the plan's §5.1.1 / §5.1.2 sub-tables. `--frontend` keeps Frontend suites, `--backend` keeps Backend. Log the dropped-by-layer count. If the filter leaves zero suites, abort with a clear note ("Plan {XX-YY} has no {layer} suites in §5.1"). `--frontend`/`--backend` are mutually exclusive — reject if both are passed.
+
 4. **Resolved-from-plan output** — log to the run report header:
    ```
    Selection: sprint (resolved from vc/shared/docs/Sprint plans/sprint-26-09-summary.json)
@@ -155,7 +161,7 @@ Catch backend errors the suites *triggered but didn't surface* — 5xx, failed d
 ### Step 6 — Consolidate Report
 Write `reports/regression/regression-YYYY-MM-DD.md` with:
 - Executive summary (suites run/passed/failed, pass rate)
-- Suite-by-suite results table
+- Suite-by-suite results table — **split into two subsections: `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`)**, classifying each suite by the layer directory its CSV lives under in `config/test-suites.json` (not by module/component). Give each subsection its own pass/fail sub-total; omit a subsection only if the run touched zero suites in that layer. Watch the loyalty split (083/083b storefront → Frontend; 075/075b/075c → Backend) and admin/GraphQL suites (050*, 0XX admin → Backend).
 - Bugs found (include App Insights-correlated `REAL_BUG` signals, attributed to a suite where possible)
 - App Insights (run window): correlated signal counts (real_bug / needs-review / dismissed), deferrals; reference telemetry by portal link. Skip if unconfigured
 - Retry log
@@ -227,6 +233,7 @@ Agents MUST resolve credentials via `@td()` at runtime — never hardcode in pro
 - Never share browser slots between concurrent agents
 - Priority order: P0 before P1 before P2
 - Always write test-run-status.json (external tools + the live HTML dashboard monitor it — update it at each state change so the dashboard reflects real progress)
+- **Split the suite-by-suite results by layer.** The Step 6 report's results table is written as two subsections — `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`) — classified by the layer directory each suite's CSV lives under in `config/test-suites.json`, each with its own pass/fail sub-total. Loyalty splits across layers (083/083b → Frontend; 075/075b/075c → Backend); admin/GraphQL suites (050*, 0XX admin) → Backend.
 - Read URLs from .env via `config.js`, never hardcode
 - If >50% suites fail, flag as critical_failure — suggest `/qa-sync-tests` to check for stale test cases
 - If a browser fails to launch, retry with fallback chain (see Browser Pool table above)
@@ -234,6 +241,7 @@ Agents MUST resolve credentials via `@td()` at runtime — never hardcode in pro
 - `--seed` runs sequentially before Step 1; it blocks the regression run and must succeed
 - `--teardown` runs after the report is written; failures are logged but don't fail the run
 - **Sprint-plan precedence:** When selection is `sprint`, `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` overrides the static `sprint` group from `test-suites.json`. Use `--no-plan` to opt out, `sprint:XX-YY` to pin.
+- **Sprint layer modifiers:** `--frontend` / `--backend` are only valid with `sprint` / `sprint:XX-YY`; they filter the resolved `suitesActivated[]` to that layer (§5.1.1 Frontend / §5.1.2 Backend), classified by the suite's CSV layer directory in `config/test-suites.json`. Mutually exclusive; ignored (with a warning) on non-sprint selections. Do NOT confuse them with the top-level `frontend`/`backend` selections, which run every suite in a layer independent of any plan.
 - **Plan-driven runs are still validated against the manifest** — every `suitesActivated[]` ID must exist in `config/test-suites.json` (warn and drop unknowns rather than failing the run).
 - **No silent fallback:** if `sprint:XX-YY` is pinned but the plan file is missing, abort with a clear error instructing the user to run `/qa-test-plan {XX-YY}` first or add `--no-plan`.
 - **App Insights correlation (Step 5.5)** reuses `/qa-monitoring`'s query + dedup + triage machinery (`ci/monitoring/queries/*.kql`, `reports/monitoring/.seen-fingerprints.json` read-only, `ci/agents/monitor-triage-agent.md`) scoped to the run window — **no separate live-repro phase**. Resolve resources from `APPINSIGHTS_*`, never hardcode; cap + log deferrals; skip gracefully (don't block the run) when App Insights is unconfigured. Correlated `REAL_BUG` signals fold into Bugs Found — no duplicate `BUG-AI-*` draft.

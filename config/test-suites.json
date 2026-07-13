@@ -325,7 +325,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 12,
+      "testCount": 9,
       "estimatedMinutes": 8,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -348,7 +348,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 12,
+      "testCount": 7,
       "estimatedMinutes": 8,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -669,7 +669,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 47,
+      "testCount": 44,
       "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -891,7 +891,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 23,
+      "testCount": 18,
       "estimatedMinutes": 16,
       "agent": "qa-frontend-expert",
       "preferredBrowser": "playwright-chrome",
@@ -2347,7 +2347,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 30,
+      "testCount": 29,
       "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": [

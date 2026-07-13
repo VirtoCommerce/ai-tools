@@ -296,15 +296,6 @@ FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
 [NETWORK] No 500 errors from API on probe input","1. Alert dialog appears (XSS executed â€” critical vulnerability)
 2. Search returns ALL addresses on SQLi probe (injection successful)
 3. Application error page shown on probe input","[ACT] Clear search field; dismiss popup","Source: VCST-4710 / PR #129; Error Guessing; OWASP A03","Manual"
-"SA-022","Session Timeout While Popup Open â€” Re-authentication Handling","Checkout > Cart > Shipping Address > Auth","Medium","BL-CHK-003","ECL-1.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
-1. User session expires while the address popup is open (simulate by invalidating token or waiting for session timeout â€” or use DevTools to clear auth cookie).","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
-FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
-[ACT] Simulate session expiry (e.g., clear auth cookie via DevTools console: document.cookie approach, or wait for natural expiry)
-[ACT] Attempt to click an address row or the OK button","[DOM] Either: (a) user is redirected to sign-in page with cart preserved, OR (b) an error message appears indicating session expired â€” no silent failure
-[STATE] No data corruption or orphaned cart changes","[NETWORK] 401 returned on any popup interaction after session expiry
-[CONSOLE] Auth error logged appropriately","1. Action proceeds silently without valid session
-2. Application freezes with spinner
-3. Cart corrupted after session expiry mid-popup","Sign in again and verify cart state","Source: VCST-4710 / PR #129; ECL-1.2; BL-CHK-003","Manual"
 "SA-023","Active Column â€” Selected Row Indicator Semantics","Checkout > Cart > Shipping Address > Table","High","BL-CHK-003",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 1. Authenticated B2B org user. Cart has an existing shipping address. Popup is open.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
 FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup

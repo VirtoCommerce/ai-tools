@@ -202,7 +202,13 @@ References (read these):
 Context7: query `/virtocommerce/vc-docs` per primary domain (tokens: 8000)
 
 Output:
-  - section_5_1_suites_activated: [{suiteId, name, module, sprintTrigger: [VCST-...], priority}]
+  - section_5_1_suites_activated: [{suiteId, name, module, sprintTrigger: [VCST-...], priority, layer: "Frontend"|"Backend"}]
+    # Split §5.1 into TWO sub-tables in the written plan:
+    #   5.1.1 Frontend Suites (regression/suites/Frontend/)
+    #   5.1.2 Backend Suites  (regression/suites/Backend/)
+    # Classify each suite by which layer directory its CSV lives under in config/test-suites.json
+    # (NOT by JIRA component). Note the loyalty split: 083/083b storefront = Frontend; 075/075b/075c = Backend.
+    # Preserve suite order within each sub-table; keep module/sprintTrigger/priority columns unchanged.
   - section_5_2_coverage_gaps: [{gapId: GAP-NN, ticket, description, targetSuites, owner}]
   - section_6_new_cases: [{ticket, layers, caseType, suggestedCount, targetSuite, technique}]
   - estimatedTotalNewCases: int (range OK, e.g., "63-72")
@@ -289,6 +295,7 @@ Next: review the plan, then either:
 - **Never assert exact prices, IDs, SKUs, order numbers** in the plan — refer to test data files / `@td(ALIAS.field)` resolver per `feedback_flexible_test_cases.md`.
 - **Read URLs from `config.js` / `.env`** — never hardcode `vcst-qa.virtocommerce.com` in the plan body; use `{FRONT_URL}` / `{BACK_URL}`.
 - **No fabricated suite IDs.** Every suite in Section 5.1 must exist in `config/test-suites.json`. If a domain has no existing suite, list it in 5.2 (Coverage Gap) and propose a target suite.
+- **Split Section 5.1 by layer.** Section 5.1 (Suites Activated) is written as two sub-tables — `5.1.1 Frontend Suites` (`regression/suites/Frontend/`) and `5.1.2 Backend Suites` (`regression/suites/Backend/`) — classifying each suite by the layer directory its CSV lives under in `config/test-suites.json`, not by JIRA component. Watch the loyalty split (083/083b storefront → Frontend; 075/075b/075c → Backend) and any admin/GraphQL suites (050*, 0XX admin) → Backend. Preserve suite order within each sub-table and keep the module/sprint-trigger/priority columns unchanged.
 - **Honor the BL knowledge file** — when describing test approach for a ticket, reference applicable `BL-*` IDs from `business-logic.md` (read; do not edit). If a ticket implies a new invariant, note it as a candidate for `--update-bl` in a follow-up `/qa-test-lifecycle` run, not in this plan.
 - **Document status defaults to Draft.** Promote to "Approved" only after user review (manual edit).
 - **Companion summary.json must validate** — keys exactly as specified, no trailing commas.
