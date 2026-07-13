@@ -5,9 +5,9 @@
 # required-vars: STORE_ID (String), CATALOG_SUBTREE_ID (String — typically "fc596540-..." root of B2B virtual catalog)
 # optional-vars: QUERY (String), FIRST (Int, default 20), AFTER (String cursor), SORT (String),
 #                USER_ID (String), CULTURE_NAME (String), CURRENCY_CODE (String),
-#                WITH_FACETS (Boolean), WITH_IMAGES (Boolean), SELECTED_ADDRESS_ID (String),
+#                FACET (String — space-separated facet field names to compute; drives term_facets), SELECTED_ADDRESS_ID (String),
 #                PRESERVE_USER_QUERY (Boolean), PREVIOUS_OUTLINE (String)
-# last-validated: 2026-05-20
+# last-validated: 2026-07-13
 # known-issues:
 #   - Without category.subtree filter, results are empty even though products exist (BL feedback)
 # used-by: (future) catalog suites
@@ -19,8 +19,7 @@
 #   "cultureName": "en-US",
 #   "currencyCode": "USD",
 #   "sort": "",
-#   "withFacets": true,
-#   "withImages": true,
+#   "facet": "price Color",
 #   "filter": "category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) \"price\":[500 TO 1000] \"Color\":\"Gray\" inStock_variations:true",
 #   "first": 16,
 #   "after": "0",
@@ -45,8 +44,7 @@ query {
     first: 16
     after: "0"
     sort: ""
-    withFacets: true
-    withImages: true
+    facet: "{{FACET}}"
     filter: "category.subtree:{{CATALOG_SUBTREE_ID}} price.USD:(0 TO) \"price\":[500 TO 1000] \"Color\":\"Gray\" inStock_variations:true"
     selectedAddressId: "{{SELECTED_ADDRESS_ID}}"
     preserveUserQuery: false
