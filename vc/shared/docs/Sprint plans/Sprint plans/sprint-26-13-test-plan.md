@@ -189,10 +189,11 @@ Risk Score = Likelihood × Impact (5×5 matrix). Thresholds: 1-4 Low, 5-9 Medium
 
 ### 5.1 Suites Activated by This Sprint
 
+#### 5.1.1 Frontend Suites (`regression/suites/Frontend/`)
+
 | Suite ID | Name | Module | Sprint Trigger | Priority |
 |----------|------|--------|----------------|----------|
 | 042 | Smoke Tests | Cross-cutting | Always-on (+ VCST-5071/5070 BEM selector sanity, VCST-4226 theme, VCST-5382 module baseline) | P0 |
-| 078 | Backend Smoke Tests | Cross-cutting | Always-on (+ VCST-5361 perf hot-path, VCST-5382) | P0 |
 | 011 | Checkout Flow | Checkout | VCST-5369, VCST-5269 | P0 |
 | 012 | Checkout Guest | Checkout | VCST-5369 | P1 |
 | 013 | Checkout B2B | Checkout | VCST-5369, VCST-5239 | P1 |
@@ -201,7 +202,6 @@ Risk Score = Likelihood × Impact (5×5 matrix). Thresholds: 1-4 Low, 5-9 Medium
 | 040a | Payment — Skyflow | Payment | VCST-5369, VCST-5202, VCST-5329 | P0 |
 | 040b | Payment — Authorize.Net | Payment | VCST-5369 | P0 |
 | 041 | Payment Cross-Cutting | Payment | VCST-5369 | P0 |
-| 018 | Orders Admin Payments | Orders | VCST-5369 (paid-order confirmation) | P2 |
 | 028 | Cart Core | Cart | VCST-5391, VCST-5431, VCST-5365 | P0 |
 | 029 | Cart Validation & Persistence | Cart | VCST-5431 | P0 |
 | 030 | Cart Merge | Cart | VCST-5077 | P1 |
@@ -209,51 +209,58 @@ Risk Score = Likelihood × Impact (5×5 matrix). Thresholds: 1-4 Low, 5-9 Medium
 | 072b | Configurable Products E2E | Configurable Products | VCST-5079, VCST-5431 | P1 |
 | 072c | Configurable Products Cross-Cutting | Configurable Products | VCST-5079 | P2 |
 | 072d | Configurable Products File & Text Sections | Configurable Products | VCST-5079 | P2 |
-| 052 | Configurable Products Admin | Configurable Products | VCST-5076 | P2 |
-| 050i | GraphQL Configurable Products | xCatalog | VCST-5077, VCST-5431, VCST-5391 | P1 |
-| 050b1 | GraphQL xCart — Basic CRUD & Quantity | xCart | VCST-5391 | P1 |
-| 075 | Loyalty | Loyalty | VCST-5135 | P1 |
-| 075b | Loyalty Mixed Cart Order | Loyalty | VCST-5104 | P1 |
-| 075c | Loyalty Product Points Earning | Loyalty | VCST-5135, VCST-5103 | P1 |
 | 083 | Loyalty Catalog Browsing | Loyalty | VCST-5135 | P1 |
 | 083b | Loyalty Mixed Cart Order | Loyalty | VCST-5104, VCST-5103, VCST-5365 | P1 |
-| 050c | GraphQL xOrder | xOrder | VCST-5104, VCST-4464 | P2 |
 | 006 | B2B Organization | B2B | VCST-5239 | P1 |
 | 008 | B2B Members | B2B | VCST-5239 | P1 |
-| 027 | Customer Orgs & Invites | Customer | VCST-5239 | P1 |
-| 027b | Customer Org Memberships (per-org roles & override) | Customer | VCST-5239, VCST-5401 (exact match) | P1 |
 | 031 | Auth Login & Register | Auth | VCST-5401 | P1 |
 | 032 | Auth Session & RBAC | Auth | VCST-5401, VCST-5239 | P1 |
 | 033 | Auth Company & Account Menu | Auth | VCST-5239 | P1 |
 | 082 | Auth Company Menu & RBAC | Auth | VCST-4923 (session token) | P1 |
-| 050d | GraphQL xProfile | xProfile | VCST-5239 | P2 |
-| 049 | Platform API | Platform | VCST-5401, VCST-5375, VCST-5345, VCST-4923 | P0 |
 | 044 | Security Tests | Cross-cutting | VCST-5401, VCST-4923 | P1 |
 | 001 | Catalog Navigation | Catalog | VCST-5177, VCST-5274 | P2 |
 | 002 | Product Detail | Catalog | VCST-5345 | P2 |
 | 003 | Catalog Filters | Catalog | VCST-5385, VCST-5324, VCST-5177, VCST-5413 | P1 |
 | 004 | Search Core | Search | VCST-5177 | P2 |
 | 005 | Search Filters & Advanced | Search | VCST-5385 | P2 |
-| 051 | Catalog Admin Products | Catalog | VCST-5345 | P1 |
-| 053 | Catalog Admin Categories | Catalog | VCST-5177, VCST-5289 | P1 |
-| 050a | GraphQL xCatalog | xCatalog | VCST-5289, VCST-5345, VCST-5177, VCST-5385, VCST-5324 | P1 |
 | 046 | Internationalization | Cross-cutting | VCST-5324, VCST-5219 | P2 |
-| 059 | CMS Page Management | CMS | VCST-5219 | P2 |
-| 060 | CMS Design & Content | CMS | VCST-4932, VCST-5429, VCST-5274, VCST-5219, VCST-5430 | P2 |
-| 062 | Assets | Assets | VCST-4932, VCST-5392 | P2 |
 | 048b | Layout Stability | UI Kit / Cross-cutting | VCST-5413, VCST-5071, VCST-5070, VCST-4226, VCST-5140 | P1 |
 | 045 | Accessibility Tests | UI Kit | VCST-4226, VCST-5140 | P2 |
 | 070 | White Labeling Storefront | Whitelabeling | VCST-4226 | P2 |
 | 071 | White Labeling Branding | Whitelabeling | VCST-4226 | P2 |
 | 014 | Orders Frontend | Orders | VCST-5140, VCST-4464 | P2 |
+| 036 | BOPIS Store Selector | BOPIS | VCST-4646, VCST-4529 | P2 |
+| 037 | BOPIS Cart | BOPIS | VCST-4646 | P2 |
+| 038 | BOPIS Checkout | BOPIS | VCST-4646 | P2 |
+
+#### 5.1.2 Backend Suites (`regression/suites/Backend/`)
+
+| Suite ID | Name | Module | Sprint Trigger | Priority |
+|----------|------|--------|----------------|----------|
+| 078 | Backend Smoke Tests | Cross-cutting | Always-on (+ VCST-5361 perf hot-path, VCST-5382) | P0 |
+| 018 | Orders Admin Payments | Orders | VCST-5369 (paid-order confirmation) | P2 |
+| 052 | Configurable Products Admin | Configurable Products | VCST-5076 | P2 |
+| 050i | GraphQL Configurable Products | xCatalog | VCST-5077, VCST-5431, VCST-5391 | P1 |
+| 050b1 | GraphQL xCart — Basic CRUD & Quantity | xCart | VCST-5391 | P1 |
+| 075 | Loyalty | Loyalty | VCST-5135 | P1 |
+| 075b | Loyalty Mixed Cart Order | Loyalty | VCST-5104 | P1 |
+| 075c | Loyalty Product Points Earning | Loyalty | VCST-5135, VCST-5103 | P1 |
+| 050c | GraphQL xOrder | xOrder | VCST-5104, VCST-4464 | P2 |
+| 027 | Customer Orgs & Invites | Customer | VCST-5239 | P1 |
+| 027b | Customer Org Memberships (per-org roles & override) | Customer | VCST-5239, VCST-5401 (exact match) | P1 |
+| 050d | GraphQL xProfile | xProfile | VCST-5239 | P2 |
+| 049 | Platform API | Platform | VCST-5401, VCST-5375, VCST-5345, VCST-4923 | P0 |
+| 051 | Catalog Admin Products | Catalog | VCST-5345 | P1 |
+| 053 | Catalog Admin Categories | Catalog | VCST-5177, VCST-5289 | P1 |
+| 050a | GraphQL xCatalog | xCatalog | VCST-5289, VCST-5345, VCST-5177, VCST-5385, VCST-5324 | P1 |
+| 059 | CMS Page Management | CMS | VCST-5219 | P2 |
+| 060 | CMS Design & Content | CMS | VCST-4932, VCST-5429, VCST-5274, VCST-5219, VCST-5430 | P2 |
+| 062 | Assets | Assets | VCST-4932, VCST-5392 | P2 |
 | 017 | Orders Admin Management | Orders | VCST-4464, VCST-5126, VCST-5434 | P2 |
 | 020 | Platform Users Roles & Settings | Platform | VCST-5375 | P2 |
 | 063 | Core Settings | Platform | VCST-5232 | P2 |
 | 085 | Task Management | Task Management | VCST-5227 | P2 |
 | 084 | News Articles | News | VCST-5223 | P2 |
-| 036 | BOPIS Store Selector | BOPIS | VCST-4646, VCST-4529 | P2 |
-| 037 | BOPIS Cart | BOPIS | VCST-4646 | P2 |
-| 038 | BOPIS Checkout | BOPIS | VCST-4646 | P2 |
 | 050k | GraphQL xPickup | xPickup | VCST-4646 | P2 |
 
 ### 5.2 Coverage Gaps — New Test Cases Needed
