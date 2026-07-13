@@ -6,7 +6,7 @@
  *
  * Config (unchanged env vars): JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN.
  */
-import type { Tracker, TrackerTicket, TrackerDeps } from "./tracker.js";
+import type { Tracker, TrackerTicket, TrackerDeps, CreateWorkItemInput } from "./tracker.js";
 import { loadProjectProfile } from "../../../scripts/lib/project-profile.mjs";
 
 /** Flatten Atlassian Document Format (ADF) to plain text (best-effort). */
@@ -148,5 +148,41 @@ export class JiraTracker implements Tracker {
       },
       body: JSON.stringify({ transition: { id: match.id } }),
     });
+  }
+
+  async createWorkItem(
+    input: CreateWorkItemInput,
+  ): Promise<{ key: string; url: string } | null> {
+    if (!this.enabled || this.dryRun) {
+      this.log(`JIRA: (skipped${this.dryRun ? " dry-run" : ""}) create ${input.type} "${input.title}"`);
+      return null;
+    }
+    // Description is ADF. Repro steps (an Azure-native field) fold into the description
+    // as a second paragraph; severity/priority are Azure concepts and are not mapped.
+    const paras = [input.description, input.reproSteps]
+      .filter((t): t is string => Boolean(t))
+      .map((text) => ({ type: "paragraph", content: [{ type: "text", text }] }));
+    const fields: any = {
+      project: { key: this.projectKey },
+      summary: input.title,
+      issuetype: { name: input.type || "Bug" },
+      description: { type: "doc", version: 1, content: paras },
+    };
+    if (input.labels?.length) fields.labels = input.labels;
+    const res = await fetch(`${this.baseUrl}/rest/api/3/issue`, {
+      method: "POST",
+      headers: {
+        Authorization: this.authHeader(),
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ fields }),
+    });
+    if (!res.ok) {
+      this.log(`JIRA: create ${input.type} failed — ${res.status}`);
+      return null;
+    }
+    const data = (await res.json()) as any;
+    return { key: data.key, url: `${this.baseUrl}/browse/${data.key}` };
   }
 }

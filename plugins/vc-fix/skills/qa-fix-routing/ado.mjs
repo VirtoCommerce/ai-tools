@@ -22,6 +22,9 @@
  *   node ado.mjs transition     --id 967 --state Active
  *   node ado.mjs list-types                                     # work item type names
  *   node ado.mjs list-states    --type Bug                      # states for a type
+ *   node ado.mjs create-workitem --type Bug --title "..." --description-file body.md \
+ *                               [--repro-file steps.md] [--severity "2 - High"] [--priority 2] \
+ *                               [--tags "qa-autofix,frontend"]   # returns { id, url }
  *   node ado.mjs list-refs      --repo frontend [--filter heads/]
  *   node ado.mjs get-file       --repo frontend --path client-app/x.vue --branch dev
  *   node ado.mjs create-pr      --repo frontend --source refs/heads/claude/qa-autofix/967 \
@@ -247,6 +250,44 @@ const COMMANDS = {
     if (!args.type) fail("--type required");
     const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workitemtypes/${enc(args.type)}/states?${V}`);
     return (d.value || []).map((s) => ({ name: s.name, category: s.category }));
+  },
+
+  async "create-workitem"(args) {
+    for (const k of ["type", "title"]) if (!args[k]) fail(`--${k} required`);
+    // Body is a JSON-Patch array (op "add" per field). Description/repro can be a file
+    // (never inline prose with em-dashes — same grabli as create-pr) or a raw string.
+    const description = args["description-file"]
+      ? readFileSync(resolve(args["description-file"]), "utf-8")
+      : args.description || "";
+    const repro = args["repro-file"]
+      ? readFileSync(resolve(args["repro-file"]), "utf-8")
+      : args.repro || "";
+    const fields = [{ op: "add", path: "/fields/System.Title", value: String(args.title) }];
+    if (description) fields.push({ op: "add", path: "/fields/System.Description", value: String(description) });
+    if (repro) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: String(repro) });
+    if (args.severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: String(args.severity) });
+    if (args.priority !== undefined && args.priority !== true)
+      fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: Number(args.priority) });
+    // ADO stores tags ";"-separated — accept comma or semicolon input and normalize.
+    if (args.tags) {
+      const tags = String(args.tags).split(/[,;]/).map((s) => s.trim()).filter(Boolean).join("; ");
+      if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
+    }
+    // The leading `$` before the type is literal + required by the ADO create endpoint.
+    const d = await call(
+      "POST",
+      `${base(args, "tracker")}/_apis/wit/workitems/$${enc(args.type)}?${V}`,
+      { body: fields, contentType: "application/json-patch+json" },
+    );
+    const org = args.org || trackerAZ().organization;
+    const project = args.project || trackerAZ().project;
+    return {
+      id: d.id,
+      type: d.fields?.["System.WorkItemType"],
+      title: d.fields?.["System.Title"],
+      state: d.fields?.["System.State"],
+      url: `https://dev.azure.com/${org}/${enc(project)}/_workitems/edit/${d.id}`,
+    };
   },
 
   async "list-refs"(args) {

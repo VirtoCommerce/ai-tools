@@ -62,7 +62,9 @@ async function adoGet(url, authHeader) {
 /**
  * Derive a lifecycle role → state map from a type's states. Pure. Name heuristics first
  * (a rich custom process like LEO's has "On Dev" / "On Review" / "Ready for QA"), with a
- * category-based fallback (Proposed / InProgress / Resolved / Completed).
+ * category-based fallback (Proposed / InProgress / Resolved / Completed). Also derives
+ * best-effort QA-side roles (testing / tested / reopen) used by /qa-verify-fix — optional,
+ * emitted only when found, and NOT part of the /qa-fix completeness gate.
  * states: [{ name, category }]
  */
 export function deriveRoleStates(states) {
@@ -84,13 +86,26 @@ export function deriveRoleStates(states) {
   // the correct signal: callers (gen-profile.mjs, tracker-ops.md's fallback) treat a
   // missing role as "ask the operator", not "guess".
   const inReview = byName(/\bon review\b|in review|code ?review|reviewing/i) || byName(/review/i);
-  const readyForTest =
-    byName(/ready for (qa|test)/i) || byName(/on qa|to test|testing|ready for/i) || byName(/resolved/i) || byCat("resolved");
+  // ready-for-test = the "awaiting human/QA" milestone. Resolve it FIRST and with a
+  // TIGHT preference (explicit "Ready for QA/Test", else "Resolved", else category) so
+  // the broad "testing"/"on qa" wording below can map to a DISTINCT `testing` state
+  // instead of colliding here.
+  const readyForTest = byName(/ready for (qa|test)/i) || byName(/resolved/i) || byCat("resolved");
   const done = byName(/closed|done|complete/i) || byCat("completed");
+  // QA-side roles (consumed by /qa-verify-fix). `testing` = QA in progress — dedup against
+  // ready-for-test so a generic Agile process (no distinct Testing state) leaves it unset
+  // rather than aliasing whatever ready-for-test resolved to.
+  const testingRaw = byName(/\btesting\b|on qa|in test|qa in progress/i);
+  const testing = testingRaw && testingRaw !== readyForTest ? testingRaw : undefined;
+  const tested = byName(/\btested\b|qa (passed|done)|verified/i);
+  const reopen = byName(/reopen|re-?open|need fixes|need to recheck|rejected|failed/i);
   const out = {};
   if (inProgress) out["in-progress"] = inProgress;
   if (inReview) out["in-review"] = inReview;
   if (readyForTest) out["ready-for-test"] = readyForTest;
+  if (testing) out["testing"] = testing;
+  if (tested) out["tested"] = tested;
+  if (reopen) out["reopen"] = reopen;
   if (done) out["done"] = done;
   return out;
 }
@@ -163,6 +178,11 @@ async function main() {
   const roleStates = deriveRoleStates(primaryStates);
   const ALL_ROLES = ["in-progress", "in-review", "ready-for-test", "done"];
   const missingRoles = ALL_ROLES.filter((r) => !roleStates[r]);
+  // QA-side roles are best-effort — surfaced but deliberately kept OUT of ALL_ROLES /
+  // roleStatesComplete: adding them would regress gen-profile.mjs's auto-transition
+  // enablement and affect the native /qa-fix flow (which only needs the 4 fix roles).
+  const QA_ROLES = ["testing", "tested", "reopen"];
+  const missingQaRoles = QA_ROLES.filter((r) => !roleStates[r]);
 
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
@@ -187,6 +207,12 @@ async function main() {
         ? ` — MISSING role(s): ${missingRoles.join(", ")} (no matching state found; confirm/hand-edit before relying on auto transitions)`
         : ""),
   );
+  if (missingQaRoles.length) {
+    console.error(
+      `[discover-tracker] QA-side role(s) not auto-derived (used by /qa-verify-fix, optional): ${missingQaRoles.join(", ")}` +
+        ` — confirm/hand-edit if you run /qa-verify-fix on this deployment.`,
+    );
+  }
   emit(out, args);
 }
 

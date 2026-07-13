@@ -13,7 +13,7 @@
  *
  * Azure Boards has no named transitions — `transition()` PATCHes System.State.
  */
-import type { Tracker, TrackerTicket, TrackerDeps } from "./tracker.js";
+import type { Tracker, TrackerTicket, TrackerDeps, CreateWorkItemInput } from "./tracker.js";
 import { adoAuthHeader, adoConfigured, adoBase } from "../ado-rest.js";
 import { loadProjectProfile } from "../../../scripts/lib/project-profile.mjs";
 
@@ -162,5 +162,46 @@ export class AzureTracker implements Tracker {
       },
     );
     if (!res.ok) this.log(`ADO: transition ${key} → ${targetState} failed — ${res.status}`);
+  }
+
+  async createWorkItem(
+    input: CreateWorkItemInput,
+  ): Promise<{ key: string; url: string } | null> {
+    if (!this.enabled || this.dryRun) {
+      this.log(`ADO: (skipped${this.dryRun ? " dry-run" : ""}) create ${input.type} "${input.title}"`);
+      return null;
+    }
+    // Body is a JSON-Patch array; the leading `$` before the type is required by the
+    // create endpoint. Optional fields are only patched when supplied.
+    const fields: Array<{ op: string; path: string; value: unknown }> = [
+      { op: "add", path: "/fields/System.Title", value: input.title },
+    ];
+    if (input.description) fields.push({ op: "add", path: "/fields/System.Description", value: input.description });
+    if (input.reproSteps) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: input.reproSteps });
+    if (input.severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: input.severity });
+    if (input.priority !== undefined) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: input.priority });
+    if (input.labels?.length) fields.push({ op: "add", path: "/fields/System.Tags", value: input.labels.join("; ") });
+    const res = await fetch(
+      `${this.base()}/_apis/wit/workitems/$${encodeURIComponent(input.type)}?api-version=${API_VERSION}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: await adoAuthHeader(),
+          "Content-Type": "application/json-patch+json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(fields),
+      },
+    );
+    if (!res.ok) {
+      this.log(`ADO: create ${input.type} failed — ${res.status}`);
+      return null;
+    }
+    const data = (await res.json()) as any;
+    const key = String(data.id);
+    return {
+      key,
+      url: `https://dev.azure.com/${this.org}/${encodeURIComponent(this.project)}/_workitems/edit/${key}`,
+    };
   }
 }

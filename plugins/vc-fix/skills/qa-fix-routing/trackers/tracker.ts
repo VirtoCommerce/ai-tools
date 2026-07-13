@@ -30,6 +30,20 @@ export interface TrackerDeps {
   log: (msg: string) => void;
 }
 
+/** Tracker-agnostic new-ticket shape (Jira issue / Azure Boards work item). */
+export interface CreateWorkItemInput {
+  /** Work item type — "Bug" (Azure); the Jira issuetype name (defaults to "Bug"). */
+  type: string;
+  title: string;
+  description?: string;
+  /** Repro steps — Azure Microsoft.VSTS.TCM.ReproSteps; folded into the Jira description. */
+  reproSteps?: string;
+  /** Free-form severity label, e.g. "2 - High" (Azure only; ignored by Jira). */
+  severity?: string;
+  priority?: number;
+  labels?: string[];
+}
+
 export interface Tracker {
   /** Short kind label for logs: "jira" | "azure". */
   readonly kind: string;
@@ -50,4 +64,10 @@ export interface Tracker {
   comment(key: string, text: string): Promise<void>;
   /** Move the ticket to a named status/state (no-op on dryRun / when disabled). */
   transition(key: string, transitionName: string): Promise<void>;
+  /**
+   * Create a new ticket/work item. OPTIONAL — not every caller needs it, so the
+   * bug-filing path can feature-detect (`tracker.createWorkItem?.(…)`). Returns the
+   * created key/id + web URL, or null on dryRun / when disabled.
+   */
+  createWorkItem?(input: CreateWorkItemInput): Promise<{ key: string; url: string } | null>;
 }
