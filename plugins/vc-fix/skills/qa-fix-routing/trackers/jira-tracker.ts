@@ -170,7 +170,11 @@ export class JiraTracker implements Tracker {
       issuetype: { name: input.type || "Bug" },
       description: { type: "doc", version: 1, content: paras },
     };
-    // Jira priority is set by id; both trackers treat the ordinal as "1 = highest".
+    // Jira priority is set by id, and Jira priority-id-to-meaning is scheme/instance-specific
+    // — NOT guaranteed to be the same small "1 = highest" ordinal space as Azure's
+    // Microsoft.VSTS.Common.Priority. This best-effort mapping assumes the project's default
+    // scheme; a create that fails or lands on the wrong priority for a customized scheme
+    // surfaces as the logged 400 below, not a silent miss.
     if (input.priority !== undefined) fields.priority = { id: String(input.priority) };
     if (input.labels?.length) fields.labels = input.labels;
     const res = await fetch(`${this.baseUrl}/rest/api/3/issue`, {

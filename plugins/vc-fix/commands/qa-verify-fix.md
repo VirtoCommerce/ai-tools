@@ -14,9 +14,10 @@ Pick up a READY-FOR-TEST bug ticket, verify the fix on the live environment, and
 > [`knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) for the per-tracker
 > resolve/comment/transition recipes, the **live transition discovery** rule (resolve a status by
 > lifecycle ROLE, never a hardcoded workflow name), ticket-key formats, the host-aware PR-read
-> mechanism (§3), and the platform-only build-version check (§5). `/qa-fix` already leaves the
-> QA-side role states — `roleStates["testing"]` / `["tested"]` / `["reopen"]` (+ `["done"]`) — in the
-> profile **specifically for this command to consume**. **With no profile ⇒ Jira / `gh` /
+> mechanism (§3), and the platform-only build-version check (§5). `/project-init`'s tracker scan
+> already leaves the QA-side role states — `roleStates["testing"]` / `["tested"]` / `["reopen"]`
+> (+ `["done"]`) — in the profile **specifically for this command to consume** (`/qa-fix` only ever
+> *reads* `roleStates`; it never writes to it). **With no profile ⇒ Jira / `gh` /
 > `vc-deploy-dev` — the original behaviour, unchanged.**
 
 ## Usage
@@ -52,10 +53,11 @@ to the Jira / GitHub / `vc-deploy-dev` behaviour — this section changes nothin
   `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). The QA roles are scanned best-effort;
   **if a role is absent from an older profile, fall back to `ask` + `ado.mjs list-states --type Bug`
   and confirm the state with the operator — do NOT invent a state.**
-- **Transition policy** (`profile.tracker.azure.transitionPolicy`): `auto` ⇒ transition silently by
-  role and just **log** it (NO operator prompt); `confirm-once` ⇒ one upfront confirmation of the
-  role→state plan; `ask` ⇒ confirm each transition (the original conservative behaviour; Jira and any
-  unscanned map default here). This **replaces** every "Ask the user before transitioning".
+- **Transition policy** (`profile.tracker.azure.transitionPolicy` + `.qaRoleStatesComplete`): see
+  `tracker-ops.md` §Live transition discovery point 4 for the full auto/confirm-once/ask semantics —
+  **the one addition specific to this command:** `transitionPolicy` is unlocked from the fix-side
+  roles alone, so a QA-side transition additionally requires `qaRoleStatesComplete === true` before
+  honoring anything other than `ask`.
 - **Build-verify source** (`profile.buildVerify.source`): `vc-deploy-dev` (native — GitHub MCP read
   of the deploy manifest), `modules-endpoint` (client — `GET {BACK_URL}/api/platform/modules`),
   `ticket` (frontend-only client — take the storefront version from the ticket). Empty/`""` ⇒ auto by
@@ -121,7 +123,8 @@ Transition the ticket to the **`testing`** role state (`tracker-ops.md` §Live t
 - **Jira** (or no profile) → `getTransitionsForJiraIssue`, then `transitionJiraIssue` on the transition whose target status matches the `testing` role (the VC-internal Jira reference name for this role is `On QA`).
 - **Azure Boards** → `ado.mjs transition --id <n> --state <roleStates["testing"]>` (e.g. `On QA`). If `roleStates["testing"]` is absent from an older profile, fall back per policy `ask` + `ado.mjs list-states --type Bug` and confirm the state — don't invent one.
 
-**Honor `tracker.azure.transitionPolicy`:** `auto` ⇒ transition silently and just log it (no prompt); `confirm-once`/`ask` ⇒ confirm (Jira / unscanned default).
+**Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — including the
+QA-side `qaRoleStatesComplete` gate: only apply `auto`/`confirm-once` when it's `true`, else `ask`.
 
 Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`):
 ```
@@ -270,7 +273,10 @@ or two role transitions from `testing`:
 - **Jira** (or no profile) → `getTransitionsForJiraIssue`, pick the transition whose target status matches the role (case-insensitive contains: "test" for `tested`, "reopen"/"fix" for `reopen`, "done" for `done`). The VC-internal Jira reference names for these roles are `Finish test` → `tested`, `Move to Done` → `done`, `Need fixes` → `reopen` — use them to recognize the transition, never as a hardcoded id.
 - **Azure Boards** → `ado.mjs transition --id <n> --state <roleStates[role]>` (LEO: `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). If a QA role is absent from an older profile, fall back to `ask` + `ado.mjs list-states --type Bug` and confirm the state with the operator — don't invent a state.
 
-**Honor `tracker.azure.transitionPolicy`** (this replaces the old "Ask the user before transitioning"): `auto` ⇒ transition silently by role and log it; `confirm-once` ⇒ one upfront confirmation of the plan; `ask` ⇒ confirm each (Jira / unscanned default). Skip entirely if the tracker is not configured, and note it in the report.
+**Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — this
+replaces the old "Ask the user before transitioning", **and** requires `qaRoleStatesComplete === true`
+before treating any of these QA-side transitions as `auto`/`confirm-once`. Skip entirely if the tracker
+is not configured, and note it in the report.
 
 **Tracker comment for VERIFIED (`testing` → `tested`):**
 ```
@@ -354,7 +360,7 @@ Output to the user: verdict, STR result, checklist score, regressions found, tra
 - Always reproduce the original bug first before confirming the fix
 - STR must pass 3 consecutive times — 2/3 is not sufficient (marks as intermittent)
 - Always query Context7 in Step 0 to understand expected post-fix behavior
-- Tracker transitions follow `profile.tracker.azure.transitionPolicy` (`auto` ⇒ silent by role; `confirm-once`/`ask` ⇒ confirm — the Jira / unscanned default), consistent with `/qa-fix` and `/qa-bug`
+- Tracker transitions follow `profile.tracker.azure.transitionPolicy` (`auto` ⇒ silent by role; `confirm-once`/`ask` ⇒ confirm — the Jira / unscanned default), consistent with `/qa-fix` and `/qa-bug` — **but gated additionally on `qaRoleStatesComplete === true`** for this command's QA-side roles (`tracker-ops.md` §Live transition discovery point 4)
 - If the tracker is unavailable, skip transitions but still execute the full verification
 - If the fix is not deployed, stop immediately — do not test against the old code
 - If an agent fails with an internal error, fall back to working directly rather than retrying
