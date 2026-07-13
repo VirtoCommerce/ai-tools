@@ -29,7 +29,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ROOT, BACK_URL, STORE_ID, DRY_RUN, VERBOSE, TEARDOWN,
-  log, verbose, assertSafeTarget, auth, api, loadAliases,
+  log, verbose, assertSafeTarget, auth, api, loadAliases, loadCsv,
 } from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);
@@ -92,30 +92,58 @@ function isCandidate(p, userGroups, now = new Date()) {
   return gate.all || userGroups.some((g) => gate.groups.has(g));
 }
 
+/** xAPI buyability/price/stock for a product as the user (also proves catalog linkage). null if not buyable/priced. */
+async function productEarnInfo(userToken, productId) {
+  const d = await gql(userToken, `query { product(id: "${productId}" storeId: "${STORE_ID}") { code availabilityData { isBuyable isAvailable availableQuantity } price { actual { amount } } } }`, 'earn_product').catch(() => null);
+  const p = d?.product; const unitPrice = Number(p?.price?.actual?.amount || 0);
+  if (!p?.availabilityData?.isBuyable || !p?.availabilityData?.isAvailable || !(unitPrice > 0)) return null;
+  return { sku: p.code, productId, unitPrice, availableQuantity: Number(p.availabilityData.availableQuantity ?? 0) };
+}
+
 /**
  * Resolve the SKU that actually EARNS for THIS user: the buyable factor SKU of the winning ProductPoints
  * program (highest-priority eligible+active+in-window). Only the single global winner earns its factor, so
  * we take candidates in priority order and use the FIRST whose factor SKU is buyable+priced for the user
- * (that also proves it is linked into the user's virtual catalog). Returns unitPrice + stock too, because
+ * (that also proves it is linked into the user's virtual catalog). Returns null when nothing resolves — the
+ * caller then falls back to the CSV heuristic. unitPrice + stock are included because
  * points = factor × unit price × qty (NOT factor × qty) and qty must respect available inventory.
  */
 async function resolveWinningEarning(userToken, userGroups) {
   const progs = (await api('POST', '/api/loyalty-programs/search', { take: 500 }, { expectStatus: [200, 201] }))?.results || [];
   const candidates = progs.filter((p) => isCandidate(p, userGroups)).sort((a, b) => (b.priority || 0) - (a.priority || 0));
-  if (!candidates.length) throw new Error(`no eligible+active+in-window ProductPoints program for groups [${userGroups.join(',')}]`);
+  if (!candidates.length) return null;
   const allFactors = (await api('POST', '/api/loyalty-program-product-factors/search', { take: 1000 }, { expectStatus: [200, 201] }))?.results || [];
   for (const prog of candidates) {
-    const factors = allFactors.filter((f) => f.loyaltyProgramId === prog.id && Number(f.factor) > 0);
-    for (const f of factors) {
-      const d = await gql(userToken, `query { product(id: "${f.productId}" storeId: "${STORE_ID}") { code availabilityData { isBuyable isAvailable availableQuantity } price { actual { amount } } } }`, 'winner_product').catch(() => null);
-      const p = d?.product; const unitPrice = Number(p?.price?.actual?.amount || 0);
-      if (p?.availabilityData?.isBuyable && p?.availabilityData?.isAvailable && unitPrice > 0) {
-        if (prog !== candidates[0]) log(`⚠ top winner "${candidates[0].name}" has no buyable factor SKU — falling back to eligible program "${prog.name}" (pri ${prog.priority}).`);
-        return { programId: prog.id, programName: prog.name, priority: prog.priority, sku: p.code, productId: f.productId, factor: Number(f.factor), unitPrice, availableQuantity: Number(p.availabilityData.availableQuantity ?? 0) };
+    for (const f of allFactors.filter((x) => x.loyaltyProgramId === prog.id && Number(x.factor) > 0)) {
+      const info = await productEarnInfo(userToken, f.productId);
+      if (info) {
+        if (prog !== candidates[0]) log(`⚠ top winner "${candidates[0].name}" has no buyable factor SKU — using eligible program "${prog.name}" (pri ${prog.priority}).`);
+        return { programName: prog.name, priority: prog.priority, factor: Number(f.factor), ...info };
       }
     }
   }
-  throw new Error('eligible winning program(s) have no buyable+priced factor SKU for this user — cannot earn via script');
+  return null;
+}
+
+/**
+ * LAST-RESORT fallback used only when NO winning program resolves (API failure / no ProductPoints programs):
+ * the highest-factor SKU from program-factors.csv (the original heuristic). ⚠ This may earn only the DEFAULT
+ * factor if that SKU is not a factor in the user's actual winning program — the caller logs a loud warning.
+ */
+async function resolveHeuristicEarning(userToken) {
+  let sku = 'LT-001'; let factor = 1;
+  try {
+    const ranked = loadCsv('test-data/loyalty/program-factors.csv')
+      .map((r) => ({ sku: r.sku, factor: Number(r.factor) || 0 }))
+      .filter((r) => r.sku && r.factor > 0).sort((a, b) => b.factor - a.factor);
+    if (ranked[0]) ({ sku, factor } = ranked[0]);
+  } catch { /* keep defaults */ }
+  const found = await api('POST', '/api/catalog/search/products', { searchPhrase: `code:"${sku}"`, take: 5, responseGroup: 'ItemInfo' }, { expectStatus: [200, 201] });
+  const productId = ((found?.items || []).find((i) => i.code === sku) || (found?.items || [])[0])?.id;
+  if (!productId) throw new Error(`fallback SKU "${sku}" not found — seed standard products first (npm run seed:products)`);
+  const info = await productEarnInfo(userToken, productId);
+  if (!info) throw new Error(`fallback SKU "${sku}" is not buyable/priced for this user — cannot earn`);
+  return { programName: '(CSV heuristic — no winning program resolved)', priority: null, factor, ...info };
 }
 
 async function userToken(email, password) {
@@ -180,7 +208,11 @@ async function run() {
   const userId = (await gql(token, `query { me { id } }`, 'me'))?.me?.id || balanceUserId;
   if (!userId) throw new Error('could not resolve userId (me.id) for the target user');
   const userGroups = await getUserGroups(email);
-  const earn = await resolveWinningEarning(token, userGroups);
+  let earn = await resolveWinningEarning(token, userGroups);
+  if (!earn) {
+    log(`⚠ no winning ProductPoints program resolved for groups [${userGroups.join(', ')}] — falling back to the program-factors.csv highest-factor heuristic (⚠ points may reflect the DEFAULT factor, not a program factor).`);
+    earn = await resolveHeuristicEarning(token);
+  }
   const perUnit = earn.factor * earn.unitPrice;   // points = factor × unit price × qty (measured, not factor × qty)
   log(`User groups: [${userGroups.join(', ')}]`);
   log(`Winning program: "${earn.programName}" (pri ${earn.priority}) → earn SKU ${earn.sku} (factor ${earn.factor} × $${earn.unitPrice} = ${perUnit} PTS/unit, stock ${earn.availableQuantity})`);
