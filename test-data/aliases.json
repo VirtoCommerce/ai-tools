@@ -2789,20 +2789,17 @@
   },
   "LOY_SKU_PTS_UNIT": {
     "_inline": true,
-    "id": "d53eddf2-6a00-487b-b983-007462814526",
     "code": "AGENT-TEST-PTS-UNIT-001",
     "sku": "AGENT-TEST-PTS-UNIT-001",
     "name": "AGENT-TEST PTS Unit Divisor",
     "price": 1,
     "currency": "PTS",
-    "pricelistId": "3dd9ceb1-7b28-4b6e-9d6b-2b90c56a7894",
     "fields": {
-      "id": "id",
       "code": "code",
       "sku": "sku",
       "price": "price"
     },
-    "_notes": "VCST-5103 1-PTS divisor fixture for balance-relative loyalty tests. A Physical, isBuyable, trackInventory=false product priced exactly 1 PTS in the 'Loyalty PTS price list' (currency=PTS, id 3dd9ceb1-7b28-4b6e-9d6b-2b90c56a7894 — NOT 'BoltsLoyalty' which is currency=MOA). Seeded 2026-06-24 on vcst-qa: created in physical catalog 72c0bdda-d622-4971-9a1b-8e55df815f4c / category cde09522-95b5-4aca-a154-26ddd0178306 (Medical autoclaves), inventory 100000 @ ffc-acme-eur-berlin-de, linked into the B2B virtual catalog @td(VIRTUAL_CATALOG_B2B.id). Because list=1 PTS, addItem qty=N makes the cart's PTS subtotal == N exactly — so a test can drive Σ(PTS) to ANY integer relative to a user's live loyalty balance (the key need: LOYALTY_NOBAL_USER's balance can't be re-zeroed, so insufficient-balance tests must add this product at qty = balance+1 rather than relying on a fixed PTS total). Live-verified 2026-06-24: equal-boundary (qty == balance allowed; qty == balance+1 → LOYALTY_INSUFFICIENT_BALANCE required>available). Resolve PTS line via itemCurrencyCode:'PTS' on addItem. AGENT-TEST- prefix → /qa-seed-data teardown sweeps it."
+    "_notes": "VCST-5103 1-PTS divisor fixture for balance-relative loyalty tests. A Physical, isBuyable, trackInventory=false product priced exactly 1 PTS in the 'Loyalty PTS price list' (currency=PTS — NOT 'BoltsLoyalty' which is currency=MOA). Because list=1 PTS, addItem qty=N makes the cart's PTS subtotal == N exactly, so a test can drive Σ(PTS) to ANY integer relative to a user's live loyalty balance (insufficient-balance tests add this at a huge fixed qty that dwarfs any balance; the ≤-boundary uses qty == balance). Resolve the PTS line via itemCurrencyCode:'PTS' on addItem. AGENT-TEST- prefix → /qa-seed-data teardown sweeps it. RUNTIME GUIDs MOVED TO THE PER-ENV OVERLAY (multi-env rule): the drifting product `id` and PTS-price-list `pricelistId` are NO LONGER pinned here (they drifted after the 2026-05-15 catalog restore → the PTS line silently stopped adding). They now live in aliases.<env>.json, (re)written idempotently by `npm run seed:loyalty-fixtures` (scripts/seed-data/seed-loyalty-fixtures.mjs), which resolves the PTS price list + virtual catalog at runtime and re-establishes the 1-PTS price + catalog link. Run the fixtures seeder to populate/refresh @td(LOY_SKU_PTS_UNIT.id) for an env; @td(LOY_SKU_PTS_UNIT.sku/.price) resolve here env-invariantly."
   },
   "MULTI_ORG_TF_BR": {
     "_inline": true,

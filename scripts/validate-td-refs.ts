@@ -23,7 +23,11 @@ const SUITES_DIR = join(ROOT, "regression", "suites");
 const TEST_DATA_DIR = join(ROOT, "test-data");
 const WARN_ONLY = process.argv.includes("--warn-only");
 
-const resolver = new TestDataResolver(TEST_DATA_DIR);
+// Layer the per-env overlay (aliases.<env>.json) the same way suites resolve at runtime — default to
+// the committed primary env `vcst` when TEST_ENV is unset (mirrors config.js / seed-common PRIMARY_ENV),
+// so @td() fields that live in the overlay (runtime GUIDs written by the seeders, e.g. LOY_SKU_PTS_UNIT.id)
+// resolve here instead of falsely failing against base-only aliases.json.
+const resolver = new TestDataResolver(TEST_DATA_DIR, process.env.TEST_ENV || "vcst");
 
 // --- DV-013 hardcoded-ID scan config ---
 // UUID-style and bare 32-char-hex literals are entity GUIDs unless allowlisted below.
