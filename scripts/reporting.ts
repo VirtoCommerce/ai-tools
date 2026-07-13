@@ -178,7 +178,19 @@ function readSuiteResults(resultsDir: string): SuiteResult[] {
   const files = readdirSync(resultsDir).filter(
     (f) => f.startsWith("suite-") && f.endsWith("-results.json")
   );
-  return files.map((f) => readJsonFile<SuiteResult>(join(resultsDir, f)));
+  const all = files.map((f) => readJsonFile<SuiteResult>(join(resultsDir, f)));
+  // Runner agents now pre-seed suite-*-results.json with completedAt: "" and rewrite
+  // it in place after every case, so a file can be caught mid-run. Only completedAt
+  // being set marks the final version — exclude anything still in flight rather than
+  // silently aggregating a partial (understated) case count into the report/gate.
+  const incomplete = all.filter((r) => !r.completedAt);
+  if (incomplete.length > 0) {
+    console.warn(
+      `Skipping ${incomplete.length} suite result file(s) still in progress (no completedAt): ` +
+        incomplete.map((r) => r.suiteId).join(", ")
+    );
+  }
+  return all.filter((r) => !!r.completedAt);
 }
 
 function readFailures(resultsDir: string): FailureEntry[] {

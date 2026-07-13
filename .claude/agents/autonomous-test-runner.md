@@ -135,6 +135,7 @@ SendMessage: to {{ORCHESTRATOR_NAME}}
 5. Authenticate with slot creds. If auth fails → all tests `BLOCKED`, send failure message, exit.
 6. If environment unreachable → write minimal results `errors: ["environment_unreachable"]`, send failure message, exit.
 7. Record `startedAt`. HAR capture is automatic — never disable.
+8. **Seed the live results file.** Immediately write `{{OUTPUT_FILE}}` with the full Phase 6 envelope, `completedAt: ""`, and every planned case pre-listed as `{ "id": "<ID>", "title": "<Title>", "status": "PENDING" }` so the live HTML dashboard shows each case flip verdict as it runs. See **Live incremental results** below.
 
 ## Phase 2: Execute (per test case)
 
@@ -153,9 +154,13 @@ SendMessage: to {{ORCHESTRATOR_NAME}}
 6. **Cross-Layer Checks** — GraphQL mutations MUST have empty `errors[]`.
 7. **Cleanup** — always execute; failures logged separately.
 8. **Evidence** — FAIL only (screenshot + console + network). PASS relies on HAR.
-9. **Record result** — PASS | FAIL | BLOCKED | SKIPPED.
+9. **Record result** — PASS | FAIL | BLOCKED | SKIPPED — then **rewrite `{{OUTPUT_FILE}}` in place** (this case `PENDING` → verdict + evidence, summary counts refreshed). Overwrite the whole file; it is cheap and idempotent. Drives the live per-case dashboard.
 
 **Do NOT send prose progress to orchestrator between tests beyond the announce.** Final summary only.
+
+### Live incremental results (for the dashboard)
+
+The live HTML report re-reads `{{OUTPUT_FILE}}` each refresh, so cases appear one-by-one with live PASS/FAIL/BLOCKED/PENDING badges while the suite still runs. Pre-seed all cases `PENDING` (Phase 1 step 8), overwrite after every case (step 9), and keep the shape identical to Phase 6 — only `completedAt: ""` marks an in-flight file. Writing the file is a plain `Write`, not a browser action.
 
 ## Phase 3: Self-Recovery (before marking FAIL)
 
