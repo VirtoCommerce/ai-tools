@@ -31,7 +31,7 @@ apply the same matrix by reading the profile.
 Use whichever surface is available; prefer the MCP when connected, else the CLI/REST.
 
 > **Azure interactive: use the `ado.mjs` helper, NOT hand-rolled `curl`+`python`.**
-> `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" <get-workitem|comment|transition|list-states|list-types|create-pr|list-policies|get-file|list-refs>`
+> `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" <get-workitem|create-workitem|comment|transition|list-states|list-types|create-pr|list-policies|get-file|list-refs>`
 > (org/project/apiBase default from the profile; Basic-PAT/az-login auth, UTF-8, and 302-sign-in detection
 > are built in). This is the fix for last run's repeated Windows grabli — `/tmp` path mismatch between Bash
 > and Windows Python, `cp1252` `UnicodeDecodeError` on ADO JSON, emoji/`&quot;` entity breakage, `$top`
@@ -41,10 +41,15 @@ Use whichever surface is available; prefer the MCP when connected, else the CLI/
 
 | Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) — via `ado.mjs` |
 |---|---|---|
+| **Create** a ticket | Atlassian MCP `createJiraIssue` (project = `tracker.projectKey`) | `ado.mjs create-workitem --type Bug --title … --description-file …` (optional `--repro-file`/`--severity`/`--priority`/`--tags`; returns `{ id, type, title, state, url }`) |
 | **Resolve** a ticket | Atlassian MCP `getJiraIssue` | `ado.mjs get-workitem --id <n>` (cleaned fields; wraps `GET {base}/_apis/wit/workitems/<n>?$expand=all`) |
 | **Search** by label | Atlassian MCP `searchJiraIssuesUsingJql` (`labels = qa-autofix`) | ADO WIQL `POST {base}/_apis/wit/wiql` — `… WHERE [System.Tags] CONTAINS 'qa-autofix' AND [System.WorkItemType]='Bug'` |
 | **Comment** | Atlassian MCP `addCommentToJiraIssue` | `ado.mjs comment --id <n> --text-file <path>` |
 | **Transition / set state** | Atlassian MCP `transitionJiraIssue` — **discover the transition id live**, never hardcode a name | `ado.mjs transition --id <n> --state <roleStates[role]>` — map ROLE→state via `tracker.azure.roleStates` (scanned per type), never a hardcoded name |
+
+**Created-ticket key follows the tracker** (as in §1): Jira returns a prefixed key (`ABC-123`);
+Azure returns a **bare numeric** id (`12345`). Use that key/id verbatim for the follow-up
+resolve/comment/transition ops and for commit/PR cross-links (Azure: `AB#12345`).
 
 `{base}` = `https://dev.azure.com/<tracker.azure.organization>/<tracker.azure.project>`.
 Auth (never passwords): Jira via the Atlassian MCP OAuth (or `JIRA_API_TOKEN`+`JIRA_EMAIL`);
@@ -57,7 +62,11 @@ test") are **VC-internal Jira workflow labels** — a client's Jira or Azure Boa
 them. Always resolve the *destination status* by role, then map it to the live workflow:
 
 1. Decide the **destination** by lifecycle role, not name:
-   `in-progress` (start work) · `in-review` (PR opened) · `ready-for-test` (awaiting human) · `done`.
+   - Fix-side (`/qa-fix`): `in-progress` (start work) · `in-review` (PR opened) · `ready-for-test` (awaiting human) · `done`.
+   - QA-side (`/qa-verify-fix`): `testing` (QA in progress) · `tested` (QA passed) · `reopen` (QA rejected, back to dev).
+   VC-internal Jira reference names for the QA roles: `On QA` → testing, `Finish test` → tested,
+   `Need fixes` / `REOPEN` → reopen. Azure Boards maps every role via `tracker.azure.roleStates`
+   (the QA roles are scanned best-effort by `/project-init`; hand-edit the profile if missing).
 2. **Jira:** call `getTransitionsForJiraIssue` and pick the transition whose target status best
    matches the role (case-insensitive contains: "progress" / "review" / "test" / "done"). If
    none matches, ask the user which transition to use — do NOT invent an id.

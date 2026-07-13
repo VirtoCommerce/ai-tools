@@ -62,20 +62,36 @@ async function adoGet(url, authHeader) {
 /**
  * Derive a lifecycle role → state map from a type's states. Pure. Name heuristics first
  * (a rich custom process like LEO's has "On Dev" / "On Review" / "Ready for QA"), with a
- * category-based fallback (Proposed / InProgress / Resolved / Completed).
+ * category-based fallback (Proposed / InProgress / Resolved / Completed). Also derives
+ * best-effort QA-side roles (testing / tested / reopen) used by /qa-verify-fix — optional,
+ * emitted only when found, and NOT part of the /qa-fix completeness gate.
  * states: [{ name, category }]
  */
 export function deriveRoleStates(states) {
   const list = (states || []).map((s) => ({ name: s.name, category: s.category || "" }));
-  const byName = (rx) => list.find((s) => rx.test(s.name))?.name;
-  const byCat = (cat) => list.find((s) => (s.category || "").toLowerCase() === cat)?.name;
+  // Claim-once: a state name maps to AT MOST ONE role. `pick` returns the first UNCLAIMED
+  // state matching the regex (or, for pickCat, the category) and marks it claimed — so
+  // overlapping heuristics (e.g. "QA Done" matching both `tested` and `done`, or "Tested on
+  // QA" matching both `tested` and `testing`) can't map one state to two roles. The
+  // resolution ORDER below therefore encodes priority: a more specific role is resolved
+  // BEFORE a broader one that could also match its state.
+  const claimed = new Set();
+  const pick = (rx) => {
+    const hit = list.find((s) => !claimed.has(s.name) && rx.test(s.name))?.name;
+    if (hit) claimed.add(hit);
+    return hit;
+  };
+  const pickCat = (cat) => {
+    const hit = list.find((s) => !claimed.has(s.name) && (s.category || "").toLowerCase() === cat)?.name;
+    if (hit) claimed.add(hit);
+    return hit;
+  };
   // in-progress = the CANONICAL "work started" entry to the InProgress category = "Active"
   // (or "In Progress"). Do NOT pick "On Dev" here: in these custom VC processes "On Dev" /
   // "On Review" / "Ready for QA" are DOWNSTREAM sub-states that map to the in-review /
   // ready-for-test roles — the start-of-work role is Active. (Confirmed against the LEO board:
   // New → Active is correct; New → On Dev is wrong.)
-  const inProgress =
-    byName(/\bactive\b|\bin ?progress\b|\bstarted\b/i) || byCat("inprogress");
+  const inProgress = pick(/\bactive\b|\bin ?progress\b|\bstarted\b/i) || pickCat("inprogress");
   // Deliberately NO fallback to `inProgress` here. Aliasing in-review to whatever
   // in-progress resolved to would silently collapse two distinct pipeline milestones
   // ("still being fixed" vs "PR open, awaiting human review") onto the same state —
@@ -83,14 +99,29 @@ export function deriveRoleStates(states) {
   // no human catching it. Leaving the role unset when no review-like state exists is
   // the correct signal: callers (gen-profile.mjs, tracker-ops.md's fallback) treat a
   // missing role as "ask the operator", not "guess".
-  const inReview = byName(/\bon review\b|in review|code ?review|reviewing/i) || byName(/review/i);
-  const readyForTest =
-    byName(/ready for (qa|test)/i) || byName(/on qa|to test|testing|ready for/i) || byName(/resolved/i) || byCat("resolved");
-  const done = byName(/closed|done|complete/i) || byCat("completed");
+  const inReview = pick(/\bon review\b|in review|code ?review|reviewing/i) || pick(/review/i);
+  // ready-for-test = the "awaiting human/QA" milestone. TIGHT preference (explicit
+  // "Ready for QA/Test", else "Resolved", else category) so the broad "testing"/"on qa"
+  // wording below maps to a DISTINCT `testing` state instead of colliding here.
+  const readyForTest = pick(/ready for (qa|test)/i) || pick(/\bresolved\b/i) || pickCat("resolved");
+  // QA-side roles (consumed by /qa-verify-fix). `tested` is resolved BEFORE `testing` so a
+  // "Tested on QA"-style state is claimed by `tested`, leaving the plain "On QA" for
+  // `testing`; both are resolved BEFORE `done` so a "QA Done" state isn't swallowed by
+  // done's broad /done/. Claim-once makes the testing-vs-ready-for-test dedup automatic too.
+  const tested = pick(/\btested\b|qa (passed|done)|verified/i);
+  const testing = pick(/\btesting\b|on qa|in test|qa in progress/i);
+  // reopen: keep patterns anchored to review/QA-rejection wording; `\brejected\b` /
+  // `\bfailed\b` are word-bounded to reduce false-positives on unrelated custom states.
+  const reopen = pick(/reopen|re-?open|need fixes|need to recheck|\brejected\b|\bfailed\b/i);
+  // done LAST — after tested/reopen have claimed their states.
+  const done = pick(/closed|\bdone\b|complete/i) || pickCat("completed");
   const out = {};
   if (inProgress) out["in-progress"] = inProgress;
   if (inReview) out["in-review"] = inReview;
   if (readyForTest) out["ready-for-test"] = readyForTest;
+  if (testing) out["testing"] = testing;
+  if (tested) out["tested"] = tested;
+  if (reopen) out["reopen"] = reopen;
   if (done) out["done"] = done;
   return out;
 }
@@ -163,6 +194,11 @@ async function main() {
   const roleStates = deriveRoleStates(primaryStates);
   const ALL_ROLES = ["in-progress", "in-review", "ready-for-test", "done"];
   const missingRoles = ALL_ROLES.filter((r) => !roleStates[r]);
+  // QA-side roles are best-effort — surfaced but deliberately kept OUT of ALL_ROLES /
+  // roleStatesComplete: adding them would regress gen-profile.mjs's auto-transition
+  // enablement and affect the native /qa-fix flow (which only needs the 4 fix roles).
+  const QA_ROLES = ["testing", "tested", "reopen"];
+  const missingQaRoles = QA_ROLES.filter((r) => !roleStates[r]);
 
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
@@ -187,6 +223,12 @@ async function main() {
         ? ` — MISSING role(s): ${missingRoles.join(", ")} (no matching state found; confirm/hand-edit before relying on auto transitions)`
         : ""),
   );
+  if (missingQaRoles.length) {
+    console.error(
+      `[discover-tracker] QA-side role(s) not auto-derived (used by /qa-verify-fix, optional): ${missingQaRoles.join(", ")}` +
+        ` — confirm/hand-edit if you run /qa-verify-fix on this deployment.`,
+    );
+  }
   emit(out, args);
 }
 

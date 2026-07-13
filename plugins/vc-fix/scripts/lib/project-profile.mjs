@@ -25,8 +25,12 @@
  * @property {"platform"|"client"} projectType
  * @property {"virto-engineer"|"client"|"ask"} operator
  * @property {{kind:"jira"|"azure", baseUrl:string, projectKey:string,
- *   azure:{organization:string, project:string, team:string,
- *   stateMap:Record<string,string>}}} tracker
+ *   ticketKeyFormat:"prefixed"|"numeric", crossLinkToken:string,
+ *   azure:{organization:string, project:string, team:string, apiBase:string,
+ *   projectId:string, stateMap:Record<string,string>,
+ *   workItemTypes:Record<string,object>,
+ *   roleStates:Record<"in-progress"|"in-review"|"ready-for-test"|"testing"|"tested"|"reopen"|"done", string>,
+ *   transitionPolicy:"auto"|"confirm-once"|"ask"}}} tracker
  * @property {{clientHost:"github"|"azure-repos", clientOrg:string,
  *   azure:{organization:string, project:string}, auth:"gh-cli"|"pat"|"az-login"}} vcs
  * @property {{host:"github", org:string, fileIssues:boolean,
@@ -122,7 +126,12 @@ export const PROFILE_DEFAULTS = {
       // Per-work-item-type allowed states, SCANNED live by /project-init (Bug/Task/User Story
       // can each have a different set): { "Bug": { states:[...] }, ... }.
       workItemTypes: {},
-      // Lifecycle role -> System.State, so /qa-fix transitions by ROLE, never a hardcoded name.
+      // Lifecycle role -> System.State, so /qa-fix / /qa-verify-fix transition by ROLE,
+      // never a hardcoded name. Fix-side roles (used by /qa-fix): in-progress, in-review,
+      // ready-for-test, done. QA-side roles (used by /qa-verify-fix): testing, tested,
+      // reopen. Populated by /project-init's discover-tracker.mjs scan — default stays {}.
+      // No auto-migration: a profile generated before the QA roles / heuristic existed keeps
+      // its old map until /project-init (discover-tracker) is re-run to refresh it.
       roleStates: {},
       // "auto" = transition silently by role (log only); "confirm-once" = one upfront ok;
       // "ask" = ask before each transition (the original conservative behaviour).
