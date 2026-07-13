@@ -47,6 +47,7 @@ const passthrough = process.argv.slice(2).filter((a) => a === '--dry-run' || a =
 const TEARDOWN_STEPS = [
   { name: 'white-labeling', script: 'seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'loyalty', script: 'seed-loyalty.mjs', args: ['--teardown'] },
+  { name: 'loyalty-fixtures', script: 'seed-loyalty-fixtures.mjs', args: ['--teardown'] },
   { name: 'promotions', script: 'seed-promotions.mjs', args: ['--teardown'] },
   { name: 'company-users', script: 'seed-company-users.mjs', args: ['--teardown'] },
   { name: 'bopis', script: 'seed-bopis.mjs', args: ['--teardown'] },
@@ -102,6 +103,12 @@ const STEPS = [
   { name: 'bopis', script: 'seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   { name: 'promotions', script: 'seed-promotions.mjs', required: false, priority: 110 },
+  // The 1-PTS divisor fixture (LOY_SKU_PTS_UNIT) that balance-relative loyalty tests depend on. Runs
+  // just BEFORE the loyalty programs (120) and is OPTIONAL (warns if the loyalty module/PTS currency
+  // is absent — it's a no-op then). Needs the catalog/store/products phases done (its category +
+  // price list resolve against them). Does NOT create a balance (no balance-write API — see
+  // seed-loyalty-balance.mjs, which is manual-only and NOT wired here because it places real orders).
+  { name: 'loyalty-fixtures', script: 'seed-loyalty-fixtures.mjs', required: false, priority: 118 },
   { name: 'loyalty', script: 'seed-loyalty.mjs', required: false, priority: 120 },
   { name: 'white-labeling', script: 'seed-white-labeling.mjs', required: false, priority: 130 },
 ].sort((a, b) => a.priority - b.priority);
