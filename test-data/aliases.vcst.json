@@ -13,6 +13,16 @@
     },
     "_notes": "VCST-5103 per-env runtime GUIDs for the 1-PTS divisor product (moved out of base aliases.json per the multi-env rule). These are the last-known vcst values; `npm run seed:loyalty-fixtures` overwrites them with freshly-resolved ids on its live run (fixing any post-restore drift)."
   },
+  "LOYALTY_VIP_USER": {
+    "_inline": true,
+    "memberId": "ce559a6d-8ad3-408e-9b03-7dbf5b4b0c8b",
+    "securityAccountId": "95a30901-9b99-4269-a855-109607378479",
+    "fields": {
+      "memberId": "memberId",
+      "securityAccountId": "securityAccountId"
+    },
+    "_notes": "Per-env runtime GUIDs for AGENT-TEST-vip@ (moved out of base aliases.json per the multi-env rule). LIVE vcst ids as of 2026-07-13 (prior account 1dba59a3-… / member 2fae41c3-… was deleted+reseeded with fresh GUIDs on 2026-07-01). Live security account 95a30901-… genuinely holds 0 PTS; the orphaned ~4.87M sits on the deleted account's read-only op-log. memberId is also resolvable live by email. Re-seed the user (seed:company-users loyalty) mints new GUIDs — refresh these when it does."
+  },
   "WL_ELECTRONICS_PLATFORM_ID": {
     "_inline": true,
     "id": "23b672d6-c27e-49a9-8741-4489960058d9",

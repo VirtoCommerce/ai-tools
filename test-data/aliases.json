@@ -2757,8 +2757,6 @@
     "password": "TestVip1!",
     "email_env": "LOYALTY_VIP_USER_EMAIL",
     "password_env": "LOYALTY_VIP_USER_PASSWORD",
-    "memberId": "2fae41c3-3b22-4482-821a-c216a6f540bb",
-    "securityAccountId": "1dba59a3-7658-4b3f-9517-6549aebbf5b1",
     "group": "VIP",
     "account_type": "Customer",
     "store_id": "B2B-store",
@@ -2766,9 +2764,10 @@
       "email": "email",
       "password": "password",
       "memberId": "memberId",
+      "securityAccountId": "securityAccountId",
       "group": "group"
     },
-    "_notes": "Customer-type storefront user provisioned 2026-05-29 for LOY-029 (per-customer-group loyalty factor). Member groups=['VIP']; storefront auth confirmed (storeId=B2B-store). AGENT-TEST- prefix so /qa-seed-data teardown sweeps it (delete security account 1dba59a3-… then member 2fae41c3-…). qa-vip@virtocommerce.com did NOT exist on vcst-qa, so a dedicated AGENT-TEST-vip user was created instead. email_env/password_env added 2026-06-09 to support [AUTH role=LOYALTY_VIP_USER] in runner-native GQL cases (VCST-5101). NOTE: password field retained in fields map for @td(LOYALTY_VIP_USER.password) used in 075-loyalty.csv LOY-029 step text — that use is storefront/API-call text, not the runner resolveRole path. NOTE 2026-06-22: after seeding the VIP balance to ~4.87M PTS for MCO-GQL-001/003/004, this user can no longer trigger LOYALTY_INSUFFICIENT_BALANCE with a finite qty — use LOYALTY_NOBAL_USER for MCO-GQL-005."
+    "_notes": "Customer-type storefront user for loyalty tests (groups=['VIP'], storeId=B2B-store, LOY-029 per-customer-group factor + [AUTH role=LOYALTY_VIP_USER] in runner GQL cases, VCST-5101). Auth by email/password; memberId is looked up live by email at runtime. RUNTIME GUIDs (memberId, securityAccountId) live in aliases.<env>.json — NOT pinned here (multi-env rule): the unified seed-company-users.mjs teardown+reseed mints a FRESH security-account GUID each time (NOT deterministic-by-email), so a pinned id goes stale on reseed. 2026-07-13: the prior ~4.87M PTS balance was orphaned on the since-DELETED account 1dba59a3-… (op-log survives, read-only, no purge API); the LIVE vcst account (security 95a30901-…, member ce559a6d-…, in aliases.vcst.json) genuinely has 0 PTS. To exercise redemption, EARN a balance via orders (seed:loyalty-balance) or drive insufficient-balance tests balance-relative via LOY_SKU_PTS_UNIT. See project_loyalty_balance_cannot_be_reset."
   },
   "LOYALTY_NOBAL_USER": {
     "_inline": true,
