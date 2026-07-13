@@ -130,6 +130,8 @@ export const PROFILE_DEFAULTS = {
       // never a hardcoded name. Fix-side roles (used by /qa-fix): in-progress, in-review,
       // ready-for-test, done. QA-side roles (used by /qa-verify-fix): testing, tested,
       // reopen. Populated by /project-init's discover-tracker.mjs scan — default stays {}.
+      // No auto-migration: a profile generated before the QA roles / heuristic existed keeps
+      // its old map until /project-init (discover-tracker) is re-run to refresh it.
       roleStates: {},
       // "auto" = transition silently by role (log only); "confirm-once" = one upfront ok;
       // "ask" = ask before each transition (the original conservative behaviour).

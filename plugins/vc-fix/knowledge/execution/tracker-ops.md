@@ -31,7 +31,7 @@ apply the same matrix by reading the profile.
 Use whichever surface is available; prefer the MCP when connected, else the CLI/REST.
 
 > **Azure interactive: use the `ado.mjs` helper, NOT hand-rolled `curl`+`python`.**
-> `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" <get-workitem|comment|transition|list-states|list-types|create-pr|list-policies|get-file|list-refs>`
+> `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" <get-workitem|create-workitem|comment|transition|list-states|list-types|create-pr|list-policies|get-file|list-refs>`
 > (org/project/apiBase default from the profile; Basic-PAT/az-login auth, UTF-8, and 302-sign-in detection
 > are built in). This is the fix for last run's repeated Windows grabli — `/tmp` path mismatch between Bash
 > and Windows Python, `cp1252` `UnicodeDecodeError` on ADO JSON, emoji/`&quot;` entity breakage, `$top`
@@ -41,7 +41,7 @@ Use whichever surface is available; prefer the MCP when connected, else the CLI/
 
 | Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) — via `ado.mjs` |
 |---|---|---|
-| **Create** a ticket | Atlassian MCP `createJiraIssue` (project = `tracker.projectKey`) | `ado.mjs create-workitem --type Bug --title … --description-file …` (optional `--repro-file`/`--severity`/`--priority`/`--tags`; returns `{id, url}`) |
+| **Create** a ticket | Atlassian MCP `createJiraIssue` (project = `tracker.projectKey`) | `ado.mjs create-workitem --type Bug --title … --description-file …` (optional `--repro-file`/`--severity`/`--priority`/`--tags`; returns `{ id, type, title, state, url }`) |
 | **Resolve** a ticket | Atlassian MCP `getJiraIssue` | `ado.mjs get-workitem --id <n>` (cleaned fields; wraps `GET {base}/_apis/wit/workitems/<n>?$expand=all`) |
 | **Search** by label | Atlassian MCP `searchJiraIssuesUsingJql` (`labels = qa-autofix`) | ADO WIQL `POST {base}/_apis/wit/wiql` — `… WHERE [System.Tags] CONTAINS 'qa-autofix' AND [System.WorkItemType]='Bug'` |
 | **Comment** | Atlassian MCP `addCommentToJiraIssue` | `ado.mjs comment --id <n> --text-file <path>` |

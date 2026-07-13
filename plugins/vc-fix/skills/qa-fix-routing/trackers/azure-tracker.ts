@@ -60,6 +60,27 @@ export class AzureTracker implements Tracker {
     return adoBase(this.org, this.project);
   }
 
+  /** Shared request helper — builds auth + content-type headers and issues the fetch,
+   *  so every op below shares one place for headers/body encoding. */
+  private async req(
+    method: string,
+    pathAndQuery: string,
+    opts: { body?: unknown; jsonPatch?: boolean } = {},
+  ): Promise<Response> {
+    const headers: Record<string, string> = {
+      Authorization: await adoAuthHeader(),
+      Accept: "application/json",
+    };
+    if (opts.body !== undefined) {
+      headers["Content-Type"] = opts.jsonPatch ? "application/json-patch+json" : "application/json";
+    }
+    return fetch(`${this.base()}${pathAndQuery}`, {
+      method,
+      headers,
+      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+    });
+  }
+
   defaultQuery(label: string): string {
     // Azure Boards has no JQL — this is WIQL. Work items are numeric (no letter
     // prefix); labels live in System.Tags; state is a free-text field (default
@@ -74,9 +95,9 @@ export class AzureTracker implements Tracker {
 
   async getIssue(key: string): Promise<TrackerTicket | null> {
     if (!this.enabled) return null;
-    const res = await fetch(
-      `${this.base()}/_apis/wit/workitems/${encodeURIComponent(key)}?$expand=all&api-version=${API_VERSION}`,
-      { headers: { Authorization: await adoAuthHeader(), Accept: "application/json" } },
+    const res = await this.req(
+      "GET",
+      `/_apis/wit/workitems/${encodeURIComponent(key)}?$expand=all&api-version=${API_VERSION}`,
     );
     if (!res.ok) {
       this.log(`ADO: failed to fetch ${key} — ${res.status}`);
@@ -100,14 +121,8 @@ export class AzureTracker implements Tracker {
 
   async search(wiql: string, max: number): Promise<string[]> {
     if (!this.enabled) return [];
-    const res = await fetch(`${this.base()}/_apis/wit/wiql?api-version=${API_VERSION}`, {
-      method: "POST",
-      headers: {
-        Authorization: await adoAuthHeader(),
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ query: wiql }),
+    const res = await this.req("POST", `/_apis/wit/wiql?api-version=${API_VERSION}`, {
+      body: { query: wiql },
     });
     if (!res.ok) {
       this.log(`ADO: WIQL search failed — ${res.status}`);
@@ -122,17 +137,10 @@ export class AzureTracker implements Tracker {
       this.log(`ADO: (skipped${this.dryRun ? " dry-run" : ""}) comment on ${key}`);
       return;
     }
-    const res = await fetch(
-      `${this.base()}/_apis/wit/workItems/${encodeURIComponent(key)}/comments?api-version=${COMMENTS_API_VERSION}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: await adoAuthHeader(),
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ text }),
-      },
+    const res = await this.req(
+      "POST",
+      `/_apis/wit/workItems/${encodeURIComponent(key)}/comments?api-version=${COMMENTS_API_VERSION}`,
+      { body: { text } },
     );
     if (!res.ok) this.log(`ADO: comment on ${key} failed — ${res.status}`);
   }
@@ -149,17 +157,10 @@ export class AzureTracker implements Tracker {
     // the legacy free-form stateMap for a caller still passing a raw display name, then
     // to the raw name itself when neither map has it.
     const targetState = this.roleStates[transitionName] || this.stateMap[transitionName] || transitionName;
-    const res = await fetch(
-      `${this.base()}/_apis/wit/workitems/${encodeURIComponent(key)}?api-version=${API_VERSION}`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: await adoAuthHeader(),
-          "Content-Type": "application/json-patch+json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify([{ op: "add", path: "/fields/System.State", value: targetState }]),
-      },
+    const res = await this.req(
+      "PATCH",
+      `/_apis/wit/workitems/${encodeURIComponent(key)}?api-version=${API_VERSION}`,
+      { body: [{ op: "add", path: "/fields/System.State", value: targetState }], jsonPatch: true },
     );
     if (!res.ok) this.log(`ADO: transition ${key} → ${targetState} failed — ${res.status}`);
   }
@@ -181,23 +182,20 @@ export class AzureTracker implements Tracker {
     if (input.severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: input.severity });
     if (input.priority !== undefined) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: input.priority });
     if (input.labels?.length) fields.push({ op: "add", path: "/fields/System.Tags", value: input.labels.join("; ") });
-    const res = await fetch(
-      `${this.base()}/_apis/wit/workitems/$${encodeURIComponent(input.type)}?api-version=${API_VERSION}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: await adoAuthHeader(),
-          "Content-Type": "application/json-patch+json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(fields),
-      },
+    const res = await this.req(
+      "POST",
+      `/_apis/wit/workitems/$${encodeURIComponent(input.type)}?api-version=${API_VERSION}`,
+      { body: fields, jsonPatch: true },
     );
     if (!res.ok) {
       this.log(`ADO: create ${input.type} failed — ${res.status}`);
       return null;
     }
     const data = (await res.json()) as any;
+    if (data?.id === undefined || data?.id === null) {
+      this.log(`ADO: create ${input.type} succeeded but returned no id`);
+      return null;
+    }
     const key = String(data.id);
     return {
       key,

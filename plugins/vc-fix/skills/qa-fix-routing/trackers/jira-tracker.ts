@@ -158,16 +158,20 @@ export class JiraTracker implements Tracker {
       return null;
     }
     // Description is ADF. Repro steps (an Azure-native field) fold into the description
-    // as a second paragraph; severity/priority are Azure concepts and are not mapped.
+    // as a second paragraph. `severity` is Azure-only and has no Jira field.
     const paras = [input.description, input.reproSteps]
       .filter((t): t is string => Boolean(t))
       .map((text) => ({ type: "paragraph", content: [{ type: "text", text }] }));
     const fields: any = {
       project: { key: this.projectKey },
       summary: input.title,
+      // Assumes the project's issue-type scheme has this type name (default "Bug");
+      // an unknown name surfaces as the create 400 logged below, not a silent miss.
       issuetype: { name: input.type || "Bug" },
       description: { type: "doc", version: 1, content: paras },
     };
+    // Jira priority is set by id; both trackers treat the ordinal as "1 = highest".
+    if (input.priority !== undefined) fields.priority = { id: String(input.priority) };
     if (input.labels?.length) fields.labels = input.labels;
     const res = await fetch(`${this.baseUrl}/rest/api/3/issue`, {
       method: "POST",
@@ -183,6 +187,10 @@ export class JiraTracker implements Tracker {
       return null;
     }
     const data = (await res.json()) as any;
+    if (!data?.key) {
+      this.log(`JIRA: create ${input.type} succeeded but returned no key`);
+      return null;
+    }
     return { key: data.key, url: `${this.baseUrl}/browse/${data.key}` };
   }
 }
