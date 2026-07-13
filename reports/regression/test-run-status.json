@@ -1,16 +1,16 @@
 {
-  "runId": "REG-2026-07-13-1247",
-  "selection": "011 (Checkout Flow, Frontend/purchase-flow, P1)",
-  "startedAt": "2026-07-13T12:47:55Z",
-  "windowStartUtc": "2026-07-13T12:47:55Z",
-  "finishedAt": null,
+  "runId": "REG-2026-07-13-1216",
+  "selection": "042 (Smoke Tests, Frontend/functional, P0) — RESUMED",
+  "startedAt": "2026-07-13T12:16:21Z",
+  "windowStartUtc": "2026-07-13T14:40:00Z",
+  "finishedAt": "2026-07-13T15:25:00Z",
   "env": "vcst-qa",
-  "build": {"platform": "3.1043.0", "theme": "2.53.0-pr-2368-997c", "xcart": "3.1026.0", "xorder": "3.1007.0", "orders": "3.1012.0"},
-  "status": "in_progress",
+  "build": {"platform": "3.1043.0", "theme": "2.53.0-pr-2368-997c", "xcart": "3.1026.0", "skyflow": "3.1003.0", "cybersource": "3.1002.0"},
+  "status": "completed",
   "mode": "standard",
-  "outputDir": "reports/regression/REG-2026-07-13-1247/",
-  "note": "Prior paused 042 smoke run context preserved at reports/regression/REG-2026-07-13-1216/paused-run-context.json (6/34 done, needs resume).",
+  "outputDir": "reports/regression/REG-2026-07-13-1216/",
+  "note": "GO. 32 PASS / 0 FAIL / 2 BLOCKED (account/harness) / 0 SKIP. Resumed after MCP storageState fix (8682e15). New App Insights signal: orderId@CheckoutCompleted (needs-review). Cleanup: 4 smoke test orders CO260713-00003..00006 (+ 011's 00001/00002).",
   "suites": [
-    {"id": "011", "name": "Checkout Flow", "status": "running", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "testCount": 71, "pass": null, "fail": null, "blocked": null}
+    {"id": "042", "name": "Smoke Tests", "status": "done", "browser": "playwright-chrome", "agent": "qa-testing-expert", "testCount": 34, "pass": 32, "fail": 0, "blocked": 2, "skipped": 0}
   ]
 }
