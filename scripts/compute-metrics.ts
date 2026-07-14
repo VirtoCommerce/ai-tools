@@ -43,6 +43,7 @@ interface RunEntry {
   duration_minutes?: number;
   bugs_found?: number;
   pass_rate?: number;
+  mode?: "ci" | "interactive"; // "ci" = coarse 1-unit-per-suite; excluded from trends when richer rows exist
 }
 
 const round = (n: number, d = 2): number => {
@@ -107,7 +108,13 @@ export function trends(entries: RunEntry[]): SuiteTrend[] {
   }
 
   const out: SuiteTrend[] = [];
-  for (const [suiteId, runsUnsorted] of bySuite) {
+  for (const [suiteId, allRuns] of bySuite) {
+    // Coarse CI rows (mode "ci", binary 0/100 pass_rate) mixed with case-level
+    // rows for the same suite would create false perfect↔non-perfect crossings
+    // (→ bogus flaky). If the suite has any richer (non-"ci") row, drop the CI
+    // ones from the trend; a CI-only suite keeps them (binary flaky is still valid).
+    const hasRich = allRuns.some((r) => r.mode !== "ci");
+    const runsUnsorted = hasRich ? allRuns.filter((r) => r.mode !== "ci") : allRuns;
     const runs = runsUnsorted.slice().sort((a, b) => a.date.localeCompare(b.date));
     const rates = runs.map((r) => round(passRateOf(r)));
     const n = rates.length;

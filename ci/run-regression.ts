@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { TestDataResolver } from "../scripts/lib/test-data-resolver.js";
 import { resolveTestEnv } from "../scripts/lib/resolve-test-env.js";
+import { mergeHistoryRows, type RunEntry } from "../scripts/lib/regression-triage.js";
 
 // --- Configuration from environment variables ---
 
@@ -627,21 +628,56 @@ interface HistoryEntry {
 }
 
 function appendToHistory(results: SuiteResult[]): void {
-  const historyPath = join("reports", "regression", "history.json");
   const date = new Date().toISOString().slice(0, 10);
+  const runId = `CI-${date}-${SUITE_SELECTION}`;
 
-  let history: HistoryEntry[] = [];
-  if (existsSync(historyPath)) {
+  // 1) Feed the flakiness engine (scripts/compute-metrics.ts) via the shared,
+  //    compute-metrics-shaped per-suite history.json. CI mode is COARSE — it only
+  //    knows a suite's overall status, not per-case counts — so each suite is an
+  //    honest 1-unit pass/fail data point (enough for suite-level flaky/trend
+  //    detection: does this suite flip between passing and failing runs?). The
+  //    accurate case-level rows come from the interactive REG-* runs via
+  //    `npm run triage:history`.
+  const rows: RunEntry[] = results
+    .filter((r) => r.suiteId && r.suiteId !== "Unknown")
+    .map((r) => {
+      const pass = r.status === "success" ? 1 : 0;
+      const fail = r.status === "error" ? 1 : 0;
+      const blocked = r.status === "budget_exceeded" || r.status === "max_turns" ? 1 : 0;
+      return {
+        runId,
+        date,
+        suiteId: r.suiteId,
+        suiteName: r.description,
+        environment: TEST_ENVIRONMENT,
+        total: 1,
+        passed: pass,
+        failed: fail,
+        blocked,
+        skipped: 0,
+        duration_minutes: Math.round((r.durationMs / 60000) * 100) / 100,
+        pass_rate: pass * 100,
+        mode: "ci",
+      };
+    });
+  const n = mergeHistoryRows(rows);
+  console.log(`History updated: reports/regression/history.json (+${n} per-suite rows for ${runId})`);
+
+  // 2) Preserve the run-level cost/duration log in its OWN file (it is not the
+  //    per-suite shape compute-metrics reads, so it no longer collides in
+  //    history.json). Kept for cost tracking / CI dashboards.
+  const runLogPath = join("reports", "regression", "history-ci-runs.json");
+  let runLog: HistoryEntry[] = [];
+  if (existsSync(runLogPath)) {
     try {
-      history = JSON.parse(readFileSync(historyPath, "utf-8"));
+      runLog = JSON.parse(readFileSync(runLogPath, "utf-8"));
     } catch {
-      history = [];
+      runLog = [];
     }
   }
-
-  const entry: HistoryEntry = {
+  runLog.push({
     date,
-    runId: `CI-${date}-${SUITE_SELECTION}`,
+    runId,
     selection: SUITE_SELECTION,
     environment: TEST_ENVIRONMENT,
     model: MODEL,
@@ -650,25 +686,14 @@ function appendToHistory(results: SuiteResult[]): void {
     failed: results.filter((r) => r.status !== "success").length,
     totalCostUsd: results.reduce((sum, r) => sum + r.costUsd, 0),
     totalDurationMs: results.reduce((sum, r) => sum + r.durationMs, 0),
-    suites: results.map((r) => ({
-      id: r.suiteId,
-      status: r.status,
-      costUsd: r.costUsd,
-      durationMs: r.durationMs,
-    })),
-  };
-
-  history.push(entry);
-
-  // Keep last 90 days
+    suites: results.map((r) => ({ id: r.suiteId, status: r.status, costUsd: r.costUsd, durationMs: r.durationMs })),
+  });
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 90);
   const cutoffStr = cutoff.toISOString().slice(0, 10);
-  history = history.filter((h) => h.date >= cutoffStr);
-
+  runLog = runLog.filter((h) => h.date >= cutoffStr);
   mkdirSync(join("reports", "regression"), { recursive: true });
-  writeFileSync(historyPath, JSON.stringify(history, null, 2), "utf-8");
-  console.log(`History updated: ${historyPath} (${history.length} entries)`);
+  writeFileSync(runLogPath, JSON.stringify(runLog, null, 2), "utf-8");
 }
 
 // --- Batch helper for parallel execution ---
