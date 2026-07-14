@@ -39,7 +39,9 @@ to the Jira / GitHub / `vc-deploy-dev` behaviour — this section changes nothin
 - **Paths & cwd discipline** (`profile.paths`): use `paths.projectRoot` as the absolute base for
   everything — `.env`/secrets (`join(projectRoot, paths.secretsEnv)`), `paths.reports`. Invoke plugin
   scripts (`ado.mjs`) by the `paths.pluginRoot` (`$CLAUDE_PLUGIN_ROOT`) absolute path. Load secrets
-  ONLY from the absolute path. Never print a PAT/token.
+  ONLY from the absolute path. **Never print a PAT/token — and never inline the literal value in a
+  command.** `ado.mjs` reads `ADO_PAT` from the environment; make sure it's loaded from `.env.local`
+  (e.g. sourced into the shell) rather than pasted as `ADO_PAT="…"` in front of each call.
 - **Execution mode** (`profile.runtime`): when `helpersRunnable` is `false` (installed plugin) read
   the baked profile fields — do not try to run/emulate the `.ts` routing helpers.
 - **Tracker** (`profile.tracker.kind`): `jira` ⇒ Atlassian MCP; `azure` ⇒ the ADO helper
@@ -117,48 +119,54 @@ Fix: [brief description of what the dev fixed]
 
 ---
 
-## Step 2 — Transition to TESTING
+## Step 2 — Confirm Fix Deployment (hard gate — BEFORE any transition)
 
-Transition the ticket to the **`testing`** role state (`tracker-ops.md` §Live transition discovery — resolve by ROLE, never a hardcoded name):
-- **Jira** (or no profile) → `getTransitionsForJiraIssue`, then `transitionJiraIssue` on the transition whose target status matches the `testing` role (the VC-internal Jira reference name for this role is `On QA`).
-- **Azure Boards** → `ado.mjs transition --id <n> --state <roleStates["testing"]>` (e.g. `On QA`). If `roleStates["testing"]` is absent from an older profile, fall back per policy `ask` + `ado.mjs list-states --type Bug` and confirm the state — don't invent one.
-
-**Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — including the
-QA-side `qaRoleStatesComplete` gate: only apply `auto`/`confirm-once` when it's `true`, else `ask`.
-
-Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`):
-```
-Starting QA verification.
-Platform: [PlatformVersion — from the build-verify source, Step 3]
-Theme: [theme/storefront version]
-Module: [relevant module + version]
-PR Build: [PR branch/artifact version confirmed deployed]
-Environment: [FRONT_URL or BACK_URL]
-Test scope: STR verification (3x) + domain regression + side effect check
-```
-
-If the tracker is unavailable, skip the transition and note it in the final report.
-
----
-
-## Step 3 — Confirm Fix Deployment
-
-Before testing, verify the fix is actually deployed. **The version source branches on `profile.buildVerify.source`** (`tracker-ops.md` §5 — the `vc-deploy-dev` manifest is VirtoCommerce-internal; a client deployment has no access):
+**Do this FIRST — before moving the ticket or dispatching any verification agent.** Testing against
+undeployed code wastes a full agent run and, worse, leaves the ticket transitioned + a "deployed"
+comment that isn't true in the client's tracker. **The version source branches on
+`profile.buildVerify.source`** (`tracker-ops.md` §5 — the `vc-deploy-dev` manifest is
+VirtoCommerce-internal; a client deployment has no access):
 
 1. **Fetch deployed versions** — by `buildVerify.source`:
    - **`vc-deploy-dev`** (native platform; also the default when the source is `""`/absent) — use **GitHub MCP** to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev`. Branch defaults to `vcst-qa`; switch to the branch matching `TEST_ENV` (`vcptcore`, `virtostart`, …) when running against another env.
    - **`modules-endpoint`** (client) — `GET {BACK_URL}/api/platform/modules` with an admin token; the deployment reports its own module/Platform versions. (Theme/storefront version comes from the storefront or the ticket.)
    - **`ticket`** (frontend-only client bug) — take the storefront version from the ticket's system info; do NOT call the admin modules endpoint (that's a backend check needing a token).
-2. **Verify PR build is deployed** — PRs are deployed to QA while still open (not merged). Read the PR on the resolved code host (`tracker-ops.md` §3):
-   - **GitHub** (or no profile) → `gh pr view <number> --json title,state,headRefName` for PR details + the expected build artifact version
-   - **Azure Repos** → `ado.mjs list-refs` (branch exists) / an ADO REST `GET …/pullRequests/<id>` for PR details
-   - Cross-reference: the deployed module/theme version should match the PR's build artifact (e.g., alpha version like `2.44.0-alpha.2262`)
-3. If the fix touches frontend: navigate to the affected page and check for expected UI changes
-4. If the fix touches backend API: make a quick API call to verify the endpoint responds as expected
-5. If environment uses cache: note potential cache staleness — if STR still fails, ask user about cache invalidation before reopening
-6. **Record** platform version, theme version, and relevant module versions — include in verification report and tracker comments
+2. **Cross-check the PR build against the running version** — read the linked PR on the resolved code host (`tracker-ops.md` §3): GitHub (or no profile) → `gh pr view <number> --json title,state,headRefName`; Azure Repos → `ado.mjs list-refs` / an ADO REST `GET …/pullRequests/<id>`. The deployed-to-QA artifact of an open PR is a **branch/alpha build** (e.g. `2.49.7-alpha.NNNN`).
+3. **Decide DEPLOYED vs NOT-DEPLOYED from explicit signals — never assume deployed:**
+   - **NOT deployed** if ANY of: the linked PR is still **open / active (not merged)** and its branch build is not the one running; the running storefront/module version is a **plain release** (e.g. `2.49.7`) rather than the PR's **alpha/branch build** (e.g. `2.49.7-alpha.NNNN`); or the running version simply does not match the PR artifact.
+   - **Deployed** only when the running version equals the PR's build artifact.
+4. Corroborate (not a substitute for step 3): frontend fix → the affected page shows the change; backend fix → a quick API call returns the fixed behavior.
 
-If the fix is NOT deployed, warn user and ask whether to wait. Do NOT proceed with verification against old code.
+**STOP gate — if NOT deployed:**
+- Do **NOT** transition the ticket to `testing`, do **NOT** dispatch the verification agent, do **NOT** run the STR.
+- Post ONE factual comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`): fix **not yet deployed** — name the running version vs the expected PR build → verification **deferred**. Leave the ticket at its **current** state: **no transition**, and specifically **no `reopen`** (an undeployed fix is not a failed fix). `transitionPolicy` does not apply here — there is no role transition to make, so this is silent regardless of `auto`/`ask`. End with a **BLOCKED** verdict (§Step 6).
+- Only re-poll if the operator explicitly asks to wait. Never test old code.
+
+**Record** the confirmed platform / theme / module versions — reused verbatim in the Step 3 comment and the final report.
+
+---
+
+## Step 3 — Transition to TESTING (only after Step 2 confirms DEPLOYED)
+
+With the fix confirmed deployed, transition the ticket to the **`testing`** role state (`tracker-ops.md` §Live transition discovery — resolve by ROLE, never a hardcoded name):
+- **Jira** (or no profile) → `getTransitionsForJiraIssue`, then `transitionJiraIssue` on the transition whose target status matches the `testing` role (the VC-internal Jira reference name for this role is `On QA`).
+- **Azure Boards** → `ado.mjs transition --id <n> --state <roleStates["testing"]>` (e.g. `On QA`). If `roleStates["testing"]` is **absent** from an older profile: do NOT invent a state, and do **NOT** write it into `project-profile.json` (persisting scanned roles is `/project-init`'s job). Fall back to policy `ask`, run **`ado.mjs list-states --type Bug` live** (don't trust the profile's cached state list), confirm the state with the operator for THIS run only, and recommend running `/project-init` to persist the QA roles.
+
+**Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — including the
+QA-side `qaRoleStatesComplete` gate: only apply `auto`/`confirm-once` when it's `true`, else `ask`.
+
+Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed":
+```
+Starting QA verification.
+Platform: [PlatformVersion confirmed deployed in Step 2]
+Theme: [theme/storefront version confirmed in Step 2]
+Module: [relevant module + version]
+PR Build: [PR alpha/branch build confirmed running in Step 2]
+Environment: [FRONT_URL or BACK_URL]
+Test scope: STR verification (3x) + domain regression + side effect check
+```
+
+If the tracker is unavailable, skip the transition and note it in the final report.
 
 ---
 
@@ -269,6 +277,11 @@ or two role transitions from `testing`:
 | Pass 2/3 | — | — | **INTERMITTENT** | testing → `reopen` (note intermittent) |
 | Blocked | — | — | **BLOCKED** | No transition, comment with blocker |
 
+> **Fix-not-deployed is NOT a Step-6 verdict** — it's caught at the Step 2 gate *before* the `testing`
+> transition, so it never triggers a rollback here. By the time you reach Step 6 the ticket is already at
+> `testing` and every row above transitions forward (`tested`/`reopen`) or holds (`BLOCKED` = a blocker
+> hit *during* verification, e.g. env down mid-run).
+
 **Resolve each role → the live workflow** (`tracker-ops.md` §2, §Live transition discovery):
 - **Jira** (or no profile) → `getTransitionsForJiraIssue`, pick the transition whose target status matches the role (case-insensitive contains: "test" for `tested`, "reopen"/"fix" for `reopen`, "done" for `done`). The VC-internal Jira reference names for these roles are `Finish test` → `tested`, `Move to Done` → `done`, `Need fixes` → `reopen` — use them to recognize the transition, never as a hardcoded id.
 - **Azure Boards** → `ado.mjs transition --id <n> --state <roleStates[role]>` (LEO: `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). If a QA role is absent from an older profile, fall back to `ask` + `ado.mjs list-states --type Bug` and confirm the state with the operator — don't invent a state.
@@ -351,7 +364,8 @@ Output to the user: verdict, STR result, checklist score, regressions found, tra
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling; tracker transitions follow `knowledge/execution/tracker-ops.md` (profile-driven, by role)
 - Read the deployment profile once (Orientation) and route every tracker/host/build-verify op through it; **no profile ⇒ Jira / `gh` / `vc-deploy-dev`, unchanged**
-- Never print a PAT/token; all externally-facing content in English
+- Never print a PAT/token, and never inline the literal (`ADO_PAT="…"`) in a command — load it from `.env.local`; all externally-facing content in English
+- Never write `project-profile.json` — persisting scanned tracker roles/states is `/project-init`'s job. A missing QA role ⇒ `ask` + live `ado.mjs list-states --type Bug` for THIS run only, then recommend the operator run `/project-init`
 - Browser fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry)
 - Never use WebKit — not supported on Windows
 - Never assign two agents to the same browser server simultaneously
@@ -362,7 +376,7 @@ Output to the user: verdict, STR result, checklist score, regressions found, tra
 - Always query Context7 in Step 0 to understand expected post-fix behavior
 - Tracker transitions follow `profile.tracker.azure.transitionPolicy` (`auto` ⇒ silent by role; `confirm-once`/`ask` ⇒ confirm — the Jira / unscanned default), consistent with `/qa-fix` and `/qa-bug` — **but gated additionally on `qaRoleStatesComplete === true`** for this command's QA-side roles (`tracker-ops.md` §Live transition discovery point 4)
 - If the tracker is unavailable, skip transitions but still execute the full verification
-- If the fix is not deployed, stop immediately — do not test against the old code
+- **Confirm deployment (Step 2) BEFORE transitioning to `testing` (Step 3).** If not deployed: STOP — do not transition, do not dispatch the agent, do not test old code; comment "not deployed, deferred" and leave the ticket at its current state (no `reopen`) → BLOCKED
 - If an agent fails with an internal error, fall back to working directly rather than retrying
 - For multi-ticket verification (`VCST-1234 VCST-1235`), process sequentially — each ticket gets its own full flow
 - If verification reveals a NEW regression (FIX OK but adjacent feature broken), escalate via `/qa-bug` with evidence from the verification run
