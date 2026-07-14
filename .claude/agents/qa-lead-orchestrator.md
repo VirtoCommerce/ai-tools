@@ -185,7 +185,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
 **ESCALATE:** Environment unavailable → DevOps, Requirements unclear → PM, Deadline unrealistic → PM
 
 **Test Case Review Approval (ISTQB peer-review gate — your authority):**
-- **APPROVE `Draft → Reviewed`:** `/qa-review-tests` verdict ≥ PASS WITH WARNINGS, zero Blockers, any Criticals are justified (e.g., known-env limitation), spot-check confirms requirement traceability / independence / P+N+B mix
+- **APPROVE `Draft → Reviewed`:** `/qa-review-tests` verdict ≥ PASS WITH WARNINGS, zero Blockers, any Criticals are justified (e.g., known-env limitation), **every assertion grounded** (Dimension 10 / GRD-*: no `{HYPOTHESIS}`/untagged; a new-feature suite has passed `--verify` upgrading its assertions to `{OBSERVED}`), spot-check confirms requirement traceability / independence / P+N+B mix
 - **REJECT:** Blockers present, or traceability/independence/technique-coverage spot-check fails — send back to test-management-specialist with specific findings to address
 - **Scope:** only you (or the user) can promote cases. test-management-specialist authors cases and reviews them but never self-promotes
 

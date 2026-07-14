@@ -391,7 +391,9 @@ Identifies redundant test cases that waste execution time without adding coverag
 
 ## Dimension 8: Environment Verification (Live — `--verify` only)
 
-Requires browser. Delegated to `qa-testing-expert` agent via `playwright-firefox`. Validates that test case steps are executable against the current live environment.
+Requires browser. Delegated to `qa-testing-expert` agent via `playwright-firefox`. Validates that test case steps are executable against the current live environment **and that each asserted behavior is actually implemented on the deployed build** — not just that the page/element exists. This is the grounding path for a **new feature** (no VirtoOZ doc / no source snapshot yet): the live DOM/behavior is the primary ground truth.
+
+**Provenance upgrade (with `--fix`):** when `qa-testing-expert` confirms an assertion's behavior live, rewrite that assertion's provenance tag to `{OBSERVED}`. This is the ONLY step that may emit `{OBSERVED}` — it is what unblocks a `{HYPOTHESIS}`/unconfirmed-`{SPEC}` case for promotion (see Dimension 10). A refuted behavior surfaces as ENV-008, not as `{OBSERVED}`.
 
 ### ENV-001: Page not reachable `[Blocker]`
 - **Detection:** `qa-testing-expert` navigates to a URL from the Steps column and gets 404, 500, redirect loop, or timeout.
@@ -429,6 +431,13 @@ Requires browser. Delegated to `qa-testing-expert` agent via `playwright-firefox
 - **Impact:** Test case describes a flow that no longer works as written.
 - **Evidence:** Screenshot at the point of blockage + console log.
 
+### ENV-008: Asserted behavior not implemented on live build `[Critical]`
+- **Detection:** `qa-testing-expert` reaches the asserted state and the **behavior the assertion claims does not occur** — the validation doesn't fire, the message/element the assertion expects never appears, the computed value differs, the state change the case asserts never happens. The step reaches the page fine (so it is not ENV-002/003); the *expectation itself* was invented, not implemented.
+- **Applies to:** any assertion tagged `{HYPOTHESIS}` or `{SPEC}` that could not be confirmed — this is the live grounding check for a new feature.
+- **Impact:** The assertion is a hallucination — it would either always FAIL (false bug) or trivially "PASS" against nothing. Left ungrounded, it corrupts regression signal.
+- **Action:** Do NOT upgrade the tag to `{OBSERVED}`. Under `--fix`, either (a) rewrite the assertion to match the observed real behavior and tag it `{OBSERVED}`, or (b) drop it and flag the gap. The case cannot promote while any assertion remains ungrounded (Dimension 10 / GRD-001).
+- **Evidence:** Screenshot of the actual state + the assertion text that was refuted.
+
 ---
 
 ## Dimension 9: Technique Coverage (Static)
@@ -445,6 +454,45 @@ Validates that every feature block covers the ISTQB-minimum mix of design techni
 - **Good:** 1× valid coupon applies, 1× expired coupon rejected, 1× coupon exceeds cart subtotal cap (boundary).
 - **Output:** List the feature group, which of {positive, negative, boundary} is missing, and suggest a case title seed (e.g., "add: expired-coupon rejection; add: boundary at max-cap").
 - **Auto-fixable:** No — generating the missing case requires domain judgment. Hand off to `/qa-test-cases-generator` with the gap as input.
+
+---
+
+## Dimension 10: Assertion Grounding (Static + Live)
+
+Ensures every behavioral assertion traces to a source of truth — the anti-hallucination gate. An
+assertion may only be phrased as a fact if it is grounded; anything else is a question to verify, not a
+claim. Static analysis flags the ungrounded lines; the live `--verify` pass (Dimension 8) is what
+converts them. This is a **hard block** on promotion: a GRD-001 Blocker keeps the case below the ≥ PASS
+WITH WARNINGS verdict promotion requires.
+
+### GRD-001: Ungrounded assertion `[Blocker]`
+- **Detection:** An assertion line is tagged `{HYPOTHESIS}` **or** carries no `{...}` provenance tag at
+  all (an untagged assertion is treated as ungrounded). Provenance grammar: `test-case-template.md` →
+  Assertions column (`{SPEC}`/`{BL}`/`{DOC}`/`{OBSERVED}` are grounded; `{HYPOTHESIS}` is not).
+- **Impact:** The expectation is asserted as fact without any source (tracker AC, invariant, doc/source,
+  or live observation). It either always FAILs (false bug) or "passes" against nothing.
+- **Resolution:** ground it — `{SPEC}` (cite the tracker AC), `{BL}` (cite the invariant), `{DOC}` (cite
+  source/i18n), or run `--verify` so `qa-testing-expert` confirms it live and upgrades it to `{OBSERVED}`
+  (or refutes it → ENV-008). A `{HYPOTHESIS}` that is genuinely exploratory must be reworded as a
+  question and the case kept at `Draft`.
+- **Migration:** legacy suites authored before this convention have no tags. The deterministic linter
+  (`scripts/lint-test-cases.ts`) downgrades **untagged legacy** cases to warn-only and hard-fails only
+  cases that already use provenance tags or are in the touched/new set (mirrors `validate-td-refs.ts`
+  `--warn-only`). A brand-new / just-touched case is expected to be fully tagged.
+- **Auto-fixable:** No — grounding requires either a source lookup or a live pass.
+
+### GRD-002: Invented literal message/validation string `[Critical]`
+- **Detection:** An assertion asserts a **literal** message, label, or validation string (quoted text)
+  on a line **not** tagged `{DOC}` or `{OBSERVED}`. VC message text lives in vc-frontend i18n / source;
+  a specific string asserted from ticket text or a guess is almost always invented.
+- **Bad:** `[DOM] error reads 'Please enter a valid card number' {SPEC}` (string not in the AC).
+- **Good (semantic):** `[DOM] error indicating an invalid card number {SPEC}`.
+- **Good (grounded literal):** `[DOM] error reads 'Card number is invalid' {DOC}` — exact string found in
+  the i18n file; or `{OBSERVED}` after seeing it live.
+- **Behavioral twin of DV-016** (which bans exact prices/order-numbers). Assert the semantic unless the
+  literal is grounded.
+- **Auto-fixable:** Partial — reviewer proposes the semantic form; grounding the literal needs a source
+  lookup or live pass.
 
 ---
 

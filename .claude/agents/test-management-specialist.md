@@ -237,6 +237,7 @@ BLOCKED ❌ → escalate to qa-lead
 7. **Peer review gate (MANDATORY — ISTQB)** — before cases enter any suite:
    1. Run `/qa-review-tests file <path>` on the freshly generated CSV. Fix all Blockers and Critical findings; reduce Highs where practical
    2. Verdict must be ≥ **PASS WITH WARNINGS** (zero Blockers, ≤3 Criticals). If NEEDS FIXES, iterate on the cases and re-review
+   2b. **Grounding gate (Dimension 10 / GRD-*)** — every assertion must be grounded (`{SPEC}`/`{BL}`/`{DOC}`/`{OBSERVED}`); zero `{HYPOTHESIS}`/untagged. For a **new feature** (behavior grounded only by `{SPEC}`/`{HYPOTHESIS}` after offline generation), run `/qa-review-tests file <path> --verify --fix` against the deployed build so `qa-testing-expert` confirms each behavior live and upgrades it to `{OBSERVED}` — this live pass is MANDATORY before promotion; ungrounded assertions block it
    3. Hand off to `qa-lead-orchestrator` with the review report and request approval to promote `Draft → Reviewed`
    4. **You do NOT self-promote** — only after `qa-lead-orchestrator` explicit approval, update `Automation_Status` from `Draft` to `Reviewed` (then author assigns execution mode: `Automated` / `Manual` / `Semi-Automated`)
    5. Cases rejected by the lead: address feedback, regenerate if needed, re-run review
