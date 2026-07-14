@@ -9,6 +9,33 @@
 
 ---
 
+## 0. Lifecycle roles → tracker transitions (tracker-agnostic layer — read first)
+
+**Consumers transition by lifecycle ROLE, never by a literal transition name.** The 16-status VC
+Bug Workflow below (§1–§3) is the **Jira reference example** for the VirtoCommerce-internal
+deployment — a client's Jira has different transition labels, and Azure Boards has none of them.
+So `/qa-bug` and `/qa-verify-fix` decide a destination *role*, then let
+[`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) resolve it to the live workflow:
+Jira via `getTransitionsForJiraIssue` (best-match by target status, never a hardcoded id), Azure
+via `ado.mjs transition --state <roleStates[role]>` (honoring `tracker.azure.transitionPolicy`).
+
+| Role | Lifecycle meaning | Jira transition (VC reference name) | Jira target status | Azure `roleStates` key |
+|------|-------------------|-------------------------------------|--------------------|------------------------|
+| `in-progress` | Dev starts / resumes work | `Take to development` · `go to inprogress` | IN PROGRESS | `in-progress` |
+| `in-review` | PR opened, code review | `Go to review` | IN REVIEW | `in-review` |
+| `ready-for-test` | Fix deployed, awaiting QA | `Ready to test` | READY FOR TEST | `ready-for-test` |
+| `testing` | QA actively testing the fix | `On QA` | TESTING | `testing` |
+| `tested` | QA verification passed | `Finish test` | TESTED | `tested` |
+| `reopen` | QA rejected / changes requested | `Need fixes` · `need to recheck` · `Request changes` | REOPEN | `reopen` |
+| `done` | Verified fixed and closed | `Move to Done` | DONE | `done` |
+
+The Azure column is the **`tracker.azure.roleStates` key** (the role slug itself); its value is the
+deployment's mapped `System.State`, scanned per work-item type by `/project-init`. Every role above
+resolves to both a Jira transition name **and** a `roleStates` key. **With no profile ⇒ Jira, and
+these reference names apply as-is** — the original VC-internal behaviour, unchanged.
+
+---
+
 ## 1. Defect Lifecycle Overview
 
 ```
@@ -19,7 +46,7 @@ DETECT ──► TRIAGE ──► ASSIGN ──► FIX ──► VERIFY ──�
   └── QA owns: Detect, Triage, Verify ──────────┘
 ```
 
-**Three paths through the JIRA Bug Workflow:**
+**Three paths through the JIRA Bug Workflow** *(Jira reference names — map by §0 role on other trackers)*:
 
 ```
 HAPPY PATH (most bugs):
@@ -45,7 +72,12 @@ HOTFIX BRANCH (critical production bugs):
 
 ---
 
-## 2. JIRA Bug Workflow — Complete Status Map
+## 2. JIRA Bug Workflow — Complete Status Map *(Jira reference example)*
+
+> **This whole section is the VC-internal Jira reference.** The status names, transition names, and
+> transition table below describe the native VirtoCommerce Jira process. On another tracker (a client's
+> Jira, or Azure Boards) the labels differ — consumers map via the §0 role table + `tracker-ops.md`, not
+> the literal names here.
 
 **16 statuses** across 3 categories (verified via JIRA API + Bug Workflow diagram):
 
@@ -99,9 +131,11 @@ HOTFIX BRANCH (critical production bugs):
 
 ---
 
-## 3. QA-Owned Transitions — Detailed Guide
+## 3. QA-Owned Transitions — Detailed Guide *(Jira reference names)*
 
-QA directly controls these 5 transitions. Each requires a JIRA comment and evidence.
+QA directly controls these 5 transitions (roles `testing` / `tested` / `reopen` / `done` in §0). The
+names below are the **Jira reference labels**; resolve the actual transition by role via `tracker-ops.md`.
+Each requires a tracker comment and evidence.
 
 ### 3.1 Ready for Test → TESTING (On QA)
 
@@ -169,13 +203,13 @@ Six-step workflow for triaging incoming bugs:
 Use the 12-item checklist (section 5 below). If score < 10/12, send back to reporter with specific items to complete.
 
 ### Step 2: Check for Duplicates
-Run JQL search before creating or refining any bug:
+Run a search before creating or refining any bug. **Jira (JQL):**
 ```
 project = ${JIRA_PROJECT_KEY} AND issuetype = Bug AND status != Cancelled
 AND (summary ~ "keyword1" OR summary ~ "keyword2")
 ORDER BY created DESC
 ```
-If duplicate found: link to existing ticket, add comment with new reproduction info, set current ticket to CANCELLED.
+**Azure Boards:** the equivalent WIQL `SELECT … WHERE [System.WorkItemType]='Bug' AND [System.Title] CONTAINS 'keyword'` — see [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §2 (Search). If duplicate found: link to existing ticket, add comment with new reproduction info, transition to the `done`/cancelled role.
 
 ### Step 3: Classify Defect Type
 Use the taxonomy in section 6. Set the `Labels` field accordingly (e.g., `functional`, `security`, `performance`).
@@ -300,6 +334,8 @@ Run 2-3 related checks in the same feature area:
 ## 8. Defect Metrics
 
 Six process-health metrics measuring the defect pipeline, not test pass rates.
+
+> The `JQL` queries below are **Jira-specific**. On Azure Boards use the equivalent WIQL (`[System.State]`, `[System.CreatedDate]`, `[Microsoft.VSTS.Common.Priority]`, and a state-change history query for reopen rate) — see [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §2. Reopen counting keys off the `reopen` role's mapped state (§0), not the literal `"Reopen"` status.
 
 ### 8.1 Defect Aging (days open)
 
