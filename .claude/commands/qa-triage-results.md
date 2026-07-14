@@ -39,7 +39,7 @@ Run the collector — it does all the JSON/CSV/evidence archaeology so you don't
 ```
 npm run triage:collect -- <RUN_ID|latest> --record
 ```
-It emits a JSON packet: every **non-passing case** — `FAIL`, `BLOCKED`, and `SKIPPED` (each carries a `status` field; only PASS and PENDING/not-yet-executed are excluded) — joined to its `traces/{TC-ID}-FAIL-trace.json` (network + console w/ stack frames, FAIL only), its `screenshots[]`, the lane `harPath`, the test case's authored `csvRow`, a stable `fingerprint`, and the cross-run `flaky`/`priorRuns` flags. The packet includes `byStatus` counts. `--record` updates the fingerprint store so the next run can flag oscillation. A BLOCKED case is triaged for *why* it was blocked (env / precondition / data / real bug); a SKIPPED case for whether the feature was removed (stale test).
+It emits a JSON packet of every **non-passing case** — `FAIL`, `BLOCKED`, and `SKIPPED` (each carries a `status` field; only PASS and PENDING/not-yet-executed are excluded) — each joined to its `traces/{TC-ID}-FAIL-trace.json` (network + console w/ stack frames, FAIL only), its `screenshots[]`, the lane `harPath`, the test case's authored `csvRow`, a stable `fingerprint`, and the cross-run `flaky`/`priorRuns` flags. The cases are pre-grouped into **`batches`** (by `suiteId` + `status`, largest first, chunked to `maxPerBatch` — default 25; override with `--max-batch N`) so Phase 3 makes **one classifier call per batch** instead of one per case; `issueCount` / `byStatus` / `batchCount` summarise the run. `--record` updates the fingerprint store so the next run can flag oscillation. A BLOCKED case is triaged for *why* it was blocked (env / precondition / data / real bug); a SKIPPED case for whether the feature was removed (stale test).
 
 If `issueCount === 0` → skip to Phase 6 and emit a clean ≤15-line report.
 
@@ -52,17 +52,17 @@ npm run triage:history -- <RUN_ID|latest> --env <TEST_ENV>
 ```
 This writes per-suite rows into `reports/regression/history.json` in the shape `scripts/compute-metrics.ts` expects (the flaky/trend detector was previously starved). Group identical fingerprints so a failure hitting N suites is triaged once.
 
-## Phase 3 — Classify each failure
-> **Owner:** `regression-triage-agent` (delegate per failure or per small batch)
+## Phase 3 — Classify (one call per batch)
+> **Owner:** `regression-triage-agent` (delegate **per batch**, not per case)
 
 First run the deterministic linter on each affected suite so the classifier has static signal:
 ```
 npm run suites:review -- <suite-csv> --json
 ```
-Then delegate each issue to **`ci/agents/regression-triage-agent.md`** with its `IssueInput` (incl. `status` + screenshot paths — the classifier READS them for visual/element failures, and triages BLOCKED/SKIPPED per its Step 1a) + the lint output. It consults the oracles and emits, per issue:
+Then delegate **each `batch`** from Phase 1 to **`ci/agents/regression-triage-agent.md`** — pass the batch's `issues` (incl. `status` + screenshot paths — the classifier READS them for visual/element failures, and triages BLOCKED/SKIPPED per its Step 1a) + that suite's lint output. Because a batch is one suite + one status, its cases usually share a cause, so the classifier reasons over them in one shared context (one set of oracle reads) but **emits one verdict per case** (`CASE:` + `CLASS` markers). Dispatch batches concurrently (largest first) up to a small pool; don't fan out one agent per case. Per case it emits:
 `CLASS` ∈ {`REAL_BUG`, `TEST_STEPS_DEFECT`, `ASSERTION_DEFECT`, `TEST_DATA_DEFECT`, `STALE_TEST`, `FLAKY`, `ENV`, `KNOWN_ISSUE`} + (for REAL_BUG) `SEVERITY`/`ROUTE_REPO`/`REPRO_LAYER` + `CONFIDENCE` + `ROOT_CAUSE` + `SUGGESTED_FIX`.
 
-Bias: when a failure can't be confidently attributed to product-or-test, it stays `REAL_BUG` with `CONFIDENCE: LOW` (→ live repro / human review) — never downgraded to a test-defect to make it disappear. See the taxonomy + worked examples in the `/qa-triage-results` skill (`triage-taxonomy.md`).
+Bias: when a case can't be confidently attributed to product-or-test, it stays `REAL_BUG` with `CONFIDENCE: LOW` (→ live repro / human review) — never downgraded to a test-defect to make it disappear. See the taxonomy + worked examples in the `/qa-triage-results` skill (`triage-taxonomy.md`).
 
 ## Phase 4 — Live-verify the real-bug candidates
 > **Owner:** `qa-frontend-expert` (REPRO_LAYER frontend) / `qa-backend-expert` (backend)

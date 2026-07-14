@@ -424,6 +424,58 @@ export function readRunIssues(runDir: string, store?: TriageStore): IssueInput[]
 }
 
 // ---------------------------------------------------------------------------
+// Batching for triage
+// ---------------------------------------------------------------------------
+
+/** A batch of issues from the same suite + status — one classifier call each. */
+export interface IssueBatch {
+  key: string; // `${suiteId}::${status}#${chunkIndex}`
+  suiteId: string;
+  suiteName: string;
+  status: Verdict;
+  count: number;
+  issues: IssueInput[];
+}
+
+export const DEFAULT_MAX_BATCH = 25;
+
+/**
+ * Group issues into classifier batches by (suiteId, status): cases from the same
+ * suite that came back the same way usually share a root cause (a whole suite
+ * blocked by one env outage, a set of skips from one removed feature), so one
+ * classifier call can cover them in shared context instead of N calls. Each
+ * group is chunked to at most `maxPerBatch` so a huge group (e.g. 300 BLOCKED)
+ * never produces an unbounded prompt. Batches are sorted largest-first. The
+ * classifier still emits a per-CASE verdict — batching is about shared context /
+ * fewer calls, not forcing one shared class.
+ */
+export function groupIssues(issues: IssueInput[], maxPerBatch = DEFAULT_MAX_BATCH): IssueBatch[] {
+  const byGroup = new Map<string, IssueInput[]>();
+  for (const i of issues) {
+    const g = `${i.suiteId}::${i.status}`;
+    const arr = byGroup.get(g) ?? [];
+    arr.push(i);
+    byGroup.set(g, arr);
+  }
+  const batches: IssueBatch[] = [];
+  for (const [g, arr] of byGroup) {
+    const [suiteId, status] = g.split("::");
+    for (let start = 0, chunk = 0; start < arr.length; start += maxPerBatch, chunk++) {
+      const slice = arr.slice(start, start + maxPerBatch);
+      batches.push({
+        key: `${g}#${chunk}`,
+        suiteId,
+        suiteName: slice[0]?.suiteName ?? "",
+        status: status as Verdict,
+        count: slice.length,
+        issues: slice,
+      });
+    }
+  }
+  return batches.sort((a, b) => b.count - a.count);
+}
+
+// ---------------------------------------------------------------------------
 // Fingerprint / flaky store
 // ---------------------------------------------------------------------------
 
@@ -593,6 +645,9 @@ function main(): void {
       recordRunOutcomes(store, runDir, runId);
       saveTriageStore(store);
     }
+    const maxIdx = rest.indexOf("--max-batch");
+    const maxPerBatch = maxIdx !== -1 ? Math.max(1, Number(rest[maxIdx + 1]) || DEFAULT_MAX_BATCH) : DEFAULT_MAX_BATCH;
+    const batches = groupIssues(issues, maxPerBatch);
     const packet = {
       runId,
       runDir,
@@ -604,7 +659,12 @@ function main(): void {
         SKIPPED: issues.filter((i) => i.status === "SKIPPED").length,
       },
       flakyCount: issues.filter((i) => i.flaky).length,
-      issues,
+      // Issues are nested inside batches (each issue appears once) — one classifier
+      // call per batch. Grouped by (suiteId, status), largest first, chunked to
+      // maxPerBatch. Flatten batches[].issues if you need the flat list.
+      batchCount: batches.length,
+      maxPerBatch,
+      batches,
     };
     console.log(JSON.stringify(packet, null, 2));
     return;

@@ -39,10 +39,11 @@ reports/regression/{RUN_ID}/            ← a completed /qa-regression run
   ├─ screenshots/ , evidence/           ← per-FAIL visual evidence
         │
         ▼  npm run triage:collect        (scripts/lib/regression-triage.ts — deterministic)
-  IssueInput[] { fingerprint, status(FAIL|BLOCKED|SKIPPED), trace, screenshots[], harPath, csvRow, flaky, priorRuns }
+  batches[] grouped by (suiteId, status), each { issues: IssueInput[] }
+    IssueInput { fingerprint, status(FAIL|BLOCKED|SKIPPED), trace, screenshots[], harPath, csvRow, flaky, priorRuns }
         │
-        ▼  ci/agents/regression-triage-agent.md   (per FAIL — judgment, oracle-grounded, READS screenshots)
-  CLASS + severity/route/confidence + root cause + suggested fix
+        ▼  ci/agents/regression-triage-agent.md   (one call PER BATCH — judgment, oracle-grounded, READS screenshots)
+  per-case: CLASS + severity/route/confidence + root cause + suggested fix
         │
         ▼  Phase 4: qa-frontend/backend-expert     (live repro of REAL_BUG candidates)
         ▼  Phase 5: /qa-review-tests --fix (test-defects) · /qa-bug draft (real bugs)   [only under --fix]

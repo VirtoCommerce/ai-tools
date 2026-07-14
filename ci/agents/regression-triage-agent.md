@@ -21,7 +21,15 @@ behind a "bad assertion" label is the worst outcome.
 
 ## Inputs (provided in the prompt)
 
-One issue's `IssueInput` (from the collect packet):
+You are given a **batch**: one or more `IssueInput`s from the **same suite and
+the same status** (grouped by the collector so related cases share one call).
+Often a batch shares one root cause — a whole suite `BLOCKED` by one env outage,
+a set of `SKIPPED` from one removed feature — so classify them together in shared
+context, reading each oracle once. **But still emit a verdict per case** (a batch
+is for efficiency, not for forcing one class): if a few cases in the batch differ,
+give them their own class. A single-issue batch is just N=1.
+
+Each `IssueInput`:
 
 - `status` — `FAIL` | `BLOCKED` | `SKIPPED` (the runner verdict; drives Step 1a).
 - `suiteId` / `caseId` / `title` / `evidence` (runner's actual/notes text).
@@ -129,9 +137,13 @@ Neither (no code or test change is warranted):
   (reproduce via API/Admin) | `none` (self-evident from the trace — still needs
   human review, no live repro).
 
-## Output — emit these markers, each on its own line, at the very end
+## Output — one marker block PER CASE, each led by its `CASE:` line
+
+Emit one block per issue in the batch (a single-issue batch = one block). Lead
+each block with the case id so the orchestrator can attribute it:
 
 ```
+CASE: SRCH-004
 CLASS: REAL_BUG          # REAL_BUG | TEST_STEPS_DEFECT | ASSERTION_DEFECT | TEST_DATA_DEFECT | STALE_TEST | FLAKY | ENV | KNOWN_ISSUE
 SEVERITY: P1             # REAL_BUG only; omit otherwise
 ROUTE_REPO: VirtoCommerce/vc-module-orders   # REAL_BUG only; single repo or "ambiguous"
@@ -143,8 +155,10 @@ ORACLE_MATCH: <vc-bug-catalog/BL id, or "none">
 SUGGESTED_FIX: <one line — required for TEST_STEPS_DEFECT / ASSERTION_DEFECT / TEST_DATA_DEFECT / STALE_TEST: the concrete CSV/data change; "n/a" otherwise>
 ```
 
-Before the markers, give a 2–4 sentence rationale: what the assertion checked,
-what the evidence (trace / screenshot / CSV) shows, and why that maps to this
-class. Keep it short — no investigation logs. Only `REAL_BUG` proceeds to live
+When every case in the batch shares one cause, give the rationale **once** for the
+batch, then emit the per-case blocks (identical values are fine) — don't repeat
+the reasoning per case. Give a 2–4 sentence rationale total: what was checked,
+what the evidence (trace / screenshot / CSV) shows, and why that maps to the
+class(es). Keep it short — no investigation logs. Only `REAL_BUG` proceeds to live
 repro (Phase 4); the test-defect classes route to `/qa-review-tests --fix`;
 `FLAKY`/`ENV`/`KNOWN_ISSUE` are dismissed with a reason.
