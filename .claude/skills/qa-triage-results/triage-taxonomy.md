@@ -1,6 +1,10 @@
 # Triage Taxonomy — the 8 classes with worked examples
 
-One `CLASS` per regression FAIL. The hard part is separating a **product** defect
+One `CLASS` per regression issue — a case that came back **FAIL, BLOCKED, or
+SKIPPED** (only PASS and PENDING are out of scope). BLOCKED and SKIPPED are
+triaged for their cause too, not dismissed (see the classifier's Step 1a:
+BLOCKED → `ENV`/`TEST_DATA_DEFECT`/`TEST_STEPS_DEFECT`/`REAL_BUG`; SKIPPED →
+`STALE_TEST`/`KNOWN_ISSUE`/`TEST_DATA_DEFECT`). The hard part is separating a **product** defect
 from a **test** defect — the evidence (trace + screenshot + CSV row), not the
 symptom, decides. Bias: **ambiguous → `REAL_BUG` / `CONFIDENCE: LOW`** (routes to
 live repro / human review); never relabel an uncertain failure as a test-defect

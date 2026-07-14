@@ -39,7 +39,7 @@ reports/regression/{RUN_ID}/            ← a completed /qa-regression run
   ├─ screenshots/ , evidence/           ← per-FAIL visual evidence
         │
         ▼  npm run triage:collect        (scripts/lib/regression-triage.ts — deterministic)
-  FailureInput[] { fingerprint, trace, screenshots[], harPath, csvRow, flaky, priorRuns }
+  IssueInput[] { fingerprint, status(FAIL|BLOCKED|SKIPPED), trace, screenshots[], harPath, csvRow, flaky, priorRuns }
         │
         ▼  ci/agents/regression-triage-agent.md   (per FAIL — judgment, oracle-grounded, READS screenshots)
   CLASS + severity/route/confidence + root cause + suggested fix
@@ -74,7 +74,7 @@ The repo convention (see `compute-metrics.ts`, `lint-test-cases.ts`): **mechanic
 
 - Never file a tracker ticket, never call `/qa-fix`, never merge. STOP for a human.
 - Never edit a CSV directly — test fixes go through `/qa-review-tests --fix` (diff + confirm).
-- BLOCKED/SKIPPED/PENDING are not failures — noted, never classified as defects.
+- Triage FAIL + BLOCKED + SKIPPED (only PASS and PENDING excluded). BLOCKED → why (env / precondition / data / real bug); SKIPPED → removed feature (stale) vs intentional gate.
 - Ambiguous → `REAL_BUG` / `CONFIDENCE: LOW` → human review; never relabel uncertainty as a test-defect.
 
 ## Related

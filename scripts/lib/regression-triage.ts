@@ -41,9 +41,17 @@ const HISTORY_WINDOW_DAYS = 90;
 
 export type Verdict = "PASS" | "FAIL" | "BLOCKED" | "SKIPPED" | "PENDING" | "UNKNOWN";
 
-/** One failing test case, assembled from the run's results + trace + CSV. */
-export interface FailureInput {
+/**
+ * One non-passing test case (an "issue"), assembled from the run's results +
+ * trace + CSV. Covers FAIL, BLOCKED, and SKIPPED — a BLOCKED case has a
+ * triage-worthy cause (env down, missing precondition/seed data, or a real bug
+ * blocking the flow) and a SKIPPED case can mean a stale/removed feature, so all
+ * three are classified. Only PASS and PENDING are excluded.
+ */
+export interface IssueInput {
   fingerprint: string;
+  /** The runner verdict that made this a triage issue: FAIL | BLOCKED | SKIPPED. */
+  status: Verdict;
   suiteId: string;
   suiteName: string;
   environment: string;
@@ -373,17 +381,19 @@ function loadTrace(runDir: string, tracePath: string | null): TraceJson | null {
 }
 
 /**
- * Assemble the triage input for a run: every real FAIL with its trace, CSV row,
- * fingerprint, and cross-run flaky flag. BLOCKED/SKIPPED/PENDING are NOT failures
- * and are excluded (the classifier treats them as notes, not defects).
+ * Assemble the triage input for a run: every non-passing case (FAIL, BLOCKED,
+ * SKIPPED) with its trace, CSV row, fingerprint, and cross-run flaky flag. A
+ * BLOCKED case is triaged for WHY it was blocked (env / precondition / data /
+ * real bug); a SKIPPED case for whether the feature was removed (stale test).
+ * Only PASS and PENDING (not-yet-executed) are excluded.
  */
-export function readRunFailures(runDir: string, store?: TriageStore): FailureInput[] {
+export function readRunIssues(runDir: string, store?: TriageStore): IssueInput[] {
   const suites = readRunSuites(runDir);
   const allShots = collectRunShots(runDir);
-  const out: FailureInput[] = [];
+  const out: IssueInput[] = [];
   for (const s of suites) {
     for (const c of s.cases) {
-      if (c.status !== "FAIL") continue;
+      if (c.status !== "FAIL" && c.status !== "BLOCKED" && c.status !== "SKIPPED") continue;
       const trace = loadTrace(runDir, c.trace);
       const signature = failureSignatureOf({ trace, evidence: c.evidence });
       const fingerprint = fingerprintFailure(s.environment, s.suiteId, c.id, signature); // dedup identical failures
@@ -392,6 +402,7 @@ export function readRunFailures(runDir: string, store?: TriageStore): FailureInp
       const flaky = entry ? hasOscillated(entry) : false;
       out.push({
         fingerprint,
+        status: c.status,
         suiteId: s.suiteId,
         suiteName: s.suiteName,
         environment: s.environment,
@@ -445,7 +456,7 @@ function hasOscillated(entry: TriageEntry): boolean {
 
 /**
  * Record this run's per-case outcomes (both PASS and FAIL) into the store so the
- * next run's readRunFailures can flag flaky oscillation. Call AFTER readRunFailures
+ * next run's readRunIssues can flag flaky oscillation. Call AFTER readRunIssues
  * (which reads the *previous* state).
  */
 export function recordRunOutcomes(store: TriageStore, runDir: string, runId: string): void {
@@ -577,7 +588,7 @@ function main(): void {
 
   if (cmd === "collect") {
     const store = loadTriageStore();
-    const failures = readRunFailures(runDir, store);
+    const issues = readRunIssues(runDir, store);
     if (rest.includes("--record")) {
       recordRunOutcomes(store, runDir, runId);
       saveTriageStore(store);
@@ -585,10 +596,15 @@ function main(): void {
     const packet = {
       runId,
       runDir,
-      environment: failures[0]?.environment ?? process.env.TEST_ENV ?? "vcst",
-      failureCount: failures.length,
-      flakyCount: failures.filter((f) => f.flaky).length,
-      failures,
+      environment: issues[0]?.environment ?? process.env.TEST_ENV ?? "vcst",
+      issueCount: issues.length,
+      byStatus: {
+        FAIL: issues.filter((i) => i.status === "FAIL").length,
+        BLOCKED: issues.filter((i) => i.status === "BLOCKED").length,
+        SKIPPED: issues.filter((i) => i.status === "SKIPPED").length,
+      },
+      flakyCount: issues.filter((i) => i.flaky).length,
+      issues,
     };
     console.log(JSON.stringify(packet, null, 2));
     return;

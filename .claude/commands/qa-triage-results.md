@@ -1,12 +1,12 @@
 ---
-description: "Triage the failures of a completed regression run: collect each FAIL + its trace/screenshots/console/network evidence + the failing CSV row → dedup & flag cross-run flakiness → classify each into real-product-bug vs test-defect (bad steps / bad assertion / stale test data / stale test) vs flaky/env/known → live-verify the real ones → auto-apply test-case fixes (with confirmation) and draft bug reports → STOP for human (never files a tracker ticket, never triggers /qa-fix). Interactive-first; a headless ci/run-triage-results.ts twin is a later follow-up. Reuses scripts/lib/regression-triage.ts + ci/agents/regression-triage-agent.md + /qa-review-tests + /qa-investigate."
+description: "Triage a completed regression run's non-passing cases (FAIL / BLOCKED / SKIPPED): collect each + its trace/screenshots/console/network evidence + the CSV row → dedup & flag cross-run flakiness → classify each into real-product-bug vs test-defect (bad steps / bad assertion / stale test data / stale test) vs flaky/env/known → live-verify the real ones → auto-apply test-case fixes (with confirmation) and draft bug reports → STOP for human (never files a tracker ticket, never triggers /qa-fix). Interactive-first; a headless ci/run-triage-results.ts twin is a later follow-up. Reuses scripts/lib/regression-triage.ts + ci/agents/regression-triage-agent.md + /qa-review-tests + /qa-investigate."
 argument-hint: "[RUN_ID | latest] [--fix] [--verify]"
 disable-model-invocation: true
 ---
 
 # /qa-triage-results — Regression-Results Triage & Analysis
 
-You are the **Triage Orchestrator** for Virto Commerce regression runs. A regression run tells you *which* tests failed; this flow works out *why* each one failed and what to do about it. It reads a completed run under `reports/regression/{RUN_ID}/`, classifies every FAIL, verifies the real bugs against the live environment, applies test-case fixes for the test-defects, drafts bug reports for confirmed product defects, and **STOPs for a human** — it never files a tracker ticket (Jira / Azure Boards) and never triggers `/qa-fix`.
+You are the **Triage Orchestrator** for Virto Commerce regression runs. A regression run tells you *which* tests failed; this flow works out *why* each one failed and what to do about it. It reads a completed run under `reports/regression/{RUN_ID}/`, classifies every non-passing case (FAIL, BLOCKED, SKIPPED), verifies the real bugs against the live environment, applies test-case fixes for the test-defects, drafts bug reports for confirmed product defects, and **STOPs for a human** — it never files a tracker ticket (Jira / Azure Boards) and never triggers `/qa-fix`.
 
 This is the missing consumer between `/qa-regression` (produces the run) and `/qa-bug`→`/qa-fix` (act on a confirmed bug). It clones the proven `/qa-monitoring` skeleton — collect → dedup → triage → live-verify → report → STOP — sourced from the regression run dir instead of App Insights.
 
@@ -39,9 +39,9 @@ Run the collector — it does all the JSON/CSV/evidence archaeology so you don't
 ```
 npm run triage:collect -- <RUN_ID|latest> --record
 ```
-It emits a JSON packet: every **real FAIL** (BLOCKED/SKIPPED/PENDING are excluded — noted separately, never classified as defects) joined to its `traces/{TC-ID}-FAIL-trace.json` (network + console w/ stack frames), its `screenshots[]`, the lane `harPath`, the failing test case's authored `csvRow`, a stable `fingerprint`, and the cross-run `flaky`/`priorRuns` flags. `--record` updates the fingerprint store so the next run can flag oscillation.
+It emits a JSON packet: every **non-passing case** — `FAIL`, `BLOCKED`, and `SKIPPED` (each carries a `status` field; only PASS and PENDING/not-yet-executed are excluded) — joined to its `traces/{TC-ID}-FAIL-trace.json` (network + console w/ stack frames, FAIL only), its `screenshots[]`, the lane `harPath`, the test case's authored `csvRow`, a stable `fingerprint`, and the cross-run `flaky`/`priorRuns` flags. The packet includes `byStatus` counts. `--record` updates the fingerprint store so the next run can flag oscillation. A BLOCKED case is triaged for *why* it was blocked (env / precondition / data / real bug); a SKIPPED case for whether the feature was removed (stale test).
 
-If `failureCount === 0` → skip to Phase 6 and emit a clean ≤15-line report.
+If `issueCount === 0` → skip to Phase 6 and emit a clean ≤15-line report.
 
 ## Phase 2 — Dedup & flakiness
 > **Owner:** orchestrator
@@ -59,7 +59,7 @@ First run the deterministic linter on each affected suite so the classifier has 
 ```
 npm run suites:review -- <suite-csv> --json
 ```
-Then delegate each failure to **`ci/agents/regression-triage-agent.md`** with its `FailureInput` (incl. screenshot paths — the classifier READS them for visual/element failures) + the lint output. It consults the oracles and emits, per failure:
+Then delegate each issue to **`ci/agents/regression-triage-agent.md`** with its `IssueInput` (incl. `status` + screenshot paths — the classifier READS them for visual/element failures, and triages BLOCKED/SKIPPED per its Step 1a) + the lint output. It consults the oracles and emits, per issue:
 `CLASS` ∈ {`REAL_BUG`, `TEST_STEPS_DEFECT`, `ASSERTION_DEFECT`, `TEST_DATA_DEFECT`, `STALE_TEST`, `FLAKY`, `ENV`, `KNOWN_ISSUE`} + (for REAL_BUG) `SEVERITY`/`ROUTE_REPO`/`REPRO_LAYER` + `CONFIDENCE` + `ROOT_CAUSE` + `SUGGESTED_FIX`.
 
 Bias: when a failure can't be confidently attributed to product-or-test, it stays `REAL_BUG` with `CONFIDENCE: LOW` (→ live repro / human review) — never downgraded to a test-defect to make it disappear. See the taxonomy + worked examples in the `/qa-triage-results` skill (`triage-taxonomy.md`).
@@ -106,7 +106,7 @@ Deliver a concise verdict to the user: counts per bucket, the report path, and t
 ## Rules
 - **Never file a tracker ticket (Jira / Azure Boards), never call `/qa-fix`, never merge anything.** Detect, classify, verify, fix *tests*, draft *bugs* — then STOP for a human.
 - **Never edit a CSV directly** — all test-case fixes go through `/qa-review-tests --fix` (confirmation + diff).
-- **BLOCKED/SKIPPED/PENDING are not failures** — they are noted, never classified as defects (a BLOCKED needs its own investigation per `feedback_blocked_is_not_terminal`, out of scope here).
+- **Triage FAIL + BLOCKED + SKIPPED** (only PASS and PENDING are excluded). A BLOCKED gets its documented investigation here (why it was blocked — env / precondition / data / real bug) per `feedback_blocked_is_not_terminal`; a SKIPPED is checked for a removed/renamed feature (stale test) vs an intentional gate.
 - **Ambiguous → REAL_BUG / LOW confidence → human review.** Never relabel an uncertain failure as a test-defect to clear the board.
 - **Read the evidence.** Open the screenshot for visual/element failures; use the trace's `networkFailures[]`/`consoleErrors[]` for network/JS failures; reference the HAR only when the trace is thin.
 - **Report policy:** the triage report lives inside `reports/regression/{RUN_ID}/`; reference artifacts by path (`.claude/rules/reports.md` §8). Long reasoning goes to the user via the verdict, not to disk.
