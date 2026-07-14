@@ -153,7 +153,7 @@ SendMessage: to {{ORCHESTRATOR_NAME}}
 5. **Evaluate Assertions** — BL-* violation = FAIL even if DOM passed.
 6. **Cross-Layer Checks** — GraphQL mutations MUST have empty `errors[]`.
 7. **Cleanup** — always execute; failures logged separately.
-8. **Evidence** — FAIL only (screenshot + console + network). PASS relies on HAR.
+8. **Evidence** — FAIL only (screenshot + console + network). PASS relies on HAR. `browser_take_screenshot` **must** get an explicit full path `reports/regression/{{RUN_ID}}/screenshots/{TC-ID}-FAIL-{desc}.png` (naming per `.claude/rules/reports.md` §7) — **never a bare filename**, which resolves against the MCP server CWD (repo root) and drops loose PNGs there.
 9. **Record result** — PASS | FAIL | BLOCKED | SKIPPED — then **rewrite `{{OUTPUT_FILE}}` in place** (this case `PENDING` → verdict + evidence, summary counts refreshed). Overwrite the whole file; it is cheap and idempotent. Drives the live per-case dashboard.
 
 **Do NOT send prose progress to orchestrator between tests beyond the announce.** Final summary only.
@@ -218,7 +218,7 @@ JSON to `{{OUTPUT_FILE}}`:
       "id": "SMK-008", "status": "FAIL",
       "title": "…", "section": "…", "priority": "High",
       "businessRule": "BL-CART-002", "edgeCaseRefs": "ECL-7.3",
-      "failedAssertion": "…", "screenshot": "path/to.png",
+      "failedAssertion": "…", "screenshot": "reports/regression/{{RUN_ID}}/screenshots/SMK-008-FAIL-cart-total.png",
       "consoleErrors": ["…"], "networkErrors": ["…"], "notes": ""
     }
   ],

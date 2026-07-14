@@ -93,6 +93,41 @@ known), not before. Probe only the axis `contributionPlan(routeRepo).host` needs
 
 A native-platform run resolves `host=github`, `mode=direct` ⇒ exactly the original preflight.
 
+## 5a. Ticket field mapping + body format — per tracker
+
+When you **create or edit** a ticket (file a bug, add a comment), map the report to the tracker's
+native fields and use that tracker's native body format. **Never assume Jira field names or wiki
+markup.**
+
+### Field mapping (report → tracker field)
+
+| Report piece | Jira (`createJiraIssue` / `editJiraIssue`) | Azure Boards (`PATCH …/workitems/<n>`) |
+|---|---|---|
+| Project / area | `fields.project.key` = `env.JIRA_PROJECT_KEY` (default `VCST`) | `System.AreaPath` (org/project from `tracker.azure`) |
+| Work item type | `fields.issuetype.name` = `Bug` | `System.WorkItemType` = `Bug` |
+| Title / summary | `fields.summary` — **plain text**, no markup | `System.Title` — plain text |
+| Body / description | `fields.description` — **Markdown** (see below) | `System.Description` + repro in `Microsoft.VSTS.TCM.ReproSteps` — **HTML** |
+| Severity → priority | `fields.priority.name` — Critical→Highest, High→High, Medium→Medium, Low→Low | `Microsoft.VSTS.Common.Priority` / `…Severity` (per `tracker.azure` map) |
+| Labels / tags | `fields.labels` (e.g. `qa-autofix`) | `System.Tags` (semicolon-separated) |
+| Environment | `fields.environment` (env name + build) if the screen has it | fold into `System.Description` |
+
+Send only fields the ticket's create-meta actually exposes — probe with
+`getJiraIssueTypeMetaWithFields` (Jira) / `GET …/workitems/<n>?$expand=all` (Azure) rather than
+guessing custom-field ids.
+
+### Body format — Markdown, NOT Jira wiki markup (VCST-5212)
+
+- **Jira via the Atlassian MCP:** author the description/comment in **GitHub-flavored Markdown**
+  (`## Heading`, `**bold**`, `` `code` ``, fenced ```` ``` ```` blocks, `-`/`1.` lists, `|` tables).
+  The MCP converts Markdown → ADF for you. **Do NOT send Jira wiki markup** (`h2.`, `*bold*`,
+  `{code}…{code}`, `{{mono}}`, `# numbered`) — it renders as literal text, the failure filed as
+  **VCST-5212**. When in doubt, it's Markdown.
+- **Azure Boards:** the description/repro-steps fields are **HTML**, not Markdown and not wiki —
+  convert the Markdown report body to simple HTML (`<h2>`, `<b>`, `<pre>`, `<ul>`/`<ol>`, `<table>`)
+  before the `PATCH`.
+- The on-disk `reports/bugs/*.md` file stays plain Markdown regardless — this rule is only about
+  what you push into a **tracker field**.
+
 ## 5. Build-version verification is platform-only
 
 The `vc-deploy-dev` manifest (used to confirm deployed module/Platform/Theme versions) is a

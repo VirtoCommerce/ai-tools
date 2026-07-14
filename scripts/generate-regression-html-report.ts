@@ -18,7 +18,7 @@
  * is in progress, and exits with a final static render once the run is marked completed.
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, statSync, mkdirSync, copyFileSync } from "node:fs";
 import { join, resolve, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
@@ -334,23 +334,38 @@ function shotsForSuite(suiteId: string, allShots: string[]): string[] {
  * Normalize a stored screenshot path (which the runner writes repo-root-relative,
  * e.g. "reports/regression/REG-…/screenshots/foo.png") to a path relative to the
  * run dir, so it resolves against the HTML report sitting inside that dir.
+ *
+ * `byBase` maps the basename of every image physically present under the run's
+ * evidence/screenshots dirs to its run-dir-relative path. It is the authority:
+ * some runners violate the "never a bare filename" rule and record a loose name
+ * (e.g. "MBR-008-FAIL-….png") whose PNG landed in the repo-root CWD — reconciling
+ * by basename rewrites such a reference to the real in-run file when one exists.
+ * A bare/unlocatable reference with no matching file is dropped (returns "") so it
+ * renders as "no evidence captured" instead of a dead link.
  */
-function toRunRelPath(p: string, runId: string): string {
+function toRunRelPath(p: string, runId: string, byBase?: Map<string, string>): string {
   let s = String(p).replace(/\\/g, "/").trim();
+  // Basename reconciliation first — an in-run file always wins over the recorded path.
+  const base = (s.split("/").pop() ?? s).toLowerCase();
+  if (byBase && byBase.has(base)) return byBase.get(base)!;
   const marker = `${runId}/`;
   const i = s.indexOf(marker);
   if (i >= 0) return s.slice(i + marker.length);
   // Fallback: keep only the last evidence/screenshots segment onward.
   const m = s.match(/(?:^|\/)((?:evidence|screenshots)\/.+)$/i);
-  return m ? m[1] : s;
+  if (m) return m[1];
+  // A bare filename (no directory) that matched no in-run file is unresolvable
+  // (misplaced/never-captured) — drop it rather than emit a broken link.
+  if (byBase && !s.includes("/")) return "";
+  return s;
 }
 
 /** Pull explicit per-case screenshot paths from any of the shapes the runner emits. */
-function explicitCaseShots(c: any, runId: string): string[] {
+function explicitCaseShots(c: any, runId: string, byBase?: Map<string, string>): string[] {
   const out: string[] = [];
   const push = (v: unknown) => {
-    if (typeof v === "string" && v.trim()) out.push(toRunRelPath(v, runId));
-    else if (Array.isArray(v)) for (const x of v) if (typeof x === "string" && x.trim()) out.push(toRunRelPath(x, runId));
+    if (typeof v === "string" && v.trim()) { const r = toRunRelPath(v, runId, byBase); if (r) out.push(r); }
+    else if (Array.isArray(v)) for (const x of v) if (typeof x === "string" && x.trim()) { const r = toRunRelPath(x, runId, byBase); if (r) out.push(r); }
   };
   push(c?.screenshot);
   push(c?.screenshots);
@@ -380,11 +395,16 @@ function normalizeSuite(raw: any, allShots: string[], runId: string): NormSuite 
   const cases: NormCase[] = [];
   const suiteShots = shotsForSuite(suiteId, allShots);
 
+  // basename (lowercased) -> run-dir-relative path, for reconciling loose
+  // filenames the runner may have recorded (see toRunRelPath).
+  const byBase = new Map<string, string>();
+  for (const rel of allShots) byBase.set((rel.split("/").pop() ?? rel).toLowerCase(), rel);
+
   // Screenshots for a case = its explicitly recorded paths + any file named after
   // the case id (deduped). The explicit field is authoritative; the name match
   // catches evidence the runner captured but didn't record on the case row.
   const caseShots = (c: any): string[] =>
-    [...new Set([...explicitCaseShots(c, runId), ...shotsForCase(String(c.id ?? ""), allShots)])];
+    [...new Set([...explicitCaseShots(c, runId, byBase), ...shotsForCase(String(c.id ?? ""), allShots)])];
 
   if (Array.isArray(raw.cases)) {
     // Smoke shape: cases[{id, title, status|verdict, expected?, actual?, evidence?, notes?}]
@@ -1628,6 +1648,79 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Self-heal misplaced evidence. A runner that ignores the "never a bare filename"
+ * rule (agents/test-runner-agent.md §7) drops its PNG in the MCP-server CWD (repo
+ * root) instead of the run's screenshots/ dir, and records a bare name — which then
+ * renders as a dead link. Before rendering, sweep every screenshot basename the
+ * suite JSONs reference but that is missing from the run dir out of the known
+ * fallback locations (repo root, the manual orphan folder, test-results/) into
+ * screenshots/, so toRunRelPath can reconcile it. Bounded to referenced basenames.
+ */
+function reconcileLooseScreenshots(runDir: string, reportsRoot: string): void {
+  if (!existsSync(runDir)) return;
+  const IMG = /\.(png|jpe?g|gif|webp)$/i;
+
+  // Referenced basenames across this run's suite JSONs — ONLY from the screenshot
+  // evidence fields, not arbitrary image URLs quoted in note/actual prose.
+  const referenced = new Set<string>();
+  const addPath = (v: unknown) => {
+    if (typeof v !== "string") return;
+    const s = v.replace(/\\/g, "/").trim();
+    if (!IMG.test(s)) return;
+    referenced.add((s.split("/").pop() ?? s).toLowerCase());
+  };
+  const walk = (node: any) => {
+    if (Array.isArray(node)) { for (const x of node) walk(x); return; }
+    if (node && typeof node === "object") {
+      for (const [k, val] of Object.entries(node)) {
+        if (/^(screenshot|screenshots|evidenceScreenshots)$/i.test(k)) {
+          Array.isArray(val) ? val.forEach(addPath) : addPath(val);
+        } else {
+          walk(val);
+        }
+      }
+    }
+  };
+  for (const f of readdirSync(runDir)) {
+    if (!/^suite-.*results.*\.json$/.test(f)) continue;
+    try { walk(JSON.parse(readFileSync(join(runDir, f), "utf-8"))); } catch { /* skip malformed */ }
+  }
+  if (referenced.size === 0) return;
+
+  // Already present in the run dir (screenshots/ or evidence/)?
+  const present = new Set<string>();
+  for (const dir of ["screenshots", "evidence"]) {
+    const p = join(runDir, dir);
+    if (existsSync(p)) for (const f of readdirSync(p)) present.add(f.toLowerCase());
+  }
+  const missing = [...referenced].filter((b) => !present.has(b));
+  if (missing.length === 0) return;
+
+  // Fallback locations, in priority order (non-recursive scan of each).
+  const repoRoot = resolve(reportsRoot, "..", "..");
+  const fallbackDirs = [
+    join(repoRoot, "test-results", "_orphaned-root-screenshots"),
+    repoRoot,
+    join(repoRoot, "test-results"),
+  ].filter((d) => existsSync(d));
+
+  const destDir = join(runDir, "screenshots");
+  const recovered: string[] = [];
+  for (const base of missing) {
+    for (const dir of fallbackDirs) {
+      const hit = readdirSync(dir).find((f) => IMG.test(f) && f.toLowerCase() === base);
+      if (!hit) continue;
+      if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
+      try { copyFileSync(join(dir, hit), join(destDir, hit)); recovered.push(hit); } catch { /* skip */ }
+      break;
+    }
+  }
+  const stillMissing = missing.filter((b) => !recovered.some((r) => r.toLowerCase() === b));
+  if (recovered.length) console.log(`  Recovered ${recovered.length} misplaced screenshot(s) into ${destDir}`);
+  if (stillMissing.length) console.warn(`  ⚠ ${stillMissing.length} referenced screenshot(s) not found anywhere (never captured): ${stillMissing.slice(0, 8).join(", ")}${stillMissing.length > 8 ? " …" : ""}`);
+}
+
+/**
  * Render one snapshot. Returns the run-level status ("in_progress"/"completed"/absent)
  * so the watch loop knows when to stop. Never exits the process itself.
  */
@@ -1637,6 +1730,7 @@ function renderOnce(args: Args, reportsRoot: string): { status: RunStatus | null
   const runDir = join(reportsRoot, runId);
   const dirExists = existsSync(runDir);
 
+  if (dirExists) reconcileLooseScreenshots(runDir, reportsRoot);
   const resultSuites = dirExists ? loadAllSuites(runDir) : [];
   const suites = mergeStatus(resultSuites, status, runId);
 

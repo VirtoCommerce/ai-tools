@@ -123,7 +123,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 6. **Cross-Layer Checks** — GraphQL mutations MUST have empty `errors[]`.
 7. **Cleanup** — execute `Cleanup` column after every test (pass or fail). Cleanup failures logged separately, do NOT affect result.
 8. **Evidence**:
-   - FAIL → `browser_take_screenshot`, capture console errors, capture relevant network requests.
+   - FAIL → `browser_take_screenshot` **with an explicit full path** `reports/regression/{{RUN_ID}}/screenshots/{TC-ID}-FAIL-{desc}.png` (naming per `.claude/rules/reports.md` §7). **Never pass a bare filename** — a relative filename resolves against the MCP server's CWD (the repo root) and litters loose PNGs there; the config `outputDir` does **not** apply to an explicit `filename`. Then capture console errors + relevant network requests.
    - PASS → no extra capture (HAR covers traffic).
 9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED — then **rewrite `{{OUTPUT_FILE}}` in place** (update this case's entry from `PENDING` to its verdict + evidence, refresh the `passed`/`failed`/`blocked`/`skipped` counts). Overwrite the whole file each time; it is cheap and idempotent. This drives the live per-case dashboard.
 
@@ -177,7 +177,7 @@ JSON to `{{OUTPUT_FILE}}`:
       "title": "…", "section": "…", "priority": "High",
       "businessRule": "BL-CART-002", "edgeCaseRefs": "ECL-7.3",
       "failedAssertion": "[MATH] line total = unit price × quantity",
-      "screenshot": "path/to.png",
+      "screenshot": "reports/regression/{{RUN_ID}}/screenshots/SMK-008-FAIL-cart-total.png",
       "consoleErrors": ["…"], "networkErrors": ["…"],
       "notes": ""
     }

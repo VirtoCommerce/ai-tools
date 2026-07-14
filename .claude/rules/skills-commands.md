@@ -57,7 +57,7 @@ Skills are slash commands with supporting reference files, organized into 4 cate
 | `/qa-review-tests` | `suite <ID> \| file <path> \| diff \| all \| domain <name> \| --verify \| --fix` | Review test cases: 8-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification). Delegates live verification to qa-testing-expert | `review-criteria.md` |
 | `/qa-local-env` | `[VCST-XXXX] [postgres\|mysql\|sqlserver]` | Bring up a local VC stack (start-local + Docker) pinned to the actual deployed `vcptcore-demo` manifest; with a task arg, augment it with the modules/PR pre-release builds the task needs. Rebuild-iff-changed; **fresh DB every run** (data volumes always wiped); admin→`Password1!`. resolve-task (JIRA+GitHub REST) → gen-manifest → provision (PowerShell) → init-admin → healthcheck. Theme channels (`latest`/`alpha`/`pr`) via `resolve-theme.mjs` → `-FrontendUrl`. | `resolve-task.mjs`, `resolve-theme.mjs`, `gen-manifest.mjs`, `provision.ps1`, `healthcheck.mjs`, `init-admin.mjs` |
 
-**`qa-methodology/` — QA Methodology (12) — manual invocation:**
+**`qa-methodology/` — QA Methodology (12) — manual invocation (except `/qa-evidence` + `/qa-sbtm`, which are auto-invocable reference-only skills):**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -97,4 +97,4 @@ Skills are slash commands with supporting reference files, organized into 4 cate
 
 `/qa-smoke`, `/qa-test VCST-1234`, `/qa-test-lifecycle PR #123`, `/qa-storybook Button`, `/vc-docs dynamic properties`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
 
-**Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only commands/skills (`/qa-status`, `/qa-env-check`, `/vc-docs`) allow model invocation.
+**Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only, no-side-effect commands/skills allow model invocation: `/qa-status`, `/qa-env-check`, `/vc-docs`, plus the two reference-only methodology skills `/qa-evidence` and `/qa-sbtm` (both surface policy/methodology text only — no browser, writes, or external calls).
