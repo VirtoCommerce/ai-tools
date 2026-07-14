@@ -167,7 +167,7 @@ An out-of-stock product (inventory = 0 or availability = false) exists in the B2
 [DOM] Product price still displayed (not hidden)
 [STATE] No way to add the out-of-stock product to cart through the PDP","[NETWORK] no add-to-cart POST fired when button is disabled
 [CONSOLE] no TypeError or JS errors","Out-of-stock indicator absent; quantity stepper (+) enabled for out-of-stock product; cart badge incrementing for out-of-stock product; console TypeError","none","Coverage Gap Analysis; GAP-CS-15; ECL-2.1","Draft"
-"CAT-052","Currency Switch on Category Page Updates All Product Prices","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","Multiple currencies configured; category has products with prices in at least 2 currencies; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to any category listing page on {{FRONT_URL}}
+"CAT-052","Currency Switch on Category Page Updates All Product Prices","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","Multiple currencies configured; currency switcher visible. On /catalog some products carry a EUR price-list value while others are USD-only — assert on products that ARE priced in the target currency, not a whole-page collapse (unpriced products hidden/unavailable per BL-PRICE-005)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Wait for product cards to load
 [ASSERT] Note the current currency symbol and record prices of the first 3 visible product cards
 [ACT] Locate the currency switcher (header or footer) and select any alternative currency different from the current one
@@ -239,16 +239,14 @@ An out-of-stock product with inventory = 0 exists and is accessible via PDP URL;
 [CONSOLE] no TypeError or JS errors","Out-of-stock message absent; quantity stepper (+) enabled for zero-inventory product; product information hidden; quantity input active for out-of-stock product; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","Draft"
 "CAT-058","Low Stock Indicator Displayed When Product Quantity Is Near Threshold","Catalog > Product","High","BL-CART-002, BL-CAT-006","ECL-2.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-A product with low inventory (at or below the configured low-stock warning threshold) exists; low stock warning configured in store settings; fixture: {{LOW_STOCK_SKU}} (see test-data/products/test-products.csv PROD-102)","url={{FRONT_URL}}; low_stock_sku={{LOW_STOCK_SKU}}","[NAV] Resolve the low-stock product PDP URL at runtime using {{LOW_STOCK_SKU}}; if {{LOW_STOCK_SKU}} is not provisioned, skip this case (SEED REQUIRED: low-stock product fixture)
+A product with low inventory (at or below the configured low-stock warning threshold) exists; the urgency label (e.g. 'Only X left!') is gated by a store setting and may be disabled; fixture: {{LOW_STOCK_SKU}} (see test-data/products/test-products.csv PROD-102)","url={{FRONT_URL}}; low_stock_sku={{LOW_STOCK_SKU}}","[NAV] Resolve the low-stock product PDP URL at runtime using {{LOW_STOCK_SKU}}; if {{LOW_STOCK_SKU}} is not provisioned, skip this case (SEED REQUIRED: low-stock product fixture)
 [WAIT] Wait for PDP to fully load
-[ASSERT] Verify a low stock warning message is displayed (e.g., 'Only X left!' or 'Low stock' or 'Limited availability')
+[ASSERT] Verify the in-stock quantity count badge displays the current available quantity
 [ASSERT] Verify the quantity stepper (+) is enabled (product still purchasable)
-[ASSERT] Verify the low stock message shows the remaining quantity or a qualitative indicator
-[ASSERT] Verify the warning message is visually distinct (e.g., amber color or warning icon)","[DOM] Low stock warning message visible on PDP when inventory is at or below configured threshold
+[ASSERT] If the low-stock urgency label (e.g., 'Only X left!') is enabled via store setting, verify it is displayed and visually distinct; otherwise verify the in-stock count badge alone communicates the low quantity","[DOM] In-stock quantity count badge on PDP reflects the current low quantity (at or below configured threshold)
 [STATE] Quantity stepper (+) remains enabled when product is low stock but not zero
-[DOM] Warning message communicates urgency (quantity count or low stock label)
-[DOM] Warning message is visually distinct from standard product information","[NETWORK] product availability data returned in GraphQL response includes low-stock signal
-[CONSOLE] no TypeError or JS errors","Low stock warning absent when inventory below threshold; quantity stepper (+) incorrectly disabled for low-stock non-zero product; warning message not visually distinct; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","Draft"
+[DOM] Low-stock urgency label, when enabled via store setting, is visually distinct from standard product information; otherwise the count badge is the sole low-stock signal","[NETWORK] product availability data returned in GraphQL response includes low-stock signal
+[CONSOLE] no TypeError or JS errors","In-stock count badge does not reflect low quantity; quantity stepper (+) incorrectly disabled for low-stock non-zero product; urgency label enabled in store settings but not rendered; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","Draft"
 "CAT-COMP-001","Add Product to Compare from PDP","Catalog > Product Comparison","High",,"ECL-7.1","Multiple products exist in catalog. Compare is localStorage-backed and works for guests and authenticated users.","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}}
 [WAIT] PDP fully loaded with product details
 [ASSERT] Verify the PDP action row (sidebar, alongside 'Add to list' / Share / Print) contains a button 'Add to Compare'

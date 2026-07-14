@@ -98,19 +98,20 @@ adminPassword={{ADMIN_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [API] getCart query returns updated price
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","cart shows old stale price after re-login; price update not reflected even after wait; subtotal mismatch","Restore product price in admin; remove item from cart","Coverage Gap Analysis","Manual"
-"CART-021","Cart Persistence - Cross-Device (Cross-Session)","Cart > Persistence","High","BL-CART-006","ECL-7.3","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"CART-021","Cart Persistence - Cross-Device (Cross-Session)","Cart > Persistence","High","BL-CART-008","ECL-7.3","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-TOOL-LIMITATION: Concurrent dual-context cross-session test cannot be executed by a single MCP agent (requires two simultaneous isolated browser contexts). Use API-layer verification instead: add items via storefront, verify via getCart GraphQL query using same user credentials from a second API call. Do not attempt dual-browser simulation via single agent.","url={{FRONT_URL}}
+Simulate two devices with two real, fully isolated browser contexts (separate engines so cookies/localStorage/IndexedDB cannot be shared) — Device A = playwright-chrome, Device B = playwright-firefox. Same registered user logs in independently in each context (no session/state copied between them).","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} in playwright-chrome browser context
-[ACT] add two or more products to cart
-[WAIT] wait 3s for cart to sync server-side
-[API] call getCart GraphQL query with {{USER_EMAIL}} credentials via Postman/curl (second 'session')
-[ASSERT] verify getCart response contains same items added in browser","[STATE] getCart API response contains items added in browser session (proves server-side persistence)
-[DOM] cart badge and page state consistent with server-side data
-[STATE] cart synchronized via server-side account, not just localStorage","[API] getCart query response errors[] is empty; lineItems count matches browser cart
-[CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","getCart API returns empty lineItems when browser shows items; qty mismatch between browser and API response","Remove items from cart","Coverage Gap Analysis","Manual"
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}} in playwright-chrome browser context (Device A)
+[ACT] add two or more products to cart on Device A
+[WAIT] wait for cart badge to update and confirm items persisted (server sync, not just local state)
+[NAV] open a second, fully isolated browser context in playwright-firefox (Device B) and log in to {{FRONT_URL}} with the same {{USER_EMAIL}} credentials (no cookies/storage carried over from Device A)
+[NAV] navigate to {{FRONT_URL}}/cart in the Device B context
+[ASSERT] verify Device B cart shows the same items and quantities that were added on Device A","[STATE] Device B cart (separate browser engine, no shared cookies/localStorage/IndexedDB) shows identical line items and quantities to Device A — proves server-side persistence, not client-side storage
+[DOM] cart badge count on Device B matches Device A
+[STATE] cart synchronized via the server-side account, not via localStorage carried between contexts","[API] Device B's underlying getCart query response errors[] is empty; lineItems count matches Device A
+[CONSOLE] no JS errors in either browser context
+[NETWORK] no 4xx/5xx on cart fetch in either context","Device B cart is empty or missing items added on Device A; quantity mismatch between the two contexts; Device B requires re-adding items (indicates reliance on client-side storage instead of server-side persistence)","Remove items from cart in both browser contexts; close both contexts","Coverage Gap Analysis","Manual"
 "CART-022","Cart Persistence - Guest Cart Merge on Sign In","Cart > Persistence","High","BL-CART-008","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Store allows guest shopping; user has registered account with existing cart items; user currently signed out","url={{FRONT_URL}}

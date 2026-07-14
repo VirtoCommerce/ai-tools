@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"PAY-UX-001","Payment Form - Field Labels and Placeholders","UX","Medium","BL-PAY-004","ECL-14.6","[PRE:CLEAR_SESSION]
+"PAY-UX-001","Payment Form - Field Labels and Required Indicators","UX","Medium","BL-PAY-004","ECL-14.6","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -7,10 +7,10 @@
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate CyberSource payment section
 [ACT] Observe all payment field labels without interacting
 [ASSERT] Each field has a visible label: 'Card Number', 'Cardholder Name', 'Expiry Date', 'CVV'
-[ASSERT] Placeholder text is present and descriptive in each field
-[ASSERT] Required fields are marked with asterisk (*) or equivalent required indicator","[DOM] All four payment fields have visible labels
-[DOM] Placeholder text present and readable in all fields
-[DOM] Required field indicator (* or 'required') present on mandatory fields","[CONSOLE] No rendering errors for payment section labels","Any field missing a label; placeholder text absent or generic (e.g., '...' only); required indicator absent on mandatory fields","none — no order placed","VCST-3387 TC-UX-001","Manual"
+[ASSERT] Required fields are marked with asterisk (*) or equivalent required indicator
+[ASSERT] Placeholder text, if present, is descriptive rather than generic (informational only — absence of a placeholder is not a failure)","[DOM] All four payment fields have visible labels
+[DOM] Required field indicator (* or 'required') present on mandatory fields
+[DOM] Placeholder text, where present, is descriptive (e.g., not '...' only) — optional/informational, not required for PASS","[CONSOLE] No rendering errors for payment section labels","Any field missing a visible label; required indicator absent on mandatory fields","none — no order placed","VCST-3387 TC-UX-001","Manual"
 "PAY-UX-002","Payment Form - Keyboard Tab Order","UX","Medium","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user

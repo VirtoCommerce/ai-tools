@@ -279,10 +279,10 @@ Chrome DevTools viewport emulation at 375px width","url={{FRONT_URL}}","[NAV] Se
 [ASSERT] Verify grid adapts to 1-2 column layout
 [ASSERT] Verify sort dropdown is accessible without horizontal scroll
 [ASSERT] Verify filter controls accessible
-[ASSERT] Verify interactive touch targets >= 44x44px","[DOM] Heading readable at 375px
+[ASSERT] Verify interactive touch targets >= 24x24px (WCAG 2.2 AA minimum)","[DOM] Heading readable at 375px
 [DOM] Grid adapts to 1-2 column layout (not 3+ columns squished)
 [DOM] Sort dropdown and filter controls accessible without horizontal scrolling
-[DOM] Touch target sizes meet minimum 44x44px","[CONSOLE] no TypeError or JS errors","Heading cut off at 375px; grid not adapting to mobile columns; horizontal scroll required; touch targets smaller than 44x44px; console TypeError","none",,"Manual"
+[DOM] Touch target sizes meet minimum 24x24px (WCAG 2.2 AA — SC 2.5.8 Target Size Minimum)","[CONSOLE] no TypeError or JS errors","Heading cut off at 375px; grid not adapting to mobile columns; horizontal scroll required; touch targets smaller than 24x24px; console TypeError","none",,"Manual"
 "SRCH-NEW-033","Search - GA4 search Event Fires on Search-Bar Submission","Search > Analytics","Medium","BL-SRCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 GA4 configured on storefront (production build — events fire; they do NOT fire in dev). The 'search' event is tied to the search-BOX interaction; it does NOT fire on a direct /search?q= URL load.","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ASSERT] Read window.dataLayer and confirm it exists

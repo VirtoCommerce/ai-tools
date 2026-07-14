@@ -100,13 +100,13 @@ SEED REQUIRED: Valid coupon code applicable to guest users must exist in system 
 [STATE] Cart contents preserved for authenticated session
 [STATE] No guest checkout option shown when disabled","[API] Store settings endpoint reflects anonymousUsersAllowed=false
 [CONSOLE] No unexpected errors on redirect","Guest can access checkout without login when anonymousUsersAllowed=false; cart lost on redirect to login","none","Coverage Gap Analysis","Manual"
-"CHK-029G","Checkout Validation - Invalid Email Format","Checkout > Guest > Validation","High","BL-CHK-001",,"Guest user at checkout, on email entry step","url={{FRONT_URL}}","[NAV] Proceed to checkout as guest (not logged in)
+"CHK-029G","Checkout Validation - Invalid Email Format","Checkout > Guest > Validation","High","BL-CHK-001",,"Guest user at checkout, on email entry step. NOTE: 'user@domain' (no TLD) is HTML5-valid and must NOT be used as an invalid-format test value; use a missing-@ or whitespace-embedded value instead.","url={{FRONT_URL}}","[NAV] Proceed to checkout as guest (not logged in)
 [ACT] Enter invalid email 'user@' in email field
 [ACT] click 'Continue'
 [ASSERT] Verify error 'Enter a valid email address' or equivalent
 [ACT] Enter 'notanemail' (no @ symbol)
 [ASSERT] Verify format validation error still shown
-[ACT] Enter 'user@domain' (no TLD)
+[ACT] Enter 'user name@example.com' (embedded whitespace — genuinely invalid)
 [ASSERT] Verify error shown
 [ACT] Enter valid email 'test@example.com'
 [ASSERT] Verify error clears
@@ -115,7 +115,7 @@ SEED REQUIRED: Valid coupon code applicable to guest users must exist in system 
 [STATE] Form does not advance with invalid email
 [STATE] Error clears when valid email entered
 [DOM] Error message references email validity","[CONSOLE] No JS exceptions during email validation
-[API] No API call made with invalid email","Email format not validated; form accepts 'notanemail' without error","none","Coverage Gap Analysis","Automated"
+[API] No API call made with invalid email","Email format not validated; form accepts 'notanemail' or whitespace-embedded email without error","none","Coverage Gap Analysis","Automated"
 "CHK-066","Guest Checkout - No Saved Addresses Available","Checkout > Guest > Address","High","BL-CHK-005","ECL-4.4, ECL-1.2","Guest checkout enabled; anonymous user at checkout step","url={{FRONT_URL}}","[NAV] navigate to {{FRONT_URL}}/cart as anonymous user with items
 [ACT] proceed to checkout
 [ASSERT] verify no saved address dropdown or selector is shown

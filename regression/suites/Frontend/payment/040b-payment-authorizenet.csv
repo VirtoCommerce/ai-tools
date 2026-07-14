@@ -318,8 +318,8 @@
 [WAIT] Wait for inline Accept.js card form to render
 --- BVA 1: expiry field empty (0 digits — pre-entry state) ---
 [ACT] Fill 'Card number' with '@td(AUTHORIZENET_VISA.number)' and CVV with '@td(AUTHORIZENET_VISA.cvv)'; leave 'Expiration date' completely empty; click elsewhere to blur
-[ASSERT] No inline error on the expiry field (empty = not-yet-entered, not an error)
-[ASSERT] 'Place order' button remains disabled (form is incomplete, not invalid)
+[ASSERT] Expiry field shows either no inline error OR an eager 'This field is required' message on blur of the empty field (both are acceptable — empty-required validation timing is implementation-defined)
+[ASSERT] 'Place order' button remains disabled (form is incomplete, not invalid) — this is the load-bearing check for BVA 1
 --- BVA 2: partial year — 1 digit (year.length !== 2 boundary; LENGTH error fires, NOT the expiry error) ---
 [ACT] Click into the 'Expiration date' field and type a single digit into the year portion (e.g., enter '2' so the field shows partial input with only 1 year digit); blur the field
 [ASSERT] An inline LENGTH error is shown on the expiry field — e.g. 'Year must be exactly 2 characters' (the yup .length(2) rule fires for a 1-digit year); this is DISTINCT from the BVA 3 expiry message — the not-expired check is not reached at year.length !== 2
@@ -334,7 +334,7 @@
 [ASSERT] Inline error clears on the expiry field (isExpirationDateValid returns true for a future date)
 [ASSERT] All fields are now validly filled; 'Place order' becomes enabled
 [ASSERT] No payment/order network call was sent during any step
-[ACT] Do NOT click 'Place order' — end of case","[STATE] BVA 1 (empty): no error, 'Place order' disabled — not-yet-complete
+[ACT] Do NOT click 'Place order' — end of case","[STATE] BVA 1 (empty): 'Place order' disabled — not-yet-complete; an eager 'This field is required' error on blur is acceptable and does not fail this case (absence of error is also acceptable)
 [STATE] BVA 2 (1-digit year): inline length error 'Year must be exactly 2 characters' shown, 'Place order' disabled; not-expired check not reached at year.length !== 2
 [DOM] BVA 3 (2-digit expired): inline error shown — isExpirationDateValid fires
 [STATE] BVA 4 (2-digit future): error clears, 'Place order' enabled — valid state restored

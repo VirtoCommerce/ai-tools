@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CFG-FILE-001","File Section — Upload Button Disabled After 5th File Uploaded (Max Limit)","Configurable Products > File Section > Upload Limits","High","BL-CAT-006","ECL-7.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical, max_files=5","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url) (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url), max_files=5","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Product configuration widget visible
 [SCROLL] Scroll to File upload section
 [ASSERT] File upload button visible and enabled
@@ -27,7 +27,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with optional File sectio
 [API] Each upload returns success response","Spinner visible >5s on any upload; upload button not disabled at 5 files; upload button not re-enabled after deletion; console TypeError during upload","Remove all uploaded files from section; navigate away from product page","VCST-4825","Manual"
 "CFG-FILE-002","File Section — Selecting None on Optional Section Clears Uploaded Files","Configurable Products > File Section > Optional Behavior","High","BL-CAT-006","ECL-7.1; ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical (Hoodie Base, optional File section, shows None option).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url) (Hoodie Base, optional File section, shows None option).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Product configuration widget visible
 [SCROLL] Scroll to optional File section
 [ASSERT] 'None' option is available and selected by default
@@ -47,7 +47,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with optional File sectio
 [API] addItem mutation returns 200 with no file references in configuration","Files remaining in list after selecting None; add-to-cart blocked despite None selected; console TypeError on None selection","Remove item from cart after test","VCST-4826","Manual"
 "CFG-FILE-003","File Section — 0-Byte File Rejected on Required Upload Section","Configurable Products > File Section > Validation","High","BL-CAT-006","ECL-7.1; ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703 (Hoodie Base required File). Upload fixture large_logo.png (0 bytes) available at test-data/uploads/.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical-1703, empty_file=large_logo.png (0 bytes)","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url) (@td(CFG_REQUIRED_FILE_CHILD.name) — required File section 'ID Proof'). Upload fixture large_logo.png (0 bytes) available at test-data/uploads/.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_REQUIRED_FILE_CHILD.url), empty_file=large_logo.png (0 bytes)","[NAV] {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)
 [WAIT] Product configuration widget visible
 [SCROLL] Scroll to required File section
 [ASSERT] File section marked as Required
@@ -69,7 +69,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with required File sectio
 [API] addItem blocked before valid file; succeeds after valid file uploaded","0-byte file accepted without error; required section satisfied by 0-byte file; add-to-cart succeeds with 0-byte file; server 500 on 0-byte upload attempt","Remove item from cart after test","VCST-4827","Manual"
 "CFG-FILE-004","Cart Quantity Counter Does Not Increment When Required Section Is Unfilled","Configurable Products > File Section > Quantity Validation","High","BL-CAT-006; BL-CART-001","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_REQUIRED_FILE_CHILD.url)","[NAV] {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)
 [WAIT] Product configuration widget visible
 [ASSERT] Required File section is unfilled (no file uploaded)
 [SCROLL] Scroll to quantity control
@@ -89,7 +89,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with required File sectio
 [NETWORK] No add-to-cart API calls triggered by quantity increment alone","Quantity incrementing with unfilled required section; counter reaching 2 or higher before file uploaded; JS error on quantity click","Navigate away; no cart cleanup needed","VCST-4828","Manual"
 "CFG-FILE-005","Add-to-Cart Plus Button Disabled When Required Section Is Unfilled","Configurable Products > File Section > Add-to-Cart Validation","High","BL-CAT-006","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_REQUIRED_FILE_CHILD.url)","[NAV] {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)
 [WAIT] Product configuration widget visible
 [ASSERT] Required File section is unfilled
 [SCROLL] Scroll to Add-to-Cart area
@@ -110,7 +110,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with required File sectio
 [NETWORK] No addItem API call made when button is disabled
 [API] addItem mutation succeeds after file uploaded — errors[] is empty","Button clickable despite being visually disabled; cart badge incrementing with unfilled required section; button not becoming enabled after file upload","Remove item from cart after test","VCST-4829","Manual"
 "CFG-FILE-006","File Section — Multiple Files Upload and Individual Remove","Configurable Products > File Section > Upload Management","Medium","BL-CAT-006","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Configurable product with optional File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Configurable product with optional File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to File section
 [ACT] Upload Logo1.png
@@ -128,7 +128,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with optional File sectio
 [STATE] Correct files remain after specific file deletion","[CONSOLE] No JS errors on file removal
 [NETWORK] No unexpected API failures","Removing one file clears all files; wrong file removed; file list showing stale entries","Remove all files; navigate away",,"Manual"
 "CFG-FILE-007","File Section — Accepted and Rejected File Types Boundary","Configurable Products > File Section > Type Validation","High","BL-CAT-006","ECL-7.1; ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical. Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, video.mp4 (24MB oversized), download.avif, Stabilio.webp.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, video.mp4 (24MB oversized), download.avif, Stabilio.webp.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Configuration widget visible
 [ACT] Upload Logo1.png (.png — accepted type)
 [WAIT] Result
@@ -153,24 +153,24 @@ User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/pro
 [STATE] .webp rejected with error (not in allowed list)
 [DOM] Error messages clearly state format is not supported","[CONSOLE] No 500 errors for rejected type uploads
 [NETWORK] Upload API returns 4xx for rejected types; 200 for accepted","Accepted types rejected; unsupported types silently accepted; server 500 on type rejection","Remove all uploaded files; navigate away",,"Manual"
-"CFG-FILE-008","File Section — Max File Size Enforcement (10MB Platform Limit)","Configurable Products > File Section > Size Validation","High","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical. Upload fixtures: large_test.png (5MB), video.mp4 (24MB).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+"CFG-FILE-008","File Section — Max File Size Enforcement (9.5MB Platform Limit)","Configurable Products > File Section > Size Validation","High","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url). Upload fixtures: large_test.png (5MB), video.mp4 (24MB).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
 [WAIT] Configuration widget visible
-[ACT] Upload large_test.png (5MB — within 10MB limit)
+[ACT] Upload large_test.png (5MB — within 9.5MB limit)
 [WAIT] Upload completes
 [ASSERT] large_test.png accepted; visible in file list
 [ACT] Remove large_test.png
-[ACT] Upload video.mp4 (24MB — exceeds 10MB platform limit)
+[ACT] Upload video.mp4 (24MB — exceeds 9.5MB platform limit)
 [WAIT] Upload attempt result
 [ASSERT] video.mp4 rejected with size error message
-[ASSERT] Upload area returns to empty state (no file persisted)","[STATE] 5MB file within 10MB limit accepted
-[STATE] 24MB file exceeding 10MB limit rejected with clear error
+[ASSERT] Upload area returns to empty state (no file persisted)","[STATE] 5MB file within 9.5MB limit accepted
+[STATE] 24MB file exceeding 9.5MB limit rejected with clear error
 [DOM] Error message references size limit
 [STATE] Upload area clean after rejection","[CONSOLE] No 500 server errors on oversized upload
 [NETWORK] Upload API returns 4xx for oversized file; 200 for 5MB file","5MB file rejected incorrectly; 24MB file accepted; server 500 on oversized upload; UI frozen after oversized upload attempt","Remove uploaded files; navigate away",,"Manual"
 "CFG-FILE-009","File Section — Re-Upload After Failed Attempt Works Correctly","Configurable Products > File Section > Upload Recovery","Medium","BL-CAT-006","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+User logged in as {{USER_EMAIL}}. Product with required File section at {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=@td(CFG_REQUIRED_FILE_CHILD.url)","[NAV] {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)
 [WAIT] Configuration widget visible
 [ACT] Upload download.avif (unsupported type — will be rejected)
 [WAIT] Rejection response
@@ -354,31 +354,37 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [API] addItem succeeds after text filled — errors[] empty","Button enabled with empty required text; cart item added with empty text; button not re-enabling after text entered","Remove item from cart after test","VCST-4829","Manual"
 "CFG-TEXT-009","Text Section — Paste-Bypass Triggers max_length_exceeded i18n Error and Backend Rejection","Configurable Products > Text Section > Server-Side Validation","High","BL-CAT-006; BL-CART-006","ECL-7.2; ECL-14.5","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. Both PR #107 (backend XCart validator) and PR #2235 (frontend MAX_LENGTH from section + max_length_exceeded i18n key) deployed to QA. Active locale = en (default).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327, over_limit_text=""ThisStringIsThirtyOneCharsLong!"" (31 chars)","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30 (section id @td(CFG_017_SECTIONS.Text)). Both PR #107 (backend XCart validator) and PR #2235 (frontend MAX_LENGTH from section + max_length_exceeded i18n key) deployed to QA. Active locale = en (default). NOTE: the client-side bypass check uses a REAL clipboard paste (Ctrl+C/Ctrl+V), never a scripted DOM value-set — a scripted page.evaluate() value-set does not exercise any real user path and several browsers already truncate a genuine paste at the native maxlength attribute, so it proves nothing a real paste wouldn't.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327, over_limit_text=""ThisStringIsThirtyOneCharsLong!"" (31 chars)","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
 [ASSERT] Text input visible; input has maxlength=""30"" attribute (DOM check)
-[ACT] Bypass HTML maxlength via programmatic value set: page.evaluate(() => { const el = document.querySelector('[data-test=section-text-fieldset] input, .section-text-fieldset input, input[name*=customText]'); el.value = 'ThisStringIsThirtyOneCharsLong!'; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); })
+[ACT] focus 'Search' field in site header (neutral scratch field for staging clipboard text)
+[ACT] type the 31-char string 'ThisStringIsThirtyOneCharsLong!' into the 'Search' field
+[KEY] Ctrl+A to select the typed text
+[KEY] Ctrl+C to copy the selected text to the system clipboard (real browser copy — no scripted DOM edit)
+[ACT] clear the 'Search' field
+[ACT] focus the required 'Text section' input
+[KEY] Ctrl+V to paste the clipboard content into the 'Text section' input (real user paste action)
 [WAIT] Vue reactivity flush (300ms)
-[ASSERT] Inline validation error visible under text input — exact text ""Text must not exceed 30 characters"" (en locale; max param = 30)
-[ASSERT] Error text comes from i18n key shared.catalog.product_details.product_configuration.max_length_exceeded (DOM has data-i18n attribute or text matches en.json translation)
-[ACT] Click 'Add to Cart'
-[WAIT] Network response
-[ASSERT] Add-to-cart blocked by client validation (no addItem mutation fired) OR addItem mutation fires and backend rejects with errorCode CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED
+[ASSERT] Observe outcome: either the native maxlength attribute truncated the pasted value to 30 chars (expected HTML behavior — not itself a bug), or if the full 31-char value landed, inline validation error visible under text input — exact text ""Text must not exceed 30 characters"" (en locale; max param = 30)
+[ASSERT] If an error is shown, its text comes from i18n key shared.catalog.product_details.product_configuration.max_length_exceeded (DOM has data-i18n attribute or text matches en.json translation)
+[API] Independent of the client-side outcome above, call the addItem GraphQL mutation directly against the same product (bypassing the UI entirely — a legitimate API-layer adversarial check, not a DOM trick) with configurationSections: [{ sectionId: ""@td(CFG_017_SECTIONS.Text)"" type: ""Text"" customText: ""ThisStringIsThirtyOneCharsLong!"" }], authenticated as {{USER_EMAIL}}
+[ASSERT] verify the addItem response for this over-limit API call rejects the value server-side
 [ACT] Clear input via UI; type valid 18-char text 'Engraved with Love'
 [WAIT] Validation re-run
 [ASSERT] Inline error cleared; Add-to-Cart enabled
 [ACT] Click 'Add to Cart'
 [WAIT] Success notification
-[ASSERT] Item added to cart with valid text","[STATE] Programmatic value-set bypasses HTML maxlength but client-side validator catches over-limit input
-[DOM] Error message text matches i18n key max_length_exceeded with max=30 substituted
-[STATE] Add-to-Cart blocked while error present
+[ASSERT] Item added to cart with valid text","[STATE] A genuine clipboard paste of 31 chars is either truncated to 30 by native maxlength, or — if it lands in full — caught by the client-side validator with the correct i18n error
+[DOM] When shown, error message text matches i18n key max_length_exceeded with max=30 substituted
+[STATE] The direct API-layer addItem call with a 31-char customText is rejected by the backend independent of any client-side outcome
+[STATE] Add-to-Cart blocked while a client-visible error is present
 [STATE] Error clears when input replaced with valid-length text
-[STATE] Successful add-to-cart with 18-char text","[CONSOLE] No JS errors during programmatic input or validation
-[NETWORK] If addItem fires with over-limit text: response body validationErrors[] contains errorCode CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED (PR #107 server-side enforcement)
-[NETWORK] Successful addItem (18-char) returns 200 with no validationErrors
+[STATE] Successful add-to-cart with 18-char text","[CONSOLE] No JS errors during the real clipboard paste or validation
+[NETWORK] The direct API-layer addItem call (31-char customText) response body validationErrors[] contains errorCode CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED (PR #107 server-side enforcement)
+[NETWORK] Successful addItem (18-char, via UI) returns 200 with no validationErrors
 [I18N] Switching locale to fr — error becomes ""Le texte ne doit pas dépasser 30 caractères"" (locales/fr.json max_length_exceeded)
-[API] addItem GraphQL response shape matches BL-GQL-001 (errors[] empty when validation surfaces via validationErrors)","Over-limit text accepted without inline error (PR #2235 not deployed or i18n key not loaded); error message is generic ""invalid"" instead of localized max_length_exceeded; max parameter shown as ""{max}"" literal (i18n interpolation broken); backend silently accepts over-limit text (PR #107 not deployed); add-to-cart succeeds with 31-char text in cart","Remove item from cart after test","VCST-4806; PR #107 (backend CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED); PR #2235 (frontend max_length_exceeded i18n + section.maxLength binding); locales/en.json max_length_exceeded; Synced: VCST-4806 (2026-04-13)","Manual"
+[API] addItem GraphQL response shape matches BL-GQL-001 (errors[] empty when validation surfaces via validationErrors)","Real paste lands at 31 chars with no inline error and no native truncation (PR #2235 gap); error message is generic ""invalid"" instead of localized max_length_exceeded; max parameter shown as ""{max}"" literal (i18n interpolation broken); direct API-layer addItem call with 31-char customText accepted without validationErrors (PR #107 not deployed); add-to-cart succeeds with 31-char text in cart","Remove item from cart after test","VCST-4806; PR #107 (backend CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED); PR #2235 (frontend max_length_exceeded i18n + section.maxLength binding); locales/en.json max_length_exceeded; Synced: VCST-4806 (2026-04-13)","Manual"
 "CFG-TEXT-019-COND-TOAST","Text Section (Conditional Required) — Toast Save with Empty Required Text Field Must Not Persist to Cart","Configurable Products > Text Section > Toast Validation","Critical","BL-CAT-006","ECL-14.1; ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Storefront accessible. User authenticated. Wedding cake product deployed: {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake. Product already in cart (lineItemId in URL) with Base+Creme selected. PDP in edit mode (Update cart button visible). Message option selected — Custom text required section (type=Text, isRequired=true, dependsOn=Message section) is visible and empty. Toast ""The product configuration has been changed"" is visible with a Save button. Note: this test specifically exercises the conditional Text section path (Custom text required appears only when Message has a value).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, pdp_url={{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake, product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id), section_custom_text_id=@td(CFG_023_SECTIONS.Text), section_message_id=@td(CFG_023_SECTIONS.Message), expected_behavior=toast Save blocked or server rejects, invalid_cart_signal=Required sections are missing","--- STOREFRONT ---
