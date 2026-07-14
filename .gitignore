@@ -36,6 +36,12 @@ project-profile.json
 reports/regression/REG-*/**/*.png
 reports/regression/REG-*/**/*.har
 reports/regression/REG-*/**/*.jpg
+# Per-FAIL failure traces (network + parsed stack traces) — disposable evidence
+# referenced from the report; may carry redacted-but-sensitive bodies, and this
+# repo is public, so never commit them. The `*` run-dir segment covers BOTH
+# regression (REG-*) and smoke (SMOKE-*) runs — both write to reports/regression/.
+reports/regression/*/traces/*.json
+vc/shared/reports/regression/*/traces/*.json
 reports/test-lifecycle/TLC-*/**/*.png
 reports/test-lifecycle/TLC-*/**/*.har
 reports/test-lifecycle/TLC-*/**/*.jpg

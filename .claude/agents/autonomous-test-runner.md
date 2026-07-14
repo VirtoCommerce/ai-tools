@@ -153,7 +153,9 @@ SendMessage: to {{ORCHESTRATOR_NAME}}
 5. **Evaluate Assertions** — BL-* violation = FAIL even if DOM passed.
 6. **Cross-Layer Checks** — GraphQL mutations MUST have empty `errors[]`.
 7. **Cleanup** — always execute; failures logged separately.
-8. **Evidence** — FAIL only (screenshot + console + network). PASS relies on HAR. `browser_take_screenshot` **must** get an explicit full path `reports/regression/{{RUN_ID}}/screenshots/{TC-ID}-FAIL-{desc}.png` (naming per `.claude/rules/reports.md` §7) — **never a bare filename**, which resolves against the MCP server CWD (repo root) and drops loose PNGs there.
+8. **Evidence** — **real FAIL only** (NOT `BLOCKED`/`SKIPPED`/`AMBIGUOUS`). PASS relies on HAR.
+   - `browser_take_screenshot` **must** get an explicit full path `reports/regression/{{RUN_ID}}/screenshots/{TC-ID}-FAIL-{desc}.png` (naming per `.claude/rules/reports.md` §7) — **never a bare filename**, which resolves against the MCP server CWD (repo root) and drops loose PNGs there.
+   - **Write a failure trace** (plain `Write`) to `reports/regression/{{RUN_ID}}/traces/{TC-ID}-FAIL-trace.json`, set the case's `trace` field to it. Capture, live: `networkFailures[]` (each 4xx/5xx + every 200 with GraphQL `errors[]` → `browser_network_request` for `{method,url,status,requestBodySnippet ≤500c,responseBodySnippet ≤1KB,graphqlErrors}`) and `consoleErrors[]` from `browser_console_messages` (level error) **with the full stack preserved and parsed** into `{level, message:<first line>, stack:[<frame>,…]}`. Add `failedAssertion`, `url`, `capturedAt`. **Redact** any Authorization header / token / password / PAN as `<redacted>` (gitignored, but the repo is public). Same shape as `test-runner-agent.md` §Failure trace file.
 9. **Record result** — PASS | FAIL | BLOCKED | SKIPPED — then **rewrite `{{OUTPUT_FILE}}` in place** (this case `PENDING` → verdict + evidence, summary counts refreshed). Overwrite the whole file; it is cheap and idempotent. Drives the live per-case dashboard.
 
 **Do NOT send prose progress to orchestrator between tests beyond the announce.** Final summary only.
@@ -219,6 +221,7 @@ JSON to `{{OUTPUT_FILE}}`:
       "title": "…", "section": "…", "priority": "High",
       "businessRule": "BL-CART-002", "edgeCaseRefs": "ECL-7.3",
       "failedAssertion": "…", "screenshot": "reports/regression/{{RUN_ID}}/screenshots/SMK-008-FAIL-cart-total.png",
+      "trace": "reports/regression/{{RUN_ID}}/traces/SMK-008-FAIL-trace.json",
       "consoleErrors": ["…"], "networkErrors": ["…"], "notes": ""
     }
   ],

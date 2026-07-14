@@ -34,6 +34,9 @@ interface NormCase {
   evidenceFile: string | null;
   screenshots: string[];
   consoleErrors: string[];
+  /** Run-dir-relative path to the per-FAIL failure trace JSON (network + parsed
+   * stack traces), or null. Written by the runner for real FAILs only. */
+  trace: string | null;
 }
 
 interface NormSuite {
@@ -351,8 +354,8 @@ function toRunRelPath(p: string, runId: string, byBase?: Map<string, string>): s
   const marker = `${runId}/`;
   const i = s.indexOf(marker);
   if (i >= 0) return s.slice(i + marker.length);
-  // Fallback: keep only the last evidence/screenshots segment onward.
-  const m = s.match(/(?:^|\/)((?:evidence|screenshots)\/.+)$/i);
+  // Fallback: keep only the last evidence/screenshots/traces segment onward.
+  const m = s.match(/(?:^|\/)((?:evidence|screenshots|traces)\/.+)$/i);
   if (m) return m[1];
   // A bare filename (no directory) that matched no in-run file is unresolvable
   // (misplaced/never-captured) — drop it rather than emit a broken link.
@@ -406,6 +409,14 @@ function normalizeSuite(raw: any, allShots: string[], runId: string): NormSuite 
   const caseShots = (c: any): string[] =>
     [...new Set([...explicitCaseShots(c, runId, byBase), ...shotsForCase(String(c.id ?? ""), allShots)])];
 
+  // Per-FAIL failure trace (network + parsed stack traces). Runner records it as
+  // a repo-root-relative path; normalize to run-dir-relative, or null if absent.
+  const caseTrace = (c: any): string | null => {
+    const v = c?.trace;
+    if (typeof v !== "string" || !v.trim()) return null;
+    return toRunRelPath(v, runId, byBase) || null;
+  };
+
   if (Array.isArray(raw.cases)) {
     // Smoke shape: cases[{id, title, status|verdict, expected?, actual?, evidence?, notes?}]
     for (const c of raw.cases) {
@@ -420,6 +431,7 @@ function normalizeSuite(raw: any, allShots: string[], runId: string): NormSuite 
         evidenceFile: null,
         screenshots: caseShots(c),
         consoleErrors: Array.isArray(c.consoleErrors) ? c.consoleErrors : [],
+        trace: caseTrace(c),
       });
     }
   } else if (Array.isArray(raw.testCases)) {
@@ -437,6 +449,7 @@ function normalizeSuite(raw: any, allShots: string[], runId: string): NormSuite 
         evidenceFile,
         screenshots: caseShots(c),
         consoleErrors: Array.isArray(c.consoleErrors) ? c.consoleErrors : [],
+        trace: caseTrace(c),
       });
     }
   }
@@ -466,6 +479,7 @@ function normalizeSuite(raw: any, allShots: string[], runId: string): NormSuite 
         evidenceFile: null,
         screenshots: unmatched,
         consoleErrors: [],
+        trace: null,
       });
     }
   }
@@ -701,6 +715,11 @@ function renderCaseRow(c: NormCase, runDir: string, embed: boolean): string {
   if (c.evidenceFile) {
     evidenceCell.push(
       `<div class="ev-link"><a href="${escapeHtml(c.evidenceFile)}" target="_blank">${escapeHtml(c.evidenceFile)}</a></div>`
+    );
+  }
+  if (c.trace) {
+    evidenceCell.push(
+      `<div class="ev-link ev-trace"><a href="${escapeHtml(c.trace)}" target="_blank" title="Failure trace: network + parsed stack traces">🩺 failure trace</a></div>`
     );
   }
   if (c.screenshots.length > 0) {

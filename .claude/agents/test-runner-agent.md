@@ -123,8 +123,14 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 6. **Cross-Layer Checks** — GraphQL mutations MUST have empty `errors[]`.
 7. **Cleanup** — execute `Cleanup` column after every test (pass or fail). Cleanup failures logged separately, do NOT affect result.
 8. **Evidence**:
-   - FAIL → `browser_take_screenshot` **with an explicit full path** `reports/regression/{{RUN_ID}}/screenshots/{TC-ID}-FAIL-{desc}.png` (naming per `.claude/rules/reports.md` §7). **Never pass a bare filename** — a relative filename resolves against the MCP server's CWD (the repo root) and litters loose PNGs there; the config `outputDir` does **not** apply to an explicit `filename`. Then capture console errors + relevant network requests.
-   - PASS → no extra capture (HAR covers traffic).
+   - **FAIL (a real defect only — NOT `BLOCKED` / `SKIPPED` / `AMBIGUOUS`; those are infra/fixture/step problems, not failures, and get no trace):**
+     1. `browser_take_screenshot` **with an explicit full path** `reports/regression/{{RUN_ID}}/screenshots/{TC-ID}-FAIL-{desc}.png` (naming per `.claude/rules/reports.md` §7). **Never pass a bare filename** — a relative filename resolves against the MCP server's CWD (the repo root) and litters loose PNGs there; the config `outputDir` does **not** apply to an explicit `filename`.
+     2. **Write a failure trace** (a plain `Write`, not a browser action) to `reports/regression/{{RUN_ID}}/traces/{TC-ID}-FAIL-trace.json` and set this case's `trace` field to that same path. The trace is the deep-dive forensic record kept **with the report** and linked from the HTML dashboard. Assemble it live:
+        - **Network failures** — from `browser_network_requests`, pick every 4xx/5xx **and** every 200 whose JSON body carries a non-empty GraphQL `errors[]`. For each, use `browser_network_request` to record `{ method, url, status, requestBodySnippet (≤500 chars), responseBodySnippet (≤1 KB), graphqlErrors }`.
+        - **Console errors with stack traces, properly parsed** — from `browser_console_messages` (level `error`), keep the **full multi-line text including every stack frame** (do NOT collapse to one line). Parse each into `{ level, message: <first line>, stack: [<frame>, <frame>, …] }`, one array entry per `at …` frame (`file:line:col`).
+        - Also record `failedAssertion`, page `url` at failure, and `capturedAt` (ISO).
+        - **Redact secrets** before writing: replace any `Authorization` header, bearer token, password, or PAN with `<redacted>` (these traces are gitignored, but the repo is public — never persist a live token).
+   - **PASS / BLOCKED / SKIPPED / AMBIGUOUS** → no screenshot, no trace (HAR covers PASS traffic; the others are not real failures).
 9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED — then **rewrite `{{OUTPUT_FILE}}` in place** (update this case's entry from `PENDING` to its verdict + evidence, refresh the `passed`/`failed`/`blocked`/`skipped` counts). Overwrite the whole file each time; it is cheap and idempotent. This drives the live per-case dashboard.
 
 **Do NOT narrate progress between tests beyond the announce line.** No prose summaries — results go to JSON.
@@ -178,6 +184,7 @@ JSON to `{{OUTPUT_FILE}}`:
       "businessRule": "BL-CART-002", "edgeCaseRefs": "ECL-7.3",
       "failedAssertion": "[MATH] line total = unit price × quantity",
       "screenshot": "reports/regression/{{RUN_ID}}/screenshots/SMK-008-FAIL-cart-total.png",
+      "trace": "reports/regression/{{RUN_ID}}/traces/SMK-008-FAIL-trace.json",
       "consoleErrors": ["…"], "networkErrors": ["…"],
       "notes": ""
     }
@@ -200,6 +207,35 @@ JSON to `{{OUTPUT_FILE}}`:
 ```
 
 **PASS rows**: `{id, status: "PASS"}` only — omit empty fields. **FAIL/BLOCKED/SKIPPED rows**: full detail. **Ratios**: `passRate = (passed / totalCases * 100).toFixed(1) + "%"`.
+
+### Failure trace file (real FAIL only — Phase 2 step 8b)
+
+Written to `reports/regression/{{RUN_ID}}/traces/{TC-ID}-FAIL-trace.json`, referenced by the case's `trace` field, gitignored (secrets-redacted; the repo is public). Shape:
+
+```json
+{
+  "caseId": "SMK-008", "suiteId": "{{SUITE_ID}}", "runId": "{{RUN_ID}}",
+  "capturedAt": "<ISO>", "url": "<page URL at failure>",
+  "failedAssertion": "[MATH] line total = unit price × quantity",
+  "networkFailures": [
+    {
+      "method": "POST", "url": "/graphql (SearchProducts)", "status": 500,
+      "requestBodySnippet": "{\"query\":\"…\"}",
+      "responseBodySnippet": "{\"errors\":[{\"message\":\"…\"}]}",
+      "graphqlErrors": ["Object reference not set to an instance of an object"]
+    }
+  ],
+  "consoleErrors": [
+    {
+      "level": "error",
+      "message": "TypeError: Cannot read property 'price' of undefined",
+      "stack": ["at ProductCard.vue:47:12", "at renderList (runtime-core.esm.js:2233)", "…"]
+    }
+  ]
+}
+```
+
+Only real FAILs get a trace — a `BLOCKED`/`SKIPPED`/`AMBIGUOUS` row never sets `trace`.
 
 ## Error Handling
 

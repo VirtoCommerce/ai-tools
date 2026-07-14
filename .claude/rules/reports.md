@@ -82,7 +82,9 @@ Example good: `Console Error: "Unhandled promise rejection: TypeError: Cannot re
 **Network — capture:** 4xx/5xx, requests with `errors[]` in response, requests >2s. **Skip:** every successful 200, full HAR contents.
 Format: `Failed: POST /graphql (SearchProducts) → 500 Internal Server Error`
 
-**HAR files:** captured automatically by browser config, stored in `test-results/{browser}/har/` (gitignored). Reference by filename — never inline the data.
+**HAR files:** captured automatically by browser config, stored in `test-results/{browser}/har/` (gitignored). Reference by filename — never inline the data. Note: the HAR path is **per-browser-lane, not per-run** — every suite on a browser appends to the same file, so it is not a reliable per-failure record. The per-FAIL trace below is what isolates a single failure.
+
+**Failure trace (real FAIL only):** on a real `FAIL` — never `BLOCKED`/`SKIPPED`/`AMBIGUOUS` — the runner writes `reports/regression/{RUN_ID}/traces/{TC-ID}-FAIL-trace.json` (kept **with** the run report, linked from the HTML dashboard, gitignored). It carries the isolated `networkFailures[]` (4xx/5xx + GraphQL `errors[]`, with request/response body snippets) and `consoleErrors[]` **with full stack traces parsed into frames**. Secrets (Authorization/token/password/PAN) are redacted before writing — the repo is public. Schema + capture rules: `.claude/agents/test-runner-agent.md` §Failure trace file. Don't duplicate the trace contents into the markdown — reference the file.
 
 ## 7. Naming Conventions
 
@@ -92,6 +94,9 @@ Screenshots:
   {TC-ID}-{description}.png           → TC-001-checkout-confirmation.png
   BUG-{short-name}-{detail}.png       → BUG-price-display-configurable.png
   {component}-{state}-{viewport}.png  → product-card-hover-mobile.png
+
+Failure traces (real FAIL only):
+  {TC-ID}-FAIL-trace.json            → SMK-008-FAIL-trace.json  (in traces/)
 
 Reports:
   Bug:           BUG-{Short-Description}.md
@@ -105,6 +110,7 @@ Reports:
 | Artifact | Lives at | Cite as |
 |----------|----------|---------|
 | HAR files | `test-results/{browser}/har/` | "HAR: `checkout-2026-05-21.har`" |
+| Failure trace (real FAIL) | `reports/regression/{RUN_ID}/traces/{TC-ID}-FAIL-trace.json` | Link from the case row; don't inline the JSON |
 | Full screenshot set | `reports/bugs/screenshots/` | Link 1–2 inline; reference the folder |
 | Test data | `test-data/aliases.json` | `@td(ALIAS.field)` — don't paste rows |
 | BL/ECL invariants | `knowledge/oracles/business-logic.md` | Cite the ID (`BL-AUTH-005`), not the body |
