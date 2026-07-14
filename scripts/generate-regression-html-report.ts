@@ -567,7 +567,10 @@ function loadAllSuites(runDir: string): NormSuite[] {
  * Real results always win — status only supplies placeholders for missing suites.
  */
 function mergeStatus(suites: NormSuite[], status: RunStatus | null, runId: string): NormSuite[] {
-  const runInProgress = statusIsInProgress(status);
+  // Only treat suites as live when the shared status file belongs to THIS run —
+  // otherwise an older completed run rendered while a different run is in progress
+  // would mis-flag its suites as "running" (and pre-expand them).
+  const runInProgress = statusIsInProgress(status) && status?.runId === runId;
   // Stamp liveStatus onto suites that DID write (partial or full) results.
   // A suite whose run-status entry still says "running" keeps its case rows but
   // is presented as live; anything else settles to "done".
@@ -755,7 +758,7 @@ function suiteAttachmentCounts(s: NormSuite): { shots: number; ev: number } {
   return { shots, ev };
 }
 
-function renderSuiteRow(s: NormSuite, runDir: string, embed: boolean, openByDefault: boolean): string {
+function renderSuiteRow(s: NormSuite, runDir: string, embed: boolean): string {
   const isRunning = s.liveStatus === "running";
   // Placeholder row for a suite that has not yet written ANY case records
   // (pending, or running but no results file yet).
@@ -785,8 +788,10 @@ function renderSuiteRow(s: NormSuite, runDir: string, embed: boolean, openByDefa
     att.shots + att.ev > 0
       ? `<span class="att-badge" title="${att.shots} screenshot(s), ${att.ev} evidence file(s)">📎 ${att.shots + att.ev}</span>`
       : "";
-  // Running suites AND failing suites open by default so you can watch cases flip.
-  const open = openByDefault || isRunning;
+  // Only a live, currently-running suite is pre-expanded (so you can watch cases
+  // flip). In a completed run every suite renders collapsed — click a row, or use
+  // "Expand all", to open it.
+  const open = isRunning;
   const openCls = open ? " open" : "";
   const hiddenCls = open ? "" : " hidden";
   const decided = s.passed + s.failed;
@@ -964,7 +969,7 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
     0
   );
   const suiteRows = allSuites
-    .map((s) => renderSuiteRow(s, runDir, embed, s.failed > 0))
+    .map((s) => renderSuiteRow(s, runDir, embed))
     .join("\n");
 
   const bugRows = allBugs
@@ -1248,7 +1253,7 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
   ${renderGallery(attachments, runDir, embed)}
 
   <h2>Suite Results
-    <span class="h2-sub">Suites with failures are pre-expanded</span>
+    <span class="h2-sub">${inProgress ? "Running suites are pre-expanded — watch cases flip live" : "Click a row, or “Expand all”, to open a suite"}</span>
   </h2>
   <div class="controls">
     <input type="text" id="filter" placeholder="Filter by suite name or ID..."/>
