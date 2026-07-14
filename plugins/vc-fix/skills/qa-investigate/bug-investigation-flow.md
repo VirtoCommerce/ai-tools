@@ -57,11 +57,16 @@ Insights resource pair all differ per env.** A bug confirmed on the wrong env is
 4. **Discover the matching App Insights resource** for this env (Section 9 — by matching the active
    `BACK_URL`/`FRONT_URL`, not by assuming a fixed name; some envs like `localhost`/fresh demos have none).
    Record what you found now so every KQL query in Section 9 targets the right resource.
-5. **Capture the deployed build versions** for this env — **authoritative source is the deploy repo
-   `VirtoCommerce/vc-deploy-dev`** via GitHub MCP `get_file_contents`, on the branch matching `TEST_ENV`
-   (`vcst-qa` default; `vcptcore` / `virtostart` for other envs):
-   - `backend/packages.json` → `PlatformVersion` + every module id with its version (P1 version-skew, §8C window anchor)
-   - `theme/artifact.json` → theme package version (from the artifact URL)
+5. **Capture the deployed build versions** for this env — **the source branches on
+   `profile.buildVerify.source`** (`tracker-ops.md` §5; `vc-deploy-dev` is VirtoCommerce-internal, so a
+   client deployment has no access):
+   - **`vc-deploy-dev`** (native platform; also the default when the source is `""`/absent) — read the
+     deploy repo `VirtoCommerce/vc-deploy-dev` via GitHub MCP `get_file_contents`, on the branch matching
+     `TEST_ENV` (`vcst-qa` default; `vcptcore` / `virtostart` for other envs):
+     - `backend/packages.json` → `PlatformVersion` + every module id with its version (P1 version-skew, §8C window anchor)
+     - `theme/artifact.json` → theme package version (from the artifact URL)
+   - **`modules-endpoint`** (client) — `GET {BACK_URL}/api/platform/modules` with an admin token; the
+     deployment reports its own Platform + module versions (theme/storefront from the storefront or the ticket).
    - `{BACK_URL}/#!/workspace/systeminfo` is a **live cross-check** of what's actually running — if it
      disagrees with the manifest, the deploy didn't land (or a different branch is live); note the mismatch.
    These versions are the anchor for the report header, P1, and the regression window in §8C.
@@ -524,13 +529,15 @@ a new exception spike in App Insights §9 after a deploy, or a version-skew P1).
 ### Step 1: Bracket the regression window
 
 Pin the two builds that bracket the break — the last known-good and the first known-bad:
-- **From the deploy timeline:** the platform/theme/module versions in the env header (§1, from
-  `vc-deploy-dev` `backend/packages.json` + `theme/artifact.json`) and §9's before/after deploy comparison
-  give you the bad build's date and version. Walk `vc-deploy-dev`'s commit history on those manifest files
+- **From the deploy timeline:** the platform/theme/module versions in the env header (§1) and §9's
+  before/after deploy comparison give you the bad build's date and version. On a **native platform** env
+  (`buildVerify.source = vc-deploy-dev`) walk `vc-deploy-dev`'s commit history on the manifest files
   (`list_commits path=backend/packages.json`) to find **when the suspect module's version changed** — that
-  deploy commit dates the regression window.
+  deploy commit dates the regression window. On a **client** deployment (`modules-endpoint`) there is no
+  `vc-deploy-dev` access — bracket the window from `/api/platform/modules` snapshots + the module's own
+  release notes/tags instead.
 - **A known-good reference:** the version on an env where it still works (P1 version skew — "works on
-  qa, fails on staging"), the last passing regression run for this suite, or the JIRA "affects version".
+  qa, fails on staging"), the last passing regression run for this suite, or the tracker's "affects version" field.
 
 ### Step 2: Walk the commit history on the owning line of code
 
@@ -553,11 +560,11 @@ half holds the change, repeat.
 Once you have the suspect commit, open its PR to recover *why* the change was made:
 
 ```
-search_issues: repo=VirtoCommerce/vc-module-pricing  type:pr <commit-sha OR JIRA-key OR keyword>
+search_issues: repo=VirtoCommerce/vc-module-pricing  type:pr <commit-sha OR ticket-key OR keyword>
 get_pull_request / get_pull_request_files: <PR number>
 ```
 
-- The PR title/description + linked JIRA tell you the **intended** behavior change.
+- The PR title/description + linked ticket tell you the **intended** behavior change.
 - `get_pull_request_files` shows the full blast radius — was your symptom an unintended side effect of a
   fix for something else? A renamed field, a tightened filter, a new null-guard that's too aggressive?
 - A regression here is usually **"fixed A, broke B"** — name both so the fixer doesn't reintroduce A.
@@ -742,7 +749,7 @@ When App Insights reveals server-side details, add to the bug report:
 
 **When likely flaky:** Check for race conditions (API timing, animation), test data pollution from prior runs, ES index lag (wait 5s and retry), environment warmup (first request after deploy).
 
-**When genuinely intermittent:** Document exact conditions, note reproduction rate in bug report (e.g., "3/10 attempts"), tag with "intermittent" label in JIRA.
+**When genuinely intermittent:** Document exact conditions, note reproduction rate in bug report (e.g., "3/10 attempts"), tag with the "intermittent" label in the tracker.
 
 ---
 

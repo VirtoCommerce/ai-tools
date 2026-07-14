@@ -44,7 +44,7 @@ Apply the project's evidence capture policy and output path conventions. Use bef
 | Tier | Use When | Content |
 |------|----------|---------|
 | **Compact** | Regression suite pass, smoke run | Pass/fail table + bug list only |
-| **Detailed** | Sprint testing, JIRA ticket testing | Full test case results + evidence |
+| **Detailed** | Sprint testing, tracker ticket testing | Full test case results + evidence |
 | **Sign-Off** | Pre-release, stakeholder review | Detailed + summary + risk assessment |
 
 ### Output Paths

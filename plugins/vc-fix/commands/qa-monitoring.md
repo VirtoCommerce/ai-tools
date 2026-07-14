@@ -78,8 +78,10 @@ and the triage agent (`monitor-triage-agent`).
   Backend signals may be confirmed via a real API/Admin interaction. Confirm a second
   source before treating a payload-only signal as a bug (`feedback_verify_payload_bugs_second_source`).
 - **Reproduced** → draft a bug report to `reports/bugs/open/BUG-AI-<fp>-<date>.md` with the
-  standard structure **and the `## Fix Routing` block** (so `/qa-fix` can pick it up).
-  **Not reproduced** → list as NEEDS_REVIEW; do not draft.
+  standard structure **and the `## Fix Routing` block** — the same profile-based contract
+  `commands/qa-bug.md` defines, including its client|platform **Ownership hint** (a hint only;
+  `/qa-fix` Gate 1/1b decides ownership from the profile). So the draft carries no native-only
+  repo assumption. **Not reproduced** → list as NEEDS_REVIEW; do not draft.
 
 ## Phase 5 — Report + notify + STOP
 - Write `reports/monitoring/MONITOR-YYYY-MM-DD-HHMM/{monitoring-report.md,summary.json}`
@@ -87,8 +89,9 @@ and the triage agent (`monitor-triage-agent`).
   Persist the updated fingerprint store. Send the Teams card:
   `MONITOR_RUN_ID=<run-id> npx tsx skills/qa-monitoring/notify-teams.ts` (no-ops if
   `TEAMS_WEBHOOK_URL` is unset).
-- **STOP.** Present the confirmed drafts and ask the user whether to file a bug
-  (`/qa-bug`) or attempt a fix (`/qa-fix`). Do not do either automatically.
+- **STOP.** Present the confirmed drafts and hand off to `/qa-bug` (file) or `/qa-fix`
+  (attempt a fix) — **the profile decides the tracker** (Jira / Azure Boards) and repo route,
+  not this command. Do not file or fix automatically.
 
 ---
 

@@ -33,7 +33,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - Capture platform + theme versions for the report header
 
 3. **Reproduce the bug:**
-   - If a JIRA ticket is provided, fetch details via Atlassian MCP
+   - If a ticket key is provided, resolve details via the profile's tracker (`tracker-ops.md` §2 — Jira MCP `getJiraIssue` / Azure `ado.mjs get-workitem`)
    - Extract exact URL, user action, expected vs actual behavior
    - Attempt reproduction using the appropriate browser (Playwright MCP) on the resolved env
    - Try at least 3 reproduction attempts before declaring "cannot reproduce"
@@ -70,7 +70,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
    - For regressions, add the **Regression block** (§8C Step 4): introducing commit/PR, first-bad & last-good versions, why it broke, revert-safe vs. fix-forward
    - Save to `reports/bugs/`
-   - Optionally create JIRA ticket via Atlassian MCP
+   - Optionally create a tracker ticket via `/qa-bug` Step 5 (tracker-ops Create — Jira `createJiraIssue` / Azure `ado.mjs create-workitem`)
 
 ## Rules
 - **Resolve `TEST_ENV` first** — every URL/credential/App Insights resource is per-env; discover the App Insights resource by matching the active URLs, never hardcode an env name

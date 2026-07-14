@@ -73,7 +73,7 @@ rows fire only when the trigger applies.
 | 9 | **REST cross-check** (call the API directly) | "GraphQL wrong — is REST too?" | `browser_evaluate` `fetch()` / Postman+Newman | `network/rest-crosscheck-*.json` | C |
 | 10 | **App Insights trace** for the op ID | any REST/xAPI/Admin/job layer | Azure MCP `applicationinsights` KQL (flow §9) → save result | `network/appinsights-<opId>.json` | **M\*** |
 | 11 | **Hangfire** Failed/Scheduled state | "didn't happen" symptom (P8) | `{BACK_URL}/hangfire` screenshot | `screenshots/hangfire-*.png` | C |
-| 12 | **Deployed versions** (platform + modules + theme) | always (header + P1 + §8C) | **`vc-deploy-dev` `backend/packages.json` + `theme/artifact.json`** via GitHub MCP (branch = `TEST_ENV`: `vcst-qa`/`vcptcore`/`virtostart`) — authoritative; `{BACK_URL}/#!/workspace/systeminfo` is a live cross-check | manifest header | **M** |
+| 12 | **Deployed versions** (platform + modules + theme) | always (header + P1 + §8C) | per `profile.buildVerify.source` (`tracker-ops.md` §5): native → **`vc-deploy-dev` `backend/packages.json` + `theme/artifact.json`** via GitHub MCP (branch = `TEST_ENV`: `vcst-qa`/`vcptcore`/`virtostart`); client → `{BACK_URL}/api/platform/modules`. `{BACK_URL}/#!/workspace/systeminfo` is a live cross-check | manifest header | **M** |
 | 13 | **Source evidence** (file path + line + quote) | browser/logs don't explain it | GitHub MCP `search_code` / `get_file_contents` (flow §8) | `source/findings.md` | C |
 | 14 | **Reproduction rate** (X/10) | intermittent | note in manifest | `evidence-index.md` | C |
 

@@ -1,5 +1,5 @@
 ---
-description: "Validate VC QA plugin environment: env vars, both surfaces (storefront + Admin SPA), MCP servers, multi-env config, test infrastructure. Read-only, fast (<30s)."
+description: "Validate VC QA plugin environment: env vars, both surfaces (storefront + Admin SPA), MCP servers, the profile's tracker/host connectivity, multi-env config, test infrastructure. Read-only, fast (<30s)."
 argument-hint: "[vars|endpoints|mcp|env]"
 ---
 
@@ -31,8 +31,11 @@ TEST_ENV            : {value or '(unset — defaults to vcst)'}
 ENV_RISK            : {value} — {description: dev/test/staging/production}
 STOREFRONT_PROFILE  : {value} — gates which Frontend suites apply
 MODULES_ENABLED     : {value or '(empty — no filter, all suites run)'}
-JIRA_PROJECT_KEY    : {value}
+Tracker / Host      : {profile.tracker.kind or 'jira (default)'} / {profile.vcs.clientHost or 'github (default)'}  — see check 6
+Ticket key          : {profile.tracker.projectKey/JIRA_PROJECT_KEY (Jira) | 'Azure Boards — numeric id' (azure)}
 ```
+
+Read `project-profile.json` (if present) once to fill the Tracker/Host line and drive check 6; **absent ⇒ native defaults (Jira / GitHub / VirtoCommerce)**, exactly as before.
 
 If `ENV_RISK=production`, add a prominent warning:
 ```
@@ -92,12 +95,12 @@ Check which MCP servers are configured and reachable. Source of truth: customer'
 
 | Server | Gates |
 |--------|-------|
-| `atlassian` | `/qa-bug` JIRA filing, `/qa-fix` ticket transitions, `/qa-verify-fix` |
+| `atlassian` | `/qa-bug` ticket filing, `/qa-fix` transitions, `/qa-verify-fix` — **only when `tracker.kind = jira`** (see check 6) |
 | `context7` | `/vc-docs` (fallback) |
-| `github` | `/qa-fix` PR open/route, `/project-init` repo discovery |
+| `github` | `/qa-fix` PR open/route, `/project-init` repo discovery — **the platform upstream is always GitHub**; a client repo may instead be on Azure Repos (check 6) |
 | `claude_ai_VirtoOZ_for_virtocommerce_com_docs` | `/vc-docs` (primary) |
 
-Optional MCPs missing = warning, not failure. The dependent skill prints a clear error at runtime.
+Optional MCPs missing = warning, not failure. The dependent skill prints a clear error at runtime. **The tracker/host rows are profile-gated** — check 6 probes only the axis the profile actually uses (an Azure-Boards deployment doesn't need `atlassian`; an Azure-Repos client doesn't need `github` for its own code).
 
 ### 5. Plugin Local State
 
@@ -111,9 +114,30 @@ full `vc-qa` plugin only, not shipped here):
 | `reports/bugs/` | Exists (create if missing — `/qa-bug` writes here). |
 | `reports/fixes/` | Exists (create if missing — `/qa-fix` writes here). |
 
----
+### 6. Tracker & Code-Host Connectivity (profile-driven)
 
-## Output Format
+Probe the **actual** tracker and code host the profile selects — not a fixed Jira+GitHub pair — plus
+the topology-required auth env vars for the resolved axes. Read `project-profile.json`
+(`tracker.kind`, `vcs.clientHost`, `upstream.contributionMode`). See
+[`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §1–§4. **No profile ⇒ probe Jira + GitHub —
+the native default, unchanged.**
+
+**Tracker** (`tracker.kind`):
+
+| kind | Probe | Expected | Env vars required |
+|------|-------|----------|-------------------|
+| `jira` (or no profile) | Atlassian MCP `getVisibleJiraProjects` (or `getJiraIssue` on a known key) | project list / issue JSON | Atlassian MCP OAuth **or** `JIRA_API_TOKEN` + `JIRA_EMAIL`; `JIRA_PROJECT_KEY` set |
+| `azure` | `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" list-types` | Bug work-item types as JSON (not an HTML sign-in page) | `ADO_PAT` **or** `ADO_AUTH=az-login`; `ADO_ORG` / `ADO_PROJECT` (else from the profile) |
+
+**Code host** (`vcs.clientHost` for the client's own repos; the platform upstream is always GitHub):
+
+| host | Probe | Expected | Env vars required |
+|------|-------|----------|-------------------|
+| `github` (or no profile) | `gh auth status` (write scope) — or `GH_TOKEN="$GITHUB_FIX_BUGS_TOKEN" gh api repos/<owner>/<repo> --jq .permissions.push` | authenticated / `true` | `GITHUB_FIX_BUGS_TOKEN` (PAT host) **or** a `gh auth login` session (`vcs.auth: gh-cli`) |
+| `azure-repos` | ADO repos REST `GET {base}/_apis/git/repositories/<repo>?api-version=7.1` (or `ado.mjs list-refs`) | repo JSON (not the 203 + HTML sign-in) | `ADO_PAT` **or** `az login` |
+
+- **Platform fork-PR / upstream issue** (`upstream.contributionMode: fork`, or a client filing upstream): needs `GITHUB_FIX_BUGS_TOKEN` (or `gh` session) **regardless** of the client host — the VirtoCommerce upstream is public GitHub.
+- Report each probed axis as UP/DOWN + which env vars are present/missing (never print the token value). A missing var on an axis the profile **does not** use is not a blocker.
 
 ```
 ## /qa-env-check — YYYY-MM-DD HH:MM:SS
@@ -157,6 +181,13 @@ Customer secrets  : 8/8 from .env.local (via _QA suffix promotion)
 | .fix-workspace/               | OK (creatable) |
 | reports/bugs/, reports/fixes/ | OK     |
 
+### Tracker & Host Connectivity (profile-driven)
+| Axis    | Resolved       | Probe               | Status | Auth vars |
+|---------|----------------|---------------------|--------|-----------|
+| Tracker | azure (Boards) | ado.mjs list-types  | UP     | ADO_PAT ✓ |
+| Host    | azure-repos    | ADO repos REST      | UP     | ADO_PAT ✓ |
+| Upstream| fork → GitHub  | gh auth status      | UP     | GITHUB_FIX_BUGS_TOKEN ✓ |
+
 ### Verdict: READY
 (or NOT READY: list specific blockers + remediation hints)
 ```
@@ -171,3 +202,4 @@ Customer secrets  : 8/8 from .env.local (via _QA suffix promotion)
 - For platform health, use `$BACK_URL/health` (NOT `/api/platform/healthcheck` — that path returns 404; see memory `Platform health endpoint`).
 - Fast execution target: < 30 seconds total.
 - When `ENV_RISK=production`, lead the output with the production warning so the user can't miss it.
+- **Probe the profile's actual tracker/host (check 6), not a fixed Jira+GitHub pair** — read `project-profile.json`; absent ⇒ native Jira/GitHub defaults. Only the axis the profile uses gates readiness; never print a token value.

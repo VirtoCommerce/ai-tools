@@ -33,9 +33,9 @@
 ## Naming Conventions
 
 - **Bug reports:** `reports/bugs/open/BUG-{Short-Description}.md` (e.g., `BUG-Guest-Checkout-Email-Validation.md`)
-- **Bug reports with JIRA ref:** `reports/bugs/open/BUG-{Description}-VCST-XXXX.md`
+- **Bug reports with a tracker ref:** `reports/bugs/open/BUG-{Description}-{KEY}.md` — `{KEY}` is the tracker's own key format (Jira `VCST-XXXX`, Azure Boards a bare numeric `12345`)
 - **Bug lifecycle:** `open/` → (verified fix) → `fixed/` | (false positive/won't fix) → `closed/`
-- **Ticket evidence:** `reports/tickets/VCST-XXXX/test-report.md`
+- **Ticket evidence:** `reports/tickets/{KEY}/test-report.md` (e.g. `VCST-XXXX/` on Jira, `12345/` on Azure Boards)
 - **Screenshots:** `{component-name}-{state}-{viewport}.png` or `{test-case-id}-{description}.png`
 - **Test execution reports:** `test-execution-report.md` (one per ticket folder)
 - **Regression reports:** `{suite-name}-report.md` or `{area}-regression-report-YYYY-MM-DD.md`
