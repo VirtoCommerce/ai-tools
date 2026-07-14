@@ -76,10 +76,10 @@
 [WAIT] Wait for dropdown to update after each character
 [ASSERT] Observe final dropdown state with all 6 characters typed","[DOM] 'Products' section appears in dropdown
 [DOM] Each product entry shows thumbnail image, product name (clickable link), and price
-[DOM] At least 4 products shown in autocomplete
+[DOM] At least 1 product preview is shown, with preview count equal to min(total matching products for the query, autocomplete cap) — not an assumed fixed count
 [DOM] 'Hints' section remains visible above Products section
-[DOM] Clear (X) button appears in input when text is present","[NETWORK] POST /graphql (searchProducts) fires with keyword: 'hoodie'
-[CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; fewer than expected products shown; Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002","Manual"
+[DOM] Clear (X) button appears in input when text is present","[NETWORK] POST /graphql (searchProducts) fires with keyword: 'hoodie'; capture response totalCount to cross-check preview count = min(totalCount, autocomplete cap)
+[CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; preview count does not equal min(total matches, autocomplete cap); Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002","Manual"
 "SRCH-NEW-003","Search Bar - Hints Section Shows Prior Searches on Focus","Search > Hints","High","BL-SRCH-002","","At least 2 prior searches exist in session history (e.g. 'laptop' and 'hoodie' visible as hints)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches 'laptop' and 'hoodie' in session)
 [ACT] Click the search input
 [ASSERT] Observe 'Hints' section label and hint items

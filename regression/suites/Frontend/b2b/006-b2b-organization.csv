@@ -64,13 +64,15 @@ Multi-org user with at least one saved wishlist. NOTE: the OWNER's own wishlists
 [STATE] Owner's own list set is user-scoped; only SHARED lists (scope=Organization) are org-scoped — visible to OTHER members within the sharing org (verified cross-member in suite 007, out of scope here)","[API] GetWishlists query is keyed by storeId+userId (no organizationId/memberId argument); errors[] empty
 [CONSOLE] no uncaught JS errors","Owner's own lists change (appear/disappear) when active org changes; list IDs differ across org switch; GetWishlists errors[] non-empty","none","Coverage Gap Analysis; user-scope verified live 2026-06-01","Reviewed"
 "B2C-ORG-006","Default Org on Sign-in","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user, one org configured as default","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in to storefront with multi-org user credentials
-2. [ASSERT] Observe which organization loads immediately after sign-in
-3. [ASSERT] Verify org switcher shows default org as active
-4. [ASSERT] Verify default org's pricing and catalog are shown","[DOM] Default org loaded automatically on sign-in (not random or last-used)
-[DOM] Org switcher displays default org name as active selection
-[DOM] Default org's catalog, pricing, addresses, and cart shown
-[STATE] No prompt to select org required on sign-in","[CONSOLE] no uncaught JS errors","Wrong org loaded on sign-in; user prompted to select org on every login; last-used org loaded instead of default","none","Coverage Gap Analysis","Draft"
+Multi-org user. NOTE: there is no 'default org' auto-load feature — the storefront restores the last-active org from the user's prior session (sticky session behavior). Sign in once, note the active org, sign out, sign back in, and confirm the SAME org reloads.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in to storefront with multi-org user credentials
+2. [ASSERT] Note which organization loads immediately after sign-in (the last-active org from the prior session)
+3. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+4. [NAV] Log in again with the same multi-org user credentials
+5. [ASSERT] Verify org switcher shows the SAME org as active as before sign-out (last-active-org restore, not a configured default)
+6. [ASSERT] Verify that org's pricing and catalog are shown","[DOM] The last-active org from the prior session is restored automatically on sign-in (sticky session) — not a random org and not a separately-configured 'default'
+[DOM] Org switcher displays the last-active org name as the active selection after re-login
+[DOM] Last-active org's catalog, pricing, addresses, and cart shown
+[STATE] No prompt to select org required on sign-in","[CONSOLE] no uncaught JS errors","A different (non-last-active) org loads on sign-in; user prompted to select org on every login despite a known last-active org","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-007","Search Orgs in Switcher","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multi-org user belonging to 6 or more organizations","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 6+ org memberships
 2. [ACT] Open the org switcher
@@ -87,13 +89,12 @@ Multi-org user belonging to 6 or more organizations","url={{FRONT_URL}},org_user
 [PRE:RESET_CART]
 Multi-org user, currently on a deep category or account page for Org A","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
 2. [NAV] Navigate to a deep category page or checkout flow
-3. [ASSERT] Note the breadcrumb trail
+3. [ASSERT] Note the current org context (header/org name) and displayed pricing/catalog for Org A
 4. [ACT] Switch to Org B using org switcher
 [WAIT] Wait for org context to update (header/org name reflects Org B)
-5. [ASSERT] Verify page state and navigation after switch","[NAV] After switching orgs, user redirected to neutral page (homepage or catalog root) rather than remaining on Org A context page
-[DOM] Breadcrumbs reset to reflect Org B
-[DOM] No stale Org A navigation state visible
-[STATE] In-progress flows (e.g., checkout) exited cleanly","[CONSOLE] no uncaught JS errors","User remains on Org A context page after switch; breadcrumbs still show Org A path; stale Org A state visible","none","Coverage Gap Analysis","Draft"
+5. [ASSERT] Verify org context (header/org name, pricing, catalog) now reflects Org B","[DOM] After switching orgs, header/org name updates to reflect Org B
+[STATE] Pricing and catalog shown reflect Org B's context after the switch
+[STATE] Org context update occurs without requiring a manual page reload","[CONSOLE] no uncaught JS errors","Header/org name still shows Org A after switch; pricing/catalog not updated to Org B; org context requires manual refresh to update","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-009","Switch Back - Cart Intact","B2C Features > Organization","Critical","BL-B2B-005","ECL-7.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Multi-org user, items in Org A cart, currently viewing Org B","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as Org A and add 3 specific products to Org A cart
@@ -373,14 +374,14 @@ Multi-org user. NOTE: vcst-qa does not configure a distinct Default address per 
 [DOM] Address list reflects the active org only (consistent with B2C-ORG-032/033 scoping)
 [STATE] When each org has a distinct default configured: Org A and Org B each show their own different Default address. When not configured: absence of a Default badge is acceptable","[CONSOLE] no uncaught JS errors","Org A's defaulted address appears or keeps its Default badge while Org B is active; default leaking across org switch; address list not scoped to the active org","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-036","Default Org Loaded on Sign-In","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with a default organization configured","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page
+Multi-org user. NOTE: there is no 'default org' auto-load feature — the storefront restores the last-active org from the user's prior session (sticky session behavior), not a configured default.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page
 2. [ACT] Sign in with multi-org credentials
 3. [WAIT] Wait for redirect to home or account page
-4. [ASSERT] Verify org switcher shows the default org name
-5. [ASSERT] Verify page context (pricing and addresses) reflects default org","[DOM] Org switcher displays the configured default organization name
-[STATE] Default org is active immediately after sign-in
-[STATE] No org selection prompt shown when default is configured","[API] initial page load context reflects default org
-[CONSOLE] no uncaught JS errors","No default org loaded; org selection prompt shown despite default configured; wrong org active after sign-in","none","Coverage Gap Analysis","Draft"
+4. [ASSERT] Verify org switcher shows the org that was active in the user's last session (last-active-org restore)
+5. [ASSERT] Verify page context (pricing and addresses) reflects that org","[DOM] Org switcher displays the last-active organization name (sticky session restore, not a configured 'default')
+[STATE] Last-active org is active immediately after sign-in
+[STATE] No org selection prompt shown when a last-active org exists","[API] initial page load context reflects the last-active org
+[CONSOLE] no uncaught JS errors","No org loaded on sign-in (blank/prompt state); org selection prompt shown despite a known last-active org; wrong (non-last-active) org active after sign-in","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-037","No Default Org - Org Selector Shown on Sign-In","B2C Features > Organization","Medium","BL-B2B-005",,"[N/A-ENV] No multi-org account WITHOUT a configured default org exists in vcst-qa (MULTI_ORG_USER signs in straight into its default org). The no-default sign-in selector cannot be exercised until such an account is provisioned. The with-default sign-in path is covered by B2C-ORG-036 (PASS).
 [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multi-org user with NO default organization configured","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page

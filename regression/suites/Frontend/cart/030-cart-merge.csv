@@ -259,10 +259,10 @@ SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available with at least 
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_slug=@td(CFG_HAT.slug)
-hat_url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
+hat_url={{FRONT_URL}}@td(CFG_HAT.url)
 optionA=color: Black
 optionB=color: Green","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated session, empty cart)
-[NAV] open Configurable Hat PDP at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
+[NAV] open Configurable Hat PDP at {{FRONT_URL}}@td(CFG_HAT.url)
 [WAIT] 'Configure the parameters' widget visible
 [ACT] in 'Select your fav color' section choose option A (e.g., Black)
 [ASSERT] PDP total reflects option A surcharge (record value as totalA)
@@ -299,7 +299,7 @@ optionB=color: Green","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated
 SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available; user {{USER_EMAIL}} starts with empty persisted cart. The user-cart configuration and the guest-cart configuration MUST be byte-identical (same option in 'Select your fav color', same/empty Text section, no File section uploads). DESIGN (VCST-5053, vc-module-x-cart >=3.1012.0): configured line items ALWAYS stay separate lines on merge — identical configs are NOT consolidated or quantity-summed (CartAggregate.InnerAddLineItemAsync short-circuits on IsConfigured; no config-content equality exists). Assert two separate lines, not a summed single line.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
-hat_url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
+hat_url={{FRONT_URL}}@td(CFG_HAT.url)
 option=color: Black","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] open Configurable Hat PDP
 [WAIT] Configure widget visible
@@ -335,7 +335,7 @@ option=color: Black","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 SEED REQUIRED: Configurable Hat product (alias CFG_HAT) with at least 2 distinct Product-section options. User {{USER_EMAIL}} starts with empty persisted cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
-hat_url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
+hat_url={{FRONT_URL}}@td(CFG_HAT.url)
 optionA=color: Black
 optionB=color: Green","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] open Configurable Hat PDP

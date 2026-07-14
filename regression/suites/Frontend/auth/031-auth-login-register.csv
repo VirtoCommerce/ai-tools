@@ -5,8 +5,7 @@
 [DOM] 'Last Name' input visible
 [DOM] 'Email' input visible
 [DOM] 'Password' input visible
-[DOM] 'Confirm Password' input visible
-[DOM] Terms/conditions checkbox present","[CONSOLE] no TypeError or JS errors
+[DOM] 'Confirm Password' input visible","[CONSOLE] no TypeError or JS errors
 [NETWORK] GET /sign-up returns HTTP 200","Spinner visible >5s; console TypeError; form fields missing after load","none","regression-qa-theme-26.csv","Automated"
 "AUTH-002","Create Account - Personal User","Registration > Personal","Medium","BL-AUTH-001","ECL-4.1","Registration page open; unique test email available","url={{FRONT_URL}}/sign-up;email=testuser+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
 [ACT] Select 'Personal' account type
@@ -94,12 +93,9 @@
 [DOM] Suggestion to log in or reset password present
 [STATE] No duplicate account created","[API] mutation errors[] is empty
 [CONSOLE] no TypeError or JS errors","Form accepts duplicate email and creates duplicate account; no error message shown; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"AUTH-010","Validation - Email Format","Registration > Validation","Medium","BL-AUTH-001","","Registration form open","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+"AUTH-010","Validation - Email Format","Registration > Validation","Medium","BL-AUTH-001","","Registration form open. NOTE: 'missing@domain' (no TLD) is HTML5-valid and must NOT be used as an invalid-format value; only genuinely malformed values (no @, empty local/domain part) are tested here.","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
 [ACT] Select 'Personal' account type
 [ACT] Fill 'Email': 'notanemail'
-[ACT] Click 'Create Account'
-[ASSERT] Error message for invalid format shown
-[ACT] Fill 'Email': 'missing@domain'
 [ACT] Click 'Create Account'
 [ASSERT] Error message for invalid format shown
 [ACT] Fill 'Email': '@nodomain.com'

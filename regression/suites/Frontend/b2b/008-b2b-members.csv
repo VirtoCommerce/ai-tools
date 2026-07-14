@@ -230,12 +230,11 @@ Org with approval threshold; purchaser account","url={{FRONT_URL}},org_user={{OR
 [MATH] Threshold boundary correctly applied","[API] below-threshold order status is Confirmed; above-threshold is PendingApproval
 [CONSOLE] no uncaught JS errors","All orders go to approval regardless of amount; threshold not enforced; below-threshold order stuck in pending","none","Coverage Gap Analysis","Draft"
 "B2C-MBR-018","Company Members Count Display","B2C Features > Members","Medium","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[N/A-ENV] The storefront /company/members page does not expose a dedicated member-count UI element in the current build — confirm with the product spec/design whether such a count widget is intended before authoring an assertion against it. Until confirmed, this case verifies count only via the rendered row count of the members table.
 Org admin; organization has known number of members","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
 2. [NAV] Navigate to /company/members
-3. [ASSERT] Verify member count is displayed
-4. [ASSERT] Verify count matches actual visible members","[DOM] Member count shown on page (header or footer)
-[MATH] Displayed count matches number of members in list
-[FORMAT] Count formatted properly","[CONSOLE] no uncaught JS errors","Member count missing; count does not match actual members; count not updating after invite/block","none","Coverage Gap Analysis","Draft"
+3. [ASSERT] Verify the members table/list renders the expected number of member rows (row count derived from the list itself, not a dedicated count-display element)","[DOM] Members table/list row count matches the organization's actual member count
+[FORMAT] Member rows render with consistent formatting","[CONSOLE] no uncaught JS errors","Members table/list does not render the expected number of rows; row count does not match actual org member count after invite/block","none","Coverage Gap Analysis","Draft"
 "B2C-MBR-019","Change Role - Per-Org Scope Verified (AC1)","B2C Features > Members > Org Membership [JOURNEY]","Critical","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa with DISTINCT per-org roles: TechFlow org (@td(MULTI_ORG_TF_BR.org_techflow_id)) = 'Organization maintainer'; BuildRight org (@td(MULTI_ORG_TF_BR.org_buildright_id)) = 'Organization employee'. These are the AC1 oracle values. TechFlow admin (TECHFLOW_ADMIN) is the maintainer performing the role change.","url={{FRONT_URL}},org_admin={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},target_member_email=@td(MULTI_ORG_TF_BR.email)","--- SCREEN: TechFlow Org ---

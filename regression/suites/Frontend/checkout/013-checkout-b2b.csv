@@ -21,20 +21,20 @@ Logged in as B2B org user ({{ORG_USER_EMAIL}}), cart has items","url={{FRONT_URL
 [CONSOLE] No errors submitting B2B order","PO Number field not visible for B2B user; PO number not shown on order detail page; PO number field missing from checkout form","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Manual"
 "CHK-035","B2B Checkout - Organization Shipping Address","Checkout > B2B > Shipping","High","BL-CHK-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-Logged in as B2B org user, org has at least one configured shipping address","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and add items to cart
+Logged in as B2B org user, org has at least 2 configured shipping addresses with distinct Description values. NOTE: the address selector is a flat table with a Description column by design — there is no org-vs-personal grouping or section labeling in the UI.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and add items to cart
 [ACT] click 'Checkout'
 [WAIT] Wait for shipping address step
-[ASSERT] Verify org shipping addresses listed as distinct group or clearly labeled
-[ASSERT] Verify personal user addresses also available but differentiated from org addresses
+[ASSERT] Verify the address selector renders as a flat table (no org/personal section headers or group labels) with a Description column
+[ASSERT] Verify both seeded org-scoped addresses appear in the table, each distinguishable by its own Description column value
 [ACT] select an organization shipping address
 [ASSERT] Verify org address populates shipping fields
 [ACT] Proceed to shipping method step
-[ASSERT] Verify org address carried through to order summary","[DOM] Org addresses shown in separate group or with org label
-[DOM] Personal addresses differentiated from org addresses
+[ASSERT] Verify org address carried through to order summary","[DOM] Address selector renders as a single flat table with a Description column (no org/personal grouping headers or labels — by design)
+[DOM] Both org-scoped addresses are listed, each identifiable via its own Description column value
 [STATE] Org address selection populates shipping form fields
 [STATE] Selected org address shown in order summary","[API] verify org context is non-null (me.organization)
 [API] currentOrganizationAddresses query executed; response items scoped to the user's organization (not personal); org-scope enforced by resolver (403 if user queries a different org). Standard GraphQL errors array is empty.
-[CONSOLE] No errors loading org address list","Org addresses not shown; personal and org addresses not differentiated; org address selection fails","none","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23)","Reviewed"
+[CONSOLE] No errors loading org address list","Org addresses not shown; Description column missing or address rows not distinguishable; org address selection fails","none","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23)","Reviewed"
 "CHK-036","B2B Checkout - Contract Pricing Applied","Checkout > B2B > Pricing","Critical","BL-CHK-004","ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 B2B org with contract/tier pricing configured, products have org-specific prices in system","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}","[NAV] Log in as {{ORG_USER_EMAIL}}

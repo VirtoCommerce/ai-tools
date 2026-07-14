@@ -39,6 +39,8 @@
     "seed:company-users:teardown": "node scripts/seed-data/seed-company-users.mjs --teardown",
     "seed:b2b": "node scripts/seed-data/seed-company-users.mjs b2b",
     "seed:b2b:memberships": "node scripts/seed-data/seed-company-users.mjs cross-org",
+    "seed:b2b:addresses": "node scripts/seed-data/seed-b2b-addresses.mjs",
+    "seed:b2b:addresses:teardown": "node scripts/seed-data/seed-b2b-addresses.mjs --teardown",
     "seed:b2b:teardown": "node scripts/seed-data/seed-company-users.mjs --teardown",
     "seed:users": "node scripts/seed-data/seed-company-users.mjs personal",
     "seed:users:teardown": "node scripts/seed-data/seed-company-users.mjs --teardown",

@@ -2013,8 +2013,8 @@
       "price": "price",
       "id": "product_id"
     },
-    "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-PACK-001 (matches sku field). Product GUID: 49567c47-5d21-4303-a11a-a53210f2e5c4. minQuantity=6, packSize=6 (verified xAPI). stock=60. Unblocks CART-054 CART-055. Env var: PACK_SIZE_SKU.",
-    "_status": "seeded-20260519"
+    "notes": "Resolves by business key (code/SKU QA-PACK-001 = product_id PROD-103); no runtime GUID pinned here (env-specific — lives in the platform, not this committed file). Seeded via scripts/seed-data/seed-standard-products.mjs (idempotent look-up-by-code). minQuantity=6, packSize=6, stock=60 (verified xAPI, reconfirmed live 2026-07-14). Unblocks CART-054/CART-055. Env var: PACK_SIZE_SKU.",
+    "_status": "seeded"
   },
   "PROD_TIER_PRICED": {
     "file": "products/test-products",

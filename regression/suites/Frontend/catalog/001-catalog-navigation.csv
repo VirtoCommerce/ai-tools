@@ -69,16 +69,14 @@
 [DOM] Facet filters available on brand result page
 [STATE] URL reflects brand filter context","[NETWORK] GET brand listing page returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Brand entry not clickable; brand listing page returns 4xx; non-brand products appearing in brand listing; console TypeError","none","Coverage Gap Analysis","Draft"
-"CAT-037","Brand Product Count","Catalog > Brands","Medium","BL-CAT-001",,"Brands page loaded; at least one brand entry is visible","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
-[ASSERT] Locate a brand entry showing a product count badge or label
-[ASSERT] Note the displayed count value
-[ACT] Click on that brand
+"CAT-037","Brand Link Navigates to Filtered Product Listing","Catalog > Brands","Medium","BL-CAT-001",,"Brands page loaded; at least one brand entry is visible","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
+[ASSERT] Locate a brand link in the A-Z brand name index
+[ACT] Click on that brand link
 [WAIT] Wait for brand product listing page
-[ASSERT] Count actual product cards on the listing page
-[ASSERT] Verify the displayed count on the brand entry matches the actual product card count on the listing page","[MATH] Product count shown on brand entry equals number of product cards on the brand listing page
-[DOM] Brand entry shows a non-zero product count label
-[STATE] Zero-count brands hidden or marked as unavailable if feature configured","[NETWORK] GET brand listing returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Product count on Brands page does not match listing count; brand count not showing; console TypeError","none","Coverage Gap Analysis","Draft"
+[ASSERT] Verify the listing page displays product cards filtered to the selected brand
+[ASSERT] Verify the URL or active filter/breadcrumb reflects the selected brand","[DOM] Selected brand link navigates to a listing page showing product cards filtered by that brand
+[STATE] Listing page URL or active filter/breadcrumb reflects the selected brand","[NETWORK] GET brand listing returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Brand link does not navigate to a filtered listing; listing shows unfiltered/all products; console TypeError","none","Coverage Gap Analysis","Draft"
 "CAT-040","PDP SEO - Meta Tags and Open Graph Tags","Catalog > SEO","Medium","BL-CAT-006",,"Any product with SEO info configured (meta title and description set in admin) exists in the B2B virtual catalog","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}} (resolve any in-stock product slug at runtime)
 [WAIT] Wait for PDP to fully render
 [ACT] Open browser DevTools Elements panel

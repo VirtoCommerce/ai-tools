@@ -14,3 +14,4 @@ ADDR-012,ORG-005,,Billing,Hans,Mueller,Acme EU Operations,Industriestrasse 42,,F
 ADDR-013,,CON-002,Shipping,Sarah,Chen,,155 Personal Ave,Apt 12B,Brooklyn,NY,11201,US,United States,+1-212-555-1020,sarah.chen@acme-industrial.test,false,Sarah personal address,Contact-level address — personal ship-to
 ADDR-014,,CON-004,Shipping,Lisa,Wang,,300 Lakeshore Dr,,Chicago,IL,60601,US,United States,+1-312-555-1040,lisa.wang@acme-industrial.test,false,Lisa personal address,Contact-level address — regional buyer
 ADDR-015,ORG-008,,Shipping,Solo,Admin,SingleUser Ltd,1 Main St,,Boston,MA,02101,US,United States,+1-555-555-8010,admin@singleuser.test,true,Single user org address,Minimal org — only address
+ADDR-016,ORG-002,,BillingAndShipping,Emily,Johnson,TechFlow Solutions,200 Bay Street,,Toronto,ON,M5H 2N2,CA,Canada,+1-416-555-2020,toronto@techflow.test,false,AGENT-TEST Toronto Office,Cross-country second-country org address — unblocks CHK-035 (>=2 distinct-country addresses)

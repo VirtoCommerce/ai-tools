@@ -71,17 +71,31 @@ Live on theme 2.52.0-pr-2335 (PR #2335 deployed 2026-06-24). The VIP account has
 [CONSOLE] no JS errors","PTS line shown in the main USD list (grouping broken); 'Products in {currency}' group missing or empty; PTS line priced in USD; raw i18n key for the group heading","none","VCST-5104; vc-frontend#2335 (order-details.vue common.labels.products_in_currency); BL-LOY-002; Reviewed/synced: TLC-2026-06-24 (PR #2335 live)",automated
 MCO-E2E-007,"/account/points-history shows Redeemed entry (PTS order total) + Earned entry (cash line product points) after a mixed-cart order","Loyalty > Mixed Cart > Points History",High,BL-LOY-005; BL-LOY-007; BL-LOY-009,ECL-7.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_VIP_USER]
-Does NOT depend on vc-frontend PR #2335 — points-history page ships independently. Depends on vc-module-loyalty#10 (ProcessOrdersAsync earn + redeem handlers), confirmed deployed 2026-06-22. Required state: the VIP user has at least one mixed-currency order placed (USD + PTS lines). If none exists, place one via MCO-E2E-001 happy path or MCO-GQL-004 runner flow first (state precondition, NOT execution dependency).",front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/points-history
-[WAIT] points history page loads (list or table of transactions visible)
-[ACT] identify the most recent Redeemed entry (operationType=Redeemed) — this is the PTS amount spent on the loyalty line of the last mixed-cart order
-[ACT] identify the most recent Earned entry (operationType=Earned) — this is the product points earned on the cash line of the last mixed-cart order","[DOM] a Redeemed row is visible — shows a negative (outgoing) PTS amount matching the PTS order line total
-[DOM] an Earned row is visible — shows a positive (incoming) PTS amount earned on the cash line
-[DOM] the running balance shown on the Redeemed row is lower than the balance before the order was placed
-[FORMAT] amounts and balance values display in @td(LOYALTY_SETTINGS.currency_code) (PTS), not in the store default currency
+Depends on vc-module-loyalty#10 (ProcessOrdersAsync earn + redeem handlers), confirmed deployed 2026-06-22. Required state: the VIP user is enrolled in an ACTIVE ProductPoints loyalty program with product factors seeded, and holds enough PTS balance to redeem the loyalty line. This case PLACES the mixed order itself: it records the balance BEFORE, places the order, then re-reads the balance AFTER and reconciles the delta against the loyalty-program calculation.",front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] points history page loads (transactions list/table + page-level Balance visible)
+[ACT] record balance_before as the page-level Balance value in PTS
+[ACT] add a points-redeemable loyalty line (paid in PTS) to the cart
+[WAIT] cart reflects the loyalty line
+[ACT] add a points-earning cash line (USD) to the cart
+[WAIT] cart reflects the cash line
+[ACT] record redeem_expected as the loyalty-line PTS total
+[ACT] proceed to checkout
+[WAIT] checkout sections render
+[ACT] place the order
+[WAIT] order confirmation renders (server-side loyalty handlers run on order create)
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] page reloads with the new transactions at the top
+[ACT] record balance_after as the page-level Balance value
+[ACT] identify the new Redeemed row (operationType=Redeemed) for this order
+[ACT] identify the new Earned row (operationType=Earned) for this order","[DOM] a new Redeemed row is visible — Type column reads Redeemed and shows the PTS spent on the loyalty line (amount unsigned BY DESIGN — direction via the Type column, not a +/- sign or colour)
+[DOM] a new Earned row is visible — Type column reads Earned and shows the points earned on the cash line
+[MATH] balance_after - balance_before = (Earned row amount) - (Redeemed row amount) — the page-level Balance reconciles with the two new entries
+[MATH] Earned row amount = the loyalty program product-points factor calculation for the cash line, and Redeemed row amount = the loyalty-line PTS order total (redeem_expected) — cross-ref MCO-GQL-004 balance_after (the redeem/earn magnitudes must match the program calc, not arbitrary values)
+[FORMAT] amounts and the page Balance display in @td(LOYALTY_SETTINGS.currency_code) (PTS), not in the store default currency
 [STATE] entries are sorted newest-first; the order-related entries appear at the top","[API] loyaltyPointsHistory(userId, first:5, sort:'createdDate:desc') items[?operationType=Redeemed].amount.amount > 0; cross-ref MCO-GQL-004 balance_after assertion
 [API] loyaltyPointsHistory items[?operationType=Earned].amount.amount > 0
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on the points-history query","History page empty or unreachable; Redeemed entry absent (LoyaltyProgramHandler not running); Earned entry absent; amounts displayed in USD instead of PTS; rows in wrong order; balance not updated","Sign out","VCST-5104; vc-module-loyalty#10 (ProcessOrdersAsync earn+redeem per order); BL-LOY-005",automated
+[NETWORK] no 4xx/5xx on the points-history query","History page empty or unreachable; Redeemed entry absent (LoyaltyProgramHandler not running); Earned entry absent; amounts displayed in USD instead of PTS; rows in wrong order","Sign out","VCST-5104; vc-module-loyalty#10 (ProcessOrdersAsync earn+redeem per order); BL-LOY-005",automated
 "MCO-E2E-002","Cart/checkout UI — insufficient loyalty balance blocks order placement (through real payment), removing the loyalty line lets a valid checkout complete [VALIDATION]","Loyalty > Mixed Cart > Cart Validation > Insufficient Balance > [VALIDATION]","Critical","BL-LOY-008","ECL-13.2; ECL-7.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_NOBAL_USER]
 [PRE:RESET_CART]
