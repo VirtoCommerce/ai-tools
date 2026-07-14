@@ -178,6 +178,41 @@ Examples:
 [NAV] URL is /order/confirmation after Place Order
 ```
 
+**Provenance suffix (grounding — MANDATORY).** Every assertion line ends with a `{...}` provenance
+tag naming *where the expected behavior comes from*. This stops agents asserting behavior that is
+not in the ticket, the docs, the source, or the live build. A **missing tag = ungrounded** (treated
+as `{HYPOTHESIS}`).
+
+| Tag | Source of truth | May be a hard assertion? |
+|-----|-----------------|--------------------------|
+| `{SPEC}` | the requirement / acceptance criterion in the **tracker ticket** (Jira **or** Azure Boards) | ✅ |
+| `{BL}` | a real `BL-*` / `BL-UI-*` invariant in `business-logic.md` | ✅ |
+| `{DOC}` | confirmed in VirtoOZ docs or product source (`/vc-docs`, `PlatformFrontendSourceCode`, an i18n file) | ✅ |
+| `{OBSERVED}` | confirmed live this session against the deployed build (DOM snapshot / smoke exec) | ✅ |
+| `{HYPOTHESIS}` | a plausible-bug guess with **no** traceable source | ❌ — phrase as "verify whether…"; **cannot be promoted** |
+
+Only `{SPEC}`/`{BL}`/`{DOC}`/`{OBSERVED}` may be phrased as hard assertions. A `{HYPOTHESIS}` line
+must be phrased as a question to verify (`[DOM] verify whether an inline error appears on invalid CVV`),
+never as a fact — and the case cannot leave `Draft` until it is grounded (see the `Automation_Status`
+promotion rule below). For a **new feature** with no doc/source yet, `{SPEC}` (from the tracker AC) and
+`{OBSERVED}` (from the mandatory `--verify` live pass) are the only classes available — the `--verify`
+pass is what upgrades a `{HYPOTHESIS}`/unconfirmed-`{SPEC}` line to `{OBSERVED}`.
+
+**Literal-text rule (the #1 hallucination).** Never assert a literal message / validation string
+unless it is grounded by `{DOC}` (found in source/i18n) or `{OBSERVED}` (seen live). Otherwise assert
+the **semantic**, not the invented string. This is the behavioral twin of DV-016.
+- ❌ `[DOM] error reads 'Please enter a valid card number' {SPEC}` (string invented; not in the AC)
+- ✅ `[DOM] error indicating an invalid card number {SPEC}` (semantic, grounded in the AC)
+- ✅ `[DOM] error reads 'Card number is invalid' {DOC}` (exact string only because it was found in the i18n file)
+
+Provenance-tagged examples:
+```
+[DOM] 'Add to Cart' button disabled before any option selected {BL}
+[STATE] order NOT created — cart still intact {BL}
+[DOM] error indicating an expired card {SPEC}
+[DOM] verify whether a per-line inline warning appears at qty > pack size {HYPOTHESIS}
+```
+
 ### Cross_Layer_Checks
 API, console, and network verification. Each on its own line, prefixed with layer tag.
 
@@ -251,7 +286,12 @@ Dual-purpose field: **review state** + **execution mode**.
 
 **Promotion rule (ISTQB peer-review principle):** a case moves from `Draft` → `Reviewed` only when:
 1. `/qa-review-tests` returns verdict ≥ PASS WITH WARNINGS (zero Blockers, ≤3 Critical findings), AND
-2. A human reviewer or `qa-lead-orchestrator` explicitly approves.
+2. **Every assertion is grounded** — each line carries `{SPEC}`/`{BL}`/`{DOC}`/`{OBSERVED}`; **zero
+   `{HYPOTHESIS}` and zero untagged** assertions (Dimension 10 / `GRD-*` is a Blocker otherwise). For a
+   **new-feature** suite (behavior grounded only by `{SPEC}`/`{HYPOTHESIS}` after offline generation), a
+   passing **`--verify`** live pass is REQUIRED — it is the only thing that upgrades those lines to
+   `{OBSERVED}`, AND
+3. A human reviewer or `qa-lead-orchestrator` explicitly approves.
 
 From `Reviewed`, the author assigns the execution mode (`Automated` / `Manual` / `Semi-Automated`) based on MCP-executability.
 
@@ -496,6 +536,16 @@ Right:
 Steps: [ACT] click 'Add to Cart'
 Assertions: [DOM] cart badge increments by 1
 ```
+
+### Provenance & grounding
+Ground before you assert. Every assertion line ends with a `{...}` provenance tag (see the Assertions
+column spec) naming where the expected behavior comes from — `{SPEC}` (tracker AC), `{BL}` (a real
+invariant), `{DOC}` (source/docs/i18n), `{OBSERVED}` (seen live), or `{HYPOTHESIS}` (a guess, no source).
+- Only `{SPEC}`/`{BL}`/`{DOC}`/`{OBSERVED}` may be phrased as facts. A `{HYPOTHESIS}` is phrased as a
+  question ("verify whether…") and blocks promotion until it is grounded — for a new feature, via the
+  mandatory `--verify` live pass that upgrades it to `{OBSERVED}`.
+- Never invent a literal message/validation string. Assert the semantic unless the exact string is
+  grounded by `{DOC}` (found in i18n/source) or `{OBSERVED}` (seen live). Behavioral twin of DV-016.
 
 ### Data binding
 Two resolvers, two sources — never hardcode either.

@@ -15,9 +15,11 @@
  *   Dim 6 BL/ECL         BL-001 REQ-001 (BL-002/004/005 need knowledge-file cross-ref — skipped)
  *   Dim 7 Duplication    DUP-001 DUP-004 (DUP-002/003 are cross-suite — skipped)
  *   Dim 9 Technique      TC-001
+ *   Dim 10 Grounding     GRD-001 (GRD-002 invented-literal needs judgment — skipped)
  *
- * Dimension 8 is intentionally NOT here — it requires a live browser and is the
- * skill's remaining judgment slot.
+ * Dimension 8, and the LIVE half of Dimension 10 (grounding {HYPOTHESIS}/{SPEC}
+ * to {OBSERVED} against the deployed build), are intentionally NOT here — they
+ * require a live browser and are the skill's remaining judgment slots.
  *
  * Reuses scripts/append-test-cases-to-suite.ts (parseSuite/COLUMNS) and
  * scripts/lib/graphql-case-parser.ts (parseSteps/validateStepBlocks) so the
@@ -55,6 +57,8 @@ const HIGH_PRIORITIES = new Set(["Critical", "High", "P0", "P1"]);
 const AUTOMATION_STATUSES = new Set([
   "Draft", "Reviewed", "Automated", "Manual", "Semi-Automated",
 ]);
+// A promoted case (past Draft) must have every assertion grounded (Dim 10 / GRD-001).
+const PROMOTED_STATUSES = new Set(["Reviewed", "Automated", "Manual", "Semi-Automated"]);
 
 // PREFIX-NNN, with an optional trailing variant letter (e.g. CFG-GQL-VCST4961-A).
 // Requires at least one digit so plain words are rejected.
@@ -69,6 +73,10 @@ const COMPOUND_RE = /^\s*\[(?:ACT|NAV)\][^\n]*(?:\band\b|\bthen\b|;)/i;
 const MUTATION_HINT_RE = /\b(addItem|removeItem|removeCartItem|createOrder|createQuote|addOrUpdate|updateCart|placeOrder|create[A-Z]\w+|update[A-Z]\w+|delete[A-Z]\w+|place order|add to cart|submit|save|checkout)\b/i;
 const GRAPHQL_MUTATION_RE = /\b(addItem|removeItem|removeCartItem|createOrder|create\w+|update\w+|delete\w+|merge\w+|clearCart)\b/;
 const ORDERING_RE = /\b(after running|following\s+[A-Z]+-\d+|requires?\s+[A-Z]+-\d+\s+to have (?:passed|run)|must be run first|run\s+[A-Z]+-\d+\s+first)\b/i;
+// Provenance suffix on an assertion (Dim 10). GROUNDED = may be a hard assertion;
+// {HYPOTHESIS} is a guess (question form only); no tag at all = ungrounded.
+const PROVENANCE_RE = /\{(?:SPEC|BL|DOC|OBSERVED|HYPOTHESIS)\}/;
+const GROUNDED_PROV_RE = /\{(?:SPEC|BL|DOC|OBSERVED)\}/;
 
 const find = (rule: string, severity: Severity, caseId: string, message: string): Finding => ({
   rule, severity, caseId, message,
@@ -210,6 +218,32 @@ function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[]
       push("REQ-001", "High", `${row.Priority} case lacks a requirement link (VCST-/REQ-/story/smoke-baseline)`);
   }
 
+  // --- Dimension 10: Assertion Grounding (GRD-001) ---
+  // Anti-hallucination gate. Provenance is opt-in per case, so the backlog stays
+  // green: a fully-untagged legacy case gets only an Informational nudge (below the
+  // default --fail-on=High). Once a case is "provenance-adopted" (any assertion
+  // carries {SPEC}/{BL}/{DOC}/{OBSERVED}/{HYPOTHESIS}) — i.e. new/touched cases from
+  // the generator — the rule bites: an untagged line is High, and a {HYPOTHESIS}
+  // line in a PROMOTED (past-Draft) case is a Blocker (must be grounded live via
+  // --verify → {OBSERVED}, or by {SPEC}/{BL}/{DOC}, before promotion).
+  // GRD-002 (invented literal message string) needs judgment → left to the skill.
+  // A fully-untagged legacy case is tallied once at file level in lintCrossRow (a
+  // per-case Informational floods the report) — here we only enforce once a case is
+  // provenance-adopted (any assertion tagged): new/touched cases from the generator.
+  const provAdopted = assertionLines.some((a) => PROVENANCE_RE.test(a));
+  const promoted = PROMOTED_STATUSES.has(row.Automation_Status);
+  if (provAdopted) {
+    for (const a of assertionLines) {
+      if (E2E_MARKER_RE.test(a)) continue;
+      const hasProv = PROVENANCE_RE.test(a);
+      const grounded = GROUNDED_PROV_RE.test(a);
+      if (!hasProv)
+        push("GRD-001", "High", `assertion missing a provenance tag (case uses provenance elsewhere): "${truncate(a)}"`);
+      else if (!grounded && promoted)
+        push("GRD-001", "Blocker", `{HYPOTHESIS} assertion cannot be in a ${row.Automation_Status} case — ground it ({SPEC}/{BL}/{DOC}) or run --verify to observe it live: "${truncate(a)}"`);
+    }
+  }
+
   return f;
 }
 
@@ -274,6 +308,14 @@ function lintCrossRow(rows: Row[]): Finding[] {
     if (missing.length)
       f.push(find("TC-001", "Medium", group[0].ID, `feature group "${parent}" (${group.length} cases) missing: ${missing.join(", ")}`));
   }
+
+  // Dim 10 (GRD-001) legacy tally — one file-level nudge instead of per-case spam.
+  // Backlog-safe: Informational is below the default --fail-on=High gate.
+  const legacyUngrounded = rows.filter((r) => r.Assertions.trim() && !PROVENANCE_RE.test(r.Assertions));
+  if (legacyUngrounded.length)
+    f.push(find("GRD-001", "Informational", legacyUngrounded[0].ID || "<file>",
+      `${legacyUngrounded.length} case(s) have no assertion provenance tags (Dim 10) — grounded on next touch/regeneration`));
+
   return f;
 }
 
@@ -333,9 +375,10 @@ function report(findings: Finding[], file: string, json: boolean, failOn: Severi
       for (const x of group) console.log(`  [${x.severity}] ${x.rule} ${x.caseId}: ${x.message}`);
     }
     console.log(
-      `\n  Static dims 1-7,9 only. Run alongside: \`npm run graphql:lint-labels -- <csv>\` (DV-019) and ` +
-        `\`npx tsx scripts/validate-td-refs.ts\` (DV-013). Dimension 8 (live env) needs a browser via ` +
-        `/qa-review-tests --verify. Schema rules DV-006..012/016/020 and BL-002/004/005 need knowledge-file judgment.`,
+      `\n  Static dims 1-7,9,10 only. Run alongside: \`npm run graphql:lint-labels -- <csv>\` (DV-019) and ` +
+        `\`npx tsx scripts/validate-td-refs.ts\` (DV-013). Dimension 8 (live env) and the live half of Dim 10 ` +
+        `(grounding {HYPOTHESIS}/{SPEC} → {OBSERVED}) need a browser via /qa-review-tests --verify. Schema rules ` +
+        `DV-006..012/016/020, GRD-002 (invented literal), and BL-002/004/005 need knowledge-file/LLM judgment.`,
     );
   }
   process.exit(blocking.length > 0 ? 1 : 0);

@@ -25,7 +25,7 @@ Review test cases against quality criteria to catch issues before regression run
 
 - **review-criteria.md** — Full review criteria catalog with severity levels, check descriptions, and examples of good vs bad patterns.
 
-## Review Dimensions (9)
+## Review Dimensions (10)
 
 | # | Dimension | What It Catches | Severity | Mode |
 |---|-----------|----------------|----------|------|
@@ -38,8 +38,11 @@ Review test cases against quality criteria to catch issues before regression run
 | 7 | **Duplication** | Overlapping test cases within the suite or across suites; **restated setup instead of `state from <ID>` reference (DUP-004)** | Medium | Static |
 | 8 | **Environment Verification** | Steps reference UI elements/pages/flows that don't exist or have changed in the live environment | Critical | Live (`--verify`) |
 | 9 | **Technique Coverage** | Feature group (shared `Section` parent or `References` ticket, ≥3 cases) missing the ISTQB positive + negative + boundary mix (TC-001) | Medium | Static |
+| 10 | **Assertion Grounding** | Assertions asserting behavior with no source — ungrounded/`{HYPOTHESIS}`/untagged (GRD-001), invented literal message strings (GRD-002). Anti-hallucination gate; `--verify` grounds them live → `{OBSERVED}` | Blocker–Critical | Static + Live (`--verify`) |
 
-Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 requires `--verify` flag and delegates to `qa-testing-expert` agent for live browser verification.
+Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 requires `--verify` flag and delegates to `qa-testing-expert` agent for live browser verification. Dimension 10 is **static** for detecting ungrounded assertions but **needs `--verify`** to actually ground them (upgrade `{HYPOTHESIS}`/`{SPEC}` → `{OBSERVED}`).
+
+> **`--verify` is MANDATORY before promoting a new-feature or ungrounded suite.** A suite that contains any `{HYPOTHESIS}` or unconfirmed-`{SPEC}` assertion (typical for a brand-new feature with no VirtoOZ doc / no source yet) cannot be promoted `Draft → Reviewed` on static review alone — the live `--verify` pass is the only step that can ground those assertions to `{OBSERVED}`. Fully `{BL}`/`{DOC}`/`{SPEC}`-grounded suites for existing features may promote on static review.
 
 > **Run the deterministic linter first.** `npm run suites:review -- <csv>` (`scripts/lint-test-cases.ts`)
 > mechanises the rule-based core of dimensions **1–7 and 9** — S-/D-/C-/T-/DV-/BL-/REQ-/DUP-/TC- checks
@@ -298,17 +301,19 @@ When `--verify` is specified, delegate live browser verification to the **`qa-te
    - Referenced pages/sections exist in the account area
    - Features mentioned in preconditions are enabled (e.g., "RFQ feature enabled", "return/RMA feature enabled")
 5. **Console/network baseline** — Capture console errors and failed network requests on each visited page as baseline health signal
+6. **Asserted-behavior grounding (Dimension 10)** — For every `{HYPOTHESIS}` and unconfirmed-`{SPEC}` assertion, confirm the **behavior it claims actually happens** on the deployed build (the validation fires, the message/element appears, the computed value/state change occurs). This is the grounding path for a new feature. Confirmed → tag becomes `{OBSERVED}` (GRD-001 cleared); refuted → **ENV-008** (do not upgrade).
 
 **Delegation protocol:**
 
 ```
 Delegate to: qa-testing-expert (playwright-firefox)
-Input: List of (case_id, url, elements_to_check, steps_to_walk) from static review
+Input: List of (case_id, url, elements_to_check, steps_to_walk, assertions_to_ground) from static review
 Output: Per-case verification result:
   - VERIFIED: page loads, elements found, flow reachable
   - CHANGED: page loads but expected element missing or renamed → include screenshot
   - BROKEN: page returns error, redirect loop, or critical JS errors
   - BLOCKED: precondition cannot be met (user can't log in, feature disabled)
+  - Per-assertion grounding: CONFIRMED (→ tag {OBSERVED}) | REFUTED (→ ENV-008, tag stays ungrounded)
 ```
 
 **Verification scope limits:**
@@ -322,6 +327,8 @@ Output: Per-case verification result:
 - **CHANGED** → Critical (element renamed or moved — update selectors/labels)
 - **BLOCKED** → High (precondition issue — may be environment-specific, not a test case defect)
 - **VERIFIED** → No finding (test case is environment-compatible)
+- **REFUTED behavior** → Critical (ENV-008 — the asserted behavior isn't implemented; under `--fix`, rewrite to the observed behavior + tag `{OBSERVED}` or drop it)
+- **CONFIRMED behavior** → No finding; under `--fix`, upgrade that assertion's provenance tag to `{OBSERVED}` (clears GRD-001)
 
 ### Step 7: Auto-Fix Mode (`--fix` flag)
 
@@ -354,7 +361,7 @@ Non-fixable issues (flagged for manual review):
 - **Actionable findings only** — every finding must include a specific suggested fix, not just "this is wrong"
 - **Preserve IDs** — never suggest renumbering or changing test case IDs
 - **Cross-suite duplication is expected across layers** — only flag duplication within the same layer/type
-- **Peer review is mandatory (ISTQB)** — a case is not "ready for regression" until (a) `/qa-review-tests` returns verdict ≥ PASS WITH WARNINGS, AND (b) a human reviewer or `qa-lead-orchestrator` approves. Track review state via `Automation_Status` values: `Draft` (just generated, unreviewed), `Reviewed` (passed `/qa-review-tests` + peer-approved), `Automated`/`Manual`/`Semi-Automated` (execution mode — assumes Reviewed). Cases stuck in `Draft` MUST NOT be included in regression selections.
+- **Peer review is mandatory (ISTQB)** — a case is not "ready for regression" until (a) `/qa-review-tests` returns verdict ≥ PASS WITH WARNINGS, (b) **every assertion is grounded** — zero GRD-001 (no `{HYPOTHESIS}`/untagged assertion), and for a new-feature/ungrounded suite a passing `--verify` run has upgraded those assertions to `{OBSERVED}`, AND (c) a human reviewer or `qa-lead-orchestrator` approves. Track review state via `Automation_Status` values: `Draft` (just generated, unreviewed), `Reviewed` (passed `/qa-review-tests` + grounded + peer-approved), `Automated`/`Manual`/`Semi-Automated` (execution mode — assumes Reviewed). Cases stuck in `Draft` MUST NOT be included in regression selections.
 
 ## Agent Delegation
 
