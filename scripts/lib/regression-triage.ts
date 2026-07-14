@@ -96,17 +96,23 @@ export interface RunEntry {
   duration_minutes?: number;
   bugs_found?: number;
   pass_rate?: number;
+  /** Row granularity: "interactive" = case-level counts (REG-* runs); "ci" = coarse
+   * 1-unit-per-suite (SDK CI runner). compute-metrics drops "ci" rows from a suite's
+   * trend when richer rows exist, so binary CI rows don't create false crossings. */
+  mode?: "ci" | "interactive";
 }
 
 interface TriageEntry {
-  fingerprint: string;
+  /** Per-CASE identity `env|suiteId|caseId` — signature-independent, so a PASS and
+   * a FAIL of the same case land in ONE entry and oscillation is detectable. */
+  caseKey: string;
   environment: string;
   suiteId: string;
   caseId: string;
-  signature: string;
+  signature: string; // most recent FAIL signature (reference only)
   firstSeen: string;
   lastSeen: string;
-  runs: string[]; // runIds this fingerprint appeared in (as a FAIL)
+  runs: string[]; // runIds this case appeared in as a FAIL
   outcomes: Record<string, Verdict>; // runId -> PASS|FAIL (both statuses recorded)
 }
 
@@ -116,7 +122,10 @@ interface TriageStore {
   entries: Record<string, TriageEntry>;
 }
 
-const STORE_VERSION = 1;
+// v2: outcome store re-keyed from the signature-based fingerprint to a per-case
+// key (env|suiteId|caseId). v1 entries keyed by fingerprint never collided a
+// case's PASS with its FAIL, so flaky oscillation never fired — drop them.
+const STORE_VERSION = 2;
 
 // ---------------------------------------------------------------------------
 // Normalization + fingerprinting
@@ -158,10 +167,24 @@ function failureSignatureOf(f: { trace: TraceJson | null; evidence: string }): s
   return normalizeSignature(f.evidence).slice(0, 120);
 }
 
-/** Stable 12-char fingerprint for a failure within (env, suite, case, locus). */
+/**
+ * Stable 12-char fingerprint for a failure within (env, suite, case, locus).
+ * Used to DEDUP identical failures (same case failing the same way) — the
+ * signature is part of the key on purpose.
+ */
 export function fingerprintFailure(env: string, suiteId: string, caseId: string, signature: string): string {
   const norm = `${env}|${suiteId}|${caseId}|${signature}`;
   return createHash("md5").update(norm).digest("hex").slice(0, 12);
+}
+
+/**
+ * Per-CASE identity — deliberately signature-FREE. This is what tracks pass↔fail
+ * oscillation across runs: a case's PASS run and its FAIL run must map to the
+ * SAME key (they have different failure signatures, so a signature-based key
+ * would never collide them and flaky would never fire).
+ */
+export function caseKeyOf(env: string, suiteId: string, caseId: string): string {
+  return `${env}|${suiteId}|${caseId}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -363,8 +386,8 @@ export function readRunFailures(runDir: string, store?: TriageStore): FailureInp
       if (c.status !== "FAIL") continue;
       const trace = loadTrace(runDir, c.trace);
       const signature = failureSignatureOf({ trace, evidence: c.evidence });
-      const fingerprint = fingerprintFailure(s.environment, s.suiteId, c.id, signature);
-      const entry = store?.entries[fingerprint];
+      const fingerprint = fingerprintFailure(s.environment, s.suiteId, c.id, signature); // dedup identical failures
+      const entry = store?.entries[caseKeyOf(s.environment, s.suiteId, c.id)]; // per-case oscillation history
       const priorRuns = entry ? entry.runs.length : 0;
       const flaky = entry ? hasOscillated(entry) : false;
       out.push({
@@ -397,7 +420,9 @@ export function loadTriageStore(path = TRIAGE_STORE_PATH): TriageStore {
   if (existsSync(path)) {
     try {
       const parsed = JSON.parse(readFileSync(path, "utf-8")) as TriageStore;
-      if (parsed && parsed.entries) return parsed;
+      // Drop a stale-schema store (e.g. v1 keyed by fingerprint) — its keys no
+      // longer match caseKeyOf(), so it would never resolve again.
+      if (parsed && parsed.entries && (parsed.version ?? 1) === STORE_VERSION) return parsed;
     } catch {
       /* corrupt — start fresh */
     }
@@ -430,17 +455,20 @@ export function recordRunOutcomes(store: TriageStore, runDir: string, runId: str
     for (const c of s.cases) {
       const status = c.status;
       if (status !== "PASS" && status !== "FAIL") continue;
-      const trace = status === "FAIL" ? loadTrace(runDir, c.trace) : null;
-      const signature = failureSignatureOf({ trace, evidence: c.evidence });
-      const fp = fingerprintFailure(s.environment, s.suiteId, c.id, signature);
-      const existing = store.entries[fp];
+      const key = caseKeyOf(s.environment, s.suiteId, c.id);
+      const existing = store.entries[key];
+      // Signature is reference-only, captured from a FAIL (a PASS has no trace).
+      const failSignature =
+        status === "FAIL"
+          ? failureSignatureOf({ trace: loadTrace(runDir, c.trace), evidence: c.evidence })
+          : existing?.signature ?? "";
       if (!existing) {
-        store.entries[fp] = {
-          fingerprint: fp,
+        store.entries[key] = {
+          caseKey: key,
           environment: s.environment,
           suiteId: s.suiteId,
           caseId: c.id,
-          signature,
+          signature: failSignature,
           firstSeen: now,
           lastSeen: now,
           runs: status === "FAIL" ? [runId] : [],
@@ -449,7 +477,10 @@ export function recordRunOutcomes(store: TriageStore, runDir: string, runId: str
       } else {
         existing.lastSeen = now;
         existing.outcomes[runId] = status;
-        if (status === "FAIL" && !existing.runs.includes(runId)) existing.runs.push(runId);
+        if (status === "FAIL") {
+          existing.signature = failSignature;
+          if (!existing.runs.includes(runId)) existing.runs.push(runId);
+        }
       }
     }
   }
@@ -525,6 +556,7 @@ export function appendSuiteHistory(runId: string, env: string, runDir: string): 
       blocked: s.blocked,
       skipped: s.skipped,
       pass_rate: executed ? Math.round((s.passed / executed) * 10000) / 100 : 0,
+      mode: "interactive",
     };
   });
   return mergeHistoryRows(rows);

@@ -657,6 +657,7 @@ function appendToHistory(results: SuiteResult[]): void {
         skipped: 0,
         duration_minutes: Math.round((r.durationMs / 60000) * 100) / 100,
         pass_rate: pass * 100,
+        mode: "ci",
       };
     });
   const n = mergeHistoryRows(rows);
