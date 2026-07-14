@@ -49,6 +49,7 @@ const TEARDOWN_STEPS = [
   { name: 'loyalty', script: 'seed-loyalty.mjs', args: ['--teardown'] },
   { name: 'loyalty-fixtures', script: 'seed-loyalty-fixtures.mjs', args: ['--teardown'] },
   { name: 'promotions', script: 'seed-promotions.mjs', args: ['--teardown'] },
+  { name: 'b2b-addresses', script: 'seed-b2b-addresses.mjs', args: ['--teardown'] },
   { name: 'company-users', script: 'seed-company-users.mjs', args: ['--teardown'] },
   { name: 'bopis', script: 'seed-bopis.mjs', args: ['--teardown'] },
   { name: 'inventory', script: 'seed-inventory.mjs', args: ['--teardown'] },
@@ -102,6 +103,8 @@ const STEPS = [
   { name: 'test-data', script: 'seed-test-data.js', args: ['catalog'], required: false, priority: 75 },
   { name: 'bopis', script: 'seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
+  // Org addresses beyond the single inline default baked into orgBody() — needs the org graph (100) first.
+  { name: 'b2b-addresses', script: 'seed-b2b-addresses.mjs', required: false, priority: 105 },
   { name: 'promotions', script: 'seed-promotions.mjs', required: false, priority: 110 },
   // The 1-PTS divisor fixture (LOY_SKU_PTS_UNIT) that balance-relative loyalty tests depend on. Runs
   // just BEFORE the loyalty programs (120) and is OPTIONAL (warns if the loyalty module/PTS currency
