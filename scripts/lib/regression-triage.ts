@@ -227,23 +227,37 @@ function loadManifestSuite(suiteId: string): { file?: string; name?: string; lay
   try {
     const m = JSON.parse(readFileSync(MANIFEST_PATH, "utf-8"));
     const suites = m.suites ?? m.testSuites ?? [];
-    // Match on exact id, or the id stripped of a browser suffix (e.g. "072b").
-    return suites.find((s: any) => String(s.id) === suiteId) ?? null;
+    // Exact id first; else fall back to the id with a trailing browser/variant
+    // suffix stripped (a result file's suiteId "072b" maps to manifest id "072").
+    const base = suiteId.replace(/[a-z]+$/i, "");
+    return suites.find((s: any) => String(s.id) === suiteId) ?? (base !== suiteId ? suites.find((s: any) => String(s.id) === base) : null) ?? null;
   } catch {
     return null;
   }
 }
 
-/** Load the failing test case's authored CSV row from its suite CSV (best-effort). */
+// Parse each suite CSV at most once per process — a run can have hundreds of
+// issues spread over a few dozen suites, so re-reading the same CSV per case is
+// wasteful. Keyed by the resolved suiteId; null = no CSV / parse failure.
+const csvRowCache = new Map<string, Record<string, string>[] | null>();
+
+/** Load the test case's authored CSV row from its suite CSV (best-effort, cached). */
 function loadCsvRow(suiteId: string, caseId: string): Record<string, string> | null {
-  const suite = loadManifestSuite(suiteId);
-  if (!suite?.file || !existsSync(suite.file)) return null;
-  try {
-    const rows = parseCsv(readFileSync(suite.file, "utf-8"), { columns: true, skip_empty_lines: true, relax_quotes: true });
-    return rows.find((r: any) => String(r.ID ?? r.id ?? "").trim() === caseId) ?? null;
-  } catch {
-    return null;
+  let rows = csvRowCache.get(suiteId);
+  if (rows === undefined) {
+    rows = null;
+    const suite = loadManifestSuite(suiteId);
+    if (suite?.file && existsSync(suite.file)) {
+      try {
+        rows = parseCsv(readFileSync(suite.file, "utf-8"), { columns: true, skip_empty_lines: true, relax_quotes: true }) as Record<string, string>[];
+      } catch {
+        rows = null;
+      }
+    }
+    csvRowCache.set(suiteId, rows);
   }
+  if (!rows) return null;
+  return rows.find((r) => String(r.ID ?? r.id ?? "").trim() === caseId) ?? null;
 }
 
 // ---------------------------------------------------------------------------

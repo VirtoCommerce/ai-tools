@@ -50,7 +50,7 @@ The collector already fingerprinted each failure and (via the store) marked `fla
 ```
 npm run triage:history -- <RUN_ID|latest> --env <TEST_ENV>
 ```
-This writes per-suite rows into `reports/regression/history.json` in the shape `scripts/compute-metrics.ts` expects (the flaky/trend detector was previously starved). Group identical fingerprints so a failure hitting N suites is triaged once.
+This writes per-suite rows into `reports/regression/history.json` in the shape `scripts/compute-metrics.ts` expects (the flaky/trend detector was previously starved). Each issue's `fingerprint` (signature-based) dedups identical failures; if the same fingerprint recurs within a batch, classify it once and apply the verdict to the duplicates rather than re-reasoning each.
 
 ## Phase 3 — Classify (one call per batch)
 > **Owner:** `regression-triage-agent` (delegate **per batch**, not per case)
