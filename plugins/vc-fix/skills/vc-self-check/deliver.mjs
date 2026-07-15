@@ -214,8 +214,14 @@ function containsClientShape(text) {
   // camelCase). A lowercase, extension-less relative path with no client-shaped segment
   // (e.g. "src/handlers/cart") is not client-identifying and is allowed to survive.
   if (/[\w-]+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql|json|xml|config|dll)\b/i.test(masked)) return true; // non-plugin source/config file
-  // (3) residual identifier tokens (client class / namespace / org / proper noun)
-  for (const tok of masked.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
+  // (3) residual identifier tokens (client class / namespace / org / proper noun).
+  // Scan the UNMASKED text, NOT `masked`: the whitelist greedily swallows a whole
+  // `hooks|skills|commands|knowledge/…` path, so a client identifier embedded in a
+  // filename under one of those dirs (e.g. `knowledge/AcmeCorp-notes.md`) would escape
+  // the shape check if we judged `masked`. Plugin file refs are lowercase-kebab, so
+  // scanning the raw text does not over-flag them. (The extension rule above stays on
+  // `masked` — else a legit plugin `repo-router.ts` reference would trip it.)
+  for (const tok of t.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
     if (SAFE_TERMS.has(tok)) continue;
     if (/[a-z][A-Z]/.test(tok)) return true; // compound camel/PascalCase (AcmeCorp, CartController)
     if (/^[A-Z][a-z][A-Za-z0-9]*$/.test(tok)) return true; // single Capitalized proper noun (Acme, Contoso) — requires a lowercase LETTER after the capital so gate/severity codes (G0-G7, S0-S3, P0) are NOT flagged

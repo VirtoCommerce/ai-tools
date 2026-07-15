@@ -1,5 +1,5 @@
 // tests/self-check-containment.test.mjs
-// Containment regression for skills/vc-self-check/deliver.mjs (PR #112, B1 + M1).
+// Containment regression for skills/vc-self-check/deliver.mjs (PR #112, B1 + M1 + B2 + whitelist-mask gap).
 // No test framework: `node tests/self-check-containment.test.mjs` → exit 0 = pass.
 // Each scenario runs in its own child process because clientTerms() memoizes the
 // profile per-process; the parent controls VC_FIX_HOME + a temp project-profile.json.
@@ -56,6 +56,20 @@ if (process.env.SC_MODE) {
     // guard: real source paths must STILL be flagged after the deletion
     check("M2 real source path still flagged", () =>
       assert.equal(isClientSpecific("edit client-modules/AcmeCorp.Custom/Handler.cs"), true));
+    // WL (whitelist-mask false-negative) — a client identifier embedded in a filename
+    // UNDER a whitelisted dir prefix (hooks|skills|commands|knowledge/) with a NON-source
+    // extension must NOT be swallowed by the whitelist mask. Proper-noun / camelCase
+    // client ids are shape-detectable even with no profile.
+    for (const s of ["knowledge/AcmeCorp-pricing-notes.md is out of date",
+                     "commands/AcmeCorpCheckoutFlow.md needs a rewrite",
+                     "commands/AcmeCorpPlaceOrderCommand.json misconfigured",
+                     "skills/ContosoSecretConfig.yaml"])
+      check("WL client id in whitelisted-dir file flagged: " + JSON.stringify(s), () => assert.equal(isClientSpecific(s), true));
+    // WL guard: genuine plugin file refs (lowercase-kebab) must STILL survive.
+    for (const s of ["extend hooks/session-telemetry.mjs", "fix repo-router.ts logic",
+                     "commands/qa-verify-fix.md Step 3 fired early",
+                     "see knowledge/diagnostics/skill-expectations.md", "fix-repos.json route"])
+      check("WL legit plugin ref survives: " + JSON.stringify(s), () => assert.equal(isClientSpecific(s), false));
     // buildDraft still withholds a genuinely client-specific finding's row.
     check("client-specific row is withheld + scrubbed", () => {
       const d = draft("/qa-fix", "at AcmeCorp.Web.Controllers.CartController.Checkout()", "edit client-modules/AcmeCorp.Custom/Handler.cs");
@@ -88,6 +102,12 @@ if (process.env.SC_MODE) {
     check("B2 ACME_API_KEY / acme.core caught", () => {
       assert.equal(isClientSpecific("ACME_API_KEY was null"), true);
       assert.equal(isClientSpecific("at acme.core.checkout"), true);
+    });
+    // WL — a lowercase client org in a filename under a whitelisted dir is caught by
+    // layer-1 (alnum boundary) once the profile is present.
+    check("WL lowercase org in whitelisted-dir file caught (with profile)", () => {
+      assert.equal(isClientSpecific("hooks/acme_payment_webhook.json failing"), true);
+      assert.equal(isClientSpecific("knowledge/acme-notes.md"), true);
     });
   }
   process.exit(failures ? 1 : 0);

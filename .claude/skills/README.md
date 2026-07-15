@@ -1,6 +1,6 @@
 # skills/ — Skill Directory
 
-> 27 skills organized in 4 category groups (vc-knowledge, testing, qa-methodology, development). Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 31 skills organized in 4 category groups (vc-knowledge, testing, qa-methodology, development), plus 3 root-level skills (34 total). Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
@@ -118,7 +118,7 @@ skills/
 └── README.md                        # This file
 ```
 
-> Plus two root-level skills outside the 4 QA category groups: `/run-vc-mcp-testing-module` (env:check, @td() resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run) and `/project-init` (onboard the plugin onto a deployment — choose native-platform vs client, pick the bug tracker + code host, write `project-profile.json` + `.mcp.json`, verify access; the profile is what makes `/qa-fix` route each bug to the right repo + tracker).
+> Plus three root-level skills outside the 4 QA category groups: `/run-vc-mcp-testing-module` (env:check, @td() resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run); `/project-init` (onboard the plugin onto a deployment — choose native-platform vs client, pick the bug tracker + code host, write `project-profile.json` + `.mcp.json`, verify access; the profile is what makes `/qa-fix` route each bug to the right repo + tracker); and `/vc-self-check` (Tier-B self-diagnostician — reads the passive session-telemetry jsonl + the transcript + the skill-expectations oracle and emits a per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce).
 
 ## VC Knowledge (1) — `vc-knowledge/`
 
