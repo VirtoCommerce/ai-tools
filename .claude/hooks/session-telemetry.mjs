@@ -27,7 +27,10 @@
  *   - Never throws, never blocks a tool, never prints a decision to stdout,
  *     never writes a secret (Authorization/token/password/PAN are redacted from
  *     every captured snippet). Always exits 0.
- *   - Per-Skill overhead is a single bounded transcript-delta read.
+ *   - Per-Skill overhead: the transcript file is read in full each firing, but only
+ *     the NEW lines (from the persisted cursor) are scanned — the scan is bounded to
+ *     the delta, the read is not. Full read of ~100k lines is a few hundred ms; fine
+ *     at skill boundaries. (A seek-from-byte-offset read would make it incremental.)
  *
  * This file is shipped identically in `plugins/vc-fix/hooks/` and `.claude/hooks/`.
  */
@@ -66,7 +69,7 @@ const REDACTIONS = [
   [/\b(authorization|bearer)\b\s*[:=]?\s*\S+/gi, "$1 «redacted»"],
   [/\b(token|api[_-]?key|secret|password|passwd|pwd)\b\s*[:=]\s*\S+/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
-  [/\b(?:\d[ -]?){13,19}\b/g, "«pan»"], // card numbers
+  [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers (anchored on digits both ends — no trailing-sep eat)
   [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub tokens
 ];
 function redact(s) {
@@ -106,9 +109,10 @@ function textOf(content) {
 }
 
 /**
- * Read transcript lines [fromLine, end), extract signals, and report how many
- * lines were consumed so the caller can advance its cursor. Defensive against
- * any line shape — a malformed line is skipped, never thrown on.
+ * Read the transcript file (in full) and scan only lines [fromLine, end) for signals,
+ * reporting how many lines were consumed so the caller can advance its cursor. The
+ * READ is whole-file; the SCAN is bounded to the delta. Defensive against any line
+ * shape — a malformed line is skipped, never thrown on.
  */
 function scanTranscript(transcriptPath, fromLine) {
   const span = { counts: zeroCounts(), details: [] };

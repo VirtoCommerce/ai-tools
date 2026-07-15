@@ -52,29 +52,46 @@ function diagDir() {
   return join(outputRoot(), ".vc-fix", "diagnostics");
 }
 
-// ─── containment scrubber (§2a) ─────────────────────────────────────────────
+// ─── containment (§2a) — whitelist gate + defense-in-depth scrubber ──────────
+//
+// TRUST MODEL: every findings-table cell is untrusted. A cell may reach an
+// outbound report ONLY if it is plugin-safe (a recognized plugin-file reference
+// or generic advice with no client-shaped tokens). `isClientSpecific` is the GATE
+// (buildDraft downgrades any client-specific row); `scrubText` is defense-in-depth
+// for the cells that pass. A blacklist scrubber alone is unsafe — it leaks anything
+// it fails to anticipate — so the gate is positive-detection, not blacklist.
 const REDACTIONS = [
   [/\b(authorization|bearer)\b\s*[:=]?\s*\S+/gi, "$1 «redacted»"],
   [/\b(token|api[_-]?key|secret|password|passwd|pwd)\b\s*[:=]\s*\S+/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"],
   [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"],
-  [/\b(?:\d[ -]?){13,19}\b/g, "«pan»"],
+  // PAN: 13–19 digits, space/dash separated. Anchored on a digit at BOTH ends so a
+  // trailing separator before the next word is NOT eaten ("4111 1111 1111 1111 used"
+  // → "«pan» used", not "«pan»used").
+  [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"],
 ];
 
-/** Recognizes a reference to a vc-fix PLUGIN file/component — these survive scrubbing. */
+/**
+ * Recognizes a reference to a vc-fix PLUGIN file/component. This is the WHITELIST:
+ * a plugin reference is the only kind of path/identifier allowed to survive into an
+ * outbound report (see `containsClientShape`, which exempts it).
+ */
 const PLUGIN_FILE_RE =
   /(session-telemetry|enforce-real-user|sweep-stray-screenshots|deliver|probe-lib|paths)\.mjs|(hooks|skills|commands|knowledge)\/[\w./-]+|\.claude\/rules\/[\w.-]+|\/(qa-[a-z-]+|vc-self-check|project-init|vc-docs)\b|repo-router\.ts|fix-repos\.json|quality-gates\.md|reports\.md/;
 
 /**
- * Scrub client-identifying content. Removes secrets, absolute filesystem paths,
- * URLs, emails, and tracker ticket keys. Relative plugin-file references and
- * slash-command names are NOT absolute/URL/email/ticket-shaped, so they survive.
+ * DEFENSE IN DEPTH (not the primary gate). Removes secrets, absolute AND relative
+ * filesystem paths (Windows back/forward-slash, UNC, source paths), URLs, emails,
+ * and tracker ticket keys. Plugin-file references (.mjs/.md/.json/.ts under the
+ * plugin dirs) and slash-command names survive — they don't match these shapes.
  */
 export function scrubText(input) {
   let s = String(input ?? "");
   for (const [re, rep] of REDACTIONS) s = s.replace(re, rep);
-  s = s.replace(/[A-Za-z]:\\[^\s"'`]+/g, "«path»"); // Windows absolute paths
-  s = s.replace(/(?<![\w])\/(?:home|Users|root|tmp|var|opt|mnt|srv|c|d)\/[^\s"'`]+/gi, "«path»"); // POSIX/msys abs paths
+  s = s.replace(/[A-Za-z]:[\\/][^\s"'`]+/g, "«path»"); // Windows abs (back OR forward slash)
+  s = s.replace(/\\\\[^\s"'`]+/g, "«path»"); // UNC \\server\share\...
+  s = s.replace(/(?<![\w])\/(?:home|Users|root|tmp|var|opt|mnt|srv|c|d)\/[^\s"'`]+/gi, "«path»"); // POSIX/msys abs
+  s = s.replace(/\b[\w.-]+(?:[\\/][\w.-]+)+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql)\b/gi, "«path»"); // relative source path
   s = s.replace(/\bhttps?:\/\/[^\s"'`)]+/gi, "«url»"); // client URLs / portal links
   s = s.replace(/\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g, "«email»"); // emails
   s = s.replace(/\b[A-Z][A-Z0-9]{1,9}-\d+\b/g, "«ticket»"); // tracker ticket keys
@@ -84,19 +101,52 @@ export function scrubText(input) {
 /** Placeholders the scrubber leaves where it removed client-specific content. */
 const REDACTED_PLACEHOLDER_RE = /«(path|url|email|ticket|redacted|jwt|gh-token|pan)»/;
 
-/** Does this text reference a vc-fix PLUGIN file/component? */
+/** Does this text reference a vc-fix PLUGIN file/component? (whitelist positive) */
 export function referencesPlugin(text) {
   return PLUGIN_FILE_RE.test(String(text ?? ""));
 }
 
+// Known-safe compound vocabulary: plugin + platform + tooling terms that are
+// legitimately capitalized identifiers but are NOT client-specific. Any OTHER
+// compound-PascalCase token (a client class / namespace / org name) is client shape.
+const SAFE_TERMS = new Set([
+  "GitHub", "GitLab", "SonarCloud", "DevOps", "GraphQL", "VirtoCommerce",
+  "TypeScript", "JavaScript", "AppInsights", "DevTools", "WebKit", "PostgreSQL",
+  "SessionStart", "PostToolUse", "PreToolUse", "SubagentStop",
+]);
+
 /**
- * A finding is CLIENT-SPECIFIC (§2a: "reproducible only with client code") when
- * scrubbing had to remove something — i.e. the scrubbed text carries a redaction
- * placeholder. Safe generic advice ("check gh auth status") that scrubs unchanged
- * is NOT client-specific and is kept verbatim.
+ * Positive detection of CLIENT-SHAPED content a blacklist scrubber can't catch:
+ * paths (any slash form), source files, .NET/JS namespace-or-class chains, stack
+ * frames, and bare compound-PascalCase identifiers (client class / org names) not in
+ * the known-safe vocabulary. A recognized plugin-file reference is whitelisted and
+ * does NOT count as client shape. Bias is fail-safe: when in doubt, treat as client.
+ */
+function containsClientShape(text) {
+  const t = String(text ?? "");
+  if (!t.trim()) return false;
+  if (/[A-Za-z]:[\\/]/.test(t)) return true; // Windows drive path
+  if (/\\\\[\w.$-]+/.test(t)) return true; // UNC
+  if (/[\w.-]+[\\/][\w.-]+/.test(t) && !referencesPlugin(t)) return true; // non-plugin path (≥2 segments)
+  if (/[\w-]+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql)\b/i.test(t) && !referencesPlugin(t)) return true; // non-plugin source file
+  if (/\b[A-Z][A-Za-z0-9]+(?:\.[A-Za-z0-9]+){2,}/.test(t)) return true; // dotted namespace/class/stack chain
+  for (const m of t.match(/\b[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]*)+\b/g) || []) {
+    if (!SAFE_TERMS.has(m)) return true; // bare compound-PascalCase client class / org
+  }
+  return false;
+}
+
+/**
+ * A findings cell is CLIENT-SPECIFIC (§2a) when EITHER the blacklist scrubber had to
+ * remove something (a placeholder survives) OR the whitelist gate detects client-shaped
+ * content the scrubber can't catch. When true, buildDraft downgrades the whole row so no
+ * client evidence reaches an outbound report. Generic advice ("check gh auth status") and
+ * plugin-file references ("hooks/enforce-real-user.mjs") return false and are kept.
  */
 export function isClientSpecific(original) {
-  return REDACTED_PLACEHOLDER_RE.test(scrubText(original));
+  const t = String(original ?? "");
+  if (REDACTED_PLACEHOLDER_RE.test(scrubText(t))) return true;
+  return containsClientShape(t);
 }
 
 // ─── DIAG parsing ────────────────────────────────────────────────────────────
@@ -122,7 +172,9 @@ export function parseDiag(md) {
     const [skill, verdict, sev] = cells;
     if (!/^(OK|DEGRADED|BROKEN)$/.test(verdict) || !/^S[0-3]$/.test(sev)) continue; // skip header/separator
     const signal = cells[3] ?? "";
-    const fix = cells[cells.length - 1] ?? "";
+    // 4-col table has no separate fix cell (cells[3] is the last) — don't alias the
+    // signal as the fix. fix only exists at ≥5 cols; root-cause only at ≥6.
+    const fix = cells.length >= 5 ? (cells[cells.length - 1] ?? "") : "";
     const rootcause = cells.length >= 6 ? cells[4] : "";
     findings.push({ skill, verdict, sev, signal, rootcause, fix });
   }
@@ -185,18 +237,24 @@ export async function findDuplicateIssue({ repo, token, fp }) {
 
 // ─── draft assembly ──────────────────────────────────────────────────────────
 export function buildDraft({ route, pluginVersion, findings, fp }) {
-  // Scrub + downgrade each finding.
+  // Whitelist gate + downgrade each finding.
   const rows = findings.map((f) => {
     const skill = scrubText(f.skill);
-    const signal = scrubText(f.signal);
-    let fix = scrubText(f.fix);
-    let note = "";
-    // §2a downgrade: if the finding's fix OR signal was client-specific (scrubbing
-    // left a redaction placeholder), replace the fix with a generic description and
-    // withhold the client evidence — never attach client code upstream.
-    if (isClientSpecific(f.fix) || isClientSpecific(f.signal) || isClientSpecific(f.rootcause)) {
+    // §2a downgrade: if ANY cell of the finding (signal / root-cause / fix) is
+    // client-specific, withhold BOTH shown cells — a client-specific row's fix would
+    // name client code, and its signal a client stack frame/path. Emit only a generic
+    // pointer; no client identifier can reach the outbound report. The scrubText on the
+    // kept branch is defense-in-depth (the gate already cleared it).
+    const clientSpecific =
+      isClientSpecific(f.signal) || isClientSpecific(f.rootcause) || isClientSpecific(f.fix);
+    let signal, fix, note = "";
+    if (clientSpecific) {
+      signal = "(client-specific evidence withheld)";
       fix = "(client-specific — generic: review the owning plugin skill)";
       note = " _[generic — client evidence withheld]_";
+    } else {
+      signal = scrubText(f.signal);
+      fix = scrubText(f.fix);
     }
     return `| ${skill} | ${f.verdict} | ${f.sev} | ${signal} | ${fix}${note} |`;
   });
@@ -214,9 +272,10 @@ export function buildDraft({ route, pluginVersion, findings, fp }) {
     ...rows,
     ``,
     `## Containment`,
-    `Scrubbed of client source, paths, URLs, identifiers, tickets, and secrets per the`,
-    `client-code containment invariant (quality-gates §2a). Findings whose evidence was`,
-    `client-specific are shown as generic descriptions only — no client code is attached.`,
+    `Every findings cell was checked against a plugin-reference whitelist: any cell carrying`,
+    `client-shaped content (file paths, source files, namespaces/classes, org identifiers,`,
+    `URLs, emails, tickets, or secrets) was withheld and its row downgraded to a generic`,
+    `pointer. Only plugin-file references and generic advice remain (quality-gates §2a).`,
   ].join("\n");
   return { title, body, route };
 }
