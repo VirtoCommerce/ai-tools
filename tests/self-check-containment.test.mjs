@@ -49,6 +49,13 @@ if (process.env.SC_MODE) {
       check("still flags client-shaped: " + JSON.stringify(s), () => assert.equal(isClientSpecific(s), true));
     for (const s of ["check gh auth status", "trim per reports.md §4", "extend hooks/session-telemetry.mjs"])
       check("generic advice survives: " + JSON.stringify(s), () => assert.equal(isClientSpecific(s), false));
+    // M2 — benign word/word slashes must survive (the bare slash rule was removed)
+    for (const s of ["STR passed 2/3", "1/3 attempts", "3/3 green", "GET/POST /graphql",
+                     "browser fallback chrome/firefox/edge", "pass/fail", "read/write", "input/output"])
+      check("M2 benign slash survives: " + JSON.stringify(s), () => assert.equal(isClientSpecific(s), false));
+    // guard: real source paths must STILL be flagged after the deletion
+    check("M2 real source path still flagged", () =>
+      assert.equal(isClientSpecific("edit client-modules/AcmeCorp.Custom/Handler.cs"), true));
     // buildDraft still withholds a genuinely client-specific finding's row.
     check("client-specific row is withheld + scrubbed", () => {
       const d = draft("/qa-fix", "at AcmeCorp.Web.Controllers.CartController.Checkout()", "edit client-modules/AcmeCorp.Custom/Handler.cs");
@@ -70,6 +77,18 @@ if (process.env.SC_MODE) {
       assert.ok(/\(plugin skill\)/.test(d.title));
     });
     check("generic advice survives with profile", () => assert.equal(isClientSpecific("check gh auth status"), false));
+    // B2 — derived underscore identifier from the configured org must be withheld
+    check("B2 underscore-joined org id is client-specific", () =>
+      assert.equal(isClientSpecific("timeout in acme_cart_service during reindex"), true));
+    check("B2 underscore id does not reach the body", () => {
+      const d = draft("/qa-fix", "timeout in acme_cart_service during reindex", "add retry to acme_cart_service call");
+      assert.ok(!/acme_cart_service/.test(d.body), "underscore client id leaked into body");
+      assert.ok(/withheld/.test(rowsOf(d)[0]), "expected withheld row");
+    });
+    check("B2 ACME_API_KEY / acme.core caught", () => {
+      assert.equal(isClientSpecific("ACME_API_KEY was null"), true);
+      assert.equal(isClientSpecific("at acme.core.checkout"), true);
+    });
   }
   process.exit(failures ? 1 : 0);
 }

@@ -118,7 +118,11 @@ function clientTerms() {
  */
 export function scrubText(input) {
   let s = String(input ?? "");
-  for (const term of clientTerms()) s = s.replace(new RegExp(`\\b${escapeRe(term)}\\b`, "gi"), "«client»");
+  // Alphanumeric-only boundary (NOT \b): `_` is a \w char, so `\bacme\b` would miss
+  // "acme" inside a derived identifier like `acme_cart_service` / `ACME_API_KEY`.
+  // Treat `_ . / -` (and everything non-alphanumeric) as a separator so the configured
+  // org is caught inside underscore/dot/slash/hyphen-joined tokens.
+  for (const term of clientTerms()) s = s.replace(new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "gi"), "«client»");
   for (const [re, rep] of REDACTIONS) s = s.replace(re, rep);
   s = s.replace(/[A-Za-z]:[\\/][^\s"'`]+/g, "«path»"); // Windows abs (back OR forward slash)
   s = s.replace(/\\\\[^\s"'`]+/g, "«path»"); // UNC \\server\share\...
@@ -196,13 +200,19 @@ const SAFE_TERMS = new Set([
 function containsClientShape(text) {
   const t = String(text ?? "");
   if (!t.trim()) return false;
-  // (1) configured client identifiers
-  for (const term of clientTerms()) if (new RegExp(`\\b${escapeRe(term)}\\b`, "i").test(t)) return true;
+  // (1) configured client identifiers — alphanumeric-only boundary (see scrubText):
+  // catches the org inside underscore/dot/slash/hyphen-joined derived identifiers.
+  for (const term of clientTerms()) if (new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "i").test(t)) return true;
   // (2) hard path shapes
   if (/[A-Za-z]:[\\/]/.test(t)) return true; // Windows drive path
   if (/\\\\[\w.$-]+/.test(t)) return true; // UNC
   const masked = t.replace(PLUGIN_FILE_RE_G, " "); // remove anchored plugin refs, judge the rest
-  if (/[\w.-]+[\\/][\w.-]+/.test(masked)) return true; // a non-plugin slash path survived
+  // NB: no bare "word/word" slash rule — it over-redacted benign plugin vocabulary
+  // ("STR passed 2/3", "GET/POST /graphql", "chrome/firefox/edge", "pass/fail"). A real
+  // client path is still caught precisely by the drive/UNC rules above, the source/config
+  // FILE rule below (by extension), and the named-segment token rules (proper-noun /
+  // camelCase). A lowercase, extension-less relative path with no client-shaped segment
+  // (e.g. "src/handlers/cart") is not client-identifying and is allowed to survive.
   if (/[\w-]+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql|json|xml|config|dll)\b/i.test(masked)) return true; // non-plugin source/config file
   // (3) residual identifier tokens (client class / namespace / org / proper noun)
   for (const tok of masked.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
