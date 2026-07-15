@@ -77,6 +77,11 @@ function redact(s) {
 
 // ─── signal extraction from the transcript delta ─────────────────────────────
 const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail"];
+// anomalyScore at/above which the Stop finalize offers the yes/no consent prompt
+// (VCST-5477). Conservative on purpose: a single recovered blip (one tool_error=3
+// or one permission_denied=2) stays below it; it takes e.g. 2 tool_errors, a
+// tool_error+hook_failure, or 3 denials to cross. stop_bail is weighted 0.
+const CONSENT_THRESHOLD = 6;
 const zeroCounts = () => ({ tool_error: 0, permission_denied: 0, hook_failure: 0, stop_bail: 0, tool_calls: 0 });
 
 const PERMISSION_DENIED_RE = /\b(permission denied|denied permission|requested permissions|user (?:denied|declined|rejected)|operation not permitted|not allowed to)\b/i;
@@ -306,6 +311,10 @@ async function cmdRecord(ev) {
   const startTs = nowIso();
   state.current = { skill, args, startTs, signals: zeroCounts(), details: [] };
   state.transcriptPath = transcriptPath;
+  // Dedup guard (VCST-5477): a session that ran the diagnostician itself must
+  // never be offered the end-of-session consent prompt — the diagnostician
+  // never diagnoses its own invocation.
+  if (/vc-self-check/i.test(skill)) state.selfCheckSeen = true;
   saveState(statePath, state);
 
   appendRecord(jsonl, { type: "skill_start", sessionId: sessionId(ev), skill, args, ts: startTs });
@@ -324,7 +333,6 @@ async function cmdFinalize(ev) {
     addCounts(state.current.signals, span.counts);
     state.current.details = state.current.details.concat(span.details).slice(0, 25);
   }
-  saveState(statePath, state);
 
   // Heuristic anomaly score. A clean STOP/BAIL is a SUCCESS (quality-gates §3),
   // so stop_bail is INFORMATIONAL and carries zero weight here — Tier B decides
@@ -347,6 +355,39 @@ async function cmdFinalize(ev) {
       ? { skill: state.current.skill, args: state.current.args, startTs: state.current.startTs, signals: state.current.signals }
       : null,
   });
+
+  // End-of-session consent prompt (VCST-5477 — Tier B trigger). When the score
+  // crosses the threshold, surface a SINGLE plain yes/no to the user asking
+  // whether to run the on-demand diagnostician. NEVER auto-run. Guards:
+  //   - one-shot per session (`promptedConsent`), so a Stop firing every turn
+  //     can't nag or loop;
+  //   - never in a session that ran the diagnostician itself (`selfCheckSeen`);
+  //   - opt-out via VC_FIX_DIAG_CONSENT=off.
+  // Mechanism: a `Stop` hook returning {decision:"block", reason} resumes the
+  // agent with `reason` as guidance — here, an instruction to ASK the user and
+  // do nothing else. If the harness ignores the block, we simply don't prompt
+  // (fail-safe toward not nagging); `promptedConsent` is set regardless so we
+  // never re-block.
+  const consentOff = /^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CONSENT || "");
+  const shouldPrompt =
+    !consentOff && !state.promptedConsent && !state.selfCheckSeen && anomalyScore >= CONSENT_THRESHOLD;
+  if (shouldPrompt) state.promptedConsent = true;
+  saveState(statePath, state);
+
+  if (shouldPrompt) {
+    const parts = anomalies.map((a) => `${a.count}× ${a.class}`).join(", ");
+    const reason = [
+      "During this session some vc-fix plugin tools behaved unexpectedly",
+      parts ? ` (${parts})` : "",
+      ".\n\nAsk the user this single yes/no question and then WAIT for their answer — ",
+      "do NOT run any diagnosis or command yourself:\n\n",
+      '  "During this session some plugin tools behaved unexpectedly. Run self-diagnosis ',
+      "to identify the problems and prepare a quality report for VirtoCommerce ",
+      '(to improve the skills)?  [yes / no]"\n\n',
+      "Only if the user answers yes, invoke `/vc-self-check`. If no, do nothing.",
+    ].join("");
+    process.stdout.write(JSON.stringify({ decision: "block", reason }));
+  }
 }
 
 // ─── entry point ─────────────────────────────────────────────────────────────
