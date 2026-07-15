@@ -1,0 +1,62 @@
+{
+  "ticket": "VCST-5441",
+  "verdict": "PASS",
+  "date": "2026-07-15",
+  "environment": "https://vcst-qa.govirto.com",
+  "fix_under_test": {
+    "repo": "VirtoCommerce/vc-platform",
+    "pr": 3076,
+    "title": "Fix saving empty dictionary settings",
+    "branch": "fix/VCST-5441",
+    "pr_state": "open (not merged)"
+  },
+  "build": {
+    "platform": "3.1044.0-pr-3076-3479-vcst-5441-347993a4",
+    "theme": "n/a (backend/platform bug)",
+    "relevant_modules": {
+      "VirtoCommerce.Customer": "3.1014.0",
+      "VirtoCommerce.ProfileExperienceApiModule": "3.1011.0"
+    }
+  },
+  "agents_dispatched": ["qa-backend-expert"],
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 0,
+    "impl_coverage": { "satisfied": 6, "drift": 0, "contradicts": 0, "not_found": 0 },
+    "conditions_total": 7,
+    "conditions_with_evidence": 6,
+    "note": "Bug (fix verification), not a Story with formal ACs — BA Mode-B review skipped; spine from Expected-vs-Actual + PR #3076 diff + BL-B2B-011",
+    "artifact": "tests/Sprint26-14/VCST-5441/ac-analysis.md"
+  },
+  "total_cases": 7,
+  "passed": 6,
+  "failed": 0,
+  "blocked": 0,
+  "na": 1,
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-B2B-011 (corrected 2026-07-15: empty whitelist = no restriction = all roles, by design)"],
+  "exploratory": {
+    "charter": "Folded into qa-backend-expert run (always-on detection + neighbor dictionary/scalar settings); no separate SBTM pass for P2 fix-verification",
+    "heuristic": "CRISP",
+    "findings": { "bugs": 0, "questions": 0, "observations": 2, "risks": 0 }
+  },
+  "appinsights": {
+    "checked": true,
+    "layers": ["backend"],
+    "window_minutes": 45,
+    "signals": { "real_bug": 0, "needs_review": 1, "dismissed": 2 },
+    "correlated_failures": [
+      "GET /api/platform/settings/ApplicationInsights.Url + VirtoCommerce.ApplicationInsights.Url -> 500 x2 (NEEDS_REVIEW): read-path 500 on a scalar setting during agent probing; unrelated to the save-path fix; all whitelist/scalar GETs under test returned 200",
+      "GET /api/order/dashboardStatistics -> 500 x1 (DISMISSED): Orders dashboard widget, unrelated",
+      "static module logo.svg 404s (DISMISSED): cosmetic"
+    ]
+  },
+  "notes": [
+    "FIX VERIFIED (clean PASS): dictionary clear-to-empty now persists at the REST owning layer AND the Admin SPA, surviving full reload; add-direction and scalar settings unaffected.",
+    "C5 resolved as BY-DESIGN: empty whitelist -> picker offers ALL roles is the source-proven intended behavior (vc-module-customer rolesPickerService.js filters only inside `if (whitelist.length)`), ratified by product owner 2026-07-15. BL-B2B-011 was the stale assumption and has been CORRECTED (Rule/Verify/Violation-signal) to 'empty = no restriction = all roles'.",
+    "Regression suite updated to match source truth: 027b-customer-org-roles.csv ORGROLE-003 (empty=all-roles, corrected) + ORGROLE-018 (new membership twin) + ORGROLE-004/005 (VCST-5441 flipped to fixed); manifest testCount 17->18.",
+    "Teardown restored both whitelists + the scalar to captured original state; env left as found."
+  ],
+  "artifacts": "tests/Sprint26-14/VCST-5441/"
+}
