@@ -130,6 +130,30 @@ _Local report only — no ticket filed, nothing sent. To contribute this upstrea
 
 ---
 
+---
+
+## Step 4 (separate, consent-gated) — deliver upstream
+
+Turning a confirmed DIAG into a scrubbed quality report to VirtoCommerce is
+[`deliver.mjs`](./deliver.mjs) (VCST-5478) — invoked as `/vc-self-check deliver`.
+It is **not** part of the diagnose flow above and is never run implicitly.
+
+```
+node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--confirm] [--as pr|fork-pr|issue|local]
+```
+
+- **Routes by the GitHub token's real rights** on `VirtoCommerce/vc-mcp-testing-module`
+  (via `../project-init/probe-lib.mjs`): push/maintain/admin → **PR**; authenticated
+  no-push → **fork-PR**; issues-only → **GitHub Issue**; no token → **local + auth
+  instructions**.
+- **Containment (§2a):** every outbound title/body is scrubbed of client source,
+  paths, URLs, identifiers, tickets, and secrets — only plugin-file references +
+  generic repro survive; a client-specific finding is downgraded to a generic line.
+- **Draft-and-confirm:** the default run is DRY (writes a `DELIVERY-*.md` draft and
+  shows it). It sends ONLY with `--confirm`, and even then auto-files just the
+  Issue route; a PR/fork-PR is handed off as ready commands. Issue dedup via a
+  stable fingerprint marker. It never touches the client-installed plugin.
+
 ## Notes
 - Verdict/severity semantics and the (signal × expectation) table live in the
   oracle — cite them, don't restate.

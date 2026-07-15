@@ -55,17 +55,19 @@ export function resolveGithubToken() {
 }
 
 /**
- * Probe the caller's permission on the upstream platform repo. Given a token, hits
- * GET /user (→ login) and GET /repos/<upstreamOrg>/vc-platform (→ permission), then
- * derives the contribution mode: push/maintain/admin ⇒ "direct", anything less ⇒
- * "fork" (you PR from your own fork). Pure network probe; never throws.
+ * Probe the caller's permission on an upstream GitHub repo. Given a token, hits
+ * GET /user (→ login) and GET /repos/<repo> (→ permission), then derives the
+ * contribution mode: push/maintain/admin ⇒ "direct", anything less ⇒ "fork" (you
+ * PR from your own fork). `repo` defaults to `<upstreamOrg>/vc-platform` (the
+ * project-init readiness/derive callers); the self-diagnostics deliver step passes
+ * `repo: "<org>/vc-mcp-testing-module"` to probe the plugin's OWN repo. Pure network
+ * probe; never throws.
  *
  * → { ok, login, perm, contributionMode, repo, status }
  *   ok=false when there is no token or /user failed; perm ∈
  *   admin|maintain|push|pull(read-only)|none|unknown.
  */
-export async function probeGithubUpstream({ upstreamOrg = "VirtoCommerce", token } = {}) {
-  const repo = `${upstreamOrg}/vc-platform`;
+export async function probeGithubUpstream({ upstreamOrg = "VirtoCommerce", repo = `${upstreamOrg}/vc-platform`, token } = {}) {
   const out = { ok: false, login: "", perm: "unknown", contributionMode: "fork", repo, status: 0 };
   if (!token) return out;
   const gh = (path) =>
