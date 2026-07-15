@@ -30,10 +30,10 @@ Manages the full defect lifecycle from detection through triage, classification,
    - `classify` → defect type taxonomy + root cause categories
    - `workflow` → JIRA Bug Workflow diagram + transition table
    - `metrics` → defect process health indicators
-3. **For triage:** Fetch ticket via Atlassian MCP → validate report completeness (12-item checklist) → check for duplicates (JQL: `summary ~ "keyword" AND status != Cancelled`) → classify defect type + root cause → assess severity + priority (reference `/qa-risk`) → route to owner via triage matrix → set JIRA fields + recommend transition.
-4. **For verify:** Fetch ticket + linked PR via Atlassian MCP → confirm fix is deployed → execute original STR verbatim (must pass 3 consecutive times) → run 2-3 adjacent regression checks → check for side effects (console errors, network failures) → decision: all pass → transition TESTED → DONE; any fail → transition TESTED → REOPEN with new evidence.
+3. **For triage:** Resolve ticket via tracker-ops (Jira MCP `getJiraIssue` / `ado.mjs get-workitem`, per profile) → validate report completeness (12-item checklist) → check for duplicates (tracker-ops §2 Search — Jira JQL `summary ~ "keyword" AND status != Cancelled`, Azure WIQL equivalent) → classify defect type + root cause → assess severity + priority (reference `/qa-risk`) → route to owner via triage matrix → set fields + recommend the destination **role** (§0 role table), transitioned via tracker-ops.
+4. **For verify:** Resolve ticket + linked PR via tracker-ops → confirm fix is deployed → execute original STR verbatim (must pass 3 consecutive times) → run 2-3 adjacent regression checks → check for side effects (console errors, network failures) → decision: all pass → transition role `tested` then `done`; any fail → transition role `reopen` with new evidence. All transitions resolve the live workflow via tracker-ops (§0 roles), honoring `tracker.azure.transitionPolicy`.
 5. **For classify:** Show defect type taxonomy (8 types) and root cause categories (6 categories) from `defect-lifecycle-workflow.md` section 6. Suggest classification for the given bug based on symptoms.
-6. **For workflow:** Show JIRA Bug Workflow ASCII diagram and full transition table from `defect-lifecycle-workflow.md` sections 1-3. Highlight QA-owned transitions.
+6. **For workflow:** Show the §0 role→transition table first (the tracker-agnostic layer), then the JIRA Bug Workflow ASCII diagram and full transition table from `defect-lifecycle-workflow.md` sections 1-3 as the Jira reference example. Highlight QA-owned transitions.
 7. **For metrics:** Compute defect process health indicators from JIRA data using JQL queries. Report aging, MTTR, reopen rate, escape rate, density, and verification pass rate against targets.
 8. For bug report templates, load `defect-report-templates.md` from this skill folder (frontend + backend templates).
 
@@ -49,7 +49,7 @@ Manages the full defect lifecycle from detection through triage, classification,
 
 ## Rules
 
-- Never transition a JIRA bug without documenting the reason in a comment.
+- Never transition a bug (any tracker) without documenting the reason in a comment; transition by §0 role via tracker-ops, never by a hardcoded transition name.
 - Always validate report completeness before triaging — missing STR = send back to reporter.
 - Verification must re-run original STR (3x) + check at least 1 adjacent flow for regression.
 - Duplicate check is mandatory before filing any new bug.

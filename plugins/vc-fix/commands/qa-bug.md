@@ -1,12 +1,24 @@
 ---
-description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a JIRA ticket."
-argument-hint: "bug description | VCST-XXXX | screenshot path"
+description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a tracker ticket."
+argument-hint: "bug description | ticket <key> | screenshot path"
 disable-model-invocation: true
 ---
 
 # /qa-bug — File a Bug Report
 
-Create a structured bug report from a description, screenshot, or observed issue. Optionally creates a JIRA ticket.
+Create a structured bug report from a description, screenshot, or observed issue. Optionally creates a bug-tracker ticket.
+
+> **Profile-driven, not Jira/GitHub-hardcoded.** Which **bug tracker** (Jira / Azure Boards) resolves
+> and creates tickets, which **code host** (GitHub / Azure Repos) a client-repo code search hits, and
+> which source drives build-version verification all come from `project-profile.json` (written by
+> `/project-init`), exactly as in `/qa-fix`. Read
+> [`knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) for the per-tracker
+> resolve/comment/**create** recipes, ticket-key formats (Jira `ABC-123` vs Azure Boards bare `12345`),
+> the host-aware code-read mechanism (§3), and the platform-only build-version check (§5). App Insights
+> identifiers are env-resolved (`APPINSIGHTS_*` / `AZURE_*`), never literals. **With no profile ⇒ Jira /
+> GitHub / `vc-deploy-dev` / `vcst` App Insights — the original behaviour, unchanged.** The platform
+> code search always stays on GitHub (the upstream is public GitHub even when the client's own code
+> lives on Azure Repos).
 
 ## Usage
 ```
@@ -19,8 +31,10 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 ## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
-1. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
+1. **Build & version verification** — fetch deployed versions. **The source branches on `profile.buildVerify.source`** (same as `/qa-fix` Phase 0; `tracker-ops.md` §5 — `vc-deploy-dev` is VirtoCommerce-internal, a client deployment has no access):
+   - **`vc-deploy-dev`** (native platform; also the default when the source is `""`/absent) — use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
+   - **`modules-endpoint`** (client) — `GET {BACK_URL}/api/platform/modules` with an admin token; the deployment reports its own module/Platform versions. (Theme/storefront version comes from the storefront or the ticket.)
+   - **`ticket`** (frontend-only client bug) — take the storefront version from the ticket's system info; do NOT call the admin modules endpoint.
    - Record platform version, theme version, and modules relevant to the bug area — include in the bug report (Step 3)
 2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
 3. **Duplicate check** — scan `reports/bugs/open/` and `reports/bugs/fixed/` for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
@@ -36,11 +50,13 @@ Create a structured bug report from a description, screenshot, or observed issue
 - Captures: screenshot, console errors, network requests, HAR file (per `/qa-evidence` policy)
 - Records exact steps to reproduce (STR)
 
-**If JIRA ticket provided:**
-- Fetch ticket details via Atlassian MCP
+**If a ticket key is provided:**
+- Resolve ticket details via the profile's tracker (`tracker-ops.md` §2), using the tracker's own key format (Jira `ABC-123` / Azure Boards bare `12345`):
+  - **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `getJiraIssue`
+  - **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <n>` (do NOT hand-roll `curl`+`python`)
 - Use qa-testing-expert to reproduce based on ticket description
 - Follow `/qa-investigate` common VC patterns (P1–P8) to isolate the layer
-- Add QA evidence to the ticket as a comment
+- Add QA evidence to the ticket as a comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`)
 
 **If screenshot provided:**
 - Read the screenshot to identify the page and issue
@@ -149,18 +165,18 @@ ready-to-route target. Resolve it deterministically (do **not** free-guess):
 Record the result as the **Fix Routing** block (template below). When the layer/RCA is ambiguous, set
 routing confidence LOW and say why — `/qa-fix` will still re-validate, but an honest LOW prevents a bad route.
 
-**Source code research (GitHub MCP):**
-- Search `VirtoCommerce/vc-frontend` for the affected component/page (use `search_code` with relevant keywords from error messages, URL paths, or component names)
-- If the bug is backend-related, search the relevant module repo (`org:VirtoCommerce vc-module-*`) — use `/qa-investigate` layer isolation to determine which module
+**Source code research — host depends on repo ownership (`tracker-ops.md` §3):**
+- **Platform repos always stay on GitHub MCP** (the VirtoCommerce upstream is public GitHub, even when the client's own code lives on Azure Repos): search `VirtoCommerce/vc-frontend` for the affected component/page (`search_code` with keywords from error messages, URL paths, or component names); for a backend bug search the relevant module repo (`org:VirtoCommerce vc-module-*`), using `/qa-investigate` layer isolation to pick the module.
+- **A client-owned repo is searched on its host** (`vcs.clientHost` / the routed `repos.client[]` entry): `github` → GitHub MCP `search_code` scoped to the client org; `azure-repos` → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-file` on candidate paths, or ADO code-search `filename:`/path scoping (ADO has no cross-repo `search_code` — narrow by module then read files).
 - Check recent commits and PRs in the affected file for recent changes that may have introduced the regression
-- Look for related issues/PRs: `search_issues` with error text or feature keywords
+- Look for related issues/PRs: `search_issues` (GitHub) with error text or feature keywords
 
-**Application Insights logs (Azure MCP):**
-- Query the active env's Application Insights via `applicationinsights` tool — platform resource is named after `TEST_ENV` and storefront is `${TEST_ENV}-storefront` (default env `vcst`: **vcst-qa** / **vcst-qa-storefront**)
+**Application Insights logs (Azure MCP) — identifiers from env, never literals:**
+- Query the active env's Application Insights via the `applicationinsights` tool. The resource names come from `APPINSIGHTS_RESOURCE_BACKEND` / `APPINSIGHTS_RESOURCE_STOREFRONT` (default env `vcst`: **vcst-qa** / **vcst-qa-storefront**) — the convention is `${TEST_ENV}-qa` / `${TEST_ENV}-qa-storefront`.
 - Search for exceptions, failed requests, or dependency failures matching the bug timeframe
 - Use error messages, request URLs, or operation IDs from HAR/network captures as query filters
 - Check for correlated server-side errors (e.g., 500s behind a frontend error)
-- Resource group: `vcst`, Subscription: `973d0b8c-44bf-438d-a4b7-1c4162d3ccba`
+- Resource group + subscription come from env: `AZURE_RESOURCE_GROUP` / `AZURE_SUBSCRIPTION_ID` (read `.env.${TEST_ENV}`; never hardcode the `vcst` group or a subscription GUID).
 
 **What to capture:**
 - Relevant source code snippet (file path + line range) showing the suspected root cause
@@ -202,7 +218,7 @@ Valid statuses:
 - `OPEN` — reported, not yet reproduced
 - `CONFIRMED` — reproduced, root cause identified
 - `REPRODUCED` — reproduced, root cause not yet identified
-- `READY_TO_SUBMIT` — ready to file in JIRA (Fix Routing block filled → eligible for `/qa-fix VCST-XXXX`)
+- `READY_TO_SUBMIT` — ready to file in the tracker (Fix Routing block filled → eligible for `/qa-fix <key>`)
 - `FIXED` — fix verified (move file to `fixed/`)
 - `CLOSED` — won't fix / cannot reproduce / false positive / duplicate (move file to `closed/`)
 
@@ -211,9 +227,9 @@ When moving to `fixed/`, add a Resolution block below the status:
 ```markdown
 ## Resolution
 - **Fixed in:** [version or PR reference]
-- **JIRA:** [VCST-XXXX]
+- **Tracker:** [ticket key — Jira `ABC-123` / Azure Boards `12345`]
 - **Verified:** [YYYY-MM-DD]
-- **Verification method:** /qa-verify-fix VCST-XXXX
+- **Verification method:** /qa-verify-fix <key>
 ```
 
 ### Report Template
@@ -246,19 +262,22 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 ---
 
-## Step 5 — Create JIRA Ticket (optional)
+## Step 5 — Create the Tracker Ticket (optional)
 
 > **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
-Ask the user: "Create a JIRA ticket for this bug?"
+Ask the user: "Create a bug-tracker ticket for this bug?"
 
-If yes, use Atlassian MCP (`createJiraIssue`):
-- Project: read from `env.JIRA_PROJECT_KEY` (defaults to `VCST` for backwards compatibility; customer sets their own in `.env` or `.env.${TEST_ENV}`)
-- Type: Bug
+If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
+- **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`, default `VCST` for backwards compatibility; customer sets their own).
+- **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <report.md>` (optional `--repro-file` / `--severity` / `--priority` / `--tags`; org/project default from the profile). Returns `{ id, type, title, state, url }`.
+
+Fields either way:
 - Summary: from bug title
-- Description: full report content in markdown
-- Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low)
-- Follow `/qa-defect workflow` for correct JIRA Bug Workflow status transitions
+- Description: full report content in markdown (Azure: pass via `--description-file`)
+- Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
+
+**Use the returned key verbatim** in the tracker's own format (Jira `ABC-123`, Azure Boards bare `12345`) for the report filename and any cross-links. Follow `/qa-defect workflow` (role-based, §0) for status transitions.
 
 Report the ticket key back to the user.
 
@@ -272,7 +291,7 @@ Report the ticket key back to the user.
 - Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A).
 - Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`)
 - Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
-- Ask before creating JIRA tickets (explicit permission required)
+- Ask before creating tracker tickets (explicit permission required)
 - If a new regression is found during investigation, escalate via `/qa-bug` (separate report)
 - **File every confirmed bug** `/qa-bug` reports all defects and routes each one; auto-fix
   eligibility (Gate 0) is `/qa-fix`'s decision, not `/qa-bug`'s.
