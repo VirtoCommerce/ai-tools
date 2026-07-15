@@ -72,21 +72,53 @@ const REDACTIONS = [
 ];
 
 /**
- * Recognizes a reference to a vc-fix PLUGIN file/component. This is the WHITELIST:
- * a plugin reference is the only kind of path/identifier allowed to survive into an
- * outbound report (see `containsClientShape`, which exempts it).
+ * Recognizes a reference to a vc-fix PLUGIN file/component — the WHITELIST. The
+ * plugin-dir / filename anchors use a negative lookbehind so a CLIENT path that merely
+ * contains a plugin-dir NAME as a mid-path segment (e.g. `acme/skills/Secret.cs`) is
+ * NOT mistaken for a plugin reference — only a token-boundary `hooks|skills|commands|
+ * knowledge/…` (or a known plugin filename) counts.
  */
 const PLUGIN_FILE_RE =
-  /(session-telemetry|enforce-real-user|sweep-stray-screenshots|deliver|probe-lib|paths)\.mjs|(hooks|skills|commands|knowledge)\/[\w./-]+|\.claude\/rules\/[\w.-]+|\/(qa-[a-z-]+|vc-self-check|project-init|vc-docs)\b|repo-router\.ts|fix-repos\.json|quality-gates\.md|reports\.md/;
+  /(?<![\w-])(?:session-telemetry|enforce-real-user|sweep-stray-screenshots|deliver|probe-lib|paths)\.mjs|(?<![\w/-])(?:hooks|skills|commands|knowledge)\/[\w./-]+|(?<![\w/-])\.claude\/rules\/[\w.-]+|(?<![\w-])\/(?:qa-[a-z-]+|vc-self-check|project-init|vc-docs)\b|(?<![\w-])(?:repo-router\.ts|fix-repos\.json|quality-gates\.md|reports\.md)/;
+const PLUGIN_FILE_RE_G = new RegExp(PLUGIN_FILE_RE.source, "g");
+
+/** Escape a string for use inside a RegExp. */
+function escapeRe(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Layer 1 — configured client identifiers (org / client-repo / github account) read
+// from project-profile.json. This is the ONLY reliable way to catch an arbitrary or
+// lowercase client name (e.g. `acme`, `acme-cart-service`). On a native-platform
+// deployment there is no profile ⇒ no client ⇒ nothing to catch here (correct).
+let _clientTerms = null;
+function clientTerms() {
+  if (_clientTerms) return _clientTerms;
+  _clientTerms = [];
+  try {
+    const p = join(outputRoot(), "project-profile.json");
+    if (existsSync(p)) {
+      const prof = JSON.parse(readFileSync(p, "utf8"));
+      const s = new Set();
+      const add = (v) => { if (typeof v === "string" && v.trim().length >= 3) s.add(v.trim()); };
+      add(prof.clientOrg); add(prof?.client?.org); add(prof?.vcs?.clientOrg);
+      add(prof?.upstream?.clientGithubAccount);
+      for (const r of prof?.repos?.client || []) (r && typeof r === "object") ? (add(r.name), add(r.repo)) : add(r);
+      _clientTerms = [...s];
+    }
+  } catch { _clientTerms = []; }
+  return _clientTerms;
+}
 
 /**
- * DEFENSE IN DEPTH (not the primary gate). Removes secrets, absolute AND relative
- * filesystem paths (Windows back/forward-slash, UNC, source paths), URLs, emails,
- * and tracker ticket keys. Plugin-file references (.mjs/.md/.json/.ts under the
- * plugin dirs) and slash-command names survive — they don't match these shapes.
+ * DEFENSE IN DEPTH (not the primary gate). Removes configured client identifiers,
+ * secrets, absolute AND relative filesystem paths (Windows back/forward-slash, UNC,
+ * source paths), URLs, emails, and tracker ticket keys. Plugin-file references and
+ * slash-command names survive — they don't match these shapes.
  */
 export function scrubText(input) {
   let s = String(input ?? "");
+  for (const term of clientTerms()) s = s.replace(new RegExp(`\\b${escapeRe(term)}\\b`, "gi"), "«client»");
   for (const [re, rep] of REDACTIONS) s = s.replace(re, rep);
   s = s.replace(/[A-Za-z]:[\\/][^\s"'`]+/g, "«path»"); // Windows abs (back OR forward slash)
   s = s.replace(/\\\\[^\s"'`]+/g, "«path»"); // UNC \\server\share\...
@@ -99,39 +131,79 @@ export function scrubText(input) {
 }
 
 /** Placeholders the scrubber leaves where it removed client-specific content. */
-const REDACTED_PLACEHOLDER_RE = /«(path|url|email|ticket|redacted|jwt|gh-token|pan)»/;
+const REDACTED_PLACEHOLDER_RE = /«(client|path|url|email|ticket|redacted|jwt|gh-token|pan)»/;
 
 /** Does this text reference a vc-fix PLUGIN file/component? (whitelist positive) */
 export function referencesPlugin(text) {
   return PLUGIN_FILE_RE.test(String(text ?? ""));
 }
 
-// Known-safe compound vocabulary: plugin + platform + tooling terms that are
-// legitimately capitalized identifiers but are NOT client-specific. Any OTHER
-// compound-PascalCase token (a client class / namespace / org name) is client shape.
+// Known-safe vocabulary: plugin + platform + tooling + common QA/dev prose words that
+// are legitimately capitalized but NOT client identity. Any capitalized/compound token
+// NOT in this set is treated as a client class / namespace / org / proper noun. Missing
+// a safe word only over-downgrades a finding (the fail-safe direction); a client name
+// leaking through is the failure we refuse.
 const SAFE_TERMS = new Set([
-  "GitHub", "GitLab", "SonarCloud", "DevOps", "GraphQL", "VirtoCommerce",
-  "TypeScript", "JavaScript", "AppInsights", "DevTools", "WebKit", "PostgreSQL",
+  // compound tech/platform terms (would otherwise trip the compound-PascalCase rule)
+  "GitHub", "GitLab", "SonarCloud", "DevOps", "GraphQL", "VirtoCommerce", "TypeScript",
+  "JavaScript", "AppInsights", "DevTools", "WebKit", "PostgreSQL", "MySQL", "SqlServer",
   "SessionStart", "PostToolUse", "PreToolUse", "SubagentStop",
+  // single-word tech/tools/acronyms
+  "GitLab", "Azure", "Jira", "Node", "Vue", "Angular", "Playwright", "Chromium",
+  "Firefox", "Edge", "Chrome", "Windows", "Linux", "Mac", "POSIX", "REST", "API",
+  "Teams", "App", "Insights", "MCP", "CLI", "PAT", "JWT", "PAN", "URL", "UNC", "HTTP",
+  "HTTPS", "JSON", "XML", "HTML", "CSS", "SQL", "DB", "ID", "UUID", "GUID", "Docker",
+  // plugin / QA / gate vocabulary
+  "OK", "BAIL", "STOP", "DIAG", "STR", "BL", "ECL", "PR", "CI", "CD", "QA", "Virto",
+  "Commerce", "Gate", "Gates", "Phase", "Step", "Steps", "Tier", "Signal", "Signals",
+  "Verdict", "Severity", "Anomaly", "Score", "Threshold", "Consent", "Prompt",
+  "Session", "Skill", "Skills", "Command", "Commands", "Hook", "Hooks", "Telemetry",
+  "Transcript", "Cursor", "Delta", "Snippet", "Token", "Auth", "Config", "Path",
+  "Paths", "File", "Files", "Line", "Lines", "Cap", "Error", "Errors", "Warning",
+  "Failure", "Permission", "Denied", "Repo", "Branch", "Commit", "Issue", "Review",
+  "Fix", "Deploy", "Build", "Test", "Tests", "Coverage", "Regression", "Suite",
+  "Module", "Modules", "Platform", "Frontend", "Backend", "Admin", "Storefront",
+  "Theme", "Cart", "Order", "Orders", "Catalog", "Checkout", "Search", "Pricing",
+  "Payment", "Marketing", "Customer", "Inventory", "User", "Users", "Bug", "Bugs",
+  "Draft", "Send", "Scrub", "Downgrade", "Redact",
+  // common capitalized prose words (sentence starters / verbs)
+  "A", "An", "The", "This", "That", "These", "Those", "No", "Not", "None", "And",
+  "Or", "But", "If", "When", "While", "With", "Without", "Via", "Per", "For", "From",
+  "To", "In", "On", "Of", "At", "As", "By", "See", "Use", "Run", "Add", "Set", "Read",
+  "Write", "Open", "Close", "Skip", "Start", "Check", "Trim", "Extend", "Verify",
+  "Ensure", "Update", "Remove", "Replace", "Move", "Rename", "Guard", "Handle", "Wire",
+  "Call", "Return", "Emit", "Log", "Report", "Confirm", "Merge", "Push", "Pull", "Fork",
+  "Missing", "Failed", "Should", "Must", "May", "Only", "Also", "Then", "Now", "Note",
+  // tool names + hook subcommands + HTTP/GraphQL verbs (appear capitalized in findings)
+  "Stop", "Edit", "Bash", "Grep", "Glob", "Task", "Init", "Record", "Finalize",
+  "Get", "Post", "Put", "Patch", "Delete", "Query", "Mutation", "Yes", "Both", "Each",
+  "Any", "All", "Its", "Their", "Reproduce", "Reproduced", "Triage", "Route", "Repro",
 ]);
 
 /**
- * Positive detection of CLIENT-SHAPED content a blacklist scrubber can't catch:
- * paths (any slash form), source files, .NET/JS namespace-or-class chains, stack
- * frames, and bare compound-PascalCase identifiers (client class / org names) not in
- * the known-safe vocabulary. A recognized plugin-file reference is whitelisted and
- * does NOT count as client shape. Bias is fail-safe: when in doubt, treat as client.
+ * Positive detection of CLIENT-SHAPED content the blacklist scrubber can't catch, in
+ * three layers: (1) a configured client identifier (any case) from the profile; (2)
+ * paths / source files (Windows drive, UNC, any-slash path or source file that is NOT an
+ * anchored plugin reference); (3) residual identifier tokens — a compound camel/Pascal
+ * token or a single Capitalized proper-noun word not in the safe vocabulary. A plugin
+ * reference is masked out first so it never trips (2)/(3). Bias is fail-safe.
  */
 function containsClientShape(text) {
   const t = String(text ?? "");
   if (!t.trim()) return false;
+  // (1) configured client identifiers
+  for (const term of clientTerms()) if (new RegExp(`\\b${escapeRe(term)}\\b`, "i").test(t)) return true;
+  // (2) hard path shapes
   if (/[A-Za-z]:[\\/]/.test(t)) return true; // Windows drive path
   if (/\\\\[\w.$-]+/.test(t)) return true; // UNC
-  if (/[\w.-]+[\\/][\w.-]+/.test(t) && !referencesPlugin(t)) return true; // non-plugin path (≥2 segments)
-  if (/[\w-]+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql)\b/i.test(t) && !referencesPlugin(t)) return true; // non-plugin source file
-  if (/\b[A-Z][A-Za-z0-9]+(?:\.[A-Za-z0-9]+){2,}/.test(t)) return true; // dotted namespace/class/stack chain
-  for (const m of t.match(/\b[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]*)+\b/g) || []) {
-    if (!SAFE_TERMS.has(m)) return true; // bare compound-PascalCase client class / org
+  const masked = t.replace(PLUGIN_FILE_RE_G, " "); // remove anchored plugin refs, judge the rest
+  if (/[\w.-]+[\\/][\w.-]+/.test(masked)) return true; // a non-plugin slash path survived
+  if (/[\w-]+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql|json|xml|config|dll)\b/i.test(masked)) return true; // non-plugin source/config file
+  // (3) residual identifier tokens (client class / namespace / org / proper noun)
+  for (const tok of masked.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
+    if (SAFE_TERMS.has(tok)) continue;
+    if (/[a-z][A-Z]/.test(tok)) return true; // compound camel/PascalCase (AcmeCorp, CartController)
+    if (/^[A-Z][a-z0-9]+$/.test(tok)) return true; // single Capitalized proper noun (Acme, Contoso)
   }
   return false;
 }
