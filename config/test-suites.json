@@ -641,8 +641,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 17,
-      "estimatedMinutes": 25,
+      "testCount": 18,
+      "estimatedMinutes": 27,
       "agent": "qa-backend-expert",
       "tags": [
         "customer",

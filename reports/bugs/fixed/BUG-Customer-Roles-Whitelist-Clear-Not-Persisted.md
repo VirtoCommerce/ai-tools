@@ -1,6 +1,14 @@
 # BUG — Platform dictionary setting cannot be cleared to empty; deleting all values + Save is a silent no-op `[Medium]`
 
-## Status: CONFIRMED
+## Status: FIXED
+
+## Resolution
+- **Fixed in:** vc-platform **PR #3076** "Fix saving empty dictionary settings" (branch `fix/VCST-5441`), deployed to vcst-qa as Platform **`3.1044.0-pr-3076-3479-vcst-5441-347993a4`** (PR still open at verification time).
+- **What changed:** `ObjectSettingEntry.ItHasValues` now treats a non-null empty `AllowedValues` as a value for dictionary settings (`Value != null || (IsDictionary ? AllowedValues != null : !AllowedValues.IsNullOrEmpty())`); `SettingsExtension.DeepSaveSettingsAsync` adds an `IsUntouchedEmptyDictionaryDefault` guard so an untouched empty-default dictionary isn't spuriously persisted; the obsolete `Value=""` workaround in `LocalizableSettingService.SaveSetting` was removed.
+- **Verified:** 2026-07-15 (VCST-5441, `/qa-test` + `/qa-verify-fix`, qa-backend-expert on playwright-edge). Clear-to-empty now persists at both the REST owning layer (`POST /settings allowedValues:[]` → 204 → GET `[]`/`value:null`) and the Admin SPA (delete-all + Save → empty after full reload), for both `Customer.OrganizationRolesWhitelist` and `Customer.MembershipRolesWhitelist`. Add-direction and scalar (non-dictionary) settings unaffected. Both whitelists restored to original state after the run.
+- **Method:** STR demonstrated across REST + Admin SPA on both whitelists (≥3 passing runs); full evidence in `tests/Sprint26-14/VCST-5441/`.
+- **Related:** the empty-whitelist → all-roles picker behavior surfaced during testing was confirmed **by design** at source (`rolesPickerService.js`); BL-B2B-011 corrected accordingly — not a defect.
+
 
 **JIRA:** VCST-5441 (filed 2026-07-09, relates to VCST-5239)
 **Env:** vcst-qa @ Platform 3.1043.0, Customer `3.1014.0-alpha.1002-vcst-5239`

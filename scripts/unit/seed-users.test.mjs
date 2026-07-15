@@ -4,6 +4,7 @@
 // Pure/mocked — no env, no network. Run: `node --test tests/unit/`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { __setApi, parseCsv, personalUsers, ensurePersonalAccount, ensureAdminAccount } from '../../scripts/lib/user-provision.mjs';
 import { resolveRole, roleByKey } from '../../scripts/lib/user-roles.mjs';
 
@@ -77,9 +78,10 @@ test('EUR_USER role carries currency EUR; other customer roles default to null (
   assert.equal(usr.currency, null, 'non-EUR roles carry no currency override (seeder falls back to USD)');
 });
 
-test('IMPERSONATION_ADMIN is provision=true; bootstrap ADMIN is not (never recreated)', () => {
+test('IMPERSONATION_ADMIN is an org-scoped role (CSV-native B2B member), NOT a provisioned admin', () => {
   const imp = resolveRole(roleByKey('IMPERSONATION_ADMIN'), { IMPERSONATION_ADMIN_EMAIL: 'i@x.com', IMPERSONATION_ADMIN_PASSWORD: 'p' });
-  assert.equal(imp.provision, true, 'seeder must create the impersonation admin');
+  assert.equal(imp.kind, 'org', 'operator is an org member (org-maintainer @ TechFlow), not a global admin');
+  assert.notEqual(imp.provision, true, 'NOT provisioned via the admin path — seeded CSV-native via b2b/users.csv USR-024');
   const admin = resolveRole(roleByKey('ADMIN'), { ADMIN: 'admin', ADMIN_PASSWORD: 'p' });
   assert.equal(admin.provision, false, 'bootstrap admin is never provisioned by the seeder');
 });
@@ -123,4 +125,17 @@ test('ensurePersonalAccount RECONCILES currency on reuse (USD→EUR) — fixes p
   const put = calls.find(c => c.method === 'POST' && c.path.endsWith('/api/members'));
   assert.ok(put, 'reconciles by upserting the existing contact');
   assert.equal(put.body.currencyCode, 'EUR', 'currency corrected to EUR on reuse (not left as USD)');
+});
+
+test('impersonation OPERATOR is a CSV row (users.csv USR-024): Customer, org-maintainer @ ORG-002, no global admin', () => {
+  const users = parseCsv(readFileSync('test-data/b2b/users.csv', 'utf8'));
+  const op = users.find(u => u.user_id === 'USR-024');
+  assert.ok(op, 'USR-024 exists in b2b/users.csv');
+  assert.equal(op.user_type, 'Customer');
+  assert.equal(op.org_id, 'ORG-002', 'scoped to the TechFlow org');
+  assert.equal(op.roles, 'Organization maintainer', 'org-maintainer role BY NAME (incl. loginOnBehalf)');
+  assert.equal(op.is_admin, 'false', 'NOT a global admin');
+  assert.match(op.password, /^\{\{[A-Z0-9_]+\}\}$/, 'password is a {{VAR}} token, not a literal');
+  const contacts = parseCsv(readFileSync('test-data/b2b/contacts.csv', 'utf8'));
+  assert.ok(contacts.find(c => c.contact_id === 'CON-024' && c.org_id === 'ORG-002'), 'CON-024 contact row exists in TechFlow');
 });

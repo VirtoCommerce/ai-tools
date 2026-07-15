@@ -1,6 +1,6 @@
 ---
 applicability: reference
-applicability_rationale: "76 storefront BLs covering pricing, cart, checkout, B2B, etc. Universal as a STARTING POINT (most BLs are platform-level invariants). Customer adapts: some BLs encode vcst-specific assumptions (specific currency, specific tier rules, specific role names). Customer's own BL-{CUSTOMER}-* IDs namespace alongside."
+applicability_rationale: "145 BLs (storefront + backend/xAPI/admin) covering pricing, cart, checkout, B2B, loyalty, payment, white-labeling, etc. Universal as a STARTING POINT (most BLs are platform-level invariants). Customer adapts: some BLs encode vcst-specific assumptions (specific currency, specific tier rules, specific role names). Customer's own BL-{CUSTOMER}-* IDs namespace alongside."
 ---
 
 # Business Logic Invariants — Agent Reference
@@ -207,13 +207,13 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert (checkout shipping step), qa-backend-expert (shipping API)
 
 ### BL-CHK-006: Order total formula `[P0-revenue]`
-- **Rule:** The order total must always equal: `sum(line item totals) + shipping cost + tax - cart-level discounts`. This formula is invariant — no hidden fees, no unexplained differences. The total displayed at checkout must match the total on the order confirmation page and in the Admin order detail.
+- **Rule:** The order total must always equal: `subTotal (sum of the list totals of items flagged selectedForCheckout) + shipping subtotal + tax total + payment subtotal + fee total − discount total (the aggregate of line-item, shipping, payment, and cart-level discounts)`. Every component is an explicit line — no hidden or unexplained differences. The total displayed at checkout must match the total on the order confirmation page and in the Admin order detail. (Source: vc-module-cart `DefaultShoppingCartTotalsCalculator.CalculateTotals` — `cart.Total = SubTotal + ShippingSubTotal + TaxTotal + PaymentSubTotal + FeeTotal − DiscountTotal`.)
 - **Verify:** Manually calculate: add all line totals + shipping + tax - discounts. Compare to displayed total. After placing order → check order confirmation → check Admin order detail → all three must match.
 - **Violation signal:** Total doesn't match manual calculation; checkout total differs from confirmation page; Admin order shows different amount; unexplained $0.01+ discrepancy.
 - **Agents:** qa-frontend-expert (checkout + confirmation), qa-backend-expert (order API), qa-testing-expert (cross-check)
 
 ### BL-CHK-007: Minimum order amount enforcement `[P0-revenue]`
-- **Rule:** When a store has a minimum order amount configured, the checkout "Place Order" button must be disabled (or checkout blocked) if the cart subtotal (after discounts) is below the minimum. The minimum applies to the subtotal, not the grand total (before shipping/tax). A clear message must indicate the minimum and the shortfall.
+- **Rule:** **NOT native to Virto Commerce** (live-verified 2026-07-15: no store-level monetary minimum-order-amount setting and no native cart validator that blocks Place Order on a below-minimum subtotal — native cart validation is quantity/stock/price-based only: MinQuantity/MaxQuantity/PackSize, out-of-stock, price-changed). This invariant applies **ONLY to deployments that add a custom minimum-order validator/setting**. Where such a validator exists: when a store has a minimum order amount configured, the checkout "Place Order" button must be disabled (or checkout blocked) if the cart subtotal (after discounts) is below the minimum. The minimum applies to the subtotal, not the grand total (before shipping/tax). A clear message must indicate the minimum and the shortfall.
 - **Verify:** Set min order = $50 → add items totaling $40 → checkout blocked with message "Minimum order is $50, you need $10 more." Add more items to exceed $50 → checkout unblocked.
 - **Violation signal:** Order placed below minimum; no message shown; minimum checked against grand total instead of subtotal; checkout not blocked.
 - **Agents:** qa-frontend-expert (checkout flow), qa-backend-expert (order validation API)
@@ -222,7 +222,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Rule:** The "State/Province" facet in the address-selection popup is rendered if and only if the term aggregation for `regionId` in the current address result set returns at least one non-null value. When `term: []` (all addresses in the set have `null regionId`), the facet element is absent from the DOM — it is not rendered as an empty dropdown. This rule is data-driven: facet presence changes dynamically as the result set changes (e.g., filtering to a country whose addresses all have null regionId causes the facet to disappear). Currently: USA and Canada addresses carry non-null regionId; other countries (UK/GB, Albania, etc.) carry null regionId.
 - **Verify:** Open address-selection popup with a user whose address book contains ≥1 US or CA address → "State/Province" facet visible with term values. Apply Country facet = non-US/CA country (e.g., GB) → "State/Province" facet disappears from DOM (not just empties). Remove Country filter → facet reappears. For a user with only non-US/CA addresses (e.g., Albania-only), facet must not be rendered at all.
 - **Violation signal:** "State/Province" facet visible with empty/zero values when result set has no non-null regionId; facet persists in DOM after filter narrows the set to null-region addresses only; facet missing when USA/Canada addresses are present.
-- **Scope:** Address-selection popup only (per VCST-4710 / PR #129); does NOT apply to `/account/addresses` page or ship-to popover.
+- **Scope:** Address-selection popup only (per VCST-4710 / PR #129); does NOT apply to the account addresses page or the ship-to popover.
+- **Ground (vc-frontend source):** the facet is the Region `FacetFilter` (`data-test-id="filter-region"`, label i18n `common.labels.region`) in `select-address-filter.vue`, rendered by `select-address-modal.vue` only when its `showFilters` prop is true. It renders via `v-if="filterOptionsRegions"`; `filterOptionsRegions` (`createAddressFilterContext` in `usePickupFilterContext.ts`, facet name `RegionId`) is `undefined` unless the address result set's `term_facets` contains a `RegionId` facet — so the facet is removed from the DOM (not merely emptied) when no non-null regionId values exist.
 - **Agents:** qa-frontend-expert (popup UI), test-management-specialist (test cases SA-027–SA-030)
 
 ---
@@ -231,10 +232,10 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 
 ### BL-ORD-001: Order state machine guards `[P0-revenue]`
 - **Rule:** Payment and shipment follow strict state machines with guards:
-  - **Payment:** `Pending → Authorized → Captured → Refunded/Voided`. Cannot capture without authorization. Cannot refund without capture. Void only possible before capture.
+  - **Payment:** `Pending → Authorized → Paid → Refunded`, with `Authorized → Voided` as a separate pre-capture branch. The capture operation sets `PaymentStatus = Paid` — there is **no `Captured` enum value**. Cannot capture without authorization. Cannot refund without capture (refund requires `Paid`). Void is only possible before capture (from `Authorized`, never from `Paid`). See BL-ORD-006 for the detailed transition table.
   - **Shipment:** `New → Pick & Pack → Ready to Send → Send`. Cannot mark "Send" before "Pick & Pack". No "Delivered" sub-state — delivered semantics live at ORDER level (`OrderStatus = Completed`). See BL-ORD-007 and `project_order_status_vocab` memory.
 - **Verify:** In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
-- **Violation signal:** Payment captured without prior authorization; shipment marked delivered while still "New"; state skipped without error.
+- **Violation signal:** Payment captured without prior authorization; shipment marked "Send" while still "New"; state skipped without error.
 - **Agents:** qa-backend-expert (order API, state transitions), qa-testing-expert (Admin SPA)
 
 ### BL-ORD-002: Cancellation restores inventory conditionally `[P1-data]`
@@ -244,8 +245,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-backend-expert (inventory API, order API), qa-testing-expert (Admin SPA workflow)
 
 ### BL-ORD-003: Partial fulfillment rules `[P1-data]`
-- **Rule:** An order with multiple line items can be partially fulfilled — some items shipped while others remain pending. Each shipment tracks its own items and state independently. The order status reflects the aggregate: "Partially shipped" when at least one (but not all) shipments are sent. Only when all shipments reach "Delivered" does the order become "Completed."
-- **Verify:** Order with 3 items → create 2 shipments (items A+B in shipment 1, item C in shipment 2) → ship shipment 1 → order status = "Partially shipped" → ship shipment 2 → order status = "Completed."
+- **Rule:** An order with multiple line items can be partially fulfilled — some items shipped while others remain pending. Each shipment tracks its own items and state independently (`New → Pick & Pack → Ready to Send → Send`, per BL-ORD-007). Virto does **NOT** auto-assign a "Partially shipped" order status — that value is not in the platform status vocabulary (BL-ORD-009). Partial-fulfillment progress is observed via per-shipment statuses; order-level completion is set at ORDER level as `OrderStatus = Completed` (a settable status), never derived from an aggregate "all shipments Delivered" (there is no `Delivered` shipment state — BL-ORD-007).
+- **Verify:** Order with 3 items → create 2 shipments (items A+B in shipment 1, item C in shipment 2) → advance shipment 1 to `Send` → shipment 1 shows `Send`, shipment 2 still `New` (per-shipment states independent) → advance shipment 2 to `Send` → set the order's `OrderStatus = Completed`. Assert there is no "Partially shipped" order status and no "Delivered" shipment state.
 - **Violation signal:** Order marked "Completed" while shipments are pending; partial shipment not reflected in order status; items missing from shipment tracking.
 - **Agents:** qa-backend-expert (order/shipment API), qa-testing-expert (Admin SPA)
 
@@ -264,17 +265,17 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 ### BL-ORD-006: Payment state machine (detailed) `[P0-revenue]`
 - **Rule:** Payment states and allowed transitions:
   - `Pending` → `Authorized` (gateway authorization successful)
-  - `Authorized` → `Captured` (funds captured/settled)
+  - `Authorized` → `Paid` (funds captured/settled; the capture operation sets status to `Paid` — there is **no `Captured` enum value**)
   - `Authorized` → `Voided` (authorization cancelled before capture)
-  - `Captured` → `Refunded` (full refund processed)
-  - `Captured` → `PartiallyRefunded` (partial refund, remainder still captured)
-  - Illegal: `Pending → Captured` (skipping auth), `Voided → Captured`, `Refunded → Captured`
+  - `Paid` → `Refunded` (full refund processed)
+  - `Paid` → `PartiallyRefunded` (partial refund, remainder still captured)
+  - Illegal: `Pending → Paid` (skipping auth), `Voided → Paid`, `Refunded → Paid`
 - **Verify:** For each illegal transition, attempt via API → expect 400/422 error. In Admin, verify buttons only show valid next states.
 - **Violation signal:** Any illegal transition succeeds; Admin shows buttons for invalid states; API returns 200 on illegal transition.
 - **Agents:** qa-backend-expert (payment API state machine)
 
 ### BL-ORD-007: Shipment state machine (detailed) `[P1-data]`
-- **Rule:** Live admin Shipment Status dropdown exposes 5 values (verified 2026-04-22 on vcst-qa):
+- **Rule:** Live admin Shipment Status dropdown exposes 5 values (verified 2026-04-22 on the environment):
   - `New` → `Pick & Pack` (items being prepared)
   - `Pick & Pack` → `Ready to Send`
   - `Ready to Send` → `Send` (shipped with tracking number — note admin spelling is "Send" not "Sent")
@@ -287,7 +288,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-backend-expert (shipment API), qa-testing-expert (Admin SPA)
 
 ### BL-ORD-009: Order status vocabulary `[P1-data]`
-- **Rule:** Admin Order → Status dropdown exposes exactly 7 settable system values (verified 2026-04-22 on vcst-qa via Settings → Order Statuses dictionary):
+- **Rule:** Admin Order → Status dropdown exposes exactly 7 settable system values (verified 2026-04-22 on the environment via Settings → Order Statuses dictionary):
   - `New` — order created, no payment activity yet
   - `Pending` — awaiting fulfillment action
   - `Payment required` — payment not yet authorized/captured
@@ -314,7 +315,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** Single-currency USD order → `order { orderTotals { isDefaultTotalCurrency total{currency{code}} } }` → exactly 1 entry, USD, `isDefaultTotalCurrency=true`. Mixed (USD + PTS) order → exactly 2 entries, exactly one `isDefaultTotalCurrency=true`, each subTotal = sum of its-currency lines. REST GET without `WithOrderTotals` → `orderTotals` null.
 - **Violation signal:** Duplicate currency entries; zero or two `isDefaultTotalCurrency=true`; an entry's subtotal mixes currencies; `OrderTotals` populated without the flag requested.
 - **Agents:** qa-backend-expert, qa-frontend-expert
-- **Source:** vc-module-order #497 `DefaultCustomerOrderTotalsCalculator.CalculateTotals` + `OrderTotal.cs`; vc-module-x-order #43 `CustomerOrderAggregate.OrderTotals` / `CustomerOrderType.cs:179`; live-verified vcst-qa 2026-06-22. Covered by suites 075b/083b.
+- **Source:** vc-module-order #497 `DefaultCustomerOrderTotalsCalculator.CalculateTotals` + `OrderTotal.cs`; vc-module-x-order #43 `CustomerOrderAggregate.OrderTotals` / `CustomerOrderType.cs:179`; live-verified 2026-06-22 on the environment. Covered by suites 075b/083b.
 - **Promoted:** 2026-06-23.
 
 ---
@@ -347,22 +348,22 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert (checkout forms), qa-backend-expert (customer profile API)
 
 ### BL-AUTH-005: RBAC 6-permission model `[P1-data]`
-- **Rule:** Every module in Virto Commerce follows a 6-permission model: `access`, `read`, `create`, `update`, `delete`, `export`. Permissions are assigned to roles, and roles are assigned to users. A user without `create` permission on a module must not see the "Create" button in Admin. API calls without the required permission must return 403 Forbidden.
+- **Rule:** Every module in Virto Commerce follows the same permission-claim model built from a canonical base set — `access`, `read`, `create`, `update`, `delete` (the 5-permission module template in `ModuleConstants.cs`) — plus `export` on modules that support data export, and further module-specific extensions (e.g. Orders adds `read_prices` / `update_shipments`). The commonly-used "6-permission" shorthand = the base 5 + `export`. Permissions are assigned to roles, and roles are assigned to users. A user without `create` permission on a module must not see the "Create" button in Admin. API calls without the required permission must return 403 Forbidden.
 - **Role whitelist is NOT a permission boundary (VCST-5239):** the Customer-module Organization/Membership role **whitelists** populate assignment dropdowns only; they are **not** server-enforced — assigning a non-whitelisted role via xAPI `changeOrganizationContactRole` / REST succeeds (`succeeded:true`). The `access/read/…/403` model governs module *operations*, not which roles may be *assigned*. Do NOT treat a non-whitelisted-role assignment as a 403/security case unless a server boundary is later added.
 - **Verify:** Create a role with only `read` on Catalog → assign to user → sign in as that user → "Create" and "Delete" buttons absent in Catalog blade. Attempt `POST /api/catalog/products` → 403. Add `create` permission → button appears.
 - **Violation signal:** Buttons visible for unauthorized actions; API returns 200 instead of 403; user can create/delete without permission; `access` permission not required to enter module.
 - **Agents:** qa-backend-expert (RBAC API, Admin SPA), qa-testing-expert (permission testing)
 
 ### BL-AUTH-006: Role hierarchy `[P1-data]`
-- **Rule:** Virto Commerce follows a role hierarchy: `Administrator > Store Manager > Customer Service > Customer > Anonymous`. Higher roles inherit all permissions of lower roles. An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data. Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`).
+- **Rule:** Virto Commerce roles are independent permission-claim sets, **NOT** a built-in inheritance hierarchy — a role has exactly the permissions assigned to it and does not automatically inherit a lower role's permissions. The names `Administrator` / `Store Manager` / `Customer Service` / `Customer` / `Anonymous` describe conventional privilege **tiers** (broadest → narrowest permission sets) used to structure the tests below, not framework-enforced inheritance. An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data. Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`).
 - **Verify:** Store Manager → can manage products, orders for assigned store → cannot access Platform Settings blade. Customer → can view own orders → cannot access Admin SPA. Anonymous → can browse catalog (if flag ON) → cannot access cart/checkout (if guest checkout OFF).
 - **Violation signal:** Lower role accesses higher-role functions; Store Manager modifies platform settings; customer sees other customers' orders; anonymous user bypasses access restrictions.
 - **Agents:** qa-backend-expert (Admin SPA, roles API), qa-frontend-expert (storefront permissions)
 
 ### BL-AUTH-007: Storefront logout UX — popup-only `[P1-ux]` `[GOLDEN RULE]`
-- **Rule:** The storefront exposes logout **only** inside the account-menu popup in the top header. There is no `/sign-out` page, no `/logout` page, and no standalone logout icon in the header. Correct sequence: (1) click the user name / avatar in the top-right header — opens the account-menu popup; (2) click the **Logout** button inside the popup (selector `data-testid="main-layout.top-header.account-menu.sign-out-button"`).
-- **Verify:** `browser_navigate('/sign-out')` and `/logout` must not resolve to a logout page (404 or redirect to home). Header nav must not contain a top-level logout button. Clicking the user name opens the popup; clicking Logout inside the popup signs the user out and redirects to home or `/sign-in`.
-- **Violation signal:** A `/sign-out` route renders a page; a header-level logout button exists; logout works only via a URL (no popup); the popup selector `main-layout.top-header.account-menu.sign-out-button` is missing.
+- **Rule:** The storefront exposes logout **only** inside the account-menu popup in the top header. There is no `/sign-out` page, no `/logout` page, and no standalone logout icon in the header. Correct sequence: (1) click the account button `data-test-id="account-button"` in the top-right header — opens the account-menu popup (`data-test-id="account-menu"`); (2) click the logout button **inside that popup**, selector `data-test-id="sign-out-button"`. Note the storefront test attribute is `data-test-id` (hyphenated) with the **flat** value `sign-out-button` — `data-testid` is not used in vc-frontend and there is no dotted-path value. (vc-frontend source: `client-app/shared/layout/components/header/_internal/top-header.vue`; composable `useSignMeOut`; routes `client-app/router/routes/main.ts` + `constants.ts` confirm no `/sign-out` or `/logout` route — logout calls `signMeOut` which clears the session and reloads through the auth guard.)
+- **Verify:** `browser_navigate('/sign-out')` and `/logout` must not resolve to a logout page (they fall through to the catch-all, no logout page). Header nav must not contain a top-level logout button. Clicking `data-test-id="account-button"` opens the popup; clicking `data-test-id="sign-out-button"` inside it signs the user out and reloads through the auth guard.
+- **Violation signal:** A `/sign-out` route renders a page; a header-level logout button exists; logout works only via a URL (no popup); the popup logout selector `data-test-id="sign-out-button"` (inside `data-test-id="account-menu"`) is missing.
 - **Applies to:** All test cases whose Steps say "sign out", "log out", "Click logout button", or "Navigate to /sign-out" — agents MUST execute the popup sequence and reviewers MUST reject the loose/wrong Step text in favor of the popup sequence.
 - **Agents:** qa-frontend-expert (storefront), qa-testing-expert (execution), test-management-specialist (CSV review)
 
@@ -374,9 +375,10 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert (storefront route guard), qa-backend-expert (`/connect/token grant_type=impersonate` self-target rejection)
 
 ### BL-AUTH-009: Nested impersonation forbidden — no silent path from impersonated session `[P0-security]`
-- **Rule:** An impersonated session must not be able to silently impersonate a third user. When the current authenticated session is itself an impersonation (banner visible, target identity active, operator context preserved), navigating to `/account/impersonate/{thirdUserId}` MUST require the operator's own credentials again via the Security Verification Form. The silent flow (form-skipping when `operator != null`) applies only to the original operator's authenticated session, never to a session where the operator IS being impersonated.
-- **Verify:** Authenticated session is impersonating User-A → navigate to `/account/impersonate/@td(USR-B.userId)` → Security Verification Form renders (no silent path); attempting to submit User-A's credentials fails (User-A lacks `CanImpersonate`); only the original operator's credentials succeed and return to operator → User-B impersonation.
-- **Violation signal:** Silent flow triggers from an impersonated session (form does not render); impersonated user successfully impersonates a third user without providing the operator's credentials; chained impersonation tokens are issued (privilege escalation).
+- **Rule:** An impersonated session must not be able to silently impersonate a third user. **Enforcement is server-side, NOT a storefront form gate.** The storefront does NOT re-prompt: in `client-app/pages/account/impersonate.vue`, `canSkipVerification = isAuthenticated && (!!operator || checkPermissions(PlatformPermissions.CanImpersonate))` — an already-impersonated session HAS `operator` set, so `canSkipVerification` is TRUE and the **silent path** runs (`useImpersonate().impersonateAuthenticated(targetUserId)` → POST `/connect/token grant_type=impersonate` with the current token); `ImpersonateForm` renders only in the `v-else`. Therefore chained impersonation MUST be blocked by the token endpoint — `/connect/token grant_type=impersonate` must **reject a request issued with an already-impersonated token** — and cannot rely on the form.
+- **⚠️ CURRENTLY VIOLATED (live-confirmed 2026-07-15 — OPEN privilege-escalation defect):** the token endpoint does **NOT** reject a chained impersonation. A session already impersonating User-A (whose own token carries **no** `loginOnBehalf` permission) successfully minted a fresh impersonation token for a third User-B (**HTTP 200**), with the original operator preserved in `vc_operator_user_id`. Control proof: the same principal (A) gets **403** impersonating B on its own plain token, but **200** when the request rides the impersonated token. **Root cause** — `vc-platform` `src/VirtoCommerce.Platform.Web/Controllers/Api/AuthorizationController.cs` `IsImpersonateGrantType()`: the `SecurityLoginOnBehalf` permission check is guarded by `IsNullOrEmpty(OperatorUserId)`, so it is **skipped whenever the presented token already has an operator claim** — conflating "reset back to operator" (empty `user_id`) with "retarget to an arbitrary new `user_id`". Fix direction: run the permission check whenever a non-empty `user_id` is supplied, regardless of an existing operator claim. Any leaked impersonated token becomes a skeleton key (pivot to any user, no operator creds). Until fixed, treat this as the known violation state, not a test bug. Bug drafted: `reports/bugs/BUG-nested-impersonation-privilege-escalation.md`.
+- **Verify:** From a session already impersonating User-A, navigate to the impersonate route for User-B → the silent path fires (**no form is expected**). At the network layer, `/connect/token grant_type=impersonate` on the impersonated token **currently returns HTTP 200** (a chained token) — the expected-post-fix behavior is a rejection (4xx, no token issued).
+- **Violation signal:** The backend issues a chained impersonation token from an already-impersonated session (privilege escalation) — **currently the case**. NOTE: the storefront form NOT rendering is **expected** (it is not the enforcement point) — do not treat that as the violation.
 - **Applies to:** IMP-013 (suite 082-auth-impersonation). Security audits of the impersonation token chain.
 - **Agents:** qa-backend-expert (`/connect/token` chain enforcement), qa-frontend-expert (silent-flow gate condition)
 
@@ -388,9 +390,9 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert (storefront layout + route persistence)
 
 ### BL-AUTH-011: Stop Impersonation must restore operator session without sign-in round-trip `[P1-data]`
-- **Rule:** Clicking Stop Impersonation in the banner must restore the original operator's authenticated session in place — without redirecting to `/sign-in`, without requiring re-authentication, and without losing the operator's prior session state (cart, in-progress flows, etc.). The result: target identity is removed, operator identity is active, no auth prompt.
-- **Verify:** Operator (SUPPORT_AGENT) starts impersonating target → confirms banner → clicks Stop Impersonation → URL does NOT redirect to `/sign-in`; account menu now shows operator name (not target); operator's cart/wishlist/addresses are restored to operator-scope; no Security Verification Form rendered; no `/connect/token` call with `grant_type=password` (only the existing operator token is restored).
-- **Violation signal:** Stop Impersonation redirects to `/sign-in` (operator must re-authenticate); account menu shows "Sign in" instead of operator name (session lost); target's cart/data persists in operator's session after stop; full page reload occurs (operator session is dropped and recreated).
+- **Rule:** Stopping impersonation must restore the original operator's authenticated session **without a sign-in round-trip** — no redirect to the sign-in route and no re-authentication prompt. The action is the **"Back to operator" row inside the account-menu popup** (`data-test-id="back-to-operator-row"`, label "Back to {operator name}"), NOT a button in the banner. It calls `useImpersonate().backToOperator()` → `revertImpersonate(...)` → `requestImpersonateToken("", ...)`, which POSTs `/connect/token` with `grant_type=impersonate` and an **empty `user_id`** — minting a **fresh operator session** (never `grant_type=password`). The restored operator tokens are written to storage and **then** the tab performs a full-page navigation (`location.href`) to the operator landing route (other tabs reload via broadcast). Because the operator token is persisted **before** the reload, no re-auth occurs. (vc-frontend source: `useImpersonate` `backToOperator`/`revertImpersonate`; account-menu popup row `back-to-operator-row`.)
+- **Verify:** Operator starts impersonating target → confirms banner → clicks the "Back to operator" row (`data-test-id="back-to-operator-row"`) → the `/connect/token grant_type=impersonate` call carries an **empty `user_id`** (no `grant_type=password`); the URL does **NOT** go to the sign-in route; after the navigation the account menu shows the operator name (not target).
+- **Violation signal:** Stopping impersonation redirects to the sign-in route (operator must re-authenticate); account menu shows "Sign in" instead of operator name (session lost); a `grant_type=password` call is made. NOTE: a full-page navigation to the operator landing route **is expected by design** — it is NOT a violation (the operator token is persisted before the reload, so the session survives).
 - **Applies to:** IMP-012 (suite 082-auth-impersonation). Any regression that touches the impersonation token-stack restore logic.
 - **Agents:** qa-frontend-expert (storefront stop-impersonation handler), qa-backend-expert (operator token re-activation)
 
@@ -428,11 +430,11 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Expired quote converted to order; no expiry indication shown; "Convert" button active on expired quote; order placed at expired quote prices.
 - **Agents:** qa-frontend-expert (quotes UI), qa-backend-expert (quotes API)
 
-### BL-B2B-004: Delegated purchasing limits `[P0-revenue]`
-- **Rule:** Organization members with "Buyer" role have a purchasing limit (budget threshold). Orders exceeding the limit require approval from an org admin or manager. The limit applies per-order, not cumulative. When the limit is exceeded, the order enters "Pending approval" status instead of being placed directly.
-- **Verify:** Set buyer limit to $500 → buyer places $400 order → succeeds. Buyer places $600 order → enters "Pending approval" → org manager approves → order placed. Buyer attempts to self-approve → rejected.
-- **Violation signal:** Order exceeding limit placed without approval; buyer can approve their own order; limit check skipped; pending order auto-approved.
-- **Agents:** qa-frontend-expert (checkout approval flow), qa-backend-expert (order approval API)
+### BL-B2B-004: Pre-purchase approval is quote-based; no native per-order spending limit `[P0-revenue]`
+- **Rule:** Virto Commerce has **no** native per-order spending-limit / budget-threshold gate, and **no** auto-approval order status (live-verified 2026-07-15: the settable `Order.Status` set is New, Pending, Payment required, Ready for pickup, Completed, Cancelled, Custom, plus read-only Processing — there is **no** "Pending approval"). Pre-purchase approval is **quote-based**: a buyer submits a Purchase Request / Quote (`submitQuoteRequest`), which an organization approver accepts or declines (`approveQuoteRequest` / `declineQuoteRequest`) before it can become an order. The `CustomerOrderType.isApproved` boolean is a passive data flag with no workflow or mutation behind it — not a spending-limit gate. Any budget-threshold / delegated-limit enforcement is a **custom or roadmap** capability, not stock platform behavior.
+- **Verify:** As an org member, create a Purchase Request / Quote → `submitQuoteRequest` → an org approver `approveQuoteRequest` / `declineQuoteRequest` before it is ordered. Introspect xAPI: order-status enum has **no** `PendingApproval`; there is **no** `approveOrder`/`rejectOrder` mutation and no org/member `limit`/`budget` field.
+- **Violation signal:** A test asserts a stock budget-limit order-approval workflow ("Pending approval" order status, per-order spending cap, self-approval block) — this feature does not exist in the base platform and must not be asserted as native. (A custom deployment MAY add one; scope such tests to that deployment.)
+- **Agents:** qa-frontend-expert (quote request/approval flow), qa-backend-expert (quote xAPI + order-status enum)
 
 ### BL-B2B-005: Member role determines feature visibility `[P1-data]`
 - **Rule:** Organization features visible on the storefront depend on the member's role. Org Admins see: member management, quotes, order approval, lists. Buyers see: order placement (within limits), lists, own orders. Members without purchasing role see: catalog browsing only. Feature visibility is controlled by both role permissions and the store's feature flags (`quotesEnabled`, etc.).
@@ -484,19 +486,25 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
   (`OrganizationMembership.Roles`, `changeOrganizationContactRole` / `PUT /api/customer/organization-memberships/{id}`).
   Each picker's option set = (assignable roles ∩ its own whitelist) − roles already assigned to that org/membership —
   the two whitelists are independent settings and must never cross-contaminate each other's picker. An EMPTY whitelist
-  must lock out assignment entirely (zero options), never silently fall back to "all platform roles." **Server-side
+  means **NO restriction — the picker offers ALL platform roles** (source-grounded: `vc-module-customer`
+  `Scripts/services/rolesPickerService.js` applies the whitelist filter *only* inside `if (whitelist.length) { … }`, so an
+  empty `allowedValues` skips filtering; the org-level picker and the per-member editor share this one service).
+  "Empty = allow-all", NOT lock-out, is the **intended design** — confirmed at source + live 2026-07-15 during VCST-5441
+  (corrects the earlier assumption that empty must lock out to zero options). **Server-side
   enforcement of the whitelist is a planned gate, not yet implemented** (VCST-5239 Story EPIC-5239-03): as of 2026-07,
   `PUT /api/organizations` and `changeOrganizationContactRole` accept a non-whitelisted `roleId` with no rejection
   (backend finding F1 — zero whitelist references in `profile-experience-api#137` or the REST organizations endpoint) —
   the whitelist today constrains only the Admin UI picker's *offered* options, not what the API will *accept*.
-- **Verify:** Remove a currently-visible role from either whitelist → cache-reset + reload → picker no longer offers it.
-  Empty whitelist → picker shows zero options, no allow-all fallback. Add-direction persists round-trip after reload;
-  clear-to-empty currently does NOT persist (VCST-5441). Direct PUT/GraphQL bypass with a non-whitelisted role currently
+- **Verify:** Remove a currently-visible role from a NON-EMPTY whitelist → cache-reset + reload → picker no longer offers it.
+  Empty whitelist → picker shows **ALL** platform roles (filter skipped) — this is correct, NOT a fallback bug. Add-direction
+  persists round-trip after reload; clear-to-empty **persists** after reload as of Platform 3.1044.0 / vc-platform PR #3076
+  (VCST-5441 fixed 2026-07-15; previously silently reverted). Direct PUT/GraphQL bypass with a non-whitelisted role currently
   succeeds — expected-post-fix it must be rejected (`errors[]` non-empty) without blocking a whitelisted role on the same path.
-- **Violation signal:** Picker offers a role outside its whitelist after a genuine cache-reset+reload; empty whitelist
-  falls back to listing every role; one whitelist's picker reflects the other whitelist's roles; clear-to-empty silently
-  reverts (VCST-5441 signature); once server enforcement ships — a non-whitelisted role is accepted by the API, OR a
-  whitelisted role is rejected (over-blocking).
+- **Violation signal:** With a NON-EMPTY whitelist, the picker offers a role outside it after a genuine cache-reset+reload,
+  OR fails to narrow to the whitelist's entries; an EMPTY whitelist wrongly locks out / shows zero options (empty must show
+  ALL roles — the filter is skipped by design); one whitelist's picker reflects the other whitelist's roles; clear-to-empty
+  silently reverts (the pre-fix VCST-5441 signature — a re-appearance now means PR #3076 regressed); once server enforcement
+  ships — a non-whitelisted role is accepted by the API, OR a whitelisted role is rejected (over-blocking).
 - **Related:** BL-B2B-005 (org-level role union/inheritance), BL-B2B-008 (org-scoped role-change isolation), VCST-5239, VCST-5441.
 - **Agents:** qa-backend-expert (Admin SPA picker, REST/GraphQL enforcement)
 
@@ -529,7 +537,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert (storefront nav), qa-backend-expert (category API)
 
 ### BL-CAT-005: Product requires virtual catalog assignment for storefront `[P1-data]`
-- **Rule:** A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the virtual catalog assigned to the store. Products must be in a category within the store's virtual catalog (or its linked physical catalog) to be visible.
+- **Rule:** A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
 - **Verify:** Create product in physical catalog only (not in store's virtual catalog) → storefront search returns nothing → add to virtual catalog category → product appears on storefront.
 - **Violation signal:** Product visible on storefront without virtual catalog assignment; product appears in wrong store's catalog; physical-only product accessible via search.
 - **Agents:** qa-backend-expert (catalog API), qa-frontend-expert (storefront search)
@@ -548,9 +556,9 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 
 ### BL-CAT-008: Unit-of-measure CRUD integrity `[P2-ux]`
 - **Rule:** Creating, renaming, or deleting a unit-of-measure group or unit in the Catalog module persists atomically and leaves no orphaned data. Deleting a group removes its units; a deleted group/unit no longer appears in the list or in product UoM dropdowns; group integrity is preserved after a unit delete.
-- **Verify:** Create UoM group → appears in list; rename → list reflects new name; delete group → group and its units absent (`GET /api/catalog/measureunits`). Create unit in group → appears with name/short-name/conversion-factor; edit → persists; delete unit → removed, group intact (`GET /api/catalog/measureunits/{groupId}`).
+- **Verify:** Create UoM group → appears in list (`POST /api/catalog/measures/search`); rename → list reflects new name; delete group → group and its units absent (`DELETE /api/catalog/measures?ids=…`; verify via `GET /api/catalog/measures/{id}`). Create unit in group → appears with name/short-name/conversion-factor; edit → persists; delete unit → removed, group intact (`GET /api/catalog/measures/{id}`). Note: units are **nested inside** the Measure (group) entity and saved via the group (`POST`/`PUT /api/catalog/measures`, partial `PATCH /api/catalog/measures/{id}`) — there is no separate unit endpoint.
 - **Violation signal:** Group/unit not created; edit not persisted; delete leaves orphaned units or stale API data; group integrity broken after a unit deletion.
-- **Agents:** qa-backend-expert (Admin SPA + REST `/api/catalog/measureunits`)
+- **Agents:** qa-backend-expert (Admin SPA + REST `/api/catalog/measures`; permissions `Measures*`)
 
 ---
 
@@ -625,7 +633,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Agents:** qa-backend-expert (API resilience), qa-testing-expert (fault injection), qa-frontend-expert (error UX)
 
 ### BL-CROSS-012: Admin entity deletion never creates $0 products `[P0-revenue]`
-- **Rule:** No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever result in a product being purchasable at $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button.
+- **Rule:** No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable by design only when the store's `zero_price_product_enabled` theme flag is TRUE (default FALSE); with the flag FALSE, $0-priced products are not addable to cart. When auditing, confirm the flag state before treating a $0 purchase as a violation.
 - **Verify:** Delete price list → check affected products show "Unavailable" not $0. Remove currency → products in that currency become unavailable. Disable pricing module → all products become unpurchasable.
 - **Violation signal:** Any product purchasable at $0.00 due to admin action; "Add to Cart" active when price data is missing; order placed at $0.
 - **Agents:** qa-frontend-expert (storefront), qa-backend-expert (pricing API), qa-testing-expert (end-to-end)
@@ -640,10 +648,10 @@ These invariants span multiple modules and are where the most expensive producti
 - **Violation signal:** Facet shows 15 but filter returns 12 products; facet counts don't update after second filter; total count mismatches; empty facets still shown (count > 0 but no results).
 - **Agents:** qa-frontend-expert (catalog page), qa-backend-expert (xCatalog facet API)
 
-### BL-SRCH-002: Zero-result query shows suggestions `[P2-ux]`
-- **Rule:** When a search query returns zero results, the storefront must display: (1) a clear "No results found for '[query]'" message, (2) optionally, spelling suggestions or "Did you mean..." alternatives, (3) a fallback — popular products or categories. The page must NOT show a blank grid, a broken layout, or an error.
-- **Verify:** Search for a nonsense term → "No results" message shown → page layout intact → suggestions or fallback content visible. Search for a common misspelling → "Did you mean..." suggestion appears.
-- **Violation signal:** Blank product grid; broken layout on zero results; no message indicating empty results; error/500 on uncommon search terms.
+### BL-SRCH-002: Zero-result query shows an intact empty state `[P2-ux]`
+- **Rule:** When a search query returns zero results, the search-results page (rendered by `category.vue` → `category-products.vue`) must render an intact empty state and never a blank grid, broken layout, or error. It must display (1) a clear no-results message via a `VcEmptyView` (variant `search`, icon `outline-stock`) using i18n key `pages.catalog.no_products_filtered_message` when a keyword/filters are active (else `pages.catalog.no_products_message`), with the searched term echoed in the page heading via i18n key `pages.search.header_empty`; and (2) a recovery action — a reset button (i18n key `pages.catalog.no_products_button`) that clears the keyword/filters (emits `resetFilterKeyword`). NOTE: vc-frontend does **NOT** implement spelling "Did you mean…" suggestions nor a popular-products/categories fallback — do not assert them.
+- **Verify:** Search for a nonsense term → the `VcEmptyView` no-results message shows with the term echoed in the heading → page layout intact → the reset button is present and clears the keyword/filters. (Do not assert a "Did you mean…" suggestion — it does not exist.)
+- **Violation signal:** Blank product grid; broken layout on zero results; no `VcEmptyView`/message on zero results; error/500 on uncommon search terms.
 - **Agents:** qa-frontend-expert (search results page), ui-ux-expert (UX evaluation)
 
 ### BL-SRCH-003: Search index consistency after catalog change `[P1-data]`
@@ -669,9 +677,9 @@ These invariants span multiple modules and are where the most expensive producti
 ## Domain 10: Shipping & BOPIS (BL-SHIP)
 
 ### BL-SHIP-001: Ship-to address determines available methods `[P0-revenue]`
-- **Rule:** Available shipping methods and rates are determined by the shipping (delivery) address, not the billing address. Each shipping method has configured zones — only methods covering the destination zone are shown at checkout. Changing the shipping address must refresh the available methods and their rates in real time.
-- **Verify:** Enter domestic address → see local methods (standard, express). Change to international address → local methods disappear, international methods appear with different rates. Enter an address in an uncovered zone → no shipping methods, checkout blocked with message.
-- **Violation signal:** Shipping methods don't change when address changes; billing address used instead of shipping; methods shown for uncovered zones; rates don't update for new destination.
+- **Rule:** Available shipping methods and rates are driven by the shipping (delivery) address, never the billing address: the platform asks every active shipping method for a rate, passing it the delivery-address-bearing shipment. VC's out-of-box **Fixed Rate** method returns flat Ground/Air rates that do **NOT** vary by destination — there are **no built-in shipping zones**. Destination-/zone-dependent availability or rates require a **custom shipping provider** registered via the module's extensibility point. Where such a provider is configured, changing the shipping address must refresh the available methods and their rates.
+- **Verify:** Confirm options derive from the delivery address, not billing. Default install (Fixed Rate): Ground/Air appear at their configured flat rates regardless of destination. Store with a zone/address-aware provider: changing to an out-of-zone address removes uncovered methods and updates rates; an uncovered zone blocks checkout with a message.
+- **Violation signal:** Billing address used instead of shipping to compute methods/rates; a zone-aware provider's methods/rates don't change when the delivery address changes; methods shown for an uncovered zone; rates don't update for a new destination on a zone-aware provider.
 - **Agents:** qa-frontend-expert (checkout shipping step), qa-backend-expert (shipping API)
 
 ### BL-SHIP-002: BOPIS requires store pickup location `[P1-data]`
@@ -699,9 +707,9 @@ These invariants span multiple modules and are where the most expensive producti
 These invariants are extracted from BOPIS suite assertions (suites 036–038). They complement the general Shipping & BOPIS rules in Domain 10 with BOPIS-specific behavioral contracts.
 
 ### BL-BOPIS-001: Cart-level Pickup toggle assigns a single pickup shipment to all items `[P1-data]`
-- **Rule:** Storefront v2.48.0 exposes a cart-level Pickup/Shipping toggle (not per-line). When the customer selects Pickup, all items in the cart are assigned to a single pickup fulfillment center. The cart xAPI must return exactly one shipment record with `fulfillmentCenterId` populated and `shippingAddress` null. Switching back to Shipping must clear the FFC and revert to a standard delivery shipment.
-- **Verify:** Select cart-level Pickup → choose a store → inspect cart xAPI `shipments[]` → exactly one shipment with `fulfillmentCenterId` set, `shippingAddress` = null → checkout shows pickup store, no shipping address form → switch to Shipping → `fulfillmentCenterId` cleared, shipping address form appears.
-- **Violation signal:** Cart xAPI returns zero shipments or more than one shipment for a pure-BOPIS cart; `fulfillmentCenterId` is null after Pickup is confirmed; `shippingAddress` is populated on a pickup shipment; switching to Delivery does not clear `fulfillmentCenterId`.
+- **Rule:** The storefront exposes a cart-level Pickup/Shipping toggle (not per-line). When the customer selects Pickup, all items are assigned to a single pickup shipment. The cart xAPI must return exactly one shipment with `shipmentMethodCode = "BuyOnlinePickupInStore"`, `shipmentMethodOption = "Pickup"`, and **`pickupLocation.id` populated** (output field `pickupLocation { id }`; the write side is `InputShipmentType.pickupLocationId`). `fulfillmentCenterId` may legitimately be **null** on a pickup shipment and MUST NOT be treated as a violation. The shipment's `deliveryAddress` is **populated** with the pickup location's physical address — that is expected, not a violation. Switching back to Shipping must clear the pickup location and revert to a standard delivery shipment. (Live-verified 2026-07-15; corroborated by suite `050k` PCK-GQL-094.)
+- **Verify:** Select cart-level Pickup → choose a store → inspect cart xAPI `shipments[]` → exactly one shipment with `pickupLocation { id }` set (`fulfillmentCenterId` may be null; `deliveryAddress` carries the pickup location's address) → checkout shows pickup store, no shipping-address entry form → switch to Shipping → `pickupLocation` cleared, delivery-address form appears.
+- **Violation signal:** Cart xAPI returns zero shipments or more than one shipment for a pure-BOPIS cart; `pickupLocation.id` is null after Pickup is confirmed; switching to Delivery does not clear the pickup location. (Note: a null `fulfillmentCenterId` or a populated `deliveryAddress` on a pickup shipment is EXPECTED, not a violation.)
 - **Note:** Per-line mixed fulfillment (some items pickup, some delivery in the same cart) is not supported in v2.48.0. This invariant will be updated when mixed-mode ships.
 - **Agents:** qa-frontend-expert (cart Pickup toggle, checkout), qa-backend-expert (cart xAPI `shipments[]`)
 
@@ -712,9 +720,9 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Agents:** qa-frontend-expert (checkout totals), qa-backend-expert (order shipment API)
 
 ### BL-BOPIS-003: FFC availability label matches actual stock level `[P1-data]`
-- **Rule:** The availability label shown for each fulfillment center in the BOPIS store-selector modal must accurately reflect the product's stock at that FFC. The label mapping is: `In Stock` (qty > 0, available today), `Available for Transfer` (qty > 0, requires inter-FFC transfer), `Not Available` (qty = 0 at this FFC). Labels must update after stock changes within the 120s consistency window (BL-CROSS-009).
-- **Verify:** FFC-A has qty=5 → label shows "In Stock." Set FFC-A qty=0 → wait 120s → label shows "Not Available." Set qty=1 with transfer flag → label shows "Available for Transfer."
-- **Violation signal:** "In Stock" label shown when FFC qty=0; "Not Available" shown when stock exists; label stale beyond 120s; label missing entirely; "Available for Transfer" shown for direct-availability stock.
+- **Rule:** The availability label shown for each fulfillment center in the BOPIS store-selector modal must accurately reflect the product's stock at that FFC. The backend `ProductPickupLocation.AvailabilityType` is one of **three** values: `Today` (in stock at the location's own FFC, default note "Today"), `Transfer` (available via the location's configured transfer FFCs) or `GlobalTransfer` (covered by store-wide global transfer); both transfer tiers default to the note "Via transfer". The displayed strings are theme-localizable settings (`TodayAvailabilityNote` / `TransferAvailabilityNote` / `GlobalTransferAvailabilityNote`), **not fixed literals**. A location where the product is wholly unavailable (no own stock, no transfer, global transfer off) is **EXCLUDED from the result entirely** (the service returns `null`) rather than shown with a "Not Available" label. Labels must update after stock changes within the 120s consistency window (BL-CROSS-009).
+- **Verify:** FFC-A has qty=5 → location shows the "Today" note. Set FFC-A qty=0 → wait 120s → the location **disappears** from the selector (or, if global transfer is enabled, downgrades to the transfer note). Set qty at a transfer FFC → location shows the "Via transfer" note.
+- **Violation signal:** "Today"/in-stock note shown when the FFC qty=0; transfer note shown for direct-availability stock; label stale beyond 120s; a wholly-unavailable location rendered with a visible "Not Available" row instead of being dropped.
 - **Agents:** qa-frontend-expert (BOPIS modal labels), qa-backend-expert (inventory API, FFC data)
 
 ### BL-BOPIS-004: BOPIS store-selector modal is view-only on PDP `[P1-data]`
@@ -736,8 +744,8 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Agents:** qa-frontend-expert (checkout form structure), qa-backend-expert (order address fields in xAPI)
 
 ### BL-BOPIS-007: BOPIS store-selector map does not collapse on no-results search `[P2-ux]`
-- **Rule:** When the store-selector modal's search returns no results (no matching store name or location), the map panel must remain visible and maintain at least 40% of the modal width. The map must NOT collapse to zero width or hidden state on a no-results query. The no-results message appears in the list panel; the map panel is unaffected.
-- **Verify:** Open BOPIS store-selector modal → measure map panel width (baseline ~50% of modal) → search for a guaranteed no-match term (e.g., `xyzabc123notastore`) → no-results message appears in list panel → map panel width remains >= 40% of modal total width (measure via `browser_evaluate` with `getBoundingClientRect()`).
+- **Rule:** When the store-selector modal's search returns no results, the map panel must remain visible and must NOT collapse to zero width or a hidden state. Mechanism (vc-frontend source: `shared/checkout/components/select-address-map/select-address-map-desktop.vue`): the side-by-side layout renders whenever `(addresses.length || filterIsApplied)` is true, so a no-results **search** (filter applied, zero results) keeps both panels mounted — the list sidebar is a fixed width (Tailwind `w-60` / 240 px, `shrink-0`) and the map wrapper is `grow` with the map view inside it (`data-test-id="pickup-locations-map"`, `h-full`) filling the remaining modal width and never shrinking on a no-results query. The no-results message + Reset-search button render inside the fixed-width list panel (`data-test-id="pickup-locations-not-found"` / `"reset-search-button"`), not the map. The full map-replacing not-found placeholder appears only when there are genuinely NO locations AND no filter is applied — a different state. NOTE: the ≥40% / baseline ~50% figures are a conservative live-measured floor, not an enforced CSS token; with a fixed 240 px sidebar and a `grow` map, on desktop the map is in practice well over half the modal width.
+- **Verify:** Open the BOPIS store-selector modal → measure the map panel (`data-test-id="pickup-locations-map"`) width via `browser_evaluate` + `getBoundingClientRect()` → search for a guaranteed no-match term → the no-results message (`data-test-id="pickup-locations-not-found"`) appears in the list panel → the map panel remains visible and does not shrink (≥40% of modal width as a conservative floor).
 - **Violation signal:** Map panel collapses to < 40% of modal width after no-results search; map panel hidden entirely; map width measured at 0px after search; map panel width decreases on no-results but not on results.
 - **Cross-reference:** VCST-4518 (map collapse regression)
 - **Agents:** qa-frontend-expert (BOPIS modal layout), ui-ux-expert (layout measurement)
@@ -783,13 +791,13 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Agents:** qa-backend-expert (import API, Admin SPA)
 
 ### BL-IMPEX-002: Export matches admin grid filters `[P1-data]`
-- **Rule:** When exporting data from Admin (products, orders, customers), the exported file must contain exactly the records matching the current grid filter/search. Exporting without a filter exports all records. The export format (CSV columns, date format, encoding) must be consistent and documented. Export must handle large datasets without timeout (background job for > 1000 records).
+- **Rule:** When exporting data from Admin (products, orders, customers), the exported file must contain exactly the records matching the current grid filter/search. Exporting without a filter exports all records. The export format (CSV columns, date format, encoding) must be consistent and documented. Export must handle large datasets without timeout — catalog CSV export always runs as a Hangfire background job (regardless of record count), returning an `ExportNotification` for progress and a blob download URL on completion.
 - **Verify:** Filter products by category X (showing 30) → export → CSV contains exactly 30 rows. Clear filter → export → CSV contains all products. Check CSV encoding (UTF-8 BOM for Excel compatibility).
 - **Violation signal:** Export includes records outside current filter; export count doesn't match grid count; large export times out with no error; encoding issues (garbled characters).
 - **Agents:** qa-backend-expert (export API, Admin SPA)
 
 ### BL-IMPEX-003: Large import does not timeout silently `[P1-data]`
-- **Rule:** CSV imports with more than 1000 rows must run as a background job (Hangfire). The user must see a progress indicator or notification when the job completes. If the import fails mid-way (e.g., row 500 of 1000 has invalid data), already-processed rows must be committed (partial success), and the error must be reported with the failing row number and reason.
+- **Rule:** CSV catalog imports always run as a Hangfire background job (regardless of row count); the import API returns immediately with an `ImportNotification` for progress reporting via push notifications. The user must see a progress indicator or notification when the job completes. If the import fails mid-way (e.g., row 500 of 1000 has invalid data), already-processed rows must be committed (partial success), and the error must be reported with the failing row number and reason.
 - **Verify:** Import 2000-row CSV → job starts in background → progress visible → completion notification. Import CSV with bad row 500 → rows 1-499 imported → error report shows "Row 500: invalid price format" → rows 501+ skipped or continued (based on config).
 - **Violation signal:** Large import runs synchronously (browser hangs); silent timeout with no error; no progress indication; partial failure rolls back all rows; error message doesn't identify failing row.
 - **Agents:** qa-backend-expert (import API, Hangfire dashboard)
@@ -805,21 +813,21 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 ## Domain 13: SEO & URLs (BL-SEO)
 
 ### BL-SEO-001: Slug uniqueness enforced `[P1-data]`
-- **Rule:** Every product and category URL slug must be unique within a store. Attempting to create a product with a duplicate slug must either auto-append a suffix (e.g., `-1`) or reject with a validation error. Slugs are case-insensitive — `/product-a` and `/Product-A` must resolve to the same entity.
-- **Verify:** Create Product A with slug "my-product" → create Product B with same slug → rejected or auto-renamed to "my-product-1." Navigate to `/MY-PRODUCT` → same page as `/my-product`.
-- **Violation signal:** Duplicate slugs accepted without suffix; two different products with same slug (one overwrites); case-sensitive slug resolution (404 for different case).
+- **Rule:** Every product and category URL slug should be unique within a store and language. Virto Commerce does **NOT** auto-append a numeric suffix; instead the SEO module validates a duplicate on save ("Duplicate URL detected") and surfaces store-level conflicts ("conflicting semantic URLs" with a Resolve-conflicts flow), and the SEO resolver disambiguates any remaining conflicts at request time via its scoring/priority pipeline. Uniqueness is scoped per **store + language** (the same slug may legitimately exist in different stores/languages). Case sensitivity of resolution is DB-collation dependent (case-insensitive under default SQL Server collation).
+- **Verify:** Create Product A with slug "my-product" → create Product B with the same slug in the same store+language → a "Duplicate URL detected" validation and/or a store "conflicting semantic URLs" warning appears (no "-1" suffix is auto-added). Use the store **Debug SEO Links** widget to see how a conflicting slug is scored and resolved.
+- **Violation signal:** Duplicate slug silently accepted with no validation and no conflict flag; two entities in the same store+language sharing a slug with no resolver disambiguation (one silently hides the other).
 - **Agents:** qa-backend-expert (catalog API, SEO settings), qa-frontend-expert (URL navigation)
 
 ### BL-SEO-002: Deleted product returns proper HTTP status `[P2-ux]`
-- **Rule:** When a product is deleted, its URL must return HTTP 410 Gone (preferred) or 404 Not Found — never 200 with an empty/broken page. Cached search engines should be informed via the status code to remove the listing. Redirecting to a relevant category page with 301 is an acceptable alternative if configured.
-- **Verify:** Note product URL → delete product in Admin → navigate to URL → HTTP 410 or 404 status. Check page: either a proper error page or redirect. Never a blank page with 200 status.
-- **Violation signal:** 200 status with blank/broken content; no status code change after deletion; product page still accessible indefinitely; 500 error.
+- **Rule:** When a product is deleted, its slug returns an empty `slugInfo` from xAPI and the Vue-SPA storefront renders its client-side NotFound page. Because VC Frontend is served via a catch-all route, the document HTTP status is **200 by default (a documented "soft 404")** — a real HTTP 404/410 is produced only via load-balancer/CDN rules. The missing slug is logged as a broken link where an admin can assign a 301 redirect (surfaced as `slugInfo.redirectUrl`). The page must never show the deleted product's old content, blank/broken content, or a 500.
+- **Verify:** Note the product URL → delete the product in Admin (or use a never-existing slug) → navigate to the URL → xAPI `slugInfo` entityInfo is empty and the SPA shows the NotFound page (HTTP 200 soft 404 by default, or a configured 301 redirect / CDN-forced 404). Never the old product content, a blank page, or a 500.
+- **Violation signal:** Deleted product's old content still served; blank/broken content; 500 error; the product page still fully resolving after deletion. **NOTE:** HTTP 200 with the SPA NotFound page is the documented default and is **NOT** a violation.
 - **Agents:** qa-frontend-expert (URL navigation), qa-backend-expert (routing/SEO config)
 
 ### BL-SEO-003: Canonical URL set on all pages `[P2-ux]`
-- **Rule:** Every storefront page must have a `<link rel="canonical">` tag pointing to its preferred URL. Products accessible from multiple categories must have one canonical URL (typically the product's primary category path). Search result pages, filtered views, and paginated pages must have appropriate canonical tags (pointing to the unfiltered/first page, or self-referencing with query parameters).
-- **Verify:** Open PDP → inspect `<link rel="canonical">` → URL matches expected format. Open same product via different category → canonical still points to primary URL. Check paginated listing → page 2 has canonical pointing to page 2 (self-referencing) or page 1 (depending on SEO strategy).
-- **Violation signal:** Missing canonical tag; canonical points to wrong URL; different canonical for same product from different entry points (unless intentional); canonical on paginated page points to page 1 when self-referencing is expected.
+- **Rule:** Every storefront page must expose its preferred URL to crawlers. Virto Commerce's storefront (vc-frontend, `@unhead/vue`) emits this as an Open Graph `<meta property="og:url">` set to the page's own resolved SEO URL — it does **NOT** render a `<link rel="canonical">` element (verified live 2026-07-15: zero canonical tags on PDP or category pages). A product resolves to one preferred URL (whatever format `seoLinkType` yields — see BL-SEO-004), so `og:url` points to that single URL regardless of the category path taken to reach it. (A true `rel="canonical"` link would be a stronger de-dup signal than `og:url`; its absence is a documented SEO consideration, not a per-page bug — treat canonical-link emission as a separate feature-gap decision.)
+- **Verify:** Open a PDP → inspect the rendered (post-hydration) DOM head → `<meta property="og:url">` present and equal to the product's own resolved URL; **no** `<link rel="canonical">` is expected. Open the same product via a different category → `og:url` still points to that same product URL. Repeat on a category listing page.
+- **Violation signal:** `og:url` missing or pointing to the wrong URL; `og:url` differs for the same product across entry points (should be its single resolved URL). NOTE: the absence of a `<link rel="canonical">` tag is the documented default and is NOT a violation.
 - **Agents:** qa-frontend-expert (page source inspection), ui-ux-expert (SEO audit)
 
 ### BL-SEO-004: SEO link type controls URL format `[P1-data]`
@@ -833,7 +841,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 ## Domain 14: Profile & Member Data (BL-PROFILE)
 
 ### BL-PROFILE-001: Silent duplicate-skip on `updateMemberAddresses` and matching `checkDuplicateAddress` detection `[P1-data]`
-- **Rule (write path — `updateMemberAddresses`):** When `updateMemberAddresses` is called with an address whose key fields — `line1` + `city` + `countryCode` + `postalCode` + `regionId` + `addressType` — exactly match an already-saved address on the same member, the server MUST silently skip the insert. No new record is created, no error is raised in `errors[]`, and the member's total address count (`currentCustomerAddresses.totalCount`) MUST remain unchanged. This holds regardless of the size of `addresses[]` (one or many) AND regardless of `memberType` (Contact or Organization — same endpoint, same dedup semantics). The dedup check is **against the member's stored collection**, not only within the incoming batch, and must NOT depend on auto-computed fields like `name` that the client submits as null.
+- **Rule (write path — `updateMemberAddresses`):** When `updateMemberAddresses` is called with an address whose key fields — `firstName` + `lastName` + `city` + `line1` + `line2` + `countryCode` + `regionId` + `postalCode` + `phone` + `email` (compared case-insensitively; `addressType` and the auto-computed `name` are **NOT** part of the dedup key) — exactly match an already-saved address on the same member, the server MUST silently skip the insert. No new record is created, no error is raised in `errors[]`, and the member's total address count (`currentCustomerAddresses.totalCount`) MUST remain unchanged. This holds regardless of the size of `addresses[]` (one or many) AND regardless of `memberType` (Contact or Organization — same endpoint, same dedup semantics). The dedup check is **against the member's stored collection**, not only within the incoming batch, and must NOT depend on auto-computed fields like `name` that the client submits as null.
 - **Rule (read path — `checkDuplicateAddress`):** `checkDuplicateAddress(memberId, address)` MUST return `isDuplicated: true` if and only if an existing stored address on `memberId` matches the submitted address by the same key fields listed above. Novel addresses return `isDuplicated: false`; exact matches return `true`. The detection contract MUST agree with the write-path dedup contract — whatever `updateMemberAddresses` silently skips, `checkDuplicateAddress` must flag. The query MUST require authentication (no anonymous access) and MUST enforce same-member / same-org authorization (no cross-member probing).
 - **Verify (write path):** Capture totalCount = N and the full field set of an existing address. Call `updateMemberAddresses(command: { memberId, addresses: [{…same fields}] })` with exactly one byte-identical element. Re-query totalCount → must equal N. Count rows in `items[]` matching the duplicate's line1 + firstName + lastName → must equal 1 (not 2). `errors[]` must be empty. Repeat with a 2-element `addresses[]` where one element is identical-to-existing and one is novel → novel row is added, duplicate is skipped, totalCount = N+1. Repeat both scenarios for a Contact memberId AND an Organization memberId.
 - **Verify (read path):** With a valid bearer token, call `checkDuplicateAddress(memberId: <own>, address: {…byte-identical fields of an existing saved address})` → `isDuplicated: true`. Call with a novel address → `isDuplicated: false`. Call anonymously (no Authorization header) → request rejected with 401 or equivalent authz error; not HTTP 200. Call with a foreign memberId (different user) → authz error, no data returned.
@@ -857,9 +865,9 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-002: Spacing grid compliance `[P2-ux]`
-- **Rule:** Every computed `padding`, `margin`, and `gap` MUST resolve to a multiple of 4 px (preferred step 8 px). Allowed values: `{0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 96}` px. Anything else (13 px, 27 px, 41 px) is off-grid and violates the Coffee theme contract — regardless of how the rendered output looks.
-- **Verify:** For each container and its key children, read `getComputedStyle(el).paddingTop|Right|Bottom|Left`, `marginTop|…`, and `gap` via `spacingAuditSnippet(selector)`. Strip `"px"`, cast to number, check membership in the allowed set. Run at multiple viewports — some breakpoints introduce token overrides.
-- **Violation signal:** Computed values like `"13px"`, `"27px"`, `"41px"`. Hardcoded pixel values in styles instead of design-token CSS variables (`var(--spacing-md)` etc.).
+- **Rule:** Every computed `padding`, `margin`, and `gap` SHOULD resolve to a value from the project spacing scale: the **Tailwind default scale** (0.25 rem / 4 px base unit, **including its half-steps** `0.5`=2 px, `1.5`=6 px, `2.5`=10 px, `3.5`=14 px) **plus** the vc-frontend `extend.spacing` additions in `tailwind.config.ts` (notably `4.5`=18 px, `17`=68 px, `18`=72 px, `19`=76 px). An arbitrary value that maps to no scale step (e.g. 13 px, 27 px, 41 px) is off-grid. The spacing scale is defined in `tailwind.config.ts` and is **theme-agnostic** — only COLORS are theme-driven CSS custom properties, so this is a design-system (not a per-theme "Coffee") contract. (Correcting the earlier claim of a strict 4 px multiple / a fixed allowed set: `vc-button.vue` uses `padding[2.5]`=10 px and `padding[3.5]`=14 px, and `extend.spacing` adds 18 px.)
+- **Verify:** For each container and its key children, read `getComputedStyle(el).paddingTop|Right|Bottom|Left`, `marginTop|…`, and `gap` via `spacingAuditSnippet(selector)`. Strip `"px"`, cast to number, check membership in the Tailwind scale (base 4 px steps + the half-steps 2/6/10/14 px + the `extend.spacing` additions). Run at multiple viewports — some breakpoints introduce token overrides.
+- **Violation signal:** Computed values that map to **no** Tailwind scale step (e.g. `"13px"`, `"27px"`, `"41px"`). Note: spacing in vc-frontend is applied via Tailwind utility classes / `theme()` refs, **not** `--spacing-*` CSS variables (those do not exist in the codebase).
 - **Agents:** ui-ux-expert (component audit), qa-frontend-expert (storefront pages)
 - **Suite coverage:** `048b` LAYOUT-SPC-001..003 (catalog product cards, cart line items, checkout form)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
@@ -894,7 +902,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Violation signal:** 32 × 32 close button on a modal. Quantity stepper buttons 28 × 28 with 4 px between. Two checkboxes stacked with 6 px gap. A tap that should hit one element hits a neighbor instead.
 - **Agents:** ui-ux-expert (mobile audits), qa-frontend-expert (revenue-critical mobile flows)
 - **Suite coverage:** `048b` LAYOUT-TGT-001..003 (PDP, cart, checkout @ 375 px)
-- **Severity rationale:** P1 (not P2) because legal/accessibility risk overlaps WCAG 2.5.5 (Target Size — AAA in WCAG 2.1, AA in WCAG 2.2).
+- **Severity rationale:** P1 (not P2) because mobile touch-target sizing carries legal/accessibility risk that overlaps the WCAG Target Size criteria: WCAG 2.2 SC 2.5.8 Target Size (Minimum) is **Level AA at 24×24 CSS px**, and SC 2.5.5 Target Size (Enhanced) is **Level AAA at 44×44 CSS px** (AAA in both WCAG 2.1 and 2.2). This invariant audits at the stricter 44×44 (AAA / Material & Apple HIG) bar; targets between 24 and 44 px pass WCAG 2.2 AA but still fail this invariant.
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ---
@@ -904,20 +912,20 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`. These rules apply across every GraphQL operation regardless of resolver domain, and are enforced by `scripts/graphql-runner.ts` for runner-native test cases. See `graphql-schema.md` for the schema reference and `graphql-test-cases-runner.md` for the authoring contract.
 
 ### BL-GQL-001: GraphQL error contract `[P1-data]`
-- **Rule:** Invalid, malformed, or forbidden GraphQL operations return a structured response: HTTP 200 with `errors[]` non-empty and `data: null` (or partial-null per spec). The server must NEVER (a) return HTTP 5xx for client-side validation failures (unknown field, missing required arg, unknown root field, missing `command` wrapper on mutations), (b) leak internal details in error messages — stack traces (`at System.`), SQL fragments (`SqlException`, `Microsoft.Data`, `SELECT … FROM`), connection strings, file paths, (c) crash instead of returning a structured error.
-- **Verify:** Send queries with `INVALID_FIELD`, `nonExistentTopLevelField`, missing `command` arg, etc. — response must be HTTP 200, `errors[]` populated with field/arg name referenced, `data === null`, message does not match the internal-leak regex `/^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i` (use negation in DATA assertion).
+- **Rule:** Invalid, malformed, or forbidden GraphQL operations return a structured response with `errors[]` non-empty and `data: null` (or partial-null per spec). Per the xAPI GraphQL-over-HTTP contract (graphql-dotnet): **query validation/parse failures** (unknown field, unknown root field, missing required arg, syntax error, missing `command` wrapper on mutations) return **HTTP 400**; **execution/resolver errors, including auth denials**, return **HTTP 200** with the error inside `errors[]`. The server must NEVER (a) return HTTP 5xx for *any* client-side error (validation OR execution), (b) leak internal details in error messages — stack traces (`at System.`), SQL fragments (`SqlException`, `Microsoft.Data`, `SELECT … FROM`), connection strings, file paths, (c) crash instead of returning a structured error.
+- **Verify:** Validation cases (`INVALID_FIELD`, `nonExistentTopLevelField`, missing `command` arg) → HTTP 400 with `errors[]` populated referencing the field/arg name and the `data` entry **absent** (omitted per GraphQL spec §7.1; present-but-null only for partial-failure/execution errors); resolver/auth-level failures → HTTP 200 with `errors[]`. In all cases the message does not match the internal-leak regex `/^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i`.
 - **Violation signal:** HTTP 5xx on schema-validation error; `errors[]` empty on an obviously-invalid query; stack trace or SQL fragment exposed in `errors[0].message`; thrown exception bubbles to transport layer.
 - **Agents:** qa-backend-expert (xAPI), test-runner-agent (graphql-runner.ts client-side validator enforces this contract).
 - **Suite coverage:** `050g` XCC-GQL-015 (direct test); referenced by ~183 cases across all 14 GraphQL suites as the "no HTTP 500 / graceful failure" invariant.
 - **Promoted:** 2026-05-15 (from `bl-proposals.md` TLC-2026-05-15-1830; 264 phantom references cleaned up across all GraphQL suites).
 
 ### BL-GQL-002: GraphQL query performance thresholds `[P2-ux]`
-- **Rule:** Happy-path GraphQL operations against the xAPI complete within target wall-clock thresholds measured from request-send to response-received: simple single-resolver queries (`me`, `categories(first:1)`, flat `orders(first:10)`) **< 500 ms**; deep nested queries (`orders { items addresses inPayments shipments }`) **< 1000 ms**; introspection (`__schema { types }`) **< 1000 ms**. Thresholds are environment-specific — these are vcst-qa baselines; staging may differ.
+- **Rule:** Happy-path GraphQL operations against the xAPI complete within target wall-clock thresholds measured from request-send to response-received: simple single-resolver queries (`me`, `categories(first:1)`, flat `orders(first:10)`) **< 500 ms**; deep nested queries (`orders { items addresses inPayments shipments }`) **< 1000 ms**; introspection (`__schema { types }`) **< 1000 ms**. Thresholds are environment-specific — these are baselines for one deployment; other environments may differ.
 - **Verify:** Runner-native `[PERF label=X] elapsed_ms < N` assertion against `r.elapsed_ms` captured per operation by `scripts/graphql-runner.ts`. Repeat the same deep query 5× to check for N+1: elapsed_ms should not grow proportionally.
 - **Violation signal:** `elapsed_ms` exceeds threshold consistently (not just one spike); response time grows linearly with repetition (N+1 hint); timeout; 504 Gateway Timeout.
 - **Agents:** qa-backend-expert (xAPI perf), regression-orchestrator (track elapsed_ms trend across runs).
 - **Suite coverage:** `050g` XCC-GQL-018 (direct test); ~75 references across 12 suites mark perf-sensitive query paths.
-- **Promoted:** 2026-05-15. Note: XCC-GQL-018 PERF assertions currently fail on vcst-qa at ~765 ms vs 500 ms target — real regression awaiting JIRA triage; NOT a flaw in this invariant.
+- **Promoted:** 2026-05-15. Note: XCC-GQL-018 PERF assertions currently fail on the environment at ~765 ms vs 500 ms target — real regression awaiting JIRA triage; NOT a flaw in this invariant.
 
 ### BL-GQL-003: GraphQL response data integrity `[P1-data]`
 - **Rule:** Successful GraphQL operations return data conformant to the schema's declared return type: (a) non-null fields are non-null in the response (resolver did not silently drop a required projection), (b) computed/derived fields (cart totals `total`/`subTotal`/`taxTotal`/`discountTotal`; index-backed price fields `price.actual`/`price.list`) are present and arithmetically consistent, (c) mutation responses include the full mutated entity, not a partial echo, (d) after-state queries reflect the mutation's effect — no stale read.
@@ -1002,7 +1010,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Verify:** Mixed cart whose PTS total exceeds balance (or balance drained to 0) → cart validation returns `LOYALTY_INSUFFICIENT_BALANCE` with `required`/`available` present and `required > available`; order not created; cart still readable. Storefront surfaces the localized message (i18n `loyalty_insufficient_balance`).
 - **Violation signal:** Order created despite a balance shortfall; missing/empty `required`/`available`; balance allowed to go negative.
 - **Agents:** qa-backend-expert, qa-frontend-expert
-- **Source:** vc-module-loyalty #10 `LoyaltyCartValidator.cs` (rule 4); vc-frontend #2335 i18n `loyalty_insufficient_balance`; verified working on vcst-qa 2026-06-22. Full negative path needs a dedicated zero-balance user (`LOYALTY_NOBAL_USER_*` fixture open).
+- **Source:** vc-module-loyalty #10 `LoyaltyCartValidator.cs` (rule 4); vc-frontend #2335 i18n `loyalty_insufficient_balance`; verified working on the environment 2026-06-22. Full negative path needs a dedicated zero-balance user (`LOYALTY_NOBAL_USER_*` fixture open).
 - **Promoted:** 2026-06-23.
 
 ### BL-LOY-009: Mixed Cart earn — only cash-currency lines earn points; loyalty-currency lines earn zero `[P1-data]`
@@ -1018,7 +1026,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Verify:** Auth as a loyalty user in a Mixed-Cart store; build a cart with only a PTS line → `cart.validationErrors` contains `LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED`; add a cash line and re-read → that error code is gone.
 - **Violation signal:** A points-only cart validates clean / is allowed to check out; or the error fails to clear after a cash line is added.
 - **Agents:** qa-backend-expert
-- **Source:** vc-module-loyalty #10 `LoyaltyCartValidator.cs` rule 2; VCST-5103 AC. Covered by suite 075b MCO-GQL-006. Live-verified PASS 5/5 on vcst-qa 2026-06-24.
+- **Source:** vc-module-loyalty #10 `LoyaltyCartValidator.cs` rule 2; VCST-5103 AC. Covered by suite 075b MCO-GQL-006. Live-verified PASS 5/5 on the environment 2026-06-24.
 - **Promoted:** 2026-06-24. *(NOTE: PROPOSED-BL-LOY-011 — points-priced products only allowed in Mixed Cart mode, rule 1 — is reserved/pending live verification via the MCO-GQL-007 store-mode flip; see TLC-2026-06-24-1121 bl-proposals.md.)*
 
 ### BL-LOY-012: The loyalty payment gateway is only valid in Payment Method mode `[P1-data]`
@@ -1026,7 +1034,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Verify:** In a non-Payment-Method store (e.g. the seeded Mixed Cart mode), add a payment via the `LoyaltyPaymentMethod` gateway → `cart.validationErrors` contains `LOYALTY_PAYMENT_METHOD_NOT_ALLOWED`. (`addOrUpdateCartPayment` accepts the gateway code without a registered-method requirement, so no mode flip or gateway provisioning is needed to exercise this.)
 - **Violation signal:** A `LoyaltyPaymentMethod` payment is accepted outside Payment Method mode; checkout proceeds.
 - **Agents:** qa-backend-expert
-- **Source:** vc-module-loyalty #10 `LoyaltyCartValidator.cs` rule 3 + `ModuleConstants.LoyaltyPaymentMethodGatewayCode`. Covered by suite 075b MCO-GQL-011. Live-verified PASS 3/3 on vcst-qa 2026-06-24.
+- **Source:** vc-module-loyalty #10 `LoyaltyCartValidator.cs` rule 3 + `ModuleConstants.LoyaltyPaymentMethodGatewayCode`. Covered by suite 075b MCO-GQL-011. Live-verified PASS 3/3 on the environment 2026-06-24.
 - **Promoted:** 2026-06-24.
 
 ### BL-LOY-013: Mixed Cart order — `order.orderTotals` exposes one entry per distinct line currency `[P1-data]`
@@ -1042,7 +1050,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Verify:** Open the Admin (`{{BACK_URL}}`, `@td(ADMIN_DEFAULT)`), Orders → open a mixed-cart order (one PTS line + one USD line) → open the **Line items** accordion → assert two totals bars (one USD, one PTS) above the table, and a **Currency** column showing PTS for the loyalty line and USD for the cash line.
 - **Violation signal:** The Line items blade shows only the primary-currency totals; the points-line total is absent from the summary bars despite PTS line items in the table; the Currency column is missing.
 - **Agents:** qa-backend-expert
-- **Source:** VCST-5104 Task 4 (Admin UI multi-currency totals), PR vc-module-order #497. UI-observed on vcst-qa 2026-06-24 — `reports/ba/screenshots/vcst-5104/08-admin-order-line-items-split-currency.png` (USD 240.00 / PTS 10.00 bars + Currency column).
+- **Source:** VCST-5104 Task 4 (Admin UI multi-currency totals), PR vc-module-order #497. UI-observed on the environment 2026-06-24 — `reports/ba/screenshots/vcst-5104/08-admin-order-line-items-split-currency.png` (USD 240.00 / PTS 10.00 bars + Currency column).
 - **Promoted:** 2026-06-24 (via `/ba-analyze VCST-5104`).
 
 ---
@@ -1080,7 +1088,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 Per-org / per-store branding resolved after sign-in by the White Labeling module's xAPI query
 (`GetWhiteLabelingSettingsQueryHandler`). These supersede the WL-specific detail formerly carried by
 `BL-B2B-006` (see the cross-reference there). Grounded in `vc-module-white-labeling` source + live
-vcst-qa verification (TLC-2026-07-02-2043).
+the environment verification (TLC-2026-07-02-2043).
 
 ### BL-WL-001: Branding is org-context & post-auth; no enabled config → platform defaults `[P2-ux]`
 - **Rule:** White Labeling branding resolves from the signed-in user's organization context after authentication. `whiteLabelingSettings(organizationId, storeId)` returns `null` when neither an enabled org setting nor an enabled store setting exists; the storefront then shows platform/theme defaults — no crash, no partial branding.
@@ -1143,10 +1151,10 @@ P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-dat
 | Pricing & Discounts | BL-PRICE-001–008 | 8 | 7 | 1 | 0 |
 | Cart | BL-CART-001–014 | 14 | 5 | 9 | 0 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 |
-| Orders & Fulfillment | BL-ORD-001–009 | 9 | 3 | 6 | 0 |
-| Users & Auth | BL-AUTH-001–011 | 11 | 2 | 8 | 1 |
-| B2B / Organization | BL-B2B-001–006 | 6 | 3 | 3 | 0 |
-| Catalog & Inventory | BL-CAT-001–007 | 7 | 2 | 3 | 2 |
+| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 |
+| Users & Auth | BL-AUTH-001–013 | 13 | 3 | 9 | 1 |
+| B2B / Organization | BL-B2B-001–011 | 11 | 4 | 7 | 0 |
+| Catalog & Inventory | BL-CAT-001–008 | 8 | 2 | 3 | 3 |
 | Cross-Domain | BL-CROSS-001–012 | 12 | 7 | 5 | 0 |
 | Search | BL-SRCH-001–005 | 5 | 0 | 3 | 2 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 |
@@ -1157,4 +1165,7 @@ P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-dat
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 |
 | UI Display & Layout Stability | BL-UI-001–006 | 6 | 0 | 1 | 5 |
 | GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 |
-| **Total** | | **114** | **39** | **61** | **14** |
+| Loyalty & Mixed Cart | BL-LOY-001–014 (011 reserved) | 13 | 4 | 7 | 2 |
+| Payment Processors | BL-PAY-001/003/004 | 3 | 3 | 0 | 0 |
+| White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 |
+| **Total** | | **145** | **48** | **76** | **21** |

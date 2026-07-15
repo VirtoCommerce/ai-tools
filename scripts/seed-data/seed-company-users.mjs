@@ -51,7 +51,9 @@ setFlags({ dryRun: DRY_RUN, verbose: VERBOSE });
 // The impersonation subset: the 11 many-orgs orgs PLUS TechFlow (ORG-002), which the blocked/
 // invited targets (CON-021/CON-022) belong to. Contacts selected explicitly by id.
 const IMP_ORG_IDS = new Set(['ORG-002','ORG-009','ORG-010','ORG-011','ORG-012','ORG-013','ORG-014','ORG-015','ORG-016','ORG-017','ORG-018','ORG-019']);
-const IMP_CONTACT_IDS = new Set(['CON-020','CON-021','CON-022']);
+// CON-020..022 = impersonation TARGETS; CON-024 = the impersonation OPERATOR (org-maintainer @ ORG-002,
+// incl. loginOnBehalf — provisioned CSV-native via provisionContactLogins like every other org member).
+const IMP_CONTACT_IDS = new Set(['CON-020','CON-021','CON-022','CON-024']);
 
 const readCsv = (rel) => { try { return parseCsv(readFileSync(join(ROOT, rel), 'utf-8')); } catch { return []; } };
 
@@ -91,7 +93,9 @@ async function seedPersonal(loyaltyOnly = false) {
   for (const u of users) { (await ensurePersonalAccount(u)) === 'created' ? created++ : reused++; }
   console.log(`  ✓ personal: ${created} created, ${reused} reused`);
   const report = { personal: users.map(u => ({ email: u.email, source: u.source, group: u.group || null })) };
-  // Provisionable admin env-roles (IMPERSONATION_ADMIN, …) — created by NO other path before this.
+  // Provisionable admin env-roles (provision=true, kind:admin) — created by NO other path. The
+  // impersonation OPERATOR is NO LONGER here: it's a CSV-native B2B org member (users.csv USR-024),
+  // seeded org-scoped via provisionContactLogins. This block stays for any future global admin fixture.
   if (!loyaltyOnly) {
     const admins = adminUsers();
     if (admins.length) {
@@ -155,6 +159,8 @@ async function run() {
   } else if (kind === 'cross-org') {
     report.memberships = await seedMemberships();
   } else if (kind === 'imp') {
+    // Seeds the impersonation TARGETS (CON-020..022) AND the OPERATOR (CON-024, org-maintainer @
+    // ORG-002 incl. loginOnBehalf) — all via the generic org-graph + provisionContactLogins path.
     Object.assign(report, await seedOrgGraph({ orgFilter: r => IMP_ORG_IDS.has(r.org_id), contactFilter: r => IMP_CONTACT_IDS.has(r.contact_id) }));
   } else if (kind === 'b2b') {
     Object.assign(report, await seedOrgGraph());

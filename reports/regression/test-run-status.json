@@ -6,7 +6,7 @@
   "finishedAt": "",
   "env": "vcst-qa",
   "build": {"platform": "3.1043.0", "theme": "2.53.0-pr-2368-6f5f", "cybersource": "3.1002.0", "skyflow": "3.1003.0", "authorizeNet": "3.1003.0", "datatrans": "3.1002.0", "payment": "3.1004.0", "xcart": "3.1026.0", "xorder": "3.1007.0"},
-  "status": "in_progress",
+  "status": "completed",
   "mode": "standard",
   "outputDir": "reports/regression/REG-2026-07-14-0018/",
   "note": "Sprint 26-13 FRONTEND scope = 39 suites (~6h) split into 6 reliability-capped chunks (feedback_long_runner_sessions_unreliable). This is CHUNK 1 (P0 gate): 042 039 040a 040b 041 044. Batch1: 039(chrome/CyberSource-iframe), 040a(edge/Skyflow), 042(firefox/smoke). Batch2: 041(chrome/PCI-iframe), 040b(edge/Authorize.Net USD-only), 044(firefox/security). Payment suites kept OFF Firefox (payment-dropdown quirk); 039 & 041 both need chrome so split across batches.",
