@@ -1,6 +1,6 @@
 ---
 description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a tracker ticket."
-argument-hint: "bug description | VCST-XXXX | screenshot path"
+argument-hint: "bug description | ticket <key> | screenshot path"
 disable-model-invocation: true
 ---
 
