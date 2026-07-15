@@ -12,7 +12,7 @@
  *
  * The Azure DevOps OAuth resource id is well-known and constant.
  */
-const ADO_RESOURCE = "499b84ac-1317-41a4-9800-7912b3d6e6e0/.default";
+const ADO_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798/.default";
 
 let _bearer: { token: string; exp: number } | null = null;
 

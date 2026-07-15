@@ -24,7 +24,7 @@ import { execSync } from "child_process";
  * it keeps its own copy rather than reaching across plugin boundaries for one
  * string.
  */
-export const ADO_RESOURCE = "499b84ac-1317-41a4-9800-7912b3d6e6e0";
+export const ADO_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798";
 
 /** Run a command, return true on exit 0 (stdout/err suppressed). */
 export function tryCmd(cmd) {

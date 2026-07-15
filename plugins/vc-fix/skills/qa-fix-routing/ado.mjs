@@ -127,7 +127,7 @@ function fail(msg, code = 1) {
 }
 
 // ---- auth (PAT Basic, or az-login bearer — mirrors ado-rest.ts) ----------------------
-const ADO_RESOURCE = "499b84ac-1317-41a4-9800-7912b3d6e6e0/.default";
+const ADO_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798/.default";
 let _bearer = null;
 async function authHeader() {
   const pat = process.env.ADO_PAT || "";
