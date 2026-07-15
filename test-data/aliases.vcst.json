@@ -136,6 +136,9 @@
   "IMPERSONATE_TARGET": {
     "userId": "557dee63-a7ea-4932-9ef2-3635f353e7a2"
   },
+  "IMPERSONATION_ADMIN": {
+    "userId": "8e25e574-18e5-441d-8d52-6512035ac186"
+  },
   "OTHER_ORG_USER": {
     "userId": "7194fb2c-0660-4738-9692-4db20b5cec10"
   },

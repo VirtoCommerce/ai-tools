@@ -52,7 +52,10 @@ export const USER_ROLES = [
   { key: 'LOYALTY_VIP_USER', emailVars: ['LOYALTY_VIP_USER_EMAIL'], passwordVar: 'LOYALTY_VIP_USER_PASSWORD', kind: 'customer', required: false, group: 'VIP', purpose: 'Loyalty VIP tier' },
   { key: 'LOYALTY_WHOLESALE_USER', emailVars: ['LOYALTY_WHOLESALE_USER_EMAIL'], passwordVar: 'LOYALTY_WHOLESALE_USER_PASSWORD', kind: 'customer', required: false, group: 'Wholesale', purpose: 'Loyalty wholesale tier' },
   { key: 'LOYALTY_NOBAL_USER', emailVars: ['LOYALTY_NOBAL_USER_EMAIL'], passwordVar: 'LOYALTY_NOBAL_USER_PASSWORD', kind: 'customer', required: false, group: 'VIP', purpose: 'Loyalty zero-balance (insufficient-balance tests)' },
-  { key: 'IMPERSONATION_ADMIN', emailVars: ['IMPERSONATION_ADMIN_EMAIL'], passwordVar: 'IMPERSONATION_ADMIN_PASSWORD', kind: 'admin', required: false, provision: true, purpose: 'Impersonation operator' },
+  // Org-scoped impersonation OPERATOR (org-maintainer @ TechFlow, incl. loginOnBehalf). kind:'org'
+  // (NOT admin): the account is a CSV-native B2B org member (b2b/users.csv USR-024) — seeded via
+  // provisionContactLogins, identity from .env, NOT provisioned by the admin path. No global role.
+  { key: 'IMPERSONATION_ADMIN', emailVars: ['IMPERSONATION_ADMIN_EMAIL'], passwordVar: 'IMPERSONATION_ADMIN_PASSWORD', kind: 'org', required: false, purpose: 'Impersonation operator (org-scoped org-maintainer)' },
   { key: 'LOCKOUT_TEST', emailVars: ['LOCKOUT_TEST_EMAIL'], passwordVar: 'LOCKOUT_TEST_PASSWORD', kind: 'customer', required: false, purpose: 'Account-lockout tests' },
 ];
 

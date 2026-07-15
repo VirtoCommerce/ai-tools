@@ -2336,22 +2336,18 @@
     "notes": "Stress-test fixtures for layout-stability suite (048b). longTitleSku resolves to a real in-stock product with a 179-char title — use to trigger BL-UI-004 (content boundary) overflow tests without DOM injection. Re-verify SKU exists if vcst catalog is reseeded."
   },
   "IMPERSONATION_ADMIN": {
-    "_inline": true,
-    "userName": "agent-test-impersonation-admin",
-    "userId": "d04a81b1-20a4-4922-96c5-d2d6c2cf8a87",
-    "email_env": "IMPERSONATION_ADMIN_EMAIL",
-    "email_value": "agent-test-impersonator@virtoworks.com",
-    "password_env": "IMPERSONATION_ADMIN_PASSWORD",
-    "isAdministrator": true,
-    "userType": "Manager",
-    "storeId": "B2B-store",
-    "targetCustomerAlias": "TECHFLOW_BUYER",
-    "targetCustomerEmail": "test-david.kim-20260310@test-agent.com",
-    "targetCustomerUserId": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
-    "targetCustomerOrgId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
-    "targetCustomerOrgName": "AGENT-TEST-Org-TechFlow-20260310",
-    "permission_key": "fallback:Administrator-role",
-    "notes": "VCST-4725 GAP-09 Page Builder preview impersonation. PROVISIONED 2026-04-30. Created via POST /api/platform/security/users/create with isAdministrator=true. AGENT-TEST- prefixed (cleanup via /qa-seed-data teardown). Credentials live in .env (IMPERSONATION_ADMIN_EMAIL/PASSWORD) per feedback_agents_read_env_creds — NEVER inline plaintext. CAVEAT: live Platform permissions registry has 0 matches for /impersonat/i across 301 perms — exact permission key for Page Builder impersonation could not be resolved within the 5-minute investigation budget. Falling back to Administrator role (isAdministrator=true) which grants the superset. If a granular permission key is later identified (likely shipped by a CMS / Page Builder / x-portal module), update this alias and downgrade the role. Target customer reuses TECHFLOW_BUYER (USR-007) — no new customer created; orgId is the existing seeded TechFlow org."
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-024"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "userId": "platform_id",
+      "org_id": "org_id"
+    },
+    "notes": "Impersonation OPERATOR — CSV-native B2B org member (b2b/users.csv USR-024 + contacts.csv CON-024). Org+member permissions AND impersonation (platform:security:loginOnBehalf) come from the 'Organization maintainer' role (roles.csv) granted org-scoped via an OrganizationMembership on TechFlow (ORG-002) — so it can login-on-behalf of members of that org incl. TECHFLOW_BUYER. NO global role / NOT isAdministrator (VCST-5028; the prior global-admin Page-Builder fallback was dropped 2026-07-15 — if Page Builder preview needs a platform admin, that's a separate fixture). Provisioned by seed-company-users (imp/b2b/all) via the generic provisionContactLogins (role BY NAME from the CSV); userId (=platform_id) auto-written to aliases.<env>.json by syncEnvAliases('b2b/users'). Identity from .env IMPERSONATION_ADMIN_EMAIL/PASSWORD (CSV email + {{IMPERSONATION_ADMIN_PASSWORD}} token match). Impersonation TARGET is @td(TECHFLOW_BUYER); its org is @td(TECHFLOW_ADMIN.org_id)."
   },
   "CFG_FILE_HOODIE": {
     "_inline": true,
