@@ -77,6 +77,10 @@ test-data/aliases.localhost.json
 # NUKE build-tool working dir (transient build logs / temp from local-env provisioning)
 .nuke/
 
+# Self-diagnostics telemetry (Tier A collector) — per-session jsonl + state,
+# written under the project output root; transient, never committed (VCST-5475)
+.vc-fix/
+
 # Auto-fix pipeline — cloned product-repo source is transient working state
 .fix-workspace/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)
