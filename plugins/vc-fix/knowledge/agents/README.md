@@ -2,9 +2,10 @@
 
 `vc-fix` ships a narrow slice of the full `vc-qa` agent crew, scoped to five workflows: project
 setup (`/project-init`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), bug
-verification (`/qa-verify-fix`), and online bug monitoring (`/qa-monitoring`). **8 agents, 6
-commands, 14 skills** — no regression orchestration, no BA team, no Storybook/a11y/design-system
-tooling. Those live only in the full `vc-qa` plugin (not shipped here).
+verification (`/qa-verify-fix`), online bug monitoring (`/qa-monitoring`), and plugin
+self-diagnostics (`/vc-self-check`). **8 agents, 7 commands, 15 skills** — no regression
+orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live only in the full
+`vc-qa` plugin (not shipped here).
 
 ## Quick Start
 
@@ -14,6 +15,7 @@ tooling. Those live only in the full `vc-qa` plugin (not shipped here).
 /qa-fix VCST-1234            # Autonomous fix of an already-filed bug
 /qa-verify-fix VCST-1234     # Verify a fix, transition the ticket
 /qa-monitoring both          # Query App Insights, dedup, triage, live-repro, report
+/vc-self-check               # Diagnose whether the plugin's own skills ran correctly
 ```
 
 ---
@@ -53,7 +55,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 
 ---
 
-## Slash Commands (6)
+## Slash Commands (7)
 
 | Command | Purpose |
 |---------|---------|
@@ -63,6 +65,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 | `/qa-verify-fix VCST-XXXX` | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition the ticket |
 | `/qa-monitoring [layer]` | Online bug monitoring from App Insights: query → dedup (fingerprint) → triage → live repro → report. Detect-and-report only — never files a ticket or auto-fixes |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers |
+| `/vc-self-check` | Self-diagnostics (Tier B): read this session's passive telemetry (`hooks/session-telemetry.mjs` → `.vc-fix/diagnostics/`) + transcript + the `knowledge/diagnostics/skill-expectations.md` oracle → per-skill verdict + severity + proposed fix → LOCAL `DIAG-*.md`. `deliver` sub-step contributes a scrubbed, consent-gated PR/issue to VirtoCommerce. Never modifies the install; `disable-model-invocation` |
 
 **Dropped from the full `vc-qa` crew:** `/qa-smoke`, `/qa-test`, `/qa-regression`,
 `/qa-coverage-generation`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-sync-tests`,

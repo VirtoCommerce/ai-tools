@@ -12,6 +12,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Forward-looking work on top of v0.7.0. Pin to a tagged release for stability; this branch tip is unstable.
 
+### Added — vc-fix self-diagnostics subsystem (VCST-5475–5479)
+
+A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills ran correctly and, opt-in, report quality issues back to VirtoCommerce — without ever mutating the client install or leaking client code. `vc-fix` now ships **8 agents, 15 skills, 7 commands** (plugin `0.6.0`; marketplace `0.9.0`).
+
+- **Tier A:** `hooks/session-telemetry.mjs` (passive) wired via `hooks/hooks.json` — `SessionStart`→init, `PostToolUse[Skill]`→record, `Stop`→finalize. Records per-skill boundaries, timings, and deterministic signals (tool errors, denied permissions, hook failures, STOP/BAIL markers, anomaly score) to gitignored `<outputRoot>/.vc-fix/diagnostics/<session_id>.jsonl`. Secrets redacted; never throws/blocks a tool.
+- **Oracle:** `knowledge/diagnostics/skill-expectations.md` — per-command expected phases/gates + anti-patterns + an S0–S3 severity rubric.
+- **Tier B:** `/vc-self-check` (`skills/vc-self-check/`, `disable-model-invocation`) reads the telemetry + transcript + oracle → per-skill verdict (OK/DEGRADED/BROKEN) + severity + proposed fix → LOCAL `DIAG-*.md`. A one-shot yes/no consent prompt fires from `Stop` only when the anomaly score is high (opt out `VC_FIX_DIAG_CONSENT=off`); never auto-runs.
+- **Delivery:** `skills/vc-self-check/deliver.mjs` (`/vc-self-check deliver`) — scrubbed (§2a client-code containment), consent-gated (draft-and-confirm) contribution to `VirtoCommerce/vc-mcp-testing-module`, routed by GitHub-token rights (PR / fork-PR / issue / local), with issue dedup.
+- Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
 ---
 
 ## [0.7.0] — 2026-07-08

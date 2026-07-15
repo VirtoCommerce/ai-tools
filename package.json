@@ -35,6 +35,7 @@
     "seed:teardown": "node scripts/seed-data/seed-test-data.js teardown",
     "seed:dry-run": "node scripts/seed-data/seed-test-data.js catalog --dry-run --verbose",
     "test": "tsx --test \"scripts/unit/**/*.test.mjs\" \"scripts/unit/**/*.test.ts\"",
+    "test:containment": "node tests/self-check-containment.test.mjs",
     "seed:company-users": "node scripts/seed-data/seed-company-users.mjs all",
     "seed:company-users:teardown": "node scripts/seed-data/seed-company-users.mjs --teardown",
     "seed:b2b": "node scripts/seed-data/seed-company-users.mjs b2b",
