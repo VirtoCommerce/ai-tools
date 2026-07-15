@@ -14,7 +14,7 @@ Forward-looking work on top of v0.7.0. Pin to a tagged release for stability; th
 
 ### Added — vc-fix self-diagnostics subsystem (VCST-5475–5479)
 
-A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills ran correctly and, opt-in, report quality issues back to VirtoCommerce — without ever mutating the client install or leaking client code. `vc-fix` now ships **8 agents, 15 skills, 7 commands** (plugin `0.5.0`; marketplace `0.8.0`).
+A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills ran correctly and, opt-in, report quality issues back to VirtoCommerce — without ever mutating the client install or leaking client code. `vc-fix` now ships **8 agents, 15 skills, 7 commands** (plugin `0.6.0`; marketplace `0.9.0`).
 
 - **Tier A:** `hooks/session-telemetry.mjs` (passive) wired via `hooks/hooks.json` — `SessionStart`→init, `PostToolUse[Skill]`→record, `Stop`→finalize. Records per-skill boundaries, timings, and deterministic signals (tool errors, denied permissions, hook failures, STOP/BAIL markers, anomaly score) to gitignored `<outputRoot>/.vc-fix/diagnostics/<session_id>.jsonl`. Secrets redacted; never throws/blocks a tool.
 - **Oracle:** `knowledge/diagnostics/skill-expectations.md` — per-command expected phases/gates + anti-patterns + an S0–S3 severity rubric.
