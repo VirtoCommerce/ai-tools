@@ -178,6 +178,11 @@ const SAFE_TERMS = new Set([
   "Stop", "Edit", "Bash", "Grep", "Glob", "Task", "Init", "Record", "Finalize",
   "Get", "Post", "Put", "Patch", "Delete", "Query", "Mutation", "Yes", "Both", "Each",
   "Any", "All", "Its", "Their", "Reproduce", "Reproduced", "Triage", "Route", "Repro",
+  // domain tool / product names that appear in findings (SonarCloud is compound-safe
+  // above; "Sonar" alone is not — add it and the rest explicitly)
+  "Swagger", "Storybook", "Vitest", "Sonar", "Cypress", "Vite", "Skyflow",
+  "CyberSource", "Datatrans", "Newman", "Postman", "Hangfire", "RabbitMQ", "Redis",
+  "ElasticSearch", "Kibana",
 ]);
 
 /**
@@ -203,7 +208,7 @@ function containsClientShape(text) {
   for (const tok of masked.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
     if (SAFE_TERMS.has(tok)) continue;
     if (/[a-z][A-Z]/.test(tok)) return true; // compound camel/PascalCase (AcmeCorp, CartController)
-    if (/^[A-Z][a-z0-9]+$/.test(tok)) return true; // single Capitalized proper noun (Acme, Contoso)
+    if (/^[A-Z][a-z][A-Za-z0-9]*$/.test(tok)) return true; // single Capitalized proper noun (Acme, Contoso) — requires a lowercase LETTER after the capital so gate/severity codes (G0-G7, S0-S3, P0) are NOT flagged
   }
   return false;
 }
@@ -309,16 +314,25 @@ export async function findDuplicateIssue({ repo, token, fp }) {
 
 // ─── draft assembly ──────────────────────────────────────────────────────────
 export function buildDraft({ route, pluginVersion, findings, fp }) {
+  // The SKILL cell is untrusted too — a client-shaped skill label (e.g.
+  // "AcmeCheckoutSkill") would otherwise leak into the row AND the title, and
+  // `scrubText` alone misses it (word-boundary/shape gap). Gate it with the same
+  // `isClientSpecific` and use the GATED label everywhere it is shown.
+  const skillLabel = (f) => (isClientSpecific(f.skill) ? "(plugin skill)" : scrubText(f.skill));
+
   // Whitelist gate + downgrade each finding.
   const rows = findings.map((f) => {
-    const skill = scrubText(f.skill);
-    // §2a downgrade: if ANY cell of the finding (signal / root-cause / fix) is
-    // client-specific, withhold BOTH shown cells — a client-specific row's fix would
+    // §2a downgrade: if ANY cell of the finding (skill / signal / root-cause / fix) is
+    // client-specific, withhold the shown cells — a client-specific row's fix would
     // name client code, and its signal a client stack frame/path. Emit only a generic
     // pointer; no client identifier can reach the outbound report. The scrubText on the
     // kept branch is defense-in-depth (the gate already cleared it).
     const clientSpecific =
-      isClientSpecific(f.signal) || isClientSpecific(f.rootcause) || isClientSpecific(f.fix);
+      isClientSpecific(f.skill) ||
+      isClientSpecific(f.signal) ||
+      isClientSpecific(f.rootcause) ||
+      isClientSpecific(f.fix);
+    const skill = skillLabel(f);
     let signal, fix, note = "";
     if (clientSpecific) {
       signal = "(client-specific evidence withheld)";
@@ -331,7 +345,7 @@ export function buildDraft({ route, pluginVersion, findings, fp }) {
     return `| ${skill} | ${f.verdict} | ${f.sev} | ${signal} | ${fix}${note} |`;
   });
   const worst = findings.some((f) => f.verdict === "BROKEN") ? "BROKEN" : findings.some((f) => f.verdict === "DEGRADED") ? "DEGRADED" : "OK";
-  const skills = [...new Set(findings.map((f) => `${scrubText(f.skill)} ${f.verdict}`))].slice(0, 3).join(", ");
+  const skills = [...new Set(findings.map((f) => `${skillLabel(f)} ${f.verdict}`))].slice(0, 3).join(", ");
   const title = `${ISSUE_TITLE_PREFIX} ${skills || worst}`;
   const body = [
     `<!-- ${FP_MARKER} ${fp} -->`,
