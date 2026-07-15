@@ -2,7 +2,7 @@
 
 Agentic **bug lifecycle** plugin for the Virto Commerce B2B e-commerce platform: project setup,
 bug filing, autonomous bug fixing, fix verification, and online bug monitoring — as a fully
-self-contained Claude Code plugin. **8 agents, 6 commands, 14 skills.**
+self-contained Claude Code plugin. **8 agents, 7 commands, 15 skills.**
 
 Part of the [`vc-tools`](../../.claude-plugin/marketplace.json) marketplace hosted in
 [`vc-mcp-testing-module`](https://github.com/VirtoCommerce/vc-mcp-testing-module) — currently the
@@ -36,7 +36,31 @@ right repo and tracker.
 /qa-verify-fix VCST-1234     # Verify a fix, transition the ticket
 /qa-monitoring both          # Query App Insights, dedup, triage, live-repro, report
 /qa-env-check                # Validate env vars, endpoints, MCP servers
+/vc-self-check               # Diagnose whether the plugin's own skills ran correctly
 ```
+
+## Self-diagnostics
+
+`vc-fix` watches whether **its own** skills run correctly on your deployment, so quality
+problems can flow back to VirtoCommerce and improve the plugin — with strict privacy guarantees.
+
+- **What is captured (locally only).** A passive hook (`hooks/session-telemetry.mjs`) records, per
+  session, which plugin skills ran, their timings, and deterministic problem *signals* — tool
+  errors, denied permissions, hook failures, STOP/BAIL markers. It writes a small JSON-lines file
+  to `<project>/.vc-fix/diagnostics/<session_id>.jsonl` (gitignored). **Secrets are redacted**
+  (tokens, passwords, card numbers, JWTs); the collector never blocks a tool and never fails your
+  session.
+- **Nothing runs, and nothing leaves, without you.** When a session looks anomalous, you get a
+  single plain **yes/no** prompt at the end — never an automatic diagnosis. Only if you say yes does
+  `/vc-self-check` read the telemetry + transcript and write a **local** `DIAG-*.md`. Sending
+  anything to VirtoCommerce is a *separate*, explicitly-confirmed step (`/vc-self-check deliver`).
+  Opt out of the prompt entirely with `VC_FIX_DIAG_CONSENT=off`.
+- **Client-code containment.** The optional upstream report is scrubbed of all client source,
+  paths, URLs, identifiers, tickets, and secrets — only plugin-file references and a generic
+  reproduction survive; a client-specific finding is downgraded to a generic description. The
+  delivery **never touches your installed plugin** and routes by your GitHub token's real rights
+  (PR / fork-PR / issue / local-only). See the
+  [`/vc-self-check` skill](skills/vc-self-check/SKILL.md).
 
 ## Why self-contained
 

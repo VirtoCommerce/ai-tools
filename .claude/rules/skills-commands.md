@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (24) — `commands/`
+## Slash Commands (25) — `commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -30,8 +30,9 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 | `/project-init` | `(no args — interactive) \| --check` | No | **Onboard this plugin onto a deployment.** Install deps; choose native-platform vs CLIENT project; pick bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos); capture test-env URL + browser-login/token auth (never passwords); discover the client/platform repo split; write `project-profile.json` + `.mcp.json`; verify access. The profile is what makes `/qa-fix` route each bug to the **right repo** (client custom code vs native VirtoCommerce platform) and the **right tracker**. Backed by the `/project-init` skill. |
+| `/vc-self-check` | `[latest \| <session-id>] \| deliver` | No | **Self-diagnose the plugin** from this session's telemetry. Tier B of the self-diagnostics subsystem: reads the passive collector's jsonl (`hooks/session-telemetry.mjs` → `<outputRoot>/.vc-fix/diagnostics/<session_id>.jsonl`) + the transcript + the oracle `knowledge/diagnostics/skill-expectations.md`, and emits a per-skill verdict (OK/DEGRADED/BROKEN) + severity (S0–S3) + evidence + root-cause hypothesis + proposed fix, into a LOCAL `DIAG-*.md`. Never modifies the install, never files a ticket, never sends anything (the `deliver` sub-step does a scrubbed, consent-gated PR/issue to VirtoCommerce). `disable-model-invocation` (no recursion); the `Stop` hook offers a one-shot yes/no consent prompt when the anomaly score is high (opt out `VC_FIX_DIAG_CONSENT=off`). Backed by the `/vc-self-check` skill. |
 
-## Skills (31) — `skills/` (grouped by category)
+## Skills (32) — `skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 4 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `skills/README.md` for full reference. (A separate top-level `run-vc-mcp-testing-module` skill builds/smoke-tests this repo's own tooling and is not part of the categorized QA set.)
 
@@ -94,6 +95,7 @@ Skills are slash commands with supporting reference files, organized into 4 cate
 |-------|-----------|---------|-----------------|
 | `/project-init` | `(no args — interactive) \| --check` | Onboard the plugin onto a deployment: native-platform vs client, bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos), discover the client/platform repo split, write `.env.<env>`/`.env.local` + `project-profile.json` + `.mcp.json`, verify access. The profile drives `/qa-fix` repo + tracker routing. | `scaffold-env.mjs`, `scaffold-secrets.mjs`, `write-env.mjs`, `gen-profile.mjs`, `discover-repos.mjs`, `gen-mcp.mjs`, `verify-access.mjs` |
 | `/run-vc-mcp-testing-module` | `(no args)` | Build / launch / smoke-test / health-check this tooling repo (env:check, `@td()` resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run). | `SKILL.md` |
+| `/vc-self-check` | `[latest \| <session-id>] \| deliver` | Self-diagnostician (Tier B) of the self-diagnostics subsystem. Reads the passive session-telemetry jsonl + transcript + the `skill-expectations.md` oracle → per-skill verdict (OK/DEGRADED/BROKEN) + severity + evidence + root-cause + proposed fix → LOCAL `DIAG-*.md`. `deliver` sub-step contributes a scrubbed, consent-gated PR/issue to VirtoCommerce (routed by GitHub-token rights). `disable-model-invocation`; the `Stop` hook offers a one-shot yes/no consent prompt. | `SKILL.md`, `deliver.mjs` |
 
 ## Usage
 

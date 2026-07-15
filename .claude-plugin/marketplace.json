@@ -1,7 +1,7 @@
 {
   "name": "vc-tools",
   "description": "Virto Commerce internal QA tooling, published as a Claude Code marketplace for VC customers running the VC platform.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "owner": {
     "name": "Virto Commerce",
     "email": "support@virtocommerce.com"
@@ -10,7 +10,7 @@
     {
       "name": "vc-fix",
       "source": "./plugins/vc-fix",
-      "description": "Bug lifecycle for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification, and online bug monitoring. Self-contained plugin (8 agents, 14 skills, 6 commands)."
+      "description": "Bug lifecycle for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification, online bug monitoring, and self-diagnostics (/vc-self-check). Self-contained plugin (8 agents, 15 skills, 7 commands)."
     }
   ]
 }
