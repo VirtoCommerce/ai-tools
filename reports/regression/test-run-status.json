@@ -1,32 +1,30 @@
 {
-  "runId": "REG-2026-07-15-1549",
-  "selection": "082",
-  "startedAt": "2026-07-15T13:50:40.018Z",
-  "windowStartUtc": "2026-07-15T13:50:40.018Z",
-  "finishedAt": "2026-07-15T14:55:13.371Z",
+  "runId": "REG-2026-07-15-2038",
+  "selection": "082 (P0/Critical only)",
+  "startedAt": "2026-07-15T18:38:28.578Z",
+  "windowStartUtc": "2026-07-15T18:38:28.578Z",
+  "finishedAt": "2026-07-15T18:42:53.000Z",
   "env": "vcst-qa",
   "build": "Platform 3.1044.0-pr-3076-3479, Theme 2.54.0-alpha.2424",
   "status": "completed",
   "mode": "standard",
-  "outputDir": "reports/regression/REG-2026-07-15-1549",
-  "note": "Single-suite regression: 082 Auth Impersonation / Login on Behalf (47 cases). --secrets login on playwright-chrome.",
+  "outputDir": "reports/regression/REG-2026-07-15-2038",
+  "note": "Suite 082 P0 subset: IMP-007 (form flow) + IMP-008 (silent flow). IMP-046 Critical but Manual — excluded.",
   "suites": [
     {
       "id": "082",
-      "name": "Auth Impersonation / Login on Behalf",
+      "name": "Auth Impersonation / Login on Behalf (P0 subset)",
       "status": "done",
       "browser": "playwright-chrome",
       "agent": "qa-frontend-expert",
-      "priority": "P1",
+      "priority": "P0",
       "batch": 1,
-      "testCount": 47,
-      "pass": 40,
-      "fail": 1,
-      "blocked": 8,
+      "testCount": 2,
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
       "skipped": 0,
-      "bugs": [
-        "BUG_082_001 (Medium — Administrator account impersonatable via storefront; IMP-022, BL-AUTH-005/006)"
-      ]
+      "bugs": []
     }
   ]
 }
