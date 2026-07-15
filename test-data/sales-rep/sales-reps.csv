@@ -1,0 +1,6 @@
+rep_key,email,first_name,last_name,full_name,store,served_orgs,is_locked,lock_membership_org,contact_id,user_id,membership_locked_id,seeded,test_purpose
+SR_REP_PRIMARY,agent-test-sr-primary@example.com,Priya,Rao,Priya Rao,B2B-store,ORG-001;ORG-002;ORG-003;ORG-004,false,,,,,true,Primary rep serving 4 orgs — happy paths for customerSalesReps/salesRepCustomers/salesRepCustomer/salesRepOrders + cross-customer dashboard
+SR_REP_SECOND_STORE,agent-test-sr-secondstore@example.com,Sam,Store,Sam Store,Electronics,ORG-001,false,,,,,true,Rep serving ACME but account bound to the secondary store (Electronics) — store-scoping of customerSalesReps
+SR_REP_BLOCKED,agent-test-sr-blocked@example.com,Blake,Barr,Blake Barr,B2B-store,ORG-001,true,,,,,true,Blocked account (LockoutEnd) serving ACME — excluded from customerSalesReps (VCST-4907 #5)
+SR_REP_LOCKED,agent-test-sr-locked@example.com,Lena,Park,Lena Park,B2B-store,ORG-002;ORG-001,false,ORG-001,,,,true,Rep serving TECHFLOW (active) + ACME (per-org membership LOCKED in ACME) — excluded from ACME views, present for TECHFLOW
+SR_REP_EXCLUSIVE_TECHFLOW,agent-test-sr-techflow@example.com,Tess,Flow,Tess Flow,B2B-store,ORG-002,false,,,,,true,Rep serving ONLY TECHFLOW — cross-org exclusion (must NOT appear for an ACME caller)

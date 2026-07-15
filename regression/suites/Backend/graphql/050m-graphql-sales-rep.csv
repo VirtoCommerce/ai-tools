@@ -1,0 +1,412 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"SR-GQL-001","customerSalesReps — Happy Path Reps Serving Caller Org","GraphQL > Sales Rep > Query > customerSalesReps","Critical","PROPOSED-BL-SR-AUTH; PROPOSED-BL-SR-SCOPE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is ACME_BUYER (member of @td(ORG_ACME.id)). SR_REP_PRIMARY (new fixture, not yet seeded — see data-prep) serves @td(ORG_ACME.id) among other orgs.","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=ACME_BUYER — POST {{BACK_URL}}/connect/token with ACME_BUYER credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query {
+  customerSalesReps {
+    totalCount
+    pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+    items { id firstName lastName middleName fullName name about photoUrl emails phones }
+  }
+}
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.customerSalesReps.totalCount >= 1 {DOC}
+[DATA] at least one items[] entry has non-empty fullName and non-empty emails[] (SR_REP_PRIMARY, who serves ORG_ACME) {DOC}
+[DATA] every items[] entry has a non-empty GUID id {DOC}","[EVIDENCE] Full field selection (id/firstName/lastName/middleName/fullName/name/about/photoUrl/emails/phones) exercises real response shape per contract Q1","errors[] non-empty; totalCount = 0 despite a seeded rep; HTTP 4xx/5xx; items[] missing requested fields","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-002","customerSalesReps — Anonymous Returns Authorization Error","GraphQL > Sales Rep > Query > customerSalesReps","Critical","PROPOSED-BL-SR-AUTH","ECL-14.1","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). No auth token set. Needs no seeded data.","none","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] none — request sent with no Authorization header (anonymous)
+[ACT] (anon) open a new tab; click query editor; type:
+query { customerSalesReps { totalCount items { id } } }
+[GQL] (anon) execute (Ctrl+Enter)
+[READ] (anon) response panel via browser_snapshot","[ERRORS] errors[] non-empty {DOC}
+[DATA] at least one error message matches /anonym/i {DOC}","none","errors[] empty for anonymous caller; data.customerSalesReps returned with items; HTTP 200 with no errors[]","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-003","customerSalesReps — Cross-Org Rep Excluded from Caller's List","GraphQL > Sales Rep > Query > customerSalesReps","Critical","PROPOSED-BL-SR-SCOPE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is ACME_BUYER (org @td(ORG_ACME.id)). SR_REP_EXCLUSIVE_TECHFLOW (new fixture) serves ONLY @td(ORG_TECHFLOW.id), never @td(ORG_ACME.id) — proves a rep serving only another org is never leaked.","org=@td(ORG_ACME.id); other_org=@td(ORG_TECHFLOW.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=ACME_BUYER — POST {{BACK_URL}}/connect/token with ACME_BUYER credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { customerSalesReps { totalCount items { id fullName } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] items[] does NOT contain the rep known to serve only @td(ORG_TECHFLOW.id) (SR_REP_EXCLUSIVE_TECHFLOW's fullName/id absent) {DOC}","none","SR_REP_EXCLUSIVE_TECHFLOW's id/fullName appears in ACME_BUYER's items[] (cross-org data leak); errors[] non-empty","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-004","customerSalesReps — Paging (first/after)","GraphQL > Sales Rep > Query > customerSalesReps","High","PROPOSED-BL-SR-SCOPE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is ACME_BUYER. @td(ORG_ACME.id) must be served by >=3 active, unlocked reps (SR_REP_PRIMARY + >=2 more fixtures) so page 1 (first:2) has a next page and page 2 (after:2) does not overlap.","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=ACME_BUYER — POST {{BACK_URL}}/connect/token with ACME_BUYER credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (page1) open a new tab; click query editor; type:
+query { customerSalesReps(first: 2, after: ""0"", sort: ""name:asc"") { totalCount pageInfo { hasNextPage } items { id fullName } } }
+[GQL] (page1) execute (Ctrl+Enter)
+[READ] (page1) response panel via browser_snapshot
+[ACT] (page2) open a new tab; click query editor; type:
+query { customerSalesReps(first: 2, after: ""2"", sort: ""name:asc"") { pageInfo { hasNextPage } items { id fullName } } }
+[GQL] (page2) execute (Ctrl+Enter)
+[READ] (page2) response panel via browser_snapshot","[ERRORS] (page1) errors[] empty {DOC}
+[DATA] (page1) pageInfo.hasNextPage = true {DOC}
+[COUNT] (page1) items.length = 2 {DOC}
+[ERRORS] (page2) errors[] empty {DOC}
+[DATA] (page2) items[] contains no id present in (page1) items[] (no cross-page overlap) {DOC}","none","page1 and page2 items[] overlap; hasNextPage false with >2 reps still unseen; errors[] non-empty","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-005","customerSalesReps — Keyword Filter Routes to Member Index","GraphQL > Sales Rep > Query > customerSalesReps","High","PROPOSED-BL-SR-SCOPE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is ACME_BUYER. SR_REP_PRIMARY's contact must be indexed in the member search index (contact name/email distinct enough to keyword-match uniquely within @td(ORG_ACME.id)'s rep set).","org=@td(ORG_ACME.id); keyword=@td(SR_REP_PRIMARY.lastName)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=ACME_BUYER — POST {{BACK_URL}}/connect/token with ACME_BUYER credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { customerSalesReps(keyword: ""{{keyword}}"") { totalCount items { fullName } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.customerSalesReps.totalCount >= 1 {DOC}
+[DATA] every items[].fullName contains the keyword substring (case-insensitive) {DOC}","none","totalCount = 0 for a known-indexed keyword; items[] include reps whose name doesn't match keyword","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-006","customerSalesReps — Sort Ascending and Descending by Name","GraphQL > Sales Rep > Query > customerSalesReps","Medium","PROPOSED-BL-SR-SCOPE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is ACME_BUYER. @td(ORG_ACME.id) served by >=2 reps with distinct names.","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=ACME_BUYER — POST {{BACK_URL}}/connect/token with ACME_BUYER credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (asc) open a new tab; click query editor; type:
+query { customerSalesReps(first: 1, sort: ""name:asc"") { items { fullName } } }
+[GQL] (asc) execute (Ctrl+Enter)
+[READ] (asc) response panel via browser_snapshot
+[ACT] (desc) open a new tab; click query editor; type:
+query { customerSalesReps(first: 1, sort: ""name:desc"") { items { fullName } } }
+[GQL] (desc) execute (Ctrl+Enter)
+[READ] (desc) response panel via browser_snapshot","[ERRORS] (asc) errors[] empty {DOC}
+[ERRORS] (desc) errors[] empty {DOC}
+[DATA] (asc) items.0.fullName != (desc) items.0.fullName — the two sort directions surface different first items when >=2 distinct-named reps exist {DOC}","none","asc and desc return the same first item despite >=2 distinctly-named reps; errors[] non-empty","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-007","customerSalesReps — Excludes Blocked Account and Per-Org-Locked Rep","GraphQL > Sales Rep > Query > customerSalesReps","Critical","PROPOSED-BL-SR-STATE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is ACME_BUYER (org @td(ORG_ACME.id)). SR_REP_BLOCKED (new fixture) serves @td(ORG_ACME.id) but its account is blocked (LockoutEnd set). SR_REP_LOCKED (new fixture) serves @td(ORG_ACME.id) but its membership in that org is per-org locked (distinct from account block). SR_REP_PRIMARY (active, unlocked) also serves @td(ORG_ACME.id) as the positive control.","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=ACME_BUYER — POST {{BACK_URL}}/connect/token with ACME_BUYER credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { customerSalesReps { totalCount items { id fullName } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] items[] contains SR_REP_PRIMARY (id/fullName) {DOC}
+[DATA] items[] does NOT contain SR_REP_BLOCKED (blocked account excluded) {DOC}
+[DATA] items[] does NOT contain SR_REP_LOCKED (per-org-locked membership excluded) {DOC}","[ADMIN] SR_REP_BLOCKED shows LockoutEnd set in the rep's Account widget; SR_REP_LOCKED's membership shows Locked in Served organizations","blocked or locked rep's id/fullName appears in items[]; active SR_REP_PRIMARY missing from items[]","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-008","customerSalesReps — Store-Scoped Accounts (Specific Store + Null = All Stores)","GraphQL > Sales Rep > Query > customerSalesReps","Critical","PROPOSED-BL-SR-STORE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is ACME_BUYER (org @td(ORG_ACME.id)). SR_REP_PRIMARY's account is bound to store {{STORE_ID}}. SR_REP_SECOND_STORE (new fixture) also serves @td(ORG_ACME.id) but its account is bound to a DIFFERENT store {{STORE_ID_SECONDARY}} — proves a rep's account is store-bound, and storeId filters/null=all-stores key on the value, not a fixed side.","org=@td(ORG_ACME.id); store_a={{STORE_ID}}; store_b={{STORE_ID_SECONDARY}}; STORE_ID_SECONDARY={{STORE_ID_SECONDARY}}","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=ACME_BUYER — POST {{BACK_URL}}/connect/token with ACME_BUYER credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (storeA) open a new tab; click query editor; type:
+query { customerSalesReps(storeId: ""{{STORE_ID}}"") { totalCount items { fullName } } }
+[GQL] (storeA) execute (Ctrl+Enter)
+[READ] (storeA) response panel via browser_snapshot
+[ACT] (storeB) open a new tab; click query editor; type:
+query { customerSalesReps(storeId: ""{{STORE_ID_SECONDARY}}"") { totalCount items { fullName } } }
+[GQL] (storeB) execute (Ctrl+Enter)
+[READ] (storeB) response panel via browser_snapshot
+[ACT] (allStores) open a new tab; click query editor; type:
+query { customerSalesReps { totalCount items { fullName } } }
+[GQL] (allStores) execute (Ctrl+Enter)
+[READ] (allStores) response panel via browser_snapshot","[ERRORS] (storeA) errors[] empty {DOC}
+[DATA] (storeA) items[] contains SR_REP_PRIMARY and does NOT contain SR_REP_SECOND_STORE {DOC}
+[ERRORS] (storeB) errors[] empty {DOC}
+[DATA] (storeB) items[] contains SR_REP_SECOND_STORE and does NOT contain SR_REP_PRIMARY {DOC}
+[ERRORS] (allStores) errors[] empty {DOC}
+[DATA] (allStores) items[] contains BOTH SR_REP_PRIMARY and SR_REP_SECOND_STORE {DOC}","none","storeA/storeB each surface the other store's rep; allStores (no filter) omits either rep","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-009","salesRepCustomers — Happy Path Orgs Served by Caller Rep","GraphQL > Sales Rep > Query > salesRepCustomers","Critical","PROPOSED-BL-SR-AUTH; PROPOSED-BL-SR-SCOPE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY (new fixture — serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id), @td(ORG_ACMEWEST.id)); does NOT serve @td(ORG_SUSPENDED.id).","served_org_a=@td(ORG_ACME.id); served_org_b=@td(ORG_TECHFLOW.id); not_served_org=@td(ORG_SUSPENDED.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query {
+  salesRepCustomers {
+    totalCount
+    pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+    items { organizationId organizationName lastOrder { id number createdDate status total currency itemsCount } }
+  }
+}
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.salesRepCustomers.totalCount >= 4 {DOC}
+[DATA] items[] contains organizationId = {{served_org_a}} AND organizationId = {{served_org_b}} {DOC}
+[DATA] items[] does NOT contain organizationId = {{not_served_org}} {DOC}","none","a served org missing from items[]; a non-served org (ORG_SUSPENDED) appears in items[]; errors[] non-empty","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-010","salesRepCustomers — Anonymous Returns Authorization Error","GraphQL > Sales Rep > Query > salesRepCustomers","Critical","PROPOSED-BL-SR-AUTH","ECL-14.1","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). No auth token set. Needs no seeded data.","none","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] none — request sent with no Authorization header (anonymous)
+[ACT] (anon) open a new tab; click query editor; type:
+query { salesRepCustomers { totalCount items { organizationId } } }
+[GQL] (anon) execute (Ctrl+Enter)
+[READ] (anon) response panel via browser_snapshot","[ERRORS] errors[] non-empty {DOC}
+[DATA] at least one error message matches /anonym/i {DOC}","none","errors[] empty for anonymous caller; data.salesRepCustomers returned with items","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-011","salesRepCustomers — lastOrder Is Most Recent, Hydrated (total/currency/itemsCount)","GraphQL > Sales Rep > Query > salesRepCustomers","Critical","PROPOSED-BL-SR-HYDRATE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has >=2 orders on {{STORE_ID}} with distinct createdDate timestamps and >=1 line item each (see data-prep note).","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepCustomers { items { organizationId lastOrder { id number createdDate status total currency itemsCount } } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] the item with organizationId = @td(ORG_ACME.id) has a non-null lastOrder {DOC}
+[DATA] that lastOrder.createdDate is the MOST RECENT among ORG_ACME's orders (no older order's number appears as lastOrder) {DOC}
+[DATA] lastOrder.total > 0 {DOC}
+[DATA] lastOrder.currency is non-empty {DOC}
+[DATA] lastOrder.itemsCount > 0 {DOC}","none","lastOrder.total = 0; lastOrder.itemsCount = 0 despite line items existing; an older order's number surfaces as lastOrder","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-012","salesRepCustomers — Excludes Organization Where Rep Is Per-Org Locked","GraphQL > Sales Rep > Query > salesRepCustomers","Critical","PROPOSED-BL-SR-STATE; PROPOSED-BL-SR-SCOPE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_LOCKED (new fixture) — serves @td(ORG_TECHFLOW.id) (active) and @td(ORG_ACME.id) (membership LOCKED in that org only).","org_active=@td(ORG_TECHFLOW.id); org_locked=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_LOCKED — POST {{BACK_URL}}/connect/token with SR_REP_LOCKED credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepCustomers { totalCount items { organizationId } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] items[] contains organizationId = {{org_active}} {DOC}
+[DATA] items[] does NOT contain organizationId = {{org_locked}} {DOC}","[ADMIN] SR_REP_LOCKED's Served organizations widget shows @td(ORG_ACME.id) membership as Locked","the locked org still appears in items[] (per-org lock not enforced); errors[] non-empty","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-013","salesRepCustomers — lastOrder Is Store-Scoped (Specific Store + Null = Global Most Recent)","GraphQL > Sales Rep > Query > salesRepCustomers","Critical","PROPOSED-BL-SR-STORE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has an OLDER order on {{STORE_ID}} and a NEWER order on {{STORE_ID_SECONDARY}} (see data-prep note) — proves lastOrder scoping ignores a newer order outside the requested store, and null store returns the globally most-recent order.","org=@td(ORG_ACME.id); store_a={{STORE_ID}}; store_b={{STORE_ID_SECONDARY}}; STORE_ID_SECONDARY={{STORE_ID_SECONDARY}}","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (storeA) open a new tab; click query editor; type:
+query { salesRepCustomers(storeId: ""{{STORE_ID}}"") { items { organizationId lastOrder { number createdDate } } } }
+[GQL] (storeA) execute (Ctrl+Enter)
+[READ] (storeA) response panel via browser_snapshot
+[ACT] (storeB) open a new tab; click query editor; type:
+query { salesRepCustomers(storeId: ""{{STORE_ID_SECONDARY}}"") { items { organizationId lastOrder { number createdDate } } } }
+[GQL] (storeB) execute (Ctrl+Enter)
+[READ] (storeB) response panel via browser_snapshot
+[ACT] (allStores) open a new tab; click query editor; type:
+query { salesRepCustomers { items { organizationId lastOrder { number createdDate } } } }
+[GQL] (allStores) execute (Ctrl+Enter)
+[READ] (allStores) response panel via browser_snapshot","[ERRORS] (storeA) errors[] empty {DOC}
+[DATA] (storeA) ORG_ACME's lastOrder.number is the OLDER (storeA) order, NOT the newer storeB order {DOC}
+[ERRORS] (storeB) errors[] empty {DOC}
+[DATA] (storeB) ORG_ACME's lastOrder.number is the storeB order {DOC}
+[ERRORS] (allStores) errors[] empty {DOC}
+[DATA] (allStores) ORG_ACME's lastOrder.number equals (storeB)'s (globally most recent, across stores) {DOC}","none","storeA scoping leaks the newer storeB order; allStores (no filter) returns the older order instead of the global most-recent","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-014","salesRepCustomers — Paging, Keyword and Sort","GraphQL > Sales Rep > Query > salesRepCustomers","High","PROPOSED-BL-SR-SCOPE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY, serving 4 distinctly-named orgs (@td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id), @td(ORG_ACMEWEST.id)), all indexed in the member search index.","orgs=[@td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id), @td(ORG_ACMEWEST.id)]; org_keyword=@td(ORG_BUILDRIGHT.name)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (page1) open a new tab; click query editor; type:
+query { salesRepCustomers(first: 2, after: ""0"", sort: ""organizationName:asc"") { totalCount pageInfo { hasNextPage } items { organizationName } } }
+[GQL] (page1) execute (Ctrl+Enter)
+[READ] (page1) response panel via browser_snapshot
+[ACT] (page2) open a new tab; click query editor; type:
+query { salesRepCustomers(first: 2, after: ""2"", sort: ""organizationName:asc"") { pageInfo { hasNextPage } items { organizationName } } }
+[GQL] (page2) execute (Ctrl+Enter)
+[READ] (page2) response panel via browser_snapshot
+[ACT] (keyword) open a new tab; click query editor; type:
+query { salesRepCustomers(keyword: ""{{org_keyword}}"") { totalCount items { organizationName } } }
+[GQL] (keyword) execute (Ctrl+Enter)
+[READ] (keyword) response panel via browser_snapshot
+[ACT] (desc) open a new tab; click query editor; type:
+query { salesRepCustomers(first: 1, sort: ""organizationName:desc"") { items { organizationName } } }
+[GQL] (desc) execute (Ctrl+Enter)
+[READ] (desc) response panel via browser_snapshot","[ERRORS] (page1) errors[] empty {DOC}
+[DATA] (page1) pageInfo.hasNextPage = true {DOC}
+[COUNT] (page1) items.length = 2 {DOC}
+[DATA] (page2) items[] has no organizationName overlap with (page1) items[] {DOC}
+[ERRORS] (keyword) errors[] empty {DOC}
+[DATA] (keyword) every items[].organizationName contains the keyword substring {DOC}
+[DATA] (desc) items.0.organizationName != (page1) items.0.organizationName (opposite sort direction surfaces a different first item) {DOC}","none","page1/page2 overlap; keyword returns an unrelated org; desc first item same as asc first item","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-015","salesRepCustomer — Happy Path Details for a Served Organization","GraphQL > Sales Rep > Query > salesRepCustomer","Critical","PROPOSED-BL-SR-AUTH; PROPOSED-BL-SR-SCOPE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY (serves @td(ORG_ACME.id)). Arg name is ""id"" (README's ""organizationId"" prose is stale — code/tests use id:).","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query {
+  salesRepCustomer(id: ""{{org}}"") {
+    organizationId organizationName accountType shipTo phone
+    primaryContact { id fullName firstName lastName emails phones photoUrl }
+  }
+}
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.salesRepCustomer.organizationId = {{org}} {DOC}
+[DATA] data.salesRepCustomer.organizationName is non-empty {DOC}
+[DATA] data.salesRepCustomer.primaryContact is non-null {DOC}","none","salesRepCustomer is null for a served org; organizationId mismatch; errors[] non-empty","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-016","salesRepCustomer — Organization Not Served Returns Null (No Leak)","GraphQL > Sales Rep > Query > salesRepCustomer","Critical","PROPOSED-BL-SR-SCOPE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY, who does NOT serve @td(ORG_SUSPENDED.id) (an org that genuinely exists) — proves a rep cannot read an arbitrary org by guessing its id.","not_served_org=@td(ORG_SUSPENDED.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepCustomer(id: ""{{not_served_org}}"") { organizationId organizationName } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[NULL] data.salesRepCustomer {DOC}","none","salesRepCustomer is non-null for a non-served (but existing) org id — data leak; errors[] non-empty instead of a clean null","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-017","salesRepCustomer — Membership Locked Returns Null","GraphQL > Sales Rep > Query > salesRepCustomer","Critical","PROPOSED-BL-SR-STATE; PROPOSED-BL-SR-SCOPE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_LOCKED, whose membership in @td(ORG_ACME.id) is per-org locked — mirrors the list-query lock filter (SR-GQL-012) at the single-entity level.","org_locked=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_LOCKED — POST {{BACK_URL}}/connect/token with SR_REP_LOCKED credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepCustomer(id: ""{{org_locked}}"") { organizationId } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[NULL] data.salesRepCustomer {DOC}","none","salesRepCustomer resolves non-null for a locked membership; errors[] non-empty instead of a clean null","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-018","salesRepCustomer — Anonymous Returns Authorization Error","GraphQL > Sales Rep > Query > salesRepCustomer","Critical","PROPOSED-BL-SR-AUTH","ECL-14.1","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). No auth token set. Needs no seeded data — any syntactically valid org id string works since auth is checked before scope resolution.","any_org_id=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] none — request sent with no Authorization header (anonymous)
+[ACT] (anon) open a new tab; click query editor; type:
+query { salesRepCustomer(id: ""{{any_org_id}}"") { organizationId } }
+[GQL] (anon) execute (Ctrl+Enter)
+[READ] (anon) response panel via browser_snapshot","[ERRORS] errors[] non-empty {DOC}
+[DATA] at least one error message matches /anonym/i {DOC}","none","errors[] empty; salesRepCustomer data returned for an anonymous caller","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-019","salesRepCustomer — primaryContact Resolves to Explicit Owner (Wins Over Rep Membership)","GraphQL > Sales Rep > Query > salesRepCustomer","High","PROPOSED-BL-SR-HYDRATE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) must have an explicit Owner contact (OwnerId) distinct from SR_REP_PRIMARY's own contact — the rep is also a member of the org, but the org's Owner must win as primaryContact (see data-prep note).","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepCustomer(id: ""{{org}}"") { primaryContact { id fullName phones } phone } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.salesRepCustomer.primaryContact.id is non-empty GUID {DOC}
+[DATA] data.salesRepCustomer.primaryContact.id does NOT equal SR_REP_PRIMARY's own contact id (the explicit org Owner wins over the rep's own membership) {DOC}
+[DATA] data.salesRepCustomer.phone is non-empty (falls back to the primary contact's phone) {DOC}","none","primaryContact.id equals the calling rep's own contact id despite an explicit Owner being set; primaryContact null despite an owner+membership both existing","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-020","salesRepCustomer — primaryContact Falls Back to First Contact Member When No Owner","GraphQL > Sales Rep > Query > salesRepCustomer","High","PROPOSED-BL-SR-HYDRATE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY, who also serves @td(ORG_TECHFLOW.id) which has NO OwnerId set — with no owner, primaryContact falls back to the org's first contact member (here, the rep itself, per component test SalesRepCustomer_FallsBackToFirstContactWhenNoOwner).","org_no_owner=@td(ORG_TECHFLOW.id); SR_REP_PRIMARY_EMAIL=@td(SR_REP_PRIMARY.email)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepCustomer(id: ""{{org_no_owner}}"") { primaryContact { id fullName emails } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.salesRepCustomer.primaryContact.emails contains {{SR_REP_PRIMARY_EMAIL}} (fallback resolved to the rep itself, the org's only/first contact member) {DOC}","none","primaryContact is null when no owner is set; primaryContact resolves to an unrelated contact","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-021","salesRepCustomer — Maps accountType and shipTo from Org Data","GraphQL > Sales Rep > Query > salesRepCustomer","Medium","PROPOSED-BL-SR-HYDRATE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has a BusinessCategory set and a default address with City + Region.","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepCustomer(id: ""{{org}}"") { accountType shipTo } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.salesRepCustomer.accountType is non-empty (mirrors org BusinessCategory) {DOC}
+[DATA] data.salesRepCustomer.shipTo matches the ""<City>, <Region>"" format (non-empty, contains a comma) {DOC}","[ADMIN] accountType matches @td(ORG_ACME.id)'s BusinessCategory field in the Customer module","accountType empty despite a set BusinessCategory; shipTo blank or missing the comma-separated City/Region format","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-022","salesRepOrders — Customer Orders Newest First, Hydrated (total/currency/itemsCount)","GraphQL > Sales Rep > Query > salesRepOrders","Critical","PROPOSED-BL-SR-AUTH; PROPOSED-BL-SR-HYDRATE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has >=2 orders with distinct createdDate and >=1 line item each. Default sort is createdDate:desc.","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query {
+  salesRepOrders(customerId: ""{{org}}"") {
+    totalCount
+    pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+    items { id number createdDate status statusDisplayValue total currency itemsCount customerId customerName }
+  }
+}
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.salesRepOrders.totalCount >= 2 {DOC}
+[DATA] items.0.createdDate >= items.1.createdDate (newest first, default createdDate:desc) {DOC}
+[DATA] items.0.total > 0 {DOC}
+[DATA] items.0.currency is non-empty {DOC}
+[DATA] items.0.itemsCount > 0 {DOC}
+[DATA] items.0.customerId = {{org}} {DOC}","none","items not in newest-first order; total/itemsCount = 0 despite seeded line items","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-023","salesRepOrders — Organization Not Served Returns Empty (No Leak)","GraphQL > Sales Rep > Query > salesRepOrders","Critical","PROPOSED-BL-SR-SCOPE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY, who does NOT serve @td(ORG_SUSPENDED.id). @td(ORG_SUSPENDED.id) has at least one order of its own — proves the rep cannot read its orders by guessing the org id.","not_served_org=@td(ORG_SUSPENDED.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{not_served_org}}"") { totalCount items { number } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[COUNT] data.salesRepOrders.totalCount = 0 {DOC}","none","totalCount > 0 or items[] non-empty for a non-served org that has real orders (leak); errors[] non-empty instead of a clean empty result","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-024","salesRepOrders — Membership Locked Returns Empty","GraphQL > Sales Rep > Query > salesRepOrders","Critical","PROPOSED-BL-SR-STATE; PROPOSED-BL-SR-SCOPE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_LOCKED, whose membership in @td(ORG_ACME.id) is per-org locked, and that org has at least one order — mirrors the customer-details lock filter (SR-GQL-017).","org_locked=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_LOCKED — POST {{BACK_URL}}/connect/token with SR_REP_LOCKED credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org_locked}}"") { totalCount items { number } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[COUNT] data.salesRepOrders.totalCount = 0 {DOC}","none","totalCount > 0 for a locked-membership org that genuinely has orders; errors[] non-empty instead of a clean empty result","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-025","salesRepOrders — Anonymous Returns Authorization Error","GraphQL > Sales Rep > Query > salesRepOrders","Critical","PROPOSED-BL-SR-AUTH","ECL-14.1","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). No auth token set. Needs no seeded data.","any_org_id=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] none — request sent with no Authorization header (anonymous)
+[ACT] (anon) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{any_org_id}}"") { totalCount items { number } } }
+[GQL] (anon) execute (Ctrl+Enter)
+[READ] (anon) response panel via browser_snapshot","[ERRORS] errors[] non-empty {DOC}
+[DATA] at least one error message matches /anonym/i {DOC}","none","errors[] empty; order data returned for an anonymous caller","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-026","salesRepOrders — Paging and Keyword Filter","GraphQL > Sales Rep > Query > salesRepOrders","High","PROPOSED-BL-SR-SCOPE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has >=3 orders with distinct createdDate, and exactly one order (SRO-ACME-KEYWORD) carries the distinctive customerName token {{ORDER_KEYWORD_TOKEN}} ('Beacon') so the keyword filter (Number OR CustomerName Contains) isolates it (see data-prep note).","org=@td(ORG_ACME.id); keyword={{ORDER_KEYWORD_TOKEN}}","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (page1) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"", first: 2, after: ""0"") { totalCount pageInfo { hasNextPage } items { number } } }
+[GQL] (page1) execute (Ctrl+Enter)
+[READ] (page1) response panel via browser_snapshot
+[ACT] (page2) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"", first: 2, after: ""2"") { pageInfo { hasNextPage } items { number } } }
+[GQL] (page2) execute (Ctrl+Enter)
+[READ] (page2) response panel via browser_snapshot
+[ACT] (keyword) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"", keyword: ""{{keyword}}"") { totalCount items { number customerName } } }
+[GQL] (keyword) execute (Ctrl+Enter)
+[READ] (keyword) response panel via browser_snapshot","[ERRORS] (page1) errors[] empty {DOC}
+[DATA] (page1) pageInfo.hasNextPage = true {DOC}
+[COUNT] (page1) items.length = 2 {DOC}
+[DATA] (page2) items[] has no number overlap with (page1) items[] {DOC}
+[ERRORS] (keyword) errors[] empty {DOC}
+[DATA] (keyword) totalCount narrows to exactly 1 (the seeded Beacon order) and that item's number contains ""SRO-ACME-KEYWORD"" — {{ORDER_KEYWORD_TOKEN}} ('Beacon') matches the order's INDEXED CustomerName; NOTE the response customerName field returns the denormalized ORGANIZATION name (not the order's raw CustomerName), so assert on the narrowing + number, not on the customerName value (verified vcptcore-qa 2026-07-16) {DOC}","none","page1/page2 overlap; keyword does not narrow the result set (returns all ACME orders); the matched order is not the seeded Beacon order","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-027","salesRepOrders — Store-Scoped (Specific Store + Null = Across Stores)","GraphQL > Sales Rep > Query > salesRepOrders","Critical","PROPOSED-BL-SR-STORE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has an OLDER order on {{STORE_ID}} and a NEWER order on {{STORE_ID_SECONDARY}} — proves the newer other-store order is excluded when scoped, and both appear when unscoped.","org=@td(ORG_ACME.id); store_a={{STORE_ID}}; store_b={{STORE_ID_SECONDARY}}; STORE_ID_SECONDARY={{STORE_ID_SECONDARY}}","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (storeA) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"", storeId: ""{{STORE_ID}}"") { totalCount items { number } } }
+[GQL] (storeA) execute (Ctrl+Enter)
+[READ] (storeA) response panel via browser_snapshot
+[ACT] (allStores) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"") { totalCount items { number } } }
+[GQL] (allStores) execute (Ctrl+Enter)
+[READ] (allStores) response panel via browser_snapshot","[ERRORS] (storeA) errors[] empty {DOC}
+[DATA] (storeA) items[] excludes the {{STORE_ID_SECONDARY}} order even though it is newer {DOC}
+[ERRORS] (allStores) errors[] empty {DOC}
+[COUNT] (allStores) items.length > (storeA) items.length {DOC}","none","storeA scoping leaks the newer other-store order; allStores omits an order present in storeA","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-028","salesRepOrders — statuses Filter Resolves Composite (Inactive → Cancelled + Failed)","GraphQL > Sales Rep > Query > salesRepOrders","Critical","PROPOSED-BL-SR-LOC","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has orders in at least statuses New, Cancelled and Failed (see data-prep note for the exact status spread required).","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (baseline) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"") { items { number status } } }
+[GQL] (baseline) execute (Ctrl+Enter)
+[READ] (baseline) response panel via browser_snapshot
+[ACT] (inactive) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"", statuses: [""Inactive""]) { totalCount items { number status } } }
+[GQL] (inactive) execute (Ctrl+Enter)
+[READ] (inactive) response panel via browser_snapshot","[ERRORS] (inactive) errors[] empty {DOC}
+[DATA] (inactive) every items[].status is either ""Cancelled"" or ""Failed"" {DOC}
+[DATA] (inactive) no items[].status = ""New"" {DOC}
+[DATA] (inactive) totalCount equals the count of (baseline) items with status Cancelled or Failed {DOC}","none","an item with status New/Processing appears when filtered by Inactive; totalCount = 0 despite known Cancelled/Failed orders in (baseline)","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-029","salesRepOrders — Multiple statuses Filter Is a Union","GraphQL > Sales Rep > Query > salesRepOrders","High","PROPOSED-BL-SR-LOC","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has orders in statuses New, Cancelled and Processing.","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"", statuses: [""New"", ""Inactive""]) { totalCount items { number status } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] items[] includes at least one status = ""New"" AND at least one status = ""Cancelled"" {DOC}
+[DATA] no items[].status = ""Processing"" (excluded — union of New + Inactive[Cancelled,Failed] only) {DOC}","none","a Processing-status order appears despite not being in the multi-select union; totalCount does not equal the New+Cancelled union size","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-030","salesRepOrders — No statuses Argument Returns All Statuses","GraphQL > Sales Rep > Query > salesRepOrders","Medium","PROPOSED-BL-SR-LOC","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has orders in >=2 distinct statuses.","org=@td(ORG_ACME.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"") { totalCount items { status } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] items[] includes at least 2 distinct status values (no implicit status filter applied) {DOC}","none","only one status value appears despite the org having orders in multiple statuses; totalCount = 0 despite known orders existing","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-031","salesRepOrders — statusDisplayValue Localized by cultureName, Raw status Preserved","GraphQL > Sales Rep > Query > salesRepOrders","High","PROPOSED-BL-SR-LOC","ECL-12.1","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY. @td(ORG_ACME.id) has at least one order with status Cancelled.","org=@td(ORG_ACME.id); culture={{CULTURE_NAME}}","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepOrders(customerId: ""{{org}}"", cultureName: ""{{culture}}"") { items { number status statusDisplayValue } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] for the Cancelled order, items[].status = ""Cancelled"" (raw status preserved, not localized) {DOC}
+[DATA] for that same order, items[].statusDisplayValue is non-empty and reflects the {{culture}} localization (differs from a raw enum dump, or matches the store's configured localized label) {DOC}","[ADMIN] statusDisplayValue matches the order-status localized label configured for {{culture}} in Store settings","statusDisplayValue equals raw status verbatim with no localization applied when a distinct localized label is configured; status field itself gets localized (raw status lost)","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-032","salesRepOrders — Without customerId Returns Cross-Customer Dashboard (Assigned Orgs Only)","GraphQL > Sales Rep > Query > salesRepOrders","Critical","PROPOSED-BL-SR-SCOPE","ECL-14.3","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY, assigned to @td(ORG_ACME.id) + @td(ORG_TECHFLOW.id) + @td(ORG_BUILDRIGHT.id) + @td(ORG_ACMEWEST.id) (NOT @td(ORG_SUSPENDED.id)). Each assigned org has >=1 order; @td(ORG_SUSPENDED.id) also has >=1 order of its own.","org_a=@td(ORG_ACME.id); org_b=@td(ORG_TECHFLOW.id); unassigned_org=@td(ORG_SUSPENDED.id)","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepOrders { totalCount items { number customerId customerName } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] items[] includes an entry with customerId = {{org_a}} AND an entry with customerId = {{org_b}} {DOC}
+[DATA] items[] does NOT include any entry with customerId = {{unassigned_org}} (unassigned org excluded from the dashboard) {DOC}
+[DATA] every items[].customerName is non-empty (denormalized name or member-lookup fallback) {DOC}","none","an unassigned org's order appears in the no-customerId dashboard (cross-customer data leak); customerName blank for a resolvable org","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-033","salesRepOrderStatuses — Returns Store's Statuses with Composite Localized Label","GraphQL > Sales Rep > Query > salesRepOrderStatuses","High","PROPOSED-BL-SR-AUTH; PROPOSED-BL-SR-LOC","ECL-12.1","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller-agnostic result (store config), but the scoped schema still requires authentication — any authenticated caller works (using ACME_BUYER here).","store={{STORE_ID}}; culture={{CULTURE_NAME}}","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=ACME_BUYER — POST {{BACK_URL}}/connect/token with ACME_BUYER credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepOrderStatuses(storeId: ""{{store}}"", cultureName: ""{{culture}}"") { name localizedName } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.salesRepOrderStatuses is non-empty {DOC}
+[DATA] items include name = ""New"" {DOC}
+[DATA] items include a composite status name = ""Inactive"" with a distinct, non-blank localizedName (e.g. a ""Not active""-style label, not the raw enum) {DOC}
+[DATA] ""New""'s name is a value valid as input to salesRepOrders(statuses:[...]) per SR-GQL-030 {DOC}","none","Inactive's localizedName equals the raw enum name (no composite label applied); the list is empty for a configured store","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-034","salesRepOrderStatuses — Anonymous Returns Authorization Error","GraphQL > Sales Rep > Query > salesRepOrderStatuses","Critical","PROPOSED-BL-SR-AUTH","ECL-14.1","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). No auth token set. Needs no seeded data — proves auth is required even for the caller-agnostic status list.","store={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] none — request sent with no Authorization header (anonymous)
+[ACT] (anon) open a new tab; click query editor; type:
+query { salesRepOrderStatuses(storeId: ""{{store}}"") { name } }
+[GQL] (anon) execute (Ctrl+Enter)
+[READ] (anon) response panel via browser_snapshot","[ERRORS] errors[] non-empty {DOC}
+[DATA] at least one error message matches /anonym/i {DOC}","none","errors[] empty; status list returned for an anonymous caller (caller-agnostic data must still require auth)","none (read-only)","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"
+"SR-GQL-035","SalesRep.Enabled Store Setting Toggles Storefront UI Only — Does NOT Gate the X-API","GraphQL > Sales Rep > Query > Store Settings","High","PROPOSED-BL-SR-UITOGGLE","","Legacy GraphiQL-UI browser mode — scripts/graphql-runner.ts POSTs only {{BACK_URL}}/graphql and introspects only the default xAPI schema, so it cannot target the scoped sales-rep schema; execute via GraphiQL UI per knowledge/api/graphiql-interaction.md. Requires TEST_ENV=vcptcore (module deployed on vcptcore-qa ONLY, absent on vcst-qa/virtostart). Caller is SR_REP_PRIMARY (authorized, serves @td(ORG_ACME.id)). Admin has set the per-store public setting SalesRep.Enabled = false on {{STORE_ID}} (module README: ""presentation switch only — does not gate the backend X-API"").","store={{STORE_ID}}; org=@td(ORG_ACME.id)","[ADMIN via {{BACK_URL}}] Stores > {{STORE_ID}} > Settings > Sales Rep module > set ""SalesRep.Enabled"" = false > Save
+[NAV] {{BACK_URL}}/ui/graphiql/sales-rep
+[WAIT] GraphiQL editor loaded (scoped sales-rep schema)
+[AUTH] role=SR_REP_PRIMARY — POST {{BACK_URL}}/connect/token with SR_REP_PRIMARY credentials — MUST include the form param storeId ({{STORE_ID}}; use {{STORE_ID_SECONDARY}} for a rep bound to the secondary store): store-bound rep/buyer accounts return HTTP 400 invalid_grant without it (verified vcptcore-qa 2026-07-16); insert ""Authorization: Bearer <token>"" in the Headers tab via execCommand('insertText') (graphiql-interaction.md Step 2)
+[ACT] (main) open a new tab; click query editor; type:
+query { salesRepCustomers(storeId: ""{{STORE_ID}}"") { totalCount items { organizationId } } }
+[GQL] (main) execute (Ctrl+Enter)
+[READ] (main) response panel via browser_snapshot","[ERRORS] errors[] empty {DOC}
+[DATA] data.salesRepCustomers.totalCount >= 1 (the X-API still returns the rep's data — membership scoping is the only gate, per README §Settings) {DOC}
+[DATA] items[] still contains organizationId = {{org}} {DOC}","[EVIDENCE] store.settings.modules.SalesRep.Enabled = false is readable via the storefront config but has no bearing on this X-API response (runner-manual)","salesRepCustomers returns empty/errors when SalesRep.Enabled=false (would mean the UI toggle incorrectly gates the API); errors[] non-empty for an authorized rep query","[ADMIN via {{BACK_URL}}] Stores > {{STORE_ID}} > Settings > Sales Rep module > restore ""SalesRep.Enabled"" = true > Save","Generated: PR #2 vc-module-sales-rep (VCST-4907/5304/5308), TLC 2026-07-15","Draft"

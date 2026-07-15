@@ -1,0 +1,52 @@
+{
+  "runId": "TLC-2026-07-15-1723",
+  "inputType": "change-source",
+  "source": "VCST-5293 + PR #2 VirtoCommerce/vc-module-sales-rep",
+  "date": "2026-07-15",
+  "verdict": "APPROVED WITH WARNINGS",
+  "verificationEnv": "vcptcore-qa",
+  "platform": "3.1043.0",
+  "module": "SalesRep 3.1000.0-pr-2-e6e9",
+  "theme": "vc-theme-b2b-vue-2.54.0-pr-2380",
+  "changedModules": ["SalesRep"],
+  "changedLayers": ["graphql-xapi", "backend", "admin-vc-shell"],
+  "affectedSuites": ["050m"],
+  "casesAnalyzed": 0,
+  "casesSynced": 0,
+  "casesGenerated": 35,
+  "casesReviewed": 35,
+  "casesVerifiedLive": 6,
+  "casesBlockedPendingSeed": 29,
+  "filesModified": ["regression/suites/Backend/graphql/050m-graphql-sales-rep.csv"],
+  "suiteRegistered": false,
+  "gateResults": {
+    "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS",
+    "G5": "WARN", "G6": "PASS", "G7": "PASS", "G8": "PASS", "G9": "N/A"
+  },
+  "liveContractVerification": {
+    "endpoint": "POST /graphql/sales-rep",
+    "anonymousAuthError": true,
+    "queryCount": 5,
+    "salesRepCustomerArg": "id",
+    "statisticsQueryPresent": false,
+    "returnFieldsMatch": true,
+    "graphiqlReachable": true
+  },
+  "docGaps": [
+    "README documents salesRepCustomerOrderStatistics (not implemented on branch)",
+    "README salesRepCustomer example uses organizationId; real arg is id"
+  ],
+  "blProposals": {
+    "new": [
+      "PROPOSED-BL-SR-AUTH", "PROPOSED-BL-SR-SCOPE", "PROPOSED-BL-SR-PERM",
+      "PROPOSED-BL-SR-STATE", "PROPOSED-BL-SR-STORE", "PROPOSED-BL-SR-HYDRATE",
+      "PROPOSED-BL-SR-LOC", "PROPOSED-BL-SR-UITOGGLE"
+    ]
+  },
+  "nextSteps": [
+    "Seed vcptcore-qa + author SR_REP_* aliases + STORE_ID_SECONDARY; re-verify 29 blocked cases",
+    "Register 050m in config/test-suites.json",
+    "File README doc-fix note on PR",
+    "Promote PROPOSED-BL-SR-* after sign-off"
+  ]
+}
