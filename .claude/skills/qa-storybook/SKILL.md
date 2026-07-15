@@ -2,7 +2,7 @@
 name: qa-storybook
 description: "[Testing] Storybook visual regression: baselines, responsive breakpoints, state variations, Atomic Design."
 argument-hint: "component name | atoms | molecules | organisms | all"
-disable-model-invocation: true
+
 ---
 
 # /qa-storybook — Storybook Component Testing
