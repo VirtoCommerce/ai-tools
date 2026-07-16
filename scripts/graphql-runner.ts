@@ -902,7 +902,14 @@ async function executeBlock(
       // It also supports JSONPath-style filters: foo[?key=value]
       const value = getByPath(response.data, resolvedPath);
       const isMissing = value === null || value === undefined;
-      const stringVal = isMissing ? "" : String(value);
+      // Non-scalar captures (arrays/objects) are JSON-serialized so they round-trip
+      // back into a downstream JSON body verbatim; scalars keep String() so they
+      // substitute unquoted into "…{{VAR}}…" positions.
+      const stringVal = isMissing
+        ? ""
+        : typeof value === "object"
+          ? JSON.stringify(value)
+          : String(value);
       ctx.variables[block.variable] = stringVal;
       if (isMissing) {
         const reason = value === null ? "null" : "undefined";
@@ -973,7 +980,15 @@ async function executeBlock(
       const stripped = resolvedRestPath.startsWith("body.") ? resolvedRestPath.slice(5) : resolvedRestPath;
       const value = getByPath(restResp.body, stripped);
       const isMissing = value === null || value === undefined;
-      const stringVal = isMissing ? "" : String(value);
+      // Non-scalar captures (arrays/objects) are JSON-serialized so they can be
+      // round-tripped back into a downstream JSON body verbatim (e.g. re-posting a
+      // full store object with only one field changed). Scalars keep String() so
+      // they substitute into "…{{VAR}}…" quoted positions unquoted.
+      const stringVal = isMissing
+        ? ""
+        : typeof value === "object"
+          ? JSON.stringify(value)
+          : String(value);
       ctx.variables[block.variable] = stringVal;
       if (isMissing) {
         const reason = value === null ? "null" : "undefined";

@@ -35,14 +35,14 @@ GET {{BACK_URL}}api/stores/@td(STORE_PRIMARY.id)
 [REST-CAPTURE fetch_store.body.currencies → S_CURS]
 [REST-OP cfg_set]
 POST {{BACK_URL}}api/stores
-Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""languages"": {{S_LANGS}}, ""currencies"": {{S_CURS}}, ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
 [REST-EXEC cfg_set]
 [GQL-OP read_after_set]
 query { store(storeId: ""@td(STORE_PRIMARY.id)"") { storeId storeUrl assetPublicUrl } }
 [GQL-EXEC read_after_set]
 [REST-OP cfg_reset]
 POST {{BACK_URL}}api/stores
-Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": """"}
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""languages"": {{S_LANGS}}, ""currencies"": {{S_CURS}}, ""assetPublicUrl"": """"}
 [REST-EXEC cfg_reset]
 [GQL-OP read_after_reset]
 query { store(storeId: ""@td(STORE_PRIMARY.id)"") { storeId assetPublicUrl } }
@@ -78,7 +78,7 @@ GET {{BACK_URL}}api/stores/@td(STORE_PRIMARY.id)
 [REST-CAPTURE fetch_store.body.currencies → S_CURS]
 [REST-OP cfg_set]
 POST {{BACK_URL}}api/stores
-Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""languages"": {{S_LANGS}}, ""currencies"": {{S_CURS}}, ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
 [REST-EXEC cfg_set]
 [GQL-OP read_after]
 query { product(id: ""{{PROD_ID}}"", storeId: ""@td(STORE_PRIMARY.id)"", currencyCode: ""{{CURRENCY_CODE}}"", cultureName: ""{{CULTURE_NAME}}"") { id imgSrc images { url relativeUrl } assets { url } } }
@@ -91,7 +91,7 @@ query { product(id: ""{{PROD_ID}}"", storeId: ""@td(STORE_PRIMARY.id)"", currenc
 [GQL-CAPTURE read_after_2.data.product.imgSrc → IMG_AFTER_2]
 [REST-OP cfg_reset]
 POST {{BACK_URL}}api/stores
-Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": """"}
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""languages"": {{S_LANGS}}, ""currencies"": {{S_CURS}}, ""assetPublicUrl"": """"}
 [REST-EXEC cfg_reset]","[ERRORS label=discover_before] errors[] empty
 [DATA label=discover_before] data.products.items.0.imgSrc is non-null
 [ERRORS label=cfg_set] errors[] empty
@@ -120,14 +120,14 @@ GET {{BACK_URL}}api/stores/@td(STORE_PRIMARY.id)
 [REST-CAPTURE fetch_store.body.currencies → S_CURS]
 [REST-OP cfg_set]
 POST {{BACK_URL}}api/stores
-Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""languages"": {{S_LANGS}}, ""currencies"": {{S_CURS}}, ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
 [REST-EXEC cfg_set]
 [GQL-OP cat_after]
 query { category(id: ""{{CAT_ID}}"", storeId: ""@td(STORE_PRIMARY.id)"", cultureName: ""{{CULTURE_NAME}}"") { id imgSrc } }
 [GQL-EXEC cat_after]
 [REST-OP cfg_reset]
 POST {{BACK_URL}}api/stores
-Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": """"}
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""languages"": {{S_LANGS}}, ""currencies"": {{S_CURS}}, ""assetPublicUrl"": """"}
 [REST-EXEC cfg_reset]","[ERRORS label=discover_cat_before] errors[] empty
 [ERRORS label=cfg_set] errors[] empty
 [ERRORS label=cat_after] errors[] empty
@@ -151,14 +151,14 @@ GET {{BACK_URL}}api/stores/@td(STORE_PRIMARY.id)
 [REST-CAPTURE fetch_store.body.currencies → S_CURS]
 [REST-OP cfg_set]
 POST {{BACK_URL}}api/stores
-Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""languages"": {{S_LANGS}}, ""currencies"": {{S_CURS}}, ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
 [REST-EXEC cfg_set]
 [GQL-OP read_external_after]
 query { products(storeId: ""@td(STORE_PRIMARY.id)"", currencyCode: ""{{CURRENCY_CODE}}"", cultureName: ""{{CULTURE_NAME}}"", first: 5, query: ""@td(EXTERNAL_HOST_IMAGE_PRODUCT.name)"") { items { name imgSrc images { url relativeUrl } } } }
 [GQL-EXEC read_external_after]
 [REST-OP cfg_reset]
 POST {{BACK_URL}}api/stores
-Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": """"}
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""languages"": {{S_LANGS}}, ""currencies"": {{S_CURS}}, ""assetPublicUrl"": """"}
 [REST-EXEC cfg_reset]","[ERRORS label=discover_external] errors[] empty
 [ERRORS label=cfg_set] errors[] empty
 [ERRORS label=read_external_after] errors[] empty
