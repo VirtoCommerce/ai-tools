@@ -9,10 +9,13 @@
         "/c",
         "npx",
         "@playwright/mcp@latest",
-        "--config",
-        "config/mcp-playwright-chrome.config.json",
-        "--secrets",
-        ".env.local"
+        "--browser",
+        "chrome",
+        "--isolated",
+        "--viewport-size",
+        "1920x1080",
+        "--output-dir",
+        "test-results/chrome"
       ]
     },
     "playwright-firefox": {
@@ -22,10 +25,13 @@
         "/c",
         "npx",
         "@playwright/mcp@latest",
-        "--config",
-        "config/mcp-playwright-firefox.config.json",
-        "--secrets",
-        ".env.local"
+        "--browser",
+        "firefox",
+        "--isolated",
+        "--viewport-size",
+        "1920x1080",
+        "--output-dir",
+        "test-results/firefox"
       ]
     },
     "playwright-edge": {
@@ -35,10 +41,13 @@
         "/c",
         "npx",
         "@playwright/mcp@latest",
-        "--config",
-        "config/mcp-playwright-firefox.config.json",
-        "--secrets",
-        ".env.local"
+        "--browser",
+        "msedge",
+        "--isolated",
+        "--viewport-size",
+        "1920x1080",
+        "--output-dir",
+        "test-results/edge"
       ]
     },
     "Chrome DevTools": {
