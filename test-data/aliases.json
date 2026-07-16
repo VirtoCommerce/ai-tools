@@ -3572,5 +3572,101 @@
       "slug": "slug"
     },
     "slug": ""
+  },
+  "SR_REP_PRIMARY": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_PRIMARY"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    }
+  },
+  "SR_REP_SECOND_STORE": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_SECOND_STORE"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    }
+  },
+  "SR_REP_BLOCKED": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_BLOCKED"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    }
+  },
+  "SR_REP_LOCKED": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_LOCKED"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store",
+      "membership_locked_id": "membership_locked_id"
+    }
+  },
+  "SR_REP_EXCLUSIVE_TECHFLOW": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_EXCLUSIVE_TECHFLOW"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    }
+  },
+  "SR_OWNER_ACME": {
+    "id": "",
+    "name": "AGENT-TEST-SR-Owner-Acme",
+    "phone": "+1-206-555-0142"
+  },
+  "SR_REP_ACME2": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_ACME2"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    }
   }
 }

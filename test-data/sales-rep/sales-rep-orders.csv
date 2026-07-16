@@ -1,0 +1,10 @@
+order_key,org,store,status,total,items_count,customer_name,seed_seq,seeded,test_purpose
+SRO-ACME-NEW,ORG-001,B2B-store,New,120.00,2,AGENT-TEST-SR Acme Buyer,1,true,ACME order (New) with 2 line items — hydration (total/currency/itemsCount not 0) + default recency
+SRO-ACME-CANCELLED,ORG-001,B2B-store,Cancelled,80.00,1,AGENT-TEST-SR Acme Buyer,2,true,ACME order (Cancelled) — composite status Inactive -> [Cancelled,Failed]
+SRO-ACME-FAILED,ORG-001,B2B-store,Failed,55.00,1,AGENT-TEST-SR Acme Buyer,3,true,ACME order (Failed) — composite status Inactive
+SRO-ACME-PROCESSING,ORG-001,B2B-store,Processing,200.00,3,AGENT-TEST-SR Acme Buyer,4,true,ACME order (Processing) — excluded by Inactive filter; present for New+Inactive union? no (Processing excluded)
+SRO-ACME-KEYWORD,ORG-001,B2B-store,New,42.00,1,AGENT-TEST-SR-Beacon,5,true,ACME order with distinctive customerName token 'Beacon' — keyword filter on salesRepOrders
+SRO-ACME-ELEC,ORG-001,Electronics,New,99.00,1,AGENT-TEST-SR Acme Buyer,6,true,ACME order on the SECONDARY store (Electronics), created last => globally most recent — store-scoped lastOrder / orders
+SRO-TECH-NEW,ORG-002,B2B-store,New,60.00,1,AGENT-TEST-SR TechFlow Buyer,7,true,TECHFLOW order — cross-customer dashboard (salesRepOrders with no customerId)
+SRO-BUILD-NEW,ORG-003,B2B-store,New,70.00,1,AGENT-TEST-SR BuildRight Buyer,8,true,BUILDRIGHT order — cross-customer dashboard
+SRO-WEST-NEW,ORG-004,B2B-store,New,90.00,1,AGENT-TEST-SR AcmeWest Buyer,9,true,ACMEWEST order — cross-customer dashboard

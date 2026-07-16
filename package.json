@@ -60,6 +60,8 @@
     "seed:promotions:teardown": "node scripts/seed-data/seed-promotions.mjs --teardown",
     "seed:bopis": "node scripts/seed-data/seed-bopis.mjs",
     "seed:bopis:teardown": "node scripts/seed-data/seed-bopis.mjs --teardown",
+    "seed:sales-rep": "node scripts/seed-data/seed-sales-rep.mjs",
+    "seed:sales-rep:teardown": "node scripts/seed-data/seed-sales-rep.mjs --teardown",
     "seed:products:teardown": "node scripts/seed-data/seed-standard-products.mjs --teardown",
     "seed:configurable:teardown": "node scripts/seed-data/seed-configurable.mjs --teardown",
     "seed:properties": "node scripts/seed-data/seed-catalog-properties.mjs",
