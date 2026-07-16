@@ -142,8 +142,12 @@ Turning a confirmed DIAG into a scrubbed quality report to VirtoCommerce is
 It is **not** part of the diagnose flow above and is never run implicitly.
 
 ```
-node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--confirm] [--as pr|fork-pr|issue|local]
+node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--confirm] [--as pr|fork-pr|issue|local] [--keep] [--purge]
 ```
+
+**Lifecycle — log → analyze → contribute → delete.** Local diagnostics are EPHEMERAL,
+not archived: once a finding is contributed upstream, the source of truth is the
+PR/issue, so the processed session's local artifacts are removed.
 
 - **Routes by the GitHub token's real rights** on `VirtoCommerce/vc-mcp-testing-module`
   (via `../project-init/probe-lib.mjs`): push/maintain/admin → **PR**; authenticated
@@ -156,6 +160,19 @@ node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--confirm] 
   shows it). It sends ONLY with `--confirm`, and even then auto-files just the
   Issue route; a PR/fork-PR is handed off as ready commands. Issue dedup via a
   stable fingerprint marker. It never touches the client-installed plugin.
+- **Delete-after-deliver (the "delete all" step):** the cleanup is scoped to the
+  **processed session only** (its `<sid>.jsonl` + `.state.json` + `DIAG-<sid>-*.md`
+  + this finding's `DELIVERY-*.md`) — other sessions are never touched.
+  - **Issue route + `--confirm`** (filed, or a dedup that is already upstream) →
+    the session's local artifacts are deleted automatically. `--keep` retains them.
+  - **PR / fork-PR** (handed off — the human opens the PR) and **local** (no token,
+    nothing sent) → **nothing is deleted**; the run prints the ready cleanup command
+    to run *after* the PR is opened / after authenticating.
+  - **Nothing worthwhile** (no BROKEN/DEGRADED finding) → files nothing and offers the
+    cleanup command.
+  - **`--purge`** is the standalone terminal step: delete this session's local
+    artifacts and send nothing (used after a hand-off PR is opened, or to discard a
+    non-actionable session).
 
 ## Notes
 - Verdict/severity semantics and the (signal × expectation) table live in the

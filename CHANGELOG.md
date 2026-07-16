@@ -68,6 +68,27 @@ couldn't actually start because the command was `disable-model-invocation`.
   `vc-self-check` spans). Docs (`CLAUDE.md`, `.claude/rules/skills-commands.md`) updated.
 - Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
 
+### Changed — self-diagnostics artifacts are ephemeral (log → analyze → contribute → delete)
+
+Local diagnostics under `<outputRoot>/.vc-fix/diagnostics/` are no longer meant to
+accumulate. Instead of a time-based retention sweep, the lifecycle is now
+**log → analyze → contribute → delete**: `deliver.mjs` cleans up the processed session's
+own artifacts once its finding is upstream.
+
+- On a successful **Issue** delivery (`--confirm`, or a dedup that is already upstream),
+  `deliver` deletes that session's `<sid>.jsonl` + `<sid>.state.json` + `DIAG-<sid>-*.md` +
+  this finding's `DELIVERY-*.md` — **that session only**, never other sessions. `--keep`
+  retains them.
+- **PR / fork-PR** (handed off — the human opens the PR) and **local** (no token, nothing
+  sent) delete nothing; the run prints a ready `--purge` cleanup command to run *after* the
+  PR is opened / after authenticating.
+- **Nothing worthwhile** (no BROKEN/DEGRADED finding) files nothing and offers the cleanup.
+- New flags: **`--purge`** (standalone terminal cleanup of the processed session, sends
+  nothing) and **`--keep`** (skip the auto-delete after a delivery). New session-scoped
+  `purgeSession()` + `sessionIdFromDiag()` in `deliver.mjs`.
+- Docs updated: `CLAUDE.md`, `.claude/rules/reports.md`, the `/vc-self-check` command + skill.
+  Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
 ### Fixed — `upstreamRef` is a resolvable upstream tag (frontend provenance)
 
 `/project-init` derived a storefront fork's `upstreamRef` as the bare `MAJOR.MINOR` of the

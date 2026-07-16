@@ -15,7 +15,12 @@ this command just invokes it.
 /vc-self-check latest          # same, explicit
 /vc-self-check <session-id>    # diagnose a specific recorded session
 /vc-self-check deliver         # Step 4: draft a scrubbed, consent-gated report to VirtoCommerce (deliver.mjs)
+/vc-self-check deliver --confirm   # file it (Issue route) — then auto-delete this session's local artifacts (--keep to retain)
+/vc-self-check deliver --purge     # terminal cleanup: delete this session's local artifacts, send nothing
 ```
+Lifecycle: **log → analyze → contribute (PR/issue) → delete**. Local diagnostics are
+ephemeral — once a finding is upstream, the PR/issue is the source of truth, so the
+processed session's artifacts are removed (only that session; never other sessions).
 
 ## What it does
 - Reads `<outputRoot>/.vc-fix/diagnostics/<session-id>.jsonl` (the passive
