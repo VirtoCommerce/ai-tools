@@ -2,7 +2,7 @@
 name: qa-monitoring
 description: "[QA Method] Online bug monitoring from Application Insights: query both layers, dedup by fingerprint, triage new/spiking signatures, reproduce HIGH-confidence bugs live, report. Detect-and-report only — never files JIRA or auto-fixes."
 argument-hint: "[frontend|backend|both] [--since=MIN] [--dry-run]"
-disable-model-invocation: true
+
 ---
 
 # /qa-monitoring — Online Bug Monitoring (methodology)

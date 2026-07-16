@@ -21,6 +21,7 @@ Chrome latest version installed; desktop resolution (1920x1080); {{FRONT_URL}} a
 [PRE:RESET_CART]
 Chrome latest version; BOPIS pickup locations configured in admin; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Latest;os=Windows 11","[NAV] {{FRONT_URL}}
 [ACT] add a BOPIS-eligible product to cart
+[WAIT] cart badge count updates confirming item added
 [ACT] click pickup/BOPIS option to open pickup modal
 [WAIT] Google Maps iframe loads with markers visible
 [ACT] pan the map by clicking and dragging

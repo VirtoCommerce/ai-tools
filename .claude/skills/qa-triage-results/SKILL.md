@@ -2,7 +2,7 @@
 name: qa-triage-results
 description: "[QA Methodology] Triage a completed regression run's failures: collect each FAIL + its evidence (trace, screenshots, console, network) + failing CSV row, dedup + flag flaky, classify each into real-product-bug vs test-defect (bad steps / bad assertion / stale test data / stale test) vs flaky/env/known, live-verify the real ones, then route test-defects to /qa-review-tests --fix and draft bug reports. Detect-classify-verify-report only — never files a tracker ticket, never triggers /qa-fix."
 argument-hint: "[RUN_ID | latest] [--fix] [--verify]"
-disable-model-invocation: true
+
 ---
 
 # /qa-triage-results — Regression-Results Triage & Analysis

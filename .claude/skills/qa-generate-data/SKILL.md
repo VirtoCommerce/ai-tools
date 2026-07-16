@@ -2,7 +2,7 @@
 name: qa-generate-data
 description: "[Testing] Prepare test data BEFORE a run by designing the cross-entity combinations a feature needs (products × loyalty × promotions × pricing × inventory × B2B), reusing existing fixtures where they cover a case and authoring only the gaps as ready-to-seed fixtures + @td() aliases. Hands off to /qa-seed-data to provision."
 argument-hint: "<feature | flow | VCST-XXXX> — e.g. loyalty mixed-cart | promotion stacking | tiered-pricing checkout"
-disable-model-invocation: true
+
 ---
 
 # /qa-generate-data — Design & Prepare Test-Data Combinations
