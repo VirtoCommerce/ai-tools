@@ -101,41 +101,6 @@ Safari latest on macOS; Google Maps API key configured; BOPIS locations set up; 
 [STATE] pan and zoom work with Safari-specific event model
 [STATE] no Safari-specific map rendering bugs","[CONSOLE] no Google Maps JS errors specific to WebKit
 [NETWORK] Maps tile requests succeed","JS error in browser console; map blank or fails to load in Safari; markers not clickable","none","VCST-4499 TC-013","Manual"
-"BROWSER-SAFARI-003","Safari iOS - Mobile Flow","Safari > iOS","Critical","BL-COMPAT-001,BL-COMPAT-002,BL-COMPAT-003","ECL-13.1,ECL-13.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-[PRE:RESET_CART]
-Safari on iPhone 16, 17, or 18 (physical device preferred; BrowserStack acceptable); {{FRONT_URL}} accessible; iOS Safari does not support WebKit on Windows — must use real device or cloud device","url={{FRONT_URL}};browser=Safari iOS;os=iOS 18;device=iPhone 18;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
-[WAIT] homepage loads in iOS mobile layout
-[ACT] run mobile smoke tests SMK-001 through SMK-012
-[ACT] navigate to BOPIS-eligible product and tap pickup option
-[WAIT] BOPIS modal opens (full-screen overlay on iOS)
-[ACT] select a store and proceed to checkout
-[WAIT] payment form visible
-[ACT] fill payment details and submit
-[WAIT] order confirmation page","[DOM] iOS layout correct — safe area insets respected (notch/home bar not overlapped by content)
-[DOM] the BOPIS modal's store list scrolls with iOS momentum (deceleration) and does not stick or freeze mid-scroll
-[DOM] the payment form's card-number, expiry, and CVV fields remain visible above the iOS virtual keyboard while being filled
-[DOM] order confirmation page visible
-[STATE] no stuck or unresponsive states after form submit","[CONSOLE] no JS exceptions in Safari Web Inspector
-[NETWORK] all API calls 2xx; payment processor request succeeds","JS error in browser console; payment iframe unresponsive; touch gesture not recognized; layout broken or overflow at any viewport; iOS safe area inset violated","Remove test order via admin if created","VCST-4499 TC-013","Manual"
-"BROWSER-SAFARI-004","Safari iOS - Touch and Gestures","Safari > iOS","High","BL-COMPAT-001,BL-COMPAT-003,BL-COMPAT-004","ECL-13.2,ECL-11.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Safari on iOS device (physical or BrowserStack); BOPIS modal accessible; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Safari iOS;os=iOS 18;device=iPhone 18","[NAV] {{FRONT_URL}}
-[ACT] open BOPIS modal in map view
-[WAIT] map renders
-[ACT] tap a store marker with a single tap
-[WAIT] store detail or info window appears
-[ACT] scroll the store list with swipe gesture
-[WAIT] list scrolls with iOS rubber-band momentum at edges
-[ACT] pinch-zoom on the map
-[WAIT] map zoom responds or native browser zoom activates
-[ACT] tap a text input field
-[WAIT] virtual keyboard slides up; layout adjusts
-[ACT] click outside the 'Search pickup locations' field to blur it
-[WAIT] keyboard dismisses; layout returns to original position","[DOM] marker tap registers and detail view appears
-[STATE] list scroll has smooth iOS momentum; rubber-band at list boundaries does not cause stuck states
-[STATE] virtual keyboard appearance does not push layout into broken state; content still accessible above keyboard
-[STATE] no frozen or unresponsive UI after keyboard dismiss
-[DOM] all touch targets are at least 44x44px","[CONSOLE] no JS errors related to touch events or keyboard events on iOS
-[NETWORK] no failed requests triggered by user gestures","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; keyboard causes layout shift with no recovery; rubber-banding causes stuck scroll state","none","VCST-4499 TC-013","Manual"
 "BROWSER-FIREFOX-001","Firefox Desktop - Full Flow","Firefox > Desktop","High","BL-COMPAT-001,BL-COMPAT-002","ECL-13.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Firefox latest version installed; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Firefox Latest;os=Windows 11","[NAV] {{FRONT_URL}}
