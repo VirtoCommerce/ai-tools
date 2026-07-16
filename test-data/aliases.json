@@ -3632,5 +3632,20 @@
     "id": "",
     "name": "AGENT-TEST-SR-Owner-Acme",
     "phone": "+1-206-555-0142"
+  },
+  "SR_REP_ACME2": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_ACME2"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    }
   }
 }

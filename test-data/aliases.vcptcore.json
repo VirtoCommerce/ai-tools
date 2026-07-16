@@ -113,5 +113,9 @@
   },
   "SR_OWNER_ACME": {
     "id": "6f73e570-9293-4240-bdbb-e372b58fb52e"
+  },
+  "SR_REP_ACME2": {
+    "id": "9a22bc60-93e9-43ae-a81a-aee72e0ff488",
+    "user_id": "c2fe5916-40a9-4747-9f97-b0fc705aaa5f"
   }
 }
