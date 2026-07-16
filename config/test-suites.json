@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-07-16",
-    "totalSuites": 115,
+    "totalSuites": 116,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1543,6 +1543,26 @@
       "customerApplicability": "reference"
     },
     {
+      "id": "050n",
+      "name": "GraphQL Store Asset URL",
+      "file": "regression/suites/Backend/graphql/050n-graphql-store-asset-url.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 9,
+      "estimatedMinutes": 14,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "store",
+        "asset-url",
+        "sprint"
+      ],
+      "customerApplicability": "universal"
+    },
+    {
       "id": "051",
       "name": "Catalog Admin Products",
       "file": "regression/suites/Backend/catalog/051-catalog-admin-products.csv",
@@ -2693,7 +2713,7 @@
     },
     "store-asset-url": {
       "include": [
-        "050m",
+        "050n",
         "034",
         "002",
         "078"
