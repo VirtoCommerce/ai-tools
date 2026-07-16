@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.28",
+    "version": "1.5.29",
     "updated": "GENERATED",
     "changelog_1_5_25": "VCST-5028 suite 027b re-auth: added MULTI_ORG_TF_BR_EMPLOYEE and MULTI_ORG_TF_BR_MAINTAINER inline aliases. Both resolve to the same physical MULTI_ORG_TF_BR account (email/password/store_id identical) but are semantically distinct: EMPLOYEE = BuildRight org-employee context (no xapi:my_organization:edit → changeRole/lock/invite MUST reject); MAINTAINER = TechFlow org-maintainer context (should carry xapi:my_organization:edit → Finding #1 guard). Used by ORGM-003/007/012 and ORGM-017/018 respectively. resolveRole falls back to *_EMAIL/*_PASSWORD env vars; for these aliases the env vars are identical to MULTI_ORG_TF_BR_EMAIL/PASSWORD — no new .env entries needed beyond already-set MULTI_ORG_TF_BR_* vars.",
     "changelog_1_5_23": "VCST-5135 ProductPoints fixtures REWORKED 2026-06-24: the original LOY-010..013 were eligibility-only clones with ZERO product factors (functionally hollow — earned no points). Discovered live in Admin (qa-backend-expert) that a ProductPoints program's earn rule lives in a SEPARATE sub-resource (LoyaltyProgramProductFactor = {loyaltyProgramId, productId, factor-points}, PUT /api/loyalty-program-product-factors/factors), NOT on the program entity. Replaced LOY-010..013 with a 10-program set LOY-010..019 that varies REAL mechanics: single-SKU earn (LOY-010), multi-SKU summation (LOY-011), VIP-exclusive earn (LOY-012), wholesaler tier (LOY-013), future/expired windows (LOY-014/015, new start_offset_days/end_offset_days CSV cols → ISO dates), inactive-with-factors (LOY-016), priority stacking (LOY-017), zero-points BVA (LOY-018), localized+multi (LOY-019). New fixture program-factors.csv (program_id,sku,factor) holds the per-product point values; seeder resolves SKU→productId at runtime via POST /api/catalog/search/products searchPhrase 'code:\"<SKU>\"' (no hardcoded GUIDs). seed-loyalty.mjs rebuilt to construct from GET /api/loyalty-programs/new/{type} skeleton (not brittle clone), set dates/store/localizedName/eligibility, then PUT factors. Aliases reworked: LOY_PP_ALL/VIP/WHOLESALE repointed, LOY_PP_VIP_INACTIVE→LOY_PP_INACTIVE, added LOY_PP_MULTI/FUTURE/EXPIRED/PRIORITY/ZERO/LOCALIZED. All seeded=false pending /qa-seed-data (or node scripts/seed-data/seed-loyalty.mjs).",
@@ -33,7 +33,8 @@
     "changelog_1_5_21": "/qa-generate-data (loyalty-product-points): added 5 alias(es) [LOY_PP_BASELINE, LOY_PP_ALL, LOY_PP_VIP, LOY_PP_WHOLESALE, LOY_PP_VIP_INACTIVE] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
     "changelog_1_5_22": "VCST-5135 ProductPoints program fixtures: programs.csv updated with seeded=true + platform_ids for LOY-010..013 (seeded 2026-06-24 via seed-loyalty.mjs). LOY_PP_* alias notes updated to reflect live IDs. Added 5 VCST-5135 combination aliases [LOY_PP_5135_01..05] covering: all-customers earn (LOY-010), VIP-only earn (LOY-011 + LOYALTY_VIP_USER), VIP-only blocked (non-VIP user — LOYALTY_NOBAL_USER has no Wholesaler group so serves as non-VIP), wholesaler earn (LOY-012), inactive program blocked (LOY-013). VCST-5135 programs are already provisioned — no /qa-seed-data step needed for programs.",
     "changelog_1_5_27": "VCST-5406: reseeded vcst-qa via the unified scripts/seed-data/seed-company-users.mjs (all kinds) on 2026-07-01 after teardown; refreshed org + contact platform_id caches in b2b/organizations.csv (19) + b2b/contacts.csv (14) from the fresh seed. Impersonation re-seed hints now point to `npm run seed:impersonation`. B2B graph reconciles clean (org-scoped roles only, VCST-5028). Note: b2b/users.csv user platform_id caches remain informational (resolved live by email); a handful of orgs (child AcmeWest + ORG-005..008) exist in DB but lag the Member search index.",
-    "changelog_1_5_28": "VCST-5406 follow-up: swept the last password literals into the {{VAR}} pattern. 4 alias password fields (AGENT_TEST_IMP_CUSTOMER, MULTI_ORG_TF_BR[/_EMPLOYEE/_MAINTAINER]) → {{DEFAULT_TEST_PASSWORD}}; 15 real-credential Password1! literals in create-account bodies of suites 027/027b/050d → {{DEFAULT_TEST_PASSWORD}}. Left intentional test inputs alone (031/082 Test/Any/WrongPassword1! are registration/negative inputs, not stored secrets)."
+    "changelog_1_5_28": "VCST-5406 follow-up: swept the last password literals into the {{VAR}} pattern. 4 alias password fields (AGENT_TEST_IMP_CUSTOMER, MULTI_ORG_TF_BR[/_EMPLOYEE/_MAINTAINER]) → {{DEFAULT_TEST_PASSWORD}}; 15 real-credential Password1! literals in create-account bodies of suites 027/027b/050d → {{DEFAULT_TEST_PASSWORD}}. Left intentional test inputs alone (031/082 Test/Any/WrongPassword1! are registration/negative inputs, not stored secrets).",
+    "changelog_1_5_29": "VCST-5089 (Per-store Asset Public URL rewrite in XAPI) regression authoring: added STORE_ASSET_TEST_URL inline alias (stable placeholder CDN host for setting/resetting Store.assetPublicUrl in tests — value is intentionally non-resolving DNS, same pattern as the live QA verification's cdn-test-vcst5089.govirto.com; only the HOST is asserted, 404/ERR_NAME_NOT_RESOLVED on the image itself is expected and acceptable). Added EXTERNAL_HOST_IMAGE_PRODUCT inline alias pinning the one concrete external-image product captured live during QA verification (product name + external host) for the BUG-1 regression guard (external URLs must NOT be rewritten when VirtoCommerce:StoreAssets:KnownAssetHosts is configured) — captured on vcptcore-qa 2026-07-14, see tests/Sprint-current/VCST-5089/test-execution-report.md; flagged env-portable-with-caveat since catalog composition diverges per env (per feedback reference_per_env_aliases_overlay) — the consuming case is marked Automation_Status=Draft pending per-env confirmation that the pinned product name resolves."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -790,6 +791,26 @@
       "id": "store_id",
       "name": "store_name"
     }
+  },
+  "STORE_ASSET_TEST_URL": {
+    "_inline": true,
+    "value": "https://cdn-vcst5089-regression.govirto.com",
+    "host": "cdn-vcst5089-regression.govirto.com",
+    "fields": {
+      "value": "value",
+      "host": "host"
+    },
+    "_notes": "VCST-5089 — stable placeholder host for setting Store.assetPublicUrl in regression tests (suite 050m + admin suite 034 + smoke 078). Intentionally non-resolving DNS — mirrors the live QA verification value (cdn-test-vcst5089.govirto.com); only the returned HOST is asserted by any case, never the image loading (404 / ERR_NAME_NOT_RESOLVED is expected/acceptable, matching tests/Sprint-current/VCST-5089/storefront-check.md). Every case that sets this value on a store MUST reset assetPublicUrl to empty string in Cleanup / inline cleanup_post."
+  },
+  "EXTERNAL_HOST_IMAGE_PRODUCT": {
+    "_inline": true,
+    "name": "Notebook: Red panda A5 45 sheets",
+    "external_host": "thewarrenstockport.co.uk",
+    "fields": {
+      "name": "name",
+      "external_host": "external_host"
+    },
+    "_notes": "VCST-5089 BUG-1 regression guard fixture — pins the concrete external-hosted product image captured live on vcptcore-qa 2026-07-14 (tests/Sprint-current/VCST-5089/test-execution-report.md): stored images[].relativeUrl = https://thewarrenstockport.co.uk/wp-content/uploads/2023/10/legami-red-panda-notebook-scaled.jpeg. Used to assert the external host is preserved (NOT rewritten to the store CDN) once VirtoCommerce:StoreAssets:KnownAssetHosts is configured — this is the exact case that was 100% broken (BUG-1, 926/926 external hosts wrongly rewritten) before the config-based fix. CAVEAT: product catalogs diverge per environment (see reference_per_env_aliases_overlay memory) — this exact product name is NOT guaranteed to resolve on every TEST_ENV. The consuming case (050m SAU-GQL-008) is marked Automation_Status=Draft; re-pin to a locally-discovered external-image product (any imported/dropship-style SKU with an images[].relativeUrl on a non-platform host) if this name is absent on the target env."
   },
   "ADDR_LA": {
     "file": "addresses/us-addresses",

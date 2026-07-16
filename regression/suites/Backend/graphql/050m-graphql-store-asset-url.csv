@@ -1,0 +1,176 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SAU-GQL-001,Schema — Store.assetPublicUrl Field Is Queryable,GraphQL > Store Asset URL > Schema,High,BL-GQL-003,ECL-2.1,"Runner-native. PUBLIC role (introspection does not require auth). Feature VCST-5089 deployed (vc-module-store PR #171 + vc-module-experience-api). Read-only — no store mutation.","—","[GQL-OP introspect_store]
+query { __type(name: ""StoreResponseType"") { name fields { name type { name kind ofType { name kind } } } } }
+[GQL-EXEC introspect_store]","[ERRORS label=introspect_store] errors[] empty
+[DATA label=introspect_store] data.__type is non-null
+[COUNT label=introspect_store] data.__type.fields[*?name=assetPublicUrl].length = 1
+[DATA label=introspect_store] data.__type.fields[?name=assetPublicUrl].type.name = String OR data.__type.fields[?name=assetPublicUrl].type.ofType.name = String","none — read-only (schema introspection)","assetPublicUrl field absent from Store type (feature not deployed on this env); introspection returns errors[]; field type is not String","none","VCST-5089",Draft
+SAU-GQL-002,Schema — Image/Asset/Product/Category url Scalar Is StoreAssetUrl (Not StoreUrl),GraphQL > Store Asset URL > Schema,High,BL-GQL-003,ECL-2.1,"Runner-native. PUBLIC role. Ground truth from live QA verification (tests/Sprint-current/VCST-5089/test-execution-report.md AC6): the scalar is named StoreAssetUrl — the ticket/checklist guessed StoreUrl, that guess was wrong. Read-only.","—","[GQL-OP scalar_exists]
+query { __type(name: ""StoreAssetUrl"") { name kind } }
+[GQL-EXEC scalar_exists]
+[GQL-OP product_imgsrc_type]
+query { __type(name: ""Product"") { fields { name type { name kind ofType { name kind } } } } }
+[GQL-EXEC product_imgsrc_type]
+[GQL-OP category_imgsrc_type]
+query { __type(name: ""Category"") { fields { name type { name kind ofType { name kind } } } } }
+[GQL-EXEC category_imgsrc_type]","[ERRORS label=scalar_exists] errors[] empty
+[DATA label=scalar_exists] data.__type is non-null
+[DATA label=scalar_exists] data.__type.name = StoreAssetUrl
+[DATA label=scalar_exists] data.__type.kind = SCALAR
+[ERRORS label=product_imgsrc_type] errors[] empty
+[DATA label=product_imgsrc_type] data.__type.fields[?name=imgSrc].type.name = StoreAssetUrl OR data.__type.fields[?name=imgSrc].type.ofType.name = StoreAssetUrl
+[ERRORS label=category_imgsrc_type] errors[] empty
+[DATA label=category_imgsrc_type] data.__type.fields[?name=imgSrc].type.name = StoreAssetUrl OR data.__type.fields[?name=imgSrc].type.ofType.name = StoreAssetUrl","none — read-only (schema introspection)","StoreAssetUrl scalar absent from schema; Product.imgSrc or Category.imgSrc typed as plain String instead of StoreAssetUrl (contract regression); introspection errors[] non-empty","none","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC6)",Draft
+SAU-GQL-003,REST Set/Reset assetPublicUrl Round-Trips Through GraphQL store Query,GraphQL > Store Asset URL > Config,Critical,BL-GQL-003,ECL-2.1; ECL-8.1,"Runner-native. AUTH as ADMIN_DEFAULT. There is no GraphQL mutation for assetPublicUrl — it is a REST-only Store field (Admin SPA Store > URLs > 'Store asset URL'). This case fetches the full @td(STORE_PRIMARY.id) store body, re-POSTs it with only assetPublicUrl changed (VC Store save is a full-object PATCH — omitted fields would be nulled), verifies via GraphQL, then resets to empty and re-verifies. CAVEAT flagged for reviewer: the re-posted body includes only the core fields captured below (id/name/url/catalog/languages/currencies/defaultLanguage/defaultCurrency) — verify against the live Store PUT/POST OpenAPI contract that no OTHER required field is nulled by a partial body before promoting this case out of Draft.","store_id=@td(STORE_PRIMARY.id); test_url=@td(STORE_ASSET_TEST_URL.value)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP fetch_store]
+GET {{BACK_URL}}api/stores/@td(STORE_PRIMARY.id)
+[REST-EXEC fetch_store]
+[REST-CAPTURE fetch_store.body.id → S_ID]
+[REST-CAPTURE fetch_store.body.name → S_NAME]
+[REST-CAPTURE fetch_store.body.url → S_URL]
+[REST-CAPTURE fetch_store.body.catalog → S_CATALOG]
+[REST-CAPTURE fetch_store.body.defaultLanguage → S_DEFLANG]
+[REST-CAPTURE fetch_store.body.languages → S_LANGS]
+[REST-CAPTURE fetch_store.body.defaultCurrency → S_DEFCUR]
+[REST-CAPTURE fetch_store.body.currencies → S_CURS]
+[REST-OP cfg_set]
+POST {{BACK_URL}}api/stores
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
+[REST-EXEC cfg_set]
+[GQL-OP read_after_set]
+query { store(storeId: ""@td(STORE_PRIMARY.id)"") { storeId storeUrl assetPublicUrl } }
+[GQL-EXEC read_after_set]
+[REST-OP cfg_reset]
+POST {{BACK_URL}}api/stores
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": """"}
+[REST-EXEC cfg_reset]
+[GQL-OP read_after_reset]
+query { store(storeId: ""@td(STORE_PRIMARY.id)"") { storeId assetPublicUrl } }
+[GQL-EXEC read_after_reset]","[ERRORS label=cfg_set] errors[] empty
+[DATA label=cfg_set] body.assetPublicUrl = @td(STORE_ASSET_TEST_URL.value)
+[ERRORS label=read_after_set] errors[] empty
+[DATA label=read_after_set] data.store.storeId = @td(STORE_PRIMARY.id)
+[DATA label=read_after_set] data.store.assetPublicUrl matches /@td(STORE_ASSET_TEST_URL.host)/
+[ERRORS label=cfg_reset] errors[] empty
+[ERRORS label=read_after_reset] errors[] empty
+[DATA label=read_after_reset] data.store.assetPublicUrl is null OR data.store.assetPublicUrl matches /^$/","[ADMIN] Confirm via Admin SPA Store > B2B-store > URLs section that 'Store asset URL' field shows the same value as the REST body (⓲ tooltip present)","REST POST returns non-2xx; GraphQL store.assetPublicUrl does not reflect the just-set value (stale read / cache not invalidated); reset POST fails leaving the shared B2B-store misconfigured for other parallel suites; any other store field (catalog/languages/currencies) changes value after this round-trip (full-body overwrite side effect)","POST {{BACK_URL}}api/stores with the captured core fields and assetPublicUrl='' (mirrors inline cfg_reset — run manually via Admin SPA if the case aborted before cfg_reset executed)","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC1/AC2)",Draft
+SAU-GQL-004,Control Store (B2C) — assetPublicUrl Baseline Empty and Isolated From B2B Config,GraphQL > Store Asset URL > Isolation,High,BL-GQL-003,ECL-2.1,"Runner-native. PUBLIC role. @td(STORE_B2C.id) has never had assetPublicUrl configured (rule 2 control baseline). Read-only — does not touch @td(STORE_PRIMARY.id); safe to run in parallel with mutating cases in this suite.","store_id=@td(STORE_B2C.id); currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}","[GQL-OP store_b2c]
+query { store(storeId: ""@td(STORE_B2C.id)"") { storeId assetPublicUrl } }
+[GQL-EXEC store_b2c]","[ERRORS label=store_b2c] errors[] empty
+[DATA label=store_b2c] data.store.assetPublicUrl is null","none — read-only","store2/B2C assetPublicUrl unexpectedly non-null (config leaked from another store or global default); control-store store query returns errors[] (isolation probe failed)","none",VCST-5089,Draft
+SAU-GQL-005,Product imgSrc/images.url/assets.url Rewritten to Configured Host — relativeUrl Unchanged and Idempotent (No Reindex),GraphQL > Store Asset URL > Rewrite,Critical,BL-GQL-003,ECL-2.1; ECL-8.1,"Runner-native. AUTH not required for the product queries (PUBLIC); ADMIN_DEFAULT required for the REST config toggle. Precondition (documented, from live verification): env has VirtoCommerce:StoreAssets:KnownAssetHosts configured to include the platform/CDN hosts of @td(STORE_PRIMARY.id) — without it every absolute URL (including external) gets rebased, which is the separate BUG-1 condition covered by SAU-GQL-007. Same REST full-body-toggle caveat as SAU-GQL-003 (Draft pending contract review).","store_id=@td(STORE_PRIMARY.id); currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}; asset_host=@td(STORE_ASSET_TEST_URL.host)","[GQL-OP discover_before]
+query { products(storeId: ""@td(STORE_PRIMARY.id)"", currencyCode: ""{{CURRENCY_CODE}}"", cultureName: ""{{CULTURE_NAME}}"", first: 1, filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { items { id imgSrc images { url relativeUrl } assets { url } } } }
+[GQL-EXEC discover_before]
+[GQL-CAPTURE discover_before.data.products.items.0.id → PROD_ID]
+[GQL-CAPTURE discover_before.data.products.items.0.imgSrc → IMG_BEFORE]
+[GQL-CAPTURE discover_before.data.products.items.0.images.0.relativeUrl → REL_BEFORE]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP fetch_store]
+GET {{BACK_URL}}api/stores/@td(STORE_PRIMARY.id)
+[REST-EXEC fetch_store]
+[REST-CAPTURE fetch_store.body.id → S_ID]
+[REST-CAPTURE fetch_store.body.name → S_NAME]
+[REST-CAPTURE fetch_store.body.url → S_URL]
+[REST-CAPTURE fetch_store.body.catalog → S_CATALOG]
+[REST-CAPTURE fetch_store.body.defaultLanguage → S_DEFLANG]
+[REST-CAPTURE fetch_store.body.languages → S_LANGS]
+[REST-CAPTURE fetch_store.body.defaultCurrency → S_DEFCUR]
+[REST-CAPTURE fetch_store.body.currencies → S_CURS]
+[REST-OP cfg_set]
+POST {{BACK_URL}}api/stores
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
+[REST-EXEC cfg_set]
+[GQL-OP read_after]
+query { product(id: ""{{PROD_ID}}"", storeId: ""@td(STORE_PRIMARY.id)"", currencyCode: ""{{CURRENCY_CODE}}"", cultureName: ""{{CULTURE_NAME}}"") { id imgSrc images { url relativeUrl } assets { url } } }
+[GQL-EXEC read_after]
+[GQL-CAPTURE read_after.data.product.imgSrc → IMG_AFTER]
+[GQL-CAPTURE read_after.data.product.images.0.relativeUrl → REL_AFTER]
+[GQL-OP read_after_2]
+query { product(id: ""{{PROD_ID}}"", storeId: ""@td(STORE_PRIMARY.id)"", currencyCode: ""{{CURRENCY_CODE}}"", cultureName: ""{{CULTURE_NAME}}"") { id imgSrc } }
+[GQL-EXEC read_after_2]
+[GQL-CAPTURE read_after_2.data.product.imgSrc → IMG_AFTER_2]
+[REST-OP cfg_reset]
+POST {{BACK_URL}}api/stores
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": """"}
+[REST-EXEC cfg_reset]","[ERRORS label=discover_before] errors[] empty
+[DATA label=discover_before] data.products.items.0.imgSrc is non-null
+[ERRORS label=cfg_set] errors[] empty
+[ERRORS label=read_after] errors[] empty
+[DATA label=read_after] data.product.id = {{PROD_ID}}
+[DATA label=read_after] data.product.imgSrc matches /@td(STORE_ASSET_TEST_URL.host)/
+[VAR] {{REL_BEFORE}} = {{REL_AFTER}}
+[VAR] {{IMG_AFTER}} = {{IMG_AFTER_2}}
+[ERRORS label=read_after_2] errors[] empty
+[ERRORS label=cfg_reset] errors[] empty","[EVIDENCE] If the discovered product's relativeUrl contains a query string (?) or fragment (#), confirm the same substring is preserved verbatim after the {{PROD_ID}} host swap in read_after.imgSrc (rule 6 sub-case — not deterministically asserted here because the discovered product's URL shape varies by catalog seed)","imgSrc/images.url/assets.url NOT rewritten to the configured host after cfg_set; relativeUrl DIFFERS between discover_before and read_after (data mutation — should be read-time-only, no reindex); IMG_AFTER differs from IMG_AFTER_2 on identical repeat query (double-prefixing / non-idempotent rewrite, rule 8 violation); errors[] non-empty on any op","POST {{BACK_URL}}api/stores with captured core fields and assetPublicUrl='' (mirrors inline cfg_reset)","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC3)",Draft
+SAU-GQL-006,Category imgSrc Rewritten From Relative-Path Stored Value,GraphQL > Store Asset URL > Rewrite > Category,High,BL-GQL-003,ECL-2.1,"Runner-native. PUBLIC for category queries; ADMIN_DEFAULT for REST config toggle. Per live verification most categories on @td(STORE_PRIMARY.id) have imgSrc=null (only 4/261 sampled had images, all relative-path) — the assertion below is written as an OR so it stays meaningful (and non-vacuous) whether or not the sampled category happens to carry an image. Same REST full-body-toggle caveat as SAU-GQL-003.","store_id=@td(STORE_PRIMARY.id); culture_name={{CULTURE_NAME}}","[GQL-OP discover_cat_before]
+query { categories(storeId: ""@td(STORE_PRIMARY.id)"", cultureName: ""{{CULTURE_NAME}}"", first: 50) { items { id imgSrc } } }
+[GQL-EXEC discover_cat_before]
+[GQL-CAPTURE discover_cat_before.data.categories.items.0.id → CAT_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP fetch_store]
+GET {{BACK_URL}}api/stores/@td(STORE_PRIMARY.id)
+[REST-EXEC fetch_store]
+[REST-CAPTURE fetch_store.body.id → S_ID]
+[REST-CAPTURE fetch_store.body.name → S_NAME]
+[REST-CAPTURE fetch_store.body.url → S_URL]
+[REST-CAPTURE fetch_store.body.catalog → S_CATALOG]
+[REST-CAPTURE fetch_store.body.defaultLanguage → S_DEFLANG]
+[REST-CAPTURE fetch_store.body.languages → S_LANGS]
+[REST-CAPTURE fetch_store.body.defaultCurrency → S_DEFCUR]
+[REST-CAPTURE fetch_store.body.currencies → S_CURS]
+[REST-OP cfg_set]
+POST {{BACK_URL}}api/stores
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
+[REST-EXEC cfg_set]
+[GQL-OP cat_after]
+query { category(id: ""{{CAT_ID}}"", storeId: ""@td(STORE_PRIMARY.id)"", cultureName: ""{{CULTURE_NAME}}"") { id imgSrc } }
+[GQL-EXEC cat_after]
+[REST-OP cfg_reset]
+POST {{BACK_URL}}api/stores
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": """"}
+[REST-EXEC cfg_reset]","[ERRORS label=discover_cat_before] errors[] empty
+[ERRORS label=cfg_set] errors[] empty
+[ERRORS label=cat_after] errors[] empty
+[DATA label=cat_after] data.category.id = {{CAT_ID}}
+[DATA label=cat_after] data.category.imgSrc is null OR data.category.imgSrc matches /@td(STORE_ASSET_TEST_URL.host)/
+[ERRORS label=cfg_reset] errors[] empty","none — read-only aside from the config toggle","category.imgSrc populated but host is neither null nor the configured asset host (rewrite not applied to categories, contradicting AC4 'categories rewrite the same way as products'); errors[] non-empty","POST {{BACK_URL}}api/stores with captured core fields and assetPublicUrl='' (mirrors inline cfg_reset)","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC4)",Draft
+SAU-GQL-007,External-Host Image URL Preserved When KnownAssetHosts Configured (BUG-1 Regression Guard),GraphQL > Store Asset URL > Rewrite > External Host (BUG-1 Guard),Critical,BL-GQL-003,ECL-2.1; ECL-9.2,"Runner-native. CRITICAL precondition: env must have VirtoCommerce:StoreAssets:KnownAssetHosts configured to include @td(STORE_PRIMARY.id)'s own platform/CDN hosts — WITHOUT it every absolute URL (including external) is rebased, which was exactly BUG-1 (926/926 external hosts wrongly rewritten, confirmed FAIL on 2026-07-14, confirmed PASS after config applied on 2026-07-16 — see tests/Sprint-current/VCST-5089/summary.json). Uses pinned fixture @td(EXTERNAL_HOST_IMAGE_PRODUCT.name) captured live on vcptcore-qa; catalog composition diverges per env, so this case is Draft pending per-env confirmation the product resolves (assertion is written to stay safe — vacuously non-failing — if it does not).","store_id=@td(STORE_PRIMARY.id); currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}; search_phrase=@td(EXTERNAL_HOST_IMAGE_PRODUCT.name)","[GQL-OP discover_external]
+query { products(storeId: ""@td(STORE_PRIMARY.id)"", currencyCode: ""{{CURRENCY_CODE}}"", cultureName: ""{{CULTURE_NAME}}"", first: 5, query: ""@td(EXTERNAL_HOST_IMAGE_PRODUCT.name)"") { items { name imgSrc images { url relativeUrl } } } }
+[GQL-EXEC discover_external]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP fetch_store]
+GET {{BACK_URL}}api/stores/@td(STORE_PRIMARY.id)
+[REST-EXEC fetch_store]
+[REST-CAPTURE fetch_store.body.id → S_ID]
+[REST-CAPTURE fetch_store.body.name → S_NAME]
+[REST-CAPTURE fetch_store.body.url → S_URL]
+[REST-CAPTURE fetch_store.body.catalog → S_CATALOG]
+[REST-CAPTURE fetch_store.body.defaultLanguage → S_DEFLANG]
+[REST-CAPTURE fetch_store.body.languages → S_LANGS]
+[REST-CAPTURE fetch_store.body.defaultCurrency → S_DEFCUR]
+[REST-CAPTURE fetch_store.body.currencies → S_CURS]
+[REST-OP cfg_set]
+POST {{BACK_URL}}api/stores
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": ""@td(STORE_ASSET_TEST_URL.value)""}
+[REST-EXEC cfg_set]
+[GQL-OP read_external_after]
+query { products(storeId: ""@td(STORE_PRIMARY.id)"", currencyCode: ""{{CURRENCY_CODE}}"", cultureName: ""{{CULTURE_NAME}}"", first: 5, query: ""@td(EXTERNAL_HOST_IMAGE_PRODUCT.name)"") { items { name imgSrc images { url relativeUrl } } } }
+[GQL-EXEC read_external_after]
+[REST-OP cfg_reset]
+POST {{BACK_URL}}api/stores
+Body: {""id"": ""{{S_ID}}"", ""name"": ""{{S_NAME}}"", ""url"": ""{{S_URL}}"", ""catalog"": ""{{S_CATALOG}}"", ""defaultLanguage"": ""{{S_DEFLANG}}"", ""defaultCurrency"": ""{{S_DEFCUR}}"", ""assetPublicUrl"": """"}
+[REST-EXEC cfg_reset]","[ERRORS label=discover_external] errors[] empty
+[ERRORS label=cfg_set] errors[] empty
+[ERRORS label=read_external_after] errors[] empty
+[DATA label=read_external_after] data.products.items.0.imgSrc is null OR data.products.items.0.imgSrc matches /@td(EXTERNAL_HOST_IMAGE_PRODUCT.external_host)/
+[ERRORS label=cfg_reset] errors[] empty","[EVIDENCE] BUG-1 repro query (from test-execution-report.md): { products(storeId:'B2B-store',cultureName:'en-US',first:15){ items{ name imgSrc images{url relativeUrl} } } } — if the fix regresses, imgSrc for this product resolves to the configured CDN host instead of the original external host","imgSrc for the pinned external-host product resolves to the configured asset host instead of its original external host (BUG-1 regression — 100% of external hosts silently rewritten); errors[] non-empty; pinned product genuinely absent from this env's catalog (re-pin via a locally-discovered external-image product before promoting out of Draft)","POST {{BACK_URL}}api/stores with captured core fields and assetPublicUrl='' (mirrors inline cfg_reset)","VCST-5089; BUG-1; tests/Sprint-current/VCST-5089/test-execution-report.md",Draft
+SAU-GQL-008,"Null/Empty imgSrc Returned As-Is Without Error (Categories With No Image)",GraphQL > Store Asset URL > Edge Cases,Medium,"BL-GQL-001, BL-GQL-003",ECL-10.2,"Runner-native. PUBLIC role. Read-only — no store mutation. Per live verification most categories on @td(STORE_PRIMARY.id) have no image (imgSrc=null); the resolver must return null as-is rather than throwing (StoreAssetPublicUrlResolver.GetAbsoluteUrl url-null/empty early-return branch).","store_id=@td(STORE_PRIMARY.id); culture_name={{CULTURE_NAME}}","[GQL-OP cat_null]
+query { categories(storeId: ""@td(STORE_PRIMARY.id)"", cultureName: ""{{CULTURE_NAME}}"", first: 50) { totalCount items { id imgSrc } } }
+[GQL-EXEC cat_null]","[ERRORS label=cat_null] errors[] empty
+[COUNT label=cat_null] data.categories.items.length >= 1
+[DATA label=cat_null] data.categories.totalCount >= 0","none — read-only","errors[] non-empty when a category's imgSrc is null (resolver throws instead of passing through); HTTP 500","none",VCST-5089,Draft
+SAU-GQL-009,"data:/blob: URI and Protocol-Relative (//host/path) Image URLs — Documented Code-Path Assertion",GraphQL > Store Asset URL > Edge Cases,Low,"BL-GQL-001, BL-GQL-003",ECL-9.3; ECL-10.2,"Runner-native. PUBLIC role. Read-only. Per live catalog scan (tests/Sprint-current/VCST-5089/test-execution-report.md, ~500 products sampled) no data:-URI or protocol-relative stored image exists in the current catalog — this case documents the expected code-path behavior (StoreAssetPublicUrlResolver.GetAbsoluteUrl early-return for these two prefixes) rather than exercising it live. Seed a dedicated fixture with a data:/blob:/protocol-relative stored image if deterministic coverage is required.","store_id=@td(STORE_PRIMARY.id); currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}","[GQL-OP scan_products]
+query { products(storeId: ""@td(STORE_PRIMARY.id)"", currencyCode: ""{{CURRENCY_CODE}}"", cultureName: ""{{CULTURE_NAME}}"", first: 20) { items { imgSrc images { relativeUrl } } } }
+[GQL-EXEC scan_products]","[ERRORS label=scan_products] errors[] empty
+[DATA label=scan_products] data.products.items is non-null
+[EVIDENCE] No data:-URI or protocol-relative (//host/path) stored image was found in the sampled catalog (documented absence, not a pass/fail signal); resolver source (vc-module-store PR #171, StoreAssetPublicUrlResolver.GetAbsoluteUrl) early-returns the url as-is for both prefixes before any host comparison — cite this as the code-path assertion until a dedicated fixture exists","none — read-only","errors[] non-empty on the scan query itself (unrelated regression, still worth catching)","none","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC10)",Draft

@@ -446,3 +446,38 @@
 [STATE] Full category hierarchy in URL","[NETWORK] Product URL includes full category breadcrumb
 [CONSOLE] No routing errors
 [ADMIN] SEO link type persisted as Long","URL shorter than expected in Long mode; Physical parent missing from URL; Product 404","restore original settings","C237771","None"
+"STORE-052","Store Asset URL Field — Present in URLs Section with Tooltip","Store > Asset URL","High","BL-STORE-001","","Admin logged in; Store exists ({{STORE_ID}}); VCST-5089 (Per-store Asset Public URL rewrite) deployed","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Go to More > Stores > Select store {{STORE_ID}} at {{BACK_URL}}
+[ACT] Scroll to the URLs section
+[ACT] Click the ⓲ tooltip icon next to 'Store asset URL'
+[WAIT] Tooltip popover renders","[DOM] 'Store asset URL' field visible in the URLs section, alongside 'Store URL' and 'Secure store URL'
+[DOM] ⓲ tooltip icon present next to the field label
+[DOM] Clicking the tooltip icon reveals a description of the field's purpose (asset/image URL rewrite host)
+[DOM] 'Store asset URL' input field renders empty (no placeholder text mistaken for a real value) when never configured","[API] GET /api/stores/{{STORE_ID}} response includes an 'assetPublicUrl' property (null or empty string when unset)
+[CONSOLE] No errors rendering the URLs section","'Store asset URL' field absent from URLs section; tooltip icon missing or non-functional; field mixed up with 'Store URL'/'Secure store URL'","none — read-only","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC1)","Draft"
+"STORE-053","Store Asset URL — Set and Save Persists the Value","Store > Asset URL","Critical","BL-STORE-001","ECL-8.1","Admin logged in; Store exists ({{STORE_ID}}); state from STORE-052 (URLs section open, 'Store asset URL' field visible)","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; test_url=@td(STORE_ASSET_TEST_URL.value)","[NAV] Go to More > Stores > Select store {{STORE_ID}} at {{BACK_URL}}
+[ACT] Scroll to the URLs section
+[ACT] Fill 'Store asset URL': @td(STORE_ASSET_TEST_URL.value)
+[ACT] Click Save
+[WAIT] Success notification appears
+[NAV] Close the store detail blade
+[NAV] Reopen {{STORE_ID}} from the Stores list","[TOAST] Success notification on Save
+[FORM] 'Store asset URL' field shows @td(STORE_ASSET_TEST_URL.value) after blade reload (value survived a fresh GET, not just client-side state)
+[DOM] 'Store URL' field still shows its original value; 'Secure store URL' field still shows its original value (neither is altered by this edit)","[API] GET /api/stores/{{STORE_ID}} returns assetPublicUrl = @td(STORE_ASSET_TEST_URL.value)
+[CONSOLE] No save errors
+[ADMIN] Value persists after a full blade close/reopen (not just in-memory)","Save button does not persist the field (value reverts on reload); success toast shown but API still returns the old value; Store URL/Secure store URL fields get corrupted by this save (full-object overwrite side effect)","Reset 'Store asset URL' to empty via the same URLs section and Save (see STORE-054) — do not leave the shared store pointed at a placeholder CDN","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC1)","Draft"
+"STORE-054","Store Asset URL — Clear and Save Persists Empty (Round-Trip)","Store > Asset URL","High","BL-STORE-001","","Admin logged in; state from STORE-053 (URLs section open for {{STORE_ID}}, 'Store asset URL' currently set to @td(STORE_ASSET_TEST_URL.value)) — if run standalone, first set the field via STORE-053's steps so there is a non-empty value to clear","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[ACT] Clear 'Store asset URL' field (delete its contents)
+[ACT] Click Save
+[WAIT] Success notification appears
+[NAV] Close the store detail blade
+[NAV] Reopen {{STORE_ID}} from the Stores list","[TOAST] Success notification on Save
+[FORM] 'Store asset URL' field is empty after blade reload
+[DOM] 'Store URL' field still shows its original value; 'Secure store URL' field still shows its original value (neither is altered by clearing this one)","[API] GET /api/stores/{{STORE_ID}} returns assetPublicUrl = null or empty string
+[CONSOLE] No save errors
+[ADMIN] Storefront product images for {{STORE_ID}} resolve back to the platform host (no longer pointing at the placeholder CDN)","Field shows empty in UI but API still returns the old value (stale cache); clearing the field throws a validation error; other store fields reset unexpectedly","none — this case IS the reset for STORE-053","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC1)","Draft"
+"STORE-055","Store Asset URL Field — Localized Across Admin UI Languages","Store > Asset URL","Medium","BL-STORE-001","","Admin logged in; Store exists ({{STORE_ID}}); VCST-5089 deployed. The 'Store asset URL' label / hint / placeholder are i18n keys shipped by vc-module-store PR #171 in 13 languages","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; lang_primary=Русский (ru); lang_secondary=Deutsch (de)","[NAV] Log in as admin and go to More > Stores at {{BACK_URL}}
+[ACT] Open the account menu (top-right) and switch interface language to Русский (ru)
+[WAIT] Admin UI reloads localized to Russian
+[NAV] Open store {{STORE_ID}} and expand the URLs section
+[ACT] Click the ⓘ info icon next to the asset URL field to reveal its description","[DOM] The field label renders the Russian translation ""URL ресурсов магазина"" (NOT the English ""Store asset URL"" and NOT a raw i18n key such as ""store-asset-url"")
+[FORM] The empty-field placeholder reads ""Введите базовый URL ресурсов""
+[DOM] The ⓘ description renders the Russian hint (starts ""Базовый URL, по которому через Experience API…"")","[ADMIN] Spot-check a second locale — switch to Deutsch (de) and confirm the label reads ""Asset-URL des Stores"" (coverage beyond a single language)","Field shows the raw i18n key (e.g. ""store-asset-url"") instead of a translation; label / hint fall back to English while the rest of the UI is Russian; ⓘ hint is untranslated","Switch the interface language back to English (en) via the account menu","VCST-5089; vc-module-store PR #171 Localizations (de/en/es/fi/fr/it/ja/no/pl/pt/ru/sv/zh)","Draft"
