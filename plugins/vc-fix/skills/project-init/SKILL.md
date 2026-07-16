@@ -29,7 +29,7 @@ platform) and to the correct bug tracker.
 |----------|---------|
 | `project-profile.json` (gitignored) | the deployment profile — read by `config.js` (→ every skill via `env.PROFILE`), `ci/lib/repo-router.ts` (client-vs-platform routing), `ci/lib/trackers/*` (which tracker) |
 | `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (Bucket #2: URLs/identifiers/tracker connection); `scaffold-secrets.mjs` writes `.env.local` (Bucket #3: secrets, per-env creds `_<ENV>`-suffixed). Each placeholder carries what/where comments. |
-| `.mcp.json` + `.claude/settings.local.json` + `config/mcp-playwright-*.config.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`). The three playwright configs are copied from the plugin into the project so the relative `--config config/…` refs in `.mcp.json` resolve from the MCP server's cwd (= the project). |
+| `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`). The Playwright servers are configured entirely via CLI flags (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files are shipped or copied. Only `playwright-chrome` is enabled by default; `playwright-firefox` / `playwright-edge` stay defined for opt-in cross-browser runs. |
 
 ## Pipeline
 
@@ -59,8 +59,8 @@ derive scripts, then call the writers with the results as flags.
   prefix it with `$CLAUDE_PLUGIN_ROOT/`.)
 - **Deployment project directory** (your Bash cwd — the folder Claude Code was launched
   in): where **all generated state lands** — `project-profile.json`, `.env.<env>`,
-  `.env.local`, `.mcp.json`, `.claude/settings.local.json`, and the per-project
-  `config/mcp-playwright-*.config.json`. The generators default their output there
+  `.env.local`, `.mcp.json`, and `.claude/settings.local.json`. The generators default
+  their output there
   automatically (symmetric with the readers: `config.js` dotenv-loads `.env.*` and
   `loadProjectProfile()` reads the profile from cwd). You do **not** pass an output path in
   the normal flow. `VC_FIX_HOME=<dir>` overrides the output root only for out-of-project /
@@ -527,7 +527,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `derive-context.mjs` | the **derive block**: reads the filled env + sessions, probes the upstream permission, emits JSON — auth actually present per axis, contributionMode, forkAccount, operator |
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
-| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS + copy the three `config/mcp-playwright-*.config.json` from the plugin into the project (so the relative `--config` refs resolve) |
+| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, where read-only plugin assets live) + `stableLinkPath()` (`~/.claude/vc-fix-latest`, the version-agnostic link baked into `paths.pluginRoot` in plugin mode; maintained by the `hooks/vc-fix-latest-link.mjs` SessionStart hook). Keeps every generator writing to the project and reading templates from the plugin |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
