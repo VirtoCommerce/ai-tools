@@ -39,8 +39,22 @@ function htmlToText(html: string): string {
 // class vs CLI script, same split as every other op in this file), so keep them in sync.
 // Author HTML passes through untouched; Markdown that would otherwise render as a literal
 // #/**/| wall is converted. See knowledge/execution/azure-html-format.md.
-const HTML_BLOCK_RE =
-  /<(h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|br|pre|code|b|strong|em|i|a|img|details|summary|blockquote)\b/i;
+//
+// Detection must not fire on tag-LIKE text that isn't markup: a bare `<` comparison (`a<b`,
+// `(a<i)`), a generic (`List<T>`), an inline mention of an element (`the <div> wrapper`), or an
+// angle bracket inside a code fence. So we strip fenced + inline code first, then require a real
+// FULL-HTML signal — a CLOSING tag or a block tag anchored at the start of a line — none of which a
+// stray `<tag` substring in prose produces. A lone self-closing void element (`<br>`/`<img>`/`<hr>`)
+// is deliberately NOT a full-HTML signal on its own: a mostly-Markdown body that embeds one must
+// still be Markdown-converted, with the embed preserved verbatim by mdToHtml's raw-HTML-line
+// passthrough (NOT passed through whole, which would leave the surrounding Markdown as a literal wall).
+const HTML_SIGNAL_RE =
+  /<\/(?:h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|pre|code|b|strong|em|i|a|img|details|summary|blockquote)>|(?:^|\n)\s*<(?:h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|pre|code|blockquote|details)\b/i;
+
+function looksLikeHtml(s: string): boolean {
+  const outsideCode = s.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
+  return HTML_SIGNAL_RE.test(outsideCode);
+}
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -51,7 +65,15 @@ function inlineMd(s: string): string {
     .replace(/`([^`]+)`/g, (_m, c: string) => `<code>${c}</code>`)
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, t: string, u: string) => `<a href="${u}">${t}</a>`);
+    // Links: `&`/`<`/`>` already escaped by escapeHtml; escape `"` so it can't break the href attribute.
+    // Allow ONLY http(s)/mailto + relative/anchor URLs — a disallowed scheme (javascript:/data:/…) drops
+    // the anchor and keeps the visible text, so a poisoned link can't inject an executable href.
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, t: string, u: string) => {
+      const url = String(u).trim();
+      const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url);
+      if (scheme && !/^(https?|mailto)$/i.test(scheme[1])) return t; // unsafe scheme → text only, no <a>
+      return `<a href="${url.replace(/"/g, "&quot;")}">${t}</a>`;
+    });
 }
 
 function mdToHtml(md: string): string {
@@ -76,6 +98,18 @@ function mdToHtml(md: string): string {
       i++;
       out.push(`<pre><code>${buf.join("\n")}</code></pre>`);
       continue;
+    }
+    // raw HTML line — a standalone embedded element (`<img …>`, `<br/>`, or a whole `<tag>…</tag>`),
+    // emitted VERBATIM (never escaped) so authored HTML survives inside an otherwise-Markdown body.
+    // A normal Markdown line never starts with `<`.
+    {
+      const t = line.trim();
+      if (/^<\/?[a-zA-Z]/.test(t) && t.endsWith(">")) {
+        closeList();
+        out.push(line);
+        i++;
+        continue;
+      }
     }
     if (/^\s*\|.*\|\s*$/.test(line)) {
       closeList();
@@ -147,7 +181,7 @@ function mdToHtml(md: string): string {
 function ensureAzureHtml(text: string): string {
   const s = String(text || "").trim();
   if (!s) return s;
-  return HTML_BLOCK_RE.test(s) ? s : mdToHtml(s);
+  return looksLikeHtml(s) ? s : mdToHtml(s);
 }
 
 export class AzureTracker implements Tracker {

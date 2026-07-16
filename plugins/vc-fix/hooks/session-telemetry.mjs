@@ -85,7 +85,7 @@ const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop
 // or one permission_denied=2) stays below it; it takes e.g. 2 tool_errors, a
 // tool_error+hook_failure, or 3 denials to cross. stop_bail is weighted 0.
 const CONSENT_THRESHOLD = 6;
-const zeroCounts = () => ({ tool_error: 0, permission_denied: 0, hook_failure: 0, stop_bail: 0, tool_calls: 0 });
+const zeroCounts = () => ({ tool_error: 0, permission_denied: 0, hook_failure: 0, stop_bail: 0, tool_calls: 0, agent_calls: 0 });
 
 const PERMISSION_DENIED_RE = /\b(permission denied|denied permission|requested permissions|user (?:denied|declined|rejected)|operation not permitted|not allowed to)\b/i;
 const HOOK_FAILURE_RE = /(error TS\d{3,}|\btsc\b[^\n]*error|PostToolUse hook[^\n]*fail|hook[^\n]*error|npm error|command failed with exit code)/i;
@@ -158,6 +158,17 @@ function scanTranscript(transcriptPath, fromLine) {
       const type = item.type;
       if (type === "tool_use") {
         span.counts.tool_calls++;
+        // Capture agents delegated BY a skill (the Task/Agent tool). The sub-agent runs in
+        // its own transcript, so its INTERNAL signals aren't visible here — but recording the
+        // delegation lets Tier B (a) attribute a failed/denied Task result (already counted as
+        // tool_error/permission_denied on its own tool_result) to the spawning skill, and
+        // (b) see which agents a skill invoked. `agent_calls` is a COUNT, not an anomaly class
+        // (absent from SIGNAL_CLASSES), so it never inflates the anomaly score on its own.
+        if (item.name === "Task" || item.name === "Agent") {
+          span.counts.agent_calls = (span.counts.agent_calls ?? 0) + 1;
+          const agent = item.input?.subagent_type || item.input?.agentType || "unknown";
+          if (span.details.length < 25) span.details.push({ cls: "agent_call", agent, snippet: snippet(item.input?.description || "") });
+        }
       } else if (type === "tool_result") {
         const body = textOf(item.content);
         if (item.is_error === true) {

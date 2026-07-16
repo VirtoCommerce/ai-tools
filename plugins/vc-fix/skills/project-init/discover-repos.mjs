@@ -147,10 +147,11 @@ export function parseSemver(tag) {
  *
  * A client frontend fork carries its OWN patch increments on top of the line's base
  * (`2.49.7` is the fork's `.7`, NOT an upstream tag). So the fork version is NOT a
- * git ref, and neither is the bare line label `2.49`. The only defensible resolvable
- * baseline is the line's BASE tag — the SMALLEST existing tag on the line (usually
- * `X.Y.0`), which is the guaranteed common ancestor ≤ the fork. If the line was never
- * tagged upstream, fall back to the HIGHEST existing tag on an EARLIER line (< line).
+ * git ref, and neither is the bare line label `2.49`. The defensible resolvable baseline
+ * is the line's BASE tag: PRIMARY — construct `<major>.<minor>.0` and use it IFF it exists
+ * upstream (the canonical, guaranteed common ancestor ≤ the fork per the Virto convention).
+ * FALLBACK 1 (if `X.Y.0` was never tagged) — the SMALLEST existing tag on the line; FALLBACK 2
+ * (line never tagged at all) — the HIGHEST existing tag on an EARLIER line (< line).
  * Over-attribution to "client" (a false positive from too-old a baseline) is SAFE;
  * leaking client code (a false negative) is not — the earliest-on-line baseline keeps
  * that safety.
@@ -163,9 +164,18 @@ export function pickBaselineTag(tags, line) {
     const v = parseSemver(t);
     if (v) parsed.push({ tag: String(t), v });
   }
+  // PRIMARY: construct the line's base by appending `.0` (`2.49` → `2.49.0`) and use it
+  // IFF that tag actually EXISTS upstream. Per the Virto convention a line is cut from its
+  // `X.Y.0` base, so this is the canonical, guaranteed-common-ancestor baseline. Return the
+  // raw existing tag verbatim (may carry a `v` prefix, e.g. `v2.49.0`) so it is fetchable.
+  const dotZero = parsed.find((p) => p.v[0] === lMaj && p.v[1] === lMin && p.v[2] === 0);
+  if (dotZero) return dotZero.tag;
+
   const cmp = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  // FALLBACK 1 (only when `X.Y.0` was never tagged): the smallest existing patch on the line.
   const onLine = parsed.filter((p) => p.v[0] === lMaj && p.v[1] === lMin).sort((a, b) => cmp(a.v, b.v));
-  if (onLine.length) return onLine[0].tag; // smallest patch on the line = its base
+  if (onLine.length) return onLine[0].tag;
+  // FALLBACK 2 (the line was never tagged at all): the highest existing tag on an EARLIER line.
   const below = parsed
     .filter((p) => p.v[0] < lMaj || (p.v[0] === lMaj && p.v[1] < lMin))
     .sort((a, b) => cmp(b.v, a.v)); // highest earlier tag first

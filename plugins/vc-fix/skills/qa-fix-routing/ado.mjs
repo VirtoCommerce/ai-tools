@@ -37,8 +37,22 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { basename, dirname, join, resolve } from "path";
+import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Resolve per-env credentials (ADO_PAT, ADO_AUTH, …) from .env.defaults → .env.${TEST_ENV}
+// → .env.local, mirroring verify-access.mjs / discover-tracker.mjs / derive-context.mjs, so
+// `TEST_ENV=<env> node ado.mjs …` works standalone without the caller pre-sourcing the shell.
+// Loaded relative to cwd (the project root) with the repo-wide layering precedence — .env.local
+// OVERRIDES (dotenv override:true), same as the sibling scripts, so a stale exported value does
+// not win over the project's .env.local. Guarded/non-fatal: only if the load itself throws (no
+// env files, or an unexpected cwd) is the already-exported process env used unchanged.
+try {
+  loadLayeredEnv("vcst");
+} catch {
+  /* non-fatal — fall back to the ambient process env */
+}
 
 // ---- profile (defaults for org/project/apiBase/projectId/repoId) --------------------
 // cwd-drift-proof: honor PROJECT_PROFILE_PATH, else search cwd AND walk up parent dirs
@@ -198,8 +212,25 @@ const enc = encodeURIComponent;
 // (knowledge/execution/azure-html-format.md) — but if Markdown slips through it renders as a
 // literal #/**/| wall (the exact defect this guards). `ensureAzureHtml` passes author HTML
 // through untouched and converts anything that still looks like Markdown.
-const HTML_BLOCK_RE =
-  /<(h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|br|pre|code|b|strong|em|i|a|img|details|summary|blockquote)\b/i;
+//
+// Detection must not fire on tag-LIKE text that isn't markup: a bare `<` comparison (`a<b`,
+// `(a<i)`), a generic (`List<T>`), an inline mention of an element (`the <div> wrapper`), or an
+// angle bracket inside a code fence. So we (a) strip fenced + inline code first, then (b) require
+// a real FULL-HTML signal — a CLOSING tag or a block tag anchored at the start of a line — none of
+// which a stray `<tag` substring in prose produces. A lone self-closing void element (`<br>`/`<img>`/
+// `<hr>`) is deliberately NOT a full-HTML signal on its own: a mostly-Markdown body that embeds one
+// (e.g. an inline screenshot) must still be Markdown-converted, with the embed preserved verbatim by
+// mdToHtml's raw-HTML-line passthrough — NOT passed through whole (which would leave the surrounding
+// Markdown `#`/`|`/`**` as a literal wall). Author HTML per azure-html-format.md always carries a
+// paired/block tag (<ol>/<li>/<h3>/<p>/<table>).
+const HTML_SIGNAL_RE =
+  /<\/(?:h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|pre|code|b|strong|em|i|a|img|details|summary|blockquote)>|(?:^|\n)\s*<(?:h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|pre|code|blockquote|details)\b/i;
+
+function looksLikeHtml(s) {
+  // Ignore angle brackets inside code — that's content, not markup.
+  const outsideCode = s.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
+  return HTML_SIGNAL_RE.test(outsideCode);
+}
 
 function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -211,7 +242,16 @@ function inlineMd(s) {
     .replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`)
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => `<a href="${u}">${t}</a>`);
+    // Links: `&`/`<`/`>` were already escaped by escapeHtml (runs before inlineMd); escape `"` too so a
+    // quote in the URL can't break out of the href attribute. Allow ONLY http(s)/mailto + relative /
+    // anchor URLs — a disallowed scheme (javascript:/data:/vbscript:/…) drops the anchor and keeps the
+    // visible text, so a poisoned link can't inject an executable href.
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => {
+      const url = String(u).trim();
+      const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url);
+      if (scheme && !/^(https?|mailto)$/i.test(scheme[1])) return t; // unsafe scheme → text only, no <a>
+      return `<a href="${url.replace(/"/g, "&quot;")}">${t}</a>`;
+    });
 }
 
 function mdToHtml(md) {
@@ -237,6 +277,18 @@ function mdToHtml(md) {
       i++; // closing fence
       out.push(`<pre><code>${buf.join("\n")}</code></pre>`);
       continue;
+    }
+    // raw HTML line — a standalone embedded element (`<img …>`, `<br/>`, or a whole `<tag>…</tag>`).
+    // Emitted VERBATIM (never escaped) so authored HTML survives inside an otherwise-Markdown body
+    // (mixed content — the deliberate embed passthrough). A normal Markdown line never starts with `<`.
+    {
+      const t = line.trim();
+      if (/^<\/?[a-zA-Z]/.test(t) && t.endsWith(">")) {
+        closeList();
+        out.push(line);
+        i++;
+        continue;
+      }
     }
     // pipe table
     if (/^\s*\|.*\|\s*$/.test(line)) {
@@ -313,7 +365,7 @@ function mdToHtml(md) {
 function ensureAzureHtml(text) {
   const s = String(text || "").trim();
   if (!s) return s;
-  return HTML_BLOCK_RE.test(s) ? s : mdToHtml(s);
+  return looksLikeHtml(s) ? s : mdToHtml(s);
 }
 
 // ---- commands -----------------------------------------------------------------------
@@ -556,6 +608,38 @@ const COMMANDS = {
       status: e.status,
       isBlocking: e.configuration?.isBlocking,
     }));
+  },
+
+  // Code Search over the client's Azure Repos — the RCA step for an azure-repos client repo
+  // (ADO has no cross-repo GitHub-style `search_code`; narrow by module then read files).
+  //   node ado.mjs search --q "<symbol|error string>" [--repo <name>] [--top 25] [--json]
+  async "search"(args) {
+    const text = args.q || args.text;
+    if (!text) fail("--q <searchText> required (optional: --repo <name> --top <n>)");
+    const AZ = vcsAZ();
+    const org = args.org || AZ.organization;
+    const project = args.project || AZ.project;
+    if (!org || !project) fail("search: no org/project — pass --org/--project or set vcs/tracker.azure in project-profile.json");
+    // ADO Code Search REST lives on the almsearch.* host (NOT dev.azure.com) and REQUIRES a
+    // filters.Project; a filters.Repository sent WITHOUT Project fails with
+    //   "Filter [Repository] is found but filter [Project] is not."
+    // So Repository (optional repo scoping) is only ever sent PAIRED with Project. Needs the
+    // org's "Code Search" extension + ADO_PAT Code(read) scope — a 404 here usually means the
+    // extension isn't installed on the org.
+    const filters = { Project: [project] };
+    if (args.repo) filters.Repository = [String(args.repo)];
+    const url = `https://almsearch.dev.azure.com/${org}/${enc(project)}/_apis/search/codesearchresults?${V}`;
+    const d = await call("POST", url, { body: { searchText: String(text), $top: Number(args.top) || 25, filters } });
+    if (args.json) return d;
+    return {
+      count: d.count,
+      results: (d.results || []).map((r) => ({
+        path: r.path,
+        repository: r.repository?.name,
+        branch: r.versions?.[0]?.branchName,
+        matches: (r.matches?.content || []).length,
+      })),
+    };
   },
 };
 

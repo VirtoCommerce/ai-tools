@@ -58,7 +58,9 @@ resolve/comment/transition ops and for commit/PR cross-links (Azure: `AB#12345`)
 > comment bodies are **HTML fields** — Markdown fed into them renders as a literal `#`/`**`/`| … |` wall
 > (bug descriptions) or collapses into one unreadable paragraph (comments). Author these as HTML per
 > [`azure-html-format.md`](azure-html-format.md); `ado.mjs` also auto-converts Markdown→HTML as a safety
-> net (author HTML passes through). This is Azure-only — Jira keeps its own markup.
+> net (author HTML passes through). Pass `--raw` to `create-workitem`/`comment` to send the body
+> verbatim and skip the safety net (rarely needed — already-HTML content is detected and passed
+> through either way). This is Azure-only — Jira keeps its own markup.
 Auth (never passwords): Jira via the Atlassian MCP OAuth (or `JIRA_API_TOKEN`+`JIRA_EMAIL`);
 Azure via `ADO_PAT` (Basic, empty user) or an `az login` session (`ADO_AUTH=az-login`) — same
 helpers as `ci/lib/ado-rest.ts`.
