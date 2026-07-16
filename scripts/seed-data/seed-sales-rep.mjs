@@ -67,9 +67,40 @@ async function memberExists(id) {
   return res && res.id === id; // VC returns 200 + empty body for a missing member
 }
 
+const PAGING_PREFIX = 'AGENT-TEST-SR-Paging-';
+
+/** Confirm a rep's account email so it can sign in to the storefront UI (idempotent). */
+async function confirmRepEmail(email) {
+  if (!email || DRY_RUN) return;
+  const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
+  if (!u || !u.id || u.emailConfirmed) return;
+  u.emailConfirmed = true;
+  await api('PUT', '/api/platform/security/users', u, { expectStatus: [200, 204] });
+  verbose(`emailConfirmed=true for ${email}`);
+}
+
+/** Create/resolve N dedicated paging orgs (no orders, no pinned id) served by a paging rep. Idempotent by name. */
+async function ensurePagingOrgs(n) {
+  const served = [];
+  for (let i = 1; i <= n; i++) {
+    const name = `${PAGING_PREFIX}${String(i).padStart(2, '0')}`;
+    let m = await findMemberByName(name);
+    if (!m) {
+      const body = {
+        memberType: 'Organization', name, businessCategory: 'Test Paging', status: 'Active',
+        addresses: [{ addressType: 'Shipping', line1: `${i} Paging St`, city: 'Seattle', regionName: 'WA', countryName: 'United States', countryCode: 'USA', postalCode: '98101', isDefault: true }],
+      };
+      m = await api('POST', '/api/members', body);
+      log(`Paging org created: ${name} (${m?.id})`);
+    } else verbose(`paging org exists: ${name}`);
+    if (m?.id) served.push({ organizationId: m.id, organizationName: name });
+  }
+  return served;
+}
+
 async function ensureServedOrgs(orgs, repRows) {
   const needed = new Set();
-  for (const r of repRows) (r.served_orgs || '').split(';').map((s) => s.trim()).filter(Boolean).forEach((k) => needed.add(k));
+  for (const r of repRows) (r.served_orgs || '').split(';').map((s) => s.trim()).filter(Boolean).filter((k) => !k.startsWith('PAGING:')).forEach((k) => needed.add(k));
   for (const key of needed) {
     const o = orgs[key];
     if (!o) { log(`WARN: org ${key} not in b2b CSV — skip`); continue; }
@@ -128,16 +159,23 @@ async function ensureRep(row, orgs, roleId) {
     rep = await api('GET', `/api/sales-rep/${existing.id}`);
     log(`Rep exists: ${row.rep_key} (${rep.id})`);
   } else {
-    const served = (row.served_orgs || '').split(';').map((s) => s.trim()).filter(Boolean)
-      .map((k) => orgs[k] ? { organizationId: orgs[k].id, organizationName: orgs[k].name } : null).filter(Boolean);
+    let served;
+    if ((row.served_orgs || '').startsWith('PAGING:')) {
+      served = await ensurePagingOrgs(parseInt(row.served_orgs.split(':')[1], 10) || 12);
+    } else {
+      served = (row.served_orgs || '').split(';').map((s) => s.trim()).filter(Boolean)
+        .map((k) => orgs[k] ? { organizationId: orgs[k].id, organizationName: orgs[k].name } : null).filter(Boolean);
+    }
     const body = {
       firstName: row.first_name, lastName: row.last_name, fullName: row.full_name,
       emails: [row.email], storeId: row.store, password: REP_PASSWORD,
       roleId, isLocked: csvBool(row.is_locked), organizations: served,
     };
     rep = await api('POST', '/api/sales-rep', body);
-    log(`Rep created: ${row.rep_key} (${rep?.id}) serving ${served.map((o) => o.organizationName).join(', ') || '(none)'}`);
+    log(`Rep created: ${row.rep_key} (${rep?.id}) serving ${served.length} org(s)`);
   }
+  // Confirm the account email so the rep can sign in to the storefront UI (idempotent, all reps).
+  await confirmRepEmail(row.email);
   // Per-org membership lock (SR_REP_LOCKED): lock the named org's membership.
   let lockedMembershipId = '';
   if (row.lock_membership_org && orgs[row.lock_membership_org]) {
@@ -194,6 +232,12 @@ async function teardown(orgs) {
   for (const row of loadCsv('test-data/sales-rep/sales-reps.csv')) {
     const rep = await findRepByFullName(row.full_name);
     if (rep?.id) { await api('DELETE', `/api/sales-rep?ids=${rep.id}`, null, { expectStatus: [200, 204] }); log(`  deleted rep ${row.rep_key}`); }
+  }
+  // Paging orgs (AGENT-TEST-SR-Paging-NN) created for SR_REP_PAGING
+  for (let i = 1; i <= 20; i++) {
+    const name = `${PAGING_PREFIX}${String(i).padStart(2, '0')}`;
+    const m = await findMemberByName(name);
+    if (m?.id) { await api('DELETE', `/api/members?ids=${m.id}`, null, { expectStatus: [200, 204] }); log(`  deleted paging org ${name}`); }
   }
   // Owner contact + ACME de-enrichment (only the owner link)
   const owner = await findMemberByName(OWNER_NAME);
