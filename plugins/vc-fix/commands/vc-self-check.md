@@ -1,7 +1,6 @@
 ---
 description: "Self-diagnose the vc-fix plugin from this session's telemetry: read the passive collector's jsonl + the transcript + the skill-expectations oracle, and emit a per-skill verdict (OK/DEGRADED/BROKEN) with severity, evidence, a root-cause hypothesis, and a concrete proposed fix. Writes a LOCAL DIAG-*.md only — never modifies the install, never sends anything externally (that is the separate `deliver` step). Plugin-wide, not qa-prefixed."
 argument-hint: "[latest | <session-id>]  (or: deliver [latest | <session-id>])"
-disable-model-invocation: true
 ---
 
 # /vc-self-check — vc-fix Self-Diagnostician
@@ -32,9 +31,12 @@ this command just invokes it.
 - Never files a tracker ticket and never sends anything externally. Contributing a
   confirmed DIAG back to VirtoCommerce is the separate, scrubbed, **explicitly
   consented** `deliver` sub-step (`deliver.mjs`, VCST-5478) — never run implicitly.
-- Never diagnoses its own invocation (dedup guard), and never auto-triggers
-  (`disable-model-invocation`) → no recursion.
+- Never diagnoses its own invocation (the collector drops `vc-self-check` spans), and
+  never re-prompts in a session that already ran it (`selfCheckSeen`) → no recursion.
+  It runs only on explicit user consent (the end-of-session prompt's **Yes**) or when the
+  user runs `/vc-self-check` directly — never as an unprompted auto-trigger.
 
-> The end-of-session `Stop` finalize offers a plain yes/no when the anomaly score
-> crosses the threshold; answering **yes** is what leads here. It is never run
-> automatically.
+> The end-of-session `Stop` finalize offers an `AskUserQuestion` Yes/No **only when a
+> skill actually ran and its skill-attributed anomaly score crosses the threshold**;
+> answering **Yes** is what leads here (the model then runs this skill). It is never run
+> without that consent.

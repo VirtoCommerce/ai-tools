@@ -48,6 +48,26 @@ self-healed.
   an upgrade**. Plugin-only change (`plugins/vc-fix/`); the project-scoped `.claude/`
   checkout has no versioned cache dir and is unaffected.
 
+### Changed — self-diagnostics consent prompt: skill-gated, opinion-poll UI, auto-run on Yes
+
+The end-of-session `/vc-self-check` consent prompt fired on **any** session whose raw
+anomaly score was high — including plain development sessions (git/Bash/Edit, a failing
+`tsc` PostToolUse hook) where **no vc-fix skill ran** — and it asked as free text, then
+couldn't actually start because the command was `disable-model-invocation`.
+
+- **`session-telemetry.mjs`** now scores the consent trigger on **skill-attributed**
+  signals only (new `skillTotals`, accumulated while a skill span is open) and gates it on
+  `anySkillSeen` — a session with zero skill invocations is never offered self-diagnosis.
+  The finalize record carries `anySkillSeen` + `skillTotals` + `skillAnomalyScore` +
+  `skillAnomalies` alongside the session-wide totals.
+- The prompt text now instructs the model to ask via the **`AskUserQuestion`** tool
+  (Yes/No), and on **Yes** to run the `vc-self-check` skill directly.
+- **`/vc-self-check` drops `disable-model-invocation`** (command + skill) so the model can
+  run it on the operator's Yes; unprompted auto-triggering is ruled out by the description +
+  the existing recursion guards (`selfCheckSeen` one-shot + the collector dropping its own
+  `vc-self-check` spans). Docs (`CLAUDE.md`, `.claude/rules/skills-commands.md`) updated.
+- Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
 ### Fixed — `upstreamRef` is a resolvable upstream tag (frontend provenance)
 
 `/project-init` derived a storefront fork's `upstreamRef` as the bare `MAJOR.MINOR` of the

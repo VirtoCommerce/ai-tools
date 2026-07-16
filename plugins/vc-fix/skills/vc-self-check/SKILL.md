@@ -1,8 +1,7 @@
 ---
 name: vc-self-check
-description: On-demand self-diagnostician for the vc-fix plugin (Tier B). Reads the passive session-telemetry jsonl + the session transcript + the skill-expectations oracle, and emits a per-skill verdict (OK / DEGRADED / BROKEN) with severity, evidence, a root-cause hypothesis, and a concrete proposed fix (which plugin file/line). Writes a LOCAL DIAG-*.md report only — it never modifies the installed plugin and never sends anything externally (that is the consent-gated Step-4 delivery). Plugin-wide (covers every vc-fix skill/tool), so it is NOT qa-prefixed. disable-model-invocation — runs only when the user explicitly invokes it (e.g. after the end-of-session consent prompt), so it never self-triggers or recurses.
+description: On-demand self-diagnostician for the vc-fix plugin (Tier B). Reads the passive session-telemetry jsonl + the session transcript + the skill-expectations oracle, and emits a per-skill verdict (OK / DEGRADED / BROKEN) with severity, evidence, a root-cause hypothesis, and a concrete proposed fix (which plugin file/line). Writes a LOCAL DIAG-*.md report only — it never modifies the installed plugin and never sends anything externally (that is the consent-gated Step-4 delivery). Plugin-wide (covers every vc-fix skill/tool), so it is NOT qa-prefixed. Invoke ONLY on explicit user consent — the end-of-session consent prompt's "Yes", or when the user runs /vc-self-check directly — NEVER as an unprompted auto-trigger. Recursion/re-nag is prevented by the collector dropping its own spans + the one-shot consent guard (selfCheckSeen), not by disabling model invocation.
 argument-hint: "[latest | <session-id>]"
-disable-model-invocation: true
 ---
 
 # /vc-self-check — vc-fix Self-Diagnostician (Tier B)
@@ -14,11 +13,15 @@ session on demand and produces a verdict per shipped skill, judged against the
 oracle ([`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md),
 VCST-5476).
 
-**When it runs.** Only when the user explicitly invokes `/vc-self-check` — most
-often after the end-of-session consent prompt (the `Stop` finalize offers a plain
-yes/no when the anomaly score crosses the threshold; see `session-telemetry.mjs`).
-It is `disable-model-invocation` so it never self-triggers → no recursion, no
-silent LLM passes.
+**When it runs.** Only on explicit user consent: either the model runs it right after
+the user answers **Yes** to the end-of-session consent prompt (the `Stop` finalize offers
+an `AskUserQuestion` Yes/No when the **skill-attributed** anomaly score crosses the
+threshold *and a skill actually ran*; see `session-telemetry.mjs`), or the user runs
+`/vc-self-check` directly. It is **not** auto-triggered outside that flow — do not invoke
+it unprompted. No recursion / re-nag: the collector never re-prompts a session that already
+ran the diagnostician (`selfCheckSeen`) and drops `vc-self-check` spans from its own
+analysis, so removing `disable-model-invocation` (needed so the model *can* run it on Yes)
+does not open a loop.
 
 **Scope at this step: LOCAL report only.** The output is a `DIAG-*.md` under the
 project's `.vc-fix/diagnostics/`. Turning a confirmed DIAG into a scrubbed,
