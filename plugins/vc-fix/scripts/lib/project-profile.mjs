@@ -50,7 +50,9 @@
  * @property {string} [integrationBranch]  the branch feature branches base off + PRs TARGET (e.g. "dev"); falls back to defaultBranch when absent
  * @property {string} [workBranchPrefix]  work-branch prefix (default "claude/qa-autofix/")
  * @property {string} [upstream]  the platform repo this was forked/derived from (provenance)
- * @property {string} [upstreamRef]  the platform version/tag the fork was cut from (provenance anchor)
+ * @property {string} [upstreamRef]  a CONCRETE, resolvable upstream tag (the fork line's base, e.g. "2.49.0") the fork was cut from (provenance anchor) — NOT the bare MAJOR.MINOR line label
+ * @property {boolean} [upstreamRefResolved]  whether upstreamRef was verified to resolve in the upstream repo at discovery (false ⇒ line label/fork version kept; Gate 1b reconstructs)
+ * @property {string} [forkVersion]  the fork's OWN package.json version (e.g. "2.49.7"), kept for reference — its patch is independent of upstream tags, so NOT a resolvable ref
  * @property {ContributionPlan} [contribution]  BAKED clone/PR plan so the interactive command doesn't re-derive it from repo-router.ts
  * @property {{install?:string, build?:string, typecheck?:string, lint?:string, test?:string}} [toolchain]  resolved toolchain (kind default + overrides)
  * @property {LocalVerify} [localVerify]  Gate-6 live local-verify facts (frontend forks)

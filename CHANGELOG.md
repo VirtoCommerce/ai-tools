@@ -48,6 +48,32 @@ self-healed.
   an upgrade**. Plugin-only change (`plugins/vc-fix/`); the project-scoped `.claude/`
   checkout has no versioned cache dir and is unaffected.
 
+### Fixed — `upstreamRef` is a resolvable upstream tag (frontend provenance)
+
+`/project-init` derived a storefront fork's `upstreamRef` as the bare `MAJOR.MINOR` of the
+fork's `package.json` version (`2.49.7` → `2.49`) and wrote that into
+`project-profile.json`. `2.49` is a line label, not a git ref (422 on `vc-frontend`); so is
+the fork's own patch `2.49.7` (the fork's `.7` has no upstream tag). `/qa-fix` Gate 1b uses
+`upstreamRef` to diff the fork against unmodified upstream — a non-resolvable ref broke that
+diff, over-attributing everything to "client" (safe but kills upstream routing), with no
+signal that the ref was never validated.
+
+- `discover-repos.mjs` now resolves the fork line to a **concrete, existing** upstream tag:
+  `git ls-remote --tags <upstream>` → pick the smallest tag on the line (its base, e.g.
+  `2.49.0` — the guaranteed common ancestor ≤ the fork), falling back to the highest earlier
+  tag when the line was never tagged. It writes `upstreamRef` = that tag plus
+  `upstreamRefResolved: true|false` and `forkVersion` (kept for reference). Offline / no
+  token → keeps the line label, `upstreamRefResolved: false`, and asks the operator.
+- `/qa-fix` Gate 1b gains a documented fallback: when `upstreamRefResolved === false` or the
+  ref 422s, reconstruct `<major>.<minor>.0` → highest `<major>.<minor>.x` → nearest tag ≤
+  line → ask; never silently treat everything as client.
+- Reporting: `discover-repos.mjs` prints `… @ 2.49.0 (verified)` / `(UNVERIFIED — ref not
+  found)` per frontend fork, and `verify-access.mjs` adds a **"Storefront upstream ref"** row
+  (PASS resolves / WARN doesn't — non-blocking, Gate 1b reconstructs / SKIP no fork).
+- `clientUpstream()` (`repo-router.ts`) now returns `upstreamRefResolved` + `forkVersion`.
+  Existing profiles are safe to leave; a `/project-init` re-run refreshes them, or an
+  operator can hand-fix `upstreamRef` to the line base (e.g. `2.49` → `2.49.0`).
+
 ---
 
 ## [0.7.0] — 2026-07-08

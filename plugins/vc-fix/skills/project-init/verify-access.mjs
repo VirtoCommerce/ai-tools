@@ -275,6 +275,34 @@ async function main() {
     }
   }
 
+  // 11. Storefront upstream ref — /qa-fix Gate 1b diffs a client frontend fork against
+  //     `vc-frontend @ upstreamRef` to tell a client customization from a platform bug;
+  //     a non-resolvable ref breaks that diff. Confirm the baked ref actually resolves in
+  //     the upstream repo. WARN (not FAIL) — Gate 1b has a reconstruct/ask fallback, so a
+  //     bad ref must not block deployment readiness. Native platform / no fork ⇒ SKIP.
+  const feForks = clientRepos.filter((r) => r?.kind === "frontend" && r?.upstream);
+  if (!feForks.length) {
+    add("Storefront upstream ref", "SKIP", "no storefront fork (native platform or client without a vc-frontend fork)");
+  } else {
+    for (const r of feForks) {
+      const bare = splitRepo(r.name).name;
+      const label = feForks.length > 1 ? `Storefront upstream ref (${bare})` : "Storefront upstream ref";
+      const ref = r.upstreamRef || "";
+      const m = /^(\d+)\.(\d+)/.exec(ref);
+      const suggest = m ? `${m[1]}.${m[2]}.0` : "the line base tag";
+      const flag = r.upstreamRefResolved === false ? " [upstreamRefResolved:false]" : "";
+      if (!ref) { add(label, "WARN", `${r.upstream}: upstreamRef missing — Gate 1b will reconstruct/ask`); continue; }
+      if (!ghtok) { add(label, "WARN", `cannot probe ${r.upstream} @ ${ref} — no GitHub token`); continue; }
+      try {
+        const res = await fetch(`https://api.github.com/repos/${r.upstream}/commits/${encodeURIComponent(ref)}`, {
+          headers: { "User-Agent": "vc-verify", Accept: "application/vnd.github+json", Authorization: `Bearer ${ghtok}` },
+        });
+        if (res.ok) add(label, "PASS", `${r.upstream} @ ${ref} resolves`);
+        else add(label, "WARN", `${r.upstream} @ ${ref} does not resolve (→ ${res.status})${flag} — Gate 1b will reconstruct (try ${suggest}) or ask`);
+      } catch (e) { add(label, "WARN", `probe failed for ${r.upstream} @ ${ref}: ${e.message}`); }
+    }
+  }
+
   renderTable(results);
   renderMcp();
   process.exit(results.some((r) => r.status === "FAIL") ? 1 : 0);

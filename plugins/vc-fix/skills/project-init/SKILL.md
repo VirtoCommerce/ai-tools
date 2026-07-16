@@ -283,15 +283,19 @@ It writes `{ projectType, clientOrg, client:[…], platform:[…] }`:
   adds any name matching the theme/frontend heuristic as `kind:"frontend"`. It also
   captures each repo's **`defaultBranch`** (so `checkoutForFix` doesn't blind-guess `main`)
   and **best-effort provenance** for a storefront fork — `upstream` (the vc-frontend repo it
-  was forked from) + `upstreamRef` (the **vc-frontend LINE** it was cut from = the
-  **MAJOR.MINOR** of the fork's `package.json` `version`, e.g. `"2.49.7"` → `2.49`; the fork's
-  own patch version has no upstream tag). The scan reads that `version` for **any** repo it
-  identified as the storefront (no `@vc-shell`/`vc-frontend` signal required) — only a repo
-  literally named `vc-frontend` keeps its full version (it *is* an upstream release).
-  **`upstreamRef` is what lets `/qa-fix` Gate 1b tell a client customization from an
-  unmodified-platform bug** — if the scan still can't derive it (package.json unreadable / no
-  parseable version), ASK the operator for the vc-frontend version the fork is based on and set
-  `repos.client[].upstreamRef`.
+  was forked from) + `upstreamRef`. **`upstreamRef` is now a CONCRETE, VERIFIED upstream tag
+  — the fork line's BASE (e.g. `2.49.0`), not the bare MAJOR.MINOR line label.** The scan
+  takes the fork's `package.json` `version` (kept as `forkVersion`, e.g. `"2.49.7"`), reduces
+  it to its `MAJOR.MINOR` line (`2.49`), then `git ls-remote --tags <upstream>` and picks the
+  smallest existing tag on that line (its base) — the guaranteed common ancestor ≤ the fork
+  (the fork's own patch has no upstream tag; the bare line label isn't a git ref — both 422 on
+  `vc-frontend`). It records `upstreamRefResolved: true`. If the line was never tagged it falls
+  back to the highest earlier tag; if ls-remote fails (offline / no token) it keeps the line
+  label with `upstreamRefResolved: false` and ASKS. The resolved baseline appears both in the
+  scan map (`… @ 2.49.0 (verified)`) and in the `verify-access` readiness table (**"Storefront
+  upstream ref"** row). **This is what lets `/qa-fix` Gate 1b tell a client customization from
+  an unmodified-platform bug** — if it couldn't be derived/verified, ASK the operator for the
+  vc-frontend line base tag and set `repos.client[].upstreamRef` (e.g. `2.49` → `2.49.0`).
 
 **Show the proposed map to the operator to confirm/correct** — a starting point, not
 gospel. **Genuine-ambiguity asks (only these):**
@@ -431,7 +435,10 @@ its permission on the upstream — shared with the derive block via `probe-lib.m
 what verify reports and what the profile stored can't drift) · **client repos** (for a
 client deployment, each `repos.client` entry is probed for reach + push on its own host —
 GitHub `permissions.push` or an Azure Repos `_apis/git/repositories/<repo>` JSON hit — so a
-dead client-repo token surfaces here, not at Gate 2; native platform ⇒ SKIP). Resolve every **FAIL**
+dead client-repo token surfaces here, not at Gate 2; native platform ⇒ SKIP) · **Storefront
+upstream ref** (a client frontend fork's `upstreamRef` resolves in `vc-frontend` — PASS; missing /
+`upstreamRefResolved:false` / doesn't resolve — WARN, since Gate 1b reconstructs/asks; no fork ⇒
+SKIP). Resolve every **FAIL**
 (exit code is non-zero while any FAIL remains); **WARN** is non-blocking; **SKIP** means
 a feature isn't configured.
 
@@ -501,6 +508,12 @@ Safe to re-run. `gen-profile`/`gen-mcp` overwrite their outputs; `--merge` layer
 onto the existing profile. To reconfigure one dimension, re-run `gen-profile`
 with just those flags + `--merge`. To re-derive after a token/session change, re-run
 `discover-repos` + `discover-tracker` + `derive-context` and regenerate the profile.
+
+**Existing profiles** written before the verified-`upstreamRef` change are safe to leave —
+Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or just re-running
+`discover-repos`) refreshes them to a concrete tag; alternatively an operator can hand-fix
+`repos.client[].upstreamRef` from the bare line label to that line's base tag (e.g. `2.49` →
+`2.49.0`).
 
 ## Scripts
 
