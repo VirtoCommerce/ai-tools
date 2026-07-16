@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-07-08",
-    "totalSuites": 113,
+    "generated": "2026-07-16",
+    "totalSuites": 115,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1518,6 +1518,31 @@
       "customerApplicability": "reference"
     },
     {
+      "id": "050m",
+      "name": "GraphQL xAPI — Sales Rep (scoped /graphql/sales-rep)",
+      "file": "regression/suites/Backend/graphql/050m-graphql-sales-rep.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 35,
+      "estimatedMinutes": 95,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "sales-rep",
+        "b2b",
+        "scoped-schema",
+        "vcptcore-only"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "env": "vcptcore",
+      "customerApplicability": "reference"
+    },
+    {
       "id": "051",
       "name": "Catalog Admin Products",
       "file": "regression/suites/Backend/catalog/051-catalog-admin-products.csv",
@@ -2529,6 +2554,30 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "universal"
+    },
+    {
+      "id": "089",
+      "name": "Sales Rep — My Customers (storefront UI/E2E)",
+      "file": "regression/suites/Frontend/sales-rep/089-sales-rep-my-customers-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 29,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "my-customers",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "env": "vcptcore",
+      "customerApplicability": "reference"
     }
   ],
   "selections": {
@@ -2647,13 +2696,17 @@
         "layer": "frontend"
       },
       "exclude": [
-        "080"
+        "080",
+        "089"
       ]
     },
     "backend": {
       "where": {
         "layer": "backend"
-      }
+      },
+      "exclude": [
+        "050m"
+      ]
     },
     "sprint": {
       "all": true,
@@ -2662,15 +2715,27 @@
         "045",
         "046",
         "047",
+        "050m",
         "063",
         "068",
         "069",
         "076",
-        "080"
+        "080",
+        "089"
       ]
     },
     "full": {
-      "all": true
+      "all": true,
+      "exclude": [
+        "050m",
+        "089"
+      ]
+    },
+    "sales-rep": {
+      "include": [
+        "050m",
+        "089"
+      ]
     },
     "domain:purchase-flow": {
       "where": {
@@ -2735,7 +2800,10 @@
     "concern:api": {
       "where": {
         "concern": "api"
-      }
+      },
+      "exclude": [
+        "050m"
+      ]
     },
     "concern:admin": {
       "where": {
