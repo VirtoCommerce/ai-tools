@@ -22,6 +22,32 @@ A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills
 - **Delivery:** `skills/vc-self-check/deliver.mjs` (`/vc-self-check deliver`) — scrubbed (§2a client-code containment), consent-gated (draft-and-confirm) contribution to `VirtoCommerce/vc-mcp-testing-module`, routed by GitHub-token rights (PR / fork-PR / issue / local), with issue dedup.
 - Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
 
+### Fixed — `paths.pluginRoot` survives a plugin upgrade
+
+`/project-init` used to bake an absolute, **version-pinned** plugin path
+(`…/vc-tools/vc-fix/<version>`) into `project-profile.json` `paths.pluginRoot`. On upgrade
+the marketplace installs a new versioned sibling dir (old versions are not pruned), so the
+baked path went stale — every `/qa-fix`/`/qa-bug` `node "$pluginRoot/skills/…"` call then
+either failed (path gone) or silently ran the OLD version's scripts, and the profile never
+self-healed.
+
+- New `SessionStart` hook `hooks/vc-fix-latest-link.mjs` maintains a stable OS link
+  `~/.claude/vc-fix-latest` → the currently-active plugin root (Windows junction / POSIX
+  dir symlink; idempotent; refuses to replace a real directory; never blocks a session).
+  Plugin-declared hooks receive `${CLAUDE_PLUGIN_ROOT}` and the harness always loads the
+  active version's hooks, so no semver scan is needed.
+- `gen-profile.mjs` (`--runtime-mode plugin`) now bakes that stable link into
+  `paths.pluginRoot` (new `stableLinkPath()` in `skills/project-init/lib/paths.mjs`),
+  falling back to the versioned dir only if the home directory is unresolvable. The
+  `agent-project` checkout path is unchanged.
+- `verify-access.mjs` gained a **plugin root** check — `paths.pluginRoot` resolves and
+  `skills/qa-fix-routing/ado.mjs` is present under it — so a stale/broken link surfaces in
+  the readiness table instead of at Gate 2.
+- Backward compatible: existing profiles with a versioned path keep working until that dir
+  is pruned; a single new session re-links, so **no `/project-init` re-run is needed after
+  an upgrade**. Plugin-only change (`plugins/vc-fix/`); the project-scoped `.claude/`
+  checkout has no versioned cache dir and is unaffected.
+
 ---
 
 ## [0.7.0] — 2026-07-08

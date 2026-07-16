@@ -21,7 +21,8 @@
  * Usage: node skills/project-init/verify-access.mjs
  */
 import { execSync } from "child_process";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync, realpathSync } from "fs";
+import { resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
@@ -102,6 +103,28 @@ async function main() {
   const profile = loadProjectProfile();
   add("Deployment profile", profile ? "PASS" : "FAIL",
     `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`);
+
+  // 1b. Plugin root resolves + the routing helper is present under it.
+  //     /qa-fix / /qa-bug invoke `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` via
+  //     profile.paths.pluginRoot. On an installed plugin that is the STABLE link
+  //     (~/.claude/vc-fix-latest) which the SessionStart hook repoints each session — a
+  //     stale/broken link is a silent /qa-fix failure, so confirm it resolves to a real
+  //     dir that actually contains the helper. Empty (native agent-project) → commands
+  //     resolve via $CLAUDE_PLUGIN_ROOT, nothing to probe.
+  const pluginRootPath = profile.paths?.pluginRoot || "";
+  if (!pluginRootPath) {
+    add("Plugin root (paths.pluginRoot)", "SKIP", "not baked — commands resolve via $CLAUDE_PLUGIN_ROOT (agent-project)");
+  } else {
+    const adoPath = resolve(pluginRootPath, "skills", "qa-fix-routing", "ado.mjs");
+    if (existsSync(adoPath)) {
+      let via = pluginRootPath;
+      try { const real = realpathSync(pluginRootPath); if (real !== pluginRootPath) via = `${pluginRootPath} → ${real}`; } catch { /* not a link */ }
+      add("Plugin root (paths.pluginRoot)", "PASS", `qa-fix-routing/ado.mjs present (${via})`);
+    } else {
+      add("Plugin root (paths.pluginRoot)", "FAIL",
+        `${pluginRootPath} — qa-fix-routing/ado.mjs missing (stale link? start a new session to re-link, or re-run /project-init)`);
+    }
+  }
 
   // 2. Core env vars
   const core = ["FRONT_URL", "BACK_URL", "ADMIN", "ADMIN_PASSWORD", "USER_EMAIL", "USER_PASSWORD", "STORE_ID"];

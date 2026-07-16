@@ -388,6 +388,17 @@ override, but in the normal flow you do **not** pass them — the scan is author
 If step 4 surfaced a storefront/theme repo the scan couldn't classify, hand-edit
 `project-profile.json` `repos.client` to add it (or fix any miscategorised entry).
 
+**`paths.pluginRoot` is version-agnostic (survives upgrades).** In `plugin` mode
+gen-profile does NOT bake the versioned cache dir (`…/vc-fix/<version>`) — that becomes a
+stale sibling on the next upgrade. It bakes the stable link **`~/.claude/vc-fix-latest`**,
+which the `SessionStart` hook (`hooks/vc-fix-latest-link.mjs`) repoints at the active
+version every session. So every command's `node "$pluginRoot/skills/…"` keeps resolving to
+the current version with **no re-run of `/project-init` needed after an upgrade** — the
+profile self-heals. (A profile written by an older plugin that still has the versioned path
+keeps working until that version dir is pruned; a single new session re-links it. On a
+native `agent-project` checkout there is no cache dir and the resolved plugin dir is baked
+as before.)
+
 ## 7. Generate `.mcp.json`
 
 ```bash
@@ -410,7 +421,9 @@ FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verif
 ```
 
 Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.
-Checks (PASS / FAIL / WARN / SKIP): deployment profile · core env vars · storefront
+Checks (PASS / FAIL / WARN / SKIP): deployment profile · **plugin root** (`paths.pluginRoot`
+resolves and `skills/qa-fix-routing/ado.mjs` is present under it — catches a stale/broken
+`vc-fix-latest` link) · core env vars · storefront
 URL · admin/platform URL · **admin login** (real `POST {BACK_URL}/connect/token`
 password grant) · storefront user login (soft WARN) · tracker token (Jira `GET /myself`
 or a **real ADO org probe**) · **GitHub fix token / gh session** (validates the token and
@@ -502,7 +515,7 @@ with just those flags + `--merge`. To re-derive after a token/session change, re
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS + copy the three `config/mcp-playwright-*.config.json` from the plugin into the project (so the relative `--config` refs resolve) |
-| `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, where read-only plugin assets live). Keeps every generator writing to the project and reading templates from the plugin |
+| `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, where read-only plugin assets live) + `stableLinkPath()` (`~/.claude/vc-fix-latest`, the version-agnostic link baked into `paths.pluginRoot` in plugin mode; maintained by the `hooks/vc-fix-latest-link.mjs` SessionStart hook). Keeps every generator writing to the project and reading templates from the plugin |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
 
