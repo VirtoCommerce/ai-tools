@@ -14,14 +14,16 @@
  *   - Admin / platform URL reachable (BACK_URL)
  *   - Admin login — real OAuth password grant against {BACK_URL}/connect/token
  *   - Storefront user login — soft probe (WARN, not FAIL: storefront users may auth via xAPI)
- *   - Jira API token — GET /rest/api/3/myself  (jira tracker)  OR  Azure DevOps auth present
+ *   - Jira API token — GET /rest/api/3/myself  (jira tracker; WARN not FAIL — the runtime
+ *     path is the Atlassian MCP OAuth, the token is only an optional probe)  OR  Azure DevOps auth present
  *   - GitHub fix token (GITHUB_FIX_BUGS_TOKEN) — validate token + push perm on the upstream repo
  *   - gh CLI session — gh auth status
  *
  * Usage: node skills/project-init/verify-access.mjs
  */
 import { execSync } from "child_process";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync, realpathSync } from "fs";
+import { resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
@@ -103,6 +105,28 @@ async function main() {
   add("Deployment profile", profile ? "PASS" : "FAIL",
     `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`);
 
+  // 1b. Plugin root resolves + the routing helper is present under it.
+  //     /qa-fix / /qa-bug invoke `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` via
+  //     profile.paths.pluginRoot. On an installed plugin that is the STABLE link
+  //     (~/.claude/vc-fix-latest) which the SessionStart hook repoints each session — a
+  //     stale/broken link is a silent /qa-fix failure, so confirm it resolves to a real
+  //     dir that actually contains the helper. Empty (native agent-project) → commands
+  //     resolve via $CLAUDE_PLUGIN_ROOT, nothing to probe.
+  const pluginRootPath = profile.paths?.pluginRoot || "";
+  if (!pluginRootPath) {
+    add("Plugin root (paths.pluginRoot)", "SKIP", "not baked — commands resolve via $CLAUDE_PLUGIN_ROOT (agent-project)");
+  } else {
+    const adoPath = resolve(pluginRootPath, "skills", "qa-fix-routing", "ado.mjs");
+    if (existsSync(adoPath)) {
+      let via = pluginRootPath;
+      try { const real = realpathSync(pluginRootPath); if (real !== pluginRootPath) via = `${pluginRootPath} → ${real}`; } catch { /* not a link */ }
+      add("Plugin root (paths.pluginRoot)", "PASS", `qa-fix-routing/ado.mjs present (${via})`);
+    } else {
+      add("Plugin root (paths.pluginRoot)", "FAIL",
+        `${pluginRootPath} — qa-fix-routing/ado.mjs missing (stale link? start a new session to re-link, or re-run /project-init)`);
+    }
+  }
+
   // 2. Core env vars
   const core = ["FRONT_URL", "BACK_URL", "ADMIN", "ADMIN_PASSWORD", "USER_EMAIL", "USER_PASSWORD", "STORE_ID"];
   const miss = core.filter((v) => !process.env[v]);
@@ -141,17 +165,22 @@ async function main() {
 
   // 7. Tracker
   if (profile.tracker.kind === "jira") {
+    // Jira access at runtime is via the Atlassian MCP (OAuth) — see the MCP table below and
+    // tracker-ops.md ("Atlassian MCP OAuth or JIRA_API_TOKEN"). JIRA_API_TOKEN is only an
+    // OPTIONAL convenience probe, so a missing or rejected token is a WARN, never a hard FAIL:
+    // it must not mark the deployment NOT READY (exit 1) when the operator authorizes Jira
+    // through the Atlassian MCP instead — which this script cannot probe (issue #119).
     const base = (process.env.JIRA_BASE_URL || profile.tracker.baseUrl || "").replace(/\/$/, "");
     const email = process.env.JIRA_EMAIL || "";
     const token = process.env.JIRA_API_TOKEN || "";
-    if (!base || !email || !token) add("Jira API token", "SKIP", "set JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN (or use Atlassian MCP)");
+    if (!base || !email || !token) add("Jira API token", "SKIP", "no direct token — Jira runs via Atlassian MCP OAuth (authorize in /mcp); set JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN only to probe a direct token");
     else {
       try {
         const auth = "Basic " + Buffer.from(`${email}:${token}`).toString("base64");
         const r = await fetch(`${base}/rest/api/3/myself`, { headers: { Authorization: auth, Accept: "application/json" } });
         const me = r.ok ? await r.json() : null;
-        add("Jira API token", r.ok ? "PASS" : "FAIL", r.ok ? `GET /myself → 200 (${me.displayName || me.emailAddress})` : `GET /myself → ${r.status}`);
-      } catch (e) { add("Jira API token", "FAIL", e.message); }
+        add("Jira API token", r.ok ? "PASS" : "WARN", r.ok ? `GET /myself → 200 (${me.displayName || me.emailAddress})` : `token rejected (GET /myself → ${r.status}) — fine if using Atlassian MCP OAuth; else check JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN`);
+      } catch (e) { add("Jira API token", "WARN", `token probe failed (${e.message}) — fine if using Atlassian MCP OAuth`); }
     }
   } else {
     const az = profile.tracker.azure || {};
@@ -249,6 +278,34 @@ async function main() {
           } else add(label, "FAIL", `GET repos/${owner}/${name} → ${res.status}`);
         } catch (e) { add(label, "FAIL", e.message); }
       }
+    }
+  }
+
+  // 11. Storefront upstream ref — /qa-fix Gate 1b diffs a client frontend fork against
+  //     `vc-frontend @ upstreamRef` to tell a client customization from a platform bug;
+  //     a non-resolvable ref breaks that diff. Confirm the baked ref actually resolves in
+  //     the upstream repo. WARN (not FAIL) — Gate 1b has a reconstruct/ask fallback, so a
+  //     bad ref must not block deployment readiness. Native platform / no fork ⇒ SKIP.
+  const feForks = clientRepos.filter((r) => r?.kind === "frontend" && r?.upstream);
+  if (!feForks.length) {
+    add("Storefront upstream ref", "SKIP", "no storefront fork (native platform or client without a vc-frontend fork)");
+  } else {
+    for (const r of feForks) {
+      const bare = splitRepo(r.name).name;
+      const label = feForks.length > 1 ? `Storefront upstream ref (${bare})` : "Storefront upstream ref";
+      const ref = r.upstreamRef || "";
+      const m = /^(\d+)\.(\d+)/.exec(ref);
+      const suggest = m ? `${m[1]}.${m[2]}.0` : "the line base tag";
+      const flag = r.upstreamRefResolved === false ? " [upstreamRefResolved:false]" : "";
+      if (!ref) { add(label, "WARN", `${r.upstream}: upstreamRef missing — Gate 1b will reconstruct/ask`); continue; }
+      if (!ghtok) { add(label, "WARN", `cannot probe ${r.upstream} @ ${ref} — no GitHub token`); continue; }
+      try {
+        const res = await fetch(`https://api.github.com/repos/${r.upstream}/commits/${encodeURIComponent(ref)}`, {
+          headers: { "User-Agent": "vc-verify", Accept: "application/vnd.github+json", Authorization: `Bearer ${ghtok}` },
+        });
+        if (res.ok) add(label, "PASS", `${r.upstream} @ ${ref} resolves`);
+        else add(label, "WARN", `${r.upstream} @ ${ref} does not resolve (→ ${res.status})${flag} — Gate 1b will reconstruct (try ${suggest}) or ask`);
+      } catch (e) { add(label, "WARN", `probe failed for ${r.upstream} @ ${ref}: ${e.message}`); }
     }
   }
 

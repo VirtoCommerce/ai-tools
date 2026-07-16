@@ -1,8 +1,14 @@
 # BUG: Pricing Export — "Select data to export" toolbar overlaps the grid column header
 
-## Status: CONFIRMED — DUPLICATE of VCST-5276 (open fix PR #101 is INCOMPLETE)
+## Status: FIXED
 
-**Env:** vcst-qa @ Platform 3.1038.0 (running PR #101 alpha artifact) · Admin SPA · Chrome DevTools MCP
+## Resolution
+- **Fixed in:** VirtoCommerce.Export 3.1003.0 (deployed on vcst-qa) — completes PR #101 via the report's recommended Option A
+- **JIRA:** VCST-5276
+- **Verified:** 2026-07-15
+- **Verification method:** /qa-bug re-verification sweep (source + live geometry). The `export-generic-viewer.tpl.html` template now renders the "Important!" note (`p.text.__note`) in the `.blade-content > .inner-block` band **above** the grid, leaving `blade-static` holding only the `searchrow` (no inline `position`/fixed-px/`ng-style`). Live read-only `getBoundingClientRect`: `gridHeader.top (320) ≥ searchRow.bottom (255)` → **overlapPx = 0** (the report's acceptance criterion). Evidence: `reports/bugs/screenshots/VCST-5276-reverify-picker-blade.png`.
+
+**Env (original report):** vcst-qa @ Platform 3.1038.0 (running PR #101 alpha artifact) · Admin SPA · Chrome DevTools MCP
 
 ## Summary
 The generic Export data-picker blade ("Select data to export") renders the **Important!** note and the search/filter row stacked inside a fixed-height `blade-static`, so the search input + filter dropdown overflow **on top of** the ui-grid column header (40px overlap). This is the same defect already filed as **VCST-5276** (status: In Progress). The open auto-fix **PR #101** removed the absolute-positioning hacks but **deleted the height reservation without replacing it**, so the bug still reproduces on the deployed PR build — exactly the failure mode our own `css-layout-patterns.md` Recipe 2 warns about.

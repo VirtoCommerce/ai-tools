@@ -227,7 +227,7 @@ function loadState(statePath, ev) {
       /* corrupt — rebuild below */
     }
   }
-  return { processedLines: 0, transcriptPath: ev.transcript_path ?? null, current: null, totals: zeroCounts() };
+  return { processedLines: 0, transcriptPath: ev.transcript_path ?? null, current: null, totals: zeroCounts(), skillTotals: zeroCounts(), anySkillSeen: false };
 }
 
 function saveState(statePath, state) {
@@ -277,7 +277,7 @@ async function cmdInit(ev) {
     transcriptPath: ev.transcript_path ?? null,
     source: ev.source ?? null,
   });
-  saveState(state, { processedLines: 0, transcriptPath: ev.transcript_path ?? null, current: null, totals: zeroCounts() });
+  saveState(state, { processedLines: 0, transcriptPath: ev.transcript_path ?? null, current: null, totals: zeroCounts(), skillTotals: zeroCounts(), anySkillSeen: false });
 }
 
 async function cmdRecord(ev) {
@@ -290,7 +290,14 @@ async function cmdRecord(ev) {
   const { span, processed } = scanTranscript(transcriptPath, state.processedLines);
   state.processedLines = processed;
   addCounts(state.totals, span.counts);
-  if (state.current) addCounts(state.current.signals, span.counts);
+  // Attribute the delta to a SKILL only when one was open (state.current). skillTotals
+  // therefore excludes the session-prefix noise (git/Bash/Edit before any skill ran) —
+  // it is what the end-of-session consent prompt is scored against, so plain development
+  // sessions never trigger it (VCST-5477 refinement).
+  if (state.current) {
+    addCounts(state.current.signals, span.counts);
+    addCounts((state.skillTotals ??= zeroCounts()), span.counts);
+  }
 
   // Close the previous skill's span.
   if (state.current) {
@@ -315,6 +322,9 @@ async function cmdRecord(ev) {
   const startTs = nowIso();
   state.current = { skill, args, startTs, signals: zeroCounts(), details: [] };
   state.transcriptPath = transcriptPath;
+  // A skill actually ran this session — the consent prompt is gated on this so a
+  // session with zero skill invocations is never offered self-diagnosis.
+  state.anySkillSeen = true;
   // Dedup guard (VCST-5477): a session that ran the diagnostician itself must
   // never be offered the end-of-session consent prompt — the diagnostician
   // never diagnoses its own invocation.
@@ -335,6 +345,7 @@ async function cmdFinalize(ev) {
   addCounts(state.totals, span.counts);
   if (state.current) {
     addCounts(state.current.signals, span.counts);
+    addCounts((state.skillTotals ??= zeroCounts()), span.counts);
     state.current.details = state.current.details.concat(span.details).slice(0, 25);
   }
 
@@ -345,6 +356,12 @@ async function cmdFinalize(ev) {
   const t = state.totals;
   const anomalyScore = t.tool_error * 3 + t.permission_denied * 2 + t.hook_failure * 3;
   const anomalies = SIGNAL_CLASSES.filter((c) => c !== "stop_bail" && t[c] > 0).map((c) => ({ class: c, count: t[c] }));
+  // Skill-attributed score — signals that occurred WHILE a vc-fix skill was running
+  // (excludes the session-prefix development noise). This is what gates the consent
+  // prompt, so a session that only edited code / ran git never triggers self-diagnosis.
+  const st = state.skillTotals ?? zeroCounts();
+  const skillAnomalyScore = st.tool_error * 3 + st.permission_denied * 2 + st.hook_failure * 3;
+  const skillAnomalies = SIGNAL_CLASSES.filter((c) => c !== "stop_bail" && st[c] > 0).map((c) => ({ class: c, count: st[c] }));
 
   appendRecord(jsonl, {
     type: "finalize",
@@ -354,41 +371,51 @@ async function cmdFinalize(ev) {
     totals: t,
     anomalyScore,
     anomalies,
+    // Skill-scoped view (the consent driver) alongside the session-wide totals.
+    anySkillSeen: Boolean(state.anySkillSeen),
+    skillTotals: st,
+    skillAnomalyScore,
+    skillAnomalies,
     stopBailCount: t.stop_bail,
     openSkill: state.current
       ? { skill: state.current.skill, args: state.current.args, startTs: state.current.startTs, signals: state.current.signals }
       : null,
   });
 
-  // End-of-session consent prompt (VCST-5477 — Tier B trigger). When the score
-  // crosses the threshold, surface a SINGLE plain yes/no to the user asking
-  // whether to run the on-demand diagnostician. NEVER auto-run. Guards:
-  //   - one-shot per session (`promptedConsent`), so a Stop firing every turn
-  //     can't nag or loop;
+  // End-of-session consent prompt (VCST-5477 — Tier B trigger). When a SKILL-scoped
+  // anomaly crosses the threshold, surface a SINGLE consent question asking whether to
+  // run the on-demand diagnostician. NEVER auto-run without the user's answer. Guards:
+  //   - a skill actually ran this session (`anySkillSeen`) — a plain development
+  //     session (git/Bash/Edit, no skill) is NEVER offered self-diagnosis;
+  //   - the score is the SKILL-attributed one (`skillAnomalyScore`), so session-prefix
+  //     noise (a failing tsc PostToolUse on an Edit, a non-zero Bash exit) doesn't trip it;
+  //   - one-shot per session (`promptedConsent`), so a Stop firing every turn can't nag;
   //   - never in a session that ran the diagnostician itself (`selfCheckSeen`);
   //   - opt-out via VC_FIX_DIAG_CONSENT=off.
-  // Mechanism: a `Stop` hook returning {decision:"block", reason} resumes the
-  // agent with `reason` as guidance — here, an instruction to ASK the user and
-  // do nothing else. If the harness ignores the block, we simply don't prompt
-  // (fail-safe toward not nagging); `promptedConsent` is set regardless so we
-  // never re-block.
+  // Mechanism: a `Stop` hook returning {decision:"block", reason} resumes the agent with
+  // `reason` as guidance — here, an instruction to ASK via the AskUserQuestion tool and,
+  // only on an explicit Yes, run the `/vc-self-check` skill. If the harness ignores the
+  // block we simply don't prompt (fail-safe toward not nagging); `promptedConsent` is set
+  // regardless so we never re-block.
   const consentOff = /^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CONSENT || "");
   const shouldPrompt =
-    !consentOff && !state.promptedConsent && !state.selfCheckSeen && anomalyScore >= CONSENT_THRESHOLD;
+    !consentOff && !state.promptedConsent && !state.selfCheckSeen && state.anySkillSeen && skillAnomalyScore >= CONSENT_THRESHOLD;
   if (shouldPrompt) state.promptedConsent = true;
   saveState(statePath, state);
 
   if (shouldPrompt) {
-    const parts = anomalies.map((a) => `${a.count}× ${a.class}`).join(", ");
+    const parts = skillAnomalies.map((a) => `${a.count}× ${a.class}`).join(", ");
     const reason = [
-      "During this session some vc-fix plugin tools behaved unexpectedly",
+      "During this session a vc-fix plugin skill behaved unexpectedly",
       parts ? ` (${parts})` : "",
-      ".\n\nAsk the user this single yes/no question and then WAIT for their answer — ",
-      "do NOT run any diagnosis or command yourself:\n\n",
-      '  "During this session some plugin tools behaved unexpectedly. Run self-diagnosis ',
+      ".\n\nAsk the user, using the AskUserQuestion tool (a single question, header ",
+      '"Self-diagnose", options exactly "Yes" and "No"):\n\n',
+      '  "During this session some plugin skills behaved unexpectedly. Run self-diagnosis ',
       "to identify the problems and prepare a quality report for VirtoCommerce ",
-      '(to improve the skills)?  [yes / no]"\n\n',
-      "Only if the user answers yes, invoke `/vc-self-check`. If no, do nothing.",
+      '(to improve the skills)?"\n\n',
+      "WAIT for the answer. If the user picks Yes, run the `vc-self-check` skill (invoke it ",
+      "via the Skill tool) and follow it. If No (or anything else), do nothing further. ",
+      "Do NOT run any diagnosis yourself before the user answers.",
     ].join("");
     process.stdout.write(JSON.stringify({ decision: "block", reason }));
   }

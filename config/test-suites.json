@@ -94,8 +94,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 32,
-      "estimatedMinutes": 22,
+      "testCount": 33,
+      "estimatedMinutes": 24,
       "agent": "qa-frontend-expert",
       "tags": [
         "catalog",
@@ -786,8 +786,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 40,
-      "estimatedMinutes": 28,
+      "testCount": 44,
+      "estimatedMinutes": 31,
       "agent": "qa-backend-expert",
       "tags": [
         "store",
@@ -1134,7 +1134,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P1",
-      "testCount": 21,
+      "testCount": 19,
       "estimatedMinutes": 15,
       "agent": "qa-testing-expert",
       "tags": [
@@ -2297,8 +2297,8 @@
       "layer": "backend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 114,
-      "estimatedMinutes": 82,
+      "testCount": 115,
+      "estimatedMinutes": 83,
       "agent": "qa-backend-expert",
       "tags": [
         "smoke",
@@ -2396,7 +2396,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 47,
+      "testCount": 48,
       "estimatedMinutes": 50,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2689,6 +2689,14 @@
     "layout-stability": {
       "include": [
         "048b"
+      ]
+    },
+    "store-asset-url": {
+      "include": [
+        "050m",
+        "034",
+        "002",
+        "078"
       ]
     },
     "frontend": {

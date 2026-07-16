@@ -1,6 +1,13 @@
 # [XCart] B2B user accrues multiple "default" carts → read/write desync + orphan shipment/payment accretion on every cart-page load
 
-## Status: CONFIRMED
+## Status: FIXED
+
+## Resolution
+- **Fixed in:** VirtoCommerce.XCart 3.1026.0 / Cart 3.1007.0 (deployed on vcst-qa; report was XCart 3.1019.0-pr-124-89a6)
+- **JIRA:** — (unfiled)
+- **Verified:** 2026-07-15
+- **Verification method:** /qa-bug re-verification sweep (playwright-edge real-user + admin REST probes). For the B2B user: `/api/carts/search` → exactly **1** cart named "default" (no duplicate accretion); `current` read-target == that one cart id (no read/write divergence); after adding an item, **3 consecutive /cart loads kept shipment count at 1 with a stable shipment id** (report saw 5→6 accretion) — the append-on-load path is now an upsert; and storefront **Clear cart committed** (items/shipments/payments = 0). Cart restored to empty; no residual carts/shipments.
+- **Caveat:** the user began with a single clean cart, so the read/write **divergence** could not be observed directly (needs a pre-existing multi-"default"-cart state). The falsifiable causal mechanism — every `/cart` load appending a fresh orphan shipment — is demonstrably no longer firing, which is the strongest available proof; hence FIXED over INCONCLUSIVE.
 
 **Severity:** High (functional — cart becomes effectively non-mutable for the user; checkout state corrupts)
 **Env:** vcst-qa — Platform `3.1035.0`, XCart `3.1019.0-pr-124-89a6`, store B2B-store

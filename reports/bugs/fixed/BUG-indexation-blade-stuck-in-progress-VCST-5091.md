@@ -1,6 +1,12 @@
 # BUG: Indexation blade stays "In progress" after a fatal error during index creation
 
-## Status: CONFIRMED
+## Status: FIXED
+
+## Resolution
+- **Fixed in:** vc-module-search PR #138 ("always seal the run's own notification on finish"), shipped in **VirtoCommerce.Search 3.1005.0** (deployed on vcst-qa; report was 3.1001.0)
+- **JIRA:** VCST-5091
+- **Verified:** 2026-07-15
+- **Verification method:** /qa-bug re-verification sweep (source). `IndexingJobs.RunIndexJobAsync` inner `finally` now calls `_progressHandler.Finish(notification)` **unconditionally** (no longer guarded by `if (notificationId.IsNullOrEmpty())`), sealing this run's own notification even on the manual-job error path — carries an explicit `VCST-5091` comment. File SHA identical between `dev` and release tag `3.1005.0`. Live browser repro was never possible (fault must be source-injected), so source confirmation in the deployed release is authoritative.
 
 **Severity:** Medium (functional — Admin UX / observability; no data loss)
 **Env:** vcst-qa @ Platform 3.1032.0, VirtoCommerce.Search 3.1001.0

@@ -1,5 +1,7 @@
 # CyberSource Microform fields signal errors by color only — no readable text `[P3]`
 
+## Status: Rejected - No bug. The problem on CyberSource side
+
 **Env:** vcst-qa @ Platform 3.1043.0, Theme 2.53.0-pr-2368
 **Ref:** REG-2026-07-14-0018 / PAY-CS-004, PAY-CS-005, PAY-CS-010, PAY-CS-011 · WCAG 1.4.1 · BL-PAY-001 (error-message clause)
 

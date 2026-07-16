@@ -1,7 +1,13 @@
 # BUG: Skyflow card form has no per-brand CVV length validation — 3-digit CVV on Amex enables Place order `[Low / P3-ux]`
 
-## Status: READY_TO_SUBMIT
+## Status: FIXED
 **JIRA:** VCST-5202 (filed 2026-06-05)
+
+## Resolution
+- **Fixed in:** Theme 2.54.0-alpha.2424 (VirtoCommerce.Skyflow 3.1003.0) — per-brand CVV validation added to the Skyflow card form
+- **JIRA:** VCST-5202
+- **Verified:** 2026-07-15
+- **Verification method:** /qa-bug re-verification sweep (playwright-chrome, real-user). Amex `378282246310005` + 3-digit CVV `123` now rejected inline ("Provide a valid security code."), CVV placeholder is brand-aware ("1111"), Place order stays DISABLED; 4-digit CVV clears the error and enables. Evidence: `reports/regression/REG-2026-07-15-1549/screenshots/VERIFY-Skyflow-amex-3digit-FIXED-error-disabled.png`.
 
 **Env:** vcst-qa @ Platform 3.1032.0, theme 2.51.0-pr-2308 (Skyflow cart-embedded AllowCartPayment flow / VCST-5009)
 

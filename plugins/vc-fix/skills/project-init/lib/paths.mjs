@@ -26,8 +26,9 @@
  * Hardcoding an absolute path (or the current user's name) is forbidden — it does not
  * survive a different user, OS, or a plugin upgrade (the cache dir is version-stamped).
  */
-import { dirname, resolve } from "path";
+import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
+import { homedir } from "os";
 
 /**
  * Root for all generated project state. Symmetric with the readers (process.cwd()).
@@ -49,6 +50,24 @@ export function outputRoot() {
 export function pluginRoot() {
   if (process.env.CLAUDE_PLUGIN_ROOT) return resolve(process.env.CLAUDE_PLUGIN_ROOT);
   return resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+}
+
+/**
+ * Stable, version-agnostic link that always resolves to the ACTIVE plugin root.
+ * The SessionStart hook (hooks/vc-fix-latest-link.mjs) repoints `~/.claude/vc-fix-latest`
+ * at the current versioned cache dir every session. gen-profile bakes THIS path into
+ * paths.pluginRoot (for an installed plugin) so the profile self-heals across upgrades,
+ * instead of the versioned dir that becomes stale/deleted on the next upgrade.
+ * This string MUST match the `link` computed in hooks/vc-fix-latest-link.mjs.
+ * @returns {string} absolute link path, or "" if the home directory is unresolvable
+ */
+export function stableLinkPath() {
+  try {
+    const home = homedir();
+    return home ? join(home, ".claude", "vc-fix-latest") : "";
+  } catch {
+    return "";
+  }
 }
 
 /**
