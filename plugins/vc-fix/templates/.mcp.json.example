@@ -14,7 +14,7 @@
         "--config",
         "config/mcp-playwright-chrome.config.json",
         "--secrets",
-        ".env.playwright.local"
+        ".env.local"
       ]
     },
     "playwright-firefox": {
@@ -27,7 +27,7 @@
         "--config",
         "config/mcp-playwright-firefox.config.json",
         "--secrets",
-        ".env.playwright.local"
+        ".env.local"
       ]
     },
     "playwright-edge": {
