@@ -1,8 +1,14 @@
 # BUG: Org users see a permanent "locked out — contact administrator" message for a temporary (15-min) login lockout
 
-## Status: READY_TO_SUBMIT
+## Status: FIXED
 
-**JIRA:** [VCST-5374](https://virtocommerce.atlassian.net/browse/VCST-5374) · Fix PR: [vc-module-customer#303](https://github.com/VirtoCommerce/vc-module-customer/pull/303) (open)
+**JIRA:** [VCST-5374](https://virtocommerce.atlassian.net/browse/VCST-5374) · Fix PR: [vc-module-customer#303](https://github.com/VirtoCommerce/vc-module-customer/pull/303) (MERGED)
+
+## Resolution
+- **Fixed in:** vc-module-customer PR #303, shipped in **VirtoCommerce.Customer 3.1014.0** (deployed on vcst-qa; report tested pre-merge on `3.1013.0-pr-303`)
+- **JIRA:** VCST-5374
+- **Verified:** 2026-07-15
+- **Verification method:** /qa-bug re-verification sweep (live + source). Live: a dedicated throwaway org-member, 5 wrong-password `/connect/token` attempts → attempt-5 body `code=user_is_temporary_locked_out` ("…temporarily locked. Please try again after some time."). Source: `OrganizationIdRequestValidator` (Customer 3.1014.0) now branches `permanentLockOut = LockoutEnd == DateTime.MaxValue` → returns `UserIsTemporaryLockedOut()` for temporary locks. Throwaway account cleaned up.
 
 ## Verification 2026-06-26 — VERIFIED (pre-merge, on PR build)
 Verified live on vcst-qa against deployed PR alpha **VirtoCommerce.Customer `3.1013.0-pr-303-fe3b`**: org user now returns `user_is_temporary_locked_out` / "…temporarily locked. Please try again later." (UI + API), determinism 3/3, permanent-lock path still `user_is_locked_out`, non-org unchanged, lockout still enforced (BL-AUTH-003). Evidence: `tests/Sprint-current/VCST-5374/`. **Move to `fixed/` once PR #303 merges** — not advancing to FIXED/DONE pre-merge.

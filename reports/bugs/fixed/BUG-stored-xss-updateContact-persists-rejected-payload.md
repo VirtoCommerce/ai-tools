@@ -1,5 +1,14 @@
 # Stored-XSS: `updateContact` persists a payload it reports as rejected `[P1]` `[Security]`
 
+## Status: FIXED
+
+## Resolution
+- **Fixed in:** VirtoCommerce.Customer 3.1014.0 (deployed on vcst-qa; report filed at Platform 3.1043.0)
+- **JIRA:** — (unfiled)
+- **Verified:** 2026-07-15
+- **Verification method:** /qa-bug re-verification sweep (backend, live). `updateContact(firstName:"<script>alert(1)</script>")` still returns HTTP 200 + `errors:[VALIDATION]` + `data.updateContact:null`, but an independent admin `GET /api/members/{id}` now returns `firstName` **unchanged ("John")** — the rejected payload is no longer persisted. A valid `updateContact` in the same run succeeded, confirming validation is content-driven and now correctly blocks the write (validate-then-save ordering fixed). Contact restored to John Doe and re-read verified.
+- **Caveat:** only the **primary** surface (`updateContact` contact persistence) was re-verified. The report's **P2 second surface** — `AddOrUpdateCartShipment` persisting raw markup into cart delivery-address fields (SEC-XSS-001) — was **NOT re-tested** in this sweep. If that surface still matters, verify it separately before considering the cart-address vector closed.
+
 **Env:** vcst-qa @ Platform 3.1043.0, Theme 2.53.0-pr-2368
 **Cases:** SEC-INPUT-002 · SEC-XSS-004 · SEC-VALIDATION-001 · SEC-VALIDATION-002 (suite 044) · SEC-XSS-001 (cart, P2 second surface)
 

@@ -1,5 +1,13 @@
 # BUG: Organization favicon reverts to platform default on navigation — [Medium]
 
+## Status: FIXED
+
+## Resolution
+- **Fixed in:** Theme 2.54.0-alpha.2424 (WhiteLabeling 3.1002.0)
+- **JIRA:** — (unfiled)
+- **Verified:** 2026-07-15
+- **Verification method:** /qa-bug re-verification sweep (playwright-edge, real-user). Signed in as WL org-A user; after 3 full navigations (/catalog, /account/dashboard, reload) all `<link rel=icon>` still point to the org favicon `favicon_23b672d6-…webp`, org asset re-requested (GET 200), and `favicon-pwa-v1.svg` is never fetched. Evidence: `test-results/edge/verify-wl-favicon-persists-dashboard.png`. (Org favicon asset changed from the report's `favicon_5c3fcbf6…` to the current `favicon_23b672d6…`; the persistence behavior is corrected.)
+
 **Env:** vcst-qa @ Theme 2.53.0-pr-2343 · WhiteLabeling 3.1002.0
 **Layer:** vc-frontend (storefront) · **Refs:** FWL-017 · BL-WL-001
 

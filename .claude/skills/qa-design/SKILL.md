@@ -2,7 +2,7 @@
 name: qa-design
 description: "[Testing] Design system consistency & UX heuristics: live-token audit, BL-UI invariants, Nielsen's 10, Figma comparison."
 argument-hint: "component | page URL | flow name"
-disable-model-invocation: true
+
 ---
 
 # /qa-design — Design & UX Evaluation
