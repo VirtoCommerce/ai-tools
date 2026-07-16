@@ -22,6 +22,99 @@ A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills
 - **Delivery:** `skills/vc-self-check/deliver.mjs` (`/vc-self-check deliver`) — scrubbed (§2a client-code containment), consent-gated (draft-and-confirm) contribution to `VirtoCommerce/vc-mcp-testing-module`, routed by GitHub-token rights (PR / fork-PR / issue / local), with issue dedup.
 - Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
 
+### Fixed — `paths.pluginRoot` survives a plugin upgrade
+
+`/project-init` used to bake an absolute, **version-pinned** plugin path
+(`…/vc-tools/vc-fix/<version>`) into `project-profile.json` `paths.pluginRoot`. On upgrade
+the marketplace installs a new versioned sibling dir (old versions are not pruned), so the
+baked path went stale — every `/qa-fix`/`/qa-bug` `node "$pluginRoot/skills/…"` call then
+either failed (path gone) or silently ran the OLD version's scripts, and the profile never
+self-healed.
+
+- New `SessionStart` hook `hooks/vc-fix-latest-link.mjs` maintains a stable OS link
+  `~/.claude/vc-fix-latest` → the currently-active plugin root (Windows junction / POSIX
+  dir symlink; idempotent; refuses to replace a real directory; never blocks a session).
+  Plugin-declared hooks receive `${CLAUDE_PLUGIN_ROOT}` and the harness always loads the
+  active version's hooks, so no semver scan is needed.
+- `gen-profile.mjs` (`--runtime-mode plugin`) now bakes that stable link into
+  `paths.pluginRoot` (new `stableLinkPath()` in `skills/project-init/lib/paths.mjs`),
+  falling back to the versioned dir only if the home directory is unresolvable. The
+  `agent-project` checkout path is unchanged.
+- `verify-access.mjs` gained a **plugin root** check — `paths.pluginRoot` resolves and
+  `skills/qa-fix-routing/ado.mjs` is present under it — so a stale/broken link surfaces in
+  the readiness table instead of at Gate 2.
+- Backward compatible: existing profiles with a versioned path keep working until that dir
+  is pruned; a single new session re-links, so **no `/project-init` re-run is needed after
+  an upgrade**. Plugin-only change (`plugins/vc-fix/`); the project-scoped `.claude/`
+  checkout has no versioned cache dir and is unaffected.
+
+### Changed — self-diagnostics consent prompt: skill-gated, opinion-poll UI, auto-run on Yes
+
+The end-of-session `/vc-self-check` consent prompt fired on **any** session whose raw
+anomaly score was high — including plain development sessions (git/Bash/Edit, a failing
+`tsc` PostToolUse hook) where **no vc-fix skill ran** — and it asked as free text, then
+couldn't actually start because the command was `disable-model-invocation`.
+
+- **`session-telemetry.mjs`** now scores the consent trigger on **skill-attributed**
+  signals only (new `skillTotals`, accumulated while a skill span is open) and gates it on
+  `anySkillSeen` — a session with zero skill invocations is never offered self-diagnosis.
+  The finalize record carries `anySkillSeen` + `skillTotals` + `skillAnomalyScore` +
+  `skillAnomalies` alongside the session-wide totals.
+- The prompt text now instructs the model to ask via the **`AskUserQuestion`** tool
+  (Yes/No), and on **Yes** to run the `vc-self-check` skill directly.
+- **`/vc-self-check` drops `disable-model-invocation`** (command + skill) so the model can
+  run it on the operator's Yes; unprompted auto-triggering is ruled out by the description +
+  the existing recursion guards (`selfCheckSeen` one-shot + the collector dropping its own
+  `vc-self-check` spans). Docs (`CLAUDE.md`, `.claude/rules/skills-commands.md`) updated.
+- Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
+### Changed — self-diagnostics artifacts are ephemeral (log → analyze → contribute → delete)
+
+Local diagnostics under `<outputRoot>/.vc-fix/diagnostics/` are no longer meant to
+accumulate. Instead of a time-based retention sweep, the lifecycle is now
+**log → analyze → contribute → delete**: `deliver.mjs` cleans up the processed session's
+own artifacts once its finding is upstream.
+
+- On a successful **Issue** delivery (`--confirm`, or a dedup that is already upstream),
+  `deliver` deletes that session's `<sid>.jsonl` + `<sid>.state.json` + `DIAG-<sid>-*.md` +
+  this finding's `DELIVERY-*.md` — **that session only**, never other sessions. `--keep`
+  retains them.
+- **PR / fork-PR** (handed off — the human opens the PR) and **local** (no token, nothing
+  sent) delete nothing; the run prints a ready `--purge` cleanup command to run *after* the
+  PR is opened / after authenticating.
+- **Nothing worthwhile** (no BROKEN/DEGRADED finding) files nothing and offers the cleanup.
+- New flags: **`--purge`** (standalone terminal cleanup of the processed session, sends
+  nothing) and **`--keep`** (skip the auto-delete after a delivery). New session-scoped
+  `purgeSession()` + `sessionIdFromDiag()` in `deliver.mjs`.
+- Docs updated: `CLAUDE.md`, `.claude/rules/reports.md`, the `/vc-self-check` command + skill.
+  Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
+### Fixed — `upstreamRef` is a resolvable upstream tag (frontend provenance)
+
+`/project-init` derived a storefront fork's `upstreamRef` as the bare `MAJOR.MINOR` of the
+fork's `package.json` version (`2.49.7` → `2.49`) and wrote that into
+`project-profile.json`. `2.49` is a line label, not a git ref (422 on `vc-frontend`); so is
+the fork's own patch `2.49.7` (the fork's `.7` has no upstream tag). `/qa-fix` Gate 1b uses
+`upstreamRef` to diff the fork against unmodified upstream — a non-resolvable ref broke that
+diff, over-attributing everything to "client" (safe but kills upstream routing), with no
+signal that the ref was never validated.
+
+- `discover-repos.mjs` now resolves the fork line to a **concrete, existing** upstream tag:
+  `git ls-remote --tags <upstream>` → pick the smallest tag on the line (its base, e.g.
+  `2.49.0` — the guaranteed common ancestor ≤ the fork), falling back to the highest earlier
+  tag when the line was never tagged. It writes `upstreamRef` = that tag plus
+  `upstreamRefResolved: true|false` and `forkVersion` (kept for reference). Offline / no
+  token → keeps the line label, `upstreamRefResolved: false`, and asks the operator.
+- `/qa-fix` Gate 1b gains a documented fallback: when `upstreamRefResolved === false` or the
+  ref 422s, reconstruct `<major>.<minor>.0` → highest `<major>.<minor>.x` → nearest tag ≤
+  line → ask; never silently treat everything as client.
+- Reporting: `discover-repos.mjs` prints `… @ 2.49.0 (verified)` / `(UNVERIFIED — ref not
+  found)` per frontend fork, and `verify-access.mjs` adds a **"Storefront upstream ref"** row
+  (PASS resolves / WARN doesn't — non-blocking, Gate 1b reconstructs / SKIP no fork).
+- `clientUpstream()` (`repo-router.ts`) now returns `upstreamRefResolved` + `forkVersion`.
+  Existing profiles are safe to leave; a `/project-init` re-run refreshes them, or an
+  operator can hand-fix `upstreamRef` to the line base (e.g. `2.49` → `2.49.0`).
+
 ---
 
 ## [0.7.0] — 2026-07-08

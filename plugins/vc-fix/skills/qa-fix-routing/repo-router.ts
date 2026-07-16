@@ -151,8 +151,17 @@ export interface ClientRepoMeta {
   testCmd?: string;
   /** The platform repo this client repo was forked/derived from (provenance). */
   upstream?: string;
-  /** The platform version/tag/branch the client fork was cut from (provenance anchor). */
+  /** The platform version/tag/branch the client fork was cut from (provenance anchor).
+   *  Since VCST self-diagnostics: a CONCRETE, resolvable upstream tag (the fork line's
+   *  base, e.g. `2.49.0`), not the bare MAJOR.MINOR line label — see discover-repos.mjs. */
   upstreamRef?: string;
+  /** Whether `upstreamRef` was verified to resolve in the upstream repo at discovery time.
+   *  false ⇒ the bare line label / fork version was kept (offline, no token, or the line
+   *  had no upstream tag); Gate 1b must reconstruct a resolvable ref before diffing. */
+  upstreamRefResolved?: boolean;
+  /** The fork's OWN package.json version (e.g. `2.49.7`), kept for reference — its patch
+   *  number is independent of upstream tags, so it is NOT a resolvable ref. */
+  forkVersion?: string;
 }
 
 const CLIENT_FULL = new Set<string>();
@@ -170,9 +179,11 @@ for (const r of CLIENT_REPOS) {
   if (r.host) CLIENT_HOSTS.set(bare, r.host);
   if (r.defaultBranch) CLIENT_BRANCHES.set(bare, r.defaultBranch);
   const meta: ClientRepoMeta = {};
-  for (const k of ["installCmd", "buildCmd", "typecheckCmd", "lintCmd", "testCmd", "upstream", "upstreamRef"] as const) {
+  for (const k of ["installCmd", "buildCmd", "typecheckCmd", "lintCmd", "testCmd", "upstream", "upstreamRef", "forkVersion"] as const) {
     if (r[k]) meta[k] = r[k];
   }
+  // Booleans must be copied explicitly — a falsy `false` would be dropped by `if (r[k])`.
+  if (typeof r.upstreamRefResolved === "boolean") meta.upstreamRefResolved = r.upstreamRefResolved;
   if (Object.keys(meta).length) CLIENT_META.set(bare, meta);
 }
 
@@ -301,11 +312,20 @@ export function repoProfile(repo: string): RepoProfile {
  * and the version anchor), or null for a platform repo / an unconfigured client repo.
  * Read by the frontend-provenance routing check (client customization vs platform bug).
  */
-export function clientUpstream(repo: string): { upstream: string; upstreamRef: string } | null {
+export function clientUpstream(
+  repo: string,
+): { upstream: string; upstreamRef: string; upstreamRefResolved: boolean; forkVersion: string } | null {
   if (repoOwnership(repo) !== "client") return null;
   const meta = CLIENT_META.get(repoName(repo).name);
   if (!meta?.upstream) return null;
-  return { upstream: meta.upstream, upstreamRef: meta.upstreamRef || "" };
+  return {
+    upstream: meta.upstream,
+    upstreamRef: meta.upstreamRef || "",
+    // Default true only when a ref exists and discovery didn't explicitly flag it unresolved,
+    // so a pre-existing profile (no flag) with a concrete ref isn't spuriously reported unverified.
+    upstreamRefResolved: meta.upstreamRefResolved ?? Boolean(meta.upstreamRef),
+    forkVersion: meta.forkVersion || "",
+  };
 }
 
 /**

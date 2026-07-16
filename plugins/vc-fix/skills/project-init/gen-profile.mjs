@@ -32,7 +32,7 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
-import { outputRoot, resolveOutPath, pluginRoot } from "./lib/paths.mjs";
+import { outputRoot, resolveOutPath, pluginRoot, stableLinkPath } from "./lib/paths.mjs";
 
 const ENUMS = {
   "project-type": ["platform", "client"],
@@ -144,7 +144,17 @@ function main() {
 
   // paths — absolute roots so skills never break on a drifted cwd and know plugin vs project.
   set("paths.projectRoot", outputRoot());
-  set("paths.pluginRoot", pluginRoot());
+  // pluginRoot: an INSTALLED plugin lives in a VERSION-STAMPED cache dir
+  // (…/vc-fix/<version>) that becomes a NEW sibling on every upgrade (old versions are
+  // NOT pruned). Baking that versioned path would leave the profile pointing at a stale
+  // (or deleted) version after any upgrade — every command's `node "$pluginRoot/skills/…"`
+  // would then run the wrong scripts or fail. So in plugin mode we bake the STABLE,
+  // version-agnostic link (~/.claude/vc-fix-latest) that the SessionStart hook
+  // (hooks/vc-fix-latest-link.mjs) repoints at the active version each session — the
+  // profile self-heals across upgrades. agent-project mode (helpers run from the checkout)
+  // keeps the resolved dir. Fall back to the versioned dir if homedir is unresolvable.
+  const stable = runtimeMode === "plugin" ? stableLinkPath() : "";
+  set("paths.pluginRoot", stable || pluginRoot());
   const envName = args.env || process.env.TEST_ENV || "";
   if (envName) set("paths.perEnv", `.env.${envName}`);
 

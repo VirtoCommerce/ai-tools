@@ -8,6 +8,14 @@ export interface ProfileRepo {
   kind?: "frontend" | "module" | "platform";
   host?: "github" | "azure-repos";
   defaultBranch?: string;
+  /** The platform repo a client fork was derived from (provenance). */
+  upstream?: string;
+  /** A concrete, resolvable upstream tag (the fork line's base, e.g. "2.49.0"). */
+  upstreamRef?: string;
+  /** Whether upstreamRef was verified to resolve in the upstream repo at discovery. */
+  upstreamRefResolved?: boolean;
+  /** The fork's own package.json version (e.g. "2.49.7"), kept for reference. */
+  forkVersion?: string;
 }
 
 export interface ProjectProfile {

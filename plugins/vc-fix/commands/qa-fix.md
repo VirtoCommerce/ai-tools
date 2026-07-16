@@ -171,7 +171,17 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   > returned 0 hits repeatedly last run before a filename query worked).
   Resolve it from the RCA
   anchor's **code provenance** against the fork's upstream (`clientUpstream(routeRepo)` → `{ upstream,
-  upstreamRef }`): fetch the anchor file from the client repo AND from `vc-frontend @ upstreamRef`, then
+  upstreamRef, upstreamRefResolved, forkVersion }`).
+  > **`upstreamRef` must be a RESOLVABLE tag before you diff.** `/project-init` now bakes a concrete,
+  > verified upstream tag (the fork line's base, e.g. `2.49.0`) — NOT the bare line label `2.49` or the
+  > fork's own patch version `2.49.7`, neither of which is a git ref (both 422 on `vc-frontend`). Use it
+  > as-is when `upstreamRefResolved === true`. Otherwise (`upstreamRefResolved === false`, or the ref 422s
+  > when you fetch it) **reconstruct** a resolvable baseline before comparing: try `<major>.<minor>.0`,
+  > then the highest existing `<major>.<minor>.x` (`gh api repos/<upstream>/tags` / `git ls-remote --tags
+  > <upstream>`), then the nearest tag ≤ the line. If NONE resolves → **ASK the operator** for the base
+  > tag — do NOT silently treat everything as client (that quietly kills upstream routing). Over-attributing
+  > to client is safe; leaking client code upstream is not (§2a), so when in doubt STOP.
+  Then fetch the anchor file from the client repo AND from `vc-frontend @ upstreamRef`, then
   feed the signals to `classifyFrontendProvenance()` (`skills/qa-fix-routing/provenance.ts`) — anchor only in client, or
   differs ⇒ **client** (fix + PR on the client repo); byte-identical to unmodified upstream ⇒ **platform**;
   anchor missing / uncomparable ⇒ **client + LOW ⇒ STOP** (containment-first, §2a). Then
