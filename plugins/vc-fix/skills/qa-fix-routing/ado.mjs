@@ -36,7 +36,7 @@
  */
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
-import { dirname, join, resolve } from "path";
+import { basename, dirname, join, resolve } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -192,6 +192,130 @@ async function call(method, url, { body, contentType } = {}) {
 const V = "api-version=7.1";
 const enc = encodeURIComponent;
 
+// ---- Markdown -> HTML safety net (Azure fields are HTML) -----------------------------
+// System.Description / Microsoft.VSTS.TCM.ReproSteps / comments are HTML on the ADO side
+// (get-workitem stripHtml()s them on read). The skills SHOULD author HTML directly
+// (knowledge/execution/azure-html-format.md) — but if Markdown slips through it renders as a
+// literal #/**/| wall (the exact defect this guards). `ensureAzureHtml` passes author HTML
+// through untouched and converts anything that still looks like Markdown.
+const HTML_BLOCK_RE =
+  /<(h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|br|pre|code|b|strong|em|i|a|img|details|summary|blockquote)\b/i;
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Inline Markdown -> HTML, applied to already-escaped text.
+function inlineMd(s) {
+  return s
+    .replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`)
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => `<a href="${u}">${t}</a>`);
+}
+
+function mdToHtml(md) {
+  const lines = String(md).replace(/\r\n/g, "\n").split("\n");
+  const out = [];
+  let i = 0;
+  let listType = null; // "ol" | "ul"
+  const closeList = () => {
+    if (listType) {
+      out.push(`</${listType}>`);
+      listType = null;
+    }
+  };
+  const isBlockStart = (l) => /^(#{1,6}\s|```|\s*\|.*\|\s*$|\s*\d+\.\s|\s*[-*+]\s)/.test(l);
+  while (i < lines.length) {
+    const line = lines[i];
+    // fenced code block
+    if (/^\s*```/.test(line)) {
+      closeList();
+      const buf = [];
+      i++;
+      while (i < lines.length && !/^\s*```/.test(lines[i])) buf.push(escapeHtml(lines[i++]));
+      i++; // closing fence
+      out.push(`<pre><code>${buf.join("\n")}</code></pre>`);
+      continue;
+    }
+    // pipe table
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      closeList();
+      const rows = [];
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) rows.push(lines[i++]);
+      const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+      const isSep = (r) => /-/.test(r) && /^\s*\|?[\s:|-]+\|?\s*$/.test(r) && !/[^\s:|-]/.test(r);
+      let html = '<table border="1" style="border-collapse:collapse;">';
+      let headerDone = false;
+      for (const r of rows) {
+        if (isSep(r)) {
+          headerDone = true;
+          continue;
+        }
+        const tag = !headerDone && rows.some(isSep) ? "th" : "td";
+        html += "<tr>" + cells(r).map((c) => `<${tag}>${inlineMd(escapeHtml(c))}</${tag}>`).join("") + "</tr>";
+      }
+      out.push(html + "</table>");
+      continue;
+    }
+    // heading
+    let m = /^(#{1,6})\s+(.*)$/.exec(line);
+    if (m) {
+      closeList();
+      const lvl = Math.min(m[1].length + 2, 6); // "# " -> h3
+      out.push(`<h${lvl}>${inlineMd(escapeHtml(m[2]))}</h${lvl}>`);
+      i++;
+      continue;
+    }
+    // ordered list item
+    m = /^\s*\d+\.\s+(.*)$/.exec(line);
+    if (m) {
+      if (listType !== "ol") {
+        closeList();
+        out.push("<ol>");
+        listType = "ol";
+      }
+      out.push(`<li>${inlineMd(escapeHtml(m[1]))}</li>`);
+      i++;
+      continue;
+    }
+    // unordered list item
+    m = /^\s*[-*+]\s+(.*)$/.exec(line);
+    if (m) {
+      if (listType !== "ul") {
+        closeList();
+        out.push("<ul>");
+        listType = "ul";
+      }
+      out.push(`<li>${inlineMd(escapeHtml(m[1]))}</li>`);
+      i++;
+      continue;
+    }
+    // blank line
+    if (/^\s*$/.test(line)) {
+      closeList();
+      i++;
+      continue;
+    }
+    // paragraph
+    closeList();
+    const para = [];
+    while (i < lines.length && !/^\s*$/.test(lines[i]) && !isBlockStart(lines[i])) {
+      para.push(inlineMd(escapeHtml(lines[i++])));
+    }
+    out.push(`<p>${para.join("<br/>")}</p>`);
+  }
+  closeList();
+  return out.join("\n");
+}
+
+/** Author-provided HTML passes through; Markdown is converted. Empty stays empty. */
+function ensureAzureHtml(text) {
+  const s = String(text || "").trim();
+  if (!s) return s;
+  return HTML_BLOCK_RE.test(s) ? s : mdToHtml(s);
+}
+
 // ---- commands -----------------------------------------------------------------------
 const COMMANDS = {
   async "get-workitem"(args) {
@@ -220,10 +344,14 @@ const COMMANDS = {
     if (!args.id) fail("--id required");
     const text = args["text-file"] ? readFileSync(resolve(args["text-file"]), "utf-8") : args.text;
     if (!text) fail("--text or --text-file required");
+    // Comments are an HTML field — convert Markdown so it doesn't render as a single
+    // unreadable blob. Pass `--raw` to skip the guard (already-HTML author content is
+    // detected and passed through automatically either way).
+    const body = args.raw ? String(text) : ensureAzureHtml(text);
     const d = await call(
       "POST",
       `${base(args, "tracker")}/_apis/wit/workItems/${args.id}/comments?api-version=7.0-preview.3`,
-      { body: { text: String(text) } },
+      { body: { text: body } },
     );
     return { id: d.id, ok: true };
   },
@@ -273,9 +401,12 @@ const COMMANDS = {
     const repro = args["repro-file"]
       ? readFileSync(resolve(args["repro-file"]), "utf-8")
       : str(args.repro);
+    // Description & ReproSteps are HTML fields — convert Markdown so it doesn't render as a
+    // literal #/**/| wall (author HTML is detected and passed through). `--raw` opts out.
+    const toField = (v) => (args.raw ? String(v) : ensureAzureHtml(v));
     const fields = [{ op: "add", path: "/fields/System.Title", value: str(args.title) }];
-    if (description) fields.push({ op: "add", path: "/fields/System.Description", value: String(description) });
-    if (repro) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: String(repro) });
+    if (description) fields.push({ op: "add", path: "/fields/System.Description", value: toField(description) });
+    if (repro) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: toField(repro) });
     const severity = str(args.severity);
     if (severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: severity });
     if (args.priority !== undefined && args.priority !== true)
@@ -285,6 +416,15 @@ const COMMANDS = {
     if (tagsInput) {
       const tags = tagsInput.split(/[,;]/).map((s) => s.trim()).filter(Boolean).join("; ");
       if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
+    }
+    // Attachment relations — comma-separated attachment URLs from `upload-attachment`. They
+    // show in the work item's Attachments tab; inline images (`<img src=...>` in the HTML)
+    // are independent and need only the URL in the field, not this relation.
+    const attachInput = str(args.attachments);
+    if (attachInput) {
+      for (const url of attachInput.split(",").map((s) => s.trim()).filter(Boolean)) {
+        fields.push({ op: "add", path: "/relations/-", value: { rel: "AttachedFile", url, attributes: { comment: "" } } });
+      }
     }
     // The leading `$` before the type is literal + required by the ADO create endpoint.
     // Reuse the SAME resolved base for both the create call and the returned URL — building
@@ -305,6 +445,37 @@ const COMMANDS = {
       state: d.fields?.["System.State"],
       url: `${apiUrl}/_workitems/edit/${d.id}`,
     };
+  },
+
+  // Upload a file (screenshot, HAR, GQL log) to ADO and return its attachment URL. Embed the
+  // URL inline in a Description/comment (`<img src=...>`) and/or pass it to create-workitem's
+  // `--attachments` to also link it in the Attachments tab. Binary body — direct fetch (the
+  // shared `call` helper JSON-encodes non-string bodies), like get-file.
+  async "upload-attachment"(args) {
+    const file = args.file;
+    if (typeof file !== "string" || !file) fail("--file <path> required");
+    const p = resolve(file);
+    const buf = readFileSync(p);
+    const name = typeof args.name === "string" && args.name ? args.name : basename(p);
+    const url = `${base(args, "tracker")}/_apis/wit/attachments?fileName=${enc(name)}&${V}`;
+    const headers = {
+      Authorization: await authHeader(),
+      Accept: "application/json",
+      "Content-Type": "application/octet-stream",
+    };
+    const res = await fetch(url, { method: "POST", headers, body: buf, redirect: "manual" });
+    if (res.status >= 300 && res.status < 400) {
+      fail(`HTTP ${res.status} sign-in redirect on upload-attachment — ADO_PAT not accepted.`);
+    }
+    const text = await res.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      fail(`HTTP ${res.status} non-JSON on upload-attachment: ${text.slice(0, 200)}`);
+    }
+    if (!res.ok) fail(`HTTP ${res.status} on upload-attachment: ${data?.message || text.slice(0, 200)}`);
+    return { id: data.id, url: data.url, name };
   },
 
   async "list-refs"(args) {
@@ -419,4 +590,10 @@ async function main() {
   else console.log(JSON.stringify(out, null, 2));
 }
 
-main().catch((e) => fail(e?.message || String(e)));
+// Run as CLI only when invoked directly (`node ado.mjs …`) — guarded so the module can be
+// imported (e.g. to unit-test the Markdown->HTML guard) without triggering the CLI.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((e) => fail(e?.message || String(e)));
+}
+
+export { ensureAzureHtml, mdToHtml };

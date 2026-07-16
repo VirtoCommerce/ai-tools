@@ -269,12 +269,15 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 Ask the user: "Create a bug-tracker ticket for this bug?"
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
-- **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`, default `VCST` for backwards compatibility; customer sets their own).
-- **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <report.md>` (optional `--repro-file` / `--severity` / `--priority` / `--tags`; org/project default from the profile). Returns `{ id, type, title, state, url }`.
+- **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`, default `VCST` for backwards compatibility; customer sets their own). Body = Jira markup/markdown, unchanged.
+- **Azure Boards** (`tracker.kind = azure`) → **author the body as HTML** per [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) — Azure's `System.Description` / `Microsoft.VSTS.TCM.ReproSteps` are **HTML fields**, so raw Markdown renders as a literal `#`/`**`/`| … |` wall (do NOT feed the markdown report file straight in). Write the HTML to a temp file and:
+  - **Screenshots first:** upload each and capture the URL — `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" upload-attachment --file <png>` → `{ url }`. Embed inline in the relevant `<li>` via `<img src="{url}" width="700">`.
+  - **Create:** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <desc.html>` (optional `--repro-file <repro.html>` / `--severity` / `--priority` / `--tags` / `--attachments "<url1>,<url2>"` to also list them in the Attachments tab; org/project default from the profile). Returns `{ id, type, title, state, url }`.
+  - **Safety net:** `create-workitem` auto-converts Markdown→HTML if any slips through, but author HTML directly for the clean, structured result — don't lean on the net.
 
 Fields either way:
 - Summary: from bug title
-- Description: full report content in markdown (Azure: pass via `--description-file`)
+- Description: the full structured report — **Jira** = markdown; **Azure** = HTML (`azure-html-format.md`)
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
 
 **Use the returned key verbatim** in the tracker's own format (Jira `ABC-123`, Azure Boards bare `12345`) for the report filename and any cross-links. Follow `/qa-defect workflow` (role-based, §0) for status transitions.
