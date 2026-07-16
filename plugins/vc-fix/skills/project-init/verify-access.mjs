@@ -14,7 +14,8 @@
  *   - Admin / platform URL reachable (BACK_URL)
  *   - Admin login — real OAuth password grant against {BACK_URL}/connect/token
  *   - Storefront user login — soft probe (WARN, not FAIL: storefront users may auth via xAPI)
- *   - Jira API token — GET /rest/api/3/myself  (jira tracker)  OR  Azure DevOps auth present
+ *   - Jira API token — GET /rest/api/3/myself  (jira tracker; WARN not FAIL — the runtime
+ *     path is the Atlassian MCP OAuth, the token is only an optional probe)  OR  Azure DevOps auth present
  *   - GitHub fix token (GITHUB_FIX_BUGS_TOKEN) — validate token + push perm on the upstream repo
  *   - gh CLI session — gh auth status
  *
@@ -141,17 +142,22 @@ async function main() {
 
   // 7. Tracker
   if (profile.tracker.kind === "jira") {
+    // Jira access at runtime is via the Atlassian MCP (OAuth) — see the MCP table below and
+    // tracker-ops.md ("Atlassian MCP OAuth or JIRA_API_TOKEN"). JIRA_API_TOKEN is only an
+    // OPTIONAL convenience probe, so a missing or rejected token is a WARN, never a hard FAIL:
+    // it must not mark the deployment NOT READY (exit 1) when the operator authorizes Jira
+    // through the Atlassian MCP instead — which this script cannot probe (issue #119).
     const base = (process.env.JIRA_BASE_URL || profile.tracker.baseUrl || "").replace(/\/$/, "");
     const email = process.env.JIRA_EMAIL || "";
     const token = process.env.JIRA_API_TOKEN || "";
-    if (!base || !email || !token) add("Jira API token", "SKIP", "set JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN (or use Atlassian MCP)");
+    if (!base || !email || !token) add("Jira API token", "SKIP", "no direct token — Jira runs via Atlassian MCP OAuth (authorize in /mcp); set JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN only to probe a direct token");
     else {
       try {
         const auth = "Basic " + Buffer.from(`${email}:${token}`).toString("base64");
         const r = await fetch(`${base}/rest/api/3/myself`, { headers: { Authorization: auth, Accept: "application/json" } });
         const me = r.ok ? await r.json() : null;
-        add("Jira API token", r.ok ? "PASS" : "FAIL", r.ok ? `GET /myself → 200 (${me.displayName || me.emailAddress})` : `GET /myself → ${r.status}`);
-      } catch (e) { add("Jira API token", "FAIL", e.message); }
+        add("Jira API token", r.ok ? "PASS" : "WARN", r.ok ? `GET /myself → 200 (${me.displayName || me.emailAddress})` : `token rejected (GET /myself → ${r.status}) — fine if using Atlassian MCP OAuth; else check JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN`);
+      } catch (e) { add("Jira API token", "WARN", `token probe failed (${e.message}) — fine if using Atlassian MCP OAuth`); }
     }
   } else {
     const az = profile.tracker.azure || {};
