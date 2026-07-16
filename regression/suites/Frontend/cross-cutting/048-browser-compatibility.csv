@@ -11,7 +11,7 @@ Chrome latest version installed; desktop resolution (1920x1080); {{FRONT_URL}} a
 [WAIT] search results visible
 [ACT] proceed through checkout to order confirmation
 [WAIT] order confirmation page displayed","[DOM] all smoke test assertions pass (SMK-001 through SMK-012)
-[DOM] BOPIS store picker displays correctly and selection is confirmed
+[DOM] the pickup-locations modal ('Pick points' dialog) shows the store list and map, and after a store is chosen the pickup section's selected-address label shows that store's name and address
 [DOM] search results render with correct layout and product cards
 [DOM] checkout completes and order confirmation number visible
 [STATE] no visual layout breaks or overlapping elements","[CONSOLE] no TypeError, ReferenceError, or uncaught exceptions throughout flow
@@ -21,7 +21,7 @@ Chrome latest version installed; desktop resolution (1920x1080); {{FRONT_URL}} a
 [PRE:RESET_CART]
 Chrome latest version; BOPIS pickup locations configured in admin; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Latest;os=Windows 11","[NAV] {{FRONT_URL}}
 [ACT] add a BOPIS-eligible product to cart
-[WAIT] cart badge count updates confirming item added
+[WAIT] cart badge count increments confirming item added
 [ACT] click pickup/BOPIS option to open pickup modal
 [WAIT] Google Maps iframe loads with markers visible
 [ACT] pan the map by clicking and dragging
@@ -32,7 +32,7 @@ Chrome latest version; BOPIS pickup locations configured in admin; {{FRONT_URL}}
 [ASSERT] info window contains store name, address, and hours","[DOM] Google Maps iframe renders without blank tiles
 [DOM] store markers visible and clickable
 [DOM] info window appears on marker click with correct store data
-[STATE] pan and zoom update map position and zoom level correctly
+[STATE] after the pan/zoom interactions, the map's center coordinates and zoom level differ from their values before the interaction
 [STATE] smooth rendering with no visible tile loading delays","[CONSOLE] no Google Maps JS API errors
 [NETWORK] Maps API tile requests return 200; no blocked requests
 [API] store location data API returns correct coordinates and details","JS error in browser console; map blank or fails to load; markers not clickable; info window missing or showing wrong data","none","VCST-4499 TC-013","Manual"
@@ -46,7 +46,7 @@ Chrome on Android (physical device or BrowserStack emulator); mobile viewport ac
 [ACT] switch between List view and Map view in the BOPIS modal
 [WAIT] respective view renders correctly
 [ACT] tap a store to select it and proceed to checkout
-[WAIT] checkout completes successfully","[DOM] mobile layout renders correctly — hamburger menu, stacked content, no horizontal scroll
+[WAIT] checkout completes successfully","[DOM] mobile layout shows the hamburger menu icon, single-column stacked content sections, and no horizontal scrollbar at the viewport width
 [DOM] List/Map toggle switches views without error
 [DOM] store selection tappable and checkout proceeds
 [DOM] all touch targets are at least 44x44px
@@ -63,7 +63,7 @@ Chrome on Android device or BrowserStack; BOPIS modal accessible; {{FRONT_URL}} 
 [ACT] pinch-zoom in on the map
 [WAIT] map zoom level increases
 [ACT] tap on a search input field
-[WAIT] virtual keyboard appears","[DOM] marker tap registers correctly and info window appears
+[WAIT] virtual keyboard appears","[DOM] tapping a store marker opens the info window / store-detail card showing that marker's store name
 [STATE] list scroll is smooth with momentum scrolling
 [STATE] pinch-zoom changes map zoom level visually
 [STATE] virtual keyboard appears on field tap; no layout shift breaks form
@@ -78,7 +78,8 @@ Safari latest version on macOS (not Windows — WebKit not supported on Windows)
 [WAIT] BOPIS selection confirmed
 [NAV] {{FRONT_URL}}/search?q=product
 [WAIT] search results visible
-[ACT] proceed through checkout to order confirmation","[DOM] all smoke test assertions pass
+[ACT] proceed through checkout to order confirmation
+[WAIT] order confirmation page displayed","[DOM] all smoke test assertions pass
 [DOM] layout consistent with Chrome reference — no CSS gaps, misaligned flexbox, or broken grid
 [DOM] no WebKit-specific rendering artifacts (missing borders, incorrect shadows)
 [STATE] no JavaScript errors in Safari Web Inspector console","[CONSOLE] no TypeError or Safari-specific errors (e.g., WebKit CSS property warnings)
@@ -95,8 +96,8 @@ Safari latest on macOS; Google Maps API key configured; BOPIS locations set up; 
 [ACT] click a store marker
 [WAIT] info window appears
 [ASSERT] info window shows correct store name and address
-[ASSERT] no rendering artifacts or blank tiles in Safari","[DOM] Google Maps renders correctly in Safari WebKit — no blank tiles, no missing markers
-[DOM] info window content displays correctly
+[ASSERT] no rendering artifacts or blank tiles in Safari","[DOM] the Google Maps iframe in Safari shows visible map tiles (no blank/gray tiles) with all configured store markers present
+[DOM] the map info window shows the selected store's name and address text
 [STATE] pan and zoom work with Safari-specific event model
 [STATE] no Safari-specific map rendering bugs","[CONSOLE] no Google Maps JS errors specific to WebKit
 [NETWORK] Maps tile requests succeed","JS error in browser console; map blank or fails to load in Safari; markers not clickable","none","VCST-4499 TC-013","Manual"
@@ -111,8 +112,8 @@ Safari on iPhone 16, 17, or 18 (physical device preferred; BrowserStack acceptab
 [WAIT] payment form visible
 [ACT] fill payment details and submit
 [WAIT] order confirmation page","[DOM] iOS layout correct — safe area insets respected (notch/home bar not overlapped by content)
-[DOM] BOPIS modal scrolls correctly with iOS momentum scrolling
-[DOM] payment form fills correctly — no virtual keyboard blocking fields
+[DOM] the BOPIS modal's store list scrolls with iOS momentum (deceleration) and does not stick or freeze mid-scroll
+[DOM] the payment form's card-number, expiry, and CVV fields remain visible above the iOS virtual keyboard while being filled
 [DOM] order confirmation page visible
 [STATE] no stuck or unresponsive states after form submit","[CONSOLE] no JS exceptions in Safari Web Inspector
 [NETWORK] all API calls 2xx; payment processor request succeeds","JS error in browser console; payment iframe unresponsive; touch gesture not recognized; layout broken or overflow at any viewport; iOS safe area inset violated","Remove test order via admin if created","VCST-4499 TC-013","Manual"
@@ -128,7 +129,7 @@ Safari on iOS device (physical or BrowserStack); BOPIS modal accessible; {{FRONT
 [WAIT] map zoom responds or native browser zoom activates
 [ACT] tap a text input field
 [WAIT] virtual keyboard slides up; layout adjusts
-[ACT] blur the input field
+[ACT] click outside the 'Search pickup locations' field to blur it
 [WAIT] keyboard dismisses; layout returns to original position","[DOM] marker tap registers and detail view appears
 [STATE] list scroll has smooth iOS momentum; rubber-band at list boundaries does not cause stuck states
 [STATE] virtual keyboard appearance does not push layout into broken state; content still accessible above keyboard
@@ -144,9 +145,10 @@ Firefox latest version installed; {{FRONT_URL}} accessible","url={{FRONT_URL}};b
 [WAIT] BOPIS selection confirmed
 [NAV] {{FRONT_URL}}/search?q=product
 [WAIT] search results visible
-[ACT] proceed through checkout to order confirmation","[DOM] all smoke test assertions pass
+[ACT] proceed through checkout to order confirmation
+[WAIT] order confirmation page displayed","[DOM] all smoke test assertions pass
 [DOM] CSS layouts (flexbox, grid) render consistently with Chrome reference — no broken grids, incorrect wrapping, or missing borders
-[DOM] fonts render correctly in Firefox (no missing glyphs or incorrect fallback fonts)
+[DOM] body and heading text render in the configured web font in Firefox — no tofu/missing-glyph boxes and no fallback to a generic serif/sans-serif font
 [STATE] no Firefox-specific JavaScript errors in browser console","[CONSOLE] no JS errors (especially no CSP violations or Firefox-specific exception types)
 [NETWORK] all requests 2xx
 [API] xAPI calls succeed","JS error in browser console; layout broken or overflow at any viewport; CSS flexbox/grid rendering defect specific to Firefox; payment iframe unresponsive","Remove test order via admin if created","VCST-4499 TC-013","Manual"
@@ -161,6 +163,7 @@ Firefox latest version; {{FRONT_URL}} accessible; user account credentials avail
 [ACT] fill registration form fields and observe Firefox-specific autocomplete suggestions
 [WAIT] autocomplete dropdown (if shown)
 [ACT] submit form (cancel if testing only form rendering)
+[WAIT] registration submission resolves (success message or validation errors displayed)
 [NAV] {{FRONT_URL}} checkout flow payment step
 [WAIT] payment iframe or form visible
 [ASSERT] payment form fields accept input in Firefox
@@ -178,6 +181,7 @@ Microsoft Edge latest (Chromium-based) installed; {{FRONT_URL}} accessible","url
 [ACT] initiate BOPIS flow: add item, select pickup, choose store
 [WAIT] BOPIS selection confirmed
 [ACT] proceed through checkout to order confirmation
+[WAIT] order confirmation page displayed
 [ASSERT] compare visual appearance and behavior against Chrome baseline for any Edge-specific differences","[DOM] all smoke test assertions pass
 [DOM] visual appearance consistent with Chrome (Edge is Chromium-based — differences should be minimal)
 [DOM] no Edge-specific rendering defects
@@ -192,9 +196,9 @@ Microsoft Edge latest; {{FRONT_URL}} accessible; an order confirmation page or i
 [ASSERT] print preview shows correctly formatted page — no clipped content, no overflow, no missing sections
 [ACT] if PDF generation is available in the application (e.g., download invoice as PDF), trigger it
 [WAIT] PDF download completes or opens in Edge PDF viewer
-[ASSERT] PDF content is complete and legible in Edge PDF viewer","[DOM] print preview renders page content correctly — headers, line items, totals visible
+[ASSERT] PDF content is complete and legible in Edge PDF viewer","[DOM] the Edge print-preview pane shows the order header, all line items, and the order total within the page margins (no clipped content)
 [DOM] no content clipped or cut off at page margins in print preview
-[DOM] PDF (if generated by app) opens correctly in Edge PDF viewer with all text readable
+[DOM] the generated invoice PDF opens in the Edge PDF viewer with all header, line-item, and total text rendered and legible
 [STATE] Edge print dialog does not hang or crash","[CONSOLE] no JS errors triggered by print or PDF actions
 [NETWORK] PDF download request returns 200 with correct content-type if app-generated","layout broken or overflow at any viewport; print preview blank or clipped; PDF download fails or opens corrupt; JS error in browser console","none","VCST-4499 TC-013","Manual"
 "BROWSER-CROSS-001","Cross-Browser - Visual Consistency","Cross-Browser > Visual","High","BL-COMPAT-001,BL-COMPAT-002","ECL-13.1","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -224,7 +228,7 @@ Chrome, Firefox, Safari (macOS), and Edge available; BOPIS modal accessible; {{F
 [ACT] trigger any page transition animations (e.g., tab switches, filter toggles) in each browser
 [ASSERT] compare smoothness across browsers","[STATE] animations play at similar timing and easing across all four browsers — no jerky, stuttering, or skipped animations
 [STATE] modal open and close animations complete without hanging mid-frame
-[DOM] animated elements reach their final state correctly (no stuck halfway states)
+[DOM] the BOPIS modal and page-transition elements reach their fully open/closed final state (final opacity and transform values) once the animation duration elapses — none remain at an intermediate opacity/transform value
 [DOM] no animation artifacts (ghost elements, flickering) in any browser","[CONSOLE] no CSS animation or Web Animations API errors in any browser
 [NETWORK] animation assets (if sprite-based or video-based) load successfully","layout broken or overflow at any viewport; animation freezes mid-play in any browser; JS error in browser console; animated element stuck in intermediate state after animation ends","none","VCST-4499 TC-013","Manual"
 "BROWSER-CROSS-003","Cross-Browser - Flexbox/Grid","Cross-Browser > Layout","High","BL-COMPAT-001,BL-COMPAT-002,BL-COMPAT-004","ECL-13.1","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -237,8 +241,8 @@ Chrome, Firefox, Safari (macOS), and Edge available; {{FRONT_URL}} accessible; m
 [ASSERT] grid and flexbox consistent — note any WebKit-specific quirks
 [NAV] same URL in Edge — repeat scroll and observation
 [ASSERT] consistent with Chrome (Chromium-based)
-[ACT] resize each browser to 768px (tablet) and 375px (mobile) and repeat layout check in all four","[DOM] product grid column count consistent across browsers at each viewport
-[DOM] flex container children align correctly — no unexpected wrapping or overflow
+[ACT] resize each of the four browsers to 768px (tablet) width, then to 375px (mobile) width","[DOM] product grid column count consistent across browsers at each viewport
+[DOM] flex container children keep the same row/column order and wrap pattern as the Chrome reference — no item wraps to an unexpected new row or overflows the container
 [DOM] grid gap/column-gap renders identically across browsers
 [DOM] no horizontal scroll at any tested viewport in any browser
 [STATE] responsive breakpoints trigger at consistent widths across browsers","[CONSOLE] no CSS grid or flexbox property deprecation warnings
@@ -254,7 +258,7 @@ iPhone 16, 17, and 18 (or latest 3 models) with Safari iOS; physical devices pre
 [NAV] {{FRONT_URL}} on iPhone 18 — repeat smoke tests and safe area check
 [ASSERT] no model-specific layout bugs on iPhone 18","[DOM] safe area insets respected on all three iPhone models — no content hidden behind notch or home indicator
 [DOM] smoke tests pass on all three models
-[STATE] swipe gestures work correctly — no interference with browser swipe-to-go-back vs. app swipe gestures
+[STATE] swipe gestures inside app modals/carousels are captured by the app and do not trigger the browser's native swipe-to-go-back navigation
 [DOM] no model-specific layout breaks (each iPhone model has slightly different viewport height)","[CONSOLE] no JS errors across any tested iPhone model
 [NETWORK] all API calls succeed on each device","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; safe area inset violated on any model; smoke test failure specific to one iPhone model","Remove any test cart items or orders created during smoke tests","VCST-4499 TC-013","Manual"
 "BROWSER-MOBILE-002","Mobile Matrix - Android Models","Mobile > Android","Critical","BL-COMPAT-001,BL-COMPAT-003,BL-COMPAT-004","ECL-13.1","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -270,9 +274,9 @@ Last 3 Android flagship models (e.g., Samsung Galaxy S24, Google Pixel 9, OnePlu
 [ASSERT] layout correct — verify no Android OEM-specific rendering issue
 [ACT] run smoke tests on OnePlus 12
 [ASSERT] all smoke tests pass
-[ASSERT] compare layouts across all three devices — no device-specific breakage","[DOM] layout renders correctly on all three Android models — no overflow, no clipped content
+[ASSERT] compare layouts across all three devices — no device-specific breakage","[DOM] homepage and product content render within the viewport on all three Android models with no horizontally clipped or overflowing elements
 [DOM] smoke tests pass on all three devices
-[STATE] Chrome Android touch events work correctly on all models
+[STATE] tap, scroll, and swipe touch events each produce their corresponding UI response (navigation, scroll, or selection) on all three Android models
 [DOM] content adapts to varying screen sizes (different aspect ratios between models)","[CONSOLE] no JS errors on any tested Android device
 [NETWORK] all API calls succeed on each device","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; smoke test failure specific to one Android model; Android OEM browser engine quirk breaking layout","Remove any test cart items or orders created during smoke tests","VCST-4499 TC-013","Manual"
 "BROWSER-MOBILE-003","Viewport Handling - All Devices","Mobile > Viewport","High","BL-COMPAT-001,BL-COMPAT-004","ECL-13.1,ECL-13.2","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -291,7 +295,7 @@ Browser DevTools or BrowserStack available for viewport simulation; {{FRONT_URL}
 [ASSERT] content adapts properly at all sizes with no broken breakpoints","[DOM] no horizontal scroll bar at 320px, 375px, or 414px viewports
 [DOM] responsive breakpoints trigger at expected widths — layout shifts from mobile to tablet to desktop at correct thresholds
 [DOM] text remains readable and not clipped at narrowest viewport (320px)
-[DOM] images scale correctly — no overflow or cropping at any viewport
+[DOM] product and hero images scale to fit their container width at every tested viewport with no overflow past the container edge and no visible cropping
 [STATE] interactive elements remain tappable/clickable at all viewport sizes","[CONSOLE] no JS errors triggered by viewport resize
 [NETWORK] no additional asset fetches that indicate incorrect responsive image handling","layout broken or overflow at any viewport; horizontal scroll present at any mobile viewport; content clipped or unreadable at 320px; breakpoints triggering at wrong widths; JS error in browser console","reset viewport","VCST-4499 TC-013","Manual"
 "BROWSER-RES-001","Resolution Matrix - Desktop","Resolution > Desktop","Medium","BL-COMPAT-001,BL-COMPAT-004","ECL-13.1","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -315,11 +319,25 @@ Desktop browser (Chrome or Edge); ability to resize or set resolution; {{FRONT_U
 Windows 10 or Windows 11 machine; Chrome latest and Edge latest installed; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Latest,Edge Latest;os=Windows 11;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}} in Chrome on Windows 11
 [WAIT] homepage fully loaded
 [ASSERT] font rendering acceptable — Windows ClearType anti-aliasing; no jagged or blurry text
-[ACT] run abbreviated smoke flow: login, search, add to cart, view checkout
+[ACT] log in with {{USER_EMAIL}} / {{USER_PASSWORD}} via the sign-in form
+[WAIT] authenticated homepage displayed
+[ACT] search for a product using the search bar
+[WAIT] search results page displayed
+[ACT] add a product to cart
+[WAIT] cart badge count increments
+[ACT] navigate to view checkout
+[WAIT] checkout page displayed
 [ASSERT] all flows work correctly in Chrome on Windows
 [NAV] same URL in Edge on Windows 11
 [ASSERT] font rendering in Edge consistent with Chrome on Windows
-[ACT] run same abbreviated smoke flow in Edge on Windows
+[ACT] log in with {{USER_EMAIL}} / {{USER_PASSWORD}} via the sign-in form in Edge
+[WAIT] authenticated homepage displayed
+[ACT] search for a product using the search bar in Edge
+[WAIT] search results page displayed
+[ACT] add a product to cart in Edge
+[WAIT] cart badge count increments
+[ACT] navigate to view checkout in Edge
+[WAIT] checkout page displayed
 [ASSERT] all flows work correctly
 [ASSERT] compare Chrome vs Edge on Windows — behavior consistent","[DOM] font rendering acceptable on Windows — ClearType does not cause readability issues
 [DOM] no OS-specific rendering defects (Windows font smoothing, system scrollbar width differences)
@@ -334,13 +352,27 @@ macOS latest (Sequoia); Chrome latest and Safari latest installed; Retina displa
 [ASSERT] macOS Safari font rendering — text readable
 [ACT] test trackpad gestures: two-finger scroll, pinch-zoom (triggers browser zoom), swipe between pages
 [ASSERT] trackpad gestures work correctly and do not cause unintended navigation or zoom on the storefront
-[ACT] run abbreviated smoke flow in Safari on macOS: login, search, add to cart, checkout
+[ACT] log in with {{USER_EMAIL}} / {{USER_PASSWORD}} via the sign-in form in Safari
+[WAIT] authenticated homepage displayed
+[ACT] search for a product using the search bar in Safari
+[WAIT] search results page displayed
+[ACT] add a product to cart in Safari
+[WAIT] cart badge count increments
+[ACT] proceed through checkout to order confirmation in Safari
+[WAIT] order confirmation page displayed
 [ASSERT] all flows work correctly
 [NAV] same URL in Chrome on macOS
 [ASSERT] Retina rendering correct in Chrome on macOS
-[ACT] run same abbreviated smoke flow in Chrome on macOS
+[ACT] log in with {{USER_EMAIL}} / {{USER_PASSWORD}} via the sign-in form in Chrome
+[WAIT] authenticated homepage displayed
+[ACT] search for a product using the search bar in Chrome
+[WAIT] search results page displayed
+[ACT] add a product to cart in Chrome
+[WAIT] cart badge count increments
+[ACT] proceed through checkout to order confirmation in Chrome
+[WAIT] order confirmation page displayed
 [ASSERT] flows work correctly
-[ASSERT] compare Safari vs Chrome on macOS — note any differences","[DOM] Retina (2x DPR) assets served correctly — no blurry product images or icons in Safari or Chrome on macOS
+[ASSERT] compare Safari vs Chrome on macOS — note any differences","[DOM] product images and icons on a Retina display load 2x/high-DPR srcset variants and appear sharp, not visibly blurry or upscaled, in both Safari and Chrome on macOS
 [DOM] macOS font rendering — text remains readable
 [STATE] abbreviated smoke flow passes in both Safari and Chrome on macOS
 [STATE] trackpad gestures (scroll, pinch-zoom) do not break storefront layout or trigger unintended actions","[CONSOLE] no JS errors in Safari Web Inspector or Chrome DevTools on macOS
