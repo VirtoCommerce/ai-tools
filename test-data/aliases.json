@@ -1,8 +1,10 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.29",
+    "version": "1.5.31",
     "updated": "GENERATED",
+    "changelog_1_5_30": "VCST-5304/5469 TLC Phase-2/3 sync (2026-07-17, sales-rep pr-2-8c40 / theme 2.54.0-pr-2380-230b live verification): added platform_id field to ORG_SUSPENDED (was missing — needed so 050m's organizationId-vs-business-key drift fix (D1) can retarget not_served_org/unassigned_org assertions to the real platform GUID). Added SR_REP_NOCUSTOMERS_ORGCTX gap-fixture alias (test-data/sales-rep/sales-reps.csv, seeded=false — NOT ready for /qa-seed-data, needs a seeder enhancement to grant org-context membership without registering a served customer). Also fixed a pre-existing unquoted-comma data bug in sales-reps.csv row SR_REP_LOCKED's test_purpose field (silently absorbed before the context_org column existed; surfaced as a column-misalignment once the trailing column was added).",
+    "changelog_1_5_31": "VCST-5304/5469 CORRECTED test design (TLC-2026-07-17-1603, live verification on vcst-qa): SR-FE-030 (089) and its SR_REP_NOCUSTOMERS_ORGCTX gap-fixture (added in 1.5.30) proved architecturally unreachable — a sales-rep org membership IS the served-customer relationship, so 'permissioned rep + org context + zero served customers' cannot exist; the seed-sales-rep.mjs enhancement it depended on is the WRONG fix and was NOT built. SR_REP_NOCUSTOMERS_ORGCTX stays seeded=false and is retired (do not seed). Added the SALES_REP_NOCUSTOMERS auth-role alias (mirrors SALES_REP) backing the genuinely-reachable case 050m SR-GQL-041, which proves the real invariant live-verified this run: a rep holding sales-rep:access as a GLOBAL role (SR_REP_NOCUSTOMERS, zero org memberships) gets a clean salesRepCustomers 200/totalCount=0/errors[] empty — not a redirect, not an error.",
     "changelog_1_5_25": "VCST-5028 suite 027b re-auth: added MULTI_ORG_TF_BR_EMPLOYEE and MULTI_ORG_TF_BR_MAINTAINER inline aliases. Both resolve to the same physical MULTI_ORG_TF_BR account (email/password/store_id identical) but are semantically distinct: EMPLOYEE = BuildRight org-employee context (no xapi:my_organization:edit → changeRole/lock/invite MUST reject); MAINTAINER = TechFlow org-maintainer context (should carry xapi:my_organization:edit → Finding #1 guard). Used by ORGM-003/007/012 and ORGM-017/018 respectively. resolveRole falls back to *_EMAIL/*_PASSWORD env vars; for these aliases the env vars are identical to MULTI_ORG_TF_BR_EMAIL/PASSWORD — no new .env entries needed beyond already-set MULTI_ORG_TF_BR_* vars.",
     "changelog_1_5_23": "VCST-5135 ProductPoints fixtures REWORKED 2026-06-24: the original LOY-010..013 were eligibility-only clones with ZERO product factors (functionally hollow — earned no points). Discovered live in Admin (qa-backend-expert) that a ProductPoints program's earn rule lives in a SEPARATE sub-resource (LoyaltyProgramProductFactor = {loyaltyProgramId, productId, factor-points}, PUT /api/loyalty-program-product-factors/factors), NOT on the program entity. Replaced LOY-010..013 with a 10-program set LOY-010..019 that varies REAL mechanics: single-SKU earn (LOY-010), multi-SKU summation (LOY-011), VIP-exclusive earn (LOY-012), wholesaler tier (LOY-013), future/expired windows (LOY-014/015, new start_offset_days/end_offset_days CSV cols → ISO dates), inactive-with-factors (LOY-016), priority stacking (LOY-017), zero-points BVA (LOY-018), localized+multi (LOY-019). New fixture program-factors.csv (program_id,sku,factor) holds the per-product point values; seeder resolves SKU→productId at runtime via POST /api/catalog/search/products searchPhrase 'code:\"<SKU>\"' (no hardcoded GUIDs). seed-loyalty.mjs rebuilt to construct from GET /api/loyalty-programs/new/{type} skeleton (not brittle clone), set dates/store/localizedName/eligibility, then PUT factors. Aliases reworked: LOY_PP_ALL/VIP/WHOLESALE repointed, LOY_PP_VIP_INACTIVE→LOY_PP_INACTIVE, added LOY_PP_MULTI/FUTURE/EXPIRED/PRIORITY/ZERO/LOCALIZED. All seeded=false pending /qa-seed-data (or node scripts/seed-data/seed-loyalty.mjs).",
     "changelog_1_5_19": "Added LOYALTY_NOBAL_USER inline alias (AGENT-TEST-nobal@test.virtocommerce.com, VIP group, zero balance) for MCO-GQL-005 LOYALTY_INSUFFICIENT_BALANCE test. LOYALTY_VIP_USER balance was seeded to ~4.87M PTS on 2026-06-22 for MCO-GQL-001/003/004 — it can no longer trigger insufficient-balance at finite cart quantities. FIXTURE-SEEDING REQUIRED: provision Customer member + security account on vcst-qa with no loyalty balance before first run. email_env=LOYALTY_NOBAL_USER_EMAIL / password_env=LOYALTY_NOBAL_USER_PASSWORD must be set in .env.local.",
@@ -1151,6 +1153,7 @@
     "fields": {
       "name": "org_name",
       "id": "org_id",
+      "platform_id": "platform_id",
       "status": "status"
     }
   },
@@ -3579,6 +3582,18 @@
     },
     "slug": ""
   },
+  "SALES_REP": {
+    "_inline": true,
+    "_notes": "Auth-only role alias for the scoped sales-rep xAPI (/graphql/sales-rep) — resolves to the SAME account as SR_REP_PRIMARY (agent-test-sr-primary@example.com). Mirrors the canonical role registry entry in scripts/lib/user-roles.mjs (key: SALES_REP, emailVars: SALES_REP_EMAIL, passwordVar: TEST_USER_PASSWORD). SR_REP_PRIMARY itself stays CSV-backed (sales-rep/sales-reps.csv) for its non-credential fields (id/email/fullName/store/…) used by @td() elsewhere in 050m; this alias exists only so graphql-auth.ts's [AUTH role=SALES_REP] can resolve credentials without a password column in that CSV (seed-sales-rep.mjs assigns REP_PASSWORD = SR_REP_PASSWORD || TEST_USER_PASSWORD || 'Password1!' to every seeded rep, including SR_REP_PRIMARY).",
+    "email_env": "SALES_REP_EMAIL",
+    "password_env": "TEST_USER_PASSWORD"
+  },
+  "SALES_REP_NOCUSTOMERS": {
+    "_inline": true,
+    "_notes": "Auth-only role alias for the scoped sales-rep xAPI (/graphql/sales-rep) — resolves to the SAME account as SR_REP_NOCUSTOMERS (agent-test-sr-nocustomers@example.com, rep 'Nora None'). Mirrors the SALES_REP alias above; exists so graphql-auth.ts's [AUTH role=SALES_REP_NOCUSTOMERS] can resolve credentials without a password column on the CSV-backed SR_REP_NOCUSTOMERS alias. Backs 050m SR-GQL-041 (VCST-5304/5469 corrected test design, 2026-07-17): this rep's JWT carries permission=sales-rep:access (a GLOBAL role, zero org memberships), and salesRepCustomers on the scoped schema returns HTTP 200/totalCount=0/errors[] empty for it — proven live this run. Storefront counterpart: the myCustomersRoute guard redirects this rep to /account/dashboard (089 SR-FE-013), NOT the empty-customers table (SR-FE-030 was deprecated as architecturally unreachable — a sales-rep org membership IS the served-customer relationship, so 'permissioned + org context + zero served' cannot exist).",
+    "email_env": "SALES_REP_NOCUSTOMERS_EMAIL",
+    "password_env": "TEST_USER_PASSWORD"
+  },
   "SR_REP_PRIMARY": {
     "file": "sales-rep/sales-reps",
     "filter": {
@@ -3704,5 +3719,22 @@
       "fullName": "full_name",
       "store": "store"
     }
+  },
+  "SR_REP_NOCUSTOMERS_ORGCTX": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_NOCUSTOMERS_ORGCTX"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store",
+      "context_org": "context_org"
+    },
+    "_notes": "RETIRED (TLC-2026-07-17-1603, VCST-5304/5469) — was a GAP fixture for the since-deprecated 089 SR-FE-030 (formerly SR-FE-013b). Live verification proved the state it targeted (permissioned rep + org context + zero served customers) is architecturally unreachable: a sales-rep org membership IS the served-customer relationship, so the seed-sales-rep.mjs enhancement this fixture depended on was the WRONG fix and was never built. Stays seeded=false permanently — do NOT seed, do NOT resolve @td(SR_REP_NOCUSTOMERS_ORGCTX.id) in any live run. Kept only for traceability of the retracted approach; see SALES_REP_NOCUSTOMERS for the genuinely-reachable replacement case (050m SR-GQL-041)."
   }
 }

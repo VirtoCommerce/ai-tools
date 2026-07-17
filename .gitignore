@@ -21,6 +21,7 @@ results/
 .claude/worktrees/
 .mcp.json
 scripts/.graphql-schema.cache.json
+scripts/.graphql-schema.*.cache.json
 
 # Newman/Postman run artifacts — carry live env credentials + OAuth tokens. Never commit.
 .newman-run/

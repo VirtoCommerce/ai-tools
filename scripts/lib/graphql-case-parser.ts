@@ -12,6 +12,7 @@
 
 export type StepBlock =
   | AuthStep
+  | EndpointStep
   | OpStep
   | VarsStep
   | ExecStep
@@ -26,6 +27,18 @@ export type StepBlock =
 export interface AuthStep {
   kind: "AUTH";
   role: string;
+  raw: string;
+}
+
+/**
+ * Selects the GraphQL endpoint path for every op in this case. Optional —
+ * absent means the default "/graphql" (default xAPI schema). Scoped schemas:
+ *   [GQL-ENDPOINT /graphql/sales-rep]
+ * Applies to all [GQL-OP]/[GQL-EXEC] in the same case (introspection + execute).
+ */
+export interface EndpointStep {
+  kind: "GQL-ENDPOINT";
+  path: string;
   raw: string;
 }
 
@@ -168,6 +181,13 @@ export function parseSteps(cell: string): StepBlock[] {
         role: authMatch[1] || "",
         raw,
       });
+      i++;
+      continue;
+    }
+
+    const endpointMatch = line.match(/^\[GQL-ENDPOINT\s+(\S+)\s*\]\s*$/i);
+    if (endpointMatch) {
+      blocks.push({ kind: "GQL-ENDPOINT", path: endpointMatch[1], raw });
       i++;
       continue;
     }
@@ -357,7 +377,7 @@ export function parseSteps(cell: string): StepBlock[] {
 }
 
 function isStepTag(line: string): boolean {
-  return /^\[(AUTH|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|REST-OP|REST-EXEC|REST-CAPTURE|REST|WAIT|SETUP|TEARDOWN)\b/i.test(line);
+  return /^\[(AUTH|GQL-ENDPOINT|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|REST-OP|REST-EXEC|REST-CAPTURE|REST|WAIT|SETUP|TEARDOWN)\b/i.test(line);
 }
 
 /**

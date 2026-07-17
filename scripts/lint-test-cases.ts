@@ -56,6 +56,11 @@ const ALIAS_PRIORITIES = new Set(["P0", "P1", "P2", "P3"]);
 const HIGH_PRIORITIES = new Set(["Critical", "High", "P0", "P1"]);
 const AUTOMATION_STATUSES = new Set([
   "Draft", "Reviewed", "Automated", "Manual", "Semi-Automated",
+  // "Deprecated" — a case explicitly retired (superseded/redundant, kept only for
+  // traceability) but not deleted, e.g. 050m SR-GQL-038 (superseded by SR-GQL-011,
+  // VCST-5304/5469 sync 2026-07-17). Never PROMOTED_STATUSES — it's excluded from
+  // regression-eligibility by definition, not merely un-reviewed.
+  "Deprecated",
 ]);
 // A promoted case (past Draft) must have every assertion grounded (Dim 10 / GRD-001).
 const PROMOTED_STATUSES = new Set(["Reviewed", "Automated", "Manual", "Semi-Automated"]);
