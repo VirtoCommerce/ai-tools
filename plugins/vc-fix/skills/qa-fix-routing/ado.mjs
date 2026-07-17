@@ -27,11 +27,17 @@
  *                               [--tags "qa-autofix,frontend"] \
  *                               [--system-info-file sysinfo.html] \
  *                               [--field "Custom.Environment=QA"] [--field "Custom.Reportedby=QA team"] \
- *                               [--field "Custom.Typeofbug=Functional"]   # returns { id, url }
+ *                               [--field "Custom.Typeofbug=Functional"] \
+ *                               [--assign-self] [--iteration current] [--parent 940]   # returns { id, url }
  *     --system-info(-file) → Microsoft.VSTS.TCM.SystemInfo (the "System Info" block: environment,
  *       build, browser, repro-rate — NOT a section inside the Description). HTML, like Description.
  *     --field "Ref.Path=value" (repeatable) → sets any work-item field, incl. the deployment's
  *       custom Bug picklists (Custom.Environment / Custom.Reportedby / Custom.Typeofbug, …).
+ *     --assign-self → assign to the token/session owner (whoami); --assign-to <email> for explicit.
+ *     --iteration current → stamp the team's active sprint (System.IterationPath); or pass a path.
+ *     --parent <id> → link the bug under a parent work item (Hierarchy-Reverse relation).
+ *   node ado.mjs whoami                                          # token owner { name, mail }
+ *   node ado.mjs current-iteration [--team "<team>"]            # active sprint { id, name, path }
  *   node ado.mjs list-refs      --repo frontend [--filter heads/]
  *   node ado.mjs get-file       --repo frontend --path client-app/x.vue --branch dev
  *   node ado.mjs create-pr      --repo frontend --source refs/heads/claude/qa-autofix/967 \
@@ -182,6 +188,17 @@ function base(args, axis = "vcs") {
   if (AZ.apiBase && !args.org && !args.project) return String(AZ.apiBase).replace(/\/$/, "");
   if (!org || !project) fail("no org/project — pass --org/--project or set tracker/vcs.azure in project-profile.json");
   return `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
+}
+
+/**
+ * Org-level base (`https://dev.azure.com/<org>`) — for org-scoped endpoints (connectionData)
+ * and work-item relation URLs, which are org-scoped, not project-scoped. Derives the org from
+ * --org / the tracker profile, else strips the trailing `/<project>` off the project base.
+ */
+function orgUrl(args) {
+  const org = args.org || trackerAZ().organization;
+  if (org) return `https://dev.azure.com/${org}`;
+  return base(args, "tracker").replace(/\/[^/]+$/, "");
 }
 
 // ---- fetch wrapper ------------------------------------------------------------------
@@ -456,6 +473,28 @@ const COMMANDS = {
     return (d.value || []).map((s) => ({ name: s.name, category: s.category }));
   },
 
+  // Identity of the token/session owner — org-scoped connectionData. Used to auto-assign a
+  // created bug back to its creator (create-workitem --assign-self). `mail` is the value ADO
+  // resolves for System.AssignedTo; `name` is the display name for a preview.
+  async whoami(args) {
+    // connectionData is a preview API — it rejects the plain "7.1" the other ops use.
+    const d = await call("GET", `${orgUrl(args)}/_apis/connectionData?api-version=7.1-preview`);
+    const u = d.authenticatedUser || {};
+    const mail = u.properties?.Account?.$value || null;
+    return { id: u.id || null, name: u.providerDisplayName || null, uniqueName: mail || u.subjectDescriptor || null, mail };
+  },
+
+  // The team's CURRENT sprint (iteration) — for stamping System.IterationPath on a new bug so
+  // it lands in the active sprint, not the backlog. Team from --team or tracker.azure.team;
+  // omitted ⇒ the project's default team.
+  async "current-iteration"(args) {
+    const team = (typeof args.team === "string" ? args.team : "") || TRACKER_AZ.team || "";
+    const teamSeg = team ? `/${enc(team)}` : "";
+    const d = await call("GET", `${base(args, "tracker")}${teamSeg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
+    const it = (d.value || [])[0];
+    return it ? { id: it.id, name: it.name, path: it.path } : null;
+  },
+
   // Field-building mirrors AzureTracker.createWorkItem (trackers/azure-tracker.ts) — same
   // endpoint, same JSON-Patch shape. Kept as an independent implementation (CLI script vs
   // TS tracker class, same split as every other op below), so keep them in sync when either
@@ -524,6 +563,36 @@ const COMMANDS = {
       for (const url of attachInput.split(",").map((s) => s.trim()).filter(Boolean)) {
         fields.push({ op: "add", path: "/relations/-", value: { rel: "AttachedFile", url, attributes: { comment: "" } } });
       }
+    }
+    // Assignee. `--assign-self` resolves the token/session owner (whoami) — the natural default
+    // for a QA-filed bug; `--assign-to <email>` sets it explicitly. AssignedTo takes an email/UPN.
+    let assignee = str(args["assign-to"]);
+    if (!assignee && args["assign-self"]) {
+      const me = await COMMANDS.whoami(args);
+      assignee = me?.mail || me?.uniqueName || "";
+      if (!assignee) fail("--assign-self: could not resolve the token owner identity (connectionData returned none)");
+    }
+    if (assignee) fields.push({ op: "add", path: "/fields/System.AssignedTo", value: assignee });
+    // Iteration (sprint). `--iteration current` stamps the team's ACTIVE sprint so the bug lands
+    // in the current sprint, not the backlog; `--iteration "<path>"` sets it verbatim.
+    const iterFlag = str(args.iteration);
+    if (iterFlag) {
+      let iterationPath = iterFlag;
+      if (/^current$/i.test(iterFlag)) {
+        const it = await COMMANDS["current-iteration"](args);
+        if (!it?.path) fail("--iteration current: no current sprint for the team (pass --team or set tracker.azure.team)");
+        iterationPath = it.path;
+      }
+      fields.push({ op: "add", path: "/fields/System.IterationPath", value: iterationPath });
+    }
+    // Parent link — attach the new bug UNDER a work item via a Hierarchy-Reverse relation.
+    // Work-item relation URLs are ORG-scoped (not project-scoped).
+    const parentId = str(args.parent);
+    if (parentId) {
+      fields.push({ op: "add", path: "/relations/-", value: {
+        rel: "System.LinkTypes.Hierarchy-Reverse",
+        url: `${orgUrl(args)}/_apis/wit/workItems/${enc(parentId)}`,
+      } });
     }
     // The leading `$` before the type is literal + required by the ADO create endpoint.
     // Reuse the SAME resolved base for both the create call and the returned URL — building

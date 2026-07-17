@@ -54,6 +54,12 @@ export interface CreateWorkItemInput {
    * Azure only; ignored by Jira.
    */
   fields?: Record<string, string | number>;
+  /** Assignee — Azure System.AssignedTo (email / UPN). Ignored by Jira. */
+  assignedTo?: string;
+  /** Iteration/sprint path — Azure System.IterationPath (e.g. `"LEO\\Sprint 18"`). Azure only. */
+  iterationPath?: string;
+  /** Parent work-item id — links the new item under it via Hierarchy-Reverse. Azure only. */
+  parentId?: string | number;
 }
 
 export interface Tracker {

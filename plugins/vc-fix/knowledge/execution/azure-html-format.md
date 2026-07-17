@@ -93,9 +93,14 @@ purpose-built fields; put it there so the description stays a clean repro and th
 | Severity | `Microsoft.VSTS.Common.Severity` | `--severity "2 - High"` | `1 - Critical` … `4 - Low` |
 | Priority | `Microsoft.VSTS.Common.Priority` | `--priority 2` | `1`–`4` |
 
+| Assignee | `System.AssignedTo` | `--assign-self` (owner via `ado.mjs whoami`) | the token/session owner |
+| Sprint | `System.IterationPath` | `--iteration current` (via `ado.mjs current-iteration`) | the team's active sprint |
+| Parent | `System.LinkTypes.Hierarchy-Reverse` | `--parent <id>` | **ask the operator** which work item to link under |
+
 > The `Custom.*` fields above are the **LEO** bug template's. They are the deployment's *custom* fields —
 > discover a different deployment's from its Bug form (or `ado.mjs list-types`) and omit any it doesn't
-> have. Severity/Priority are standard VSTS fields present everywhere.
+> have. Severity/Priority/AssignedTo/IterationPath are standard VSTS fields present everywhere. `--assign-self`
+> assigns to the creator; `--iteration current` files into the active sprint; `--parent` is **asked**, not assumed.
 
 > **Tags = area + module only** (`--tags "front; orders"`, `"back; catalog"`). Do **not** repeat what a
 > field already carries — the bug type (`Regression`) belongs in `Custom.Typeofbug`, the environment in

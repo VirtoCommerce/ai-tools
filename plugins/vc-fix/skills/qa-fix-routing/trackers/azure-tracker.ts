@@ -375,6 +375,18 @@ export class AzureTracker implements Tracker {
       const v = typeof value === "string" && /(SystemInfo|Description|ReproSteps)$/i.test(path) ? ensureAzureHtml(value) : value;
       fields.push({ op: "add", path: `/fields/${path}`, value: v });
     }
+    // Assignee / iteration / parent. The CLI (ado.mjs) resolves --assign-self / --iteration current
+    // for you; here the caller passes the already-resolved email / path / id. Work-item relation
+    // URLs are org-scoped.
+    if (input.assignedTo) fields.push({ op: "add", path: "/fields/System.AssignedTo", value: input.assignedTo });
+    if (input.iterationPath) fields.push({ op: "add", path: "/fields/System.IterationPath", value: input.iterationPath });
+    if (input.parentId !== undefined && input.parentId !== null && `${input.parentId}` !== "") {
+      fields.push({
+        op: "add",
+        path: "/relations/-",
+        value: { rel: "System.LinkTypes.Hierarchy-Reverse", url: `https://dev.azure.com/${this.org}/_apis/wit/workItems/${input.parentId}` },
+      });
+    }
     const res = await this.req(
       "POST",
       `/_apis/wit/workitems/$${encodeURIComponent(input.type)}?api-version=${API_VERSION}`,
