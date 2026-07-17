@@ -7,7 +7,7 @@
  * + the orders API. Business keys live in test-data/sales-rep/*.csv; runtime platform GUIDs are
  * written to test-data/aliases.<env>.json (never committed into the CSV).
  *
- * The module is deployed on vcptcore-qa only — run with `TEST_ENV=vcptcore`.
+ * The module is deployed on the QA environments (vcst, vcptcore) — run with the matching `TEST_ENV`.
  *
  * Phases (idempotent, look-up-then-create):
  *   1. Owner contact for ACME (distinct from the reps) + enrich ACME org (ownerId, businessCategory, address).
@@ -68,6 +68,15 @@ async function memberExists(id) {
 }
 
 const PAGING_PREFIX = 'AGENT-TEST-SR-Paging-';
+
+/** Resolve a rep's ApplicationUser (login/security-account) id by email — the id GetCurrentUserId()
+ *  returns from the JWT, which salesRepOrders/lastOrder match order.CustomerId against (NOT the
+ *  Contact/member id). Returns null if the account is missing. */
+async function resolveUserId(email) {
+  if (!email) return null;
+  const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
+  return (u && u.id) ? u.id : null;
+}
 
 /** Confirm a rep's account email so it can sign in to the storefront UI (idempotent). */
 async function confirmRepEmail(email) {
@@ -200,9 +209,17 @@ async function ensureOrder(row, orgs, customerId) {
   const org = orgs[row.org];
   if (!org) { log(`  WARN: order ${row.order_key} — org ${row.org} unknown, skip`); return; }
   const number = `${ORDER_MARK}-${row.order_key}`;
-  // Idempotency: search by our deterministic number.
+  const wantCustomerId = customerId || org.id;
+  // Idempotency + self-heal: match by our deterministic number. salesRepOrders/lastOrder match
+  // order.CustomerId == the rep's ApplicationUser (login) id, so an order seeded with the wrong
+  // id (e.g. the pre-fix Contact id) is deleted and recreated with the correct attribution.
   const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
-  if ((found?.totalCount || 0) > 0) { verbose(`order ${number} exists`); return; }
+  const existing = (found?.results || [])[0];
+  if (existing) {
+    if (existing.customerId === wantCustomerId) { verbose(`order ${number} exists (correct customerId)`); return; }
+    await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
+    log(`  order ${number} re-attributing customerId ${existing.customerId} -> ${wantCustomerId}`);
+  }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const price = Math.round((parseFloat(row.total) / n) * 100) / 100;
   const items = Array.from({ length: n }, (_, i) => ({
@@ -210,7 +227,7 @@ async function ensureOrder(row, orgs, customerId) {
     name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: 'USD',
   }));
   const body = {
-    number, storeId: row.store, organizationId: org.id, customerId: customerId || org.id,
+    number, storeId: row.store, organizationId: org.id, customerId: wantCustomerId,
     customerName: row.customer_name, currency: 'USD', status: row.status,
     total: parseFloat(row.total), subTotal: parseFloat(row.total), items,
   };
@@ -273,15 +290,21 @@ async function main() {
   const roleId = await resolveSalesRepRoleId();
   log(`Sales Rep role: ${roleId || '(service default)'}`);
   const repWriteback = {};
-  let primaryContactId = null;
+  let primaryRepEmail = null;
   for (const row of reps) {
     const { contactId, userId, lockedMembershipId } = await ensureRep(row, orgs, roleId);
     repWriteback[row.rep_key] = { contact_id: contactId || '', user_id: userId || '', membership_locked_id: lockedMembershipId || '' };
-    if (row.rep_key === 'SR_REP_PRIMARY') primaryContactId = contactId;
+    if (row.rep_key === 'SR_REP_PRIMARY') primaryRepEmail = row.email;
   }
 
-  // Phase 4 — orders (customerId = primary rep contact, a member of every ACME/etc. org)
-  for (const row of orders) await ensureOrder(row, orgs, primaryContactId);
+  // Phase 4 — orders. salesRepOrders/lastOrder attribute an order to a rep by
+  // order.CustomerId == the rep's ApplicationUser (login) id — the value GetCurrentUserId()
+  // returns from the JWT — NOT the rep's Contact/member id. Stamp the primary rep's account id
+  // so the rep-scoped order queries actually return these orders (VCST-5304/5308).
+  const primaryUserId = await resolveUserId(primaryRepEmail);
+  if (!primaryUserId) log('WARN: could not resolve SR_REP_PRIMARY ApplicationUser id — orders will not be rep-attributed');
+  else verbose(`orders attributed to SR_REP_PRIMARY account id ${primaryUserId}`);
+  for (const row of orders) await ensureOrder(row, orgs, primaryUserId);
 
   // Phase 5 — write-back runtime GUIDs
   syncEnvAliases('sales-rep/sales-reps', repWriteback);

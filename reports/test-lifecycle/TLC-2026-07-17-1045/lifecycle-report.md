@@ -34,7 +34,7 @@ Module-level: all 4 sales-rep suites. Review/gap depth focused on the two suites
 3. **Open Q — gating rule (grounded live):** the "Sales reps" link is gated by **organization membership** (the account-sidebar "Corporate" section), NOT a special permission — both a rep and a plain Purchasing Agent see it; a personal/non-corporate user has no Corporate section. (`PROPOSED-BL-SR-UI-GATE` should say "org membership".)
 4. **Open Q — nested Money `total` CONFIRMED** — `total` is `MoneyType!` on both `salesRepOrders` and `salesRepCustomers.lastOrder`; a flat scalar select is rejected, nested `{amount,formattedAmount,currency{code,symbol}}` validates (200, no errors). Schema also confirms `SalesRepOrder` has **no `customerName`** field (use `organizationName`) — the 050m cases already select `organizationName`.
 5. **⚠️ 091 Customer Profile — BLOCKED (deploy/version gap).** `/company/my-customers/{orgId}` returns the SPA 404 on the deployed theme **pr-2380**, and the in-app row click is a no-op — the profile route is not registered in that theme build. The feature was confirmed on theme **pr-2383**; pr-2380 is deployed. **All SR-CP-* (incl. new SR-CP-021) are Draft/blocked until pr-2383+ deploys.** Not a product bug and not a test defect — recorded as a deploy-blocker note in SR-CP-001. No ticket filed.
-6. **⚠️ Order-attribution data gap.** `salesRepOrders` totalCount=**0** and every `salesRepCustomers.lastOrder`=**null**, despite the seeder creating ACME orders — so the storefront shows "My last order = —" and no order-level assertion (rep-attribution SR-GQL-011, order rows/totals in 091, 089 last-order) can be value-verified. Needs investigation: seed doesn't attribute orders to the rep in the way `salesRepOrders` expects, **or** the query attributes differently than assumed. Value-level order coverage stays blocked until resolved.
+6. **✅ Order-attribution gap — investigated & RESOLVED (seed defect, not a product bug).** `salesRepOrders`/`lastOrder` match orders by `order.OrganizationId ∈ servedOrgs AND order.CustomerId == GetCurrentUserId()` (the rep's **ApplicationUser/login id**), read from the orders DB (not ES) — source: `SalesRepOrdersQueryHandler.BuildSearchCriteria` on the deployed PR-2 branch. The seeder was stamping `order.CustomerId` with the rep's **Contact/member id** (`d88c636a…`), not the account id (`734f5d85…`) — different identifiers, so nothing matched → `totalCount:0`, `lastOrder:null`. Fixed `scripts/seed-data/seed-sales-rep.mjs` to attribute orders by the rep's ApplicationUser id (resolved via `/api/platform/security/users/{email}`) + self-heal existing mis-attributed orders on re-seed; re-seeded vcst-qa. **Verified live:** `salesRepOrders(ACME)` 0→**6** (nested-Money totals across New/Processing/Failed/Cancelled); `lastOrder` non-null for all 4 orgs. Order-level assertions (SR-GQL-011, 089 last-order, 091 orders section) are now value-verifiable.
 7. **Admin embedded-app characterized (no suite exists).** `/#!/workspace/embedded-app/vc-sales-rep` (vc-shell micro-frontend) loads clean. Tabs: Dashboard · Sales Reps (list) · Blocked · Not-assigned Reps · Organizations · Not-assigned Orgs. **Rep-detail blade is where a rep↔org assignment is made** ("Served organizations" multi-select) — the admin action that drives storefront My Customers + buyer Sales-Reps; Block = the buyer-list exclusion. → author `Backend/sales-rep/092-*` (scenarios below).
 8. **Cosmetic:** reps have no seeded phone → 090 Phone column blank.
 
@@ -48,7 +48,7 @@ Module-level: all 4 sales-rep suites. Review/gap depth focused on the two suites
 | G5 Data Validity | PASS | `@td()` 129/129 (050m) + 15/15 (089) + 23/23 (090) + 43/43 (091); 0 hardcoded GUIDs |
 | G6 Coverage | PASS (rec) | PROPOSED-BL-SR-* refs on all cases |
 | G7 Duplication | PASS (rec) | No same-layer dupes |
-| G8 Environment | **PARTIAL** | 089+090 VERIFIED; Money shape CONFIRMED; **091 BLOCKED (theme)**; order-attribution BLOCKED (seed) |
+| G8 Environment | **PARTIAL** | 089+090 VERIFIED; Money shape CONFIRMED; order-attribution FIXED (seed → `salesRepOrders` 0→6); **091 BLOCKED (theme pr-2380)** |
 | G9 Sync | PASS | All env-pins removed; module-suite-map gap closed |
 
 ## Files Modified
@@ -70,7 +70,7 @@ Module-level: all 4 sales-rep suites. Review/gap depth focused on the two suites
 ## Next Steps
 - [ ] Commit `aliases.vcst.json` overlay + this run's suite/config/knowledge edits (branch off `main`)
 - [ ] Provision `TEST_USER_PASSWORD` + `B2B_USER_PASSWORD` in CI/GitHub-Actions secret + team vault
-- [ ] Investigate order-attribution: seeded ACME orders not surfaced by `salesRepOrders` (seed vs product)
+- [x] Investigate order-attribution — RESOLVED: seed used the Contact id instead of the rep's ApplicationUser id for `order.CustomerId`; fixed seeder + re-seeded + verified (`salesRepOrders` 0→6). See finding 6.
 - [ ] Re-verify all SR-CP-* (091) once theme `2.54.0-pr-2383+` deploys on vcst-qa; then promote
 - [ ] Author `Backend/sales-rep/092-*` admin embedded-app suite (see scenarios)
 - [ ] (Minor) seed rep phone numbers for 090 Phone-column coverage
