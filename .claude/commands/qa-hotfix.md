@@ -72,6 +72,11 @@ anything (this is the "я тебе говорю v12 и v14" step).
    Note: a vc-frontend hotfix asset is named `vc-frontend-X.Y.Z.zip`, not `vc-theme-b2b-vue-*`
    (`reference-vc-frontend-release-asset-naming`) — use the release's real `assets[]` URL when a
    bundle pin must be updated.
+7. **Offer self-diagnostics (consent-gated).** At the very end of the run — released, STOPPED, or
+   BAILed — ask a single Yes/No to run [`/vc-self-check`](../skills/vc-self-check/SKILL.md) on this
+   session (local `DIAG-*.md` only, nothing sent externally). Run it **only** on an explicit Yes;
+   never auto-trigger. Skip the offer silently if the end-of-session prompt already offered it
+   (`selfCheckSeen`) or telemetry wasn't collected. See the skill's *Final step* section.
 
 ## Hard rules
 
