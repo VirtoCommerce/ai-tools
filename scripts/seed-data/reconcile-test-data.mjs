@@ -21,6 +21,12 @@
  *                          WITH a role; a multi-org user's memberships carry DIFFERENT roles.
  *   5. Secret hygiene     — no password literals committed in the user CSVs
  *                          (b2b, personal, agent-pool, white-labeling).
+ *   9. Org address parity — each seeded org's LIVE member address fields
+ *                          (regionName/city/postalCode/countryCode/line1) match the
+ *                          CSV columns. Catches a seed storing a diverging value —
+ *                          e.g. the region CODE ("NY") where the CSV holds the NAME
+ *                          ("New York") (the VCST-5304 D2 drift). Quote-aware CSV
+ *                          parse (the earlier naive split misread quoted columns).
  *
  * Usage:
  *   TEST_ENV=vcst   npm run td:reconcile
@@ -131,6 +137,88 @@ function parseCsvLoose(text) {
     head.forEach((h, i) => { row[h] = (cells[i] || '').trim(); });
     return row;
   });
+}
+
+/**
+ * Quote-aware single-line CSV parse. parseCsvLoose() splits on every comma, which
+ * misreads any quoted field containing a comma and shifts all later columns — fine
+ * for the early name/id columns the other checks read, but WRONG for the address
+ * columns check [9] compares (this is the parsing bug that masked the D2 drift).
+ * Handles "" escapes; assumes no embedded newlines (true for organizations.csv).
+ */
+function parseCsvQuoted(text) {
+  const parseLine = (line) => {
+    const out = [];
+    let cur = '';
+    let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (q) {
+        if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+        else if (ch === '"') q = false;
+        else cur += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === ',') { out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out;
+  };
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
+  if (!lines.length) return [];
+  const head = parseLine(lines[0]).map((h) => h.trim());
+  return lines.slice(1).map((l) => {
+    const cells = parseLine(l);
+    const row = {};
+    head.forEach((h, i) => { row[h] = (cells[i] || '').trim(); });
+    return row;
+  });
+}
+
+/* ── 9. Org address parity — seeded member address ↔ CSV columns ──
+ * For each seeded org with a pinned platform_id, GET the live member and compare its
+ * first address against the CSV columns. A mismatch means the seed stored a value that
+ * diverges from the committed CSV (the VCST-5304 D2 class: regionName held the code
+ * "NY" while region_name column = "New York"). Reported as a WARNING — it doesn't break
+ * @td resolution, but it's a data-quality signal a suite assertion can trip over. */
+async function checkOrgAddressParity() {
+  console.log('\n[9] Org address parity (seeded member address ↔ CSV columns)');
+  const p = join(ROOT, 'test-data/b2b/organizations.csv');
+  if (!existsSync(p)) { warn('test-data/b2b/organizations.csv not found — skipping'); return; }
+  const rows = parseCsvQuoted(readFileSync(p, 'utf8')).filter((r) => /^(true|yes|1)$/i.test(r.seeded || ''));
+  if (!rows.length) { warn('no seeded=true org rows to check'); return; }
+  // CSV column → live member address field. region_name is the NAME; the platform
+  // address field is regionName (should hold the name, not the region_id code).
+  const MAP = [
+    ['region_name', 'regionName'],
+    ['city', 'city'],
+    ['postal_code', 'postalCode'],
+    ['country_code', 'countryCode'],
+    ['address_line1', 'line1'],
+  ];
+  let drift = 0;
+  let checked = 0;
+  for (const r of rows) {
+    const id = r.platform_id;
+    if (!id) continue; // only orgs with a pinned GUID resolve to a stable live member here
+    let m = null;
+    try { m = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] }); }
+    catch (e) { warn(`org ${r.org_id}: member GET error — ${String(e.message).slice(0, 80)}`); continue; }
+    if (!m?.id) { warn(`org ${r.org_id} (${id}) not found live — skip parity`); continue; }
+    const addr = (m.addresses || [])[0];
+    if (!addr) { warn(`org ${r.org_id}: live member has no address to compare`); continue; }
+    checked++;
+    for (const [csvCol, liveField] of MAP) {
+      const csvVal = (r[csvCol] || '').trim();
+      const liveVal = String(addr[liveField] ?? '').trim();
+      if (csvVal && liveVal && csvVal.toLowerCase() !== liveVal.toLowerCase()) {
+        warn(`org ${r.org_id} address.${liveField} DRIFT: csv ${csvCol}="${csvVal}" ≠ live="${liveVal}"`);
+        drift++;
+      }
+    }
+  }
+  if (!drift) ok(`address fields match the CSV for ${checked} seeded org(s) (region/city/postal/country/line1)`);
+  else warn(`${drift} address-field drift(s) across seeded orgs — the seed stored a value diverging from the CSV column (e.g. region code vs name). Reseed/PATCH the member, or correct the CSV.`);
 }
 
 async function checkB2bOrgs() {
@@ -396,6 +484,7 @@ async function checkSeoComplete() {
   await checkCatalogRoot();
   await checkUserRoles();
   await checkB2bOrgs();
+  await checkOrgAddressParity();
   await checkB2bMemberships();
   checkSecretHygiene();
   await checkDuplicateSeedEntities();

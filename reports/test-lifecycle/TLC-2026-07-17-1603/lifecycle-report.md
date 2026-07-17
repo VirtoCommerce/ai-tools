@@ -91,6 +91,8 @@ The reason 050m was 80 GraphiQL-UI rows: `graphql-runner.ts` hardwired `/graphql
 - [ ] Fix `graphql-auth.ts` `resolveRole()` to run `{{VAR}}` substitution on CSV-resolved creds (affects every `b2b/users.csv`-backed alias — e.g. ACME_BUYER → literal `{{B2B_USER_PASSWORD}}`; broader than this suite).
 - [x] ~~Provision `STORE_ID_SECONDARY` on vcst~~ — added `STORE_ID_SECONDARY=Electronics` to `.env.defaults` (verified live). ~~seed `SR_REP_PAGING`~~ — already seeded on vcst-qa (12 orgs, verified live).
 - [x] ~~Enhance `seed-sales-rep.mjs` for SR-FE-030~~ — investigated & found the state unreachable; deprecated SR-FE-030 + added SR-GQL-041 instead (seeder unchanged).
+- [x] **Added `td:reconcile` check [9] — org address parity** (seeded member address ↔ CSV columns, quote-aware parse). Surfaced systematic `regionName` code-vs-name drift on **ORG-001/002/003** (NY/CA/TX stored where the CSV holds the full name) + a **full-address drift on ORG-003** (live `city=Austin, postal=78701, line1="100 Job Site Rd"` ≠ CSV `Houston/77001/"2800 Industrial Blvd"`). Reported as warnings.
+- [ ] **Data cleanup (needs reseed/PATCH):** correct the seeded org members so `regionName` holds the name (per address convention) and ORG-003's address matches the CSV — then revert SR-GQL-036/039 to assert the region name.
 - [ ] Optional DATA-grammar extension: top-level scalar `!=` predicate.
 - [ ] Run `/qa-regression sales-rep` once fixtures are seeded to close G8 value-level coverage.
 
