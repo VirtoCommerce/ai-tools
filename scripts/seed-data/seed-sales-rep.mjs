@@ -205,6 +205,20 @@ async function ensureRep(row, orgs, roleId) {
 
 const ORDER_MARK = 'AGENT-TEST';
 
+/** Build an order address (Shipping|Billing) from the served org's address fields. */
+function orderAddress(org, addressType) {
+  return {
+    addressType,
+    firstName: 'AGENT-TEST', lastName: 'Buyer',
+    line1: org.line1 || '1 Main St',
+    city: org.city || 'New York',
+    regionName: org.region || 'New York',
+    countryCode: org.countryCode || 'USA', countryName: org.country || 'United States',
+    postalCode: org.postal || '10001',
+    phone: '+1-206-555-0100', email: 'agent-test-sr-order@example.com',
+  };
+}
+
 async function ensureOrder(row, orgs, customerId) {
   const org = orgs[row.org];
   if (!org) { log(`  WARN: order ${row.order_key} — org ${row.org} unknown, skip`); return; }
@@ -216,9 +230,12 @@ async function ensureOrder(row, orgs, customerId) {
   const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
   const existing = (found?.results || [])[0];
   if (existing) {
-    if (existing.customerId === wantCustomerId) { verbose(`order ${number} exists (correct customerId)`); return; }
+    const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
+    const enriched = (full?.addresses || []).length && (full?.shipments || []).length && (full?.inPayments || []).length;
+    const totalOk = Math.abs((full?.total || 0) - parseFloat(row.total)) < 0.01;
+    if (existing.customerId === wantCustomerId && enriched && totalOk) { verbose(`order ${number} exists (attributed + enriched + total ok)`); return; }
     await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
-    log(`  order ${number} re-attributing customerId ${existing.customerId} -> ${wantCustomerId}`);
+    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk})`);
   }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const price = Math.round((parseFloat(row.total) / n) * 100) / 100;
@@ -226,10 +243,30 @@ async function ensureOrder(row, orgs, customerId) {
     sku: `AGENT-TEST-SR-SKU-${i + 1}`, productId: `agent-test-sr-prod-${i + 1}`, catalogId: 'agent-test-sr',
     name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: 'USD',
   }));
+  const total = parseFloat(row.total);
+  const shipAddr = orderAddress(org, 'Shipping');
+  const billAddr = orderAddress(org, 'Billing');
+  // NOTE on totals: the platform's order-total calculator folds shipment.total and inPayment.total
+  // back into order.Total, so a non-zero shipment/payment total inflates the order (observed $120→$255).
+  // Keep the structural records (address/shipment/payment) but zero their monetary totals so order.Total
+  // stays == the CSV total (preserving the salesRepOrders/lastOrder totals verified in 091). The payment's
+  // `sum` carries the amount (mirrors a real order: sum=<amount>, total=0).
   const body = {
     number, storeId: row.store, organizationId: org.id, customerId: wantCustomerId,
     customerName: row.customer_name, currency: 'USD', status: row.status,
-    total: parseFloat(row.total), subTotal: parseFloat(row.total), items,
+    total, subTotal: total, shippingTotal: 0, shippingTotalWithTax: 0, taxTotal: 0, items,
+    addresses: [shipAddr, billAddr],
+    shipments: [{
+      shipmentMethodCode: 'FixedRate', shipmentMethodOption: 'Ground', currency: 'USD',
+      price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
+      status: 'New', number: `${number}-S1`, deliveryAddress: shipAddr, items: [],
+    }],
+    inPayments: [{
+      gatewayCode: 'DefaultManualPaymentMethod', currency: 'USD',
+      customerId: wantCustomerId, customerName: row.customer_name, organizationId: org.id,
+      sum: total, price: 0, priceWithTax: 0, total: 0, totalWithTax: 0, status: 'New', paymentStatus: 'New',
+      number: `${number}-P1`, billingAddress: billAddr,
+    }],
   };
   const created = await api('POST', '/api/order/customerOrders', body);
   log(`  order ${number} (${row.status}, ${row.store}, ${n} items) -> ${created?.id || '(created)'}`);
