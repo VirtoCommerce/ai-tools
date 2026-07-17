@@ -42,7 +42,9 @@
  * Flags: --out <path> (default project-profile.json under outputRoot), --write (apply;
  * default is dry-run), --set <path>=<value> (repeatable; folds a decision/rescan value
  * in — value is coerced: true/false → boolean, integer → number, else string), --print
- * (echo the full report JSON — implied when not --write).
+ * (echo the full report JSON — implied when not --write), --force (allow a --write that
+ * would remove ≥5 fields — without it such a prune returns status "needs-force" and writes
+ * nothing, guarding against reconciling a rich profile against a leaner schema).
  *
  * Exit code is always 0 (the skill reads the JSON to decide next steps); a genuine IO/parse
  * failure prints an { "error": ... } report and still exits 0 so the skill can handle it.
@@ -242,6 +244,31 @@ function main() {
   const { migrated, added, removed, pending, rescan } = reconcile(PROFILE_DEFAULTS, raw, decisions);
   const hasStructuralChange = added.length > 0 || removed.length > 0;
   const status = hasStructuralChange || pending.length > 0 ? "changes" : "current";
+
+  // Prune safety valve. A normal reconcile drops 0–2 genuinely-obsolete fields; dropping a large
+  // batch usually means this tree's schema is a SUBSET of the one that wrote the profile (e.g. a
+  // richer plugin profile reconciled against a leaner schema) — writing would strip live config.
+  // Refuse to --write such a prune unless the operator confirms with --force. --print is unaffected.
+  const REMOVE_GUARD = 5;
+  if (args.write && !args.force && removed.length >= REMOVE_GUARD) {
+    console.log(
+      JSON.stringify(
+        {
+          status: "needs-force",
+          path: outPath,
+          wrote: false,
+          reason: `refusing to remove ${removed.length} fields without --force — this looks like a schema mismatch (a leaner schema than the one that wrote the profile), not stale fields. Review 'removed'; re-run with --force only if the removals are truly intended.`,
+          added,
+          removed,
+          pending,
+          rescan,
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
 
   let wrote = false;
   if (args.write && (hasStructuralChange || Object.keys(decisions).length > 0)) {

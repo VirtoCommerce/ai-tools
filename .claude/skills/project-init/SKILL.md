@@ -398,7 +398,9 @@ does **NOT** re-run the interview.
    re-run `discover-*` for any `rescan` and fold back with `gen-profile --merge`; then
    `node skills/project-init/reconcile-profile.mjs --write --set <path>=<value>` (one `--set`
    per decision). Unresolved fields are left absent (safe — a missing field reads as its
-   no-op default) and stay reported. Idempotent: once done, the report is `current`.
+   no-op default) and stay reported. Idempotent: once done, the report is `current`. A `--write`
+   that would remove **≥5 fields** returns `status:"needs-force"` and writes nothing (likely a
+   schema mismatch, not stale fields) — review `removed`, then re-run with `--force` only if intended.
 3. **Verify:** `FORCE_COLOR=1 TEST_ENV=<env> node skills/project-init/verify-access.mjs`.
 
 Restate both the reconciliation summary and the readiness table in your reply.

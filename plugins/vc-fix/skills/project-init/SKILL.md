@@ -532,6 +532,11 @@ no-op default (e.g. no `selfDiagnostics` ⇒ the telemetry hook does nothing) �
 the report so a later `--check` can finish them. Reconciling is **idempotent**: once done,
 the report is `current`.
 
+If a `--write` would remove **≥5 fields** it returns `status:"needs-force"` and writes
+nothing — that many removals usually means a schema mismatch (reconciling against a leaner
+schema than the one that wrote the profile), not stale fields. **Review the `removed` list**;
+only if the removals are genuinely intended, re-run with `--force`.
+
 ### Step C — verify access
 
 Run the readiness table (§8) so a stale token / URL / login surfaces too:

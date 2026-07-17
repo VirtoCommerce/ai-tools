@@ -12,6 +12,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Fixed — code-review follow-ups (Azure tooling + reconcile + telemetry)
+
+Addresses the findings from the PR review:
+
+- **HTML-field over-match (correctness).** The custom-field HTML decision was a suffix regex `/(SystemInfo|Description|ReproSteps)$/i` — it would wrongly Markdown→HTML-convert a plaintext custom field like `Custom.ProblemDescription` / `Custom.EnvSystemInfo`, corrupting its value. Now an **exact** allowlist (`isHtmlField`, the three real HTML refs only).
+- **De-duplicated the Azure field-building (maintainability).** New shared `skills/qa-fix-routing/ado-html.mjs` (+ `.d.mts`) owns `mdToHtml`/`ensureAzureHtml`/`isHtmlField` and a single `buildBugFields()` Bug JSON-Patch builder. `ado.mjs` and `trackers/azure-tracker.ts` now both call it instead of hand-mirroring ~11 fields (and a full second copy of `ensureAzureHtml`) across JS and TS — the drift risk the review flagged is gone.
+- **Reconcile prune guard (data-loss).** `reconcile-profile.mjs --write` now refuses to remove **≥5 fields** without `--force`, returning `status:"needs-force"` — so reconciling a rich profile against a leaner schema (e.g. via the native `.claude` surface) can't silently strip live `/qa-fix` routing config.
+- **Telemetry double-read (efficiency).** `session-telemetry.mjs cmdInit` read + parsed `project-profile.json` twice per session start (gate + projectType); now memoized to one read per process.
+
 ### Fixed — `/qa-bug` Azure Boards work items now match the lean gold-standard shape
 
 Azure bugs filed by `/qa-bug` were dumping the whole markdown report (env tables, module versions, 4-layer validation, root-cause, fix routing) into `System.Description`, with no summary and environment baked into the body — nothing like the target shape. Realigned to the reference bug template.
