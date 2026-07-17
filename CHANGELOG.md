@@ -12,6 +12,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Added — `/project-init --check` reconciles a stale profile to the current schema
+
+A deployment onboarded on an older plugin keeps its `project-profile.json` across upgrades, but the schema (`PROFILE_DEFAULTS`) evolves — fields get added / removed / need re-deriving. `--check` now migrates the profile before verifying, instead of only running the readiness table.
+
+- New `skills/project-init/reconcile-profile.mjs` (deterministic, dry-run by default) diffs the profile against `PROFILE_DEFAULTS` → JSON report: **`added`** (missing fields with a safe default, auto-filled on `--write`) · **`removed`** (obsolete fields pruned — but **open maps** `roleStates`/`stateMap`/`workItemTypes` and **arrays** `repos.*` are kept wholesale) · **`pending`** (fields that are the operator's decision — each carries its own `question` + `options`, e.g. `selfDiagnostics` — never auto-filled) · **`rescan`** (fields to re-derive from a live scan). Mirrors `gen-profile`'s discriminated `tracker.azure`/`vcs.azure` pruning, so a non-Azure profile is never re-grown an empty `azure:{}`. `--write` applies structural changes + `--set <path>=<value>` decisions; idempotent (a reconciled profile reports `current`).
+- The `/project-init` skill's new **`--check`** section drives it: reconcile (dry-run) → ask each `pending` via `AskUserQuestion` / re-scan → `--write` the decisions → verify-access. Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
 ### Fixed — session-telemetry gated on a `selfDiagnostics` opt-in (no stray `.vc-fix/` in random folders)
 
 - The `SessionStart` hook previously ran `session-telemetry.mjs init` unconditionally, creating `<cwd>/.vc-fix/diagnostics/` (a `session_start` record + `.state.json`) on **every** Claude launch in **any** directory — before any skill ran. Running Claude in an unrelated folder left a junk `.vc-fix/` behind.

@@ -480,6 +480,71 @@ and point the operator at the first run:
 
 ---
 
+## `--check` — reconcile an existing profile, then verify
+
+`/project-init --check` is for a deployment that is ALREADY onboarded — most often
+**after a plugin upgrade**. The schema (`PROFILE_DEFAULTS` in `scripts/lib/project-profile.mjs`)
+evolves between versions — fields are **added** (e.g. `selfDiagnostics`), **removed**
+(e.g. the old baked `pluginRoot`), or need a fresh **rescan** (repos / tracker role model
+drift) — but the on-disk `project-profile.json` was written once and goes stale. `--check`
+brings it back in line with the current schema, then runs the readiness table. It does
+**NOT** re-run the interview.
+
+### Step A — reconcile the profile (deterministic, dry-run first)
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --print
+```
+
+`reconcile-profile.mjs` diffs the profile against the current schema and prints a JSON
+report — no writes, no scans, no questions of its own:
+
+- **`added`** — schema fields missing from the profile that have a SAFE default (filled
+  automatically on `--write`). Discriminated blocks (`tracker.azure`, `vcs.azure`) follow
+  the same rule `gen-profile` uses, so a Jira+GitHub profile is never re-grown an `azure:{}`.
+- **`removed`** — obsolete fields no longer in the schema (pruned on `--write`). **Open
+  maps** (`tracker.azure.roleStates`/`stateMap`/`workItemTypes`) and **arrays** (`repos.*`)
+  are kept wholesale — their contents are data, not schema.
+- **`pending`** — fields whose value is the OPERATOR's decision (a privacy / behaviour
+  opt-in, e.g. `selfDiagnostics`). Each carries its own `question` + `options`; **never**
+  auto-filled.
+- **`rescan`** — fields that should be re-derived from a live scan (repos / tracker).
+
+`status:"no-profile"` ⇒ never onboarded — run the **full interview** instead, don't reconcile.
+`status:"current"` ⇒ nothing stale — skip to **Step C**.
+
+### Step B — resolve decisions + rescans, then write
+
+- For each **`pending`** entry, ask the operator with **`AskUserQuestion`**, using the
+  entry's own `question` + `options` (make the `default` value the Recommended option).
+- For each **`rescan`** entry, re-run the matching discovery (`discover-repos` /
+  `discover-tracker`) and fold the result back via `gen-profile --merge` (§ Re-running).
+- Then apply everything in one write, one `--set path=value` per resolved decision:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write \
+  --set selfDiagnostics=<true|false>
+```
+
+`--write` applies the structural adds/removes plus any `--set` decisions. Unresolved
+`pending`/`rescan` fields are left **absent** — safe, because a missing field reads as its
+no-op default (e.g. no `selfDiagnostics` ⇒ the telemetry hook does nothing) — and stay in
+the report so a later `--check` can finish them. Reconciling is **idempotent**: once done,
+the report is `current`.
+
+### Step C — verify access
+
+Run the readiness table (§8) so a stale token / URL / login surfaces too:
+
+```bash
+FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+```
+
+**Restate BOTH** the reconciliation summary (added / removed / decided) **and** the
+readiness table in your reply.
+
+---
+
 ## How this makes `/qa-fix` route correctly
 
 Once the profile exists, the fix pipeline uses it automatically:
@@ -524,6 +589,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `derive-context.mjs` | the **derive block**: reads the filled env + sessions, probes the upstream permission, emits JSON — auth actually present per axis, contributionMode, forkAccount, operator |
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
+| `reconcile-profile.mjs` | **`--check` migration**: diff an existing profile against the current `PROFILE_DEFAULTS` schema → JSON report of `added` (safe-default) / `removed` (obsolete, open-maps+arrays preserved) / `pending` (operator-decision fields with `question`+`options`, e.g. `selfDiagnostics`) / `rescan` (re-derive live). Deterministic, dry-run by default; `--write` applies structural changes + `--set path=value` decisions. Idempotent. Mirrors `gen-profile`'s `tracker.azure`/`vcs.azure` discriminated pruning |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see `knowledge/execution/plugin-root.md`.) |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |

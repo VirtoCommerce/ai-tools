@@ -1,6 +1,6 @@
 ---
 description: "Initialize / onboard this QA plugin for a deployment — install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Writes project-profile.json + .env + .mcp.json, verifies access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
-argument-hint: "(no args — interactive) | --check (verify an existing setup)"
+argument-hint: "(no args — interactive) | --check (reconcile an existing profile + verify)"
 disable-model-invocation: true
 ---
 
@@ -26,7 +26,7 @@ permissions + the filled env + a live module/repo scan.
 
 ```
 /project-init            # run the full onboarding interview + pipeline
-/project-init --check    # just run verify-access.mjs against the current setup
+/project-init --check    # reconcile an existing profile to the current schema, then verify
 ```
 
 ## Flow (the skill drives this)
@@ -101,4 +101,18 @@ permissions + the filled env + a live module/repo scan.
    contributionMode) + manual actions (reload IDE for `.mcp.json`, pending OAuth) + first
    run `/qa-fix <TICKET>`.
 
-For `--check`, skip to step 8: `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`.
+### `--check` — reconcile an existing setup (after a plugin upgrade), then verify
+
+Do **not** re-run the interview. The skill's **`--check`** section drives this:
+
+1. **Reconcile** the profile to the current schema (dry-run):
+   `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --print` — prints
+   `added` (safe defaults) / `removed` (obsolete fields) / `pending` (operator-decision
+   fields, each with a `question`+`options` — e.g. `selfDiagnostics`) / `rescan` (re-derive
+   live). `no-profile` ⇒ run the full interview instead; `current` ⇒ nothing stale.
+2. **Ask** each `pending` decision via `AskUserQuestion` (default = Recommended); re-run
+   `discover-*` for any `rescan`; then apply:
+   `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write --set <path>=<value>`.
+3. **Verify**: `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`.
+
+Restate both the reconciliation summary and the readiness table in your reply.
