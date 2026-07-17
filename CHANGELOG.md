@@ -10,11 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Forward-looking work on top of v0.7.0. Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.7.0`** (marketplace `0.9.0`). Pin to a tagged release for stability; this branch tip is unstable.
 
 ### Added — vc-fix self-diagnostics subsystem (VCST-5475–5479)
 
-A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills ran correctly and, opt-in, report quality issues back to VirtoCommerce — without ever mutating the client install or leaking client code. `vc-fix` now ships **8 agents, 15 skills, 7 commands** (plugin `0.6.0`; marketplace `0.9.0`).
+A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills ran correctly and, opt-in, report quality issues back to VirtoCommerce — without ever mutating the client install or leaking client code. `vc-fix` now ships **8 agents, 15 skills, 7 commands** (plugin `0.7.0`; marketplace `0.9.0`).
 
 - **Tier A:** `hooks/session-telemetry.mjs` (passive) wired via `hooks/hooks.json` — `SessionStart`→init, `PostToolUse[Skill]`→record, `Stop`→finalize. Records per-skill boundaries, timings, and deterministic signals (tool errors, denied permissions, hook failures, STOP/BAIL markers, anomaly score) to gitignored `<outputRoot>/.vc-fix/diagnostics/<session_id>.jsonl`. Secrets redacted; never throws/blocks a tool.
 - **Oracle:** `knowledge/diagnostics/skill-expectations.md` — per-command expected phases/gates + anti-patterns + an S0–S3 severity rubric.
@@ -22,31 +22,37 @@ A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills
 - **Delivery:** `skills/vc-self-check/deliver.mjs` (`/vc-self-check deliver`) — scrubbed (§2a client-code containment), consent-gated (draft-and-confirm) contribution to `VirtoCommerce/vc-mcp-testing-module`, routed by GitHub-token rights (PR / fork-PR / issue / local), with issue dedup.
 - Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
 
-### Fixed — `paths.pluginRoot` survives a plugin upgrade
+### Fixed — client-deployment robustness (Azure Boards / Azure Repos) + plugin-root resolution
 
-`/project-init` used to bake an absolute, **version-pinned** plugin path
-(`…/vc-tools/vc-fix/<version>`) into `project-profile.json` `paths.pluginRoot`. On upgrade
-the marketplace installs a new versioned sibling dir (old versions are not pruned), so the
-baked path went stale — every `/qa-fix`/`/qa-bug` `node "$pluginRoot/skills/…"` call then
-either failed (path gone) or silently ran the OLD version's scripts, and the profile never
-self-healed.
+Bundle of fixes surfaced by a client deployment on Azure Boards + Azure Repos (PR #122).
 
-- New `SessionStart` hook `hooks/vc-fix-latest-link.mjs` maintains a stable OS link
-  `~/.claude/vc-fix-latest` → the currently-active plugin root (Windows junction / POSIX
-  dir symlink; idempotent; refuses to replace a real directory; never blocks a session).
-  Plugin-declared hooks receive `${CLAUDE_PLUGIN_ROOT}` and the harness always loads the
-  active version's hooks, so no semver scan is needed.
-- `gen-profile.mjs` (`--runtime-mode plugin`) now bakes that stable link into
-  `paths.pluginRoot` (new `stableLinkPath()` in `skills/project-init/lib/paths.mjs`),
-  falling back to the versioned dir only if the home directory is unresolvable. The
-  `agent-project` checkout path is unchanged.
-- `verify-access.mjs` gained a **plugin root** check — `paths.pluginRoot` resolves and
-  `skills/qa-fix-routing/ado.mjs` is present under it — so a stale/broken link surfaces in
-  the readiness table instead of at Gate 2.
-- Backward compatible: existing profiles with a versioned path keep working until that dir
-  is pruned; a single new session re-links, so **no `/project-init` re-run is needed after
-  an upgrade**. Plugin-only change (`plugins/vc-fix/`); the project-scoped `.claude/`
-  checkout has no versioned cache dir and is unaffected.
+- **Plugin root is resolved at runtime, not baked.** `paths.pluginRoot` is no longer written
+  to `project-profile.json`, and the earlier stable-link workaround
+  (`hooks/vc-fix-latest-link.mjs` + `stableLinkPath()`) is **removed** — it went stale/dangling
+  on upgrades. Commands now resolve `$pluginRoot` = the ACTIVE (enabled) install at call time
+  via the documented `claude plugin list --json` (fallback: highest-semver scan of
+  `~/.claude/plugins/cache/*/vc-fix/`); see `knowledge/execution/plugin-root.md`. Result: no
+  version-stamped path, no stale link, **no `/project-init` re-run after an upgrade**.
+  `verify-access.mjs` now probes that resolver.
+- **`ado.mjs` auto-loads `.env.local` / `.env.${TEST_ENV}`** via `loadLayeredEnv` (like the
+  sibling scripts), so `TEST_ENV=<env> node ado.mjs …` resolves `ADO_PAT` standalone — no more
+  "Azure DevOps auth unavailable" until the shell was manually sourced.
+- **`ado.mjs search` subcommand** — ADO Code Search on the `almsearch.*` host; always sends
+  `filters.Project` and only pairs `filters.Repository` with it (the API rejects
+  Repository-without-Project). `qa-bug` §3 documents the filter-pair requirement.
+- **Azure Boards content authored as HTML** (`System.Description` / `ReproSteps` / comments are
+  HTML fields) with a Markdown→HTML safety net; hardened against mixed Markdown+embed bodies
+  (raw-HTML-line passthrough) and disallowed link schemes (`javascript:`/`data:` neutralized).
+- **Storefront `upstreamRef`** resolves a fork line to `<major>.<minor>.0` by verifying that tag
+  exists upstream (verbatim, `v`-prefix preserved), falling back to smallest-on-line /
+  earlier-line — the resolvable baseline `/qa-fix` Gate 1b needs.
+- **Self-diagnostics** made runnable + accurate: `/vc-self-check` is model-invocable (the `Stop`
+  consent prompt uses the `AskUserQuestion` tool and, on Yes, runs the skill — the old
+  `disable-model-invocation` dead-ended it); scoring/consent key off the **skill-attributed**
+  anomaly (`skillTotals`/`skillAnomalyScore`), and the collector logs the agents a skill delegates
+  to (`agent_calls`), so it logs/analyses only skill + skill-invoked-agent activity.
+
+Plugin-tree changes (`plugins/vc-fix/`).
 
 ### Changed — self-diagnostics consent prompt: skill-gated, opinion-poll UI, auto-run on Yes
 

@@ -64,38 +64,52 @@ this skill**.
 Read [`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
 — the per-skill expected phases/outputs/anti-patterns and the S0–S3 rubric.
 
-### Step 2 — Build the span list
+### Step 2 — Build the span list (skill + skill-invoked agents ONLY)
 From the jsonl, assemble each skill span (`skill_start` → matching `skill_end`)
-plus the still-open `finalize.openSkill`, and the session-prefix signals (those
-recorded before the first `skill_start`). **Drop any span whose skill matches
-`vc-self-check`** (dedup guard). If there are no spans and `finalize.anomalyScore`
-is 0 → a clean session: report "no issues" (a one-line DIAG is fine) and stop.
+plus the still-open `finalize.openSkill`. **These skill spans — and the agents each
+span delegated to (the `agent_call` details / `agent_calls` count) — are the ONLY
+data you analyse.** **Drop any span whose skill matches `vc-self-check`** (dedup guard).
+- The **session-prefix signals** (recorded before the first `skill_start`) and any
+  session-wide `finalize.totals`/`anomalyScore` are **environment/development noise —
+  NOT scored**. Never let them drive a verdict; mention them (if at all) only as a
+  one-line context note.
+- Clean-session test uses the **skill-scoped** view: if there are no non-`vc-self-check`
+  spans, or `finalize.anySkillSeen` is false, or `finalize.skillAnomalyScore` is 0 →
+  a clean session: report "no issues" (a one-line DIAG is fine) and stop.
 
 ### Step 3 — Diagnose each span against the oracle
 For each span:
 1. Take its recorded signal counts (`tool_error`, `permission_denied`,
-   `hook_failure`, `stop_bail`, `tool_calls`).
+   `hook_failure`, `stop_bail`, `tool_calls`, `agent_calls`) plus its `agent_call`
+   details (which agents the skill delegated to).
 2. Where a verdict depends on **presence/absence of a required phase or output**
    (the oracle's S1/S2 rows), open the `transcriptPath` and confirm — e.g. did
    `/qa-fix` actually reach a green G2 repro before the PR? did `/qa-verify-fix`
    run Step 2 before the `testing` transition? was the bug report written and
    within its cap?
-3. Emit, per skill:
+3. **A skill-invoked agent's failure is the SPAWNING SKILL's finding.** A sub-agent
+   runs in its own transcript (its internal signals aren't in this jsonl), but a
+   failed/denied `Task` surfaces as a `tool_error`/`permission_denied` on the span
+   plus the `agent_call` detail — attribute it to the skill that delegated (e.g.
+   "`/qa-fix` → `fullstack-backend`: permission_denied on `gh pr create`").
+4. Emit, per skill:
    - **verdict**: `OK` (S0) / `DEGRADED` (S2/S3) / `BROKEN` (S1) — map via the
      oracle rubric. A clean STOP/BAIL is `OK`.
    - **severity**: S0 / S1 / S2 / S3.
-   - **evidence**: the signal counts + a transcript reference (line/turn), no dumps.
+   - **evidence**: the signal counts (+ delegated agent, if any) + a transcript
+     reference (line/turn), no dumps.
    - **root-cause hypothesis**: one or two sentences.
    - **proposed fix**: a concrete plugin file (and line/area if known) — e.g.
      "extend `ALLOWED_PATTERNS` in `hooks/enforce-real-user.mjs`", "trim the bug
      report per `reports.md` §4", "the `testing` transition in `commands/qa-verify-fix.md`
      Step 3 fired before Step 2 confirmed deploy".
 
-### Step 4 — Session-wide cross-cutting check
-Evaluate the finalize totals against the oracle's §4 cross-cutting table
-(tsc-on-every-Edit, browser fallback loop, denied-tool retry storm, oversized
-report, silent all-clear on a failed probe, merge attempt, write under the plugin
-dir). Add any hit as its own finding.
+### Step 4 — Skill-scoped cross-cutting check
+Evaluate the **skill-attributed** rollup (`finalize.skillTotals` / `skillAnomalies`,
+i.e. signals raised WHILE a skill was running — never the session-wide `totals`)
+against the oracle's §4 cross-cutting table (tsc-on-every-Edit, browser fallback loop,
+denied-tool retry storm, oversized report, silent all-clear on a failed probe, merge
+attempt, write under the plugin dir). Add any hit as its own finding.
 
 ### Step 5 — Write the LOCAL DIAG report
 Write `<outputRoot>/.vc-fix/diagnostics/DIAG-<session-id>-<UTC-timestamp>.md`
