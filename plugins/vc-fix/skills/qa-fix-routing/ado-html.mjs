@@ -209,6 +209,12 @@ function normalizeList(v) {
  * @param {import("./ado-html.d.mts").BugFieldInput} input
  */
 export function buildBugFields(input = {}) {
+  // Title is the one required field — assert here so the shared builder fails loudly instead
+  // of emitting a title-less op that ADO rejects with an opaque 400. (Both callers already
+  // guard, but this is the single source of truth, so it validates its own contract.)
+  if (typeof input.title !== "string" || !input.title.trim()) {
+    throw new Error("buildBugFields: input.title is required (non-empty string)");
+  }
   const raw = !!input.raw;
   const html = (v) => (raw ? String(v) : ensureAzureHtml(v));
   const fields = [{ op: "add", path: "/fields/System.Title", value: input.title }];
