@@ -1,0 +1,37 @@
+{
+  "runId": "TLC-2026-07-17-0437",
+  "inputType": "change-source",
+  "source": "VCST-5304 + VCST-5469",
+  "date": "2026-07-17",
+  "feature": "Sales Rep hub — My customers (salesRepCustomers + /company/my-customers)",
+  "env": "vcptcore-qa",
+  "verdict": "APPROVED WITH WARNINGS",
+  "changedStories": ["VCST-5304", "VCST-5469"],
+  "affectedSuites": ["050m", "089"],
+  "casesSynced": 4,
+  "casesGenerated": 2,
+  "casesTouched": ["SR-GQL-009", "SR-GQL-011", "SR-GQL-013", "SR-FE-004"],
+  "casesAdded": ["SR-GQL-038", "SR-GQL-039"],
+  "filesModified": [
+    "regression/suites/Backend/graphql/050m-graphql-sales-rep.csv",
+    "regression/suites/Frontend/sales-rep/089-sales-rep-my-customers-storefront.csv",
+    "config/test-suites.json"
+  ],
+  "gateResults": {
+    "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS", "G5": "PASS",
+    "G6": "PASS", "G7": "PASS", "G8": "PARTIAL", "G9": "PASS"
+  },
+  "phase5Flags": {
+    "flag1_total_shape": "nested (schema VERIFIED; values BLOCKED — no data)",
+    "flag2_list_iconUrl_address": "present on list items (schema VERIFIED; values BLOCKED)",
+    "flag3_attribution": "BLOCKED — rep account empty (totalCount:0), /company/my-customers redirects to dashboard",
+    "argSurface": "VERIFIED — first/after/keyword/sort/storeId/cultureName all exist",
+    "consoleNetwork": "clean"
+  },
+  "keyFinding": "Deployed scoped schema exposes NESTED Money total; flat total in SR-GQL-009/011 is stale vs the 2026-07-16 build and would fail validation live — flagged, rewrite pending value-level reverify.",
+  "mustFix": [
+    "Seed a populated vcptcore rep (rep-flow order), re-run Flags 1 & 3 for value-level confirmation + FE-API match, rewrite SR-GQL-009/011 flat total -> nested Money",
+    "Confirm VCST-5469 My-customers FE page is deployed on the target storefront build"
+  ],
+  "cases_remain_draft": true
+}

@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-07-16",
-    "totalSuites": 115,
+    "generated": "2026-07-17",
+    "totalSuites": 117,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1525,8 +1525,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 35,
-      "estimatedMinutes": 95,
+      "testCount": 39,
+      "estimatedMinutes": 100,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
@@ -2578,6 +2578,54 @@
       ],
       "env": "vcptcore",
       "customerApplicability": "reference"
+    },
+    {
+      "id": "090",
+      "name": "Sales Rep — My Sales Reps (storefront, buyer-facing)",
+      "file": "regression/suites/Frontend/sales-rep/090-sales-rep-my-sales-reps-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 20,
+      "estimatedMinutes": 45,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "my-sales-reps",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "env": "vcptcore",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "091",
+      "name": "Sales Rep — Customer Profile (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/091-sales-rep-customer-profile-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 20,
+      "estimatedMinutes": 55,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "customer-profile",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "env": "vcptcore",
+      "customerApplicability": "reference"
     }
   ],
   "selections": {
@@ -2697,7 +2745,9 @@
       },
       "exclude": [
         "080",
-        "089"
+        "089",
+        "090",
+        "091"
       ]
     },
     "backend": {
@@ -2721,20 +2771,26 @@
         "069",
         "076",
         "080",
-        "089"
+        "089",
+        "090",
+        "091"
       ]
     },
     "full": {
       "all": true,
       "exclude": [
         "050m",
-        "089"
+        "089",
+        "090",
+        "091"
       ]
     },
     "sales-rep": {
       "include": [
         "050m",
-        "089"
+        "089",
+        "090",
+        "091"
       ]
     },
     "domain:purchase-flow": {
