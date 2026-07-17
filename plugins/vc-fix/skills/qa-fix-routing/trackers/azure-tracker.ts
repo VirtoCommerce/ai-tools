@@ -65,6 +65,16 @@ function inlineMd(s: string): string {
     .replace(/`([^`]+)`/g, (_m, c: string) => `<code>${c}</code>`)
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
+    // Images: MUST run before the link regex below — `![alt](url)` would otherwise be matched by
+    // the link pattern (which sees `[alt](url)` and ignores the leading `!`), degrading a screenshot
+    // embed into a bare text link. Same scheme allowlist as links, restricted to http(s) (no
+    // `mailto:` image src); a disallowed/unsupported scheme drops the tag and keeps the alt text.
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt: string, u: string) => {
+      const url = String(u).trim();
+      const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url);
+      if (scheme && !/^https?$/i.test(scheme[1])) return alt;
+      return `<img src="${url.replace(/"/g, "&quot;")}" alt="${alt.replace(/"/g, "&quot;")}">`;
+    })
     // Links: `&`/`<`/`>` already escaped by escapeHtml; escape `"` so it can't break the href attribute.
     // Allow ONLY http(s)/mailto + relative/anchor URLs — a disallowed scheme (javascript:/data:/…) drops
     // the anchor and keeps the visible text, so a poisoned link can't inject an executable href.
@@ -87,7 +97,17 @@ function mdToHtml(md: string): string {
       listType = null;
     }
   };
-  const isBlockStart = (l: string): boolean => /^(#{1,6}\s|```|\s*\|.*\|\s*$|\s*\d+\.\s|\s*[-*+]\s)/.test(l);
+  // A standalone embedded element (`<img …>`, `<br/>`, or a whole `<tag>…</tag>`) — matched on the
+  // TRIMMED line so leading/trailing whitespace doesn't hide it. MUST also gate the paragraph
+  // continuation below (isBlockStart), not just the top-of-loop dispatch: without that, a tag on the
+  // line right after plain prose (no blank-line separator) gets swallowed into the in-progress
+  // paragraph and HTML-escaped instead of passed through verbatim.
+  const isRawHtmlLine = (l: string): boolean => {
+    const t = l.trim();
+    return /^<\/?[a-zA-Z]/.test(t) && t.endsWith(">");
+  };
+  const isBlockStart = (l: string): boolean =>
+    isRawHtmlLine(l) || /^(#{1,6}\s|```|\s*\|.*\|\s*$|\s*\d+\.\s|\s*[-*+]\s)/.test(l);
   while (i < lines.length) {
     const line = lines[i];
     if (/^\s*```/.test(line)) {
@@ -99,17 +119,13 @@ function mdToHtml(md: string): string {
       out.push(`<pre><code>${buf.join("\n")}</code></pre>`);
       continue;
     }
-    // raw HTML line — a standalone embedded element (`<img …>`, `<br/>`, or a whole `<tag>…</tag>`),
-    // emitted VERBATIM (never escaped) so authored HTML survives inside an otherwise-Markdown body.
-    // A normal Markdown line never starts with `<`.
-    {
-      const t = line.trim();
-      if (/^<\/?[a-zA-Z]/.test(t) && t.endsWith(">")) {
-        closeList();
-        out.push(line);
-        i++;
-        continue;
-      }
+    // raw HTML line — emitted VERBATIM (never escaped) so authored HTML survives inside an
+    // otherwise-Markdown body (mixed content — the deliberate embed passthrough).
+    if (isRawHtmlLine(line)) {
+      closeList();
+      out.push(line);
+      i++;
+      continue;
     }
     if (/^\s*\|.*\|\s*$/.test(line)) {
       closeList();
