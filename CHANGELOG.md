@@ -10,7 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Forward-looking work on top of v0.7.0. Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.7.0`** (marketplace `0.9.0`). Pin to a tagged release for stability; this branch tip is unstable.
 
 ### Added — vc-fix self-diagnostics subsystem (VCST-5475–5479)
 
