@@ -41,6 +41,12 @@ export interface IntrospectOptions {
   backUrl: string;
   token?: string; // optional bearer token
   timeoutMs?: number;
+  /**
+   * GraphQL endpoint path relative to backUrl. Defaults to "/graphql".
+   * Scoped schemas pass e.g. "/graphql/sales-rep" so introspection targets
+   * that schema, not the default xAPI one.
+   */
+  endpointPath?: string;
 }
 
 /**
@@ -51,7 +57,9 @@ export async function introspect(
   opts: IntrospectOptions
 ): Promise<IntrospectionQuery> {
   const { backUrl, token, timeoutMs = 15000 } = opts;
-  const url = `${backUrl.replace(/\/$/, "")}/graphql`;
+  const rawPath = opts.endpointPath || "/graphql";
+  const path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+  const url = `${backUrl.replace(/\/$/, "")}${path}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 

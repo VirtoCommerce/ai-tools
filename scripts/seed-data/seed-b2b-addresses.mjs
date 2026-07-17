@@ -34,6 +34,30 @@ import {
 const akey = (a) => [a?.addressType, a?.line1, a?.city, a?.countryCode]
   .map((x) => String(x || '').trim().toLowerCase()).join('|');
 
+// Region CODE → display NAME (US states + DC + CA provinces). The platform address model
+// wants regionId = the ISO/subdivision CODE and regionName = the human NAME; the `state`
+// column in addresses.csv carries the CODE, so map it to the name for regionName. This is
+// the fix for the VCST-5304 D2 systematic drift (regionName held "NY" instead of "New York").
+const REGION_NAMES = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado',
+  CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho',
+  IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana',
+  ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
+  MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada',
+  NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina',
+  ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania',
+  RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas',
+  UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington', WV: 'West Virginia',
+  WI: 'Wisconsin', WY: 'Wyoming', DC: 'District of Columbia',
+  AB: 'Alberta', BC: 'British Columbia', MB: 'Manitoba', NB: 'New Brunswick',
+  NL: 'Newfoundland and Labrador', NS: 'Nova Scotia', ON: 'Ontario', PE: 'Prince Edward Island',
+  QC: 'Quebec', SK: 'Saskatchewan',
+};
+/** A known 2-letter subdivision code → true (so an already-full name passes through untouched). */
+const isRegionCode = (v) => { const s = String(v || '').trim().toUpperCase(); return s.length <= 3 && !!REGION_NAMES[s]; };
+/** Resolve a code to its display name; a value that's already a name (or unknown) passes through. */
+const regionNameFor = (v) => { const s = String(v || '').trim(); return s ? (REGION_NAMES[s.toUpperCase()] || s) : undefined; };
+
 function buildAddress(row) {
   return {
     addressType: (row.address_type || 'Shipping').trim(), // Shipping | Billing | BillingAndShipping
@@ -43,8 +67,8 @@ function buildAddress(row) {
     line1: row.line1,
     line2: row.line2 || undefined,
     city: row.city,
-    regionId: row.state || undefined,
-    regionName: row.state || undefined,
+    regionId: row.state || undefined,          // ISO/subdivision code (e.g. "NY")
+    regionName: regionNameFor(row.state),       // display name (e.g. "New York") — NOT the code
     postalCode: row.postal_code,
     countryCode: iso3(row.country_code),
     countryName: row.country_name,
@@ -107,6 +131,38 @@ async function seed(byOrg, orgMap) {
   console.log(`\n✅ B2B addresses seed — ${added} address(es) added across ${orgsTouched} org(s)${DRY_RUN ? ' [DRY RUN]' : ''}.`);
 }
 
+/**
+ * Normalize regionName code→name across seeded orgs' member addresses (idempotent).
+ * Fixes the systematic VCST-5304 D2 drift where the org default + any code-sourced address
+ * stored the region CODE ("NY") in regionName instead of the display NAME ("New York").
+ * regionId (the code) is left untouched. With no `--only`, runs over EVERY org in
+ * organizations.csv (not just those with addresses.csv rows, so an org whose only address is
+ * its inline default is covered); with `--only`, narrows to the org(s) `byOrg` resolved
+ * (mirrors seed()/teardown()'s scoping — a scoped run must not touch other orgs live).
+ */
+async function normalizeRegionNames(orgMap, byOrg) {
+  let fixedOrgs = 0, fixedAddrs = 0;
+  const entries = ONLY ? [...orgMap].filter(([orgId]) => byOrg.has(orgId)) : orgMap;
+  for (const [orgId, org] of entries) {
+    if (!org.platformId) continue;
+    const member = await getOrg(org.platformId);
+    if (!member?.id || !Array.isArray(member.addresses) || !member.addresses.length) continue;
+    let changed = 0;
+    const addresses = member.addresses.map((a) => {
+      if (a.regionName && isRegionCode(a.regionName)) {
+        const name = regionNameFor(a.regionName);
+        if (name && name !== a.regionName) { changed++; return { ...a, regionName: name }; }
+      }
+      return a;
+    });
+    if (!changed) { verbose(`${orgId} (${org.name}): regionName already clean`); continue; }
+    log(`${org.name}: normalizing regionName code→name on ${changed} address(es)`);
+    if (!DRY_RUN) await api('POST', '/api/members', { ...member, addresses }, { expectStatus: [200, 201, 204] });
+    fixedAddrs += changed; fixedOrgs++;
+  }
+  console.log(`\n✅ regionName normalization — ${fixedAddrs} address(es) across ${fixedOrgs} org(s) set to the state NAME${DRY_RUN ? ' [DRY RUN]' : ''}.`);
+}
+
 async function teardown(byOrg, orgMap) {
   let removed = 0;
   for (const [orgId, rows] of byOrg) {
@@ -147,7 +203,7 @@ async function main() {
   if (!byOrg.size) { console.error(`ABORT: --only ${ONLY} matched no org address rows`); process.exit(2); }
 
   if (TEARDOWN) await teardown(byOrg, orgMap);
-  else await seed(byOrg, orgMap);
+  else { await seed(byOrg, orgMap); await normalizeRegionNames(orgMap, byOrg); }
 }
 
 main().catch((err) => { console.error(`\n❌ B2B addresses seed failed: ${err.message}`); process.exit(1); });

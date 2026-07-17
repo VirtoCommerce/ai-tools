@@ -45,6 +45,7 @@ import {
   parseTestData,
   validateStepBlocks,
   StepBlock,
+  EndpointStep,
   RestStep,
   RestOpStep,
 } from "./lib/graphql-case-parser.js";
@@ -91,6 +92,11 @@ interface CliArgs {
   schemaCache: string;
   refreshSchema: boolean;
   backUrl?: string;
+  /**
+   * GraphQL endpoint path (default "/graphql"). Overridden per-case by a
+   * [GQL-ENDPOINT <path>] step. Use for scoped schemas, e.g. "/graphql/sales-rep".
+   */
+  endpointPath?: string;
   evidenceDir: string;
   dryRun: boolean;
 }
@@ -128,6 +134,9 @@ function parseArgs(): CliArgs {
       case "--back-url":
         out.backUrl = argv[++i];
         break;
+      case "--endpoint":
+        out.endpointPath = argv[++i];
+        break;
       case "--evidence-dir":
         out.evidenceDir = argv[++i];
         break;
@@ -163,15 +172,20 @@ Options:
   --schema-cache <path>   reuse saved introspection (default: scripts/.graphql-schema.cache.json)
   --refresh-schema        force fresh introspection
   --back-url <url>        override BACK_URL from .env
+  --endpoint <path>       GraphQL endpoint path (default /graphql); scoped schemas
+                          e.g. /graphql/sales-rep. Per-case [GQL-ENDPOINT] overrides this.
   --evidence-dir <path>   output dir (default: reports/regression/graphql-evidence)
-  --dry-run               validate + parse but don't POST to /graphql (schema check only)
+  --dry-run               validate + parse but don't POST (schema check only)
 `);
 }
 
 async function loadOrIntrospect(args: CliArgs) {
-  if (!args.refreshSchema && existsSync(args.schemaCache)) {
-    process.stderr.write(`Using cached schema: ${args.schemaCache}\n`);
-    return loadSchemaCache(args.schemaCache);
+  const endpointPath = normalizeEndpoint(args.endpointPath || "/graphql");
+  const cachePath = schemaCachePathFor(endpointPath, args.schemaCache);
+
+  if (!args.refreshSchema && existsSync(cachePath)) {
+    process.stderr.write(`Using cached schema: ${cachePath}\n`);
+    return loadSchemaCache(cachePath);
   }
 
   const backUrl = args.backUrl || process.env.BACK_URL;
@@ -181,15 +195,63 @@ async function loadOrIntrospect(args: CliArgs) {
     );
   }
 
-  process.stderr.write(`Introspecting ${backUrl}/graphql ...\n`);
+  process.stderr.write(`Introspecting ${backUrl}${endpointPath} ...\n`);
   const t0 = Date.now();
-  const intro = await introspect({ backUrl });
+  const intro = await introspect({ backUrl, endpointPath });
   const elapsed = Date.now() - t0;
   process.stderr.write(`Introspected in ${elapsed}ms\n`);
 
-  saveSchemaCache(intro, args.schemaCache);
-  process.stderr.write(`Cached to ${args.schemaCache}\n`);
+  saveSchemaCache(intro, cachePath);
+  process.stderr.write(`Cached to ${cachePath}\n`);
   return intro;
+}
+
+/** Normalize an endpoint path: ensure a leading slash, drop a trailing one. */
+function normalizeEndpoint(p: string): string {
+  const s = (p || "/graphql").startsWith("/") ? p : `/${p}`;
+  return s.replace(/\/+$/, "") || "/graphql";
+}
+
+/** Filesystem-safe slug for an endpoint's schema cache, e.g. "/graphql/sales-rep" → "graphql-sales-rep". */
+function endpointSlug(endpointPath: string): string {
+  return (
+    endpointPath
+      .replace(/^\//, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "default"
+  );
+}
+
+/**
+ * Per-endpoint schema-cache path. The default "/graphql" keeps the existing
+ * baseCache file (backward-compatible); scoped schemas get their own cache
+ * (`.graphql-schema.<slug>.cache.json`) so introspections never collide.
+ */
+function schemaCachePathFor(endpointPath: string, baseCache: string): string {
+  if (endpointPath === "/graphql") return baseCache;
+  return join(ROOT, "scripts", `.graphql-schema.${endpointSlug(endpointPath)}.cache.json`);
+}
+
+/**
+ * Load (or introspect + cache) the schema for a specific endpoint path.
+ * Used by runCase when a case targets a scoped schema so validation runs
+ * against THAT schema rather than the default xAPI one.
+ */
+async function loadOrIntrospectEndpoint(
+  args: CliArgs,
+  backUrl: string,
+  endpointPath: string,
+  cachePath: string
+): Promise<GraphQLSchema> {
+  if (!args.refreshSchema && existsSync(cachePath)) {
+    process.stderr.write(`Using cached scoped schema: ${cachePath}\n`);
+    return buildSchema(loadSchemaCache(cachePath));
+  }
+  process.stderr.write(`Introspecting ${backUrl}${endpointPath} ...\n`);
+  const intro = await introspect({ backUrl, endpointPath });
+  saveSchemaCache(intro, cachePath);
+  process.stderr.write(`Cached scoped schema to ${cachePath}\n`);
+  return buildSchema(intro);
 }
 
 function readQueryFile(path: string): string {
@@ -539,6 +601,27 @@ async function runCase(
   }
   console.log(`\nSteps parsed: ${blocks.length} blocks`);
 
+  // 2b. Resolve the GraphQL endpoint for this case: [GQL-ENDPOINT] > --endpoint > default.
+  const endpointBlock = blocks.find((b) => b.kind === "GQL-ENDPOINT") as
+    | EndpointStep
+    | undefined;
+  const endpointPath = normalizeEndpoint(
+    endpointBlock?.path || args.endpointPath || "/graphql"
+  );
+  const schemaCachePath = schemaCachePathFor(endpointPath, args.schemaCache);
+  // For a scoped (non-default) endpoint the passed-in default-schema `schema` is
+  // the wrong schema to validate against — (re)introspect that endpoint's schema.
+  let effectiveSchema = schema;
+  if (endpointPath !== "/graphql") {
+    console.log(`Endpoint: ${endpointPath} (scoped schema)`);
+    effectiveSchema = await loadOrIntrospectEndpoint(
+      args,
+      backUrl,
+      endpointPath,
+      schemaCachePath
+    );
+  }
+
   // 3. Execute blocks
   const operations = new Map<string, { query: string; variables: Record<string, unknown> }>();
   const responses = new Map<string, GraphQLResponse>();
@@ -546,7 +629,7 @@ async function runCase(
   const restResponses = new Map<string, RestOpResponse>();
   const evidenceOps: OpEvidence[] = [];
   const nullCaptures: string[] = [];
-  const schemaRef: SchemaRef = { current: schema, refreshAttempted: false, refreshed: false };
+  const schemaRef: SchemaRef = { current: effectiveSchema, refreshAttempted: false, refreshed: false };
   let currentToken: string | undefined;
 
   for (const block of blocks) {
@@ -556,6 +639,8 @@ async function runCase(
         {
           args,
           backUrl,
+          endpointPath,
+          schemaCachePath,
           schemaRef,
           tokenCache,
           variables,
@@ -719,6 +804,8 @@ async function executeBlock(
   ctx: {
     args: CliArgs;
     backUrl: string;
+    endpointPath: string;
+    schemaCachePath: string;
     schemaRef: SchemaRef;
     tokenCache: TokenCache;
     variables: Record<string, string>;
@@ -803,8 +890,11 @@ async function executeBlock(
           `  ! schema-mismatch detected (${v.errors[0].code}); refreshing introspection cache once`
         );
         try {
-          const intro = await introspect({ backUrl: ctx.backUrl });
-          saveSchemaCache(intro, ctx.args.schemaCache);
+          const intro = await introspect({
+            backUrl: ctx.backUrl,
+            endpointPath: ctx.endpointPath,
+          });
+          saveSchemaCache(intro, ctx.schemaCachePath);
           ctx.schemaRef.current = buildSchema(intro);
           ctx.schemaRef.refreshed = true;
           v = validateQuery(ctx.schemaRef.current, op.query);
@@ -861,11 +951,12 @@ async function executeBlock(
         return;
       }
 
-      console.log(`\n• [GQL-EXEC ${block.label}] POST /graphql`);
+      console.log(`\n• [GQL-EXEC ${block.label}] POST ${ctx.endpointPath}`);
       const token = getToken();
       const response = await executeOperation(op.query, op.variables, {
         backUrl: ctx.backUrl,
         token,
+        endpointPath: ctx.endpointPath,
       });
       console.log(
         `  ${response.status} ${response.ok ? "OK" : "ERR"} — ${response.elapsed_ms}ms — ${response.errors.length} errors`
@@ -1068,6 +1159,7 @@ async function executeBlock(
         response = await executeOperation(op.query, op.variables, {
           backUrl: ctx.backUrl,
           token,
+          endpointPath: ctx.endpointPath,
         });
         // Replace the stored response so downstream [GQL-CAPTURE]/[DATA] on this
         // label see the freshest (settled) value.
