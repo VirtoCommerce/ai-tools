@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "SR-FE-MSR-001","Corporate Member Sees ""Sales Reps"" Link & Page Loads (Happy Path Gating)","Storefront > Sales Rep > My Sales Reps > Gating","Critical","PROPOSED-BL-SR-UI-GATE, PROPOSED-BL-SR-UI-NAV","ECL-4.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_BUYER]
-Store setting SalesRep.Enabled=true on {{STORE_ID}} (module installed on vcptcore-qa). ACME_BUYER is a corporate member of @td(ORG_ACME.id) (isCorporateMember=true).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account
+Store setting SalesRep.Enabled=true on {{STORE_ID}} (module installed and enabled on the target environment). ACME_BUYER is a corporate member of @td(ORG_ACME.id) (isCorporateMember=true).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account
 [WAIT] account dashboard loaded, left rail rendered
 [ASSERT] ""Corporate"" section visible in the account left rail
 [ACT] click ""Sales reps"" link under ""Corporate""
@@ -132,7 +132,7 @@ Mobile viewport.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account (mobile
 [ACT] click the link and confirm navigation to /company/sales-reps {OBSERVED}","none","link missing or unclickable in the mobile account menu; mobile menu fails to open at all on the tested viewport","none (read-only)","VCST-5409","Draft"
 "SR-FE-MSR-019","Console/Network Baseline — Clean Page Load with No Errors","Storefront > Sales Rep > My Sales Reps > Regression Guard","High","PROPOSED-BL-SR-UI-TABLE","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_BUYER]
-Known benign noise: a storefront console 400 ""Invalid workspace"" from dc.services.visualstudio.com/v2/track (Application Insights) is expected env noise on vcptcore-qa and is NOT a bug (see repo memory reference_vcptcore_appinsights_invalid_workspace) — exclude it from the pass/fail check below.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+Known benign noise: a storefront console 400 ""Invalid workspace"" from dc.services.visualstudio.com/v2/track (Application Insights) is expected environment-level telemetry noise (Application Insights configuration, not application-origin) and is NOT a bug — exclude it from the pass/fail check below.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
 [WAIT] page fully loaded, table rendered","[DOM] page renders without a visible error boundary/blank state {OBSERVED}","[API] customerSalesReps request returns HTTP 200 with errors[] empty
 [CONSOLE] no console errors other than the documented benign App Insights 400 noise
 [NETWORK] no 4xx/5xx on /graphql during page load","an application-origin console error (TypeError, unhandled rejection) appears; a 4xx/5xx on /graphql; errors[] non-empty","none (read-only)","VCST-5409","Draft"

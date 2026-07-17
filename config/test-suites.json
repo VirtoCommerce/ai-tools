@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-07-17",
-    "totalSuites": 118,
+    "totalSuites": 119,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1533,13 +1533,11 @@
         "xapi",
         "sales-rep",
         "b2b",
-        "scoped-schema",
-        "vcptcore-only"
+        "scoped-schema"
       ],
       "requiresModules": [
         "sales-rep"
       ],
-      "env": "vcptcore",
       "customerApplicability": "reference"
     },
     {
@@ -2596,7 +2594,6 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "env": "vcptcore",
       "customerApplicability": "reference"
     },
     {
@@ -2620,7 +2617,6 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "env": "vcptcore",
       "customerApplicability": "reference"
     },
     {
@@ -2631,7 +2627,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 20,
+      "testCount": 21,
       "estimatedMinutes": 55,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2644,7 +2640,30 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "env": "vcptcore",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "092",
+      "name": "Sales Rep — Admin Embedded App (back-office)",
+      "file": "regression/suites/Backend/sales-rep/092-sales-rep-admin-embedded-app.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 22,
+      "estimatedMinutes": 95,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "sales-rep",
+        "admin",
+        "embedded-app",
+        "backend",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
       "customerApplicability": "reference"
     }
   ],
@@ -2801,7 +2820,8 @@
         "080",
         "089",
         "090",
-        "091"
+        "091",
+        "092"
       ]
     },
     "full": {
@@ -2810,7 +2830,8 @@
         "050m",
         "089",
         "090",
-        "091"
+        "091",
+        "092"
       ]
     },
     "sales-rep": {
@@ -2818,7 +2839,8 @@
         "050m",
         "089",
         "090",
-        "091"
+        "091",
+        "092"
       ]
     },
     "domain:purchase-flow": {

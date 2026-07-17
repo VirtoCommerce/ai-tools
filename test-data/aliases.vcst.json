@@ -551,5 +551,41 @@
       }
     ],
     "storeOriginalCatalog": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "SR_REP_PRIMARY": {
+    "id": "d88c636a-ecf1-43ba-b3f0-ee6d4be41f76",
+    "user_id": "734f5d85-01a4-4042-bf4e-5205362eb54d"
+  },
+  "SR_REP_SECOND_STORE": {
+    "id": "6365ed9b-c198-450b-a9fc-05ab9ccc072f",
+    "user_id": "39e16ade-d80c-4beb-a925-0a86567eb149"
+  },
+  "SR_REP_BLOCKED": {
+    "id": "d3510ce7-0375-4003-bd30-fec5268522ff",
+    "user_id": "a793a2c3-9014-4c42-a34a-35ebe36b28a4"
+  },
+  "SR_REP_LOCKED": {
+    "id": "485fa89f-10e2-4cd9-bde6-6fd98d457457",
+    "user_id": "86adfe03-2483-4589-af5b-be655539d55d",
+    "membership_locked_id": "61affd21-c6d1-4997-bd82-dd39f7ac21c4"
+  },
+  "SR_REP_EXCLUSIVE_TECHFLOW": {
+    "id": "7599cab6-b625-4390-b65f-789e8f920804",
+    "user_id": "1712c6d8-95ca-4e42-a7dc-ca57baebdd1f"
+  },
+  "SR_REP_ACME2": {
+    "id": "ad8d25e5-0651-468a-a37d-65e5ee21eb0d",
+    "user_id": "17701f9b-f698-405f-a0f0-0151489e28c4"
+  },
+  "SR_REP_NOCUSTOMERS": {
+    "id": "a2067372-3316-4ca8-b57c-bc90aa94c5c9",
+    "user_id": "5e32ae59-ff42-4be4-bb9f-ef9ea49c5b96"
+  },
+  "SR_REP_PAGING": {
+    "id": "34a3e544-24f4-4c1f-87fc-f48ed3b0dfee",
+    "user_id": "110bac68-1062-4198-8b98-ead891d88546"
+  },
+  "SR_OWNER_ACME": {
+    "id": "d4962ba5-cc2e-478c-b265-bad4dbc671ec"
   }
 }
