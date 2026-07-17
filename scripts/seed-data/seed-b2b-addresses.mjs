@@ -132,15 +132,18 @@ async function seed(byOrg, orgMap) {
 }
 
 /**
- * Normalize regionName code→name across EVERY seeded org's member addresses (idempotent).
+ * Normalize regionName code→name across seeded orgs' member addresses (idempotent).
  * Fixes the systematic VCST-5304 D2 drift where the org default + any code-sourced address
  * stored the region CODE ("NY") in regionName instead of the display NAME ("New York").
- * regionId (the code) is left untouched. Runs over all orgs in organizations.csv, not just
- * those with addresses.csv rows, so an org whose only address is its inline default is covered.
+ * regionId (the code) is left untouched. With no `--only`, runs over EVERY org in
+ * organizations.csv (not just those with addresses.csv rows, so an org whose only address is
+ * its inline default is covered); with `--only`, narrows to the org(s) `byOrg` resolved
+ * (mirrors seed()/teardown()'s scoping — a scoped run must not touch other orgs live).
  */
-async function normalizeRegionNames(orgMap) {
+async function normalizeRegionNames(orgMap, byOrg) {
   let fixedOrgs = 0, fixedAddrs = 0;
-  for (const [orgId, org] of orgMap) {
+  const entries = ONLY ? [...orgMap].filter(([orgId]) => byOrg.has(orgId)) : orgMap;
+  for (const [orgId, org] of entries) {
     if (!org.platformId) continue;
     const member = await getOrg(org.platformId);
     if (!member?.id || !Array.isArray(member.addresses) || !member.addresses.length) continue;
@@ -200,7 +203,7 @@ async function main() {
   if (!byOrg.size) { console.error(`ABORT: --only ${ONLY} matched no org address rows`); process.exit(2); }
 
   if (TEARDOWN) await teardown(byOrg, orgMap);
-  else { await seed(byOrg, orgMap); await normalizeRegionNames(orgMap); }
+  else { await seed(byOrg, orgMap); await normalizeRegionNames(orgMap, byOrg); }
 }
 
 main().catch((err) => { console.error(`\n❌ B2B addresses seed failed: ${err.message}`); process.exit(1); });
