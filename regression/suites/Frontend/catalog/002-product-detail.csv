@@ -316,6 +316,29 @@ A product with low inventory (at or below the configured low-stock warning thres
 [DOM] Properties aligned for comparison","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors
 [NETWORK] no 4xx/5xx","Compare page does not load; selected products not shown on compare page; 404 error","Clear compare selection","Coverage Gap Analysis","Draft"
+"CAT-AURL-001","Storefront Image src Host Follows Store Asset Public URL (Listing + PDP)","Catalog > Product > Asset URL (Admin+Storefront)","Critical","BL-GQL-003","","Admin credentials available ({{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}}); VCST-5089 deployed; env has VirtoCommerce:StoreAssets:KnownAssetHosts configured for @td(STORE_PRIMARY.id)'s own platform host (documented precondition — external images stay on their own host regardless and are NOT expected to switch to the configured CDN). This case sets the config via Admin SPA (safe, full-object save through the UI form, no raw REST body reconstruction) and resets it at the end — self-contained, no dependency on any other case's execution order.","admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; front_url={{FRONT_URL}}; store_id=@td(STORE_PRIMARY.id); test_url=@td(STORE_ASSET_TEST_URL.value); asset_host=@td(STORE_ASSET_TEST_URL.host)","[NAV] {{ADMIN_URL}}
+[ACT] Sign in with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}
+[NAV] Navigate to More > Stores > select @td(STORE_PRIMARY.id)
+[ACT] Scroll to the URLs section
+[ACT] Fill 'Store asset URL': @td(STORE_ASSET_TEST_URL.value)
+[ACT] Click Save
+[WAIT] Success notification appears
+[NAV] {{FRONT_URL}} (storefront bound to @td(STORE_PRIMARY.id))
+[NAV] Navigate to a category/listing page with product cards
+[WAIT] Product grid loaded (`.category-products__list .vc-product-card` rendered, skeleton removed)
+[ASSERT] Inspect the src attribute of `.vc-product-card .vc-product-image img` on the first 3 cards (DevTools Network/Elements)
+[NAV] Open any product detail page (PDP) from the listing
+[WAIT] PDP fully loaded (`.image-gallery__img--active` rendered)
+[ASSERT] Inspect the src attribute of `.image-gallery__img--active`
+[NAV] Return to {{ADMIN_URL}} > Stores > @td(STORE_PRIMARY.id) > URLs section
+[ACT] Clear 'Store asset URL' field
+[ACT] Click Save
+[WAIT] Success notification appears","[DOM] '.vc-product-card .vc-product-image img' src attribute host equals @td(STORE_ASSET_TEST_URL.host) for platform-hosted images, visible on each of the first 3 '.vc-product-card' elements (404/ERR_NAME_NOT_RESOLVED on the image itself is EXPECTED and acceptable — the CDN host is intentionally unmapped; only the host matters, per tests/Sprint-current/VCST-5089/storefront-check.md)
+[DOM] '.image-gallery__img--active' src attribute host equals @td(STORE_ASSET_TEST_URL.host) for the same reason
+[DOM] The store theme logo ('img[src*=cms-content/assets/customization]' in the header) remains visible and is NOT rewritten — it is not an xAPI product/category image and continues to load 200 from the platform host
+[STATE] Layout remains intact — only imagery fails to load (broken-image icon/placeholder on '.vc-product-image img' / '.image-gallery__img--active'), no layout shift or crash","[NETWORK] product/PDP page requests return HTTP 200 for the page itself (image sub-requests may 404/ERR_NAME_NOT_RESOLVED — expected)
+[CONSOLE] no uncaught JS TypeError/ReferenceError (ERR_NAME_NOT_RESOLVED console entries for the unmapped CDN are expected and not a failure signal)
+[API] GraphQL products/product query underlying the page returns imgSrc with the configured host (confirms the storefront is not caching a stale pre-rewrite image URL)","Listing/PDP image src still shows the platform host instead of the configured CDN host (rewrite not reaching the storefront-facing query); theme logo incorrectly rewritten to the CDN host (over-broad rewrite bug); page itself returns 4xx/5xx (not just the image sub-request); JS TypeError/crash (not just an image load failure)","Config reset to empty is the LAST step of this case's own Steps — if the run aborts before that step, manually clear 'Store asset URL' via Admin SPA > Stores > @td(STORE_PRIMARY.id) > URLs before leaving the shared environment","VCST-5089; tests/Sprint-current/VCST-5089/storefront-check.md (AC9)","Draft"
 "CAT-COMP-009","Clear All from Compare","Catalog > Product Comparison","Medium",,,"User has 2+ products in compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] With products in compare bar click 'Clear All' or 'Remove All'
 [WAIT] Compare bar clears
 [ASSERT] Verify no products in compare","[DOM] Compare bar disappears or shows empty state

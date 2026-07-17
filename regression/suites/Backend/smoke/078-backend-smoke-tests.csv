@@ -1038,3 +1038,20 @@ BSM-114,Admin SPA — Archive News Article,Backend Smoke > News Admin,Medium,,,"
 [ACT] open 'Archived' filter and search {{name}}","[GRID] article listed under 'Archived' filter
 [GRID] 'Is archived' = true and 'Archive date' is set for the article","[API] GET {{BACK_URL}}/api/news/{{NEWS_ID}} → isArchived=true, archiveDate non-null
 [CONSOLE] no console errors after Archive","Archive button no-op, isArchived stays false in API, article not listed under Archived filter","[HTTP] DELETE {{BACK_URL}}/api/news?ids={{NEWS_ID}}","Suite 084 NEWS-008",Automated
+BSM-115,GraphQL xAPI — Store assetPublicUrl Field and StoreAssetUrl Scalar Are Queryable (Read-Only),Backend Smoke > GraphQL xAPI,High,BL-GQL-003,ECL-2.1,"GraphiQL accessible (BSM-019 passed); VCST-5089 deployed. NON-MUTATING by design — does not set/reset any store's assetPublicUrl (that would break shared storefront imagery for the whole team mid-smoke-run); smoke coverage here is limited to 'the field and scalar exist and resolve without error'. Full read/write/rewrite regression coverage lives in suite 050m (GraphQL Store Asset URL) and admin suite 034 (STORE-052/053/054).","back_url={{BACK_URL}}; store_id={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL loaded
+[ACT] enter query:
+query {
+  store(storeId: ""{{STORE_ID}}"") {
+    storeId
+    storeUrl
+    assetPublicUrl
+  }
+}
+[ACT] click Execute Query button
+[WAIT] response appears in right panel
+[ACT] clear editor, enter query: { __type(name: ""StoreAssetUrl"") { name kind } }
+[ACT] click Execute Query button
+[WAIT] response appears","[ERRORS] no errors[] in either response
+[DATA] first response: store.storeId = {{STORE_ID}} and store.assetPublicUrl is present as a field (null or a string — either is acceptable, this smoke case does not configure it)
+[DATA] second response: __type.name = StoreAssetUrl and __type.kind = SCALAR (schema scalar exists — confirms VCST-5089 is deployed on this env)","[NETWORK] both GraphQL POST requests return HTTP 200","errors[] present on either query (feature not deployed or schema regression); assetPublicUrl field absent from store{} response; StoreAssetUrl scalar absent from schema (__type returns null)",none,"VCST-5089; Suite 050m (GraphQL Store Asset URL); Suite 034 (Store Management)",Draft

@@ -3,7 +3,7 @@
 [ACT] Select existing store and click on it","[STATE] Store details blade opens in editable format
 [DOM] All widgets visible: Settings, Aggregation properties, Assets, SEO
 [STATE] Store information displayed correctly","[API] GET /api/stores/{{STORE_ID}} returns 200 with correct store data
-[ADMIN] Store blade renders without console errors","Blade does not open; widgets missing; 404 on store API","none","C169626","None"
+[ADMIN] Store blade renders without console errors","Blade does not open; widgets missing; 404 on store API","none","C169626","Draft"
 "STORE-002","Add New Store","Store > Management","Critical","BL-STORE-001","ECL-8.1","Admin logged in; Stores Module installed; At least one catalog exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; store_code=TEST001; store_name=Test Store","[NAV] Navigate to More > Stores at {{BACK_URL}}
 [ACT] Click Add button
 [ACT] Fill required fields: Code (alphanumeric no spaces), Name, select Catalog from dropdown, Default language, Default currency, State
@@ -16,7 +16,7 @@
 [STATE] New store created and displayed in Stores list
 [STATE] Store details displayed in editable format","[API] POST /api/stores returns 201 with new store ID
 [CONSOLE] No errors during store creation
-[ADMIN] New store appears in store list","Create button stays disabled after filling fields; Code validation not enforced; API returns 400/500","delete created store","C169627","None"
+[ADMIN] New store appears in store list","Create button stays disabled after filling fields; Code validation not enforced; API returns 400/500","delete created store","C169627","Draft"
 "STORE-003","Edit Store Details - Basic Fields","Store > Management","High","BL-STORE-001","ECL-8.1","Admin logged in; Store exists in system","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; new_name=UpdatedStore","[NAV] Go to More > Stores > Select store and click
 [ACT] Edit Store name (alphanumeric validation)
 [ACT] Edit Catalog from dropdown
@@ -32,7 +32,7 @@
 [STATE] Default language updates correctly
 [STATE] All changes saved successfully","[API] PUT /api/stores/{{STORE_ID}} returns 200
 [CONSOLE] No save errors
-[ADMIN] Updated fields reflected after blade reload","Save fails silently; Code field becomes editable; Store URL accepts invalid input","restore original settings","C169631","None"
+[ADMIN] Updated fields reflected after blade reload","Save fails silently; Code field becomes editable; Store URL accepts invalid input","restore original settings","C169631","Draft"
 "STORE-004","Edit Store Details - Languages","Store > Management","High","BL-STORE-002","","Admin logged in; Store exists in system","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; language_code=fr-FR","[NAV] Open Store details for {{STORE_ID}}
 [ACT] Add new language (follow Add new state process)
 [ACT] Select additional language from dropdown
@@ -44,7 +44,7 @@
 [STATE] Languages deleted successfully and removed from field
 [STATE] All changes persist after save","[API] PUT /api/stores/{{STORE_ID}} includes updated languages array
 [CONSOLE] No errors on language change
-[ADMIN] Language list reflects changes after save","Language not persisted after save; X icon does not remove language; Dropdown empty","restore original settings","C169631","None"
+[ADMIN] Language list reflects changes after save","Language not persisted after save; X icon does not remove language; Dropdown empty","restore original settings","C169631","Draft"
 "STORE-005","Edit Store Details - Currencies","Store > Management","High","BL-STORE-001","","Admin logged in; Store exists in system","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; currency_code=EUR","[NAV] Open Store details for {{STORE_ID}}
 [ACT] Edit Default currency from dropdown
 [ACT] Click Edit icon next to Default currency
@@ -61,7 +61,7 @@
 [STATE] Multiple additional currencies can be selected
 [STATE] New currencies saved and displayed correctly","[API] GET /api/stores/{{STORE_ID}} returns updated currencies array
 [CONSOLE] No validation errors
-[ADMIN] New currency available in currency dropdown","Required field validation bypassed; New currency not appearing in dropdown; Is primary incorrectly enabled","restore original settings","C169631","None"
+[ADMIN] New currency available in currency dropdown","Required field validation bypassed; New currency not appearing in dropdown; Is primary incorrectly enabled","restore original settings","C169631","Draft"
 "STORE-006","Edit Store Details - Linked Stores","Store > Management","Medium","BL-STORE-001","","Admin logged in; Multiple stores exist in system","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Open Store details for {{STORE_ID}}
 [ACT] Click Linked stores field
 [ACT] Select one or more stores from dropdown
@@ -72,7 +72,7 @@
 [STATE] Delete icon removes linked store from field
 [STATE] Changes saved successfully","[API] PUT /api/stores/{{STORE_ID}} includes linkedStores array
 [CONSOLE] No errors on link/unlink
-[ADMIN] Linked stores shown in store details after save","Dropdown empty; Delete icon not functional; Linked stores not persisted","restore original settings","C169631","None"
+[ADMIN] Linked stores shown in store details after save","Dropdown empty; Delete icon not functional; Linked stores not persisted","restore original settings","C169631","Draft"
 "STORE-007","Delete Store","Store > Toolbar","Critical","BL-STORE-001","","Admin logged in; Store_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; store_id=Store_1","[NAV] Navigate to More > Stores at {{BACK_URL}}
 [ACT] Select Store_1
 [ACT] Click Delete button
@@ -81,24 +81,24 @@
 [STATE] Store_1 deleted after confirmation
 [STATE] Store removed from list","[API] DELETE /api/stores/Store_1 returns 204
 [CONSOLE] No errors post-deletion
-[ADMIN] Store_1 no longer appears in store list","Confirmation dialog not shown; Store still appears in list after deletion; API returns 403/500","none (store deleted)","C237895","None"
+[ADMIN] Store_1 no longer appears in store list","Confirmation dialog not shown; Store still appears in list after deletion; API returns 403/500","none (store deleted)","C237895","Draft"
 "STORE-008","Open Store in Browser","Store > Toolbar","Medium","BL-STORE-001","","Admin logged in; Admin on Store blade; Store_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store_id=Store_1","[NAV] Open Store details for Store_1
 [ACT] Click Open in Browser button","[NAV] Admin redirected to Store_1 storefront page in new browser tab
 [STATE] Store displays correctly at {{FRONT_URL}}","[NETWORK] HTTP 200 on storefront URL
-[CONSOLE] No JS errors on storefront load","New tab not opened; Storefront returns 404/500; Store displays blank page","none","C237773","None"
+[CONSOLE] No JS errors on storefront load","New tab not opened; Storefront returns 404/500; Store displays blank page","none","C237773","Draft"
 "STORE-009","Save Store Changes","Store > Toolbar","High","BL-STORE-001","","Admin logged in; Admin on Store blade; Store_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; store_id=Store_1","[NAV] Open Store_1 details
 [ACT] Make changes to store settings
 [ACT] Click Save button","[STATE] Save button becomes active after changes
 [STATE] Changes in Store_1 saved successfully
 [STATE] Updated data displayed correctly","[API] PUT /api/stores/Store_1 returns 200
 [CONSOLE] No save errors
-[ADMIN] Changes persist after blade reload","Save button stays inactive after changes; Save triggers error toast; Changes not reflected after reload","restore original settings","C237892","None"
+[ADMIN] Changes persist after blade reload","Save button stays inactive after changes; Save triggers error toast; Changes not reflected after reload","restore original settings","C237892","Draft"
 "STORE-010","Reset Store Changes","Store > Toolbar","Medium","BL-STORE-001","","Admin logged in; Admin on Store blade; Store_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; store_id=Store_1","[NAV] Open Store_1 details
 [ACT] Make changes to store settings
 [ACT] Click Reset button","[DOM] Reset button visible and active
 [STATE] Changes not saved after reset
 [STATE] Initial data restored and displayed","[ADMIN] Fields show original values after reset
-[CONSOLE] No errors on reset","Reset button not visible; Data not restored after reset; Unsaved changes persist","none","C237894","None"
+[CONSOLE] No errors on reset","Reset button not visible; Data not restored after reset; Unsaved changes persist","none","C237894","Draft"
 "STORE-016","Edit Assets - Upload and Manage","Store > Assets","Medium","BL-STORE-001","","Admin logged in; Store created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; test_file=test-asset.png","[NAV] Go to More > Stores > Select store {{STORE_ID}}
 [ACT] Click Assets widget
 [ACT] Click Upload button
@@ -116,7 +116,7 @@
 [DOM] Delete confirmation message appears
 [STATE] Asset removed from list after confirmation","[API] POST /api/assets returns 201 with asset URL
 [NETWORK] Asset URL accessible via HTTP 200
-[CONSOLE] No upload errors","Upload fails silently; Delete confirmation not shown; Asset not removed from list; API returns 413/500","delete created assets","C169670","None"
+[CONSOLE] No upload errors","Upload fails silently; Delete confirmation not shown; Asset not removed from list; API returns 413/500","delete created assets","C169670","Draft"
 "STORE-017","Edit SEO - View and Manage SEOs","Store > SEO","High","BL-STORE-001","ECL-8.1","Admin logged in; Store created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; seo_keyword=test-store; seo_language=en-US","[NAV] Go to More > Stores > Select store {{STORE_ID}}
 [ACT] Click SEO widget
 [ACT] Click on SEO from list to view details
@@ -138,7 +138,7 @@
 [DOM] Delete confirmation message displays
 [STATE] SEO deleted and removed from list","[API] GET /api/seoinfos?storeId={{STORE_ID}} returns correct SEO entries
 [API] DELETE /api/seoinfos/{id} returns 204
-[CONSOLE] No SEO save errors","SEO not appearing in list after create; URL keyword accepts spaces; Delete removes wrong entry; API 400 on create","delete created SEO entries","C169671","None"
+[CONSOLE] No SEO save errors","SEO not appearing in list after create; URL keyword accepts spaces; Delete removes wrong entry; API 400 on create","delete created SEO entries","C169671","Draft"
 "STORE-018","Edit Advanced Properties","Store > Advanced Properties","Medium","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Go to More > Stores > Select store > Open Store details for {{STORE_ID}}
 [ACT] Click Advanced properties widget
 [ACT] Edit any field and click OK
@@ -151,7 +151,7 @@
 [STATE] Properties returned to initial form after Reset
 [STATE] All changes saved successfully after Save","[API] PUT /api/stores/{{STORE_ID}} returns 200 with updated advanced properties
 [CONSOLE] No errors on Save/Reset
-[ADMIN] Advanced property values persist after blade reload","Save/Reset buttons not appearing after edit; Reset does not restore initial values; API 400","restore original settings","C169672","None"
+[ADMIN] Advanced property values persist after blade reload","Save/Reset buttons not appearing after edit; Reset does not restore initial values; API 400","restore original settings","C169672","Draft"
 "STORE-019","Edit Fulfillment Center","Store > Fulfillment Centers","High","BL-STORE-003","","Admin logged in; Store exists; Fulfillment centers configured","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; fc_name=Main Warehouse","[NAV] Go to More > Stores > Select store {{STORE_ID}}
 [ACT] Edit default fulfillment center from dropdown
 [ACT] Click three dots on fulfillment center > Select Manage
@@ -166,7 +166,7 @@
 [STATE] New fulfillment center added to list and available for selection","[API] GET /api/fulfillment returns fulfillment centers for store
 [API] DELETE /api/fulfillment/{id} returns 204
 [CONSOLE] No errors on FC operations
-[ADMIN] FC list reflects changes after save","FC dropdown empty; Delete does not show confirmation; New FC not available in dropdown; BL-STORE-003 violation: checkout broken after unlink","delete created fulfillment center","C237961","None"
+[ADMIN] FC list reflects changes after save","FC dropdown empty; Delete does not show confirmation; New FC not available in dropdown; BL-STORE-003 violation: checkout broken after unlink","delete created fulfillment center","C237961","Draft"
 "STORE-020","Edit Dynamic Properties","Store > Dynamic Properties","High","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; property_name=CustomProp; value_type=ShortText","[NAV] Go to More > Stores > Select store {{STORE_ID}}
 [ACT] Click Dynamic properties widget
 [ACT] Click Manage type properties button
@@ -186,7 +186,7 @@
 [STATE] Property deleted and removed from list","[API] GET /api/dynamic-properties?objectType=Store returns store properties
 [API] DELETE /api/dynamic-properties/{id} returns 204
 [CONSOLE] No property CRUD errors
-[ADMIN] Property list reflects create/delete operations","Property not appearing after create; Delete removes wrong property; Value type not saved; API 400","delete created dynamic properties","C169747","None"
+[ADMIN] Property list reflects create/delete operations","Property not appearing after create; Delete removes wrong property; Value type not saved; API 400","delete created dynamic properties","C169747","Draft"
 "STORE-021","Manage Settings - Quotes","Store > Settings","High","BL-STORE-001","","Admin logged in; Store created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}","[NAV] Go to More > Stores > Select Store > Click Settings widget
 [ACT] Enable Quotes (switch on) and click OK
 [NAV] Open Store on Storefront at {{FRONT_URL}} and verify Quotes functionality available
@@ -198,7 +198,7 @@
 [STATE] Quotes toggle switched off
 [STATE] Quotes function not available on Storefront","[API] GET /api/stores/{{STORE_ID}}/settings returns quotes setting
 [NETWORK] Storefront quote endpoints return 200/403 based on toggle
-[CONSOLE] No toggle errors","Storefront shows Quotes when disabled; API does not reflect toggle state; Setting not persisted","restore original settings","C169756","None"
+[CONSOLE] No toggle errors","Storefront shows Quotes when disabled; API does not reflect toggle state; Setting not persisted","restore original settings","C169756","Draft"
 "STORE-022","Manage Settings - Anonymous Users","Store > Settings","High","BL-STORE-001","","Admin logged in; Store created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}","[NAV] Go to Store > Settings for {{STORE_ID}}
 [ACT] Switch on Allow anonymous users for store > Click OK
 [NAV] Go to Storefront at {{FRONT_URL}} and create order as anonymous user
@@ -209,7 +209,7 @@
 [STATE] Anonymous users toggle switched off
 [STATE] System prevents access to store for anonymous users","[API] GET /api/stores/{{STORE_ID}}/settings returns allowAnonymous setting
 [NETWORK] Anonymous cart/order requests allowed/blocked per toggle
-[CONSOLE] No auth errors when anonymous order enabled","Anonymous order blocked when toggle is ON; Anonymous order allowed when OFF; Setting not saved","restore original settings","C169756","None"
+[CONSOLE] No auth errors when anonymous order enabled","Anonymous order blocked when toggle is ON; Anonymous order allowed when OFF; Setting not saved","restore original settings","C169756","Draft"
 "STORE-023","Manage Settings - Tax Calculation","Store > Settings","High","BL-STORE-001","","Admin logged in; Store created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}","[NAV] Go to Store > Settings for {{STORE_ID}}
 [ACT] Switch on Enable tax calculation > Click OK
 [NAV] Go to Storefront at {{FRONT_URL}} and create order
@@ -221,7 +221,7 @@
 [STATE] Tax calculation toggle switched off
 [STATE] Taxes not calculated in order","[API] GET /api/stores/{{STORE_ID}}/settings returns taxCalculationEnabled
 [NETWORK] Tax calculation API calls made/skipped per toggle
-[CONSOLE] No tax provider errors","Tax shown when disabled; Tax not shown when enabled; Tax line item missing from order breakdown","restore original settings","C169756","None"
+[CONSOLE] No tax provider errors","Tax shown when disabled; Tax not shown when enabled; Tax line item missing from order breakdown","restore original settings","C169756","Draft"
 "STORE-024","Manage Settings - Subscriptions","Store > Settings","Medium","BL-STORE-001","","Admin logged in; Store created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}","[NAV] Go to Store > Settings for {{STORE_ID}}
 [ACT] Switch on Enable subscriptions > Click OK
 [NAV] Go to Storefront at {{FRONT_URL}} and create order
@@ -233,7 +233,7 @@
 [STATE] Subscriptions toggle switched off
 [STATE] Subscription not allowed on Storefront","[API] GET /api/stores/{{STORE_ID}}/settings returns subscriptionsEnabled
 [NETWORK] Subscription endpoints return 200/403 per toggle
-[CONSOLE] No subscription errors","Subscription UI shown when disabled; Subscription blocked when enabled; Toggle state not persisted","restore original settings","C169756","None"
+[CONSOLE] No subscription errors","Subscription UI shown when disabled; Subscription blocked when enabled; Toggle state not persisted","restore original settings","C169756","Draft"
 "STORE-025","Manage Settings - Google Analytics 4","Store > Settings","High","BL-STORE-001","","Admin logged in; Store created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; ga4_measurement_id=G-S2KXT3KTJZ","[NAV] Go to Store > Settings for {{STORE_ID}}
 [ACT] Scroll to Google Analytics 4
 [ACT] Toggle Enable = True
@@ -253,21 +253,21 @@
 [STATE] Changes saved
 [DOM] Google tag script disabled in storefront","[NETWORK] Network requests to google-analytics.com present/absent per toggle
 [CONSOLE] No GA4 initialization errors when enabled
-[ADMIN] GA4 settings persist after save","Script present when disabled; Script absent when enabled; Wrong measurement ID in script; GA4 requests sent when disabled","restore original settings","C169756","None"
+[ADMIN] GA4 settings persist after save","Script present when disabled; Script absent when enabled; Wrong measurement ID in script; GA4 requests sent when disabled","restore original settings","C169756","Draft"
 "STORE-026","Manage Payment Methods","Store > Payment & Shipping","Medium","BL-STORE-003","","Admin logged in; Store exists; At least one payment method created and selected","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Go to Store details for {{STORE_ID}}
 [ACT] Navigate to Payment methods section
 [ACT] Configure payment method availability","[STATE] Payment method configuration accessible
 [STATE] Payment methods available for checkout
 [STATE] Changes saved successfully","[API] GET /api/stores/{{STORE_ID}} includes paymentMethods array
 [NETWORK] Checkout payment page shows configured methods
-[CONSOLE] No payment config errors","Payment methods list empty; Changes not saved; BL-STORE-003 violation: method not available at checkout","restore original settings","C169758","None"
+[CONSOLE] No payment config errors","Payment methods list empty; Changes not saved; BL-STORE-003 violation: method not available at checkout","restore original settings","C169758","Draft"
 "STORE-027","Manage Shipping Methods","Store > Payment & Shipping","Medium","BL-STORE-003","","Admin logged in; Store exists; At least one shipping method added","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Go to Store details for {{STORE_ID}}
 [ACT] Navigate to Shipping methods section
 [ACT] Configure shipping method visibility","[STATE] Shipping method configuration accessible
 [STATE] Shipping methods visible in shopping cart
 [STATE] Changes saved successfully","[API] GET /api/stores/{{STORE_ID}} includes shippingMethods array
 [NETWORK] Cart page shows configured shipping methods
-[CONSOLE] No shipping config errors","Shipping methods list empty; Methods not showing in cart; BL-STORE-003 violation: method not linked to store","restore original settings","C169759","None"
+[CONSOLE] No shipping config errors","Shipping methods list empty; Methods not showing in cart; BL-STORE-003 violation: method not linked to store","restore original settings","C169759","Draft"
 "STORE-028","Add Store URL","Store > Store URL","Medium","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; store_url={{FRONT_URL}}","[NAV] Go to Store details for {{STORE_ID}}
 [ACT] Enter Store URL in field: {{FRONT_URL}}
 [ACT] Save changes
@@ -275,7 +275,7 @@
 [STATE] Store URL saved successfully
 [NAV] Store opens in separate browser tab with configured URL","[NETWORK] HTTP 200 on configured store URL
 [API] GET /api/stores/{{STORE_ID}} returns updated url field
-[CONSOLE] No URL save errors","Invalid URL accepted; URL not saved; Open in Browser opens wrong URL; HTTP 404","restore original settings","C184229","None"
+[CONSOLE] No URL save errors","Invalid URL accepted; URL not saved; Open in Browser opens wrong URL; HTTP 404","restore original settings","C184229","Draft"
 "STORE-029","Set Attributes - Change Order and Verify Storefront","Store > Attributes & Filters","Medium","BL-STORE-004","","Admin logged in; Store exists; FilterBrowsing configured","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}","[NAV] Go to Store > Dynamic properties > FilterBrowsing for {{STORE_ID}}
 [ACT] Change attribute order
 [ACT] Save
@@ -285,7 +285,7 @@
 [STATE] Attribute order updated on Storefront filters
 [STATE] Filters display in new order","[NETWORK] Storefront category page loads with reordered filters
 [CONSOLE] No filter rendering errors
-[ADMIN] Aggregation properties show updated attribute order","Filter order unchanged on Storefront; Aggregation properties not reflecting new order; Save returns error","restore original settings","C341063","None"
+[ADMIN] Aggregation properties show updated attribute order","Filter order unchanged on Storefront; Aggregation properties not reflecting new order; Save returns error","restore original settings","C341063","Draft"
 "STORE-030","Set Attributes - Add/Delete Attributes and Verify","Store > Attributes & Filters","High","BL-STORE-004","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; attribute_name=TestAttribute","[NAV] Go to Admin > Stores > Store > Dynamic properties > FilterBrowsing for {{STORE_ID}}
 [ACT] Add new attribute: TestAttribute
 [ACT] Save
@@ -302,7 +302,7 @@
 [STATE] Deleted attribute removed from Aggregation properties
 [STATE] Deleted attribute removed from Storefront filters","[API] PUT /api/stores/{{STORE_ID}}/aggregation-properties includes new attribute
 [NETWORK] Storefront filter sidebar reflects attribute changes
-[CONSOLE] No attribute sync errors","New attribute not appearing in filters; Deleted attribute still showing; Aggregation properties out of sync","delete created attribute","C341066","None"
+[CONSOLE] No attribute sync errors","New attribute not appearing in filters; Deleted attribute still showing; Aggregation properties out of sync","delete created attribute","C341066","Draft"
 "STORE-031","Set Price Ranges - Include Endpoints and Verify Storefront","Store > Attributes & Filters","Medium","BL-STORE-004","","Admin logged in; Store exists; FilterBrowsing configured with price ranges","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}","[NAV] Go to Store > Dynamic properties > FilterBrowsing for {{STORE_ID}}
 [ACT] Review price range JSON configuration
 [ASSERT] Verify inclusion/non-inclusion of range endpoints
@@ -311,7 +311,7 @@
 [STATE] Storefront price filters display correct ranges
 [STATE] Range endpoints handled correctly per JSON config","[NETWORK] Storefront price filter buckets match JSON config
 [CONSOLE] No price range rendering errors
-[ADMIN] JSON config matches displayed filter behavior","Endpoints not matching JSON config; Price filter shows wrong ranges; JSON config not applied","restore original settings","C341064","None"
+[ADMIN] JSON config matches displayed filter behavior","Endpoints not matching JSON config; Price filter shows wrong ranges; JSON config not applied","restore original settings","C341064","Draft"
 "STORE-032","Set Price Ranges - Add/Edit/Delete Ranges and Verify","Store > Attributes & Filters","High","BL-STORE-004","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; range=0-100","[NAV] Go to Admin > Store > Dynamic properties > FilterBrowsing for {{STORE_ID}}
 [ACT] Add new range: 0-100
 [ACT] Save
@@ -331,12 +331,12 @@
 [STATE] Deleted range removed from Aggregation properties
 [STATE] Deleted range removed from Storefront filters","[NETWORK] Storefront price filter buckets updated after range changes
 [API] PUT /api/stores/{{STORE_ID}}/aggregation-properties returns 200
-[CONSOLE] No price range sync errors","Edited range not reflected on Storefront; Deleted range still appearing; Aggregation properties out of sync","restore original settings","C341065","None"
+[CONSOLE] No price range sync errors","Edited range not reflected on Storefront; Deleted range still appearing; Aggregation properties out of sync","restore original settings","C341065","Draft"
 "STORE-033","Store Access Permission","Store > Permissions","High","BL-STORE-001","","Admin logged in; User_1 created; Role_1 created with store:access permission; Role_1 assigned to User_1; Store_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; role=Role_1; permission=store:access","[NAV] Login as User_1 at {{BACK_URL}}
 [NAV] Navigate to More > Stores","[DOM] User_1 can see Store blade
 [STATE] Store module accessible with access permission","[API] GET /api/stores returns 200 for User_1
 [CONSOLE] No 403 errors in console
-[ADMIN] Stores menu item visible for User_1","Store blade not visible for User_1; 403 on store list API; Menu item hidden despite permission","none","C237734","None"
+[ADMIN] Stores menu item visible for User_1","Store blade not visible for User_1; 403 on store list API; Menu item hidden despite permission","none","C237734","Draft"
 "STORE-034","Store Read Permission","Store > Permissions","High","BL-STORE-001","","Admin logged in; User_1 created; Role_1 with permissions: store:access, store:read, platform:dynamic_properties (access/update/read), catalog:read; Role_1 assigned to User_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; role=Role_1; permissions=store:access,store:read","[NAV] Login as User_1 at {{BACK_URL}}
 [NAV] Open Stores > Select Store_1
 [ACT] Attempt to modify settings
@@ -345,7 +345,7 @@
 [DOM] Save button hidden
 [DOM] Reset button hidden","[API] PUT /api/stores/Store_1 returns 403 for User_1
 [CONSOLE] No JS errors on read-only view
-[ADMIN] Toolbar shows only read actions for User_1","Save button visible despite read-only role; User_1 can save changes; API accepts PUT from User_1","none","C237741","None"
+[ADMIN] Toolbar shows only read actions for User_1","Save button visible despite read-only role; User_1 can save changes; API accepts PUT from User_1","none","C237741","Draft"
 "STORE-035","Store Update Permission","Store > Permissions","High","BL-STORE-001","","Admin logged in; User_1 created; Role_1 with permissions: store:access, store:read, store:update, platform:dynamic_properties (access/update/read), catalog:read; Role_1 assigned to User_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; role=Role_1; permissions=store:access,store:read,store:update","[NAV] Login as User_1 at {{BACK_URL}}
 [NAV] Open Stores > Select Store_1
 [ACT] Make changes to store settings","[STATE] Store blade opened
@@ -353,7 +353,7 @@
 [DOM] Reset button visible and active
 [STATE] User_1 can modify and save changes","[API] PUT /api/stores/Store_1 returns 200 for User_1
 [CONSOLE] No 403 errors
-[ADMIN] Changes saved and reflected for User_1","Save button hidden; API returns 403; Changes not persisted after save","restore original settings","C237732","None"
+[ADMIN] Changes saved and reflected for User_1","Save button hidden; API returns 403; Changes not persisted after save","restore original settings","C237732","Draft"
 "STORE-036","Store Create Permission","Store > Permissions","High","BL-STORE-001","","Admin logged in; User_1 created; Role_1 with permissions: store:access, store:read, store:create, catalog:read; Role_1 assigned to User_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; role=Role_1; permissions=store:access,store:read,store:create","[NAV] Login as User_1 at {{BACK_URL}}
 [NAV] Navigate to Stores module
 [ASSERT] Verify Add button visible
@@ -361,7 +361,7 @@
 [STATE] User_1 can create new store
 [STATE] New store saved successfully","[API] POST /api/stores returns 201 for User_1
 [CONSOLE] No 403 errors on create
-[ADMIN] New store appears in store list","Add button hidden; API returns 403 on create; Store not saved","delete created store","C237742","None"
+[ADMIN] New store appears in store list","Add button hidden; API returns 403 on create; Store not saved","delete created store","C237742","Draft"
 "STORE-037","Store Delete Permission","Store > Permissions","High","BL-STORE-001","","Admin logged in; User_1 created; Role_1 with permissions: store:access, store:read, store:delete; Role_1 assigned to User_1; Store_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; role=Role_1; permissions=store:access,store:read,store:delete","[NAV] Login as User_1 at {{BACK_URL}}
 [NAV] Open Stores module
 [ACT] Select Store_1
@@ -370,7 +370,7 @@
 [STATE] User_1 can select and delete store
 [STATE] Store deleted successfully after confirmation","[API] DELETE /api/stores/Store_1 returns 204 for User_1
 [CONSOLE] No 403 errors on delete
-[ADMIN] Store_1 removed from list","Delete button hidden; API returns 403; Store not removed after confirmation","none (store deleted)","C237743","None"
+[ADMIN] Store_1 removed from list","Delete button hidden; API returns 403; Store not removed after confirmation","none (store deleted)","C237743","Draft"
 "STORE-038","Store Login on Behalf Permission","Store > Permissions","Medium","BL-STORE-001","","Admin logged in; User_1 created; Role_1 with store:loginOnBehalf permission; Role_1 assigned to User_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; user=User_1","[NAV] Login as Admin at {{BACK_URL}}
 [NAV] Navigate to Security > Users > User_1
 [ACT] Click Login on Behalf
@@ -378,7 +378,7 @@
 [STATE] User_1 information shown in store
 [STATE] Session active with User_1 credentials","[NETWORK] Storefront session cookie belongs to User_1
 [CONSOLE] No auth errors
-[ADMIN] Login on Behalf action logged in audit","Login on Behalf fails; User_1 information not shown; Session remains as Admin","none","C237744","None"
+[ADMIN] Login on Behalf action logged in audit","Login on Behalf fails; User_1 information not shown; Session remains as Admin","none","C237744","Draft"
 "STORE-039","UI Tooltips - Display and Hide","Store > General","Low","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Open Store blade > Settings for {{STORE_ID}}
 [ASSERT] Observe tooltips (should be folded)
 [ACT] Click blue question mark for field1
@@ -387,7 +387,7 @@
 [STATE] Tooltip for field1 unfolded after click
 [STATE] Tooltip for field2 unfolded (field1 remains open)
 [STATE] All tooltips folded after clicking Hide link","[CONSOLE] No JS errors on tooltip toggle
-[DOM] Tooltip elements present in DOM with correct visibility","Tooltips not folded initially; field1 closes when field2 opens; Hide link not functioning","none","C338428","None"
+[DOM] Tooltip elements present in DOM with correct visibility","Tooltips not folded initially; field1 closes when field2 opens; Hide link not functioning","none","C338428","Draft"
 "STORE-044","Enable SPA Setting","Store > SPA","Medium","BL-STORE-001","","Admin logged in; Store_1 created; User_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1","[NAV] Login as Admin at {{BACK_URL}}
 [NAV] Go to Store_1 > Settings panel
 [ACT] Switch on Is SPA
@@ -396,7 +396,7 @@
 [STATE] Setting saved
 [STATE] Store now operates as Single Page Application
 [STATE] Navigation without full page reloads","[NETWORK] Page navigations do not trigger full HTTP reloads
-[CONSOLE] No SPA routing errors","Full page reloads occurring in SPA mode; Setting not saved; JS routing errors in console","restore original settings","C237757","None"
+[CONSOLE] No SPA routing errors","Full page reloads occurring in SPA mode; Setting not saved; JS routing errors in console","restore original settings","C237757","Draft"
 "STORE-045","Disable SPA Setting","Store > SPA","Medium","BL-STORE-001","","Admin logged in; Store_1 created; User_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1","[NAV] Login as Admin at {{BACK_URL}}
 [NAV] Go to Store_1 > Settings panel
 [ACT] Switch off Is SPA
@@ -405,7 +405,7 @@
 [STATE] Setting saved
 [STATE] Store is not Single Page Application
 [STATE] Traditional page loads on navigation","[NETWORK] Page navigations trigger full HTTP requests
-[CONSOLE] No routing errors in non-SPA mode","No page reloads in non-SPA mode; Setting not saved; Store behaves as SPA when disabled","restore original settings","C237760","None"
+[CONSOLE] No routing errors in non-SPA mode","No page reloads in non-SPA mode; Setting not saved; Store behaves as SPA when disabled","restore original settings","C237760","Draft"
 "STORE-048","SEO Link Type - None","Store > Link Type","Medium","BL-STORE-001","","Admin logged in; Store_1 created; User_1 logged in","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1","[NAV] Go to Store_1 > Settings panel at {{BACK_URL}}
 [ACT] Set SEO Link type to None
 [ACT] Save
@@ -415,7 +415,7 @@
 [FORMAT] URL address format: /product/123 (numeric ID)
 [STATE] Short URL not used","[NETWORK] Product page URL contains numeric ID only
 [CONSOLE] No routing errors
-[ADMIN] SEO link type setting persisted","URL uses slug instead of ID; SEO Link type setting not saved; Product 404 after URL format change","restore original settings","C237768","None"
+[ADMIN] SEO link type setting persisted","URL uses slug instead of ID; SEO Link type setting not saved; Product 404 after URL format change","restore original settings","C237768","Draft"
 "STORE-049","SEO Link Type - Short","Store > Link Type","Medium","BL-STORE-001","","Admin logged in; Store_1 created; User_1 logged in","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1","[NAV] Go to Store_1 > Settings panel at {{BACK_URL}}
 [ACT] Set SEO Link type to Short
 [ACT] Save
@@ -425,7 +425,7 @@
 [FORMAT] URL address format: /my-cool-product (slug only)
 [STATE] SEO-friendly short URLs","[NETWORK] Product URL uses slug without category hierarchy
 [CONSOLE] No routing errors
-[ADMIN] SEO link type persisted as Short","URL includes category path in Short mode; Numeric ID used instead of slug; Product 404","restore original settings","C237769","None"
+[ADMIN] SEO link type persisted as Short","URL includes category path in Short mode; Numeric ID used instead of slug; Product 404","restore original settings","C237769","Draft"
 "STORE-050","SEO Link Type - Collapsed","Store > Link Type","Medium","BL-STORE-001","","Admin logged in; Store_1 created; User_1 logged in","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1","[NAV] Go to Store_1 > Settings panel at {{BACK_URL}}
 [ACT] Set SEO Link type to Collapsed
 [ACT] Save
@@ -435,7 +435,7 @@
 [FORMAT] URL format: /virtual-parent-category/my-cool-category/my-cool-product
 [STATE] Virtual parent hierarchy shown","[NETWORK] Product URL includes virtual parent + leaf category + product slug
 [CONSOLE] No routing errors
-[ADMIN] SEO link type persisted as Collapsed","Full physical hierarchy shown instead of collapsed; URL missing virtual parent; Product 404","restore original settings","C237770","None"
+[ADMIN] SEO link type persisted as Collapsed","Full physical hierarchy shown instead of collapsed; URL missing virtual parent; Product 404","restore original settings","C237770","Draft"
 "STORE-051","SEO Link Type - Long","Store > Link Type","Medium","BL-STORE-001","","Admin logged in; Store_1 created; User_1 logged in","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1","[NAV] Go to Store_1 > Settings panel at {{BACK_URL}}
 [ACT] Set SEO Link type to Long
 [ACT] Save
@@ -445,4 +445,39 @@
 [FORMAT] URL format: /virtual-parent-category/physical-parent-category/my-cool-category/my-cool-product
 [STATE] Full category hierarchy in URL","[NETWORK] Product URL includes full category breadcrumb
 [CONSOLE] No routing errors
-[ADMIN] SEO link type persisted as Long","URL shorter than expected in Long mode; Physical parent missing from URL; Product 404","restore original settings","C237771","None"
+[ADMIN] SEO link type persisted as Long","URL shorter than expected in Long mode; Physical parent missing from URL; Product 404","restore original settings","C237771","Draft"
+"STORE-052","Store Asset URL Field — Present in URLs Section with Tooltip","Store > Asset URL","High","BL-STORE-001","","Admin logged in; Store exists ({{STORE_ID}}); VCST-5089 (Per-store Asset Public URL rewrite) deployed","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Go to More > Stores > Select store {{STORE_ID}} at {{BACK_URL}}
+[ACT] Scroll to the URLs section
+[ACT] Click the ⓲ tooltip icon next to 'Store asset URL'
+[WAIT] Tooltip popover renders","[DOM] 'Store asset URL' field visible in the URLs section, alongside 'Store URL' and 'Secure store URL'
+[DOM] ⓲ tooltip icon present next to the field label
+[DOM] Clicking the tooltip icon reveals a description of the field's purpose (asset/image URL rewrite host)
+[DOM] 'Store asset URL' input field renders empty (no placeholder text mistaken for a real value) when never configured","[API] GET /api/stores/{{STORE_ID}} response includes an 'assetPublicUrl' property (null or empty string when unset)
+[CONSOLE] No errors rendering the URLs section","'Store asset URL' field absent from URLs section; tooltip icon missing or non-functional; field mixed up with 'Store URL'/'Secure store URL'","none — read-only","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC1)","Draft"
+"STORE-053","Store Asset URL — Set and Save Persists the Value","Store > Asset URL","Critical","BL-STORE-001","ECL-8.1","Admin logged in; Store exists ({{STORE_ID}}); state from STORE-052 (URLs section open, 'Store asset URL' field visible)","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; test_url=@td(STORE_ASSET_TEST_URL.value)","[NAV] Go to More > Stores > Select store {{STORE_ID}} at {{BACK_URL}}
+[ACT] Scroll to the URLs section
+[ACT] Fill 'Store asset URL': @td(STORE_ASSET_TEST_URL.value)
+[ACT] Click Save
+[WAIT] Success notification appears
+[NAV] Close the store detail blade
+[NAV] Reopen {{STORE_ID}} from the Stores list","[TOAST] Success notification on Save
+[FORM] 'Store asset URL' field shows @td(STORE_ASSET_TEST_URL.value) after blade reload (value survived a fresh GET, not just client-side state)
+[DOM] 'Store URL' field still shows its original value; 'Secure store URL' field still shows its original value (neither is altered by this edit)","[API] GET /api/stores/{{STORE_ID}} returns assetPublicUrl = @td(STORE_ASSET_TEST_URL.value)
+[CONSOLE] No save errors
+[ADMIN] Value persists after a full blade close/reopen (not just in-memory)","Save button does not persist the field (value reverts on reload); success toast shown but API still returns the old value; Store URL/Secure store URL fields get corrupted by this save (full-object overwrite side effect)","Reset 'Store asset URL' to empty via the same URLs section and Save (see STORE-054) — do not leave the shared store pointed at a placeholder CDN","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC1)","Draft"
+"STORE-054","Store Asset URL — Clear and Save Persists Empty (Round-Trip)","Store > Asset URL","High","BL-STORE-001","","Admin logged in; state from STORE-053 (URLs section open for {{STORE_ID}}, 'Store asset URL' currently set to @td(STORE_ASSET_TEST_URL.value)) — if run standalone, first set the field via STORE-053's steps so there is a non-empty value to clear","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[ACT] Clear 'Store asset URL' field (delete its contents)
+[ACT] Click Save
+[WAIT] Success notification appears
+[NAV] Close the store detail blade
+[NAV] Reopen {{STORE_ID}} from the Stores list","[TOAST] Success notification on Save
+[FORM] 'Store asset URL' field is empty after blade reload
+[DOM] 'Store URL' field still shows its original value; 'Secure store URL' field still shows its original value (neither is altered by clearing this one)","[API] GET /api/stores/{{STORE_ID}} returns assetPublicUrl = null or empty string
+[CONSOLE] No save errors
+[ADMIN] Storefront product images for {{STORE_ID}} resolve back to the platform host (no longer pointing at the placeholder CDN)","Field shows empty in UI but API still returns the old value (stale cache); clearing the field throws a validation error; other store fields reset unexpectedly","none — this case IS the reset for STORE-053","VCST-5089; tests/Sprint-current/VCST-5089/test-execution-report.md (AC1)","Draft"
+"STORE-055","Store Asset URL Field — Localized Across Admin UI Languages","Store > Asset URL","Medium","BL-STORE-001","","Admin logged in; Store exists ({{STORE_ID}}); VCST-5089 deployed. The 'Store asset URL' label / hint / placeholder are i18n keys shipped by vc-module-store PR #171 in 13 languages","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; lang_primary=Русский (ru); lang_secondary=Deutsch (de)","[NAV] Log in as admin and go to More > Stores at {{BACK_URL}}
+[ACT] Open the account menu (top-right) and switch interface language to Русский (ru)
+[WAIT] Admin UI reloads localized to Russian
+[NAV] Open store {{STORE_ID}} and expand the URLs section
+[ACT] Click the ⓘ info icon next to the asset URL field to reveal its description","[DOM] The field label renders the Russian translation ""URL ресурсов магазина"" (NOT the English ""Store asset URL"" and NOT a raw i18n key such as ""store-asset-url"")
+[FORM] The empty-field placeholder reads ""Введите базовый URL ресурсов""
+[DOM] The ⓘ description renders the Russian hint (starts ""Базовый URL, по которому через Experience API…"")","[ADMIN] Spot-check a second locale — switch to Deutsch (de) and confirm the label reads ""Asset-URL des Stores"" (coverage beyond a single language)","Field shows the raw i18n key (e.g. ""store-asset-url"") instead of a translation; label / hint fall back to English while the rest of the UI is Russian; ⓘ hint is untranslated","Switch the interface language back to English (en) via the account menu","VCST-5089; vc-module-store PR #171 Localizations (de/en/es/fi/fr/it/ja/no/pl/pt/ru/sv/zh)","Draft"

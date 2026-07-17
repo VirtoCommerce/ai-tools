@@ -218,9 +218,6 @@ export const env = {
     CYBERSOURCE_CARD: getEnvVar('CYBERSOURCE_CARD'),
     CYBERSOURCE_EXPIRY: getEnvVar('CYBERSOURCE_EXPIRY'),
     CYBERSOURCE_CVV: getEnvVar('CYBERSOURCE_CVV'),
-    CYBERSOURCE_3DS_FRICTIONLESS_CARD: getEnvVar('CYBERSOURCE_3DS_FRICTIONLESS_CARD', ''),
-    CYBERSOURCE_3DS_CHALLENGE_CARD: getEnvVar('CYBERSOURCE_3DS_CHALLENGE_CARD', ''),
-    CYBERSOURCE_3DS_OTP: getEnvVar('CYBERSOURCE_3DS_OTP', ''),
 
     // Dedicated lockout-test account (for SEC-AUTH-003, SEC-RATE-001/002)
     // Isolated from the agent pool so brute-force lockout tests do not block parallel slot accounts.

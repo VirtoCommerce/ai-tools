@@ -38,7 +38,7 @@
  *   contributionMode:"fork"|"direct", clientGithubAccount:string}} upstream
  * @property {{client:Array<ClientRepo>, platform:Array<object>}} repos
  * @property {{mode:"plugin"|"agent-project", helpersRunnable:boolean}} runtime
- * @property {{projectRoot:string, pluginRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
+ * @property {{projectRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
  * @property {{source:""|"vc-deploy-dev"|"modules-endpoint"|"ticket"}} buildVerify
  *
  * @typedef {Object} ClientRepo
@@ -50,7 +50,9 @@
  * @property {string} [integrationBranch]  the branch feature branches base off + PRs TARGET (e.g. "dev"); falls back to defaultBranch when absent
  * @property {string} [workBranchPrefix]  work-branch prefix (default "claude/qa-autofix/")
  * @property {string} [upstream]  the platform repo this was forked/derived from (provenance)
- * @property {string} [upstreamRef]  the platform version/tag the fork was cut from (provenance anchor)
+ * @property {string} [upstreamRef]  a CONCRETE, resolvable upstream tag (the fork line's base, e.g. "2.49.0") the fork was cut from (provenance anchor) — NOT the bare MAJOR.MINOR line label
+ * @property {boolean} [upstreamRefResolved]  whether upstreamRef was verified to resolve in the upstream repo at discovery (false ⇒ line label/fork version kept; Gate 1b reconstructs)
+ * @property {string} [forkVersion]  the fork's OWN package.json version (e.g. "2.49.7"), kept for reference — its patch is independent of upstream tags, so NOT a resolvable ref
  * @property {ContributionPlan} [contribution]  BAKED clone/PR plan so the interactive command doesn't re-derive it from repo-router.ts
  * @property {{install?:string, build?:string, typecheck?:string, lint?:string, test?:string}} [toolchain]  resolved toolchain (kind default + overrides)
  * @property {LocalVerify} [localVerify]  Gate-6 live local-verify facts (frontend forks)
@@ -95,13 +97,12 @@ export const PROFILE_DEFAULTS = {
   // baked profile facts instead of trying to execute (or mentally emulate) the helpers.
   runtime: { mode: "agent-project", helpersRunnable: true },
 
-  // paths — absolute roots so skills never break on a drifted Bash cwd, and know where
-  // the read-only plugin assets live vs where generated state / secrets land. Empty ⇒
-  // consumers fall back to process.cwd() (projectRoot) and $CLAUDE_PLUGIN_ROOT (pluginRoot).
-  // The relative names are resolved against projectRoot.
+  // paths — absolute roots so skills never break on a drifted Bash cwd. Empty projectRoot ⇒
+  // consumers fall back to process.cwd(). The relative names are resolved against projectRoot.
+  // NOTE: there is no pluginRoot here — commands resolve the ACTIVE plugin install at runtime
+  // via `claude plugin list --json` (knowledge/execution/plugin-root.md), never a baked path.
   paths: {
     projectRoot: "",
-    pluginRoot: "",
     workspace: ".fix-workspace",
     reports: "reports",
     secretsEnv: ".env.local",

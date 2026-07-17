@@ -2,11 +2,11 @@
 
 ## MCP Servers (configured in .mcp.json)
 
-| Server | Purpose | Config File |
-|--------|---------|-------------|
-| **playwright-chrome** | Browser automation with Chromium | `config/mcp-playwright-chrome.config.json` |
-| **playwright-firefox** | Browser automation with Firefox | `config/mcp-playwright-firefox.config.json` |
-| **playwright-edge** | Browser automation with Edge | `config/mcp-playwright-edge.config.json` |
+| Server | Purpose | Setup |
+|--------|---------|-------|
+| **playwright-chrome** | Browser automation with Chromium (`--browser chrome`) | CLI flags only — no config file |
+| **playwright-firefox** | Browser automation with Firefox (`--browser firefox`) | CLI flags only — no config file |
+| **playwright-edge** | Browser automation with Edge (`--browser msedge`) | CLI flags only — no config file |
 | **postman** | API testing - collections, environments, monitors | N/A (uses `--minimal` flag) |
 | **github** | PR review, code search, issue management | N/A (uses `GITHUB_PERSONAL_ACCESS_TOKEN` via `GIT_TOKEN`) |
 | **context7** | Up-to-date library documentation lookup | N/A (HTTP MCP at `mcp.context7.com`, uses `CONTEXT7_API_KEY`) |
@@ -27,21 +27,22 @@ The 6 servers in the table above are configured in `.mcp.json` (project-level). 
 - Default to `chromium` (not `chrome`) for Playwright MCP browser launches. WebKit is NOT supported on Windows — fall back to Edge or Chrome immediately without attempting installation.
 - Always verify MCP server config uses correct browser engine names: `chromium`, `firefox`, `webkit` (not `chrome`, `edge`).
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
-- Browser configs set viewport to 1920x1080, HAR capture enabled, video on failure, isolated contexts.
+- Playwright servers are configured entirely via CLI flags in `.mcp.json` — `--browser chrome|firefox|msedge`,
+  `--isolated` (a clean in-memory context per session), `--viewport-size 1920x1080`, and
+  `--output-dir test-results/<browser>`. Headed is the default (we deliberately do NOT pass `--headless`).
 - **Teardown:** after a browser task, tear down what you started — kill any local dev server you launched
   (find the PID on its port, `taskkill //PID <pid> //F` on Windows / `kill` on POSIX) and delete stray
-  helper files the MCP created that are not evidence (e.g. an empty `test-results/auth/*.json`
-  storage-state stub). Keep only intentional evidence (screenshots/HAR) under the run's reports dir.
+  helper files the MCP created that are not evidence. Keep only intentional evidence (screenshots) under
+  the run's reports dir.
 
 ## `.mcp.json` Setup
 
-This file is gitignored. After cloning, create it locally. Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly.
+This file is gitignored — `/project-init` generates it (`gen-mcp.mjs`) from `templates/.mcp.json.example`. Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly (gen-mcp normalizes this automatically). The Playwright servers carry only CLI flags — no config file, no `--secrets`. Restart/reconnect the MCP servers after any edit.
 
-### Browser login secrets (`--secrets`) — use the SCOPED file, never `.env.local`
+### Browser login — the real UI with the env credentials
 
-Repro/verify runs that sign into the storefront/Admin SPA must enter real passwords via the **real UI** (never an API/token bypass). The Playwright MCP `--secrets <dotenv>` flag makes this safe: call `browser_type` with the secret's **NAME** (e.g. `browser_type(text="B2B_USER_PASSWORD")`) and the MCP substitutes the value and **redacts it in logs** — the plaintext never enters the agent's context or the transcript. Substitution triggers only when the typed text exactly equals a NAME in the file.
+Repro/verify runs that sign into the storefront/Admin SPA enter the real password through the **real UI** (never an API/token bypass). No separate secrets file is needed: `/project-init` already writes `USER_EMAIL` to `.env.<env>` and `USER_PASSWORD` to `.env.local`, and the QA agent signs in with those.
 
-- **Point `--secrets` at a dedicated, minimal file — NOT `.env.local`.** `.env.local` also holds API tokens/keys (`GITHUB_TOKEN`, `GITHUB_FIX_BUGS_TOKEN`, `JIRA_API_TOKEN`, `FIGMA_API_KEY`, `POSTMAN_API_KEY`). If those were reachable, a malicious page or prompt-injection could get the agent to type a PAT/API key into an arbitrary web form. Least privilege = a separate file with **login passwords only**.
-- **Setup:** copy `templates/.env.playwright.local.template` → `.env.playwright.local` (auto-gitignored by the `.env.*.local` rule), fill from the team secret store, and add `"--secrets", ".env.playwright.local"` to each Playwright server's args (see `templates/.mcp.json.example`). Reconnect/restart the MCP after editing.
+If you ever want to **reuse a saved browser session** instead of logging in each run, that is an opt-in `--storage-state <path>` on the Playwright server, pointing at a file the client's **own** login flow produced — it is never shipped or generated by the plugin.
 
 > Storybook visual regression (`/qa-storybook` + `ui-ux-expert`) is full `vc-qa` plugin only, not shipped here.

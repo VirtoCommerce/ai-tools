@@ -53,7 +53,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 **If a ticket key is provided:**
 - Resolve ticket details via the profile's tracker (`tracker-ops.md` §2), using the tracker's own key format (Jira `ABC-123` / Azure Boards bare `12345`):
   - **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `getJiraIssue`
-  - **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <n>` (do NOT hand-roll `curl`+`python`)
+  - **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <n>` (do NOT hand-roll `curl`+`python`). Resolve `$pluginRoot` = the active install path at runtime via `claude plugin list --json` (not the profile; see [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)) — applies to every `$pluginRoot/…` invocation below too.
 - Use qa-testing-expert to reproduce based on ticket description
 - Follow `/qa-investigate` common VC patterns (P1–P8) to isolate the layer
 - Add QA evidence to the ticket as a comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`)
@@ -167,7 +167,7 @@ routing confidence LOW and say why — `/qa-fix` will still re-validate, but an 
 
 **Source code research — host depends on repo ownership (`tracker-ops.md` §3):**
 - **Platform repos always stay on GitHub MCP** (the VirtoCommerce upstream is public GitHub, even when the client's own code lives on Azure Repos): search `VirtoCommerce/vc-frontend` for the affected component/page (`search_code` with keywords from error messages, URL paths, or component names); for a backend bug search the relevant module repo (`org:VirtoCommerce vc-module-*`), using `/qa-investigate` layer isolation to pick the module.
-- **A client-owned repo is searched on its host** (`vcs.clientHost` / the routed `repos.client[]` entry): `github` → GitHub MCP `search_code` scoped to the client org; `azure-repos` → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-file` on candidate paths, or ADO code-search `filename:`/path scoping (ADO has no cross-repo `search_code` — narrow by module then read files).
+- **A client-owned repo is searched on its host** (`vcs.clientHost` / the routed `repos.client[]` entry): `github` → GitHub MCP `search_code` scoped to the client org (keep it **tightly scoped** — `repo:`/`path:`/`filename:` + an exact symbol; a broad repo-wide query can return an oversized response); `azure-repos` → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" search --q "<symbol>" [--repo <name>]` (ADO Code Search; org/project from the profile), or `ado.mjs get-file` to read a known path. Note: the ADO Code Search API **requires a `Project` filter and only accepts a `Repository` filter when `Project` is also present** (`Repository` alone → *"Filter [Repository] is found but filter [Project] is not."*) — `ado.mjs search` sends the pair for you. ADO has no cross-repo GitHub-style `search_code`; narrow by module then read files.
 - Check recent commits and PRs in the affected file for recent changes that may have introduced the regression
 - Look for related issues/PRs: `search_issues` (GitHub) with error text or feature keywords
 
@@ -269,12 +269,15 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 Ask the user: "Create a bug-tracker ticket for this bug?"
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
-- **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`, default `VCST` for backwards compatibility; customer sets their own).
-- **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <report.md>` (optional `--repro-file` / `--severity` / `--priority` / `--tags`; org/project default from the profile). Returns `{ id, type, title, state, url }`.
+- **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`, default `VCST` for backwards compatibility; customer sets their own). Body = Jira markup/markdown, unchanged.
+- **Azure Boards** (`tracker.kind = azure`) → **author the body as HTML** per [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) — Azure's `System.Description` / `Microsoft.VSTS.TCM.ReproSteps` are **HTML fields**, so raw Markdown renders as a literal `#`/`**`/`| … |` wall (do NOT feed the markdown report file straight in). Write the HTML to a temp file and:
+  - **Screenshots first:** upload each and capture the URL — `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" upload-attachment --file <png>` → `{ url }`. Embed inline in the relevant `<li>` via `<img src="{url}" width="700">`.
+  - **Create:** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <desc.html>` (optional `--repro-file <repro.html>` / `--severity` / `--priority` / `--tags` / `--attachments "<url1>,<url2>"` to also list them in the Attachments tab; org/project default from the profile). Returns `{ id, type, title, state, url }`.
+  - **Safety net:** `create-workitem` auto-converts Markdown→HTML if any slips through, but author HTML directly for the clean, structured result — don't lean on the net.
 
 Fields either way:
 - Summary: from bug title
-- Description: full report content in markdown (Azure: pass via `--description-file`)
+- Description: the full structured report — **Jira** = markdown; **Azure** = HTML (`azure-html-format.md`)
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
 
 **Use the returned key verbatim** in the tracker's own format (Jira `ABC-123`, Azure Boards bare `12345`) for the report filename and any cross-links. Follow `/qa-defect workflow` (role-based, §0) for status transitions.

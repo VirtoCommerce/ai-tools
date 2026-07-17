@@ -10,17 +10,116 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Forward-looking work on top of v0.7.0. Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.7.0`** (marketplace `0.9.0`). Pin to a tagged release for stability; this branch tip is unstable.
 
 ### Added — vc-fix self-diagnostics subsystem (VCST-5475–5479)
 
-A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills ran correctly and, opt-in, report quality issues back to VirtoCommerce — without ever mutating the client install or leaking client code. `vc-fix` now ships **8 agents, 15 skills, 7 commands** (plugin `0.6.0`; marketplace `0.9.0`).
+A two-tier way for a client-installed `vc-fix` to observe whether its OWN skills ran correctly and, opt-in, report quality issues back to VirtoCommerce — without ever mutating the client install or leaking client code. `vc-fix` now ships **8 agents, 15 skills, 7 commands** (plugin `0.7.0`; marketplace `0.9.0`).
 
 - **Tier A:** `hooks/session-telemetry.mjs` (passive) wired via `hooks/hooks.json` — `SessionStart`→init, `PostToolUse[Skill]`→record, `Stop`→finalize. Records per-skill boundaries, timings, and deterministic signals (tool errors, denied permissions, hook failures, STOP/BAIL markers, anomaly score) to gitignored `<outputRoot>/.vc-fix/diagnostics/<session_id>.jsonl`. Secrets redacted; never throws/blocks a tool.
 - **Oracle:** `knowledge/diagnostics/skill-expectations.md` — per-command expected phases/gates + anti-patterns + an S0–S3 severity rubric.
 - **Tier B:** `/vc-self-check` (`skills/vc-self-check/`, `disable-model-invocation`) reads the telemetry + transcript + oracle → per-skill verdict (OK/DEGRADED/BROKEN) + severity + proposed fix → LOCAL `DIAG-*.md`. A one-shot yes/no consent prompt fires from `Stop` only when the anomaly score is high (opt out `VC_FIX_DIAG_CONSENT=off`); never auto-runs.
 - **Delivery:** `skills/vc-self-check/deliver.mjs` (`/vc-self-check deliver`) — scrubbed (§2a client-code containment), consent-gated (draft-and-confirm) contribution to `VirtoCommerce/vc-mcp-testing-module`, routed by GitHub-token rights (PR / fork-PR / issue / local), with issue dedup.
 - Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
+### Fixed — client-deployment robustness (Azure Boards / Azure Repos) + plugin-root resolution
+
+Bundle of fixes surfaced by a client deployment on Azure Boards + Azure Repos (PR #122).
+
+- **Plugin root is resolved at runtime, not baked.** `paths.pluginRoot` is no longer written
+  to `project-profile.json`, and the earlier stable-link workaround
+  (`hooks/vc-fix-latest-link.mjs` + `stableLinkPath()`) is **removed** — it went stale/dangling
+  on upgrades. Commands now resolve `$pluginRoot` = the ACTIVE (enabled) install at call time
+  via the documented `claude plugin list --json` (fallback: highest-semver scan of
+  `~/.claude/plugins/cache/*/vc-fix/`); see `knowledge/execution/plugin-root.md`. Result: no
+  version-stamped path, no stale link, **no `/project-init` re-run after an upgrade**.
+  `verify-access.mjs` now probes that resolver.
+- **`ado.mjs` auto-loads `.env.local` / `.env.${TEST_ENV}`** via `loadLayeredEnv` (like the
+  sibling scripts), so `TEST_ENV=<env> node ado.mjs …` resolves `ADO_PAT` standalone — no more
+  "Azure DevOps auth unavailable" until the shell was manually sourced.
+- **`ado.mjs search` subcommand** — ADO Code Search on the `almsearch.*` host; always sends
+  `filters.Project` and only pairs `filters.Repository` with it (the API rejects
+  Repository-without-Project). `qa-bug` §3 documents the filter-pair requirement.
+- **Azure Boards content authored as HTML** (`System.Description` / `ReproSteps` / comments are
+  HTML fields) with a Markdown→HTML safety net; hardened against mixed Markdown+embed bodies
+  (raw-HTML-line passthrough) and disallowed link schemes (`javascript:`/`data:` neutralized).
+- **Storefront `upstreamRef`** resolves a fork line to `<major>.<minor>.0` by verifying that tag
+  exists upstream (verbatim, `v`-prefix preserved), falling back to smallest-on-line /
+  earlier-line — the resolvable baseline `/qa-fix` Gate 1b needs.
+- **Self-diagnostics** made runnable + accurate: `/vc-self-check` is model-invocable (the `Stop`
+  consent prompt uses the `AskUserQuestion` tool and, on Yes, runs the skill — the old
+  `disable-model-invocation` dead-ended it); scoring/consent key off the **skill-attributed**
+  anomaly (`skillTotals`/`skillAnomalyScore`), and the collector logs the agents a skill delegates
+  to (`agent_calls`), so it logs/analyses only skill + skill-invoked-agent activity.
+
+Plugin-tree changes (`plugins/vc-fix/`).
+
+### Changed — self-diagnostics consent prompt: skill-gated, opinion-poll UI, auto-run on Yes
+
+The end-of-session `/vc-self-check` consent prompt fired on **any** session whose raw
+anomaly score was high — including plain development sessions (git/Bash/Edit, a failing
+`tsc` PostToolUse hook) where **no vc-fix skill ran** — and it asked as free text, then
+couldn't actually start because the command was `disable-model-invocation`.
+
+- **`session-telemetry.mjs`** now scores the consent trigger on **skill-attributed**
+  signals only (new `skillTotals`, accumulated while a skill span is open) and gates it on
+  `anySkillSeen` — a session with zero skill invocations is never offered self-diagnosis.
+  The finalize record carries `anySkillSeen` + `skillTotals` + `skillAnomalyScore` +
+  `skillAnomalies` alongside the session-wide totals.
+- The prompt text now instructs the model to ask via the **`AskUserQuestion`** tool
+  (Yes/No), and on **Yes** to run the `vc-self-check` skill directly.
+- **`/vc-self-check` drops `disable-model-invocation`** (command + skill) so the model can
+  run it on the operator's Yes; unprompted auto-triggering is ruled out by the description +
+  the existing recursion guards (`selfCheckSeen` one-shot + the collector dropping its own
+  `vc-self-check` spans). Docs (`CLAUDE.md`, `.claude/rules/skills-commands.md`) updated.
+- Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
+### Changed — self-diagnostics artifacts are ephemeral (log → analyze → contribute → delete)
+
+Local diagnostics under `<outputRoot>/.vc-fix/diagnostics/` are no longer meant to
+accumulate. Instead of a time-based retention sweep, the lifecycle is now
+**log → analyze → contribute → delete**: `deliver.mjs` cleans up the processed session's
+own artifacts once its finding is upstream.
+
+- On a successful **Issue** delivery (`--confirm`, or a dedup that is already upstream),
+  `deliver` deletes that session's `<sid>.jsonl` + `<sid>.state.json` + `DIAG-<sid>-*.md` +
+  this finding's `DELIVERY-*.md` — **that session only**, never other sessions. `--keep`
+  retains them.
+- **PR / fork-PR** (handed off — the human opens the PR) and **local** (no token, nothing
+  sent) delete nothing; the run prints a ready `--purge` cleanup command to run *after* the
+  PR is opened / after authenticating.
+- **Nothing worthwhile** (no BROKEN/DEGRADED finding) files nothing and offers the cleanup.
+- New flags: **`--purge`** (standalone terminal cleanup of the processed session, sends
+  nothing) and **`--keep`** (skip the auto-delete after a delivery). New session-scoped
+  `purgeSession()` + `sessionIdFromDiag()` in `deliver.mjs`.
+- Docs updated: `CLAUDE.md`, `.claude/rules/reports.md`, the `/vc-self-check` command + skill.
+  Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
+### Fixed — `upstreamRef` is a resolvable upstream tag (frontend provenance)
+
+`/project-init` derived a storefront fork's `upstreamRef` as the bare `MAJOR.MINOR` of the
+fork's `package.json` version (`2.49.7` → `2.49`) and wrote that into
+`project-profile.json`. `2.49` is a line label, not a git ref (422 on `vc-frontend`); so is
+the fork's own patch `2.49.7` (the fork's `.7` has no upstream tag). `/qa-fix` Gate 1b uses
+`upstreamRef` to diff the fork against unmodified upstream — a non-resolvable ref broke that
+diff, over-attributing everything to "client" (safe but kills upstream routing), with no
+signal that the ref was never validated.
+
+- `discover-repos.mjs` now resolves the fork line to a **concrete, existing** upstream tag:
+  `git ls-remote --tags <upstream>` → pick the smallest tag on the line (its base, e.g.
+  `2.49.0` — the guaranteed common ancestor ≤ the fork), falling back to the highest earlier
+  tag when the line was never tagged. It writes `upstreamRef` = that tag plus
+  `upstreamRefResolved: true|false` and `forkVersion` (kept for reference). Offline / no
+  token → keeps the line label, `upstreamRefResolved: false`, and asks the operator.
+- `/qa-fix` Gate 1b gains a documented fallback: when `upstreamRefResolved === false` or the
+  ref 422s, reconstruct `<major>.<minor>.0` → highest `<major>.<minor>.x` → nearest tag ≤
+  line → ask; never silently treat everything as client.
+- Reporting: `discover-repos.mjs` prints `… @ 2.49.0 (verified)` / `(UNVERIFIED — ref not
+  found)` per frontend fork, and `verify-access.mjs` adds a **"Storefront upstream ref"** row
+  (PASS resolves / WARN doesn't — non-blocking, Gate 1b reconstructs / SKIP no fork).
+- `clientUpstream()` (`repo-router.ts`) now returns `upstreamRefResolved` + `forkVersion`.
+  Existing profiles are safe to leave; a `/project-init` re-run refreshes them, or an
+  operator can hand-fix `upstreamRef` to the line base (e.g. `2.49` → `2.49.0`).
 
 ---
 

@@ -1,5 +1,7 @@
 # Empty footer nav in es/it/pt/no + broken locale deep-links + no active switcher state — P2
 
+## Status: Rejected
+
 **Severity:** P2 · **Type:** Localization / Routing (BL-L10N-001)
 
 **Env:** vcst-qa @ Platform 3.1043.0, Theme 2.53.0-pr-2368

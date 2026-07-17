@@ -94,8 +94,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 32,
-      "estimatedMinutes": 22,
+      "testCount": 33,
+      "estimatedMinutes": 24,
       "agent": "qa-frontend-expert",
       "tags": [
         "catalog",
@@ -786,8 +786,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 40,
-      "estimatedMinutes": 28,
+      "testCount": 44,
+      "estimatedMinutes": 31,
       "agent": "qa-backend-expert",
       "tags": [
         "store",
@@ -1134,7 +1134,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P1",
-      "testCount": 21,
+      "testCount": 19,
       "estimatedMinutes": 15,
       "agent": "qa-testing-expert",
       "tags": [
@@ -1541,6 +1541,26 @@
       ],
       "env": "vcptcore",
       "customerApplicability": "reference"
+    },
+    {
+      "id": "050n",
+      "name": "GraphQL Store Asset URL",
+      "file": "regression/suites/Backend/graphql/050n-graphql-store-asset-url.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 9,
+      "estimatedMinutes": 14,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "store",
+        "asset-url",
+        "sprint"
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "051",
@@ -2297,8 +2317,8 @@
       "layer": "backend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 114,
-      "estimatedMinutes": 82,
+      "testCount": 115,
+      "estimatedMinutes": 83,
       "agent": "qa-backend-expert",
       "tags": [
         "smoke",
@@ -2396,7 +2416,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 47,
+      "testCount": 48,
       "estimatedMinutes": 50,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2737,6 +2757,14 @@
     "layout-stability": {
       "include": [
         "048b"
+      ]
+    },
+    "store-asset-url": {
+      "include": [
+        "050n",
+        "034",
+        "002",
+        "078"
       ]
     },
     "frontend": {

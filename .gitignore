@@ -105,3 +105,7 @@ test-data/**/_seed-results*.json
 test-data/_seed-results*.json
 # Seed-freshness marker (mtime + profile) for the regression reuse-skip check — local state
 test-data/b2b/.seed-fingerprint.json
+
+# vc-fix plugin self-diagnosis working report — may reference client identifiers /
+# session context; kept local, never committed to the public upstream (§2a containment).
+reports/vc-fix-plugin-diagnosis.md

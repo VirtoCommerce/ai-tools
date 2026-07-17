@@ -27,7 +27,8 @@ record carries these deterministic counts (`hooks/session-telemetry.mjs`):
 | `hook_failure` | A PostToolUse/other hook failed (e.g. `tsc` on every Edit, `npm error`) | `error TS####`, `tsc … error`, `command failed…` in output |
 | `stop_bail` | A STOP / BAIL / hand-off / `FIX_STATUS: FAILED` marker | marker regex in assistant text |
 | `tool_calls` | Count of tool invocations in the span | `tool_use` items |
-| `anomalyScore` | `tool_error*3 + permission_denied*2 + hook_failure*3` | finalize (stop_bail weighted 0 — a clean bail is success) |
+| `agent_calls` | Count of agents the skill delegated to (Task/Agent tool) | `tool_use` name ∈ {Task, Agent}; the `agent_call` span details name each. A COUNT, not an anomaly class — a FAILED delegation surfaces as `tool_error`/`permission_denied` on the span |
+| `anomalyScore` | `tool_error*3 + permission_denied*2 + hook_failure*3` | finalize. **Scoring + the consent gate use the SKILL-attributed `skillAnomalyScore`** (same formula over `skillTotals` — signals raised WHILE a skill ran); the session-wide `anomalyScore` is informational only. stop_bail weighted 0 — a clean bail is success |
 
 Derived patterns the diagnostician computes from the transcript + these counts
 (the collector does not pre-label them): **retry storm** (same tool re-invoked ≥4×
@@ -134,8 +135,9 @@ Step-1 collector's signals can actually surface.
 
 ## 4. Cross-cutting anti-patterns (any skill)
 
-These are session-wide and detectable straight from `finalize` totals — the
-diagnostician flags them regardless of which skill was running:
+These are detectable from the **skill-attributed** `finalize.skillTotals` (signals
+raised while a skill ran — not the session-wide `totals`) — the diagnostician flags
+them regardless of which skill was running:
 
 | Pattern | Detection | Severity |
 |---------|-----------|----------|

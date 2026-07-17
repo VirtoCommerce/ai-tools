@@ -38,8 +38,10 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
   or emit a generic "send me the file" acknowledgement. (A developer agent once burned a whole turn doing
   exactly that — 0 tool calls — and had to be re-driven.) If anything is genuinely missing, act on sensible
   defaults from the profile and report; do not stall.
-- **Absolute paths only.** The orchestrator MUST pass `profile.paths` (`projectRoot`, `pluginRoot`,
-  `workspace`, `secretsEnv`) in the prompt. The agent resolves every path from `projectRoot`
+- **Absolute paths only.** The orchestrator MUST pass `profile.paths` (`projectRoot`,
+  `workspace`, `secretsEnv`) in the prompt. To launch a bundled plugin script, the agent resolves
+  `$pluginRoot` = the active install path at runtime via `claude plugin list --json` (not a profile
+  field; see `knowledge/execution/plugin-root.md`). The agent resolves every other path from `projectRoot`
   (`.env`/secrets, workspace, reports), runs git as `git -C "<abs-checkout>"`, and **never `cd`s into the
   workspace as a persisted directory** (the Bash cwd drifts between calls and silently breaks relative
   `source .env.local`). Load secrets only from the absolute `join(projectRoot, secretsEnv)`.
