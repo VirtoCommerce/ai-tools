@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "SR-FE-001","Sales Rep Sees My Customers Page & Hub (Happy Path Gating)","Storefront > Sales Rep > Gating","Critical","PROPOSED-BL-SR-UI-GATE","ECL-4.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-Store setting SalesRep.Enabled=true on {{STORE_ID}}. SR_REP_PRIMARY (new fixture, test-data/sales-rep/sales-reps.csv) holds permission sales-rep:access and serves >=1 org with orders.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PRIMARY_PASSWORD}}","[NAV] {{FRONT_URL}}/account
+Store setting SalesRep.Enabled=true on {{STORE_ID}}. SR_REP_PRIMARY (new fixture, test-data/sales-rep/sales-reps.csv) holds permission sales-rep:access and serves >=1 org with orders.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] {{FRONT_URL}}/account
 [WAIT] account dashboard loaded, left rail rendered
 [ASSERT] ""Sales Rep hub"" section visible in the account left rail
 [ACT] click ""My customers"" link under ""Sales Rep hub""
@@ -30,16 +30,17 @@ Requires an admin toggle of the store setting SalesRep.Enabled to false on {{STO
 [NAV] /company/my-customers does not render the My Customers table (route not added — init() returns early per source) {DOC}","none","Hub or route remains reachable while SalesRep.Enabled=false — gating checks module state client-side only, not the actual setting","[ADMIN] restore SalesRep.Enabled=true on {{STORE_ID}} before ending the session","VCST-5469","Draft"
 "SR-FE-004","My Customers Table — Column Rendering: Org Name + Last Order Date & Number","Storefront > Sales Rep > My Customers > Table","Critical","PROPOSED-BL-SR-UI-TABLE","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SR_REP_PRIMARY serves @td(ORG_ACME.id), which has >=1 order with a known createdDate and number.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
+SR_REP_PRIMARY serves @td(ORG_ACME.id), which has >=1 order with a known createdDate and number. ATTRIBUTION NOTE (VCST-5304/5469 sync, 2026-07-17): per the finalized 'Last order = My (current sales rep) last order' semantic, the rendered Last order date+number must be SR_REP_PRIMARY's OWN most-recent order for ORG_ACME (not the org's globally most-recent order across all actors) — mirrors BE case SR-GQL-011.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] table rows loaded
 [ASSERT] row for @td(ORG_ACME.name) is visible","[DOM] the ORG_ACME row's ""Customer"" cell shows the organization name @td(ORG_ACME.name) {OBSERVED}
 [DOM] the ORG_ACME row's ""Last order"" cell shows a formatted date {DOC}
 [DOM] the ""Last order"" cell shows a link reading ""#{number}"" for the order {DOC}
-[FORMAT] the date format matches the locale's short date format (no raw ISO timestamp) {DOC}","[API] salesRepCustomers items[].organizationName and items[].lastOrder match the rendered row (cross-check against 050m SR-GQL-009/011 contract)
-[CONSOLE] no console errors","Org name column blank or shows a raw GUID instead of the name; last-order date rendered as a raw ISO string; order number missing the # prefix","none (read-only)","VCST-5469","Draft"
+[FORMAT] the date format matches the locale's short date format (no raw ISO timestamp) {DOC}
+[STATE] the rendered date+#number corresponds to SR_REP_PRIMARY's own last order for ORG_ACME, not merely the org's globally most-recent order across all actors (mirrors BE attribution in SR-GQL-011) {SPEC}","[API] salesRepCustomers items[].organizationName and items[].lastOrder match the rendered row (cross-check against 050m SR-GQL-009/011 contract); the rendered lastOrder date+number is SR_REP_PRIMARY's OWN most-recent order for ORG_ACME per the 'Last order = My last order' semantic (VCST-5304 sync, 2026-07-17; mirrors SR-GQL-011 attribution)
+[CONSOLE] no console errors","Org name column blank or shows a raw GUID instead of the name; last-order date rendered as a raw ISO string; order number missing the # prefix; the rendered last-order date+number belongs to a different actor's/admin-seeded order rather than SR_REP_PRIMARY's own (attribution violation, mirrors SR-GQL-011)","none (read-only)","VCST-5469, VCST-5304 (attribution sync 2026-07-17)","Draft"
 "SR-FE-005","Last Order Column Shows ""—"" When Org Has No Orders","Storefront > Sales Rep > My Customers > Table","High","PROPOSED-BL-SR-UI-TABLE","ECL-3.1","[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-Requires a NEW org served by SR_REP_PRIMARY with zero orders (data gap — see data-prep note; propose alias ORG_SR_NO_ORDERS). BLOCKED until seeded.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
+[PRE:SIGNIN_AS:SR_REP_PAGING]
+SR_REP_PAGING (seeded) serves 12 AGENT-TEST-SR-Paging-NN orgs, NONE with orders — every row's Last order cell must render the ""—"" placeholder while the Customer cell still shows the org name (re-pointed off SR_REP_PRIMARY, which keeps exactly 4 order-bearing orgs for the badge cases).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] table rows loaded
 [ASSERT] row for the zero-order org is visible","[DOM] the zero-order org's ""Last order"" cell renders the literal placeholder ""—"" (no date, no link, no crash) {DOC}
 [DOM] the same row's ""Customer"" cell still shows the organization name normally (only the Last order cell is affected) {DOC}","[API] salesRepCustomers item for that org has lastOrder = null (mirrors backend null-lastOrder shape)","cell renders blank/undefined instead of ""—""; cell throws a rendering error (null lastOrder not guarded)","none (read-only)","VCST-5469","Draft"
@@ -94,7 +95,7 @@ SR_REP_PRIMARY serves @td(ORG_ACME.id). Placeholder text explicitly states searc
 [ACT] attempt to append one more character (65th)","[DOM] search input element's value length equals 64 after typing the 64-character string (no truncation) {BL}
 [DOM] search input element's value length remains capped at 64 after attempting to type a 65th character (maxlength=64 enforced) {DOC}","none","input silently accepts more than 64 characters; input rejects fewer than 64 characters (too-strict boundary)","[ACT] clear the search input","VCST-5469","Draft"
 "SR-FE-013","Empty State — Rep With Zero Served Customers","Storefront > Sales Rep > My Customers > Empty State","Medium","PROPOSED-BL-SR-UI-EMPTY","ECL-3.1","[PRE:CLEAR_SESSION]
-Requires a NEW rep fixture holding sales-rep:access but serving ZERO orgs (data gap — propose alias SR_REP_NOCUSTOMERS). BLOCKED until seeded.
+SR_REP_NOCUSTOMERS (seeded, test-data/sales-rep/sales-reps.csv) holds sales-rep:access but serves ZERO orgs.
 [PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] page loads with no search keyword applied","[DOM] empty view shows text ""No customers found"" (the plain/no-keyword variant, not the search variant) {DOC}
 [DOM] no ""Reset search"" button is shown (there is no active keyword to reset) {DOC}","[API] salesRepCustomers returns totalCount=0 with no keyword, errors[] empty","the search-variant empty view (with Reset search) renders instead of the plain empty view when no keyword was ever applied; page shows a loading spinner indefinitely instead of the empty view","none (read-only)","VCST-5469","Draft"
@@ -116,7 +117,7 @@ Per source, only the Customer column is declared sortable; verify whether ""Last
 [ACT] click the ""Last order"" column header
 [WAIT] brief pause for any re-render","[DOM] row order is UNCHANGED after clicking ""Last order"" header (column is not sortable) {DOC}
 [DOM] verify whether ""Last order"" header shows any sort affordance (cursor/icon) at all — expected: none {HYPOTHESIS}","[API] no additional salesRepCustomers(sort:) query fired for the Last order click","clicking ""Last order"" reorders the table (column is unexpectedly sortable, contradicting the documented single-sortable-column design)","none (read-only)","VCST-5469","Draft"
-"SR-FE-016","Sort — Header Click Resets Table to Page 1","Storefront > Sales Rep > My Customers > Sort","Medium","PROPOSED-BL-SR-UI-SORT, PROPOSED-BL-SR-UI-PAGE","","Requires SR_REP_PAGING (new fixture, >=11 served orgs — see data-prep) so page 2 is reachable before sorting. BLOCKED until seeded.
+"SR-FE-016","Sort — Header Click Resets Table to Page 1","Storefront > Sales Rep > My Customers > Sort","Medium","PROPOSED-BL-SR-UI-SORT, PROPOSED-BL-SR-UI-PAGE","","SR_REP_PAGING (seeded, 12 served orgs) so page 2 is reachable before sorting.
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PAGING]","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] table rows loaded (page 1 of >1)
@@ -125,7 +126,7 @@ Per source, only the Customer column is declared sortable; verify whether ""Last
 [ACT] click the ""Customer"" column header
 [WAIT] table re-sorts","[STATE] table is showing page 1 after the sort click, not the previously-active page 2 {DOC}
 [DOM] pagination control's active-page indicator element reads ""1"" immediately after the sort click {OBSERVED}","[API] the post-sort salesRepCustomers query uses after:0 (page 1 offset)","table remains on page 2 after sorting instead of resetting to page 1; pagination indicator shows 2 while row content silently changed to page-1 data","none (read-only)","VCST-5469","Draft"
-"SR-FE-017","Paging — 10 Per Page With Next/Previous Navigation","Storefront > Sales Rep > My Customers > Paging","High","PROPOSED-BL-SR-UI-PAGE","ECL-3.2","Requires SR_REP_PAGING (new fixture, >=11 served orgs with distinct names — see data-prep). BLOCKED until seeded.
+"SR-FE-017","Paging — 10 Per Page With Next/Previous Navigation","Storefront > Sales Rep > My Customers > Paging","High","PROPOSED-BL-SR-UI-PAGE","ECL-3.2","SR_REP_PAGING (seeded, 12 served orgs with distinct names AGENT-TEST-SR-Paging-01..12).
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PAGING]","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] table rows loaded
@@ -134,7 +135,7 @@ Per source, only the Customer column is declared sortable; verify whether ""Last
 [WAIT] page 2 loads","[COUNT] page 1 shows exactly 10 rows {DOC}
 [COUNT] page 2's row count equals (totalCount - 10), with zero org names repeated from page 1's rows {DOC}
 [DOM] pagination control's active-page indicator element shows ""2"" (selected state) {DOC}","[API] page-1 salesRepCustomers(first:10, after:0) and page-2 (first:10, after:10) each return errors[] empty (mirrors 050m SR-GQL-014 paging pattern at the UI layer)","page 1 shows more or fewer than 10 rows; page 2 repeats a page-1 row; next-page control does nothing","none (read-only)","VCST-5469","Draft"
-"SR-FE-018","Paging — Page Clamps Down When Result Set Shrinks Below Current Page","Storefront > Sales Rep > My Customers > Paging","Medium","PROPOSED-BL-SR-UI-PAGE","ECL-3.2","Requires SR_REP_PAGING on page 2+, then an admin action mid-test that unassigns enough served orgs to shrink the result set below the current page (e.g. via Admin, un-assign 5+ orgs). BLOCKED until seeded + admin-assist scripted.
+"SR-FE-018","Paging — Page Clamps Down When Result Set Shrinks Below Current Page","Storefront > Sales Rep > My Customers > Paging","Medium","PROPOSED-BL-SR-UI-PAGE","ECL-3.2","SR_REP_PAGING (seeded, 12 orgs) on page 2+, then an admin action mid-test that unassigns enough served orgs to shrink the result set below the current page (e.g. via Admin/REST un-assign 5+ orgs from the rep). Requires admin-assist during the run.
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PAGING]","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [ACT] navigate to page 2 (or later)
@@ -143,7 +144,7 @@ Per source, only the Customer column is declared sortable; verify whether ""Last
 [ACT] reload {{FRONT_URL}}/company/my-customers
 [WAIT] page loads","[STATE] table clamps down to the last valid page (does NOT show an empty/broken page for a stale page number) {DOC}
 [DOM] pagination control's active-page indicator reflects the new last-valid-page number, not the stale pre-shrink page {DOC}","[API] the clamped-page salesRepCustomers query uses a valid after: offset within the new totalCount","page shows an empty table with pagination stuck on the stale (now out-of-range) page number instead of clamping down; pagination indicator itself never updates from the stale page number","[ADMIN] restore SR_REP_PAGING's original served-org assignments","VCST-5469","Draft"
-"SR-FE-019","Paging — Page Change Scrolls to Top","Storefront > Sales Rep > My Customers > Paging","Low","PROPOSED-BL-SR-UI-PAGE","","Requires SR_REP_PAGING (>=11 served orgs). BLOCKED until seeded.
+"SR-FE-019","Paging — Page Change Scrolls to Top","Storefront > Sales Rep > My Customers > Paging","Low","PROPOSED-BL-SR-UI-PAGE","","SR_REP_PAGING (seeded, 12 served orgs).
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PAGING]","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [SCROLL] scroll down to the bottom of the table
@@ -160,7 +161,7 @@ SR_REP_PRIMARY serves exactly 4 orgs (ACME, TECHFLOW, BUILDRIGHT, ACMEWEST per t
 [NAV] {{FRONT_URL}}/account
 [WAIT] left rail reloads","[DOM] badge on ""My customers"" still reads 4 (unfiltered total), NOT 1 (the table's filtered count) {DOC}
 [COUNT] badge value stays exactly 4 across both the pre-filter and post-filter left-rail reloads {OBSERVED}","[API] the badge is backed by a separate salesRepCustomers(first:0){{totalCount}} query, independent of the table's keyword-filtered query (per useSalesRepCustomersCount source)","badge shows 1 (reflecting the table's active filter) instead of the rep's true total of 4; badge goes blank/zero while table is filtered","[ACT] clear the search filter","VCST-5469","Draft"
-"SR-FE-021","Hub Badge Hides When Total Customer Count Is Zero","Storefront > Sales Rep > Hub > Badge","Medium","PROPOSED-BL-SR-UI-BADGE","","Requires SR_REP_NOCUSTOMERS (new fixture, zero served orgs — same fixture as SR-FE-013). BLOCKED until seeded.
+"SR-FE-021","Hub Badge Hides When Total Customer Count Is Zero","Storefront > Sales Rep > Hub > Badge","Medium","PROPOSED-BL-SR-UI-BADGE","","SR_REP_NOCUSTOMERS (seeded, zero served orgs — same fixture as SR-FE-013).
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account
 [WAIT] left rail loaded","[DOM] ""My customers"" link is visible under ""Sales Rep hub"" but shows NO badge element {DOC}
@@ -173,11 +174,11 @@ SR_REP_PRIMARY serves exactly 4 orgs (ACME, TECHFLOW, BUILDRIGHT, ACMEWEST per t
 [DOM] no ""My customers"" link or badge appears in the mobile account menu {DOC}","[NETWORK] no salesRepCustomers or useSalesRepCustomersCount request is issued for this session","hub section, link, or badge appears for a buyer holding no sales-rep:access permission","none (read-only)","VCST-5469","Draft"
 "SR-FE-023","Left Rail — Purchasing/Marketing/Corporate/User Remain Unmodified for a Sales Rep","Storefront > Sales Rep > Left Rail Regression Guard","High","PROPOSED-BL-SR-UI-NAV","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-FINDING (verified from vc-frontend @ 11b645c3 source: menu.json, useNavigations.ts, account-navigation.vue, modules/sales-rep/index.ts): the module is ADDITIVE ONLY — it registers a new ""Sales Rep hub"" section via registerAccountSection() and merges a ""Sales reps"" contact link into Corporate via mergeMenuSchema(). NOTHING in the shipped code removes/filters Purchasing, Marketing, or any existing item, for reps or buyers. This CONTRADICTS the ticket narrative (""Purchasing removed, Marketing restructured""). This case is a regression guard against that unimplemented/mismatched claim.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account
+FINDING (verified from vc-frontend @ 11b645c3 source: menu.json, useNavigations.ts, account-navigation.vue, modules/sales-rep/index.ts): the module is ADDITIVE ONLY — it registers a new ""Sales Rep hub"" section via registerAccountSection() and merges a ""Sales reps"" contact link into Corporate via mergeMenuSchema(). NOTHING in the shipped code removes/filters Purchasing, Marketing, or any existing item, for reps or buyers. RESOLVED (VCST-5304, re-verified via JIRA 2026-07-17): the ticket's original ""Purchasing removed / Marketing restructured"" lines are struck through in the JIRA description (scope retracted) and VCST-5304 is marked Implemented / Ready for test — the source-code finding and the decided requirement now agree, no contradiction remains. This case stands as a regression guard against that retracted scope being reintroduced later.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account
 [WAIT] left rail loaded","[DOM] ""Purchasing"" section is present with its Dashboard/Orders/Lists/Saved for later children {OBSERVED}
 [DOM] ""Marketing"" section is present (at minimum, Promotion & coupons, if the Marketing xAPI module is enabled) {OBSERVED}
 [DOM] ""Corporate"" section is present including the new ""Sales reps"" contact link (VCST-5409, merged via the same module) {OBSERVED}
-[DOM] ""User"" section is present with Profile/Change password/Saved credit cards {OBSERVED}","none","Purchasing or Marketing section is missing/altered for a sales rep — would mean the ticket's described reorg WAS actually shipped and this suite is now stale and needs updating; Points history or Coupons & promotions links are absent (would indicate the reorg happened via a different module, e.g. Loyalty, not this PR)","none (read-only)","VCST-5469","Draft"
+[DOM] ""User"" section is present with Profile/Change password/Saved credit cards {OBSERVED}","none","Purchasing or Marketing section is missing/altered for a sales rep — would mean the retracted VCST-5304 reorg scope was reintroduced without updating this suite; Points history or Coupons & promotions links are absent (would indicate a reorg landed via a different module, e.g. Loyalty, outside this PR)","none (read-only)","VCST-5469, VCST-5304","Draft"
 "SR-FE-024","Left Rail — Sales Rep Hub Renders Ahead of Purchasing (Priority Ordering)","Storefront > Sales Rep > Left Rail","Medium","PROPOSED-BL-SR-UI-NAV","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Per source constants.ts, HUB_NAV_PRIORITY=5 vs Purchasing's implicit priority 10 — hub must render first.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account

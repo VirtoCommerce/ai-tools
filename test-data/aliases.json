@@ -1100,7 +1100,13 @@
       "name": "org_name",
       "platform_id": "platform_id",
       "id": "org_id",
-      "category": "business_category"
+      "category": "business_category",
+      "line1": "address_line1",
+      "city": "city",
+      "regionName": "region_name",
+      "postalCode": "postal_code",
+      "countryCode": "country_code",
+      "countryName": "country_name"
     }
   },
   "ORG_TECHFLOW": {
@@ -3658,6 +3664,36 @@
     "file": "sales-rep/sales-reps",
     "filter": {
       "rep_key": "SR_REP_ACME2"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    }
+  },
+  "SR_REP_NOCUSTOMERS": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_NOCUSTOMERS"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    }
+  },
+  "SR_REP_PAGING": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_PAGING"
     },
     "fields": {
       "id": "contact_id",

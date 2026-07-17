@@ -1,0 +1,147 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"SR-FE-MSR-001","Corporate Member Sees ""Sales Reps"" Link & Page Loads (Happy Path Gating)","Storefront > Sales Rep > My Sales Reps > Gating","Critical","PROPOSED-BL-SR-UI-GATE, PROPOSED-BL-SR-UI-NAV","ECL-4.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+Store setting SalesRep.Enabled=true on {{STORE_ID}} (module installed on vcptcore-qa). ACME_BUYER is a corporate member of @td(ORG_ACME.id) (isCorporateMember=true).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account
+[WAIT] account dashboard loaded, left rail rendered
+[ASSERT] ""Corporate"" section visible in the account left rail
+[ACT] click ""Sales reps"" link under ""Corporate""
+[WAIT] page navigates to /company/sales-reps
+[WAIT] page heading and table visible","[NAV] URL is {{FRONT_URL}}/company/sales-reps {OBSERVED}
+[DOM] page heading reads ""Sales reps"" (i18n key sales_rep.page.title) {DOC}
+[DOM] ""Sales reps"" link is visible in the account left rail under ""Corporate"" {DOC}
+[DOM] table renders with ""Name"", ""Email"", ""Phone"" column headers {DOC}
+[STATE] at least one row shows a rep serving ACME (e.g. @td(SR_REP_PRIMARY.fullName)) {OBSERVED}","[API] customerSalesReps query returns HTTP 200, errors[] empty (mirrors SR-GQL-001 in 050m)
+[CONSOLE] no console errors on page load
+[NETWORK] no 4xx/5xx on /graphql during page load","""Sales reps"" link absent from Corporate section for a corporate member; 404 or redirect away from /company/sales-reps; table stuck loading >5s; errors[] non-empty; console TypeError","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-002","Guest (Unauthenticated) Direct URL Hit Redirects Away from Sales Reps Page","Storefront > Sales Rep > My Sales Reps > Gating","Critical","PROPOSED-BL-SR-UI-GATE","ECL-4.2, ECL-14.1","[PRE:CLEAR_SESSION]
+No authenticated session (guest/anonymous storefront visitor).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] route guard resolves and navigation settles","[NAV] final URL is NOT /company/sales-reps (redirected to login or home) {SPEC}
+[DOM] no ""Sales reps"" table or heading renders anywhere on the resulting page {SPEC}","[NETWORK] no /graphql request for customerSalesReps is issued for this session
+[CONSOLE] no console errors from the blocked navigation attempt","page renders the Sales Reps table/columns for an unauthenticated visitor; URL stays at /company/sales-reps instead of redirecting","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-003","Module Disabled: Link and Route Absent Even for a Corporate Member","Storefront > Sales Rep > My Sales Reps > Gating","High","PROPOSED-BL-SR-UI-GATE","","[PRE:CLEAR_SESSION]
+Requires an admin toggle of the store setting SalesRep.Enabled to false on {{STORE_ID}}, then signing in as ACME_BUYER (a corporate member who otherwise sees the link). Disruptive to other concurrent testers on {{STORE_ID}} — run in an isolated window or accept as a one-off manual check, then restore SalesRep.Enabled=true immediately after.","front_url={{FRONT_URL}}","[ADMIN] set store setting SalesRep.Enabled = false on {{STORE_ID}}
+[PRE:SIGNIN_AS:ACME_BUYER]
+[NAV] {{FRONT_URL}}/account
+[WAIT] account dashboard loaded
+[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] navigation settles","[DOM] ""Sales reps"" link is absent from the ""Corporate"" section while the setting is disabled {DOC}
+[NAV] /company/sales-reps does not render the Sales Reps table (route/menu injection gated on module settings) {DOC}","none","link or route remains reachable while SalesRep.Enabled=false — gating checks module state client-side only, not the actual setting","[ADMIN] restore SalesRep.Enabled=true on {{STORE_ID}} before ending the session","VCST-5409","Draft"
+"SR-FE-MSR-004","My Sales Reps Table — Name/Email/Phone Render for Served Reps","Storefront > Sales Rep > My Sales Reps > Table","Critical","PROPOSED-BL-SR-UI-TABLE, PROPOSED-BL-SR-AUTH","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+ACME_BUYER's org @td(ORG_ACME.id) is served by SR_REP_PRIMARY (active, default store).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded
+[ASSERT] row for @td(SR_REP_PRIMARY.fullName) is visible","[DOM] the row's ""Name"" cell shows @td(SR_REP_PRIMARY.fullName) {OBSERVED}
+[DOM] the row's ""Email"" cell shows @td(SR_REP_PRIMARY.email) {OBSERVED}
+[DOM] the row's ""Phone"" cell shows a non-empty phone value {DOC}","[API] customerSalesReps items[] fullName/emails[0]/phones[0] match the rendered row (cross-check against 050m SR-GQL-001 contract)
+[CONSOLE] no console errors","Name/Email column blank or shows a raw GUID/i18n key instead of the value; Phone column always blank even when phones[] is populated","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-005","Cross-Org Rep Excluded from Buyer's Sales Reps List","Storefront > Sales Rep > My Sales Reps > Scope","Critical","PROPOSED-BL-SR-SCOPE, PROPOSED-BL-SR-UI-TABLE","ECL-14.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+SR_REP_EXCLUSIVE_TECHFLOW serves ONLY @td(ORG_TECHFLOW.id), never @td(ORG_ACME.id) — proves a rep serving only another org is never leaked to the ACME buyer.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded","[DOM] no row shows @td(SR_REP_EXCLUSIVE_TECHFLOW.fullName) anywhere in the table {DOC}
+[STATE] table contains only reps known to serve @td(ORG_ACME.id) {OBSERVED}","[API] customerSalesReps items[] for ACME_BUYER does not include SR_REP_EXCLUSIVE_TECHFLOW's id (mirrors 050m SR-GQL-003)","SR_REP_EXCLUSIVE_TECHFLOW's name appears in ACME_BUYER's list (cross-org data leak)","none (read-only)","VCST-5409, VCST-5293","Draft"
+"SR-FE-MSR-006","Blocked and Per-Org-Locked Reps Excluded; Active Rep Included","Storefront > Sales Rep > My Sales Reps > Scope","Critical","PROPOSED-BL-SR-STATE","ECL-14.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+SR_REP_BLOCKED serves @td(ORG_ACME.id) but its account is blocked. SR_REP_LOCKED serves @td(ORG_ACME.id) but its membership in that org is per-org locked. SR_REP_PRIMARY (active, unlocked) also serves @td(ORG_ACME.id) as the positive control.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded","[DOM] table contains a row for @td(SR_REP_PRIMARY.fullName) {DOC}
+[DOM] no row shows @td(SR_REP_BLOCKED.fullName) {DOC}
+[DOM] no row shows @td(SR_REP_LOCKED.fullName) {DOC}","[API] customerSalesReps items[] excludes SR_REP_BLOCKED and SR_REP_LOCKED, includes SR_REP_PRIMARY (mirrors 050m SR-GQL-007)","blocked or locked rep's name appears in the table; active SR_REP_PRIMARY missing from the table","none (read-only)","VCST-5409, VCST-5293","Draft"
+"SR-FE-MSR-007","Search — Apply on Enter Key","Storefront > Sales Rep > My Sales Reps > Search","High","PROPOSED-BL-SR-UI-SEARCH","ECL-3.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+@td(ORG_ACME.id) is served by >=2 distinctly-named reps (SR_REP_PRIMARY, SR_REP_ACME2).","front_url={{FRONT_URL}}, keyword=@td(SR_REP_PRIMARY.lastName)","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded (unfiltered, >=2 rows)
+[ACT] fill search input (placeholder per sales_rep.table.search_placeholder): {{keyword}}
+[KEY] press Enter
+[WAIT] table refreshes","[DOM] table shows only the row matching {{keyword}} (@td(SR_REP_PRIMARY.fullName) present, @td(SR_REP_ACME2.fullName) absent) {DOC}
+[STATE] result set is narrowed compared to the unfiltered load {OBSERVED}","[API] customerSalesReps(keyword) query fired with the typed value, errors[] empty","table does not refresh until an unrelated action; typing alone (no Enter) live-filters the table (contradicts apply-on-commit design); errors[] non-empty","[ACT] clear the search input and reset","VCST-5409","Draft"
+"SR-FE-MSR-008","Search — Apply via Search Button","Storefront > Sales Rep > My Sales Reps > Search","High","PROPOSED-BL-SR-UI-SEARCH","ECL-3.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+@td(ORG_ACME.id) is served by >=2 distinctly-named reps.","front_url={{FRONT_URL}}, keyword=@td(SR_REP_PRIMARY.lastName)","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded
+[ACT] fill search input: {{keyword}}
+[ACT] click the search button (aria-label per sales_rep.table.search_aria)
+[WAIT] table refreshes","[DOM] table rows are limited to entries whose ""Name"" cell text contains {{keyword}} (case-insensitive substring) {DOC}
+[DOM] search button element is present with the documented aria-label {DOC}","[API] customerSalesReps(keyword) query fired, errors[] empty","clicking the button has no effect; button lacks the documented aria-label","[ACT] clear the search input and reset","VCST-5409","Draft"
+"SR-FE-MSR-009","Search — No Match Shows ""No Sales Reps Match Your Search"" + Reset","Storefront > Sales Rep > My Sales Reps > Search","High","PROPOSED-BL-SR-UI-EMPTY","ECL-3.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]","front_url={{FRONT_URL}}, keyword={{RANDOM_NOMATCH_STRING}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[ACT] fill search input with a keyword guaranteed not to match any served rep: {{keyword}}
+[KEY] press Enter
+[WAIT] table refreshes to empty state","[DOM] empty view shows text ""No sales reps match your search"" (sales_rep.table.no_results) {DOC}
+[DOM] empty view shows a ""Reset search"" button (sales_rep.table.reset_search) {DOC}
+[DOM] the generic ""No sales reps found"" (no-keyword) empty text is NOT shown instead {DOC}","[API] customerSalesReps(keyword) query returns totalCount=0, errors[] empty","the no-match search shows the plain ""No sales reps found"" empty view instead of the search variant; no Reset search button offered","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-010","Search — Reset Restores Full List and Page 1","Storefront > Sales Rep > My Sales Reps > Search","High","PROPOSED-BL-SR-UI-SEARCH","","state from SR-FE-MSR-009 (buyer signed in, search applied with a no-match keyword, ""Reset search"" empty view visible)","front_url={{FRONT_URL}}","[ACT] click ""Reset search"" button
+[WAIT] table refreshes","[DOM] search input field's value is an empty string after clicking Reset search {DOC}
+[COUNT] table row count returns to the pre-search unfiltered total {DOC}
+[STATE] table is showing page 1 of results {DOC}","[API] a fresh customerSalesReps query (no keyword, after:0) is fired on reset","reset leaves the stale no-match empty view visible; reset does not clear the input text; page does not return to 1","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-011","Search — Input Enforces 64-Character Max Length (BVA)","Storefront > Sales Rep > My Sales Reps > Search","Medium","PROPOSED-BL-SR-UI-SEARCH","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]","front_url={{FRONT_URL}}, str_64={{RANDOM_STRING_64}}, str_65={{RANDOM_STRING_65}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[ACT] fill search input with a 64-character string: {{str_64}}
+[ASSERT] full 64-character value accepted in the field
+[ACT] attempt to append one more character (65th)","[DOM] search input element's value length equals 64 after typing the 64-character string (no truncation) {BL}
+[DOM] search input element's value length remains capped at 64 after attempting to type a 65th character (maxlength=64 enforced) {DOC}","none","input silently accepts more than 64 characters; input rejects fewer than 64 characters (too-strict boundary)","[ACT] clear the search input","VCST-5409","Draft"
+"SR-FE-MSR-012","Sort — Header Click Toggles Ascending/Descending on Name Column","Storefront > Sales Rep > My Sales Reps > Sort","High","PROPOSED-BL-SR-UI-SORT","ECL-3.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+@td(ORG_ACME.id) served by >=2 distinctly-named reps (SR_REP_PRIMARY, SR_REP_ACME2).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded
+[ACT] click the ""Name"" column header
+[WAIT] table re-sorts
+[ASSERT] first row's rep name recorded
+[ACT] click the ""Name"" column header again
+[WAIT] table re-sorts","[DOM] after the first click, the ""Name"" column's values are in strict ascending or descending alphabetical order top-to-bottom {DOC}
+[DOM] after the second click, the first row's name differs from the first click's first-row name (direction reversed) {DOC}","[API] customerSalesReps(sort:) query fired with the opposite sort value on the second click","clicking the header twice produces the same row order both times; no sort indicator/order change observed","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-013","Sort — Email and Phone Column Headers Are Not Sortable","Storefront > Sales Rep > My Sales Reps > Sort","Medium","PROPOSED-BL-SR-UI-SORT","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+Per source, only the Name column is declared sortable (email/phone are collection-backed, not member fields); verify neither Email nor Phone reacts to a click.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded
+[ASSERT] current row order recorded
+[ACT] click the ""Email"" column header
+[WAIT] brief pause for any re-render
+[ACT] click the ""Phone"" column header
+[WAIT] brief pause for any re-render","[DOM] row order is UNCHANGED after clicking ""Email"" header {DOC}
+[DOM] row order is UNCHANGED after clicking ""Phone"" header {DOC}
+[DOM] verify whether either header shows any sort affordance (cursor/icon) at all — expected: none {HYPOTHESIS}","[API] no additional customerSalesReps(sort:) query fired for either click","clicking ""Email"" or ""Phone"" reorders the table (column unexpectedly sortable, contradicting the single-sortable-column design)","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-014","Paging — Next Page Navigation for a Rep-Heavy Org (NEEDS DATA GAP)","Storefront > Sales Rep > My Sales Reps > Paging","Medium","PROPOSED-BL-SR-UI-PAGE","ECL-3.2","DATA GAP: no existing fixture org is served by >10 active reps (page size is 10). SR_REP_PAGING serves 12 orgs FROM the rep's perspective (used by 089 for the rep-facing My Customers page) but no ORG in the current dataset is served by >10 reps FROM the buyer's perspective. This case cannot execute until a new fixture org + >=11 active reps serving it is authored and seeded (out of scope for this suite generation — see qa-generate-data). Left as Draft/blocked pending that fixture.
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER] (placeholder buyer — replace with the rep-heavy org's buyer once seeded)","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded
+[ASSERT] exactly 10 rows visible on page 1
+[ACT] click ""next page"" control
+[WAIT] page 2 loads","[COUNT] page 1 shows exactly 10 rows {DOC}
+[COUNT] page 2's row count equals (totalCount - 10), with zero rep names repeated from page 1 {DOC}
+[DOM] pagination control's active-page indicator element shows ""2"" (selected state) {DOC}
+[STATE] page change scrolls the viewport back to the top {DOC}","[API] page-1 customerSalesReps(first:10, after:0) and page-2 (first:10, after:10) each return errors[] empty","page 1 shows more or fewer than 10 rows; page 2 repeats a page-1 row; next-page control does nothing; BLOCKED: no rep-heavy org fixture exists to execute this case","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-015","Empty State — Buyer Whose Org Is Served by Zero Active Reps (NEEDS DATA GAP)","Storefront > Sales Rep > My Sales Reps > Empty State","Medium","PROPOSED-BL-SR-UI-EMPTY","ECL-3.1","DATA GAP: no existing org+buyer fixture qualifies — ORG_ACME/ORG_TECHFLOW/ORG_BUILDRIGHT/ORG_ACMEWEST are all served by >=1 active rep, and ORG_EMPTY (ORG-007) has zero contacts/users so no buyer can log into it. Requires a NEW fixture: an Active org with a real corporate-member login and ZERO reps assigned. Not provisioned in this pass (see qa-generate-data) — left as Draft/blocked pending that fixture.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] page loads with no search keyword applied","[DOM] empty view shows text ""No sales reps found"" (sales_rep.table.empty, the plain/no-keyword variant) {DOC}
+[DOM] no ""Reset search"" button is shown (there is no active keyword to reset) {DOC}","[API] customerSalesReps returns totalCount=0 with no keyword, errors[] empty","the search-variant empty view (with Reset search) renders instead of the plain empty view when no keyword was ever applied; page shows a loading spinner indefinitely; BLOCKED: no zero-rep org+buyer fixture exists to execute this case","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-016","i18n — Page Title, Columns, and Search Placeholder Localize in a Non-English Locale","Storefront > Sales Rep > My Sales Reps > i18n","Low","PROPOSED-BL-SR-UI-TABLE","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+Storefront culture switched to a non-English locale present among the module's shipped locale files (e.g. es-ES or de-DE — spot-check one).","front_url={{FRONT_URL}}, culture={{CULTURE_NAME}}","[ACT] switch storefront culture/language to a non-English locale
+[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] page loads","[DOM] page heading text is localized (not the raw i18n key ""sales_rep.page.title"") {DOC}
+[DOM] ""Name""/""Email""/""Phone"" column headers are localized (not raw i18n keys) {DOC}
+[DOM] search input's placeholder attribute text is localized (not the raw i18n key ""sales_rep.table.search_placeholder"") {DOC}","none","page, column headers, or placeholder show the raw i18n key instead of translated text — missing locale entry; page falls back silently to English with no visible indication of a missing translation","[ACT] switch storefront culture back to the default","VCST-5409","Draft"
+"SR-FE-MSR-017","Mobile Layout — My Sales Reps Table Mobile Item Shows Name, Email, Phone","Storefront > Sales Rep > My Sales Reps > Mobile","Medium","PROPOSED-BL-SR-UI-TABLE","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+Viewport at or below the ""lg"" mobile-breakpoint declared on the VcTable.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps (mobile viewport)
+[WAIT] mobile item list rendered (table mobile-item template)","[DOM] each mobile item's rep-name text renders in a bold/emphasized element, visually distinct from the email/phone text below it {DOC}
+[DOM] each mobile item shows the email and phone together beneath the name {DOC}","none","mobile item omits the name, email, or phone; desktop table (not the mobile-item template) renders at mobile viewport width","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-018","Mobile — Corporate Menu Shows ""Sales Reps"" Link","Storefront > Sales Rep > My Sales Reps > Gating","Medium","PROPOSED-BL-SR-UI-NAV","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+Mobile viewport.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account (mobile viewport)
+[ACT] open the mobile account menu
+[WAIT] mobile menu rendered","[DOM] ""Sales reps"" link is visible in the mobile account menu under ""Corporate"" {DOC}
+[ACT] click the link and confirm navigation to /company/sales-reps {OBSERVED}","none","link missing or unclickable in the mobile account menu; mobile menu fails to open at all on the tested viewport","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-019","Console/Network Baseline — Clean Page Load with No Errors","Storefront > Sales Rep > My Sales Reps > Regression Guard","High","PROPOSED-BL-SR-UI-TABLE","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+Known benign noise: a storefront console 400 ""Invalid workspace"" from dc.services.visualstudio.com/v2/track (Application Insights) is expected env noise on vcptcore-qa and is NOT a bug (see repo memory reference_vcptcore_appinsights_invalid_workspace) — exclude it from the pass/fail check below.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] page fully loaded, table rendered","[DOM] page renders without a visible error boundary/blank state {OBSERVED}","[API] customerSalesReps request returns HTTP 200 with errors[] empty
+[CONSOLE] no console errors other than the documented benign App Insights 400 noise
+[NETWORK] no 4xx/5xx on /graphql during page load","an application-origin console error (TypeError, unhandled rejection) appears; a 4xx/5xx on /graphql; errors[] non-empty","none (read-only)","VCST-5409","Draft"
+"SR-FE-MSR-020","E2E Cross-Layer — Storefront Rep List Matches Backend customerSalesReps Contract","Storefront > Sales Rep > My Sales Reps > Cross-Layer","High","PROPOSED-BL-SR-AUTH, PROPOSED-BL-SR-SCOPE","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+Complements 050m SR-GQL-001 (which validates the backend contract/scoping for this exact caller in isolation) — this case only bridges storefront-rendered rows to that already-verified API response, without re-testing scoping logic.","front_url={{FRONT_URL}}","--- STOREFRONT ---
+[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded
+[ASSERT] set of rendered rep names recorded
+--- API ---
+[GQL] issue customerSalesReps { totalCount items { fullName } } as ACME_BUYER and read the response","[DOM] the set of rep names rendered in the storefront table equals the set of items[].fullName from the API response (same members, no extra/missing rows) {OBSERVED}
+[COUNT] storefront row count equals the API's totalCount (assuming a single unpaginated page) {OBSERVED}","[API] customerSalesReps(first:0-equivalent full list) totalCount and items[] match the rendered table exactly (no stale cache, no off-by-one)","storefront table and API response diverge (stale cache-first query not invalidated); storefront shows a cached value from a prior session","none (read-only)","VCST-5409, VCST-5293","Draft"

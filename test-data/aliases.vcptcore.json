@@ -117,5 +117,13 @@
   "SR_REP_ACME2": {
     "id": "9a22bc60-93e9-43ae-a81a-aee72e0ff488",
     "user_id": "c2fe5916-40a9-4747-9f97-b0fc705aaa5f"
+  },
+  "SR_REP_NOCUSTOMERS": {
+    "id": "5d994444-df4e-462b-a7c1-b9ee7351e122",
+    "user_id": "188c6acf-259c-457c-92f2-48469c2093e9"
+  },
+  "SR_REP_PAGING": {
+    "id": "041121a2-718d-4c54-80ae-0bfcd7cec099",
+    "user_id": "9608556a-489b-4455-9687-a2622ecf810c"
   }
 }
