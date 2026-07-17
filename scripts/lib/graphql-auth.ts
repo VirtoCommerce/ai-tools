@@ -14,6 +14,13 @@ export interface RoleCredentials {
   email: string;
   password: string;
   storeId?: string;
+  /**
+   * Optional organization context for the password grant (snake_case
+   * `organization_id` on the token request). Needed for a multi-org user whose
+   * DEFAULT org would otherwise be picked — e.g. a sales rep whose default org
+   * membership is locked must sign in under an UNLOCKED served org.
+   */
+  organizationId?: string;
 }
 
 export interface TokenEntry {
@@ -30,6 +37,29 @@ export interface AuthOptions {
 }
 
 const TOKEN_REFRESH_BUFFER_MS = 30_000;
+
+/**
+ * Expands `{{VAR}}` tokens in a CSV-resolved credential to its env value.
+ * Committed test-data CSVs store passwords as `{{VAR}}` tokens (never literals —
+ * see .claude/rules/test-data.md), so `@td()` resolution yields the token string,
+ * not the secret. Without this, the CSV-backed `@td` path in resolveRole() returned
+ * the literal `{{B2B_USER_PASSWORD}}` and every b2b/users.csv-backed role login failed.
+ * Mirrors the seeders' per-env suffix promotion (`VAR`, then `VAR_<TEST_ENV>`); throws
+ * a clear error if the referenced var is unset (was a silent login_failed).
+ */
+function expandEnvTokens(value: string, role: string): string {
+  return value.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => {
+    const env = (process.env.TEST_ENV || "").toUpperCase();
+    const v =
+      process.env[name] ?? (env ? process.env[`${name}_${env}`] : undefined);
+    if (v === undefined || v === "") {
+      throw new Error(
+        `Role "${role}" credential references {{${name}}} but neither ${name} nor ${name}_${env} is set in .env`
+      );
+    }
+    return v;
+  });
+}
 
 /**
  * Resolves a role alias (e.g. "USER_DEFAULT") to concrete credentials.
@@ -56,7 +86,7 @@ export function resolveRole(
   }
 
   const entry = aliases[role] as
-    | { _inline?: boolean; email_env?: string; password_env?: string; store_id?: string }
+    | { _inline?: boolean; email_env?: string; password_env?: string; store_id?: string; organization_id?: string }
     | undefined;
 
   if (entry?._inline && entry.email_env && entry.password_env) {
@@ -67,34 +97,51 @@ export function resolveRole(
         `Role "${role}" expects env vars ${entry.email_env}/${entry.password_env}, but they are not set`
       );
     }
+    // organization_id may be a literal GUID or an @td() token — resolve the token form.
+    let organizationId = entry.organization_id;
+    if (organizationId && /^@td\(/.test(organizationId)) {
+      try {
+        const resolver = new TestDataResolver(testDataDir);
+        const v = resolver.resolve(organizationId);
+        if (v && v !== organizationId) organizationId = v;
+      } catch { /* leave as-is; token request will send the literal */ }
+    }
     return {
       role,
       email,
       password,
       storeId: entry.store_id || process.env.STORE_ID,
+      organizationId,
     };
   }
 
   // CSV-backed or direct-field alias (e.g. TECHFLOW_ADMIN → b2b/users.csv, or an
   // _inline alias carrying literal `email`/`password`): resolve via the @td() resolver.
   if (entry) {
+    let emailRaw = "";
+    let passwordRaw = "";
+    let sidRaw = "";
     try {
       const resolver = new TestDataResolver(testDataDir);
-      const email = resolver.resolve(`@td(${role}.email)`);
-      const password = resolver.resolve(`@td(${role}.password)`);
-      // resolve() passes unresolved tokens through unchanged — treat that as "not found".
-      const resolved = (v: string, token: string) => v && v !== token;
-      if (
-        resolved(email, `@td(${role}.email)`) &&
-        resolved(password, `@td(${role}.password)`)
-      ) {
-        let storeId = process.env.STORE_ID;
-        const sid = resolver.resolve(`@td(${role}.store_id)`);
-        if (resolved(sid, `@td(${role}.store_id)`)) storeId = sid;
-        return { role, email, password, storeId };
-      }
+      emailRaw = resolver.resolve(`@td(${role}.email)`);
+      passwordRaw = resolver.resolve(`@td(${role}.password)`);
+      sidRaw = resolver.resolve(`@td(${role}.store_id)`);
     } catch {
-      // fall through to env-var pattern
+      // resolver/alias error → fall through to the env-var pattern below
+    }
+    // resolve() passes unresolved tokens through unchanged — treat that as "not found".
+    const resolved = (v: string, token: string) => !!v && v !== token;
+    if (
+      resolved(emailRaw, `@td(${role}.email)`) &&
+      resolved(passwordRaw, `@td(${role}.password)`)
+    ) {
+      // Committed CSVs carry `{{VAR}}` password tokens — expand to the env secret.
+      const email = expandEnvTokens(emailRaw, role);
+      const password = expandEnvTokens(passwordRaw, role);
+      const storeId = resolved(sidRaw, `@td(${role}.store_id)`)
+        ? sidRaw
+        : process.env.STORE_ID;
+      return { role, email, password, storeId };
     }
   }
 
@@ -131,6 +178,11 @@ export async function acquireToken(
 
   if (opts.storeId || creds.storeId) {
     body.set("storeId", opts.storeId || creds.storeId!);
+  }
+
+  // Org-scoped grant (snake_case) — sign in under a specific org context.
+  if (creds.organizationId) {
+    body.set("organization_id", creds.organizationId);
   }
 
   const res = await fetch(url, {

@@ -137,9 +137,78 @@ async function refContains(repo: string, ref: string, sha: string): Promise<bool
   return !!c && c.aheadBy === 0;
 }
 /** Paths the fix commit touches, with status (added/modified/removed/renamed). */
-async function commitTouchedFiles(repo: string, sha: string): Promise<{ path: string; status: string; prev?: string }[]> {
+async function commitTouchedFiles(repo: string, sha: string): Promise<{ path: string; status: string; prev?: string; patch?: string }[]> {
   const c = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/commits/${encodeURIComponent(sha)}`);
-  return (c?.files ?? []).map((f: any) => ({ path: f.filename, status: f.status, prev: f.previous_filename }));
+  return (c?.files ?? []).map((f: any) => ({ path: f.filename, status: f.status, prev: f.previous_filename, patch: f.patch }));
+}
+
+/**
+ * Fix-shape check — the developer's pre-hotfix checklist (pts 1–3), computed once from the fix
+ * commit's own diff (repo/task-level, NOT per-bundle). Points 4 (cherry-pick) / 5 (vc-build compress
+ * = the Release-hotfix workflow build+test job) / 6 (regression env) are enforced downstream.
+ *   1. single module — the fix stays inside ONE src/<Project> tree (multi-project ⇒ hand off)
+ *   3. no dependency-version bump — the fix must not raise a VirtoCommerce.* dependency pin in a
+ *      module.manifest / .csproj / Directory.Build.props (that would drag other modules' versions)
+ *   2. no breaking changes — HEURISTIC only: flag contract-bearing files (manifest, csproj, props,
+ *      DTO/Model/Contract/interface, Client) so a human confirms; never auto-passes a breaking change.
+ * Semantic "does the feature exist here / won't it break" is NOT decidable statically — that is what
+ * the build+test job and the regression env are for. On any RISK the tool STOPs → analyze + involve
+ * a developer (never force it through). */
+interface FixShape {
+  modules: string[];          // distinct module identities (src/<Project> root, layer suffix stripped) the fix touches
+  multiModule: boolean;       // pt.1 violated — fix spans >1 module
+  dependencyBumps: string[];  // pt.3 violated — "file: Pkg oldVer → newVer"
+  contractFiles: string[];    // pt.2 heuristic — contract-bearing files touched (human must confirm)
+}
+function analyzeFixShape(files: { path: string; status: string; prev?: string; patch?: string }[]): FixShape {
+  // A single VC module conventionally SPANS several src/<Project> directories — Core/Data/Web (and
+  // tests/<Project>.Tests) — per knowledge/architecture/vc-module-architecture.md §2. Bucketing by the
+  // raw project folder would flag every ordinary cross-layer fix (Core DTO + Data service + Web
+  // controller) as "multi-module", so strip the trailing layer suffix before deduping — only a fix
+  // that genuinely spans distinct MODULES (different base name) counts as pt.1's multi-module signal.
+  const LAYER_SUFFIX_RE = /\.(Core|Data|Web|Client|Test|Tests)$/i;
+  const srcRoot = (p: string) => (/^src\/([^/]+)\//.exec(p)?.[1]) ?? null;
+  const moduleOf = (project: string) => project.replace(LAYER_SUFFIX_RE, '');
+  const modules = [...new Set(files.map((f) => srcRoot(f.path)).filter((x): x is string => !!x).map(moduleOf))];
+
+  // pt.3 — dependency-version bumps: scan added/removed patch lines for a VirtoCommerce.* version.
+  //   .csproj:          <PackageReference Include="VirtoCommerce.X.Core" Version="3.800.0" />
+  //   module.manifest:  <dependency id="VirtoCommerce.X" version="3.800.0" />
+  //   Directory.Build.props: <VirtoCommercePlatformVersion>3.800.0</VirtoCommercePlatformVersion>
+  const isDepFile = (p: string) => /module\.manifest$/i.test(p) || /\.csproj$/i.test(p) || /Directory\.Build\.props$/i.test(p);
+  const verOnLine = (line: string): string | null => {
+    const m = /(?:Version|version)\s*=\s*"([^"]+)"/.exec(line)                 // csproj / manifest attribute
+      || /<(?:[A-Za-z.]*Version)>([^<]+)<\/[A-Za-z.]*Version>/.exec(line);      // props element
+    return m?.[1] ?? null;
+  };
+  // Identifies WHICH dependency a version belongs to, so a file that bumps several packages in one
+  // commit doesn't get its old/new versions flattened and cross-attributed.
+  const depKeyOnLine = (line: string): string | null =>
+    /(?:Include|id)\s*=\s*"([^"]+)"/.exec(line)?.[1]                           // csproj Include= / manifest id=
+    ?? /<([A-Za-z.]*Version)>/.exec(line)?.[1]                                 // props element tag name
+    ?? null;
+  const dependencyBumps: string[] = [];
+  for (const f of files.filter((f) => isDepFile(f.path) && f.patch)) {
+    const removedByKey = new Map<string, string>(), addedByKey = new Map<string, string>();
+    for (const l of f.patch!.split('\n')) {
+      if (!/VirtoCommerce/i.test(l)) continue;
+      const ver = verOnLine(l);
+      if (ver === null) continue;
+      const key = depKeyOnLine(l) ?? '?';
+      if (l.startsWith('+') && !l.startsWith('+++')) addedByKey.set(key, ver);
+      else if (l.startsWith('-') && !l.startsWith('---')) removedByKey.set(key, ver);
+    }
+    for (const key of new Set([...removedByKey.keys(), ...addedByKey.keys()])) {
+      const from = removedByKey.get(key) ?? '∅', to = addedByKey.get(key) ?? '∅';
+      if (from !== to) dependencyBumps.push(`${f.path}: ${key} ${from} → ${to}`);
+    }
+  }
+
+  // pt.2 — breaking-change surface (heuristic; requires human confirmation, not an auto-block).
+  const CONTRACT_RE = /(module\.manifest$|\.csproj$|Directory\.Build\.props$|Dto\.cs$|Model[s]?\/|Contracts?\/|[/\\]I[A-Z][A-Za-z0-9]+\.cs$|Client\.cs$)/;
+  const contractFiles = files.filter((f) => f.status !== 'added' && CONTRACT_RE.test(f.path)).map((f) => f.path);
+
+  return { modules, multiModule: modules.length > 1, dependencyBumps, contractFiles };
 }
 /** True if a path exists on the given ref (branch/tag). */
 async function pathExistsOnRef(repo: string, path: string, ref: string): Promise<boolean> {
@@ -393,6 +462,8 @@ async function main() {
   // ── 3. per-bundle analysis ──
   // Fetch the files the fix touches once (for the code-level applicability check below).
   const touchedFiles = fixSha ? await commitTouchedFiles(repo, fixSha).catch(() => []) : [];
+  // Fix-shape check (developer's pre-hotfix checklist, pts 1–3) — repo/task-level, computed once.
+  const fixShape = touchedFiles.length ? analyzeFixShape(touchedFiles) : null;
   const bundleResults: BundleResult[] = [];
   for (const name of bundleNames) {
     const url = bundleUrlOf(name);
@@ -432,10 +503,13 @@ async function main() {
 
   // ── output ──
   const baselineIssues = bundleResults.filter((b) => b.baseline && (b.baseline.mismatch || b.baseline.collision));
-  const blocked = !prGate.merged || !releaseGate.released || baselineIssues.length > 0 || bundleResults.some((b) => b.verdict === 'no-support-branch' || b.verdict === 'not-in-bundle' || b.verdict === 'error');
+  // Fix-shape hard signals (developer checklist): a multi-module fix (pt.1) or a dependency-version
+  // bump (pt.3) is a STOP → analyze + involve a developer, never force it through a hotfix.
+  const fixShapeBlocked = !!fixShape && (fixShape.multiModule || fixShape.dependencyBumps.length > 0);
+  const blocked = !prGate.merged || !releaseGate.released || baselineIssues.length > 0 || fixShapeBlocked || bundleResults.some((b) => b.verdict === 'no-support-branch' || b.verdict === 'not-in-bundle' || b.verdict === 'error');
 
   if (asJson) {
-    console.log(JSON.stringify({ task, repo, fixSha, prGate, releaseGate, bundles: bundleResults, checkedAt: new Date().toISOString() }, null, 2));
+    console.log(JSON.stringify({ task, repo, fixSha, prGate, releaseGate, fixShape, bundles: bundleResults, checkedAt: new Date().toISOString() }, null, 2));
     throw new Exit(blocked ? 1 : 0);
   }
 
@@ -488,6 +562,24 @@ async function main() {
   }
   console.log('─'.repeat(W));
 
+  // Fix-shape check — the developer's pre-hotfix checklist (pts 1–3), from the fix commit's own diff.
+  if (fixShape) {
+    console.log(`\nFix-shape check (developer checklist — before any hotfix):`);
+    console.log(`  1. single module      : ${fixShape.multiModule
+      ? `⚠ fix spans ${fixShape.modules.length} modules (${fixShape.modules.join(', ')}) → STOP, hand off to a developer`
+      : `✓ one module${fixShape.modules.length ? ` (${fixShape.modules[0]})` : ' (no src/ project files touched)'}`}`);
+    console.log(`  2. no breaking change : ${fixShape.contractFiles.length
+      ? `⚠ touches contract-bearing files — a developer MUST confirm no breaking change:\n       ${fixShape.contractFiles.slice(0, 8).join('\n       ')}${fixShape.contractFiles.length > 8 ? `\n       (+${fixShape.contractFiles.length - 8} more)` : ''}`
+      : `✓ no obvious API/DTO/manifest contract file touched (heuristic)`}`);
+    console.log(`  3. no dep-version bump: ${fixShape.dependencyBumps.length
+      ? `⚠ raises a VirtoCommerce dependency pin → STOP, hand off:\n       ${fixShape.dependencyBumps.join('\n       ')}`
+      : `✓ no VirtoCommerce.* dependency version changed (manifest/.csproj/props)`}`);
+    console.log(`  4. cherry-pick clean  : ↓ definitive at the write step (git cherry-pick)`);
+    console.log(`  5. vc-build compress  : ↓ enforced by the "Release hotfix" workflow (build + test job); hotfix:release --poll fails red`);
+    console.log(`  6. regression env     : ↓ after the release, on the regression environment`);
+    if (fixShapeBlocked) console.log(`  ⛔ A fix-shape signal fired — if something looks like it could break, STOP: analyze and involve a developer before hotfixing.`);
+  }
+
   // Code-level applicability (the "по коду" check): touched files present on each support branch.
   const withCode = bundleResults.filter((b) => b.codeApply);
   if (withCode.length) {
@@ -512,8 +604,12 @@ async function main() {
     }
   }
 
-  // Plan for ready bundles
-  const ready = bundleResults.filter((b) => b.verdict === 'ready');
+  // Plan for ready bundles — suppressed while a fix-shape signal is unresolved (STOP + hand off first).
+  const ready = fixShapeBlocked ? [] : bundleResults.filter((b) => b.verdict === 'ready');
+  if (fixShapeBlocked && bundleResults.some((b) => b.verdict === 'ready')) {
+    console.log(`\n⛔ Bundles are branch-ready, but the fix-shape check flagged a risk (multi-module or dependency bump).`);
+    console.log(`   Do NOT hotfix yet — analyze and involve a developer. Override only with a human decision.`);
+  }
   if (ready.length) {
     console.log(`\nNext steps (confirm before each write — the /qa-hotfix orchestrator runs these):`);
     for (const b of ready) {
@@ -525,9 +621,13 @@ async function main() {
     }
   }
   const noBranch = bundleResults.filter((b) => b.verdict === 'no-support-branch');
-  if (noBranch.length) {
-    console.log(`\n⛔ No hotfix possible for: ${noBranch.map((b) => `${b.bundle} (need ${b.supportBranch})`).join(', ')}`);
-    console.log(`   Creating a support branch is a release-management decision — hand off, don't auto-create.`);
+  if (noBranch.length && fixShapeBlocked) {
+    console.log(`\n⛔ ${noBranch.map((b) => b.bundle).join(', ')} need${noBranch.length === 1 ? 's' : ''} a support branch, but the fix-shape check flagged a risk above.`);
+    console.log(`   Resolve the fix-shape signal FIRST — don't create a support branch for a fix that isn't safe to hotfix yet.`);
+  } else if (noBranch.length) {
+    console.log(`\n⚠ No support branch yet for: ${noBranch.map((b) => `${b.bundle} (need ${b.supportBranch}, base ${b.pinned})`).join(', ')}`);
+    console.log(`   Create it first (gated write step 0): branch ${noBranch[0].supportBranch} from the line's base tag`);
+    console.log(`   (highest released X.Y.* tag, else the bundle-pinned tag), confirm the base, push, then re-run this precheck.`);
   }
 
   throw new Exit(blocked ? 1 : 0);

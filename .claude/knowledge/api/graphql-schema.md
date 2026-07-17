@@ -1,11 +1,6 @@
----
-applicability: reference
-applicability_rationale: "xAPI GraphQL schema reference. The schema SHAPE is universal across VC, but field availability varies by module set + customer modifications. Customer regenerates from their live introspection."
----
-
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-13)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-17)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -77,6 +72,8 @@ pageContext(domain: String, cultureName: String, permalink: String, organization
 ### Orders
 
 ```
+salesRepOrders(after: String, first: Int, keyword: String, sort: String, organizationId: String, storeId: String, statuses: [String], cultureName: String)
+salesRepOrderStatuses(storeId: String, cultureName: String)
 order(id: String, number: String, cultureName: String)
 payments(facet: String, filter: String, sort: String, cultureName: String, userId: String, after: String, first: Int)
 orderLineItemStatuses(cultureName: String)
@@ -103,6 +100,9 @@ newsArticleTags(languageCode: String!)
 fcmSettings()
 pushMessages(after: String, first: Int, keyword: String, sort: String, unreadOnly: Boolean, withHidden: Boolean, cultureName: String)
 tasks(after: String, first: Int, keyword: String, sort: String, responsibleId: String, storeId: String, startDueDate: DateTime, endDueDate: DateTime, isActive: Boolean, completed: Boolean)
+customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
+salesRepCustomer(organizationId: String!)
+salesRepCustomers(after: String, first: Int, keyword: String, sort: String, storeId: String, cultureName: String)
 skyflowCards(storeId: String)
 evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: [String], userGroups: [String])
 backInStockSubscriptions(after: String, first: Int, keyword: String, sort: String, storeId: String, productIds: [String], isActive: Boolean)

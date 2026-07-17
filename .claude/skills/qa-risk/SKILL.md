@@ -2,7 +2,7 @@
 name: qa-risk
 description: "[QA Method] Risk-based test prioritization: risk matrix, severity classification, dynamic reprioritization, test depth allocation."
 argument-hint: "feature | sprint | release | VCST-XXXX"
-disable-model-invocation: true
+
 ---
 
 # /qa-risk — Risk-Based Test Prioritization

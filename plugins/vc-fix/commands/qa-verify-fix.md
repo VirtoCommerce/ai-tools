@@ -37,8 +37,10 @@ operator what the profile already answers. **Absent profile ⇒ every field belo
 to the Jira / GitHub / `vc-deploy-dev` behaviour — this section changes nothing for the native path.**
 
 - **Paths & cwd discipline** (`profile.paths`): use `paths.projectRoot` as the absolute base for
-  everything — `.env`/secrets (`join(projectRoot, paths.secretsEnv)`), `paths.reports`. Invoke plugin
-  scripts (`ado.mjs`) by the `paths.pluginRoot` (`$CLAUDE_PLUGIN_ROOT`) absolute path. Load secrets
+  everything — `.env`/secrets (`join(projectRoot, paths.secretsEnv)`), `paths.reports`. To invoke a
+  bundled plugin script (`ado.mjs`), resolve `$pluginRoot` = the ACTIVE install path at runtime via
+  `claude plugin list --json` (there is no baked plugin path in the profile; see
+  [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)). Load secrets
   ONLY from the absolute path. **Never print a PAT/token — and never inline the literal value in a
   command.** `ado.mjs` reads `ADO_PAT` from the environment; make sure it's loaded from `.env.local`
   (e.g. sourced into the shell) rather than pasted as `ADO_PAT="…"` in front of each call.
@@ -155,7 +157,7 @@ With the fix confirmed deployed, transition the ticket to the **`testing`** role
 **Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — including the
 QA-side `qaRoleStatesComplete` gate: only apply `auto`/`confirm-once` when it's `true`, else `ask`.
 
-Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed":
+Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed". **On Azure, write the comment as HTML** (`<b>`, `<br/>`, `<ul>/<li>`, `<code>`) per [`azure-html-format.md`](../knowledge/execution/azure-html-format.md) — a plain-text/Markdown comment collapses into one unreadable paragraph; the plain block below is illustrative content, not the literal wire format:
 ```
 Starting QA verification.
 Platform: [PlatformVersion confirmed deployed in Step 2]

@@ -32,6 +32,8 @@ Canonical reference for writing **runner-native GraphQL test cases** in suite CS
 
 The runner detects the mode via Phase 0 in `test-runner-agent.md`: if **every** non-empty `Steps` cell in a suite contains `[GQL-OP ` or `[GQL-EXEC `, the suite takes the GraphQL Runner Fast Path (no browser, zero browser-pool slot consumed).
 
+**Scoped schemas (`/graphql/<name>`) are runner-native too.** A module can expose a dedicated scoped GraphQL schema (e.g. Sales Rep at `POST /graphql/sales-rep`, GraphiQL at `/ui/graphiql/sales-rep`) instead of the default xAPI `/graphql`. Use the **`[GQL-ENDPOINT <path>]`** step (§3.0) to point a case at that schema — the runner then introspects, schema-validates, and POSTs against it, and caches the scoped schema separately (`scripts/.graphql-schema.<slug>.cache.json`). A scoped schema is **no longer a reason to fall back to GraphiQL UI**.
+
 ---
 
 ## 2. CSV row contract
@@ -66,6 +68,7 @@ The `Steps` cell is parsed line-by-line by `parseSteps()`. Recognized tags (case
 
 | Tag | Purpose | Body |
 |-----|---------|------|
+| `[GQL-ENDPOINT <path>]` | Point every op in this case at a scoped schema (default `/graphql`); see §3.0 | none |
 | `[AUTH role=<alias>]` | Acquire OAuth token; set as `Authorization: Bearer …` for subsequent ops | none |
 | `[GQL-OP <label>]` | Declare a GraphQL operation under `<label>` | multi-line query/mutation body until next tag |
 | `[GQL-VARS <label>]` | Bind variables (JSON) for the named op | inline JSON on same line, OR multi-line JSON until next tag |
@@ -79,6 +82,22 @@ The `Steps` cell is parsed line-by-line by `parseSteps()`. Recognized tags (case
 | `[WAIT seconds=<n>]` / `[WAIT] <freetext>` | Fixed delay (sleep) — legacy bare form sleeps 12s | none |
 
 Other tags (`[SETUP]`, `[TEARDOWN]`) are recognized as step-tag boundaries but skipped at execution time. Anything not on this list is silently dropped from execution but recorded in evidence as `UNKNOWN`.
+
+### 3.0 `[GQL-ENDPOINT <path>]` — scoped schema selector
+
+Optional. Absent ⇒ the default xAPI schema at `/graphql`. Present ⇒ every `[GQL-OP]`/`[GQL-EXEC]` in the case introspects, schema-validates, and POSTs against `<path>` instead. Put it **once, first** in the `Steps` cell (before `[AUTH]`), and use the leading-slash absolute path:
+
+```text
+[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP customers]
+query { salesRepCustomers(first: 20, storeId: ""{{STORE_ID}}"", sort: ""name:asc"") { totalCount items { organizationId organizationName lastOrder { number total { amount formattedAmount currency { code symbol } } } } } }
+[GQL-EXEC customers]
+```
+
+- **One endpoint per case.** All ops in the case use it; the runner keys the introspected schema by endpoint (`scripts/.graphql-schema.<slug>.cache.json`) so scoped and default schemas never collide.
+- **CLI equivalent:** `--endpoint /graphql/sales-rep` (per-case `[GQL-ENDPOINT]` overrides the flag). On **Windows Git-Bash**, prefix the command with `MSYS_NO_PATHCONV=1` so a leading-slash `--endpoint` arg isn't mangled into a filesystem path — this affects only the CLI flag, never the in-CSV tag.
+- Implemented in `graphql-case-parser.ts` (`EndpointStep`), `graphql-executor.ts` + `graphql-validator.ts` (`endpointPath` option), and `graphql-runner.ts` (`--endpoint` + per-endpoint schema cache). Default behavior for existing suites is unchanged.
 
 ### 3.1 `[AUTH role=<alias>]`
 

@@ -101,7 +101,7 @@ export function evaluateAssertion(
   responses: Map<string, GraphQLResponse>,
   variables: Record<string, string>
 ): AssertionResult {
-  const predicate = substituteVars(assertion.predicate, variables);
+  const predicate = stripProvenance(substituteVars(assertion.predicate, variables));
 
   // VAR is variable-vs-literal — no response needed, no label binding to enforce.
   if (assertion.kind === "VAR") {
@@ -160,6 +160,20 @@ function substituteVars(s: string, vars: Record<string, string>): string {
   return s.replace(/\{\{(\w+)\}\}/g, (_m, name) => {
     return Object.prototype.hasOwnProperty.call(vars, name) ? vars[name] : `{{${name}}}`;
   });
+}
+
+// Trailing grounding-provenance tag (Dim 10 / GRD-001; project memory
+// project_assertion_provenance_grounding_gate) — authors append {SPEC}/{BL}/{DOC}/
+// {OBSERVED}/{HYPOTHESIS} to the END of an assertion line for traceability. It is
+// lint-scanned against the raw line (scripts/lint-test-cases.ts PROVENANCE_RE) and
+// was never meant to be part of the evaluated predicate — strip it before dispatch
+// so numeric (`>=`/`<=`), equality (`=`), and regex (`matches /…/`) predicates don't
+// choke on trailing `{...}` text. Single-brace, so it can't collide with `{{VAR}}`
+// substitution above.
+const PROVENANCE_SUFFIX_RE = /\s*\{(?:SPEC|BL|DOC|OBSERVED|HYPOTHESIS)\}\s*$/;
+
+function stripProvenance(s: string): string {
+  return s.replace(PROVENANCE_SUFFIX_RE, "").trim();
 }
 
 function evaluateErrorsPredicate(

@@ -32,7 +32,7 @@
  *                    [--confirm] [--json]
  *   (default --repo VirtoCommerce/vc-mcp-testing-module; default is a DRY draft.)
  */
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync, unlinkSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveGithubToken, probeGithubUpstream } from "../project-init/probe-lib.mjs";
@@ -410,7 +410,7 @@ function prHandoffCommands({ repo, route, fp }) {
 
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 function parseArgs(argv) {
-  const a = { repo: PLUGIN_REPO, confirm: false, json: false };
+  const a = { repo: PLUGIN_REPO, confirm: false, json: false, purge: false, keep: false };
   for (let i = 0; i < argv.length; i++) {
     const t = argv[i];
     if (t === "--confirm" || t === "--send") a.confirm = true;
@@ -418,6 +418,10 @@ function parseArgs(argv) {
     else if (t === "--diag") a.diag = argv[++i];
     else if (t === "--repo") a.repo = argv[++i];
     else if (t === "--as") a.override = argv[++i];
+    // --purge: standalone cleanup of the processed session's local artifacts (no delivery).
+    // --keep:  after a successful delivery, do NOT auto-purge (retain the local artifacts).
+    else if (t === "--purge") a.purge = true;
+    else if (t === "--keep") a.keep = true;
   }
   return a;
 }
@@ -430,6 +434,43 @@ function newestDiag() {
     .map((f) => ({ f, t: statSync(join(dir, f)).mtimeMs }))
     .sort((x, y) => y.t - x.t);
   return files.length ? join(dir, files[0].f) : null;
+}
+
+/** The diagnosed session id — from the DIAG header (`- Session: <sid> · …`), else the
+ *  `DIAG-<sid>-<UTC-timestamp>.md` filename with the trailing timestamp stripped. "" if
+ *  neither yields one (then only the explicit diag/delivery files are purged, by-name). */
+function sessionIdFromDiag(md, diagPath) {
+  const m = /(?:^|\n)\s*[-*]?\s*Session:\s*([^\s·|]+)/i.exec(md || "");
+  if (m && m[1]) return m[1].trim();
+  const base = String(diagPath || "").split(/[\\/]/).pop() || "";
+  const fm = /^DIAG-(.+)-\d{8}T\d{6}Z\.md$/.exec(base);
+  return fm ? fm[1] : "";
+}
+
+/**
+ * Delete ONLY the processed session's local diagnostics artifacts — the collector's
+ * `<sid>.jsonl` + `<sid>.state.json`, its `DIAG-<sid>-*.md`, and this finding's
+ * `DELIVERY-<fp>-*.md` drafts — plus any explicit `extra` paths (the exact DIAG +
+ * DELIVERY handled this run). Other sessions' files are left untouched (concept:
+ * "delete the processed session after it's been delivered"). Best-effort per file;
+ * never throws. Returns the basenames removed.
+ */
+function purgeSession({ dir, sid, fp, extra = [] }) {
+  const removed = [];
+  const rm = (p) => { try { if (existsSync(p)) { unlinkSync(p); removed.push(String(p).split(/[\\/]/).pop()); } } catch { /* ignore */ } };
+  const sidSafe = sid && sid.length >= 6 ? sid : null;
+  if (existsSync(dir)) {
+    let names = [];
+    try { names = readdirSync(dir); } catch { names = []; }
+    for (const f of names) {
+      const match =
+        (sidSafe && (f === `${sid}.jsonl` || f === `${sid}.state.json` || f.startsWith(`DIAG-${sid}-`))) ||
+        (fp && f.startsWith(`DELIVERY-${fp}-`));
+      if (match) rm(join(dir, f));
+    }
+  }
+  for (const p of extra) if (p) rm(p);
+  return [...new Set(removed)];
 }
 
 export async function main(argv = process.argv.slice(2)) {
@@ -446,6 +487,37 @@ export async function main(argv = process.argv.slice(2)) {
   const md = readFileSync(diagPath, "utf8");
   const { pluginVersion, findings } = parseDiag(md);
   const fp = fingerprint(findings);
+  const sid = sessionIdFromDiag(md, diagPath);
+  const purgeHint = `node "$pluginRoot/skills/vc-self-check/deliver.mjs" --purge${args.diag ? ` --diag ${diagPath}` : ""}`;
+
+  // --purge (standalone): the terminal "delete all" step of the log→analyze→contribute→
+  // delete cycle. Cleans up ONLY this processed session's local artifacts and sends
+  // nothing. Use it after a hand-off PR has been opened, or when there was nothing
+  // worthwhile to contribute.
+  if (args.purge) {
+    const removed = purgeSession({ dir: diagDir(), sid, fp, extra: [diagPath] });
+    const out = { action: "purge", session: sid || null, removed };
+    if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
+    else process.stdout.write(
+      removed.length
+        ? `Purged ${removed.length} local artifact(s) for session ${sid || "(this DIAG)"}:\n  ${removed.join("\n  ")}\n`
+        : `Nothing to purge for session ${sid || "(this DIAG)"}.\n`
+    );
+    return;
+  }
+
+  // Nothing worthwhile to contribute (no BROKEN/DEGRADED finding) → file nothing; offer
+  // the cleanup step so the local log doesn't linger.
+  const actionable = findings.filter((f) => f.verdict === "BROKEN" || f.verdict === "DEGRADED");
+  if (!actionable.length) {
+    const out = { action: "none", session: sid || null, findings: findings.length, actionable: 0 };
+    if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
+    else process.stdout.write(
+      `No worthwhile finding to contribute (no BROKEN/DEGRADED among ${findings.length}). Nothing sent.\n` +
+        `To clear this session's local diagnostics:\n  ${purgeHint}\n`
+    );
+    return;
+  }
 
   const { token, via, scopes } = resolveGithubToken();
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
@@ -493,7 +565,7 @@ export async function main(argv = process.argv.slice(2)) {
           draft.body,
           `-------------`,
           route === "issue"
-            ? `Nothing sent. Re-run with --confirm to file this GitHub Issue.`
+            ? `Nothing sent. Re-run with --confirm to file this GitHub Issue (then this session's local artifacts are auto-cleaned; --keep to retain).`
             : route === "local"
             ? `No token/rights → local report only. Authenticate to deliver:\n  export GITHUB_FIX_BUGS_TOKEN=<PAT>   # or:  gh auth login`
             : `Nothing sent. A ${route} is handed off (not auto-created) — with --confirm you get the ready command sequence:`,
@@ -510,16 +582,29 @@ export async function main(argv = process.argv.slice(2)) {
   if (route === "issue") {
     if (dup) {
       plan.skipped = `duplicate of #${dup.number}`;
+      // Already upstream (this finding lives in an open issue) → the session's local
+      // artifacts have served their purpose; delete them unless --keep.
+      if (!args.keep) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-      else process.stdout.write(`Duplicate of open issue #${dup.number} (${dup.url}) — not filing again.\n`);
+      else process.stdout.write(
+        `Duplicate of open issue #${dup.number} (${dup.url}) — not filing again.\n` +
+          (plan.purged?.length ? `Purged ${plan.purged.length} local artifact(s) for session ${sid || "(this DIAG)"}.\n` : ``)
+      );
       return;
     }
     try {
       const created = await createIssue({ repo: args.repo, token, title: draft.title, body: draft.body });
       plan.sent = true;
       plan.issue = created;
+      // Delivered → delete the processed session's local artifacts (unless --keep).
+      if (!args.keep) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-      else process.stdout.write(`Filed GitHub Issue #${created.number}: ${created.url}\n`);
+      else process.stdout.write(
+        `Filed GitHub Issue #${created.number}: ${created.url}\n` +
+          (plan.purged?.length
+            ? `Purged ${plan.purged.length} local artifact(s) for session ${sid || "(this DIAG)"}.\n`
+            : args.keep ? `Kept local artifacts (--keep).\n` : ``)
+      );
     } catch (e) {
       plan.error = String(e?.message ?? e);
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
@@ -531,18 +616,22 @@ export async function main(argv = process.argv.slice(2)) {
 
   if (route === "pr" || route === "fork-pr") {
     plan.handoff = true;
+    // Not delivered yet (the human opens the PR) → do NOT purge now.
     if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
     else
       process.stdout.write(
         `${route} is NOT auto-created (a code PR needs a working tree + human-reviewed patch).\n` +
-          `Scrubbed draft: ${deliveryPath}\n\n${prHandoffCommands({ repo: args.repo, route, fp })}\n`
+          `Scrubbed draft: ${deliveryPath}\n\n${prHandoffCommands({ repo: args.repo, route, fp })}\n\n` +
+          `Once the PR is open, clear this session's local diagnostics:\n  ${purgeHint}\n`
       );
     return;
   }
 
-  // local
+  // local — no token/rights, nothing delivered → keep the artifacts (don't purge).
   if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-  else process.stdout.write(`No token/rights → local report only: ${deliveryPath}\nAuthenticate then re-run.\n`);
+  else process.stdout.write(
+    `No token/rights → local report only: ${deliveryPath}\nAuthenticate then re-run to deliver (artifacts kept until then).\n`
+  );
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || "").href) {

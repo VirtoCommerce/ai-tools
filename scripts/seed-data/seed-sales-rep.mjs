@@ -6,8 +6,11 @@
  * vc-module-sales-rep REST API (POST /api/sales-rep) + the customer-module org-membership API
  * + the orders API. Business keys live in test-data/sales-rep/*.csv; runtime platform GUIDs are
  * written to test-data/aliases.<env>.json (never committed into the CSV).
+ * NOTE: aliases.<env>.json is a COMMITTED shared overlay — after a reseed that changes rep GUIDs,
+ * re-commit it so teammates/CI resolve the same @td(SR_REP_*.id) values. A stale overlay resolves
+ * to deleted/old entities. (Order GUIDs are NOT written to the overlay — orders resolve by number.)
  *
- * The module is deployed on vcptcore-qa only — run with `TEST_ENV=vcptcore`.
+ * The module is deployed on the QA environments (vcst, vcptcore) — run with the matching `TEST_ENV`.
  *
  * Phases (idempotent, look-up-then-create):
  *   1. Owner contact for ACME (distinct from the reps) + enrich ACME org (ownerId, businessCategory, address).
@@ -68,6 +71,15 @@ async function memberExists(id) {
 }
 
 const PAGING_PREFIX = 'AGENT-TEST-SR-Paging-';
+
+/** Resolve a rep's ApplicationUser (login/security-account) id by email — the id GetCurrentUserId()
+ *  returns from the JWT, which salesRepOrders/lastOrder match order.CustomerId against (NOT the
+ *  Contact/member id). Returns null if the account is missing. */
+async function resolveUserId(email) {
+  if (!email) return null;
+  const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
+  return (u && u.id) ? u.id : null;
+}
 
 /** Confirm a rep's account email so it can sign in to the storefront UI (idempotent). */
 async function confirmRepEmail(email) {
@@ -196,23 +208,70 @@ async function ensureRep(row, orgs, roleId) {
 
 const ORDER_MARK = 'AGENT-TEST';
 
+/** Build an order address (Shipping|Billing) from the served org's address fields. */
+function orderAddress(org, addressType) {
+  return {
+    addressType,
+    firstName: 'AGENT-TEST', lastName: 'Buyer',
+    line1: org.line1 || '1 Main St',
+    city: org.city || 'New York',
+    regionName: org.region || 'New York',
+    countryCode: org.countryCode || 'USA', countryName: org.country || 'United States',
+    postalCode: org.postal || '10001',
+    phone: '+1-206-555-0100', email: 'agent-test-sr-order@example.com',
+  };
+}
+
 async function ensureOrder(row, orgs, customerId) {
   const org = orgs[row.org];
   if (!org) { log(`  WARN: order ${row.order_key} — org ${row.org} unknown, skip`); return; }
   const number = `${ORDER_MARK}-${row.order_key}`;
-  // Idempotency: search by our deterministic number.
+  const wantCustomerId = customerId || org.id;
+  // Idempotency + self-heal: match by our deterministic number. salesRepOrders/lastOrder match
+  // order.CustomerId == the rep's ApplicationUser (login) id, so an order seeded with the wrong
+  // id (e.g. the pre-fix Contact id) is deleted and recreated with the correct attribution.
   const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
-  if ((found?.totalCount || 0) > 0) { verbose(`order ${number} exists`); return; }
+  const existing = (found?.results || [])[0];
+  if (existing) {
+    const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
+    const enriched = (full?.addresses || []).length && (full?.shipments || []).length && (full?.inPayments || []).length;
+    const totalOk = Math.abs((full?.total || 0) - parseFloat(row.total)) < 0.01;
+    const orgOk = full?.organizationId === org.id && !!full?.organizationName;
+    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk) { verbose(`order ${number} exists (attributed + enriched + total + org ok)`); return; }
+    await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
+    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk})`);
+  }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const price = Math.round((parseFloat(row.total) / n) * 100) / 100;
   const items = Array.from({ length: n }, (_, i) => ({
     sku: `AGENT-TEST-SR-SKU-${i + 1}`, productId: `agent-test-sr-prod-${i + 1}`, catalogId: 'agent-test-sr',
     name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: 'USD',
   }));
+  const total = parseFloat(row.total);
+  const shipAddr = orderAddress(org, 'Shipping');
+  const billAddr = orderAddress(org, 'Billing');
+  // NOTE on totals: the platform's order-total calculator folds shipment.total and inPayment.total
+  // back into order.Total, so a non-zero shipment/payment total inflates the order (observed $120→$255).
+  // Keep the structural records (address/shipment/payment) but zero their monetary totals so order.Total
+  // stays == the CSV total (preserving the salesRepOrders/lastOrder totals verified in 091). The payment's
+  // `sum` carries the amount (mirrors a real order: sum=<amount>, total=0).
   const body = {
-    number, storeId: row.store, organizationId: org.id, customerId: customerId || org.id,
-    customerName: row.customer_name, currency: 'USD', status: row.status,
-    total: parseFloat(row.total), subTotal: parseFloat(row.total), items,
+    number, storeId: row.store, organizationId: org.id, organizationName: org.name,
+    customerId: wantCustomerId, customerName: row.customer_name, currency: 'USD', status: row.status,
+    total, subTotal: total, shippingTotal: 0, shippingTotalWithTax: 0, taxTotal: 0, items,
+    addresses: [shipAddr, billAddr],
+    shipments: [{
+      shipmentMethodCode: 'FixedRate', shipmentMethodOption: 'Ground', currency: 'USD',
+      organizationId: org.id, organizationName: org.name,
+      price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
+      status: 'New', number: `${number}-S1`, deliveryAddress: shipAddr, items: [],
+    }],
+    inPayments: [{
+      gatewayCode: 'DefaultManualPaymentMethod', currency: 'USD',
+      customerId: wantCustomerId, customerName: row.customer_name, organizationId: org.id, organizationName: org.name,
+      sum: total, price: 0, priceWithTax: 0, total: 0, totalWithTax: 0, status: 'New', paymentStatus: 'New',
+      number: `${number}-P1`, billingAddress: billAddr,
+    }],
   };
   const created = await api('POST', '/api/order/customerOrders', body);
   log(`  order ${number} (${row.status}, ${row.store}, ${n} items) -> ${created?.id || '(created)'}`);
@@ -273,15 +332,27 @@ async function main() {
   const roleId = await resolveSalesRepRoleId();
   log(`Sales Rep role: ${roleId || '(service default)'}`);
   const repWriteback = {};
-  let primaryContactId = null;
+  let primaryRepEmail = null;
   for (const row of reps) {
     const { contactId, userId, lockedMembershipId } = await ensureRep(row, orgs, roleId);
     repWriteback[row.rep_key] = { contact_id: contactId || '', user_id: userId || '', membership_locked_id: lockedMembershipId || '' };
-    if (row.rep_key === 'SR_REP_PRIMARY') primaryContactId = contactId;
+    if (row.rep_key === 'SR_REP_PRIMARY') primaryRepEmail = row.email;
   }
 
-  // Phase 4 — orders (customerId = primary rep contact, a member of every ACME/etc. org)
-  for (const row of orders) await ensureOrder(row, orgs, primaryContactId);
+  // Phase 4 — orders. salesRepOrders/lastOrder attribute an order to a rep by
+  // order.CustomerId == the rep's ApplicationUser (login) id — the value GetCurrentUserId()
+  // returns from the JWT — NOT the rep's Contact/member id. Stamp the primary rep's account id
+  // so the rep-scoped order queries actually return these orders (VCST-5304/5308).
+  const primaryUserId = await resolveUserId(primaryRepEmail);
+  if (!primaryUserId) {
+    // Fail loud: without the rep's ApplicationUser id every order would fall back to a wrong
+    // CustomerId and be invisible to salesRepOrders/lastOrder. Skip order seeding rather than
+    // write un-queryable orders; fix the rep account and re-run.
+    log('WARN: could not resolve SR_REP_PRIMARY ApplicationUser id — SKIPPING order seeding (orders would not be rep-attributed). Ensure the rep account exists, then re-run.');
+  } else {
+    verbose(`orders attributed to SR_REP_PRIMARY account id ${primaryUserId}`);
+    for (const row of orders) await ensureOrder(row, orgs, primaryUserId);
+  }
 
   // Phase 5 — write-back runtime GUIDs
   syncEnvAliases('sales-rep/sales-reps', repWriteback);

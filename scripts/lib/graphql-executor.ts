@@ -7,6 +7,11 @@ export interface ExecuteOptions {
   backUrl: string;
   token?: string;
   timeoutMs?: number;
+  /**
+   * GraphQL endpoint path relative to backUrl. Defaults to "/graphql" (the
+   * default xAPI schema). Scoped schemas pass e.g. "/graphql/sales-rep".
+   */
+  endpointPath?: string;
 }
 
 export interface GraphQLResponse {
@@ -23,7 +28,9 @@ export async function executeOperation(
   variables: Record<string, unknown> | undefined,
   opts: ExecuteOptions
 ): Promise<GraphQLResponse> {
-  const url = `${opts.backUrl.replace(/\/$/, "")}/graphql`;
+  const rawPath = opts.endpointPath || "/graphql";
+  const path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+  const url = `${opts.backUrl.replace(/\/$/, "")}${path}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs || 30_000);
 

@@ -29,7 +29,7 @@ platform) and to the correct bug tracker.
 |----------|---------|
 | `project-profile.json` (gitignored) | the deployment profile — read by `config.js` (→ every skill via `env.PROFILE`), `ci/lib/repo-router.ts` (client-vs-platform routing), `ci/lib/trackers/*` (which tracker) |
 | `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (Bucket #2: URLs/identifiers/tracker connection); `scaffold-secrets.mjs` writes `.env.local` (Bucket #3: secrets, per-env creds `_<ENV>`-suffixed). Each placeholder carries what/where comments. |
-| `.mcp.json` + `.claude/settings.local.json` + `config/mcp-playwright-*.config.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`). The three playwright configs are copied from the plugin into the project so the relative `--config config/…` refs in `.mcp.json` resolve from the MCP server's cwd (= the project). |
+| `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`). The Playwright servers are configured entirely via CLI flags (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files are shipped or copied. Only `playwright-chrome` is enabled by default; `playwright-firefox` / `playwright-edge` stay defined for opt-in cross-browser runs. |
 
 ## Pipeline
 
@@ -59,8 +59,8 @@ derive scripts, then call the writers with the results as flags.
   prefix it with `$CLAUDE_PLUGIN_ROOT/`.)
 - **Deployment project directory** (your Bash cwd — the folder Claude Code was launched
   in): where **all generated state lands** — `project-profile.json`, `.env.<env>`,
-  `.env.local`, `.mcp.json`, `.claude/settings.local.json`, and the per-project
-  `config/mcp-playwright-*.config.json`. The generators default their output there
+  `.env.local`, `.mcp.json`, and `.claude/settings.local.json`. The generators default
+  their output there
   automatically (symmetric with the readers: `config.js` dotenv-loads `.env.*` and
   `loadProjectProfile()` reads the profile from cwd). You do **not** pass an output path in
   the normal flow. `VC_FIX_HOME=<dir>` overrides the output root only for out-of-project /
@@ -283,15 +283,19 @@ It writes `{ projectType, clientOrg, client:[…], platform:[…] }`:
   adds any name matching the theme/frontend heuristic as `kind:"frontend"`. It also
   captures each repo's **`defaultBranch`** (so `checkoutForFix` doesn't blind-guess `main`)
   and **best-effort provenance** for a storefront fork — `upstream` (the vc-frontend repo it
-  was forked from) + `upstreamRef` (the **vc-frontend LINE** it was cut from = the
-  **MAJOR.MINOR** of the fork's `package.json` `version`, e.g. `"2.49.7"` → `2.49`; the fork's
-  own patch version has no upstream tag). The scan reads that `version` for **any** repo it
-  identified as the storefront (no `@vc-shell`/`vc-frontend` signal required) — only a repo
-  literally named `vc-frontend` keeps its full version (it *is* an upstream release).
-  **`upstreamRef` is what lets `/qa-fix` Gate 1b tell a client customization from an
-  unmodified-platform bug** — if the scan still can't derive it (package.json unreadable / no
-  parseable version), ASK the operator for the vc-frontend version the fork is based on and set
-  `repos.client[].upstreamRef`.
+  was forked from) + `upstreamRef`. **`upstreamRef` is now a CONCRETE, VERIFIED upstream tag
+  — the fork line's BASE (e.g. `2.49.0`), not the bare MAJOR.MINOR line label.** The scan
+  takes the fork's `package.json` `version` (kept as `forkVersion`, e.g. `"2.49.7"`), reduces
+  it to its `MAJOR.MINOR` line (`2.49`), then `git ls-remote --tags <upstream>` and picks the
+  smallest existing tag on that line (its base) — the guaranteed common ancestor ≤ the fork
+  (the fork's own patch has no upstream tag; the bare line label isn't a git ref — both 422 on
+  `vc-frontend`). It records `upstreamRefResolved: true`. If the line was never tagged it falls
+  back to the highest earlier tag; if ls-remote fails (offline / no token) it keeps the line
+  label with `upstreamRefResolved: false` and ASKS. The resolved baseline appears both in the
+  scan map (`… @ 2.49.0 (verified)`) and in the `verify-access` readiness table (**"Storefront
+  upstream ref"** row). **This is what lets `/qa-fix` Gate 1b tell a client customization from
+  an unmodified-platform bug** — if it couldn't be derived/verified, ASK the operator for the
+  vc-frontend line base tag and set `repos.client[].upstreamRef` (e.g. `2.49` → `2.49.0`).
 
 **Show the proposed map to the operator to confirm/correct** — a starting point, not
 gospel. **Genuine-ambiguity asks (only these):**
@@ -388,6 +392,14 @@ override, but in the normal flow you do **not** pass them — the scan is author
 If step 4 surfaced a storefront/theme repo the scan couldn't classify, hand-edit
 `project-profile.json` `repos.client` to add it (or fix any miscategorised entry).
 
+**No plugin path is baked into the profile — it is resolved at runtime.** gen-profile does
+NOT write `paths.pluginRoot` (a versioned cache dir `…/vc-fix/<version>` would freeze to a
+stale/deleted version on the next upgrade). Instead every command's `node "$pluginRoot/skills/…"`
+resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude plugin list --json`
+(fallback: a highest-semver scan of `~/.claude/plugins/cache/*/vc-fix/`). See
+[`knowledge/execution/plugin-root.md`](../../knowledge/execution/plugin-root.md). Result:
+**no re-run of `/project-init` after an upgrade**, no version-stamped path, no stale link.
+
 ## 7. Generate `.mcp.json`
 
 ```bash
@@ -410,7 +422,9 @@ FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verif
 ```
 
 Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.
-Checks (PASS / FAIL / WARN / SKIP): deployment profile · core env vars · storefront
+Checks (PASS / FAIL / WARN / SKIP): deployment profile · **plugin root** (`claude plugin list --json`
+resolves the active vc-fix install and `skills/qa-fix-routing/ado.mjs` is present under it;
+WARN if the `claude` CLI isn't on PATH) · core env vars · storefront
 URL · admin/platform URL · **admin login** (real `POST {BACK_URL}/connect/token`
 password grant) · storefront user login (soft WARN) · tracker token (Jira `GET /myself`
 or a **real ADO org probe**) · **GitHub fix token / gh session** (validates the token and
@@ -418,7 +432,10 @@ its permission on the upstream — shared with the derive block via `probe-lib.m
 what verify reports and what the profile stored can't drift) · **client repos** (for a
 client deployment, each `repos.client` entry is probed for reach + push on its own host —
 GitHub `permissions.push` or an Azure Repos `_apis/git/repositories/<repo>` JSON hit — so a
-dead client-repo token surfaces here, not at Gate 2; native platform ⇒ SKIP). Resolve every **FAIL**
+dead client-repo token surfaces here, not at Gate 2; native platform ⇒ SKIP) · **Storefront
+upstream ref** (a client frontend fork's `upstreamRef` resolves in `vc-frontend` — PASS; missing /
+`upstreamRefResolved:false` / doesn't resolve — WARN, since Gate 1b reconstructs/asks; no fork ⇒
+SKIP). Resolve every **FAIL**
 (exit code is non-zero while any FAIL remains); **WARN** is non-blocking; **SKIP** means
 a feature isn't configured.
 
@@ -489,6 +506,12 @@ onto the existing profile. To reconfigure one dimension, re-run `gen-profile`
 with just those flags + `--merge`. To re-derive after a token/session change, re-run
 `discover-repos` + `discover-tracker` + `derive-context` and regenerate the profile.
 
+**Existing profiles** written before the verified-`upstreamRef` change are safe to leave —
+Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or just re-running
+`discover-repos`) refreshes them to a concrete tag; alternatively an operator can hand-fix
+`repos.client[].upstreamRef` from the bare line label to that line's base tag (e.g. `2.49` →
+`2.49.0`).
+
 ## Scripts
 
 | Script | Role |
@@ -501,8 +524,8 @@ with just those flags + `--merge`. To re-derive after a token/session change, re
 | `derive-context.mjs` | the **derive block**: reads the filled env + sessions, probes the upstream permission, emits JSON — auth actually present per axis, contributionMode, forkAccount, operator |
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
-| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS + copy the three `config/mcp-playwright-*.config.json` from the plugin into the project (so the relative `--config` refs resolve) |
-| `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, where read-only plugin assets live). Keeps every generator writing to the project and reading templates from the plugin |
+| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
+| `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see `knowledge/execution/plugin-root.md`.) |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
 

@@ -30,6 +30,7 @@
  *   node skills/project-init/discover-repos.mjs --modules-json mods.json --print
  */
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { execSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
@@ -129,6 +130,103 @@ export function stripRef(ref) {
 export function vcFrontendRef(version) {
   const m = /^\s*v?(\d+)\.(\d+)/.exec(String(version || ""));
   return m ? `${m[1]}.${m[2]}` : "";
+}
+
+/**
+ * Parse a tag/version into [major, minor, patch] numbers, or null. Accepts an optional
+ * leading `v` and a `refs/tags/` prefix; ignores any pre-release/build suffix. Pure.
+ */
+export function parseSemver(tag) {
+  const m = /(?:^|\/|v)(\d+)\.(\d+)\.(\d+)/.exec(String(tag || ""));
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+}
+
+/**
+ * Pick the RESOLVABLE upstream BASELINE tag for a fork line (MAJOR.MINOR), given the
+ * upstream's existing tag list. Pure. "" when neither of the two candidates exists.
+ *
+ * A client frontend fork carries its OWN patch increments on top of the line's base
+ * (`2.49.7` is the fork's `.7`, NOT an upstream tag). So the fork version is NOT a
+ * git ref, and neither is the bare line label `2.49`. The defensible resolvable baseline
+ * is the line's BASE tag: PRIMARY — construct `<major>.<minor>.0` and use it IFF it exists
+ * upstream (the canonical, guaranteed common ancestor ≤ the fork per the Virto convention).
+ * FALLBACK 1 (if `X.Y.0` was never tagged) — the SMALLEST existing tag on the line; FALLBACK 2
+ * (line never tagged at all) — the HIGHEST existing tag on an EARLIER line (< line).
+ * Over-attribution to "client" (a false positive from too-old a baseline) is SAFE;
+ * leaking client code (a false negative) is not — the earliest-on-line baseline keeps
+ * that safety.
+ */
+export function pickBaselineTag(tags, line) {
+  const [lMaj, lMin] = String(line || "").split(".").map(Number);
+  if (!Number.isFinite(lMaj) || !Number.isFinite(lMin)) return "";
+  const parsed = [];
+  for (const t of tags || []) {
+    const v = parseSemver(t);
+    if (v) parsed.push({ tag: String(t), v });
+  }
+  // PRIMARY: construct the line's base by appending `.0` (`2.49` → `2.49.0`) and use it
+  // IFF that tag actually EXISTS upstream. Per the Virto convention a line is cut from its
+  // `X.Y.0` base, so this is the canonical, guaranteed-common-ancestor baseline. Return the
+  // raw existing tag verbatim (may carry a `v` prefix, e.g. `v2.49.0`) so it is fetchable.
+  const dotZero = parsed.find((p) => p.v[0] === lMaj && p.v[1] === lMin && p.v[2] === 0);
+  if (dotZero) return dotZero.tag;
+
+  const cmp = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  // FALLBACK 1 (only when `X.Y.0` was never tagged): the smallest existing patch on the line.
+  const onLine = parsed.filter((p) => p.v[0] === lMaj && p.v[1] === lMin).sort((a, b) => cmp(a.v, b.v));
+  if (onLine.length) return onLine[0].tag;
+  // FALLBACK 2 (the line was never tagged at all): the highest existing tag on an EARLIER line.
+  const below = parsed
+    .filter((p) => p.v[0] < lMaj || (p.v[0] === lMaj && p.v[1] < lMin))
+    .sort((a, b) => cmp(b.v, a.v)); // highest earlier tag first
+  return below.length ? below[0].tag : "";
+}
+
+/**
+ * `git ls-remote --tags <upstream>` → array of bare tag names (deduped; the `^{}`
+ * annotated-tag peel suffix stripped), or null on ANY failure (git missing, offline,
+ * bad token). Auth: GITHUB_FIX_BUGS_TOKEN embedded in the URL when present — the
+ * upstream is always a public VirtoCommerce GitHub repo, so the token is optional but
+ * avoids rate limits. GIT_TERMINAL_PROMPT=0 so a missing credential fails fast instead
+ * of hanging on a prompt.
+ */
+function lsRemoteTags(upstreamFull) {
+  try {
+    const tok = process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || "";
+    const auth = tok ? `${tok}@` : "";
+    const url = `https://${auth}github.com/${upstreamFull}.git`;
+    const out = execSync(`git ls-remote --tags "${url}"`, {
+      stdio: ["ignore", "pipe", "ignore"],
+      env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+      timeout: 20000,
+    }).toString();
+    const tags = new Set();
+    for (const raw of out.split("\n")) {
+      const m = /refs\/tags\/(.+?)(?:\^\{\})?$/.exec(raw.trim());
+      if (m) tags.add(m[1]);
+    }
+    return [...tags];
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve a fork's line label to a concrete, EXISTING upstream tag. Returns
+ * { upstream, upstreamRef, upstreamRefResolved, forkVersion }. Never throws.
+ *  - line resolves to a baseline tag → upstreamRef = that tag, upstreamRefResolved:true
+ *  - ls-remote fails (offline / no git / no token) OR no candidate tag → keep the bare
+ *    line label (or fork version when the line is unparseable), upstreamRefResolved:false
+ *    (the skill then ASKS the operator, per existing behavior).
+ */
+function resolveUpstreamRef({ upstream, forkVersion, line }) {
+  const base = { upstream, forkVersion: forkVersion || "" };
+  if (!line) return { ...base, upstreamRef: forkVersion || "", upstreamRefResolved: false };
+  const tags = lsRemoteTags(upstream);
+  if (!tags) return { ...base, upstreamRef: line, upstreamRefResolved: false };
+  const baseline = pickBaselineTag(tags, line);
+  if (baseline) return { ...base, upstreamRef: baseline, upstreamRefResolved: true };
+  return { ...base, upstreamRef: line, upstreamRefResolved: false };
 }
 
 /**
@@ -238,29 +336,32 @@ async function listClientReposLive(host, { org, project }) {
  */
 async function deriveFrontendProvenance(host, { org, project, name, isFork, fullName }) {
   try {
+    // 1. Identify the upstream repo (a real GitHub fork names its parent; else infer
+    //    vc-frontend lineage from package.json) and read the fork's own version.
+    let upstream = "";
     if (host === "github") {
-      // A real GitHub fork names its parent directly.
       const res = await fetch(`https://api.github.com/repos/${org}/${name}`, { headers: githubHeaders() });
       if (res.ok) {
         const repo = await res.json();
-        if (repo.fork && repo.parent?.full_name) {
-          // Anchor the version from package.json when available.
-          const pkg = await readPackageJsonLive(host, { org, project, name });
-          return { upstream: repo.parent.full_name, upstreamRef: String(pkg?.version || "") };
-        }
+        if (repo.fork && repo.parent?.full_name) upstream = repo.parent.full_name;
       }
     }
-    // Fallback (Azure Repos, or a GitHub copy that isn't a fork): infer from package.json.
     const pkg = await readPackageJsonLive(host, { org, project, name });
-    const strong = frontendProvenanceFromPackage(pkg);
-    if (strong) return strong;
-    // No @vc-shell/vc-frontend signal, but this repo was ALREADY identified as the
-    // client's storefront fork (name heuristic). Per the Virto convention its
-    // package.json `version`'s MAJOR.MINOR pins the vc-frontend line it was cut from —
-    // anchor upstreamRef to that so /qa-fix Gate 1b can compare against the right upstream.
-    const ref = vcFrontendRef(pkg?.version);
-    if (ref) return { upstream: "VirtoCommerce/vc-frontend", upstreamRef: ref };
-    return null;
+    if (!upstream) {
+      const strong = frontendProvenanceFromPackage(pkg); // @vc-shell/virtocommerce signal
+      if (strong?.upstream) upstream = strong.upstream;
+    }
+    const forkVersion = String(pkg?.version || "");
+    const line = vcFrontendRef(forkVersion); // MAJOR.MINOR line the fork was cut from
+    // No fork parent and no strong signal, but this repo was already name-matched as the
+    // storefront fork and its package.json shows a parseable version → assume vc-frontend.
+    if (!upstream && line) upstream = "VirtoCommerce/vc-frontend";
+    if (!upstream) return null;
+
+    // 2. Resolve the fork line to a CONCRETE, EXISTING upstream tag (the line's base).
+    //    The fork's patch (e.g. `.7`) and the bare line label (`2.49`) are NOT git refs;
+    //    /qa-fix Gate 1b needs a resolvable baseline to diff the fork against upstream.
+    return resolveUpstreamRef({ upstream, forkVersion, line });
   } catch {
     return null;
   }
@@ -504,14 +605,29 @@ async function main() {
         const prov = await deriveFrontendProvenance(host, {
           org, project, name: n, isFork: info.isFork, fullName: info.fullName,
         });
-        if (prov?.upstream) { entry.upstream = prov.upstream; entry.upstreamRef = prov.upstreamRef; }
+        if (prov?.upstream) {
+          entry.upstream = prov.upstream;
+          entry.upstreamRef = prov.upstreamRef;
+          entry.upstreamRefResolved = prov.upstreamRefResolved;
+          if (prov.forkVersion) entry.forkVersion = prov.forkVersion;
+          // Fix 3a — print the verified upstream baseline per frontend fork.
+          const mark = prov.upstreamRefResolved ? "(verified)" : "(UNVERIFIED — ref not found)";
+          console.error(
+            `[discover-repos] frontend  ${entry.name}  → upstream ${prov.upstream} @ ${prov.upstreamRef} ${mark}` +
+              (prov.forkVersion ? `   [fork ${prov.forkVersion}]` : ""),
+          );
+        }
         result.client.push(entry);
       }
+      const feEntries = result.client.filter((c) => c.kind === "frontend");
+      const unverified = feEntries.filter((c) => c.upstream && !c.upstreamRefResolved);
       console.error(
         fe.length
           ? `[discover-repos] storefront/theme repo(s) found: ${fe.join(", ")}` +
-              (result.client.some((c) => c.kind === "frontend" && c.upstream)
-                ? ` (provenance derived)`
+              (feEntries.some((c) => c.upstream)
+                ? unverified.length
+                  ? ` (provenance derived; upstreamRef UNVERIFIED for ${unverified.map((c) => c.name).join(", ")} — ASK the operator to confirm the vc-frontend line base tag, e.g. 2.49 → 2.49.0)`
+                  : ` (provenance derived; upstreamRef verified)`
                 : ` — provenance NOT derived; ASK the operator for the vc-frontend version the fork is based on (repos.client[].upstreamRef).`)
           : `[discover-repos] NO storefront/theme repo matched — ASK the operator to name it, then add { kind: "frontend" } to repos.client.`,
       );
