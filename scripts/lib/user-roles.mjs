@@ -57,6 +57,7 @@ export const USER_ROLES = [
   // provisionContactLogins, identity from .env, NOT provisioned by the admin path. No global role.
   { key: 'IMPERSONATION_ADMIN', emailVars: ['IMPERSONATION_ADMIN_EMAIL'], passwordVar: 'IMPERSONATION_ADMIN_PASSWORD', kind: 'org', required: false, purpose: 'Impersonation operator (org-scoped org-maintainer)' },
   { key: 'LOCKOUT_TEST', emailVars: ['LOCKOUT_TEST_EMAIL'], passwordVar: 'LOCKOUT_TEST_PASSWORD', kind: 'customer', required: false, purpose: 'Account-lockout tests' },
+  { key: 'SALES_REP', emailVars: ['SALES_REP_EMAIL'], passwordVar: 'TEST_USER_PASSWORD', kind: 'org', required: false, purpose: 'Sales rep — scoped sales-rep xAPI (salesRepCustomers/Customer/Orders/OrderStatuses)' },
 ];
 
 /**

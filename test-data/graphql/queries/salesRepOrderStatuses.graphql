@@ -1,0 +1,16 @@
+# name: salesRepOrderStatuses
+# category: sales-rep
+# role: SALES_REP
+# purpose: Store's configured order statuses with localized labels, for the Orders section status-filter chips
+# required-vars: (none)
+# optional-vars: (none)
+# last-validated: 2026-07-17
+# known-issues: (none)
+# used-by: SR-GQL-033
+
+query {
+  salesRepOrderStatuses(storeId: "B2B-store", cultureName: "en-US") {
+    name
+    localizedName
+  }
+}

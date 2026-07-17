@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "SR-FE-001","Sales Rep Sees My Customers Page & Hub (Happy Path Gating)","Storefront > Sales Rep > Gating","Critical","PROPOSED-BL-SR-UI-GATE","ECL-4.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-Store setting SalesRep.Enabled=true on {{STORE_ID}}. SR_REP_PRIMARY (new fixture, test-data/sales-rep/sales-reps.csv) holds permission sales-rep:access and serves >=1 org with orders.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] {{FRONT_URL}}/account
+Store setting SalesRep.Enabled=true on {{STORE_ID}}. SR_REP_PRIMARY (new fixture, test-data/sales-rep/sales-reps.csv) holds permission sales-rep:access and serves >=1 org with orders.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account
 [WAIT] account dashboard loaded, left rail rendered
 [ASSERT] ""Sales Rep hub"" section visible in the account left rail
 [ACT] click ""My customers"" link under ""Sales Rep hub""

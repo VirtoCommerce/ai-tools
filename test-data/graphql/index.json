@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-07-13",
+  "lastValidated": "2026-07-17",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 67,
+  "totalFixtures": 72,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -328,6 +328,41 @@
         "anonymous-readable when `XAPI.Security.ReturnModuleVersion` is ON (default) — version disclosure is by-design; operators may toggle OFF in prod",
         "on vcst-qa, resolving by `domain` returns ~18 modules with empty `version`; resolving by `storeId` returns ~79 modules with populated `version` — anonymous/storefront context likely narrows the response"
       ]
+    },
+    "customerSalesReps": {
+      "path": "queries/customerSalesReps.graphql",
+      "category": "sales-rep",
+      "role": "ORG_USER",
+      "requiredVars": [],
+      "usedBy": ["SR-GQL-001", "SR-GQL-003", "SR-GQL-007"]
+    },
+    "salesRepCustomers": {
+      "path": "queries/salesRepCustomers.graphql",
+      "category": "sales-rep",
+      "role": "SALES_REP",
+      "requiredVars": [],
+      "usedBy": ["SR-GQL-009", "SR-GQL-011", "SR-GQL-013"]
+    },
+    "salesRepCustomer": {
+      "path": "queries/salesRepCustomer.graphql",
+      "category": "sales-rep",
+      "role": "SALES_REP",
+      "requiredVars": ["ORGANIZATION_ID"],
+      "usedBy": ["SR-GQL-015", "SR-GQL-019", "SR-GQL-021", "SR-GQL-036"]
+    },
+    "salesRepOrders": {
+      "path": "queries/salesRepOrders.graphql",
+      "category": "sales-rep",
+      "role": "SALES_REP",
+      "requiredVars": ["ORGANIZATION_ID"],
+      "usedBy": ["SR-GQL-022", "SR-GQL-031", "SR-GQL-037"]
+    },
+    "salesRepOrderStatuses": {
+      "path": "queries/salesRepOrderStatuses.graphql",
+      "category": "sales-rep",
+      "role": "SALES_REP",
+      "requiredVars": [],
+      "usedBy": ["SR-GQL-033"]
     }
   },
   "mutations": {
