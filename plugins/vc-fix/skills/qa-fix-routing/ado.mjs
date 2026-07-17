@@ -24,7 +24,14 @@
  *   node ado.mjs list-states    --type Bug                      # states for a type
  *   node ado.mjs create-workitem --type Bug --title "..." --description-file body.md \
  *                               [--repro-file steps.md] [--severity "2 - High"] [--priority 2] \
- *                               [--tags "qa-autofix,frontend"]   # returns { id, url }
+ *                               [--tags "qa-autofix,frontend"] \
+ *                               [--system-info-file sysinfo.html] \
+ *                               [--field "Custom.Environment=QA"] [--field "Custom.Reportedby=QA team"] \
+ *                               [--field "Custom.Typeofbug=Functional"]   # returns { id, url }
+ *     --system-info(-file) → Microsoft.VSTS.TCM.SystemInfo (the "System Info" block: environment,
+ *       build, browser, repro-rate — NOT a section inside the Description). HTML, like Description.
+ *     --field "Ref.Path=value" (repeatable) → sets any work-item field, incl. the deployment's
+ *       custom Bug picklists (Custom.Environment / Custom.Reportedby / Custom.Typeofbug, …).
  *   node ado.mjs list-refs      --repo frontend [--filter heads/]
  *   node ado.mjs get-file       --repo frontend --path client-app/x.vue --branch dev
  *   node ado.mjs create-pr      --repo frontend --source refs/heads/claude/qa-autofix/967 \
@@ -128,7 +135,9 @@ function parseArgs(argv) {
     const next = argv[i + 1];
     if (next === undefined || next.startsWith("--")) args[key] = true;
     else {
-      args[key] = next;
+      // `--field` is repeatable (one per work-item field) → collect into an array.
+      if (key === "field") (args.field ??= []).push(next);
+      else args[key] = next;
       i++;
     }
   }
@@ -483,6 +492,29 @@ const COMMANDS = {
     if (tagsInput) {
       const tags = tagsInput.split(/[,;]/).map((s) => s.trim()).filter(Boolean).join("; ");
       if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
+    }
+    // System Info block (Microsoft.VSTS.TCM.SystemInfo) — the "System Info" panel on the Bug
+    // form; the canonical home for environment / build / browser / repro-rate, NOT a section
+    // inside the Description. HTML field, so normalize like Description unless --raw. Prefer
+    // --system-info-file (HTML via file, per the "always via file" rule for long HTML).
+    const systemInfo = args["system-info-file"]
+      ? readFileSync(resolve(args["system-info-file"]), "utf-8")
+      : str(args["system-info"]);
+    if (systemInfo) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.SystemInfo", value: toField(systemInfo) });
+    // Arbitrary work-item fields — repeatable `--field "Ref.Path=value"`. This is how the
+    // deployment's custom Bug fields are set without hardcoding a list here, e.g.
+    //   --field "Custom.Environment=QA" --field "Custom.Reportedby=QA team" --field "Custom.Typeofbug=Functional"
+    // An HTML field path (SystemInfo/Description/ReproSteps) is normalized; every other value
+    // is sent verbatim (picklist string / number-as-string — ADO coerces on its side).
+    const customFields = Array.isArray(args.field) ? args.field : str(args.field) ? [str(args.field)] : [];
+    for (const spec of customFields) {
+      const eq = String(spec).indexOf("=");
+      if (eq < 0) fail(`--field must be "Field.Ref=value" (got "${spec}")`);
+      const path = String(spec).slice(0, eq).trim();
+      const raw = String(spec).slice(eq + 1);
+      if (!path) fail(`--field has an empty field ref (got "${spec}")`);
+      const value = /(SystemInfo|Description|ReproSteps)$/i.test(path) ? toField(raw) : raw;
+      fields.push({ op: "add", path: `/fields/${path}`, value });
     }
     // Attachment relations — comma-separated attachment URLs from `upload-attachment`. They
     // show in the work item's Attachments tab; inline images (`<img src=...>` in the HTML)

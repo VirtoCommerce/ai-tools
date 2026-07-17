@@ -41,7 +41,7 @@ Use whichever surface is available; prefer the MCP when connected, else the CLI/
 
 | Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) — via `ado.mjs` |
 |---|---|---|
-| **Create** a ticket | Atlassian MCP `createJiraIssue` (project = `tracker.projectKey`) | `ado.mjs create-workitem --type Bug --title … --description-file …` (optional `--repro-file`/`--severity`/`--priority`/`--tags`/`--attachments`; returns `{ id, type, title, state, url }`) |
+| **Create** a ticket | Atlassian MCP `createJiraIssue` (project = `tracker.projectKey`) | `ado.mjs create-workitem --type Bug --title … --description-file …` (environment/metadata → dedicated fields: `--system-info-file <html>` for the System Info block + repeatable `--field "Custom.Environment=QA"` / `"Custom.Reportedby=QA team"` / `"Custom.Typeofbug=Functional"`; plus `--severity`/`--priority`/`--tags`/`--attachments`. Leave `ReproSteps` empty — put the whole abstract report in `--description-file` per [`azure-html-format.md`](azure-html-format.md). Returns `{ id, type, title, state, url }`) |
 | **Upload** a screenshot / file | (Jira: MCP attachment) | `ado.mjs upload-attachment --file <path>` → `{ url }`; embed inline as `<img src="{url}">` and/or pass to `create-workitem --attachments "<url1>,<url2>"` |
 | **Resolve** a ticket | Atlassian MCP `getJiraIssue` | `ado.mjs get-workitem --id <n>` (cleaned fields; wraps `GET {base}/_apis/wit/workitems/<n>?$expand=all`) |
 | **Search** by label | Atlassian MCP `searchJiraIssuesUsingJql` (`labels = qa-autofix`) | ADO WIQL `POST {base}/_apis/wit/wiql` — `… WHERE [System.Tags] CONTAINS 'qa-autofix' AND [System.WorkItemType]='Bug'` |

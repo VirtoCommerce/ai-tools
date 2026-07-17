@@ -12,6 +12,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Fixed — `/qa-bug` Azure Boards work items now match the lean gold-standard shape
+
+Azure bugs filed by `/qa-bug` were dumping the whole markdown report (env tables, module versions, 4-layer validation, root-cause, fix routing) into `System.Description`, with no summary and environment baked into the body — nothing like the target shape. Realigned to the reference bug template.
+
+- **`knowledge/execution/azure-html-format.md`** rewritten: `System.Description` is now an **abstract Summary → Preconditions → Steps → Actual → Expected** and nothing else; the Summary and Steps carry **no user-specific data** (no emails / IDs / order numbers / GUIDs / names — reproducible by anyone who meets the Preconditions). Everything else (RCA / layer validation / versions / fix routing) collapses into **one `🔧 Technical Details` accordion below**, trimmed to essentials.
+- **Environment & metadata now go to dedicated Bug fields, never a description section:** `Custom.Environment` picklist, `Custom.Reportedby`, `Custom.Typeofbug`, and the build/theme/browser/repro-rate in the **System Info** block (`Microsoft.VSTS.TCM.SystemInfo`). `Microsoft.VSTS.TCM.ReproSteps` is left **empty** (the LEO Bug form hides it — the visible repro area is backed by `System.Description`).
+- **`ado.mjs create-workitem`** gained `--system-info-file` / `--system-info` (→ System Info block) and a repeatable `--field "Ref=value"` (sets any work-item field, incl. the deployment's custom picklists) — previously there was no way to populate those fields at all. Mirrored in `trackers/azure-tracker.ts` (`CreateWorkItemInput.systemInfo` + `.fields`) per the keep-in-sync contract; `commands/qa-bug.md` Step 5 + `knowledge/execution/tracker-ops.md` updated to match. Plugin-only (Azure formatting is not in the `.claude/` surface).
+
 ### Added — `/project-init --check` reconciles a stale profile to the current schema
 
 A deployment onboarded on an older plugin keeps its `project-profile.json` across upgrades, but the schema (`PROFILE_DEFAULTS`) evolves — fields get added / removed / need re-deriving. `--check` now migrates the profile before verifying, instead of only running the readiness table.

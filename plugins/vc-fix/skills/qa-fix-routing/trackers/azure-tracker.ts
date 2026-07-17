@@ -366,6 +366,15 @@ export class AzureTracker implements Tracker {
         .join("; ");
       if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
     }
+    // System Info block (Microsoft.VSTS.TCM.SystemInfo) — environment/build/browser/repro-rate,
+    // NOT a description section. HTML. Mirrors ado.mjs's --system-info(-file).
+    if (input.systemInfo) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.SystemInfo", value: ensureAzureHtml(input.systemInfo) });
+    // Arbitrary custom fields (the deployment's Bug picklists) — mirrors ado.mjs's `--field`.
+    // An HTML field path is normalized; every other value is sent verbatim.
+    for (const [path, value] of Object.entries(input.fields ?? {})) {
+      const v = typeof value === "string" && /(SystemInfo|Description|ReproSteps)$/i.test(path) ? ensureAzureHtml(value) : value;
+      fields.push({ op: "add", path: `/fields/${path}`, value: v });
+    }
     const res = await this.req(
       "POST",
       `/_apis/wit/workitems/$${encodeURIComponent(input.type)}?api-version=${API_VERSION}`,
