@@ -53,8 +53,10 @@ helpers, and do **not** ask the operator what the profile already answers.
   **everything** — `.env`/secrets (`join(projectRoot, paths.secretsEnv)`), `paths.workspace`
   (`.fix-workspace`), `paths.reports`. **Never `cd` into the workspace**; run git as
   `git -C <abs>`. Load secrets ONLY from the absolute path (a drifted Bash cwd made a relative
-  `source .env.local` silently empty → an ADO write 302'd and was misdiagnosed). Invoke plugin
-  scripts by `paths.pluginRoot` (`$CLAUDE_PLUGIN_ROOT`) absolute path.
+  `source .env.local` silently empty → an ADO write 302'd and was misdiagnosed). To invoke a
+  bundled plugin script, resolve `$pluginRoot` = the ACTIVE install path at runtime via
+  `claude plugin list --json` (**not** from the profile — there is no baked plugin path; see
+  [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)), then `node "$pluginRoot/skills/…"`.
 - **Execution mode** (`profile.runtime`): when `helpersRunnable` is `true` (native agentic
   checkout) you MAY execute the `.ts`/`.mjs` routing helpers; when `false` (installed plugin)
   **read the baked profile fields** — do not try to run/emulate `repo-router.ts` / `provenance.ts`.

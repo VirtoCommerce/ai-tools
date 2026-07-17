@@ -22,11 +22,12 @@
  * Usage: node skills/project-init/verify-access.mjs
  */
 import { execSync } from "child_process";
-import { existsSync, readFileSync, realpathSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
+import { pluginRoot } from "./lib/paths.mjs";
 import { probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE } from "./probe-lib.mjs";
 
 let TEST_ENV;
@@ -105,26 +106,36 @@ async function main() {
   add("Deployment profile", profile ? "PASS" : "FAIL",
     `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`);
 
-  // 1b. Plugin root resolves + the routing helper is present under it.
-  //     /qa-fix / /qa-bug invoke `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` via
-  //     profile.paths.pluginRoot. On an installed plugin that is the STABLE link
-  //     (~/.claude/vc-fix-latest) which the SessionStart hook repoints each session — a
-  //     stale/broken link is a silent /qa-fix failure, so confirm it resolves to a real
-  //     dir that actually contains the helper. Empty (native agent-project) → commands
-  //     resolve via $CLAUDE_PLUGIN_ROOT, nothing to probe.
-  const pluginRootPath = profile.paths?.pluginRoot || "";
-  if (!pluginRootPath) {
-    add("Plugin root (paths.pluginRoot)", "SKIP", "not baked — commands resolve via $CLAUDE_PLUGIN_ROOT (agent-project)");
+  // 1b. The ACTIVE plugin install resolves at runtime + the routing helper is present.
+  //     /qa-fix / /qa-bug launch `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` where
+  //     $pluginRoot is resolved from `claude plugin list --json` (the enabled
+  //     vc-fix@vc-tools installPath — knowledge/execution/plugin-root.md), NOT a baked
+  //     profile field. Confirm that resolver works and points at a real install with the
+  //     helper; fall back to this script's own location (import.meta.url) when the `claude`
+  //     CLI isn't on PATH in the shell.
+  let activeRoot = "";
+  let cliOk = false;
+  try {
+    const raw = execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString();
+    cliOk = true; // the CLI ran; activeRoot may still be "" if no enabled vc-fix entry matched
+    const arr = JSON.parse(raw);
+    const e = arr.find((x) => x.id === "vc-fix@vc-tools" && x.enabled) || arr.find((x) => x.id === "vc-fix@vc-tools");
+    activeRoot = e?.installPath || "";
+  } catch {
+    /* claude CLI unavailable / not on PATH — fall back to self-location below */
+  }
+  const selfRoot = pluginRoot(); // import.meta.url based — where THIS script actually lives
+  if (activeRoot && existsSync(resolve(activeRoot, "skills", "qa-fix-routing", "ado.mjs"))) {
+    add("Plugin root (claude plugin list)", "PASS", `active install resolves — qa-fix-routing/ado.mjs present (${activeRoot})`);
+  } else if (!activeRoot && existsSync(resolve(selfRoot, "skills", "qa-fix-routing", "ado.mjs"))) {
+    // Distinguish CLI-missing from CLI-ran-but-no-match: the fallback + fix advice differ.
+    const why = cliOk
+      ? "`claude plugin list` ran but found no enabled vc-fix@vc-tools install (running from a checkout, or the plugin is disabled)"
+      : "`claude plugin list` unavailable in this shell — commands must use the cache-dir fallback (plugin-root.md)";
+    add("Plugin root (claude plugin list)", "WARN", `${why}. Helper present at ${selfRoot}`);
   } else {
-    const adoPath = resolve(pluginRootPath, "skills", "qa-fix-routing", "ado.mjs");
-    if (existsSync(adoPath)) {
-      let via = pluginRootPath;
-      try { const real = realpathSync(pluginRootPath); if (real !== pluginRootPath) via = `${pluginRootPath} → ${real}`; } catch { /* not a link */ }
-      add("Plugin root (paths.pluginRoot)", "PASS", `qa-fix-routing/ado.mjs present (${via})`);
-    } else {
-      add("Plugin root (paths.pluginRoot)", "FAIL",
-        `${pluginRootPath} — qa-fix-routing/ado.mjs missing (stale link? start a new session to re-link, or re-run /project-init)`);
-    }
+    add("Plugin root (claude plugin list)", "FAIL",
+      "could not resolve the active vc-fix install (qa-fix-routing/ado.mjs missing) — re-install the plugin; see knowledge/execution/plugin-root.md");
   }
 
   // 2. Core env vars

@@ -129,6 +129,8 @@ the native default, unchanged.**
 | `jira` (or no profile) | Atlassian MCP `getVisibleJiraProjects` (or `getJiraIssue` on a known key) | project list / issue JSON | Atlassian MCP OAuth **or** `JIRA_API_TOKEN` + `JIRA_EMAIL`; `JIRA_PROJECT_KEY` set |
 | `azure` | `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" list-types` | Bug work-item types as JSON (not an HTML sign-in page) | `ADO_PAT` **or** `ADO_AUTH=az-login`; `ADO_ORG` / `ADO_PROJECT` (else from the profile) |
 
+> `$pluginRoot` above = the ACTIVE vc-fix install path, resolved at runtime via `claude plugin list --json` (not a profile field; see [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)).
+
 **Code host** (`vcs.clientHost` for the client's own repos; the platform upstream is always GitHub):
 
 | host | Probe | Expected | Env vars required |

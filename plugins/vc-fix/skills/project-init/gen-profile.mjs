@@ -32,7 +32,7 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
-import { outputRoot, resolveOutPath, pluginRoot, stableLinkPath } from "./lib/paths.mjs";
+import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 
 const ENUMS = {
   "project-type": ["platform", "client"],
@@ -142,19 +142,13 @@ function main() {
   set("runtime.mode", runtimeMode);
   set("runtime.helpersRunnable", runtimeMode === "agent-project");
 
-  // paths — absolute roots so skills never break on a drifted cwd and know plugin vs project.
+  // paths — absolute roots so skills never break on a drifted cwd. NOTE: pluginRoot is
+  // deliberately NOT baked. An installed plugin lives in a VERSION-STAMPED cache dir
+  // (…/vc-fix/<version>) that a baked path would freeze to a stale/deleted version after
+  // any upgrade. Instead every command resolves the ACTIVE install at runtime via
+  // `claude plugin list --json` (see knowledge/execution/plugin-root.md) — no field, no
+  // stale link, no re-init after upgrade.
   set("paths.projectRoot", outputRoot());
-  // pluginRoot: an INSTALLED plugin lives in a VERSION-STAMPED cache dir
-  // (…/vc-fix/<version>) that becomes a NEW sibling on every upgrade (old versions are
-  // NOT pruned). Baking that versioned path would leave the profile pointing at a stale
-  // (or deleted) version after any upgrade — every command's `node "$pluginRoot/skills/…"`
-  // would then run the wrong scripts or fail. So in plugin mode we bake the STABLE,
-  // version-agnostic link (~/.claude/vc-fix-latest) that the SessionStart hook
-  // (hooks/vc-fix-latest-link.mjs) repoints at the active version each session — the
-  // profile self-heals across upgrades. agent-project mode (helpers run from the checkout)
-  // keeps the resolved dir. Fall back to the versioned dir if homedir is unresolvable.
-  const stable = runtimeMode === "plugin" ? stableLinkPath() : "";
-  set("paths.pluginRoot", stable || pluginRoot());
   const envName = args.env || process.env.TEST_ENV || "";
   if (envName) set("paths.perEnv", `.env.${envName}`);
 

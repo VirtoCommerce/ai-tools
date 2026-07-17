@@ -38,7 +38,7 @@
  *   contributionMode:"fork"|"direct", clientGithubAccount:string}} upstream
  * @property {{client:Array<ClientRepo>, platform:Array<object>}} repos
  * @property {{mode:"plugin"|"agent-project", helpersRunnable:boolean}} runtime
- * @property {{projectRoot:string, pluginRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
+ * @property {{projectRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
  * @property {{source:""|"vc-deploy-dev"|"modules-endpoint"|"ticket"}} buildVerify
  *
  * @typedef {Object} ClientRepo
@@ -97,13 +97,12 @@ export const PROFILE_DEFAULTS = {
   // baked profile facts instead of trying to execute (or mentally emulate) the helpers.
   runtime: { mode: "agent-project", helpersRunnable: true },
 
-  // paths — absolute roots so skills never break on a drifted Bash cwd, and know where
-  // the read-only plugin assets live vs where generated state / secrets land. Empty ⇒
-  // consumers fall back to process.cwd() (projectRoot) and $CLAUDE_PLUGIN_ROOT (pluginRoot).
-  // The relative names are resolved against projectRoot.
+  // paths — absolute roots so skills never break on a drifted Bash cwd. Empty projectRoot ⇒
+  // consumers fall back to process.cwd(). The relative names are resolved against projectRoot.
+  // NOTE: there is no pluginRoot here — commands resolve the ACTIVE plugin install at runtime
+  // via `claude plugin list --json` (knowledge/execution/plugin-root.md), never a baked path.
   paths: {
     projectRoot: "",
-    pluginRoot: "",
     workspace: ".fix-workspace",
     reports: "reports",
     secretsEnv: ".env.local",
