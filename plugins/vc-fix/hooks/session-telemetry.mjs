@@ -19,6 +19,11 @@
  * diagnostician (VCST-5477) reading this jsonl + the oracle (VCST-5476).
  *
  * INVARIANTS (all enforced here):
+ *   - GATED: init/record/finalize run ONLY when the output root carries a
+ *     `project-profile.json` with `selfDiagnostics: true`. In any other directory
+ *     — no profile, or the flag absent/false — every subcommand is a full no-op:
+ *     nothing is read from the transcript, nothing is written, and `.vc-fix/` is
+ *     never created. Running Claude in a random folder therefore leaves no trace.
  *   - Writes ONLY under the project output root — `<outputRoot>/.vc-fix/
  *     diagnostics/<session_id>.jsonl` — where outputRoot = VC_FIX_HOME ||
  *     process.cwd(), matching skills/project-init/lib/paths.mjs `outputRoot()`.
@@ -273,9 +278,27 @@ function readProjectType(root) {
   return null; // absent profile ⇒ native-platform default
 }
 
+// Self-diagnostics gate. Telemetry (init/record/finalize) runs ONLY when the output
+// root carries a project-profile.json with `selfDiagnostics: true`. Absent profile,
+// absent field, or any non-true value ⇒ false ⇒ the hook is a full no-op (nothing
+// read, nothing written, no `.vc-fix/` dir). Read raw (like readProjectType), NOT via
+// loadProjectProfile — a shipped default must never silently enable it; the field has
+// to be physically present in the file and strictly === true.
+function selfDiagnosticsEnabled(root) {
+  try {
+    const p = join(root, "project-profile.json");
+    if (!existsSync(p)) return false;
+    const j = JSON.parse(readFileSync(p, "utf8"));
+    return j?.selfDiagnostics === true;
+  } catch {
+    return false;
+  }
+}
+
 // ─── subcommands ─────────────────────────────────────────────────────────────
 async function cmdInit(ev) {
   const { root, dir, sid, jsonl, state } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return; // gate: no profile opt-in ⇒ full no-op
   ensureDir(dir);
   appendRecord(jsonl, {
     type: "session_start",
@@ -292,7 +315,8 @@ async function cmdInit(ev) {
 }
 
 async function cmdRecord(ev) {
-  const { dir, jsonl, state: statePath } = await paths(ev);
+  const { root, dir, jsonl, state: statePath } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return; // gate: no profile opt-in ⇒ full no-op
   ensureDir(dir);
   const state = loadState(statePath, ev);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
@@ -346,7 +370,8 @@ async function cmdRecord(ev) {
 }
 
 async function cmdFinalize(ev) {
-  const { dir, jsonl, state: statePath } = await paths(ev);
+  const { root, dir, jsonl, state: statePath } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return; // gate: no profile opt-in ⇒ full no-op
   ensureDir(dir);
   const state = loadState(statePath, ev);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;

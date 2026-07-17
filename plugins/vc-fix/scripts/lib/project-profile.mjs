@@ -40,6 +40,7 @@
  * @property {{mode:"plugin"|"agent-project", helpersRunnable:boolean}} runtime
  * @property {{projectRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
  * @property {{source:""|"vc-deploy-dev"|"modules-endpoint"|"ticket"}} buildVerify
+ * @property {boolean} selfDiagnostics  opt-in for the passive session-telemetry hook — when true the collector records to <outputRoot>/.vc-fix/; absent/false ⇒ the hook is a full no-op (no `.vc-fix/`)
  *
  * @typedef {Object} ClientRepo
  * @property {string} name  owner/name of the client-owned repo
@@ -171,6 +172,14 @@ export const PROFILE_DEFAULTS = {
   //   frontend-only client bug — take the storefront version from the ticket; don't
   //   hit the admin modules endpoint, which needs a token).
   buildVerify: { source: "" },
+
+  // selfDiagnostics — opt-in for the passive session-telemetry hook
+  // (hooks/session-telemetry.mjs). When true, the collector records per-skill
+  // signals to <outputRoot>/.vc-fix/diagnostics/. /project-init writes it true by
+  // default; the hook reads project-profile.json RAW and requires the field to be
+  // strictly === true, so an absent profile (running Claude in a random folder) or
+  // an absent/false flag ⇒ the hook is a full no-op and never creates `.vc-fix/`.
+  selfDiagnostics: true,
 };
 
 /** Recursive merge: objects merge key-by-key; arrays + scalars are replaced wholesale. */

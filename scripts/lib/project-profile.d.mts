@@ -38,6 +38,8 @@ export interface ProjectProfile {
     clientGithubAccount: string;
   };
   repos: { client: ProfileRepo[]; platform: ProfileRepo[] };
+  /** Opt-in for the passive session-telemetry hook. true ⇒ record to <outputRoot>/.vc-fix/; absent/false ⇒ the hook is a full no-op. */
+  selfDiagnostics: boolean;
 }
 
 export const PROFILE_DEFAULTS: ProjectProfile;

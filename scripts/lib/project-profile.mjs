@@ -32,6 +32,7 @@
  * @property {{host:"github", org:string, fileIssues:boolean,
  *   contributionMode:"fork"|"direct", clientGithubAccount:string}} upstream
  * @property {{client:Array<ClientRepo>, platform:Array<object>}} repos
+ * @property {boolean} selfDiagnostics  opt-in for the passive session-telemetry hook — when true the collector records to <outputRoot>/.vc-fix/; absent/false ⇒ the hook is a full no-op (no `.vc-fix/`)
  *
  * @typedef {Object} ClientRepo
  * @property {string} name  owner/name of the client-owned repo
@@ -73,6 +74,14 @@ export const PROFILE_DEFAULTS = {
     clientGithubAccount: "",
   },
   repos: { client: [], platform: [] },
+
+  // selfDiagnostics — opt-in for the passive session-telemetry hook
+  // (.claude/hooks/session-telemetry.mjs). When true, the collector records per-skill
+  // signals to <outputRoot>/.vc-fix/diagnostics/. /project-init writes it true by
+  // default; the hook reads project-profile.json RAW and requires the field to be
+  // strictly === true, so an absent profile (running Claude in a random folder) or
+  // an absent/false flag ⇒ the hook is a full no-op and never creates `.vc-fix/`.
+  selfDiagnostics: true,
 };
 
 /** Recursive merge: objects merge key-by-key; arrays + scalars are replaced wholesale. */

@@ -10,7 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Ships as **plugin `0.7.0`** (marketplace `0.9.0`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
+
+### Fixed — session-telemetry gated on a `selfDiagnostics` opt-in (no stray `.vc-fix/` in random folders)
+
+- The `SessionStart` hook previously ran `session-telemetry.mjs init` unconditionally, creating `<cwd>/.vc-fix/diagnostics/` (a `session_start` record + `.state.json`) on **every** Claude launch in **any** directory — before any skill ran. Running Claude in an unrelated folder left a junk `.vc-fix/` behind.
+- Now all three subcommands (`init` / `record` / `finalize`) early-return to a **full no-op** unless the output root (`VC_FIX_HOME || cwd`) has a `project-profile.json` with `selfDiagnostics: true`. Absent profile, absent field, or any non-`true` value ⇒ nothing is read from the transcript, nothing is written, and `.vc-fix/` is never created. The gate (`selfDiagnosticsEnabled(root)`) reads the profile **raw** (like `readProjectType`), so a shipped default can never silently enable it — the field must be physically present and strictly `=== true`.
+- `/project-init` now writes `"selfDiagnostics": true` into `project-profile.json` by default (via `PROFILE_DEFAULTS`); the `--merge` path back-fills it into an existing profile that lacks the field without touching other fields. Documented in `project-profile.example.json`, the `ProjectProfile` JSDoc, and `project-profile.d.mts`. (A future `/project-init` will ask the operator; for now it defaults to on.)
+- Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
 
 ### Added — vc-fix self-diagnostics subsystem (VCST-5475–5479)
 
