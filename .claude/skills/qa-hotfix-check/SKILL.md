@@ -38,7 +38,7 @@ it never cuts a release.
   module's live version. Because a hotfix is a real release tag (not a prerelease), the version bumps
   cleanly, so **version-match is a reliable "it restarted on the hotfix" signal**. Two phases:
   (1) the deploy Action reaches `success`, then (2) the modules API reports the target version.
-- **Rollback trap** ([[reference-deploy-manifest-module-resolution]]): `GithubReleases` downloads
+- **Rollback trap** (`reference-deploy-manifest-module-resolution`): `GithubReleases` downloads
   `releases/download/<Version>/<Id>_<Version>.zip` **directly** — if that release has no downloadable
   asset the Pack step 404s and the platform **rolls back the whole InstallModules step**. So the target
   release must exist **with a `.zip` asset** before we ever commit.
@@ -97,14 +97,17 @@ With `--apply` the script, **per env**: bumps the version in `packages.json` →
 deploy) → polls the **"Cloud platform deployment"** Action (matched by the commit's `head_sha`) to
 `success` → polls `<BACK_URL>/api/platform/modules` until the module reports the target version.
 
-- `--no-wait` commits but skips the polling (when you want to verify the deploy out-of-band).
+- `--no-wait` commits but skips the polling (when you want to verify the deploy out-of-band). This
+  reports `⚠ committed, deploy/version NOT confirmed` — never `✅ delivered` — since neither check ran;
+  confirm the deploy + version by hand before treating that env as delivered (Step 3/4 wait for it).
 - `--timeout=<sec>` per-env budget for deploy + restart (default 1200).
 - Deliver envs **one at a time** unless the user explicitly wants both at once — a stable regression on
   the first env is a reason to pause before touching the second.
 
 Verdicts after `--apply`: `✅ delivered` (deploy green + live version confirmed) · `⚠ deployed, version
 not confirmed` (deploy green but the modules API never reported the version — investigate, don't assume)
-· `⛔ deploy failed` (read the Action logs, classify, fix root cause or escalate — never loop blindly).
+· `⚠ committed, deploy/version NOT confirmed` (`--no-wait` — confirm out-of-band before proceeding) ·
+`⛔ deploy failed` (read the Action logs, classify, fix root cause or escalate — never loop blindly).
 
 **Platform hotfixes:** `/api/platform/modules` carries no Platform-core version, so a Platform delivery
 confirms on the deploy Action + `/health` green; state that limitation explicitly rather than implying a
@@ -126,7 +129,7 @@ affected module from `module-suite-map.md`.)
 ## Step 4 — record on the JIRA task (English)
 
 Once **every targeted env** is delivered **and** the fix is verified live, comment on the task (English
-per [[feedback-jira-comments-in-english]]; markdown, not wiki, per [[reference-jira-comment-markdown-not-wiki]]):
+per `feedback-jira-comments-in-english`; markdown, not wiki, per `reference-jira-comment-markdown-not-wiki`):
 the per-env table (env · branch · pinned→target · deploy run link) and one line — *"Hotfix verified on
 stable + regression."* If verification was **provider-limited / inconclusive** (Step 3), say so plainly
 (delivered + no-regression, definitive proof pending) — never claim a clean pass. If an env STOPped, say
@@ -139,7 +142,7 @@ matching env is delivered + verified (Step 3) and the comment is posted (Step 4)
 subtask to **Done**, then the **parent** task to Done — via the Atlassian MCP.
 
 **Discover transitions live — the workflow is multi-hop and has a Done-lookalike trap** (verified 2026-07-17,
-see [[reference-vcst-hotfix-workflow-transitions]]). There is **no** single-hop "Done" from the starting
+see `reference-vcst-hotfix-workflow-transitions`). There is **no** single-hop "Done" from the starting
 status; walk `getTransitionsForJiraIssue` → `transitionJiraIssue` one step at a time, re-querying after
 each hop, until the status is **`name: "Done"`** (`statusCategory.key === "done"`):
 
@@ -206,7 +209,7 @@ silent degradation is surfaced instead of read as success. For each stage, emit 
 State the DEGRADED items as explicit follow-ups (e.g. "Azure behavioural proof still owed on an
 Azure-backed env"), never bury them. For a deeper, plugin-wide self-diagnosis (reads session telemetry +
 the skill-expectations oracle, writes a local `DIAG-*.md`, sends nothing externally), defer to the
-[`/vc-self-check`](../../..) skill — this Step 7 is the lightweight in-skill version of that discipline.
+[`/vc-self-check`](../vc-self-check/SKILL.md) skill — this Step 7 is the lightweight in-skill version of that discipline.
 
 ## Hard rules (STOP/BAIL is a success)
 

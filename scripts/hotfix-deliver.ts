@@ -10,7 +10,7 @@
  *   2. Read the env's backend/packages.json → the module's PINNED version → its line X.Y.
  *   3. Find the released hotfix on that line = the highest X.Y.* tag whose release CONTAINS the fix
  *      (cherry-pick aware). None on the line → STOP: run /qa-hotfix for this bundle first.
- *   4. Asset gate (the rollback trap, [[reference-deploy-manifest-module-resolution]]): the target
+ *   4. Asset gate (the rollback trap, `reference-deploy-manifest-module-resolution`): the target
  *      release must exist + carry a downloadable .zip asset, else the GithubReleases Pack step 404s
  *      and the platform rolls back the whole InstallModules step.
  *   5. (--apply) Bump the version in packages.json and commit "VCST-XXXX: <title>" to the branch via
@@ -38,6 +38,7 @@
  *   --version=<X.Y.Z>          Override the target version per env (else auto-resolve on the line).
  *   --message=<text>           Override the commit message (else "VCST-XXXX: <JIRA summary | PR title>").
  *   --apply                    Perform the gated write (commit) + wait for deploy. Omit = dry-run.
+ *   --dry-run                  Explicit no-op form of the default (read-only); wins over --apply if both given.
  *   --no-wait                  (with --apply) commit but skip the deploy Action + module polling.
  *   --password=<pw>            Admin password for the /api/platform/modules check (else env/Password1).
  *   --timeout=<sec>            Deploy + restart poll budget per env (default 1200).
@@ -73,7 +74,7 @@ const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian
 interface SemVer { major: number; minor: number; patch: number; }
 interface PrInfo { repo: string; number: number; title: string; url: string; merged: boolean; mergeCommitSha: string | null; }
 interface EnvCoords { env: string; file: string; deployOwner: string; deployRepo: string; branch: string; path: string; backUrl: string; admin: string; password: string; }
-type EnvVerdict = 'delivered' | 'already-delivered' | 'no-hotfix-on-line' | 'asset-missing' | 'not-in-manifest' | 'deploy-failed' | 'not-confirmed' | 'wrong-source' | 'version-line-mismatch' | 'skipped' | 'planned' | 'error';
+type EnvVerdict = 'delivered' | 'already-delivered' | 'no-hotfix-on-line' | 'asset-missing' | 'not-in-manifest' | 'deploy-failed' | 'not-confirmed' | 'committed-unconfirmed' | 'wrong-source' | 'version-line-mismatch' | 'skipped' | 'planned' | 'error';
 interface EnvResult {
   env: string; branch: string; moduleId: string | null;
   pinned: string | null; line: string | null; target: string | null;
@@ -206,16 +207,37 @@ async function resolveTask(task: string, repoOverride?: string, prOverride?: str
   const items: any[] = search?.items ?? [];
   const candidates = items.map((i) => ({ repo: i.repository_url.split('/').pop() as string, number: i.number as number })).filter((c) => isProductRepo(c.repo));
   const repos = [...new Set(candidates.map((c) => c.repo))];
-  const repo = repoOverride ?? (repos.length === 1 ? repos[0] : undefined);
+  let repo = repoOverride ?? (repos.length === 1 ? repos[0] : undefined);
   if (!repo) {
     if (repos.length > 1) throw new Error(`${task} touches multiple repos (${repos.join(', ')}). Disambiguate with --repo or --pr.`);
-    throw new Error(`No product-repo PR found for ${task}. Pass --pr=<owner/repo#N|url> or --repo=<name>.`);
+    // FALLBACK, mirroring hotfix-precheck.ts: GitHub search finds nothing → try the PR link in the
+    // JIRA issue description (needs JIRA_EMAIL + JIRA_API_TOKEN in .env.local).
+    const fromJira = await prFromJiraDescription(task);
+    if (!fromJira) throw new Error(`No product-repo PR found for ${task} (GitHub search + JIRA description). Pass --pr=<owner/repo#N|url> or --repo=<name>.`);
+    if (!isProductRepo(fromJira.repo)) throw new Error(`JIRA-described PR repo ${fromJira.repo} is not a product repo.`);
+    const pr = await fetchPr(fromJira.repo, fromJira.number);
+    if (!pr) throw new Error(`JIRA-described PR ${fromJira.repo}#${fromJira.number} not found.`);
+    return { repo: fromJira.repo, fix: pr };
   }
   const prs: PrInfo[] = [];
   for (const c of candidates.filter((c) => c.repo === repo)) { const pr = await fetchPr(c.repo, c.number); if (pr) prs.push(pr); }
   const fix = prs.find((p) => p.merged) ?? prs[0];
   if (!fix) throw new Error(`No PR resolved for ${task} in ${repo}.`);
   return { repo, fix };
+}
+/** FALLBACK only: when no PR references the task on GitHub, parse the PR link out of the JIRA issue
+ * description (same approach as hotfix-precheck.ts's prFromJiraDescription). */
+async function prFromJiraDescription(task: string): Promise<{ repo: string; number: number } | null> {
+  const email = process.env.JIRA_EMAIL, token = process.env.JIRA_API_TOKEN;
+  if (!email || !token) { console.error(`[hotfix-deliver] no GitHub PR found for ${task}; JIRA description fallback needs JIRA_EMAIL + JIRA_API_TOKEN in .env.local`); return null; }
+  const auth = Buffer.from(`${email}:${token}`).toString('base64');
+  const res = await fetch(`${JIRA_BASE}/rest/api/3/issue/${encodeURIComponent(task)}?fields=description`, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json', 'User-Agent': 'vc-hotfix-deliver' } });
+  if (!res.ok) { console.error(`[hotfix-deliver] JIRA fetch for ${task} failed (HTTP ${res.status})`); return null; }
+  const j = await res.json();
+  // description is ADF (JSON) — the PR href lives in a link mark; stringify + regex finds it.
+  const blob = JSON.stringify(j?.fields?.description ?? '');
+  const m = /github\.com\/[^/"\\]+\/([a-z0-9._-]+)\/pull\/(\d+)/i.exec(blob);
+  return m ? { repo: m[1], number: +m[2] } : null;
 }
 /** FALLBACK title: the JIRA summary (for a clean commit message), if creds are present. */
 async function jiraSummary(task: string): Promise<string | null> {
@@ -254,6 +276,20 @@ function bumpPlatform(json: any, version: string): string {
   clone.PlatformVersion = version;
   clone.PlatformImageTag = version;
   return JSON.stringify(clone, null, 2) + '\n';
+}
+/** How many lines actually changed between the original manifest text and the re-serialized one.
+ * `bumpModule`/`bumpPlatform` round-trip the WHOLE file through JSON.parse+stringify rather than
+ * editing the target value in place, so if the source file's on-disk formatting (key order, line
+ * endings, indentation) differs even slightly from a plain 2-space stringify, the "bump" silently
+ * rewrites the entire file. This is still valid JSON either way, but a big, unreviewable diff on a
+ * commit that triggers a live deploy is worth flagging loudly rather than letting it pass quietly —
+ * see the caller for the `expectedChangedLines` threshold. */
+function countChangedLines(before: string, after: string): number {
+  const a = before.split('\n'), b = after.split('\n');
+  if (a.length !== b.length) return Math.max(a.length, b.length); // structural reformat — treat as fully changed
+  let changed = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) changed++;
+  return changed;
 }
 /** Gated write: commit the new manifest to the branch. Returns the commit sha. */
 async function commitManifest(c: EnvCoords, newText: string, sha: string, message: string): Promise<string> {
@@ -295,14 +331,17 @@ async function getAdminToken(c: EnvCoords): Promise<string | null> {
     return (await r.json())?.access_token ?? null;
   } catch { return null; }
 }
-async function liveModuleVersion(c: EnvCoords, token: string, id: string): Promise<string | null> {
+/** `status` lets the poller tell "still restarting" (5xx/network) apart from "token went stale"
+ * (401/403) — both previously collapsed into the same `null`, so a persistent auth failure could
+ * spin silently until timeout with a note that read identically to "app just hasn't come up yet". */
+async function liveModuleVersion(c: EnvCoords, token: string, id: string): Promise<{ status: number; version: string | null }> {
   try {
     const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: { Authorization: `Bearer ${token}` } });
-    if (r.status !== 200) return null;
+    if (r.status !== 200) return { status: r.status, version: null };
     const mods = await r.json();
     const m = (Array.isArray(mods) ? mods : []).find((x: any) => (x.id || '').toLowerCase() === id.toLowerCase());
-    return m?.version ?? null;
-  } catch { return null; }
+    return { status: r.status, version: m?.version ?? null };
+  } catch { return { status: 0, version: null }; }
 }
 /** Single /health probe (used to confirm a Platform delivery, which has no modules-API version). */
 async function platformHealthy(c: EnvCoords): Promise<boolean> {
@@ -314,12 +353,17 @@ async function waitLiveVersion(c: EnvCoords, id: string, target: string, timeout
   let token = await getAdminToken(c);
   if (!token) return { ok: false, version: null, note: `could not get an admin token at ${c.backUrl} — verify the version by hand` };
   let last: string | null = null;
+  let consecutiveAuthFailures = 0;
   while (Date.now() < deadline) {
-    const v = await liveModuleVersion(c, token, id);
-    last = v;
-    if (v === target) return { ok: true, version: v, note: `live module ${id} = ${v}` };
+    const { status, version } = await liveModuleVersion(c, token, id);
+    last = version;
+    if (version === target) return { ok: true, version, note: `live module ${id} = ${version}` };
+    consecutiveAuthFailures = status === 401 || status === 403 ? consecutiveAuthFailures + 1 : 0;
     await sleep(POLL_INTERVAL_MS);
     token = (await getAdminToken(c)) || token; // refresh (deploy may bounce the app / expire the token)
+  }
+  if (consecutiveAuthFailures > 0) {
+    return { ok: false, version: last, note: `admin token was rejected (401/403) on the last ${consecutiveAuthFailures} check(s) at ${c.backUrl} — this may be an auth problem, not "still restarting"; verify credentials before assuming the version` };
   }
   return { ok: false, version: last, note: `live module ${id} still ${last ?? 'unreachable'} (expected ${target}) after ${timeoutS}s` };
 }
@@ -334,14 +378,18 @@ async function main() {
   const has = (n: string) => args.includes(`--${n}`);
   const task = args.find((a) => !a.startsWith('--'))?.toUpperCase();
   const asJson = has('json');
-  const apply = has('apply');
+  // Dry-run is the default (no write happens without --apply); --dry-run is accepted as an explicit,
+  // self-documenting no-op — recognizing it (rather than silently ignoring an unknown flag) means a
+  // caller that types it gets the write-safe behavior they asked for even if --apply is also present.
+  const apply = has('apply') && !has('dry-run');
   const noWait = has('no-wait');
-  const timeoutS = Number(flag('timeout')) || DEFAULT_TIMEOUT_S;
+  const timeoutFlag = flag('timeout');
+  const timeoutS = timeoutFlag !== undefined && Number.isFinite(Number(timeoutFlag)) ? Number(timeoutFlag) : DEFAULT_TIMEOUT_S;
   const envs = (flag('envs') ?? 'stable,regression').split(',').map((s) => s.trim()).filter(Boolean);
   const versionOverride = flag('version');
   const passwordOverride = flag('password');
 
-  if (!task || !/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(task)) fail('Usage: npx tsx scripts/hotfix-deliver.ts <TASK-KEY> [--envs=stable,regression] [--apply] [--dry-run default] [--repo=] [--pr=] [--version=] [--json]');
+  if (!task || !/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(task)) fail('Usage: npx tsx scripts/hotfix-deliver.ts <TASK-KEY> [--envs=stable,regression] [--dry-run (default) | --apply] [--repo=] [--pr=] [--version=] [--json]');
 
   TOKEN = loadToken();
   if (!TOKEN) fail('No GIT_TOKEN — a PAT with contents:write on vc-deploy-dev is required (read .env.local).');
@@ -444,13 +492,22 @@ async function main() {
       }
 
       // 5. gated write (only with --apply)
-      if (!apply) { results.push({ ...r, verdict: 'planned', note: `would bump ${isPlatform ? 'Platform' : moduleId} ${pinnedVer} → ${target} and commit "${commitMessage}"` }); continue; }
       const newText = isPlatform ? bumpPlatform(manifest.json, target) : bumpModule(manifest.json, moduleId!, target);
+      const expectedChangedLines = isPlatform ? 2 : 1; // Platform: PlatformVersion + PlatformImageTag; module: one Version line
+      const changedLines = countChangedLines(manifest.text, newText);
+      const reformatWarning = changedLines > expectedChangedLines
+        ? ` ⚠ this bump reformats ~${changedLines} lines (expected ${expectedChangedLines}) — the source file's formatting differs from a plain 2-space JSON.stringify; review the full diff before confirming, not just the version change`
+        : '';
+      if (!apply) { results.push({ ...r, verdict: 'planned', note: `would bump ${isPlatform ? 'Platform' : moduleId} ${pinnedVer} → ${target} and commit "${commitMessage}"${reformatWarning}` }); continue; }
+      if (reformatWarning && !asJson) console.error(`[hotfix-deliver] [${c.env}]${reformatWarning}`);
       const commitSha = await commitManifest(c, newText, manifest.sha, commitMessage);
       r.commitSha = commitSha;
       if (!asJson) console.log(`\n[${c.env}] committed ${pinnedVer} → ${target} @ ${c.branch} (${commitSha.slice(0, 8)})`);
 
-      if (noWait) { results.push({ ...r, verdict: 'delivered', note: `committed (--no-wait: deploy + version not confirmed)` }); continue; }
+      // NOT 'delivered' — that verdict means deploy-green + live-version-confirmed (see Step 2 of the
+      // skill). --no-wait skips both checks, so the commit landed but nothing was actually confirmed;
+      // label it distinctly so neither the exit code nor the printed badge reads as a clean pass.
+      if (noWait) { results.push({ ...r, verdict: 'committed-unconfirmed', note: `committed (--no-wait: deploy + version not confirmed — verify out-of-band before treating this as delivered)` }); continue; }
 
       // 6. wait for the deploy Action
       if (!asJson) console.log(`[${c.env}] waiting for "Cloud platform deployment" …`);
@@ -472,13 +529,17 @@ async function main() {
     } catch (e: any) {
       results.push({ ...r, verdict: 'error', note: e.message });
     }
-    // Fail-fast: if THIS env was committed (write happened) but didn't end 'delivered', pause the rest.
+    // Fail-fast: if THIS env was committed (write happened) and the deploy/version check actively
+    // FAILED, pause the rest. 'committed-unconfirmed' (--no-wait) is a deliberate skip, not a
+    // failure, so it must NOT trip this guard — otherwise --no-wait across multiple envs would
+    // pause after the first env every time, defeating its purpose.
     const last = results[results.length - 1];
-    if (apply && last.commitSha && last.verdict !== 'delivered') aborted = true;
+    const HARD_FAIL_AFTER_COMMIT: EnvVerdict[] = ['deploy-failed', 'not-confirmed'];
+    if (apply && last.commitSha && HARD_FAIL_AFTER_COMMIT.includes(last.verdict)) aborted = true;
   }
 
   // ── output ──
-  const bad: EnvVerdict[] = ['no-hotfix-on-line', 'asset-missing', 'not-in-manifest', 'deploy-failed', 'not-confirmed', 'wrong-source', 'version-line-mismatch', 'skipped', 'error'];
+  const bad: EnvVerdict[] = ['no-hotfix-on-line', 'asset-missing', 'not-in-manifest', 'deploy-failed', 'not-confirmed', 'committed-unconfirmed', 'wrong-source', 'version-line-mismatch', 'skipped', 'error'];
   const blocked = results.some((x) => bad.includes(x.verdict));
 
   if (asJson) { console.log(JSON.stringify({ task, repo, moduleId, fixSha, commitMessage, apply, envs: results, checkedAt: new Date().toISOString() }, null, 2)); throw new Exit(blocked ? 1 : 0); }
@@ -487,6 +548,7 @@ async function main() {
     delivered: '✅ delivered', 'already-delivered': '◯ already delivered', planned: '📝 planned (dry-run)',
     'no-hotfix-on-line': '⛔ no hotfix on line', 'asset-missing': '⛔ asset missing', 'not-in-manifest': '— not in manifest',
     'deploy-failed': '⛔ deploy failed', 'not-confirmed': '⚠ deployed, version not confirmed',
+    'committed-unconfirmed': '⚠ committed, deploy/version NOT confirmed (--no-wait)',
     'wrong-source': '⛔ prerelease source (hand off)', 'version-line-mismatch': '⛔ --version wrong line',
     skipped: '⏸ skipped (prior env failed)', error: '⚠ error',
   } as Record<EnvVerdict, string>)[v];
@@ -506,6 +568,10 @@ async function main() {
   if (results.some((x) => x.verdict === 'delivered')) {
     console.log(`\nNext (owned by /qa-hotfix-check): verify the fix behaviour live on each delivered env,`);
     console.log(`then comment on ${task} (English) and bump the stable bundles.`);
+  }
+  if (results.some((x) => x.verdict === 'committed-unconfirmed')) {
+    console.log(`\n⚠ Committed with --no-wait — confirm the deploy + live version out-of-band before treating`);
+    console.log(`  that env as delivered; do not proceed to behaviour verification / the JIRA comment until confirmed.`);
   }
   throw new Exit(blocked ? 1 : 0);
 }
