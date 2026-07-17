@@ -126,7 +126,7 @@ Create `REG-YYYY-MM-DD-HHMM` and output directory `reports/regression/{RUN_ID}/`
 
 ### Step 3 — Initialize Status Tracker & Launch Live Dashboard
 1. Write `reports/regression/test-run-status.json` with all suites in `pending` state (run-level `status: "in_progress"`).
-2. **Launch the live HTML dashboard in the background** so the user watches progress fill in from the start:
+2. **ALWAYS launch the live HTML dashboard in the background — automatically, on EVERY run, without being asked.** This is mandatory, not optional: never wait for the user to request the dashboard, and never ask whether to launch it. It fires for every selection and every execution mode — browser-pool runs AND single runner-native suites (e.g. 050m) alike. Launch it here, right after writing `test-run-status.json` and **before dispatching any suite agent (Step 4)**:
    ```
    npm run report:regression:watch -- --run-id {RUN_ID}
    ```
@@ -233,6 +233,7 @@ Agents MUST resolve credentials via `@td()` at runtime — never hardcode in pro
 - Never share browser slots between concurrent agents
 - Priority order: P0 before P1 before P2
 - Always write test-run-status.json (external tools + the live HTML dashboard monitor it — update it at each state change so the dashboard reflects real progress)
+- **Always auto-launch the live dashboard watcher (Step 3) — every run, every mode, without asking.** Spawn `npm run report:regression:watch -- --run-id {RUN_ID}` in the background immediately after writing `test-run-status.json` and before dispatching any suite agent. Never wait for the user to request it, and never ask whether to launch it — it applies to browser-pool runs and single runner-native suites (e.g. 050m) equally.
 - **Split the suite-by-suite results by layer.** The Step 6 report's results table is written as two subsections — `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`) — classified by the layer directory each suite's CSV lives under in `config/test-suites.json`, each with its own pass/fail sub-total. Loyalty splits across layers (083/083b → Frontend; 075/075b/075c → Backend); admin/GraphQL suites (050*, 0XX admin) → Backend.
 - Read URLs from .env via `config.js`, never hardcode
 - If >50% suites fail, flag as critical_failure — suggest `/qa-sync-tests` to check for stale test cases

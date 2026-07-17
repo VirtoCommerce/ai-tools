@@ -393,7 +393,57 @@ function countByVerdict(cases: NormCase[]) {
   return c;
 }
 
-function normalizeSuite(raw: any, allShots: string[], runId: string): NormSuite {
+/**
+ * Resolve a case's GraphQL evidence JSON to a link relative to the run dir (where
+ * the HTML report lives). Accepts, in priority order: a dedicated `evidenceFile`
+ * field, an `evidence`/`notes` value that is itself a bare `.json` filename
+ * (legacy shape — prose lived elsewhere), and a value already carrying a
+ * `graphql-evidence/` prefix. The file is located on disk in two places:
+ *   - run-scoped   <runDir>/graphql-evidence/<name>        → "graphql-evidence/<name>"
+ *   - shared root  reports/regression/graphql-evidence/<name> → "../graphql-evidence/<name>"
+ * `graphql-runner.ts` now always writes run-scoped (via --run-id/RUN_ID); run-less
+ * ad-hoc runs go to scripts/.graphql-evidence, not under reports/. The shared-root
+ * branch is a legacy fallback for pre-existing reports that named a file there — it
+ * no longer receives new evidence. Returns null when no candidate exists or the file
+ * can't be located (renders as no evidence, not a dead link).
+ */
+function isJsonName(v: unknown): v is string {
+  return typeof v === "string" && /\.json$/i.test(v.trim());
+}
+function resolveGqlEvidence(c: any, runDir: string): string | null {
+  // `graphqlEvidence` is the field the runner-native agent records (a full run-relative
+  // path); `evidenceFile`/`evidence`/`notes` cover the dedicated + legacy shapes.
+  const candidate = [c?.graphqlEvidence, c?.evidenceFile, c?.evidence, c?.notes].find(isJsonName);
+  if (candidate) {
+    const norm = String(candidate).replace(/\\/g, "/").trim();
+    const bare = norm.split("/").pop()!;
+    if (bare) {
+      if (existsSync(join(runDir, "graphql-evidence", bare))) return `graphql-evidence/${bare}`;
+      if (existsSync(join(dirname(runDir), "graphql-evidence", bare))) return `../graphql-evidence/${bare}`;
+      // Recorded with an explicit graphql-evidence/ path but not found on disk — keep
+      // the best-effort link rather than silently dropping a deliberately-recorded ref.
+      if (/graphql-evidence\//i.test(norm)) return norm;
+    }
+  }
+  // No usable recorded reference — fall back to matching a file named after the case id
+  // (`<CASE_ID>-<ts>.json`, the runner's naming). RUN-SCOPED ONLY: a run dir holds a
+  // single run's files, so this is unambiguous; the shared root mixes runs and is skipped.
+  const cid = String(c?.id ?? "").trim().toUpperCase();
+  if (cid) {
+    const gqlDir = join(runDir, "graphql-evidence");
+    if (existsSync(gqlDir)) {
+      const hit = readdirSync(gqlDir).find((f) => {
+        if (!/\.json$/i.test(f)) return false;
+        const b = f.toUpperCase();
+        return b === `${cid}.JSON` || b.startsWith(`${cid}-`);
+      });
+      if (hit) return `graphql-evidence/${hit}`;
+    }
+  }
+  return null;
+}
+
+function normalizeSuite(raw: any, allShots: string[], runId: string, runDir: string): NormSuite {
   const suiteId = String(raw.suiteId ?? "??");
   const cases: NormCase[] = [];
   const suiteShots = shotsForSuite(suiteId, allShots);
@@ -436,11 +486,12 @@ function normalizeSuite(raw: any, allShots: string[], runId: string): NormSuite 
     }
   } else if (Array.isArray(raw.testCases)) {
     for (const c of raw.testCases) {
-      const evidenceFieldIsFilename = typeof c.notes === "string" && /\.json$/i.test(c.notes);
-      const evidenceFile = evidenceFieldIsFilename ? `graphql-evidence/${c.notes}` : null;
-      const evidenceText = evidenceFieldIsFilename
-        ? ""
-        : String(c.evidence ?? c.notes ?? "");
+      const evidenceFile = resolveGqlEvidence(c, runDir);
+      // Prose = the first non-filename value among evidence/notes; when a field
+      // was consumed as the evidence filename it is not repeated as text.
+      const evidenceText = String(
+        [c.evidence, c.notes].find((v) => typeof v === "string" && v.trim() && !isJsonName(v)) ?? ""
+      );
       cases.push({
         id: String(c.id ?? ""),
         title: String(c.title ?? ""),
@@ -536,7 +587,7 @@ function loadAllSuites(runDir: string): NormSuite[] {
   const bySuite = new Map<string, { suite: NormSuite; cases: number; mtime: number }>();
   for (const f of files) {
     const full = join(runDir, f);
-    const suite = normalizeSuite(JSON.parse(readFileSync(full, "utf-8")), allShots, runId);
+    const suite = normalizeSuite(JSON.parse(readFileSync(full, "utf-8")), allShots, runId, runDir);
     const cases = suite.cases.length;
     const mtime = statSync(full).mtimeMs;
     const prev = bySuite.get(suite.suiteId);
