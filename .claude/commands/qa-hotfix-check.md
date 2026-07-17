@@ -1,5 +1,5 @@
 ---
-description: "Deliver an ALREADY-RELEASED hotfix onto the deployed vcptcore-stable + vcptcore-regression environments, then confirm + verify it. Per env: bump the module/Platform version in vc-deploy-dev's backend/packages.json (commit 'VCST-XXXX: title' → triggers the Cloud platform deployment Action), wait for the Action to go green, poll /api/platform/modules until the env reports the new version, then verify the fix behaves live. Comments the result on the JIRA task, transitions the per-env subtasks (Check on regression/stable) + the parent to Done (live transition discovery, never Cancelled), bumps the latest-stable bundles (auto-detect, then ASK), and self-diagnoses the run. Delivery-only — STOPs if the hotfix isn't released yet (run /qa-hotfix first). Gated writes, dry-run by default, never auto-merges."
+description: "Deliver an ALREADY-RELEASED hotfix onto the deployed vcptcore-stable + vcptcore-regression environments, then confirm + verify it. Per env: bump the module/Platform version in vc-deploy-dev's backend/packages.json (commit 'VCST-XXXX: title' → triggers the Cloud platform deployment Action), wait for the Action to go green, poll /api/platform/modules until the env reports the new version, then verify the fix behaves live. Comments the result on the JIRA task, transitions the per-env subtasks (Check on regression/stable) + the parent to Done (live transition discovery, never Cancelled), bumps the frozen stable + `latest` bundles (auto-detect, then ASK), and self-diagnoses the run. Delivery-only — STOPs if the hotfix isn't released yet (run /qa-hotfix first). Gated writes, dry-run by default, never auto-merges."
 argument-hint: "VCST-XXXX [--envs=stable,regression] [--bundles=v14,v15] [--dry-run]"
 disable-model-invocation: true
 ---
@@ -63,15 +63,18 @@ you to `/qa-hotfix`.
    development → In progress → go to done`; parent Bug `check hotfix → Testing on stable → Move to done`.
    **Never pick `Cancelled`** (a Done-category lookalike). Only close on a genuine pass — a delivery FAIL
    or behavioural FAIL is a STOP (provider-limited + no-regression is closeable).
-6. **Bump the latest-stable bundles (auto-detect, then ASK).** Detect which bundles trail this same-line
-   patch, then confirm before writing:
+6. **Bump the bundles — frozen stable AND `latest` (auto-detect, then ASK).** Detect which bundles trail
+   this same-line patch, then confirm before writing:
    ```bash
    npm run bundle:check -- v14
    npm run bundle:check -- v15
+   npm run bundle:check -- latest    # rolling newest-generation bundle
    ```
-   Show the candidates, ask the user to confirm/override (the latest-stable set drifts — v14/v15 today,
-   never hardcode), then bump each confirmed bundle's pin as a PR to `master` (surgical one-line version
-   replace). Never auto-merge the bundle PR.
+   Propose **both**: the frozen stable bundles (v14/v15 — the set drifts, never hardcode) **and**
+   `bundles/latest`. `latest` tracks the newest generation, so it trails only when the fix is on the
+   newest line (an older-frozen-line hotfix leaves it `✓ current`) — offer it explicitly whenever it
+   trails so it isn't silently skipped. Bump each confirmed bundle's pin (module `Version`, or
+   `PlatformVersion`+`PlatformImageTag`) as a PR to `master`. Never auto-merge the bundle PR.
 7. **Self-diagnose the run.** End with a one-line **OK / DEGRADED / BROKEN** verdict per stage (deliver,
    verify, comment, transition, bundles) and surface every DEGRADED item as an explicit follow-up (e.g.
    "Azure behavioural proof still owed"). Deeper plugin-wide diagnosis: `/vc-self-check`.

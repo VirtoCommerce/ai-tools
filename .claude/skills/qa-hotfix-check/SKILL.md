@@ -1,6 +1,6 @@
 ---
 name: qa-hotfix-check
-description: "[QA Methodology] DELIVER an already-released hotfix onto the deployed vcptcore-stable + vcptcore-regression environments (bump the module/Platform version in vc-deploy-dev's backend/packages.json, commit \"VCST-XXXX: title\"), WAIT for the deploy to land (deploy Action green → /api/platform/modules reports the new version), VERIFY the fix works live, comment on the JIRA task, transition the per-env subtasks (Check on regression/stable) + the parent to Done (live transition discovery, never Cancelled), bump the latest-stable bundles (auto-detect + ASK), and self-diagnose the run (OK/DEGRADED/BROKEN per stage). Use when asked to 'доставить хотфикс на стенды / проверить хотфикс на средах / раскатить фикс на stable+regression'. Downstream of /qa-hotfix; delivery-only (never cuts a release). Gated writes, never auto-merges."
+description: "[QA Methodology] DELIVER an already-released hotfix onto the deployed vcptcore-stable + vcptcore-regression environments (bump the module/Platform version in vc-deploy-dev's backend/packages.json, commit \"VCST-XXXX: title\"), WAIT for the deploy to land (deploy Action green → /api/platform/modules reports the new version), VERIFY the fix works live, comment on the JIRA task, transition the per-env subtasks (Check on regression/stable) + the parent to Done (live transition discovery, never Cancelled), bump the frozen stable + `latest` bundles (auto-detect + ASK), and self-diagnose the run (OK/DEGRADED/BROKEN per stage). Use when asked to 'доставить хотфикс на стенды / проверить хотфикс на средах / раскатить фикс на stable+regression'. Downstream of /qa-hotfix; delivery-only (never cuts a release). Gated writes, never auto-merges."
 argument-hint: "VCST-XXXX [--envs=stable,regression] [--bundles=v14,v15] [--dry-run]"
 ---
 
@@ -156,25 +156,38 @@ env-check subtasks are literally "did we check this env" — we did), but a **fa
 **behavioural FAIL** is a STOP: leave the tracker where it is and report. Map subtasks to envs by summary
 ("regression" / "stable"); close only the subtasks whose env was actually delivered this run.
 
-## Step 6 — bump the latest-stable bundles (auto-detect + confirm)
+## Step 6 — bump the bundles (frozen stable **and** `latest`) — auto-detect + confirm
 
-The env delivery proves the hotfix is deployable; the **stable bundles** (`vc-modules/bundles/vN`) are
-the shipped release artifacts and must pick the patch up too. Auto-detect the candidates, then confirm
-before writing:
+The env delivery proves the hotfix is deployable; the **bundles** (`vc-modules/bundles/*`) are the
+shipped release artifacts and must pick the patch up too. Two kinds, both proposed here:
 
-1. Run bundle detection to find which latest-stable bundles are **missing this same-line patch**:
+- **Frozen stable bundles** (`bundles/vN` — e.g. `v14`, `v15`): a fixed generation, bumped along its
+  own same-line hotfix.
+- **The rolling `latest` bundle** (`bundles/latest`): tracks the **newest** generation. It needs the
+  hotfix **only when it trails on the same line** — i.e. the fix landed on the newest line. A hotfix on
+  an **older** frozen line (e.g. a `v14`/3.1007 patch while `latest` is on 3.1039) leaves `latest`
+  untouched (`bundle:check` returns `✓ current` for it). So `latest` is a **conditional** candidate:
+  propose a PR for it **iff** detection shows it trailing.
+
+Auto-detect the candidates, then confirm before writing:
+
+1. Run detection over the frozen stable bundles **and** `latest`:
    ```bash
-   npm run bundle:check -- v14        # repeat per candidate bundle
+   npm run bundle:check -- v14        # each frozen stable bundle
    npm run bundle:check -- v15
+   npm run bundle:check -- latest     # the rolling newest-generation bundle
    ```
-   (`/qa-bundle-check` flags `⬆ HOTFIX AVAILABLE` when a bundle trails the line.)
-2. **Show the user the candidate bundles and ask for confirmation** — the set of latest-stable bundles
-   changes over generations (v14/v15 today; do not hardcode). Accept whatever they confirm/override
-   with `--bundles=`.
-3. For each confirmed bundle, bump its pinned version to the hotfix (surgical commit — a targeted
-   `"Id": "VirtoCommerce.X" … "Version"` replace that changes ONLY that one line, preserving the rest of
-   `package.json`), on a branch, opened as a **PR to `master`** with a `DO NOT MERGE until human review`
-   body. **Never auto-merge** the bundle PR.
+   (`/qa-bundle-check` flags `⬆ HOTFIX AVAILABLE` when a bundle trails its line, `✓ current` otherwise.)
+2. **Show the user every candidate that trails — frozen stable bundles AND `latest` — and ask for
+   confirmation.** The stable set changes over generations (v14/v15 today; do not hardcode). Accept
+   whatever they confirm/override with `--bundles=`. If `latest` trails, offer it explicitly as its own
+   proposal (it is easy to forget — a fix not absorbed into `latest` regresses on the next generation cut).
+3. For each confirmed bundle (frozen **or** `latest`), bump its pinned version to the hotfix (surgical
+   commit — a targeted `"Id": "VirtoCommerce.X" … "Version"`, or `PlatformVersion`/`PlatformImageTag`,
+   replace that changes ONLY those lines, preserving the rest of `package.json`), on a branch, opened as
+   a **PR to `master`** with a `DO NOT MERGE until human review` body. **Never auto-merge** the bundle
+   PR. (`latest` may ride in the same PR as the frozen-stable bumps, or its own — the point is it is
+   never silently skipped.)
 
 ## Step 7 — self-diagnose the run (self-check)
 
