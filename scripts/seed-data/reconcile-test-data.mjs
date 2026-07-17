@@ -205,7 +205,12 @@ async function checkOrgAddressParity() {
     try { m = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] }); }
     catch (e) { warn(`org ${r.org_id}: member GET error — ${String(e.message).slice(0, 80)}`); continue; }
     if (!m?.id) { warn(`org ${r.org_id} (${id}) not found live — skip parity`); continue; }
-    const addr = (m.addresses || [])[0];
+    // organizations.csv holds the org's PRIMARY address — compare against the DEFAULT
+    // shipping address (not addresses[0], which may be a secondary addresses.csv row and
+    // would false-positive on city/line1). Fall back: any default, then first address.
+    const addrs = m.addresses || [];
+    const addr = addrs.find((a) => a.isDefault && /shipping/i.test(a.addressType || '')) ||
+      addrs.find((a) => a.isDefault) || addrs[0];
     if (!addr) { warn(`org ${r.org_id}: live member has no address to compare`); continue; }
     checked++;
     for (const [csvCol, liveField] of MAP) {
