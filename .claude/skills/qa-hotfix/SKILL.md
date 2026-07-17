@@ -186,7 +186,11 @@ For each ready bundle (line `X.Y`):
 
 - Re-run the precheck → the bundle should now read `◯ already-applied`.
 - Report per bundle: new patch version + release URL. Comment the outcome on the JIRA task (English).
-- **Advance the JIRA status to `Hotfix ready`** (right after the outcome comment). The path is
+- **Advance the JIRA status to `Hotfix ready`** (right after the outcome comment) — **only for
+  issue type `Bug`.** The `Wait hotfixes` / `Hotfix ready` statuses live only in the Bug workflow;
+  a hotfix can also target a **Story** (or any other type), and those have no such statuses — for
+  them **leave the status untouched** (still post the outcome comment, still skip the flag). Check
+  the issue's `issuetype.name` first; if it isn't `Bug`, do nothing here. For a Bug, the path is
   **`Tested → Wait hotfixes → Hotfix ready`**, but the middle hop is driven by a field, not a
   transition:
   1. **Set the "Need hotfixes" flag** (VCST: `customfield_10181` = option `{id: "10151"}` — the
