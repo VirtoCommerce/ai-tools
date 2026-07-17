@@ -115,6 +115,8 @@
     "bundle:check": "npx tsx scripts/bundle-version-check.ts",
     "hotfix:precheck": "npx tsx scripts/hotfix-precheck.ts",
     "hotfix:release": "npx tsx scripts/hotfix-release.ts",
+    "hotfix:deliver": "npx tsx scripts/hotfix-deliver.ts",
+    "hotfix:deliver:dry": "npx tsx scripts/hotfix-deliver.ts --dry-run",
     "local:manifest": "node skills/qa-local-env/gen-manifest.mjs",
     "local:health": "node skills/qa-local-env/healthcheck.mjs",
     "seed:reviews": "node scripts/seed-data/seed-reviews.mjs",
