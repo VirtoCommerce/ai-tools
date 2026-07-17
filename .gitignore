@@ -22,6 +22,8 @@ results/
 .mcp.json
 scripts/.graphql-schema.cache.json
 scripts/.graphql-schema.*.cache.json
+# Ad-hoc/run-less graphql-runner evidence (no --run-id) — scratch, not tied to a run
+scripts/.graphql-evidence/
 
 # Newman/Postman run artifacts — carry live env credentials + OAuth tokens. Never commit.
 .newman-run/
