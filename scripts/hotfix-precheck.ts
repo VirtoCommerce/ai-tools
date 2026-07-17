@@ -155,14 +155,21 @@ async function commitTouchedFiles(repo: string, sha: string): Promise<{ path: st
  * the build+test job and the regression env are for. On any RISK the tool STOPs → analyze + involve
  * a developer (never force it through). */
 interface FixShape {
-  modules: string[];          // distinct src/<Project> roots the fix touches
-  multiModule: boolean;       // pt.1 violated — fix spans >1 project
+  modules: string[];          // distinct module identities (src/<Project> root, layer suffix stripped) the fix touches
+  multiModule: boolean;       // pt.1 violated — fix spans >1 module
   dependencyBumps: string[];  // pt.3 violated — "file: Pkg oldVer → newVer"
   contractFiles: string[];    // pt.2 heuristic — contract-bearing files touched (human must confirm)
 }
 function analyzeFixShape(files: { path: string; status: string; prev?: string; patch?: string }[]): FixShape {
+  // A single VC module conventionally SPANS several src/<Project> directories — Core/Data/Web (and
+  // tests/<Project>.Tests) — per knowledge/architecture/vc-module-architecture.md §2. Bucketing by the
+  // raw project folder would flag every ordinary cross-layer fix (Core DTO + Data service + Web
+  // controller) as "multi-module", so strip the trailing layer suffix before deduping — only a fix
+  // that genuinely spans distinct MODULES (different base name) counts as pt.1's multi-module signal.
+  const LAYER_SUFFIX_RE = /\.(Core|Data|Web|Client|Test|Tests)$/i;
   const srcRoot = (p: string) => (/^src\/([^/]+)\//.exec(p)?.[1]) ?? null;
-  const modules = [...new Set(files.map((f) => srcRoot(f.path)).filter((x): x is string => !!x))];
+  const moduleOf = (project: string) => project.replace(LAYER_SUFFIX_RE, '');
+  const modules = [...new Set(files.map((f) => srcRoot(f.path)).filter((x): x is string => !!x).map(moduleOf))];
 
   // pt.3 — dependency-version bumps: scan added/removed patch lines for a VirtoCommerce.* version.
   //   .csproj:          <PackageReference Include="VirtoCommerce.X.Core" Version="3.800.0" />
@@ -174,19 +181,26 @@ function analyzeFixShape(files: { path: string; status: string; prev?: string; p
       || /<(?:[A-Za-z.]*Version)>([^<]+)<\/[A-Za-z.]*Version>/.exec(line);      // props element
     return m?.[1] ?? null;
   };
+  // Identifies WHICH dependency a version belongs to, so a file that bumps several packages in one
+  // commit doesn't get its old/new versions flattened and cross-attributed.
+  const depKeyOnLine = (line: string): string | null =>
+    /(?:Include|id)\s*=\s*"([^"]+)"/.exec(line)?.[1]                           // csproj Include= / manifest id=
+    ?? /<([A-Za-z.]*Version)>/.exec(line)?.[1]                                 // props element tag name
+    ?? null;
   const dependencyBumps: string[] = [];
   for (const f of files.filter((f) => isDepFile(f.path) && f.patch)) {
-    const added: string[] = [], removed: string[] = [];
+    const removedByKey = new Map<string, string>(), addedByKey = new Map<string, string>();
     for (const l of f.patch!.split('\n')) {
-      const isDep = /VirtoCommerce/i.test(l) && (verOnLine(l) !== null);
-      if (!isDep) continue;
-      if (l.startsWith('+') && !l.startsWith('+++')) added.push(l.slice(1).trim());
-      else if (l.startsWith('-') && !l.startsWith('---')) removed.push(l.slice(1).trim());
+      if (!/VirtoCommerce/i.test(l)) continue;
+      const ver = verOnLine(l);
+      if (ver === null) continue;
+      const key = depKeyOnLine(l) ?? '?';
+      if (l.startsWith('+') && !l.startsWith('+++')) addedByKey.set(key, ver);
+      else if (l.startsWith('-') && !l.startsWith('---')) removedByKey.set(key, ver);
     }
-    if (added.length || removed.length) {
-      const from = removed.map(verOnLine).filter(Boolean).join(',') || '∅';
-      const to = added.map(verOnLine).filter(Boolean).join(',') || '∅';
-      dependencyBumps.push(`${f.path}: ${from} → ${to}`);
+    for (const key of new Set([...removedByKey.keys(), ...addedByKey.keys()])) {
+      const from = removedByKey.get(key) ?? '∅', to = addedByKey.get(key) ?? '∅';
+      if (from !== to) dependencyBumps.push(`${f.path}: ${key} ${from} → ${to}`);
     }
   }
 
@@ -551,15 +565,15 @@ async function main() {
   // Fix-shape check — the developer's pre-hotfix checklist (pts 1–3), from the fix commit's own diff.
   if (fixShape) {
     console.log(`\nFix-shape check (developer checklist — before any hotfix):`);
-    console.log(`  1. single module     : ${fixShape.multiModule
-      ? `⚠ fix spans ${fixShape.modules.length} projects (${fixShape.modules.join(', ')}) → STOP, hand off to a developer`
-      : `✓ one project${fixShape.modules.length ? ` (${fixShape.modules[0]})` : ' (no src/ project files touched)'}`}`);
-    console.log(`  3. no dep-version bump: ${fixShape.dependencyBumps.length
-      ? `⚠ raises a VirtoCommerce dependency pin → STOP, hand off:\n       ${fixShape.dependencyBumps.join('\n       ')}`
-      : `✓ no VirtoCommerce.* dependency version changed (manifest/.csproj/props)`}`);
+    console.log(`  1. single module      : ${fixShape.multiModule
+      ? `⚠ fix spans ${fixShape.modules.length} modules (${fixShape.modules.join(', ')}) → STOP, hand off to a developer`
+      : `✓ one module${fixShape.modules.length ? ` (${fixShape.modules[0]})` : ' (no src/ project files touched)'}`}`);
     console.log(`  2. no breaking change : ${fixShape.contractFiles.length
       ? `⚠ touches contract-bearing files — a developer MUST confirm no breaking change:\n       ${fixShape.contractFiles.slice(0, 8).join('\n       ')}${fixShape.contractFiles.length > 8 ? `\n       (+${fixShape.contractFiles.length - 8} more)` : ''}`
       : `✓ no obvious API/DTO/manifest contract file touched (heuristic)`}`);
+    console.log(`  3. no dep-version bump: ${fixShape.dependencyBumps.length
+      ? `⚠ raises a VirtoCommerce dependency pin → STOP, hand off:\n       ${fixShape.dependencyBumps.join('\n       ')}`
+      : `✓ no VirtoCommerce.* dependency version changed (manifest/.csproj/props)`}`);
     console.log(`  4. cherry-pick clean  : ↓ definitive at the write step (git cherry-pick)`);
     console.log(`  5. vc-build compress  : ↓ enforced by the "Release hotfix" workflow (build + test job); hotfix:release --poll fails red`);
     console.log(`  6. regression env     : ↓ after the release, on the regression environment`);
@@ -607,7 +621,10 @@ async function main() {
     }
   }
   const noBranch = bundleResults.filter((b) => b.verdict === 'no-support-branch');
-  if (noBranch.length) {
+  if (noBranch.length && fixShapeBlocked) {
+    console.log(`\n⛔ ${noBranch.map((b) => b.bundle).join(', ')} need${noBranch.length === 1 ? 's' : ''} a support branch, but the fix-shape check flagged a risk above.`);
+    console.log(`   Resolve the fix-shape signal FIRST — don't create a support branch for a fix that isn't safe to hotfix yet.`);
+  } else if (noBranch.length) {
     console.log(`\n⚠ No support branch yet for: ${noBranch.map((b) => `${b.bundle} (need ${b.supportBranch}, base ${b.pinned})`).join(', ')}`);
     console.log(`   Create it first (gated write step 0): branch ${noBranch[0].supportBranch} from the line's base tag`);
     console.log(`   (highest released X.Y.* tag, else the bundle-pinned tag), confirm the base, push, then re-run this precheck.`);

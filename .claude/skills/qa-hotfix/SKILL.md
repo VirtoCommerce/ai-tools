@@ -1,6 +1,6 @@
 ---
 name: qa-hotfix
-description: "[QA Methodology] Release a HOTFIX of an already-merged-and-released fix into the bundles that are currently the latest stable releases (ASK which ones — the set changes over time; e.g. at one point v12 & v14). Resolve the JIRA task → its linked PR → fix commit, verify it is MERGED and SHIPPED, then per bundle cherry-pick onto support/<X.Y> and trigger the repo's 'Release hotfix' workflow. Use when asked to 'выпустить хотфикс для релиза', backport a fix to a stable bundle, or cut a patch on a support line. Gated writes, never auto-merges, STOPs when no support branch exists."
+description: "[QA Methodology] Release a HOTFIX of an already-merged-and-released fix into the bundles that are currently the latest stable releases (ASK which ones — the set changes over time; e.g. at one point v12 & v14). Resolve the JIRA task → its linked PR → fix commit, verify it is MERGED and SHIPPED, check the fix-shape safety gate (single module, no dependency-version bump), then per bundle create the support/<X.Y> branch if missing (gated) and cherry-pick onto it, triggering the repo's 'Release hotfix' workflow. Use when asked to 'выпустить хотфикс для релиза', backport a fix to a stable bundle, or cut a patch on a support line. Gated writes, never auto-merges, STOPs on a fix-shape risk or a cherry-pick conflict."
 argument-hint: "VCST-XXXX [v12,v14] [--repo=<name>] [--pr=<ref>] [--dry-run]"
 ---
 
