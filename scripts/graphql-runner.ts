@@ -20,7 +20,9 @@
  *   --schema-cache <path>   reuse saved introspection (default: scripts/.graphql-schema.cache.json)
  *   --refresh-schema        force fresh introspection
  *   --back-url <url>        override BACK_URL from .env
- *   --evidence-dir <path>   evidence output dir (default: reports/regression/graphql-evidence)
+ *   --run-id <id>           regression run id — scopes evidence under reports/regression/<id>/graphql-evidence
+ *   --evidence-dir <path>   evidence output dir (default: reports/regression/<run-id>/graphql-evidence
+ *                           when --run-id/RUN_ID is set, else scripts/.graphql-evidence scratch dir)
  *   --dry-run               validate + parse but don't POST to /graphql
  */
 
@@ -81,7 +83,11 @@ for (const [key, value] of Object.entries(process.env)) {
 const ROOT = resolve(process.cwd());
 const DEFAULT_CACHE = join(ROOT, "scripts", ".graphql-schema.cache.json");
 const DEFAULT_FIXTURES = join(ROOT, "scripts", "fixtures", "graphql");
-const DEFAULT_EVIDENCE = join(ROOT, "reports", "regression", "graphql-evidence");
+// Run-less / ad-hoc invocations (no --run-id, no --evidence-dir) write here — a
+// gitignored scratch dir, deliberately OUTSIDE reports/regression/ so it can never
+// masquerade as a run's evidence. Regression runs pass --run-id (or --evidence-dir)
+// and land under reports/regression/<run-id>/graphql-evidence instead.
+const DEFAULT_EVIDENCE = join(ROOT, "scripts", ".graphql-evidence");
 const TEST_DATA_DIR = join(ROOT, "test-data");
 
 interface CliArgs {
@@ -98,7 +104,16 @@ interface CliArgs {
    */
   endpointPath?: string;
   evidenceDir: string;
+  /** True when --evidence-dir was passed explicitly (suppresses the run-scoped default). */
+  evidenceDirExplicit: boolean;
+  /** Regression run id — scopes evidence under reports/regression/<runId>/graphql-evidence. */
+  runId?: string;
   dryRun: boolean;
+}
+
+/** reports/regression/<runId>/graphql-evidence when a run id is known. */
+function runScopedEvidenceDir(runId: string): string {
+  return join(ROOT, "reports", "regression", runId, "graphql-evidence");
 }
 
 function parseArgs(): CliArgs {
@@ -107,6 +122,8 @@ function parseArgs(): CliArgs {
     schemaCache: DEFAULT_CACHE,
     refreshSchema: false,
     evidenceDir: DEFAULT_EVIDENCE,
+    evidenceDirExplicit: false,
+    runId: process.env.RUN_ID || process.env.REG_RUN_ID || undefined,
     dryRun: false,
   };
 
@@ -139,6 +156,10 @@ function parseArgs(): CliArgs {
         break;
       case "--evidence-dir":
         out.evidenceDir = argv[++i];
+        out.evidenceDirExplicit = true;
+        break;
+      case "--run-id":
+        out.runId = argv[++i];
         break;
       case "--dry-run":
         out.dryRun = true;
@@ -152,6 +173,12 @@ function parseArgs(): CliArgs {
           out.queryFile = a;
         }
     }
+  }
+
+  // Scope evidence to the run dir so the HTML report (which links
+  // "<runDir>/graphql-evidence/<file>") can find it. Explicit --evidence-dir wins.
+  if (!out.evidenceDirExplicit && out.runId) {
+    out.evidenceDir = runScopedEvidenceDir(out.runId);
   }
 
   return out;
@@ -174,7 +201,11 @@ Options:
   --back-url <url>        override BACK_URL from .env
   --endpoint <path>       GraphQL endpoint path (default /graphql); scoped schemas
                           e.g. /graphql/sales-rep. Per-case [GQL-ENDPOINT] overrides this.
-  --evidence-dir <path>   output dir (default: reports/regression/graphql-evidence)
+  --evidence-dir <path>   output dir. Default: reports/regression/<run-id>/graphql-evidence
+                          when --run-id/RUN_ID is set; otherwise scripts/.graphql-evidence
+                          (a gitignored ad-hoc scratch dir, not tied to any run)
+  --run-id <id>           regression run id — scopes evidence under that run dir so the
+                          HTML report picks it up (also read from RUN_ID / REG_RUN_ID env)
   --dry-run               validate + parse but don't POST (schema check only)
 `);
 }
@@ -787,6 +818,9 @@ async function runCase(
   );
   writeFileSync(evidencePath, JSON.stringify(evidence, null, 2), "utf-8");
   console.log(`\nEvidence: ${evidencePath}`);
+  // Machine-readable: the aggregating agent copies this bare filename into the
+  // case row's `evidenceFile` field so the HTML report links it (Attachments panel).
+  console.log(`EVIDENCE_FILE=${evidencePath.split(/[\\/]/).pop()}`);
 
   return verdict === "PASS" ? 0 : 1;
 }
