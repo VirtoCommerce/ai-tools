@@ -233,9 +233,10 @@ async function ensureOrder(row, orgs, customerId) {
     const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
     const enriched = (full?.addresses || []).length && (full?.shipments || []).length && (full?.inPayments || []).length;
     const totalOk = Math.abs((full?.total || 0) - parseFloat(row.total)) < 0.01;
-    if (existing.customerId === wantCustomerId && enriched && totalOk) { verbose(`order ${number} exists (attributed + enriched + total ok)`); return; }
+    const orgOk = full?.organizationId === org.id && !!full?.organizationName;
+    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk) { verbose(`order ${number} exists (attributed + enriched + total + org ok)`); return; }
     await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
-    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk})`);
+    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk})`);
   }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const price = Math.round((parseFloat(row.total) / n) * 100) / 100;
@@ -252,18 +253,19 @@ async function ensureOrder(row, orgs, customerId) {
   // stays == the CSV total (preserving the salesRepOrders/lastOrder totals verified in 091). The payment's
   // `sum` carries the amount (mirrors a real order: sum=<amount>, total=0).
   const body = {
-    number, storeId: row.store, organizationId: org.id, customerId: wantCustomerId,
-    customerName: row.customer_name, currency: 'USD', status: row.status,
+    number, storeId: row.store, organizationId: org.id, organizationName: org.name,
+    customerId: wantCustomerId, customerName: row.customer_name, currency: 'USD', status: row.status,
     total, subTotal: total, shippingTotal: 0, shippingTotalWithTax: 0, taxTotal: 0, items,
     addresses: [shipAddr, billAddr],
     shipments: [{
       shipmentMethodCode: 'FixedRate', shipmentMethodOption: 'Ground', currency: 'USD',
+      organizationId: org.id, organizationName: org.name,
       price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
       status: 'New', number: `${number}-S1`, deliveryAddress: shipAddr, items: [],
     }],
     inPayments: [{
       gatewayCode: 'DefaultManualPaymentMethod', currency: 'USD',
-      customerId: wantCustomerId, customerName: row.customer_name, organizationId: org.id,
+      customerId: wantCustomerId, customerName: row.customer_name, organizationId: org.id, organizationName: org.name,
       sum: total, price: 0, priceWithTax: 0, total: 0, totalWithTax: 0, status: 'New', paymentStatus: 'New',
       number: `${number}-P1`, billingAddress: billAddr,
     }],
