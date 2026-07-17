@@ -6,6 +6,9 @@
  * vc-module-sales-rep REST API (POST /api/sales-rep) + the customer-module org-membership API
  * + the orders API. Business keys live in test-data/sales-rep/*.csv; runtime platform GUIDs are
  * written to test-data/aliases.<env>.json (never committed into the CSV).
+ * NOTE: aliases.<env>.json is a COMMITTED shared overlay — after a reseed that changes rep GUIDs,
+ * re-commit it so teammates/CI resolve the same @td(SR_REP_*.id) values. A stale overlay resolves
+ * to deleted/old entities. (Order GUIDs are NOT written to the overlay — orders resolve by number.)
  *
  * The module is deployed on the QA environments (vcst, vcptcore) — run with the matching `TEST_ENV`.
  *
@@ -341,9 +344,15 @@ async function main() {
   // returns from the JWT — NOT the rep's Contact/member id. Stamp the primary rep's account id
   // so the rep-scoped order queries actually return these orders (VCST-5304/5308).
   const primaryUserId = await resolveUserId(primaryRepEmail);
-  if (!primaryUserId) log('WARN: could not resolve SR_REP_PRIMARY ApplicationUser id — orders will not be rep-attributed');
-  else verbose(`orders attributed to SR_REP_PRIMARY account id ${primaryUserId}`);
-  for (const row of orders) await ensureOrder(row, orgs, primaryUserId);
+  if (!primaryUserId) {
+    // Fail loud: without the rep's ApplicationUser id every order would fall back to a wrong
+    // CustomerId and be invisible to salesRepOrders/lastOrder. Skip order seeding rather than
+    // write un-queryable orders; fix the rep account and re-run.
+    log('WARN: could not resolve SR_REP_PRIMARY ApplicationUser id — SKIPPING order seeding (orders would not be rep-attributed). Ensure the rep account exists, then re-run.');
+  } else {
+    verbose(`orders attributed to SR_REP_PRIMARY account id ${primaryUserId}`);
+    for (const row of orders) await ensureOrder(row, orgs, primaryUserId);
+  }
 
   // Phase 5 — write-back runtime GUIDs
   syncEnvAliases('sales-rep/sales-reps', repWriteback);
