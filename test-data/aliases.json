@@ -3594,6 +3594,13 @@
     "email_env": "SALES_REP_NOCUSTOMERS_EMAIL",
     "password_env": "TEST_USER_PASSWORD"
   },
+  "SR_REP_LOCKED_TFCTX": {
+    "_inline": true,
+    "_notes": "Auth-only role for SR_REP_LOCKED (agent-test-sr-locked@example.com) signing in under its UNLOCKED served org ORG-002/TechFlow via an ORG-SCOPED password grant. Its DEFAULT org is ORG-001/ACME, whose membership is per-org locked, so a plain grant returns 400 user_is_locked_in_organization (proven live, VCST-5304 2026-07-17). Sending organization_id=@td(ORG_TECHFLOW.platform_id) + storeId signs it in under TechFlow (HTTP 200); the lock still excludes ACME from salesRepCustomers/salesRepCustomer/salesRepOrders (confound-checked: an unlocked rep with the same org-scoped token still returns all its orgs, so the exclusion is the lock, not token scope). Unblocks 050m SR-GQL-012/017/024 headlessly (no browser). storeId defaults to STORE_ID. Same account as the CSV-backed SR_REP_LOCKED alias, which stays for its @td id/email/membership fields.",
+    "email_env": "SR_REP_LOCKED_EMAIL",
+    "password_env": "TEST_USER_PASSWORD",
+    "organization_id": "@td(ORG_TECHFLOW.platform_id)"
+  },
   "SR_REP_PRIMARY": {
     "file": "sales-rep/sales-reps",
     "filter": {

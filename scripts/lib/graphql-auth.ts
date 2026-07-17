@@ -14,6 +14,13 @@ export interface RoleCredentials {
   email: string;
   password: string;
   storeId?: string;
+  /**
+   * Optional organization context for the password grant (snake_case
+   * `organization_id` on the token request). Needed for a multi-org user whose
+   * DEFAULT org would otherwise be picked — e.g. a sales rep whose default org
+   * membership is locked must sign in under an UNLOCKED served org.
+   */
+  organizationId?: string;
 }
 
 export interface TokenEntry {
@@ -79,7 +86,7 @@ export function resolveRole(
   }
 
   const entry = aliases[role] as
-    | { _inline?: boolean; email_env?: string; password_env?: string; store_id?: string }
+    | { _inline?: boolean; email_env?: string; password_env?: string; store_id?: string; organization_id?: string }
     | undefined;
 
   if (entry?._inline && entry.email_env && entry.password_env) {
@@ -90,11 +97,21 @@ export function resolveRole(
         `Role "${role}" expects env vars ${entry.email_env}/${entry.password_env}, but they are not set`
       );
     }
+    // organization_id may be a literal GUID or an @td() token — resolve the token form.
+    let organizationId = entry.organization_id;
+    if (organizationId && /^@td\(/.test(organizationId)) {
+      try {
+        const resolver = new TestDataResolver(testDataDir);
+        const v = resolver.resolve(organizationId);
+        if (v && v !== organizationId) organizationId = v;
+      } catch { /* leave as-is; token request will send the literal */ }
+    }
     return {
       role,
       email,
       password,
       storeId: entry.store_id || process.env.STORE_ID,
+      organizationId,
     };
   }
 
@@ -161,6 +178,11 @@ export async function acquireToken(
 
   if (opts.storeId || creds.storeId) {
     body.set("storeId", opts.storeId || creds.storeId!);
+  }
+
+  // Org-scoped grant (snake_case) — sign in under a specific org context.
+  if (creds.organizationId) {
+    body.set("organization_id", creds.organizationId);
   }
 
   const res = await fetch(url, {
