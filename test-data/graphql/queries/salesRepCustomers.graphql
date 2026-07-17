@@ -1,0 +1,23 @@
+# name: salesRepCustomers
+# category: sales-rep
+# role: SALES_REP
+# purpose: Rep-side list of organizations the caller serves, with last-order summary
+# required-vars: (none)
+# optional-vars: CULTURE_NAME
+# last-validated: 2026-07-17
+# known-issues: (none)
+# used-by: SR-GQL-009, SR-GQL-011, SR-GQL-013
+
+query {
+  salesRepCustomers(first: 20, sort: "name:asc", storeId: "B2B-store", cultureName: "en-US") {
+    totalCount
+    pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+    items {
+      organizationId
+      organizationName
+      iconUrl
+      address { line1 city regionName postalCode countryCode }
+      lastOrder { id number createdDate status total { amount formattedAmount currency { code symbol } } }
+    }
+  }
+}

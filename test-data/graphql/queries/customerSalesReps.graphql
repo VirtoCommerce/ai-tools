@@ -1,0 +1,17 @@
+# name: customerSalesReps
+# category: sales-rep
+# role: ORG_USER
+# purpose: Buyer-side list of sales reps serving the caller's organization (org scoped from claims, no id arg)
+# required-vars: (none)
+# optional-vars: (none)
+# last-validated: 2026-07-17
+# known-issues: (none)
+# used-by: SR-GQL-001, SR-GQL-003, SR-GQL-007
+
+query {
+  customerSalesReps(first: 20, sort: "name:asc", storeId: "B2B-store") {
+    totalCount
+    pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+    items { id firstName lastName middleName fullName name about photoUrl emails phones }
+  }
+}

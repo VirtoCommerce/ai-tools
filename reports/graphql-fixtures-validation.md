@@ -1,10 +1,10 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-07-13T11:05:01.151Z
+**Validated at:** 2026-07-17T09:52:44.213Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 67 fixtures — 67 passed, 0 failed
+**Total:** 72 fixtures — 72 passed, 0 failed
 
-## ✅ Passed Fixtures (67)
+## ✅ Passed Fixtures (72)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
@@ -37,6 +37,7 @@
 | createWishlist | mutation | ORG_USER | wishlist | STORE_ID (String), USER_ID (String), LIST_NAME (String) | 2026-07-13 | 1 noted |
 | currentCustomerAddresses | query | ORG_USER | profile | (none) | 2026-07-13 | 1 noted |
 | currentOrganizationAddresses | query | ORG_USER | profile | (none) | 2026-07-13 | 1 noted |
+| customerSalesReps | query | ORG_USER | sales-rep | (none) | 2026-07-17 | 1 noted |
 | deleteMemberAddresses | mutation | ORG_USER | profile | MEMBER_ID (String), CITY, COUNTRY_CODE, LINE1, POSTAL_CODE (of the address to delete) | 2026-07-13 | 1 noted |
 | getSavedForLater | query | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
 | initializeApplication | query | PUBLIC | store | (none — pass one of `domain` or `storeId` via gql-vars to resolve the store) | 2026-07-13 | 1 noted |
@@ -60,6 +61,10 @@
 | removeConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
 | removeCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-07-13 | 1 noted |
 | removeWishlist | mutation | ORG_USER (owner) | wishlist | LIST_ID (String) | 2026-07-13 | 1 noted |
+| salesRepCustomer | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-07-17 | 1 noted |
+| salesRepCustomers | query | SALES_REP | sales-rep | (none) | 2026-07-17 | 1 noted |
+| salesRepOrders | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-07-17 | 1 noted |
+| salesRepOrderStatuses | query | SALES_REP | sales-rep | (none) | 2026-07-17 | 1 noted |
 | selectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 2 noted |
 | selectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
 | selectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
@@ -166,6 +171,9 @@
 **currentOrganizationAddresses**:
 - (none)
 
+**customerSalesReps**:
+- (none)
+
 **deleteMemberAddresses**:
 - Deletion matching key is the full address object — pass exact values
 
@@ -236,6 +244,18 @@
 - Removing a coupon that was never applied returns 200 OK (silent no-op) by design — not an error.
 
 **removeWishlist**:
+- (none)
+
+**salesRepCustomer**:
+- (none)
+
+**salesRepCustomers**:
+- (none)
+
+**salesRepOrders**:
+- (none)
+
+**salesRepOrderStatuses**:
 - (none)
 
 **selectAllCartConfigurationItems**:
