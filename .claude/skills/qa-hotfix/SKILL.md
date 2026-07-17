@@ -186,6 +186,22 @@ For each ready bundle (line `X.Y`):
 
 - Re-run the precheck → the bundle should now read `◯ already-applied`.
 - Report per bundle: new patch version + release URL. Comment the outcome on the JIRA task (English).
+- **Advance the JIRA status to `Hotfix ready`** (right after the outcome comment). The path is
+  **`Tested → Wait hotfixes → Hotfix ready`**, but the middle hop is driven by a field, not a
+  transition:
+  1. **Set the "Need hotfixes" flag** (VCST: `customfield_10181` = option `{id: "10151"}` — the
+     ` true` checkbox). A JIRA post-function then **auto-moves `Tested → Wait hotfixes`** (the
+     "Wait hotfixes" status only exists while this flag is set — that's why there is no manual
+     `Tested → Wait hotfixes` transition).
+  2. **Take the live-discovered transition whose target status is `Hotfix ready`** (VCST: the
+     "Hotfix released" transition, id `15`). Discover it with `getTransitionsForJiraIssue` — never
+     hardcode the id; match by `to.name === "Hotfix ready"`.
+  - **Never move a ticket backwards.** If the ticket is already at or past `Hotfix ready` (e.g.
+    `Testing on stable`, `Done`), no `Hotfix ready` transition is offered → leave the status as-is.
+    Setting the flag on such a ticket is harmless (it still needed hotfixes) but do not force a
+    backward transition.
+  - Tracker-agnostic: this is the VCST (Jira) workflow; discover the field + transitions live and
+    skip the step on a tracker/project that has no `Hotfix ready` status.
 - **Theme/frontend caveat:** a vc-frontend hotfix release asset is named `vc-frontend-X.Y.Z.zip`
   (not `vc-theme-b2b-vue-*`) — `reference-vc-frontend-release-asset-naming`. If a bundle's
   `ThemeB2BVue` pin must then be bumped, take the URL from the release's real `assets[]`, never by
