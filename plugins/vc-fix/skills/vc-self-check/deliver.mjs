@@ -67,7 +67,7 @@ function diagDir() {
 //   off  — nothing leaves the machine; refuse to send, DIAG stays local.
 //   ask  — DEFAULT: DRY draft + a single [Show diff]/[Send]/[Don't send] decision
 //          (the model shows the draft, then re-runs with --confirm on Send).
-//   auto — the Issue route files automatically (scrubbed) + notifies; a PR/fork-PR
+//   auto — the Issue route files automatically (scrubbed) + prints the filed URL; a PR/fork-PR
 //          is prepared as ready commands (a human always opens the PR).
 function readProfileObj() {
   try {
@@ -348,12 +348,20 @@ export function resolveRoute({ token, probe, scopes, override }) {
 }
 
 // ─── fingerprint / dedup ─────────────────────────────────────────────────────
-/** Stable, Date-free short hash (djb2 → base36) over the finding signatures. */
-export function fingerprint(findings) {
-  const sig = (findings || [])
-    .map((f) => `${f.skill}|${f.verdict}|${f.sev}|${(f.fix || "").replace(/\s+/g, " ").trim()}`)
-    .sort()
-    .join("\n");
+/**
+ * Stable, Date-free short hash (djb2 → base36) over the finding signatures AND the
+ * operator feedback. Folding feedback in is load-bearing: a feedback-ONLY session
+ * (no BROKEN/DEGRADED finding) would otherwise hash the empty findings list to a
+ * CONSTANT fingerprint, collapsing every negative-feedback report from every client
+ * into one upstream issue and losing the note (D2). Distinct notes → distinct
+ * fingerprints → distinct issues; identical notes dedup (the note lives in the first
+ * issue). Feedback text is scrubbed before hashing so the fingerprint carries no
+ * client identifier.
+ */
+export function fingerprint(findings, feedback = []) {
+  const parts = (findings || []).map((f) => `${f.skill}|${f.verdict}|${f.sev}|${(f.fix || "").replace(/\s+/g, " ").trim()}`);
+  for (const f of feedback || []) parts.push(`fb|${f.verdict}|${scrubText(f.text || "").replace(/\s+/g, " ").trim().slice(0, 120)}`);
+  const sig = parts.sort().join("\n");
   let h = 5381;
   for (let i = 0; i < sig.length; i++) h = ((h * 33) ^ sig.charCodeAt(i)) >>> 0;
   return h.toString(36);
@@ -380,7 +388,7 @@ export async function findDuplicateIssue({ repo, token, fp }) {
 }
 
 // ─── draft assembly ──────────────────────────────────────────────────────────
-export function buildDraft({ route, pluginVersion, findings, fp, feedback = [] }) {
+export function buildDraft({ route, pluginVersion, findings, fp, feedback = [], mode = "ask" }) {
   // The SKILL cell is untrusted too — a client-shaped skill label (e.g.
   // "AcmeCheckoutSkill") would otherwise leak into the row AND the title, and
   // `scrubText` alone misses it (word-boundary/shape gap). Gate it with the same
@@ -413,26 +421,28 @@ export function buildDraft({ route, pluginVersion, findings, fp, feedback = [] }
   });
   const worst = findings.some((f) => f.verdict === "BROKEN") ? "BROKEN" : findings.some((f) => f.verdict === "DEGRADED") ? "DEGRADED" : "OK";
   const skills = [...new Set(findings.map((f) => `${skillLabel(f)} ${f.verdict}`))].slice(0, 3).join(", ");
-  const title = `${ISSUE_TITLE_PREFIX} ${skills || worst}`;
+  const fbWorst = (feedback || []).some((f) => f.verdict === "down") ? "👎" : (feedback || []).some((f) => f.verdict === "up") ? "👍" : "";
+  // Title never says a bare "OK": a feedback-only report (no findings) reflects the
+  // operator verdict, not "OK" (D2).
+  const title = `${ISSUE_TITLE_PREFIX} ${skills || (feedback.length ? `operator feedback ${fbWorst}`.trim() : worst)}`;
 
   // Operator /vc-feedback verdicts — the highest-value signal (and the main detector
-  // of silent failures). §2a-gate each: a client-specific note is withheld, keeping
-  // only the 👍/👎 verdict; a clean note is scrubbed defense-in-depth.
+  // of silent failures). The note is FREE-FORM prose, and the §2a gate (isClientSpecific)
+  // is weaker on lowercase business identifiers than on structured cells. So the prose
+  // is included ONLY in `ask` mode (where the operator previews the full draft before
+  // Send). In `auto` mode — filed UNATTENDED — the note prose is DROPPED and only the
+  // 👍/👎 verdict is sent (B-F1). A client-specific note is withheld in every mode.
   const fbLines = (feedback || []).map((f) => {
     const mark = f.verdict === "down" ? "👎" : f.verdict === "up" ? "👍" : "•";
-    const note = f.text && !isClientSpecific(f.text) ? scrubText(f.text) : "(operator note withheld — client-specific)";
-    return `- ${mark} ${note}`;
+    const drop = mode === "auto" || !f.text || isClientSpecific(f.text);
+    return drop ? `- ${mark}` : `- ${mark} ${scrubText(f.text)}`;
   });
 
   const body = [
     `<!-- ${FP_MARKER} ${fp} -->`,
     `Automated quality report from the vc-fix self-diagnostics subsystem (\`/vc-self-check\`).`,
     `Plugin version: ${scrubText(pluginVersion)}. Generated from local session telemetry.`,
-    ``,
-    `## Findings`,
-    `| Skill | Verdict | Sev | Signal | Proposed fix (plugin file) |`,
-    `|-------|---------|-----|--------|----------------------------|`,
-    ...rows,
+    ...(rows.length ? [``, `## Findings`, `| Skill | Verdict | Sev | Signal | Proposed fix (plugin file) |`, `|-------|---------|-----|--------|----------------------------|`, ...rows] : []),
     ...(fbLines.length ? [``, `## Operator feedback`, ...fbLines] : []),
     ``,
     `## Containment`,
@@ -564,10 +574,10 @@ export async function main(argv = process.argv.slice(2)) {
 
   const md = readFileSync(diagPath, "utf8");
   const { pluginVersion, findings } = parseDiag(md);
-  const fp = fingerprint(findings);
   const sid = sessionIdFromDiag(md, diagPath);
   const feedback = readSessionFeedback(sid);
   const mode = feedbackMode(); // off | ask | auto (delivery consent — VCST-5509)
+  const fp = fingerprint(findings, feedback); // fold feedback so feedback-only reports don't collapse (D2)
   const purgeHint = `node "$pluginRoot/skills/vc-self-check/deliver.mjs" --purge${args.diag ? ` --diag ${diagPath}` : ""}`;
 
   // --purge (standalone): the terminal "delete all" step of the log→analyze→contribute→
@@ -622,7 +632,7 @@ export async function main(argv = process.argv.slice(2)) {
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
 
-  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback });
+  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback, mode });
   const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
 
   // Always write the draft locally (never under the plugin dir).

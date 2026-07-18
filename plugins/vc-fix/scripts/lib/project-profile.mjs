@@ -188,7 +188,7 @@ export const PROFILE_DEFAULTS = {
   //   off  = nothing is ever sent; the DIAG stays local.
   //   ask  = DEFAULT — deliver.mjs is a DRY draft + a single [Show diff]/[Send]/
   //          [Don't send] decision; sends only on Send.
-  //   auto = the Issue route files automatically (scrubbed) + notifies; a PR/fork-PR
+  //   auto = the Issue route files automatically (scrubbed) + prints the filed URL; a PR/fork-PR
   //          is handed off as ready `gh` commands (a human always opens the PR).
   feedback: { mode: "ask" },
 };

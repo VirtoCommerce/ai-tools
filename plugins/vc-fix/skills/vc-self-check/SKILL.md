@@ -186,7 +186,7 @@ node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--confirm] 
   DIAG stays local.
 - **`ask`** (default) — the default DRY run: writes a scrubbed `DELIVERY-*.md` draft and
   presents a single [Show diff] / [Send] / [Don't send] decision; sends only on Send.
-- **`auto`** — the Issue route auto-files (scrubbed) and notifies after; a PR/fork-PR is
+- **`auto`** — the Issue route auto-files (scrubbed) and prints the filed URL; a PR/fork-PR is
   prepared as ready `gh` commands (a human always opens the PR — an irreversible external
   action). Local capture + diagnosis never need consent — only this outbound step does.
 

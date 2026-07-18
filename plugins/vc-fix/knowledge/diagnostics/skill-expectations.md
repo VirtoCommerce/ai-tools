@@ -60,9 +60,9 @@ outcome. `error ≠ failure`: a self-corrected error is `recovered`, not `failed
 | Outcome | Meaning | Escalate? | Maps to |
 |---------|---------|-----------|---------|
 | `success` | Ran clean, produced its expected output (§1c). A clean BAIL is `success`. | no | S0 |
-| `recovered` | An error occurred but the same tool later succeeded within the span (self-corrected). | **no** | S3 (note only) |
+| `recovered` | An error occurred but the **same invocation** (same `tool` + `arg_hash`) later succeeded within the span (self-corrected). Keyed on the exact invocation, NOT the tool name — `Read(A)` fail then `Read(B)` ok is NOT a recovery of A. Applies to `tool_error`, `permission_denied`, and `hook_failure` alike. | **no** | S3 (note only) |
 | `degraded` | Completed but a **struggle** sub-signal fired (§1d) — persistence without progress. | yes | S2 |
-| `failed` | A blocking, unrecovered error: `permission_denied`/`hook_failure`, or a `tool_error` whose tool never succeeded again in the span. | yes | S1 |
+| `failed` | A blocking error that was **not** recovered (its exact `tool`+`arg_hash` never succeeded afterward) — a `tool_error`, `permission_denied`, or `hook_failure`. Signals come ONLY from `is_error` tool results (never from narration or the text content of a successful tool). | yes | S1 |
 | `silent_suspect` | Closed with no error and no struggle, but produced **none** of its expected-output markers (§1c) — task likely done wrong with no error signal. | yes | S1/S2 |
 
 Only `degraded`/`failed`/`silent_suspect` spans are `flagged`; the tail-trigger runs the
@@ -100,7 +100,7 @@ so normal thorough work does NOT trip them. Any hit ⇒ `degraded`.
 |------------|-----------|-----------------|-----|
 | `retry_storm` | same tool + `arg_hash` repeated with recurring errors | `RETRY_STORM_REPEATS=3` & `RETRY_STORM_ERRORS=2` | S2 |
 | `reread_loop` | same read/search `arg_hash` repeated | `REREAD_LOOP=5` | S2 |
-| `search_thrash` | consecutive search/read ops with no decisive op (Edit/Write/PR/create) between | `SEARCH_THRASH_RUN=8` | S2 |
+| `search_thrash` | a run of consecutive search/read ops AND the span produced **no** decisive op at all (Edit/Write/PR/create) — persistence without progress, not mere volume; a read-heavy investigation that ends in a decisive op is NOT thrash | `SEARCH_THRASH_RUN=8` | S2 |
 | `fallback_loop` | distinct browser variants used in one span (firefox→edge→chrome bounce) | `FALLBACK_DISTINCT=3` | S2 |
 | `recurring_error` | same error signature keeps returning | `RECURRING_ERROR=3` | S2 |
 | `stall` | a single op ran abnormally long | `STALL_MS=8min` | S2/S3 |

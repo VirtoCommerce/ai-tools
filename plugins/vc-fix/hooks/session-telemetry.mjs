@@ -63,7 +63,7 @@
  * NOTE: this collector is the canonical `plugins/vc-fix/` copy. The `.claude/`
  * mirror predates VCST-5509 and is intentionally NOT kept in lock-step here.
  */
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, renameSync } from "node:fs";
 import { dirname, resolve, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -159,6 +159,10 @@ const T = {
   STALL_MS: 8 * 60 * 1000, // a single op wall-clock >8min
   LOW_YIELD_OPS: 20, // ≥20 tool ops in a span with zero decisive op
 };
+// Bound the per-span op history so a long-lived command span can't grow its
+// state.json without limit (the struggle detectors only need a recent window;
+// span.opCount / span.sawDecisive carry the whole-span aggregates they need).
+const OPS_CAP = 120;
 
 // ─── signal counts ───────────────────────────────────────────────────────────
 const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail"];
@@ -169,9 +173,18 @@ const HOOK_FAILURE_RE = /(error TS\d{3,}|\btsc\b[^\n]*error|PostToolUse hook[^\n
 const BAIL_RE = /(FIX_STATUS:\s*FAILED|\bBAIL(?:_CLASS)?\b|out-of-auto-fix-scope|hand(?:ed)?[ -]off|STOP\s*[—-]\s*hand)/;
 
 // Plugin slash-commands we open a COMMAND span for (acceptance criterion: a
-// command session is fully traced, not just skill-attributed).
-const PLUGIN_COMMANDS = ["project-init", "qa-bug", "qa-fix", "qa-verify-fix", "qa-monitoring", "qa-env-check", "vc-self-check", "vc-feedback", "vc-docs"];
+// command session is fully traced, not just skill-attributed). `/vc-feedback` is
+// deliberately ABSENT — cmdPrompt records a feedback record and returns before
+// COMMAND_RE, so it never opens a command span.
+const PLUGIN_COMMANDS = ["project-init", "qa-bug", "qa-fix", "qa-verify-fix", "qa-monitoring", "qa-env-check", "vc-self-check", "vc-docs"];
 const COMMAND_RE = new RegExp(`^\\s*/(${PLUGIN_COMMANDS.join("|")})\\b`, "i");
+
+// Normalize a skill/command name for the oracle lookup: strip a leading "/" and a
+// leading "<plugin>:" namespace (a Skill invoked as `vc-fix:qa-bug` must still map
+// to the `qa-bug` EXPECTED_OUTPUT entry, else it silently escapes silent_suspect).
+function normalizeName(n) {
+  return String(n ?? "unknown").replace(/^\//, "").replace(/^[\w.-]+:/, "");
+}
 
 function textOf(content) {
   if (typeof content === "string") return content;
@@ -195,7 +208,9 @@ function newSpan(state, kind, name, startTs, parentId) {
     startTs: startTs || nowIso(),
     signals: zeroCounts(),
     details: [], // bounded ring of redacted snippets (evidence)
-    ops: [], // bounded op history for struggle detection
+    ops: [], // bounded ring of recent ops for struggle detection (see OPS_CAP)
+    opCount: 0, // whole-span op total (survives the ops-ring cap; used by low_yield)
+    sawDecisive: false, // did any decisive op run in this span (whole-span; low_yield)
     sawExpected: false,
     retries: 0,
     lastTs: startTs || nowIso(),
@@ -204,6 +219,16 @@ function newSpan(state, kind, name, startTs, parentId) {
 function pushDetail(span, cls, text, extra) {
   span.signals[cls] = (span.signals[cls] ?? 0) + 1;
   if (span.details.length < 25) span.details.push({ cls, snippet: snippet(text), ...extra });
+}
+// Record a child op on its parent span for struggle detection. Keeps a bounded
+// RING (last OPS_CAP) plus whole-span aggregates (opCount, sawDecisive) so a
+// long-lived command span's state.json stays small and low_yield stays correct.
+function pushOp(span, op) {
+  if (!span) return;
+  span.opCount = (span.opCount ?? 0) + 1;
+  if (DECISIVE_RE.test(op.tool)) span.sawDecisive = true;
+  span.ops.push(op);
+  if (span.ops.length > OPS_CAP) span.ops.shift();
 }
 function markExpected(span, blob) {
   if (!span || span.sawExpected) return;
@@ -244,11 +269,15 @@ function detectStruggle(span) {
   }
   for (const n of readCounts.values()) if (n >= T.REREAD_LOOP) { struggle.push("reread_loop"); break; }
 
-  // search_thrash — a long run of search/read ops with no decisive op between.
-  let run = 0;
-  for (const o of ops) {
-    if (DECISIVE_RE.test(o.tool)) run = 0;
-    else if (SEARCH_RE.test(o.tool)) { run++; if (run >= T.SEARCH_THRASH_RUN) { struggle.push("search_thrash"); break; } }
+  // search_thrash — persistence WITHOUT progress: a long run of search/read ops AND
+  // the span produced NO decisive op at all. A normal read-heavy investigation that
+  // ends in a Write/Edit/PR/create (sawDecisive) is NOT thrash — it made progress.
+  if (!span.sawDecisive) {
+    let run = 0;
+    for (const o of ops) {
+      if (DECISIVE_RE.test(o.tool)) run = 0;
+      else if (SEARCH_RE.test(o.tool)) { run++; if (run >= T.SEARCH_THRASH_RUN) { struggle.push("search_thrash"); break; } }
+    }
   }
 
   // fallback_loop — bouncing across browser variants within one span.
@@ -269,23 +298,26 @@ function detectStruggle(span) {
   // stall — a single op ran abnormally long.
   if (ops.some((o) => (o.durationMs || 0) > T.STALL_MS)) struggle.push("stall");
 
-  // low_yield — many tool ops, nothing decisive produced.
-  const decisive = ops.some((o) => DECISIVE_RE.test(o.tool));
-  if (ops.length >= T.LOW_YIELD_OPS && !decisive) struggle.push("low_yield");
+  // low_yield — many tool ops (whole-span count), nothing decisive produced.
+  if ((span.opCount ?? ops.length) >= T.LOW_YIELD_OPS && !span.sawDecisive) struggle.push("low_yield");
 
   return [...new Set(struggle)];
 }
 
-// Was every errored tool later re-run successfully within the span? (self-correction)
+// Self-correction test — keyed on the SPECIFIC invocation (tool + arg_hash), not
+// the tool NAME: `Read(A)` failing then `Read(B)` succeeding is NOT a recovery of
+// A (different target). An errored key is "recovered" only if the LAST op of that
+// exact key is a success (the same thing was retried and eventually worked).
 function allErrorsRecovered(span) {
-  const errored = new Set();
-  const succeededAfterError = new Set();
+  const lastStatus = new Map();
+  const everErrored = new Set();
   for (const o of span.ops || []) {
-    if (o.status === "error") errored.add(o.tool);
-    else if (errored.has(o.tool)) succeededAfterError.add(o.tool);
+    const k = `${o.tool}|${o.arg_hash}`;
+    lastStatus.set(k, o.status);
+    if (o.status === "error") everErrored.add(k);
   }
-  if (!errored.size) return false;
-  for (const t of errored) if (!succeededAfterError.has(t)) return false;
+  if (!everErrored.size) return false;
+  for (const k of everErrored) if (lastStatus.get(k) !== "ok") return false;
   return true;
 }
 
@@ -293,13 +325,15 @@ function classify(span) {
   const s = span.signals;
   const blockingErr = s.tool_error > 0 || s.permission_denied > 0 || s.hook_failure > 0;
   const struggle = detectStruggle(span);
-  // permission_denied / hook_failure that never resolved are hard blockers.
-  const hardBlock = s.permission_denied > 0 || s.hook_failure > 0;
-
+  const recovered = blockingErr && allErrorsRecovered(span);
+  // A blocking error is a `failed` outcome UNLESS the specific failed invocation was
+  // self-corrected (retried to success). permission_denied / hook_failure that were
+  // recovered are S3 `recovered`, matching the oracle §1a / §2 rows — they only hard-
+  // block when they never resolved.
   let outcome;
-  if (blockingErr && allErrorsRecovered(span) && !hardBlock) {
+  if (recovered) {
     outcome = "recovered"; // error occurred but self-corrected → do NOT escalate
-  } else if (hardBlock || (s.tool_error > 0 && !allErrorsRecovered(span))) {
+  } else if (blockingErr) {
     outcome = "failed";
   } else if (struggle.length) {
     outcome = "degraded";
@@ -358,6 +392,17 @@ function emitSpan(jsonlPath, state, span, endTs) {
   }
 }
 
+// Close the open skill span and roll its expected-output result UP to the enclosing
+// command span: a command that delegates its work to a same-named skill (or whose
+// skill produced the expected artifact) must NOT itself be judged silent_suspect.
+function closeSkill(jsonlPath, state, endTs) {
+  const sk = state.currentSkill;
+  if (!sk) return;
+  if (sk.sawExpected && state.currentCommand) state.currentCommand.sawExpected = true;
+  emitSpan(jsonlPath, state, sk, endTs);
+  state.currentSkill = null;
+}
+
 // ─── transcript scan — the single reconstruction engine ──────────────────────
 /**
  * Scan the transcript delta [processedLines, end) in chronological order, opening
@@ -411,14 +456,14 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         if (parent) markExpected(parent, `${name} ${redact(JSON.stringify(item.input ?? {})).slice(0, 500)}`);
 
         if (name === "Skill") {
-          if (state.currentSkill) emitSpan(jsonlPath, state, state.currentSkill, ts), (state.currentSkill = null);
-          const skillName = String(item.input?.skill ?? item.input?.command ?? item.input?.name ?? "unknown").replace(/^\//, "");
+          if (state.currentSkill) closeSkill(jsonlPath, state, ts);
+          const skillName = normalizeName(item.input?.skill ?? item.input?.command ?? item.input?.name);
           state.currentSkill = newSpan(state, "skill", skillName, ts, state.currentCommand?.id ?? null);
           state.anySkillSeen = true;
           if (/vc-self-check/i.test(skillName)) state.selfCheckSeen = true;
         } else if (name === "Task" || name === "Agent") {
           const agentType = String(item.input?.subagent_type ?? item.input?.agentType ?? "unknown");
-          if (parent) { parent.signals.agent_calls++; parent.ops.push({ tool: `agent:${agentType}`, arg_hash, status: "ok", ts }); }
+          if (parent) parent.signals.agent_calls++; // the op is pushed once, when the agent span CLOSES
           state.totals.agent_calls++;
           const sp = newSpan(state, "agent", agentType, ts, innerParent()?.id ?? null);
           sp.arg_hash = arg_hash;
@@ -433,42 +478,52 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
       } else if (type === "tool_result") {
         const id = item.tool_use_id;
         const body = textOf(item.content);
-        const isErr = item.is_error === true;
-        const isDenied = !isErr && PERMISSION_DENIED_RE.test(body);
-        const isHook = !isErr && !isDenied && HOOK_FAILURE_RE.test(body);
+        // A signal is recorded ONLY from a genuine FAILURE result (`is_error === true`).
+        // A SUCCESSFUL tool whose body merely CONTAINS error-like text — grepping a
+        // build log, reading source that says "npm error"/"permission denied" — is NOT a
+        // failure (A-F1/D1: no false `failed` from tool output or narration). An actual
+        // error is sub-typed permission_denied / hook_failure / tool_error.
+        const cls = item.is_error === true
+          ? (PERMISSION_DENIED_RE.test(body) ? "permission_denied" : HOOK_FAILURE_RE.test(body) ? "hook_failure" : "tool_error")
+          : null;
         const sp = id ? state.openOps.get(id) : null;
         const p = innerParent();
+        // Any result (success OR failure) can carry an expected-output marker — a
+        // create_pull_request response or a sub-agent Task return "opened PR pull/42".
+        // This is what keeps a command/skill that delivers via a sub-agent (whose
+        // internal ops are in a skipped sidechain) from being false `silent_suspect`.
+        if (p) markExpected(p, body);
         if (sp) {
           state.openOps.delete(id);
-          if (isErr) pushDetail(sp, "tool_error", body, { toolUseId: id });
-          else if (isDenied) pushDetail(sp, "permission_denied", body, { toolUseId: id });
-          else if (isHook) pushDetail(sp, "hook_failure", body);
+          if (cls) pushDetail(sp, cls, body, { toolUseId: id });
           emitSpan(jsonlPath, state, sp, ts);
-          if (p) {
-            p.ops.push({ tool: sp.name, arg_hash: sp.arg_hash, status: isErr || isDenied || isHook ? "error" : "ok", ts, durationMs: Date.parse(ts) - Date.parse(sp.startTs) || 0 });
-            if (isErr) pushDetail(p, "tool_error", body);
-            else if (isDenied) pushDetail(p, "permission_denied", body);
-            else if (isHook) pushDetail(p, "hook_failure", body);
+          // Roll the op onto the parent ONLY if it is still the span that opened it
+          // (A-F7: a late result must not be misattributed to a different skill that
+          // has opened since). The tool span itself always carries its own signal.
+          if (p && p.id === sp.parentId) {
+            pushOp(p, { tool: sp.name, arg_hash: sp.arg_hash, status: cls ? "error" : "ok", ts, durationMs: Date.parse(ts) - Date.parse(sp.startTs) || 0 });
+            if (cls) pushDetail(p, cls, body);
           }
-          if (isErr) state.totals.tool_error++;
-          else if (isDenied) state.totals.permission_denied++;
-          else if (isHook) state.totals.hook_failure++;
-        } else {
-          if (isErr) attributeSignal("tool_error", body, { toolUseId: id });
-          else if (isDenied) attributeSignal("permission_denied", body, { toolUseId: id });
-          else if (isHook) attributeSignal("hook_failure", body);
+          if (cls) state.totals[cls]++;
+        } else if (cls) {
+          attributeSignal(cls, body, { toolUseId: id });
         }
       } else if (type === "text") {
+        // Narrative text (assistant/user) is scanned ONLY for expected-output markers
+        // and BAIL. Do NOT derive permission_denied/hook_failure from prose — a user
+        // who writes "login returns permission denied" is describing a bug, not failing
+        // (A-F1). Real failures come through tool_result above.
         const b = item.text ?? "";
         if (parent) markExpected(parent, b);
-        if (PERMISSION_DENIED_RE.test(b)) attributeSignal("permission_denied", b);
         if (BAIL_RE.test(b)) { if (parent) pushDetail(parent, "stop_bail", b); state.totals.stop_bail++; }
       }
     }
 
+    // Top-level string content = a system / hook echo (e.g. the `tsc` PostToolUse
+    // output), not user prose — keep hook_failure detection here (the tsc-on-every-Edit
+    // cross-cutting pattern), but not permission_denied (denials arrive as tool_results).
     if (typeof content === "string") {
       if (HOOK_FAILURE_RE.test(content)) attributeSignal("hook_failure", content);
-      if (PERMISSION_DENIED_RE.test(content)) attributeSignal("permission_denied", content);
     }
   }
 }
@@ -538,9 +593,20 @@ function loadState(statePath, ev, sid) {
   }
   return freshState(ev, sid);
 }
+// Atomic write (temp + rename): a crash mid-write can never leave a truncated
+// state.json that would parse-fail → freshState → cursor reset to 0 → the whole
+// transcript re-scanned and every span re-emitted (A-F5). rename() is atomic on
+// the same filesystem; a stray temp file is harmless (never read).
 function saveState(statePath, state) {
   const out = { ...state, openOps: [...state.openOps.entries()] };
-  writeFileSync(statePath, JSON.stringify(out), "utf8");
+  const tmp = `${statePath}.tmp`;
+  try {
+    writeFileSync(tmp, JSON.stringify(out), "utf8");
+    renameSync(tmp, statePath);
+  } catch {
+    // Fall back to a direct write rather than losing the cursor entirely.
+    try { writeFileSync(statePath, JSON.stringify(out), "utf8"); } catch { /* give up silently */ }
+  }
 }
 
 function readPluginVersion() {
@@ -623,8 +689,16 @@ async function cmdPrompt(ev) {
 
   // /vc-feedback "<text>" [👍|👎] — attach an explicit operator verdict to the trace.
   if (/^\/vc-feedback\b/i.test(prompt)) {
-    const verdict = /👎|:-1:|:thumbsdown:|\bdown\b|\bbad\b/i.test(prompt) ? "down" : /👍|:\+1:|:thumbsup:|\bup\b|\bgood\b/i.test(prompt) ? "up" : "neutral";
-    const text = prompt.replace(/^\/vc-feedback\b/i, "").replace(/👍|👎|:[-+\w]+:/g, "").trim();
+    // Verdict from an EXPLICIT marker only — emoji / :±1: / :thumbs*: / a trailing
+    // ±1 / a whole-word up|down|good|bad as the LAST token. Substring sentiment on
+    // prose ("not bad", "the dropdown", "up to date") is too unreliable and would
+    // spuriously force a `down` (→ upstream delivery via hasNegFeedback) — so it is
+    // NOT used (B-F2/D7).
+    const tail = prompt.replace(/^\/vc-feedback\b/i, "").trim();
+    const neg = /(👎|:-1:|:thumbsdown:)/.test(tail) || /(^|\s)(-1|down|bad)\s*$/i.test(tail);
+    const pos = /(👍|:\+1:|:thumbsup:)/.test(tail) || /(^|\s)(\+1|up|good)\s*$/i.test(tail);
+    const verdict = neg ? "down" : pos ? "up" : "neutral";
+    const text = tail.replace(/👍|👎|:[-+\w]+:/g, "").replace(/(^|\s)([-+]1|up|down|good|bad)\s*$/i, "").trim();
     appendRecord(jsonl, { type: "feedback", sessionId: sid, ts: nowIso(), verdict, text: snippet(text, 500), skill: state.currentSkill?.name ?? state.currentCommand?.name ?? null });
     state.feedbackCount = (state.feedbackCount ?? 0) + 1;
     saveState(statePath, state);
@@ -662,8 +736,21 @@ async function cmdFinalize(ev) {
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
   scanTranscript(jsonl, transcriptPath, state);
 
-  // Close trailing spans (skill first, then command).
-  if (state.currentSkill) { emitSpan(jsonl, state, state.currentSkill, state.currentSkill.lastTs); state.currentSkill = null; }
+  // Drain any tool/agent op still open at Stop (interrupted session — no tool_result
+  // seen) so its span is recorded and its op reaches the parent (A-F8), instead of
+  // being silently dropped. Status "incomplete" (not an error → doesn't force failed).
+  for (const [, sp] of state.openOps) {
+    const p = state.currentSkill && state.currentSkill.id === sp.parentId ? state.currentSkill
+      : state.currentCommand && state.currentCommand.id === sp.parentId ? state.currentCommand
+      : null;
+    emitSpan(jsonl, state, sp, sp.lastTs);
+    if (p) pushOp(p, { tool: sp.name, arg_hash: sp.arg_hash, status: "incomplete", ts: sp.lastTs, durationMs: 0 });
+  }
+  state.openOps.clear();
+
+  // Close trailing spans (skill first — rolling its expected-output up to the command
+  // — then the command).
+  if (state.currentSkill) closeSkill(jsonl, state, state.currentSkill.lastTs);
   if (state.currentCommand) { emitSpan(jsonl, state, state.currentCommand, state.currentCommand.lastTs); state.currentCommand = null; }
 
   // Tail-based escalation: keep only NEW non-success signatures we haven't already
