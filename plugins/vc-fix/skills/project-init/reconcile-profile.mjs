@@ -75,6 +75,20 @@ const MANAGED_FIELDS = [
       { label: "No", value: false, hint: "hook stays a full no-op — no .vc-fix/" },
     ],
   },
+  {
+    // Consent for UPSTREAM delivery of self-diagnostics (VCST-5509). An object field —
+    // resolved with `--set feedback.mode=<auto|ask|off>` (sub-key resolution below).
+    path: "feedback",
+    policy: "ask",
+    default: { mode: "ask" },
+    question:
+      "When vc-fix self-diagnostics finds a plugin quality issue, how should it be contributed back to VirtoCommerce to improve the plugin? This gates ONLY outbound delivery — local capture/diagnosis are unaffected, and nothing is ever sent without scrubbing all client identifiers first.",
+    options: [
+      { label: "Ask each time (recommended)", value: { mode: "ask" }, hint: "dry-run + a single Show-diff/Send/Don't-send decision" },
+      { label: "Automatic", value: { mode: "auto" }, hint: "file the scrubbed GitHub Issue automatically; PR/fork-PR handed off as commands" },
+      { label: "Off", value: { mode: "off" }, hint: "nothing leaves the machine — the DIAG stays local" },
+    ],
+  },
 ];
 const managedFor = (path) => MANAGED_FIELDS.find((m) => m.path === path);
 
@@ -137,6 +151,17 @@ function parseDecisions(setFlags) {
 const isPlainObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const clone = (v) => (v === undefined ? v : JSON.parse(JSON.stringify(v)));
 
+/** Set a dotted sub-path (e.g. "mode") into `obj`, creating intermediate objects. */
+function setDeep(obj, dotted, value) {
+  const parts = dotted.split(".");
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (!isPlainObject(cur[parts[i]])) cur[parts[i]] = {};
+    cur = cur[parts[i]];
+  }
+  cur[parts[parts.length - 1]] = value;
+}
+
 // ─── the reconcile core ──────────────────────────────────────────────────────
 /**
  * Reconcile `existing` (a raw profile object, _meta already stripped) against the
@@ -179,9 +204,17 @@ function reconcile(schema, existing, decisions) {
           // Missing field → ADD per policy.
           const managed = managedFor(path);
           if (managed && (managed.policy === "ask" || managed.policy === "rescan")) {
+            // Sub-key resolution for an object-valued managed field: `--set feedback.mode=off`
+            // folds into the object (so the operator resolves a nested opt-in the same way).
+            const subKeys = Object.keys(decisions).filter((dk) => dk.startsWith(`${path}.`));
             if (path in decisions) {
               out[k] = decisions[path];
               report.added.push({ path, value: decisions[path], via: `${managed.policy}-resolved` });
+            } else if (subKeys.length) {
+              const obj = clone(managed.default) ?? clone(schemaNode[k]) ?? {};
+              for (const dk of subKeys) setDeep(obj, dk.slice(path.length + 1), decisions[dk]);
+              out[k] = obj;
+              report.added.push({ path, value: obj, via: `${managed.policy}-resolved` });
             } else {
               // Leave ABSENT until the user/scan resolves it — never guess.
               report.pending.push({

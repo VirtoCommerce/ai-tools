@@ -37,29 +37,47 @@ right repo and tracker.
 /qa-monitoring both          # Query App Insights, dedup, triage, live-repro, report
 /qa-env-check                # Validate env vars, endpoints, MCP servers
 /vc-self-check               # Diagnose whether the plugin's own skills ran correctly
+/vc-feedback "…" 👎          # Attach your own verdict to this session (silent-failure signal)
 ```
 
-## Self-diagnostics
+## Self-diagnostics — the client→vendor feedback loop
 
-`vc-fix` watches whether **its own** skills run correctly on your deployment, so quality
-problems can flow back to VirtoCommerce and improve the plugin — with strict privacy guarantees.
+`vc-fix` watches whether **its own** commands / skills / agents run correctly on your
+deployment, so quality problems can flow back to VirtoCommerce and improve the plugin —
+with strict privacy guarantees. **Capture is decoupled from escalation:** everything is
+recorded silently; only *interesting* (non-clean) work is ever surfaced or sent.
 
-- **What is captured (locally only).** A passive hook (`hooks/session-telemetry.mjs`) records, per
-  session, which plugin skills ran, their timings, and deterministic problem *signals* — tool
-  errors, denied permissions, hook failures, STOP/BAIL markers. It writes a small JSON-lines file
-  to `<project>/.vc-fix/diagnostics/<session_id>.jsonl` (gitignored). **Secrets are redacted**
-  (tokens, passwords, card numbers, JWTs); the collector never blocks a tool and never fails your
-  session.
-- **Nothing runs, and nothing leaves, without you.** When a session looks anomalous, you get a
-  single plain **yes/no** prompt at the end — never an automatic diagnosis. Only if you say yes does
-  `/vc-self-check` read the telemetry + transcript and write a **local** `DIAG-*.md`. Sending
-  anything to VirtoCommerce is a *separate*, explicitly-confirmed step (`/vc-self-check deliver`).
-  Opt out of the prompt entirely with `VC_FIX_DIAG_CONSENT=off`.
-- **Client-code containment.** The optional upstream report is scrubbed of all client source,
-  paths, URLs, identifiers, tickets, and secrets — only plugin-file references and a generic
-  reproduction survive; a client-specific finding is downgraded to a generic description. The
-  delivery **never touches your installed plugin** and routes by your GitHub token's real rights
-  (PR / fork-PR / issue / local-only). See the
+- **What is captured (locally only).** A passive hook (`hooks/session-telemetry.mjs`) records
+  every operation as a **span** — command, skill, agent, tool — with timings, and deterministic
+  problem *signals* (tool errors, denied permissions, hook failures, STOP/BAIL markers). Spans are
+  reconstructed from the session transcript (no per-tool-call overhead). It writes a small
+  JSON-lines file to `<project>/.vc-fix/diagnostics/<session_id>.jsonl` (gitignored). **Raw payloads
+  are never stored** — tool inputs are hashed (`arg_hash`) and **secrets are redacted** (tokens,
+  passwords, card numbers, JWTs). The collector never blocks a tool and never fails your session.
+  Capture runs only when `project-profile.json` has `selfDiagnostics: true`.
+- **Outcome, not error count, drives escalation.** Each skill/command span is classified with cheap
+  heuristics (no LLM): `success` · `recovered` (a self-corrected error — **not** escalated) ·
+  `degraded` (a *struggle* pattern: retry storm, search thrash, reread/fallback loop, low yield) ·
+  `failed` (a blocking, unrecovered error) · `silent_suspect` (finished clean but produced none of
+  its expected output — a *silent* failure). The old numeric `>= 6` anomaly gate is gone.
+- **One silent auto-diagnosis, deduped.** When a span is `failed`/`degraded`/`silent_suspect` with a
+  **new** signature, the end-of-turn hook runs `/vc-self-check` **silently** (no yes/no modal) to
+  write a **local** `DIAG-*.md` and prints one info line. The same signature never re-triggers; the
+  happy path stays silent. Kill switch: `VC_FIX_DIAG_CONSENT=off` suppresses the auto-run (capture
+  still records).
+- **Tell it directly.** `/vc-feedback "<what happened>" [👍|👎]` attaches your verdict to the
+  session — the highest-value signal, and the main way a *silent* failure (looked fine, was wrong)
+  gets caught.
+- **Delivery is consented (`feedback.mode`), scrubbed, and deduped.** Sending anything upstream is a
+  separate step (`/vc-self-check deliver`) gated by `project-profile.json` `feedback.mode`
+  (set once at `/project-init`): **`off`** = nothing ever leaves the machine · **`ask`** (default) =
+  a dry-run + a single Show-diff/Send/Don't-send decision · **`auto`** = the Issue route files
+  automatically, a PR/fork-PR is handed off as ready commands (a human always opens the PR). Every
+  outbound report is scrubbed of all client source, paths, URLs, identifiers, tickets, and secrets —
+  only plugin-file references and a generic reproduction survive; a client-specific finding is
+  downgraded. Identical defects from many clients **dedup to one upstream issue with a "+1
+  occurrence" comment**. Delivery **never touches your installed plugin** and routes by your GitHub
+  token's real rights (PR / fork-PR / issue / local-only). See the
   [`/vc-self-check` skill](skills/vc-self-check/SKILL.md).
 
 ## Why self-contained

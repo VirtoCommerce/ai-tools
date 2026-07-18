@@ -523,13 +523,21 @@ report — no writes, no scans, no questions of its own:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write \
-  --set selfDiagnostics=<true|false>
+  --set selfDiagnostics=<true|false> \
+  --set feedback.mode=<auto|ask|off>
 ```
+
+`feedback.mode` (VCST-5509) is the DELIVERY-consent opt-in — it gates only the outbound
+`/vc-self-check deliver` step, never local capture/diagnosis. Default `ask` = a dry-run +
+a single Show-diff/Send/Don't-send decision; `auto` = the Issue route files automatically
+(scrubbed) and a PR/fork-PR is handed off as commands; `off` = nothing ever leaves the
+machine. It surfaces as its own `pending` entry with a three-way `question`/`options`.
 
 `--write` applies the structural adds/removes plus any `--set` decisions. Unresolved
 `pending`/`rescan` fields are left **absent** — safe, because a missing field reads as its
-no-op default (e.g. no `selfDiagnostics` ⇒ the telemetry hook does nothing) — and stay in
-the report so a later `--check` can finish them. Reconciling is **idempotent**: once done,
+no-op default (e.g. no `selfDiagnostics` ⇒ the telemetry hook does nothing; no `feedback`
+⇒ delivery treats it as `ask`) — and stay in the report so a later `--check` can finish
+them. Reconciling is **idempotent**: once done,
 the report is `current`.
 
 If a `--write` would remove **≥5 fields** it returns `status:"needs-force"` and writes

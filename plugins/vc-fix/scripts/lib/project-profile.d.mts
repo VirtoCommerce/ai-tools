@@ -46,8 +46,10 @@ export interface ProjectProfile {
     clientGithubAccount: string;
   };
   repos: { client: ProfileRepo[]; platform: ProfileRepo[] };
-  /** Opt-in for the passive session-telemetry hook. true ⇒ record to <outputRoot>/.vc-fix/; absent/false ⇒ the hook is a full no-op. */
+  /** Opt-in for the passive session-telemetry CAPTURE hook. true ⇒ record to <outputRoot>/.vc-fix/; absent/false ⇒ the hook is a full no-op. */
   selfDiagnostics: boolean;
+  /** Consent for UPSTREAM delivery of self-diagnostics (VCST-5509). Gates deliver.mjs only; local capture/diagnosis need no consent. off = never send; ask (default) = dry-run + confirm; auto = Issue auto-files, PR/fork-PR handed off. */
+  feedback: { mode: "auto" | "ask" | "off" };
 }
 
 export const PROFILE_DEFAULTS: ProjectProfile;

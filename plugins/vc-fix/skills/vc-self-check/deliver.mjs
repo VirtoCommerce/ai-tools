@@ -7,10 +7,16 @@
  * GitHub token's ACTUAL rights and gated on explicit user consent.
  *
  * Mirrors `contributionPlan`, pointed at the plugin repo. Reuses
- * `../project-init/probe-lib.mjs` (`resolveGithubToken` + `probeGithubUpstream`)
- * — that relative import resolves identically in BOTH trees (plugins/vc-fix/ and
- * .claude/ each ship skills/project-init/probe-lib.mjs), so this file is
- * byte-identical across trees.
+ * `../project-init/probe-lib.mjs` (`resolveGithubToken` + `probeGithubUpstream`).
+ * (This was byte-identical across the plugins/vc-fix/ and .claude/ trees before
+ * VCST-5509; that story updated only the canonical plugins/vc-fix/ copy, so the
+ * .claude/ mirror now lags — see the tech-debt note in the plan.)
+ *
+ * CONSENT (VCST-5509): outbound delivery is gated by project-profile.json
+ * `feedback.mode` — off (never send, DIAG stays local) / ask (DEFAULT: DRY draft +
+ * a single [Show diff]/[Send]/[Don't send] decision) / auto (Issue files
+ * automatically; a PR/fork-PR is handed off as ready commands). Local capture +
+ * diagnosis need no consent — only this step does.
  *
  * HARD INVARIANTS (quality-gates §2a client-code containment + per-action consent):
  *   - NEVER touches the client-installed plugin (read-only w.r.t. the install).
@@ -18,19 +24,21 @@
  *     of client source, file paths, URLs, identifiers, tickets, data, and secrets —
  *     only plugin-file references + a generic repro survive. A finding whose
  *     evidence is client-specific is DOWNGRADED to a generic description, never
- *     attached.
- *   - DRAFT-AND-CONFIRM: the default run is DRY (draft + show). It sends ONLY with
- *     `--confirm`, and even then auto-sends only the low-risk GitHub Issue route;
- *     a PR/fork-PR is handed off as ready commands (opening a code PR needs a
- *     working tree + a human-reviewed patch, which a telemetry script must not
- *     fabricate).
- *   - Issue dedup: a stable fingerprint marker prevents repeat sessions from
- *     spamming the tracker.
+ *     attached. Operator /vc-feedback notes are §2a-gated the same way.
+ *   - DRAFT-AND-CONFIRM (mode=ask): the run is DRY (draft + show). It sends ONLY
+ *     with `--confirm` (mode=auto pre-confirms), and even then auto-sends only the
+ *     low-risk GitHub Issue route; a PR/fork-PR is handed off as ready commands
+ *     (opening a code PR needs a working tree + a human-reviewed patch, which a
+ *     telemetry script must not fabricate).
+ *   - Issue dedup with OCCURRENCE COUNTING: a stable fingerprint marker converges
+ *     the same defect from many clients to ONE upstream issue — a dedup hit adds a
+ *     "+1 occurrence" comment instead of a new ticket.
  *
  * Usage:
  *   node deliver.mjs [--diag <path>] [--repo <owner/name>] [--as pr|fork-pr|issue|local]
- *                    [--confirm] [--json]
- *   (default --repo VirtoCommerce/vc-mcp-testing-module; default is a DRY draft.)
+ *                    [--confirm] [--keep] [--purge] [--json]
+ *   (default --repo VirtoCommerce/vc-mcp-testing-module; default is a DRY draft
+ *    unless feedback.mode=auto.)
  */
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync, unlinkSync } from "node:fs";
 import { resolve, join } from "node:path";
@@ -50,6 +58,49 @@ function outputRoot() {
 }
 function diagDir() {
   return join(outputRoot(), ".vc-fix", "diagnostics");
+}
+
+// ─── consent (VCST-5509) — feedback.mode gates OUTBOUND delivery only ─────────
+// Local capture + diagnosis need no consent (nothing leaves the machine). This
+// script — the ONLY step that sends anything upstream — is gated by
+// project-profile.json `feedback.mode`:
+//   off  — nothing leaves the machine; refuse to send, DIAG stays local.
+//   ask  — DEFAULT: DRY draft + a single [Show diff]/[Send]/[Don't send] decision
+//          (the model shows the draft, then re-runs with --confirm on Send).
+//   auto — the Issue route files automatically (scrubbed) + notifies; a PR/fork-PR
+//          is prepared as ready commands (a human always opens the PR).
+function readProfileObj() {
+  try {
+    const p = join(outputRoot(), "project-profile.json");
+    if (existsSync(p)) return JSON.parse(readFileSync(p, "utf8"));
+  } catch {
+    /* null */
+  }
+  return null;
+}
+export function feedbackMode() {
+  const m = readProfileObj()?.feedback?.mode;
+  return m === "off" || m === "auto" || m === "ask" ? m : "ask"; // default = ask
+}
+
+// Read this session's explicit /vc-feedback verdicts from the collector jsonl so the
+// outbound report carries the highest-value signal. Text is already redacted by the
+// collector; buildDraft additionally §2a-gates it before it goes upstream.
+export function readSessionFeedback(sid) {
+  if (!sid) return [];
+  try {
+    const p = join(diagDir(), `${sid}.jsonl`);
+    if (!existsSync(p)) return [];
+    return readFileSync(p, "utf8")
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .filter((r) => r && r.type === "feedback")
+      .map((r) => ({ verdict: r.verdict, text: r.text || "" }));
+  } catch {
+    return [];
+  }
 }
 
 // ─── containment (§2a) — whitelist gate + defense-in-depth scrubber ──────────
@@ -329,7 +380,7 @@ export async function findDuplicateIssue({ repo, token, fp }) {
 }
 
 // ─── draft assembly ──────────────────────────────────────────────────────────
-export function buildDraft({ route, pluginVersion, findings, fp }) {
+export function buildDraft({ route, pluginVersion, findings, fp, feedback = [] }) {
   // The SKILL cell is untrusted too — a client-shaped skill label (e.g.
   // "AcmeCheckoutSkill") would otherwise leak into the row AND the title, and
   // `scrubText` alone misses it (word-boundary/shape gap). Gate it with the same
@@ -363,6 +414,16 @@ export function buildDraft({ route, pluginVersion, findings, fp }) {
   const worst = findings.some((f) => f.verdict === "BROKEN") ? "BROKEN" : findings.some((f) => f.verdict === "DEGRADED") ? "DEGRADED" : "OK";
   const skills = [...new Set(findings.map((f) => `${skillLabel(f)} ${f.verdict}`))].slice(0, 3).join(", ");
   const title = `${ISSUE_TITLE_PREFIX} ${skills || worst}`;
+
+  // Operator /vc-feedback verdicts — the highest-value signal (and the main detector
+  // of silent failures). §2a-gate each: a client-specific note is withheld, keeping
+  // only the 👍/👎 verdict; a clean note is scrubbed defense-in-depth.
+  const fbLines = (feedback || []).map((f) => {
+    const mark = f.verdict === "down" ? "👎" : f.verdict === "up" ? "👍" : "•";
+    const note = f.text && !isClientSpecific(f.text) ? scrubText(f.text) : "(operator note withheld — client-specific)";
+    return `- ${mark} ${note}`;
+  });
+
   const body = [
     `<!-- ${FP_MARKER} ${fp} -->`,
     `Automated quality report from the vc-fix self-diagnostics subsystem (\`/vc-self-check\`).`,
@@ -372,6 +433,7 @@ export function buildDraft({ route, pluginVersion, findings, fp }) {
     `| Skill | Verdict | Sev | Signal | Proposed fix (plugin file) |`,
     `|-------|---------|-----|--------|----------------------------|`,
     ...rows,
+    ...(fbLines.length ? [``, `## Operator feedback`, ...fbLines] : []),
     ``,
     `## Containment`,
     `Every findings cell was checked against a plugin-reference whitelist: any cell carrying`,
@@ -392,6 +454,22 @@ async function createIssue({ repo, token, title, body }) {
   if (!r.ok) throw new Error(`GitHub issue create failed: ${r.status} ${await r.text().catch(() => "")}`);
   const j = await r.json();
   return { number: j.number, url: j.html_url };
+}
+
+// Dedup with occurrence-counting: the SAME defect fingerprinted from many clients must
+// converge to ONE upstream ticket, not spawn hundreds. On a dedup hit we post a "+1
+// occurrence" comment instead of a new issue — the vendor sees how many clients hit it.
+async function addOccurrenceComment({ repo, token, number, fp }) {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/issues/${number}/comments`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "User-Agent": "vc-self-check", Accept: "application/vnd.github+json" },
+      body: JSON.stringify({ body: `+1 occurrence — another vc-fix client hit the same finding (fingerprint \`${fp}\`).` }),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
 }
 
 function prHandoffCommands({ repo, route, fp }) {
@@ -488,6 +566,8 @@ export async function main(argv = process.argv.slice(2)) {
   const { pluginVersion, findings } = parseDiag(md);
   const fp = fingerprint(findings);
   const sid = sessionIdFromDiag(md, diagPath);
+  const feedback = readSessionFeedback(sid);
+  const mode = feedbackMode(); // off | ask | auto (delivery consent — VCST-5509)
   const purgeHint = `node "$pluginRoot/skills/vc-self-check/deliver.mjs" --purge${args.diag ? ` --diag ${diagPath}` : ""}`;
 
   // --purge (standalone): the terminal "delete all" step of the log→analyze→contribute→
@@ -506,24 +586,43 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  // Nothing worthwhile to contribute (no BROKEN/DEGRADED finding) → file nothing; offer
-  // the cleanup step so the local log doesn't linger.
+  // Nothing worthwhile to contribute → file nothing; offer the cleanup step. A negative
+  // /vc-feedback verdict IS worthwhile even with no BROKEN/DEGRADED finding (it's often
+  // the only signal on a silent failure).
   const actionable = findings.filter((f) => f.verdict === "BROKEN" || f.verdict === "DEGRADED");
-  if (!actionable.length) {
+  const hasNegFeedback = feedback.some((f) => f.verdict === "down");
+  if (!actionable.length && !hasNegFeedback) {
     const out = { action: "none", session: sid || null, findings: findings.length, actionable: 0 };
     if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
     else process.stdout.write(
-      `No worthwhile finding to contribute (no BROKEN/DEGRADED among ${findings.length}). Nothing sent.\n` +
+      `No worthwhile finding to contribute (no BROKEN/DEGRADED among ${findings.length}, no 👎 feedback). Nothing sent.\n` +
         `To clear this session's local diagnostics:\n  ${purgeHint}\n`
     );
     return;
   }
 
+  // feedback.mode=off — the operator opted out of upstream delivery. Nothing leaves the
+  // machine; the DIAG stays local. (Capture + diagnosis already ran — they need no consent.)
+  if (mode === "off") {
+    const out = { action: "disabled", reason: "feedback.mode=off", session: sid || null };
+    if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
+    else process.stdout.write(
+      `Upstream delivery is disabled (feedback.mode=off). The DIAG stays local — nothing sent.\n` +
+        `Enable it by setting feedback.mode to "ask" or "auto" in project-profile.json (or re-run /project-init).\n` +
+        `To clear this session's local diagnostics:\n  ${purgeHint}\n`
+    );
+    return;
+  }
+  // auto — the outbound step proceeds without a per-run --confirm (the operator consented
+  // once at onboarding). The Issue route files; a PR/fork-PR is still handed off (a human
+  // opens the PR — an irreversible external action).
+  const confirm = args.confirm || mode === "auto";
+
   const { token, via, scopes } = resolveGithubToken();
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
 
-  const draft = buildDraft({ route, pluginVersion, findings, fp });
+  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback });
   const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
 
   // Always write the draft locally (never under the plugin dir).
@@ -548,15 +647,16 @@ export async function main(argv = process.argv.slice(2)) {
     sent: false,
   };
 
-  if (!args.confirm) {
+  if (!confirm) {
     plan.dryRun = true;
+    plan.mode = mode;
     if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
     else {
       process.stdout.write(
         [
-          `Route: ${route} — ${reason}`,
+          `Route: ${route} — ${reason}   (feedback.mode=${mode})`,
           `Repo:  ${args.repo}   Token: ${via || "none"}   Perm: ${probe?.perm ?? "n/a"}`,
-          dup ? `Dedup: matches existing open issue #${dup.number} (${dup.url}) — would SKIP` : `Dedup: no existing self-check issue with this fingerprint`,
+          dup ? `Dedup: matches existing open issue #${dup.number} (${dup.url}) — would add a "+1 occurrence" comment (no new issue)` : `Dedup: no existing self-check issue with this fingerprint`,
           ``,
           `Draft written (scrubbed): ${deliveryPath}`,
           `--- draft ---`,
@@ -578,16 +678,20 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  // --confirm: act. Only the Issue route auto-sends; pr/fork-pr hand off; local writes.
+  // Act. Only the Issue route auto-sends; pr/fork-pr hand off; local writes.
   if (route === "issue") {
     if (dup) {
       plan.skipped = `duplicate of #${dup.number}`;
-      // Already upstream (this finding lives in an open issue) → the session's local
-      // artifacts have served their purpose; delete them unless --keep.
+      // Already upstream — don't re-file; add a "+1 occurrence" comment so the vendor
+      // sees this defect hit another client (occurrence counts across clients).
+      plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
+      // The finding is upstream → the session's local artifacts have served their
+      // purpose; delete them unless --keep.
       if (!args.keep) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
       else process.stdout.write(
-        `Duplicate of open issue #${dup.number} (${dup.url}) — not filing again.\n` +
+        `Duplicate of open issue #${dup.number} (${dup.url}) — not filing again; ` +
+          `${plan.occurrenceComment ? "added a +1 occurrence comment" : "could not add occurrence comment"}.\n` +
           (plan.purged?.length ? `Purged ${plan.purged.length} local artifact(s) for session ${sid || "(this DIAG)"}.\n` : ``)
       );
       return;

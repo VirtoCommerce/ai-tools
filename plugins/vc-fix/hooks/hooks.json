@@ -10,6 +10,26 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-telemetry.mjs\" prompt"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-telemetry.mjs\" agentstop"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "mcp__(playwright-(chrome|firefox|edge|webkit)|Chrome_DevTools)__(browser_evaluate|browser_run_code_unsafe|evaluate_script)",

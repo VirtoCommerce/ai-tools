@@ -1,11 +1,14 @@
 # Skill-Expectations Oracle — vc-fix self-diagnostics
 
-Step 2 of the vc-fix self-diagnostics subsystem (VCST-5476). This is the **oracle**
-the on-demand LLM diagnostician `/vc-self-check` (Step 3, VCST-5477) judges each
-session against. The passive Tier-A collector (`hooks/session-telemetry.mjs`,
-VCST-5475) records *what happened*; this file declares, per shipped command, *what
-a correct run looks like* — so the diagnostician can decide whether a skill actually
-did its job, not merely whether a tool errored.
+The **oracle** for the vc-fix self-diagnostics subsystem (VCST-5476, extended by the
+client→vendor feedback loop VCST-5509). The passive Tier-0 collector
+(`hooks/session-telemetry.mjs`, VCST-5475/5509) records *what happened* as spans and
+tags each with a Tier-1 **outcome** (deterministic, no LLM); the on-demand LLM
+diagnostician `/vc-self-check` (Tier 2) judges the flagged spans against this file —
+so it can decide whether a skill actually did its job, not merely whether a tool
+errored. This file is **dual-purpose**: the machine-readable §1c/§1d tables are kept
+in **lock-step with the collector's inline consts** (Tier 1 uses them); the prose is
+the diagnostician's judgment guide (Tier 2).
 
 > **Reference, don't restate.** Gate IDs (`G0`–`G7`) are defined once in
 > [`../../.claude/rules/quality-gates.md`](../../.claude/rules/quality-gates.md); report
@@ -17,8 +20,18 @@ did its job, not merely whether a tool errored.
 ## 1. Signal vocabulary (what the collector gives the diagnostician)
 
 The diagnostician reads the per-session jsonl (`<outputRoot>/.vc-fix/diagnostics/
-<session_id>.jsonl`) plus the raw `transcript_path`. Each `skill_end` / `finalize`
-record carries these deterministic counts (`hooks/session-telemetry.mjs`):
+<session_id>.jsonl`) plus the raw `transcript_path`. The jsonl now carries one
+**`span`** record per closed operation (VCST-5509) plus a `finalize` roll-up. A span:
+
+```
+{ type:"span", id, parentId, kind:"command|skill|agent|tool", name,
+  status:"ok|error", outcome, struggle[], startTs, endTs, durationMs, retries,
+  tool_name, arg_hash, signals:{…}, details:[…] }
+```
+
+Span **kinds** nest: `command` (a plugin slash-command turn) ▷ `skill` (a Skill
+invocation) ▷ `agent` (a Task/Agent delegation) / `tool` (any other tool). Each span's
+`signals` are the deterministic counts:
 
 | Signal | Meaning | How the collector detects it |
 |--------|---------|------------------------------|
@@ -27,21 +40,71 @@ record carries these deterministic counts (`hooks/session-telemetry.mjs`):
 | `hook_failure` | A PostToolUse/other hook failed (e.g. `tsc` on every Edit, `npm error`) | `error TS####`, `tsc … error`, `command failed…` in output |
 | `stop_bail` | A STOP / BAIL / hand-off / `FIX_STATUS: FAILED` marker | marker regex in assistant text |
 | `tool_calls` | Count of tool invocations in the span | `tool_use` items |
-| `agent_calls` | Count of agents the skill delegated to (Task/Agent tool) | `tool_use` name ∈ {Task, Agent}; the `agent_call` span details name each. A COUNT, not an anomaly class — a FAILED delegation surfaces as `tool_error`/`permission_denied` on the span |
-| `anomalyScore` | `tool_error*3 + permission_denied*2 + hook_failure*3` | finalize. **Scoring + the consent gate use the SKILL-attributed `skillAnomalyScore`** (same formula over `skillTotals` — signals raised WHILE a skill ran); the session-wide `anomalyScore` is informational only. stop_bail weighted 0 — a clean bail is success |
+| `agent_calls` | Count of agents delegated (Task/Agent tool) | `tool_use` name ∈ {Task, Agent}. A COUNT — a FAILED delegation surfaces as `tool_error`/`permission_denied` on the parent span |
 
-Derived patterns the diagnostician computes from the transcript + these counts
-(the collector does not pre-label them): **retry storm** (same tool re-invoked ≥4×
-with repeated `tool_error`/`permission_denied`), **incomplete run** (expected phases
-for the invoked skill never appear), **missing required output** (a required artifact
-below was never written), **oversized report** (an artifact over its `reports.md` cap).
+The **numeric `anomalyScore >= 6` gate is GONE** (VCST-5509). Escalation is driven by
+the per-span `outcome` (§1a), not a weighted count. `finalize` carries `spanCounts`
+(outcome histogram), `flagged[]` (the non-`success`/non-`recovered` skill/command
+spans with their dedup `signature`), `feedbackCount`, and `anySkillSeen`.
 
 **Load-bearing nuance (quality-gates §3):** a `stop_bail` is a **SUCCESS**, not an
 anomaly, when the run reached the bail *legitimately* (a G0/G1 BAIL with a reason
-comment, or a reported `FIX_STATUS: FAILED` on an un-encodable repro). `stop_bail`
-becomes a signal only when paired with a *broken* trajectory (bail mid-fix after a
-green repro; bail with no reason; a permission/hook failure that forced the stop).
-Tier A cannot tell these apart — that judgment is exactly this oracle's job.
+comment, or a reported `FIX_STATUS: FAILED` on an un-encodable repro). A clean BAIL is
+an accepted expected output (§1c), so it classifies as `success`, never `silent_suspect`.
+
+### 1a. Outcome taxonomy (Tier 1 → S0–S3)
+
+The collector tags every **skill/command** span (the escalation units) with exactly one
+outcome. `error ≠ failure`: a self-corrected error is `recovered`, not `failed`.
+
+| Outcome | Meaning | Escalate? | Maps to |
+|---------|---------|-----------|---------|
+| `success` | Ran clean, produced its expected output (§1c). A clean BAIL is `success`. | no | S0 |
+| `recovered` | An error occurred but the same tool later succeeded within the span (self-corrected). | **no** | S3 (note only) |
+| `degraded` | Completed but a **struggle** sub-signal fired (§1d) — persistence without progress. | yes | S2 |
+| `failed` | A blocking, unrecovered error: `permission_denied`/`hook_failure`, or a `tool_error` whose tool never succeeded again in the span. | yes | S1 |
+| `silent_suspect` | Closed with no error and no struggle, but produced **none** of its expected-output markers (§1c) — task likely done wrong with no error signal. | yes | S1/S2 |
+
+Only `degraded`/`failed`/`silent_suspect` spans are `flagged`; the tail-trigger runs the
+diagnostician once per turn on **new** signatures only (dedup). `recovered`/`success`
+never escalate. `vc-self-check`'s own spans are dropped (loop guard).
+
+### 1c. Expected-output markers (Tier 1 `silent_suspect` — machine-readable)
+
+A skill/command span that closed clean but matched **none** of its markers is
+`silent_suspect`. Markers are matched against the span's tool names + redacted tool
+inputs + assistant text. **A clean BAIL/STOP marker counts as expected output.** Kept
+in lock-step with `EXPECTED_OUTPUT` in `hooks/session-telemetry.mjs`.
+
+| Skill / command | An expected-output marker is ANY of |
+|-----------------|-------------------------------------|
+| `/qa-bug` | a `reports/bugs/` write · a tracker-create (`createJiraIssue`/`create_issue`) · a clean BAIL |
+| `/qa-fix` | a PR created (`create_pull_request` / `gh pr create` / `pull/<n>`) · a clean BAIL |
+| `/qa-verify-fix` | a ticket transition/update · `READY FOR TEST`/`testing`/`verified`/`reproduc…` · a clean BAIL |
+| `/qa-monitoring` | a `reports/monitoring/` write · `signature`/`dedup`/"no new signatures" · a clean BAIL |
+| `/qa-env-check` | a readiness/`PASS`/`FAIL` verdict table |
+| `/project-init` | a `project-profile.json`/`.mcp.json`/`.env.*` write · a readiness/verify-access table |
+| `/vc-docs` | any activity (lookup skill — never silent_suspect) |
+
+A skill with **no** entry above is never `silent_suspect` (the collector treats an
+absent oracle entry as "output produced"). Add an entry here **and** in the collector
+const when a new user-facing skill ships.
+
+### 1d. Struggle sub-signals (Tier 1 `degraded` — machine-readable)
+
+Detected from the span's op history — **persistence without progress**, not volume.
+Thresholds are the `T.*` consts in `hooks/session-telemetry.mjs`; tuned conservatively
+so normal thorough work does NOT trip them. Any hit ⇒ `degraded`.
+
+| Sub-signal | Fires when | Threshold const | Sev |
+|------------|-----------|-----------------|-----|
+| `retry_storm` | same tool + `arg_hash` repeated with recurring errors | `RETRY_STORM_REPEATS=3` & `RETRY_STORM_ERRORS=2` | S2 |
+| `reread_loop` | same read/search `arg_hash` repeated | `REREAD_LOOP=5` | S2 |
+| `search_thrash` | consecutive search/read ops with no decisive op (Edit/Write/PR/create) between | `SEARCH_THRASH_RUN=8` | S2 |
+| `fallback_loop` | distinct browser variants used in one span (firefox→edge→chrome bounce) | `FALLBACK_DISTINCT=3` | S2 |
+| `recurring_error` | same error signature keeps returning | `RECURRING_ERROR=3` | S2 |
+| `stall` | a single op ran abnormally long | `STALL_MS=8min` | S2/S3 |
+| `low_yield` | many tool ops, zero decisive op produced | `LOW_YIELD_OPS=20` | S2 |
 
 ---
 
@@ -57,7 +120,9 @@ Tier A cannot tell these apart — that judgment is exactly this oracle's job.
 ### (signal × expectation) → severity
 
 Apply the **most severe** matching row. "During a required phase" means the signal's
-`skill_end`/`openSkill` span is one whose skill is listed in §3.
+`span` is one whose skill/command is listed in §3. (These rows refine the §1a outcome:
+Tier 1 gives the coarse outcome deterministically; Tier 2 uses the rows below to place
+the exact severity + verdict.)
 
 | Observation | Severity |
 |-------------|----------|
@@ -69,9 +134,10 @@ Apply the **most severe** matching row. "During a required phase" means the sign
 | Report artifact **over its `reports.md` cap** | **S2** |
 | **Retry storm** (≥4×) that eventually succeeded | **S2** |
 | Wrong-layer / off-allowlist route that Gate 1 caught (route churn) | **S2** |
-| A single `tool_error`/`permission_denied` the skill recovered from | **S3** |
+| A single `tool_error`/`permission_denied` the skill recovered from (outcome `recovered`) | **S3** |
 | Benign `hook_failure` warning that did not block (e.g. one `tsc` note, later clean) | **S3** |
-| Clean run, expected phases present, outputs written, `anomalyScore = 0` (or only a legitimate bail) | **S0** |
+| Clean run, expected phases present, expected output produced (§1c), no struggle (outcome `success`) | **S0** |
+| Closed clean but produced no expected output (outcome `silent_suspect`) — task likely done wrong, no error | **S1** (S2 if a partial artifact exists) |
 
 ---
 
@@ -135,9 +201,11 @@ Step-1 collector's signals can actually surface.
 
 ## 4. Cross-cutting anti-patterns (any skill)
 
-These are detectable from the **skill-attributed** `finalize.skillTotals` (signals
-raised while a skill ran — not the session-wide `totals`) — the diagnostician flags
-them regardless of which skill was running:
+These are detectable across a skill/command span's own `signals` + `struggle` + the
+child `agent`/`tool` span records (never the session-prefix development noise before
+the first skill/command) — the diagnostician flags them regardless of which skill was
+running. Several now surface automatically as a `degraded`/`failed` outcome (§1a/§1d);
+the diagnostician still confirms the root cause and names the fix:
 
 | Pattern | Detection | Severity |
 |---------|-----------|----------|
@@ -151,11 +219,14 @@ them regardless of which skill was running:
 
 ---
 
-## 5. Worked mappings (for the Step-3 dry read)
+## 5. Worked mappings (for the Tier-2 dry read)
 
-- **Known-good `/qa-env-check`:** span shows checks 1–6 + a READY verdict, `anomalyScore = 0`, no browser/write tool_use → **S0 / OK**.
-- **Synthetic broken `/qa-fix`:** span shows a green G2 repro `skill_end`, then a `stop_bail` with no PR and no reason comment, `permission_denied` on `gh pr create` → **S1 / BROKEN** (blocker: could not deliver the fix; root-cause hypothesis: PR auth missing → propose checking `GITHUB_FIX_BUGS_TOKEN` / `gh auth status`).
-- **Degraded `/qa-bug`:** report written but 190 lines for a functional bug (cap 120), Step 2 4-layer table present → **S2 / DEGRADED** (fix: trim per `reports.md` §4 bloat patterns).
+- **Known-good `/qa-env-check`:** span `outcome:"success"`, checks 1–6 + a READY verdict, no browser/write tool_use → **S0 / OK**.
+- **Synthetic broken `/qa-fix`:** span `outcome:"failed"`, a green G2 repro then no PR, `permission_denied` on `gh pr create` (never recovered) → **S1 / BROKEN** (root-cause: PR auth missing → propose checking `GITHUB_FIX_BUGS_TOKEN` / `gh auth status`).
+- **Silent `/qa-fix`:** span `outcome:"silent_suspect"` — closed clean, edits made, but no PR-created and no BAIL marker → **S1** (task ended without delivering or bailing; the worst failure mode — no error signal).
+- **Degraded `/qa-bug` (struggle):** span `outcome:"degraded"`, `struggle:["search_thrash","low_yield"]` — 10 searches, no decisive op → **S2** (root-cause: lost in exploration; fix: the skill's Step-1 needs a tighter repro-first path).
+- **Recovered `/qa-bug`:** span `outcome:"recovered"` — one `gh` `tool_error` then a successful retry → **S3 / note only, NOT escalated.**
+- **Operator `/vc-feedback` 👎:** a `feedback` record `{verdict:"down"}` — the highest-value signal; always surface it even if every span was `success` (a silent failure the heuristics missed).
 
 ---
 

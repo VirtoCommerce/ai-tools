@@ -41,6 +41,7 @@ const ENUMS = {
   "client-vcs": ["github", "azure-repos"],
   "contribution-mode": ["fork", "direct"],
   "vcs-auth": ["gh-cli", "pat", "az-login"],
+  "feedback-mode": ["auto", "ask", "off"],
 };
 
 function parseArgs(argv) {
@@ -126,6 +127,9 @@ function main() {
   set("upstream.org", args["upstream-org"]);
   set("upstream.contributionMode", args["contribution-mode"]);
   set("upstream.clientGithubAccount", args["upstream-account"]);
+  // feedback.mode — consent for upstream self-diagnostics delivery (VCST-5509).
+  // Default stays "ask" (PROFILE_DEFAULTS) unless the operator picked one.
+  set("feedback.mode", args["feedback-mode"]);
 
   // vcs.authEnv — which env var carries the WRITE credential for the client host, so the
   // interactive command doesn't guess. (github PAT ⇒ GITHUB_FIX_BUGS_TOKEN; azure-repos ⇒
