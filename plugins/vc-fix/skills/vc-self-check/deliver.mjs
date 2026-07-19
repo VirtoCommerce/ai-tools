@@ -358,8 +358,14 @@ export function resolveRoute({ token, probe, scopes, override }) {
  * issue). Feedback text is scrubbed before hashing so the fingerprint carries no
  * client identifier.
  */
+/** Per-finding signature (identity of a single finding, ignoring session). Used
+ *  both by fingerprint() and by batch aggregation to dedup the SAME finding across
+ *  many sessions into one entry with an occurrence count. */
+export function findingSig(f) {
+  return `${f.skill}|${f.verdict}|${f.sev}|${(f.fix || "").replace(/\s+/g, " ").trim()}`;
+}
 export function fingerprint(findings, feedback = []) {
-  const parts = (findings || []).map((f) => `${f.skill}|${f.verdict}|${f.sev}|${(f.fix || "").replace(/\s+/g, " ").trim()}`);
+  const parts = (findings || []).map(findingSig);
   for (const f of feedback || []) parts.push(`fb|${f.verdict}|${scrubText(f.text || "").replace(/\s+/g, " ").trim().slice(0, 120)}`);
   const sig = parts.sort().join("\n");
   let h = 5381;
@@ -417,6 +423,8 @@ export function buildDraft({ route, pluginVersion, findings, fp, feedback = [], 
       signal = scrubText(f.signal);
       fix = scrubText(f.fix);
     }
+    // In a batch, a finding seen across several sessions carries an occurrence count.
+    if (f.occurrences > 1) note += ` _(×${f.occurrences} sessions)_`;
     return `| ${skill} | ${f.verdict} | ${f.sev} | ${signal} | ${fix}${note} |`;
   });
   const worst = findings.some((f) => f.verdict === "BROKEN") ? "BROKEN" : findings.some((f) => f.verdict === "DEGRADED") ? "DEGRADED" : "OK";
@@ -510,18 +518,25 @@ function parseArgs(argv) {
     // --keep:  after a successful delivery, do NOT auto-purge (retain the local artifacts).
     else if (t === "--purge") a.purge = true;
     else if (t === "--keep") a.keep = true;
+    // --batch: aggregate ALL local DIAG-*.md into ONE consolidated report (findings
+    // deduped across sessions with occurrence counts). See mainBatch().
+    else if (t === "--batch") a.batch = true;
   }
   return a;
 }
 
-function newestDiag() {
+/** All local DIAG-*.md paths, newest first. */
+function listDiags() {
   const dir = diagDir();
-  if (!existsSync(dir)) return null;
-  const files = readdirSync(dir)
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
     .filter((f) => /^DIAG-.*\.md$/.test(f))
-    .map((f) => ({ f, t: statSync(join(dir, f)).mtimeMs }))
-    .sort((x, y) => y.t - x.t);
-  return files.length ? join(dir, files[0].f) : null;
+    .map((f) => ({ p: join(dir, f), t: statSync(join(dir, f)).mtimeMs }))
+    .sort((x, y) => y.t - x.t)
+    .map((x) => x.p);
+}
+function newestDiag() {
+  return listDiags()[0] || null;
 }
 
 /** The diagnosed session id — from the DIAG header (`- Session: <sid> · …`), else the
@@ -561,8 +576,160 @@ function purgeSession({ dir, sid, fp, extra = [] }) {
   return [...new Set(removed)];
 }
 
+/**
+ * --batch: aggregate ALL local DIAG-*.md into ONE consolidated contribution. Findings
+ * are deduped ACROSS sessions by their per-finding signature and annotated with an
+ * occurrence count (how many local sessions hit each); operator feedback is merged
+ * (dedup identical notes). Same consent (feedback.mode) + route + scrub + upstream
+ * dedup as a single run. On a successful send, EVERY included session's local
+ * artifacts are purged (the batch's delete-after-deliver). This keeps many accumulated
+ * flagged sessions from spamming the tracker with one issue each.
+ */
+async function mainBatch(args) {
+  const diags = listDiags();
+  if (!diags.length) {
+    const msg = "No DIAG reports found to batch. Run /vc-self-check first.";
+    if (args.json) process.stdout.write(JSON.stringify({ action: "batch", error: msg }) + "\n");
+    else process.stderr.write(msg + "\n");
+    process.exitCode = 2;
+    return;
+  }
+
+  // Collect every DIAG + its session feedback; aggregate findings by signature.
+  const sessions = []; // { sid, diagPath }
+  const byKey = new Map(); // findingSig → { finding, occurrences, sessions:Set }
+  const allFeedback = [];
+  const fbSeen = new Set();
+  let pluginVersion = "unknown";
+  for (const diagPath of diags) {
+    let md;
+    try { md = readFileSync(diagPath, "utf8"); } catch { continue; }
+    const parsed = parseDiag(md);
+    if (parsed.pluginVersion && parsed.pluginVersion !== "unknown") pluginVersion = parsed.pluginVersion;
+    const sid = sessionIdFromDiag(md, diagPath);
+    const feedback = readSessionFeedback(sid);
+    sessions.push({ sid, diagPath });
+    for (const f of parsed.findings) {
+      if (f.verdict !== "BROKEN" && f.verdict !== "DEGRADED") continue; // only actionable
+      const key = findingSig(f);
+      const e = byKey.get(key) || { finding: f, occurrences: 0, sessions: new Set() };
+      e.occurrences++;
+      e.sessions.add(sid);
+      byKey.set(key, e);
+    }
+    for (const fb of feedback) {
+      const k = `${fb.verdict}|${scrubText(fb.text || "")}`;
+      if (fbSeen.has(k)) continue;
+      fbSeen.add(k);
+      allFeedback.push(fb);
+    }
+  }
+  const dir = diagDir();
+  const findings = [...byKey.values()].map((e) => ({ ...e.finding, occurrences: e.occurrences }));
+  const hasNeg = allFeedback.some((f) => f.verdict === "down");
+  const fp = fingerprint(findings, allFeedback);
+
+  // --batch --purge: standalone cleanup of ALL local sessions, send nothing.
+  if (args.purge) {
+    const removed = [];
+    for (const s of sessions) removed.push(...purgeSession({ dir, sid: s.sid, fp, extra: [s.diagPath] }));
+    if (args.json) process.stdout.write(JSON.stringify({ action: "batch-purge", sessions: sessions.length, removed }) + "\n");
+    else process.stdout.write(`Purged ${removed.length} local artifact(s) across ${sessions.length} session(s).\n`);
+    return;
+  }
+
+  if (!findings.length && !hasNeg) {
+    if (args.json) process.stdout.write(JSON.stringify({ action: "batch", sessions: sessions.length, findings: 0, actionable: 0 }) + "\n");
+    else process.stdout.write(`Batched ${sessions.length} session(s): no BROKEN/DEGRADED finding and no 👎 feedback. Nothing to send.\n  Clean up with: node "$pluginRoot/skills/vc-self-check/deliver.mjs" --batch --purge\n`);
+    return;
+  }
+
+  const mode = feedbackMode();
+  if (mode === "off") {
+    if (args.json) process.stdout.write(JSON.stringify({ action: "batch", disabled: true, reason: "feedback.mode=off" }) + "\n");
+    else process.stdout.write(`Upstream delivery is disabled (feedback.mode=off). ${sessions.length} session(s) stay local — nothing sent.\n`);
+    return;
+  }
+  const confirm = args.confirm || mode === "auto";
+
+  const { token, via, scopes } = resolveGithubToken();
+  const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
+  const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
+  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback: allFeedback, mode });
+  const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
+
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const deliveryPath = join(dir, `DELIVERY-${fp}-${stamp}.md`);
+  writeFileSync(deliveryPath, `# ${draft.title}\n\n${draft.body}\n`, "utf8");
+
+  const purgeAll = () => {
+    const removed = [];
+    for (const s of sessions) removed.push(...purgeSession({ dir, sid: s.sid, fp, extra: [s.diagPath] }));
+    try { if (existsSync(deliveryPath)) { unlinkSync(deliveryPath); removed.push(deliveryPath.split(/[\\/]/).pop()); } } catch { /* ignore */ }
+    return [...new Set(removed)];
+  };
+  const plan = { action: "batch", sessions: sessions.length, findings: findings.length, repo: args.repo, tokenVia: via || null, perm: probe?.perm ?? null, route, reason, fingerprint: fp, duplicate: dup, deliveryDraft: deliveryPath, mode, sent: false };
+
+  if (!confirm) {
+    plan.dryRun = true;
+    if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+    else process.stdout.write(
+      [
+        `Batched ${sessions.length} session(s) → ${findings.length} unique finding(s).`,
+        `Route: ${route} — ${reason}   (feedback.mode=${mode})`,
+        dup ? `Dedup: matches open issue #${dup.number} — would add "+1 occurrence"` : `Dedup: none`,
+        `Draft written (scrubbed): ${deliveryPath}`,
+        `--- draft ---\n# ${draft.title}\n\n${draft.body}\n-------------`,
+        route === "issue" ? `Re-run with --batch --confirm to file (then all ${sessions.length} sessions are purged; --keep to retain).`
+          : route === "local" ? `No token/rights → local only. Authenticate to deliver.`
+          : `A ${route} is handed off — re-run with --batch --confirm for the ready commands.`,
+      ].join("\n") + "\n"
+    );
+    return;
+  }
+
+  if (route === "issue") {
+    if (dup) {
+      plan.skipped = `duplicate of #${dup.number}`;
+      plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
+      if (!args.keep) plan.purged = purgeAll();
+      if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+      else process.stdout.write(`Batch duplicate of #${dup.number} — added +1 occurrence.` + (plan.purged?.length ? ` Purged ${plan.purged.length} artifact(s) across ${sessions.length} session(s).` : ``) + `\n`);
+      return;
+    }
+    try {
+      const created = await createIssue({ repo: args.repo, token, title: draft.title, body: draft.body });
+      plan.sent = true; plan.issue = created;
+      if (!args.keep) plan.purged = purgeAll();
+      if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+      else process.stdout.write(`Filed batch Issue #${created.number}: ${created.url}` + (plan.purged?.length ? ` — purged ${plan.purged.length} artifact(s) across ${sessions.length} session(s).` : ``) + `\n`);
+    } catch (e) {
+      plan.error = String(e?.message ?? e);
+      if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+      else process.stderr.write(plan.error + "\n");
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  if (route === "pr" || route === "fork-pr") {
+    plan.handoff = true;
+    if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+    else process.stdout.write(
+      `${route} is NOT auto-created. Scrubbed batch draft: ${deliveryPath}\n\n${prHandoffCommands({ repo: args.repo, route, fp })}\n\n` +
+        `Once the PR is open, clear all batched sessions:\n  node "$pluginRoot/skills/vc-self-check/deliver.mjs" --batch --purge\n`
+    );
+    return;
+  }
+
+  if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+  else process.stdout.write(`No token/rights → local batch report only: ${deliveryPath}\n`);
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
+  if (args.batch) return mainBatch(args);
   const diagPath = args.diag ? resolve(args.diag) : newestDiag();
   if (!diagPath || !existsSync(diagPath)) {
     const msg = "No DIAG report found. Run /vc-self-check first to produce a local DIAG-*.md.";

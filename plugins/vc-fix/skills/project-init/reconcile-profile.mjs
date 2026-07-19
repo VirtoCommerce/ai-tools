@@ -206,6 +206,10 @@ function reconcile(schema, existing, decisions) {
           if (managed && (managed.policy === "ask" || managed.policy === "rescan")) {
             // Sub-key resolution for an object-valued managed field: `--set feedback.mode=off`
             // folds into the object (so the operator resolves a nested opt-in the same way).
+            // NB: like every managed field, this applies only when the field is being ADDED
+            // (an old profile that lacks `feedback`). reconcile PRESERVES an existing value —
+            // to CHANGE an already-set feedback.mode, edit project-profile.json or re-run
+            // `gen-profile --feedback-mode <v>` (same add-only contract as `selfDiagnostics`).
             const subKeys = Object.keys(decisions).filter((dk) => dk.startsWith(`${path}.`));
             if (path in decisions) {
               out[k] = decisions[path];

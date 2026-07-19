@@ -178,8 +178,14 @@ Turning a confirmed DIAG into a scrubbed quality report to VirtoCommerce is
 It is **not** part of the diagnose flow above and is never run implicitly.
 
 ```
-node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--confirm] [--as pr|fork-pr|issue|local] [--keep] [--purge]
+node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--batch] [--confirm] [--as pr|fork-pr|issue|local] [--keep] [--purge]
 ```
+
+**`--batch`** consolidates ALL local `DIAG-*.md` into ONE contribution: findings are
+deduped across sessions (each annotated with an occurrence count), operator feedback is
+merged, and on a successful send every included session's artifacts are purged — so many
+accumulated flagged sessions don't file one issue each. Same consent/route/scrub/dedup as
+a single run; `--batch --purge` clears all batched sessions without sending.
 
 **Consent is `feedback.mode` (set once at `/project-init`, `project-profile.json`):**
 - **`off`** — nothing leaves the machine; `deliver` refuses to send and prints why. The
