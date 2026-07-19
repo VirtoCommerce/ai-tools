@@ -169,7 +169,13 @@ export function mdToHtml(md) {
   return out.join("\n");
 }
 
-/** Author-provided HTML passes through; Markdown is converted. Empty stays empty. */
+/**
+ * Author-provided HTML passes through; Markdown is converted. Empty stays empty.
+ * NOTE: the pass-through branch does NOT escape — the `mdToHtml`/`inlineMd` scheme
+ * allowlist + `escapeHtml` only run on the Markdown path. Safe here because (a) bodies
+ * are model/QA-authored, not attacker-controlled, and (b) Azure DevOps server-side
+ * sanitizes work-item HTML on save. Do not treat this as an XSS boundary.
+ */
 export function ensureAzureHtml(text) {
   const s = String(text || "").trim();
   if (!s) return s;

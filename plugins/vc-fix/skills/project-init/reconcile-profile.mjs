@@ -68,6 +68,7 @@ const MANAGED_FIELDS = [
     path: "selfDiagnostics",
     policy: "ask",
     default: true,
+    validate: (v) => v === true || v === false,
     question:
       "Enable vc-fix self-diagnostics for this project? The passive session-telemetry hook records how the plugin's OWN skills ran (to <project>/.vc-fix/, gitignored) so /vc-self-check can spot plugin quality issues. It never sends anything without a separate consent step and never touches your code.",
     options: [
@@ -81,6 +82,7 @@ const MANAGED_FIELDS = [
     path: "feedback",
     policy: "ask",
     default: { mode: "ask" },
+    validate: (v) => v != null && typeof v === "object" && ["auto", "ask", "off"].includes(v.mode),
     question:
       "When vc-fix self-diagnostics finds a plugin quality issue, how should it be contributed back to VirtoCommerce to improve the plugin? This gates ONLY outbound delivery — local capture/diagnosis are unaffected, and nothing is ever sent without scrubbing all client identifiers first.",
     options: [
@@ -211,14 +213,23 @@ function reconcile(schema, existing, decisions) {
             // to CHANGE an already-set feedback.mode, edit project-profile.json or re-run
             // `gen-profile --feedback-mode <v>` (same add-only contract as `selfDiagnostics`).
             const subKeys = Object.keys(decisions).filter((dk) => dk.startsWith(`${path}.`));
-            if (path in decisions) {
-              out[k] = decisions[path];
-              report.added.push({ path, value: decisions[path], via: `${managed.policy}-resolved` });
-            } else if (subKeys.length) {
-              const obj = clone(managed.default) ?? clone(schemaNode[k]) ?? {};
-              for (const dk of subKeys) setDeep(obj, dk.slice(path.length + 1), decisions[dk]);
-              out[k] = obj;
-              report.added.push({ path, value: obj, via: `${managed.policy}-resolved` });
+            // Validate the resolved value against the field's own contract before writing —
+            // a bad `--set` (e.g. feedback.mode=bogus) must NOT land a garbage value, even
+            // though the downstream readers are defensive. On failure, leave the field
+            // pending (unresolved) rather than write it. (R2-F2 defense-in-depth.)
+            let candidate;
+            let resolved = false;
+            if (path in decisions) { candidate = decisions[path]; resolved = true; }
+            else if (subKeys.length) {
+              candidate = clone(managed.default) ?? clone(schemaNode[k]) ?? {};
+              for (const dk of subKeys) setDeep(candidate, dk.slice(path.length + 1), decisions[dk]);
+              resolved = true;
+            }
+            if (resolved && (!managed.validate || managed.validate(candidate))) {
+              out[k] = candidate;
+              report.added.push({ path, value: candidate, via: `${managed.policy}-resolved` });
+            } else if (resolved) {
+              report.pending.push({ path, policy: managed.policy, default: managed.default, question: managed.question, options: managed.options, invalid: true });
             } else {
               // Leave ABSENT until the user/scan resolves it — never guess.
               report.pending.push({
