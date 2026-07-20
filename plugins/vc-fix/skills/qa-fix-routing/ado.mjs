@@ -24,7 +24,20 @@
  *   node ado.mjs list-states    --type Bug                      # states for a type
  *   node ado.mjs create-workitem --type Bug --title "..." --description-file body.md \
  *                               [--repro-file steps.md] [--severity "2 - High"] [--priority 2] \
- *                               [--tags "qa-autofix,frontend"]   # returns { id, url }
+ *                               [--tags "qa-autofix,frontend"] \
+ *                               [--system-info-file sysinfo.html] \
+ *                               [--field "Custom.Environment=QA"] [--field "Custom.Reportedby=QA team"] \
+ *                               [--field "Custom.Typeofbug=Functional"] \
+ *                               [--assign-self] [--iteration current] [--parent 940]   # returns { id, url }
+ *     --system-info(-file) → Microsoft.VSTS.TCM.SystemInfo (the "System Info" block: environment,
+ *       build, browser, repro-rate — NOT a section inside the Description). HTML, like Description.
+ *     --field "Ref.Path=value" (repeatable) → sets any work-item field, incl. the deployment's
+ *       custom Bug picklists (Custom.Environment / Custom.Reportedby / Custom.Typeofbug, …).
+ *     --assign-self → assign to the token/session owner (whoami); --assign-to <email> for explicit.
+ *     --iteration current → stamp the team's active sprint (System.IterationPath); or pass a path.
+ *     --parent <id> → link the bug under a parent work item (Hierarchy-Reverse relation).
+ *   node ado.mjs whoami                                          # token owner { name, mail }
+ *   node ado.mjs current-iteration [--team "<team>"]            # active sprint { id, name, path }
  *   node ado.mjs list-refs      --repo frontend [--filter heads/]
  *   node ado.mjs get-file       --repo frontend --path client-app/x.vue --branch dev
  *   node ado.mjs create-pr      --repo frontend --source refs/heads/claude/qa-autofix/967 \
@@ -38,6 +51,10 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { basename, dirname, join, resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
+// Azure HTML conversion + the Bug JSON-Patch builder live in a shared module so the CLI here
+// and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
+// re-exported below for the unit test that imports them from this file.
+import { ensureAzureHtml, mdToHtml, buildBugFields } from "./ado-html.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -128,7 +145,9 @@ function parseArgs(argv) {
     const next = argv[i + 1];
     if (next === undefined || next.startsWith("--")) args[key] = true;
     else {
-      args[key] = next;
+      // `--field` is repeatable (one per work-item field) → collect into an array.
+      if (key === "field") (args.field ??= []).push(next);
+      else args[key] = next;
       i++;
     }
   }
@@ -175,6 +194,17 @@ function base(args, axis = "vcs") {
   return `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
 }
 
+/**
+ * Org-level base (`https://dev.azure.com/<org>`) — for org-scoped endpoints (connectionData)
+ * and work-item relation URLs, which are org-scoped, not project-scoped. Derives the org from
+ * --org / the tracker profile, else strips the trailing `/<project>` off the project base.
+ */
+function orgUrl(args) {
+  const org = args.org || trackerAZ().organization;
+  if (org) return `https://dev.azure.com/${org}`;
+  return base(args, "tracker").replace(/\/[^/]+$/, "");
+}
+
 // ---- fetch wrapper ------------------------------------------------------------------
 async function call(method, url, { body, contentType } = {}) {
   const headers = { Authorization: await authHeader(), Accept: "application/json" };
@@ -206,182 +236,6 @@ async function call(method, url, { body, contentType } = {}) {
 const V = "api-version=7.1";
 const enc = encodeURIComponent;
 
-// ---- Markdown -> HTML safety net (Azure fields are HTML) -----------------------------
-// System.Description / Microsoft.VSTS.TCM.ReproSteps / comments are HTML on the ADO side
-// (get-workitem stripHtml()s them on read). The skills SHOULD author HTML directly
-// (knowledge/execution/azure-html-format.md) — but if Markdown slips through it renders as a
-// literal #/**/| wall (the exact defect this guards). `ensureAzureHtml` passes author HTML
-// through untouched and converts anything that still looks like Markdown.
-//
-// Detection must not fire on tag-LIKE text that isn't markup: a bare `<` comparison (`a<b`,
-// `(a<i)`), a generic (`List<T>`), an inline mention of an element (`the <div> wrapper`), or an
-// angle bracket inside a code fence. So we (a) strip fenced + inline code first, then (b) require
-// a real FULL-HTML signal — a CLOSING tag or a block tag anchored at the start of a line — none of
-// which a stray `<tag` substring in prose produces. A lone self-closing void element (`<br>`/`<img>`/
-// `<hr>`) is deliberately NOT a full-HTML signal on its own: a mostly-Markdown body that embeds one
-// (e.g. an inline screenshot) must still be Markdown-converted, with the embed preserved verbatim by
-// mdToHtml's raw-HTML-line passthrough — NOT passed through whole (which would leave the surrounding
-// Markdown `#`/`|`/`**` as a literal wall). Author HTML per azure-html-format.md always carries a
-// paired/block tag (<ol>/<li>/<h3>/<p>/<table>).
-const HTML_SIGNAL_RE =
-  /<\/(?:h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|pre|code|b|strong|em|i|a|img|details|summary|blockquote)>|(?:^|\n)\s*<(?:h[1-6]|ol|ul|li|p|table|thead|tbody|tr|td|th|div|pre|code|blockquote|details)\b/i;
-
-function looksLikeHtml(s) {
-  // Ignore angle brackets inside code — that's content, not markup.
-  const outsideCode = s.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
-  return HTML_SIGNAL_RE.test(outsideCode);
-}
-
-function escapeHtml(s) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-// Inline Markdown -> HTML, applied to already-escaped text.
-function inlineMd(s) {
-  return s
-    .replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`)
-    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
-    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
-    // Images: MUST run before the link regex below — `![alt](url)` would otherwise be matched by
-    // the link pattern (which sees `[alt](url)` and ignores the leading `!`), degrading a screenshot
-    // embed into a bare text link. Same scheme allowlist as links, restricted to http(s) (no
-    // `mailto:` image src); a disallowed/unsupported scheme drops the tag and keeps the alt text.
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, u) => {
-      const url = String(u).trim();
-      const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url);
-      if (scheme && !/^https?$/i.test(scheme[1])) return alt;
-      return `<img src="${url.replace(/"/g, "&quot;")}" alt="${alt.replace(/"/g, "&quot;")}">`;
-    })
-    // Links: `&`/`<`/`>` were already escaped by escapeHtml (runs before inlineMd); escape `"` too so a
-    // quote in the URL can't break out of the href attribute. Allow ONLY http(s)/mailto + relative /
-    // anchor URLs — a disallowed scheme (javascript:/data:/vbscript:/…) drops the anchor and keeps the
-    // visible text, so a poisoned link can't inject an executable href.
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => {
-      const url = String(u).trim();
-      const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url);
-      if (scheme && !/^(https?|mailto)$/i.test(scheme[1])) return t; // unsafe scheme → text only, no <a>
-      return `<a href="${url.replace(/"/g, "&quot;")}">${t}</a>`;
-    });
-}
-
-function mdToHtml(md) {
-  const lines = String(md).replace(/\r\n/g, "\n").split("\n");
-  const out = [];
-  let i = 0;
-  let listType = null; // "ol" | "ul"
-  const closeList = () => {
-    if (listType) {
-      out.push(`</${listType}>`);
-      listType = null;
-    }
-  };
-  // A standalone embedded element (`<img …>`, `<br/>`, or a whole `<tag>…</tag>`) — matched on the
-  // TRIMMED line so leading/trailing whitespace doesn't hide it. MUST also gate the paragraph
-  // continuation below (isBlockStart), not just the top-of-loop dispatch: without that, a tag on the
-  // line right after plain prose (no blank-line separator) gets swallowed into the in-progress
-  // paragraph and HTML-escaped instead of passed through verbatim.
-  const isRawHtmlLine = (l) => {
-    const t = l.trim();
-    return /^<\/?[a-zA-Z]/.test(t) && t.endsWith(">");
-  };
-  const isBlockStart = (l) => isRawHtmlLine(l) || /^(#{1,6}\s|```|\s*\|.*\|\s*$|\s*\d+\.\s|\s*[-*+]\s)/.test(l);
-  while (i < lines.length) {
-    const line = lines[i];
-    // fenced code block
-    if (/^\s*```/.test(line)) {
-      closeList();
-      const buf = [];
-      i++;
-      while (i < lines.length && !/^\s*```/.test(lines[i])) buf.push(escapeHtml(lines[i++]));
-      i++; // closing fence
-      out.push(`<pre><code>${buf.join("\n")}</code></pre>`);
-      continue;
-    }
-    // raw HTML line — emitted VERBATIM (never escaped) so authored HTML survives inside an
-    // otherwise-Markdown body (mixed content — the deliberate embed passthrough).
-    if (isRawHtmlLine(line)) {
-      closeList();
-      out.push(line);
-      i++;
-      continue;
-    }
-    // pipe table
-    if (/^\s*\|.*\|\s*$/.test(line)) {
-      closeList();
-      const rows = [];
-      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) rows.push(lines[i++]);
-      const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-      const isSep = (r) => /-/.test(r) && /^\s*\|?[\s:|-]+\|?\s*$/.test(r) && !/[^\s:|-]/.test(r);
-      let html = '<table border="1" style="border-collapse:collapse;">';
-      let headerDone = false;
-      for (const r of rows) {
-        if (isSep(r)) {
-          headerDone = true;
-          continue;
-        }
-        const tag = !headerDone && rows.some(isSep) ? "th" : "td";
-        html += "<tr>" + cells(r).map((c) => `<${tag}>${inlineMd(escapeHtml(c))}</${tag}>`).join("") + "</tr>";
-      }
-      out.push(html + "</table>");
-      continue;
-    }
-    // heading
-    let m = /^(#{1,6})\s+(.*)$/.exec(line);
-    if (m) {
-      closeList();
-      const lvl = Math.min(m[1].length + 2, 6); // "# " -> h3
-      out.push(`<h${lvl}>${inlineMd(escapeHtml(m[2]))}</h${lvl}>`);
-      i++;
-      continue;
-    }
-    // ordered list item
-    m = /^\s*\d+\.\s+(.*)$/.exec(line);
-    if (m) {
-      if (listType !== "ol") {
-        closeList();
-        out.push("<ol>");
-        listType = "ol";
-      }
-      out.push(`<li>${inlineMd(escapeHtml(m[1]))}</li>`);
-      i++;
-      continue;
-    }
-    // unordered list item
-    m = /^\s*[-*+]\s+(.*)$/.exec(line);
-    if (m) {
-      if (listType !== "ul") {
-        closeList();
-        out.push("<ul>");
-        listType = "ul";
-      }
-      out.push(`<li>${inlineMd(escapeHtml(m[1]))}</li>`);
-      i++;
-      continue;
-    }
-    // blank line
-    if (/^\s*$/.test(line)) {
-      closeList();
-      i++;
-      continue;
-    }
-    // paragraph
-    closeList();
-    const para = [];
-    while (i < lines.length && !/^\s*$/.test(lines[i]) && !isBlockStart(lines[i])) {
-      para.push(inlineMd(escapeHtml(lines[i++])));
-    }
-    out.push(`<p>${para.join("<br/>")}</p>`);
-  }
-  closeList();
-  return out.join("\n");
-}
-
-/** Author-provided HTML passes through; Markdown is converted. Empty stays empty. */
-function ensureAzureHtml(text) {
-  const s = String(text || "").trim();
-  if (!s) return s;
-  return looksLikeHtml(s) ? s : mdToHtml(s);
-}
 
 // ---- commands -----------------------------------------------------------------------
 const COMMANDS = {
@@ -447,10 +301,32 @@ const COMMANDS = {
     return (d.value || []).map((s) => ({ name: s.name, category: s.category }));
   },
 
-  // Field-building mirrors AzureTracker.createWorkItem (trackers/azure-tracker.ts) — same
-  // endpoint, same JSON-Patch shape. Kept as an independent implementation (CLI script vs
-  // TS tracker class, same split as every other op below), so keep them in sync when either
-  // changes: field list, tag normalization, and any new optional field.
+  // Identity of the token/session owner — org-scoped connectionData. Used to auto-assign a
+  // created bug back to its creator (create-workitem --assign-self). `mail` is the value ADO
+  // resolves for System.AssignedTo; `name` is the display name for a preview.
+  async whoami(args) {
+    // connectionData is a preview API — it rejects the plain "7.1" the other ops use.
+    const d = await call("GET", `${orgUrl(args)}/_apis/connectionData?api-version=7.1-preview`);
+    const u = d.authenticatedUser || {};
+    const mail = u.properties?.Account?.$value || null;
+    return { id: u.id || null, name: u.providerDisplayName || null, uniqueName: mail || u.subjectDescriptor || null, mail };
+  },
+
+  // The team's CURRENT sprint (iteration) — for stamping System.IterationPath on a new bug so
+  // it lands in the active sprint, not the backlog. Team from --team or tracker.azure.team;
+  // omitted ⇒ the project's default team.
+  async "current-iteration"(args) {
+    const team = (typeof args.team === "string" ? args.team : "") || TRACKER_AZ.team || "";
+    const teamSeg = team ? `/${enc(team)}` : "";
+    const d = await call("GET", `${base(args, "tracker")}${teamSeg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
+    const it = (d.value || [])[0];
+    return it ? { id: it.id, name: it.name, path: it.path } : null;
+  },
+
+  // The Bug JSON-Patch body is built by the SHARED buildBugFields (ado-html.mjs), the same
+  // builder AzureTracker.createWorkItem uses — so the field list can't drift between the CLI
+  // and the TS tracker. This command only resolves the CLI-only conveniences (reading
+  // --*-file bodies, --assign-self via whoami, --iteration current) into concrete values first.
   async "create-workitem"(args) {
     // `str()` guards every optional flag against parseArgs's boolean-`true` coercion
     // (a flag with no following value, or immediately followed by another `--flag`,
@@ -468,31 +344,49 @@ const COMMANDS = {
     const repro = args["repro-file"]
       ? readFileSync(resolve(args["repro-file"]), "utf-8")
       : str(args.repro);
-    // Description & ReproSteps are HTML fields — convert Markdown so it doesn't render as a
-    // literal #/**/| wall (author HTML is detected and passed through). `--raw` opts out.
-    const toField = (v) => (args.raw ? String(v) : ensureAzureHtml(v));
-    const fields = [{ op: "add", path: "/fields/System.Title", value: str(args.title) }];
-    if (description) fields.push({ op: "add", path: "/fields/System.Description", value: toField(description) });
-    if (repro) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: toField(repro) });
-    const severity = str(args.severity);
-    if (severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: severity });
-    if (args.priority !== undefined && args.priority !== true)
-      fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: Number(args.priority) });
-    // ADO stores tags ";"-separated — accept comma or semicolon input and normalize.
-    const tagsInput = str(args.tags);
-    if (tagsInput) {
-      const tags = tagsInput.split(/[,;]/).map((s) => s.trim()).filter(Boolean).join("; ");
-      if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
+    const systemInfo = args["system-info-file"]
+      ? readFileSync(resolve(args["system-info-file"]), "utf-8")
+      : str(args["system-info"]);
+    // Parse repeatable `--field "Ref.Path=value"` into an object (CLI-specific validation), e.g.
+    //   --field "Custom.Environment=QA" --field "Custom.Reportedby=QA team".
+    const customFields = {};
+    for (const spec of Array.isArray(args.field) ? args.field : str(args.field) ? [str(args.field)] : []) {
+      const eq = String(spec).indexOf("=");
+      if (eq < 0) fail(`--field must be "Field.Ref=value" (got "${spec}")`);
+      const path = String(spec).slice(0, eq).trim();
+      if (!path) fail(`--field has an empty field ref (got "${spec}")`);
+      customFields[path] = String(spec).slice(eq + 1);
     }
-    // Attachment relations — comma-separated attachment URLs from `upload-attachment`. They
-    // show in the work item's Attachments tab; inline images (`<img src=...>` in the HTML)
-    // are independent and need only the URL in the field, not this relation.
-    const attachInput = str(args.attachments);
-    if (attachInput) {
-      for (const url of attachInput.split(",").map((s) => s.trim()).filter(Boolean)) {
-        fields.push({ op: "add", path: "/relations/-", value: { rel: "AttachedFile", url, attributes: { comment: "" } } });
-      }
+    // Resolve the CLI-only conveniences to concrete values, then hand everything to the shared
+    // buildBugFields (the single source of the Bug JSON-Patch, also used by azure-tracker.ts).
+    let assignedTo = str(args["assign-to"]);
+    if (!assignedTo && args["assign-self"]) {
+      const me = await COMMANDS.whoami(args);
+      assignedTo = me?.mail || me?.uniqueName || "";
+      if (!assignedTo) fail("--assign-self: could not resolve the token owner identity (connectionData returned none)");
     }
+    let iterationPath = str(args.iteration);
+    if (iterationPath && /^current$/i.test(iterationPath)) {
+      const it = await COMMANDS["current-iteration"](args);
+      if (!it?.path) fail("--iteration current: no current sprint for the team (pass --team or set tracker.azure.team)");
+      iterationPath = it.path;
+    }
+    const fields = buildBugFields({
+      title: str(args.title),
+      description,
+      reproSteps: repro,
+      severity: str(args.severity),
+      priority: args.priority !== undefined && args.priority !== true ? args.priority : undefined,
+      tags: str(args.tags),
+      systemInfo,
+      fields: customFields,
+      attachments: str(args.attachments),
+      assignedTo,
+      iterationPath,
+      parentId: str(args.parent),
+      orgUrl: orgUrl(args),
+      raw: !!args.raw,
+    });
     // The leading `$` before the type is literal + required by the ADO create endpoint.
     // Reuse the SAME resolved base for both the create call and the returned URL — building
     // the URL from a separately-recomputed org/project (as opposed to the apiBase actually

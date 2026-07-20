@@ -377,6 +377,36 @@ and point the operator at the first run:
 
 ---
 
+## `--check` — reconcile an existing profile, then verify
+
+`/project-init --check` is for a deployment that is ALREADY onboarded — most often
+**after a plugin upgrade**. The schema (`PROFILE_DEFAULTS` in `scripts/lib/project-profile.mjs`)
+evolves between versions — fields are **added** (e.g. `selfDiagnostics`), **removed**, or
+need a fresh **rescan** (repos / tracker role model) — but the on-disk `project-profile.json`
+was written once and goes stale. `--check` reconciles it, then runs the readiness table. It
+does **NOT** re-run the interview.
+
+1. **Reconcile (dry-run):** `node skills/project-init/reconcile-profile.mjs --print` diffs
+   the profile against the schema → JSON report: **`added`** (safe defaults, auto-filled on
+   write) · **`removed`** (obsolete fields; open maps `roleStates`/`stateMap`/`workItemTypes`
+   and arrays `repos.*` are preserved) · **`pending`** (operator-decision fields, each with a
+   `question`+`options`, e.g. `selfDiagnostics` — never auto-filled) · **`rescan`** (re-derive
+   live). Discriminated `tracker.azure`/`vcs.azure` follow `gen-profile`'s own pruning, so a
+   non-Azure profile is never re-grown an `azure:{}`. `no-profile` ⇒ run the full interview;
+   `current` ⇒ nothing stale.
+2. **Resolve + write:** ask each `pending` via `AskUserQuestion` (default = Recommended);
+   re-run `discover-*` for any `rescan` and fold back with `gen-profile --merge`; then
+   `node skills/project-init/reconcile-profile.mjs --write --set <path>=<value>` (one `--set`
+   per decision). Unresolved fields are left absent (safe — a missing field reads as its
+   no-op default) and stay reported. Idempotent: once done, the report is `current`. A `--write`
+   that would remove **≥5 fields** returns `status:"needs-force"` and writes nothing (likely a
+   schema mismatch, not stale fields) — review `removed`, then re-run with `--force` only if intended.
+3. **Verify:** `FORCE_COLOR=1 TEST_ENV=<env> node skills/project-init/verify-access.mjs`.
+
+Restate both the reconciliation summary and the readiness table in your reply.
+
+---
+
 ## How this makes `/qa-fix` route correctly
 
 Once the profile exists, the fix pipeline uses it automatically:
@@ -414,6 +444,7 @@ with just those flags + `--merge`. To re-derive after a token/session change, re
 | `derive-context.mjs` | the **derive block**: reads the filled env + sessions, probes the upstream permission, emits JSON — auth actually present per axis, contributionMode, forkAccount, operator |
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
+| `reconcile-profile.mjs` | **`--check` migration**: diff an existing profile against the current `PROFILE_DEFAULTS` schema → JSON report of `added` (safe-default) / `removed` (obsolete; open-maps+arrays preserved) / `pending` (operator-decision fields with `question`+`options`, e.g. `selfDiagnostics`) / `rescan` (re-derive live). Deterministic, dry-run by default; `--write` + `--set path=value`. Idempotent; mirrors `gen-profile`'s azure-block pruning |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) + enable servers for the tracker/VCS |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |

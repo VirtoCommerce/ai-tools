@@ -7,10 +7,16 @@
  * GitHub token's ACTUAL rights and gated on explicit user consent.
  *
  * Mirrors `contributionPlan`, pointed at the plugin repo. Reuses
- * `../project-init/probe-lib.mjs` (`resolveGithubToken` + `probeGithubUpstream`)
- * — that relative import resolves identically in BOTH trees (plugins/vc-fix/ and
- * .claude/ each ship skills/project-init/probe-lib.mjs), so this file is
- * byte-identical across trees.
+ * `../project-init/probe-lib.mjs` (`resolveGithubToken` + `probeGithubUpstream`).
+ * (This was byte-identical across the plugins/vc-fix/ and .claude/ trees before
+ * VCST-5509; that story updated only the canonical plugins/vc-fix/ copy, so the
+ * .claude/ mirror now lags — see the tech-debt note in the plan.)
+ *
+ * CONSENT (VCST-5509): outbound delivery is gated by project-profile.json
+ * `feedback.mode` — off (never send, DIAG stays local) / ask (DEFAULT: DRY draft +
+ * a single [Show diff]/[Send]/[Don't send] decision) / auto (Issue files
+ * automatically; a PR/fork-PR is handed off as ready commands). Local capture +
+ * diagnosis need no consent — only this step does.
  *
  * HARD INVARIANTS (quality-gates §2a client-code containment + per-action consent):
  *   - NEVER touches the client-installed plugin (read-only w.r.t. the install).
@@ -18,19 +24,21 @@
  *     of client source, file paths, URLs, identifiers, tickets, data, and secrets —
  *     only plugin-file references + a generic repro survive. A finding whose
  *     evidence is client-specific is DOWNGRADED to a generic description, never
- *     attached.
- *   - DRAFT-AND-CONFIRM: the default run is DRY (draft + show). It sends ONLY with
- *     `--confirm`, and even then auto-sends only the low-risk GitHub Issue route;
- *     a PR/fork-PR is handed off as ready commands (opening a code PR needs a
- *     working tree + a human-reviewed patch, which a telemetry script must not
- *     fabricate).
- *   - Issue dedup: a stable fingerprint marker prevents repeat sessions from
- *     spamming the tracker.
+ *     attached. Operator /vc-feedback notes are §2a-gated the same way.
+ *   - DRAFT-AND-CONFIRM (mode=ask): the run is DRY (draft + show). It sends ONLY
+ *     with `--confirm` (mode=auto pre-confirms), and even then auto-sends only the
+ *     low-risk GitHub Issue route; a PR/fork-PR is handed off as ready commands
+ *     (opening a code PR needs a working tree + a human-reviewed patch, which a
+ *     telemetry script must not fabricate).
+ *   - Issue dedup with OCCURRENCE COUNTING: a stable fingerprint marker converges
+ *     the same defect from many clients to ONE upstream issue — a dedup hit adds a
+ *     "+1 occurrence" comment instead of a new ticket.
  *
  * Usage:
  *   node deliver.mjs [--diag <path>] [--repo <owner/name>] [--as pr|fork-pr|issue|local]
- *                    [--confirm] [--json]
- *   (default --repo VirtoCommerce/vc-mcp-testing-module; default is a DRY draft.)
+ *                    [--confirm] [--keep] [--purge] [--json]
+ *   (default --repo VirtoCommerce/vc-mcp-testing-module; default is a DRY draft
+ *    unless feedback.mode=auto.)
  */
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync, unlinkSync } from "node:fs";
 import { resolve, join } from "node:path";
@@ -50,6 +58,49 @@ function outputRoot() {
 }
 function diagDir() {
   return join(outputRoot(), ".vc-fix", "diagnostics");
+}
+
+// ─── consent (VCST-5509) — feedback.mode gates OUTBOUND delivery only ─────────
+// Local capture + diagnosis need no consent (nothing leaves the machine). This
+// script — the ONLY step that sends anything upstream — is gated by
+// project-profile.json `feedback.mode`:
+//   off  — nothing leaves the machine; refuse to send, DIAG stays local.
+//   ask  — DEFAULT: DRY draft + a single [Show diff]/[Send]/[Don't send] decision
+//          (the model shows the draft, then re-runs with --confirm on Send).
+//   auto — the Issue route files automatically (scrubbed) + prints the filed URL; a PR/fork-PR
+//          is prepared as ready commands (a human always opens the PR).
+function readProfileObj() {
+  try {
+    const p = join(outputRoot(), "project-profile.json");
+    if (existsSync(p)) return JSON.parse(readFileSync(p, "utf8"));
+  } catch {
+    /* null */
+  }
+  return null;
+}
+export function feedbackMode() {
+  const m = readProfileObj()?.feedback?.mode;
+  return m === "off" || m === "auto" || m === "ask" ? m : "ask"; // default = ask
+}
+
+// Read this session's explicit /vc-feedback verdicts from the collector jsonl so the
+// outbound report carries the highest-value signal. Text is already redacted by the
+// collector; buildDraft additionally §2a-gates it before it goes upstream.
+export function readSessionFeedback(sid) {
+  if (!sid) return [];
+  try {
+    const p = join(diagDir(), `${sid}.jsonl`);
+    if (!existsSync(p)) return [];
+    return readFileSync(p, "utf8")
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .filter((r) => r && r.type === "feedback")
+      .map((r) => ({ verdict: r.verdict, text: r.text || "" }));
+  } catch {
+    return [];
+  }
 }
 
 // ─── containment (§2a) — whitelist gate + defense-in-depth scrubber ──────────
@@ -297,12 +348,26 @@ export function resolveRoute({ token, probe, scopes, override }) {
 }
 
 // ─── fingerprint / dedup ─────────────────────────────────────────────────────
-/** Stable, Date-free short hash (djb2 → base36) over the finding signatures. */
-export function fingerprint(findings) {
-  const sig = (findings || [])
-    .map((f) => `${f.skill}|${f.verdict}|${f.sev}|${(f.fix || "").replace(/\s+/g, " ").trim()}`)
-    .sort()
-    .join("\n");
+/**
+ * Stable, Date-free short hash (djb2 → base36) over the finding signatures AND the
+ * operator feedback. Folding feedback in is load-bearing: a feedback-ONLY session
+ * (no BROKEN/DEGRADED finding) would otherwise hash the empty findings list to a
+ * CONSTANT fingerprint, collapsing every negative-feedback report from every client
+ * into one upstream issue and losing the note (D2). Distinct notes → distinct
+ * fingerprints → distinct issues; identical notes dedup (the note lives in the first
+ * issue). Feedback text is scrubbed before hashing so the fingerprint carries no
+ * client identifier.
+ */
+/** Per-finding signature (identity of a single finding, ignoring session). Used
+ *  both by fingerprint() and by batch aggregation to dedup the SAME finding across
+ *  many sessions into one entry with an occurrence count. */
+export function findingSig(f) {
+  return `${f.skill}|${f.verdict}|${f.sev}|${(f.fix || "").replace(/\s+/g, " ").trim()}`;
+}
+export function fingerprint(findings, feedback = []) {
+  const parts = (findings || []).map(findingSig);
+  for (const f of feedback || []) parts.push(`fb|${f.verdict}|${scrubText(f.text || "").replace(/\s+/g, " ").trim().slice(0, 120)}`);
+  const sig = parts.sort().join("\n");
   let h = 5381;
   for (let i = 0; i < sig.length; i++) h = ((h * 33) ^ sig.charCodeAt(i)) >>> 0;
   return h.toString(36);
@@ -329,7 +394,7 @@ export async function findDuplicateIssue({ repo, token, fp }) {
 }
 
 // ─── draft assembly ──────────────────────────────────────────────────────────
-export function buildDraft({ route, pluginVersion, findings, fp }) {
+export function buildDraft({ route, pluginVersion, findings, fp, feedback = [], mode = "ask" }) {
   // The SKILL cell is untrusted too — a client-shaped skill label (e.g.
   // "AcmeCheckoutSkill") would otherwise leak into the row AND the title, and
   // `scrubText` alone misses it (word-boundary/shape gap). Gate it with the same
@@ -358,20 +423,35 @@ export function buildDraft({ route, pluginVersion, findings, fp }) {
       signal = scrubText(f.signal);
       fix = scrubText(f.fix);
     }
+    // In a batch, a finding seen across several sessions carries an occurrence count.
+    if (f.occurrences > 1) note += ` _(×${f.occurrences} sessions)_`;
     return `| ${skill} | ${f.verdict} | ${f.sev} | ${signal} | ${fix}${note} |`;
   });
   const worst = findings.some((f) => f.verdict === "BROKEN") ? "BROKEN" : findings.some((f) => f.verdict === "DEGRADED") ? "DEGRADED" : "OK";
   const skills = [...new Set(findings.map((f) => `${skillLabel(f)} ${f.verdict}`))].slice(0, 3).join(", ");
-  const title = `${ISSUE_TITLE_PREFIX} ${skills || worst}`;
+  const fbWorst = (feedback || []).some((f) => f.verdict === "down") ? "👎" : (feedback || []).some((f) => f.verdict === "up") ? "👍" : "";
+  // Title never says a bare "OK": a feedback-only report (no findings) reflects the
+  // operator verdict, not "OK" (D2).
+  const title = `${ISSUE_TITLE_PREFIX} ${skills || (feedback.length ? `operator feedback ${fbWorst}`.trim() : worst)}`;
+
+  // Operator /vc-feedback verdicts — the highest-value signal (and the main detector
+  // of silent failures). The note is FREE-FORM prose, and the §2a gate (isClientSpecific)
+  // is weaker on lowercase business identifiers than on structured cells. So the prose
+  // is included ONLY in `ask` mode (where the operator previews the full draft before
+  // Send). In `auto` mode — filed UNATTENDED — the note prose is DROPPED and only the
+  // 👍/👎 verdict is sent (B-F1). A client-specific note is withheld in every mode.
+  const fbLines = (feedback || []).map((f) => {
+    const mark = f.verdict === "down" ? "👎" : f.verdict === "up" ? "👍" : "•";
+    const drop = mode === "auto" || !f.text || isClientSpecific(f.text);
+    return drop ? `- ${mark}` : `- ${mark} ${scrubText(f.text)}`;
+  });
+
   const body = [
     `<!-- ${FP_MARKER} ${fp} -->`,
     `Automated quality report from the vc-fix self-diagnostics subsystem (\`/vc-self-check\`).`,
     `Plugin version: ${scrubText(pluginVersion)}. Generated from local session telemetry.`,
-    ``,
-    `## Findings`,
-    `| Skill | Verdict | Sev | Signal | Proposed fix (plugin file) |`,
-    `|-------|---------|-----|--------|----------------------------|`,
-    ...rows,
+    ...(rows.length ? [``, `## Findings`, `| Skill | Verdict | Sev | Signal | Proposed fix (plugin file) |`, `|-------|---------|-----|--------|----------------------------|`, ...rows] : []),
+    ...(fbLines.length ? [``, `## Operator feedback`, ...fbLines] : []),
     ``,
     `## Containment`,
     `Every findings cell was checked against a plugin-reference whitelist: any cell carrying`,
@@ -392,6 +472,22 @@ async function createIssue({ repo, token, title, body }) {
   if (!r.ok) throw new Error(`GitHub issue create failed: ${r.status} ${await r.text().catch(() => "")}`);
   const j = await r.json();
   return { number: j.number, url: j.html_url };
+}
+
+// Dedup with occurrence-counting: the SAME defect fingerprinted from many clients must
+// converge to ONE upstream ticket, not spawn hundreds. On a dedup hit we post a "+1
+// occurrence" comment instead of a new issue — the vendor sees how many clients hit it.
+async function addOccurrenceComment({ repo, token, number, fp }) {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/issues/${number}/comments`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "User-Agent": "vc-self-check", Accept: "application/vnd.github+json" },
+      body: JSON.stringify({ body: `+1 occurrence — another vc-fix client hit the same finding (fingerprint \`${fp}\`).` }),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
 }
 
 function prHandoffCommands({ repo, route, fp }) {
@@ -422,18 +518,25 @@ function parseArgs(argv) {
     // --keep:  after a successful delivery, do NOT auto-purge (retain the local artifacts).
     else if (t === "--purge") a.purge = true;
     else if (t === "--keep") a.keep = true;
+    // --batch: aggregate ALL local DIAG-*.md into ONE consolidated report (findings
+    // deduped across sessions with occurrence counts). See mainBatch().
+    else if (t === "--batch") a.batch = true;
   }
   return a;
 }
 
-function newestDiag() {
+/** All local DIAG-*.md paths, newest first. */
+function listDiags() {
   const dir = diagDir();
-  if (!existsSync(dir)) return null;
-  const files = readdirSync(dir)
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
     .filter((f) => /^DIAG-.*\.md$/.test(f))
-    .map((f) => ({ f, t: statSync(join(dir, f)).mtimeMs }))
-    .sort((x, y) => y.t - x.t);
-  return files.length ? join(dir, files[0].f) : null;
+    .map((f) => ({ p: join(dir, f), t: statSync(join(dir, f)).mtimeMs }))
+    .sort((x, y) => y.t - x.t)
+    .map((x) => x.p);
+}
+function newestDiag() {
+  return listDiags()[0] || null;
 }
 
 /** The diagnosed session id — from the DIAG header (`- Session: <sid> · …`), else the
@@ -473,8 +576,160 @@ function purgeSession({ dir, sid, fp, extra = [] }) {
   return [...new Set(removed)];
 }
 
+/**
+ * --batch: aggregate ALL local DIAG-*.md into ONE consolidated contribution. Findings
+ * are deduped ACROSS sessions by their per-finding signature and annotated with an
+ * occurrence count (how many local sessions hit each); operator feedback is merged
+ * (dedup identical notes). Same consent (feedback.mode) + route + scrub + upstream
+ * dedup as a single run. On a successful send, EVERY included session's local
+ * artifacts are purged (the batch's delete-after-deliver). This keeps many accumulated
+ * flagged sessions from spamming the tracker with one issue each.
+ */
+async function mainBatch(args) {
+  const diags = listDiags();
+  if (!diags.length) {
+    const msg = "No DIAG reports found to batch. Run /vc-self-check first.";
+    if (args.json) process.stdout.write(JSON.stringify({ action: "batch", error: msg }) + "\n");
+    else process.stderr.write(msg + "\n");
+    process.exitCode = 2;
+    return;
+  }
+
+  // Collect every DIAG + its session feedback; aggregate findings by signature.
+  const sessions = []; // { sid, diagPath }
+  const byKey = new Map(); // findingSig → { finding, occurrences, sessions:Set }
+  const allFeedback = [];
+  const fbSeen = new Set();
+  let pluginVersion = "unknown";
+  for (const diagPath of diags) {
+    let md;
+    try { md = readFileSync(diagPath, "utf8"); } catch { continue; }
+    const parsed = parseDiag(md);
+    if (parsed.pluginVersion && parsed.pluginVersion !== "unknown") pluginVersion = parsed.pluginVersion;
+    const sid = sessionIdFromDiag(md, diagPath);
+    const feedback = readSessionFeedback(sid);
+    sessions.push({ sid, diagPath });
+    for (const f of parsed.findings) {
+      if (f.verdict !== "BROKEN" && f.verdict !== "DEGRADED") continue; // only actionable
+      const key = findingSig(f);
+      const e = byKey.get(key) || { finding: f, occurrences: 0, sessions: new Set() };
+      e.occurrences++;
+      e.sessions.add(sid);
+      byKey.set(key, e);
+    }
+    for (const fb of feedback) {
+      const k = `${fb.verdict}|${scrubText(fb.text || "")}`;
+      if (fbSeen.has(k)) continue;
+      fbSeen.add(k);
+      allFeedback.push(fb);
+    }
+  }
+  const dir = diagDir();
+  const findings = [...byKey.values()].map((e) => ({ ...e.finding, occurrences: e.occurrences }));
+  const hasNeg = allFeedback.some((f) => f.verdict === "down");
+  const fp = fingerprint(findings, allFeedback);
+
+  // --batch --purge: standalone cleanup of ALL local sessions, send nothing.
+  if (args.purge) {
+    const removed = [];
+    for (const s of sessions) removed.push(...purgeSession({ dir, sid: s.sid, fp, extra: [s.diagPath] }));
+    if (args.json) process.stdout.write(JSON.stringify({ action: "batch-purge", sessions: sessions.length, removed }) + "\n");
+    else process.stdout.write(`Purged ${removed.length} local artifact(s) across ${sessions.length} session(s).\n`);
+    return;
+  }
+
+  if (!findings.length && !hasNeg) {
+    if (args.json) process.stdout.write(JSON.stringify({ action: "batch", sessions: sessions.length, findings: 0, actionable: 0 }) + "\n");
+    else process.stdout.write(`Batched ${sessions.length} session(s): no BROKEN/DEGRADED finding and no 👎 feedback. Nothing to send.\n  Clean up with: node "$pluginRoot/skills/vc-self-check/deliver.mjs" --batch --purge\n`);
+    return;
+  }
+
+  const mode = feedbackMode();
+  if (mode === "off") {
+    if (args.json) process.stdout.write(JSON.stringify({ action: "batch", disabled: true, reason: "feedback.mode=off" }) + "\n");
+    else process.stdout.write(`Upstream delivery is disabled (feedback.mode=off). ${sessions.length} session(s) stay local — nothing sent.\n`);
+    return;
+  }
+  const confirm = args.confirm || mode === "auto";
+
+  const { token, via, scopes } = resolveGithubToken();
+  const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
+  const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
+  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback: allFeedback, mode });
+  const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
+
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const deliveryPath = join(dir, `DELIVERY-${fp}-${stamp}.md`);
+  writeFileSync(deliveryPath, `# ${draft.title}\n\n${draft.body}\n`, "utf8");
+
+  const purgeAll = () => {
+    const removed = [];
+    for (const s of sessions) removed.push(...purgeSession({ dir, sid: s.sid, fp, extra: [s.diagPath] }));
+    try { if (existsSync(deliveryPath)) { unlinkSync(deliveryPath); removed.push(deliveryPath.split(/[\\/]/).pop()); } } catch { /* ignore */ }
+    return [...new Set(removed)];
+  };
+  const plan = { action: "batch", sessions: sessions.length, findings: findings.length, repo: args.repo, tokenVia: via || null, perm: probe?.perm ?? null, route, reason, fingerprint: fp, duplicate: dup, deliveryDraft: deliveryPath, mode, sent: false };
+
+  if (!confirm) {
+    plan.dryRun = true;
+    if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+    else process.stdout.write(
+      [
+        `Batched ${sessions.length} session(s) → ${findings.length} unique finding(s).`,
+        `Route: ${route} — ${reason}   (feedback.mode=${mode})`,
+        dup ? `Dedup: matches open issue #${dup.number} — would add "+1 occurrence"` : `Dedup: none`,
+        `Draft written (scrubbed): ${deliveryPath}`,
+        `--- draft ---\n# ${draft.title}\n\n${draft.body}\n-------------`,
+        route === "issue" ? `Re-run with --batch --confirm to file (then all ${sessions.length} sessions are purged; --keep to retain).`
+          : route === "local" ? `No token/rights → local only. Authenticate to deliver.`
+          : `A ${route} is handed off — re-run with --batch --confirm for the ready commands.`,
+      ].join("\n") + "\n"
+    );
+    return;
+  }
+
+  if (route === "issue") {
+    if (dup) {
+      plan.skipped = `duplicate of #${dup.number}`;
+      plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
+      if (!args.keep) plan.purged = purgeAll();
+      if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+      else process.stdout.write(`Batch duplicate of #${dup.number} — added +1 occurrence.` + (plan.purged?.length ? ` Purged ${plan.purged.length} artifact(s) across ${sessions.length} session(s).` : ``) + `\n`);
+      return;
+    }
+    try {
+      const created = await createIssue({ repo: args.repo, token, title: draft.title, body: draft.body });
+      plan.sent = true; plan.issue = created;
+      if (!args.keep) plan.purged = purgeAll();
+      if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+      else process.stdout.write(`Filed batch Issue #${created.number}: ${created.url}` + (plan.purged?.length ? ` — purged ${plan.purged.length} artifact(s) across ${sessions.length} session(s).` : ``) + `\n`);
+    } catch (e) {
+      plan.error = String(e?.message ?? e);
+      if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+      else process.stderr.write(plan.error + "\n");
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  if (route === "pr" || route === "fork-pr") {
+    plan.handoff = true;
+    if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+    else process.stdout.write(
+      `${route} is NOT auto-created. Scrubbed batch draft: ${deliveryPath}\n\n${prHandoffCommands({ repo: args.repo, route, fp })}\n\n` +
+        `Once the PR is open, clear all batched sessions:\n  node "$pluginRoot/skills/vc-self-check/deliver.mjs" --batch --purge\n`
+    );
+    return;
+  }
+
+  if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
+  else process.stdout.write(`No token/rights → local batch report only: ${deliveryPath}\n`);
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
+  if (args.batch) return mainBatch(args);
   const diagPath = args.diag ? resolve(args.diag) : newestDiag();
   if (!diagPath || !existsSync(diagPath)) {
     const msg = "No DIAG report found. Run /vc-self-check first to produce a local DIAG-*.md.";
@@ -486,8 +741,10 @@ export async function main(argv = process.argv.slice(2)) {
 
   const md = readFileSync(diagPath, "utf8");
   const { pluginVersion, findings } = parseDiag(md);
-  const fp = fingerprint(findings);
   const sid = sessionIdFromDiag(md, diagPath);
+  const feedback = readSessionFeedback(sid);
+  const mode = feedbackMode(); // off | ask | auto (delivery consent — VCST-5509)
+  const fp = fingerprint(findings, feedback); // fold feedback so feedback-only reports don't collapse (D2)
   const purgeHint = `node "$pluginRoot/skills/vc-self-check/deliver.mjs" --purge${args.diag ? ` --diag ${diagPath}` : ""}`;
 
   // --purge (standalone): the terminal "delete all" step of the log→analyze→contribute→
@@ -506,24 +763,43 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  // Nothing worthwhile to contribute (no BROKEN/DEGRADED finding) → file nothing; offer
-  // the cleanup step so the local log doesn't linger.
+  // Nothing worthwhile to contribute → file nothing; offer the cleanup step. A negative
+  // /vc-feedback verdict IS worthwhile even with no BROKEN/DEGRADED finding (it's often
+  // the only signal on a silent failure).
   const actionable = findings.filter((f) => f.verdict === "BROKEN" || f.verdict === "DEGRADED");
-  if (!actionable.length) {
+  const hasNegFeedback = feedback.some((f) => f.verdict === "down");
+  if (!actionable.length && !hasNegFeedback) {
     const out = { action: "none", session: sid || null, findings: findings.length, actionable: 0 };
     if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
     else process.stdout.write(
-      `No worthwhile finding to contribute (no BROKEN/DEGRADED among ${findings.length}). Nothing sent.\n` +
+      `No worthwhile finding to contribute (no BROKEN/DEGRADED among ${findings.length}, no 👎 feedback). Nothing sent.\n` +
         `To clear this session's local diagnostics:\n  ${purgeHint}\n`
     );
     return;
   }
 
+  // feedback.mode=off — the operator opted out of upstream delivery. Nothing leaves the
+  // machine; the DIAG stays local. (Capture + diagnosis already ran — they need no consent.)
+  if (mode === "off") {
+    const out = { action: "disabled", reason: "feedback.mode=off", session: sid || null };
+    if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
+    else process.stdout.write(
+      `Upstream delivery is disabled (feedback.mode=off). The DIAG stays local — nothing sent.\n` +
+        `Enable it by setting feedback.mode to "ask" or "auto" in project-profile.json (or re-run /project-init).\n` +
+        `To clear this session's local diagnostics:\n  ${purgeHint}\n`
+    );
+    return;
+  }
+  // auto — the outbound step proceeds without a per-run --confirm (the operator consented
+  // once at onboarding). The Issue route files; a PR/fork-PR is still handed off (a human
+  // opens the PR — an irreversible external action).
+  const confirm = args.confirm || mode === "auto";
+
   const { token, via, scopes } = resolveGithubToken();
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
 
-  const draft = buildDraft({ route, pluginVersion, findings, fp });
+  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback, mode });
   const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
 
   // Always write the draft locally (never under the plugin dir).
@@ -548,15 +824,16 @@ export async function main(argv = process.argv.slice(2)) {
     sent: false,
   };
 
-  if (!args.confirm) {
+  if (!confirm) {
     plan.dryRun = true;
+    plan.mode = mode;
     if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
     else {
       process.stdout.write(
         [
-          `Route: ${route} — ${reason}`,
+          `Route: ${route} — ${reason}   (feedback.mode=${mode})`,
           `Repo:  ${args.repo}   Token: ${via || "none"}   Perm: ${probe?.perm ?? "n/a"}`,
-          dup ? `Dedup: matches existing open issue #${dup.number} (${dup.url}) — would SKIP` : `Dedup: no existing self-check issue with this fingerprint`,
+          dup ? `Dedup: matches existing open issue #${dup.number} (${dup.url}) — would add a "+1 occurrence" comment (no new issue)` : `Dedup: no existing self-check issue with this fingerprint`,
           ``,
           `Draft written (scrubbed): ${deliveryPath}`,
           `--- draft ---`,
@@ -578,16 +855,20 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  // --confirm: act. Only the Issue route auto-sends; pr/fork-pr hand off; local writes.
+  // Act. Only the Issue route auto-sends; pr/fork-pr hand off; local writes.
   if (route === "issue") {
     if (dup) {
       plan.skipped = `duplicate of #${dup.number}`;
-      // Already upstream (this finding lives in an open issue) → the session's local
-      // artifacts have served their purpose; delete them unless --keep.
+      // Already upstream — don't re-file; add a "+1 occurrence" comment so the vendor
+      // sees this defect hit another client (occurrence counts across clients).
+      plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
+      // The finding is upstream → the session's local artifacts have served their
+      // purpose; delete them unless --keep.
       if (!args.keep) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
       else process.stdout.write(
-        `Duplicate of open issue #${dup.number} (${dup.url}) — not filing again.\n` +
+        `Duplicate of open issue #${dup.number} (${dup.url}) — not filing again; ` +
+          `${plan.occurrenceComment ? "added a +1 occurrence comment" : "could not add occurrence comment"}.\n` +
           (plan.purged?.length ? `Purged ${plan.purged.length} local artifact(s) for session ${sid || "(this DIAG)"}.\n` : ``)
       );
       return;

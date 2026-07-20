@@ -16,6 +16,7 @@ this command just invokes it.
 /vc-self-check <session-id>    # diagnose a specific recorded session
 /vc-self-check deliver         # Step 4: draft a scrubbed, consent-gated report to VirtoCommerce (deliver.mjs)
 /vc-self-check deliver --confirm   # file it (Issue route) — then auto-delete this session's local artifacts (--keep to retain)
+/vc-self-check deliver --batch      # consolidate ALL local DIAGs into ONE report (dedup findings + occurrence counts)
 /vc-self-check deliver --purge     # terminal cleanup: delete this session's local artifacts, send nothing
 ```
 Lifecycle: **log → analyze → contribute (PR/issue) → delete**. Local diagnostics are
@@ -34,14 +35,16 @@ processed session's artifacts are removed (only that session; never other sessio
 - Never modifies the installed plugin (the proposed fix is a recommendation, not
   an edit).
 - Never files a tracker ticket and never sends anything externally. Contributing a
-  confirmed DIAG back to VirtoCommerce is the separate, scrubbed, **explicitly
-  consented** `deliver` sub-step (`deliver.mjs`, VCST-5478) — never run implicitly.
+  confirmed DIAG back to VirtoCommerce is the separate, scrubbed, `feedback.mode`-gated
+  `deliver` sub-step (`deliver.mjs`, VCST-5478/5509) — never run implicitly.
 - Never diagnoses its own invocation (the collector drops `vc-self-check` spans), and
-  never re-prompts in a session that already ran it (`selfCheckSeen`) → no recursion.
-  It runs only on explicit user consent (the end-of-session prompt's **Yes**) or when the
-  user runs `/vc-self-check` directly — never as an unprompted auto-trigger.
+  never re-triggers in a session that already ran it (`selfCheckSeen`) → no recursion.
 
-> The end-of-session `Stop` finalize offers an `AskUserQuestion` Yes/No **only when a
-> skill actually ran and its skill-attributed anomaly score crosses the threshold**;
-> answering **Yes** is what leads here (the model then runs this skill). It is never run
-> without that consent.
+> **How the auto-run works (VCST-5509).** At `Stop`, the collector's `finalize` runs the
+> Tier-1 outcome classifier over the session's spans. If ≥1 skill/command span was
+> flagged (`failed` / `degraded` / `silent_suspect`) with a **new** signature, it returns
+> a `{decision:"block"}` telling the agent to run this skill **silently** (no Yes/No
+> modal) and print one info line. The happy path (`success` / `recovered`) emits nothing.
+> Per-signature dedup (`seenSignatures`) + `selfCheckSeen` prevent re-nag/recursion. The
+> old numeric `anomalyScore >= 6` gate and the interactive consent modal are gone. Kill
+> switch: `VC_FIX_DIAG_CONSENT=off` suppresses the auto-run (capture still records).

@@ -1,64 +1,89 @@
 #!/usr/bin/env node
 /**
- * Passive session-telemetry collector — Tier A of the vc-fix self-diagnostics
- * subsystem (VCST-5475). Wired via hooks/hooks.json:
+ * Passive session-telemetry collector — Tier 0 (Instrumentation) + Tier 1
+ * (Outcome classification) of the vc-fix self-diagnostics subsystem
+ * (VCST-5475, rebuilt for the client→vendor feedback loop VCST-5509).
  *
- *   SessionStart              → `init`     (write a session header record)
- *   PostToolUse matcher=Skill → `record`   (close the previous skill's span,
- *                                            roll up its signals, open a new one)
- *   Stop                      → `finalize` (roll up the trailing span, emit a
- *                                            heuristic anomaly snapshot)
+ * Wired via hooks/hooks.json:
  *
- * DESIGN — why this is cheap: the hook fires ONLY at skill boundaries and at
- * Stop, never per tool-call. Each firing reads the session `transcript_path`
- * JSONL and deterministically extracts problem SIGNALS (tool errors, denied
- * permissions, hook failures such as the `tsc` PostToolUse, STOP/BAIL markers)
- * from the delta since the last firing, attributing them to the span that just
- * ended. The heavy interpretation (were the STEPS correct? is this a real
- * anomaly or a clean BAIL?) is Tier B's job — the on-demand `/vc-self-check`
- * diagnostician (VCST-5477) reading this jsonl + the oracle (VCST-5476).
+ *   SessionStart              → `init`      (write a session header, reset state)
+ *   UserPromptSubmit          → `prompt`    (open a COMMAND span for a plugin
+ *                                            slash-command; record `/vc-feedback`)
+ *   PostToolUse matcher=Skill → `record`    (scan the delta — the scanner opens/
+ *                                            closes skill spans as it meets them)
+ *   SubagentStop              → `agentstop` (scan the delta so a finished sub-agent's
+ *                                            Task result is captured promptly)
+ *   Stop                      → `finalize`  (close trailing spans, classify every
+ *                                            span, tail-trigger the diagnostician)
+ *
+ * ─── DESIGN (VCST-5509) ─────────────────────────────────────────────────────
+ * CAPTURE is decoupled from ESCALATION.
+ *
+ *  • CAPTURE (Tier 0) — total + silent. Every operation becomes a SPAN aligned to
+ *    the OpenTelemetry GenAI semantic conventions:
+ *      { id, parentId, kind: command|skill|agent|tool, name, status: ok|error,
+ *        outcome, startTs, endTs, durationMs, retries, tool_name, arg_hash,
+ *        signals, struggle[] }
+ *    Spans are RECONSTRUCTED from the session transcript (not a per-tool hook):
+ *    the hook fires only at boundaries (prompt / skill / subagent-stop / stop),
+ *    reads the transcript delta since a persisted cursor, and pairs each tool_use
+ *    with its tool_result to build tool/agent spans with real durations. Skill
+ *    spans are the interval between Skill invocations; command spans are the
+ *    interval from a plugin slash-command prompt to Stop. Raw payloads are NEVER
+ *    stored — tool inputs are hashed (arg_hash) and a bounded details ring keeps
+ *    only redacted snippets.
+ *
+ *  • CLASSIFY (Tier 1) — cheap heuristics, NO LLM. On close, each skill/command/
+ *    agent span is tagged: success | recovered (self-corrected → NOT escalated) |
+ *    degraded (a struggle sub-signal fired) | failed (a blocking, unrecovered
+ *    error) | silent_suspect (closed clean but the oracle's expected output is
+ *    absent). error ≠ failure; the numeric `>= 6` gate is GONE.
+ *
+ *  • ESCALATE (Tier 2) — tail-based. At Stop, if any span's outcome is
+ *    failed/degraded/silent_suspect AND its signature is NEW (deduped across the
+ *    session), a `Stop`{decision:"block"} resumes the agent with an instruction to
+ *    run `/vc-self-check` SILENTLY (no Yes/No modal) and print ONE info line. The
+ *    happy path emits nothing. Loop guards: `vc-self-check`'s own spans are dropped,
+ *    `selfCheckSeen` suppresses re-trigger, per-signature dedup prevents re-nag.
  *
  * INVARIANTS (all enforced here):
- *   - Writes ONLY under the project output root — `<outputRoot>/.vc-fix/
- *     diagnostics/<session_id>.jsonl` — where outputRoot = VC_FIX_HOME ||
- *     process.cwd(), matching skills/project-init/lib/paths.mjs `outputRoot()`.
- *     NEVER writes under the plugin install dir (`pluginRoot`). The `.vc-fix/`
- *     path is gitignored.
- *   - Never throws, never blocks a tool, never prints a decision to stdout,
- *     never writes a secret (Authorization/token/password/PAN are redacted from
- *     every captured snippet). Always exits 0.
- *   - Per-Skill overhead: the transcript file is read in full each firing, but only
- *     the NEW lines (from the persisted cursor) are scanned — the scan is bounded to
- *     the delta, the read is not. Full read of ~100k lines is a few hundred ms; fine
- *     at skill boundaries. (A seek-from-byte-offset read would make it incremental.)
+ *   - GATED on capture: init/prompt/record/agentstop/finalize run ONLY when the
+ *     output root carries a project-profile.json with `selfDiagnostics: true`.
+ *     Absent profile / absent field / any non-true value ⇒ full no-op (nothing
+ *     read, nothing written, no `.vc-fix/`). (Tier-3 DELIVERY consent is a separate
+ *     `feedback.mode` gate read by deliver.mjs — never here.)
+ *   - Writes ONLY under <outputRoot>/.vc-fix/diagnostics/ (outputRoot =
+ *     VC_FIX_HOME || cwd, matching skills/project-init/lib/paths.mjs). NEVER under
+ *     the plugin install dir. `.vc-fix/` is gitignored.
+ *   - Never throws, never blocks a tool, never writes a secret (Authorization/
+ *     token/password/PAN redacted from every snippet). Always exits 0.
+ *   - The auto-diagnosis trigger can be suppressed with VC_FIX_DIAG_CONSENT=off
+ *     (kill switch) — capture still runs; nothing is surfaced.
  *
- * This file is shipped identically in `plugins/vc-fix/hooks/` and `.claude/hooks/`.
+ * NOTE: this collector is the canonical `plugins/vc-fix/` copy. The `.claude/`
+ * mirror predates VCST-5509 and is intentionally NOT kept in lock-step here.
  */
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, renameSync } from "node:fs";
 import { dirname, resolve, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // ─── output root resolution ────────────────────────────────────────────────
 // Canonical definition lives in skills/project-init/lib/paths.mjs `outputRoot()`
-// (VC_FIX_HOME || process.cwd()). We prefer importing it so the two stay in
-// lock-step; when that module isn't resolvable (the `.claude/` tree's
-// project-init has a flatter layout with no lib/paths.mjs), we fall back to the
-// byte-identical inline logic. Either way the result is the project dir — NEVER
-// the plugin install dir.
+// (VC_FIX_HOME || process.cwd()). Prefer importing it; fall back to the inline
+// equivalent. Either way the result is the project dir — NEVER the plugin dir.
 async function resolveOutputRoot() {
   try {
     const url = new URL("../skills/project-init/lib/paths.mjs", import.meta.url);
     const mod = await import(url.href);
     if (typeof mod.outputRoot === "function") return mod.outputRoot();
   } catch {
-    /* fall through to the inline equivalent */
+    /* fall through */
   }
   return process.env.VC_FIX_HOME ? resolve(process.env.VC_FIX_HOME) : process.cwd();
 }
 
 // Plugin install dir — read-only. Only used to read the plugin version for the
-// session header; NEVER a write target. CLAUDE_PLUGIN_ROOT when set, else this
-// file's own dir climbed one level (<pluginRoot>/hooks/session-telemetry.mjs).
+// session header; NEVER a write target.
 function pluginRoot() {
   if (process.env.CLAUDE_PLUGIN_ROOT) return resolve(process.env.CLAUDE_PLUGIN_ROOT);
   return resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -69,7 +94,7 @@ const REDACTIONS = [
   [/\b(authorization|bearer)\b\s*[:=]?\s*\S+/gi, "$1 «redacted»"],
   [/\b(token|api[_-]?key|secret|password|passwd|pwd)\b\s*[:=]\s*\S+/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
-  [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers (anchored on digits both ends — no trailing-sep eat)
+  [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers
   [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub tokens
 ];
 function redact(s) {
@@ -77,23 +102,88 @@ function redact(s) {
   for (const [re, rep] of REDACTIONS) out = out.replace(re, rep);
   return out;
 }
+function snippet(text, max = 120) {
+  const t = redact(String(text ?? "").replace(/\s+/g, " ").trim());
+  return t.length > max ? t.slice(0, max - 3) + "…" : t;
+}
 
-// ─── signal extraction from the transcript delta ─────────────────────────────
+// Stable, Date-free djb2 → base36 hash. Used for arg_hash and span signatures so
+// the same input/finding collides across sessions and clients (vendor dedup).
+function hash(str) {
+  let h = 5381;
+  const s = String(str ?? "");
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+// ─── op taxonomy (used by Tier-1 struggle detection) ─────────────────────────
+// A "search/read" op gathers information; a "decisive" op changes the world. A
+// long run of the former with none of the latter is search_thrash / low_yield.
+const SEARCH_RE = /(^|__)(Read|Grep|Glob|LS|NotebookRead|WebFetch|WebSearch|get_file_contents|get_pull_request|get_issue|search_code|search_issues|search_repositories|list_|read_page|get_page_text|snapshot)/i;
+const DECISIVE_RE = /(^|__)(Edit|MultiEdit|Write|NotebookEdit|create_pull_request|create_issue|create_or_update_file|push_files|create_branch|add_issue_comment|update_issue|createJiraIssue|editJiraIssue|transitionJiraIssue|addCommentToJiraIssue)/i;
+function browserVariant(name) {
+  const m = /mcp__playwright-(chrome|firefox|edge|webkit)__/i.exec(String(name || ""));
+  if (m) return m[1].toLowerCase();
+  if (/mcp__Chrome_DevTools__/i.test(String(name || ""))) return "devtools";
+  return null;
+}
+
+// ─── expected-output oracle (Tier-1 silent_suspect) ──────────────────────────
+// Per plugin skill/command: regexes that, if ANY appears in the span's activity
+// (tool names + redacted inputs + assistant text), prove the skill produced its
+// expected artifact. A span that closed with no error and no struggle but matched
+// NONE of its markers is `silent_suspect` (task likely done wrong, no error). A
+// clean BAIL/STOP is an accepted output (never silent_suspect). Keep this table
+// in lock-step with knowledge/diagnostics/skill-expectations.md §expected-output.
+const BAIL_OK_RE = /(FIX_STATUS:\s*FAILED|\bBAIL(?:_CLASS)?\b|out-of-auto-fix-scope|hand(?:ed)?[ -]off|STOP\s*[—-]\s*hand|no (?:issues|anomal|bug|error)|all clear|nothing to (?:fix|report))/i;
+const EXPECTED_OUTPUT = {
+  "qa-bug": [/reports[\/\\]bugs[\/\\]/i, /createJiraIssue|create_issue|work item|filed\b/i, BAIL_OK_RE],
+  "qa-fix": [/create_pull_request|gh pr create|pull\/\d+|PR #?\d+|opened a? PR/i, BAIL_OK_RE],
+  "qa-verify-fix": [/transitionJiraIssue|update_issue|READY FOR TEST|testing|verified|reproduc/i, BAIL_OK_RE],
+  "qa-monitoring": [/reports[\/\\]monitoring[\/\\]|signature|dedup|no (?:new )?(?:errors|signatures)/i, BAIL_OK_RE],
+  "qa-env-check": [/readiness|env:check|✅|✓|PASS|FAIL|table/i],
+  "project-init": [/project-profile\.json|\.mcp\.json|\.env\.|readiness|verify-access/i],
+  "vc-docs": [/./], // any activity counts — a lookup skill
+};
+
+// ─── struggle thresholds (documented consts) ─────────────────────────────────
+// Conservative on purpose — normal thorough work must NOT trip these. Mirror in
+// knowledge/diagnostics/skill-expectations.md §struggle sub-signals.
+const T = {
+  RETRY_STORM_REPEATS: 3, // same tool+arg_hash appears ≥3×
+  RETRY_STORM_ERRORS: 2, //   …with ≥2 errors among them
+  REREAD_LOOP: 5, // same read arg_hash ≥5×
+  SEARCH_THRASH_RUN: 8, // ≥8 consecutive search/read ops, no decisive op between
+  FALLBACK_DISTINCT: 3, // ≥3 distinct browser variants used in one span
+  RECURRING_ERROR: 3, // same error signature ≥3×
+  STALL_MS: 8 * 60 * 1000, // a single op wall-clock >8min
+  LOW_YIELD_OPS: 20, // ≥20 tool ops in a span with zero decisive op
+};
+// Bound the per-span op history so a long-lived command span can't grow its
+// state.json without limit (the struggle detectors only need a recent window;
+// span.opCount / span.sawDecisive carry the whole-span aggregates they need).
+const OPS_CAP = 120;
+
+// ─── signal counts ───────────────────────────────────────────────────────────
 const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail"];
-// anomalyScore at/above which the Stop finalize offers the yes/no consent prompt
-// (VCST-5477). Conservative on purpose: a single recovered blip (one tool_error=3
-// or one permission_denied=2) stays below it; it takes e.g. 2 tool_errors, a
-// tool_error+hook_failure, or 3 denials to cross. stop_bail is weighted 0.
-const CONSENT_THRESHOLD = 6;
 const zeroCounts = () => ({ tool_error: 0, permission_denied: 0, hook_failure: 0, stop_bail: 0, tool_calls: 0, agent_calls: 0 });
 
 const PERMISSION_DENIED_RE = /\b(permission denied|denied permission|requested permissions|user (?:denied|declined|rejected)|operation not permitted|not allowed to)\b/i;
 const HOOK_FAILURE_RE = /(error TS\d{3,}|\btsc\b[^\n]*error|PostToolUse hook[^\n]*fail|hook[^\n]*error|npm error|command failed with exit code)/i;
 const BAIL_RE = /(FIX_STATUS:\s*FAILED|\bBAIL(?:_CLASS)?\b|out-of-auto-fix-scope|hand(?:ed)?[ -]off|STOP\s*[—-]\s*hand)/;
 
-function snippet(text) {
-  const t = redact(String(text ?? "").replace(/\s+/g, " ").trim());
-  return t.length > 120 ? t.slice(0, 117) + "…" : t;
+// Plugin slash-commands we open a COMMAND span for (acceptance criterion: a
+// command session is fully traced, not just skill-attributed). `/vc-feedback` is
+// deliberately ABSENT — cmdPrompt records a feedback record and returns before
+// COMMAND_RE, so it never opens a command span.
+const PLUGIN_COMMANDS = ["project-init", "qa-bug", "qa-fix", "qa-verify-fix", "qa-monitoring", "qa-env-check", "vc-self-check", "vc-docs"];
+const COMMAND_RE = new RegExp(`^\\s*/(${PLUGIN_COMMANDS.join("|")})\\b`, "i");
+
+// Normalize a skill/command name for the oracle lookup: strip a leading "/" and a
+// leading "<plugin>:" namespace (a Skill invoked as `vc-fix:qa-bug` must still map
+// to the `qa-bug` EXPECTED_OUTPUT entry, else it silently escapes silent_suspect).
+function normalizeName(n) {
+  return String(n ?? "unknown").replace(/^\//, "").replace(/^[\w.-]+:/, "");
 }
 
 function textOf(content) {
@@ -108,39 +198,246 @@ function textOf(content) {
   return "";
 }
 
-/**
- * Read the transcript file (in full) and scan only lines [fromLine, end) for signals,
- * reporting how many lines were consumed so the caller can advance its cursor. The
- * READ is whole-file; the SCAN is bounded to the delta. Defensive against any line
- * shape — a malformed line is skipped, never thrown on.
- */
-function scanTranscript(transcriptPath, fromLine) {
-  const span = { counts: zeroCounts(), details: [] };
-  let processed = fromLine;
-  if (!transcriptPath || !existsSync(transcriptPath)) return { span, processed };
+// ─── span helpers ──────────────────────────────────────────────────────────
+function newSpan(state, kind, name, startTs, parentId) {
+  return {
+    id: `${state.sid}-${state.spanSeq++}`,
+    parentId: parentId ?? null,
+    kind,
+    name,
+    startTs: startTs || nowIso(),
+    signals: zeroCounts(),
+    details: [], // bounded ring of redacted snippets (evidence)
+    ops: [], // bounded ring of recent ops for struggle detection (see OPS_CAP)
+    opCount: 0, // whole-span op total (survives the ops-ring cap; used by low_yield)
+    sawDecisive: false, // did any decisive op run in this span (whole-span; low_yield)
+    sawExpected: false,
+    retries: 0,
+    lastTs: startTs || nowIso(),
+  };
+}
+function pushDetail(span, cls, text, extra) {
+  span.signals[cls] = (span.signals[cls] ?? 0) + 1;
+  if (span.details.length < 25) span.details.push({ cls, snippet: snippet(text), ...extra });
+}
+// Record a child op on its parent span for struggle detection. Keeps a bounded
+// RING (last OPS_CAP) plus whole-span aggregates (opCount, sawDecisive) so a
+// long-lived command span's state.json stays small and low_yield stays correct.
+function pushOp(span, op) {
+  if (!span) return;
+  span.opCount = (span.opCount ?? 0) + 1;
+  if (DECISIVE_RE.test(op.tool)) span.sawDecisive = true;
+  span.ops.push(op);
+  if (span.ops.length > OPS_CAP) span.ops.shift();
+}
+function markExpected(span, blob) {
+  if (!span || span.sawExpected) return;
+  const markers = EXPECTED_OUTPUT[span.name];
+  if (!markers) {
+    span.sawExpected = true; // no oracle entry ⇒ never silent_suspect
+    return;
+  }
+  if (markers.some((re) => re.test(blob))) span.sawExpected = true;
+}
 
+// ─── Tier 1: struggle detection + outcome classification ─────────────────────
+function detectStruggle(span) {
+  const struggle = [];
+  const ops = span.ops || [];
+  if (!ops.length) return struggle;
+
+  // retry_storm — same tool+arg repeated with recurring errors.
+  const byKey = new Map();
+  for (const o of ops) {
+    const k = `${o.tool}|${o.arg_hash}`;
+    const e = byKey.get(k) || { n: 0, err: 0 };
+    e.n++;
+    if (o.status === "error") e.err++;
+    byKey.set(k, e);
+  }
+  let maxRepeat = 0;
+  for (const e of byKey.values()) {
+    maxRepeat = Math.max(maxRepeat, e.n);
+    if (e.n >= T.RETRY_STORM_REPEATS && e.err >= T.RETRY_STORM_ERRORS) struggle.push("retry_storm");
+  }
+  span.retries = Math.max(span.retries || 0, Math.max(0, maxRepeat - 1));
+
+  // reread_loop — same READ arg repeated a lot (even without errors).
+  const readCounts = new Map();
+  for (const o of ops) {
+    if (SEARCH_RE.test(o.tool)) readCounts.set(o.arg_hash, (readCounts.get(o.arg_hash) || 0) + 1);
+  }
+  for (const n of readCounts.values()) if (n >= T.REREAD_LOOP) { struggle.push("reread_loop"); break; }
+
+  // search_thrash — persistence WITHOUT progress: a long run of search/read ops AND
+  // the span produced NO decisive op at all. A normal read-heavy investigation that
+  // ends in a Write/Edit/PR/create (sawDecisive) is NOT thrash — it made progress.
+  if (!span.sawDecisive) {
+    let run = 0;
+    for (const o of ops) {
+      if (DECISIVE_RE.test(o.tool)) run = 0;
+      else if (SEARCH_RE.test(o.tool)) { run++; if (run >= T.SEARCH_THRASH_RUN) { struggle.push("search_thrash"); break; } }
+    }
+  }
+
+  // fallback_loop — bouncing across browser variants within one span.
+  const variants = new Set();
+  for (const o of ops) { const v = browserVariant(o.tool); if (v) variants.add(v); }
+  if (variants.size >= T.FALLBACK_DISTINCT) struggle.push("fallback_loop");
+
+  // recurring_error — same error signature keeps returning.
+  const errSig = new Map();
+  for (const d of span.details) {
+    if (d.cls === "tool_error" || d.cls === "hook_failure") {
+      const k = (d.snippet || "").slice(0, 40);
+      errSig.set(k, (errSig.get(k) || 0) + 1);
+    }
+  }
+  for (const n of errSig.values()) if (n >= T.RECURRING_ERROR) { struggle.push("recurring_error"); break; }
+
+  // stall — a single op ran abnormally long.
+  if (ops.some((o) => (o.durationMs || 0) > T.STALL_MS)) struggle.push("stall");
+
+  // low_yield — many tool ops (whole-span count), nothing decisive produced.
+  if ((span.opCount ?? ops.length) >= T.LOW_YIELD_OPS && !span.sawDecisive) struggle.push("low_yield");
+
+  return [...new Set(struggle)];
+}
+
+// Self-correction test — keyed on the SPECIFIC invocation (tool + arg_hash), not
+// the tool NAME: `Read(A)` failing then `Read(B)` succeeding is NOT a recovery of
+// A (different target). An errored key is "recovered" only if the LAST op of that
+// exact key is a success (the same thing was retried and eventually worked).
+function allErrorsRecovered(span) {
+  const lastStatus = new Map();
+  const everErrored = new Set();
+  for (const o of span.ops || []) {
+    const k = `${o.tool}|${o.arg_hash}`;
+    lastStatus.set(k, o.status);
+    if (o.status === "error") everErrored.add(k);
+  }
+  if (!everErrored.size) return false;
+  for (const k of everErrored) if (lastStatus.get(k) !== "ok") return false;
+  return true;
+}
+
+function classify(span) {
+  const s = span.signals;
+  const blockingErr = s.tool_error > 0 || s.permission_denied > 0 || s.hook_failure > 0;
+  const struggle = detectStruggle(span);
+  const recovered = blockingErr && allErrorsRecovered(span);
+  // A blocking error is a `failed` outcome UNLESS the specific failed invocation was
+  // self-corrected (retried to success). permission_denied / hook_failure that were
+  // recovered are S3 `recovered`, matching the oracle §1a / §2 rows — they only hard-
+  // block when they never resolved. NOTE: this recovery check is keyed on `span.ops`
+  // (tool+arg_hash pairs from tool_use/tool_result), so it can only ever apply to a
+  // hook_failure surfaced via a tool_result tied to a tool_use_id. A hook_failure
+  // detected from bare top-level string content (the untied PostToolUse echo path,
+  // e.g. a `tsc` note after an Edit — see the scanTranscript comment above the
+  // `attributeSignal("hook_failure", …)` call) has no paired op to resolve against, so
+  // it can never classify as `recovered` — it always forces `failed` for the span it
+  // occurred in. This is intentional fail-toward-escalation (no false "recovered" on a
+  // signal we can't actually observe resolving), not a design oversight.
+  let outcome;
+  if (recovered) {
+    outcome = "recovered"; // error occurred but self-corrected → do NOT escalate
+  } else if (blockingErr) {
+    outcome = "failed";
+  } else if (struggle.length) {
+    outcome = "degraded";
+  } else if ((span.kind === "skill" || span.kind === "command") && !span.sawExpected) {
+    outcome = "silent_suspect"; // closed clean but produced no expected artifact
+  } else {
+    outcome = "success";
+  }
+  return { outcome, struggle };
+}
+
+function topSignal(span) {
+  if (span.struggle && span.struggle.length) return span.struggle[0];
+  for (const c of SIGNAL_CLASSES) if (span.signals[c] > 0) return c;
+  return span.sawExpected ? "ok" : "no_output";
+}
+
+function spanRecord(state, span, endTs) {
+  const { outcome, struggle } = span.outcome ? { outcome: span.outcome, struggle: span.struggle } : classify(span);
+  span.outcome = outcome;
+  span.struggle = struggle;
+  return {
+    type: "span",
+    sessionId: state.sid,
+    id: span.id,
+    parentId: span.parentId,
+    kind: span.kind,
+    name: span.name,
+    status: span.signals.tool_error || span.signals.permission_denied || span.signals.hook_failure ? "error" : "ok",
+    outcome,
+    struggle,
+    startTs: span.startTs,
+    endTs,
+    durationMs: Date.parse(endTs) - Date.parse(span.startTs) || null,
+    retries: span.retries || 0,
+    tool_name: span.kind === "tool" || span.kind === "agent" ? span.name : null,
+    arg_hash: span.arg_hash ?? null,
+    signals: span.signals,
+    details: span.details.slice(0, 25),
+  };
+}
+
+// Append the span record + roll its outcome into the session counters / flags.
+// Only SKILL and COMMAND spans are escalation units: a tool/agent failure rolls
+// up to its parent skill (the Task/tool_result signals attribute to the parent),
+// which is where the oracle diagnosis and dedup happen. So a recovered parent is
+// never dragged back to `failed` by one of its own transient child errors.
+function emitSpan(jsonlPath, state, span, endTs) {
+  const rec = spanRecord(state, span, endTs || span.lastTs || nowIso());
+  appendRecord(jsonlPath, rec);
+  state.spanCounts[rec.outcome] = (state.spanCounts[rec.outcome] ?? 0) + 1;
+  const escalationUnit = span.kind === "skill" || span.kind === "command";
+  if (escalationUnit && rec.outcome !== "success" && rec.outcome !== "recovered" && !/vc-self-check/i.test(span.name)) {
+    const sig = hash(`${span.kind}|${span.name}|${rec.outcome}|${topSignal(span)}`);
+    state.flagged.push({ id: span.id, kind: span.kind, name: span.name, outcome: rec.outcome, struggle: rec.struggle, signature: sig });
+  }
+}
+
+// Close the open skill span and roll its expected-output result UP to the enclosing
+// command span: a command that delegates its work to a same-named skill (or whose
+// skill produced the expected artifact) must NOT itself be judged silent_suspect.
+function closeSkill(jsonlPath, state, endTs) {
+  const sk = state.currentSkill;
+  if (!sk) return;
+  if (sk.sawExpected && state.currentCommand) state.currentCommand.sawExpected = true;
+  emitSpan(jsonlPath, state, sk, endTs);
+  state.currentSkill = null;
+}
+
+// ─── transcript scan — the single reconstruction engine ──────────────────────
+/**
+ * Scan the transcript delta [processedLines, end) in chronological order, opening
+ * and closing spans as it meets tool_use / tool_result / Skill / Task events, and
+ * append a `span` record for each span that CLOSES. Advances state.processedLines.
+ * Never throws; a malformed line is skipped.
+ */
+function scanTranscript(jsonlPath, transcriptPath, state) {
+  if (!transcriptPath || !existsSync(transcriptPath)) return;
   let lines;
   try {
     const content = readFileSync(transcriptPath, "utf8");
-    // Consume only COMPLETE (newline-terminated) lines. `split("\n")` yields a
-    // trailing element that is either "" (file ended with \n → all lines done)
-    // or a partial line still being flushed — in both cases the last element is
-    // not a complete record, so we drop it and leave it for the next firing.
-    // Without this, the cursor overshoots by one and the next appended line is
-    // silently skipped.
     const parts = content.split("\n");
-    lines = parts.slice(0, Math.max(0, parts.length - 1));
+    lines = parts.slice(0, Math.max(0, parts.length - 1)); // complete lines only
   } catch {
-    return { span, processed };
+    return;
   }
 
-  const pushDetail = (cls, text, extra) => {
-    span.counts[cls]++;
-    if (span.details.length < 25) span.details.push({ cls, snippet: snippet(text), ...extra });
+  const innerParent = () => state.currentSkill || state.currentCommand || null;
+  const attributeSignal = (cls, text, extra) => {
+    const p = innerParent();
+    if (p) pushDetail(p, cls, text, extra);
+    state.totals[cls] = (state.totals[cls] ?? 0) + 1;
   };
 
-  for (let i = fromLine; i < lines.length; i++) {
-    processed = i + 1;
+  for (let i = state.processedLines; i < lines.length; i++) {
+    state.processedLines = i + 1;
     const raw = lines[i];
     if (!raw || !raw.trim()) continue;
     let ev;
@@ -149,53 +446,98 @@ function scanTranscript(transcriptPath, fromLine) {
     } catch {
       continue;
     }
+    if (ev.isSidechain === true) continue; // sub-agent's own transcript — not our ops
+    const ts = typeof ev.timestamp === "string" ? ev.timestamp : nowIso();
     const msg = ev.message ?? ev;
     const content = msg?.content ?? ev?.content;
     const items = Array.isArray(content) ? content : content != null ? [content] : [];
+    const parent = innerParent();
+    if (parent) parent.lastTs = ts;
 
     for (const item of items) {
       if (!item || typeof item !== "object") continue;
       const type = item.type;
+
       if (type === "tool_use") {
-        span.counts.tool_calls++;
-        // Capture agents delegated BY a skill (the Task/Agent tool). The sub-agent runs in
-        // its own transcript, so its INTERNAL signals aren't visible here — but recording the
-        // delegation lets Tier B (a) attribute a failed/denied Task result (already counted as
-        // tool_error/permission_denied on its own tool_result) to the spawning skill, and
-        // (b) see which agents a skill invoked. `agent_calls` is a COUNT, not an anomaly class
-        // (absent from SIGNAL_CLASSES), so it never inflates the anomaly score on its own.
-        if (item.name === "Task" || item.name === "Agent") {
-          span.counts.agent_calls = (span.counts.agent_calls ?? 0) + 1;
-          const agent = item.input?.subagent_type || item.input?.agentType || "unknown";
-          if (span.details.length < 25) span.details.push({ cls: "agent_call", agent, snippet: snippet(item.input?.description || "") });
+        const name = String(item.name || "unknown");
+        const arg_hash = hash(redact(JSON.stringify(item.input ?? {})).slice(0, 4000));
+        if (parent) markExpected(parent, `${name} ${redact(JSON.stringify(item.input ?? {})).slice(0, 500)}`);
+
+        if (name === "Skill") {
+          if (state.currentSkill) closeSkill(jsonlPath, state, ts);
+          const skillName = normalizeName(item.input?.skill ?? item.input?.command ?? item.input?.name);
+          state.currentSkill = newSpan(state, "skill", skillName, ts, state.currentCommand?.id ?? null);
+          state.anySkillSeen = true;
+          if (/vc-self-check/i.test(skillName)) state.selfCheckSeen = true;
+        } else if (name === "Task" || name === "Agent") {
+          const agentType = String(item.input?.subagent_type ?? item.input?.agentType ?? "unknown");
+          if (parent) parent.signals.agent_calls++; // the op is pushed once, when the agent span CLOSES
+          state.totals.agent_calls++;
+          const sp = newSpan(state, "agent", agentType, ts, innerParent()?.id ?? null);
+          sp.arg_hash = arg_hash;
+          state.openOps.set(item.id, sp);
+        } else {
+          if (parent) parent.signals.tool_calls++;
+          state.totals.tool_calls++;
+          const sp = newSpan(state, "tool", name, ts, innerParent()?.id ?? null);
+          sp.arg_hash = arg_hash;
+          state.openOps.set(item.id, sp);
         }
       } else if (type === "tool_result") {
+        const id = item.tool_use_id;
         const body = textOf(item.content);
-        if (item.is_error === true) {
-          pushDetail("tool_error", body, { toolUseId: item.tool_use_id });
-        } else if (PERMISSION_DENIED_RE.test(body)) {
-          pushDetail("permission_denied", body, { toolUseId: item.tool_use_id });
-        } else if (HOOK_FAILURE_RE.test(body)) {
-          pushDetail("hook_failure", body);
+        // A signal is recorded ONLY from a genuine FAILURE result (`is_error === true`).
+        // A SUCCESSFUL tool whose body merely CONTAINS error-like text — grepping a
+        // build log, reading source that says "npm error"/"permission denied" — is NOT a
+        // failure (A-F1/D1: no false `failed` from tool output or narration). An actual
+        // error is sub-typed permission_denied / hook_failure / tool_error.
+        const cls = item.is_error === true
+          ? (PERMISSION_DENIED_RE.test(body) ? "permission_denied" : HOOK_FAILURE_RE.test(body) ? "hook_failure" : "tool_error")
+          : null;
+        const sp = id ? state.openOps.get(id) : null;
+        const p = innerParent();
+        // Any result (success OR failure) can carry an expected-output marker — a
+        // create_pull_request response or a sub-agent Task return "opened PR pull/42".
+        // This is what keeps a command/skill that delivers via a sub-agent (whose
+        // internal ops are in a skipped sidechain) from being false `silent_suspect`.
+        if (p) markExpected(p, body);
+        if (sp) {
+          state.openOps.delete(id);
+          if (cls) pushDetail(sp, cls, body, { toolUseId: id });
+          emitSpan(jsonlPath, state, sp, ts);
+          // Roll the op onto the parent ONLY if it is still the span that opened it
+          // (A-F7: a late result must not be misattributed to a different skill that
+          // has opened since). The tool span itself always carries its own signal.
+          if (p && p.id === sp.parentId) {
+            pushOp(p, { tool: sp.name, arg_hash: sp.arg_hash, status: cls ? "error" : "ok", ts, durationMs: Date.parse(ts) - Date.parse(sp.startTs) || 0 });
+            if (cls) pushDetail(p, cls, body);
+          }
+          if (cls) state.totals[cls]++;
+        } else if (cls) {
+          attributeSignal(cls, body, { toolUseId: id });
         }
       } else if (type === "text") {
-        const body = item.text ?? "";
-        if (PERMISSION_DENIED_RE.test(body)) pushDetail("permission_denied", body);
-        if (BAIL_RE.test(body)) pushDetail("stop_bail", body);
+        // Narrative text (assistant/user) is scanned ONLY for expected-output markers
+        // and BAIL. Do NOT derive permission_denied/hook_failure from prose — a user
+        // who writes "login returns permission denied" is describing a bug, not failing
+        // (A-F1). Real failures come through tool_result above.
+        const b = item.text ?? "";
+        if (parent) markExpected(parent, b);
+        if (BAIL_RE.test(b)) { if (parent) pushDetail(parent, "stop_bail", b); state.totals.stop_bail++; }
       }
     }
 
-    // Top-level string content (system / hook echoes) that isn't in an items array.
+    // Top-level string content = a system / hook echo (e.g. the `tsc` PostToolUse
+    // output), not user prose — keep hook_failure detection here (the tsc-on-every-Edit
+    // cross-cutting pattern), but not permission_denied (denials arrive as tool_results).
+    // NOT tied to a tool_use_id, so attributeSignal() below has no op to attach this to —
+    // classify()'s recovery check can therefore never mark it `recovered` (see the NOTE
+    // there). A transient hook note that's clean on the very next Edit still forces
+    // `failed` for this span; that's a known, accepted asymmetry vs the tool_result path.
     if (typeof content === "string") {
-      if (HOOK_FAILURE_RE.test(content)) pushDetail("hook_failure", content);
-      if (PERMISSION_DENIED_RE.test(content)) pushDetail("permission_denied", content);
+      if (HOOK_FAILURE_RE.test(content)) attributeSignal("hook_failure", content);
     }
   }
-  return { span, processed };
-}
-
-function addCounts(target, src) {
-  for (const k of Object.keys(src)) target[k] = (target[k] ?? 0) + src[k];
 }
 
 // ─── file / state helpers ────────────────────────────────────────────────────
@@ -206,43 +548,77 @@ function readStdin() {
     return "";
   }
 }
-
 function sessionId(ev) {
   return String(ev.session_id || (ev.transcript_path ? basename(ev.transcript_path).replace(/\.jsonl$/i, "") : "") || "unknown-session");
 }
-
 function nowIso() {
   return new Date().toISOString();
 }
-
 async function paths(ev) {
   const root = await resolveOutputRoot();
   const dir = join(root, ".vc-fix", "diagnostics");
   const sid = sessionId(ev);
   return { root, dir, sid, jsonl: join(dir, `${sid}.jsonl`), state: join(dir, `${sid}.state.json`) };
 }
-
 function ensureDir(dir) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
-
 function appendRecord(jsonlPath, record) {
   appendFileSync(jsonlPath, JSON.stringify(record) + "\n", "utf8");
 }
 
-function loadState(statePath, ev) {
+function freshState(ev, sid) {
+  return {
+    sid,
+    spanSeq: 0,
+    processedLines: 0,
+    transcriptPath: ev.transcript_path ?? null,
+    currentCommand: null,
+    currentSkill: null,
+    openOps: new Map(), // tool_use_id → open tool/agent span
+    totals: zeroCounts(),
+    spanCounts: {},
+    flagged: [], // non-success/recovered spans this session
+    seenSignatures: [], // fingerprints already surfaced to the diagnostician
+    feedbackCount: 0,
+    anySkillSeen: false,
+    selfCheckSeen: false,
+    promptedThisTurn: false,
+  };
+}
+// openOps is a Map → serialize as entries; revive on load.
+function loadState(statePath, ev, sid) {
   if (existsSync(statePath)) {
     try {
-      return JSON.parse(readFileSync(statePath, "utf8"));
+      const j = JSON.parse(readFileSync(statePath, "utf8"));
+      j.openOps = new Map(Array.isArray(j.openOps) ? j.openOps : []);
+      j.totals = j.totals || zeroCounts();
+      j.spanCounts = j.spanCounts || {};
+      j.flagged = j.flagged || [];
+      j.seenSignatures = j.seenSignatures || [];
+      j.spanSeq = j.spanSeq || 0;
+      j.sid = j.sid || sid;
+      return j;
     } catch {
-      /* corrupt — rebuild below */
+      /* corrupt — rebuild */
     }
   }
-  return { processedLines: 0, transcriptPath: ev.transcript_path ?? null, current: null, totals: zeroCounts(), skillTotals: zeroCounts(), anySkillSeen: false };
+  return freshState(ev, sid);
 }
-
+// Atomic write (temp + rename): a crash mid-write can never leave a truncated
+// state.json that would parse-fail → freshState → cursor reset to 0 → the whole
+// transcript re-scanned and every span re-emitted (A-F5). rename() is atomic on
+// the same filesystem; a stray temp file is harmless (never read).
 function saveState(statePath, state) {
-  writeFileSync(statePath, JSON.stringify(state), "utf8");
+  const out = { ...state, openOps: [...state.openOps.entries()] };
+  const tmp = `${statePath}.tmp`;
+  try {
+    writeFileSync(tmp, JSON.stringify(out), "utf8");
+    renameSync(tmp, statePath);
+  } catch {
+    // Fall back to a direct write rather than losing the cursor entirely.
+    try { writeFileSync(statePath, JSON.stringify(out), "utf8"); } catch { /* give up silently */ }
+  }
 }
 
 function readPluginVersion() {
@@ -254,28 +630,45 @@ function readPluginVersion() {
         if (j && typeof j.version === "string") return j.version;
       }
     } catch {
-      /* try next candidate */
+      /* next */
     }
   }
   return null;
 }
 
-function readProjectType(root) {
+let _profileRoot;
+let _profile;
+function readProfile(root) {
+  if (_profileRoot === root) return _profile;
+  _profileRoot = root;
+  _profile = null;
   try {
     const p = join(root, "project-profile.json");
-    if (existsSync(p)) {
-      const j = JSON.parse(readFileSync(p, "utf8"));
-      return typeof j.projectType === "string" ? j.projectType : null;
-    }
+    if (existsSync(p)) _profile = JSON.parse(readFileSync(p, "utf8"));
   } catch {
-    /* ignore */
+    /* null */
   }
-  return null; // absent profile ⇒ native-platform default
+  return _profile;
+}
+function readProjectType(root) {
+  const j = readProfile(root);
+  return typeof j?.projectType === "string" ? j.projectType : null;
+}
+// Capture gate — telemetry runs ONLY with `selfDiagnostics === true` in the
+// output-root profile. Absent/false ⇒ full no-op. (feedback.mode gates DELIVERY,
+// not capture — read by deliver.mjs, never here.)
+function selfDiagnosticsEnabled(root) {
+  try {
+    return readProfile(root)?.selfDiagnostics === true;
+  } catch {
+    return false;
+  }
 }
 
 // ─── subcommands ─────────────────────────────────────────────────────────────
 async function cmdInit(ev) {
   const { root, dir, sid, jsonl, state } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return;
   ensureDir(dir);
   appendRecord(jsonl, {
     type: "session_start",
@@ -288,145 +681,131 @@ async function cmdInit(ev) {
     transcriptPath: ev.transcript_path ?? null,
     source: ev.source ?? null,
   });
-  saveState(state, { processedLines: 0, transcriptPath: ev.transcript_path ?? null, current: null, totals: zeroCounts(), skillTotals: zeroCounts(), anySkillSeen: false });
+  saveState(state, freshState(ev, sid));
 }
 
-async function cmdRecord(ev) {
-  const { dir, jsonl, state: statePath } = await paths(ev);
+// UserPromptSubmit — open a COMMAND span for a plugin slash-command, or record a
+// `/vc-feedback` verdict. This is what makes a COMMAND session (not just a Skill
+// invocation) fully traced.
+async function cmdPrompt(ev) {
+  const { root, dir, sid, jsonl, state: statePath } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return;
   ensureDir(dir);
-  const state = loadState(statePath, ev);
+  const state = loadState(statePath, ev, sid);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
-
-  // Roll up the delta since the last firing — it belongs to the PREVIOUS skill.
-  const { span, processed } = scanTranscript(transcriptPath, state.processedLines);
-  state.processedLines = processed;
-  addCounts(state.totals, span.counts);
-  // Attribute the delta to a SKILL only when one was open (state.current). skillTotals
-  // therefore excludes the session-prefix noise (git/Bash/Edit before any skill ran) —
-  // it is what the end-of-session consent prompt is scored against, so plain development
-  // sessions never trigger it (VCST-5477 refinement).
-  if (state.current) {
-    addCounts(state.current.signals, span.counts);
-    addCounts((state.skillTotals ??= zeroCounts()), span.counts);
-  }
-
-  // Close the previous skill's span.
-  if (state.current) {
-    const endTs = nowIso();
-    appendRecord(jsonl, {
-      type: "skill_end",
-      sessionId: sessionId(ev),
-      skill: state.current.skill,
-      args: state.current.args,
-      startTs: state.current.startTs,
-      endTs,
-      durationMs: Date.parse(endTs) - Date.parse(state.current.startTs) || null,
-      signals: state.current.signals,
-      details: state.current.details.concat(span.details).slice(0, 25),
-    });
-  }
-
-  // Open the new skill.
-  const input = ev.tool_input ?? {};
-  const skill = String(input.skill ?? input.name ?? "unknown");
-  const args = input.args != null ? snippet(input.args) : null;
-  const startTs = nowIso();
-  state.current = { skill, args, startTs, signals: zeroCounts(), details: [] };
+  scanTranscript(jsonl, transcriptPath, state);
   state.transcriptPath = transcriptPath;
-  // A skill actually ran this session — the consent prompt is gated on this so a
-  // session with zero skill invocations is never offered self-diagnosis.
-  state.anySkillSeen = true;
-  // Dedup guard (VCST-5477): a session that ran the diagnostician itself must
-  // never be offered the end-of-session consent prompt — the diagnostician
-  // never diagnoses its own invocation.
-  if (/vc-self-check/i.test(skill)) state.selfCheckSeen = true;
-  saveState(statePath, state);
+  state.promptedThisTurn = false; // new turn
 
-  appendRecord(jsonl, { type: "skill_start", sessionId: sessionId(ev), skill, args, ts: startTs });
+  const prompt = String(ev.prompt ?? "").trim();
+
+  // /vc-feedback "<text>" [👍|👎] — attach an explicit operator verdict to the trace.
+  if (/^\/vc-feedback\b/i.test(prompt)) {
+    // Verdict from an EXPLICIT marker only — emoji / :±1: / :thumbs*: / a trailing
+    // ±1 / a whole-word up|down|good|bad as the LAST token. Substring sentiment on
+    // prose ("not bad", "the dropdown", "up to date") is too unreliable and would
+    // spuriously force a `down` (→ upstream delivery via hasNegFeedback) — so it is
+    // NOT used (B-F2/D7).
+    const tail = prompt.replace(/^\/vc-feedback\b/i, "").trim();
+    const neg = /(👎|:-1:|:thumbsdown:)/.test(tail) || /(^|\s)(-1|down|bad)\s*$/i.test(tail);
+    const pos = /(👍|:\+1:|:thumbsup:)/.test(tail) || /(^|\s)(\+1|up|good)\s*$/i.test(tail);
+    const verdict = neg ? "down" : pos ? "up" : "neutral";
+    const text = tail.replace(/👍|👎|:[-+\w]+:/g, "").replace(/(^|\s)([-+]1|up|down|good|bad)\s*$/i, "").trim();
+    appendRecord(jsonl, { type: "feedback", sessionId: sid, ts: nowIso(), verdict, text: snippet(text, 500), skill: state.currentSkill?.name ?? state.currentCommand?.name ?? null });
+    state.feedbackCount = (state.feedbackCount ?? 0) + 1;
+    saveState(statePath, state);
+    return; // feedback does NOT open a command span
+  }
+
+  const m = COMMAND_RE.exec(prompt);
+  if (m) {
+    // A new command turn — the previous command's trailing skill (if any) stays
+    // open until the scanner meets the next Skill or finalize closes it.
+    state.currentCommand = newSpan(state, "command", m[1].toLowerCase(), nowIso(), null);
+    if (/vc-self-check/i.test(m[1])) state.selfCheckSeen = true;
+  }
+  saveState(statePath, state);
+}
+
+// PostToolUse[Skill] / SubagentStop — just advance the scan (the scanner opens/
+// closes skill + agent spans as it meets them).
+async function cmdScan(ev) {
+  const { root, dir, sid, jsonl, state: statePath } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return;
+  ensureDir(dir);
+  const state = loadState(statePath, ev, sid);
+  const transcriptPath = ev.transcript_path ?? state.transcriptPath;
+  scanTranscript(jsonl, transcriptPath, state);
+  state.transcriptPath = transcriptPath;
+  saveState(statePath, state);
 }
 
 async function cmdFinalize(ev) {
-  const { dir, jsonl, state: statePath } = await paths(ev);
+  const { root, dir, sid, jsonl, state: statePath } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return;
   ensureDir(dir);
-  const state = loadState(statePath, ev);
+  const state = loadState(statePath, ev, sid);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
+  scanTranscript(jsonl, transcriptPath, state);
 
-  const { span, processed } = scanTranscript(transcriptPath, state.processedLines);
-  state.processedLines = processed;
-  addCounts(state.totals, span.counts);
-  if (state.current) {
-    addCounts(state.current.signals, span.counts);
-    addCounts((state.skillTotals ??= zeroCounts()), span.counts);
-    state.current.details = state.current.details.concat(span.details).slice(0, 25);
+  // Drain any tool/agent op still open at Stop (interrupted session — no tool_result
+  // seen) so its span is recorded and its op reaches the parent (A-F8), instead of
+  // being silently dropped. Status "incomplete" (not an error → doesn't force failed).
+  for (const [, sp] of state.openOps) {
+    const p = state.currentSkill && state.currentSkill.id === sp.parentId ? state.currentSkill
+      : state.currentCommand && state.currentCommand.id === sp.parentId ? state.currentCommand
+      : null;
+    emitSpan(jsonl, state, sp, sp.lastTs);
+    if (p) pushOp(p, { tool: sp.name, arg_hash: sp.arg_hash, status: "incomplete", ts: sp.lastTs, durationMs: 0 });
   }
+  state.openOps.clear();
 
-  // Heuristic anomaly score. A clean STOP/BAIL is a SUCCESS (quality-gates §3),
-  // so stop_bail is INFORMATIONAL and carries zero weight here — Tier B decides
-  // whether a bail was clean against the Step-2 oracle. Only the unambiguous
-  // "something went wrong" signals inflate the score.
-  const t = state.totals;
-  const anomalyScore = t.tool_error * 3 + t.permission_denied * 2 + t.hook_failure * 3;
-  const anomalies = SIGNAL_CLASSES.filter((c) => c !== "stop_bail" && t[c] > 0).map((c) => ({ class: c, count: t[c] }));
-  // Skill-attributed score — signals that occurred WHILE a vc-fix skill was running
-  // (excludes the session-prefix development noise). This is what gates the consent
-  // prompt, so a session that only edited code / ran git never triggers self-diagnosis.
-  const st = state.skillTotals ?? zeroCounts();
-  const skillAnomalyScore = st.tool_error * 3 + st.permission_denied * 2 + st.hook_failure * 3;
-  const skillAnomalies = SIGNAL_CLASSES.filter((c) => c !== "stop_bail" && st[c] > 0).map((c) => ({ class: c, count: st[c] }));
+  // Close trailing spans (skill first — rolling its expected-output up to the command
+  // — then the command).
+  if (state.currentSkill) closeSkill(jsonl, state, state.currentSkill.lastTs);
+  if (state.currentCommand) { emitSpan(jsonl, state, state.currentCommand, state.currentCommand.lastTs); state.currentCommand = null; }
+
+  // Tail-based escalation: keep only NEW non-success signatures we haven't already
+  // surfaced. (vc-self-check's own spans were never flagged — emitSpan drops them.)
+  const uniqueFresh = [];
+  const seen = new Set();
+  for (const f of state.flagged) {
+    if (state.seenSignatures.includes(f.signature) || seen.has(f.signature)) continue;
+    seen.add(f.signature);
+    uniqueFresh.push(f);
+  }
 
   appendRecord(jsonl, {
     type: "finalize",
-    sessionId: sessionId(ev),
+    sessionId: sid,
     ts: nowIso(),
     reason: ev.reason ?? null,
-    totals: t,
-    anomalyScore,
-    anomalies,
-    // Skill-scoped view (the consent driver) alongside the session-wide totals.
+    totals: state.totals,
+    spanCounts: state.spanCounts,
+    flagged: state.flagged.map((f) => ({ name: f.name, kind: f.kind, outcome: f.outcome, struggle: f.struggle, signature: f.signature })),
     anySkillSeen: Boolean(state.anySkillSeen),
-    skillTotals: st,
-    skillAnomalyScore,
-    skillAnomalies,
-    stopBailCount: t.stop_bail,
-    openSkill: state.current
-      ? { skill: state.current.skill, args: state.current.args, startTs: state.current.startTs, signals: state.current.signals }
-      : null,
+    feedbackCount: state.feedbackCount ?? 0,
   });
 
-  // End-of-session consent prompt (VCST-5477 — Tier B trigger). When a SKILL-scoped
-  // anomaly crosses the threshold, surface a SINGLE consent question asking whether to
-  // run the on-demand diagnostician. NEVER auto-run without the user's answer. Guards:
-  //   - a skill actually ran this session (`anySkillSeen`) — a plain development
-  //     session (git/Bash/Edit, no skill) is NEVER offered self-diagnosis;
-  //   - the score is the SKILL-attributed one (`skillAnomalyScore`), so session-prefix
-  //     noise (a failing tsc PostToolUse on an Edit, a non-zero Bash exit) doesn't trip it;
-  //   - one-shot per session (`promptedConsent`), so a Stop firing every turn can't nag;
-  //   - never in a session that ran the diagnostician itself (`selfCheckSeen`);
-  //   - opt-out via VC_FIX_DIAG_CONSENT=off.
-  // Mechanism: a `Stop` hook returning {decision:"block", reason} resumes the agent with
-  // `reason` as guidance — here, an instruction to ASK via the AskUserQuestion tool and,
-  // only on an explicit Yes, run the `/vc-self-check` skill. If the harness ignores the
-  // block we simply don't prompt (fail-safe toward not nagging); `promptedConsent` is set
-  // regardless so we never re-block.
   const consentOff = /^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CONSENT || "");
-  const shouldPrompt =
-    !consentOff && !state.promptedConsent && !state.selfCheckSeen && state.anySkillSeen && skillAnomalyScore >= CONSENT_THRESHOLD;
-  if (shouldPrompt) state.promptedConsent = true;
+  const shouldPrompt = !consentOff && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
+  if (shouldPrompt) {
+    state.promptedThisTurn = true;
+    for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
+  }
   saveState(statePath, state);
 
   if (shouldPrompt) {
-    const parts = skillAnomalies.map((a) => `${a.count}× ${a.class}`).join(", ");
+    const summary = uniqueFresh.map((f) => `${f.outcome} in /${f.name}${f.struggle?.length ? ` (${f.struggle.join(",")})` : ""}`).join("; ");
     const reason = [
-      "During this session a vc-fix plugin skill behaved unexpectedly",
-      parts ? ` (${parts})` : "",
-      ".\n\nAsk the user, using the AskUserQuestion tool (a single question, header ",
-      '"Self-diagnose", options exactly "Yes" and "No"):\n\n',
-      '  "During this session some plugin skills behaved unexpectedly. Run self-diagnosis ',
-      "to identify the problems and prepare a quality report for VirtoCommerce ",
-      '(to improve the skills)?"\n\n',
-      "WAIT for the answer. If the user picks Yes, run the `vc-self-check` skill (invoke it ",
-      "via the Skill tool) and follow it. If No (or anything else), do nothing further. ",
-      "Do NOT run any diagnosis yourself before the user answers.",
+      "The vc-fix self-diagnostics collector flagged this session's plugin activity as ",
+      `not-clean: ${summary}.\n\n`,
+      "Silently run the `vc-self-check` skill NOW (invoke it via the Skill tool with the ",
+      "argument `latest`) to diagnose these spans against the oracle and write a local ",
+      "DIAG-*.md. Do NOT ask the user a Yes/No question first — just run it. When it ",
+      "finishes, print ONE short info line: the finding count + the DIAG path (e.g. ",
+      '"vc-fix self-check: 1 BROKEN, 1 DEGRADED → .vc-fix/diagnostics/DIAG-….md"). ',
+      "Then continue. Nothing leaves the machine — the local report is not sent anywhere.",
     ].join("");
     process.stdout.write(JSON.stringify({ decision: "block", reason }));
   }
@@ -446,11 +825,11 @@ async function cmdFinalize(ev) {
       }
     }
     if (sub === "init") await cmdInit(ev);
-    else if (sub === "record") await cmdRecord(ev);
+    else if (sub === "prompt") await cmdPrompt(ev);
+    else if (sub === "record" || sub === "agentstop") await cmdScan(ev);
     else if (sub === "finalize") await cmdFinalize(ev);
     // Unknown subcommand: no-op.
   } catch (err) {
-    // A telemetry hook must NEVER fail the agent — log to stderr and exit 0.
     process.stderr.write(`session-telemetry hook error: ${err?.message ?? err}\n`);
   }
   process.exit(0);

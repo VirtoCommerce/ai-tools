@@ -40,6 +40,8 @@
  * @property {{mode:"plugin"|"agent-project", helpersRunnable:boolean}} runtime
  * @property {{projectRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
  * @property {{source:""|"vc-deploy-dev"|"modules-endpoint"|"ticket"}} buildVerify
+ * @property {boolean} selfDiagnostics  opt-in for the passive session-telemetry CAPTURE hook — when true the collector records to <outputRoot>/.vc-fix/; absent/false ⇒ the hook is a full no-op (no `.vc-fix/`)
+ * @property {{mode:"auto"|"ask"|"off"}} feedback  consent for UPSTREAM delivery of self-diagnostics (VCST-5509). off = nothing leaves the machine; ask (default) = dry-run + a single Show-diff/Send/Don't-send decision; auto = Issue route files automatically, PR/fork-PR handed off as commands. Gates ONLY deliver.mjs — local capture (selfDiagnostics) + diagnosis need no consent
  *
  * @typedef {Object} ClientRepo
  * @property {string} name  owner/name of the client-owned repo
@@ -171,6 +173,24 @@ export const PROFILE_DEFAULTS = {
   //   frontend-only client bug — take the storefront version from the ticket; don't
   //   hit the admin modules endpoint, which needs a token).
   buildVerify: { source: "" },
+
+  // selfDiagnostics — opt-in for the passive session-telemetry hook
+  // (hooks/session-telemetry.mjs). When true, the collector records per-skill
+  // signals to <outputRoot>/.vc-fix/diagnostics/. /project-init writes it true by
+  // default; the hook reads project-profile.json RAW and requires the field to be
+  // strictly === true, so an absent profile (running Claude in a random folder) or
+  // an absent/false flag ⇒ the hook is a full no-op and never creates `.vc-fix/`.
+  selfDiagnostics: true,
+
+  // feedback — consent for UPSTREAM delivery of self-diagnostics (VCST-5509). This
+  // gates ONLY the outbound `deliver.mjs` step; local capture (selfDiagnostics) +
+  // diagnosis (`/vc-self-check`) run without consent (nothing leaves the machine).
+  //   off  = nothing is ever sent; the DIAG stays local.
+  //   ask  = DEFAULT — deliver.mjs is a DRY draft + a single [Show diff]/[Send]/
+  //          [Don't send] decision; sends only on Send.
+  //   auto = the Issue route files automatically (scrubbed) + prints the filed URL; a PR/fork-PR
+  //          is handed off as ready `gh` commands (a human always opens the PR).
+  feedback: { mode: "ask" },
 };
 
 /** Recursive merge: objects merge key-by-key; arrays + scalars are replaced wholesale. */

@@ -44,5 +44,8 @@
       { "name": "VirtoCommerce/vc-platform", "kind": "platform" },
       { "name": "VirtoCommerce/vc-module-cart", "kind": "module" }
     ]
-  }
+  },
+
+  "selfDiagnostics": true,
+  "feedback": { "mode": "ask" }
 }

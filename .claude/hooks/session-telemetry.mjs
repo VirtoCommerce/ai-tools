@@ -19,6 +19,11 @@
  * diagnostician (VCST-5477) reading this jsonl + the oracle (VCST-5476).
  *
  * INVARIANTS (all enforced here):
+ *   - GATED: init/record/finalize run ONLY when the output root carries a
+ *     `project-profile.json` with `selfDiagnostics: true`. In any other directory
+ *     — no profile, or the flag absent/false — every subcommand is a full no-op:
+ *     nothing is read from the transcript, nothing is written, and `.vc-fix/` is
+ *     never created. Running Claude in a random folder therefore leaves no trace.
  *   - Writes ONLY under the project output root — `<outputRoot>/.vc-fix/
  *     diagnostics/<session_id>.jsonl` — where outputRoot = VC_FIX_HOME ||
  *     process.cwd(), matching skills/project-init/lib/paths.mjs `outputRoot()`.
@@ -249,22 +254,47 @@ function readPluginVersion() {
   return null;
 }
 
-function readProjectType(root) {
+// Read + parse the project-profile.json ONCE per process, memoized by root — the gate and
+// the projectType lookup both need it (cmdInit reads both), and re-reading the same small
+// file twice per session start is wasted I/O. Returns the parsed object, or null when absent
+// or unparseable. Read raw (NOT loadProjectProfile) so a shipped default can never silently
+// enable telemetry — the fields must be physically present in the file.
+let _profileRoot;
+let _profile;
+function readProfile(root) {
+  if (_profileRoot === root) return _profile;
+  _profileRoot = root;
+  _profile = null;
   try {
     const p = join(root, "project-profile.json");
-    if (existsSync(p)) {
-      const j = JSON.parse(readFileSync(p, "utf8"));
-      return typeof j.projectType === "string" ? j.projectType : null;
-    }
+    if (existsSync(p)) _profile = JSON.parse(readFileSync(p, "utf8"));
   } catch {
-    /* ignore */
+    /* leave null */
   }
-  return null; // absent profile ⇒ native-platform default
+  return _profile;
+}
+
+function readProjectType(root) {
+  const j = readProfile(root);
+  return typeof j?.projectType === "string" ? j.projectType : null; // absent ⇒ native-platform default
+}
+
+// Self-diagnostics gate. Telemetry (init/record/finalize) runs ONLY when the output root
+// carries a project-profile.json with `selfDiagnostics: true`. Absent profile, absent field,
+// or any non-true value ⇒ false ⇒ the hook is a full no-op (nothing read, nothing written,
+// no `.vc-fix/` dir). Strictly `=== true` — a shipped default must never silently enable it.
+function selfDiagnosticsEnabled(root) {
+  try {
+    return readProfile(root)?.selfDiagnostics === true;
+  } catch {
+    return false;
+  }
 }
 
 // ─── subcommands ─────────────────────────────────────────────────────────────
 async function cmdInit(ev) {
   const { root, dir, sid, jsonl, state } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return; // gate: no profile opt-in ⇒ full no-op
   ensureDir(dir);
   appendRecord(jsonl, {
     type: "session_start",
@@ -281,7 +311,8 @@ async function cmdInit(ev) {
 }
 
 async function cmdRecord(ev) {
-  const { dir, jsonl, state: statePath } = await paths(ev);
+  const { root, dir, jsonl, state: statePath } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return; // gate: no profile opt-in ⇒ full no-op
   ensureDir(dir);
   const state = loadState(statePath, ev);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
@@ -335,7 +366,8 @@ async function cmdRecord(ev) {
 }
 
 async function cmdFinalize(ev) {
-  const { dir, jsonl, state: statePath } = await paths(ev);
+  const { root, dir, jsonl, state: statePath } = await paths(ev);
+  if (!selfDiagnosticsEnabled(root)) return; // gate: no profile opt-in ⇒ full no-op
   ensureDir(dir);
   const state = loadState(statePath, ev);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;

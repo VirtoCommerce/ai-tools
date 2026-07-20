@@ -10,7 +10,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Ships as **plugin `0.7.0`** (marketplace `0.9.0`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
+
+### Fixed — code-review follow-ups (Azure tooling + reconcile + telemetry)
+
+Addresses the findings from the PR review:
+
+- **HTML-field over-match (correctness).** The custom-field HTML decision was a suffix regex `/(SystemInfo|Description|ReproSteps)$/i` — it would wrongly Markdown→HTML-convert a plaintext custom field like `Custom.ProblemDescription` / `Custom.EnvSystemInfo`, corrupting its value. Now an **exact** allowlist (`isHtmlField`, the three real HTML refs only).
+- **De-duplicated the Azure field-building (maintainability).** New shared `skills/qa-fix-routing/ado-html.mjs` (+ `.d.mts`) owns `mdToHtml`/`ensureAzureHtml`/`isHtmlField` and a single `buildBugFields()` Bug JSON-Patch builder. `ado.mjs` and `trackers/azure-tracker.ts` now both call it instead of hand-mirroring ~11 fields (and a full second copy of `ensureAzureHtml`) across JS and TS — the drift risk the review flagged is gone.
+- **Reconcile prune guard (data-loss).** `reconcile-profile.mjs --write` now refuses to remove **≥5 fields** without `--force`, returning `status:"needs-force"` — so reconciling a rich profile against a leaner schema (e.g. via the native `.claude` surface) can't silently strip live `/qa-fix` routing config.
+- **Telemetry double-read (efficiency).** `session-telemetry.mjs cmdInit` read + parsed `project-profile.json` twice per session start (gate + projectType); now memoized to one read per process.
+
+### Fixed — `/qa-bug` Azure Boards work items now match the lean gold-standard shape
+
+Azure bugs filed by `/qa-bug` were dumping the whole markdown report (env tables, module versions, 4-layer validation, root-cause, fix routing) into `System.Description`, with no summary and environment baked into the body — nothing like the target shape. Realigned to the reference bug template.
+
+- **`knowledge/execution/azure-html-format.md`** rewritten: `System.Description` is now an **abstract Summary → Preconditions → Steps → Actual → Expected** and nothing else; the Summary and Steps carry **no user-specific data** (no emails / IDs / order numbers / GUIDs / names — reproducible by anyone who meets the Preconditions). Everything else (RCA / layer validation / versions / fix routing) collapses into **one `🔧 Technical Details` accordion below**, trimmed to essentials.
+- **Environment & metadata now go to dedicated Bug fields, never a description section:** `Custom.Environment` picklist, `Custom.Reportedby`, `Custom.Typeofbug`, and the build/theme/browser/repro-rate in the **System Info** block (`Microsoft.VSTS.TCM.SystemInfo`). `Microsoft.VSTS.TCM.ReproSteps` is left **empty** (the LEO Bug form hides it — the visible repro area is backed by `System.Description`).
+- **`ado.mjs create-workitem`** gained `--system-info-file` / `--system-info` (→ System Info block) and a repeatable `--field "Ref=value"` (sets any work-item field, incl. the deployment's custom picklists) — previously there was no way to populate those fields at all. Mirrored in `trackers/azure-tracker.ts` (`CreateWorkItemInput.systemInfo` + `.fields`) per the keep-in-sync contract; `commands/qa-bug.md` Step 5 + `knowledge/execution/tracker-ops.md` updated to match. Plugin-only (Azure formatting is not in the `.claude/` surface).
+- **Auto-assignee, current sprint, and asked parent link.** `create-workitem` now takes `--assign-self` (assigns to the token/session owner), `--iteration current` (stamps the team's active sprint so the bug isn't filed to the backlog), and `--parent <id>` (Hierarchy-Reverse link). Two new resolver verbs back them: `ado.mjs whoami` (owner identity via `connectionData`) and `ado.mjs current-iteration` (active sprint via team `iterations?$timeframe=current`). `/qa-bug` sets `--assign-self --iteration current` automatically and **asks the operator** which work item to link as parent. Mirrored in `azure-tracker.ts` (`CreateWorkItemInput.assignedTo` / `.iterationPath` / `.parentId`).
+
+### Added — `/project-init --check` reconciles a stale profile to the current schema
+
+A deployment onboarded on an older plugin keeps its `project-profile.json` across upgrades, but the schema (`PROFILE_DEFAULTS`) evolves — fields get added / removed / need re-deriving. `--check` now migrates the profile before verifying, instead of only running the readiness table.
+
+- New `skills/project-init/reconcile-profile.mjs` (deterministic, dry-run by default) diffs the profile against `PROFILE_DEFAULTS` → JSON report: **`added`** (missing fields with a safe default, auto-filled on `--write`) · **`removed`** (obsolete fields pruned — but **open maps** `roleStates`/`stateMap`/`workItemTypes` and **arrays** `repos.*` are kept wholesale) · **`pending`** (fields that are the operator's decision — each carries its own `question` + `options`, e.g. `selfDiagnostics` — never auto-filled) · **`rescan`** (fields to re-derive from a live scan). Mirrors `gen-profile`'s discriminated `tracker.azure`/`vcs.azure` pruning, so a non-Azure profile is never re-grown an empty `azure:{}`. `--write` applies structural changes + `--set <path>=<value>` decisions; idempotent (a reconciled profile reports `current`).
+- The `/project-init` skill's new **`--check`** section drives it: reconcile (dry-run) → ask each `pending` via `AskUserQuestion` / re-scan → `--write` the decisions → verify-access. Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
+
+### Fixed — session-telemetry gated on a `selfDiagnostics` opt-in (no stray `.vc-fix/` in random folders)
+
+- The `SessionStart` hook previously ran `session-telemetry.mjs init` unconditionally, creating `<cwd>/.vc-fix/diagnostics/` (a `session_start` record + `.state.json`) on **every** Claude launch in **any** directory — before any skill ran. Running Claude in an unrelated folder left a junk `.vc-fix/` behind.
+- Now all three subcommands (`init` / `record` / `finalize`) early-return to a **full no-op** unless the output root (`VC_FIX_HOME || cwd`) has a `project-profile.json` with `selfDiagnostics: true`. Absent profile, absent field, or any non-`true` value ⇒ nothing is read from the transcript, nothing is written, and `.vc-fix/` is never created. The gate (`selfDiagnosticsEnabled(root)`) reads the profile **raw** (like `readProjectType`), so a shipped default can never silently enable it — the field must be physically present and strictly `=== true`.
+- `/project-init` now writes `"selfDiagnostics": true` into `project-profile.json` by default (via `PROFILE_DEFAULTS`); the `--merge` path back-fills it into an existing profile that lacks the field without touching other fields. Documented in `project-profile.example.json`, the `ProjectProfile` JSDoc, and `project-profile.d.mts`. (A future `/project-init` will ask the operator; for now it defaults to on.)
+- Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
 
 ### Added — vc-fix self-diagnostics subsystem (VCST-5475–5479)
 
