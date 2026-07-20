@@ -24,13 +24,17 @@ import {
 } from '../../lib/seed-common.mjs';
 import { QUOTE_FIXTURES, quoteNumber, resolveTokens, finalizeQuoteBody, applyCatalogItems } from './orders-specs.mjs';
 
-// Standard VirtoCommerce.Quote module REST surface. Confirmed live at G6 (see file header).
+// VirtoCommerce.Quote module REST surface. Confirmed live at G6 against the module swagger
+// (docs/VirtoCommerce.Quote/swagger.json, vcst 2026-07-20): every route is under /api/quote/requests
+// — NOT /api/quote (the earlier guess 404'd on create; search 404'd silently under expectStatus).
+// A dedicated `PUT /api/quote/requests/{id}/status?status=<value>` also exists for status-only changes.
 const QUOTE_ENDPOINTS = {
-  search: '/api/quote/search',
-  create: '/api/quote',
-  update: '/api/quote',
-  byId: (id) => `/api/quote/${id}`,
-  delete: (ids) => `/api/quote?ids=${ids}`,
+  search: '/api/quote/requests/search',
+  create: '/api/quote/requests',
+  update: '/api/quote/requests',
+  byId: (id) => `/api/quote/requests/${id}`,
+  delete: (ids) => `/api/quote/requests?ids=${ids}`,
+  setStatus: (id, status) => `/api/quote/requests/${id}/status?status=${encodeURIComponent(status)}`,
 };
 
 function loadFixture(relPath) {
@@ -65,12 +69,13 @@ async function ensureQuote(spec, submitter, products) {
   const created = await api('POST', QUOTE_ENDPOINTS.create, body, { expectStatus: [200, 201] });
   const id = created?.id || (DRY_RUN ? `dry-${spec.key}` : null);
   // Admin per-line pricing / buyer-accept are already encoded in the fixture body (proposalPrices +
-  // target status); a follow-up PUT re-asserts them for platforms that ignore status/pricing on create.
+  // target status). The create body's `status` persists directly on vcst (confirmed via read-back),
+  // but for platforms/versions that ignore status on create we re-assert via the module's dedicated
+  // status-only route (PUT /api/quote/requests/{id}/status?status=…), which is the verified-shape path.
   if (id && !DRY_RUN && (spec.adminPriced || spec.buyerAccepted)) {
     const full = created?.id ? created : await api('GET', QUOTE_ENDPOINTS.byId(id), null, { expectStatus: [200, 404] });
     if (full && full.status !== spec.quoteStatus) {
-      full.status = spec.quoteStatus;
-      await api('PUT', QUOTE_ENDPOINTS.update, full, { expectStatus: [200, 204] });
+      await api('PUT', QUOTE_ENDPOINTS.setStatus(id, spec.quoteStatus), null, { expectStatus: [200, 204] });
       verbose(`quote ${number} status re-asserted → ${spec.quoteStatus}`);
     }
   }
