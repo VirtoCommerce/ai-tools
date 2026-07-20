@@ -11,7 +11,7 @@
 | **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Modules, Admin SPA, background jobs |
 | **qa-testing-expert** | opus | Interactive testing - UI verification, Figma comparison, debugging |
 | **test-management-specialist** | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts |
-| **test-data-engineer** | opus | Owns test-data end-to-end: designs cross-entity combinations and **authors** the seeders / fixtures / `@td()` aliases / drift-guard validators + their unit tests (`/qa-generate-data` + `/qa-seed-data`). Write-capable in THIS repo only (`scripts/seed-data/`, `test-data/`); no browser, no external repos. Canonical owner — `test-management-specialist` delegates fixture authoring here, `qa-backend-expert` runs + live-verifies. See `knowledge/execution/test-data-authoring.md`. |
+| **test-data-engineer** | opus | Owns test-data end-to-end: designs cross-entity combinations, **authors** the seeders / fixtures / `@td()` aliases / drift-guard validators + their unit tests, **AND RUNS them live** — real seed/teardown against a non-prod env + `td:reconcile` (Node + Platform-API, no browser) (`/qa-generate-data` + `/qa-seed-data`). Write-capable in THIS repo only (`scripts/seed-data/`, `test-data/`); no external repos. Canonical owner — `test-management-specialist` delegates fixture authoring here; `qa-backend/frontend-expert` do only the **browser** confirmation (storefront/Admin-SPA render + suite run) the engineer can't. See `knowledge/execution/test-data-authoring.md`. |
 | **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.1 AA accessibility, design system |
 | **regression-orchestrator** | sonnet | Parallel regression + smoke mode, retries, browser fallback, consolidated reports |
 | **autonomous-regression-orchestrator** | sonnet | Agent Teams regression: token bucket, exponential backoff, failure recovery, JIRA integration |
@@ -68,7 +68,7 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 | **qa-testing-expert** | `playwright-firefox` | |
 | **ui-ux-expert** | `Chrome DevTools MCP` | (no webkit on Windows) |
 | **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) | |
-| **test-data-engineer** | none — code/data authoring only; delegates live verification to qa-backend/frontend-expert | |
+| **test-data-engineer** | none — authors AND runs seeders live (Node + Platform-API); delegates only browser-based storefront/suite verification to qa-backend/frontend-expert | |
 
 ### BA Team Browsers
 | Agent | Playwright MCP Server | Purpose |
