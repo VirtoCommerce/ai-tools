@@ -179,7 +179,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `regression/suites/_release/080-full-regression-release.csv` | **C** | Storefront release suite. |
 | `test-data/aliases.json` | **B** schema / **C** content | Registry shape = B. Entries are storefront. |
 | `test-data/orgs/`, `products/`, `addresses/`, etc. | **C** | All storefront-domain. |
-| `tests/SprintXX-XX/` | **C** | Per-ticket evidence — project-local. |
+| `reports/tickets/SprintXX-XX/` | **C** | Per-ticket evidence — project-local. |
 | `reports/` | **C** | Per-project output. |
 | `docs/prompts/` | **B**/**C** | `story-testing.md` = B, `How to test Builder.io.md` = C. |
 | `vc/shared/docs/Sprint plans/` | **C** | VC sprint plans (cross-env, Layer 2). |

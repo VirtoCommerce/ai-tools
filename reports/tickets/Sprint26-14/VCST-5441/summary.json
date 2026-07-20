@@ -27,7 +27,7 @@
     "conditions_total": 7,
     "conditions_with_evidence": 6,
     "note": "Bug (fix verification), not a Story with formal ACs — BA Mode-B review skipped; spine from Expected-vs-Actual + PR #3076 diff + BL-B2B-011",
-    "artifact": "tests/Sprint26-14/VCST-5441/ac-analysis.md"
+    "artifact": "reports/tickets/Sprint26-14/VCST-5441/ac-analysis.md"
   },
   "total_cases": 7,
   "passed": 6,
@@ -58,5 +58,5 @@
     "Regression suite updated to match source truth: 027b-customer-org-roles.csv ORGROLE-003 (empty=all-roles, corrected) + ORGROLE-018 (new membership twin) + ORGROLE-004/005 (VCST-5441 flipped to fixed); manifest testCount 17->18.",
     "Teardown restored both whitelists + the scalar to captured original state; env left as found."
   ],
-  "artifacts": "tests/Sprint26-14/VCST-5441/"
+  "artifacts": "reports/tickets/Sprint26-14/VCST-5441/"
 }

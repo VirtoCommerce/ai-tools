@@ -196,7 +196,7 @@ function shouldScan(path: string): boolean {
   // Skip evidence/reports from past runs (they're snapshots, not source)
   if (path.includes("/reports/regression/REG-")) return false;
   if (path.includes("/reports/exploratory/")) return false;
-  if (path.includes("/tests/Sprint")) return false;
+  if (path.includes("/reports/tickets/")) return false;
 
   // Restrict by --suites/--agents flags
   if (SUITES_ONLY && !path.includes("/regression/suites/")) return false;

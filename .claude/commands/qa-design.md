@@ -32,7 +32,7 @@ Classify the argument:
 **Flags:**
 - `--storefront-only` — skip the Storybook phase for component targets. No-op for page/flow targets (already storefront-only).
 
-Resolve current sprint: check `tests/Sprint-current` → otherwise list `tests/` and pick the latest `SprintXX-XX`. This becomes `{SPRINT}` for the output path.
+Resolve current sprint: check `reports/tickets/Sprint-current` → otherwise list `reports/tickets/` and pick the latest `SprintXX-XX`. This becomes `{SPRINT}` for the output path.
 
 ---
 
@@ -106,7 +106,7 @@ Use the **Agent tool** with `subagent_type: ui-ux-expert`. Browser: `Chrome DevT
 - Navigate to the Storybook story URL.
 - Wait for the story iframe to render (story `#story` element painted, no skeletons).
 - Run the same invariant audits as Phase B but scoped to the story's rendered DOM (typically `#root` or the `[data-test-id]` of the component within the iframe).
-- Output: `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storybook/` — screenshots only for FAIL.
+- Output: `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storybook/` — screenshots only for FAIL.
 - Methodology reuse: [`/qa-storybook` skill](../skills/qa-storybook/SKILL.md) — same responsive-breakpoint and isolation patterns.
 
 **Phase B — Storefront audit (always runs):**
@@ -178,13 +178,13 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
    - **Context-specific FAIL** — invariant fails in only some contexts. Integration bug; the *failing context* is where to fix (parent layout, page-level CSS, real data overflow).
    - This classification is the unique value of the explorer approach — it tells the user WHERE to fix, not just WHAT.
 
-- Output: `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storefront/{context-slug}/` per context — screenshots only for FAIL.
+- Output: `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storefront/{context-slug}/` per context — screenshots only for FAIL.
 
 **Page or flow target (Phase B simplified):**
 
 - Navigate to the resolved URL via real-user interaction.
 - For each viewport (375 / 768 / 1280), run the invariant audits on the live page.
-- Output: `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storefront/` — screenshots only for FAIL.
+- Output: `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storefront/` — screenshots only for FAIL.
 
 **Both phases share:**
 
@@ -201,7 +201,7 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
 
 ### Step 4 — Consolidate report
 
-Receive agent results, write `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/report.md`.
+Receive agent results, write `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/report.md`.
 
 **Component targets (dual eval)** — two result columns highlight isolation-only vs integration-only failures:
 
@@ -272,4 +272,4 @@ Never auto-file. Explicit `y` required.
 - Ask before filing bugs (explicit user yes required).
 - Off-matrix targets get audited but trigger a warning + "Consider adding to critical-ui-scope.md" suggestion. Never auto-edit the matrix.
 - Browser: ui-ux-expert uses `Chrome DevTools MCP`. Max 3 concurrent browser agents (per [agents.md](../rules/agents.md)). Phase A and Phase B run sequentially within the same agent dispatch; they do not need two browser slots.
-- Output path follows [output-paths.md](../skills/qa-evidence/output-paths.md): `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/{storybook|storefront}/`.
+- Output path follows [output-paths.md](../skills/qa-evidence/output-paths.md): `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/{storybook|storefront}/`.

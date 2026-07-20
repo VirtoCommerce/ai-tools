@@ -280,7 +280,7 @@ When running in parallel, each browser slot uses a **dedicated test user** to pr
 Bugs: [list with severity]
 Decision: [APPROVED / CONDITIONS / BLOCKED]
 Blocking: [none or list]
-Full report: tests/SprintXX-XX/VCST-XXXX/test-execution-report.md
+Full report: reports/tickets/SprintXX-XX/VCST-XXXX/test-execution-report.md
 ```
 
 **Approval criteria:**

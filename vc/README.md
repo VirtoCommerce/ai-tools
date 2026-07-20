@@ -37,11 +37,11 @@ vc/shared/
 
 After workstream #6, the convention is:
 
-- **Active runs** (any env) write to `reports/regression/`, `reports/bugs/`, `tests/Sprint-XX-XX/` at the **repo root**. Agent prompts (orchestrators, test runners) reference these root paths. Customer's runs also write here.
+- **Active runs** (any env) write to `reports/regression/`, `reports/bugs/`, `reports/tickets/Sprint-XX-XX/` at the **repo root**. Agent prompts (orchestrators, test runners) reference these root paths. Customer's runs also write here.
 - **VC's per-env archive** lives under `vc/{env-name}/`. Historical sprint evidence is moved here once the sprint closes; historical regression runs once they're > 6 months old.
 
 VC's archival discipline (going forward):
-- Sprint closes → `git mv tests/Sprint-NN-NN vc/vcst-qa/tests/Sprint-NN-NN` (or whichever env owned it).
+- Sprint closes → `git mv reports/tickets/Sprint-NN-NN vc/vcst-qa/reports/tickets/Sprint-NN-NN` (or whichever env owned it).
 - Old regression run → `git mv reports/regression/REG-OLD-DATE vc/vcst-qa/reports/regression/REG-OLD-DATE`.
 - Sprint plans live in `vc/shared/docs/Sprint plans/` (cross-env VC team material — not vcst-specific). Referenced by `/qa-regression sprint`, `/qa-coverage-generation sprint`, and `/qa-test-plan` at runtime.
 

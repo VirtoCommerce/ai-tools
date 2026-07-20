@@ -50,8 +50,8 @@ Apply the project's evidence capture policy and output path conventions. Use bef
 ### Output Paths
 | Artifact | Directory |
 |----------|-----------|
-| Test docs (plans, cases, reports) | `tests/SprintXX-XX/VCST-XXXX/` |
-| Screenshots (test evidence) | `tests/SprintXX-XX/VCST-XXXX/screenshots/` |
+| Test docs (plans, cases, reports) | `reports/tickets/SprintXX-XX/VCST-XXXX/` |
+| Screenshots (test evidence) | `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/` |
 | Bug reports | `reports/bugs/` |
 | Bug evidence | `reports/bugs/screenshots/`, `reports/bugs/api-traces/` |
 | Regression reports | `reports/regression/` |

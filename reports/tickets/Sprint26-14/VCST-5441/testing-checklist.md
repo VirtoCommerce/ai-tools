@@ -31,4 +31,4 @@
 While exercising the settings blades, watch every layer (console errors, 4xx/5xx, GraphQL `errors[]` in 200s, visual glitches on the settings grid, save-toast correctness). File any incidental defect (verify first — disabled control / by-design are not bugs).
 
 ## Evidence
-Follow `.claude/skills/qa-evidence/evidence-capture-policy.md`. Capture: TC1 GET response (before/after), TC2 empty-after-reload screenshot, TC5 zero-options picker screenshot, any failure. HAR auto-captured. Output → `tests/Sprint26-14/VCST-5441/`.
+Follow `.claude/skills/qa-evidence/evidence-capture-policy.md`. Capture: TC1 GET response (before/after), TC2 empty-after-reload screenshot, TC5 zero-options picker screenshot, any failure. HAR auto-captured. Output → `reports/tickets/Sprint26-14/VCST-5441/`.

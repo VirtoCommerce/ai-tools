@@ -73,7 +73,7 @@ Real examples from recent reports (BUG-IMP-049 at 315 lines vs 150 target; BA-VC
 | Regression suite (20+ tests) | failures + 1 summary per area | 15–20 |
 | Exploratory session | anomalies only | 10 |
 
-**Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`tests/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) stay tracked.
+**Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) stay tracked.
 
 ## 6. Console & Network Evidence
 

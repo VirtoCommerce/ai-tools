@@ -76,9 +76,9 @@ Reference `tracker-ops.md` / `project-profile.mjs` — don't restate their conte
 
 ## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
-1. **Resolve current sprint** — check if `tests/Sprint-current` exists → use it. Otherwise list `tests/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths below.
+1. **Resolve current sprint** — check if `reports/tickets/Sprint-current` exists → use it. Otherwise list `reports/tickets/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths below.
 2. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user — fix may not be deployed or env may be stale.
-3. **Duplicate check** — scan `tests/{SPRINT}/VCST-XXXX/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
+3. **Duplicate check** — scan `reports/tickets/{SPRINT}/VCST-XXXX/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
 4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected module/feature (e.g., `"order status transitions"`, `"cart price recalculation"`) with `tokens: 8000`. Understand expected post-fix behavior to set correct assertions.
 
 ## Step 1 — Fetch Ticket & Understand the Bug
@@ -229,7 +229,7 @@ Edge Cases:
   - `qa-frontend-expert` / `qa-testing-expert` → `FRONT_URL`
   - `qa-backend-expert` → `BACK_URL` (+ `FRONT_URL` if the fix has a storefront-visible side)
 - Browser server assignment
-- Output path: `tests/{SPRINT}/VCST-XXXX/`
+- Output path: `reports/tickets/{SPRINT}/VCST-XXXX/`
 - Evidence requirements: screenshot at previously-failing step, console log, network errors, HAR file
 - Instruction to follow `skills/qa-evidence/evidence-capture-policy.md`
 
@@ -241,7 +241,7 @@ Bug: [summary]
 Fix: [what the dev changed]
 Environment: {FRONT_URL} / {BACK_URL}  (use those that apply)
 Browser: {BROWSER_SERVER}
-Output: tests/{SPRINT}/VCST-XXXX/
+Output: reports/tickets/{SPRINT}/VCST-XXXX/
 
 Steps to Reproduce (run 3 consecutive times):
 1. [step 1]
@@ -259,7 +259,7 @@ Take a screenshot at the step that previously failed.
 Capture console errors and network failures.
 Follow skills/qa-evidence/evidence-capture-policy.md
 
-Write results to tests/{SPRINT}/VCST-XXXX/verification-report.md
+Write results to reports/tickets/{SPRINT}/VCST-XXXX/verification-report.md
 ```
 
 ---
@@ -300,7 +300,7 @@ STR: Passed 3/3 runs
 Regression: [X] adjacent checks — all passed
 Console: No new errors
 Side effects: None
-Evidence: tests/{SPRINT}/VCST-XXXX/
+Evidence: reports/tickets/{SPRINT}/VCST-XXXX/
 Business rules verified: [BL-* list or "N/A"]
 ```
 
@@ -309,7 +309,7 @@ Business rules verified: [BL-* list or "N/A"]
 QA FAILED — Reopening.
 Issue: [what still fails or what new issue was found]
 STR result: [X/3 passed]
-Evidence: tests/{SPRINT}/VCST-XXXX/
+Evidence: reports/tickets/{SPRINT}/VCST-XXXX/
 Build: [version/commit tested]
 Environment: [URL]
 ```
@@ -318,7 +318,7 @@ Environment: [URL]
 
 ## Step 7 — Deliver Summary
 
-Write `tests/{SPRINT}/VCST-XXXX/verification-summary.json`:
+Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
 ```json
 {
   "ticket": "VCST-XXXX",
@@ -341,7 +341,7 @@ Write `tests/{SPRINT}/VCST-XXXX/verification-summary.json`:
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
   "tracker_transition": {"role": "tested", "state": "TESTED"},
-  "artifacts": "tests/{SPRINT}/VCST-XXXX/"
+  "artifacts": "reports/tickets/{SPRINT}/VCST-XXXX/"
 }
 ```
 (`tracker_transition.role` is the lifecycle role applied; `state` is the resolved destination status —

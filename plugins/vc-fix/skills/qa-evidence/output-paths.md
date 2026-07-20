@@ -11,8 +11,8 @@
 
 | Artifact Type | Path | Examples |
 |---------------|------|----------|
-| **Test documentation** (plans, cases, execution reports, testrail CSVs) | `tests/SprintXX-XX/VCST-XXXX/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
-| **Test screenshots** (evidence captured during test execution) | `tests/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
+| **Test documentation** (plans, cases, execution reports, testrail CSVs) | `reports/tickets/SprintXX-XX/VCST-XXXX/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
+| **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
 | **Bug reports — open** (active bugs) | `reports/bugs/open/` | `BUG-Checkout-Payment-Overlap-iOS.md` |
 | **Bug reports — fixed** (verified fixes, kept for regression reference) | `reports/bugs/fixed/` | `BUG-Cart-Total-Reset-VCST-4700.md` |
 | **Bug reports — closed** (won't fix, false positive, cannot reproduce) | `reports/bugs/closed/` | `BUG-GA4-add-payment-info.md` |
@@ -49,7 +49,7 @@
 ## Folder Structure Per Ticket
 
 ```
-tests/SprintXX-XX/VCST-XXXX-feature-name/
+reports/tickets/SprintXX-XX/VCST-XXXX-feature-name/
 ├── test-plan.md
 ├── test-cases.md
 ├── test-execution-report.md
@@ -62,8 +62,8 @@ tests/SprintXX-XX/VCST-XXXX-feature-name/
 ## Important Rules
 
 - `test-results/` is gitignored -- use it only for raw browser output (HAR, videos, console logs)
-- `tests/` and `reports/` are tracked in git -- use them for all documentation artifacts
-- Never save test documentation into `test-results/` and never save raw browser dumps into `tests/` or `reports/`
-- **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/VCST-XXXX/` or `tests/SprintXX-XX/VCST-XXXX/`
+- `reports/` is tracked in git -- use it for all documentation artifacts (the top-level `tests/` dir now holds only repo unit tests, not QA evidence)
+- Never save test documentation into `test-results/` and never save raw browser dumps into `reports/`
+- **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/SprintXX-XX/VCST-XXXX/` (sprint context) or `reports/tickets/VCST-XXXX/` (ad-hoc, no sprint subfolder)
 - **Default for `/qa-bug` / `/qa-fix` / `/qa-verify-fix` evidence:** use `reports/tickets/VCST-XXXX/` for ad-hoc evidence with no sprint context
 - See `reports/README.md` for full naming convention reference

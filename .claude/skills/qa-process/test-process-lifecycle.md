@@ -330,7 +330,7 @@ Run through these 12 items before starting any test execution. Flag any item tha
 
 | # | Action | Details | Output |
 |---|--------|---------|--------|
-| 1 | Archive test artifacts | Move sprint test docs from `tests/SprintXX/` to `archive/sprints/` | Archived folder |
+| 1 | Archive test artifacts | Move sprint test docs from `reports/tickets/SprintXX/` to `archive/sprints/` | Archived folder |
 | 2 | Archive regression report | Ensure `reports/regression/` has the final report with run ID | Archived report |
 | 3 | Update regression suite CSVs | Add new test cases discovered during this cycle to `regression/suites/` | Updated CSVs |
 | 4 | Update risk register | Adjust risk scores based on bugs found — increase risk for areas with escaped defects | Updated risk scores (via `/qa-risk`) |
