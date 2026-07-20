@@ -29,7 +29,7 @@
  */
 
 import { config as loadDotenv } from "dotenv";
-import { resolveTestEnv } from "./lib/resolve-test-env.js";
+import { resolveTestEnv } from "../lib/resolve-test-env.js";
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, resolve, basename } from "path";
 import {
@@ -38,7 +38,7 @@ import {
   loadSchemaCache,
   saveSchemaCache,
   validateQuery,
-} from "./lib/graphql-validator.js";
+} from "../lib/graphql-validator.js";
 
 // Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
 // Mirrors scripts/lib/seed-common.mjs — a bare loadDotenv() reads only `.env`, which does

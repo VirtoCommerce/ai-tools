@@ -39,8 +39,8 @@ commit → "Release Hotfix"). Terminal entry: [`/qa-hotfix`](../../commands/qa-h
 Resolving "task → PR → commit", "is it merged & released", "which support branch & next patch" is
 mechanical — parse JSON, query GitHub, compare integers. So:
 
-- **`scripts/hotfix-precheck.ts`** does all the read-only analysis and emits a per-bundle verdict.
-- **`scripts/hotfix-release.ts`** does the one deterministic write (dispatch the Release-hotfix
+- **`scripts/hotfix/hotfix-precheck.ts`** does all the read-only analysis and emits a per-bundle verdict.
+- **`scripts/hotfix/hotfix-release.ts`** does the one deterministic write (dispatch the Release-hotfix
   workflow) and verifies the published patch contains the fix.
 - The **agent/orchestrator** only does what needs judgment: read the JIRA task, run the cherry-pick
   (resolving conflicts), and gate every write behind explicit human confirmation.
@@ -67,7 +67,7 @@ This is the original "проверяем, что PR смержен и релиз
 ```bash
 npm run hotfix:precheck -- VCST-5082            # gates-only: PR → merged → shipped
 # overrides if the linked-PR search needs help:
-npx tsx scripts/hotfix-precheck.ts VCST-5082 [--repo=<name>] [--pr=<owner/repo#num|url>] [--json]
+npx tsx scripts/hotfix/hotfix-precheck.ts VCST-5082 [--repo=<name>] [--pr=<owner/repo#num|url>] [--json]
 ```
 
 1. The PR is **MERGED** (else STOP — merge first; a hotfix cherry-picks the merged commit).
@@ -308,6 +308,6 @@ file under `reports/`. A hotfix that changes a release decision flows into the n
   self-heals for new modules.
 - Tag scheme assumed: bare `Major.Minor.Patch`; branch scheme `support/Major.Minor`. If a repo
   diverges (e.g. `v`-prefixed tags, a different support-branch name), adjust `tagOf()` / the
-  `support/${line}` construction in `scripts/hotfix-precheck.ts`.
+  `support/${line}` construction in `scripts/hotfix/hotfix-precheck.ts`.
 - The "Release hotfix" workflow is discovered by name, so a renamed file keeps working as long as
   the workflow's `name:` stays "Release hotfix".

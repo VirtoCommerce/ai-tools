@@ -1,5 +1,5 @@
 ---
-description: "Refresh the storefront sitemap (.claude/knowledge/domain/sitemap.md) from the live environment. Runs the deterministic xAPI crawler (scripts/refresh-sitemap.mjs), diffs against the committed snapshot, and — only when something changed — rewrites the volatile sections, bumps the rev, appends a changelog row, and syncs the vc-fix plugin mirror. Diff-gated: no change ⇒ no write."
+description: "Refresh the storefront sitemap (.claude/knowledge/domain/sitemap.md) from the live environment. Runs the deterministic xAPI crawler (scripts/maintenance/refresh-sitemap.mjs), diffs against the committed snapshot, and — only when something changed — rewrites the volatile sections, bumps the rev, appends a changelog row, and syncs the vc-fix plugin mirror. Diff-gated: no change ⇒ no write."
 argument-hint: "[--check] [--no-browser]"
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 Keeps `.claude/knowledge/domain/sitemap.md` current against the live storefront. Intended to run **once per sprint** (it is wired into `/qa-test-plan` Step 0), but safe to run anytime.
 
 Two halves:
-- **Deterministic core** — `scripts/refresh-sitemap.mjs` (npm `sitemap:refresh`): pulls structure + versions over xAPI GraphQL + the Platform modules API. No browser, CI-safe. Writes a **per-environment** snapshot `.claude/knowledge/domain/sitemap-snapshot.<env>.json` (env = resolved `TEST_ENV`, or `--label`) and prints a diff vs the previous snapshot for that env.
+- **Deterministic core** — `scripts/maintenance/refresh-sitemap.mjs` (npm `sitemap:refresh`): pulls structure + versions over xAPI GraphQL + the Platform modules API. No browser, CI-safe. Writes a **per-environment** snapshot `.claude/knowledge/domain/sitemap-snapshot.<env>.json` (env = resolved `TEST_ENV`, or `--label`) and prints a diff vs the previous snapshot for that env.
 - **Write-up (this command)** — reads the diff and, only if it is non-empty, rewrites the affected sections of `sitemap.md` in prose, bumps the rev, appends a changelog row, and syncs the plugin mirror.
 
 ## Flags
@@ -24,7 +24,7 @@ Two halves:
 The crawler is **env-driven and portable to any VC deployment** — the queries are standard xAPI + Platform APIs, present regardless of theme customization (incl. a client `vc-frontend` fork). Target selection:
 - **Default (vcst):** `npm run sitemap:refresh` → baseline `sitemap-snapshot.vcst.json`, write-up target `sitemap.md`.
 - **A configured client env:** `TEST_ENV=<name> npm run sitemap:refresh` (uses their `.env.<name>` — `FRONT_URL`/`BACK_URL`/`STORE_ID`) → baseline `sitemap-snapshot.<name>.json`.
-- **Ad-hoc, no env file:** `node scripts/refresh-sitemap.mjs --front <url> --back <url> --store <id> --label <name>`.
+- **Ad-hoc, no env file:** `node scripts/maintenance/refresh-sitemap.mjs --front <url> --back <url> --store <id> --label <name>`.
 
 Per-env snapshots mean a client run **never clobbers the vcst baseline** or reports a false whole-catalog "changed". Two conditions for a client run: (1) `STORE_ID` is required (no default — it is per-deployment); (2) only run against a client env with **their authorization** — read-only, but it is their data (client-containment, `.claude/rules/quality-gates.md` §2a). Admin creds are optional (platform version degrades to null without them).
 

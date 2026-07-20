@@ -184,7 +184,7 @@ Use placeholder `{{BACK_URL}}` for any base URL the reader substitutes:
 
 ## GraphQL xAPI
 - Endpoint: `POST {{BACK_URL}}/graphql`
-- Live introspection: standard introspection query, or `npx tsx scripts/graphql-runner.ts --query "{ __schema { queryType { fields { name } } } }"`
+- Live introspection: standard introspection query, or `npx tsx scripts/graphql/graphql-runner.ts --query "{ __schema { queryType { fields { name } } } }"`
 - Schema snapshot: `knowledge/api/graphql-schema.md` (refresh: `npm run schema:refresh`)
 - **Curated fixture library:** `test-data/graphql/index.json` indexes 63 schema-validated queries + mutations under `test-data/graphql/queries/` and `test-data/graphql/mutations/`. Each entry has `path`, `category`, `role`, `requiredVars`, `gqlVars`, `exampleVars`. Validated by `npm run graphql:fixtures:validate`. **Pull dev-doc examples from this library** rather than authoring fresh queries.
 - QA test format: runner-native CSV cases in `regression/suites/Backend/graphql/` — authoring contract at `knowledge/api/graphql-test-cases-runner.md` (use this format for any new GraphQL test, not Postman or GraphiQL UI)

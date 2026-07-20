@@ -27,7 +27,7 @@ Measure test effectiveness and enforce quality gates for sprint releases, full r
 
 > **Compute the numbers deterministically — don't do the arithmetic by hand.**
 > `npm run metrics:compute -- --history reports/regression/history.json [--gate smoke|sprint|release|hotfix]
-> [--suite <id>] [--since <ISO>] [--p0-bugs N] [--p1-bugs N] [--json]` (`scripts/compute-metrics.ts`) is the
+> [--suite <id>] [--since <ISO>] [--p0-bugs N] [--p1-bugs N] [--json]` (`scripts/regression/compute-metrics.ts`) is the
 > single source for every formula in `quality-metrics-catalog.md` (pass/fail/blocked/skip rate, velocity,
 > defect density) and every trend (sprint-over-sprint delta, rolling average, consecutive drops, flakiness),
 > plus the gate verdict per `quality-gates.md` §9 (PASS/FAIL or APPROVED / WITH CONDITIONS / BLOCKED). It

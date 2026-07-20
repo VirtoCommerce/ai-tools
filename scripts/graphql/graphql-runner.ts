@@ -29,7 +29,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "fs";
 import { resolve, join, basename, dirname } from "path";
 import { config as loadDotenv } from "dotenv";
-import { resolveTestEnv } from "./lib/resolve-test-env.js";
+import { resolveTestEnv } from "../lib/resolve-test-env.js";
 import { parse as parseCsv } from "csv-parse/sync";
 import {
   introspect,
@@ -38,10 +38,10 @@ import {
   saveSchemaCache,
   loadSchemaCache,
   ValidationResult,
-} from "./lib/graphql-validator.js";
-import { TestDataResolver } from "./lib/test-data-resolver.js";
-import { TokenCache } from "./lib/graphql-auth.js";
-import { executeOperation, GraphQLResponse } from "./lib/graphql-executor.js";
+} from "../lib/graphql-validator.js";
+import { TestDataResolver } from "../lib/test-data-resolver.js";
+import { TokenCache } from "../lib/graphql-auth.js";
+import { executeOperation, GraphQLResponse } from "../lib/graphql-executor.js";
 import {
   parseSteps,
   parseTestData,
@@ -50,7 +50,7 @@ import {
   EndpointStep,
   RestStep,
   RestOpStep,
-} from "./lib/graphql-case-parser.js";
+} from "../lib/graphql-case-parser.js";
 import {
   parseAssertions,
   evaluateAssertion,
@@ -58,7 +58,7 @@ import {
   AssertionResult,
   InfoAssertion,
   getByPath,
-} from "./lib/graphql-assertions.js";
+} from "../lib/graphql-assertions.js";
 import { GraphQLSchema } from "graphql";
 
 // Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).

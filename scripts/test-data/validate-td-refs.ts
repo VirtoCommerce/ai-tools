@@ -16,7 +16,7 @@
 
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
-import { TestDataResolver } from "./lib/test-data-resolver.js";
+import { TestDataResolver } from "../lib/test-data-resolver.js";
 
 const ROOT = process.cwd();
 const SUITES_DIR = join(ROOT, "regression", "suites");

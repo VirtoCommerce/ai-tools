@@ -11,7 +11,7 @@
 | File | Purpose |
 |------|---------|
 | [`knowledge/api/graphql-schema.md`](../../knowledge/api/graphql-schema.md) | **Authoritative** live introspection snapshot — query/mutation names, input types, return types. Verify every name and field against this before writing. |
-| [`knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | **Authoring contract** for runner-native GraphQL test cases (`scripts/graphql-runner.ts`): full `Steps`/`Assertions`/`Cleanup` tag grammar, `getByPath` filter, capture chaining. Gold-standard suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`. |
+| [`knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | **Authoring contract** for runner-native GraphQL test cases (`scripts/graphql/graphql-runner.ts`): full `Steps`/`Assertions`/`Cleanup` tag grammar, `getByPath` filter, capture chaining. Gold-standard suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`. |
 | [`skills/qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) | `@td(ALIAS.field)` resolver + [`test-data/aliases.json`](../../../test-data/aliases.json) registry. Use `@td()` for entity IDs, store IDs, SKUs, coupon codes, addresses, test cards — never hardcode. `{{STORE_ID}}` etc. resolves from `.env`; entity-level fixtures resolve from `aliases.json`. |
 
 ---

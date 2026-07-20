@@ -39,7 +39,7 @@ A release cuts when **all** of these are true:
 4. `npm run env:check` is green on `TEST_ENV=vcst`
 5. `npm run verify:multi-env` exits 0 (filter pipeline is unbroken)
 6. `npm run suites:lint` exits 0 (manifest is schema-valid)
-7. `npx tsx scripts/validate-td-refs.ts` exits 0 (no broken `@td()` refs)
+7. `npx tsx scripts/test-data/validate-td-refs.ts` exits 0 (no broken `@td()` refs)
 
 If any check fails, fix the cause before tagging — don't release a known-broken state.
 
@@ -75,7 +75,7 @@ npm install
 npm run env:check
 npm run verify:multi-env
 npm run suites:lint
-npx tsx scripts/validate-td-refs.ts
+npx tsx scripts/test-data/validate-td-refs.ts
 npm run plugin:check
 node skills/run-vc-mcp-testing-module/driver.mjs
 ```
@@ -99,7 +99,7 @@ PR description template:
 - [x] `npm run env:check` green
 - [x] `npm run verify:multi-env` exits 0
 - [x] `npm run suites:lint` exits 0
-- [x] `npx tsx scripts/validate-td-refs.ts` exits 0
+- [x] `npx tsx scripts/test-data/validate-td-refs.ts` exits 0
 - [x] `npm run plugin:check` green
 - [x] `node skills/run-vc-mcp-testing-module/driver.mjs` 7/7 checks pass
 

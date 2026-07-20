@@ -2,7 +2,7 @@
 
 > **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-17)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
-> **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
+> **Refresh**: `node scripts/graphql/refresh-graphql-schema.mjs` — run when schema may have changed.
 
 ## Critical Rules
 

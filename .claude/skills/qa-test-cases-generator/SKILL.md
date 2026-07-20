@@ -91,7 +91,7 @@ Each layer produces its own test case block with layer-appropriate tags from `te
 
 **MANDATORY** when generating GraphQL test cases. Skipping this step produces invalid queries/mutations.
 
-> **Authoring contract:** new GraphQL test cases MUST follow the runner-native format consumed by `scripts/graphql-runner.ts`. Read **`knowledge/api/graphql-test-cases-runner.md`** before writing any GraphQL row — it defines the canonical `Steps`/`Assertions`/`Cleanup` grammar (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` + `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`), `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, and an authoring checklist. Gold-standard examples: `regression/suites/Backend/graphql/050i-graphql-configurations.csv` (CFG-GQL-001…032).
+> **Authoring contract:** new GraphQL test cases MUST follow the runner-native format consumed by `scripts/graphql/graphql-runner.ts`. Read **`knowledge/api/graphql-test-cases-runner.md`** before writing any GraphQL row — it defines the canonical `Steps`/`Assertions`/`Cleanup` grammar (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` + `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`), `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, and an authoring checklist. Gold-standard examples: `regression/suites/Backend/graphql/050i-graphql-configurations.csv` (CFG-GQL-001…032).
 
 1. **Read schema reference** — read `knowledge/api/graphql-schema.md` (introspected from live endpoint)
 2. **Check schema freshness** — if the feature involves new/changed GraphQL operations, run `npm run schema:refresh` first to update the reference from live introspection
@@ -361,7 +361,7 @@ Generated test cases route to the correct executing agent by layer:
 - **No vague assertions** — "page loads correctly" is not an assertion. Use `[DOM] product title visible` or `[NAV] URL matches /product/*`
 - **No compound steps** — one action per `[ACT]` line. Wrong: `click Add to Cart and verify badge`. Right: separate `[ACT]` and `[ASSERT]`. This rule still applies inside journey cases — each action is one `[ACT]`; the journey is built from many sequential `[ACT]`/`[ASSERT]` rounds, not from compound lines
 - **Frontend journeys are exceptions to atomicity** — for Storefront UI flows where behavior depends on cross-screen state (checkout, cart→order, login+purchase, BOPIS end-to-end, address/org switch mid-journey), write one journey case with `--- SCREEN: <name> ---` dividers in `Steps`, `[JOURNEY]` tag in `Section`, and an `[ASSERT]` at every screen boundary. Do NOT shard into atomic per-screen cases. See `agents/test-management-specialist.md` → Frontend Journey Exception for full criteria
-- **Always resolve test data, never hardcode** — URLs and credentials use `{{VAR}}` (env-backed). Entity-specific values — IDs, SKUs, prices, emails, addresses, coupon codes, test-card numbers, order numbers, virtual-catalog roots, URL path segments — use `@td(ALIAS.field)` resolved against [`test-data/aliases.json`](../../../test-data/aliases.json). Hardcoded fixtures rot when catalogs are reseeded or orgs are recreated. See `../testing/qa-postman/test-data-fixtures.md` for the full resolver contract and patterns. Validate with `npx tsx scripts/validate-td-refs.ts`
+- **Always resolve test data, never hardcode** — URLs and credentials use `{{VAR}}` (env-backed). Entity-specific values — IDs, SKUs, prices, emails, addresses, coupon codes, test-card numbers, order numbers, virtual-catalog roots, URL path segments — use `@td(ALIAS.field)` resolved against [`test-data/aliases.json`](../../../test-data/aliases.json). Hardcoded fixtures rot when catalogs are reseeded or orgs are recreated. See `../testing/qa-postman/test-data-fixtures.md` for the full resolver contract and patterns. Validate with `npx tsx scripts/test-data/validate-td-refs.ts`
 - **Every mutation → `errors[]` check** — GraphQL HTTP 200 does not mean success in xAPI
 - **Minimum 2 failure signals** per case (timeout + API/console)
 - **Negative cases are mandatory** — for every happy path, generate at least one negative/error case — pick the failure mode most likely to slip through, not all possible invalid inputs
@@ -373,7 +373,7 @@ Generated test cases route to the correct executing agent by layer:
 - **ID stability** — never reuse or renumber IDs. Deleted cases leave gaps in numbering
 - **Ask before writing** — present generated cases for review before appending to any suite CSV file
 - **Append via the safe writer, never hand-rolled** — once approved, append with
-  `npm run suites:append -- <target-suite.csv> --rows <new-rows.csv>` (`scripts/append-test-cases-to-suite.ts`).
+  `npm run suites:append -- <target-suite.csv> --rows <new-rows.csv>` (`scripts/test-cases/append-test-cases-to-suite.ts`).
   It validates the 15-column schema, escapes commas/newlines in Steps/Assertions, guarantees the boundary
   newline, dedup-checks by ID + Title+Section, and round-trip-verifies the append (the corruption from a
   hand-rolled `appendFileSync` — merged 29-field rows — is what prompted this). Use `--dry-run` to preview.

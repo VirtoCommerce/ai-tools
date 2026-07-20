@@ -612,7 +612,7 @@ The `full` profile is **not** "the other profiles combined with synthetic `AGENT
 **Guiding rules for `full`:**
 - **Preserve pinned identity.** Where a CSV row or `aliases.json` already pins a `platform_id` / `code` / `slug` / GUID, create the entity with that identity (or update the existing one). Never mint a fresh random ID for a fixture that suites resolve by a pinned value — that breaks `@td()`.
 - **Idempotent.** Look up each fixture first (by pinned ID, then by code/name); create only if missing, else update in place. A `full` re-run must not duplicate fixtures.
-- **Write-back.** When a pinned entity is missing and gets re-provisioned with a new ID, write the new ID back into the source CSV **and** `aliases.json`, then re-run `npx tsx scripts/validate-td-refs.ts` (Step 6 of the skill).
+- **Write-back.** When a pinned entity is missing and gets re-provisioned with a new ID, write the new ID back into the source CSV **and** `aliases.json`, then re-run `npx tsx scripts/test-data/validate-td-refs.ts` (Step 6 of the skill).
 - **Read GUIDs, never hardcode.** Catalog roots, store IDs, FFC IDs, virtual-catalog IDs come from `aliases.json` (`@td(VIRTUAL_CATALOG_B2B.id)`, `@td(STORE_PRIMARY.id)`, …) or the `01-Infrastructure` discovery folder — see `feedback_no_hardcoded_guids_in_scripts.md`.
 - **Respect the dependency order** (§Entity Dependency Graph). Seed in the order of the table below; reindex last.
 

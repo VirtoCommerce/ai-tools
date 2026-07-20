@@ -29,8 +29,8 @@ process.env.DOTENV_CONFIG_QUIET = process.env.DOTENV_CONFIG_QUIET ?? "true";
 const origLog = console.log;
 if (JSON_ONLY) console.log = (...a) => console.error(...a);
 
-const { assertSafeTarget, auth } = await import("./lib/seed-common.mjs");
-const { FEATURES, discoverFeature } = await import("./lib/feature-variants.mjs");
+const { assertSafeTarget, auth } = await import("../lib/seed-common.mjs");
+const { FEATURES, discoverFeature } = await import("../lib/feature-variants.mjs");
 
 function toFactorSpec(result) {
   // Live axes with ≥1 value become factors directly; suggested design axes are

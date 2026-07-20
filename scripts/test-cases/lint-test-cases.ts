@@ -33,7 +33,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { COLUMNS, parseSuite, type Row } from "./append-test-cases-to-suite.js";
-import { parseSteps, validateStepBlocks } from "./lib/graphql-case-parser.js";
+import { parseSteps, validateStepBlocks } from "../lib/graphql-case-parser.js";
 
 type Severity = "Blocker" | "Critical" | "High" | "Medium" | "Informational";
 const SEVERITY_ORDER: Severity[] = ["Informational", "Medium", "High", "Critical", "Blocker"];

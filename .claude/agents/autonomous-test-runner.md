@@ -71,7 +71,7 @@ npm run graphql:lint-labels -- {{SUITE_CSV_PATH}}
 Iterate over every row with non-empty `Steps`:
 
 ```bash
-npx tsx scripts/graphql-runner.ts --case {{SUITE_CSV_PATH}}:<CASE_ID> --evidence-dir reports/regression/{{RUN_ID}}/graphql-evidence
+npx tsx scripts/graphql/graphql-runner.ts --case {{SUITE_CSV_PATH}}:<CASE_ID> --evidence-dir reports/regression/{{RUN_ID}}/graphql-evidence
 ```
 
 Per-case announce message (same cadence as Phase 2):

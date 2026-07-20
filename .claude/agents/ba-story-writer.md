@@ -209,7 +209,7 @@ Security considerations:
 
 When the story touches **GraphQL xAPI** queries/mutations:
 - Reference exact field/argument names from `knowledge/api/graphql-schema.md` (live introspection snapshot) — not paraphrased names
-- Note that QA will write tests against this story in **runner-native format** (`scripts/graphql-runner.ts`) — see `knowledge/api/graphql-test-cases-runner.md`. Acceptance Criteria for GraphQL behavior should be falsifiable against `errors[]`, response field paths, or counts so the test author can map them directly to `[ERRORS]` / `[DATA]` / `[COUNT]` assertions without rewriting.
+- Note that QA will write tests against this story in **runner-native format** (`scripts/graphql/graphql-runner.ts`) — see `knowledge/api/graphql-test-cases-runner.md`. Acceptance Criteria for GraphQL behavior should be falsifiable against `errors[]`, response field paths, or counts so the test author can map them directly to `[ERRORS]` / `[DATA]` / `[COUNT]` assertions without rewriting.
 
 ### 10. Test Scenarios
 Complement ACs with a test scenario matrix:
@@ -224,7 +224,7 @@ Complement ACs with a test scenario matrix:
 | GraphQL mutation success | Valid input | `errors[] empty`, expected field values | GraphQL (runner-native) |
 | GraphQL mutation invalid input | Missing required field | `errors[] non-empty` with descriptive message | GraphQL (runner-native) |
 
-**Test type "GraphQL (runner-native)"** denotes a test the QA team will execute via `scripts/graphql-runner.ts` using the contract in `knowledge/api/graphql-test-cases-runner.md`. When the story includes GraphQL xAPI changes, prefer this test type over generic "Integration" for any scenario that exercises a query/mutation directly — it's faster, schema-validated, and produces structured evidence.
+**Test type "GraphQL (runner-native)"** denotes a test the QA team will execute via `scripts/graphql/graphql-runner.ts` using the contract in `knowledge/api/graphql-test-cases-runner.md`. When the story includes GraphQL xAPI changes, prefer this test type over generic "Integration" for any scenario that exercises a query/mutation directly — it's faster, schema-validated, and produces structured evidence.
 
 ---
 
