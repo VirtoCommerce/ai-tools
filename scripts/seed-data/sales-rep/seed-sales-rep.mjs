@@ -24,6 +24,7 @@
 import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, loadAliases,
   writeEnvAliasOverride, syncEnvAliases, csvBool, DRY_RUN, TEARDOWN, ONLY, STORE_ID, verifyRemoved,
+  discoverCatalogProducts,
 } from '../../lib/seed-common.mjs';
 
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
@@ -222,7 +223,14 @@ function orderAddress(org, addressType) {
   };
 }
 
-async function ensureOrder(row, orgs, customerId) {
+// Placeholder product identity used when the catalog has no discoverable products (dry-run / bare
+// env). A real seed overlays live catalog products instead — see ensureOrder / SYNTHETIC_* below.
+const SYNTHETIC_CATALOG_ID = 'agent-test-sr';
+const SYNTHETIC_PRODUCT_PREFIX = 'agent-test-sr-prod-';
+const isSyntheticItem = (it) =>
+  it?.catalogId === SYNTHETIC_CATALOG_ID || String(it?.productId || '').startsWith(SYNTHETIC_PRODUCT_PREFIX);
+
+async function ensureOrder(row, orgs, customerId, products = []) {
   const org = orgs[row.org];
   if (!org) { log(`  WARN: order ${row.order_key} — org ${row.org} unknown, skip`); return; }
   const number = `${ORDER_MARK}-${row.order_key}`;
@@ -237,9 +245,13 @@ async function ensureOrder(row, orgs, customerId) {
     const enriched = (full?.addresses || []).length && (full?.shipments || []).length && (full?.inPayments || []).length;
     const totalOk = Math.abs((full?.total || 0) - parseFloat(row.total)) < 0.01;
     const orgOk = full?.organizationId === org.id && !!full?.organizationName;
-    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk) { verbose(`order ${number} exists (attributed + enriched + total + org ok)`); return; }
+    // Auto-upgrade a legacy order whose line items still point at the synthetic placeholder catalog —
+    // but only when we actually have real products to swap in (never thrash on a bare/dry-run catalog).
+    const itemsOk = products.length === 0
+      || ((full?.items || []).length > 0 && !(full.items).some(isSyntheticItem));
+    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk && itemsOk) { verbose(`order ${number} exists (attributed + enriched + total + org + items ok)`); return; }
     await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
-    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk})`);
+    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, itemsOk=${itemsOk})`);
   }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const total = parseFloat(row.total);
@@ -250,14 +262,19 @@ async function ensureOrder(row, orgs, customerId) {
   // rebuilds the order on EVERY reseed. remainder-to-first keeps the sum exact.
   const per = Math.round((total / n) * 100) / 100;
   const firstPrice = Math.round((total - per * (n - 1)) * 100) / 100;
-  // Synthetic SKUs on purpose: suite 050m only asserts attribution / totals / itemsCount / keyword —
-  // it never navigates a line item to its PDP. Do NOT reuse these orders for reorder / "buy again"
-  // tests (these products exist in no catalog); use seed-order-states.mjs (real catalog products via
-  // discoverCatalogProducts) for those.
-  const items = Array.from({ length: n }, (_, i) => ({
-    sku: `AGENT-TEST-SR-SKU-${i + 1}`, productId: `agent-test-sr-prod-${i + 1}`, catalogId: 'agent-test-sr',
-    name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price: i === 0 ? firstPrice : per, productType: 'Physical', currency: 'USD',
-  }));
+  // Point line items at REAL catalog products discovered live on this env, so the seeded order
+  // references browsable products (reorder / PDP link / product image resolve) — mirrors
+  // seed-order-states.mjs / applyCatalogItems. Price / quantity / currency stay fixture-driven so
+  // order.Total == the CSV total; only product IDENTITY comes from the live catalog. Fewer products
+  // than items → cycle. If NONE were discovered (dry-run / bare catalog) we fall back to synthetic
+  // placeholders — non-browsable, so don't reuse those for reorder tests; seed the catalog first.
+  const items = Array.from({ length: n }, (_, i) => {
+    const price = i === 0 ? firstPrice : per;
+    const p = products.length ? products[i % products.length] : null;
+    return p
+      ? { sku: p.sku, productId: p.id, catalogId: p.catalogId, name: p.name, quantity: 1, price, productType: 'Physical', currency: 'USD' }
+      : { sku: `AGENT-TEST-SR-SKU-${i + 1}`, productId: `${SYNTHETIC_PRODUCT_PREFIX}${i + 1}`, catalogId: SYNTHETIC_CATALOG_ID, name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: 'USD' };
+  });
   const shipAddr = orderAddress(org, 'Shipping');
   const billAddr = orderAddress(org, 'Billing');
   // NOTE on totals: the platform's order-total calculator folds shipment.total and inPayment.total
@@ -361,7 +378,12 @@ async function main() {
     log('WARN: could not resolve SR_REP_PRIMARY ApplicationUser id — SKIPPING order seeding (orders would not be rep-attributed). Ensure the rep account exists, then re-run.');
   } else {
     verbose(`orders attributed to SR_REP_PRIMARY account id ${primaryUserId}`);
-    for (const row of orders) await ensureOrder(row, orgs, primaryUserId);
+    // Discover real catalog products once (env-resilient, not hardcoded) to back the line items.
+    const maxItems = Math.max(1, ...orders.map((r) => parseInt(r.items_count, 10) || 1));
+    const products = await discoverCatalogProducts(api, maxItems);
+    if (products.length) verbose(`line items use ${products.length} real catalog product(s): ${products.map((p) => p.sku).join(', ')}`);
+    else if (!DRY_RUN) log('  WARN: no catalog products discovered — line items keep synthetic placeholders (seed catalog first for reorder/PDP-link cases).');
+    for (const row of orders) await ensureOrder(row, orgs, primaryUserId, products);
   }
 
   // Phase 5 — write-back runtime GUIDs
