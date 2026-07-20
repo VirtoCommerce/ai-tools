@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (26) — `commands/`
+## Slash Commands (27) — `commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -11,6 +11,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-test` | `VCST-XXXX \| feature \| PR #N` | No | Test a JIRA ticket, feature, or PR |
 | `/qa-regression` | `[smoke\|critical\|sprint\|sprint:XX-YY\|full\|frontend\|backend\|IDs] [--no-plan]` | No | Run regression suites in parallel. `sprint` auto-resolves `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (falls back to static group with `--no-plan` or when no plan exists). |
 | `/qa-status` | `[run\|jira\|env]` | **Yes** | Dashboard: run status, JIRA queue, env health, recent bugs |
+| `/qa-sitemap` | `[--check] [--no-browser]` | No | Refresh `.claude/knowledge/domain/sitemap.md` from the live storefront. Deterministic xAPI crawler (`scripts/refresh-sitemap.mjs` / `npm run sitemap:refresh`) captures nav categories + `/products-with-options` + platform version, diffs against a per-env `sitemap-snapshot.<env>.json`, and — only when changed — rewrites the volatile sections, bumps the rev, appends a changelog row, syncs the vc-fix plugin mirror. Diff-gated; env-driven (portable to a client deployment via `TEST_ENV`/`--front`/`--back`/`--store`/`--label`). Wired into `/qa-test-plan` Step 0 (per-sprint cadence). |
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | Reproduce, document, and optionally file a JIRA bug |
 | `/qa-fix` | `VCST-XXXX` | No | Autonomous fix of an already-filed bug: triage (Gate 0) → root-cause + single-repo route (Gate 1) → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review. Never auto-merges. Interactive twin of `ci/run-fix-cycle.ts`; reuses `ci/config/fix-repos.json` + `ci/lib/repo-router.ts`. Delegates to the `developers/` team by repo kind — `fullstack-backend` + `backend-reviewer` (module/platform) or `fullstack-frontend` + `frontend-reviewer` (vc-frontend). Gate ladder: `.claude/rules/quality-gates.md` |
 | `/qa-monitoring` | `[frontend\|backend\|both] [--since=MIN] [--dry-run]` | No | Online bug monitoring from Application Insights: query both layers → dedup by fingerprint → triage new/spiking signatures → reproduce HIGH-confidence bugs live → draft reports + Teams alert → STOP for human. Detect-and-report only (never files a tracker ticket / auto-fixes). Interactive twin of `ci/run-monitor.ts`; shares `ci/monitoring/queries/*.kql` + `ci/agents/monitor-triage-agent.md` + the fingerprint store. |
