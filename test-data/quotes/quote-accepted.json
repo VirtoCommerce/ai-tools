@@ -3,7 +3,7 @@
   "number": "AGENT-TEST-QTE-ACCEPTED",
   "storeId": "{{STORE_ID}}",
   "currency": "USD",
-  "status": "Accepted",
+  "status": "Ordered",
   "customerName": "AGENT-TEST Org Buyer",
   "comment": "AGENT-TEST admin-priced RFQ accepted by buyer",
   "items": [

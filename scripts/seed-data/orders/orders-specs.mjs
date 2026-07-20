@@ -80,7 +80,7 @@ export const QUOTE_FIXTURES = [
     key: 'ACCEPTED',
     alias: 'ACCEPTED_QUOTE',
     fixtureFile: 'quotes/quote-accepted.json',
-    quoteStatus: 'Accepted',
+    quoteStatus: 'Ordered',
     adminPriced: true,
     buyerAccepted: true,
     blockedCases: ['QUOTE-007', 'QUOTE-024', 'QUOTE-027', 'QUOTE-028', 'QUOTE-030'],
@@ -225,5 +225,18 @@ export function finalizeQuoteBody(spec, fixtureObj, ctx = {}) {
   if (ctx.customerName) body.customerName = ctx.customerName;
   if (ctx.organizationId) body.organizationId = ctx.organizationId;
   if (ctx.organizationName) body.organizationName = ctx.organizationName;
+  // Propagate the quote's currency onto every QuoteItem (and its proposal tier prices). The platform's
+  // QuoteItem.Currency / QuoteTierPrice.Currency columns are NOT NULL, so a create with items missing a
+  // currency 500s at the DB layer ("Cannot insert NULL into column 'Currency'"). Currency is a single
+  // quote-level fact, so we derive it here rather than repeat it per item in the committed fixture.
+  const currency = body.currency;
+  if (currency && Array.isArray(body.items)) {
+    for (const item of body.items) {
+      if (!item.currency) item.currency = currency;
+      if (Array.isArray(item.proposalPrices)) {
+        for (const tp of item.proposalPrices) if (tp && typeof tp === 'object' && !tp.currency) tp.currency = currency;
+      }
+    }
+  }
   return body;
 }

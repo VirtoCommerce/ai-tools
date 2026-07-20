@@ -6,8 +6,8 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  ORDER_FIXTURES, orderNumber, ORDER_MARK,
-  resolveTokens, finalizeOrderBody, applyCatalogItems,
+  ORDER_FIXTURES, QUOTE_FIXTURES, orderNumber, ORDER_MARK,
+  resolveTokens, finalizeOrderBody, finalizeQuoteBody, applyCatalogItems,
   validateFixtureShape, findGuidLeaks,
 } from '../seed-data/orders/orders-specs.mjs';
 
@@ -75,6 +75,24 @@ test('applyCatalogItems with no products keeps the fixture placeholders untouche
   const fixture = { items: [{ sku: 'PLACEHOLDER', productId: 'p', name: 'ph', quantity: 1, price: 1 }] };
   const out = applyCatalogItems(fixture, []);
   assert.equal(out.items[0].sku, 'PLACEHOLDER');
+});
+
+test('finalizeQuoteBody propagates quote currency onto items + proposal tier prices', () => {
+  // The platform's QuoteItem.Currency / QuoteTierPrice.Currency columns are NOT NULL — a create body
+  // whose items omit currency 500s at the DB layer. finalizeQuoteBody derives it from the quote.
+  const spec = QUOTE_FIXTURES.find((s) => s.key === 'ACCEPTED');
+  const fixture = {
+    number: '', status: 'PLACEHOLDER', currency: 'USD',
+    items: [
+      { sku: 'A', quantity: 2, listPrice: 10, proposalPrices: [{ quantity: 2, price: 8 }] },
+      { sku: 'B', quantity: 1, currency: 'EUR', proposalPrices: [] }, // pre-set currency preserved
+    ],
+  };
+  const body = finalizeQuoteBody(spec, fixture, { customerId: 'user-1' });
+  assert.equal(body.status, spec.quoteStatus, 'status from the spec (Ordered)');
+  assert.equal(body.items[0].currency, 'USD', 'item currency derived from quote');
+  assert.equal(body.items[0].proposalPrices[0].currency, 'USD', 'tier-price currency derived from quote');
+  assert.equal(body.items[1].currency, 'EUR', 'an item that already has a currency is left untouched');
 });
 
 test('findGuidLeaks detects a bare GUID anywhere in the object tree', () => {
