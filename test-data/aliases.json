@@ -3682,6 +3682,28 @@
     "name": "AGENT-TEST-SR-Owner-Acme",
     "phone": "+1-206-555-0142"
   },
+  "SR_ADMIN_CUSTOMER_ONLY": {
+    "file": "sales-rep/admin-users",
+    "filter": {
+      "user_key": "SR_ADMIN_CUSTOMER_ONLY"
+    },
+    "fields": {
+      "email": "email",
+      "userName": "user_name",
+      "roleName": "role_name"
+    }
+  },
+  "SR_ADMIN_NO_READ": {
+    "file": "sales-rep/admin-users",
+    "filter": {
+      "user_key": "SR_ADMIN_NO_READ"
+    },
+    "fields": {
+      "email": "email",
+      "userName": "user_name",
+      "roleName": "role_name"
+    }
+  },
   "SR_REP_ACME2": {
     "file": "sales-rep/sales-reps",
     "filter": {
