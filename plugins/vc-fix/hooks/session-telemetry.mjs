@@ -329,7 +329,15 @@ function classify(span) {
   // A blocking error is a `failed` outcome UNLESS the specific failed invocation was
   // self-corrected (retried to success). permission_denied / hook_failure that were
   // recovered are S3 `recovered`, matching the oracle §1a / §2 rows — they only hard-
-  // block when they never resolved.
+  // block when they never resolved. NOTE: this recovery check is keyed on `span.ops`
+  // (tool+arg_hash pairs from tool_use/tool_result), so it can only ever apply to a
+  // hook_failure surfaced via a tool_result tied to a tool_use_id. A hook_failure
+  // detected from bare top-level string content (the untied PostToolUse echo path,
+  // e.g. a `tsc` note after an Edit — see the scanTranscript comment above the
+  // `attributeSignal("hook_failure", …)` call) has no paired op to resolve against, so
+  // it can never classify as `recovered` — it always forces `failed` for the span it
+  // occurred in. This is intentional fail-toward-escalation (no false "recovered" on a
+  // signal we can't actually observe resolving), not a design oversight.
   let outcome;
   if (recovered) {
     outcome = "recovered"; // error occurred but self-corrected → do NOT escalate
@@ -522,6 +530,10 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     // Top-level string content = a system / hook echo (e.g. the `tsc` PostToolUse
     // output), not user prose — keep hook_failure detection here (the tsc-on-every-Edit
     // cross-cutting pattern), but not permission_denied (denials arrive as tool_results).
+    // NOT tied to a tool_use_id, so attributeSignal() below has no op to attach this to —
+    // classify()'s recovery check can therefore never mark it `recovered` (see the NOTE
+    // there). A transient hook note that's clean on the very next Edit still forces
+    // `failed` for this span; that's a known, accepted asymmetry vs the tool_result path.
     if (typeof content === "string") {
       if (HOOK_FAILURE_RE.test(content)) attributeSignal("hook_failure", content);
     }
