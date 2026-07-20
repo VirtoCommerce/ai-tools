@@ -65,14 +65,32 @@ export const FOCUS_INDICATOR_MIN_PX = 2;
 /** BL-UI-010 image aspect-ratio tolerance — `displayed / intrinsic` must stay within ±5% to avoid visible squash/stretch. */
 export const IMAGE_ASPECT_TOLERANCE = 0.05;
 
-/** BL-UI-007 critical-alert selectors. Any decorative or interactive element overlapping these rects is a violation. */
+/**
+ * BL-UI-007 critical-alert selectors. Any decorative or interactive element overlapping these rects is a violation.
+ *
+ * NOTE (VCST-4400 gap): VC surfaces some user-facing warnings in NON-semantic containers
+ * (e.g. the cart line-item over-stock message renders in `div.vc-line-item__after` with no
+ * `role="alert"`/`aria-live`). Those are invisible to this occlusion set — check them with
+ * `alertSemanticsAuditSnippet` (are they announced at all?) and pass a custom selector to
+ * `occlusionAuditSnippet` when the alert lives outside this list. The base `.vc-alert` is
+ * included so every VcAlert variant (not just danger/warning) is covered once rendered.
+ */
 export const CRITICAL_ALERT_SELECTORS = [
+  '.vc-alert',
   '.vc-alert--danger',
   '.vc-alert--warning',
   '[role="alert"]',
   '[role="alertdialog"]',
+  '[role="status"]',
   '[aria-live="assertive"]',
+  '[aria-live="polite"]',
 ] as const;
+
+/** WCAG 1.4.11 non-text (UI-component / graphical-object) contrast minimum. Applies to icon glyphs, borders, etc. */
+export const NON_TEXT_CONTRAST_RATIO = 3.0;
+
+/** Sized-control equality tolerance (px). A declared-size control (icon, avatar, swatch) must render within ±1 px of its token. */
+export const SIZED_CONTROL_TOLERANCE_PX = 1;
 
 // ---------------------------------------------------------------------------
 // Snippet result types (what each `evaluate` call returns)
@@ -185,6 +203,54 @@ export interface FocusIndicatorAuditResult {
     /** True when neither `outline` nor `box-shadow` produces a visible focus ring on `:focus-visible`. */
     boxShadowPresent: boolean;
   }>;
+  /**
+   * (VCST-4400 gap fix) Controls whose focus ring could NOT be assessed programmatically —
+   * the element did not match `:focus-visible` after a scripted `.focus()`, so a ring keyed on
+   * `:focus-visible` (the common pattern) would not render here even though real keyboard Tab
+   * shows it. These are NOT failures; confirm with a real Tab pass before filing.
+   */
+  indeterminate: Array<{ tag: string; role: string | null; text: string }>;
+  /** Disabled / aria-disabled controls skipped (WCAG 2.4.7 does not require a ring on inactive controls). */
+  skipped: number;
+}
+
+export interface NonTextContrastAuditResult {
+  selector: string;
+  evaluated: number;
+  violations: Array<{
+    tag: string;
+    label: string;
+    /** Resolved glyph color (stroke for outline icons, fill for solid, else CSS color). */
+    foreground: string;
+    background: string;
+    ratio: number;
+    requiredRatio: number;
+  }>;
+  /** Skipped because the nearest interactive ancestor is disabled (WCAG 1.4.11 exempts inactive components). */
+  exempt: number;
+}
+
+export interface SizedControlAuditResult {
+  selector: string;
+  expectedPx: number | null;
+  square: boolean;
+  ratio: number | null;
+  evaluated: number;
+  violations: Array<{
+    tag: string;
+    width: number;
+    height: number;
+    /** off-token (rendered ≠ expected), non-square, or wrong-ratio. */
+    reason: string;
+    expectedPx: number | null;
+  }>;
+}
+
+export interface AlertSemanticsAuditResult {
+  selector: string;
+  evaluated: number;
+  /** Visible, text-bearing candidates that carry NO alert/status/live semantics — a screen reader won't announce them. */
+  unannounced: Array<{ tag: string; text: string }>;
 }
 
 export interface ImageAspectAuditResult {
@@ -741,34 +807,45 @@ export function contrastAuditSnippet(selector: string = 'body *'): string {
 }
 
 /**
- * WCAG 2.4.7 (Focus Visible, AA) auditor. Programmatically focuses every interactive
- * matching the standard interactive selector, checks whether `:focus-visible` produces
- * a visible focus ring (outline ≥ 2 px OR a box-shadow that draws a contrasting ring),
- * then blurs and moves on.
+ * WCAG 2.4.7 (Focus Visible, AA) auditor. Programmatically focuses every ENABLED interactive
+ * matching the standard interactive selector, checks whether a visible focus ring is present
+ * (outline ≥ 2 px OR a box-shadow that draws a contrasting ring), then blurs and moves on.
+ *
+ * VCST-4400 gap fix — this snippet previously over-reported false "missing" rings:
+ * - It now SKIPS `disabled` / `aria-disabled="true"` controls (WCAG 2.4.7 does not require a
+ *   ring on inactive controls) — counted in `skipped`.
+ * - It distinguishes MISSING from INDETERMINATE. Most themes key the ring on `:focus-visible`,
+ *   which a scripted `.focus()` frequently does NOT set. When the element does not match
+ *   `:focus-visible` after focus AND shows no ring, the ring is `indeterminate` (a
+ *   `:focus-visible`-gated ring would not render under programmatic focus) — NOT a failure.
+ *   Only elements that DO match `:focus-visible` yet still show no ring are real `missing`.
+ *   Confirm indeterminates with a real keyboard-Tab pass before filing.
  *
  * Caveats:
- * - Snippet does NOT cover transitions — only static focus-state computed style.
- * - Custom `:focus-visible` styles using `::after` / `::before` pseudo elements are
- *   NOT inspected by this snippet; pseudo-element focus rings require visual review.
- * - Page state may change if a focusable element has a `focus` handler with side
- *   effects (rare). Best run on idle pages.
+ * - Static focus-state computed style only — no transitions.
+ * - `::after` / `::before` pseudo-element focus rings are not inspected — require visual review.
+ * - Best run on idle pages (a focusable with a side-effecting focus handler could mutate state).
  *
- * Returns FocusIndicatorAuditResult. Empty `missing[]` = PASS.
+ * Returns FocusIndicatorAuditResult. Empty `missing[]` = PASS (review `indeterminate[]` via real Tab).
  */
 export const focusIndicatorAudit = `
 (() => {
   const SEL = 'button, a[href], input:not([type=hidden]), select, textarea, [role=button], [role=link], [role=checkbox], [role=radio], [role=tab], [role=menuitem]';
+  let skipped = 0;
   const els = Array.from(document.querySelectorAll(SEL)).filter(el => {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) return false;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
     if (el.tabIndex < 0) return false;
+    // WCAG 2.4.7 exempts inactive controls — don't flag a missing ring on disabled ones.
+    if (el.disabled === true || el.getAttribute('aria-disabled') === 'true') { skipped++; return false; }
     return true;
   });
   // Cap to 100 to keep snippet snappy
   const sample = els.slice(0, 100);
   const missing = [];
+  const indeterminate = [];
   const previouslyFocused = document.activeElement;
   for (const el of sample) {
     try {
@@ -783,21 +860,34 @@ export const focusIndicatorAudit = `
     // No outline = check for box-shadow ring (common pattern: 0 0 0 2px theme-color).
     const hasOutline = outlineWidth >= ${FOCUS_INDICATOR_MIN_PX} && outlineStyle !== 'none';
     const hasBoxShadowRing = boxShadow && boxShadow !== 'none' && /(\\d+)px/.test(boxShadow);
-    if (!hasOutline && !hasBoxShadowRing) {
-      missing.push({
+    if (hasOutline || hasBoxShadowRing) continue; // has a ring — PASS
+    // No ring seen. Is a :focus-visible-gated rule even active right now?
+    let focusVisible = false;
+    try { focusVisible = el.matches(':focus-visible'); } catch (e) { focusVisible = false; }
+    if (!focusVisible) {
+      // Programmatic focus did not trigger :focus-visible; a ring keyed on it would not render.
+      // Cannot conclude "missing" — mark indeterminate (confirm via real Tab).
+      indeterminate.push({
         tag: el.tagName.toLowerCase(),
         role: el.getAttribute('role'),
         text: (el.textContent || '').trim().slice(0, 40),
-        outlineWidth,
-        outlineStyle,
-        boxShadowPresent: !!hasBoxShadowRing,
       });
-      if (missing.length >= 30) break;
+      if (indeterminate.length >= 30) continue;
+      continue;
     }
+    missing.push({
+      tag: el.tagName.toLowerCase(),
+      role: el.getAttribute('role'),
+      text: (el.textContent || '').trim().slice(0, 40),
+      outlineWidth,
+      outlineStyle,
+      boxShadowPresent: !!hasBoxShadowRing,
+    });
+    if (missing.length >= 30) break;
   }
   // Restore prior focus
   try { if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus({ preventScroll: true }); } catch (e) {}
-  return { evaluated: sample.length, missing };
+  return { evaluated: sample.length, missing, indeterminate, skipped };
 })()
 `.trim();
 
@@ -851,6 +941,210 @@ export function imageAspectAuditSnippet(selector: string = 'img'): string {
     }
   }
   return { selector: SEL, evaluated, violations };
+})()
+`.trim();
+}
+
+/**
+ * WCAG 1.4.11 (Non-text Contrast, AA) auditor — for ICON GLYPHS and graphical objects,
+ * which `contrastAuditSnippet` deliberately skips (it only evaluates text-bearing nodes).
+ * VCST-4400 gap: the outline-first icon migration produced enabled icons at 2.52:1 that the
+ * text auditor could not see. This snippet resolves each glyph's foreground (stroke for outline
+ * icons, fill for solid, else CSS `color`) against its effective background at the 3:1 minimum.
+ *
+ * Default selector targets VC icon components. Only ENABLED icons are evaluated — WCAG 1.4.11
+ * exempts inactive components, so an icon whose nearest interactive ancestor is `disabled` /
+ * `aria-disabled` is counted in `exempt`, not `violations` (avoids the VCST-5100 false-positive).
+ *
+ * Caveats: DOM-only — background images/gradients under the glyph are not analyzed. A glyph
+ * painted over a photo needs pixel inspection (out of scope).
+ *
+ * Returns NonTextContrastAuditResult. Empty `violations[]` = PASS.
+ */
+export function nonTextContrastAuditSnippet(
+  selector: string = 'svg, .vc-icon, [class*="icon"] svg, [class*="icon"]',
+): string {
+  return `
+(() => {
+  const SEL = ${JSON.stringify(selector)};
+  const REQUIRED = ${NON_TEXT_CONTRAST_RATIO};
+  function parseColor(s) {
+    if (!s) return null;
+    const m = s.match(/rgba?\\(([^)]+)\\)/i);
+    if (m) {
+      const p = m[1].split(',').map(x => parseFloat(x.trim()));
+      if (p.length >= 3) return [p[0], p[1], p[2], p[3] == null ? 1 : p[3]];
+    }
+    return null;
+  }
+  function lum(rgb) {
+    const [r, g, b] = rgb.slice(0, 3).map(v => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  function ratio(a, b) { const la = lum(a), lb = lum(b); const [hi, lo] = la > lb ? [la, lb] : [lb, la]; return (hi + 0.05) / (lo + 0.05); }
+  function effectiveBg(el) {
+    let cur = el;
+    while (cur && cur !== document.documentElement) {
+      const bg = parseColor(getComputedStyle(cur).backgroundColor);
+      if (bg && bg[3] > 0) return bg;
+      cur = cur.parentElement;
+    }
+    return parseColor(getComputedStyle(document.documentElement).backgroundColor) || [255, 255, 255, 1];
+  }
+  // Resolve the glyph's painted color: prefer a real stroke (outline icons), then fill (solid), then CSS color.
+  function glyphColor(el, cs) {
+    const stroke = parseColor(cs.stroke);
+    if (cs.stroke && cs.stroke !== 'none' && stroke && stroke[3] > 0) return stroke;
+    const fill = parseColor(cs.fill);
+    if (cs.fill && cs.fill !== 'none' && fill && fill[3] > 0) return fill;
+    return parseColor(cs.color);
+  }
+  const els = Array.from(document.querySelectorAll(SEL)).filter(el => {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return false;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none') return false;
+    return true;
+  });
+  const violations = [];
+  let evaluated = 0, exempt = 0;
+  for (const el of els) {
+    // WCAG 1.4.11 exempts inactive components.
+    const host = el.closest('button, a[href], [role=button], [role=link], input, select, textarea');
+    if (host && (host.disabled === true || host.getAttribute('aria-disabled') === 'true')) { exempt++; continue; }
+    const cs = getComputedStyle(el);
+    const fg = glyphColor(el, cs);
+    if (!fg) continue;
+    evaluated++;
+    const bg = effectiveBg(el);
+    const r = ratio(fg, bg);
+    if (r < REQUIRED) {
+      violations.push({
+        tag: el.tagName.toLowerCase() + (el.getAttribute('data-test-id') ? '[data-test-id=' + el.getAttribute('data-test-id') + ']' : ''),
+        label: (el.getAttribute('aria-label') || (host && host.getAttribute('aria-label')) || (el.getAttribute('name')) || '').slice(0, 40),
+        foreground: 'rgb(' + fg.slice(0, 3).map(Math.round).join(',') + ')',
+        background: 'rgb(' + bg.slice(0, 3).map(Math.round).join(',') + ')',
+        ratio: Math.round(r * 100) / 100,
+        requiredRatio: REQUIRED,
+      });
+      if (violations.length >= 50) break;
+    }
+  }
+  return { selector: SEL, evaluated, violations, exempt };
+})()
+`.trim();
+}
+
+/**
+ * Sized-control oracle (VCST-5413) — for any control with a DECLARED size (icon, avatar,
+ * swatch, slider handle, chip, checkbox): assert the rendered dimension equals its design
+ * token and, where applicable, that it is square (or a fixed ratio). This is the
+ * equality + aspect oracle the `/qa-design` Sized-Control Pass calls for — "≥ threshold /
+ * no-overflow" gates MISS an off-token or wrong-shape control (VCST-5413: a 34×28 oval where
+ * an 18×18 circle belonged passed every threshold gate).
+ *
+ * opts:
+ *   - expectedPx  the resolved token value the control must equal (±1 px). Omit to only check shape.
+ *   - tokenVar    a CSS custom property to resolve the expected px FROM the element (e.g. '--handle-size').
+ *                 Takes precedence over expectedPx when it resolves to a px value.
+ *   - square      require width === height (±1 px). Default true (most sized controls are square).
+ *   - ratio       require width/height === ratio (±2%). Overrides `square` when set.
+ *
+ * Run on BOTH Storybook (isolated) and storefront (integrated) and diff — a size that changes
+ * between the two is the cascade-override red flag this exists to catch.
+ *
+ * Returns SizedControlAuditResult. Empty `violations[]` = PASS.
+ */
+export function sizedControlAuditSnippet(
+  selector: string,
+  opts: { expectedPx?: number; tokenVar?: string; square?: boolean; ratio?: number } = {},
+): string {
+  const square = opts.square !== false && opts.ratio == null;
+  return `
+(() => {
+  const SEL = ${JSON.stringify(selector)};
+  const OPTS = ${JSON.stringify({ expectedPx: opts.expectedPx ?? null, tokenVar: opts.tokenVar ?? null, ratio: opts.ratio ?? null })};
+  const SQUARE = ${square};
+  const TOL = ${SIZED_CONTROL_TOLERANCE_PX};
+  const els = Array.from(document.querySelectorAll(SEL)).filter(el => {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return false;
+    const cs = getComputedStyle(el);
+    return cs.visibility !== 'hidden' && cs.display !== 'none';
+  });
+  const violations = [];
+  let evaluated = 0;
+  let resolvedExpected = OPTS.expectedPx;
+  for (const el of els) {
+    evaluated++;
+    const r = el.getBoundingClientRect();
+    const w = Math.round(r.width * 10) / 10, h = Math.round(r.height * 10) / 10;
+    let expected = OPTS.expectedPx;
+    if (OPTS.tokenVar) {
+      const tv = getComputedStyle(el).getPropertyValue(OPTS.tokenVar).trim();
+      const px = parseFloat(tv);
+      if (!Number.isNaN(px)) { expected = px; resolvedExpected = px; }
+    }
+    const reasons = [];
+    if (expected != null && (Math.abs(w - expected) > TOL || Math.abs(h - expected) > TOL)) {
+      reasons.push('off-token (rendered ' + w + 'x' + h + ' vs token ' + expected + 'px)');
+    }
+    if (OPTS.ratio != null) {
+      const actual = h > 0 ? w / h : 0;
+      if (Math.abs(actual - OPTS.ratio) / OPTS.ratio > 0.02) reasons.push('wrong ratio ' + (Math.round(actual * 100) / 100) + ' vs ' + OPTS.ratio);
+    } else if (SQUARE && Math.abs(w - h) > TOL) {
+      reasons.push('non-square ' + w + 'x' + h);
+    }
+    if (reasons.length) {
+      violations.push({ tag: el.tagName.toLowerCase() + (el.getAttribute('data-test-id') ? '[data-test-id=' + el.getAttribute('data-test-id') + ']' : ''), width: w, height: h, reason: reasons.join('; '), expectedPx: expected });
+      if (violations.length >= 40) break;
+    }
+  }
+  return { selector: SEL, expectedPx: resolvedExpected, square: SQUARE, ratio: OPTS.ratio, evaluated, violations };
+})()
+`.trim();
+}
+
+/**
+ * Alert-semantics auditor (WCAG 4.1.3 Status Messages) — VCST-4400 gap. VC surfaces some
+ * warnings in NON-semantic containers (the cart over-stock message renders in
+ * `div.vc-line-item__after` with no `role="alert"`/`aria-live`), so a screen reader never
+ * announces them. This finds visible, text-bearing candidates matching `selector` that carry
+ * NO alert/status/live semantics (on themselves or an ancestor).
+ *
+ * Advisory by design (WARN) — not every matched container is a status message; a human confirms
+ * which ones should announce. Point it at suspected message slots
+ * (e.g. `.vc-line-item__after, [class*="error"], [class*="warning"]`).
+ *
+ * Returns AlertSemanticsAuditResult. Empty `unannounced[]` = PASS.
+ */
+export function alertSemanticsAuditSnippet(
+  selector: string = '.vc-alert--danger, .vc-alert--warning, [class*="line-item__after"], [class*="error"], [class*="warning"]',
+): string {
+  return `
+(() => {
+  const SEL = ${JSON.stringify(selector)};
+  const isAnnounced = el => !!(el.closest('[role=alert], [role=alertdialog], [role=status], [aria-live]') || el.querySelector('[role=alert], [role=status], [aria-live]'));
+  const els = Array.from(document.querySelectorAll(SEL)).filter(el => {
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none') return false;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return false;
+    return (el.textContent || '').trim().length > 0;
+  });
+  const unannounced = [];
+  let evaluated = 0;
+  for (const el of els) {
+    evaluated++;
+    if (!isAnnounced(el)) {
+      unannounced.push({
+        tag: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(/\\s+/).slice(0, 2).join('.') : ''),
+        text: (el.textContent || '').trim().slice(0, 80),
+      });
+      if (unannounced.length >= 40) break;
+    }
+  }
+  return { selector: SEL, evaluated, unannounced };
 })()
 `.trim();
 }
@@ -980,8 +1274,11 @@ export interface LayoutFinding {
     | "BL-UI-006"
     | "BL-UI-007"
     | "BL-UI-008"
+    | "BL-UI-008-NONTEXT"
     | "BL-UI-009"
     | "BL-UI-010"
+    | "SIZED-CONTROL"
+    | "WCAG-4.1.3"
     | "ADMIN-BLADE-OVERLAP";
   severity: Severity;
   message: string;
@@ -1150,18 +1447,82 @@ export function classifyContrast(result: ContrastAuditResult): LayoutFinding {
 export function classifyFocusIndicator(
   result: FocusIndicatorAuditResult,
 ): LayoutFinding {
+  const indet = result.indeterminate?.length ?? 0;
+  const indetNote = indet > 0 ? ` (${indet} indeterminate — confirm via real keyboard Tab)` : "";
   if (result.missing.length === 0) {
+    // No confirmed miss. If some were indeterminate, WARN rather than a clean PASS —
+    // programmatic focus couldn't assess a :focus-visible-gated ring on those.
     return {
       invariant: "BL-UI-009",
-      severity: "PASS",
-      message: `All ${result.evaluated} interactives have a visible focus indicator`,
+      severity: indet > 0 ? "WARN" : "PASS",
+      message: `${result.evaluated} interactives audited: no confirmed missing focus ring${indetNote}`,
       evidence: result,
     };
   }
   return {
     invariant: "BL-UI-009",
     severity: "FAIL",
-    message: `${result.missing.length} interactive(s) without visible focus ring (≥ ${FOCUS_INDICATOR_MIN_PX} px outline OR contrasting box-shadow)`,
+    message: `${result.missing.length} interactive(s) with :focus-visible active but no ring (≥ ${FOCUS_INDICATOR_MIN_PX} px outline OR contrasting box-shadow)${indetNote}`,
+    evidence: result,
+  };
+}
+
+export function classifyNonTextContrast(
+  result: NonTextContrastAuditResult,
+): LayoutFinding {
+  if (result.violations.length === 0) {
+    return {
+      invariant: "BL-UI-008-NONTEXT",
+      severity: "PASS",
+      message: `All ${result.evaluated} enabled glyphs meet WCAG 1.4.11 (${NON_TEXT_CONTRAST_RATIO}:1); ${result.exempt} exempt (disabled)`,
+      evidence: result,
+    };
+  }
+  const worst = result.violations.reduce((a, b) => (a.ratio < b.ratio ? a : b));
+  return {
+    invariant: "BL-UI-008-NONTEXT",
+    severity: "FAIL",
+    message: `${result.violations.length} icon/graphic contrast violation(s) (WCAG 1.4.11); worst ${worst.ratio}:1 (needs ${worst.requiredRatio}:1)${worst.label ? ` on "${worst.label}"` : ""}`,
+    evidence: result,
+  };
+}
+
+export function classifySizedControl(
+  result: SizedControlAuditResult,
+): LayoutFinding {
+  if (result.violations.length === 0) {
+    return {
+      invariant: "SIZED-CONTROL",
+      severity: "PASS",
+      message: `All ${result.evaluated} control(s) on token${result.expectedPx != null ? ` (${result.expectedPx}px)` : ""}${result.square ? " and square" : ""}`,
+      evidence: result,
+    };
+  }
+  const sample = result.violations[0];
+  return {
+    invariant: "SIZED-CONTROL",
+    severity: "FAIL",
+    message: `${result.violations.length} sized-control violation(s); first: ${sample.tag} ${sample.reason}`,
+    evidence: result,
+  };
+}
+
+export function classifyAlertSemantics(
+  result: AlertSemanticsAuditResult,
+): LayoutFinding {
+  if (result.unannounced.length === 0) {
+    return {
+      invariant: "WCAG-4.1.3",
+      severity: "PASS",
+      message: `All ${result.evaluated} alert-like element(s) carry alert/status/live semantics`,
+      evidence: result,
+    };
+  }
+  // Advisory — needs human confirmation that these are genuine status messages.
+  return {
+    invariant: "WCAG-4.1.3",
+    severity: "WARN",
+    message: `${result.unannounced.length} visible message(s) with no role=alert/status/aria-live (screen reader won't announce); first: "${result.unannounced[0].text}"`,
     evidence: result,
   };
 }
@@ -1248,8 +1609,11 @@ export interface LayoutAuditBundle {
   shifts?: Array<{ before: RectSnapshot; after: RectSnapshot }>;
   occlusion?: OcclusionAuditResult;
   contrast?: ContrastAuditResult;
+  nonTextContrast?: NonTextContrastAuditResult;
   focusIndicator?: FocusIndicatorAuditResult;
   imageAspect?: ImageAspectAuditResult;
+  sizedControl?: SizedControlAuditResult;
+  alertSemantics?: AlertSemanticsAuditResult;
   bladeOverflow?: BladeStaticOverflowResult;
 }
 
@@ -1268,8 +1632,11 @@ export function analyzeLayoutResults(
   if (bundle.targets) findings.push(classifyTouchTargets(bundle.targets));
   if (bundle.occlusion) findings.push(classifyOcclusion(bundle.occlusion));
   if (bundle.contrast) findings.push(classifyContrast(bundle.contrast));
+  if (bundle.nonTextContrast) findings.push(classifyNonTextContrast(bundle.nonTextContrast));
   if (bundle.focusIndicator) findings.push(classifyFocusIndicator(bundle.focusIndicator));
   if (bundle.imageAspect) findings.push(classifyImageAspect(bundle.imageAspect));
+  if (bundle.sizedControl) findings.push(classifySizedControl(bundle.sizedControl));
+  if (bundle.alertSemantics) findings.push(classifyAlertSemantics(bundle.alertSemantics));
   if (bundle.bladeOverflow) findings.push(classifyBladeStaticOverflow(bundle.bladeOverflow));
   if (bundle.shifts) {
     for (const s of bundle.shifts) {
