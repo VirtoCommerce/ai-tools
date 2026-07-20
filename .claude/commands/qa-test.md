@@ -29,9 +29,9 @@ Gather all inputs and determine scope. Combines pre-flight checks with scope ana
 2. **Build & version verification** — use GitHub MCP `get_file_contents` to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs):
    - Record: platform version (`PlatformVersion`), theme version (from `artifact.json` URL), and modules relevant to the ticket scope
    - **For PR testing:** PRs are deployed to QA while still open. Confirm the PR's build artifact version appears in `packages.json` (modules) or `artifact.json` (theme). If not deployed → warn user and ask whether to wait
-3. **Duplicate check** — scan `tests/{SPRINT}/` for the same ticket tested in the last 2 hours. If found, warn user and show previous results.
+3. **Duplicate check** — scan `reports/tickets/{SPRINT}/` for the same ticket tested in the last 2 hours. If found, warn user and show previous results.
 
-**Resolve current sprint** — check if `tests/Sprint-current` exists → use it. Otherwise list `tests/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths. Create the folder if it doesn't exist.
+**Resolve current sprint** — check if `reports/tickets/Sprint-current` exists → use it. Otherwise list `reports/tickets/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths (rooted at `reports/tickets/{SPRINT}/`). Create the folder if it doesn't exist.
 
 **Scope analysis:**
 
@@ -78,7 +78,7 @@ The BA returns (see `ba-story-writer` Mode B):
 
 **Surface to the user inline:** the weak ACs, the DRIFT/CONTRADICTS/scope-creep findings, and the gap-ACs. Then **proceed** — fold the **gap-ACs into the test scope** alongside the story's own ACs, and carry every DRIFT/NOT-FOUND/CONTRADICTS into execution as a thing to verify **live** (a static-diff finding is a suspicion, not a defect).
 
-**Output:** write the AC traceability table to `tests/{SPRINT}/VCST-XXXX/ac-analysis.md`. It is the spine for Step 3 (test cases) and Step 6 (verdict + live reconciliation).
+**Output:** write the AC traceability table to `reports/tickets/{SPRINT}/VCST-XXXX/ac-analysis.md`. It is the spine for Step 3 (test cases) and Step 6 (verdict + live reconciliation).
 
 ---
 
@@ -128,8 +128,8 @@ The specialist follows the **`/qa-plan` methodology scoped to this ticket** — 
    - Flag gaps where no existing test case covers a condition
 3. **If no test cases exist** → generate **new test cases** using `/qa-test-cases-generator` methodology:
    - Derive cases from the Step 1b AC conditions (story + gap-ACs), `E2E-*` scenarios, `BL-*` invariants, `ECL-*` patterns, and domain checklists
-   - Write cases to `tests/{SPRINT}/VCST-XXXX/test-cases.csv`
-4. **Output:** `tests/{SPRINT}/VCST-XXXX/testing-checklist.md` — used by execution agents in Step 4 as their test plan.
+   - Write cases to `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv`
+4. **Output:** `reports/tickets/{SPRINT}/VCST-XXXX/testing-checklist.md` — used by execution agents in Step 4 as their test plan.
 
 ---
 
@@ -146,7 +146,7 @@ Launch all applicable agents **simultaneously** in a single message using the Ag
 - **Edge cases to cover** — `ECL-*` patterns from Step 2
 - The browser server to use (from routing table in Step 2)
 - Environment URLs
-- Output path: `tests/{SPRINT}/VCST-XXXX/` or `tests/{SPRINT}/feature-name/`
+- Output path: `reports/tickets/{SPRINT}/VCST-XXXX/` or `reports/tickets/{SPRINT}/feature-name/`
 - Evidence capture policy: `skills/qa-evidence/evidence-capture-policy.md`
 
 Example prompt structure:
@@ -156,7 +156,7 @@ Test VCST-XXXX on the [backend/frontend].
 Context: [brief description of what changed]
 Environment: {FRONT_URL} / {BACK_URL}
 Browser: {BROWSER_SERVER}
-Output: tests/{SPRINT}/VCST-XXXX/
+Output: reports/tickets/{SPRINT}/VCST-XXXX/
 
 Testing checklist: [from Step 3 output]
 
@@ -175,7 +175,7 @@ Evidence policy: follow skills/qa-evidence/evidence-capture-policy.md
 
 Always-on bug detection (shared-instructions §Always-On Bug Detection): the checklist is the floor, not the ceiling. While executing, hunt across EVERY layer (UI/visual, functional, console, network, GraphQL errors[] inside 200, a11y, perf) and file any incidental defect you see — even one unrelated to this ticket (out-of-scope-bug rule). Pursue every "huh." Verify before filing (disabled control / API-only / by-design are not bugs).
 
-Write a test execution report to tests/{SPRINT}/VCST-XXXX/test-execution-report.md.
+Write a test execution report to reports/tickets/{SPRINT}/VCST-XXXX/test-execution-report.md.
 ```
 
 ---
@@ -204,7 +204,7 @@ After all execution agents return, run a **targeted exploratory session** using 
 
    Environment: {FRONT_URL} / {BACK_URL}
    Browser: playwright-firefox
-   Output: tests/{SPRINT}/VCST-XXXX/exploratory-session.md
+   Output: reports/tickets/{SPRINT}/VCST-XXXX/exploratory-session.md
 
    Log findings in real-time. Classify each as: Bug | Question | Observation | Risk.
    Follow evidence capture policy for any bugs found.
@@ -278,12 +278,12 @@ Exploratory: [N] findings ([bugs/observations/risks]).
 App Insights (test window): [N] correlated signals — [confirmed/needs-review/none].
 Business rules verified: [BL-* list].
 Bugs: [list or None]. Decision: [verdict].
-Artifacts: tests/{SPRINT}/VCST-XXXX/
+Artifacts: reports/tickets/{SPRINT}/VCST-XXXX/
 ```
 
 **6f. Deliver summary:**
 
-Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
+Write `reports/tickets/{SPRINT}/VCST-XXXX/summary.json`:
 ```json
 {
   "ticket": "VCST-XXXX",
@@ -303,7 +303,7 @@ Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
     "impl_coverage": { "satisfied": 0, "drift": 0, "contradicts": 0, "not_found": 0 },
     "conditions_total": 0,
     "conditions_with_evidence": 0,
-    "artifact": "tests/{SPRINT}/VCST-XXXX/ac-analysis.md"
+    "artifact": "reports/tickets/{SPRINT}/VCST-XXXX/ac-analysis.md"
   },
   "total_cases": 0,
   "passed": 0,
@@ -323,7 +323,7 @@ Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
     "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
     "correlated_failures": []
   },
-  "artifacts": "tests/{SPRINT}/VCST-XXXX/"
+  "artifacts": "reports/tickets/{SPRINT}/VCST-XXXX/"
 }
 ```
 

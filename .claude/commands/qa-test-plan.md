@@ -49,7 +49,7 @@ Parse any of `SprintXX-YY` / `sprint-XX-YY` / `XX-YY` (where `XX` is the year su
 
 If parsing fails (input doesn't match `XX-YY` and isn't `current`/`last`), ask the user for the correct sprint label rather than guessing.
 
-**Output target:** `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` (single canonical location for all sprint plans — co-located with the structural reference). Per-ticket test artifacts (test-cases.csv, exploratory-session.md, etc.) continue to live under `tests/{SPRINT_LABEL}/VCST-XXXX/` — the sprint plan does NOT go there. Create the `vc/shared/docs/Sprint plans/` directory if it doesn't exist.
+**Output target:** `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` (single canonical location for all sprint plans — co-located with the structural reference). Per-ticket test artifacts (test-cases.csv, exploratory-session.md, etc.) continue to live under `reports/tickets/{SPRINT_LABEL}/VCST-XXXX/` — the sprint plan does NOT go there. Create the `vc/shared/docs/Sprint plans/` directory if it doesn't exist.
 
 **Duplicate guard:** If `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` already exists, ask the user whether to overwrite or append a `-v2` suffix. Never silently overwrite.
 

@@ -15,7 +15,7 @@
  *   npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
  *
  * Flags:
- *   --sprint=<S>     place the package under tests/<S>/<TICKET>/ (else reports/tickets/<TICKET>/)
+ *   --sprint=<S>     place the package under reports/tickets/<S>/<TICKET>/ (else reports/tickets/<TICKET>/)
  *   --browser=<b>    which test-results/<b>/ to scan for raw HAR/video/console (default: chrome)
  *   --symptom="..."  one-line symptom pre-filled into the manifest + worksheet
  *   --check          re-scan an existing package and print the completeness report (no scaffold)
@@ -72,7 +72,7 @@ const ENV_RISK = process.env.ENV_RISK || envVars.ENV_RISK || 'unknown';
 
 // ---------- package location ----------
 const baseDir = sprint
-  ? join('tests', sprint, ticket)
+  ? join('reports', 'tickets', sprint, ticket)
   : join('reports', 'tickets', ticket);
 
 const SUBDIRS = ['screenshots', 'network', 'console', 'har', 'source'] as const;

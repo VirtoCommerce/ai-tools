@@ -154,7 +154,7 @@
 | `docs/prompts/` | LLM prompt templates for QA automation |
 | `reports/bugs/` | Bug reports with evidence |
 | `reports/regression/` | Regression results + history.json |
-| `tests/SprintXX-XX/` | Test cases by sprint/JIRA ticket |
+| `reports/tickets/SprintXX-XX/` | Test cases by sprint/JIRA ticket |
 | `test-data/` | Test fixtures (users, addresses, payment cards) |
 | `config.js` | Environment configuration (loads .env) |
 | `.mcp.json` | MCP server configuration (gitignored, local-only) |

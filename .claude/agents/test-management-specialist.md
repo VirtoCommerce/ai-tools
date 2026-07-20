@@ -204,7 +204,7 @@ BLOCKED ❌ → escalate to qa-lead
 2. **Decompose into layers** — Which layers apply? (API, GraphQL, Admin, Storefront, E2E). Record in test plan
 3. **Explore per layer (MANDATORY)** — Run `/qa-sbtm <feature>` first to surface unknown unknowns before writing test cases. Then explore per layer: Storefront labels, Admin blades, API schemas, GraphQL operations (see UI Exploration Protocol above). Use `/qa-api ref <module>` to get exact mutation/query signatures before writing test steps
 4. **Apply test design techniques (MANDATORY)** — Run `/qa-test-design <feature>` to systematically derive test conditions before writing cases. **The techniques serve the four Mental Model questions — they don't replace them.** Use them to operationalize "how do we break this?" and "what wasn't considered?": pairwise for toggles/flags, decision tables for business rules, state transitions for lifecycles, **error guessing for "what if X breaks?" gaps the spec missed**, BVA for numeric edges. Produces structured test conditions that feed directly into step 6. Skip this step only for trivial bug-fix verifications with < 3 test cases.
-5. **Create test plan** — Save to `tests/SprintXX-XX/VCST-XXXX/test-plan.md` with **Layer Coverage Matrix**:
+5. **Create test plan** — Save to `reports/tickets/SprintXX-XX/VCST-XXXX/test-plan.md` with **Layer Coverage Matrix**:
    ```
    | Layer | Applicable? | # Cases | Assigned Agent | Target Suite |
    |-------|-------------|---------|---------------|-------------|
@@ -245,7 +245,7 @@ BLOCKED ❌ → escalate to qa-lead
    seeds the gap fixtures (they are `seeded=false` templates until then) and writes real IDs back so
    `@td(COMBO_ALIAS.field)` resolves. Document `{{VAR}}` bindings + the `@td()` combination aliases in
    the Test_Data column. (Step 5b designs + authors the data; this step provisions it.)
-9. **Organize into suites** — Only `Reviewed` cases go into regression-eligible suites. API→`Backend/api/049-*`, GraphQL→`Backend/graphql/050*`, Admin→`Backend/<module>/*`, Storefront→`Frontend/<area>/*`, E2E→feature suite. `Draft` cases live in `tests/Sprint-current/VCST-XXXX/` until promoted
+9. **Organize into suites** — Only `Reviewed` cases go into regression-eligible suites. API→`Backend/api/049-*`, GraphQL→`Backend/graphql/050*`, Admin→`Backend/<module>/*`, Storefront→`Frontend/<area>/*`, E2E→feature suite. `Draft` cases live in `reports/tickets/Sprint-current/VCST-XXXX/` until promoted
 10. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
 11. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
 12. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority (Draft vs Reviewed counts), coverage %, delegation per layer, JIRA links

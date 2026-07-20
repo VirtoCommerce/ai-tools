@@ -4,13 +4,13 @@
 
 | Artifact Type | Path | Examples |
 |---------------|------|----------|
-| **Test documentation** (plans, cases, execution reports, testrail CSVs) | `tests/SprintXX-XX/VCST-XXXX/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
-| **Test screenshots** (evidence captured during test execution) | `tests/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
+| **Test documentation** (plans, cases, execution reports, testrail CSVs) | `reports/tickets/SprintXX-XX/VCST-XXXX/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
+| **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
 | **Bug reports — open** (active bugs) | `reports/bugs/open/` | `BUG-Checkout-Payment-Overlap-iOS.md` |
 | **Bug reports — fixed** (verified fixes, kept for regression reference) | `reports/bugs/fixed/` | `BUG-Cart-Total-Reset-VCST-4700.md` |
 | **Bug reports — closed** (won't fix, false positive, cannot reproduce) | `reports/bugs/closed/` | `BUG-GA4-add-payment-info.md` |
 | **Bug evidence** (screenshots & API traces for bugs) | `reports/bugs/screenshots/` and `reports/bugs/api-traces/` | `payment-form-broken-ios.png`, `graphql-error-response.json` |
-| **Ticket test evidence** (ad-hoc evidence with no sprint context) | `reports/tickets/VCST-XXXX/` | `test-report.md`, `screenshots/*.png` — use only for hotfix or ad-hoc verification outside a sprint |
+| **Ticket test evidence** (ad-hoc evidence with no sprint context) | `reports/tickets/VCST-XXXX/` | `test-report.md`, `screenshots/*.png` — use only for hotfix or ad-hoc verification outside a sprint (no `SprintXX-XX/` subfolder) |
 | **Regression reports** (suite-level & consolidated reports) | `reports/regression/` | `frontend-regression-report-2026-02-09.md` |
 | **Full regression runs** (multi-suite reports) | `reports/regression/REG-YYYY-MM-DD-HHMM/` | suite reports, `REGRESSION-REPORT.md` |
 | **Smoke test runs** (`/qa-smoke` Track A + Track B) | `reports/regression/SMOKE-YYYY-MM-DD-HHMM/` | `smoke-report.md`, `suite-01-trackA-results.json`, `suite-01-trackB-results.json`, `trackA-evidence/`, `trackB-evidence/` |
@@ -42,7 +42,7 @@
 ## Folder Structure Per Ticket
 
 ```
-tests/SprintXX-XX/VCST-XXXX-feature-name/
+reports/tickets/SprintXX-XX/VCST-XXXX-feature-name/
 ├── test-plan.md
 ├── test-cases.md
 ├── test-execution-report.md
@@ -55,8 +55,8 @@ tests/SprintXX-XX/VCST-XXXX-feature-name/
 ## Important Rules
 
 - `test-results/` is gitignored -- use it only for raw browser output (HAR, videos, console logs)
-- `tests/` and `reports/` are tracked in git -- use them for all documentation artifacts
-- Never save test documentation into `test-results/` and never save raw browser dumps into `tests/` or `reports/`
-- **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/VCST-XXXX/` or `tests/SprintXX-XX/VCST-XXXX/`
-- **Default for `/qa-test` runs:** always use `tests/SprintXX-XX/VCST-XXXX/`; only use `reports/tickets/` for ad-hoc evidence with no sprint context
+- `reports/` is tracked in git -- use it for all documentation artifacts (the top-level `tests/` dir now holds only repo unit tests, not QA evidence)
+- Never save test documentation into `test-results/` and never save raw browser dumps into `reports/`
+- **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/SprintXX-XX/VCST-XXXX/` (sprint context) or `reports/tickets/VCST-XXXX/` (ad-hoc, no sprint subfolder)
+- **Default for `/qa-test` runs:** always use `reports/tickets/SprintXX-XX/VCST-XXXX/`; only use `reports/tickets/VCST-XXXX/` (no `SprintXX-XX/` subfolder) for ad-hoc evidence with no sprint context
 - See `reports/README.md` for full naming convention reference

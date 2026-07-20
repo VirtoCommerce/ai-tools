@@ -48,7 +48,7 @@ Test Storybook components for visual regression, responsive behavior, and state 
 
 5. **Output:**
    - Visual diff report with pass/fail per component/state/viewport
-   - New baselines saved to test evidence directory (e.g., `tests/SprintXX-XX/VCST-XXXX/screenshots/`)
+   - New baselines saved to test evidence directory (e.g., `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/`)
    - Summary: X components tested, Y passed, Z regressions found
 
 ## Rules

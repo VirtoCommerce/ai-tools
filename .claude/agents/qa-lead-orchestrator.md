@@ -270,7 +270,7 @@ transitionJiraIssue({ issueKey: "VCST-XXXX", transition: "Need fixes" })  // Fai
 ### Communication Templates
 
 **Starting:** `QA testing started. Assigned to: [agents]. Scope: [areas]. Environment: [QA].`
-**Complete:** `QA Complete — [X] cases, [Y] passed, [Z] failed. Bugs: [list]. Decision: [verdict]. Artifacts: tests/SprintXX-XX/VCST-XXXX/`
+**Complete:** `QA Complete — [X] cases, [Y] passed, [Z] failed. Bugs: [list]. Decision: [verdict]. Artifacts: reports/tickets/SprintXX-XX/VCST-XXXX/`
 **Delegation:** `@[agent]: [instruction] | Context: VCST-XXXX, P[X], [QA] | Tasks: [list] | Focus: [edge cases] | Expected: [deliverable]`
 
 ### Release Report Template
