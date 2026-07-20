@@ -19,7 +19,7 @@
  *
  * Exit codes: 0 ok · 2 bad args / env · 1 no programs matched.
  */
-import { assertSafeTarget, auth, api, log, DRY_RUN } from '../lib/seed-common.mjs';
+import { assertSafeTarget, auth, api, log, DRY_RUN } from '../../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);
 const getArg = (flag) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : null);
