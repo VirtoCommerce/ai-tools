@@ -39,7 +39,7 @@ import { dirname, resolve } from 'node:path';
 import { parse as parseDotenv } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '..');
+const REPO_ROOT = resolve(__dirname, '..', '..');
 const OWNER = 'VirtoCommerce';
 const POLL_INTERVAL_MS = 15_000;
 const POLL_TIMEOUT_MS = 25 * 60_000; // hotfix build+test+publish can take ~10-20 min

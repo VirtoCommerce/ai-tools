@@ -44,7 +44,7 @@ Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 re
 
 > **`--verify` is MANDATORY before promoting a new-feature or ungrounded suite.** A suite that contains any `{HYPOTHESIS}` or unconfirmed-`{SPEC}` assertion (typical for a brand-new feature with no VirtoOZ doc / no source yet) cannot be promoted `Draft → Reviewed` on static review alone — the live `--verify` pass is the only step that can ground those assertions to `{OBSERVED}`. Fully `{BL}`/`{DOC}`/`{SPEC}`-grounded suites for existing features may promote on static review.
 
-> **Run the deterministic linter first.** `npm run suites:review -- <csv>` (`scripts/lint-test-cases.ts`)
+> **Run the deterministic linter first.** `npm run suites:review -- <csv>` (`scripts/test-cases/lint-test-cases.ts`)
 > mechanises the rule-based core of dimensions **1–7 and 9** — S-/D-/C-/T-/DV-/BL-/REQ-/DUP-/TC- checks
 > as exact rules, with `--json` for machine consumption and a `--fail-on` severity gate. It is the single
 > source for these rules; DV-013 still runs via `validate-td-refs.ts` and DV-019 via `graphql:lint-labels`
@@ -131,7 +131,7 @@ For every test case row, evaluate:
   - [ ] MoneyType uses `currency { code }` not `currencyCode` (DV-011)
 - [ ] Referenced products/SKUs exist in `test-data/` or use `{{TEST_SKU}}`
 - [ ] Referenced org users use `{{ORG_USER_EMAIL}}` not hardcoded emails
-- [ ] **Golden Rule — no hardcoded env-dependent values** (DV-013…DV-018, DV-020). Machine check: `npx tsx scripts/validate-td-refs.ts` (fails on hardcoded GUID/ID literals by default; `--warn-only` to downgrade):
+- [ ] **Golden Rule — no hardcoded env-dependent values** (DV-013…DV-018, DV-020). Machine check: `npx tsx scripts/test-data/validate-td-refs.ts` (fails on hardcoded GUID/ID literals by default; `--warn-only` to downgrade):
   - [ ] No GUIDs/entity IDs for products/catalogs/categories/users/orgs/orders (DV-013) — use `@td()` resolver or runtime resolution
   - [ ] No fixture/alias column holding a volatile system GUID (DV-020) — reference by business key (`code`/`promo_name`/`slug`/`sku`); capture a system id at runtime, never persist it (the `gql_id` anti-pattern)
   - [ ] No literal SKUs / product names outside `test-data/` fixtures (DV-014) — use `{{TEST_SKU}}` or `@td(ALIAS.sku)`

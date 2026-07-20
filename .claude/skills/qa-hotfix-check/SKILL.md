@@ -48,7 +48,7 @@ it never cuts a release.
 Resolving "task → PR → fix commit → released patch on the env's line", editing the manifest, dispatching
 via a push, and polling two endpoints is mechanical. So:
 
-- **`scripts/hotfix-deliver.ts`** owns steps 1–3 below: resolve, the gated `packages.json` commit, the
+- **`scripts/hotfix/hotfix-deliver.ts`** owns steps 1–3 below: resolve, the gated `packages.json` commit, the
   deploy-Action poll, and the live module-version poll. **Read-only by default** (dry-run); `--apply`
   performs the gated write.
 - The **agent/orchestrator** owns the judgment: confirm each write, run the live **fix-behaviour**
@@ -245,4 +245,4 @@ file under `reports/`. A delivery that changes a release decision flows into the
 - `config/module-repo-map.json` (shared with `bundle:check` / `hotfix:precheck`) maps repo → manifest
   module Id and self-heals for new modules.
 - Tag/line scheme assumed: bare `Major.Minor.Patch`. Adjust `parseSemVer` / `highestOnLine` in
-  `scripts/hotfix-deliver.ts` if a repo diverges.
+  `scripts/hotfix/hotfix-deliver.ts` if a repo diverges.

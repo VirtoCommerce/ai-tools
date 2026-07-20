@@ -157,7 +157,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | Figma comparison | `/qa-design` | `design-system-consistency.md` |
 | API verification | `/qa-api ref <module>` | `xapi-query-ref.md` |
 | GraphQL interaction (GraphiQL UI) | — | `knowledge/api/graphiql-interaction.md` |
-| **Runner-native GraphQL test cases** | — | **`knowledge/api/graphql-test-cases-runner.md`** — read this before writing, reviewing, or migrating any GraphQL test case. Defines the `Steps`/`Assertions`/`Cleanup` grammar that `scripts/graphql-runner.ts` consumes. |
+| **Runner-native GraphQL test cases** | — | **`knowledge/api/graphql-test-cases-runner.md`** — read this before writing, reviewing, or migrating any GraphQL test case. Defines the `Steps`/`Assertions`/`Cleanup` grammar that `scripts/graphql/graphql-runner.ts` consumes. |
 | **Live discovery + random inputs** | — | **`knowledge/execution/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS recipes (`scripts/lib/live-discover.ts`, `random-data.ts`), CSV-runner recipes (`[GQL-OP]+[GQL-CAPTURE]`), parallel-run isolation via agent user pool, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves a product/address/cart/coupon entity at runtime. |
 | Live xAPI schema | — | `knowledge/api/graphql-schema.md` |
 | VC documentation | `/vc-docs` | Context7 MCP |

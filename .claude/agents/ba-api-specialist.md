@@ -91,7 +91,7 @@ When the slug is unclear, search rather than guess: `mcp__github__search_reposit
 
 **Existing project knowledge to consult before re-deriving the API surface:**
 - `knowledge/api/graphql-schema.md` — live introspected snapshot of the xAPI GraphQL schema (queries, mutations, input types, return types). Faster than re-introspecting; refresh via `npm run schema:refresh` if it looks stale.
-- `knowledge/api/graphql-test-cases-runner.md` — canonical authoring contract for the QA team's runner-native GraphQL test cases (consumed by `scripts/graphql-runner.ts`). When you flag coverage gaps for GraphQL endpoints, point downstream test-authoring agents (test-management-specialist, qa-backend-expert) at this format. New GraphQL tests MUST be written in this format, not as Postman requests or GraphiQL UI flows.
+- `knowledge/api/graphql-test-cases-runner.md` — canonical authoring contract for the QA team's runner-native GraphQL test cases (consumed by `scripts/graphql/graphql-runner.ts`). When you flag coverage gaps for GraphQL endpoints, point downstream test-authoring agents (test-management-specialist, qa-backend-expert) at this format. New GraphQL tests MUST be written in this format, not as Postman requests or GraphiQL UI flows.
 - `knowledge/api/api-auth.md` — Platform OAuth2 token flow (consistent with how the runner acquires tokens via `[AUTH role=…]`).
 - `knowledge/execution/module-suite-map.md` — module-to-test-suite mapping (use to flag "Postman has X requests but `regression/suites/Backend/<module>/` already covers Y").
 - `regression/suites/Backend/graphql/` and `regression/suites/Backend/api/` — existing GraphQL + REST test coverage; reference when reporting overlap with Postman.
@@ -100,7 +100,7 @@ When the slug is unclear, search rather than guess: `mcp__github__search_reposit
 
 **Live GraphQL introspection (when schema snapshot looks stale or a new mutation is suspected):**
 - `POST {api_base_url}/graphql` with the standard introspection query — or run `npm run schema:refresh` (writes both the cached `scripts/.graphql-schema.cache.json` and updates `knowledge/api/graphql-schema.md`).
-- One-off probe: `npx tsx scripts/graphql-runner.ts --query "{ __type(name: \"TypeName\") { fields { name } } }"` — validates without sending a real request.
+- One-off probe: `npx tsx scripts/graphql/graphql-runner.ts --query "{ __type(name: \"TypeName\") { fields { name } } }"` — validates without sending a real request.
 
 **From Live Swagger UI (browser):**
 Use **`playwright-edge`** to browse the Swagger UI at `{api_base_url}/docs/`:
@@ -237,7 +237,7 @@ Write API docs that a developer can read and use in under 5 minutes. The structu
 - **Every mutation example must show variables**, either inline in the operation or in a `# Variables:` block beneath it. A bare mutation field with no inputs is useless.
 - **"What happens after" is mandatory** for every mutation example: name the server-side calls (`UpdateConfiguredLineItemPrice`, `RecalculateAsync`, `SaveAsync`, etc.), the locks acquired, the cascade. The reader must know whether to expect a reprice, an index update, a webhook, or a side effect on neighboring entities.
 - **No QA-internal sections in the user-facing doc.** "Test-Data File Validation", "API Health and Consistency Findings" and similar audit content belong in the structured JSON output (`health_issues`, `postman_improvements`), NOT in `api_docs_markdown`. Developers reading the docs do not want internal verification artifacts.
-- **Schema-validate before publishing.** Confirm every type/field name against `knowledge/api/graphql-schema.md` (or run live introspection via `scripts/graphql-runner.ts --query`). Confirm the endpoint URL pattern (`{BACK_URL}/graphql` for xAPI, NOT `/xapi/graphql` — see `reference_graphql_endpoints` memory).
+- **Schema-validate before publishing.** Confirm every type/field name against `knowledge/api/graphql-schema.md` (or run live introspection via `scripts/graphql/graphql-runner.ts --query`). Confirm the endpoint URL pattern (`{BACK_URL}/graphql` for xAPI, NOT `/xapi/graphql` — see `reference_graphql_endpoints` memory).
 - **Cross-link companion docs** instead of duplicating. The system-analysis report has flow diagrams and pain-point analysis; the developer-quickstart has React/Apollo storefront code. Link to them from the API doc rather than re-rendering.
 
 #### Skeleton

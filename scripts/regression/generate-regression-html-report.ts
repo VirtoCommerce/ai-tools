@@ -240,7 +240,7 @@ function categorize(suiteId: string): NormSuite["category"] {
 function findManifest(): string | null {
   const candidates = [
     resolve(process.cwd(), "config/test-suites.json"),
-    resolve(dirname(fileURLToPath(import.meta.url)), "../config/test-suites.json"),
+    resolve(dirname(fileURLToPath(import.meta.url)), "../../config/test-suites.json"),
   ];
   for (const c of candidates) if (existsSync(c)) return c;
   return null;

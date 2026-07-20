@@ -23,7 +23,7 @@ Version comparison is mechanical: parse JSON → query GitHub → compare intege
 LLM agents are the wrong tool here — slow, token-expensive, and non-deterministic
 (a re-run can miss a module or misread a page). So:
 
-- **Primary engine:** `scripts/bundle-version-check.ts` does 99% of the work.
+- **Primary engine:** `scripts/hotfix/bundle-version-check.ts` does 99% of the work.
 - **Agent fan-out is a FALLBACK only** — used when a module Id doesn't resolve to a
   repo (new/renamed module absent from the map) or the GitHub API is unavailable.
 
@@ -33,14 +33,14 @@ LLM agents are the wrong tool here — slow, token-expensive, and non-determinis
 npm run bundle:check -- v12        # short bundle name → bundles/v12/package.json
 npm run bundle:check -- "https://github.com/VirtoCommerce/vc-modules/blob/master/bundles/v14/package.json"
 # or directly:
-npx tsx scripts/bundle-version-check.ts "<vN | bundle-url>" [--json] [--no-platform] [--no-theme] [--no-trace] [--concurrency=N]
+npx tsx scripts/hotfix/bundle-version-check.ts "<vN | bundle-url>" [--json] [--no-platform] [--no-theme] [--no-trace] [--concurrency=N]
 ```
 
 - Accepts a `github.com/.../blob/...` URL or a raw URL (normalized internally).
 - `GIT_TOKEN` is read from `.env.local` (raises the GitHub limit to 5000 req/h;
   without it the API caps at 60/h and the run will likely rate-limit → exit 2).
 
-### How it works (`scripts/bundle-version-check.ts`)
+### How it works (`scripts/hotfix/bundle-version-check.ts`)
 
 1. Fetch + parse the bundle: modules from `Sources[].Modules[]` (`{Id, Version}`),
    `PlatformVersion` → repo `vc-platform`, and the version embedded in the

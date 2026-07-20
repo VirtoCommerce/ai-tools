@@ -5,7 +5,7 @@
  * completed regression run, extracts every real FAIL with its failure trace
  * and the failing CSV row, fingerprints each failure, flags cross-run FLAKY
  * oscillation, and (separately) writes correctly-shaped per-suite history rows
- * so the flakiness engine (`scripts/compute-metrics.ts`) actually gets fed.
+ * so the flakiness engine (`scripts/regression/compute-metrics.ts`) actually gets fed.
  *
  * It contains NO classification judgment — deciding whether a FAIL is a real
  * product bug vs a stale assertion vs bad test data is the job of the LLM

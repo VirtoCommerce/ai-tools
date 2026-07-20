@@ -68,12 +68,12 @@ What each check guards (all run from the repo root):
 | Check | Underlying command | Asserts |
 |-------|--------------------|---------|
 | `env:check` | `node get_variables_env.js` | 33 env vars reported SET/EMPTY (exit 0 even if some EMPTY) |
-| `td-refs` | `npx tsx scripts/validate-td-refs.ts` | every `@td()` ref across all suites resolves; no bare GUID/ID literals |
-| `scope` | `npx tsx scripts/validate-critical-ui-scope.ts` | critical-UI-scope matrix cells point at existing test IDs |
-| `suites:lint` | `npx tsx scripts/sync-test-suites.ts --check` | `config/test-suites.json` matches CSVs on disk |
+| `td-refs` | `npx tsx scripts/test-data/validate-td-refs.ts` | every `@td()` ref across all suites resolves; no bare GUID/ID literals |
+| `scope` | `npx tsx scripts/maintenance/validate-critical-ui-scope.ts` | critical-UI-scope matrix cells point at existing test IDs |
+| `suites:lint` | `npx tsx scripts/test-cases/sync-test-suites.ts --check` | `config/test-suites.json` matches CSVs on disk |
 | `seed:dry-run` | `node scripts/seed-data/seed-test-data.js catalog --dry-run` | seed planner resolves fixtures, makes no API writes |
-| `graphql:fixtures` | `npx tsx scripts/validate-graphql-fixtures.ts` | every `.graphql` fixture validates vs cached schema |
-| `graphql:labels` | `npx tsx scripts/review-graphql-labels.ts <csv>` | runner-native GraphQL CSV has balanced labels |
+| `graphql:fixtures` | `npx tsx scripts/graphql/validate-graphql-fixtures.ts` | every `.graphql` fixture validates vs cached schema |
+| `graphql:labels` | `npx tsx scripts/graphql/review-graphql-labels.ts <csv>` | runner-native GraphQL CSV has balanced labels |
 
 The driver calls these scripts **directly** rather than via their `npm run`
 aliases on purpose — see Gotchas.
@@ -83,7 +83,7 @@ just what you changed instead of the whole driver — the label linter takes a f
 **or** a directory:
 
 ```bash
-npx tsx scripts/review-graphql-labels.ts regression/suites/Backend/graphql/
+npx tsx scripts/graphql/review-graphql-labels.ts regression/suites/Backend/graphql/
 ```
 
 (Verified: scans 16 files / 300 runner-native cases, exit 0 when balanced.) For
@@ -116,7 +116,7 @@ reference, the real entry points are:
 - **The GraphQL schema cache is a local artifact, not committed.**
   `scripts/.graphql-schema.cache.json` (~1.4 MB) is not tracked by git. A fresh
   clone has no cache, so `graphql:fixtures` can't validate until you regenerate it
-  with `npx tsx scripts/validate-graphql-fixtures.ts --refresh` — which needs
+  with `npx tsx scripts/graphql/validate-graphql-fixtures.ts --refresh` — which needs
   `BACK_URL` in `.env` (live platform). On a machine that already ran against the
   env (like this one) the cache exists and the check runs fully offline.
 - **`.env` files are layered and partly gitignored.** `env:check` reads them via
@@ -130,7 +130,7 @@ reference, the real entry points are:
 
 | Symptom | Fix |
 |---------|-----|
-| `The system cannot find the path specified.` from `npm run schema:check` | Bash-ism (`> /dev/null`) under Windows. Run the script directly: `node scripts/refresh-graphql-schema.mjs --dry-run`. |
-| `graphql:fixtures` fails with file-not-found / schema cache missing | Regenerate the cache: `npx tsx scripts/validate-graphql-fixtures.ts --refresh` (needs `BACK_URL` in `.env`). |
+| `The system cannot find the path specified.` from `npm run schema:check` | Bash-ism (`> /dev/null`) under Windows. Run the script directly: `node scripts/graphql/refresh-graphql-schema.mjs --dry-run`. |
+| `graphql:fixtures` fails with file-not-found / schema cache missing | Regenerate the cache: `npx tsx scripts/graphql/validate-graphql-fixtures.ts --refresh` (needs `BACK_URL` in `.env`). |
 | `tsx: not found` / `command not found` | `npm install` — `tsx` is a devDependency. |
 | Driver reports a check as `FAIL (exit ERR:ENOENT)` | `node`/`npx` not on PATH, or you ran the driver outside the repo. Run from repo root with Node 18+. |

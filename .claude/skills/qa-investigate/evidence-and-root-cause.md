@@ -12,20 +12,20 @@
 
 ---
 
-## 0. Bundle the package first — `scripts/bundle-evidence.ts`
+## 0. Bundle the package first — `scripts/regression/bundle-evidence.ts`
 
 Before you start capturing, scaffold the evidence package so every artifact lands in one place with a
 manifest:
 
 ```bash
 # scaffold a package for the ticket (run once, at the start of repro)
-npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --browser=chrome \
+npx tsx scripts/regression/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --browser=chrome \
   --symptom="extendedPrice null after editing a configured item"
 
 # …capture evidence into the printed package dir (Part A)…
 
 # re-scan and report what's still missing (run before writing the report)
-npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
+npx tsx scripts/regression/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
 ```
 
 What the script does:

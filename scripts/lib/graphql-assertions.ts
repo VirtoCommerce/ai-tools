@@ -165,7 +165,7 @@ function substituteVars(s: string, vars: Record<string, string>): string {
 // Trailing grounding-provenance tag (Dim 10 / GRD-001; project memory
 // project_assertion_provenance_grounding_gate) — authors append {SPEC}/{BL}/{DOC}/
 // {OBSERVED}/{HYPOTHESIS} to the END of an assertion line for traceability. It is
-// lint-scanned against the raw line (scripts/lint-test-cases.ts PROVENANCE_RE) and
+// lint-scanned against the raw line (scripts/test-cases/lint-test-cases.ts PROVENANCE_RE) and
 // was never meant to be part of the evaluated predicate — strip it before dispatch
 // so numeric (`>=`/`<=`), equality (`=`), and regex (`matches /…/`) predicates don't
 // choke on trailing `{...}` text. Single-brace, so it can't collide with `{{VAR}}`

@@ -4,7 +4,7 @@
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { TestDataResolver } from './lib/test-data-resolver.js';
+import { TestDataResolver } from '../lib/test-data-resolver.js';
 
 const [inputPath, outputPath] = process.argv.slice(2);
 

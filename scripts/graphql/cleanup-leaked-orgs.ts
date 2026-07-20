@@ -23,8 +23,8 @@
  */
 
 import { config as loadDotenv } from "dotenv";
-import { resolveTestEnv } from "./lib/resolve-test-env.js";
-import { TokenCache } from "./lib/graphql-auth.js";
+import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { TokenCache } from "../lib/graphql-auth.js";
 
 // Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
 // A bare loadDotenv() reads only `.env`, which does not exist in this repo, so BACK_URL

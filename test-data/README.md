@@ -40,7 +40,7 @@ All aliases are defined in [`aliases.json`](aliases.json). Each alias maps to:
 
 ### Validation
 
-Run `npx tsx scripts/validate-td-refs.ts` to verify all `@td()` references across all suites resolve correctly.
+Run `npx tsx scripts/test-data/validate-td-refs.ts` to verify all `@td()` references across all suites resolve correctly.
 
 ---
 

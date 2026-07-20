@@ -24,7 +24,7 @@
 import { readFileSync, statSync, readdirSync, existsSync } from "fs";
 import { resolve, join, relative } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
-import { parseSteps, validateStepBlocks } from "./lib/graphql-case-parser.js";
+import { parseSteps, validateStepBlocks } from "../lib/graphql-case-parser.js";
 
 interface Finding {
   file: string;

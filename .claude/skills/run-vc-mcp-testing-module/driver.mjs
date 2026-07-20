@@ -45,21 +45,21 @@ const CHECKS = [
     name: "td-refs",
     desc: "every @td() reference across all regression suites resolves",
     cmd: "npx",
-    args: ["tsx", "scripts/validate-td-refs.ts"],
+    args: ["tsx", "scripts/test-data/validate-td-refs.ts"],
     acceptExit: [0],
   },
   {
     name: "scope",
     desc: "critical-UI-scope matrix cells map to existing test IDs",
     cmd: "npx",
-    args: ["tsx", "scripts/validate-critical-ui-scope.ts"],
+    args: ["tsx", "scripts/maintenance/validate-critical-ui-scope.ts"],
     acceptExit: [0],
   },
   {
     name: "suites:lint",
     desc: "test-suites.json manifest is in sync with CSVs on disk",
     cmd: "npx",
-    args: ["tsx", "scripts/sync-test-suites.ts", "--check"],
+    args: ["tsx", "scripts/test-cases/sync-test-suites.ts", "--check"],
     acceptExit: [0],
   },
   {
@@ -80,7 +80,7 @@ const CHECKS = [
     name: "graphql:fixtures",
     desc: "all .graphql fixtures validate vs cached schema (exit 1 = drift findings, not crash)",
     cmd: "npx",
-    args: ["tsx", "scripts/validate-graphql-fixtures.ts"],
+    args: ["tsx", "scripts/graphql/validate-graphql-fixtures.ts"],
     acceptExit: [0, 1],
   },
   {
@@ -89,7 +89,7 @@ const CHECKS = [
     cmd: "npx",
     args: [
       "tsx",
-      "scripts/review-graphql-labels.ts",
+      "scripts/graphql/review-graphql-labels.ts",
       "regression/suites/Backend/graphql/050i-graphql-configurations.csv",
     ],
     acceptExit: [0],

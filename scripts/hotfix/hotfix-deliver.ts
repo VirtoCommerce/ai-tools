@@ -60,7 +60,7 @@ import { dirname, resolve } from 'node:path';
 import { parse as parseDotenv } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '..');
+const REPO_ROOT = resolve(__dirname, '..', '..');
 const OWNER = 'VirtoCommerce';
 const MAX_PATCH_PROBE = 40;
 const MAX_RELEASES_SCAN = 30;

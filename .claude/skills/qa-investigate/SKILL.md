@@ -22,7 +22,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 
    **Scaffold the evidence package up front** so every artifact has one home and nothing is missed:
    ```
-   npx tsx scripts/bundle-evidence.ts VCST-XXXX [--sprint=Sprint-current] [--browser=chrome] --symptom="…"
+   npx tsx scripts/regression/bundle-evidence.ts VCST-XXXX [--sprint=Sprint-current] [--browser=chrome] --symptom="…"
    ```
    It resolves `TEST_ENV`, pre-fills the env header, creates `screenshots/ network/ console/ har/ source/`, and writes `evidence-index.md` (manifest with the mandatory-slot + **trace-ID** checklist) and `root-cause.md` (the worksheet).
 
@@ -65,7 +65,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - **WHEN & WHY** (§8C — regression archaeology): for any "used to work" / post-deploy / version-skew symptom, bracket the good→bad window (§1 + §9), walk `list_commits` on the suspect path, diff the method across good/bad refs, and open the introducing PR (`get_pull_request`) to recover what the change *intended*. Confirm the diff actually explains the symptom — correlation ≠ causation.
 
 8. **Document and hand off:**
-   - **Gate first:** run `npx tsx scripts/bundle-evidence.ts VCST-XXXX [--sprint=…] --check`. A clean PASS (all mandatory slots filled + alternatives ruled out) is the bar before writing the report; an INCOMPLETE means go back and capture.
+   - **Gate first:** run `npx tsx scripts/regression/bundle-evidence.ts VCST-XXXX [--sprint=…] --check`. A clean PASS (all mandatory slots filled + alternatives ruled out) is the bar before writing the report; an INCOMPLETE means go back and capture.
    - Write bug report using templates in `skills/qa-defect/defect-report-templates.md` — reference the package artifacts, don't inline them (`reports.md` §8)
    - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
    - For regressions, add the **Regression block** (§8C Step 4): introducing commit/PR, first-bad & last-good versions, why it broke, revert-safe vs. fix-forward

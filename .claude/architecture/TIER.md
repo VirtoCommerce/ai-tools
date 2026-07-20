@@ -165,12 +165,12 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `scripts/lib/test-data-resolver.ts` | **B** | `@td()` resolver — generic. |
 | `scripts/lib/live-discover.ts` | **B** | xAPI discovery primitives — xAPI is storefront, pattern is B. |
 | `scripts/lib/random-data.ts` | **B** | Zero-dep random generators — generic. |
-| `scripts/validate-td-refs.ts` | **B** | Generic validator. |
-| `scripts/graphql-runner.ts` | **B** | Runner-native GraphQL execution — generic for any GraphQL endpoint. |
+| `scripts/test-data/validate-td-refs.ts` | **B** | Generic validator. |
+| `scripts/graphql/graphql-runner.ts` | **B** | Runner-native GraphQL execution — generic for any GraphQL endpoint. |
 | `scripts/lib/axe-runner.ts` | **A** | `axeRunSnippet()` + `classifyAxeResults()` + keyboard-trail classifier. WCAG axe run + severity mapping — universal. Consumed by `qa-accessibility` (A) and `qa-storybook` (B). |
-| `scripts/compute-metrics.ts` | **A** | Deterministic source for every formula/gate in `quality-metrics-catalog.md` + `quality-gates.md`. Consumed by `qa-metrics` (A). Generic computation; open-P0/P1 counts injected via flags. |
-| `scripts/append-test-cases-to-suite.ts` | **A** | Safe writer enforcing the **15-column enriched-CSV org standard** (schema + escaping + boundary newline + dedup + round-trip). Consumed by `qa-test-cases-generator` (A), `qa-api` (B), `qa-coverage-gap` (B). Tier-A because it enforces the A-tier format contract. |
-| `scripts/lint-test-cases.ts` | **B** | Mechanises the rule-based core of `qa-review-tests` dimensions 1–7/9 (`--json`, `--fail-on`). Generic rule engine; the BL/DV cross-reference rules lean on C knowledge files but the linter itself is B. Consumed by `qa-review-tests` (B), `qa-api` (B). |
+| `scripts/regression/compute-metrics.ts` | **A** | Deterministic source for every formula/gate in `quality-metrics-catalog.md` + `quality-gates.md`. Consumed by `qa-metrics` (A). Generic computation; open-P0/P1 counts injected via flags. |
+| `scripts/test-cases/append-test-cases-to-suite.ts` | **A** | Safe writer enforcing the **15-column enriched-CSV org standard** (schema + escaping + boundary newline + dedup + round-trip). Consumed by `qa-test-cases-generator` (A), `qa-api` (B), `qa-coverage-gap` (B). Tier-A because it enforces the A-tier format contract. |
+| `scripts/test-cases/lint-test-cases.ts` | **B** | Mechanises the rule-based core of `qa-review-tests` dimensions 1–7/9 (`--json`, `--fail-on`). Generic rule engine; the BL/DV cross-reference rules lean on C knowledge files but the linter itself is B. Consumed by `qa-review-tests` (B), `qa-api` (B). |
 | `ci/run-regression.ts` | **B** | Orchestration shape generic; agent definitions in `ci/agents/` are C. |
 | `ci/run-full-cycle.ts` | **B** | Generic phased pipeline. |
 | `ci/notify-teams.ts` | **A** | Generic Teams webhook adapter. |

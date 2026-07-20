@@ -35,7 +35,7 @@ Three modes in one skill: look up API reference, execute tests, or write test ca
 - **test-cases-api-graphql.md** — Existing REST API (Suite 14) and GraphQL xAPI (Suite 15) test cases with validations and execution patterns.
 - **api-test-case-patterns.md** — Coverage checklists and writing guide for generating new test cases in enriched CSV format. Read this when in `cases` mode.
 - **`knowledge/api/graphql-schema.md`** — **Authoritative** live introspection snapshot of the GraphQL schema. Lists all queries, mutations, input types, return types, and key rules. Consult this FIRST when writing or reviewing any GraphQL test case.
-- **`knowledge/api/graphql-test-cases-runner.md`** — **Authoritative** authoring contract for runner-native GraphQL test cases (the format consumed by `scripts/graphql-runner.ts`): full `Steps` / `Assertions` / `Cleanup` tag grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, authoring checklist, worked example. Read this BEFORE writing ANY GraphQL test case; gold-standard reference suite is `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
+- **`knowledge/api/graphql-test-cases-runner.md`** — **Authoritative** authoring contract for runner-native GraphQL test cases (the format consumed by `scripts/graphql/graphql-runner.ts`): full `Steps` / `Assertions` / `Cleanup` tag grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, authoring checklist, worked example. Read this BEFORE writing ANY GraphQL test case; gold-standard reference suite is `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
 - **`skills/qa-postman/test-data-fixtures.md`** — `@td(ALIAS.field)` resolver, [`test-data/aliases.json`](../../../test-data/aliases.json) registry, and fixture conventions. Read this BEFORE writing entity IDs, SKUs, prices, emails, addresses, or test-card numbers into request bodies — resolve at authoring time, never hardcode.
 - **`skills/qa-postman/SKILL.md`** — Postman MCP entry point (modes, workflow, sub-guide index). The Postman MCP **authors** collections; it does **not** execute them — execution happens via Newman/Postman CLI/Postman Monitor (see `qa-postman/execution.md`).
 
@@ -119,7 +119,7 @@ Delegate to `qa-backend-expert` agent with scope and credentials.
 2. **Read test patterns** from `test-cases-api-graphql.md`
 3. **Delegate** to `qa-backend-expert` via Task tool:
    - Pass `BACK_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` from environment
-   - Agent executes via `browser_evaluate` fetch, curl, `npx tsx scripts/graphql-runner.ts` (for runner-native GraphQL CSVs), or a Postman collection authored via Postman MCP and executed with Newman/Postman CLI. The Postman MCP itself does not execute collections — see `qa-postman/execution.md`.
+   - Agent executes via `browser_evaluate` fetch, curl, `npx tsx scripts/graphql/graphql-runner.ts` (for runner-native GraphQL CSVs), or a Postman collection authored via Postman MCP and executed with Newman/Postman CLI. The Postman MCP itself does not execute collections — see `qa-postman/execution.md`.
 4. **Output:** Pass/fail per endpoint, response codes, timings, full request/response on failure
 
 **REST API (Suite 14) coverage:**
@@ -149,7 +149,7 @@ Generate test cases in **enriched CSV format** for `test-management-specialist`.
 6. **Output test cases** in enriched CSV columns:
    `ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status`
 7. **Append via the safe writer** (after review) — `npm run suites:append -- <suite.csv> --rows <new.csv>`
-   (`scripts/append-test-cases-to-suite.ts`): schema + boundary-newline + dedup + round-trip verified. Never
+   (`scripts/test-cases/append-test-cases-to-suite.ts`): schema + boundary-newline + dedup + round-trip verified. Never
    hand-roll the append. Review the generated rows first with `npm run suites:review -- <new.csv>`.
 
 **Key rules for API test cases:**
@@ -189,6 +189,6 @@ Always use env vars — never hardcode URLs or credentials:
 Same rule applies to **entity IDs, SKUs, prices, emails, addresses, coupon codes, test cards, order numbers, and URL path segments** — resolve them at authoring time via the project's test-data library. Hardcoding rots: catalogs get re-seeded, orgs get re-created, prices change.
 
 - **Resolver:** `@td(ALIAS.field)` → looks up [`test-data/aliases.json`](../../../test-data/aliases.json), reads the matching CSV row, returns the requested column. Examples: `@td(CYBERSOURCE_VISA.number)`, `@td(STORE_PRIMARY.id)`, `@td(ACME_ADMIN.email)`, `@td(CFG_LAPTOP.id)`.
-- **Implementation:** [`scripts/lib/test-data-resolver.ts`](../../../scripts/lib/test-data-resolver.ts), consumed by `scripts/graphql-runner.ts` and the regression suite parsers.
-- **Validation:** `npx tsx scripts/validate-td-refs.ts` — verifies every `@td()` reference resolves.
+- **Implementation:** [`scripts/lib/test-data-resolver.ts`](../../../scripts/lib/test-data-resolver.ts), consumed by `scripts/graphql/graphql-runner.ts` and the regression suite parsers.
+- **Validation:** `npx tsx scripts/test-data/validate-td-refs.ts` — verifies every `@td()` reference resolves.
 - **Reference:** [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) covers full conventions (catalog/address/account gotchas, fixture directory layout).
