@@ -242,12 +242,22 @@ async function ensureOrder(row, orgs, customerId) {
     log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk})`);
   }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
-  const price = Math.round((parseFloat(row.total) / n) * 100) / 100;
+  const total = parseFloat(row.total);
+  // Split the total across n items so the line-item extended prices sum EXACTLY to `total` —
+  // assign the rounding remainder to the first item. An even split (round(total/n) for every item)
+  // drifts a cent on uneven divisions (e.g. 200/3 → 66.67×3 = 200.01); the platform then recomputes
+  // order.Total to 200.01, and the `Math.abs(total - row.total) < 0.01` idempotency check above
+  // rebuilds the order on EVERY reseed. remainder-to-first keeps the sum exact.
+  const per = Math.round((total / n) * 100) / 100;
+  const firstPrice = Math.round((total - per * (n - 1)) * 100) / 100;
+  // Synthetic SKUs on purpose: suite 050m only asserts attribution / totals / itemsCount / keyword —
+  // it never navigates a line item to its PDP. Do NOT reuse these orders for reorder / "buy again"
+  // tests (these products exist in no catalog); use seed-order-states.mjs (real catalog products via
+  // discoverCatalogProducts) for those.
   const items = Array.from({ length: n }, (_, i) => ({
     sku: `AGENT-TEST-SR-SKU-${i + 1}`, productId: `agent-test-sr-prod-${i + 1}`, catalogId: 'agent-test-sr',
-    name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: 'USD',
+    name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price: i === 0 ? firstPrice : per, productType: 'Physical', currency: 'USD',
   }));
-  const total = parseFloat(row.total);
   const shipAddr = orderAddress(org, 'Shipping');
   const billAddr = orderAddress(org, 'Billing');
   // NOTE on totals: the platform's order-total calculator folds shipment.total and inPayment.total
