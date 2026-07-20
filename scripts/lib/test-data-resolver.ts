@@ -27,6 +27,15 @@ interface AliasEntry {
   fields: AliasFields;
 }
 
+// JSON-fixture-backed alias (VCST-5482 pilot): static fields resolve from a Swagger-shaped JSON
+// fixture under test-data/ (e.g. orders/completed-order); runtime GUIDs (id) come from the
+// aliases.<env>.json overlay, which wins field-by-field in resolveAlias(). `fields` maps a short
+// name → a dotted JSON path (defaults to the field name itself when a mapping is absent).
+interface JsonAliasEntry {
+  json: string; // path under test-data/, with or without the .json extension
+  fields?: AliasFields;
+}
+
 interface AliasRegistry {
   _meta?: Record<string, string>;
   [aliasName: string]: AliasEntry | Record<string, string> | undefined;
@@ -95,6 +104,7 @@ export class TestDataResolver {
   // resolveAlias() — env fields win per-field; anything absent falls back to base.
   private envOverrides: AliasRegistry = {};
   private csvCache: Map<string, CSVRow[]> = new Map();
+  private jsonCache: Map<string, Record<string, unknown>> = new Map();
   private warnings: string[] = [];
 
   constructor(testDataDir: string, testEnv?: string) {
@@ -228,9 +238,26 @@ export class TestDataResolver {
       return resolved;
     }
 
+    // JSON-fixture alias (VCST-5482): static fields resolve from a Swagger-shaped JSON fixture; the
+    // runtime GUID (id) was already resolved from the env overlay above. `fields` maps short name →
+    // dotted JSON path (falls back to the field name itself).
+    if ((alias as JsonAliasEntry).json) {
+      const j = alias as JsonAliasEntry;
+      const path = j.fields?.[fieldName] ?? fieldName;
+      const data = this.loadJSON(j.json);
+      const resolved = this.tryResolveObjectField(data, path);
+      if (resolved === undefined) {
+        throw new Error(
+          `Field "${fieldName}" (json path "${path}") not found in ${j.json}.json for alias "${aliasName}". ` +
+          `If this is a runtime id, seed the env so aliases.<env>.json carries it.`
+        );
+      }
+      return resolved;
+    }
+
     if (!(alias as AliasEntry).file) {
       throw new Error(
-        `Alias "${aliasName}" has neither _inline:true nor a .file field — cannot resolve`
+        `Alias "${aliasName}" has neither _inline:true, a .json fixture, nor a .file field — cannot resolve`
       );
     }
 
@@ -299,6 +326,20 @@ export class TestDataResolver {
     const rows = parseCSV(content);
     this.csvCache.set(normalizedFile, rows);
     return rows;
+  }
+
+  private loadJSON(file: string): Record<string, unknown> {
+    const normalizedFile = file.replace(/\.json$/, "");
+    if (this.jsonCache.has(normalizedFile)) {
+      return this.jsonCache.get(normalizedFile)!;
+    }
+    const jsonPath = join(this.testDataDir, `${normalizedFile}.json`);
+    if (!existsSync(jsonPath)) {
+      throw new Error(`JSON fixture not found: ${jsonPath}`);
+    }
+    const data = JSON.parse(readFileSync(jsonPath, "utf-8")) as Record<string, unknown>;
+    this.jsonCache.set(normalizedFile, data);
+    return data;
   }
 
   private filterRows(rows: CSVRow[], filter: Record<string, string>): CSVRow | null {

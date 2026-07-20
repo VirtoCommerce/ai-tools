@@ -45,18 +45,21 @@ const passthrough = process.argv.slice(2).filter((a) => a === '--dry-run' || a =
  * block a full clean). Invoked with `npm run seed:bootstrap -- --teardown`.
  */
 const TEARDOWN_STEPS = [
-  { name: 'white-labeling', script: 'seed-white-labeling.mjs', args: ['--teardown'] },
-  { name: 'loyalty', script: 'seed-loyalty.mjs', args: ['--teardown'] },
-  { name: 'loyalty-fixtures', script: 'seed-loyalty-fixtures.mjs', args: ['--teardown'] },
-  { name: 'promotions', script: 'seed-promotions.mjs', args: ['--teardown'] },
-  { name: 'b2b-addresses', script: 'seed-b2b-addresses.mjs', args: ['--teardown'] },
-  { name: 'company-users', script: 'seed-company-users.mjs', args: ['--teardown'] },
-  { name: 'bopis', script: 'seed-bopis.mjs', args: ['--teardown'] },
-  { name: 'inventory', script: 'seed-inventory.mjs', args: ['--teardown'] },
-  { name: 'pricing', script: 'seed-pricing.mjs', args: ['--teardown'] },
-  { name: 'configurable', script: 'seed-configurable.mjs', args: ['--teardown'] },
-  { name: 'products', script: 'seed-standard-products.mjs', args: ['--teardown'] },
-  { name: 'properties', script: 'seed-catalog-properties.mjs', args: ['--teardown'] },
+  // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
+  { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
+  { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
+  { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
+  { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', args: ['--teardown'] },
+  { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', args: ['--teardown'] },
+  { name: 'promotions', script: 'promotions/seed-promotions.mjs', args: ['--teardown'] },
+  { name: 'b2b-addresses', script: 'b2b/seed-b2b-addresses.mjs', args: ['--teardown'] },
+  { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['--teardown'] },
+  { name: 'bopis', script: 'bopis/seed-bopis.mjs', args: ['--teardown'] },
+  { name: 'inventory', script: 'inventory/seed-inventory.mjs', args: ['--teardown'] },
+  { name: 'pricing', script: 'pricing/seed-pricing.mjs', args: ['--teardown'] },
+  { name: 'configurable', script: 'products/seed-configurable.mjs', args: ['--teardown'] },
+  { name: 'products', script: 'products/seed-standard-products.mjs', args: ['--teardown'] },
+  { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', args: ['--teardown'] },
   // Sweeps every AGENT-TEST-SEED-* catalog + its categories/products/pricelists and unbinds the store.
   { name: 'catalog+categories', script: 'seed-test-data.js', args: ['teardown'] },
 ];
@@ -81,39 +84,44 @@ const TEARDOWN_STEPS = [
  * `required` steps abort the run on failure; optional ones warn and continue.
  */
 const STEPS = [
-  { name: 'catalog', script: 'seed-catalog.mjs', required: true, priority: 10 },
+  { name: 'catalog', script: 'catalog/seed-catalog.mjs', required: true, priority: 10 },
   // NOTE: the categories.csv tree is NOT a separate phase — the products phase (priority 40) builds it
   // in-process via seedCategoryTree so its (catalogId, code) cache spans category creation + product
   // placement. A separate `seed-catalog-categories.mjs` process could not be seen by the products
   // process (cross-process index lag) → duplicate categories.csv tree. `seed:categories` remains only
   // as a standalone command. Do NOT re-add a categories step here.
-  { name: 'store', script: 'seed-store.mjs', required: true, priority: 80 },
-  { name: 'properties', script: 'seed-catalog-properties.mjs', required: true, priority: 30 },
-  { name: 'products', script: 'seed-standard-products.mjs', required: true, priority: 40 },
-  { name: 'configurable', script: 'seed-configurable.mjs', required: false, priority: 50 },
+  { name: 'store', script: 'store/seed-store.mjs', required: true, priority: 80 },
+  { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', required: true, priority: 30 },
+  { name: 'products', script: 'products/seed-standard-products.mjs', required: true, priority: 40 },
+  { name: 'configurable', script: 'products/seed-configurable.mjs', required: false, priority: 50 },
   // NOTE: no generic 'pricing' phase — standard-products + configurable price their OWN products
   // (distinct per-product prices). The generic seed-pricing.mjs set a FLAT 99.99 pricelist at high
   // priority that overrode every per-product price (all products showed 99.99). It remains available
   // as a standalone `npm run seed:pricing` for explicitly bulk-pricing an arbitrary catalog.
-  { name: 'inventory', script: 'seed-inventory.mjs', required: true, priority: 70 },
+  { name: 'inventory', script: 'inventory/seed-inventory.mjs', required: true, priority: 70 },
   // Relational fixture set (products-full.csv + pricing/*.csv + stock-levels.csv). Now UNIFIED: it
   // delegates catalog/categories to the shared ensureCatalogs + seedCategoryTree (stable AGENT-TEST-SEED
   // names, store-scoped SEO) instead of a date-stamped fork, and seeds into the same catalogs. Runs
   // after inventory(70) so its stock has FFCs. Optional — supplementary to the .mjs product set.
   { name: 'test-data', script: 'seed-test-data.js', args: ['catalog'], required: false, priority: 75 },
-  { name: 'bopis', script: 'seed-bopis.mjs', required: true, priority: 90 },
-  { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
+  { name: 'bopis', script: 'bopis/seed-bopis.mjs', required: true, priority: 90 },
+  { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   // Org addresses beyond the single inline default baked into orgBody() — needs the org graph (100) first.
-  { name: 'b2b-addresses', script: 'seed-b2b-addresses.mjs', required: false, priority: 105 },
-  { name: 'promotions', script: 'seed-promotions.mjs', required: false, priority: 110 },
+  { name: 'b2b-addresses', script: 'b2b/seed-b2b-addresses.mjs', required: false, priority: 105 },
+  { name: 'promotions', script: 'promotions/seed-promotions.mjs', required: false, priority: 110 },
   // The 1-PTS divisor fixture (LOY_SKU_PTS_UNIT) that balance-relative loyalty tests depend on. Runs
   // just BEFORE the loyalty programs (120) and is OPTIONAL (warns if the loyalty module/PTS currency
   // is absent — it's a no-op then). Needs the catalog/store/products phases done (its category +
   // price list resolve against them). Does NOT create a balance (no balance-write API — see
   // seed-loyalty-balance.mjs, which is manual-only and NOT wired here because it places real orders).
-  { name: 'loyalty-fixtures', script: 'seed-loyalty-fixtures.mjs', required: false, priority: 118 },
-  { name: 'loyalty', script: 'seed-loyalty.mjs', required: false, priority: 120 },
-  { name: 'white-labeling', script: 'seed-white-labeling.mjs', required: false, priority: 130 },
+  { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', required: false, priority: 118 },
+  { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', required: false, priority: 120 },
+  { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', required: false, priority: 130 },
+  // Order/quote STATE fixtures (VCST-5482) — after products (40) + company-users (100): orders are
+  // owned by USER_EMAIL, quotes submitted by ORG_USER_EMAIL, and line items point at real catalog
+  // products. Optional: quotes need the Quote module deployed + Stores.EnableQuotes on the store.
+  { name: 'orders', script: 'orders/seed-order-states.mjs', required: false, priority: 140 },
+  { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
 ].sort((a, b) => a.priority - b.priority);
 
 function runStep(step) {

@@ -338,6 +338,13 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 
 ### Order State Fixtures (suite 014)
 
+> **VCST-5482 — now SEEDED:** `COMPLETED_ORDER`, `SHIPPED_ORDER`, `PROCESSING_ORDER` are provided by
+> `npm run seed:orders` (`scripts/seed-data/orders/seed-order-states.mjs`) as `@td()` JSON-fixture
+> aliases — line items point at real catalog products (live-discovered). The remaining feature-gated /
+> status-string-uncertain states below (invoice, returns/RMA, OOS, discontinued, partially-shipped,
+> BOPIS-pickup) stay **DEFERRED** pending product-owner confirmation. Status strings live in
+> `scripts/seed-data/orders/orders-specs.mjs` (confirm live on first run).
+
 | Env Var | Fixture Spec | Admin Status | Storefront Label | Suites Affected | Admin Path |
 |---------|-------------|--------------|-----------------|-----------------|------------|
 | `SHIPPED_ORDER` | Order owned by `{{USER_EMAIL}}` in Shipped state; tracking number and carrier name assigned | DEFERRED (likely "New" → shipment created with status "Sent" per BL-ORD-007) | "Shipped" | 014: CHK-013, ORD-006, ORD-012, ORD-030 | Admin > Orders > [Order] > Shipments > create shipment > set status to Sent > add tracking number |
@@ -362,6 +369,13 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 ### Quote Fixtures (suite 015)
 
 All quotes must be owned by `{{ORG_USER_EMAIL}}` (B2B org buyer). Quote statuses use their own vocabulary separate from order statuses.
+
+> **VCST-5482 — now SEEDED:** `QUOTE_WITH_ADMIN_RESPONSE` and `ACCEPTED_QUOTE` are provided by
+> `npm run seed:quotes` (`scripts/seed-data/orders/seed-quotes.mjs`) as `@td()` JSON-fixture aliases
+> (requires the Quote module deployed + `Stores.EnableQuotes`). The remaining feature-gated states
+> (expired, multi-round negotiation, substitution, OOS, PO) stay **DEFERRED**. The Quote REST route +
+> status vocabulary are confirmed live on first run; `scripts/seed-data/orders/orders-specs.mjs` is the
+> single place to correct them.
 
 | Env Var | Fixture Spec | Quote Status | Quote Label | Suites Affected | Admin Path |
 |---------|-------------|-------------|-------------|-----------------|------------|

@@ -1,0 +1,48 @@
+{
+  "_fixture": "QUOTE_WITH_ADMIN_RESPONSE — Swagger-shaped QuoteRequest body (VirtoCommerce.Quote module) for VCST-5482. Buyer-submitted RFQ that the admin has priced per line (proposalPrices). Submitter resolved at seed time from {{ORG_USER_EMAIL}}. The exact Quote REST route + field names (proposalPrices vs selectedTierPrice, status vocabulary) are confirmed LIVE on first run per quality-gates G6 — orders-specs.mjs is the single place to correct the status string. No runtime GUIDs here; created id → aliases.<env>.json.",
+  "number": "AGENT-TEST-QTE-ADMIN-RESPONSE",
+  "storeId": "{{STORE_ID}}",
+  "currency": "USD",
+  "status": "Processing",
+  "customerName": "AGENT-TEST Org Buyer",
+  "comment": "AGENT-TEST RFQ awaiting/holding admin per-line pricing",
+  "items": [
+    {
+      "sku": "AGENT-TEST-QTE-SKU-1",
+      "productId": "agent-test-qte-prod-1",
+      "name": "AGENT-TEST Quoted Item 1",
+      "quantity": 10,
+      "listPrice": 49.99,
+      "salePrice": 49.99,
+      "proposalPrices": [
+        { "quantity": 10, "price": 44.99 }
+      ]
+    },
+    {
+      "sku": "AGENT-TEST-QTE-SKU-2",
+      "productId": "agent-test-qte-prod-2",
+      "name": "AGENT-TEST Quoted Item 2",
+      "quantity": 5,
+      "listPrice": 129.0,
+      "salePrice": 129.0,
+      "proposalPrices": [
+        { "quantity": 5, "price": 119.0 }
+      ]
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Shipping",
+      "firstName": "AGENT-TEST",
+      "lastName": "Org Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{ORG_USER_EMAIL}}"
+    }
+  ]
+}

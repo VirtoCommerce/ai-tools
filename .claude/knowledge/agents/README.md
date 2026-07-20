@@ -15,9 +15,9 @@ Three agent teams for the Virto Commerce platform: **QA** (quality assurance), *
 
 ---
 
-## Agent Inventory (18 agents + per-team shared instructions)
+## Agent Inventory (19 agents + per-team shared instructions)
 
-### QA Team (10 agents + shared-instructions)
+### QA Team (11 agents + shared-instructions)
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
@@ -27,6 +27,7 @@ Three agent teams for the Virto Commerce platform: **QA** (quality assurance), *
 | **qa-testing-expert** | opus | green | Interactive testing, Figma comparison, debugging |
 | **ui-ux-expert** | sonnet | pink | Storybook, WCAG 2.1 AA, design system |
 | **test-management-specialist** | sonnet | purple | Test planning, case writing, coverage tracking |
+| **test-data-engineer** | opus | teal | Authors seeders / fixtures / `@td()` aliases / validators + unit tests (`/qa-generate-data` + `/qa-seed-data`); write-capable in this repo only, no browser |
 | **regression-orchestrator** | sonnet | orange | Parallel regression + smoke mode, retries, reports |
 | **autonomous-regression-orchestrator** | sonnet | orange | Agent Teams regression: token bucket, failure recovery, JIRA integration |
 | **autonomous-test-runner** | sonnet | orange | Standalone autonomous test execution agent |
@@ -200,7 +201,7 @@ Shared knowledge files in `knowledge/` (27 files) — full annotated list in `.c
 
 ## Customizing Agents
 
-All 18 agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is non-recursive — no team subfolders): 10 QA + 4 BA + 4 Developers. The three per-team `shared-instructions.md` files and this README live under `knowledge/agents/` (a plain reference dir, not scanned as components). Shared knowledge files are in `knowledge/` (28 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
+All 19 agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is non-recursive — no team subfolders): 11 QA + 4 BA + 4 Developers. The three per-team `shared-instructions.md` files and this README live under `knowledge/agents/` (a plain reference dir, not scanned as components). Shared knowledge files are in `knowledge/` (28 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
 
 ---
 

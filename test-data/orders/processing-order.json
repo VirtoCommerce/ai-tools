@@ -1,0 +1,74 @@
+{
+  "_fixture": "PROCESSING_ORDER — Swagger-shaped create body for POST /api/order/customerOrders (VCST-5482). Order in Processing state (payment captured, not yet shipped). Owner resolved at seed time from {{USER_EMAIL}}. No runtime GUIDs here — created id → aliases.<env>.json; status re-stamped from orders-specs.mjs.",
+  "number": "AGENT-TEST-ORD-PROCESSING",
+  "storeId": "{{STORE_ID}}",
+  "currency": "USD",
+  "status": "Processing",
+  "customerName": "AGENT-TEST Buyer",
+  "total": 59.99,
+  "subTotal": 59.99,
+  "shippingTotal": 0,
+  "shippingTotalWithTax": 0,
+  "taxTotal": 0,
+  "items": [
+    {
+      "sku": "AGENT-TEST-ORD-SKU-3",
+      "productId": "agent-test-ord-prod-3",
+      "catalogId": "agent-test-ord",
+      "name": "AGENT-TEST Processing Item 1",
+      "quantity": 1,
+      "price": 59.99,
+      "productType": "Physical",
+      "currency": "USD"
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Shipping",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    },
+    {
+      "addressType": "Billing",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    }
+  ],
+  "shipments": [
+    {
+      "shipmentMethodCode": "FixedRate",
+      "shipmentMethodOption": "Ground",
+      "currency": "USD",
+      "status": "New",
+      "number": "AGENT-TEST-ORD-PROCESSING-S1",
+      "items": []
+    }
+  ],
+  "inPayments": [
+    {
+      "gatewayCode": "DefaultManualPaymentMethod",
+      "currency": "USD",
+      "customerName": "AGENT-TEST Buyer",
+      "sum": 59.99,
+      "status": "Paid",
+      "paymentStatus": "Paid",
+      "number": "AGENT-TEST-ORD-PROCESSING-P1"
+    }
+  ]
+}
