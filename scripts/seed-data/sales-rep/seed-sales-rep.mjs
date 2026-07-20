@@ -245,13 +245,16 @@ async function ensureOrder(row, orgs, customerId, products = []) {
     const enriched = (full?.addresses || []).length && (full?.shipments || []).length && (full?.inPayments || []).length;
     const totalOk = Math.abs((full?.total || 0) - parseFloat(row.total)) < 0.01;
     const orgOk = full?.organizationId === org.id && !!full?.organizationName;
+    // Status must match the CSV, so a status change (e.g. Failed -> Payment required) rebuilds the
+    // stale order instead of being silently ignored. Mirrors seed-order-states.mjs's statusOk gate.
+    const statusOk = full?.status === row.status;
     // Auto-upgrade a legacy order whose line items still point at the synthetic placeholder catalog —
     // but only when we actually have real products to swap in (never thrash on a bare/dry-run catalog).
     const itemsOk = products.length === 0
       || ((full?.items || []).length > 0 && !(full.items).some(isSyntheticItem));
-    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk && itemsOk) { verbose(`order ${number} exists (attributed + enriched + total + org + items ok)`); return; }
+    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk && statusOk && itemsOk) { verbose(`order ${number} exists (attributed + enriched + total + org + status + items ok)`); return; }
     await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
-    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, itemsOk=${itemsOk})`);
+    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, statusOk=${statusOk}, itemsOk=${itemsOk})`);
   }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const total = parseFloat(row.total);
