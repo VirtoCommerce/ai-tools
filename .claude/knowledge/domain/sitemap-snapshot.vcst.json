@@ -1,0 +1,237 @@
+{
+  "generatedIso": "2026-07-20T12:03:58.029Z",
+  "env": "vcst",
+  "frontUrl": "https://vcst-qa-storefront.govirto.com",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "storeId": "B2B-store",
+  "themeVersion": null,
+  "platform": {
+    "maxPlatformVersion": "3.1039.0",
+    "moduleCount": 86
+  },
+  "storeTotalProducts": 4518,
+  "navCategories": [
+    {
+      "slug": "accessories",
+      "name": "Accessories"
+    },
+    {
+      "slug": "alcoholic-drinks",
+      "name": "Alcoholic drinks"
+    },
+    {
+      "slug": "bolts",
+      "name": "Bolts"
+    },
+    {
+      "slug": "bolts/carriage-bolts",
+      "name": "Carriage Bolts"
+    },
+    {
+      "slug": "coffee-and-tea",
+      "name": "Coffee and tea"
+    },
+    {
+      "slug": "computer-office-education",
+      "name": "Computer, Office, Education"
+    },
+    {
+      "slug": "consumer-electronics",
+      "name": "Consumer Electronics"
+    },
+    {
+      "slug": "craft",
+      "name": "Craft"
+    },
+    {
+      "slug": "destinations",
+      "name": "destinations"
+    },
+    {
+      "slug": "drinks-and-food",
+      "name": "Drinks And Food"
+    },
+    {
+      "slug": "evergreen-wholesale",
+      "name": "Evergreen Wholesale"
+    },
+    {
+      "slug": "evergreen-wholesale/ev-green-sports",
+      "name": "Ever green sports"
+    },
+    {
+      "slug": "evergreen-wholesale/seasonal",
+      "name": "Seasonal"
+    },
+    {
+      "slug": "for-women",
+      "name": "For women"
+    },
+    {
+      "slug": "home-appliances",
+      "name": "Home Appliances"
+    },
+    {
+      "slug": "jewelry-and-gems",
+      "name": "Jewelry and Gems"
+    },
+    {
+      "slug": "juice",
+      "name": "Juice"
+    },
+    {
+      "slug": "kitchen-supplies",
+      "name": "Home supplies"
+    },
+    {
+      "slug": "loyalty-products",
+      "name": "Loyalty products"
+    },
+    {
+      "slug": "mall-of-america",
+      "name": "Mall of America"
+    },
+    {
+      "slug": "new-catalog-item",
+      "name": "Generatation-en"
+    },
+    {
+      "slug": "new-home",
+      "name": "New home"
+    },
+    {
+      "slug": "office-furniture",
+      "name": "Office furniture"
+    },
+    {
+      "slug": "online-courses",
+      "name": "Courses and audio books"
+    },
+    {
+      "slug": "phones-and-accessories",
+      "name": "Phones and Accessories"
+    },
+    {
+      "slug": "printers",
+      "name": "Printers"
+    },
+    {
+      "slug": "products-with-options",
+      "name": "Products with options"
+    },
+    {
+      "slug": "security-and-protection",
+      "name": "Security And Protection"
+    },
+    {
+      "slug": "seed-agent-test-accessories",
+      "name": "AGENT-TEST-Accessories"
+    },
+    {
+      "slug": "seed-beauty",
+      "name": "Beauty"
+    },
+    {
+      "slug": "seed-books",
+      "name": "Books"
+    },
+    {
+      "slug": "seed-clothing",
+      "name": "Clothing"
+    },
+    {
+      "slug": "seed-electronics",
+      "name": "Electronics"
+    },
+    {
+      "slug": "seed-furniture",
+      "name": "Furniture"
+    },
+    {
+      "slug": "seed-home",
+      "name": "Home"
+    },
+    {
+      "slug": "seed-home-improvement",
+      "name": "Home Improvement"
+    },
+    {
+      "slug": "seed-loyalty-fixtures",
+      "name": "Loyalty Fixtures"
+    },
+    {
+      "slug": "seed-personal-care",
+      "name": "Personal Care"
+    },
+    {
+      "slug": "seed-sports",
+      "name": "Sports"
+    },
+    {
+      "slug": "seed-test-fixtures",
+      "name": "Test Fixtures"
+    },
+    {
+      "slug": "seed-tools",
+      "name": "Tools"
+    },
+    {
+      "slug": "snacks",
+      "name": "Snacks"
+    },
+    {
+      "slug": "soft-drinks",
+      "name": "Soft Drinks"
+    },
+    {
+      "slug": "speeds-medical",
+      "name": "Speeds Medical"
+    },
+    {
+      "slug": "sweet-home",
+      "name": "Rental home"
+    },
+    {
+      "slug": "tv-multimedia",
+      "name": "TV & Multimedia"
+    },
+    {
+      "slug": "tyres",
+      "name": "Tyres"
+    },
+    {
+      "slug": "wireless-accessory-world",
+      "name": "Wireless Accessory World"
+    }
+  ],
+  "productsWithOptions": [
+    {
+      "slug": "products-with-options/build-the-bike-of-your-dreams",
+      "name": "Build the bike of your dreams"
+    },
+    {
+      "slug": "products-with-options/cfg-parents",
+      "name": "Configurable Parents"
+    },
+    {
+      "slug": "products-with-options/configurable-caps-shirts",
+      "name": "Configurable caps & shirts"
+    },
+    {
+      "slug": "products-with-options/custom-furniture",
+      "name": "Custom Furniture"
+    },
+    {
+      "slug": "products-with-options/dreamy-cakes",
+      "name": "Dreamy cakes"
+    },
+    {
+      "slug": "products-with-options/shirts-jeans-and-more",
+      "name": "Shirts, jeans and more"
+    },
+    {
+      "slug": "products-with-options/wonderful-beds",
+      "name": "Wonderful beds"
+    }
+  ]
+}

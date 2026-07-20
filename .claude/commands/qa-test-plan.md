@@ -32,10 +32,23 @@ You run this orchestration inline. Delegate the heavy "Write" step (Section 6: p
 | `--from <date>` / `--to <date>` | Override sprint window (ISO 8601). Defaults to JIRA sprint dates. |
 | `--draft` | Write the plan with `Document status: Draft` and skip risk score validation gates. |
 | `--no-suites` | Skip Section 5 regression suite mapping. |
+| `--no-sitemap` | Skip Step 0 (storefront sitemap refresh). Use offline or when the env is unreachable. |
 
 ---
 
-## Pipeline: Resolve → Fetch JIRA → Fetch PRs → Correlate → Assess → Write
+## Pipeline: Refresh sitemap → Resolve → Fetch JIRA → Fetch PRs → Correlate → Assess → Write
+
+### Step 0 — Refresh the storefront sitemap (diff-gated)
+
+Before scoping the sprint, bring the storefront sitemap current — the sprint boundary is the natural cadence for this. Run:
+
+```
+/qa-sitemap
+```
+
+(or, headless / non-interactive: `npm run sitemap:refresh` then apply the diff per the `/qa-sitemap` methodology). It is **diff-gated** — on a quiet sprint the deterministic crawler prints `SITEMAP_CHANGED=no` and nothing is written, so this step is a cheap no-op when the catalog hasn't moved. When it does change, `.claude/knowledge/domain/sitemap.md` (+ the plugin mirror) is refreshed and the rev bumped **before** the plan is written, so any sitemap references in the plan are current.
+
+Skip only with an explicit `--no-sitemap` flag (e.g. offline). Do not block the plan if the environment is unreachable — note "sitemap not refreshed (env unreachable)" and continue.
 
 ### Step 1 — Resolve Sprint
 

@@ -77,6 +77,8 @@
     "seed:loyalty:users": "node scripts/seed-data/seed-company-users.mjs loyalty",
     "schema:refresh": "node scripts/refresh-graphql-schema.mjs",
     "schema:check": "node scripts/refresh-graphql-schema.mjs --check",
+    "sitemap:refresh": "node scripts/refresh-sitemap.mjs",
+    "sitemap:check": "node scripts/refresh-sitemap.mjs --check",
     "td:validate": "npx tsx scripts/validate-td-refs.ts",
     "td:validate:warn": "npx tsx scripts/validate-td-refs.ts --warn-only",
     "td:reconcile": "node scripts/seed-data/reconcile-test-data.mjs",

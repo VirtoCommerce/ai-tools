@@ -5,13 +5,16 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** May 20, 2026 (rev 4)
+**Generated:** July 20, 2026 (rev 5)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
-**Platform version:** 2.49.0 *(was 2.43.0 in March)*
+**Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = 3.1039.0; 86 modules loaded)
+
+> **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
 ## Overview
 
-B2B e-commerce storefront on Virto Commerce. Tests are signed in as user **John Mitchell** (org `AGENT-TEST-Org-TechFlow-20260310`). Catalog content was **fully restored from another environment on 2026-05-15** (vcst-qa catalog wipe + restore — see `project_vcstqa_restore_2026_05_15.md` memory); category and product inventory below reflects the post-restore state and differs substantially from the March 2026 sitemap.
+B2B e-commerce storefront on Virto Commerce. **This rev was crawled as a guest** (unauthenticated) — the catalog is store-level so the top-level inventory/counts match the B2B signed-in view; the authenticated-only §2 Account and §7 Admin sections carry forward from rev 4 and were **not** re-verified this pass. Catalog content has been **re-seeded again since the May 2026 rev** — top-level inventory below reflects the current (guest, 2026-07-20) state and differs substantially from rev 4: a new family of `/seed-*` categories replaced the May `SEED-20260518/19-*` fixtures, `Products with options` grew 11→48, `Rental home` moved `/homes`→`/sweet-home`, `Bolts` is a top-level category again, and `[en-US] TV` was dropped. Treat all IDs/slugs/counts as drift candidates; resolve via `@td()` / `live-discover` (see `.claude/rules/test-data.md`).
 
 ## Available Languages
 
@@ -108,81 +111,70 @@ All account pages require authentication. Account sidebar is organized into **4 
 
 ## 3. Main Categories
 
-> **2026-05-15 catalog restore:** Top-level inventory below reflects the post-restore state. Several categories present in March (Bolts top-level, NewTest2, Car Covers EN, Coming Soon, Coffee and tea was minimal, etc.) were replaced or dropped. **~4,537 products and 422 categories were swapped out**; only ~5 of 28 configurable products survived (with rebuilt sections).
+> **Ongoing re-seeding:** Top-level inventory has drifted again since the May 2026 rev. This is incremental re-seeding (not a full wipe like 2026-05-15) — existing categories' counts shifted down slightly (Accessories 3,087→2,985, Consumer Electronics 413→391, etc.) and a **new `/seed-*` category family** was added, replacing the May `SEED-20260518/19-*` fixtures.
 
-### Top-Level Categories (from `/catalog`)
+### Top-Level Categories (from the `/catalog` grid)
 
-Counts are live product totals as of 2026-05-20.
+Counts are live product totals from the `/catalog` category grid as of **2026-07-20** (guest crawl). This grid is the authoritative top-level list; the "All products" nav dropdown (§11) carries some extra legacy/CMS-managed entries not in this grid (Coffee and tea, Juice, Mall of America, Wireless Accessory World, Speeds Medical).
 
 | Category | URL | Count | Notes |
 |----------|-----|-------|-------|
-| [en-US] TV | `/tv` | 37 | Locale-tagged TV category |
-| Accessories | `/accessories` | 3,087 | Largest top-level category |
+| Accessories | `/accessories` | 2,985 | Largest top-level category *(was 3,087)* |
+| AGENT-TEST-Accessories | `/seed-agent-test-accessories` | 11 | *(new — seed fixture)* |
 | Alcoholic drinks | `/alcoholic-drinks` | 37 | |
-| Carriage Bolts | `/bolts/carriage-bolts` | — | Only this subcategory exists; no `/bolts` top-level page |
-| Coffee and tea | `/coffee-and-tea` | 2 | |
-| Computer, Office, Education | `/computer-office-education` | 379 | Friendly URL; ID-based form below |
-| Conditional Parents | `/seed-20260519-cond-parents` | 8 | *(new — seed category)* |
-| Configurable Parents | `/seed-20260518-cfg-parents` | 2 | *(new — seed category)* |
-| Consumer Electronics | `/consumer-electronics` | 413 | Friendly URL; ID-based form below |
-| Craft | `/craft` | 38 | *(new since March)* |
-| Drinks And Food | `/drinks-and-food` | 27 | *(new since March)* |
-| Evergreen Wholesale | `/evergreen-wholesale` | 54 | *(new since March)* |
-| For women | `/for-women` | 4 | *(new since March)* |
-| Home Appliances | `/home-appliances` | 351 | Friendly URL; ID-based form below |
-| Home supplies | `/kitchen-supplies` | 14 | URL still `kitchen-supplies` but display name is now "Home supplies" |
-| Jewelry and Gems | `/jewelry-and-gems` | 133 | |
-| Juice | `/juice` | 2 | |
-| Mall of America | `/mall-of-america` | 9 | *(new since March — hosts Apple Store and gift card products)* |
-| Meiertobler Demo | `/meiertobler-demo` | 5 | *(new since March)* |
+| Beauty | `/seed-beauty` | 3 | *(new — seed fixture)* |
+| Bolts | `/bolts` | 29 | **Top-level again** (was demoted to `/bolts/carriage-bolts`-only in May) |
+| Books | `/seed-books` | 1 | *(new — seed fixture; was un-seeded in May)* |
+| Clothing | `/seed-clothing` | 4 | *(new — seed fixture)* |
+| Computer, Office, Education | `/computer-office-education` | 291 | Friendly URL; ID-based form below *(was 379)* |
+| Consumer Electronics | `/consumer-electronics` | 391 | Friendly URL; ID-based form below *(was 413)* |
+| Craft | `/craft` | 34 | *(was 38)* |
+| destinations | `/destinations` | 20 | *(new — lowercase slug + label)* |
+| Drinks And Food | `/drinks-and-food` | 23 | *(was 27)* |
+| Electronics | `/seed-electronics` | 16 | *(seed fixture — replaces May "SEED-20260518-Electronics", was 12)* |
+| Evergreen Wholesale | `/evergreen-wholesale` | 54 | |
+| For women | `/for-women` | 2 | *(was 4)* |
+| Furniture | `/seed-furniture` | 2 | *(new — seed fixture)* |
+| Home | `/seed-home` | 48 | *(new — seed fixture)* |
+| Home Appliances | `/home-appliances` | 326 | Friendly URL; ID-based form below *(was 351)* |
+| Home Improvement | `/seed-home-improvement` | 2 | *(new — seed fixture)* |
+| Home supplies | `/kitchen-supplies` | 11 | URL still `kitchen-supplies`, display name "Home supplies" *(was 14)* |
+| Jewelry and Gems | `/jewelry-and-gems` | 135 | *(was 133)* |
+| Loyalty products | `/loyalty-products` | 27 | *(new — loyalty fixture family)* |
 | New home | `/new-home` | 3 | |
-| Office furniture | `/office-furniture` | 335 | *(new since March)* |
-| Phones and Accessories | `/phones-and-accessories` | 463 | Friendly URL; ID-based form below |
-| Printers | `/printers` | 22 | |
-| Products with options | `/products-with-options` | 11 | Configurable/variation products (restructured — see §5) |
-| Rental home | `/homes` | 19 | URL is `/homes` (not `/rental-home`) |
-| Seasonal | `/evergreen-wholesale/seasonal` | — | Subcategory of Evergreen Wholesale |
-| Security And Protection | `/security-and-protection` | 552 | Friendly URL; ID-based form below |
-| SEED-20260518-Electronics | `/seed-electronics` | 12 | *(new — seed category)* |
-| SEED-20260518-Industrial Supplies | `/seed-industrial-supplies` | 8 | *(new — seed category)* |
-| SEED-20260518-Office Supplies | `/seed-office-supplies` | 7 | *(new — seed category)* |
-| Services | `/services` | 4 | *(new since March)* |
+| Office furniture | `/office-furniture` | 335 | |
+| Personal Care | `/seed-personal-care` | 2 | *(new — seed fixture)* |
+| Phones and Accessories | `/phones-and-accessories` | 446 | Friendly URL; ID-based form below *(was 463)* |
+| Printers | `/printers` | 21 | *(was 22)* |
+| Products with options | `/products-with-options` | 48 | Configurable/variation products — **restructured & grown 11→48**, see §5 |
+| Rental home | `/sweet-home` | 19 | **URL changed** `/homes` → `/sweet-home` |
+| Security And Protection | `/security-and-protection` | 551 | Friendly URL; ID-based form below *(was 552)* |
 | Snacks | `/snacks` | 4 | |
-| Soft Drinks | `/soft-drinks` | 16 | |
-| Sports | `/evergreen-wholesale/sports` | — | Subcategory of Evergreen Wholesale |
-| Standard Test Products | `/seed-20260519-std-cat` | 5 | *(new — seed category)* |
-| TV & Multimedia | `/tv-multimedia` | 9 | *(new since March)* |
-| Tyres | `/tyres` | 7 | *(new since March)* |
-| WIPO | `/wipo` | 8 | *(new since March)* |
-| Wireless Accessory World | `/wireless-accessory-world` | 4 | *(new since March)* |
+| Soft Drinks | `/soft-drinks` | 13 | *(was 16)* |
+| Sports | `/seed-sports` | 4 | *(new — seed fixture; distinct from Evergreen Wholesale/Sports subcat)* |
+| Test Fixtures | `/seed-test-fixtures` | 9 | *(new — seed fixture)* |
+| Tools | `/seed-tools` | 7 | *(new — seed fixture)* |
+| TV & Multimedia | `/tv-multimedia` | 6 | *(was 9)* |
+| Tyres | `/tyres` | 4 | *(was 7)* |
 
-### Categories Removed Since March 2026
-- `/car-covers` (Car Covers EN)
-- `/online-courses` (Online Courses)
-- `/coming-soon` (Coming Soon)
-- `/bolts` (top-level Bolts — subcategory `bolts/carriage-bolts` remains)
-- `/newtest2` (NewTest2)
-- `/new-catalog-item` (New Catalog Item)
-- `/category1` (Category 1)
-- `/soda` as top-level (404 — homepage hero first-slider still links here; correct target is `/soft-drinks` — SMK-001 / BUG_042_001)
-- `/jewelry-and-gems` subcategories from March (preserved category, but children changed)
-- Alcoholic-drinks subcategories from March (Beer, Cider, Distilled, Wine, etc. — verify each before use)
-- Snacks subcategories from March (Chips, Cookie, Crackers, Nachos — verify)
-- Soft-drinks subcategories from March (Mineral Water, Soda — verify)
-- Printers subcategories from March (All-in-One, Multifunction — verify)
+### Categories Dropped From the Grid Since May 2026
+- `/tv` — [en-US] TV (was 37) — no longer a top-level grid tile
+- `/coffee-and-tea`, `/juice`, `/mall-of-america`, `/wireless-accessory-world`, `/speeds-medical` — still in the "All products" nav dropdown but **absent from the `/catalog` grid** (verify before use)
+- `/meiertobler-demo` (Meiertobler Demo), `/services` (Services), `/wipo` (WIPO) — gone from the grid
+- May seed fixtures replaced: `/seed-20260518-cfg-parents` (→ now `/products-with-options/cfg-parents`), `/seed-20260519-cond-parents`, `/seed-20260519-std-cat`, `/seed-industrial-supplies`, `/seed-office-supplies`
+- Still bad from earlier revs — homepage hero first-slider `/soda` target (SMK-001 / BUG_042_001): `/soda` is not a top-level grid category; correct target `/soft-drinks`. (Storefront is an SPA — every path returns the 200 shell, so a 404 is rendered client-side; existence must be judged from the `/catalog` grid, not HTTP status.)
 
-### Subcategories (sampled live, May 2026)
+### Subcategories (sampled live, July 2026)
 
 | Subcategory | URL | Parent |
 |-------------|-----|--------|
+| Carriage Bolts | `/bolts/carriage-bolts` | Bolts |
+| Ever green sports | `/evergreen-wholesale/ev-green-sports` | Evergreen Wholesale |
 | Seasonal | `/evergreen-wholesale/seasonal` | Evergreen Wholesale |
-| Sports | `/evergreen-wholesale/sports` | Evergreen Wholesale |
 | Everything for Kitchen | `/kitchen-supplies/everything-for-kitchen` | Home supplies |
-| Carriage Bolts | `/bolts/carriage-bolts` | Bolts (no top-level page) |
-| Apple Store Top | `/mall-of-america/apple-store-top/` | Mall of America |
+| Holders & Stands | `/accessories/aliexpress/phones-and-accessories/holders-stands` | Accessories |
+| Home appliance | `/accessories/aliexpress/home-appliences` | Accessories *(note the `home-appliences` spelling in the slug)* |
 | Digital / Gift Cards | `/accessories/digital/gift-cards/` | Accessories |
-| Aliexpress / Phones-and-Accessories / Holders-Stands | `/accessories/aliexpress/phones-and-accessories/holders-stands` | Accessories |
-| Digital products / Subscriptions | `/courses-and-digital-products/digital-products/subscriptions/` | Courses & digital products |
 
 ### Category by ID (stable URLs — homepage tiles)
 
@@ -202,18 +194,24 @@ Counts are live product totals as of 2026-05-20.
 
 ## 4. E2E / Test / Seed Categories
 
+The May `SEED-20260518/19-*` fixtures are gone; the current seed family uses friendly `/seed-<domain>` slugs (all in the §3 grid, listed here together). Treat as disposable — counts/existence drift with each re-seed.
+
 | Category | URL | Notes |
 |----------|-----|-------|
-| Standard Test Products | `/seed-20260519-std-cat` | Active — 5 products |
-| Configurable Parents | `/seed-20260518-cfg-parents` | Active — 2 products |
-| Conditional Parents | `/seed-20260519-cond-parents` | Active — 8 products |
-| SEED-20260518-Electronics | `/seed-electronics` | Active — 12 products |
-| SEED-20260518-Industrial Supplies | `/seed-industrial-supplies` | Active — 8 products |
-| SEED-20260518-Office Supplies | `/seed-office-supplies` | Active — 7 products |
-| [E2E Test] RAM | `/e2e-test-ram` | Verify before use (was in March nav) |
-| [E2E Test] Notebooks | `/e2e-test-notebooks` | Verify before use |
-| [E2E Test] SSD | `/e2e-test-ssd` | Verify before use |
-| [E2E] Catalog | `/e2e-catalog` | Verify before use |
+| AGENT-TEST-Accessories | `/seed-agent-test-accessories` | Active — 11 |
+| Beauty | `/seed-beauty` | Active — 3 |
+| Books | `/seed-books` | Active — 1 |
+| Clothing | `/seed-clothing` | Active — 4 |
+| Electronics | `/seed-electronics` | Active — 16 |
+| Furniture | `/seed-furniture` | Active — 2 |
+| Home | `/seed-home` | Active — 48 |
+| Home Improvement | `/seed-home-improvement` | Active — 2 |
+| Loyalty Fixtures | `/seed-loyalty-fixtures` | In nav (loyalty fixture family; see also `/loyalty-products`, `/loyalty-catalog`) |
+| Personal Care | `/seed-personal-care` | Active — 2 |
+| Sports | `/seed-sports` | Active — 4 |
+| Test Fixtures | `/seed-test-fixtures` | Active — 9 |
+| Tools | `/seed-tools` | Active — 7 |
+| Configurable Parents | `/products-with-options/cfg-parents` | Active — 24 (moved under Products with options; see §5) |
 
 ---
 
@@ -224,38 +222,38 @@ Counts are live product totals as of 2026-05-20.
 | Pattern | Example | Notes |
 |---------|---------|-------|
 | `/product/{uuid}` | `/product/fa1c0921-9f2f-4053-b8d0-d7822a4293b6` | Standard UUID-based product URL — works regardless of category nesting |
-| `/{category}/{slug}` | `/products-with-options/configurable-products/hoodie` | SEO-friendly product URL under category (post-restore path) |
+| `/{category}/{slug}` | `/products-with-options/configurable-caps-shirts/hoodie` | SEO-friendly product URL under category |
 | `/{category}/{sub}/{slug}` | `/accessories/digital/gift-cards/` | Deeply nested category path |
 
-### `/products-with-options` Subcategories (RESTRUCTURED post-restore)
+### `/products-with-options` Subcategories (RESTRUCTURED again — July 2026, 48 results)
 
-The March 2026 layout (`configurable-caps-shirts`, `variations-of-jeans`, `configurations`) is gone. Current subcategories:
+The May layout (`configurable-products`, `cakes`) is gone; the CFG products moved **back** under `configurable-caps-shirts`, `cakes`→`dreamy-cakes` (now a full variation family), and the seed `cfg-parents` category folded in here (24 products). Current subcategories:
 
 | Subcategory | URL | Count | Notes |
 |-------------|-----|-------|-------|
 | Build the bike of your dreams | `/products-with-options/build-the-bike-of-your-dreams` | 3 | bike-with-options, off-road-bike, off-road-bike-configurable-product-text |
-| Cakes | `/products-with-options/cakes` | 1 | vintage-wedding-cake |
-| Configurable products | `/products-with-options/configurable-products` | 5 | configurable-hat, hoodie, vintage-california-beach-pullover-hoodie, hat, custom-t-shirt |
+| Configurable caps & shirts | `/products-with-options/configurable-caps-shirts` | 5 | hoodie, custom-t-shirt, hat, vintage-california-beach-pullover-hoodie *(back to this slug — was `configurable-products` in May)* |
+| Configurable Parents | `/products-with-options/cfg-parents` | 24 | seed cfg-parents family (see `project_configurable_parents_url_segment_cfg_parents` memory) |
+| Dreamy cakes | `/products-with-options/dreamy-cakes` | 14 | *(was "cakes" / 1 — now a full variation set: buttercreme styles, filings, flowers)* |
 | Shirts, jeans and more | `/products-with-options/shirts-jeans-and-more` | 1 | mens-flannel-shirts-… (variation product) |
 | Wonderful beds | `/products-with-options/wonderful-beds` | 1 | bed-with-additional-options |
 
-### Configurable Products (post-restore canonical paths)
+### Configurable Products (canonical paths — July 2026)
 
 | Product | URL | Notes |
 |---------|-----|-------|
-| Configurable Hat | `/products-with-options/configurable-products/configurable-hat` | Survived restore — sections rebuilt |
-| Custom T-shirt | `/products-with-options/configurable-products/custom-t-shirt` | Survived restore — sections rebuilt |
-| Vintage Colorado Hoodie | `/products-with-options/configurable-products/hoodie` | *Path changed* — was `/configurable-caps-shirts/hoodie` in March |
-| Black California Beach Pullover Hoodie | `/products-with-options/configurable-products/vintage-california-beach-pullover-hoodie` | Now under configurable-products |
-| Hat | `/products-with-options/configurable-products/hat` | |
-| Bike with options | `/products-with-options/build-the-bike-of-your-dreams/bike-with-options` | New path |
-| Off-Road Bike | `/products-with-options/build-the-bike-of-your-dreams/off-road-bike` | New path |
-| Off-Road Bike (text-only variant) | `/products-with-options/build-the-bike-of-your-dreams/off-road-bike-configurable-product-text` | *(new)* |
-| Vintage Wedding Cake | `/products-with-options/cakes/vintage-wedding-cake` | *(new — cake category)* |
-| Bed with Additional Options | `/products-with-options/wonderful-beds/bed-with-additional-options` | *(new)* |
-| Men's Flannel Shirts | `/products-with-options/shirts-jeans-and-more/mens-flannel-shirts-lightweight-cotton-button-down-…/b2c` | Variation product |
+| Vintage Colorado Hoodie | `/products-with-options/configurable-caps-shirts/hoodie` | *Path changed* — was `/configurable-products/hoodie` in May |
+| Custom T-shirt | `/products-with-options/configurable-caps-shirts/custom-t-shirt` | "Customize" CTA |
+| Men's Adjustable Scholarship Hat (Team Color) | `/products-with-options/configurable-caps-shirts/hat` | 6 variations |
+| Black California Beach Pullover Hoodie | `/products-with-options/configurable-caps-shirts/vintage-california-beach-pullover-hoodie` | 5 variations |
+| Bike with options | `/products-with-options/build-the-bike-of-your-dreams/bike-with-options` | "Customize" CTA |
+| Off-Road Bike | `/products-with-options/build-the-bike-of-your-dreams/off-road-bike` | |
+| Off-Road Bike (text-only variant) | `/products-with-options/build-the-bike-of-your-dreams/off-road-bike-configurable-product-text` | |
+| Vintage Wedding Cake (Dreamy cakes) | `/products-with-options/dreamy-cakes/top-white-bottom-white` (+ variants) | Variation family: buttercreme-style-*, filing-*, flowers-* |
+| Bed with Additional Options | `/products-with-options/wonderful-beds/bed-with-additional-options` | "Customize" CTA |
+| Men's Flannel Shirts | `/products-with-options/shirts-jeans-and-more/mens-flannel-shirts-…` | Variation product |
 
-> **Do not assert exact prices or section IDs against these products.** The restore rebuilt configuration sections for surviving CFG products (Hat / T-shirt / Hoodie); verify section composition at runtime via xAPI or live discovery. See `feedback_env_resilience` and `live-discovery.md`.
+> **Do not assert exact prices or section IDs against these products.** Configuration sections drift with each re-seed; verify section composition at runtime via xAPI or live discovery. See `feedback_env_resilience` and `live-discovery.md`.
 
 ### Product Display Types
 
@@ -420,33 +418,32 @@ Icons in the middle navigation row (right side):
 - **Notifications** (button — opens notifications dropdown, no dedicated page link, shows unread count badge)
 - Cart → `/cart` (shows item count badge)
 
-### All Products Dropdown *(refreshed May 2026)*
+### All Products Dropdown *(refreshed July 2026)*
 Available via the **"All products"** button. Top entries:
-- Shop all categories
-- Shop by brand
-- New & Trending
-- Holders & Stands
+- Shop all categories → `/catalog`
+- Shop by brand → `/Brands`
+- New & Trending → `/search?q=juicer`
+- Holders & Stands → `/accessories/aliexpress/phones-and-accessories/holders-stands`
 
-Plus all top-level categories listed in §3 (live order may vary): Home Appliances, Soft Drinks, Books, For women, Courses and audio books, Speeds Medical, Configurable Parents, New home, TV & Multimedia, Products with options, Craft, Carriage Bolts, Coffee and tea, Tyres, Alcoholic drinks, Accessories, Consumer Electronics, Conditional Parents, Medical goods, SEED-20260518-Office Supplies, SEED-20260518-Industrial Supplies, Juice, Snacks, SEED-20260518-Electronics, [en-US] TV, Services, Jewelry and Gems, Evergreen Wholesale, Meiertobler Demo, Generatation-en, Sports, Office furniture, Standard Test Products, Rental home, Seasonal, Phones and Accessories, Home supplies, Security And Protection, Printers, Drinks And Food, Mall of America, WIPO, Wireless Accessory World, Computer Office Education.
+Plus top-level categories (live order varies). **The dropdown is a CMS-managed menu and does NOT match the `/catalog` grid 1:1** — it still carries legacy entries not in the grid: Bolts, Test Fixtures, Home Improvement, Home, Courses and audio books (`/online-courses`), Speeds Medical, Generatation-en (`/new-catalog-item`), Juice, Coffee and tea, Mall of America, Wireless Accessory World, Loyalty (`/loyalty-catalog`), Loyalty Fixtures (`/seed-loyalty-fixtures`). Verify any entry against the §3 grid before relying on it.
 
-> "Configurable Parents" appears multiple times in the dropdown (likely a seed-data duplication artifact — verify before relying on it for tests).
-
-### Main Navigation Bar (inline subcategory navigation, May 2026)
+### Main Navigation Bar (inline subcategory navigation, July 2026)
 - Alcoholic Drinks
 - Accessories
 - Jewelry and gems
-- Tyres *(new since March)*
-- Home appliance *(new since March)*
+- Tyres
+- Home appliance → `/accessories/aliexpress/home-appliences`
 - Juice
-- Home supplies *(renamed from "Kitchen Supplies")*
+- Home supplies
 - Products with options
 - Soft drinks
 - Snacks
 - Printers
-- Rental home
-- TV new *(renamed from "TV")*
-- All BRANDS
-- SEE ALL PRODUCTS
+- Rental home → `/sweet-home` *(URL changed from `/homes`)*
+- TV new → `/tv-multimedia`
+- All brands → `/brands`
+- Loyalty → `/loyalty-catalog` *(new)*
+- SEE ALL PRODUCTS → `/catalog`
 
 ---
 
@@ -497,8 +494,8 @@ Plus all top-level categories listed in §3 (live order may vary): Home Applianc
 ## 13. Technical Information
 
 ### Platform
-- **Platform:** Virto Commerce (ASP.NET)
-- **Version:** **2.49.0** *(was 2.43.0 in March)*
+- **Platform:** Virto Commerce (ASP.NET) — assembly line **3.10xx** (max module-required `platformVersion` 3.1039.0; 86 modules loaded)
+- **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver."; a PR-preview theme build) *(was 2.49.0 in May)*
 - **Environment:** QA (vcst-qa)
 - **Storefront:** vc-frontend (Coffee theme)
 - **GraphQL:** WebSocket connection available for subscriptions
@@ -526,9 +523,9 @@ Plus all top-level categories listed in §3 (live order may vary): Home Applianc
 | **Storefront** | | |
 | Static Pages | ~14 | Homepage, sign-in/up, contacts, catalog, cart, brands, news, etc. |
 | Account Pages | 13 | Dashboard, orders, lists, profile, company info/members, etc. |
-| Main Categories (live) | ~38 | Including SEED-* test categories and renamed/restructured ones |
+| Main Categories (live grid) | ~37 | `/catalog` grid tiles, incl. `/seed-*` fixtures (nav dropdown lists more) |
 | Category IDs | 7 | Named ID-based categories |
-| Products | ~5,500+ | Live counts: Accessories 3,087 + Security 552 + Phones 463 + Consumer Electronics 413 + Home Appliances 351 + Office furniture 335 + Computer 379 + others |
+| Products | ~5,000+ | Live counts: Accessories 2,985 + Security 551 + Phones 446 + Consumer Electronics 391 + Office furniture 335 + Home Appliances 326 + Computer 291 + others |
 | Languages | 15 | All pages × 15 languages |
 | **Admin SPA** | | |
 | System Pages | 8 | Login, dashboard, system info, modules, Swagger, GraphiQL, Hangfire, health |
@@ -552,11 +549,28 @@ Plus all top-level categories listed in §3 (live order may vary): Home Applianc
 4. **Product variations** may have additional sub-pages
 5. **SEO URLs** used in multiple languages
 6. **No `/sitemap.xml`** — site does not expose an XML sitemap
-7. **SEED-20260518/19-*** categories are test fixtures — they MAY be removed by future cleanup; don't rely on exact counts
-8. **`Configurable Parents` appears multiple times** in the All Products dropdown (seed-data duplication artifact — verify before testing)
+7. **`/seed-*` categories** are test fixtures (current family replaced the May `SEED-20260518/19-*` set) — they MAY be removed/re-created by future cleanup; don't rely on exact counts
+8. **`/catalog` grid ≠ "All products" nav dropdown** — the CMS-managed dropdown carries legacy entries not present in the grid; treat the grid (§3) as authoritative
 9. **Footer Popular Categories link** says "Allbiz" but resolves to Medical goods (label-vs-link drift)
+10. **Storefront is an SPA** — every path returns the 200 shell and renders 404s client-side, so HTTP status can't confirm a category/product exists; judge existence from the `/catalog` grid or live discovery
 
 ---
+
+## Changelog (vs. May 20, 2026 rev 4)
+
+| Change | Details |
+|--------|---------|
+| Storefront theme version | 2.49.0 → **2.54.0-pr-2382** (footer "Ver."); doc now separates this from the VC **platform** assembly line (3.10xx) — earlier revs mislabeled the footer version as "Platform version" |
+| Catalog re-seeded (incremental) | Not a full wipe — existing category counts drifted down slightly (Accessories 3,087→2,985, Consumer Electronics 413→391, Home Appliances 351→326, Phones 463→446, Computer 379→291, Soft Drinks 16→13, Tyres 7→4, etc.) |
+| New `/seed-*` category family | AGENT-TEST-Accessories, Beauty, Books, Clothing, Electronics, Furniture, Home, Home Improvement, Personal Care, Sports, Test Fixtures, Tools, Loyalty products, destinations — replacing the May `SEED-20260518/19-*` fixtures |
+| Bolts | Back as a **top-level** category (`/bolts`, 29) — was demoted to `/bolts/carriage-bolts`-only in May |
+| Rental home URL | `/homes` → **`/sweet-home`** (19) |
+| Dropped from `/catalog` grid | `[en-US] TV` (`/tv`), Meiertobler Demo, Services, WIPO; and (in dropdown only, not grid) Coffee and tea, Juice, Mall of America, Wireless Accessory World, Speeds Medical |
+| `/products-with-options` restructured & grown 11 → 48 | CFG products moved **back** to `configurable-caps-shirts` (was `configurable-products` in May); `cakes`→**`dreamy-cakes`** (1→14, full variation family); seed **`cfg-parents`** folded in (24) |
+| CFG product paths | Hoodie/T-shirt/Hat/Beach-hoodie now under `/products-with-options/configurable-caps-shirts/...` |
+| Nav / Loyalty | "Loyalty" (`/loyalty-catalog`) added to inline nav; loyalty fixture categories (`/loyalty-products`, `/seed-loyalty-fixtures`) present |
+| Crawl scope | Guest (unauthenticated); §2 Account + §7 Admin carried forward from rev 4 (not re-verified) |
+| Not re-verified this rev | Languages (still 15 assumed), homepage hero copy, account sidebar, admin blades, REST/GraphQL surface — unchanged from rev 4 unless noted |
 
 ## Changelog (vs. March 21, 2026 rev 3)
 
@@ -583,6 +597,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** May 20, 2026 (rev 4)
-**Tool Used:** Playwright (Chrome) MCP — live crawl
-**Coverage:** Homepage, top header, all-products dropdown, language selector, /catalog top-level inventory with counts, /products-with-options subcategories, account sidebar (Purchasing/Marketing/Corporate/User), footer, platform version (2.49.0)
+**Last Updated:** July 20, 2026 (rev 5)
+**Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
+**Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Carried forward from rev 4 (not re-verified):** §2 Account pages, §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.
