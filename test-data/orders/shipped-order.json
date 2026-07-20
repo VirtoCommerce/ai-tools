@@ -1,0 +1,75 @@
+{
+  "_fixture": "SHIPPED_ORDER — Swagger-shaped create body for POST /api/order/customerOrders (VCST-5482). Order in Shipped state with a shipment marked Sent + a tracking number. Owner resolved at seed time from {{USER_EMAIL}}. No runtime GUIDs here — created id → aliases.<env>.json; status re-stamped from orders-specs.mjs.",
+  "number": "AGENT-TEST-ORD-SHIPPED",
+  "storeId": "{{STORE_ID}}",
+  "currency": "USD",
+  "status": "Shipped",
+  "customerName": "AGENT-TEST Buyer",
+  "total": 89.97,
+  "subTotal": 89.97,
+  "shippingTotal": 0,
+  "shippingTotalWithTax": 0,
+  "taxTotal": 0,
+  "items": [
+    {
+      "sku": "AGENT-TEST-ORD-SKU-1",
+      "productId": "agent-test-ord-prod-1",
+      "catalogId": "agent-test-ord",
+      "name": "AGENT-TEST Shipped Item 1",
+      "quantity": 3,
+      "price": 29.99,
+      "productType": "Physical",
+      "currency": "USD"
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Shipping",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    },
+    {
+      "addressType": "Billing",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    }
+  ],
+  "shipments": [
+    {
+      "shipmentMethodCode": "FixedRate",
+      "shipmentMethodOption": "Ground",
+      "currency": "USD",
+      "status": "Sent",
+      "number": "AGENT-TEST-ORD-SHIPPED-S1",
+      "trackingNumber": "AGENT-TEST-TRK-SHIPPED",
+      "items": []
+    }
+  ],
+  "inPayments": [
+    {
+      "gatewayCode": "DefaultManualPaymentMethod",
+      "currency": "USD",
+      "customerName": "AGENT-TEST Buyer",
+      "sum": 89.97,
+      "status": "Paid",
+      "paymentStatus": "Paid",
+      "number": "AGENT-TEST-ORD-SHIPPED-P1"
+    }
+  ]
+}

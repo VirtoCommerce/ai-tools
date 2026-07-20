@@ -1,0 +1,85 @@
+{
+  "_fixture": "COMPLETED_ORDER — Swagger-shaped create body for POST /api/order/customerOrders (VCST-5482). Owner resolved at seed time from {{USER_EMAIL}}. No runtime GUIDs here — the created order id is written to aliases.<env>.json. status/shipment status are re-stamped from orders-specs.mjs at seed time.",
+  "number": "AGENT-TEST-ORD-COMPLETED",
+  "storeId": "{{STORE_ID}}",
+  "currency": "USD",
+  "status": "Completed",
+  "customerName": "AGENT-TEST Buyer",
+  "total": 249.98,
+  "subTotal": 249.98,
+  "shippingTotal": 0,
+  "shippingTotalWithTax": 0,
+  "taxTotal": 0,
+  "items": [
+    {
+      "sku": "AGENT-TEST-ORD-SKU-1",
+      "productId": "agent-test-ord-prod-1",
+      "catalogId": "agent-test-ord",
+      "name": "AGENT-TEST Completed Item 1",
+      "quantity": 1,
+      "price": 124.99,
+      "productType": "Physical",
+      "currency": "USD"
+    },
+    {
+      "sku": "AGENT-TEST-ORD-SKU-2",
+      "productId": "agent-test-ord-prod-2",
+      "catalogId": "agent-test-ord",
+      "name": "AGENT-TEST Completed Item 2",
+      "quantity": 1,
+      "price": 124.99,
+      "productType": "Physical",
+      "currency": "USD"
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Shipping",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    },
+    {
+      "addressType": "Billing",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    }
+  ],
+  "shipments": [
+    {
+      "shipmentMethodCode": "FixedRate",
+      "shipmentMethodOption": "Ground",
+      "currency": "USD",
+      "status": "Delivered",
+      "number": "AGENT-TEST-ORD-COMPLETED-S1",
+      "trackingNumber": "AGENT-TEST-TRK-COMPLETED",
+      "items": []
+    }
+  ],
+  "inPayments": [
+    {
+      "gatewayCode": "DefaultManualPaymentMethod",
+      "currency": "USD",
+      "customerName": "AGENT-TEST Buyer",
+      "sum": 249.98,
+      "status": "Paid",
+      "paymentStatus": "Paid",
+      "number": "AGENT-TEST-ORD-COMPLETED-P1"
+    }
+  ]
+}

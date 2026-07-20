@@ -235,6 +235,30 @@ export const idsParam = (ids) => [...ids].filter(Boolean).map((id) => `ids=${enc
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Live-discover REAL catalog products that EXIST on the target env (POST /api/catalog/search/products —
+ * the same admin route seed-loyalty uses to resolve SKU→productId). Returns up to `count` normalized
+ * `{ id, sku, name, catalogId }`, preferring buyable physical products. Env-resilient (no hardcoded
+ * SKUs, per .claude/rules/test-data.md): callers overlay these onto order/quote line items so the
+ * seeded records reference browsable products. Returns [] in --dry-run or when the catalog is empty —
+ * callers keep their fixture placeholders. Optional `catalogId` scopes the search to one catalog.
+ */
+export async function discoverCatalogProducts(api, count = 3, { catalogId = null, searchPhrase = '' } = {}) {
+  if (DRY_RUN || count <= 0) return [];
+  const body = { take: Math.max(count * 2, count), responseGroup: 'ItemInfo', searchPhrase };
+  if (catalogId) body.catalogId = catalogId;
+  let res;
+  try { res = await api('POST', '/api/catalog/search/products', body, { expectStatus: [200, 201] }); }
+  catch (e) { verbose(`discoverCatalogProducts: search failed (${String(e.message).slice(0, 120)})`); return []; }
+  const items = res?.items || res?.results || [];
+  const norm = items
+    .filter((p) => p && p.id && (p.code || p.sku))
+    .map((p) => ({ id: p.id, sku: p.code || p.sku, name: p.name || p.code || p.sku, catalogId: p.catalogId }));
+  // Prefer buyable/active where the flag is present, but never return fewer than we have.
+  const buyable = norm.filter((p) => items.find((i) => i.id === p.id)?.isBuyable !== false);
+  return (buyable.length >= count ? buyable : norm).slice(0, count);
+}
+
 // Primary env: its canonical IDs live committed, curated, inline in aliases.json,
 // so seeders NEVER auto-write an aliases.vcst.json override for it. Every OTHER env
 // (localhost, vcptcore, virtostart, customer envs) gets aliases.<env>.json written on
