@@ -33,7 +33,7 @@ import {
 } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parse } from 'dotenv';
-import { resolveTestEnv } from './lib/resolve-test-env.js';
+import { resolveTestEnv } from '../lib/resolve-test-env.js';
 
 // ---------- args ----------
 const argv = process.argv.slice(2);

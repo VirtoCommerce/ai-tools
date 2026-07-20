@@ -104,7 +104,7 @@ Launch up to 3 agents in a SINGLE message for parallel execution.
 
 Wait for completion messages from teammates. On completion:
 1. Read `results/{RUN_ID}/suite-{ID}-results.json`
-2. Update status: `npx tsx scripts/reporting.ts update-status --run-id {RUN_ID} --results-dir results/{RUN_ID}/ --suite-id {ID} --status completed`
+2. Update status: `npx tsx scripts/regression/reporting.ts update-status --run-id {RUN_ID} --results-dir results/{RUN_ID}/ --suite-id {ID} --status completed`
 3. Free browser slot, check failures (Step 5), check rate limits (Step 6)
 4. Dispatch next queued suite to freed slot
 
@@ -153,7 +153,7 @@ Fast-path retries reuse the same `compute-only` lane — do NOT fall back to a b
 ### Step 7: Generate Report
 
 ```bash
-npx tsx scripts/reporting.ts generate --run-id {RUN_ID} --results-dir results/{RUN_ID}/
+npx tsx scripts/regression/reporting.ts generate --run-id {RUN_ID} --results-dir results/{RUN_ID}/
 ```
 
 Produces: `results/{RUN_ID}/regression-report.md` + `summary.json`
@@ -161,7 +161,7 @@ Produces: `results/{RUN_ID}/regression-report.md` + `summary.json`
 ### Step 8: JIRA Ticket Creation
 
 ```bash
-npx tsx scripts/reporting.ts jira-payloads --run-id {RUN_ID} --results-dir results/{RUN_ID}/
+npx tsx scripts/regression/reporting.ts jira-payloads --run-id {RUN_ID} --results-dir results/{RUN_ID}/
 ```
 
 Read `jira-payloads.json`, create tickets via Atlassian MCP `createJiraIssue` (if available). Rate limit: 2s between creations.

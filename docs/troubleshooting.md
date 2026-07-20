@@ -192,7 +192,7 @@ See [`docs/onboarding.md`](onboarding.md) § Configuration Buckets for the 3-buc
 > reproduce a bug as an ad-hoc unit test instead of running suite CSVs, so this failure mode doesn't
 > apply to a marketplace `vc-fix` install.
 
-**Symptom:** `npx tsx scripts/validate-td-refs.ts` or a suite run logs:
+**Symptom:** `npx tsx scripts/test-data/validate-td-refs.ts` or a suite run logs:
 ```
 [test-data-resolver] Failed to resolve @td(TECHFLOW_ADMIN.email): Unknown alias "TECHFLOW_ADMIN"
 ```
@@ -299,7 +299,7 @@ The system cannot find the path specified.
 
 **Fix:** Run the underlying script directly instead of via `npm run`:
 ```bash
-node scripts/refresh-graphql-schema.mjs --dry-run
+node scripts/graphql/refresh-graphql-schema.mjs --dry-run
 ```
 
 Same fix for any other `npm run` script that uses bash redirects or inline `VAR=val cmd` syntax. The driver (`node skills/run-vc-mcp-testing-module/driver.mjs`) sidesteps this by invoking scripts directly.

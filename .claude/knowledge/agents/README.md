@@ -145,7 +145,7 @@ Reads JIRA ticket, maps to affected components, dispatches specialists, reports 
 ### 3. Regression (`/qa-regression [scope]`)
 Reads `config/test-suites.json`, dispatches sub-agents in batches of 3, retries with browser fallback chain.
 
-**Autonomous mode** (`/qa-regression [scope] --autonomous`): Uses `autonomous-regression-orchestrator` with Agent Teams for enhanced orchestration — 3+1 token bucket, exponential backoff (30s→60s→120s), persistent failure tracking, consolidated reporting via `scripts/reporting.ts`, and auto-JIRA ticket creation. Results in `results/{RUN_ID}/`.
+**Autonomous mode** (`/qa-regression [scope] --autonomous`): Uses `autonomous-regression-orchestrator` with Agent Teams for enhanced orchestration — 3+1 token bucket, exponential backoff (30s→60s→120s), persistent failure tracking, consolidated reporting via `scripts/regression/reporting.ts`, and auto-JIRA ticket creation. Results in `results/{RUN_ID}/`.
 
 | Selection | Suites | Use Case |
 |-----------|--------|----------|

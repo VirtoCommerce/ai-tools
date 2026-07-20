@@ -21,7 +21,7 @@ The project ships a centralized fixture system at [`test-data/`](../../../test-d
 
 ## 2. The `@td()` Resolver
 
-The runtime resolver at [`scripts/lib/test-data-resolver.ts`](../../../scripts/lib/test-data-resolver.ts) reads CSV-backed fixtures and a JSON alias registry. It is consumed by `scripts/graphql-runner.ts` and the regression suite parsers. **Postman collections themselves don't run the resolver** — but you should resolve `@td()` references **at authoring time** when building the collection (read the file, look up the alias, paste the actual value or pass it through an env variable).
+The runtime resolver at [`scripts/lib/test-data-resolver.ts`](../../../scripts/lib/test-data-resolver.ts) reads CSV-backed fixtures and a JSON alias registry. It is consumed by `scripts/graphql/graphql-runner.ts` and the regression suite parsers. **Postman collections themselves don't run the resolver** — but you should resolve `@td()` references **at authoring time** when building the collection (read the file, look up the alias, paste the actual value or pass it through an env variable).
 
 ### Syntax
 
@@ -57,7 +57,7 @@ The runtime resolver at [`scripts/lib/test-data-resolver.ts`](../../../scripts/l
 ### Validation
 
 ```bash
-npx tsx scripts/validate-td-refs.ts
+npx tsx scripts/test-data/validate-td-refs.ts
 ```
 Verifies every `@td()` reference across all suites resolves cleanly.
 

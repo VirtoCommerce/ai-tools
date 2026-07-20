@@ -41,7 +41,7 @@ import { dirname, resolve } from 'node:path';
 import { parse as parseDotenv } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '..');
+const REPO_ROOT = resolve(__dirname, '..', '..');
 const OWNER = 'VirtoCommerce';
 const MAX_PATCH_PROBE = 30; // safety cap on how far above the pinned patch we probe
 // Short bundle names (e.g. "v12", "v14") expand to this template; override the branch via BUNDLE_REF.

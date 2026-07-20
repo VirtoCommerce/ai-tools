@@ -114,7 +114,7 @@ Reference files — read on-demand before each testing area, not all upfront:
 | **Authoring Runner-Native GraphQL Cases** | `knowledge/api/graphql-test-cases-runner.md` |
 | **Live Test-Data Discovery** | `knowledge/execution/live-discovery.md` |
 
-**Authoring or reviewing GraphQL test cases? Read `graphql-test-cases-runner.md` first.** It is the canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar used by `scripts/graphql-runner.ts` (tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, common failure modes, authoring checklist). Do not invent tags, predicate shapes, or path syntax not documented there.
+**Authoring or reviewing GraphQL test cases? Read `graphql-test-cases-runner.md` first.** It is the canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar used by `scripts/graphql/graphql-runner.ts` (tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, common failure modes, authoring checklist). Do not invent tags, predicate shapes, or path syntax not documented there.
 
 ## Live-Verification Policy
 
@@ -139,9 +139,9 @@ Full decision tree, JS recipes, and CSV-runner recipes: `knowledge/execution/liv
 
 Before authoring or reviewing any query/mutation:
 - Consult `knowledge/api/graphql-schema.md` (live introspection snapshot — 86 queries / 134 mutations / 36 types as of last refresh).
-- For ad-hoc inline checks: `npx tsx scripts/graphql-runner.ts --query "<inline>"`.
+- For ad-hoc inline checks: `npx tsx scripts/graphql/graphql-runner.ts --query "<inline>"`.
 - Schema is refreshed via `npm run schema:refresh`; fixtures are bumped/renamed via `npm run graphql:fixtures:update`; CI gate is `npm run graphql:fixtures:validate`.
-- The canonical runner is `scripts/graphql-runner.ts` — **never write custom JS to execute CSV-defined GraphQL cases.**
+- The canonical runner is `scripts/graphql/graphql-runner.ts` — **never write custom JS to execute CSV-defined GraphQL cases.**
 
 ### 3. Verify selectors & state against the live UI
 

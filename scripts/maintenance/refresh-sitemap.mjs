@@ -39,10 +39,10 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'dotenv';
-import { resolveTestEnv } from './lib/resolve-test-env.js';
+import { resolveTestEnv } from '../lib/resolve-test-env.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '..');
+const ROOT = resolve(__dirname, '..', '..');
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');

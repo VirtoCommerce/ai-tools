@@ -631,7 +631,7 @@ function appendToHistory(results: SuiteResult[]): void {
   const date = new Date().toISOString().slice(0, 10);
   const runId = `CI-${date}-${SUITE_SELECTION}`;
 
-  // 1) Feed the flakiness engine (scripts/compute-metrics.ts) via the shared,
+  // 1) Feed the flakiness engine (scripts/regression/compute-metrics.ts) via the shared,
   //    compute-metrics-shaped per-suite history.json. CI mode is COARSE — it only
   //    knows a suite's overall status, not per-case counts — so each suite is an
   //    honest 1-unit pass/fail data point (enough for suite-level flaky/trend

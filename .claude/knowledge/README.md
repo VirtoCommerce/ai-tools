@@ -3,8 +3,8 @@
 Cross-agent reference files (27) grouped by **what an agent reaches for the file to answer**.
 These are shared knowledge bases agents consult during testing, authoring, and fixing — not
 per-task notes. Paths are referenced throughout `.claude/`, `ci/`, and the validator scripts;
-move a file → update its references (and `scripts/audit-agents-knowledge.ts` /
-`scripts/detect-vcst-isms.ts`).
+move a file → update its references (and `scripts/maintenance/audit-agents-knowledge.ts` /
+`scripts/maintenance/detect-vcst-isms.ts`).
 
 ## Folders
 
@@ -25,6 +25,6 @@ move a file → update its references (and `scripts/audit-agents-knowledge.ts` /
 - **`oracles/` is the correctness backbone.** Exploratory and review flows use it as the
   "Familiar Problems" oracle and to seed Bad Neighborhood tours.
 - **`graphql-schema.md` is generated** from live introspection via
-  `scripts/refresh-graphql-schema.mjs` — verify field names there before authoring GraphQL.
+  `scripts/graphql/refresh-graphql-schema.mjs` — verify field names there before authoring GraphQL.
 - **Cross-file links use relative paths** (e.g. an `oracles/` file links a selector as
   `../automation/storefront-selectors.md`).

@@ -47,7 +47,7 @@ Reference implementations: b2b users (`user-provision.mjs` → `syncEnvAliases('
 - **[`scripts/lib/test-data-resolver.ts`](../../scripts/lib/test-data-resolver.ts)** — `@td()` resolver implementation (CSV-backed + inline aliases)
 - **[`scripts/lib/live-discover.ts`](../../scripts/lib/live-discover.ts)** — typed xAPI discovery primitives (catalog root, products, addresses, cart, coupons)
 - **[`scripts/lib/random-data.ts`](../../scripts/lib/random-data.ts)** — zero-dep random generators (emails, org names, SKUs, quantities, comments)
-- **[`scripts/validate-td-refs.ts`](../../scripts/validate-td-refs.ts)** — STATIC validation (`npm run td:validate` — verifies every `@td()` reference resolves + flags hardcoded GUIDs)
+- **[`scripts/test-data/validate-td-refs.ts`](../../scripts/test-data/validate-td-refs.ts)** — STATIC validation (`npm run td:validate` — verifies every `@td()` reference resolves + flags hardcoded GUIDs)
 - **[`scripts/seed-data/reconcile-test-data.mjs`](../../scripts/seed-data/reconcile-test-data.mjs)** — LIVE reconciliation (`TEST_ENV=<env> npm run td:reconcile` — probes the platform: catalog root exists, `.env.{ENV}` user roles have accounts, B2B users are org-scoped with no global roles, no password literals in committed CSVs)
 - **[`scripts/lib/user-roles.mjs`](../../scripts/lib/user-roles.mjs)** — canonical test-user ROLE → `.env.{ENV}` var registry (identity from `.env.{ENV}`, secrets from `.env.local`); consumed by the user seeders + `td:reconcile`
 - **[`knowledge/api/graphql-test-cases-runner.md`](../knowledge/api/graphql-test-cases-runner.md)** — runner-native CSV grammar where `@td()` and `[GQL-CAPTURE]` are consumed natively
@@ -74,7 +74,7 @@ Reference implementations: b2b users (`user-provision.mjs` → `syncEnvAliases('
 | Per-domain drift guards | `npm run td:validate:b2b` (`validate-b2b-data.mjs`) + `td:validate:cfg` (`validate-configurable-data.mjs`) + `td:validate:standard` (`validate-standard-data.mjs`) — fail if a runtime GUID sits in a committed CSV, and (cfg) if CSV business fields drift from `SPECS`, and (standard) if a discovered fixture / `SPEC_OVERLAYS` key is incoherent with the CSVs. New seeders SHOULD add a matching `td:validate:<domain>` guard (see the "Authoring rule for ANY new seeder" above). |
 | [`/qa-generate-data`](../skills/qa-generate-data/SKILL.md) | Authors fixtures from scratch with no system GUIDs (blank `*_guid`/`platform_id`, `seeded=false`), business-key aliases, `AGENT-TEST-` prefix; ends on a mandatory `validate-td-refs.ts` green gate |
 | Regression suite CSVs | `Test_Data` columns use `{{VAR}}` and `@td()` exclusively |
-| `scripts/graphql-runner.ts` | Resolves `@td()` natively before sending GraphQL ops; rejects unresolved tokens at lint time |
+| `scripts/graphql/graphql-runner.ts` | Resolves `@td()` natively before sending GraphQL ops; rejects unresolved tokens at lint time |
 
 ## Memory entries that codify this rule
 
@@ -91,7 +91,7 @@ You should not. If you genuinely cannot resolve via `{{VAR}}` or `@td()`:
 
 1. Add a new alias entry to [`test-data/aliases.json`](../../test-data/aliases.json) pointing to a CSV row that holds the value
 2. Or use the inline `@td(file, filter, column)` form for one-off lookups (see [`test-data/README.md`](../../test-data/README.md) §Direct form)
-3. Run `npx tsx scripts/validate-td-refs.ts` to confirm resolution
+3. Run `npx tsx scripts/test-data/validate-td-refs.ts` to confirm resolution
 4. If neither works, the value is environmental — promote it to `.env` and reference as `{{VAR}}`
 
 A literal in a Steps/Test_Data column without one of these resolvers is a review failure (see `/qa-review-tests` Dimension 6 — Data Validity).

@@ -67,7 +67,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Payment Matrix | `knowledge/api/order-creation-matrix.md` — 15 payment × shipping combos |
 | Live xAPI Schema | `knowledge/api/graphql-schema.md` — types/fields/inputs from live introspection |
-| **Runner-native GraphQL test cases** | `knowledge/api/graphql-test-cases-runner.md` — canonical contract for `Steps`/`Assertions`/`Cleanup` grammar consumed by `scripts/graphql-runner.ts`. Read BEFORE writing or reviewing any GraphQL test case. |
+| **Runner-native GraphQL test cases** | `knowledge/api/graphql-test-cases-runner.md` — canonical contract for `Steps`/`Assertions`/`Cleanup` grammar consumed by `scripts/graphql/graphql-runner.ts`. Read BEFORE writing or reviewing any GraphQL test case. |
 | **Live discovery + random inputs** | `knowledge/execution/live-discovery.md` — decision tree for `{{VAR}}` vs `@td()` vs `live-discover` (any product / catalog root / first address) vs `random-data` (unique emails/orgs with `AGENT-TEST-` prefix). JS recipes via `scripts/lib/live-discover.ts` + `random-data.ts`; CSV-runner recipes via `[GQL-OP]+[GQL-CAPTURE]`; parallel-run isolation via agent user pool. Consult before authoring any test that mentions a product/address/cart/coupon entity that may drift between seeds. |
 
 > All paths relative to `agents/`

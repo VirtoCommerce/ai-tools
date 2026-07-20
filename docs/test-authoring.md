@@ -90,7 +90,7 @@ Test cases never hardcode IDs/SKUs/emails/prices. Everything goes through one of
 }
 ```
 
-Validate after editing: `npx tsx scripts/validate-td-refs.ts` (catches unresolvable `@td()` calls in any suite).
+Validate after editing: `npx tsx scripts/test-data/validate-td-refs.ts` (catches unresolvable `@td()` calls in any suite).
 
 ## Section 3 — Where to Put Your Suites
 
