@@ -340,6 +340,14 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   results, confidence). Print the PR link. **End.** Never merge, never auto-advance past On Review.
   Post-merge/deploy verification (and the move toward Ready for QA / Tested on QA) is the separate
   `/qa-verify-fix VCST-XXXX`.
+- **Signal completion (self-diagnostics — the LAST action, on EVERY terminal exit).** After the report /
+  PR link above — and **equally** on any earlier Gate 0/1 **BAIL / STOP** (a clean bail is a completed
+  run) — run this once (best-effort, silent, never blocks; `$pluginRoot` was already resolved in Phase 1):
+  ```bash
+  node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "qa-fix"
+  ```
+  It lets the vc-fix self-diagnostics collector print its one-line clean/health status **exactly once**,
+  after this run finishes. (See `knowledge/diagnostics/skill-expectations.md` §Signal completion.)
 
 ---
 

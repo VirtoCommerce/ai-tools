@@ -49,6 +49,20 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
   so the agent derives `.fix-workspace/<repo-basename>/` and the branch base/target — never a hardcoded
   `vc-frontend`/`dev`.
 
+## Terminal step — signal self-diagnostics completion (MUST)
+
+Every command/skill's terminal step MUST, as its **LAST action** (after all user-visible output, and on
+every early-exit / BAIL path too), emit the completion marker so the self-diagnostics clean line prints
+exactly once — never on intermediate pauses:
+
+```bash
+node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "<this-skill-name>"
+```
+
+Best-effort, silent, never blocks; a no-op when capture is disabled. Full contract + authoring checklist:
+[`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
+§Signal completion.
+
 ## Browser Assignment & Fallback Chain
 
 Each agent MUST be assigned an explicit browser server. If the primary browser fails (launch error, user data dir conflict, timeout), retry with the next browser in the fallback chain. Max 1 retry.

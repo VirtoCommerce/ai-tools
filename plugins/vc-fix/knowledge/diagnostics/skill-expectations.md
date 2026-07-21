@@ -253,3 +253,51 @@ the diagnostician still confirms the root cause and names the fix:
 - Report categories + size caps + bloat patterns: [`../../.claude/rules/reports.md`](../../.claude/rules/reports.md)
 - Signal source + record schema: [`../../hooks/session-telemetry.mjs`](../../hooks/session-telemetry.mjs)
 - The 6 command definitions: [`../../commands/`](../../commands/)
+
+---
+
+## Signal completion at your final step (REQUIRED for every skill & command)
+
+The self-diagnostics **clean status line** (`vc-fix self-check: no plugin issues detected`) is
+gated on an **explicit completion signal**, NOT on the `Stop` hook. `Stop` fires at the end of
+**every** turn — including every pause where a multi-turn skill (e.g. `/project-init`'s interview,
+`/qa-fix`'s sub-agent hand-off) waits for the operator — and it carries no signal that a skill has
+*finished*. A per-turn guard structurally cannot express "once, at the end", so without an explicit
+marker the clean line either repeats on every pause or never fires at the right moment.
+
+So every command/skill MUST, as the **LAST action of its terminal step** (after all user-visible
+output), emit the completion marker:
+
+```bash
+node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "<this-skill-name>"
+```
+
+(`$pluginRoot` = the active install path, resolved at runtime via `claude plugin list --json` — see
+[`../execution/plugin-root.md`](../execution/plugin-root.md); `/project-init` uses `$CLAUDE_PLUGIN_ROOT`,
+consistent with the rest of that skill.)
+
+Rules:
+
+- Run it **exactly once**, at the real end of the workflow (e.g. after the final "Done"/STOP step),
+  **AFTER** all user-visible output — never at an intermediate pause, and never before a step that
+  still waits on the operator.
+- If the skill **bails early** (NOT READY / BAIL / no-op / couldn't reproduce), still emit it — a
+  correct early exit is a completed run.
+- It is safe and silent: it **never throws, never blocks** a tool, and is a **no-op** when
+  self-diagnostics capture is disabled (`selfDiagnostics:false` / `VC_FIX_DIAG_CONSENT=off` /
+  `VC_FIX_DIAG_CAPTURE=off`) or when there is no session state yet. Being Bash-invoked it has no hook
+  stdin, so it targets the session whose `.state.json` was most recently modified (the active
+  session) unless `--session <id>` is passed.
+
+**Why:** the marker sets `state.skillCompletePending`; the next terminal `Stop`'s `cmdFinalize`
+consumes it to surface the clean line **exactly once**, after your skill actually finished. Without
+it the clean line is withheld (audit `suppressReason: "awaiting-completion"`) — or, only when
+`VC_FIX_DIAG_LINE_FALLBACK=on`, a once-per-**session** legacy fallback fires instead. The `findings`
+escalation (a flagged span → silent `/vc-self-check`) is independent and needs no marker.
+
+**Authoring checklist (add to every new skill/command):**
+
+- [ ] The terminal step's LAST action emits `session-telemetry.mjs complete --skill "<name>"`.
+- [ ] Every early-exit path (BAIL / NOT READY / no-op) also emits it.
+- [ ] `<name>` matches the skill/command name the collector attributes spans to (the slash-command
+      name without its namespace, e.g. `qa-fix`, `project-init`).

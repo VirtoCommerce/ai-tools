@@ -359,6 +359,20 @@ Output to the user: verdict, STR result, checklist score, regressions found, tra
 
 `reports/bugs/closed/` and `reports/bugs/rejected/` are managed manually (closed by QA lead, rejected during triage) — this command does not move files into them.
 
+**Signal completion (self-diagnostics — the LAST action).** After the summary above — and equally
+on an early **BLOCKED** exit (fix not deployed → deferred at the Step 2 gate; a correct early exit is
+a completed run) — run this once (best-effort, silent, never blocks):
+
+```bash
+node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "qa-verify-fix"
+```
+
+So the vc-fix self-diagnostics collector prints its one-line clean/health status **exactly once**
+after the run. `$pluginRoot` = the active install path — reuse if already resolved this run, else
+`claude plugin list --json` (see [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)).
+Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostics/skill-expectations.md)
+§Signal completion.
+
 ---
 
 ## Rules

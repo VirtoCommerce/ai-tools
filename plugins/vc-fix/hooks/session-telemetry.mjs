@@ -758,6 +758,12 @@ function freshState(ev, sid) {
     sawPluginSpan: false, // did any plugin skill/command span close this session (finalize `decision`)
     selfCheckSeen: false,
     promptedThisTurn: false,
+    // Explicit "a skill/command finished its terminal step" marker, set by the `complete`
+    // subcommand (invoked by a skill as its LAST action). The NEXT terminal Stop consumes it
+    // to surface the clean line at most ONCE per skill run — so intermediate pauses of a
+    // multi-turn skill (interview, "fill the files then done") never surface it. { skill, ts }.
+    skillCompletePending: null,
+    cleanLineOffered: false, // opt-in legacy fallback: the once-per-SESSION clean line already surfaced
     testEnv: process.env.TEST_ENV ?? null, // enriched from `TEST_ENV=` in tool args during scan (see below)
     cleanupPending: false, // leftover artifacts from OTHER inactive sessions detected at init
     cleanupOffered: false, // the one-shot cleanup offer already surfaced this session
@@ -779,6 +785,8 @@ function loadState(statePath, ev, sid) {
       j.sid = j.sid || sid;
       j.cleanupPending = j.cleanupPending || false;
       j.cleanupOffered = j.cleanupOffered || false;
+      j.skillCompletePending = j.skillCompletePending || null; // forward-compat for pre-marker state files
+      j.cleanLineOffered = j.cleanLineOffered || false;
       j.staleInactiveSessions = j.staleInactiveSessions || 0;
       j.staleInactiveFiles = j.staleInactiveFiles || 0;
       j.testEnv = j.testEnv ?? (process.env.TEST_ENV ?? null);
@@ -1038,10 +1046,10 @@ async function cmdFinalize(ev) {
   // (plain stdout → debug log only; `systemMessage` is not rendered — CC issue #50542).
   // So a visible line always costs one extra model turn.
   //   • FINDINGS → block+run /vc-self-check (the resume is justified — we want the diag).
-  //   • CLEAN    → resume ONCE to print a "no plugin issues detected" line by DEFAULT (on a
-  //     TERMINAL Stop that had real plugin activity), a deliberate one-extra-turn cost. Silence
-  //     it with VC_FIX_DIAG_LINE=off. The `decision` record below stays the free durable audit
-  //     regardless of whether a line was printed.
+  //   • CLEAN    → resume ONCE to print a "no plugin issues detected" line by DEFAULT, but only
+  //     once a skill/command has signalled its terminal step (`complete`) — a deliberate
+  //     one-extra-turn cost, at most once per run. Silence it with VC_FIX_DIAG_LINE=off. The
+  //     `decision` record below stays the free durable audit regardless of whether a line printed.
   const consentOff = /^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CONSENT || "");
   const lineOff = /^(off|never|0|false|no)$/i.test(process.env.VC_FIX_DIAG_LINE || "");
   // `!stopHookActive` is a belt-and-suspenders guard alongside `promptedThisTurn`: the Stop that
@@ -1049,11 +1057,24 @@ async function cmdFinalize(ev) {
   // nor the clean line re-fires and no resume loop can form.
   const shouldPrompt = !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
   const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen);
-  // Clean line (default ON): only on a clean TERMINAL turn that had real plugin activity, once
-  // per turn, never when the kill switch or VC_FIX_DIAG_LINE=off is set. `promptedThisTurn`
-  // (reset ONLY by a new UserPromptSubmit) is what stops the resumed print-turn's own Stop from
-  // re-blocking → no infinite loop.
-  const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && pluginActivity;
+  // Clean line (default ON): gated on an EXPLICIT completion signal, NOT on per-turn plugin
+  // activity. `Stop` fires at the end of EVERY turn (including every interview/"fill the files"
+  // pause of a multi-turn skill) and cannot know whether another user turn is coming, so a
+  // per-turn `pluginActivity` guard structurally can't express "once, at the end" — it re-printed
+  // the line after every pause. Instead a skill signals `complete` as the LAST action of its
+  // terminal step (sets state.skillCompletePending); the line then fires at most ONCE per run,
+  // only after that final step, and the marker is consumed on surfacing so it never repeats.
+  // `promptedThisTurn` (reset ONLY by a new UserPromptSubmit) + `!stopHookActive` still stop the
+  // resumed print-turn's own Stop from re-blocking → no infinite loop.
+  const completePending = Boolean(state.skillCompletePending);
+  // Opt-in backward-compat (OFF by default): for a skill that never signals `complete`, fall back
+  // to a once-per-SESSION clean line (persisted `cleanLineOffered` guard, mirroring
+  // `cleanupOffered`) instead of per-turn. This rescues an un-migrated skill without regressing to
+  // the per-pause repeat. A migrated skill signals completion explicitly and never needs it.
+  const lineFallback = /^(on|1|true|yes)$/i.test(process.env.VC_FIX_DIAG_LINE_FALLBACK || "");
+  const fallbackClean = lineFallback && !completePending && !state.cleanLineOffered;
+  const cleanEligible = pluginActivity && (completePending || fallbackClean);
+  const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && cleanEligible;
   // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were
   // detected at init. Independent of plugin activity (worth offering even on a plain dev turn),
   // but rides the SAME resume (appended to the findings/clean reason) when one is already firing,
@@ -1072,13 +1093,29 @@ async function cmdFinalize(ev) {
     flaggedTotal: state.flagged.length,
     surfaced, // did we resume + print a visible line this turn
     cleanupOffered: cleanupBlock, // did we surface the stale-artifact cleanup offer this turn
-    // Why nothing surfaced this turn (audit only — never affects behavior). `stopHookActive`
-    // is checked before the dedup fallback so a suppression caused by OUR OWN resume-turn's
-    // Stop is logged as "stop-hook-active", not misreported as "already-surfaced".
+    completeSignalled: completePending, // did a skill signal its terminal step this run
+    completedSkill: completePending ? (state.skillCompletePending?.skill ?? null) : null,
+    // Why nothing surfaced this turn (audit only — never affects behavior). "awaiting-completion"
+    // is the NORMAL intermediate-pause state: a plugin skill ran but hasn't signalled `complete`
+    // yet, so the clean line is deliberately withheld until its terminal step. `stopHookActive` is
+    // checked before the dedup fallback so a suppression caused by OUR OWN resume-turn's Stop is
+    // logged as "stop-hook-active", not misreported as "already-surfaced".
     suppressReason: surfaced
       ? null
       : uniqueFresh.length === 0
-        ? (pluginActivity ? "clean" : "no-plugin-activity")
+        ? (!pluginActivity
+            ? "no-plugin-activity"
+            : !cleanEligible
+              ? "awaiting-completion"
+              : lineOff
+                ? "line-off"
+                : consentOff
+                  ? "consent-off"
+                  : stopHookActive
+                    ? "stop-hook-active"
+                    : state.selfCheckSeen
+                      ? "self-check-session"
+                      : "already-surfaced")
         : consentOff
           ? "consent-off"
           : stopHookActive
@@ -1107,7 +1144,13 @@ async function cmdFinalize(ev) {
   // re-blocks. `cleanupOffered` is persisted (NOT reset per turn) → the offer is once per session.
   if (surfaced) state.promptedThisTurn = true;
   if (cleanupBlock) state.cleanupOffered = true;
-  if (shouldPrompt) for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
+  // Consume the completion signal the moment the run's outcome is surfaced — a clean line OR a
+  // findings escalation is the terminal outcome of the completed run, so either one clears the
+  // marker → the clean line never repeats for the same run. The opt-in fallback instead sets the
+  // once-per-session guard. (Findings clearing is belt-and-suspenders: selfCheckSeen already
+  // blocks a later clean line, but consuming the marker keeps the one-line-per-run invariant.)
+  if (cleanBlock) { state.skillCompletePending = null; if (fallbackClean) state.cleanLineOffered = true; }
+  if (shouldPrompt) { for (const f of uniqueFresh) state.seenSignatures.push(f.signature); state.skillCompletePending = null; }
   saveState(statePath, state);
 
   // Build the ONE decision:block reason. At most one of findings/clean fires (findings wins);
@@ -1155,6 +1198,62 @@ async function cmdFinalize(ev) {
     reason = reason ? `${reason}\n\nADDITIONALLY — ${cleanup}` : cleanup;
   }
   if (reason) process.stdout.write(JSON.stringify({ decision: "block", reason }));
+}
+
+// complete — an explicit "this skill/command finished its terminal step" signal, invoked
+// by a skill as the LAST action of its final step (incl. an early BAIL / NOT-READY exit —
+// a correct early exit is a completed run):
+//   node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "<name>"
+// It sets a persisted, one-shot marker (state.skillCompletePending) that the NEXT terminal
+// Stop's cmdFinalize consumes to surface the clean line AT MOST ONCE per run — so a
+// multi-turn skill's intermediate pauses (interview, "fill the files then done") never
+// surface it. Because a Bash-invoked command receives NO hook stdin (no session_id), it
+// targets the session whose .state.json was most recently modified — the active session —
+// unless an explicit `--session <id>` is given. Never throws, never blocks; a no-op when
+// capture is disabled (consent-off / kill switch / selfDiagnostics:false) or when there is
+// no session state yet; idempotent (re-running just refreshes the marker timestamp).
+function parseCompleteArgs(argv) {
+  const a = {};
+  for (let i = 0; i < argv.length; i++) {
+    const t = argv[i];
+    if (t === "--skill") a.skill = argv[++i];
+    else if (t === "--session") a.session = argv[++i];
+  }
+  return a;
+}
+// The most-recently-modified `<sid>.state.json` in the diagnostics dir → its sid. During an
+// active skill run that session's state was just written by the last hook firing, so it is
+// the active session. "" when the dir is absent/empty. Never throws.
+function newestSessionId(dir) {
+  let entries;
+  try { entries = readdirSync(dir); } catch { return ""; }
+  let best = "";
+  let bestT = -Infinity;
+  for (const f of entries) {
+    if (!f.endsWith(".state.json")) continue;
+    try {
+      const t = statSync(join(dir, f)).mtimeMs;
+      if (t > bestT) { bestT = t; best = f; }
+    } catch { /* vanished / locked — skip */ }
+  }
+  return best ? best.replace(/\.state\.json$/, "") : "";
+}
+async function cmdComplete() {
+  try {
+    const a = parseCompleteArgs(process.argv.slice(3));
+    const root = await resolveOutputRoot();
+    if (!captureEnabled(root)) return; // no-op when capture is off
+    const dir = join(root, ".vc-fix", "diagnostics");
+    const sid = a.session || newestSessionId(dir);
+    if (!sid) return; // no session state yet — nothing to mark
+    const statePath = join(dir, `${sid}.state.json`);
+    if (!existsSync(statePath)) return;
+    const state = loadState(statePath, {}, sid);
+    state.skillCompletePending = { skill: a.skill || null, ts: nowIso() };
+    saveState(statePath, state);
+  } catch {
+    /* never throw / never block a tool */
+  }
 }
 
 // purge-inactive — MANUAL cleanup, run by the model (via Bash) after the user confirms
@@ -1210,6 +1309,7 @@ async function cmdPurgeInactive() {
     else if (sub === "prompt") await cmdPrompt(ev);
     else if (sub === "record" || sub === "agentstop") await cmdScan(ev);
     else if (sub === "finalize") await cmdFinalize(ev);
+    else if (sub === "complete") await cmdComplete();
     else if (sub === "purge-inactive") await cmdPurgeInactive();
     // Unknown subcommand: no-op.
   } catch (err) {

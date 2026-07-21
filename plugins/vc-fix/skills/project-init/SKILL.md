@@ -530,6 +530,20 @@ and point the operator at the first run:
 /qa-fix VCST-1234        # (or your tracker's key) — now routes to the right repo
 ```
 
+**Signal completion (self-diagnostics — the LAST action of this step).** After the Step 9
+summary above, run this once — best-effort, silent, and it never blocks:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"
+```
+
+It tells the vc-fix self-diagnostics collector this run has finished, so its one-line
+clean/health status prints **exactly once** (right after this step) instead of on every
+interview / file-fill / verify pause. Emit it even when the run ended early (a NOT READY
+precondition bail, or "nothing to do") — a correct early exit is still a completed run. (See
+[`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
+§Signal completion.)
+
 ---
 
 ## `--add-env` — add another environment to an already-onboarded project
@@ -613,6 +627,9 @@ Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new en
 readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (per run, or via
 your shell) selects the new environment for `/qa-fix`, `/qa-bug`, `/qa-verify-fix`.
 
+As the LAST action, signal completion (best-effort, silent, never blocks):
+`node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"`.
+
 ---
 
 ## `--check` — reconcile an existing profile, then verify
@@ -692,6 +709,9 @@ FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verif
 
 **Restate BOTH** the reconciliation summary (added / removed / decided) **and** the
 readiness table in your reply.
+
+As the LAST action, signal completion (best-effort, silent, never blocks):
+`node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"`.
 
 ---
 

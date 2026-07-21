@@ -48,6 +48,16 @@ function assistantText(ts, text) {
 function appendLines(transcriptPath, lines) {
   appendFileSync(transcriptPath, lines.map((l) => l + "\n").join(""));
 }
+// The explicit terminal-step completion signal a skill emits as its LAST action. Bash-invoked
+// (no hook stdin), so it resolves the session from the newest .state.json in `home` (one per home
+// here) unless `--session` is given. This is what arms the clean line for the NEXT terminal Stop.
+function complete(home, skill, extraEnv = {}) {
+  return execFileSync(process.execPath, [HOOK, "complete", "--skill", skill], {
+    input: "",
+    encoding: "utf8",
+    env: { ...process.env, VC_FIX_HOME: home, ...extraEnv },
+  });
+}
 
 function readSpans(home, sid) {
   const p = join(home, ".vc-fix", "diagnostics", `${sid}.jsonl`);
@@ -386,6 +396,7 @@ test("decision record: a clean plugin turn is recorded clean (line silenced with
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "export const env = {...}"),
       assistantText("2026-01-01T00:00:02Z", "Readiness table: all checks PASS — READY."),
     ]);
+    complete(home, "qa-env-check", LINE_OFF); // /qa-env-check finished its terminal step
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, LINE_OFF);
 
     // With the line silenced the clean path never resumes the agent → empty stdout.
@@ -395,8 +406,9 @@ test("decision record: a clean plugin turn is recorded clean (line silenced with
     assert.ok(fin && fin.decision, "finalize must carry a decision object");
     assert.equal(fin.decision.verdict, "clean");
     assert.equal(fin.decision.pluginActivity, true, "a /qa-env-check command ran");
+    assert.equal(fin.decision.completeSignalled, true, "the terminal-step signal was recorded");
     assert.equal(fin.decision.surfaced, false, "line off = silent-but-recorded");
-    assert.equal(fin.decision.suppressReason, "clean");
+    assert.equal(fin.decision.suppressReason, "line-off");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -442,15 +454,17 @@ test("clean line (default ON): a clean plugin terminal turn resumes the agent to
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
       assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
     ]);
+    complete(home, "qa-env-check"); // terminal step reached → arm the clean line
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
     const dec = JSON.parse(out);
-    assert.equal(dec.decision, "block", "default: a clean plugin turn resumes to print the line");
+    assert.equal(dec.decision, "block", "default: a completed clean plugin turn resumes to print the line");
     assert.match(dec.reason, /no plugin issues detected/i);
     assert.doesNotMatch(dec.reason, /vc-self-check|run the/i, "the clean line must not trigger a skill");
 
     const fin = finalizeOf(readSpans(home, sid));
     assert.equal(fin.decision.verdict, "clean");
+    assert.equal(fin.decision.completeSignalled, true);
     assert.equal(fin.decision.surfaced, true);
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -492,10 +506,12 @@ test("clean line: blocks at most once per turn (no resume loop)", () => {
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
       assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
     ]);
+    complete(home, "qa-env-check");
     const first = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
     assert.equal(JSON.parse(first).decision, "block");
     // The resumed print-turn's own Stop fires finalize again with NO new UserPromptSubmit —
-    // promptedThisTurn is still set, so it must NOT re-block (else an infinite resume loop).
+    // promptedThisTurn is still set AND the completion marker was consumed, so it must NOT
+    // re-block (else an infinite resume loop).
     const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
     assert.equal(second.trim(), "", "a repeat finalize in the same turn must not re-block");
   } finally {
@@ -516,12 +532,194 @@ test("VC_FIX_DIAG_LINE=off: a clean plugin terminal turn prints nothing (but is 
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
       assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
     ]);
+    complete(home, "qa-env-check", LINE_OFF);
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, LINE_OFF);
     assert.equal(out.trim(), "", "VC_FIX_DIAG_LINE=off silences the clean line");
     const fin = finalizeOf(readSpans(home, sid));
     assert.equal(fin.decision.verdict, "clean");
     assert.equal(fin.decision.pluginActivity, true);
     assert.equal(fin.decision.surfaced, false);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── completion-gated clean line — the PR-143 core behavior ─────────────────────────
+// A multi-turn skill (/project-init: interview pause, "fill the files then done" pause) must
+// print the clean line EXACTLY ONCE — after its terminal step — and ZERO times on the pauses.
+test("clean line (completion-gated): a multi-turn skill is silent on pauses, fires once after `complete`", () => {
+  const home = setupHome();
+  try {
+    const sid = "multiturn-init";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/project-init" });
+
+    // ── Pause 1 (interview): a trivial turn, then the agent yields for the operator's answer.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "r1", "Read", { file_path: "project-profile.json" }),
+      toolResult("2026-01-01T00:00:01Z", "r1", false, "no profile yet"),
+    ]);
+    const pause1 = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(pause1.trim(), "", "no clean line on the interview pause — `complete` was not signalled");
+    let fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "clean");
+    assert.equal(fin.decision.pluginActivity, true, "the /project-init command ran");
+    assert.equal(fin.decision.completeSignalled, false);
+    assert.equal(fin.decision.suppressReason, "awaiting-completion", "clean, active, but no terminal signal yet");
+
+    // ── Pause 2 (the operator answered; not a slash command): another yield, still no `complete`.
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "yes, use the qa env" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:02Z", "r2", "Read", { file_path: ".env.qa" }),
+      toolResult("2026-01-01T00:00:03Z", "r2", false, "FRONT_URL=..."),
+    ]);
+    const pause2 = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(pause2.trim(), "", "still no clean line on the second pause");
+    assert.equal(finalizesOf(readSpans(home, sid)).pop().decision.suppressReason, "awaiting-completion");
+
+    // ── Terminal step (Step 9 — Done): the skill signals completion, then the turn ends.
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "looks good, finish" });
+    complete(home, "project-init");
+    const term = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const dec = JSON.parse(term);
+    assert.equal(dec.decision, "block", "the clean line fires exactly once — after the terminal step");
+    assert.match(dec.reason, /no plugin issues detected/i);
+    fin = finalizesOf(readSpans(home, sid)).pop();
+    assert.equal(fin.decision.completeSignalled, true);
+    assert.equal(fin.decision.completedSkill, "project-init");
+    assert.equal(fin.decision.surfaced, true);
+
+    // ── The resumed print-turn's own Stop must NOT re-fire (marker consumed + promptedThisTurn).
+    const after = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(after.trim(), "", "the clean line never repeats — the completion marker was consumed");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("clean line (completion-gated): the marker is consumed → a later clean turn does NOT re-fire without a new signal", () => {
+  const home = setupHome();
+  try {
+    const sid = "consume-once";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "r1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "r1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
+    ]);
+    complete(home, "qa-env-check");
+    assert.equal(JSON.parse(run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" })).decision, "block", "fires once");
+
+    // A brand-new user turn (NOT a command, no new `complete`) that is otherwise clean must stay silent.
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "thanks" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:03Z", "r2", "Read", { file_path: "notes.md" }),
+      toolResult("2026-01-01T00:00:04Z", "r2", false, "notes"),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(out.trim(), "", "no new completion signal → no second clean line (marker was consumed)");
+    assert.equal(finalizesOf(readSpans(home, sid)).pop().decision.suppressReason, "awaiting-completion");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── opt-in legacy fallback — VC_FIX_DIAG_LINE_FALLBACK=on ───────────────────────────
+const FALLBACK_ON = { VC_FIX_DIAG_LINE_FALLBACK: "on" };
+test("fallback (opt-in): an un-migrated skill (no `complete`) fires the clean line at most once per SESSION", () => {
+  const home = setupHome();
+  try {
+    const sid = "fallback-once";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, FALLBACK_ON);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" }, FALLBACK_ON);
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "r1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "r1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
+    ]);
+    // No `complete` — but the fallback surfaces the line once anyway.
+    const first = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, FALLBACK_ON);
+    const dec = JSON.parse(first);
+    assert.equal(dec.decision, "block", "fallback ON → an un-migrated clean turn still surfaces the line once");
+    assert.match(dec.reason, /no plugin issues detected/i);
+
+    // A second clean turn in the same session must NOT re-fire (cleanLineOffered, once-per-session).
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "again" }, FALLBACK_ON);
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:03Z", "r2", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:04Z", "r2", false, "env ok"),
+    ]);
+    const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, FALLBACK_ON);
+    assert.equal(second.trim(), "", "the fallback clean line is once-per-session, never per-turn");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("fallback OFF (default): an un-migrated clean turn stays silent (awaiting-completion), never per-turn", () => {
+  const home = setupHome();
+  try {
+    const sid = "fallback-off";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "r1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "r1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(out.trim(), "", "default (fallback off): no `complete` → no clean line");
+    assert.equal(finalizeOf(readSpans(home, sid)).decision.suppressReason, "awaiting-completion");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── the `complete` subcommand itself ────────────────────────────────────────────────
+test("complete: no-op when capture is disabled (never creates state, never throws)", () => {
+  const home = setupHome({ selfDiagnostics: false });
+  try {
+    // Even with a pre-existing state file, a disabled capture must not touch it.
+    const dir = join(home, ".vc-fix", "diagnostics");
+    mkdirSync(dir, { recursive: true });
+    const statePath = join(dir, "some-session.state.json");
+    writeFileSync(statePath, JSON.stringify({ sid: "some-session" }));
+    const out = complete(home, "qa-fix");
+    assert.equal(out.trim(), "", "complete prints nothing");
+    const st = JSON.parse(readFileSync(statePath, "utf8"));
+    assert.equal(st.skillCompletePending, undefined, "capture disabled → the marker is never written");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("complete: targets the newest session state file and writes the { skill, ts } marker", () => {
+  const home = setupHome();
+  try {
+    const dir = join(home, ".vc-fix", "diagnostics");
+    mkdirSync(dir, { recursive: true });
+    // An older, inactive session's state and the current one — complete must pick the newest.
+    const older = join(dir, "older.state.json");
+    writeFileSync(older, JSON.stringify({ sid: "older" }));
+    utimesSync(older, Date.now() / 1000 - 7200, Date.now() / 1000 - 7200); // 2h old
+    const current = join(dir, "current.state.json");
+    writeFileSync(current, JSON.stringify({ sid: "current" }));
+    complete(home, "qa-fix");
+    const cur = JSON.parse(readFileSync(current, "utf8"));
+    assert.ok(cur.skillCompletePending, "the newest state file got the marker");
+    assert.equal(cur.skillCompletePending.skill, "qa-fix");
+    assert.match(cur.skillCompletePending.ts, /^\d{4}-\d\d-\d\dT/, "marker carries an ISO timestamp");
+    const old = JSON.parse(readFileSync(older, "utf8"));
+    assert.equal(old.skillCompletePending, undefined, "the older session was left untouched");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -541,6 +739,7 @@ test("stop_hook_active:true suppresses the clean line block", () => {
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
       assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
     ]);
+    complete(home, "qa-env-check"); // armed — but the resume-turn's own Stop (stop_hook_active) must still suppress it
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", stop_hook_active: true });
     assert.equal(out.trim(), "", "stop_hook_active must suppress the clean line block");
   } finally {
@@ -747,6 +946,7 @@ test("E2E: /qa-fix hands off to a background sub-agent (checkpoint), then termin
       toolResult("2026-01-01T00:00:05Z", "ta1", false, "Done — opened PR pull/42 with the fix and repro test."),
     ]);
     run(home, "agentstop", { session_id: sid, transcript_path: transcriptPath });
+    complete(home, "qa-fix"); // /qa-fix reached its terminal step (Phase 7 — STOP for human review)
 
     // 4) TERMINAL Stop — nothing pending now.
     const term = run(home, "finalize", {
