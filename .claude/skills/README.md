@@ -1,6 +1,6 @@
 # skills/ — Skill Directory
 
-> 31 skills organized in 4 category groups (vc-knowledge, testing, qa-methodology, development), plus 3 root-level skills (34 total). Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 32 skills organized in 4 category groups (vc-knowledge, testing, qa-methodology, development), plus 3 root-level skills (35 total). Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
@@ -95,12 +95,13 @@ skills/
 │       ├── defect-lifecycle-workflow.md
 │       └── defect-report-templates.md
 │
-├── development/                     # Development (5) — used by the developers/ team in /qa-fix
+├── development/                     # Development (6) — used by the developers/ team in /qa-fix
 │   ├── dotnet-unit-test/            # Reproduce a backend bug as a failing xUnit test (red)
 │   ├── dotnet-fix/                  # Minimal .NET 10 fix → green
 │   ├── angular-admin/               # Fix a module's Admin SPA (AngularJS) UI (scratch-harness red→green)
 │   ├── vue-unit-test/               # Reproduce a vc-frontend bug as a failing vitest test (red)
-│   └── vue-fix/                     # Minimal Vue 3 / TS fix → green
+│   ├── vue-fix/                     # Minimal Vue 3 / TS fix → green
+│   └── vc-shell-fix/                # Fix a module-embedded Vue 3 shell sub-app (real tsx --test, or ephemeral harness)
 │
 ├── run-vc-mcp-testing-module/       # Repo tooling (not a QA category): build / launch / smoke-test / health-check this repo
 │   └── SKILL.md
@@ -187,10 +188,11 @@ Manual invocation, cross-team best practices. Process framework, reactive (post-
 |-------|---------|-----------------|
 | `/qa-test-cases-generator` | Generate agent-native test cases in enriched CSV format from JIRA tickets, features, checklists, or legacy suites | test-case-template.md, test-case-examples.md |
 
-## Development (5) — `development/`
+## Development (6) — `development/`
 
 Manual invocation, used by the **developers/** team in `/qa-fix` (the only write-capable team). One
-test-skill + one fix-skill per repo kind; backend adds the Admin-SPA path.
+test-skill + one fix-skill per repo kind; backend adds the Admin-SPA path; frontend adds the
+module-embedded Vue 3 sub-app path.
 
 | Skill | Invoked by | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -199,6 +201,7 @@ test-skill + one fix-skill per repo kind; backend adds the Admin-SPA path.
 | `/angular-admin` | fullstack-backend | Fix a module's Admin SPA (AngularJS) UI in-repo; red→green via uncommitted Node scratch harness | angular-patterns.md, scratch-harness-patterns.md |
 | `/vue-unit-test` | fullstack-frontend | Reproduce a vc-frontend storefront bug as a failing vitest test (red); `@vue/test-utils` + `effectScope` | vitest-patterns.md |
 | `/vue-fix` | fullstack-frontend | Minimal, idiomatic Vue 3 / TS fix → green; vue-tsc + lint + vitest + build gate | vue-fix-patterns.md, vue3-best-practices.md |
+| `/vc-shell-fix` | fullstack-frontend | Fix a module-embedded Vue 3 "shell" sub-app (`@vc-shell/framework`); state/logic red→green via the sub-app's own real `tsx --test` runner, mounted-component/DOM via an ephemeral never-committed harness | vc-shell-scratch-harness-patterns.md |
 
 > `/storybook-test` (UI-kit Storybook play-function interaction tests) is planned/optional — `fullstack-frontend` degrades to a `/vue-unit-test` component test when it's absent.
 
