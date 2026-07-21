@@ -281,11 +281,17 @@ Rules:
 - Run it **exactly once**, at the real end of the workflow (e.g. after the final "Done"/STOP step),
   **AFTER** all user-visible output — never at an intermediate pause, and never before a step that
   still waits on the operator.
+- Only the **top-level command/skill the operator invoked** emits it. A **dispatched sub-agent**
+  (the `fullstack-*` devs, `qa-*-expert`s) must NOT — its spans run in a collector-skipped sidechain
+  and roll up to the enclosing command, and a sub-agent's `complete` would set the marker with a
+  misattributed name on the parent session mid-run. The parent orchestrator owns the signal.
 - If the skill **bails early** (NOT READY / BAIL / no-op / couldn't reproduce), still emit it — a
   correct early exit is a completed run.
 - It is safe and silent: it **never throws, never blocks** a tool, and is a **no-op** when
-  self-diagnostics capture is disabled (`selfDiagnostics:false` / `VC_FIX_DIAG_CONSENT=off` /
-  `VC_FIX_DIAG_CAPTURE=off`) or when there is no session state yet. Being Bash-invoked it has no hook
+  self-diagnostics **capture** is disabled (`selfDiagnostics:false` / `VC_FIX_DIAG_CAPTURE=off`) or
+  when there is no session state yet. It is **NOT** gated on `VC_FIX_DIAG_CONSENT` — consent gates
+  *surfacing* the clean line at finalize, not writing the marker (matching the CHANGELOG's "capture
+  is unaffected by the consent kill-switch"). Being Bash-invoked it has no hook
   stdin, so it targets the session whose `.state.json` was most recently modified (the active
   session) unless `--session <id>` is passed.
 

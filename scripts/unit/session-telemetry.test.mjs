@@ -45,6 +45,12 @@ function toolResult(ts, id, isError, text) {
 function assistantText(ts, text) {
   return JSON.stringify({ timestamp: ts, message: { content: [{ type: "text", text }] } });
 }
+// A top-level STRING content record — a system/hook echo (e.g. the `tsc` PostToolUse output).
+// This is the UNTIED hook_failure path: no tool_use_id, so classify()'s recovery check can't see
+// it resolve. Matches HOOK_FAILURE_RE.
+function hookEcho(ts, text) {
+  return JSON.stringify({ timestamp: ts, message: { content: text } });
+}
 function appendLines(transcriptPath, lines) {
   appendFileSync(transcriptPath, lines.map((l) => l + "\n").join(""));
 }
@@ -136,6 +142,36 @@ test("classify: a retried invocation that eventually succeeds is `recovered`, no
     assert.equal(cmd.length, 1, "expected exactly one qa-bug command span");
     assert.equal(cmd[0].outcome, "recovered");
     assert.equal(cmd[0].status, "error", "status reflects the raw error signal even though outcome is recovered");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── untied hook_failure co-occurring with a recovered op must NOT be `recovered` ──
+test("classify: an untied hook_failure alongside a self-corrected op-keyed error is `failed`, not `recovered`", () => {
+  const home = setupHome();
+  try {
+    const sid = "untied-hookfail";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-50" });
+    appendLines(transcriptPath, [
+      // A Read that fails then succeeds on the SAME target (same arg_hash) → op-keyed error that
+      // self-corrects → allErrorsRecovered() would say "recovered".
+      toolUse("2026-01-01T00:00:00Z", "r1", "Read", { file_path: "a.ts" }),
+      toolResult("2026-01-01T00:00:01Z", "r1", true, "transient read error"),
+      toolUse("2026-01-01T00:00:02Z", "r2", "Read", { file_path: "a.ts" }),
+      toolResult("2026-01-01T00:00:03Z", "r2", false, "file contents"),
+      // …but an UNTIED tsc hook_failure (no tool_use_id) never resolved → must force `failed`.
+      hookEcho("2026-01-01T00:00:04Z", "error TS2322: Type 'string' is not assignable to type 'number'"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-fix");
+    assert.equal(cmd.length, 1);
+    assert.ok(cmd[0].signals.hook_failure >= 1, "the untied hook_failure was recorded");
+    assert.equal(cmd[0].outcome, "failed", "an untied, never-resolved hook_failure must veto `recovered` even when another op self-corrected");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -263,6 +299,44 @@ test("classify: a read-only skill (many reads, no decisive op) that produced its
   }
 });
 
+// ─── secret redaction — the hook's hard invariant (public-repo delivery) ────────────
+test("redaction: secrets in a tool_result never reach a span's details[].snippet or the block reason", () => {
+  const home = setupHome();
+  try {
+    const sid = "redact-1";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-42" });
+    // Realistic failing tool_result bodies that echo credentials — a 401 echoing the sent
+    // Authorization header, a curl dumping a JSON body + a card number. These flow into the
+    // span's details[].snippet, which is persisted to <sid>.jsonl and (via deliver) a PUBLIC repo.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", true, "HTTP 401: sent Authorization: Bearer opaqueLEAKtokenAAAA1234567890"),
+      toolUse("2026-01-01T00:00:02Z", "b2", "Bash", { command: "curl api" }),
+      // a JSON password, a STANDALONE gh token (not inside the Authorization header, so the
+      // gh-token rule — not the auth rule — must catch it), and a card number.
+      toolResult("2026-01-01T00:00:03Z", "b2", true, 'body {"password":"LEAKPASSs3cret"} tok ghp_LEAKTOKENabcdef1234567890 card 4111 1111 1111 1111'),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    const recs = readSpans(home, sid);
+    const snippets = recs.filter((r) => r.type === "span").flatMap((r) => (r.details || []).map((d) => d.snippet || ""));
+    const haystack = snippets.join("  ") + "  " + out; // details + the surfaced block reason
+    for (const secret of ["opaqueLEAKtokenAAAA1234567890", "ghp_LEAKTOKENabcdef1234567890", "LEAKPASSs3cret", "4111 1111 1111 1111"]) {
+      assert.ok(!haystack.includes(secret), `secret must be redacted from spans + block reason, but leaked: ${secret}`);
+    }
+    // Prove redaction actually ran (not merely truncated away): the markers are present.
+    const joined = snippets.join(" ");
+    assert.ok(/«redacted»/.test(joined), "authorization/password value replaced with the redaction marker");
+    assert.ok(/«gh-token»/.test(joined), "the GitHub token shape was redacted");
+    assert.ok(/«pan»/.test(joined), "the card number was redacted");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── dedup: the same signature must not re-trigger the block on a later finalize ──
 test("tail-trigger dedup: the same flagged signature only blocks once per session", () => {
   const home = setupHome();
@@ -286,6 +360,14 @@ test("tail-trigger dedup: the same flagged signature only blocks once per sessio
     // a different scenario, not a dedup of this one.)
     const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
     assert.equal(second.trim(), "", "a repeat finalize on an already-seen signature must emit nothing");
+    // Not just silent — silent for the RIGHT reason: the flagged span is still tracked
+    // (flaggedTotal ≥ 1), nothing FRESH remained (freshCount 0), and it was withheld because we
+    // already surfaced this turn — not because the span was dropped or re-classified clean.
+    const last = finalizesOf(readSpans(home, sid)).pop();
+    assert.equal(last.decision.surfaced, false);
+    assert.equal(last.decision.freshCount, 0, "the signature was already seen → no fresh finding");
+    assert.ok(last.decision.flaggedTotal >= 1, "the flagged span is still tracked, not dropped");
+    assert.equal(last.decision.suppressReason, "already-surfaced");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

@@ -49,17 +49,21 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
   so the agent derives `.fix-workspace/<repo-basename>/` and the branch base/target — never a hardcoded
   `vc-frontend`/`dev`.
 
-## Terminal step — signal self-diagnostics completion (MUST)
+## Terminal step — signal self-diagnostics completion (MUST — top-level orchestrator only)
 
-Every command/skill's terminal step MUST, as its **LAST action** (after all user-visible output, and on
-every early-exit / BAIL path too), emit the completion marker so the self-diagnostics clean line prints
-exactly once — never on intermediate pauses:
+The **top-level command/skill** (the one the operator invoked — e.g. `/qa-fix`, `/project-init`) MUST,
+as its **LAST action** (after all user-visible output, and on every early-exit / BAIL path too), emit the
+completion marker so the self-diagnostics clean line prints exactly once — never on intermediate pauses:
 
 ```bash
-node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "<this-skill-name>"
+node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "<the-top-level-command-name>"
 ```
 
-Best-effort, silent, never blocks; a no-op when capture is disabled. Full contract + authoring checklist:
+**A dispatched sub-agent (the `fullstack-*` devs, `qa-*-expert`s) must NOT emit it.** Their spans run in
+sidechains the collector skips and roll up to the enclosing command; a sub-agent's `complete` would set
+the marker with a misattributed name on the *parent* session mid-run. The parent orchestrator owns the
+signal, at its own terminal step. Best-effort, silent, never blocks; a no-op when capture is disabled.
+Full contract + authoring checklist:
 [`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
 §Signal completion.
 

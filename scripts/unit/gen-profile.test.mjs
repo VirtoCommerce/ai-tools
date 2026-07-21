@@ -78,3 +78,26 @@ test("gen-profile: an invalid --feedback-mode is rejected (non-zero exit)", () =
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+test("gen-profile: a malformed --self-diagnostics value is rejected, not silently coerced to false", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-genprofile-"));
+  try {
+    let err;
+    try {
+      // "yes"/"True"/"1" used to fall through to selfDiagnostics:false (capture OFF) with no error —
+      // a plausible typo silently opting the project out of the default-on subsystem.
+      execFileSync(process.execPath, [GEN, "--tracker", "jira", "--self-diagnostics", "yes"], {
+        encoding: "utf8",
+        env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },
+        stdio: "pipe",
+      });
+    } catch (e) {
+      err = e;
+    }
+    assert.ok(err, "gen-profile must exit non-zero on a malformed --self-diagnostics");
+    assert.equal(err.status, 1);
+    assert.match(String(err.stderr || ""), /Invalid --self-diagnostics/);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

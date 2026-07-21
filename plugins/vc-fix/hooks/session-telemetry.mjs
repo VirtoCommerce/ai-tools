@@ -137,8 +137,18 @@ function pluginRoot() {
 
 // ─── secret redaction ──────────────────────────────────────────────────────
 const REDACTIONS = [
-  [/\b(authorization|bearer)\b\s*[:=]?\s*\S+/gi, "$1 «redacted»"],
-  [/\b(token|api[_-]?key|secret|password|passwd|pwd)\b\s*[:=]\s*\S+/gi, "$1=«redacted»"],
+  // Authorization header / bearer scheme: redact the CREDENTIAL, not just the scheme word.
+  // A `:`/`=` is required so the prose word "authorization" is not mangled; the optional
+  // `bearer ` after it is consumed so `Authorization: Bearer <token>` loses the token (the old
+  // `\S+` ate only "Bearer" and LEAKED the token). A bare `Bearer <tok>` (no header prefix) is
+  // caught by the next rule.
+  [/\b(authorization)\b"?\s*[:=]\s*(?:bearer\s+)?\S+/gi, "$1 «redacted»"],
+  [/\bbearer\s+\S+/gi, "bearer «redacted»"],
+  // key/value secrets — optional quotes around BOTH key and value so the JSON form
+  // (`"password":"x"`, `"apiKey": "x"`), the shell form (`password=x`) and the header form
+  // (`X-Api-Key: x`) all redact the value. The old rule needed a literal `keyword[:=]` with no
+  // quote between them, so every JSON-shaped secret escaped it.
+  [/\b(token|api[_-]?key|secret|password|passwd|pwd)\b"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
   [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers
   [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub tokens
@@ -280,6 +290,12 @@ function newSpan(state, kind, name, startTs, parentId) {
     opCount: 0, // whole-span op total (survives the ops-ring cap; used by low_yield)
     sawDecisive: false, // did any decisive op run in this span (whole-span; low_yield)
     sawExpected: false,
+    // A blocking failure recorded with NO paired op (an untied hook_failure — the top-level
+    // PostToolUse `tsc` echo — or an untied tool error). It can't be resolved by allErrorsRecovered
+    // (which only sees op-keyed errors), so it must force `failed` even when a DIFFERENT, op-keyed
+    // error in the same span did self-correct. Without this, a span with both a recovered retry and
+    // an untied hook_failure was wrongly tagged `recovered` (VCST review finding).
+    sawUntiedFailure: false,
     retries: 0,
     lastTs: startTs || nowIso(),
   };
@@ -398,19 +414,19 @@ function classify(span) {
   const s = span.signals;
   const blockingErr = s.tool_error > 0 || s.permission_denied > 0 || s.hook_failure > 0;
   const struggle = detectStruggle(span);
-  const recovered = blockingErr && allErrorsRecovered(span);
+  const recovered = blockingErr && allErrorsRecovered(span) && !span.sawUntiedFailure;
   // A blocking error is a `failed` outcome UNLESS the specific failed invocation was
   // self-corrected (retried to success). permission_denied / hook_failure that were
   // recovered are S3 `recovered`, matching the oracle §1a / §2 rows — they only hard-
-  // block when they never resolved. NOTE: this recovery check is keyed on `span.ops`
-  // (tool+arg_hash pairs from tool_use/tool_result), so it can only ever apply to a
-  // hook_failure surfaced via a tool_result tied to a tool_use_id. A hook_failure
-  // detected from bare top-level string content (the untied PostToolUse echo path,
-  // e.g. a `tsc` note after an Edit — see the scanTranscript comment above the
-  // `attributeSignal("hook_failure", …)` call) has no paired op to resolve against, so
-  // it can never classify as `recovered` — it always forces `failed` for the span it
-  // occurred in. This is intentional fail-toward-escalation (no false "recovered" on a
-  // signal we can't actually observe resolving), not a design oversight.
+  // block when they never resolved. NOTE: allErrorsRecovered is keyed on `span.ops`
+  // (tool+arg_hash pairs from tool_use/tool_result), so it can only observe an error
+  // resolving when that error was TIED to a tool_use_id. A blocking failure recorded
+  // with NO paired op — an untied hook_failure (the top-level PostToolUse `tsc` echo,
+  // see the `attributeSignal("hook_failure", …)` call) or an untied tool error — sets
+  // `span.sawUntiedFailure`, which vetoes `recovered` here. This closes the co-occurrence
+  // gap: a span with BOTH an untied hook_failure AND a self-corrected op-keyed error must
+  // still be `failed` (the untied failure was never observed resolving), not `recovered`.
+  // Intentional fail-toward-escalation.
   let outcome;
   if (recovered) {
     outcome = "recovered"; // error occurred but self-corrected → do NOT escalate
@@ -514,7 +530,12 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
   const innerParent = () => state.currentSkill || state.currentCommand || null;
   const attributeSignal = (cls, text, extra) => {
     const p = innerParent();
-    if (p) pushDetail(p, cls, text, extra);
+    if (p) {
+      pushDetail(p, cls, text, extra);
+      // An UNTIED blocking failure (no paired op) — mark the span so classify() can't call it
+      // `recovered` on the strength of some OTHER op-keyed error that self-corrected.
+      if (cls === "tool_error" || cls === "permission_denied" || cls === "hook_failure") p.sawUntiedFailure = true;
+    }
     state.totals[cls] = (state.totals[cls] ?? 0) + 1;
   };
 
@@ -684,8 +705,10 @@ function pruneOldDiagnostics(dir, sid, nowMs) {
   }
   let removed = 0;
   for (const f of entries) {
-    // Never the CURRENT session's own artifacts (it's just starting).
-    if (sid && (f === `${sid}.jsonl` || f === `${sid}.state.json` || f.startsWith(`DIAG-${sid}-`))) continue;
+    // Never the CURRENT session's own artifacts (it's just starting). Includes DELIVERY-<sid>-*
+    // for symmetry with collectInactiveArtifacts — else a resume >24h after start could reap this
+    // session's own delivery draft.
+    if (sid && (f === `${sid}.jsonl` || f === `${sid}.state.json` || f.startsWith(`DIAG-${sid}-`) || f.startsWith(`DELIVERY-${sid}-`))) continue;
     // Only OUR OWN artifact shapes — a stray file a user dropped here is left alone.
     const isOurs = f.endsWith(".jsonl") || f.endsWith(".state.json") || (f.startsWith("DIAG-") && f.endsWith(".md")) || (f.startsWith("DELIVERY-") && f.endsWith(".md"));
     if (!isOurs) continue;
@@ -1214,8 +1237,10 @@ async function cmdFinalize(ev) {
 // surface it. Because a Bash-invoked command receives NO hook stdin (no session_id), it
 // targets the session whose .state.json was most recently modified — the active session —
 // unless an explicit `--session <id>` is given. Never throws, never blocks; a no-op when
-// capture is disabled (consent-off / kill switch / selfDiagnostics:false) or when there is
-// no session state yet; idempotent (re-running just refreshes the marker timestamp).
+// capture is disabled (VC_FIX_DIAG_CAPTURE=off / selfDiagnostics:false) or when there is no
+// session state yet; idempotent (re-running just refreshes the marker timestamp). NOTE: gated on
+// captureEnabled ONLY — NOT on VC_FIX_DIAG_CONSENT, which gates SURFACING at finalize, not capture;
+// the marker is still written under consent-off (the withheld clean line just never prints there).
 function parseCompleteArgs(argv) {
   const a = {};
   for (let i = 0; i < argv.length; i++) {

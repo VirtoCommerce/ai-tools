@@ -89,6 +89,13 @@ function deepMerge(base, override) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   for (const k of Object.keys(ENUMS)) validateEnum(args, k);
+  // --self-diagnostics is boolean, not an ENUM, but must still reject a malformed value: a bare
+  // flag (=== true) or "true"/"false" only. Otherwise a plausible typo (`--self-diagnostics yes`,
+  // `True`, `1`) used to silently coerce to `false` and opt the project OUT of default-on capture,
+  // asymmetric with the enum-validated --feedback-mode.
+  if (args["self-diagnostics"] !== undefined && args["self-diagnostics"] !== true && !["true", "false"].includes(args["self-diagnostics"])) {
+    fail(`Invalid --self-diagnostics "${args["self-diagnostics"]}". Allowed: true | false (or the bare flag = true)`);
+  }
 
   // Default output → the deployment project (process.cwd()), symmetric with the reader
   // loadProjectProfile() which reads project-profile.json from cwd. --out still overrides.
