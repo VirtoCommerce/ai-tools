@@ -85,6 +85,11 @@ recorded silently; only *interesting* (non-clean) work is ever surfaced or sent.
   occurrence" comment**. Delivery **never touches your installed plugin** and routes by your GitHub
   token's real rights (PR / fork-PR / issue / local-only). See the
   [`/vc-self-check` skill](skills/vc-self-check/SKILL.md).
+- **Nothing accumulates.** Once a finding is delivered, `deliver` removes that session's local
+  artifacts (the PR/issue is now the source of truth). As a backstop for artifacts that are *never*
+  delivered (`feedback.mode=off`, a PR hand-off you don't `--purge`, a clean no-finding run), the
+  collector age-caps its own diagnostics at **SessionStart**: it deletes files older than
+  `VC_FIX_DIAG_MAX_AGE_H` hours (default **24**; set `0` to disable), never the current session's.
 
 ## Why self-contained
 

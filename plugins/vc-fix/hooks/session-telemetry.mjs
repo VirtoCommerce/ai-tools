@@ -83,6 +83,11 @@
  *   - Writes ONLY under <outputRoot>/.vc-fix/diagnostics/ (outputRoot =
  *     VC_FIX_HOME || cwd, matching skills/project-init/lib/paths.mjs). NEVER under
  *     the plugin install dir. `.vc-fix/` is gitignored.
+ *   - Age-cap backstop: at SessionStart the collector deletes its OWN diagnostics
+ *     artifacts older than VC_FIX_DIAG_MAX_AGE_H hours (default 24; `0` disables),
+ *     never the current session's. This complements deliver.mjs's delete-after-
+ *     delivery (which only reclaims DELIVERED sessions) so undelivered artifacts
+ *     (feedback.mode=off, un-`--purge`d hand-offs, clean runs) can't accumulate.
  *   - Never throws, never blocks a tool, never writes a secret (Authorization/
  *     token/password/PAN redacted from every snippet). Always exits 0.
  *   - The auto-diagnosis trigger AND the visible line can both be suppressed with
@@ -94,7 +99,7 @@
  * NOTE: this collector is the canonical `plugins/vc-fix/` copy. The `.claude/`
  * mirror predates VCST-5509 and is intentionally NOT kept in lock-step here.
  */
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, renameSync } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, renameSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { dirname, resolve, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -619,6 +624,51 @@ function appendRecord(jsonlPath, record) {
   appendFileSync(jsonlPath, JSON.stringify(record) + "\n", "utf8");
 }
 
+// Age-cap floor (VC_FIX_DIAG_MAX_AGE_H, default 24h; 0/invalid-negative ⇒ default,
+// exactly 0 ⇒ disabled). The ephemeral lifecycle (deliver.mjs delete-after-delivery)
+// only reclaims DELIVERED sessions; artifacts that are never delivered (feedback.mode
+// =off, a PR/fork-PR hand-off the operator never `--purge`s, a clean no-finding run)
+// would otherwise accumulate forever. This is the backstop, NOT a replacement: it runs
+// once per session at SessionStart and deletes only OUR OWN artifact shapes that are
+// older than the cutoff — never the current session's files, never a still-fresh
+// (in-flight) session's. Best-effort; never throws.
+function diagMaxAgeHours() {
+  const raw = process.env.VC_FIX_DIAG_MAX_AGE_H;
+  if (raw == null || raw === "") return 24;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return 24; // garbage ⇒ safe default
+  return n; // 0 ⇒ disabled
+}
+function pruneOldDiagnostics(dir, sid, nowMs) {
+  const maxAgeH = diagMaxAgeHours();
+  if (!(maxAgeH > 0)) return 0; // disabled
+  const cutoff = nowMs - maxAgeH * 3_600_000;
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return 0;
+  }
+  let removed = 0;
+  for (const f of entries) {
+    // Never the CURRENT session's own artifacts (it's just starting).
+    if (sid && (f === `${sid}.jsonl` || f === `${sid}.state.json` || f.startsWith(`DIAG-${sid}-`))) continue;
+    // Only OUR OWN artifact shapes — a stray file a user dropped here is left alone.
+    const isOurs = f.endsWith(".jsonl") || f.endsWith(".state.json") || (f.startsWith("DIAG-") && f.endsWith(".md")) || (f.startsWith("DELIVERY-") && f.endsWith(".md"));
+    if (!isOurs) continue;
+    const p = join(dir, f);
+    try {
+      if (statSync(p).mtimeMs < cutoff) {
+        unlinkSync(p);
+        removed++;
+      }
+    } catch {
+      /* file vanished / locked — skip */
+    }
+  }
+  return removed;
+}
+
 function freshState(ev, sid) {
   return {
     sid,
@@ -723,6 +773,10 @@ async function cmdInit(ev) {
   const { root, dir, sid, jsonl, state } = await paths(ev);
   if (!selfDiagnosticsEnabled(root)) return;
   ensureDir(dir);
+  // Age-cap the diagnostics dir BEFORE writing this session's first record — reclaims
+  // artifacts that the ephemeral (delete-after-delivery) path never gets to (undelivered
+  // sessions). Never touches the current sid; best-effort, never throws.
+  const pruned = pruneOldDiagnostics(dir, sid, Date.now());
   appendRecord(jsonl, {
     type: "session_start",
     sessionId: sid,
@@ -733,6 +787,7 @@ async function cmdInit(ev) {
     cwd: process.cwd(),
     transcriptPath: ev.transcript_path ?? null,
     source: ev.source ?? null,
+    ...(pruned > 0 ? { prunedOldArtifacts: pruned } : {}),
   });
   saveState(state, freshState(ev, sid));
 }

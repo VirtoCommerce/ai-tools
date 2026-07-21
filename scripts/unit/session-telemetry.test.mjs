@@ -11,7 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, appendFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, appendFileSync, readFileSync, existsSync, rmSync, utimesSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -649,6 +649,90 @@ test("E2E: /qa-fix hands off to a background sub-agent (checkpoint), then termin
     const fins = finalizesOf(recs);
     assert.equal(fins[fins.length - 1].decision.verdict, "clean");
     assert.equal(fins[fins.length - 1].decision.surfaced, true);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── age-cap backstop — prune our own aged artifacts at SessionStart ────────────────
+const diagDirOf = (home) => join(home, ".vc-fix", "diagnostics");
+function seedFile(dir, name, ageHours, content = "x") {
+  const p = join(dir, name);
+  writeFileSync(p, content);
+  if (ageHours != null) {
+    const t = Date.now() / 1000 - ageHours * 3600; // utimesSync numeric = seconds
+    utimesSync(p, t, t);
+  }
+  return p;
+}
+
+test("age-cap: SessionStart prunes our aged artifacts (>24h) but keeps fresh, current-session, and stray files", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    // Aged (48h) artifacts of a PRIOR, undelivered session → must be pruned.
+    const oldJsonl = seedFile(dir, "old-session.jsonl", 48);
+    const oldState = seedFile(dir, "old-session.state.json", 48);
+    const oldDiag = seedFile(dir, "DIAG-old-session-2026.md", 48);
+    const oldDelivery = seedFile(dir, "DELIVERY-abcd1234-2026.md", 48);
+    // Fresh artifact (in-flight another session) → must survive.
+    const freshJsonl = seedFile(dir, "fresh-session.jsonl", 0);
+    // An aged artifact of the CURRENT session (a DIAG init won't recreate) → guard must keep it.
+    const curDiag = seedFile(dir, "DIAG-cur-session-2026.md", 48);
+    // A stray non-artifact file, aged → not our shape, must be left alone.
+    const stray = seedFile(dir, "notes.txt", 48);
+
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: "cur-session", transcript_path: transcriptPath });
+
+    assert.ok(!existsSync(oldJsonl), "aged .jsonl pruned");
+    assert.ok(!existsSync(oldState), "aged .state.json pruned");
+    assert.ok(!existsSync(oldDiag), "aged DIAG-*.md pruned");
+    assert.ok(!existsSync(oldDelivery), "aged DELIVERY-*.md pruned");
+    assert.ok(existsSync(freshJsonl), "fresh artifact kept");
+    assert.ok(existsSync(curDiag), "current session's own artifact kept even when aged");
+    assert.ok(existsSync(stray), "a stray non-artifact file is never touched");
+
+    // The count is surfaced on the session_start record.
+    const start = readSpans(home, "cur-session").find((r) => r.type === "session_start");
+    assert.equal(start.prunedOldArtifacts, 4, "4 aged artifacts were reclaimed");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("age-cap: VC_FIX_DIAG_MAX_AGE_H=0 disables the sweep (aged files survive)", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    const oldJsonl = seedFile(dir, "old-session.jsonl", 48);
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: "cur-session", transcript_path: transcriptPath }, { VC_FIX_DIAG_MAX_AGE_H: "0" });
+    assert.ok(existsSync(oldJsonl), "sweep disabled → aged file must survive");
+    const start = readSpans(home, "cur-session").find((r) => r.type === "session_start");
+    assert.equal(start.prunedOldArtifacts, undefined, "nothing pruned → no count field");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("age-cap: a custom VC_FIX_DIAG_MAX_AGE_H threshold is honored", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    const twoHrOld = seedFile(dir, "two-hr.jsonl", 2);
+    const halfHrOld = seedFile(dir, "half-hr.jsonl", 0.5);
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    // 1-hour cap: the 2h file is stale, the 0.5h file is fresh.
+    run(home, "init", { session_id: "cur-session", transcript_path: transcriptPath }, { VC_FIX_DIAG_MAX_AGE_H: "1" });
+    assert.ok(!existsSync(twoHrOld), "older than the 1h cap → pruned");
+    assert.ok(existsSync(halfHrOld), "younger than the 1h cap → kept");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

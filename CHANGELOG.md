@@ -12,6 +12,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Added — self-diagnostics age-cap backstop (undelivered artifacts can't accumulate)
+
+The ephemeral lifecycle (`deliver.mjs` delete-after-delivery) only reclaims **delivered** sessions. Artifacts that are never delivered — `feedback.mode=off`, a PR/fork-PR hand-off the operator never `--purge`s, a clean no-finding run — would otherwise pile up in `<outputRoot>/.vc-fix/diagnostics/` forever. `session-telemetry.mjs cmdInit` (SessionStart) now age-caps its **own** artifacts as a backstop:
+
+- Deletes `<sid>.jsonl` / `<sid>.state.json` / `DIAG-*.md` / `DELIVERY-*.md` older than **`VC_FIX_DIAG_MAX_AGE_H`** hours (default **24**; `0` disables; garbage/negative ⇒ default). Matched by our own artifact shapes only — a stray file dropped in the dir is left alone.
+- **Never** the current session's files, and never a still-fresh (in-flight) session's — the mtime cutoff handles the latter. Best-effort, never throws, `exit 0`.
+- Complements (does not replace) delete-after-delivery; the reclaimed count is surfaced as `prunedOldArtifacts` on the `session_start` record.
+
 ### Fixed — code-review follow-ups (Azure tooling + reconcile + telemetry)
 
 Addresses the findings from the PR review:
