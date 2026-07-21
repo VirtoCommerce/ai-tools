@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-07-17",
-    "totalSuites": 119,
+    "totalSuites": 120,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2665,6 +2665,31 @@
         "sales-rep"
       ],
       "customerApplicability": "reference"
+    },
+    {
+      "id": "092",
+      "name": "Sales Rep — Admin / VC-Shell App (rep management)",
+      "file": "regression/suites/Backend/sales-rep/092-sales-rep-admin.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 18,
+      "estimatedMinutes": 70,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "sales-rep",
+        "admin",
+        "vc-shell",
+        "permissions",
+        "crud",
+        "vcptcore-only"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "env": "vcptcore",
+      "customerApplicability": "reference"
     }
   ],
   "selections": {
@@ -2802,7 +2827,8 @@
         "layer": "backend"
       },
       "exclude": [
-        "050m"
+        "050m",
+        "092"
       ]
     },
     "sprint": {
@@ -2914,7 +2940,10 @@
     "concern:admin": {
       "where": {
         "concern": "admin"
-      }
+      },
+      "exclude": [
+        "092"
+      ]
     },
     "loyalty": {
       "include": [
