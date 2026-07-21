@@ -63,10 +63,15 @@ mentioned here, **never run from this flow**.
 - **`latest`** (default): the newest `*.jsonl` in that dir. A specific **`<session-id>`**
   arg reads `<session-id>.jsonl`.
 - If the dir or file is absent → tell the user telemetry hasn't been collected (the
-  plugin may be running without the hooks wired, or `selfDiagnostics` is not `true` in
-  `project-profile.json`) and STOP.
+  plugin may be running without the hooks wired, or capture was opted out via
+  `selfDiagnostics: false` in `project-profile.json` / `VC_FIX_DIAG_CAPTURE=off`) and STOP.
 - Read the `session_start` record for `transcriptPath`, `pluginVersion`, `testEnv`,
-  `projectType`.
+  `projectType`. Note: `session_start.testEnv` is null when `TEST_ENV` was passed inline
+  per-command (not exported to the hook env) — the **`finalize`** record carries the value
+  recovered from tool args, so prefer `finalize.testEnv` when `session_start.testEnv` is null.
+- A session that survived a **resume/compact** has a second `session_start` with
+  `source:"resume"`/`"compact"`; the collector carries the command span + cursor across it,
+  so treat the run as one continuous session (don't read it as "the plugin didn't run").
 
 ### Step 1 — Load the oracle
 Read [`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)

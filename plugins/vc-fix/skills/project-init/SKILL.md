@@ -670,7 +670,8 @@ machine. It surfaces as its own `pending` entry with a three-way `question`/`opt
 
 `--write` applies the structural adds/removes plus any `--set` decisions. Unresolved
 `pending`/`rescan` fields are left **absent** — safe, because a missing field reads as its
-safe default (no `selfDiagnostics` ⇒ the telemetry hook is a full no-op; no `feedback`
+safe default (no `selfDiagnostics` ⇒ capture runs by default — the DEFAULT-ON opt-out gate;
+set `selfDiagnostics:false` to opt out; no `feedback`
 ⇒ delivery falls back to `ask` — a dry-run + confirm, never an unattended send) — and stay
 in the report so a later `--check` can finish
 them. Reconciling is **idempotent**: once done,

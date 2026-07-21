@@ -40,7 +40,7 @@
  * @property {{mode:"plugin"|"agent-project", helpersRunnable:boolean}} runtime
  * @property {{projectRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
  * @property {{source:""|"vc-deploy-dev"|"modules-endpoint"|"ticket"}} buildVerify
- * @property {boolean} selfDiagnostics  opt-in for the passive session-telemetry CAPTURE hook — when true the collector records to <outputRoot>/.vc-fix/; absent/false ⇒ the hook is a full no-op (no `.vc-fix/`)
+ * @property {boolean} selfDiagnostics  the passive session-telemetry CAPTURE hook is DEFAULT-ON — it records to <outputRoot>/.vc-fix/ for every session UNLESS this is explicitly false (or env VC_FIX_DIAG_CAPTURE=off); false ⇒ the hook is a full no-op (no `.vc-fix/`)
  * @property {{mode:"auto"|"ask"|"off"}} feedback  consent for UPSTREAM delivery of self-diagnostics (VCST-5509). off = nothing leaves the machine; ask (default) = dry-run + a single Show-diff/Send/Don't-send decision; auto = Issue route files automatically, PR/fork-PR handed off as commands. Gates ONLY deliver.mjs — local capture (selfDiagnostics) + diagnosis need no consent
  *
  * @typedef {Object} ClientRepo
@@ -174,12 +174,13 @@ export const PROFILE_DEFAULTS = {
   //   hit the admin modules endpoint, which needs a token).
   buildVerify: { source: "" },
 
-  // selfDiagnostics — opt-in for the passive session-telemetry hook
-  // (hooks/session-telemetry.mjs). When true, the collector records per-skill
-  // signals to <outputRoot>/.vc-fix/diagnostics/. /project-init writes it true by
-  // default; the hook reads project-profile.json RAW and requires the field to be
-  // strictly === true, so an absent profile (running Claude in a random folder) or
-  // an absent/false flag ⇒ the hook is a full no-op and never creates `.vc-fix/`.
+  // selfDiagnostics — the passive session-telemetry hook (hooks/session-telemetry.mjs)
+  // is DEFAULT-ON: it records per-skill signals to <outputRoot>/.vc-fix/diagnostics/
+  // for EVERY session unless this field is EXPLICITLY set to false (or the env kill-switch
+  // VC_FIX_DIAG_CAPTURE is off). This is deliberate — capturing by default means the very
+  // first skill a client runs, `/project-init` (which writes this profile only at the END
+  // of onboarding, so no profile exists during its own run), is itself diagnosed. Set to
+  // false to opt a project out entirely (the hook becomes a full no-op, no `.vc-fix/`).
   selfDiagnostics: true,
 
   // feedback — consent for UPSTREAM delivery of self-diagnostics (VCST-5509). This

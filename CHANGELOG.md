@@ -12,6 +12,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Changed — self-diagnostics capture is now DEFAULT-ON (opt-out), so `/project-init` is diagnosed
+
+The passive session-telemetry collector was gated on `project-profile.json` `selfDiagnostics === true`. But that profile is written only at the **end** of `/project-init`, so during onboarding there was no profile → the hooks no-op'd → **`/project-init` — the very first, most failure-prone skill a client runs — was the subsystem's blind spot**. Capture is now default-on (`plugins/vc-fix/hooks/session-telemetry.mjs`):
+
+- `captureEnabled()` (was `selfDiagnosticsEnabled()`) records for **every** session UNLESS the output-root profile **explicitly** sets `selfDiagnostics: false`, or the env kill-switch **`VC_FIX_DIAG_CAPTURE`** is `off`/`0`/`false`/`no`. Absent profile / absent field / any non-`false` value ⇒ capture ON.
+- The `selfDiagnostics` profile field is kept as the per-project opt-out (`false` ⇒ full no-op, no `.vc-fix/`); `/project-init` still writes it `true` by default. Docs updated (README, `vc-feedback.md`, `/vc-self-check` SKILL, `project-profile.mjs` JSDoc).
+- `plugins/vc-fix` only — the `.claude/` mirror intentionally stays on the pre-5509 model.
+
+### Fixed — self-diagnostics was blind to sessions that crossed a resume/compact (found by `/vc-self-check` itself)
+
+A resumed `/project-init` session self-diagnosed this: the collector classified a whole `/project-init` run as `clean` / `pluginActivity:false` ("the plugin never ran"). Root cause — a command span is opened in `cmdPrompt` and lives only in `state.currentCommand` until it CLOSES at `finalize`; a `resume`/`compact` `SessionStart` fires mid-command, and `cmdInit` unconditionally did `saveState(freshState())`, **wiping** the open span + the scan cursor + the `sawPluginSpan`/`anySkillSeen` aggregates. Every tool span then orphaned (`parentId:null`) and the run escaped both the clean line and findings escalation. Since `/project-init` is long and frequently compacts, this defeated the default-on capture above for exactly the skill it was meant to cover.
+
+- **Fix:** `cmdInit` now carries the persisted state over (`loadState`) when `ev.source === "resume" | "compact"` instead of resetting. `loadState` falls back to `freshState` when no state file exists, so brand-new sessions are unaffected; a plain `startup`/`clear` still fully resets.
+- **Also (S3, cosmetic):** `session_start.testEnv` was null when `TEST_ENV` was passed inline per-command (`TEST_ENV=… node …`, never exported to the hook env). The scanner now recovers it from the first tool arg carrying `TEST_ENV=` and records it on the `finalize` record; `/vc-self-check` prefers `finalize.testEnv` when `session_start.testEnv` is null.
+
+### Added — one-shot cleanup offer for leftover inactive-session diagnostics
+
+Complements the silent 24h age-cap. At `SessionStart` the collector counts leftover artifacts from **other, now-inactive** sessions (mtime older than a 1h inactivity floor, so a live parallel session is never offered up) and surfaces the count on the `session_start` record (`staleInactiveSessions` / `staleInactiveFiles`). On the next **terminal** `Stop` it surfaces a **one-shot** `AskUserQuestion` offer — *"Detected diagnostic files from old inactive sessions. Delete them now? (Session files older than 24h are auto-deleted at the next session start anyway.)"* with **Delete now** / **Keep (I'll remove them myself)** — riding the same resume as any findings/clean line so it costs no extra turn.
+
+- **Delete now** runs the new **`session-telemetry.mjs purge-inactive`** subcommand (`--keep <sid>` protects the current session; `--dir`; `--all` ignores the 1h floor), which removes only vc-fix's OWN diagnostic artifact shapes — never client code, never the current session.
+- Asked **at most once per session** (`cleanupOffered` guard); suppressed by `VC_FIX_DIAG_CONSENT=off`. Capture is unaffected by the consent kill-switch.
+
 ### Added — `/project-init --add-env` (add another environment to an onboarded project)
 
 A day-2 mode alongside `--check`: point an already-onboarded project at **another deployment target** (a second QA env, staging, a customer's second site) without re-running the onboarding interview. An *environment* is env-agnostic to the deployment profile — it's only a URL set + per-env access creds selected at runtime by `TEST_ENV` — so `--add-env` reuses `project-profile.json` and touches nothing project-level.

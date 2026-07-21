@@ -56,8 +56,8 @@ function readSpans(home, sid) {
 }
 const spansOf = (records, kind, name) => records.filter((r) => r.type === "span" && r.kind === kind && r.name === name);
 
-// ─── capture gate ──────────────────────────────────────────────────────────────
-test("capture gate: selfDiagnostics !== true is a full no-op (no .vc-fix/ created)", () => {
+// ─── capture gate (DEFAULT-ON, opt-out) ─────────────────────────────────────────
+test("capture gate: selfDiagnostics:false is an explicit opt-out (no .vc-fix/ created)", () => {
   const home = setupHome({ selfDiagnostics: false });
   try {
     const transcriptPath = join(home, "transcript.jsonl");
@@ -65,17 +65,37 @@ test("capture gate: selfDiagnostics !== true is a full no-op (no .vc-fix/ create
     run(home, "init", { session_id: "gate-off", transcript_path: transcriptPath });
     run(home, "prompt", { session_id: "gate-off", transcript_path: transcriptPath, prompt: "/qa-bug something" });
     run(home, "finalize", { session_id: "gate-off", transcript_path: transcriptPath, reason: "stop" });
-    assert.ok(!existsSync(join(home, ".vc-fix")), ".vc-fix/ must never be created when selfDiagnostics is not === true");
+    assert.ok(!existsSync(join(home, ".vc-fix")), ".vc-fix/ must never be created when selfDiagnostics is explicitly false");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
 });
 
-test("capture gate: absent project-profile.json is also a full no-op", () => {
+test("capture gate: DEFAULT-ON — an absent project-profile.json still captures (fixes the /project-init blind spot)", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-telemetry-noprofile-"));
   try {
-    run(home, "init", { session_id: "no-profile", transcript_path: join(home, "transcript.jsonl") });
-    assert.ok(!existsSync(join(home, ".vc-fix")));
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    // No project-profile.json — exactly the state DURING /project-init's own run.
+    run(home, "init", { session_id: "no-profile", transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: "no-profile", transcript_path: transcriptPath, prompt: "/project-init" });
+    run(home, "finalize", { session_id: "no-profile", transcript_path: transcriptPath, reason: "stop" });
+    assert.ok(existsSync(join(home, ".vc-fix")), "absent profile ⇒ capture ON (default-on)");
+    const recs = readSpans(home, "no-profile");
+    assert.ok(recs.some((r) => r.type === "session_start"), "session_start is recorded with no profile");
+    assert.equal(spansOf(recs, "command", "project-init").length, 1, "the /project-init command span is captured");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("capture gate: VC_FIX_DIAG_CAPTURE=off forces a full no-op even with selfDiagnostics true", () => {
+  const home = setupHome(); // selfDiagnostics: true
+  try {
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: "kill-switch", transcript_path: transcriptPath }, { VC_FIX_DIAG_CAPTURE: "off" });
+    assert.ok(!existsSync(join(home, ".vc-fix")), "the env kill-switch disables capture entirely");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -827,6 +847,207 @@ test("age-cap: a custom VC_FIX_DIAG_MAX_AGE_H threshold is honored", () => {
     run(home, "init", { session_id: "cur-session", transcript_path: transcriptPath }, { VC_FIX_DIAG_MAX_AGE_H: "1" });
     assert.ok(!existsSync(twoHrOld), "older than the 1h cap → pruned");
     assert.ok(existsSync(halfHrOld), "younger than the 1h cap → kept");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── resume / compact — a SessionStart mid-command must NOT wipe the open span ──────
+test("resume: a SessionStart mid-command carries state over so the command span survives (no false pluginActivity:false)", () => {
+  const home = setupHome();
+  try {
+    const sid = "resume-mid";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath, source: "startup" });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/project-init" });
+    // Work done before the context is summarized.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "node discover-repos.mjs" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "scanned repos"),
+    ]);
+    // COMPACT/RESUME fires SessionStart in the MIDDLE of the /project-init command.
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath, source: "resume" });
+    // Work continues after the resume.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:02Z", "b2", "Bash", { command: "node verify-access.mjs" }),
+      toolResult("2026-01-01T00:00:03Z", "b2", false, "project-profile.json written; readiness table: all PASS"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", background_tasks: [] });
+
+    const recs = readSpans(home, sid);
+    const cmd = spansOf(recs, "command", "project-init");
+    assert.equal(cmd.length, 1, "the command span survives the resume and is emitted exactly once");
+    const fin = finalizeOf(recs);
+    assert.equal(fin.decision.pluginActivity, true, "plugin activity must NOT be lost across a resume");
+    const toolSpans = recs.filter((r) => r.type === "span" && r.kind === "tool");
+    assert.ok(toolSpans.length >= 1, "tool spans were captured");
+    assert.ok(toolSpans.every((t) => t.parentId === cmd[0].id), "tool spans attribute to the command span, not orphaned (parentId:null)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("resume: a plain 'startup' SessionStart still fully resets (carry-over is gated to resume/compact)", () => {
+  const home = setupHome();
+  try {
+    const sid = "startup-reset";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath, source: "startup" });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/project-init" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "node x.mjs" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "ok"),
+    ]);
+    // A fresh 'startup' (NOT resume) must wipe the open command span.
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath, source: "startup" });
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", background_tasks: [] }, LINE_OFF);
+    const recs = readSpans(home, sid);
+    assert.equal(spansOf(recs, "command", "project-init").length, 0, "a startup reset drops the pre-reset command span");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── testEnv enrichment (S3) — recover TEST_ENV passed inline in tool args ───────────
+test("testEnv: recovered from an inline TEST_ENV= in tool args onto the finalize record", () => {
+  const home = setupHome();
+  try {
+    const sid = "testenv-1";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    // No TEST_ENV in the hook env → session_start.testEnv is null.
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    const start = readSpans(home, sid).find((r) => r.type === "session_start");
+    assert.equal(start.testEnv, null, "not exported to the hook env → null on session_start");
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "TEST_ENV=vcptcore node verify-access.mjs" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "Readiness: all PASS"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.testEnv, "vcptcore", "finalize recovers TEST_ENV from the tool args");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── cleanup offer — leftover artifacts from OTHER inactive sessions ────────────────
+test("cleanup offer: leftover inactive-session artifacts surface a one-shot AskUserQuestion offer at the terminal Stop", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    // A prior session's artifacts, 2h old (> the 1h inactivity floor, < the 24h age-cap so
+    // they survive the silent prune) → the offer should propose clearing them.
+    seedFile(dir, "old-inactive.jsonl", 2);
+    seedFile(dir, "old-inactive.state.json", 2);
+
+    const sid = "cur-cleanup";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+
+    // The stale counts land on session_start.
+    const start = readSpans(home, sid).find((r) => r.type === "session_start");
+    assert.equal(start.staleInactiveSessions, 1, "one inactive session detected");
+    assert.equal(start.staleInactiveFiles, 2, "two leftover files detected");
+
+    // A plain dev turn (no plugin activity) — the cleanup offer stands alone.
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "refactor this" });
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    const dec = JSON.parse(out);
+    assert.equal(dec.decision, "block", "the cleanup offer surfaces via decision:block");
+    assert.match(dec.reason, /Detected diagnostic files from old inactive sessions/);
+    assert.match(dec.reason, /purge-inactive --keep "cur-cleanup"/, "the exact purge command is handed to the model");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.cleanupOffered, true);
+
+    // A repeat finalize (same turn / resume) must NOT re-offer — once per session.
+    const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(second.trim(), "", "the cleanup offer fires at most once per session");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("cleanup offer: fresh (<1h) leftover files from a live parallel session are NOT offered", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    seedFile(dir, "live-parallel.jsonl", 0); // 0h old — a still-live parallel session
+    const sid = "cur-nolt";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    const start = readSpans(home, sid).find((r) => r.type === "session_start");
+    assert.equal(start.staleInactiveFiles, undefined, "a fresh parallel-session file is below the inactivity floor → not offered");
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "refactor this" });
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(out.trim(), "", "no stale artifacts → no cleanup offer");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("cleanup offer: VC_FIX_DIAG_CONSENT=off suppresses the offer (capture still runs)", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    seedFile(dir, "old-inactive.jsonl", 2);
+    const sid = "cur-consentoff";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    const OFF = { VC_FIX_DIAG_CONSENT: "off" };
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "refactor this" }, OFF);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, OFF);
+    assert.equal(out.trim(), "", "the kill switch suppresses the cleanup offer");
+    assert.ok(existsSync(join(home, ".vc-fix")), "capture still ran (consent gates surfacing, not capture)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── purge-inactive subcommand ──────────────────────────────────────────────────
+test("purge-inactive: removes inactive-session artifacts, keeps the current session's and fresh files", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    const oldJ = seedFile(dir, "old-a.jsonl", 2);
+    const oldS = seedFile(dir, "old-a.state.json", 2);
+    const oldDiag = seedFile(dir, "DIAG-old-a-2026.md", 2);
+    const curJ = seedFile(dir, "cur.jsonl", 0); // current session — kept via --keep
+    const freshOther = seedFile(dir, "live-b.jsonl", 0); // another session, fresh — kept by the floor
+    const out = execFileSync(process.execPath, [HOOK, "purge-inactive", "--keep", "cur", "--dir", dir], { encoding: "utf8" });
+    assert.ok(!existsSync(oldJ), "aged .jsonl removed");
+    assert.ok(!existsSync(oldS), "aged .state.json removed");
+    assert.ok(!existsSync(oldDiag), "aged DIAG-*.md removed");
+    assert.ok(existsSync(curJ), "the current session's file is kept (--keep)");
+    assert.ok(existsSync(freshOther), "a fresh (<1h) file is kept by the inactivity floor");
+    assert.match(out, /Removed 3 inactive/);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("purge-inactive --all: ignores the inactivity floor (removes even fresh non-kept files)", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    const freshOther = seedFile(dir, "live-b.jsonl", 0);
+    const curJ = seedFile(dir, "cur.jsonl", 0);
+    const out = execFileSync(process.execPath, [HOOK, "purge-inactive", "--keep", "cur", "--dir", dir, "--all"], { encoding: "utf8" });
+    assert.ok(!existsSync(freshOther), "--all removes even a fresh non-kept file");
+    assert.ok(existsSync(curJ), "--keep still protects the current session");
+    assert.match(out, /Removed 1 inactive/);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

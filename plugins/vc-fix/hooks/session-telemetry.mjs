@@ -76,10 +76,13 @@
  *    correctly reports NOT READY / BAIL is itself healthy.)
  *
  * INVARIANTS (all enforced here):
- *   - GATED on capture: init/prompt/record/agentstop/finalize run ONLY when the
- *     output root carries a project-profile.json with `selfDiagnostics: true`.
- *     Absent profile / absent field / any non-true value ⇒ full no-op (nothing
- *     read, nothing written, no `.vc-fix/`). (Tier-3 DELIVERY consent is a separate
+ *   - CAPTURE IS DEFAULT-ON (opt-out): init/prompt/record/agentstop/finalize run
+ *     UNLESS the output-root project-profile.json EXPLICITLY sets
+ *     `selfDiagnostics: false`, OR the env kill-switch VC_FIX_DIAG_CAPTURE is
+ *     off/0/false/no. Absent profile / absent field / any non-false value ⇒ capture
+ *     ON — so `/project-init` (which writes project-profile.json only at the END of
+ *     onboarding, so there is NO profile during its own run) is itself captured; it
+ *     used to be the subsystem's blind spot. (Tier-3 DELIVERY consent is a separate
  *     `feedback.mode` gate read by deliver.mjs — never here.)
  *   - Writes ONLY under <outputRoot>/.vc-fix/diagnostics/ (outputRoot =
  *     VC_FIX_HOME || cwd, matching skills/project-init/lib/paths.mjs). NEVER under
@@ -89,6 +92,12 @@
  *     never the current session's. This complements deliver.mjs's delete-after-
  *     delivery (which only reclaims DELIVERED sessions) so undelivered artifacts
  *     (feedback.mode=off, un-`--purge`d hand-offs, clean runs) can't accumulate.
+ *   - Cleanup OFFER (complements the silent age-cap): at SessionStart the collector
+ *     counts leftover artifacts from OTHER, now-inactive sessions (mtime older than
+ *     INACTIVE_MS, so a live parallel session is never offered up) and, on the next
+ *     TERMINAL Stop, surfaces a ONE-shot AskUserQuestion offer to delete them now via
+ *     the `purge-inactive` subcommand. Suppressed by VC_FIX_DIAG_CONSENT=off; asked at
+ *     most once per session (the `cleanupOffered` guard).
  *   - Never throws, never blocks a tool, never writes a secret (Authorization/
  *     token/password/PAN redacted from every snippet). Always exits 0.
  *   - The auto-diagnosis trigger AND the visible line can both be suppressed with
@@ -518,8 +527,16 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
 
       if (type === "tool_use") {
         const name = String(item.name || "unknown");
-        const arg_hash = hash(redact(JSON.stringify(item.input ?? {})).slice(0, 4000));
-        if (parent) markExpected(parent, `${name} ${redact(JSON.stringify(item.input ?? {})).slice(0, 500)}`);
+        const inputStr = redact(JSON.stringify(item.input ?? {}));
+        const arg_hash = hash(inputStr.slice(0, 4000));
+        if (parent) markExpected(parent, `${name} ${inputStr.slice(0, 500)}`);
+        // Enrich testEnv (S3): TEST_ENV is often passed INLINE per command (`TEST_ENV=… node …`)
+        // and never exported to the hook's own env, so session_start.testEnv is null. Recover it
+        // from the FIRST tool arg that carries it. Cheap, best-effort — first match wins.
+        if (!state.testEnv) {
+          const em = /\bTEST_ENV=([A-Za-z0-9_.-]+)/.exec(inputStr);
+          if (em) state.testEnv = em[1];
+        }
 
         if (name === "Skill") {
           if (state.currentSkill) closeSkill(jsonlPath, state, ts);
@@ -670,6 +687,44 @@ function pruneOldDiagnostics(dir, sid, nowMs) {
   return removed;
 }
 
+// Inactivity floor for the cleanup OFFER: an artifact belongs to an "old inactive
+// session" only if it is NOT the current session's AND its mtime is older than this —
+// so a still-LIVE parallel session (which writes its jsonl/state frequently) is never
+// offered up for deletion. Distinct from the age-cap (24h): the offer surfaces even for
+// <24h leftovers, the age-cap only silently reclaims >24h ones.
+const INACTIVE_MS = 60 * 60 * 1000; // 1h
+
+// Collect our-own artifacts that belong to OTHER, now-inactive sessions. Returns
+// { files:[abs path], sessions:Set<sid> }. `nowMs` drives the mtime cutoff
+// (nowMs - INACTIVE_MS); pass a far-future nowMs to ignore the floor (purge --all).
+// Never throws.
+function collectInactiveArtifacts(dir, sid, nowMs) {
+  const out = { files: [], sessions: new Set() };
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return out;
+  }
+  const cutoff = nowMs - INACTIVE_MS;
+  for (const f of entries) {
+    // Never the CURRENT session's own artifacts.
+    if (sid && (f === `${sid}.jsonl` || f === `${sid}.state.json` || f.startsWith(`DIAG-${sid}-`) || f.startsWith(`DELIVERY-${sid}-`))) continue;
+    // Only OUR OWN artifact shapes — a stray file a user dropped here is left alone.
+    const isOurs = f.endsWith(".jsonl") || f.endsWith(".state.json") || (f.startsWith("DIAG-") && f.endsWith(".md")) || (f.startsWith("DELIVERY-") && f.endsWith(".md"));
+    if (!isOurs) continue;
+    const p = join(dir, f);
+    try {
+      if (statSync(p).mtimeMs >= cutoff) continue; // still-fresh → maybe a live parallel session
+    } catch {
+      continue; // vanished / locked
+    }
+    out.files.push(p);
+    if (f.endsWith(".jsonl")) out.sessions.add(f.replace(/\.jsonl$/, "")); // one jsonl per session
+  }
+  return out;
+}
+
 function freshState(ev, sid) {
   return {
     sid,
@@ -688,6 +743,11 @@ function freshState(ev, sid) {
     sawPluginSpan: false, // did any plugin skill/command span close this session (finalize `decision`)
     selfCheckSeen: false,
     promptedThisTurn: false,
+    testEnv: process.env.TEST_ENV ?? null, // enriched from `TEST_ENV=` in tool args during scan (see below)
+    cleanupPending: false, // leftover artifacts from OTHER inactive sessions detected at init
+    cleanupOffered: false, // the one-shot cleanup offer already surfaced this session
+    staleInactiveSessions: 0,
+    staleInactiveFiles: 0,
   };
 }
 // openOps is a Map → serialize as entries; revive on load.
@@ -702,6 +762,11 @@ function loadState(statePath, ev, sid) {
       j.seenSignatures = j.seenSignatures || [];
       j.spanSeq = j.spanSeq || 0;
       j.sid = j.sid || sid;
+      j.cleanupPending = j.cleanupPending || false;
+      j.cleanupOffered = j.cleanupOffered || false;
+      j.staleInactiveSessions = j.staleInactiveSessions || 0;
+      j.staleInactiveFiles = j.staleInactiveFiles || 0;
+      j.testEnv = j.testEnv ?? (process.env.TEST_ENV ?? null);
       return j;
     } catch {
       /* corrupt — rebuild */
@@ -758,26 +823,32 @@ function readProjectType(root) {
   const j = readProfile(root);
   return typeof j?.projectType === "string" ? j.projectType : null;
 }
-// Capture gate — telemetry runs ONLY with `selfDiagnostics === true` in the
-// output-root profile. Absent/false ⇒ full no-op. (feedback.mode gates DELIVERY,
-// not capture — read by deliver.mjs, never here.)
-function selfDiagnosticsEnabled(root) {
+// Capture gate — DEFAULT-ON, opt-out. Telemetry runs UNLESS the output-root profile
+// EXPLICITLY sets `selfDiagnostics: false`, or the env kill-switch VC_FIX_DIAG_CAPTURE
+// is off/0/false/no. Absent profile / absent field / any non-false value ⇒ capture ON —
+// so `/project-init` (no profile yet during its own run) is captured too. (feedback.mode
+// gates DELIVERY, not capture — read by deliver.mjs, never here.)
+function captureEnabled(root) {
+  if (/^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CAPTURE || "")) return false;
   try {
-    return readProfile(root)?.selfDiagnostics === true;
+    return readProfile(root)?.selfDiagnostics !== false;
   } catch {
-    return false;
+    return true; // absent / unreadable profile ⇒ default-on
   }
 }
 
 // ─── subcommands ─────────────────────────────────────────────────────────────
 async function cmdInit(ev) {
   const { root, dir, sid, jsonl, state } = await paths(ev);
-  if (!selfDiagnosticsEnabled(root)) return;
+  if (!captureEnabled(root)) return;
   ensureDir(dir);
   // Age-cap the diagnostics dir BEFORE writing this session's first record — reclaims
   // artifacts that the ephemeral (delete-after-delivery) path never gets to (undelivered
   // sessions). Never touches the current sid; best-effort, never throws.
   const pruned = pruneOldDiagnostics(dir, sid, Date.now());
+  // After the silent age-cap sweep, count what's LEFT from other inactive sessions — the
+  // cleanup offer (surfaced at the next terminal Stop) proposes clearing these now.
+  const inactive = collectInactiveArtifacts(dir, sid, Date.now());
   appendRecord(jsonl, {
     type: "session_start",
     sessionId: sid,
@@ -789,8 +860,26 @@ async function cmdInit(ev) {
     transcriptPath: ev.transcript_path ?? null,
     source: ev.source ?? null,
     ...(pruned > 0 ? { prunedOldArtifacts: pruned } : {}),
+    ...(inactive.files.length > 0 ? { staleInactiveSessions: inactive.sessions.size, staleInactiveFiles: inactive.files.length } : {}),
   });
-  saveState(state, freshState(ev, sid));
+  // ─── resume / compact — carry the persisted state over, DON'T reset ──────────────
+  // A `resume`/`compact` SessionStart fires MID-command when the context is summarized
+  // (e.g. a long `/project-init` gets compacted halfway). A blind freshState() here WIPES
+  // the open command span (state.currentCommand — it only lands in the jsonl when it CLOSES
+  // at finalize), the scan cursor (processedLines), and the sawPluginSpan / anySkillSeen
+  // aggregates — so a vc-fix command that crossed the boundary orphans all its tool spans
+  // (parentId:null) and finalize sees pluginActivity:false ("the plugin never ran"). It then
+  // escapes BOTH the clean line AND the findings escalation — the whole session goes dark.
+  // So on resume/compact we reload the persisted state instead of resetting; loadState()
+  // itself falls back to freshState() when no state file exists, so a brand-new session is
+  // unaffected, and a plain `startup`/`clear` still gets the full reset. (Self-diagnosed via
+  // /vc-self-check on a resumed /project-init session, 2026-07-21.)
+  const carryOver = ev.source === "resume" || ev.source === "compact";
+  const st = carryOver ? loadState(state, ev, sid) : freshState(ev, sid);
+  st.cleanupPending = inactive.files.length > 0;
+  st.staleInactiveSessions = inactive.sessions.size;
+  st.staleInactiveFiles = inactive.files.length;
+  saveState(state, st);
 }
 
 // UserPromptSubmit — open a COMMAND span for a plugin slash-command, or record a
@@ -798,7 +887,7 @@ async function cmdInit(ev) {
 // invocation) fully traced.
 async function cmdPrompt(ev) {
   const { root, dir, sid, jsonl, state: statePath } = await paths(ev);
-  if (!selfDiagnosticsEnabled(root)) return;
+  if (!captureEnabled(root)) return;
   ensureDir(dir);
   const state = loadState(statePath, ev, sid);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
@@ -846,7 +935,7 @@ async function cmdPrompt(ev) {
 // closes skill + agent spans as it meets them).
 async function cmdScan(ev) {
   const { root, dir, sid, jsonl, state: statePath } = await paths(ev);
-  if (!selfDiagnosticsEnabled(root)) return;
+  if (!captureEnabled(root)) return;
   ensureDir(dir);
   const state = loadState(statePath, ev, sid);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
@@ -857,7 +946,7 @@ async function cmdScan(ev) {
 
 async function cmdFinalize(ev) {
   const { root, dir, sid, jsonl, state: statePath } = await paths(ev);
-  if (!selfDiagnosticsEnabled(root)) return;
+  if (!captureEnabled(root)) return;
   ensureDir(dir);
   const state = loadState(statePath, ev, sid);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
@@ -950,7 +1039,14 @@ async function cmdFinalize(ev) {
   // (reset ONLY by a new UserPromptSubmit) is what stops the resumed print-turn's own Stop from
   // re-blocking → no infinite loop.
   const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && pluginActivity;
-  const surfaced = shouldPrompt || cleanBlock;
+  // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were
+  // detected at init. Independent of plugin activity (worth offering even on a plain dev turn),
+  // but rides the SAME resume (appended to the findings/clean reason) when one is already firing,
+  // so it never costs a second turn. Suppressed by the kill switch; guarded to once via
+  // `cleanupOffered` (persisted, NOT reset per turn) and `promptedThisTurn`.
+  const cleanupPending = Boolean(state.cleanupPending) && !state.cleanupOffered;
+  const cleanupBlock = cleanupPending && !consentOff && !stopHookActive && !state.promptedThisTurn;
+  const surfaced = shouldPrompt || cleanBlock || cleanupBlock;
   // A durable, deterministic audit of every decision moment — greppable with
   // `"type":"finalize"` / `decision` in the session jsonl. This is how "when did the hook
   // run and what did it decide" stays observable WITHOUT printing a line on every turn.
@@ -960,6 +1056,7 @@ async function cmdFinalize(ev) {
     freshCount: uniqueFresh.length,
     flaggedTotal: state.flagged.length,
     surfaced, // did we resume + print a visible line this turn
+    cleanupOffered: cleanupBlock, // did we surface the stale-artifact cleanup offer this turn
     // Why nothing surfaced this turn (audit only — never affects behavior). `stopHookActive`
     // is checked before the dedup fallback so a suppression caused by OUR OWN resume-turn's
     // Stop is logged as "stop-hook-active", not misreported as "already-surfaced".
@@ -986,18 +1083,24 @@ async function cmdFinalize(ev) {
     flagged: state.flagged.map((f) => ({ name: f.name, kind: f.kind, outcome: f.outcome, struggle: f.struggle, signature: f.signature })),
     anySkillSeen: Boolean(state.anySkillSeen),
     feedbackCount: state.feedbackCount ?? 0,
+    testEnv: state.testEnv ?? process.env.TEST_ENV ?? null, // enriched from tool args when not exported to the hook env
     decision,
   });
 
-  // Set the one-shot guard for ANY block we emit this turn (findings OR clean-line), so a
-  // repeat finalize in the same turn (incl. the resumed print-turn's own Stop) never re-blocks.
+  // Set the one-shot guard for ANY block we emit this turn (findings / clean-line / cleanup),
+  // so a repeat finalize in the same turn (incl. the resumed print-turn's own Stop) never
+  // re-blocks. `cleanupOffered` is persisted (NOT reset per turn) → the offer is once per session.
   if (surfaced) state.promptedThisTurn = true;
+  if (cleanupBlock) state.cleanupOffered = true;
   if (shouldPrompt) for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
   saveState(statePath, state);
 
+  // Build the ONE decision:block reason. At most one of findings/clean fires (findings wins);
+  // the cleanup offer is APPENDED to whichever is firing, or stands alone if neither is.
+  let reason = null;
   if (shouldPrompt) {
     const summary = uniqueFresh.map((f) => `${f.outcome} in /${f.name}${f.struggle?.length ? ` (${f.struggle.join(",")})` : ""}`).join("; ");
-    const reason = [
+    reason = [
       "The vc-fix self-diagnostics collector flagged this session's plugin activity as ",
       `not-clean: ${summary}.\n\n`,
       "Silently run the `vc-self-check` skill NOW (invoke it via the Skill tool with the ",
@@ -1007,10 +1110,9 @@ async function cmdFinalize(ev) {
       '"vc-fix self-check: 1 BROKEN, 1 DEGRADED → .vc-fix/diagnostics/DIAG-….md"). ',
       "Then continue. Nothing leaves the machine — the local report is not sent anywhere.",
     ].join("");
-    process.stdout.write(JSON.stringify({ decision: "block", reason }));
   } else if (cleanBlock) {
     // Default clean line — resume the agent ONCE to print the clean-status line, then stop.
-    const reason = [
+    reason = [
       "The vc-fix self-diagnostics collector evaluated this session's plugin activity and found ",
       "NO PLUGIN issues (all skill/command spans ran clean/recovered). This judges ONLY whether ",
       "the plugin's own skills executed correctly — it does NOT endorse your environment health ",
@@ -1019,8 +1121,61 @@ async function cmdFinalize(ev) {
       "`vc-fix self-check: no plugin issues detected` — and then stop. Do NOT run any skill, do ",
       "NOT take any other action; this is an informational status line only.",
     ].join("");
-    process.stdout.write(JSON.stringify({ decision: "block", reason }));
   }
+  if (cleanupBlock) {
+    const script = join(pluginRoot(), "hooks", "session-telemetry.mjs");
+    const purgeCmd = `node "${script}" purge-inactive --keep "${sid}" --dir "${dir}"`;
+    const cleanup = [
+      `The vc-fix self-diagnostics collector found leftover diagnostic files from `,
+      `${state.staleInactiveSessions} older inactive session(s) (${state.staleInactiveFiles} file(s)) `,
+      "in the local `.vc-fix/diagnostics/` folder. Ask the user — via the AskUserQuestion tool — ",
+      'whether to delete them now. Question: "Detected diagnostic files from old inactive sessions. ',
+      'Delete them now? (Session files older than 24h are auto-deleted at the next session start anyway.)" ',
+      'Options: "Delete now" and "Keep (I\'ll remove them myself)". On "Delete now", run this exact ',
+      "command with the Bash tool and report how many files were removed:\n  ",
+      purgeCmd,
+      '\nOn "Keep", do nothing. This only removes vc-fix\'s OWN local diagnostic artifacts from ',
+      "previous sessions — never your code, and never the current session.",
+    ].join("");
+    reason = reason ? `${reason}\n\nADDITIONALLY — ${cleanup}` : cleanup;
+  }
+  if (reason) process.stdout.write(JSON.stringify({ decision: "block", reason }));
+}
+
+// purge-inactive — MANUAL cleanup, run by the model (via Bash) after the user confirms
+// the cleanup offer. NOT gated by captureEnabled: it's an explicit, consented action.
+// Flags: --keep <sid> (never delete this session's files), --dir <abs> (diagnostics dir;
+// defaults to <outputRoot>/.vc-fix/diagnostics), --all (ignore the 1h inactivity floor —
+// delete every non-kept artifact regardless of mtime). Prints a human-readable count.
+function parsePurgeArgs(argv) {
+  const a = {};
+  for (let i = 0; i < argv.length; i++) {
+    const t = argv[i];
+    if (t === "--keep") a.keep = argv[++i];
+    else if (t === "--dir") a.dir = argv[++i];
+    else if (t === "--all") a.all = true;
+  }
+  return a;
+}
+async function cmdPurgeInactive() {
+  const a = parsePurgeArgs(process.argv.slice(3));
+  let dir = a.dir;
+  if (!dir) {
+    const root = await resolveOutputRoot();
+    dir = join(root, ".vc-fix", "diagnostics");
+  }
+  // --all ⇒ pass a far-future nowMs so the mtime floor never keeps anything.
+  const set = collectInactiveArtifacts(dir, a.keep || "", a.all ? Number.MAX_SAFE_INTEGER : Date.now());
+  let removed = 0;
+  for (const p of set.files) {
+    try {
+      unlinkSync(p);
+      removed++;
+    } catch {
+      /* vanished / locked — skip */
+    }
+  }
+  process.stdout.write(`Removed ${removed} inactive vc-fix diagnostic file(s) from ${dir}\n`);
 }
 
 // ─── entry point ─────────────────────────────────────────────────────────────
@@ -1040,6 +1195,7 @@ async function cmdFinalize(ev) {
     else if (sub === "prompt") await cmdPrompt(ev);
     else if (sub === "record" || sub === "agentstop") await cmdScan(ev);
     else if (sub === "finalize") await cmdFinalize(ev);
+    else if (sub === "purge-inactive") await cmdPurgeInactive();
     // Unknown subcommand: no-op.
   } catch (err) {
     process.stderr.write(`session-telemetry hook error: ${err?.message ?? err}\n`);

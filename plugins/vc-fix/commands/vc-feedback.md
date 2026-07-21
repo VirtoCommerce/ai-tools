@@ -31,5 +31,6 @@ failure** the automatic heuristics can't catch).
   externally — a 👎 becomes an upstream contribution only through the separate,
   `feedback.mode`-gated `deliver` step (`/vc-self-check deliver`), where it is scrubbed of
   all client identifiers first.
-- Recorded only when `selfDiagnostics: true` in `project-profile.json` (same capture gate
-  as the rest of the collector); otherwise the hook is a full no-op.
+- Captured by default (same default-on gate as the rest of the collector); recorded unless
+  `project-profile.json` explicitly sets `selfDiagnostics: false` or `VC_FIX_DIAG_CAPTURE=off`,
+  in which case the hook is a full no-op.
