@@ -1,7 +1,7 @@
 # PageBuilder Test Pages — Test Data
 
 **Module:** CMS (PageBuilder)
-**Suites:** 059-cms-page-management, 060-cms-design-content
+**Suites:** 059-page-builder, 060-page-builder-design-content
 **Date:** 2026-03-26
 **Prerequisites:** Admin logged in; CMS module installed; PageBuilder shell accessible at `${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store`
 
@@ -586,8 +586,8 @@ Test files for CMS-111 through CMS-122 (save/load/clone functionality, PR #116):
 
 ## Related Files
 
-- Suite CSV: `regression/suites/Backend/cms/059-cms-page-management.csv`
-- Suite CSV: `regression/suites/Backend/cms/060-cms-design-content.csv`
+- Suite CSV: `regression/suites/Backend/page-builder/059-page-builder.csv`
+- Suite CSV: `regression/suites/Backend/page-builder/060-page-builder-design-content.csv`
 - Prompt: `docs/prompts/How to test Builder.io.md`
 - B2B users (for access control): `test-data/b2b/users.csv`
 - Agent pool users: `test-data/users/agent-user-pool.csv`
