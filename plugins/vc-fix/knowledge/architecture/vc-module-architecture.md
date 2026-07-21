@@ -51,6 +51,23 @@ module.manifest                 # id, version, Dependencies[] (resolve as NuGet 
   "wrong field name silently no-ops" cases (e.g. `sections` vs `configurationSections`; coupons are a
   separate entity, not inline). Cross-check against `vc-bug-catalog.md`.
 
+### 2a. Embedded frontend sub-apps (a different stack from the module's own Admin UI)
+
+A module MAY additionally ship one or more standalone frontend apps under `Apps/<name>/` on a stack
+**other** than the module's own legacy AngularJS `Web/Scripts/` (§2 above). Example: `vc-module-pagebuilder`
+ships a **Vue 3 "shell"** at `Apps/page-builder-shell/` (`@vc-shell/framework` + Vite + vee-validate —
+the user-facing "details blade" lives here), plus a separate **Angular 21 "designer"** that has **no
+agent support today** (see `fullstack-frontend.md` — a bug there is a clean STOP, not silently routed
+anywhere).
+
+A sub-app is declared per-repo in `skills/qa-fix-routing/fix-repos.json` `moduleFrontendSubApps` (path +
+stack + toolchain commands) and resolved by RCA anchor via `skills/qa-fix-routing/repo-router.ts`
+`resolveOwningSubApp()`. A match does **not** change the repo's `kind` (still `"module"` for
+ownership/allowlist purposes) — it only routes **that one bug** to `fullstack-frontend` (instead of
+`fullstack-backend`), scoped to the sub-app's own directory within the same single-repo checkout (Gate 1
+still passes). See `/vc-shell-fix` for the fix workflow when the sub-app has no real component-test
+harness.
+
 ## 3. .NET 10 best practices (apply, don't over-apply)
 
 - Nullable reference types on; prefer `required` members / primary constructors where the file already

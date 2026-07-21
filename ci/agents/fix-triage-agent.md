@@ -29,7 +29,7 @@ Pick exactly one repo from the allowed list:
 
 - **Storefront UI / UX / CLS / a11y / checkout-flow / cart-UI / theme** → `VirtoCommerce/vc-frontend`
 - **xAPI / GraphQL resolver behavior** → the matching `vc-module-x-*` (cart/catalog/order)
-- **Admin / API / business logic** (pricing, marketing/coupons, inventory, orders, catalog, customer) → the matching `vc-module-*`. **Admin SPA UI layout/CSS** (a module blade with overlapping/misaligned/clipped controls, usually from inline `position:absolute`/fixed-px styling — the [PR #101](https://github.com/VirtoCommerce/vc-module-export/pull/101) class) is **code-fixable** (mirror the platform classes + visual render-harness proof) → GO to that `vc-module-*`. BAIL only if the visual bug needs live data / cross-blade interaction that can't be reproduced in a render harness.
+- **Admin / API / business logic** (pricing, marketing/coupons, inventory, orders, catalog, customer) → the matching `vc-module-*`. **Admin SPA UI layout/CSS** (a module blade with overlapping/misaligned/clipped controls, usually from inline `position:absolute`/fixed-px styling — the [PR #101](https://github.com/VirtoCommerce/vc-module-export/pull/101) class) is **code-fixable** (mirror the platform classes + visual render-harness proof) → GO to that `vc-module-*`. BAIL only if the visual bug needs live data / cross-blade interaction that can't be reproduced in a render harness. Some module repos additionally embed a **modern frontend sub-app** on a different stack from the legacy AngularJS Admin UI (e.g. a Vue 3 "shell" under `Apps/<name>/`, nested inside the `.Web` project) — this is still the same `vc-module-*` repo (GO), but pin the RCA anchor as precisely as you can (see `RCA_ANCHOR` below) so the pipeline can tell a legacy-AngularJS bug from an embedded-sub-app bug.
 - **Security / RBAC / users / dynamic properties / platform settings** → `VirtoCommerce/vc-platform`
 
 Use the bug report's **Component** line and any "Fixed in <repo> PR #" hints as the strongest signal. Prefer the heuristic guess only if it agrees with the ticket evidence.
@@ -53,6 +53,15 @@ VERDICT: GO            # or BAIL
 ROUTE_REPO: VirtoCommerce/vc-frontend   # required when GO; the best-fit repo (also helpful on BAIL); must be from the allowed list
 OWNERSHIP: platform                     # or client — your reading of ROUTE_REPO's ownership
 COMPONENT: <component/area, short>
+RCA_ANCHOR: src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/src/composables/usePublishState.ts
+                                         # optional but valuable when GO on a `vc-module-*` repo: the repo-relative
+                                         # file/path path you believe holds the root cause (from the bug report's
+                                         # own RCA-anchor line, or your own best guess if the report has none). The
+                                         # pipeline uses this to detect a bug that actually lives in a declared
+                                         # embedded frontend sub-app (e.g. a Vue 3 "shell") rather than the module's
+                                         # own C#/legacy-AngularJS code — a plain repo/component name is not enough,
+                                         # it must be path-shaped. Omit ("n/a") if you have no anchor better than
+                                         # the COMPONENT guess.
 BAIL_REASON: <one sentence>             # required when BAIL; omit or "n/a" when GO
 BAIL_CLASS: not-a-bug                   # required when BAIL: not-a-bug | too-complex | multi-repo
 CONFIDENCE: HIGH|MEDIUM|LOW
