@@ -28,6 +28,20 @@ fork account) from your token plus a live repo scan, and writes `project-profile
 `.env.<env>` + `.env.local` + `.mcp.json`. That profile is what routes every `/qa-fix` to the
 right repo and tracker.
 
+### project-init modes
+
+`/project-init` has one onboarding flow and two **day-2 modes** that skip the interview:
+
+| Invocation | When | What it does |
+|------------|------|--------------|
+| `/project-init` | first onboarding of a deployment | full interview (**env name · tracker · code host · auth · self-diagnostics consent**) → derive `projectType` / client-vs-platform repo split / contribution mode from the token + a live scan → write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` → verify access |
+| `/project-init --add-env` | day-2: point an already-onboarded project at **another deployment target** (a second QA env, staging, a customer's second site) | asks the new environment name, guards against overwriting an existing `.env.<name>`, then scaffolds `.env.<new>` (its URLs) + the `_<ENV>`-suffixed per-env access creds in `.env.local` — **reusing** the project's tracker/host, leaving cross-env tokens untouched — and verifies the new env with `TEST_ENV=<new>`. Does **not** re-interview, re-scan repos, or rewrite the profile / `.mcp.json` (those are project-level, env-agnostic) |
+| `/project-init --check` | day-2: after a plugin upgrade | reconciles the on-disk `project-profile.json` to the current schema (adds new fields with safe defaults, prunes obsolete ones, re-asks operator-decision fields like the self-diagnostics consent), then re-verifies access |
+
+> An **environment** is only a URL set + its access creds, selected at runtime by `TEST_ENV`.
+> A different **tracker or code host** is a different *project* — run a fresh `/project-init`
+> in its own directory for that, not `--add-env`.
+
 ## Quick Start
 
 ```

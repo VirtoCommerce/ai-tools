@@ -12,6 +12,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Added — `/project-init --add-env` (add another environment to an onboarded project)
+
+A day-2 mode alongside `--check`: point an already-onboarded project at **another deployment target** (a second QA env, staging, a customer's second site) without re-running the onboarding interview. An *environment* is env-agnostic to the deployment profile — it's only a URL set + per-env access creds selected at runtime by `TEST_ENV` — so `--add-env` reuses `project-profile.json` and touches nothing project-level.
+
+- **Flow:** precondition (`project-profile.json` must exist; else run the full `/project-init`) → **ask the new env name** (plain chat) + existing-env guard (reuse vs new name, never clobber) → `scaffold-env.mjs` writes `.env.<new>` (its URLs) + `scaffold-secrets.mjs` adds the `_<ENV>`-suffixed per-env app passwords to `.env.local` (**reusing** the profile's tracker/host; cross-env GitHub/Jira/ADO tokens are single-instance, left untouched — idempotent add-only) → `verify-access` with `TEST_ENV=<new>`.
+- **Does NOT** re-interview, re-scan repos, re-derive, rewrite `project-profile.json`, or regenerate `.mcp.json` — all env-agnostic and already done.
+- A different **tracker or code host** is a different *project* (a fresh `/project-init` in its own directory), not an environment.
+- **No new code** — reuses the existing `scaffold-env` / `scaffold-secrets` / `verify-access` scripts as-is. Command + skill docs, README (project-init modes table), agents README, and the self-diagnostics oracle updated.
+
 ### Added — self-diagnostics age-cap backstop (undelivered artifacts can't accumulate)
 
 The ephemeral lifecycle (`deliver.mjs` delete-after-delivery) only reclaims **delivered** sessions. Artifacts that are never delivered — `feedback.mode=off`, a PR/fork-PR hand-off the operator never `--purge`s, a clean no-finding run — would otherwise pile up in `<outputRoot>/.vc-fix/diagnostics/` forever. `session-telemetry.mjs cmdInit` (SessionStart) now age-caps its **own** artifacts as a backstop:

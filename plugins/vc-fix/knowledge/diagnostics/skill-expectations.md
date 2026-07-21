@@ -94,7 +94,7 @@ in lock-step with `EXPECTED_OUTPUT` in `hooks/session-telemetry.mjs`.
 | `/qa-verify-fix` | a ticket transition/update · `READY FOR TEST`/`testing`/`verified`/`reproduc…` · a clean BAIL |
 | `/qa-monitoring` | a `reports/monitoring/` write · `signature`/`dedup`/"no new signatures" · a clean BAIL |
 | `/qa-env-check` | a readiness/`PASS`/`FAIL` verdict table |
-| `/project-init` | a `project-profile.json`/`.mcp.json`/`.env.*` write · a readiness/verify-access table |
+| `/project-init` | a `project-profile.json`/`.mcp.json`/`.env.*` write · a readiness/verify-access table (any mode: full onboarding, `--add-env` = an `.env.*` write + verify table, `--check` = a reconcile summary + verify table) |
 | `/vc-docs` | any activity (lookup skill — never silent_suspect) |
 
 A skill with **no** entry above is never `silent_suspect` (the collector treats an

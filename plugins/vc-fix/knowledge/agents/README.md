@@ -59,7 +59,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 
 | Command | Purpose |
 |---------|---------|
-| `/project-init` | Onboard this plugin: env name, bug tracker (Jira/Azure Boards), code host (GitHub/Azure Repos), auth, discover client/platform repo split, write `project-profile.json` + `.env.<env>` + `.mcp.json`, verify access |
+| `/project-init` | Onboard this plugin: env name, bug tracker (Jira/Azure Boards), code host (GitHub/Azure Repos), auth, discover client/platform repo split, write `project-profile.json` + `.env.<env>` + `.mcp.json`, verify access. Day-2 modes (skip the interview): **`--add-env`** adds another environment (URLs + per-env access creds) to an onboarded project; **`--check`** reconciles the profile to the current schema after an upgrade, then verifies |
 | `/qa-bug [description]` | Reproduce, document, and optionally file a bug |
 | `/qa-fix VCST-XXXX` | Autonomous fix of an already-filed bug: triage → root-cause + single-repo route → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review (never auto-merges) |
 | `/qa-verify-fix VCST-XXXX` | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition the ticket |
