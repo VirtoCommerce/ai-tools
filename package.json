@@ -157,6 +157,7 @@
     "cross-env": "^7.0.3",
     "csv-stringify": "^6.7.0",
     "playwright": "^1.61.1",
-    "tsx": "^4.0.0"
+    "tsx": "^4.0.0",
+    "typescript": "^7.0.2"
   }
 }

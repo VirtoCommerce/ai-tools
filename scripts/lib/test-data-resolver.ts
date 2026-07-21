@@ -241,8 +241,8 @@ export class TestDataResolver {
     // JSON-fixture alias (VCST-5482): static fields resolve from a Swagger-shaped JSON fixture; the
     // runtime GUID (id) was already resolved from the env overlay above. `fields` maps short name →
     // dotted JSON path (falls back to the field name itself).
-    if ((alias as JsonAliasEntry).json) {
-      const j = alias as JsonAliasEntry;
+    if ((alias as { json?: string }).json) {
+      const j = alias as unknown as JsonAliasEntry;
       const path = j.fields?.[fieldName] ?? fieldName;
       const data = this.loadJSON(j.json);
       const resolved = this.tryResolveObjectField(data, path);
