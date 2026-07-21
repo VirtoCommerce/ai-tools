@@ -55,17 +55,23 @@ files and the storefront's `.vue` SFCs. If the tools aren't present this session
 `Grep`/`Glob`/`Read`/`Edit` exactly as documented elsewhere in this file — nothing below is a new hard
 rule, just a faster path when it's there.
 
-**Right after checkout, activate the checkout as the tool's project** (Serena: `activate_project` on
-the absolute `.fix-workspace/<repo-basename>/` path) before any `Grep`/`Read`, so symbol lookups resolve
-against this checkout, not a stale index.
+**Activate the checkout as the tool's project only *after* dependencies are installed** — the checkout
+step's own install/restore command comes first, *then* `activate_project` (Serena) on the absolute
+`.fix-workspace/<repo-basename>/` path, before any `Grep`/`Read`. Activating any earlier leaves
+symbol/reference lookups unreliable: Roslyn can't resolve cross-project/NuGet types until `restore`
+produces `obj/project.assets.json`, and the Vue/TS server can't resolve the `@/` → `client-app/` alias
+until `node_modules` exists.
 
 **Prefer, in order, when available:**
 1. A symbol overview of the RCA file (Serena: `get_symbols_overview`) — the class/method tree, no
    bodies — to locate the seam without reading the whole file into context.
 2. Fetch just the target symbol's body (Serena: `find_symbol(..., include_body=true)`) — a controller
    action, service method, or `<script setup>` function — instead of the surrounding file.
-3. Find every caller before touching a signature/contract (Serena: `find_referencing_symbols`) — one
-   call instead of a repo-wide `Grep`, and how you self-check the "no breaking changes" hard rule.
+3. Find every caller *within this checked-out repo* before touching a signature/contract (Serena:
+   `find_referencing_symbols`) — one call instead of a repo-wide `Grep`. This confirms in-repo callers
+   aren't broken; it does **not** cover external/cross-repo contract consumers (another repo's
+   REST/GraphQL/DTO/manifest usage) — the public-contract check (G1/G4) is unchanged and still required
+   regardless of what this tool reports.
 4. Apply the fix directly to the symbol (Serena: `replace_symbol_body` /
    `insert_after_symbol`/`insert_before_symbol`) instead of Read-whole-file + Edit-by-string-match,
    which retries on whitespace or non-unique matches in a large file.

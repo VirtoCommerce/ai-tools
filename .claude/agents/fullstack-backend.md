@@ -72,11 +72,12 @@ Invoke the development skills:
 1. **Understand the bug** — read the ticket JSON + `/qa-bug` report (STR, expected/actual, owning
    layer, RCA). Confirm root cause, not symptom.
 2. **Checkout** — the repo is resolved + cloned via `ci/lib/repo-router.ts` `checkoutForFix` into
-   `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute
-   paths. **Immediately activate the checkout for Serena** (`activate_project` on the absolute path) so
-   the rest of the fix uses fast symbol navigation instead of blind Grep+Read (`shared-instructions.md`
-   §Fast local navigation & editing).
-3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see `/dotnet-unit-test`).
+   `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute paths.
+3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see
+   `/dotnet-unit-test`). **Then activate the checkout for Serena** (`activate_project` on the absolute
+   path), not before — Roslyn can't resolve cross-project/NuGet types until `restore` produces
+   `obj/project.assets.json`, so activating any earlier leaves symbol/reference lookups unreliable
+   (`shared-instructions.md` §Fast local navigation & editing).
 4. **Reproduce (red)** — add a NEW test asserting expected behavior; confirm it fails. Trivial-skip
    only for one-line guards/typos (note in PR body). **Admin SPA layout/CSS bug:** instead, scaffold the
    visual render harness (`/angular-admin` `visual-render-harness.md`) and have `qa-backend-expert` capture

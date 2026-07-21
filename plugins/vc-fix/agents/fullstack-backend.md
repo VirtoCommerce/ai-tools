@@ -77,11 +77,13 @@ Invoke the development skills:
    `integrationBranch`** from the profile (often `dev` — do not hardcode). Clone URL + auth =
    `contribution.cloneUrl` + `contribution.authEnv`. Use **absolute paths** + `git -C "<checkout>"`;
    never `cd` into the workspace as a persisted cwd. (In a native agentic checkout you MAY instead call
-   `repo-router.ts` `checkoutForFix`.) **If an LSP-backed symbol tool is available this session (e.g.
-   Serena), activate the checkout as its project now** (`activate_project` on the absolute path) so the
-   rest of the fix uses fast symbol navigation instead of blind Grep+Read
-   (`shared-instructions.md` §Fast local navigation & editing).
-3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see `/dotnet-unit-test`).
+   `repo-router.ts` `checkoutForFix`.)
+3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see
+   `/dotnet-unit-test`). **If an LSP-backed symbol tool is available this session (e.g. Serena),
+   activate the checkout as its project now** (`activate_project` on the absolute path), not before —
+   Roslyn can't resolve cross-project/NuGet types until `restore` produces `obj/project.assets.json`,
+   so activating any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md` §Fast
+   local navigation & editing).
 4. **Reproduce (red)** — add a NEW test asserting expected behavior; confirm it fails. Trivial-skip
    only for one-line guards/typos (note in PR body). **Admin SPA layout/CSS bug:** instead, scaffold the
    visual render harness (`/angular-admin` `visual-render-harness.md`) and have `qa-backend-expert` capture

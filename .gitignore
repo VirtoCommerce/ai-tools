@@ -16,6 +16,10 @@ node_modules
 .vscode/
 test-results/
 results/
+# settings.json is ignored tree-wide by default (IDE/tool-local config); the
+# project's own shared config is the one deliberate exception.
+settings.json
+!/.claude/settings.json
 .claude/settings.local.json
 .claude/worktrees/
 .mcp.json

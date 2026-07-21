@@ -120,11 +120,13 @@ Invoke the development skills:
    **Base + PR target = `contribution.prTarget` / `integrationBranch`** from the profile (often `dev`, but
    may differ — do not assume). Clone URL + auth = `contribution.cloneUrl` + `contribution.authEnv`
    (Azure Repos: embed `$ADO_PAT`, never print it). Use **absolute paths** and `git -C "<checkout>"`;
-   never `cd` into the workspace as a persisted directory. **If an LSP-backed symbol tool is available
-   this session (e.g. Serena), activate the checkout as its project now** (`activate_project` on the
-   absolute path) so the rest of the fix uses fast symbol navigation instead of blind Grep+Read
-   (`shared-instructions.md` §Fast local navigation & editing).
-3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once.
+   never `cd` into the workspace as a persisted directory.
+3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once. **If
+   an LSP-backed symbol tool is available this session (e.g. Serena), activate the checkout as its
+   project now** (`activate_project` on the absolute path), not before — the TS server can't resolve
+   the `@/` → `client-app/` alias (or anything in `node_modules`) until install has run, so activating
+   any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md` §Fast local
+   navigation & editing).
 4. **Reproduce (red)** — add a NEW `*.spec.ts` asserting expected behavior; confirm it fails by running
    **only that spec file** — `npx vitest run <path/to/new.spec.ts>`. Trivial-skip only for a one-line
    template/typo/binding with no assertable logic (note in PR body + manual verification steps).

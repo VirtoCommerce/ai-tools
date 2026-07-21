@@ -46,25 +46,36 @@ on a Windows long-path error deep in a GraphQL folder (see below). Always use th
 and Serena call — never `cd` into the workspace as a persisted directory, and never rely on
 `git rev-parse` from inside it to relocate yourself.
 
-## Fast local navigation & editing — use Serena, not blind Grep+Read+Edit
-Serena (`mcp__plugin_serena_serena__*`, enabled repo-wide via `.claude/settings.json` →
-`enabledPlugins`) is LSP-backed symbol navigation + precise editing. Once the repo is checked out, it
-is the **default tool for "find the seam" and "apply the fix"** — it cuts the token/round-trip cost of
-the naive loop (`Grep` for a string → `Read` the whole file → hand-match an `old_string` in `Edit`),
-which is slow on VC modules' larger C# files and vc-frontend's `.vue` SFCs.
+## Fast local navigation & editing — use Serena when available, don't assume it
+Serena (`mcp__plugin_serena_serena__*`) is LSP-backed symbol navigation + precise editing.
+`.claude/settings.json`'s `enabledPlugins.serena` only *enables* it for whoever already has the plugin
+installed — it does **not** install Serena itself, so **check once per run whether its tools are
+actually present this session** before relying on them; a fresh clone or a CI runner that hasn't run
+`/plugin install serena` won't have it, same assumption the `plugins/vc-fix/` copy of this file already
+makes. When it IS available (repo checked out **and** dependencies installed — see below), it's the
+preferred tool for "find the seam" and "apply the fix" — it cuts the token/round-trip cost of the naive
+loop (`Grep` for a string → `Read` the whole file → hand-match an `old_string` in `Edit`), which is slow
+on VC modules' larger C# files and vc-frontend's `.vue` SFCs. If it isn't available this session, use
+`Grep`/`Glob`/`Read`/`Edit` exactly as documented elsewhere in this file — nothing below is a new hard
+rule, just a faster path when it's there.
 
-**Right after `checkoutForFix` (workflow step 2 in both dev agents), activate the checkout as Serena's
-project** — `activate_project` on the absolute `.fix-workspace/<repo>/` path — before any Grep/Read, so
-symbol lookups resolve against this checkout, not a stale index from a previous run.
+**Activate the checkout as Serena's project only *after* dependencies are installed** (workflow step 3
+in both dev agents — `dotnet restore` / `yarn install` — not step 2's checkout) — `activate_project` on
+the absolute `.fix-workspace/<repo>/` path, before any Grep/Read. Activating any earlier leaves
+symbol/reference lookups unreliable: Roslyn can't resolve cross-project/NuGet types until `restore`
+produces `obj/project.assets.json`, and the Vue/TS server can't resolve the `@/` → `client-app/` alias
+until `node_modules` exists.
 
-**Prefer, in order:**
+**Prefer, in order, when available:**
 1. `get_symbols_overview(file)` — the file's symbol tree (classes/methods/properties), no bodies.
    Locates the RCA method without reading the whole file into context.
 2. `find_symbol(name_path, include_body=true)` — fetch just the target symbol's body (a controller
    action, service method, or `<script setup>` function), not the surrounding file.
-3. `find_referencing_symbols(name_path)` — before touching a signature/contract, see every caller in
-   one call instead of a repo-wide `Grep` — this is also how you self-check the "no breaking changes"
-   hard rule below.
+3. `find_referencing_symbols(name_path)` — before touching a signature/contract, see every caller
+   *within this checked-out repo* in one call instead of a repo-wide `Grep`. This confirms in-repo
+   callers aren't broken; it does **not** cover external/cross-repo contract consumers (another repo's
+   REST/GraphQL/DTO/manifest usage) — the public-contract check (G1/G4) is unchanged and still required
+   regardless of what this tool reports.
 4. `replace_symbol_body` / `insert_after_symbol` / `insert_before_symbol` — apply the fix directly to
    the symbol (swap a method body, add a guard clause, add an overload) instead of
    Read-whole-file-then-Edit-by-string-match, which retries on whitespace or non-unique matches in a

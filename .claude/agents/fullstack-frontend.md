@@ -109,10 +109,12 @@ Invoke the development skills:
    layer, RCA). Confirm the root cause, not the symptom. **Rule out `$cfg` config-gating** (→ BAIL if so).
 2. **Checkout** — the repo is resolved + cloned via `ci/lib/repo-router.ts` `checkoutForFix` into
    `.fix-workspace/vc-frontend/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there;
-   absolute paths; run commands as `cd "<checkout>" && <cmd>`. **Immediately activate the checkout for
-   Serena** (`activate_project` on the absolute path) so the rest of the fix uses fast symbol navigation
-   instead of blind Grep+Read (`shared-instructions.md` §Fast local navigation & editing).
-3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once.
+   absolute paths; run commands as `cd "<checkout>" && <cmd>`.
+3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once. **Then
+   activate the checkout for Serena** (`activate_project` on the absolute path), not before — the TS
+   server can't resolve the `@/` → `client-app/` alias (or anything in `node_modules`) until install has
+   run, so activating any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md`
+   §Fast local navigation & editing).
 4. **Reproduce (red)** — add a NEW `*.spec.ts` asserting expected behavior; confirm it fails
    (`npx vitest run -t VCST-XXXX`). Trivial-skip only for a one-line template/typo/binding with no
    assertable logic (note in PR body + manual verification steps).
