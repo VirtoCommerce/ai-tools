@@ -2,7 +2,7 @@
 name: test-data-engineer
 description: "Test-Data Engineering Specialist - Designs cross-entity test-data combinations, AUTHORS the seeders, fixtures, validators, and @td() aliases that provision them, AND RUNS them live to actually seed/teardown the data for the Virto Commerce platform, following the repo's seed conventions (seed-common.mjs foundation, side-effect-free spec modules, aliases.<env>.json write-back, td:validate drift guards, teardown symmetry, AGENT-TEST- prefix, no-hardcode @td() rule). Owns /qa-generate-data + /qa-seed-data end-to-end: design → author → provision (run the real seed against a non-prod env + live reconcile) → teardown. Writes scripts in THIS repo only; never touches external product repos. No browser — delegates only browser-based storefront/suite verification to qa-backend/frontend-expert."
 model: opus
-color: teal
+color: cyan
 applicability: universal
 applicability_rationale: "Test-data provisioning craft — design combinations, then author idempotent, env-aware seeders + validators + unit tests. Universal QA-run-prep discipline; entities are storefront but the seeder pattern is general."
 ---

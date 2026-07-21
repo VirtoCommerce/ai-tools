@@ -44,42 +44,73 @@ Reproduced on throwaway page `AGENT-TEST-5417D` (groupId `500651f3-02d8-41fe-8ae
 **Superseded — see "Root Cause Analysis (updated, live /qa-fix investigation)" below.** Original hypothesis:
 REST is authoritative and correct: `PublishStatus` returns `HasChanges = groupedPage.HasChanges` (false once `PublishGroup` promotes the draft and deletes superseded pages, leaving no Draft). The shell's banner is driven by a **client-side "has changes" flag that is not cleared / not re-fetched from `publish-status`** after a successful publish. Same frontend state-staleness family as the designer empty-render (`BUG-PageBuilder-Designer-Empty-Render-Double-Fetch.md`).
 
-## Root Cause Analysis (updated, live /qa-fix investigation, 2026-07-21)
-`/qa-fix` routed this correctly to `fullstack-frontend` (module-embedded Vue3 sub-app routing — see
-`moduleFrontendSubApps`/`resolveOwningSubApp()`), which cloned the real repo and traced the actual code
-(`src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/src/modules/page-builder/`). Findings
-that overturn the original hypothesis:
+## Root Cause Analysis (updated, live /qa-fix investigation, 2026-07-21) — SUPERSEDED
+The prior /qa-fix run (module-embedded Vue3 sub-app routing → `fullstack-frontend`) hypothesized a
+**backend async draft-promotion race** in `PublishGroup`. **This is refuted by the backend code trace
+below** — the publish is fully synchronous. Kept for audit trail; do not action.
 
-1. **The client already re-fetches after publish.** `composables/usePageBuilderDetails/index.ts`
-   `publishGroup()` calls `loadGroup()` post-publish, which re-fetches BOTH `getGroup` (→
-   `item.hasChanges`) and `publishStatus` (→ `status.hasChanges`). This has been true since the original
-   commit (`2cf5b39`, `785bf30`) — "not re-fetched" was never the defect.
-2. **Not a reactivity bug either** — `useModificationTracker`'s `currentValue` is a writable `Ref`;
-   reassignment propagates correctly to `pageStatus.vue`'s `v-if="item.hasChanges && item.status ==
-   PageStatuses.Published"`.
-3. **The real cause: a backend async draft-promotion race.** The evidence bug report shows `item.status`
-   fresh ("Published") but `item.hasChanges` stale (`true`) *from the same `getGroup` response object* —
-   while a REST query moments later returns `hasChanges:false`. `PublishGroup` promotes/deletes the
-   superseded draft **asynchronously** server-side; the shell's immediate post-publish re-fetch races that
-   promotion and captures a transient pre-settle state that is never re-read.
+## Root Cause Analysis (updated 2 — code-level backend trace, 2026-07-21)
+Read the actual C# on `dev` (GitHub, read-only). The publish path is **synchronous and correct**, so the
+"async race" theory does not hold:
 
-**This is a backend timing issue, not a client-side state-staleness bug** — cross-scope for a
-shell-only auto-fix (the correct fix is either backend: make `PublishGroup` synchronously reflect the
-settled state before returning, or frontend: poll `publish-status` until it settles post-publish — neither
-is a minimal, locally-verifiable, shell-only change). `/qa-fix` correctly STOPped rather than pushing a
-speculative fix — see the ticket comment for the full trace.
+1. **Publish is synchronous.** `PageBuilderPageController.PublishGroup` (POST `grouped/publishing/{groupId}`,
+   `src/VirtoCommerce.PageBuilderModule.Web/Controllers/Api/PageBuilderPageController.cs`) does:
+   `pageToPublish.Status = Published` → `await groupedPageService.SaveChangesAsync([group])` (during which
+   `GroupedPageService.NormalizePublishedPages` demotes the superseded Published page to `Archived`) →
+   `await crudService.DeleteAsync(pagesToDelete)` → **only then** `Ok()`. No queue / Hangfire / event-driven
+   deferral — the draft is gone before the 200 returns.
+2. **`HasChanges` is a pure computed property** (`GroupedPageBuilderPage.cs`:
+   `Pages?.Any(p => p.Status == Draft) ?? false`), read identically by `GetGroup` and `PublishStatus`. After
+   a synchronous publish the group holds no `Draft` page ⇒ the server correctly returns `hasChanges:false` —
+   exactly what the **original evidence** shows (both REST endpoints returned `false` while the banner said
+   `true`). So the authoritative server value is correct; the banner is not.
+3. **A Draft is (re)created by any save.** Both `UpdateGroup` (PUT `grouped`) and `SavePageContent`
+   (POST `grouped/{id}/content`) add a fresh `Draft` page whenever none exists. So **any save/update the
+   shell fires *after* publish legitimately flips `HasChanges` back to `true`** (a phantom draft).
+
+**Corrected conclusion:** the backend is not at fault (publish synchronous, `HasChanges` correct,
+DB has no draft post-publish). The defect is **shell-side**, and its most concrete mechanism is one of:
+(a) a **display/state bug** — the banner renders stale `true` while the re-fetched authoritative value is
+`false`; or (b) a **phantom draft** — the shell fires a content/settings save (e.g. `SyncGroupSettingsToContent`
+equivalent, autosave) *after* publish, which re-creates a Draft server-side and legitimately re-raises
+`HasChanges`. Both are owned by `page-builder-shell`, not the C# module.
+
+**One decisive live capture would settle (a) vs (b)** — needs a human/live session, not static analysis:
+capture the exact `GET grouped/{id}` response body the shell receives in the seconds after Publish, plus
+the shell's network trace for any `PUT grouped` / `POST grouped/{id}/content` fired post-publish.
+- server body `hasChanges:false` + banner `true` ⇒ **(a) display bug** (fix the binding/state in the shell).
+- server body `hasChanges:true` + a post-publish save in the trace ⇒ **(b) phantom draft** (stop the shell
+  saving after publish, or treat the just-published state as clean).
+
+## Root Cause Analysis (CONFIRMED — live network capture, vcptcore-qa, 2026-07-21)
+Reproduced live (deployed `PageBuilderModule 3.1016.0` / platform `3.1046.0-pr-3056` — drifted from the
+filed PR build, **still reproduces**). Verdict: **(a) display/state bug — CONFIRMED; (b) phantom draft — RULED OUT.**
+- Post-Publish, the shell's own `GET grouped/{id}` returned `status:"Published"`, **`hasChanges:false`**,
+  `pages[]` = a single `Published` page (no Draft). `publish-status` → `{"published":true,"hasChanges":false}`.
+- **No `PUT grouped` and no `POST grouped/{id}/content` fired after the publish 200** — no draft is re-created ⇒ (b) ruled out.
+- Yet the banner renders `true` and a `beforeunload` guard fires — a client dirty flag stuck `true`. A genuine
+  reload re-derives the clean state and the banner disappears.
+- **Root cause:** the shell's Publish handler doesn't reset local `hasChanges`/dirty state after a successful
+  publish (and ignores the `hasChanges:false` in the `GET grouped/{id}` it already re-fetches).
+- Evidence screenshot: `test-results/edge/vcst-5515-banner-after-publish.png` (gitignored).
 
 ## Fix Routing (→ /qa-fix)
-- **Owning layer:** Layer 2 — Admin (Page Builder shell, in-repo frontend) for the SYMPTOM; likely
-  **backend** (`VirtoCommerce.PageBuilderModule.Data`, `PublishGroup`) for the actual root cause — see
-  updated RCA above.
-- **Suggested repo:** `VirtoCommerce/vc-module-pagebuilder` (`page-builder-shell` frontend for the
-  symptom; the module's C# `Data` layer for the likely real fix)
-- **repoKind:** module
+- **Owning layer:** Layer 1/2 — **Page Builder Vue 3 shell** (`page-builder-shell`). Backend REST is
+  confirmed correct and is **NOT** the fix target (corrects the superseded RCA).
+- **Suggested repo:** `VirtoCommerce/vc-module-pagebuilder` → sub-app
+  `src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/`
+- **repoKind:** module (embedded Vue3 sub-app → routes to `fullstack-frontend` + `/vc-shell-fix` via
+  `moduleFrontendSubApps`)
 - **Ownership hint:** platform (native)
-- **Component / module:** Page Builder shell `usePageBuilderDetails` composable (symptom) / `PublishGroup`
-  draft-promotion timing (likely root cause)
-- **RCA anchor:** `src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/src/modules/page-builder/composables/usePageBuilderDetails/index.ts` (symptom); backend `PublishGroup` (likely real fix, not yet located).
-- **Routing confidence:** MEDIUM — repo + sub-app routing confirmed live; the auto-fix itself correctly
-  STOPped (cross-scope / not locally verifiable) rather than guessing. Human decision needed on which
-  side (backend timing fix vs. frontend poll-until-settled mitigation) to pursue.
+- **Component / module:** shell `usePageBuilderDetails` composable + `pageStatus.vue` banner binding
+  (`item.hasChanges && item.status == Published`); check for any post-publish save.
+- **RCA anchors (confirmed):** backend (correct, not the fix) —
+  `.../Web/Controllers/Api/PageBuilderPageController.cs` `PublishGroup` + `PublishStatus`;
+  `.../Core/Models/GroupedPageBuilderPage.cs` `HasChanges`/`Status`;
+  `.../Data/Services/GroupedPageService.cs` `NormalizePublishedPages`. Symptom (fix here) —
+  `.../Apps/page-builder-shell/src/modules/page-builder/composables/usePageBuilderDetails/index.ts`.
+- **Routing confidence:** HIGH — backend proven clean (code trace), defect confirmed shell-side (a)
+  display/state via live capture. Fix: reset the local dirty/`hasChanges` state after a successful publish
+  in `usePageBuilderDetails` so `pageStatus.vue`'s banner clears. Now a clean locally-scoped shell fix —
+  candidate for `/qa-fix` → `fullstack-frontend` + `/vc-shell-fix`; the banner reset still needs live/visual
+  verification post-deploy.
