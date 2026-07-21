@@ -30,6 +30,37 @@ export interface RepoProfile {
   defaultBranch: string;
 }
 
+/**
+ * An embedded frontend sub-app inside a `module`-kind repo, on a stack other than the
+ * module's own C#/AngularJS Admin UI (e.g. `vc-module-pagebuilder`'s Vue 3 "shell" at
+ * `src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/`). Declared per-repo in
+ * `skills/qa-fix-routing/fix-repos.json` `moduleFrontendSubApps`; resolved by RCA anchor via
+ * `resolveOwningSubApp()`. `stack` is a closed enum — supporting a new stack is a new agent
+ * capability, not just a config row.
+ */
+export interface SubAppProfile {
+  /** Repo-relative directory of the sub-app, no leading `./` (e.g.
+   *  "src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell"). */
+  path: string;
+  stack: "vue3";
+  /** False ⇒ no `@vue/test-utils`/jsdom shipped — `/vc-shell-fix` picks its harness path on this. */
+  hasComponentTestHarness: boolean;
+  installCmd: string;
+  buildCmd: string;
+  typecheckCmd?: string;
+  lintCmd?: string;
+  testCmd: string;
+}
+
+/** Result of a matched `resolveOwningSubApp()` lookup. */
+export interface SubAppOverride {
+  subApp: SubAppProfile;
+  /** Toolchain profile to use for THIS bug in place of `REPO_PROFILES[kind]` (or a client
+   *  repo's `ClientRepoMeta` override). `kind` is unchanged — ownership/allowlist/PR-target
+   *  logic (`repoOwnership`/`contributionPlan`/`ClientRepoMeta`) is completely untouched. */
+  profile: RepoProfile;
+}
+
 export const REPO_PROFILES: Record<RepoKind, RepoProfile> = {
   frontend: {
     kind: "frontend",
@@ -83,6 +114,8 @@ interface FixReposConfig {
     explicit?: Array<{ name: string; kind: RepoKind }>;
   };
   routing: Array<{ name: string; match: string }>;
+  /** See `SubAppProfile` / `resolveOwningSubApp` below. Keyed by bare repo name. */
+  moduleFrontendSubApps?: Record<string, SubAppProfile[]>;
 }
 
 interface RouteRule {
@@ -113,7 +146,9 @@ function loadConfig() {
     match: new RegExp(rule.match, "i"),
   }));
 
-  return { org, allowPatterns, denyPatterns, explicit, routing };
+  const moduleFrontendSubApps = cfg.moduleFrontendSubApps || {};
+
+  return { org, allowPatterns, denyPatterns, explicit, routing, moduleFrontendSubApps };
 }
 
 const CONFIG = loadConfig();
@@ -305,6 +340,48 @@ export function repoProfile(repo: string): RepoProfile {
     }
   }
   return base;
+}
+
+/**
+ * Does this `module`-kind repo declare an embedded frontend sub-app (a different stack
+ * from the module's own C#/AngularJS Admin UI) that owns `anchorPath` — the RCA anchor from
+ * the `/qa-bug` Fix Routing block? Returns `null` when the repo has no declared sub-apps, or
+ * the anchor doesn't fall under any of them; the caller then falls back to the ordinary
+ * `repoKind`/`repoProfile` route (`fullstack-backend`).
+ *
+ * Deliberately does NOT change `repoKind()` — a module with a matched sub-app is still
+ * `kind: "module"` for ownership/allowlist/PR-target purposes. This only overrides *which
+ * developer agent + toolchain* handles THIS ONE bug (Gate 1 developer-agent selection), so
+ * `moduleFrontendSubApps` has zero effect on `isAllowedRepo`, `repoOwnership`, `computeOwnership`,
+ * `contributionPlan`, or `ClientRepoMeta` — a matched sub-app in a CLIENT-owned module still
+ * delivers via that repo's own client contribution plan, unaffected by this override.
+ */
+export function resolveOwningSubApp(repo: string, anchorPath: string): SubAppOverride | null {
+  const { name } = repoName(repo);
+  const subApps = CONFIG.moduleFrontendSubApps[name];
+  if (!subApps?.length) return null;
+
+  const normalized = anchorPath.replace(/\\/g, "/").replace(/^\.\//, "");
+  const hit = subApps.find((s) => {
+    const p = s.path.replace(/\\/g, "/");
+    return normalized === p || normalized.startsWith(`${p}/`);
+  });
+  if (!hit) return null;
+
+  const base = repoProfile(repo); // validates isAllowedRepo(); kind stays "module"
+  return {
+    subApp: hit,
+    profile: {
+      kind: base.kind,
+      language: "ts",
+      installCmd: hit.installCmd,
+      buildCmd: hit.buildCmd,
+      typecheckCmd: hit.typecheckCmd,
+      lintCmd: hit.lintCmd,
+      testCmd: hit.testCmd,
+      defaultBranch: base.defaultBranch,
+    },
+  };
 }
 
 /**

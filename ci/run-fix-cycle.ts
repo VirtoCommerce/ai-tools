@@ -8,6 +8,7 @@ import {
   isAllowedRepo,
   repoOwnership,
   repoProfile,
+  resolveOwningSubApp,
   routingReference,
   suggestRepo,
   REPO_ORG,
@@ -317,6 +318,11 @@ Read the ticket JSON and bug report, then output your verdict markers as instruc
   // real-but-unfixable PLATFORM bug warrants an upstream GitHub Issue. Defaults to
   // not-a-bug, which never files (preserves the old comment-and-leave behaviour).
   const bailClass = (marker(triage.result, "BAIL_CLASS") || "not-a-bug").toLowerCase();
+  // RCA_ANCHOR (optional): the file/path the triage agent points at as the root-cause
+  // location. Consumed below by resolveOwningSubApp() to detect a bug routed to a
+  // module repo whose RCA anchor actually falls under a declared embedded frontend
+  // sub-app (e.g. vc-module-pagebuilder's Vue 3 shell) — see quality-gates.md §1 G1.
+  const rcaAnchor = marker(triage.result, "RCA_ANCHOR") || "";
 
   if (verdict !== "GO") {
     // A real-but-unfixable platform bug → file a GitHub Issue upstream so a human
@@ -387,15 +393,24 @@ Read the ticket JSON and bug report, then output your verdict markers as instruc
       costUsd: spent,
     };
   }
-  const profile = repoProfile(routeRepo);
+  const baseProfile = repoProfile(routeRepo);
+  // A `module`-kind repo may declare an embedded frontend sub-app on a different stack
+  // (ci/config/fix-repos.json moduleFrontendSubApps, e.g. vc-module-pagebuilder's Vue 3
+  // shell). If the RCA anchor falls under one, override the toolchain profile + developer
+  // agent for THIS bug only — repoOwnership/isAllowedRepo/repoKind stay untouched.
+  const subAppOverride =
+    baseProfile.kind === "module" && rcaAnchor ? resolveOwningSubApp(routeRepo, rcaAnchor) : null;
+  const profile = subAppOverride ? subAppOverride.profile : baseProfile;
   const prBodyPath = join(ticketDir, "PR_BODY.md");
 
   // --- Dependency context (best-effort; from module.manifest) ---
   // Backend modules resolve dependencies as NuGet packages, so the checkout
   // still builds. But the graph tells the agent where the root cause *could*
   // live (a dependency) and which modules a base-module fix would impact.
+  // Skipped for a matched sub-app override too — a module's embedded frontend
+  // sub-app (npm/yarn deps) has nothing to do with the module's own NuGet graph.
   let depBlock = "";
-  if (profile.kind !== "frontend") {
+  if (profile.kind !== "frontend" && !subAppOverride) {
     try {
       const fmt = (d: { moduleId: string; repo: string | null }) =>
         `  - ${d.moduleId}${d.repo ? ` → ${REPO_ORG}/${d.repo}` : " (repo unresolved)"}`;
@@ -419,7 +434,9 @@ Read the ticket JSON and bug report, then output your verdict markers as instruc
   }
 
   // --- Phase 1: Reproduce → Fix → Verify ---
-  const devAgent = profile.kind === "frontend" ? "fix-frontend-agent" : "fix-backend-agent";
+  // A matched sub-app override always routes to fix-frontend-agent (it knows Vue 3),
+  // even though `profile.kind` stays "module" (repoKind/ownership are untouched).
+  const devAgent = profile.kind === "frontend" || subAppOverride ? "fix-frontend-agent" : "fix-backend-agent";
   const fixPrompt = `${readAgent(devAgent)}
 
 ## Fix Assignment
@@ -430,7 +447,23 @@ Read the ticket JSON and bug report, then output your verdict markers as instruc
 - **Base branch:** ${checkout.baseBranch}
 - **Ticket JSON:** ${join(ticketDir, "ticket.json")}
 - **Bug report:** ${bugReportPath || "(none — use ticket description)"}
-${depBlock}
+${
+  subAppOverride
+    ? `
+## Module-embedded frontend sub-app
+This bug is routed to a **declared embedded frontend sub-app** inside the module repo — NOT the
+module's own C#/legacy-AngularJS code. \`${routeRepo}\` stays kind \`module\` for ownership purposes;
+only the toolchain + developer agent for this bug changed.
+- **Sub-app path (within the checkout):** \`${subAppOverride.subApp.path}\`
+- **Stack:** ${subAppOverride.subApp.stack}
+- Run every Toolchain command below with cwd = \`${checkout.path}/${subAppOverride.subApp.path}\`.
+  \`git diff\`/\`add\`/\`commit\`/\`push\` still operate at the checkout root — one repo, one commit.
+- **Component-test harness:** ${subAppOverride.subApp.hasComponentTestHarness ? "present — use it directly." : "NONE shipped (no `@vue/test-utils`/jsdom). A state/logic bug (composable/store/service) proves red→green directly with the Test command below — Vue 3 reactivity runs standalone in Node, no stub needed. A mounted-component/DOM bug needs an EPHEMERAL, NEVER-COMMITTED vitest+`@vue/test-utils`+jsdom harness reusing this sub-app's own vite config — strip it completely before pushing (verify `git status`/`git diff` in the sub-app dir shows nothing but the product fix). See `.claude/skills/vc-shell-fix/SKILL.md` + `vc-shell-scratch-harness-patterns.md` for the full recipe (read them with the Read tool — they are not preloaded here)."}
+- **Never touch:** the module's \`Web/Scripts/\` (legacy AngularJS Admin UI), the module's C# projects,
+  or any OTHER sub-app in the same repo (declared or not) — stay within the path above.
+`
+    : ""
+}${depBlock}
 ## Cross-module rule
 If the root cause is **not** in this repo but in one of its dependencies above,
 do **NOT** patch around it here. Stop and report \`FIX_STATUS: FAILED\` with

@@ -27,6 +27,12 @@ a rewrite:
 | `module` / `platform` | `vc-module-*`, `vc-module-x-*`, `vc-platform` | **`fullstack-backend`** (live) | .NET 10 / xUnit (+ module Admin Angular / Jasmine) |
 | `frontend` | `vc-frontend` | **`fullstack-frontend`** (live; CI twin `ci/agents/fix-frontend-agent.md`) | Vue 3 / TS / vitest (+ in-repo UI kit / Storybook) |
 
+> A `module` repo may additionally declare an embedded **frontend sub-app** on a different stack
+> (`moduleFrontendSubApps` in `skills/qa-fix-routing/fix-repos.json`, e.g. `vc-module-pagebuilder`'s Vue 3
+> "shell"). When Gate 1's RCA anchor falls under a declared sub-app path, the developer agent for **this
+> bug** is `fullstack-frontend` instead (via `/vc-shell-fix`), scoped to the sub-app directory —
+> `repoKind` itself stays `"module"`, unaffected for every other bug in that repo.
+
 Routing, the repo allowlist, and the org are **config** (`skills/qa-fix-routing/fix-repos.json`; org overridable
 via `FIX_REPO_ORG` for customer forks / other projects) — `/qa-fix` reads them via
 `skills/qa-fix-routing/repo-router.ts` (`suggestRepo` / `isAllowedRepo` / `repoProfile` / `checkoutForFix`) and the
@@ -163,6 +169,14 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   no developer agent enabled yet, STOP with "routed to <repo> (<kind>); no developer agent enabled for
   this kind yet — handing off"; the ticket stays filed. Both live kinds — `module`/`platform` and
   `frontend` — have an agent today.)
+  - **Sub-app override:** when `kind === "module"`, also call `resolveOwningSubApp(routeRepo, rcaAnchor)`
+    (the RCA anchor from the Fix Routing block or the derived route). A **match** overrides the developer
+    agent to `fullstack-frontend` (working directory = `<checkout>/<subApp.path>`, toolchain = the
+    sub-app's declared profile) — ownership/PR-target/allowlist are unaffected, `repoKind` stays
+    `"module"`. **No match** → today's `fullstack-backend` route, unchanged. An anchor in an undeclared
+    sub-app of a hybrid repo (e.g. a stack with no agent support yet) is **not** silently mis-routed — it
+    falls through to `fullstack-backend`, which will honestly STOP at Gate 2 if it has no capability for
+    that stack.
 - **Gate 1b — frontend provenance (client deployments only):** if the routed repo is a **client
   `frontend` fork** (`repoOwnership(routeRepo) === "client"` AND `repoKind === "frontend"`), the symptom
   alone can't tell a *client customization* bug from an *unmodified-platform* bug.
@@ -208,8 +222,9 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 
 ## Phase 2 — Clone + Reproduce (Gate 2)
 > **Owner:** the routed developer agent (`fullstack-backend` for module/platform; `fullstack-frontend`
-> for frontend). Skills: `/dotnet-unit-test` + `/angular-admin` (backend) or `/vue-unit-test`
-> (+ `/storybook-test` for UI-kit interaction bugs, optional) (frontend).
+> for frontend, **and** for a module's declared embedded frontend sub-app). Skills: `/dotnet-unit-test` +
+> `/angular-admin` (backend) or `/vue-unit-test` (+ `/storybook-test` for UI-kit interaction bugs,
+> optional) (frontend) or `/vc-shell-fix` (a module-embedded sub-app override matched at Gate 1).
 
 - Clone the one routed repo into `.fix-workspace/` on branch `claude/qa-autofix/VCST-XXXX` (reuse
   `checkoutForFix`; base = detected default branch). Use the repo's own test command (`repoProfile`).
