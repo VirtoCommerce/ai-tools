@@ -1,6 +1,6 @@
 # BUG: Page Builder shows a stale "Has unsaved changes" banner after a clean Publish
 
-## Status: FIXED — PR [vc-module-pagebuilder#156](https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/156) (open, awaiting merge); verified live on vcst-qa @ PageBuilderModule `3.1017.0-pr-156-59d4`. Regression cases CMS-131..134 (suite `Page Builder` / 059) PASS live 2026-07-21.
+## Status: FIXED — PR [vc-module-pagebuilder#156](https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/156) (open, awaiting merge); verified live on vcst-qa @ PageBuilderModule `3.1017.0-pr-156-59d4`. Regression cases CMS-135..138 (suite `Page Builder` / 059) PASS live 2026-07-21.
 
 ## JIRA: [VCST-5515](https://virtocommerce.atlassian.net/browse/VCST-5515) (filed 2026-07-21, Bug / Low)
 
