@@ -123,7 +123,8 @@ Invoke the development skills:
    never `cd` into the workspace as a persisted directory.
 3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once. **If
    an LSP-backed symbol tool is available this session (e.g. Serena), activate the checkout as its
-   project now** (`activate_project` on the absolute path), not before — the TS server can't resolve
+   project now** — pin the language first (`serena project create --language typescript`; use `vue` for an
+   SFC `<script setup>` fix), then `activate_project` on the absolute path — not before — the TS server can't resolve
    the `@/` → `client-app/` alias (or anything in `node_modules`) until install has run, so activating
    any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md` §Fast local
    navigation & editing).

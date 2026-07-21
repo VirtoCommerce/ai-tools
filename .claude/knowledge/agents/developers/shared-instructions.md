@@ -66,6 +66,18 @@ symbol/reference lookups unreliable: Roslyn can't resolve cross-project/NuGet ty
 produces `obj/project.assets.json`, and the Vue/TS server can't resolve the `@/` → `client-app/` alias
 until `node_modules` exists.
 
+**Pin the language to the fix's layer — a `vc-module-*` checkout is polyglot.** One module repo can hold
+C# (backend), AngularJS (its `Web/Scripts/` Admin SPA), and a Vue 3 `@vc-shell/framework` sub-app at once,
+so `activate_project` on a bare path can auto-detect and bind the *wrong* (or a needlessly heavy) language
+server. The checked-out product repos ship no `.serena/project.yml`, so make activation deterministic:
+write one first with `serena project create --language <lang> "<absolute-checkout>"` (or set its
+`languages:` directly), then `activate_project`. Match `<lang>` to the routed layer:
+- **C# backend** (`fullstack-backend`, `/dotnet-fix`) → `csharp`, after `dotnet restore`.
+- **module Admin SPA** (AngularJS in `Web/Scripts/`, `/angular-admin`) → `typescript` (its server also indexes plain JS).
+- **`vc-frontend` storefront** + **module `vc-shell` sub-app** (`fullstack-frontend`, `/vue-fix` / `/vc-shell-fix`) → `typescript` for the composables/stores/services where most logic fixes land, or `vue` when the fix is inside an SFC `<script setup>`; after `yarn install`.
+
+(The repo-root `.serena/project.yml` committed for THIS tooling repo is TypeScript and is unrelated to these per-checkout activations.)
+
 **Prefer, in order, when available:**
 1. `get_symbols_overview(file)` — the file's symbol tree (classes/methods/properties), no bodies.
    Locates the RCA method without reading the whole file into context.

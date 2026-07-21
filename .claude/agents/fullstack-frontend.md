@@ -111,7 +111,8 @@ Invoke the development skills:
    `.fix-workspace/vc-frontend/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there;
    absolute paths; run commands as `cd "<checkout>" && <cmd>`.
 3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once. **Then
-   activate the checkout for Serena** (`activate_project` on the absolute path), not before — the TS
+   pin the language + activate the checkout for Serena** — first `serena project create --language typescript`
+   on the checkout (use `vue` for an SFC `<script setup>` fix), then `activate_project` on the absolute path, not before — the TS
    server can't resolve the `@/` → `client-app/` alias (or anything in `node_modules`) until install has
    run, so activating any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md`
    §Fast local navigation & editing).
