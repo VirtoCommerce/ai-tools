@@ -46,6 +46,16 @@
  *    happy path emits nothing. Loop guards: `vc-self-check`'s own spans are dropped,
  *    `selfCheckSeen` suppresses re-trigger, per-signature dedup prevents re-nag.
  *
+ *  • DECISION MOMENT (Task 2.1) — every finalize records a `decision` object on its
+ *    `finalize` jsonl record: { verdict:"clean|flagged", pluginActivity, freshCount,
+ *    flaggedTotal, surfaced, suppressReason }. This is the DURABLE, deterministic
+ *    audit of "when did the collector decide, and what did it decide" — greppable
+ *    (`"type":"finalize"` / `"decision"`) without printing anything. A VISIBLE line is
+ *    only produced when there is a finding (the block above → the model prints it):
+ *    a Stop hook on this platform cannot surface a user-visible line WITHOUT resuming
+ *    the agent (`systemMessage` is not rendered — CC issue #50542; plain stdout goes to
+ *    the debug log only), so the CLEAN path stays silent-but-recorded by design.
+ *
  * INVARIANTS (all enforced here):
  *   - GATED on capture: init/prompt/record/agentstop/finalize run ONLY when the
  *     output root carries a project-profile.json with `selfDiagnostics: true`.
@@ -158,6 +168,7 @@ const T = {
   RECURRING_ERROR: 3, // same error signature ≥3×
   STALL_MS: 8 * 60 * 1000, // a single op wall-clock >8min
   LOW_YIELD_OPS: 20, // ≥20 tool ops in a span with zero decisive op
+  SILENT_MIN_OPS: 2, // a skill/command must have done ≥2 ops before it can be silent_suspect
 };
 // Bound the per-span op history so a long-lived command span can't grow its
 // state.json without limit (the struggle detectors only need a recent window;
@@ -270,9 +281,12 @@ function detectStruggle(span) {
   for (const n of readCounts.values()) if (n >= T.REREAD_LOOP) { struggle.push("reread_loop"); break; }
 
   // search_thrash — persistence WITHOUT progress: a long run of search/read ops AND
-  // the span produced NO decisive op at all. A normal read-heavy investigation that
-  // ends in a Write/Edit/PR/create (sawDecisive) is NOT thrash — it made progress.
-  if (!span.sawDecisive) {
+  // the span produced NO progress at all. "Progress" is a decisive op (Write/Edit/PR/
+  // create → sawDecisive) OR the skill's own expected output (sawExpected) — a read-only
+  // skill like /qa-env-check legitimately does many reads and produces a readiness table
+  // (its expected output) without any decisive op, so gating on sawDecisive alone falsely
+  // degraded it. Progress-based, not volume-based (research §5).
+  if (!span.sawDecisive && !span.sawExpected) {
     let run = 0;
     for (const o of ops) {
       if (DECISIVE_RE.test(o.tool)) run = 0;
@@ -298,8 +312,10 @@ function detectStruggle(span) {
   // stall — a single op ran abnormally long.
   if (ops.some((o) => (o.durationMs || 0) > T.STALL_MS)) struggle.push("stall");
 
-  // low_yield — many tool ops (whole-span count), nothing decisive produced.
-  if ((span.opCount ?? ops.length) >= T.LOW_YIELD_OPS && !span.sawDecisive) struggle.push("low_yield");
+  // low_yield — many tool ops (whole-span count) with NO progress: neither a decisive op
+  // nor the skill's expected output (sawExpected). A read-only skill that produced its
+  // readiness/report output is not low-yield even with zero decisive op (research §5).
+  if ((span.opCount ?? ops.length) >= T.LOW_YIELD_OPS && !span.sawDecisive && !span.sawExpected) struggle.push("low_yield");
 
   return [...new Set(struggle)];
 }
@@ -345,8 +361,13 @@ function classify(span) {
     outcome = "failed";
   } else if (struggle.length) {
     outcome = "degraded";
-  } else if ((span.kind === "skill" || span.kind === "command") && !span.sawExpected) {
-    outcome = "silent_suspect"; // closed clean but produced no expected artifact
+  } else if ((span.kind === "skill" || span.kind === "command") && !span.sawExpected && (span.opCount ?? 0) >= T.SILENT_MIN_OPS) {
+    // closed clean but produced no expected artifact — a likely silent failure. Requires a
+    // MINIMUM of real work (≥ SILENT_MIN_OPS): a command span that opened and closed with
+    // ~0 ops (e.g. `/qa-fix` → the agent asks a clarifying question → stop) is a trivial /
+    // deferred turn, not a "task done wrong", so it must not be flagged (research §5:
+    // require substance; conservative thresholds beat over-flagging).
+    outcome = "silent_suspect";
   } else {
     outcome = "success";
   }
@@ -394,6 +415,10 @@ function emitSpan(jsonlPath, state, span, endTs) {
   appendRecord(jsonlPath, rec);
   state.spanCounts[rec.outcome] = (state.spanCounts[rec.outcome] ?? 0) + 1;
   const escalationUnit = span.kind === "skill" || span.kind === "command";
+  // A skill/command span closing (other than vc-self-check's own) means this session had
+  // real plugin activity — the finalize `decision` record uses this to distinguish
+  // "the hook judged a plugin run" from "a plain dev turn with no plugin skill".
+  if (escalationUnit && !/vc-self-check/i.test(span.name)) state.sawPluginSpan = true;
   if (escalationUnit && rec.outcome !== "success" && rec.outcome !== "recovered" && !/vc-self-check/i.test(span.name)) {
     const sig = hash(`${span.kind}|${span.name}|${rec.outcome}|${topSignal(span)}`);
     state.flagged.push({ id: span.id, kind: span.kind, name: span.name, outcome: rec.outcome, struggle: rec.struggle, signature: sig });
@@ -582,6 +607,7 @@ function freshState(ev, sid) {
     seenSignatures: [], // fingerprints already surfaced to the diagnostician
     feedbackCount: 0,
     anySkillSeen: false,
+    sawPluginSpan: false, // did any plugin skill/command span close this session (finalize `decision`)
     selfCheckSeen: false,
     promptedThisTurn: false,
   };
@@ -775,6 +801,35 @@ async function cmdFinalize(ev) {
     uniqueFresh.push(f);
   }
 
+  // ─── the decision moment (Task 2.1 — always recorded, never resumes the agent) ───
+  // Whether the tail-trigger will surface a VISIBLE line this turn. Computed BEFORE the
+  // finalize record so the record can carry the verdict. `shouldPrompt` gates the ONLY
+  // user-visible surface we have from a Stop hook (decision:block → the model prints the
+  // line + runs /vc-self-check); on this platform a Stop hook cannot show a line without
+  // resuming the agent, so the CLEAN path stays silent-but-recorded (operator choice).
+  const consentOff = /^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CONSENT || "");
+  const shouldPrompt = !consentOff && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
+  const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen);
+  // A durable, deterministic audit of every decision moment — greppable with
+  // `type":"decision"` in the session jsonl. This is how "when did the hook run and what
+  // did it decide" stays observable without printing a line on every clean turn.
+  const decision = {
+    verdict: uniqueFresh.length ? "flagged" : "clean",
+    pluginActivity,
+    freshCount: uniqueFresh.length,
+    flaggedTotal: state.flagged.length,
+    surfaced: shouldPrompt, // did we resume + print a visible line this turn
+    suppressReason: shouldPrompt
+      ? null
+      : uniqueFresh.length === 0
+        ? (pluginActivity ? "clean" : "no-plugin-activity")
+        : consentOff
+          ? "consent-off"
+          : state.selfCheckSeen
+            ? "self-check-session"
+            : "already-surfaced",
+  };
+
   appendRecord(jsonl, {
     type: "finalize",
     sessionId: sid,
@@ -785,10 +840,9 @@ async function cmdFinalize(ev) {
     flagged: state.flagged.map((f) => ({ name: f.name, kind: f.kind, outcome: f.outcome, struggle: f.struggle, signature: f.signature })),
     anySkillSeen: Boolean(state.anySkillSeen),
     feedbackCount: state.feedbackCount ?? 0,
+    decision,
   });
 
-  const consentOff = /^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CONSENT || "");
-  const shouldPrompt = !consentOff && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
   if (shouldPrompt) {
     state.promptedThisTurn = true;
     for (const f of uniqueFresh) state.seenSignatures.push(f.signature);

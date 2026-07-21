@@ -28,6 +28,10 @@
  *
  * Flags: --out <path> (default project-profile.json), --merge (layer over existing
  * profile instead of defaults), --print (echo the result).
+ *
+ * Self-diagnostics consent (asked in the fresh interview, symmetric with reconcile):
+ *   --self-diagnostics <true|false>  local telemetry CAPTURE opt-in (default true)
+ *   --feedback-mode <ask|auto|off>   UPSTREAM delivery consent (default ask)
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
@@ -130,6 +134,14 @@ function main() {
   // feedback.mode — consent for upstream self-diagnostics delivery (VCST-5509).
   // Default stays "ask" (PROFILE_DEFAULTS) unless the operator picked one.
   set("feedback.mode", args["feedback-mode"]);
+  // selfDiagnostics — opt-in for the passive session-telemetry CAPTURE hook
+  // (VCST-5475/5509). Default stays true (PROFILE_DEFAULTS); the fresh interview now
+  // asks it explicitly (symmetric with `/project-init --check` reconcile). Coerce the
+  // string flag → boolean: `--self-diagnostics false` ⇒ false, `--self-diagnostics true`
+  // or a bare `--self-diagnostics` ⇒ true.
+  if (args["self-diagnostics"] !== undefined) {
+    set("selfDiagnostics", args["self-diagnostics"] === true || args["self-diagnostics"] === "true");
+  }
 
   // vcs.authEnv — which env var carries the WRITE credential for the client host, so the
   // interactive command doesn't guess. (github PAT ⇒ GITHUB_FIX_BUGS_TOKEN; azure-repos ⇒

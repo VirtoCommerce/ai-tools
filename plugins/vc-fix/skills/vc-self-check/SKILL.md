@@ -221,6 +221,13 @@ processed session's local artifacts are removed. Scope is the **processed sessio
 - **`--purge`** is the standalone terminal cleanup (send nothing).
 
 ## Notes
+- **Decision trail (when did the collector run, what did it decide).** Every `finalize`
+  writes a `decision` object on its jsonl `finalize` record —
+  `{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
+  suppressReason }`. A visible line is only printed on a finding (a `Stop` hook can't show
+  a line without resuming the agent), so the clean path is silent-but-recorded. To review
+  the decisions of a session:
+  `grep '"type":"finalize"' <outputRoot>/.vc-fix/diagnostics/<session-id>.jsonl`.
 - Verdict/severity semantics + the (signal × expectation) table live in the oracle —
   cite them, don't restate.
 - If two spans share a root cause (e.g. the same `tsc` hook failing across skills), merge

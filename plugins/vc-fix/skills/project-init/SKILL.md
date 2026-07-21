@@ -34,7 +34,7 @@ platform) and to the correct bug tracker.
 ## Pipeline
 
 ```
-0 preconditions → 1 install → 2 interview (env name · tracker · code host · auth pref)
+0 preconditions → 1 install → 2 interview (env name · tracker · code host · auth pref · self-diagnostics consent)
 → 3 scaffold BOTH env templates + operator fills + pause
 → 4 discover repos (ALWAYS) → projectType · clientOrg · repo split · storefront
 → 4b discover tracker (Azure) → per-type states · role→state map · apiBase · projectId
@@ -195,6 +195,33 @@ Applicable axes:
 
 Map the answers to the scaffold flags: `--github-auth pat|gh-cli`, `--ado-auth
 pat|az-login`, `--jira-auth token|oauth`.
+
+### 2e. Self-diagnostics & upstream-feedback consent — one `AskUserQuestion` (two questions)
+
+Ask the two self-diagnostics consent decisions together, in a **single** `AskUserQuestion`
+call with two questions. These are the SAME decisions `/project-init --check` surfaces via
+`reconcile-profile.mjs` `MANAGED_FIELDS` — use the wording/options below verbatim so the
+fresh interview and the reconcile path never diverge. Make each `default` the Recommended
+(first) option.
+
+1. **selfDiagnostics** (local capture opt-in):
+   - Question: *"Enable vc-fix self-diagnostics for this project? The passive
+     session-telemetry hook records how the plugin's OWN skills ran (to `<project>/.vc-fix/`,
+     gitignored) so `/vc-self-check` can spot plugin quality issues. It never sends anything
+     without a separate consent step and never touches your code."*
+   - Options: **Yes (recommended)** → `true` · **No** → `false` (hook stays a full no-op).
+2. **feedback.mode** (upstream delivery consent — gates ONLY outbound `deliver`, never local
+   capture/diagnosis; nothing is ever sent without scrubbing all client identifiers first):
+   - Question: *"When vc-fix self-diagnostics finds a plugin quality issue, how should it be
+     contributed back to VirtoCommerce to improve the plugin?"*
+   - Options: **Ask each time (recommended)** → `ask` (dry-run + a single
+     Show-diff/Send/Don't-send decision) · **Automatic** → `auto` (file the scrubbed GitHub
+     Issue automatically; PR/fork-PR handed off as commands) · **Off** → `off` (nothing
+     leaves the machine — the DIAG stays local).
+
+Carry both answers to step 6: `--self-diagnostics <true|false>` and `--feedback-mode
+<ask|auto|off>`. (If selfDiagnostics = No, feedback.mode is moot — capture is off — but pass
+it anyway; it is harmless and keeps the profile explicit.)
 
 ## 3. Scaffold the two env templates, then hand off for filling
 
@@ -373,6 +400,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --client-vcs github \
   --operator <derived> --contribution-mode <derived> \
   --upstream-account <forkAccount, only if fork> \
+  --self-diagnostics <true|false, from step 2e> --feedback-mode <ask|auto|off, from step 2e> \
   --vcs-auth <derived: client host's auth — github⇒gh-cli|pat, azure-repos⇒az-login|pat> --print
 # Azure Boards + Azure Repos:
 #   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --vcs-auth pat ...
@@ -610,7 +638,9 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference
-> per axis. Both env files are scaffolded as commented templates the operator fills;
+> per axis + the **self-diagnostics consent** (step 2e: `selfDiagnostics` capture
+> opt-in + `feedback.mode` upstream-delivery consent — same two decisions the `--check`
+> reconcile surfaces). Both env files are scaffolded as commented templates the operator fills;
 > the scan (step 4) derives projectType + clientOrg, the derive block (step 5) derives
 > contribution mode + fork account + operator, and verify-access (step 8) confirms.
 > The existing `bootstrap/install.ts` (`npm run plugin:configure`) wizard remains an

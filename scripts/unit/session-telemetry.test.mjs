@@ -142,27 +142,92 @@ test("classify: an unrecovered permission_denied is `failed` and triggers the si
   }
 });
 
-// ─── silent_suspect: clean close, no expected-output marker ─────────────────────
-test("classify: a clean close with none of the skill's expected-output markers is `silent_suspect`", () => {
+// ─── silent_suspect: clean close, real work, no expected-output marker ───────────
+test("classify: a clean close with real work but none of the skill's expected-output markers is `silent_suspect`", () => {
   const home = setupHome();
   try {
     const sid = "silent-1";
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, "");
     run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-7" });
+
+    // /qa-fix made 2 real edits but never opened a PR and never printed a BAIL marker —
+    // the worst mode: closed clean, no error, no expected output. opCount (2) ≥ SILENT_MIN_OPS.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Edit", { file_path: "a.cs" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "edited"),
+      toolUse("2026-01-01T00:00:02Z", "tu2", "Edit", { file_path: "b.cs" }),
+      toolResult("2026-01-01T00:00:03Z", "tu2", false, "edited"),
+    ]);
+
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    const records = readSpans(home, sid);
+    const cmd = spansOf(records, "command", "qa-fix");
+    assert.equal(cmd.length, 1);
+    assert.equal(cmd[0].outcome, "silent_suspect");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── Fix B: a near-empty command turn is NOT silent_suspect (min-activity floor) ──
+test("classify: a command that closes with < SILENT_MIN_OPS ops is NOT silent_suspect (deferred/trivial turn)", () => {
+  const home = setupHome();
+  try {
+    const sid = "minops-1";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-8" });
+
+    // Only one op then the agent yields (e.g. it asked the user a clarifying question) —
+    // a trivial/deferred turn, not a "task done wrong". Must NOT flag as silent_suspect.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "ticket.md" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "some ticket text"),
+    ]);
+
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    const records = readSpans(home, sid);
+    const cmd = spansOf(records, "command", "qa-fix");
+    assert.equal(cmd.length, 1);
+    assert.notEqual(cmd[0].outcome, "silent_suspect", "a < SILENT_MIN_OPS turn must not be flagged silent");
+    assert.equal(cmd[0].outcome, "success");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── Fix A: a read-only skill with many reads + its expected output is NOT degraded ──
+test("classify: a read-only skill (many reads, no decisive op) that produced its expected output is `success`, not degraded", () => {
+  const home = setupHome();
+  try {
+    const sid = "readonly-1";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
     run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
 
-    appendLines(transcriptPath, [
-      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
-      toolResult("2026-01-01T00:00:01Z", "tu1", false, "export const env = {...}"),
-    ]);
+    // 9 consecutive Read ops (would trip SEARCH_THRASH_RUN=8 under the old sawDecisive-only
+    // guard) but the skill produced its readiness table (expected output) → progress → clean.
+    const lines = [];
+    for (let i = 0; i < 9; i++) {
+      lines.push(toolUse(`2026-01-01T00:00:0${i}Z`, `tu${i}`, "Read", { file_path: `f${i}.env` }));
+      lines.push(toolResult(`2026-01-01T00:00:0${i}Z`, `tu${i}`, false, "VAR=value"));
+    }
+    lines.push(assistantText("2026-01-01T00:00:10Z", "Readiness table: all checks PASS — READY."));
+    appendLines(transcriptPath, lines);
 
     run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
     const records = readSpans(home, sid);
     const cmd = spansOf(records, "command", "qa-env-check");
     assert.equal(cmd.length, 1);
-    assert.equal(cmd[0].outcome, "silent_suspect");
+    assert.equal(cmd[0].outcome, "success", "expected output = progress; must not be search_thrash/low_yield degraded");
+    assert.deepEqual(cmd[0].struggle, [], "no struggle sub-signal should fire");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -213,6 +278,88 @@ test("/vc-feedback: an explicit 👎 verdict is recorded as a feedback record, n
     assert.equal(fb[0].verdict, "down");
     assert.match(fb[0].text, /broke pagination/);
     assert.equal(spansOf(records, "command", "vc-feedback").length, 0, "/vc-feedback must not open its own command span");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── decision moment (Task 2.1): every finalize records a decision verdict ──────────
+const finalizeOf = (records) => records.find((r) => r.type === "finalize");
+
+test("decision record: a clean plugin turn is recorded clean + not surfaced (no visible line)", () => {
+  const home = setupHome();
+  try {
+    const sid = "decision-clean";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "export const env = {...}"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all checks PASS — READY."),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    // Clean path never resumes the agent → empty stdout (no decision:block).
+    assert.equal(out.trim(), "", "a clean turn must not block/resume the agent");
+
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.ok(fin && fin.decision, "finalize must carry a decision object");
+    assert.equal(fin.decision.verdict, "clean");
+    assert.equal(fin.decision.pluginActivity, true, "a /qa-env-check command ran");
+    assert.equal(fin.decision.surfaced, false, "clean = silent-but-recorded");
+    assert.equal(fin.decision.suppressReason, "clean");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("decision record: a finding is recorded flagged + surfaced (visible line via block)", () => {
+  const home = setupHome();
+  try {
+    const sid = "decision-flagged";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-3" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", true, "permission denied: token missing pull-request scope"),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    assert.equal(JSON.parse(out).decision, "block", "a fresh finding surfaces via decision:block");
+
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "flagged");
+    assert.equal(fin.decision.freshCount, 1);
+    assert.equal(fin.decision.surfaced, true);
+    assert.equal(fin.decision.suppressReason, null);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("decision record: a plain dev turn (no plugin skill/command) is recorded no-plugin-activity", () => {
+  const home = setupHome();
+  try {
+    const sid = "decision-noact";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "please refactor this function" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "util.ts" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "export function x() {}"),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    assert.equal(out.trim(), "", "a no-plugin turn must not block");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "clean");
+    assert.equal(fin.decision.pluginActivity, false, "no plugin skill/command ran");
+    assert.equal(fin.decision.suppressReason, "no-plugin-activity");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

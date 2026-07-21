@@ -45,7 +45,13 @@ invocation) ▷ `agent` (a Task/Agent delegation) / `tool` (any other tool). Eac
 The **numeric `anomalyScore >= 6` gate is GONE** (VCST-5509). Escalation is driven by
 the per-span `outcome` (§1a), not a weighted count. `finalize` carries `spanCounts`
 (outcome histogram), `flagged[]` (the non-`success`/non-`recovered` skill/command
-spans with their dedup `signature`), `feedbackCount`, and `anySkillSeen`.
+spans with their dedup `signature`), `feedbackCount`, `anySkillSeen`, and a **`decision`**
+object (Task 2.1) — the durable, deterministic audit of the decision moment:
+`{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
+suppressReason }`. `surfaced` is whether a user-visible line was produced (only on a
+finding — a `Stop` hook cannot show a line without resuming the agent, so the clean path
+is silent-but-recorded). Grep `"type":"finalize"` to see when the collector ran and what
+it decided.
 
 **Load-bearing nuance (quality-gates §3):** a `stop_bail` is a **SUCCESS**, not an
 anomaly, when the run reached the bail *legitimately* (a G0/G1 BAIL with a reason
@@ -63,7 +69,7 @@ outcome. `error ≠ failure`: a self-corrected error is `recovered`, not `failed
 | `recovered` | An error occurred but the **same invocation** (same `tool` + `arg_hash`) later succeeded within the span (self-corrected). Keyed on the exact invocation, NOT the tool name — `Read(A)` fail then `Read(B)` ok is NOT a recovery of A. Applies to `tool_error`, `permission_denied`, and a `hook_failure` **surfaced via a `tool_result`** tied to a `tool_use_id`. A `hook_failure` detected from a bare top-level string echo (an untied PostToolUse note, e.g. a `tsc` message after an Edit — no `tool_use_id` to key an op on) has no invocation to resolve against and can **never** classify as `recovered`; it always forces `failed` for its span, even if the very next Edit is clean. Deliberate fail-toward-escalation, not an oversight. | **no** | S3 (note only) |
 | `degraded` | Completed but a **struggle** sub-signal fired (§1d) — persistence without progress. | yes | S2 |
 | `failed` | A blocking error that was **not** recovered (its exact `tool`+`arg_hash` never succeeded afterward, or — for an untied `hook_failure` echo — unconditionally, per the `recovered` row above) — a `tool_error`, `permission_denied`, or `hook_failure`. Signals come ONLY from `is_error` tool results (never from narration or the text content of a successful tool). | yes | S1 |
-| `silent_suspect` | Closed with no error and no struggle, but produced **none** of its expected-output markers (§1c) — task likely done wrong with no error signal. | yes | S1/S2 |
+| `silent_suspect` | Closed with no error and no struggle, but produced **none** of its expected-output markers (§1c) — task likely done wrong with no error signal. Requires a **minimum of real work** (`SILENT_MIN_OPS = 2` ops): a command span that opened and closed with ~0 ops (e.g. `/qa-fix` → the agent asks a clarifying question → stop) is a trivial/deferred turn, not a silent failure, and is NOT flagged. | yes | S1/S2 |
 
 Only `degraded`/`failed`/`silent_suspect` spans are `flagged`; the tail-trigger runs the
 diagnostician once per turn on **new** signatures only (dedup). `recovered`/`success`
@@ -100,11 +106,15 @@ so normal thorough work does NOT trip them. Any hit ⇒ `degraded`.
 |------------|-----------|-----------------|-----|
 | `retry_storm` | same tool + `arg_hash` repeated with recurring errors | `RETRY_STORM_REPEATS=3` & `RETRY_STORM_ERRORS=2` | S2 |
 | `reread_loop` | same read/search `arg_hash` repeated | `REREAD_LOOP=5` | S2 |
-| `search_thrash` | a run of consecutive search/read ops AND the span produced **no** decisive op at all (Edit/Write/PR/create) — persistence without progress, not mere volume; a read-heavy investigation that ends in a decisive op is NOT thrash | `SEARCH_THRASH_RUN=8` | S2 |
+| `search_thrash` | a run of consecutive search/read ops AND the span produced **no progress** at all — where progress = a decisive op (Edit/Write/PR/create → `sawDecisive`) **OR** the skill's own expected output (`sawExpected`, §1c). A read-only skill like `/qa-env-check` does many reads and produces a readiness table (its expected output) with no decisive op — that is progress, NOT thrash | `SEARCH_THRASH_RUN=8` | S2 |
 | `fallback_loop` | distinct browser variants used in one span (firefox→edge→chrome bounce) | `FALLBACK_DISTINCT=3` | S2 |
 | `recurring_error` | same error signature keeps returning | `RECURRING_ERROR=3` | S2 |
 | `stall` | a single op ran abnormally long | `STALL_MS=8min` | S2/S3 |
-| `low_yield` | many tool ops, zero decisive op produced | `LOW_YIELD_OPS=20` | S2 |
+| `low_yield` | many tool ops with **no progress** — neither a decisive op nor the skill's expected output (`sawExpected`) | `LOW_YIELD_OPS=20` | S2 |
+
+> **Progress, not volume (both `search_thrash` + `low_yield`).** Neither fires while the span
+> has already produced its expected output — a read-heavy but successful read-only skill is
+> not struggling. Volume alone never flags.
 
 ---
 
