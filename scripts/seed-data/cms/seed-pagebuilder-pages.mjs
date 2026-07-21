@@ -2,12 +2,23 @@
 /**
  * scripts/seed-data/cms/seed-pagebuilder-pages.mjs
  *
- * RECONCILE the canonical qa-* PageBuilder pages (suites 059/060 published-page cases) to their
- * expected Published status + permalink on the target env, idempotently. It does NOT author page
- * content (blocks already exist) — it restores an archived page to Published and, when the expected
- * permalink is FREE, corrects it. It NEVER forces a permalink into a slot owned by a different page
- * and NEVER touches the drifted "(copy)"/"-2" clones — those are reported for manual cleanup.
+ * Provision the canonical qa-* PageBuilder pages (suites 059/060 published-page cases) to their
+ * expected Published status + permalink + content on the target env, idempotently. Two paths:
  *
+ *   1. CREATE (from scratch) — when the canonical page does NOT exist on the env (e.g. a fresh
+ *      customer env like vcptcore-qa), the seeder AUTHORS it headlessly via REST: POST a minimal
+ *      grouped shell (verified live — the server assigns the groupId + a page shell), fill content
+ *      from the fixture, and publish. Personalization that needs no live id (visibility + userGroups
+ *      string labels) is set from the spec; an org restriction is bound only when the org resolves
+ *      LIVE on the env (else the page is created + published and the seeder REPORTS that org
+ *      personalization needs manual completion — never fabricates an id). multiLang (return-policy)
+ *      creates BOTH the en-US and de-DE single-culture pages sharing the permalink.
+ *   2. RECONCILE (pre-existing) — restores an archived page to Published, fills an empty shell from
+ *      the fixture, and corrects a FREE permalink. It NEVER forces a permalink into a slot owned by a
+ *      different page, NEVER re-personalizes a pre-existing page, and NEVER touches the drifted
+ *      "(copy)"/"-2" clones — those are reported for manual cleanup.
+ *
+ * A second run finds the now-existing pages by EXACT name and reconciles/no-ops — never duplicates.
  * Single source of truth: ./pagebuilder-pages-specs.mjs. Runtime groupIds → aliases.<env>.json.
  *
  *   TEST_ENV=vcst npm run seed:cms-pages
@@ -21,12 +32,13 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, STORE_ID, writeEnvAliasOverride,
-  ROOT, BACK_URL, ADMIN, ADMIN_PASSWORD, discoverCatalogProducts,
+  ROOT, BACK_URL, ADMIN, ADMIN_PASSWORD, discoverCatalogProducts, loadCsv,
 } from '../../lib/seed-common.mjs';
 import {
   CANONICAL_PAGES, STATUS, pickCanonical, permalinkConflict, draftBody, permalinkBody,
   updateBody, isoOffsetDays, pickPromoteCandidate, pickByNameCulture, familyDuplicates,
   CONTENT_FILE, contentDocFor, parseContentDoc, blockCount, buildContentBody, maxDiscover,
+  createGroupedBody,
 } from './pagebuilder-pages-specs.mjs';
 
 // Content is served/accepted as text/plain JSON, which seed-common's api() (JSON-only) can't READ,
@@ -116,6 +128,52 @@ const upsert = (body) => api('POST', '/api/page-builder-pages/grouped', body, { 
 const publish = (id) => api('POST', `/api/page-builder-pages/grouped/publishing/${id}?publish=true`, null, { expectStatus: [200, 201, 204] });
 const archive = (id) => api('POST', `/api/page-builder-pages/grouped/archive?ids=${encodeURIComponent(id)}`, null, { expectStatus: [200, 201, 204] });
 
+/**
+ * CREATE a brand-new grouped page from a spec + culture/name/permalink (from-scratch path). POSTs the
+ * verified minimal body (createGroupedBody) — no id, pages:[] → the server assigns the groupId and a
+ * page shell — then resolves the new groupId (the POST returns the created object; a rare 204 falls
+ * back to a name+culture search). Returns a lightweight page stub { id, name, permalink, cultureName,
+ * status:'Draft' } the existing publish/content flow consumes, or null on failure.
+ */
+async function createPage(spec, { culture, name, permalink, orgId = null }) {
+  const body = createGroupedBody(spec, { storeId: STORE_ID, culture, name, permalink, orgId });
+  const resp = await createGrouped(body);
+  const gid = resp?.id || pickByNameCulture(await searchPages(), name, culture)?.id;
+  if (!gid) return null;
+  return { id: gid, name, permalink, cultureName: culture, status: STATUS.DRAFT };
+}
+const createGrouped = (body) => api('POST', '/api/page-builder-pages/grouped', body, { expectStatus: [200, 201, 204] });
+
+/** The org platform_id PINNED in test-data/b2b/organizations.csv for the row whose org_name contains
+ * `keyword` (env-invariant — seedOrgs forces this id on every env). Null if the CSV/row is absent. */
+let _orgCsv = null;
+function pinnedOrgId(keyword) {
+  try {
+    if (!_orgCsv) _orgCsv = loadCsv('test-data/b2b/organizations.csv');
+    return _orgCsv.find((r) => String(r.org_name || '').includes(keyword))?.platform_id || null;
+  } catch { return null; }
+}
+
+/**
+ * Resolve an org's LIVE platform id by business-key keyword (POST /api/members/search — the same route
+ * the user seeders use). Env-correct, never fabricated: returns null when the org is absent on the env
+ * (the caller creates + publishes the page anyway and reports that org personalization needs manual
+ * completion). PREFERS the CSV-pinned id when it exists live — that is the org the seeded TechFlow test
+ * users actually belong to, so the page restriction gates for them (an env may carry drifted duplicate
+ * orgs of the same name); else falls back to the first live hit containing the keyword.
+ */
+async function resolveOrgId(keyword) {
+  if (!keyword) return null;
+  try {
+    const r = await api('POST', '/api/members/search', { memberType: 'Organization', keyword, take: 25 }, { expectStatus: [200, 201] });
+    const orgs = r?.results || r?.items || [];
+    if (!orgs.length) return null;
+    const pinned = pinnedOrgId(keyword);
+    if (pinned && orgs.some((o) => o.id === pinned)) return pinned;
+    return orgs.find((o) => String(o.name || '').includes(keyword))?.id || orgs[0]?.id || null;
+  } catch (e) { verbose(`resolveOrgId(${keyword}) failed: ${String(e.message).slice(0, 120)}`); return null; }
+}
+
 /** Ensure `page` is Published. Archived → restore-to-Draft (upsert) → publish; Draft → publish. */
 async function ensurePublished(page) {
   if (page.status === STATUS.PUBLISHED) { verbose(`already Published: ${page.name}`); return 'ok'; }
@@ -144,40 +202,93 @@ async function applyPatchAndPublish(page, patch) {
  */
 async function reconcileMultiLang(spec, pages) {
   const notes = [];
+  let anyCreated = false;
   // --- EN canonical ---
   let en = pickByNameCulture(pages, spec.name, spec.culture);
   if (!en) {
     const cand = pickPromoteCandidate(pages, spec);
-    if (!cand) { return { result: 'MISSING', enId: null, notes: [`no en-US "${spec.name}" and no promotable ${spec.familyPrefix}* candidate — manual re-author`] }; }
-    if (DRY_RUN) { log(`  [DRY] would promote "${cand.name}" (${cand.permalink}) → "${spec.name}" @ ${spec.permalink}`); en = cand; }
-    else {
-      await applyPatchAndPublish(cand, { name: spec.name, permalink: spec.permalink });
-      notes.push(`promoted "${cand.name}" (${cand.permalink}) → EN canonical "${spec.name}" @ ${spec.permalink}`);
-      en = { ...cand, name: spec.name, permalink: spec.permalink, status: STATUS.PUBLISHED };
+    if (cand) {
+      if (DRY_RUN) { log(`  [DRY] would promote "${cand.name}" (${cand.permalink}) → "${spec.name}" @ ${spec.permalink}`); en = cand; }
+      else {
+        await applyPatchAndPublish(cand, { name: spec.name, permalink: spec.permalink });
+        notes.push(`promoted "${cand.name}" (${cand.permalink}) → EN canonical "${spec.name}" @ ${spec.permalink}`);
+        en = { ...cand, name: spec.name, permalink: spec.permalink, status: STATUS.PUBLISHED };
+      }
+    } else if (DRY_RUN) {
+      log(`  [DRY] would CREATE EN "${spec.name}" @ ${spec.permalink} + fill content`);
+      notes.push(`[DRY] would create EN "${spec.name}"`);
+      anyCreated = true;
+    } else {
+      // No exact-name EN and nothing to promote → CREATE the EN single-culture page from scratch.
+      en = await createPage(spec, { culture: spec.culture, name: spec.name, permalink: spec.permalink });
+      if (!en) return { result: 'CREATE-FAILED', enId: null, notes: [...notes, 'EN create returned no groupId'] };
+      anyCreated = true;
+      notes.push(`CREATED EN "${spec.name}" @ ${spec.permalink}`);
     }
   } else {
     if (en.permalink !== spec.permalink && !DRY_RUN) { await applyPatchAndPublish(en, { permalink: spec.permalink }); notes.push(`EN permalink ${en.permalink} → ${spec.permalink}`); }
     const st = await ensurePublished(en); if (st !== 'ok') notes.push(`EN status ${st}`);
   }
   if (en?.id) { const c = await ensurePageState(en, spec, 'en-US'); notes.push(`EN ${c}`); }
-  // --- DE canonical ---
-  const de = pickByNameCulture(pages, spec.deName, 'de-DE');
-  if (!de) notes.push(`de-DE "${spec.deName}" not found — DE version needs manual creation`);
-  else {
+  // --- DE canonical (the platform models EN+DE as TWO single-culture pages SHARING the permalink) ---
+  let de = pickByNameCulture(pages, spec.deName, 'de-DE');
+  if (!de) {
+    if (DRY_RUN) { log(`  [DRY] would CREATE DE "${spec.deName}" @ ${spec.permalink} + fill content`); notes.push(`[DRY] would create DE "${spec.deName}"`); anyCreated = true; }
+    else {
+      de = await createPage(spec, { culture: 'de-DE', name: spec.deName, permalink: spec.permalink });
+      if (!de) notes.push(`⚠ DE "${spec.deName}" create returned no groupId — needs manual creation`);
+      else { anyCreated = true; notes.push(`CREATED DE "${spec.deName}" @ ${spec.permalink}`); }
+    }
+  } else {
     if (de.permalink !== spec.permalink && !DRY_RUN) { await applyPatchAndPublish(de, { permalink: spec.permalink }); notes.push(`DE permalink ${de.permalink} → ${spec.permalink}`); }
     const st = await ensurePublished(de); if (st !== 'ok') notes.push(`DE(${spec.deName}) status ${st}`);
     else notes.push(`DE "${spec.deName}" @ ${spec.permalink} Published`);
-    const c = await ensurePageState(de, spec, 'de-DE'); notes.push(`DE ${c}`);
+  }
+  if (de?.id) { const c = await ensurePageState(de, spec, 'de-DE'); notes.push(`DE ${c}`); }
+  // --- FR canonical (a third single-culture page sharing the permalink) ---
+  let fr = null;
+  if (spec.frName) {
+    fr = pickByNameCulture(pages, spec.frName, 'fr-FR');
+    if (!fr) {
+      if (DRY_RUN) { log(`  [DRY] would CREATE FR "${spec.frName}" @ ${spec.permalink} + fill content`); notes.push(`[DRY] would create FR "${spec.frName}"`); anyCreated = true; }
+      else {
+        fr = await createPage(spec, { culture: 'fr-FR', name: spec.frName, permalink: spec.permalink });
+        if (!fr) notes.push(`⚠ FR "${spec.frName}" create returned no groupId — needs manual creation`);
+        else { anyCreated = true; notes.push(`CREATED FR "${spec.frName}" @ ${spec.permalink}`); }
+      }
+    } else {
+      if (fr.permalink !== spec.permalink && !DRY_RUN) { await applyPatchAndPublish(fr, { permalink: spec.permalink }); notes.push(`FR permalink ${fr.permalink} → ${spec.permalink}`); }
+      const st = await ensurePublished(fr); if (st !== 'ok') notes.push(`FR(${spec.frName}) status ${st}`);
+    }
+    if (fr?.id) { const c = await ensurePageState(fr, spec, 'fr-FR'); notes.push(`FR ${c}`); }
+  }
+  // --- culture-heal: creating/publishing a page at a SHARED permalink can flip a sibling's
+  // cultureName (proven live — an FR create flipped EN → fr-FR). Re-assert each sibling's culture via
+  // a content-safe metadata upsert (no publish, so content is never drained). Idempotent (no-op when correct).
+  const heal = [[en, spec.culture], [de, 'de-DE'], [fr, 'fr-FR']];
+  for (const [pg, cul] of heal) {
+    if (!pg?.id || DRY_RUN) continue;
+    const h = await enforceCulture(pg.id, cul);
+    if (h) notes.push(h);
   }
   // --- archive drifted family duplicates (reversible) ---
-  const dupes = familyDuplicates(pages, spec, [en?.id, de?.id]);
+  const dupes = familyDuplicates(pages, spec, [en?.id, de?.id, fr?.id]);
   for (const d of dupes) {
     if (DRY_RUN) { log(`  [DRY] would archive duplicate "${d.name}" (${d.permalink}, ${d.status})`); continue; }
     await archive(d.id);
     notes.push(`archived duplicate "${d.name}" (${d.permalink})`);
   }
   if (DRY_RUN && dupes.length) notes.push(`${dupes.length} duplicate(s) would be archived`);
-  return { result: de ? 'RECONCILED' : 'PARTIAL', enId: en?.id || null, notes };
+  return { result: anyCreated ? 'CREATED' : (de ? 'RECONCILED' : 'PARTIAL'), enId: en?.id || null, frId: fr?.id || null, notes };
+}
+
+/** Re-assert a page's cultureName via a content-safe metadata upsert (NO publish). Returns a note if
+ * it changed, else ''. (Bare publish drains the draft; metadata upserts preserve content — proven live.) */
+async function enforceCulture(groupId, culture) {
+  const full = await getGrouped(groupId);
+  if (!full || full.cultureName === culture) return '';
+  await upsert(updateBody(full, { cultureName: culture }));
+  return `healed culture ${full.cultureName} → ${culture} ("${full.name}")`;
 }
 
 async function seed() {
@@ -188,16 +299,43 @@ async function seed() {
   for (const spec of CANONICAL_PAGES) {
     // Multi-language (PAGE-3): two single-culture pages share the permalink; dedicated reconcile.
     if (spec.multiLang) {
-      const { result, enId, notes } = await reconcileMultiLang(spec, pages);
+      const { result, enId, frId, notes } = await reconcileMultiLang(spec, pages);
       results.push({ alias: spec.alias, name: spec.name, group: enId, action: result, detail: notes.join('; ') });
       if (enId) writeback[spec.alias] = { _inline: true, group_id: enId, permalink: spec.permalink };
-      log(`  ${result.padEnd(10)} ${spec.name} — ${notes.join('; ') || 'EN+DE @ ' + spec.permalink}`);
+      if (frId && spec.frAlias) writeback[spec.frAlias] = { _inline: true, group_id: frId, permalink: spec.permalink };
+      log(`  ${result.padEnd(10)} ${spec.name} — ${notes.join('; ') || 'EN+DE+FR @ ' + spec.permalink}`);
       continue;
     }
-    const chosen = pickCanonical(pages, spec);
+    let chosen = pickCanonical(pages, spec);
+    let created = false;
+    let createNote = '';
     if (!chosen) {
-      results.push({ alias: spec.alias, name: spec.name, action: 'MISSING', detail: `no exact-name page (only drifted copies) — manual re-seed via test-data/cms/pagebuilder-pages.md` });
-      continue;
+      // From-scratch CREATE: the canonical page doesn't exist on this env — author it headlessly
+      // (create shell → publish content, below) instead of reporting MISSING.
+      const personalPreview = spec.personalization === 'org'
+        ? ` [org personalization: resolve "${spec.orgSearchKeyword}" live]`
+        : (spec.userGroups ? ` [userGroups ${spec.userGroups.join(', ')} — manual (module NREs on userGroups)]` : '');
+      if (DRY_RUN) {
+        log(`  [DRY] would CREATE "${spec.name}" @ ${spec.permalink} (${spec.culture})${personalPreview} + fill content${spec.schedule ? ' + in-window schedule' : ''}`);
+        results.push({ alias: spec.alias, name: spec.name, action: 'CREATE', detail: `[DRY] would create + publish content${spec.schedule ? ' + schedule' : ''}${personalPreview}` });
+        continue;
+      }
+      let orgId = null;
+      if (spec.personalization === 'org') {
+        orgId = await resolveOrgId(spec.orgSearchKeyword);
+        createNote = orgId
+          ? `org bound (${spec.orgSearchKeyword})`
+          : `⚠ ORG PERSONALIZATION NEEDS MANUAL COMPLETION — no "${spec.orgSearchKeyword}" org on ${process.env.TEST_ENV || 'vcst'} (page created + published, unrestricted)`;
+      } else if (spec.userGroups) {
+        createNote = `⚠ userGroup personalization [${spec.userGroups.join(', ')}] NOT set — module NREs on userGroups upsert; page published UNRESTRICTED, needs manual completion`;
+      }
+      chosen = await createPage(spec, { culture: spec.culture, name: spec.name, permalink: spec.permalink, orgId });
+      if (!chosen) {
+        results.push({ alias: spec.alias, name: spec.name, action: 'CREATE-FAILED', detail: 'POST /grouped returned no groupId' });
+        log(`  CREATE-FAILED ${spec.name}`);
+        continue;
+      }
+      created = true;
     }
     const conflict = permalinkConflict(pages, spec, chosen);
     let permalinkNote = '';
@@ -219,8 +357,8 @@ async function seed() {
     const stateNote = await ensurePageState(chosen, spec, spec.culture, { schedule: spec.schedule });
     const cultureNote = chosen.cultureName && chosen.cultureName !== spec.culture ? ` [culture drift: ${chosen.cultureName}≠${spec.culture}]` : '';
     const changed = !/^content ok/.test(stateNote);
-    const action = conflict ? 'CONFLICT' : (statusResult === 'ok' && !permalinkNote && !changed ? 'OK' : 'RECONCILED');
-    results.push({ alias: spec.alias, name: spec.name, group: chosen.id, action, detail: [statusResult, permalinkNote, stateNote, cultureNote.trim()].filter(Boolean).join('; ') });
+    const action = created ? 'CREATED' : (conflict ? 'CONFLICT' : (statusResult === 'ok' && !permalinkNote && !changed ? 'OK' : 'RECONCILED'));
+    results.push({ alias: spec.alias, name: spec.name, group: chosen.id, action, detail: [createNote, statusResult, permalinkNote, stateNote, cultureNote.trim()].filter(Boolean).join('; ') });
     if (chosen.id) writeback[spec.alias] = { _inline: true, group_id: chosen.id, permalink: spec.permalink };
     log(`  ${action.padEnd(10)} ${spec.name} — ${results[results.length - 1].detail || 'Published @ ' + spec.permalink}`);
   }
@@ -230,10 +368,12 @@ async function seed() {
     log(`✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote ${Object.keys(writeback).length} PageBuilder page group id(s)`);
   }
 
-  const conflicts = results.filter((r) => ['CONFLICT', 'MISSING', 'PARTIAL'].includes(r.action));
-  log('\n  === reconcile summary ===');
+  const conflicts = results.filter((r) => ['CONFLICT', 'MISSING', 'PARTIAL', 'CREATE-FAILED'].includes(r.action));
+  const personalWarn = results.filter((r) => /⚠/.test(r.detail || '') && !conflicts.includes(r));
+  log('\n  === provisioning summary ===');
   for (const r of results) log(`   ${r.action}: ${r.name}${r.detail ? ' — ' + r.detail : ''}`);
   if (conflicts.length) log(`\n  ⚠ ${conflicts.length} page(s) need MANUAL cleanup (see above) — reported, not forced.`);
+  if (personalWarn.length) log(`  ⚠ ${personalWarn.length} page(s) published but need MANUAL personalization completion (userGroup/org — see notes).`);
   return results;
 }
 

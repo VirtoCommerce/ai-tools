@@ -9,6 +9,7 @@ import {
   CANONICAL_PAGES, STATUS, pickCanonical, permalinkConflict, draftBody, permalinkBody, findGuidLeaks,
   updateBody, isoOffsetDays, pickPromoteCandidate, pickByNameCulture, familyDuplicates,
   CONTENT_FILE, contentDocFor, parseContentDoc, blockCount, buildContentBody, maxDiscover,
+  createGroupedBody,
 } from '../seed-data/cms/pagebuilder-pages-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -56,6 +57,15 @@ test('permalinkConflict returns null when the slot is owned by the chosen page',
   assert.equal(permalinkConflict([chosen], spec('PB_RETURN_POLICY'), chosen), null);
 });
 
+test('permalinkConflict ignores an ARCHIVED page at the slot (it does not render — no real conflict)', () => {
+  const chosen = { id: 'me', permalink: '/other' };
+  const pages = [chosen, { id: 'stale', name: 'QA Return Policy (obsolete-probe)', cultureName: 'en-US', status: 'Archived', permalink: '/qa-return-policy' }];
+  assert.equal(permalinkConflict(pages, spec('PB_RETURN_POLICY'), chosen), null);
+  // but a PUBLISHED different page at the slot is still a conflict
+  pages[1].status = 'Published';
+  assert.equal(permalinkConflict(pages, spec('PB_RETURN_POLICY'), chosen).id, 'stale');
+});
+
 test('draftBody sets group + nested page statuses to Draft (deep copy)', () => {
   const full = { status: 'Archived', permalink: '/p', pages: [{ status: 'Archived' }] };
   const b = draftBody(full);
@@ -76,6 +86,22 @@ test('PB_RETURN_POLICY is a multiLang spec with a de-DE counterpart + promote co
   assert.equal(rp.deName, 'QA Rückgaberichtlinie');
   assert.equal(rp.familyPrefix, '/qa-return-policy');
   assert.ok(rp.promoteNameRe);
+});
+
+test('PB_RETURN_POLICY declares de-DE + fr-FR siblings with a dedicated FR alias', () => {
+  const rp = spec('PB_RETURN_POLICY');
+  assert.equal(rp.deName, 'QA Rückgaberichtlinie');
+  assert.equal(rp.frName, 'QA Politique de retour et de remboursement');
+  assert.equal(rp.frAlias, 'PB_RETURN_POLICY_FR');
+});
+
+test('page-content.json has fr-FR return-policy blocks + PB_RETURN_POLICY_FR alias registered', () => {
+  const fixture = JSON.parse(readFileSync(join(ROOT, CONTENT_FILE), 'utf8'));
+  const fr = contentDocFor(fixture, spec('PB_RETURN_POLICY'), 'fr-FR');
+  assert.ok(fr && blockCount(fr) >= 1, 'fr-FR content present');
+  const registry = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
+  assert.ok(registry.PB_RETURN_POLICY_FR, 'PB_RETURN_POLICY_FR registered');
+  assert.equal(registry.PB_RETURN_POLICY_FR.culture, 'fr-FR');
 });
 
 test('PB_SUMMER_PREVIEW carries an in-window schedule baseline (start past, end future)', () => {
@@ -163,12 +189,51 @@ test('maxDiscover returns the largest @discover:N across a doc', () => {
   assert.equal(maxDiscover({ content: [{ type: 'title' }] }), 0);
 });
 
+test('createGroupedBody builds the verified minimal from-scratch create body (no id, Draft, pages:[])', () => {
+  const b = createGroupedBody(spec('PB_HOMEPAGE'), { storeId: 'B2B-store', culture: 'en-US', name: 'QA Homepage Spring Sale', permalink: '/qa-homepage-spring-sale' });
+  assert.equal(b.id, undefined);              // server assigns the groupId
+  assert.equal(b.storeId, 'B2B-store');
+  assert.equal(b.cultureName, 'en-US');
+  assert.equal(b.name, 'QA Homepage Spring Sale');
+  assert.equal(b.permalink, '/qa-homepage-spring-sale');
+  assert.equal(b.status, STATUS.DRAFT);
+  assert.equal(b.visibility, true);
+  assert.deepEqual(b.pages, []);              // server auto-creates the page shell
+  assert.equal('userGroups' in b, false);     // no personalization for PB_HOMEPAGE
+  assert.equal('organizationId' in b, false);
+});
+
+test('createGroupedBody NEVER emits userGroups (module NREs on it) — even for a userGroup-personalized spec', () => {
+  const wg = spec('PB_WHOLESALE_GUIDE');
+  assert.deepEqual(wg.userGroups, ['B2B Wholesale']); // spec documents the intended labels for the manual-completion report
+  const b = createGroupedBody(wg, { storeId: 'S', culture: 'en-US', name: wg.name, permalink: wg.permalink });
+  assert.equal('userGroups' in b, false);   // NOT sent — a userGroups create/upsert 500s server-side
+  assert.equal('organizationId' in b, false);
+});
+
+test('createGroupedBody binds organizationId ONLY when a live orgId is supplied (never fabricated)', () => {
+  const ps = spec('PB_PARTNER_SUPPORT');
+  assert.equal(ps.personalization, 'org');
+  assert.ok(ps.orgSearchKeyword);
+  const bound = createGroupedBody(ps, { storeId: 'S', culture: 'en-US', name: ps.name, permalink: ps.permalink, orgId: 'org-guid-123' });
+  assert.equal(bound.organizationId, 'org-guid-123');
+  const unbound = createGroupedBody(ps, { storeId: 'S', culture: 'en-US', name: ps.name, permalink: ps.permalink, orgId: null });
+  assert.equal('organizationId' in unbound, false); // org absent on env → left unset for manual completion
+});
+
+test('createGroupedBody does not mutate the source spec', () => {
+  const wg = spec('PB_WHOLESALE_GUIDE');
+  const before = JSON.stringify(wg);
+  createGroupedBody(wg, { storeId: 'S', culture: 'en-US', name: wg.name, permalink: wg.permalink });
+  assert.equal(JSON.stringify(wg), before);
+});
+
 test('every canonical page has a content-fixture doc with ≥1 known-type block, GUID-free', () => {
   const fixture = JSON.parse(readFileSync(join(ROOT, CONTENT_FILE), 'utf8'));
   assert.deepEqual(findGuidLeaks(JSON.stringify(fixture)), []);
   const KNOWN = new Set(['title', 'text', 'image', 'predefined-product-list']);
   for (const p of CANONICAL_PAGES) {
-    for (const cul of (p.multiLang ? ['en-US', 'de-DE'] : [p.culture])) {
+    for (const cul of (p.multiLang ? ['en-US', 'de-DE', ...(p.frName ? ['fr-FR'] : [])] : [p.culture])) {
       const doc = contentDocFor(fixture, p, cul);
       assert.ok(doc && blockCount(doc) >= 1, `${p.alias} (${cul}) has content`);
       for (const b of doc.content) assert.ok(KNOWN.has(b.type), `${p.alias} block type ${b.type} known`);

@@ -50,6 +50,16 @@
         { "type": "text", "text": "So senden Sie zurück: 1. Melden Sie sich in Ihrem Konto an. 2. Navigieren Sie zu Bestellungen. 3. Wählen Sie die Bestellung und klicken Sie auf Rückgabe. 4. Drucken Sie das Versandetikett. 5. Versenden Sie innerhalb von 7 Werktagen." },
         { "type": "title", "heading": "h2", "title": "Rückgabe starten", "subtitle": "Gehen Sie zu Ihren Bestellungen" }
       ]
+    },
+    "fr-FR": {
+      "settings": { "header": "Politique de retour et de remboursement", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "title", "heading": "h2", "title": "Politique de retour et de remboursement", "subtitle": null },
+        { "type": "text", "text": "Chez Coffee Shop, nous voulons que vous soyez entièrement satisfait de votre achat. Si votre commande ne vous convient pas, vous pouvez retourner les articles éligibles dans les 30 jours suivant la livraison pour un remboursement complet ou un échange." },
+        { "type": "text", "text": "Conditions d'éligibilité : les articles doivent être inutilisés et dans leur emballage d'origine. Les appareils électroniques doivent être retournés avec tous leurs accessoires. Les denrées périssables ne sont pas retournables. Les articles personnalisés sont en vente définitive." },
+        { "type": "text", "text": "Comment effectuer un retour : 1. Connectez-vous à votre compte. 2. Accédez à Commandes. 3. Sélectionnez la commande et cliquez sur Retour. 4. Choisissez les articles et le motif. 5. Imprimez l'étiquette d'expédition prépayée. 6. Expédiez sous 7 jours ouvrables." },
+        { "type": "title", "heading": "h2", "title": "Commencer un retour", "subtitle": "Accédez à vos commandes" }
+      ]
     }
   },
 

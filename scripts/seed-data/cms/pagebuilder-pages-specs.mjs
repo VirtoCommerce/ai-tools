@@ -35,12 +35,18 @@ export const STATUS = { PUBLISHED: 'Published', DRAFT: 'Draft', ARCHIVED: 'Archi
  */
 export const CANONICAL_PAGES = [
   { alias: 'PB_HOMEPAGE',        name: 'QA Homepage Spring Sale',      permalink: '/qa-homepage-spring-sale',      culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none',       cases: 'CMS-027/029/031/078-085' },
-  { alias: 'PB_WHOLESALE_GUIDE', name: 'QA Wholesale Buyer Guide 2026', permalink: '/qa-wholesale-buyer-guide',     culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'userGroup',  cases: 'CMS-024/025/121-125' },
-  // Multi-language: the platform models EN+DE as TWO single-culture pages that SHARE the permalink
-  // (verified live — not one group with pages[]). deName is the de-DE version's canonical name;
-  // familyPrefix + promoteNameRe let the seeder promote a drifted EN copy to the canonical EN page.
+  { alias: 'PB_WHOLESALE_GUIDE', name: 'QA Wholesale Buyer Guide 2026', permalink: '/qa-wholesale-buyer-guide',     culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'userGroup',  cases: 'CMS-024/025/121-125',
+    // Intended user-group restriction. NOT settable headlessly — the module NREs on any userGroups
+    // create/upsert (verified live), so on a CREATE the seeder publishes the page unrestricted and
+    // REPORTS that these labels need manual completion; on a pre-existing page it never re-personalizes.
+    userGroups: ['B2B Wholesale'] },
+  // Multi-language: the platform models EN+DE+FR as SEPARATE single-culture pages that SHARE the
+  // permalink (verified live — not one group with pages[]). deName/frName are the de-DE/fr-FR versions'
+  // canonical names; the seeder ensures each is Published with content at the shared permalink, and
+  // creates a missing sibling (then re-asserts every sibling's cultureName — a create at a shared
+  // permalink can flip a sibling's culture). familyPrefix + promoteNameRe promote a drifted EN copy.
   { alias: 'PB_RETURN_POLICY',   name: 'QA Return Policy',             permalink: '/qa-return-policy',             culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none',       cases: 'CMS-027/028/031/035',
-    multiLang: true, deName: 'QA Rückgaberichtlinie', familyPrefix: '/qa-return-policy', promoteNameRe: '^QA Return Policy' },
+    multiLang: true, deName: 'QA Rückgaberichtlinie', frName: 'QA Politique de retour et de remboursement', frAlias: 'PB_RETURN_POLICY_FR', familyPrefix: '/qa-return-policy', promoteNameRe: '^QA Return Policy' },
   // Scheduled promo. IMPORTANT (verified live 2026-07-21): a FUTURE-dated (Pending) page HIDES its
   // content in BOTH the draft and published projections (content API returns 0 blocks until the
   // window opens) — so a future baseline would render empty AND can't be content-verified/idempotent.
@@ -50,7 +56,12 @@ export const CANONICAL_PAGES = [
   // Dates are relative-to-now (legitimately dynamic), recomputed each seed so the window never expires.
   { alias: 'PB_SUMMER_PREVIEW',  name: 'QA Summer Collection Preview', permalink: '/qa-summer-collection-preview', culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none',       cases: 'CMS-030/033/034',
     schedule: { startOffsetDays: -1, endOffsetDays: 60 } },
-  { alias: 'PB_PARTNER_SUPPORT', name: 'QA Partner Portal Support',    permalink: '/qa-partner-portal-support',    culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'org',        cases: 'CMS-024/025/026/030' },
+  { alias: 'PB_PARTNER_SUPPORT', name: 'QA Partner Portal Support',    permalink: '/qa-partner-portal-support',    culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'org',        cases: 'CMS-024/025/026/030',
+    // On a from-scratch CREATE the seeder resolves this org LIVE by business-key keyword (env-correct
+    // platform id, never fabricated — test-data/b2b/organizations.csv ORG-002 TechFlow). If the org is
+    // absent on the target env, the page is still created + published and the seeder REPORTS that org
+    // personalization needs manual completion. A pre-existing page is never re-personalized.
+    orgSearchKeyword: 'AGENT-TEST-Org-TechFlow' },
 ];
 
 const norm = (s) => String(s || '').trim().toLowerCase();
@@ -69,12 +80,36 @@ export function pickCanonical(pages, spec) {
 }
 
 /**
- * Is spec.permalink occupied by a DIFFERENT page than `chosen`? Returns the conflicting page (so the
- * seeder can report it) or null. A page occupying the slot that IS `chosen` is not a conflict.
+ * Is spec.permalink occupied by a DIFFERENT, LIVE page than `chosen`? Returns the conflicting page (so
+ * the seeder can report it) or null. A page occupying the slot that IS `chosen` is not a conflict, and
+ * an ARCHIVED page is not a conflict either — it does not render on the storefront, so it never truly
+ * occupies the permalink (this also stops a leftover archived clone/duplicate at the permalink from
+ * falsely blocking the canonical page).
  */
 export function permalinkConflict(pages, spec, chosen) {
   const chosenId = chosen?.id;
-  return (pages || []).find((p) => norm(p.permalink) === norm(spec.permalink) && p.id !== chosenId) || null;
+  return (pages || []).find((p) =>
+    norm(p.permalink) === norm(spec.permalink) && p.id !== chosenId && p.status !== STATUS.ARCHIVED) || null;
+}
+
+/**
+ * Build the grouped CREATE body for a brand-new canonical page (from-scratch path). Verified live
+ * contract (vcptcore-qa 2026-07-21, VirtoCommerce.PageBuilderModule): POST /api/page-builder-pages/grouped
+ * with NO id and pages:[] makes the server assign a groupId AND auto-create the single page shell in
+ * pages[]; status 'Draft'; visibility always true.
+ *
+ * Personalization: `organizationId` binds cleanly here (verified live — persists) and is set ONLY when
+ * the seeder resolved a live org id and passes it as `orgId` (never fabricated; left unset → reported
+ * for manual completion). `userGroups` is DELIBERATELY NOT sent: the module's grouped create/upsert
+ * throws a server-side NRE ("Object reference not set…") on ANY userGroups value (string[] or object[],
+ * at create OR upsert — verified live), so a userGroups create would fail outright. userGroup
+ * personalization is therefore left for manual completion and reported by the seeder (spec.userGroups
+ * documents the intended labels for that report). Pure; a fresh object each call, source spec untouched.
+ */
+export function createGroupedBody(spec, { storeId, culture, name, permalink, orgId = null } = {}) {
+  const body = { storeId, cultureName: culture, name, permalink, visibility: true, status: STATUS.DRAFT, pages: [] };
+  if (spec.personalization === 'org' && orgId) body.organizationId = orgId;
+  return body;
 }
 
 /** Build the restore-to-Draft upsert body from a fetched grouped page object. */

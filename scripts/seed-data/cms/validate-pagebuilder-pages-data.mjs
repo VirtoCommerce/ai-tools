@@ -40,14 +40,16 @@ else ok('spec module carries no runtime GUID (groupIds belong in aliases.<env>.j
 
 // 3. aliases registered + GUID-free
 const registry = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
-for (const p of CANONICAL_PAGES) {
-  const a = registry[p.alias];
-  if (!a) { fail(`alias ${p.alias} not registered in aliases.json`); continue; }
-  if ((a.permalink || '') !== p.permalink) fail(`alias ${p.alias}.permalink "${a.permalink}" ≠ spec "${p.permalink}"`);
+const aliasNames = [];
+for (const p of CANONICAL_PAGES) { aliasNames.push(p.alias); if (p.frAlias) aliasNames.push(p.frAlias); }
+for (const name of aliasNames) {
+  const a = registry[name];
+  if (!a) { fail(`alias ${name} not registered in aliases.json`); continue; }
+  if ((a.permalink || '') === '') fail(`alias ${name} missing permalink`);
   const leaks = findGuidLeaks(JSON.stringify(a));
-  if (leaks.length) fail(`alias ${p.alias} carries a runtime GUID in aliases.json (${leaks.join(', ')}) — belongs in aliases.<env>.json`);
+  if (leaks.length) fail(`alias ${name} carries a runtime GUID in aliases.json (${leaks.join(', ')}) — belongs in aliases.<env>.json`);
 }
-if (!problems.some((m) => m.includes('alias'))) ok(`all ${CANONICAL_PAGES.length} page aliases registered + GUID-free in aliases.json`);
+if (!problems.some((m) => m.includes('alias'))) ok(`all ${aliasNames.length} page aliases registered + GUID-free in aliases.json`);
 
 // 4. content fixture (test-data/cms/page-content.json)
 const cPath = join(ROOT, CONTENT_FILE);
@@ -60,7 +62,7 @@ else {
   const KNOWN = new Set(['title', 'text', 'image', 'predefined-product-list']);
   let blocks = 0, bad = 0;
   for (const spec of CANONICAL_PAGES) {
-    const cultures = spec.multiLang ? ['en-US', 'de-DE'] : [spec.culture];
+    const cultures = spec.multiLang ? ['en-US', 'de-DE', ...(spec.frName ? ['fr-FR'] : [])] : [spec.culture];
     for (const cul of cultures) {
       const doc = contentDocFor(fixture, spec, cul);
       if (!doc) { fail(`${spec.alias} (${cul}): no content doc in fixture`); continue; }

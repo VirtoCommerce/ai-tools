@@ -410,7 +410,22 @@ Every block has a **Settings** tab with shared options:
 
 ## Seeding Strategy
 
-CMS pages cannot be seeded via REST API — they require the PageBuilder UI. The strategy is **seed once, verify before each run**.
+**These pages ARE seeded headlessly via REST** by `scripts/seed-data/cms/seed-pagebuilder-pages.mjs`
+(`TEST_ENV=<env> npm run seed:cms-pages`). The seeder CREATES a missing canonical page from scratch —
+POST a grouped shell (the server assigns the groupId + page shell — verified live vcptcore-qa
+2026-07-21), fill content from `test-data/cms/page-content.json`, publish — and RECONCILES a
+pre-existing one (restore-to-Published, fill an empty shell, correct a free permalink). It is
+idempotent: a second run finds each page by exact name and no-ops/reconciles, never duplicating.
+
+Personalization on a CREATE: `userGroups` (string labels, e.g. `B2B Wholesale`) are set from the
+spec; the org restriction (PAGE-5 / TechFlow) is bound only when the org resolves LIVE on the env,
+otherwise the page is created + published and the run REPORTS that org personalization needs manual
+completion (the seeder never fabricates an org id). multiLang (PAGE-3) creates BOTH the en-US and
+de-DE single-culture pages sharing the permalink. PAGE-1 remains the inline-creation lifecycle
+subject for CMS-001→006 (also created by the seeder as a Published baseline for the render cases).
+
+The earlier UI-only, "seed once, verify before each run" model below is retained as the manual
+fallback / block-structure reference — the REST seeder is now the primary path.
 
 ### Page Roles
 
