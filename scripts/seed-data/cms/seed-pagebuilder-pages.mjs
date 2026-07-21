@@ -67,30 +67,44 @@ async function discoverSkus(n) {
 }
 
 /**
- * Ensure a page has content: if its live content[] is EMPTY, apply the fixture doc (resolving
- * @discover SKUs live) then publish. NEVER overwrites a page that already has blocks (preserves
- * human-authored content). Returns a short status string.
+ * Idempotently ensure a page's CONTENT and (optional in-window) SCHEDULE in a SINGLE publish.
+ * Preserves existing blocks (re-posts live content); fills from the fixture only when the page is
+ * empty. Content + dates MUST land in one publish: a second publish drains the just-promoted (empty)
+ * draft and wipes the content, and a future/Pending page hides content in every projection — both
+ * proven live 2026-07-21. Returns a short status string; no-ops when already correct.
  */
-async function ensureContent(page, spec, culture) {
-  const fixture = loadContentFixture();
-  const doc = contentDocFor(fixture, spec, culture);
-  const live = await getContent(page.id);
-  const have = blockCount(live);
-  if (have > 0) return `content ok (${have} blocks, kept)`;
-  if (!doc) return 'EMPTY (no fixture content to apply)';
-  if (DRY_RUN) { log(`  [DRY] would fill ${page.name} (${culture}) with ${doc.content.length} block(s)`); return `[DRY] would fill ${doc.content.length} blocks`; }
-  const skus = await discoverSkus(maxDiscover(doc));
-  const body = buildContentBody(doc, { skus });
-  // Restore to Draft AND clear any schedule for the fill, so publish promotes the content to the LIVE
-  // (published) projection — a future-scheduled (Pending) page hides content in every projection, and
-  // a bare publish on an archived/scheduled page is a no-op (both proven live). ensureSchedule (which
-  // runs AFTER this) re-applies the in-window dates.
+async function ensurePageState(page, spec, culture, { schedule } = {}) {
+  const now = Date.now();
   const full = await getGrouped(page.id);
-  if (full) { const r = draftBody(full); r.startDate = null; r.endDate = null; await upsert(r); }
-  await postContent(page.id, body);
+  const live = await getContent(page.id, false);
+  const haveContent = blockCount(live) > 0;
+  const wantSchedule = !!schedule;
+  const inWindow = full?.startDate && Date.parse(full.startDate) < now
+    && full?.endDate && Date.parse(full.endDate) > now + 7 * 86400000;
+  const scheduleOk = wantSchedule ? inWindow : (!full?.startDate && !full?.endDate);
+  if (haveContent && scheduleOk && full?.status === STATUS.PUBLISHED) {
+    return `content ok (${blockCount(live)} blocks${wantSchedule ? ', in-window' : ''}, kept)`;
+  }
+  // Desired content: keep existing blocks; else fill from the fixture (resolving @discover SKUs live).
+  const doc = contentDocFor(loadContentFixture(), spec, culture);
+  let contentBody, fillNote;
+  if (haveContent) { contentBody = { settings: live.settings || {}, content: live.content }; fillNote = `content kept (${blockCount(live)} blocks)`; }
+  else if (doc) {
+    const skus = await discoverSkus(maxDiscover(doc));
+    contentBody = buildContentBody(doc, { skus });
+    fillNote = `filled ${doc.content.length} blocks${maxDiscover(doc) ? ` (${skus.length} live SKUs)` : ''}`;
+  } else return 'EMPTY (no fixture content to apply)';
+  const schedNote = wantSchedule ? ` + in-window schedule (${isoOffsetDays(schedule.startOffsetDays).slice(0, 10)}…${isoOffsetDays(schedule.endOffsetDays).slice(0, 10)})` : '';
+  if (DRY_RUN) { log(`  [DRY] would set ${page.name} (${culture}): ${fillNote}${schedNote}`); return `[DRY] ${fillNote}${schedNote}`; }
+  // ONE publish carrying content + dates: Draft(+dates) → post content → publish.
+  const restore = draftBody(full);
+  restore.startDate = wantSchedule ? isoOffsetDays(schedule.startOffsetDays) : null;
+  restore.endDate = wantSchedule ? isoOffsetDays(schedule.endOffsetDays) : null;
+  await upsert(restore);
+  await postContent(page.id, contentBody);
   await publish(page.id);
   const after = blockCount(await getContent(page.id, false));
-  return after > 0 ? `filled ${after} blocks${maxDiscover(doc) ? ` (${skus.length} live SKUs)` : ''}` : 'fill FAILED (still empty)';
+  return after > 0 ? `${fillNote}${schedNote}` : 'WRITE FAILED (still empty)';
 }
 
 async function searchPages() {
@@ -121,14 +135,6 @@ async function applyPatchAndPublish(page, patch) {
   await publish(page.id);
 }
 
-/** Set the schedule window (relative to now) on a Published page (CMS-033/034 baseline). */
-async function ensureSchedule(page, schedule) {
-  const start = isoOffsetDays(schedule.startOffsetDays);
-  const end = isoOffsetDays(schedule.endOffsetDays);
-  await applyPatchAndPublish(page, { startDate: start, endDate: end });
-  const off = (d) => `${d >= 0 ? '+' : ''}${d}d`;
-  return `schedule set (in-window) start=${start.slice(0, 10)} (${off(schedule.startOffsetDays)}) end=${end.slice(0, 10)} (${off(schedule.endOffsetDays)})`;
-}
 
 /**
  * Multi-language reconcile (PAGE-3): ensure a canonical en-US page AND a canonical de-DE page both
@@ -153,7 +159,7 @@ async function reconcileMultiLang(spec, pages) {
     if (en.permalink !== spec.permalink && !DRY_RUN) { await applyPatchAndPublish(en, { permalink: spec.permalink }); notes.push(`EN permalink ${en.permalink} → ${spec.permalink}`); }
     const st = await ensurePublished(en); if (st !== 'ok') notes.push(`EN status ${st}`);
   }
-  if (en?.id) { const c = await ensureContent(en, spec, 'en-US'); notes.push(`EN ${c}`); }
+  if (en?.id) { const c = await ensurePageState(en, spec, 'en-US'); notes.push(`EN ${c}`); }
   // --- DE canonical ---
   const de = pickByNameCulture(pages, spec.deName, 'de-DE');
   if (!de) notes.push(`de-DE "${spec.deName}" not found — DE version needs manual creation`);
@@ -161,7 +167,7 @@ async function reconcileMultiLang(spec, pages) {
     if (de.permalink !== spec.permalink && !DRY_RUN) { await applyPatchAndPublish(de, { permalink: spec.permalink }); notes.push(`DE permalink ${de.permalink} → ${spec.permalink}`); }
     const st = await ensurePublished(de); if (st !== 'ok') notes.push(`DE(${spec.deName}) status ${st}`);
     else notes.push(`DE "${spec.deName}" @ ${spec.permalink} Published`);
-    const c = await ensureContent(de, spec, 'de-DE'); notes.push(`DE ${c}`);
+    const c = await ensurePageState(de, spec, 'de-DE'); notes.push(`DE ${c}`);
   }
   // --- archive drifted family duplicates (reversible) ---
   const dupes = familyDuplicates(pages, spec, [en?.id, de?.id]);
@@ -208,17 +214,13 @@ async function seed() {
     }
     // Even under a permalink conflict, still ensure the canonical page's own status is Published.
     const statusResult = await ensurePublished(chosen);
-    // Content FIRST — fill an empty shell from the fixture (never overwrites existing blocks) while
-    // the page is in a normal published state. A future-dated schedule (below) makes publish a no-op
-    // for the content draft, so content must land before the schedule is applied.
-    const contentNote = await ensureContent(chosen, spec, spec.culture);
-    // Scheduling window (PAGE-4): set relative-to-now StartDate/EndDate baseline (applied last).
-    let scheduleNote = '';
-    if (spec.schedule) scheduleNote = await ensureSchedule(chosen, spec.schedule);
+    // Content + (optional) in-window schedule in ONE publish — fills an empty shell from the fixture
+    // (never overwrites existing blocks) and applies PAGE-4's schedule window atomically.
+    const stateNote = await ensurePageState(chosen, spec, spec.culture, { schedule: spec.schedule });
     const cultureNote = chosen.cultureName && chosen.cultureName !== spec.culture ? ` [culture drift: ${chosen.cultureName}≠${spec.culture}]` : '';
-    const filled = /^filled/.test(contentNote);
-    const action = conflict ? 'CONFLICT' : (statusResult === 'ok' && !permalinkNote && !scheduleNote && !filled ? 'OK' : 'RECONCILED');
-    results.push({ alias: spec.alias, name: spec.name, group: chosen.id, action, detail: [statusResult, permalinkNote, scheduleNote, contentNote, cultureNote.trim()].filter(Boolean).join('; ') });
+    const changed = !/^content ok/.test(stateNote);
+    const action = conflict ? 'CONFLICT' : (statusResult === 'ok' && !permalinkNote && !changed ? 'OK' : 'RECONCILED');
+    results.push({ alias: spec.alias, name: spec.name, group: chosen.id, action, detail: [statusResult, permalinkNote, stateNote, cultureNote.trim()].filter(Boolean).join('; ') });
     if (chosen.id) writeback[spec.alias] = { _inline: true, group_id: chosen.id, permalink: spec.permalink };
     log(`  ${action.padEnd(10)} ${spec.name} — ${results[results.length - 1].detail || 'Published @ ' + spec.permalink}`);
   }
