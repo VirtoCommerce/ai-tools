@@ -177,6 +177,33 @@ test("classify: an untied hook_failure alongside a self-corrected op-keyed error
   }
 });
 
+test("classify (control): the SAME self-corrected op WITHOUT the untied hook_failure is `recovered`", () => {
+  // Isolates the veto: drop only the hookEcho line from the test above. The Read fail→ok pair alone
+  // must classify `recovered` — proving the `failed` verdict there comes from sawUntiedFailure, not
+  // from the retry failing to register as recovered.
+  const home = setupHome();
+  try {
+    const sid = "untied-control";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-51" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "r1", "Read", { file_path: "a.ts" }),
+      toolResult("2026-01-01T00:00:01Z", "r1", true, "transient read error"),
+      toolUse("2026-01-01T00:00:02Z", "r2", "Read", { file_path: "a.ts" }),
+      toolResult("2026-01-01T00:00:03Z", "r2", false, "file contents"),
+      // NO hookEcho — the only difference from the veto test.
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-fix");
+    assert.equal(cmd.length, 1);
+    assert.equal(cmd[0].outcome, "recovered", "the self-corrected Read pair alone is `recovered` (no untied failure to veto it)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── failed: unrecovered blocking error, no expected output ─────────────────────
 test("classify: an unrecovered permission_denied is `failed` and triggers the silent auto-diagnosis block", () => {
   const home = setupHome();
@@ -318,13 +345,23 @@ test("redaction: secrets in a tool_result never reach a span's details[].snippet
       // a JSON password, a STANDALONE gh token (not inside the Authorization header, so the
       // gh-token rule — not the auth rule — must catch it), and a card number.
       toolResult("2026-01-01T00:00:03Z", "b2", true, 'body {"password":"LEAKPASSs3cret"} tok ghp_LEAKTOKENabcdef1234567890 card 4111 1111 1111 1111'),
+      // ADO Basic auth (base64(":"+PAT)) — the exact header probe-lib emits; the OLD rule left this
+      // blob behind. Plus a DB connection-string password, an Azure AccountKey, and a JWT.
+      toolUse("2026-01-01T00:00:04Z", "b3", "Bash", { command: "ado call" }),
+      toolResult("2026-01-01T00:00:05Z", "b3", true, "HTTP 401 Authorization: Basic dXNlcjpMRUFLYmFzaWNQQVQ="),
+      toolUse("2026-01-01T00:00:06Z", "b4", "Bash", { command: "psql" }),
+      toolResult("2026-01-01T00:00:07Z", "b4", true, "url postgres://svc:LEAKdbpw@h/x key AccountKey=LEAKacct== jwt eyJLEAKhdrABCDEFGHIJKLMNOP.z"),
     ]);
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
     const recs = readSpans(home, sid);
     const snippets = recs.filter((r) => r.type === "span").flatMap((r) => (r.details || []).map((d) => d.snippet || ""));
     const haystack = snippets.join("  ") + "  " + out; // details + the surfaced block reason
-    for (const secret of ["opaqueLEAKtokenAAAA1234567890", "ghp_LEAKTOKENabcdef1234567890", "LEAKPASSs3cret", "4111 1111 1111 1111"]) {
+    for (const secret of [
+      "opaqueLEAKtokenAAAA1234567890", "ghp_LEAKTOKENabcdef1234567890", "LEAKPASSs3cret", "4111 1111 1111 1111",
+      "dXNlcjpMRUFLYmFzaWNQQVQ=",                              // Basic-auth base64 blob (ADO PAT)
+      "LEAKdbpw", "LEAKacct==", "eyJLEAKhdrABCDEFGHIJKLMNOP",  // conn-string pw, Azure AccountKey, JWT
+    ]) {
       assert.ok(!haystack.includes(secret), `secret must be redacted from spans + block reason, but leaked: ${secret}`);
     }
     // Prove redaction actually ran (not merely truncated away): the markers are present.
@@ -332,6 +369,7 @@ test("redaction: secrets in a tool_result never reach a span's details[].snippet
     assert.ok(/«redacted»/.test(joined), "authorization/password value replaced with the redaction marker");
     assert.ok(/«gh-token»/.test(joined), "the GitHub token shape was redacted");
     assert.ok(/«pan»/.test(joined), "the card number was redacted");
+    assert.ok(/«jwt»/.test(joined), "the JWT was redacted");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -808,6 +846,21 @@ test("complete: targets the newest session state file and writes the { skill, ts
     assert.match(cur.skillCompletePending.ts, /^\d{4}-\d\d-\d\dT/, "marker carries an ISO timestamp");
     const old = JSON.parse(readFileSync(older, "utf8"));
     assert.equal(old.skillCompletePending, undefined, "the older session was left untouched");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("complete: still writes the marker under VC_FIX_DIAG_CONSENT=off (consent gates surfacing, NOT capture)", () => {
+  const home = setupHome();
+  try {
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: "consent-off-complete", transcript_path: transcriptPath }, { VC_FIX_DIAG_CONSENT: "off" });
+    complete(home, "project-init", { VC_FIX_DIAG_CONSENT: "off" });
+    const st = JSON.parse(readFileSync(join(home, ".vc-fix", "diagnostics", "consent-off-complete.state.json"), "utf8"));
+    assert.ok(st.skillCompletePending, "complete is gated on captureEnabled only — consent-off must NOT suppress the marker write");
+    assert.equal(st.skillCompletePending.skill, "project-init");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

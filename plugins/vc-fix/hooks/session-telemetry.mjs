@@ -137,18 +137,24 @@ function pluginRoot() {
 
 // ─── secret redaction ──────────────────────────────────────────────────────
 const REDACTIONS = [
-  // Authorization header / bearer scheme: redact the CREDENTIAL, not just the scheme word.
-  // A `:`/`=` is required so the prose word "authorization" is not mangled; the optional
-  // `bearer ` after it is consumed so `Authorization: Bearer <token>` loses the token (the old
-  // `\S+` ate only "Bearer" and LEAKED the token). A bare `Bearer <tok>` (no header prefix) is
-  // caught by the next rule.
-  [/\b(authorization)\b"?\s*[:=]\s*(?:bearer\s+)?\S+/gi, "$1 «redacted»"],
-  [/\bbearer\s+\S+/gi, "bearer «redacted»"],
+  // URL userinfo — scheme://user:PASSWORD@host (postgres/mysql/redis/amqp/http proxy connection
+  // strings, common in Bash tool inputs). Keep the username as signal, drop the password. Runs
+  // first so the password is gone before any later rule sees the line.
+  [/\b([a-z][\w+.-]*:\/\/)([^\s:@/]+):[^\s@/]+@/gi, "$1$2:«redacted»@"],
+  // Authorization header — redact the CREDENTIAL, not just the scheme word. An optional scheme
+  // (Bearer/Basic/Digest/Negotiate/NTLM) is consumed so `Authorization: Basic <b64>` and
+  // `Authorization: Bearer <tok>` alike lose the credential. The OLD `(?:bearer\s+)?` covered only
+  // Bearer, so a `Basic <b64>` (an ADO PAT: base64(":"+PAT)) or Digest/NTLM blob LEAKED into the
+  // jsonl → the public upstream via deliver. A `:`/`=` is required so prose "authorization" is not
+  // mangled; a header-less `Bearer/Basic <cred>` is caught by the next rule.
+  [/\b(authorization)\b"?\s*[:=]\s*(?:(?:bearer|basic|digest|negotiate|ntlm)\s+)?\S+/gi, "$1 «redacted»"],
+  [/\b(bearer|basic|digest|negotiate|ntlm)\s+\S+/gi, "$1 «redacted»"],
   // key/value secrets — optional quotes around BOTH key and value so the JSON form
-  // (`"password":"x"`, `"apiKey": "x"`), the shell form (`password=x`) and the header form
-  // (`X-Api-Key: x`) all redact the value. The old rule needed a literal `keyword[:=]` with no
-  // quote between them, so every JSON-shaped secret escaped it.
-  [/\b(token|api[_-]?key|secret|password|passwd|pwd)\b"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
+  // (`"password":"x"`, `"apiKey": "x"`), the shell form (`password=x`), the header form
+  // (`X-Api-Key: x`) and the Azure connection-string form (`AccountKey=…`, `SharedAccessSignature=…`)
+  // all redact the value. The old rule needed a literal `keyword[:=]` with no quote between them, so
+  // every JSON-shaped secret escaped it.
+  [/\b(token|api[_-]?key|secret|password|passwd|pwd|accountkey|sharedaccesssignature)\b"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
   [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers
   [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub tokens
@@ -1140,9 +1146,11 @@ async function cmdFinalize(ev) {
                     ? "consent-off"
                     : lineOff
                       ? "line-off"
-                      : !cleanEligible
-                        ? "awaiting-completion"
-                        : "clean")
+                      : "awaiting-completion")
+        // ^ the residual clean-branch reason. Reaching here means clean + pluginActivity + none of
+        //   the guards above blocked; if cleanEligible were ALSO true, cleanBlock would have fired
+        //   and surfaced=true (→ null), so we can only be here with cleanEligible false — i.e.
+        //   awaiting the completion signal. (A separate "clean" leaf was unreachable — removed.)
         : consentOff
           ? "consent-off"
           : stopHookActive
@@ -1171,13 +1179,15 @@ async function cmdFinalize(ev) {
   // re-blocks. `cleanupOffered` is persisted (NOT reset per turn) → the offer is once per session.
   if (surfaced) state.promptedThisTurn = true;
   if (cleanupBlock) state.cleanupOffered = true;
-  // Consume the completion signal the moment the run's outcome is surfaced — a clean line OR a
-  // findings escalation is the terminal outcome of the completed run, so either one clears the
-  // marker → the clean line never repeats for the same run. The opt-in fallback instead sets the
-  // once-per-session guard. (Findings clearing is belt-and-suspenders: selfCheckSeen already
-  // blocks a later clean line, but consuming the marker keeps the one-line-per-run invariant.)
-  if (cleanBlock) { state.skillCompletePending = null; if (fallbackClean) state.cleanLineOffered = true; }
-  if (shouldPrompt) { for (const f of uniqueFresh) state.seenSignatures.push(f.signature); state.skillCompletePending = null; }
+  if (cleanBlock && fallbackClean) state.cleanLineOffered = true; // legacy fallback: once per session
+  if (shouldPrompt) for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
+  // Consume the completion signal on ANY terminal Stop that evaluated it — not only when it
+  // surfaced. A completion signal is for THIS terminal Stop; if the clean line can't surface now
+  // (line/consent off, already surfaced this turn, or the run produced only sidechain spans so
+  // pluginActivity is false), the signal is SPENT and must not carry to a LATER unrelated clean
+  // turn (which would mis-attribute a clean line to it). The deferred/checkpoint path returns
+  // before here, so a marker still survives a background-sub-agent checkpoint to the terminal Stop.
+  if (completePending) state.skillCompletePending = null;
   saveState(statePath, state);
 
   // Build the ONE decision:block reason. At most one of findings/clean fires (findings wins);

@@ -10,7 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Ships as **plugin `0.8.0`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.8.0`** (marketplace `0.9.2`). Pin to a tagged release for stability; this branch tip is unstable.
 
 ### Changed — the clean self-check line now fires on an EXPLICIT completion signal, not per-turn
 
@@ -70,6 +70,8 @@ The ephemeral lifecycle (`deliver.mjs` delete-after-delivery) only reclaims **de
 - Complements (does not replace) delete-after-delivery; the reclaimed count is surfaced as `prunedOldArtifacts` on the `session_start` record.
 
 ### Changed — self-diagnostics: checkpoint Stop on pending sub-agents + clean self-check line ON by default
+
+> **Superseded in part by "the clean self-check line now fires on an EXPLICIT completion signal" (above):** the clean line is no longer per-turn-activity-gated — it now fires once, after a skill signals `complete`. The checkpoint-vs-terminal Stop distinction below is unchanged.
 
 The `Stop` hook fires at the end of **every** turn, including a turn that only handed work to a background sub-agent and is now waiting. Since the sub-agent's work lives in a sidechain the collector skips, `cmdFinalize` would judge an **incomplete** session — and (with the line on) print a "no plugin issues detected" verdict **mid-task**. `session-telemetry.mjs cmdFinalize` now distinguishes **checkpoint** vs **terminal**:
 

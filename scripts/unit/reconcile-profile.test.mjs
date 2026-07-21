@@ -89,3 +89,61 @@ test("reconcile --write: a MISSING managed (ask) field is NOT silently defaulted
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+test("reconcile --write: refuses a mass-prune (>=5 removed) without --force; --force applies it", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    // 5 unknown fields → removed.length >= REMOVE_GUARD (5). This usually means a leaner schema than
+    // the one that wrote the profile — writing would strip live config, so it must refuse without --force.
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      legacyA: 1, legacyB: 2, legacyC: 3, legacyD: 4, legacyE: 5,
+    }));
+    // Without --force: status needs-force, writes NOTHING.
+    const out = execFileSync(process.execPath, [RECONCILE, "--write"], {
+      encoding: "utf8", env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },
+    });
+    const rep = JSON.parse(out);
+    assert.equal(rep.status, "needs-force");
+    assert.equal(rep.wrote, false);
+    const unchanged = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(unchanged.legacyA, 1, "the profile is left UNCHANGED — the guard wrote nothing");
+    // With --force: the prune is applied.
+    const p = reconcile(home, ["--force"]);
+    assert.equal(p.legacyA, undefined, "--force drops the obsolete fields");
+    assert.equal(p.projectType, "client", "a real user value survives the forced prune");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("reconcile --write: prunes the conditional azure blocks off-discriminator and adds them on", () => {
+  // jira + github → tracker.azure / vcs.azure are NOT schema for this profile → a stale one is pruned
+  // (and must NOT be re-added on every --check, which would churn the profile).
+  const h1 = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    writeFileSync(join(h1, "project-profile.json"), JSON.stringify({
+      tracker: { kind: "jira", projectKey: "ACME", azure: { organization: "stale-org" } },
+      vcs: { clientHost: "github", clientOrg: "acme", azure: { organization: "stale" } },
+    }));
+    const p = reconcile(h1);
+    assert.equal(p.tracker.azure, undefined, "tracker.azure pruned for a jira profile");
+    assert.equal(p.vcs.azure, undefined, "vcs.azure pruned for a github profile");
+    assert.equal(p.tracker.projectKey, "ACME", "the sibling user value survives the prune");
+  } finally {
+    rmSync(h1, { recursive: true, force: true });
+  }
+  // azure tracker + azure-repos host → the blocks ARE schema → added when missing.
+  const h2 = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    writeFileSync(join(h2, "project-profile.json"), JSON.stringify({
+      tracker: { kind: "azure", projectKey: "ACME" },
+      vcs: { clientHost: "azure-repos", clientOrg: "acme" },
+    }));
+    const p = reconcile(h2);
+    assert.ok(p.tracker.azure && typeof p.tracker.azure === "object", "tracker.azure added for an azure tracker");
+    assert.ok(p.vcs.azure && typeof p.vcs.azure === "object", "vcs.azure added for an azure-repos host");
+  } finally {
+    rmSync(h2, { recursive: true, force: true });
+  }
+});
