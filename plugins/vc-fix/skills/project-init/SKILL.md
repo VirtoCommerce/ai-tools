@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Everything else — whether it is a native-platform or a CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local + .mcp.json and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client custom code vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer.
+description: Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Everything else — whether it is a native-platform or a CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local + .mcp.json and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client custom code vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer. Day-2 modes skip the interview: `add-env [name]` adds another environment (URLs + per-env access keys) to an already-onboarded project; `--check` reconciles an existing profile to the current schema then verifies.
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -22,6 +22,11 @@ platform) and to the correct bug tracker.
 > **Additive, never destructive.** This skill only *adds* a profile + config. With
 > no profile, the plugin keeps its original behaviour (native-platform, Jira,
 > GitHub). Nothing existing is rewritten.
+
+> **Two day-2 modes** (skip the interview): **`add-env [name]`** — add another
+> environment (URLs + per-env access creds) to an already-onboarded project (§`add-env`
+> below); **`--check`** — reconcile an existing profile to the current schema after a
+> plugin upgrade, then verify (§`--check`).
 
 ## What it produces
 
@@ -524,6 +529,82 @@ and point the operator at the first run:
 ```
 /qa-fix VCST-1234        # (or your tracker's key) — now routes to the right repo
 ```
+
+---
+
+## `add-env` — add another environment to an already-onboarded project
+
+`/project-init add-env [name]` is for a deployment that is ALREADY onboarded (a
+`project-profile.json` exists) and you want to point the plugin at **another deployment
+target** — a second QA env, staging, a customer's second storefront — that shares the
+**same project topology**.
+
+**Why this is short (and touches almost nothing).** The deployment profile is
+**env-agnostic**: `tracker.kind`, `vcs.clientHost`, `repos.*`, `contributionMode`, the
+tracker role model — all describe the PROJECT (where bugs are filed, where code lives, which
+repos exist), not a single deployment. An *environment* is only a **URL set + its access
+creds** (`.env.<name>` + the `_<ENV>`-suffixed passwords in `.env.local`), selected at
+runtime by `TEST_ENV`. So `add-env`:
+
+- **does NOT** re-run the interview, re-scan repos (`discover-repos`), re-derive
+  (`derive-context`), rewrite `project-profile.json`, or regenerate `.mcp.json` — all
+  env-agnostic and already done;
+- **only** scaffolds the new env's two files (reusing the profile's tracker/host), then
+  verifies the new env.
+
+> A different **tracker or code host** is a different *project*, not an environment — those
+> live in `project-profile.json`. For that, run a fresh full `/project-init` in its own
+> project directory; don't try to bend `add-env` to it.
+
+### Step A — precondition + read the project topology (no questions)
+
+1. `project-profile.json` must exist in the cwd. If it doesn't → this project was never
+   onboarded: run the **full interview** (`/project-init`, no args) instead. Confirm the cwd
+   (§0a) — everything still lands here.
+2. Read `tracker.kind` and `vcs.clientHost` from `project-profile.json` (e.g.
+   `node -e "const p=require('./project-profile.json');console.log(p.tracker.kind,p.vcs.clientHost)"`,
+   or just read the file). **Do NOT ask them again** — they are project-level and already
+   decided. These become the `--tracker` / `--client-vcs` flags below.
+
+### Step B — env name + existing-env guard
+
+- Take the env name from the `[name]` argument, or ask it as a **plain chat** question (§2a);
+  normalise to `[a-z0-9_]+` and tell the operator what you used.
+- **Existing-env guard** (§2c): check `.env.<name>` first. Found → `AskUserQuestion` to
+  **reuse** it (scaffolding is add-only, never clobbers filled values) or **pick a new name**
+  (re-check). Not found → proceed.
+
+### Step C — scaffold the new env's two files, then pause
+
+Same scaffolders as the full flow (§3), reusing the tracker/host read from the profile:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs"     --env <new> --tracker <kind> --client-vcs <host> --print
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> --tracker <kind> --client-vcs <host> --print
+```
+
+- `scaffold-env` writes `.env.<new>` — the new deployment's URLs/identifiers (`FRONT_URL`,
+  `BACK_URL`, store/culture, `ADO_ORG`/`ADO_PROJECT` if Azure). All empty for the operator to fill.
+- `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
+  (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Cross-env
+  tokens** (`GITHUB_FIX_BUGS_TOKEN` / `JIRA_API_TOKEN` / `ADO_PAT`) are single-instance and
+  already present from the first env — idempotent add-only leaves them untouched. (A new env
+  reachable only with a *different* tracker/GitHub token is the "different project" case above.)
+
+Tell the operator both were touched, what to fill (the new env's URLs + its admin/user
+passwords), then **pause** with the unmistakable waiting banner (§3c) — no tool calls after it.
+
+### Step D — verify the new environment
+
+```bash
+FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+```
+
+Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new env's URLs +
+**real admin login** + the (cross-env) tracker/GitHub tokens all work for this target.
+`project-profile.json` and `.mcp.json` are **unchanged** (env-agnostic). **Restate the
+readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (per run, or via
+your shell) selects the new environment for `/qa-fix`, `/qa-bug`, `/qa-verify-fix`.
 
 ---
 
