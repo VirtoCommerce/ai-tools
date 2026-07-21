@@ -1,0 +1,46 @@
+{
+  "runId": "TLC-2026-07-17-0420",
+  "inputType": "change-source",
+  "source": "VCST-5308 — [BFE] [Sales Rep] View customer profile",
+  "date": "2026-07-17",
+  "env": "vcptcore-qa",
+  "build": { "salesRepXapi": "pr-2", "theme": "vc-theme-b2b-vue 2.54.0-pr-2383" },
+  "verdict": "APPROVED WITH WARNINGS",
+  "changedModules": ["sales-rep (xAPI scoped /graphql/sales-rep)", "vc-frontend storefront (in-repo sales-rep module)"],
+  "affectedSuites": ["050m", "089", "091"],
+  "casesAnalyzed": 86,
+  "casesSynced": 25,
+  "casesEnriched": 4,
+  "casesGenerated": 20,
+  "casesVerified": 5,
+  "newSuite": { "id": "091", "name": "Sales Rep — Customer Profile (storefront)", "file": "regression/suites/Frontend/sales-rep/091-sales-rep-customer-profile-storefront.csv", "caseCount": 20, "range": "SR-CP-001..020" },
+  "schemaDriftCaught": [
+    { "op": "salesRepCustomer", "was": "id:", "now": "organizationId: (String!)", "fields": "organizationId/organizationName (no id/name)" },
+    { "op": "salesRepOrders", "was": "customerId:", "now": "organizationId:" },
+    { "op": "total", "was": "flat scalar", "now": "nested MoneyType {amount formattedAmount currency{code symbol}}" }
+  ],
+  "profileRoute": "/company/my-customers/{organizationId}",
+  "gateResults": { "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS", "G5": "PASS", "G6": "WARN", "G7": "WARN", "G8": "PASS", "G9": "PASS" },
+  "automationStatus": "all touched cases Draft (050m 39 + 091 20) pending orchestrator promotion + residual mini-verify",
+  "mustFix": [
+    "Live-confirm plural salesRepCustomers arg + salesRepOrders.items.customerId/customerName field names (not re-introspected in Phase 5)",
+    "Promote Draft -> Reviewed after mini-verify"
+  ],
+  "shouldFix": [
+    "Pagination boundary (Orders first:20) — no >20-order fixture org",
+    "050m legacy GraphiQL-UI format migration (pre-existing, suite-wide)",
+    "SR-GQL-038 superseded by SR-GQL-011 — consolidate"
+  ],
+  "observations": [
+    "Sales-widget KPI values are mock (salesRepCustomerOrderStatistics absent from scoped schema) — value-reconciliation deferred to VCST-5309",
+    "Unregistered suite Backend/sales-rep/092-sales-rep-admin.csv (30 cases) on disk, not in manifest — separate task"
+  ],
+  "filesModified": [
+    "config/test-suites.json",
+    "regression/suites/Backend/graphql/050m-graphql-sales-rep.csv",
+    "regression/suites/Frontend/sales-rep/091-sales-rep-customer-profile-storefront.csv",
+    "regression/suites/Frontend/sales-rep/089-sales-rep-my-customers-storefront.csv",
+    "test-data/aliases.json"
+  ],
+  "validateTdRefs": "green (050m 129/129, 089 15/15, 091 39/39; unrelated pre-existing FAIL in 036-bopis)"
+}

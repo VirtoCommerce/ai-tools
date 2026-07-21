@@ -40,7 +40,7 @@ All aliases are defined in [`aliases.json`](aliases.json). Each alias maps to:
 
 ### Validation
 
-Run `npx tsx scripts/validate-td-refs.ts` to verify all `@td()` references across all suites resolve correctly.
+Run `npx tsx scripts/test-data/validate-td-refs.ts` to verify all `@td()` references across all suites resolve correctly.
 
 ---
 
@@ -338,6 +338,13 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 
 ### Order State Fixtures (suite 014)
 
+> **VCST-5482 — now SEEDED:** `COMPLETED_ORDER`, `SHIPPED_ORDER`, `PROCESSING_ORDER` are provided by
+> `npm run seed:orders` (`scripts/seed-data/orders/seed-order-states.mjs`) as `@td()` JSON-fixture
+> aliases — line items point at real catalog products (live-discovered). The remaining feature-gated /
+> status-string-uncertain states below (invoice, returns/RMA, OOS, discontinued, partially-shipped,
+> BOPIS-pickup) stay **DEFERRED** pending product-owner confirmation. Status strings live in
+> `scripts/seed-data/orders/orders-specs.mjs` (confirm live on first run).
+
 | Env Var | Fixture Spec | Admin Status | Storefront Label | Suites Affected | Admin Path |
 |---------|-------------|--------------|-----------------|-----------------|------------|
 | `SHIPPED_ORDER` | Order owned by `{{USER_EMAIL}}` in Shipped state; tracking number and carrier name assigned | DEFERRED (likely "New" → shipment created with status "Sent" per BL-ORD-007) | "Shipped" | 014: CHK-013, ORD-006, ORD-012, ORD-030 | Admin > Orders > [Order] > Shipments > create shipment > set status to Sent > add tracking number |
@@ -363,12 +370,19 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 
 All quotes must be owned by `{{ORG_USER_EMAIL}}` (B2B org buyer). Quote statuses use their own vocabulary separate from order statuses.
 
+> **VCST-5482 — now SEEDED:** `QUOTE_WITH_ADMIN_RESPONSE` and `ACCEPTED_QUOTE` are provided by
+> `npm run seed:quotes` (`scripts/seed-data/orders/seed-quotes.mjs`) as `@td()` JSON-fixture aliases
+> (requires the Quote module deployed + `Stores.EnableQuotes`). The remaining feature-gated states
+> (expired, multi-round negotiation, substitution, OOS, PO) stay **DEFERRED**. The Quote REST route +
+> status vocabulary are confirmed live on first run; `scripts/seed-data/orders/orders-specs.mjs` is the
+> single place to correct them.
+
 | Env Var | Fixture Spec | Quote Status | Quote Label | Suites Affected | Admin Path |
 |---------|-------------|-------------|-------------|-----------------|------------|
 | `QUOTE_WITH_ADMIN_RESPONSE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin has responded with per-line pricing | DEFERRED | "Quote Received" | 015: QUOTE-004, 005, 006, 008, 009, 018, 019, 020, 021, 025 | Admin > Quotes > [Quote] > enter per-line prices > submit response |
-| `ACCEPTED_QUOTE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin priced; buyer accepted | DEFERRED | "Accepted" | 015: QUOTE-007, 024, 027, 028, 030 | Complete QUOTE_WITH_ADMIN_RESPONSE flow → buyer accepts |
-| `ACCEPTED_QUOTE_WITH_PO` | Accepted quote that was originally submitted with a PO number field populated | DEFERRED | "Accepted" | 015: QUOTE-029 | Same as ACCEPTED_QUOTE but with PO number entered during RFQ submission |
-| `ACCEPTED_QUOTE_OOS` | Accepted quote where at least one quoted item has since been set to OOS in inventory | DEFERRED | "Accepted" (with OOS item) | 015: QUOTE-026 | Create ACCEPTED_QUOTE; then Admin > Inventory > set that item stock=0 |
+| `ACCEPTED_QUOTE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin priced; buyer accepted | DEFERRED | "Ordered" | 015: QUOTE-007, 024, 027, 028, 030 | Complete QUOTE_WITH_ADMIN_RESPONSE flow → buyer accepts |
+| `ACCEPTED_QUOTE_WITH_PO` | Accepted quote that was originally submitted with a PO number field populated | DEFERRED | "Ordered" | 015: QUOTE-029 | Same as ACCEPTED_QUOTE but with PO number entered during RFQ submission |
+| `ACCEPTED_QUOTE_OOS` | Accepted quote where at least one quoted item has since been set to OOS in inventory | DEFERRED | "Ordered" (with OOS item) | 015: QUOTE-026 | Create ACCEPTED_QUOTE; then Admin > Inventory > set that item stock=0 |
 | `EXPIRED_QUOTE` | Quote with admin-set expiry date that has already passed; system should auto-transition to Expired status | DEFERRED | "Expired" | 015: QUOTE-011, 022, 023 | Admin > Quotes > [Quote] > set expiry date to yesterday > save |
 | `QUOTE_MULTI_ROUND` | Quote that has completed 2+ negotiation rounds (admin offer → buyer counter → admin re-offer) | DEFERRED | Negotiation state | 015: QUOTE-019 | Requires negotiation feature enabled; DEFERRED until feature confirmed |
 | `QUOTE_WITH_SUBSTITUTION` | Quote where admin offered a substitute product on at least one line | DEFERRED | Depends on substitution feature | 015: QUOTE-010 | Admin > Quotes > [Quote] > line item > offer substitute product; DEFERRED until feature confirmed |

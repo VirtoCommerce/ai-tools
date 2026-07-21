@@ -2,7 +2,7 @@
 
 Detailed review criteria for the `/qa-review-tests` skill. Each criterion has a severity, description, detection rule, and examples of good vs bad patterns.
 
-> **Cross-reference for Dimension 5 (Data Validity):** The consolidated test-data policy lives at [`.claude/rules/test-data.md`](../../rules/test-data.md). The canonical `@td()` resolver contract is at [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md); the alias registry is [`test-data/aliases.json`](../../../test-data/aliases.json). DV-013 / DV-014 / DV-016 / DV-017 / DV-020 below are the enforcement rules — when a reviewer flags one, point the author at the rule file for the rationale and the `@td()` patterns. **DV-013 is also machine-enforced:** `npx tsx scripts/validate-td-refs.ts` scans every suite for bare GUID/ID literals and **fails the build** on any (use `--warn-only` to downgrade for WIP). The golden habit (DV-013 + DV-020): reference data by its **stable business key** (code / name / slug / SKU), keep system GUIDs out of fixtures entirely, and capture a GUID at runtime only when a step truly needs it.
+> **Cross-reference for Dimension 5 (Data Validity):** The consolidated test-data policy lives at [`.claude/rules/test-data.md`](../../rules/test-data.md). The canonical `@td()` resolver contract is at [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md); the alias registry is [`test-data/aliases.json`](../../../test-data/aliases.json). DV-013 / DV-014 / DV-016 / DV-017 / DV-020 below are the enforcement rules — when a reviewer flags one, point the author at the rule file for the rationale and the `@td()` patterns. **DV-013 is also machine-enforced:** `npx tsx scripts/test-data/validate-td-refs.ts` scans every suite for bare GUID/ID literals and **fails the build** on any (use `--warn-only` to downgrade for WIP). The golden habit (DV-013 + DV-020): reference data by its **stable business key** (code / name / slug / SKU), keep system GUIDs out of fixtures entirely, and capture a GUID at runtime only when a step truly needs it.
 
 ---
 
@@ -237,7 +237,7 @@ Ensures all referenced data is valid and resolvable.
 - **Impact:** QA environment is re-seeded frequently; hardcoded GUIDs become "not found" → false BLOCKED/FAIL. Root cause from the Golden Rule memory: #1 source of false failures.
 - **Bad:** `productId: 58b856c7-da60-460f-afe0-3b2e7a03a2d6`
 - **Good:** "any in-stock product from B2B virtual catalog (`category.subtree:fc596540...`) — resolve first card on category page at runtime" OR `@td(PRODUCT_BIKE.id)` via the `@td()` resolver.
-- **Enforced by:** `npx tsx scripts/validate-td-refs.ts` **fails the build** on any bare UUID/32-hex literal not wrapped in `@td()`/`{{VAR}}` (sentinel `00000000-…` and documented env constants allowlisted; `--warn-only` downgrades to a warning for WIP). The same GUID arriving one indirection away — via a fixture column — is **DV-020**.
+- **Enforced by:** `npx tsx scripts/test-data/validate-td-refs.ts` **fails the build** on any bare UUID/32-hex literal not wrapped in `@td()`/`{{VAR}}` (sentinel `00000000-…` and documented env constants allowlisted; `--warn-only` downgrades to a warning for WIP). The same GUID arriving one indirection away — via a fixture column — is **DV-020**.
 - **Auto-fixable:** No — requires domain choice on how to resolve.
 
 ### DV-020: Fixture/alias field that stores a volatile system GUID `[High]`
@@ -311,7 +311,7 @@ Ensures all referenced data is valid and resolvable.
     mutation { createOrganization(...) { id } }
   [GQL-EXEC valid_name]
   ```
-- **How to run the check:** `npx tsx scripts/review-graphql-labels.ts <csv-path>` (or `npm run graphql:lint-labels -- <csv-path>`). Exits 0 when clean, 1 when any row has structural errors, with per-row line-level findings.
+- **How to run the check:** `npx tsx scripts/graphql/review-graphql-labels.ts <csv-path>` (or `npm run graphql:lint-labels -- <csv-path>`). Exits 0 when clean, 1 when any row has structural errors, with per-row line-level findings.
 - **Auto-fixable:** No — the author must pick which label is canonical. Linter output names both sides of the mismatch so the fix is mechanical.
 - **Scope:** Only runner-native cases. Legacy GraphiQL UI cases (still using `[ACT] Type mutation: …` / `[GQL] Click Execute`) are exempt because they have no `<label>` semantics — those are covered by the separate migrate-on-touch guidance in the GraphQL section of `test-case-template.md`.
 
@@ -476,7 +476,7 @@ WITH WARNINGS verdict promotion requires.
   (or refutes it → ENV-008). A `{HYPOTHESIS}` that is genuinely exploratory must be reworded as a
   question and the case kept at `Draft`.
 - **Migration:** legacy suites authored before this convention have no tags. The deterministic linter
-  (`scripts/lint-test-cases.ts`) downgrades **untagged legacy** cases to warn-only and hard-fails only
+  (`scripts/test-cases/lint-test-cases.ts`) downgrades **untagged legacy** cases to warn-only and hard-fails only
   cases that already use provenance tags or are in the touched/new set (mirrors `validate-td-refs.ts`
   `--warn-only`). A brand-new / just-touched case is expected to be fully tagged.
 - **Auto-fixable:** No — grounding requires either a source lookup or a live pass.

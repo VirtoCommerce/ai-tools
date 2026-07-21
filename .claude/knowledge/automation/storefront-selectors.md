@@ -224,7 +224,7 @@ Captured via stylesheet introspection (`document.styleSheets` rule search). DOM 
   "longTitleChars": 179
 }
 ```
-(NOTE: this entry was NOT added by this capture session — write task is selector documentation only. Suggest adding via a separate `/qa-seed-data` or manual `test-data/` update, then run `npx tsx scripts/validate-td-refs.ts`.)
+(NOTE: this entry was NOT added by this capture session — write task is selector documentation only. Suggest adding via a separate `/qa-seed-data` or manual `test-data/` update, then run `npx tsx scripts/test-data/validate-td-refs.ts`.)
 
 ---
 

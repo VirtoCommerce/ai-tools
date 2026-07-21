@@ -5,7 +5,7 @@ applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Custom
 
 # Critical UI Scope — Regression-Enforced Component Checklist
 
-**Canonical scope of UI primitives that every regression run must verify.** Layout-stability findings on these components are revenue-protecting, not cosmetic. The Coverage Matrix at the bottom of this file is **machine-readable**: `scripts/validate-critical-ui-scope.ts` parses it and fails the build if any covered cell points at a test ID that doesn't exist in any regression suite CSV.
+**Canonical scope of UI primitives that every regression run must verify.** Layout-stability findings on these components are revenue-protecting, not cosmetic. The Coverage Matrix at the bottom of this file is **machine-readable**: `scripts/maintenance/validate-critical-ui-scope.ts` parses it and fails the build if any covered cell points at a test ID that doesn't exist in any regression suite CSV.
 
 > **Pre-reads:** [BL-UI invariants](business-logic.md#domain-15-ui-display--layout-stability-bl-ui), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts), [048b suite](../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
 >
@@ -1145,7 +1145,7 @@ NOTE: BL-UI-001 / BL-UI-003 / BL-UI-006 marked n/a — static once rendered;
 
 ## Coverage Matrix — machine-readable
 
-The validator at [`scripts/validate-critical-ui-scope.ts`](../../../scripts/validate-critical-ui-scope.ts) parses the table below.
+The validator at [`scripts/maintenance/validate-critical-ui-scope.ts`](../../../scripts/maintenance/validate-critical-ui-scope.ts) parses the table below.
 
 **Cell value contract:**
 - A test ID like `LAYOUT-CLS-001` or `LAYOUT-COMP-VCBUTTON-001` — must exist in a regression suite CSV under the `ID` column.

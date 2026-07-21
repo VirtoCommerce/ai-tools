@@ -5,13 +5,13 @@ applicability_rationale: "Runner contract grammar (tag syntax, predicate shapes,
 
 # Authoring GraphQL Test Cases for Runner-Native Execution
 
-Canonical reference for writing **runner-native GraphQL test cases** in suite CSVs. Cases written to this spec execute via `scripts/graphql-runner.ts` (browserless, ~10–30× faster than GraphiQL UI flow), are schema-validated before send, and produce structured JSON evidence.
+Canonical reference for writing **runner-native GraphQL test cases** in suite CSVs. Cases written to this spec execute via `scripts/graphql/graphql-runner.ts` (browserless, ~10–30× faster than GraphiQL UI flow), are schema-validated before send, and produce structured JSON evidence.
 
 **Audience:** every QA agent that writes, reviews, or migrates GraphQL test cases — `test-management-specialist`, `qa-backend-expert`, `qa-frontend-expert`, `qa-testing-expert`, `test-runner-agent`, `autonomous-test-runner`, `qa-lead-orchestrator`, plus the `/qa-test-cases-generator` and `/qa-api` skills.
 
 **Source of truth (read these if anything below seems ambiguous — code wins):**
 
-- `scripts/graphql-runner.ts` — orchestrator (loadCase → parse → AUTH → GQL/REST exec → assertions → cleanup → evidence)
+- `scripts/graphql/graphql-runner.ts` — orchestrator (loadCase → parse → AUTH → GQL/REST exec → assertions → cleanup → evidence)
 - `scripts/lib/graphql-case-parser.ts` — Steps tag grammar (`isStepTag()` + `parseSteps()`)
 - `scripts/lib/graphql-assertions.ts` — Assertion grammar + `getByPath()` + filter syntax
 - `scripts/lib/graphql-validator.ts` — DV-006…DV-011 schema-validate-before-send
@@ -143,7 +143,7 @@ The body is everything between `[GQL-OP <label>]` and the next recognized tag. C
 
 **Field-selection rule (feedback memory `feedback_graphql_full_field_selection.md`):** happy-path tests use **full** field selection so the test exercises real-world response shape. Minimal selection (e.g., only `id`) is allowed only for explicit counter probes, idempotency roundtrips, or schema-coverage cases that say so in the Title.
 
-**Schema rule (feedback memory `feedback_graphql_schema_validation.md`):** every query/mutation MUST be validated against the live schema before authoring. Either consult `knowledge/api/graphql-schema.md` (snapshot) or run `npx tsx scripts/graphql-runner.ts --query "<inline>"` (validate-only mode, no HTTP send). The runner will refuse to execute a query that doesn't validate (`schemaValid: false` recorded in evidence, `responses` populated with synthetic schema-error response so assertions fail loudly).
+**Schema rule (feedback memory `feedback_graphql_schema_validation.md`):** every query/mutation MUST be validated against the live schema before authoring. Either consult `knowledge/api/graphql-schema.md` (snapshot) or run `npx tsx scripts/graphql/graphql-runner.ts --query "<inline>"` (validate-only mode, no HTTP send). The runner will refuse to execute a query that doesn't validate (`schemaValid: false` recorded in evidence, `responses` populated with synthetic schema-error response so assertions fail loudly).
 
 ### 3.3 `[GQL-VARS <label>]`
 
@@ -533,8 +533,8 @@ When you write a new runner-native GraphQL case, walk this list:
 10. **Capture every dynamic ID** before referencing it; use filter paths (`[?sectionId={{X}}]`) to insulate against ordering shifts.
 11. **`Cleanup` column** carries only `[AUTH]` + `[REST]` blocks for non-cart resources; never put GraphQL there.
 12. **Lint passes** — `npm run graphql:lint-labels -- <csv>`.
-13. **Dry-run executes** — `npx tsx scripts/graphql-runner.ts --case <csv>:<ID> --dry-run` validates the query against the schema without sending HTTP.
-14. **Live execution PASSes** — `npx tsx scripts/graphql-runner.ts --case <csv>:<ID>` returns exit code 0.
+13. **Dry-run executes** — `npx tsx scripts/graphql/graphql-runner.ts --case <csv>:<ID> --dry-run` validates the query against the schema without sending HTTP.
+14. **Live execution PASSes** — `npx tsx scripts/graphql/graphql-runner.ts --case <csv>:<ID>` returns exit code 0.
 
 ---
 

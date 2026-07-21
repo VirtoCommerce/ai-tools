@@ -16,10 +16,10 @@ It then hands off to [`/qa-seed-data`](../qa-seed-data/SKILL.md) to provision.
 
 ```
 /qa-generate-data <feature>                                          (design, this skill)
-  1. learn live   → scripts/discover-variants.mjs <feature>          (real per-axis variant counts)
+  1. learn live   → scripts/test-data/discover-variants.mjs <feature>          (real per-axis variant counts)
   2. matrix       → scripts/lib/combinatorial-generator.ts           (minimal all-pairs covering set)
   3. reuse/gap    → live-discover + aliases.json                     (reuse-first; author only gaps)
-  4. author       → scripts/author-fixtures.ts --plan plan.json      (gap rows + @td() aliases + validate)
+  4. author       → scripts/test-data/author-fixtures.ts --plan plan.json      (gap rows + @td() aliases + validate)
 /qa-seed-data <domain>       ─►  provisions the fixtures on the platform, writes IDs back   (live)
 test cases / suites          ─►  reference each combination via @td(COMBO_ALIAS.field)
 ```
@@ -58,8 +58,8 @@ Before designing combinations, find out **how many variants genuinely exist per 
 env — the real cardinality / option space, not assumptions. Run the discovery script:
 
 ```bash
-node scripts/discover-variants.mjs <feature>          # readable inventory: per-axis values + counts
-node scripts/discover-variants.mjs <feature> --json   # clean factor spec on stdout (pipe-safe)
+node scripts/test-data/discover-variants.mjs <feature>          # readable inventory: per-axis values + counts
+node scripts/test-data/discover-variants.mjs <feature> --json   # clean factor spec on stdout (pipe-safe)
 ```
 
 It enumerates LIVE axes from admin REST (e.g. loyalty: programs / program types / active states;
@@ -81,7 +81,7 @@ starting point; prune/relabel it to the axes the scenarios actually need.
 Feed the pruned factor spec (+ any constraints excluding invalid pairs) to the pairwise generator:
 
 ```bash
-node scripts/discover-variants.mjs <feature> --json | npx tsx scripts/lib/combinatorial-generator.ts -
+node scripts/test-data/discover-variants.mjs <feature> --json | npx tsx scripts/lib/combinatorial-generator.ts -
 # or: npx tsx scripts/lib/combinatorial-generator.ts '<edited-factor-spec-json>'
 ```
 
@@ -110,17 +110,17 @@ registers the `@td()` aliases (CSV-backed per gap fixture + inline per combinati
 or a bare GUID slipped in:
 
 ```bash
-npx tsx scripts/author-fixtures.ts --plan plan.json            # author + validate (green gate)
-npx tsx scripts/author-fixtures.ts --plan plan.json --dry-run  # preview the diff, write nothing
+npx tsx scripts/test-data/author-fixtures.ts --plan plan.json            # author + validate (green gate)
+npx tsx scripts/test-data/author-fixtures.ts --plan plan.json --dry-run  # preview the diff, write nothing
 ```
 
 Plan shape (the contract): `{ feature, fixtures:[{combo, scenario, file, businessKey, row, alias}],
 comboAliases:[{name, combo, inline, fields, notes}] }` — see the header of
-[`scripts/author-fixtures.ts`](../../../scripts/author-fixtures.ts). It is **idempotent** (a gap row
+[`scripts/test-data/author-fixtures.ts`](../../../scripts/test-data/author-fixtures.ts). It is **idempotent** (a gap row
 whose business key already exists is reused, never duplicated) and enforces the guardrails (GUID columns
 blanked, bare UUIDs rejected, `seeded=false`, `AGENT-TEST-` prefix checked). This is the **only on-disk
 output**. (Manual fallback if you don't build a plan: edit the CSVs + `aliases.json` by hand, then run
-`npx tsx scripts/validate-td-refs.ts`.)
+`npx tsx scripts/test-data/validate-td-refs.ts`.)
 
 ### 7. Report & hand off
 Return **inline to the caller**: the variant inventory (step 2), the combination matrix (step 4, with
@@ -135,7 +135,7 @@ data; it never provisions.
 
 1. **Scope:** does an unpriced line still earn points? does burn fail at the balance boundary? do points
    accrue on the post-discount total when a promo applies? (BL-LOY-*, vc-bug-catalog VC-LOY-*).
-2. **Learn live:** `node scripts/discover-variants.mjs loyalty` → e.g. *10 programs, 2 program types
+2. **Learn live:** `node scripts/test-data/discover-variants.mjs loyalty` → e.g. *10 programs, 2 program types
    (ProductPoints/Default), 2 active states* + suggested `loyalty_balance: above/exact/below`,
    `cart_composition: single_priced/mixed_priced_unpriced/with_oos_line`.
 3. **Axes (pruned):** `program_type` {ProductPoints, Default} × `loyalty_balance` {above, exact, below}
@@ -146,7 +146,7 @@ data; it never provisions.
 5. **Reuse/gap:** `LOYALTY_VIP_USER` reused for the high-balance cell; the *unpriced product* and a
    *zero-balance loyalty user* are gaps → author `AGENT-TEST-UNPRICED-01` (price omitted) +
    `AGENT_TEST_LOY_NOBAL`. Mixed-cart = reused priced product + the unpriced gap.
-6. **Author:** `npx tsx scripts/author-fixtures.ts --plan loyalty-plan.json` → writes the 2 gap rows
+6. **Author:** `npx tsx scripts/test-data/author-fixtures.ts --plan loyalty-plan.json` → writes the 2 gap rows
    (tagged `used_by=LOY-MIX-0n`), adds `LOY_MIX_*` combination aliases, validator green.
 7. **Hand off:** return the matrix inline; tell the caller to `/qa-seed-data loyalty products`, then
    author cases referencing `@td(LOY_MIX_02.product)` etc.
@@ -234,9 +234,9 @@ ad-hoc data:
 The combination matrix returned inline (step 7) is what those callers consume to map cases → Combo IDs.
 
 ## Pipeline scripts (this skill's tooling)
-- Stage 1 — live variant discovery: [`scripts/discover-variants.mjs`](../../../scripts/discover-variants.mjs) (CLI) + [`scripts/lib/feature-variants.mjs`](../../../scripts/lib/feature-variants.mjs) (`FEATURES` registry)
+- Stage 1 — live variant discovery: [`scripts/test-data/discover-variants.mjs`](../../../scripts/test-data/discover-variants.mjs) (CLI) + [`scripts/lib/feature-variants.mjs`](../../../scripts/lib/feature-variants.mjs) (`FEATURES` registry)
 - Stage 2 — pairwise/all-pairs: [`scripts/lib/combinatorial-generator.ts`](../../../scripts/lib/combinatorial-generator.ts)
-- Stage 3 — gap fixtures + aliases + validate: [`scripts/author-fixtures.ts`](../../../scripts/author-fixtures.ts)
+- Stage 3 — gap fixtures + aliases + validate: [`scripts/test-data/author-fixtures.ts`](../../../scripts/test-data/author-fixtures.ts)
 
 ## References (cite, don't duplicate)
 - Combination-design intent: `feedback_test_data_prep_is_combination_design` · test-design mindset: `feedback_test_design_mental_model`
@@ -246,5 +246,5 @@ The combination matrix returned inline (step 7) is what those callers consume to
 - Resolver decision tree (`{{VAR}}` vs `@td()` vs live-discover vs random-data): [`knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
 - BL invariants the data must let you observe: [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) · historical bad combinations: [`vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md)
 - Generators: [`scripts/lib/random-data.ts`](../../../scripts/lib/random-data.ts) · discovery: [`scripts/lib/live-discover.ts`](../../../scripts/lib/live-discover.ts)
-- Validators: [`scripts/validate-td-refs.ts`](../../../scripts/validate-td-refs.ts) · [`scripts/audit-aliases.ts`](../../../scripts/audit-aliases.ts)
+- Validators: [`scripts/test-data/validate-td-refs.ts`](../../../scripts/test-data/validate-td-refs.ts) · [`scripts/test-data/audit-aliases.ts`](../../../scripts/test-data/audit-aliases.ts)
 - Provisioning companion: [`/qa-seed-data`](../qa-seed-data/SKILL.md)

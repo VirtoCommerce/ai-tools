@@ -587,5 +587,25 @@
   },
   "SR_OWNER_ACME": {
     "id": "d4962ba5-cc2e-478c-b265-bad4dbc671ec"
+  },
+  "COMPLETED_ORDER": {
+    "id": "51cc5eb9-23d4-47fe-b46d-36e03dc53b2f",
+    "number": "AGENT-TEST-ORD-COMPLETED"
+  },
+  "SHIPPED_ORDER": {
+    "id": "8b3eef55-aded-4589-b1fa-04fd06b02909",
+    "number": "AGENT-TEST-ORD-SHIPPED"
+  },
+  "PROCESSING_ORDER": {
+    "id": "fa8f601d-a217-4caf-b761-32ae1898ee2f",
+    "number": "AGENT-TEST-ORD-PROCESSING"
+  },
+  "QUOTE_WITH_ADMIN_RESPONSE": {
+    "id": "85de013a-305e-44a0-96a8-1fd7ee51c790",
+    "number": "AGENT-TEST-QTE-ADMIN-RESPONSE"
+  },
+  "ACCEPTED_QUOTE": {
+    "id": "56da2e96-e32b-42f4-885e-57261ce60e12",
+    "number": "AGENT-TEST-QTE-ACCEPTED"
   }
 }

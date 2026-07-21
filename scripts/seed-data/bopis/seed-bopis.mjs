@@ -1,0 +1,164 @@
+#!/usr/bin/env node
+/**
+ * scripts/seed-bopis.mjs
+ *
+ * Idempotent seeder for BOPIS pickup locations from test-data/stores/bopis-locations.csv.
+ * Fills the gap where pickup locations had no seed script.
+ *
+ * KEY FACT (verified against vc-module-shipping source): a BOPIS pickup location is a
+ * dedicated `PickupLocation` entity (route `api/shipping/pickup-locations`), NOT a flag
+ * on a fulfillment center. It REFERENCES an FFC via `fulfillmentCenterId` as its
+ * inventory source. This seeder links each location to an existing FFC (matched by the
+ * CSV ffc_id, else the first active FFC) — it does not create FFCs.
+ *
+ * REST contract:
+ *   - Create:   POST  /api/shipping/pickup-locations            (single object) → 200
+ *   - Update:   PUT   /api/shipping/pickup-locations            (object incl. id) → 200
+ *   - Search:   POST  /api/shipping/pickup-locations/search     {storeId, take} → PickupLocation[]
+ *   - Delete:   DELETE /api/shipping/pickup-locations/{storeId}/{id} → 200
+ *   - FFC lookup: POST /api/inventory/fulfillmentcenters/search {take} → {results[]}
+ *   geoLocation is a single "lat,long" string (no space). countryCode is ISO-3.
+ *
+ * USAGE:
+ *   node scripts/seed-bopis.mjs [--dry-run] [--verbose] [--only LOC-001] [--teardown]
+ * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by location name within the store.
+ * No _seed-results report (VCST-5406) — BOPIS_* resolve by static location_id business key.
+ */
+import {
+  assertSafeTarget, auth, api, loadCsv, log, verbose, csvBool, iso3,
+  ensureFulfillmentCenter, verifyRemoved,
+  STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
+} from '../../lib/seed-common.mjs';
+
+// Pickup locations join the AGENT-TEST family so teardown's safety guard can identify
+// and sweep them (the guard only deletes locations whose LIVE name starts with AGENT-TEST).
+// Idempotent: a CSV name that already carries the prefix is left as-is.
+const seededName = (name) => (name && name.startsWith('AGENT-TEST') ? name : `AGENT-TEST-${name}`);
+
+let FFCS = [];
+async function loadFfcs() {
+  const r = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 100 });
+  FFCS = r?.results || [];
+  log(`Discovered ${FFCS.length} fulfillment center(s)`);
+}
+// Best-effort: match the CSV ffc_id to an existing FFC by id/outerId/name, else first active.
+function resolveFfcId(ffcRef) {
+  if (!FFCS.length) return null;
+  const m = FFCS.find((f) => f.id === ffcRef || f.outerId === ffcRef || f.name === ffcRef || (f.name || '').includes(ffcRef));
+  return (m || FFCS[0]).id;
+}
+
+async function findPickup(storeId, name) {
+  const r = await api('POST', '/api/shipping/pickup-locations/search', { storeId, take: 200 });
+  const list = Array.isArray(r) ? r : (r?.results || []);
+  return list.find((p) => p.name === name) || null;
+}
+
+function buildBody(row, ffcId, existingId) {
+  const storeId = (row.store_id || STORE_ID).trim();
+  const lat = (row.latitude || '').trim();
+  const lng = (row.longitude || '').trim();
+  const body = {
+    name: seededName(row.location_name),
+    storeId,
+    isActive: csvBool(row.is_active, true),
+    fulfillmentCenterId: ffcId,
+    geoLocation: lat && lng ? `${lat},${lng}` : undefined,
+    contactPhone: row.phone || undefined,
+    contactEmail: row.email || undefined,
+    workingHours: [row.operating_hours_weekday && `Mon-Fri ${row.operating_hours_weekday}`,
+      row.operating_hours_weekend && `Sat-Sun ${row.operating_hours_weekend}`].filter(Boolean).join('; ') || undefined,
+    description: row.description || undefined,
+    address: {
+      name: row.location_name,
+      line1: row.address_line1,
+      line2: row.address_line2 || undefined,
+      city: row.city,
+      regionId: row.state_province || undefined,
+      regionName: row.state_province || undefined,
+      postalCode: row.postal_code,
+      countryCode: iso3(row.country_code),
+      countryName: row.country_name,
+    },
+  };
+  if (existingId) body.id = existingId;
+  return body;
+}
+
+async function teardown(rows) {
+  log(`Teardown — deleting ${rows.length} pickup location(s)...`);
+  let deleted = 0;
+  for (const row of rows) {
+    const storeId = (row.store_id || STORE_ID).trim();
+    const found = await findPickup(storeId, seededName(row.location_name));
+    if (!found) { verbose(`not present: ${row.location_name}`); continue; }
+    // Safety: only delete AGENT-TEST- pickup locations, never a real one that shares a name.
+    // Authorize deletion on the LIVE entity's name only — never the seeder-authored CSV name (which
+    // is always AGENT-TEST-prefixed and would green-light deleting a real matched location).
+    if (!String(found.name || '').startsWith('AGENT-TEST')) { verbose(`skip ${found.name || row.location_name}: not an AGENT-TEST location`); continue; }
+    await api('DELETE', `/api/shipping/pickup-locations/${storeId}/${found.id}`, null, { expectStatus: [200, 204, 404] });
+    log(`  ✓ Deleted: ${row.location_name} (${found.id})`);
+    deleted++;
+  }
+  // Verify zero residue — re-search for the rows we tried to delete.
+  const residual = await verifyRemoved(async () => {
+    const still = [];
+    for (const row of rows) {
+      const storeId = (row.store_id || STORE_ID).trim();
+      if (await findPickup(storeId, seededName(row.location_name))) still.push(row.location_name);
+    }
+    return still;
+  });
+  log(residual === 0
+    ? `Teardown verified — ${deleted} deleted, 0 remain.`
+    : `⚠ Teardown incomplete — ${deleted} deleted, ${residual} still present.`);
+  if (residual > 0 && !DRY_RUN) process.exit(1);
+}
+
+async function main() {
+  assertSafeTarget();
+  console.log(`\n🌱 BOPIS pickup-locations seed${DRY_RUN ? ' [DRY RUN]' : ''}${TEARDOWN ? ' [TEARDOWN]' : ''}`);
+  console.log(`   Target: ${BACK_URL} | Store: ${STORE_ID}\n`);
+  await auth();
+
+  const all = loadCsv('test-data/stores/bopis-locations.csv');
+  const rows = ONLY ? all.filter((r) => r.location_id === ONLY) : all;
+  if (!rows.length) { console.error(`ABORT: --only ${ONLY} matched no locations`); process.exit(2); }
+
+  if (TEARDOWN) { await teardown(rows); return; }
+
+  await loadFfcs();
+  if (!FFCS.length && !DRY_RUN) {
+    // Fresh DB has no FFC — create a default one (a pickup location requires an FFC as its inventory source).
+    const ffc = await ensureFulfillmentCenter(api);
+    if (ffc?.id) { FFCS = [ffc]; log(`Using created fulfillment center ${ffc.id}`); }
+  }
+  if (!FFCS.length && !DRY_RUN) {
+    console.error('ABORT: no fulfillment centers exist and one could not be created — a pickup location requires an FFC.');
+    process.exit(2);
+  }
+
+  const results = [];
+  for (const row of rows) {
+    const storeId = (row.store_id || STORE_ID).trim();
+    const ffcId = resolveFfcId(row.ffc_id);
+    const existing = await findPickup(storeId, seededName(row.location_name));
+    const body = buildBody(row, ffcId, existing?.id);
+    if (existing) {
+      await api('PUT', '/api/shipping/pickup-locations', body, { expectStatus: [200, 204] });
+      log(`↻ pickup: ${row.location_name} (${existing.id}) → FFC ${ffcId}`);
+      results.push({ locationId: row.location_id, name: row.location_name, id: existing.id, ffcId });
+    } else {
+      const saved = await api('POST', '/api/shipping/pickup-locations', body, { expectStatus: [200, 201] });
+      log(`✓ pickup: ${row.location_name} (${saved?.id}) → FFC ${ffcId}`);
+      results.push({ locationId: row.location_id, name: row.location_name, id: saved?.id, ffcId });
+    }
+  }
+
+  // No _seed-results report: BOPIS_* aliases resolve by static location_id business
+  // keys, and the live BOPIS inline snapshot (position-50/51 ids) is captured out-of-band
+  // (VCST-4707), not seeded — so this seeder has no runtime GUIDs to persist.
+  console.log(`\n✅ BOPIS seed complete — ${results.length} pickup location(s).`);
+}
+
+main().catch((err) => { console.error(`\n❌ BOPIS seed failed: ${err.message}`); process.exit(1); });

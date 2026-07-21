@@ -375,7 +375,7 @@ Tests executed via `browser_evaluate` (fetch), curl, or a Postman collection aut
 
 ### Layer: GraphQL xAPI
 
-**Execution is migrating from the GraphiQL UI to a Node runner** (`scripts/graphql-runner.ts`). The runner validates every query against the introspected schema *before* sending (catches DV-006/008/009/010/011 at lint time with zero HTTP cost), executes via direct `fetch` to `/graphql`, and writes JSON evidence — no browser, no CodeMirror brittleness. Key rules stay: **HTTP 200 ≠ success** — always check `errors[]`; **all cart mutations require `userId`**; **shipment mutations require `price` matching rate**.
+**Execution is migrating from the GraphiQL UI to a Node runner** (`scripts/graphql/graphql-runner.ts`). The runner validates every query against the introspected schema *before* sending (catches DV-006/008/009/010/011 at lint time with zero HTTP cost), executes via direct `fetch` to `/graphql`, and writes JSON evidence — no browser, no CodeMirror brittleness. Key rules stay: **HTTP 200 ≠ success** — always check `errors[]`; **all cart mutations require `userId`**; **shipment mutations require `price` matching rate**.
 
 > **Canonical authoring guide:** `knowledge/api/graphql-test-cases-runner.md` is the source-of-truth contract for the runner-native format below — full tag grammar, predicate shapes (including arithmetic / cross-path / OR-AND composition / `[VAR]`), `getByPath()` filter syntax (`[?key=value]`, `[*?key=value]`, `[?key!=value]`, bracket indices), `@td()` resolver (CSV-backed + inline aliases), capture chaining, common failure modes, an authoring checklist, and a worked example. The summary below is correct but minimal — when in doubt, the knowledge file wins. Gold-standard suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
 
@@ -554,7 +554,7 @@ Two resolvers, two sources — never hardcode either.
 - Wrong: `[NAV] https://vcst-qa-storefront.govirto.com/cart`
 - Right: `[NAV] {{FRONT_URL}}/cart`
 
-**`@td(ALIAS.field)` — fixture-backed:** entity IDs, SKUs, prices, addresses, coupon codes, test cards, order numbers, virtual-catalog roots, URL path segments. Resolved from [`test-data/aliases.json`](../../../test-data/aliases.json) (the registry) → CSV row in [`test-data/`](../../../test-data). Implemented by `scripts/lib/test-data-resolver.ts`; validated by `npx tsx scripts/validate-td-refs.ts`. Full contract: [`../../testing/qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md).
+**`@td(ALIAS.field)` — fixture-backed:** entity IDs, SKUs, prices, addresses, coupon codes, test cards, order numbers, virtual-catalog roots, URL path segments. Resolved from [`test-data/aliases.json`](../../../test-data/aliases.json) (the registry) → CSV row in [`test-data/`](../../../test-data). Implemented by `scripts/lib/test-data-resolver.ts`; validated by `npx tsx scripts/test-data/validate-td-refs.ts`. Full contract: [`../../testing/qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md).
 - Wrong: `productId: "3a2c9d8e-..."` (rots when catalog is reseeded)
 - Right: `productId: @td(CFG_LAPTOP.id)`
 - Wrong: `cardNumber: "4622943127013705"`

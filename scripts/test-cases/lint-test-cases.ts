@@ -1,0 +1,393 @@
+/**
+ * Static linter for enriched-CSV regression suites — the deterministic core of
+ * `/qa-review-tests`. It mechanises the rules that need no live browser and no
+ * human judgment, so the skill shrinks to the one dimension that genuinely
+ * needs a browser (Dimension 8: Environment Verification) plus the fuzzy-edge
+ * calls.
+ *
+ * Coverage (rule IDs from review-criteria.md):
+ *   Dim 1 Structure      S-001..S-007
+ *   Dim 2 Determinism    D-001..D-006
+ *   Dim 3 Completeness   C-001..C-008
+ *   Dim 4 Testability    T-001..T-003   (T-004 needs tool-availability judgment — skipped)
+ *   Dim 5 Data Validity  DV-001 DV-002 DV-003 DV-013 DV-019
+ *                        (DV-006..012/016/020 need schema/value judgment — skipped, noted)
+ *   Dim 6 BL/ECL         BL-001 REQ-001 (BL-002/004/005 need knowledge-file cross-ref — skipped)
+ *   Dim 7 Duplication    DUP-001 DUP-004 (DUP-002/003 are cross-suite — skipped)
+ *   Dim 9 Technique      TC-001
+ *   Dim 10 Grounding     GRD-001 (GRD-002 invented-literal needs judgment — skipped)
+ *
+ * Dimension 8, and the LIVE half of Dimension 10 (grounding {HYPOTHESIS}/{SPEC}
+ * to {OBSERVED} against the deployed build), are intentionally NOT here — they
+ * require a live browser and are the skill's remaining judgment slots.
+ *
+ * Reuses scripts/append-test-cases-to-suite.ts (parseSuite/COLUMNS) and
+ * scripts/lib/graphql-case-parser.ts (parseSteps/validateStepBlocks) so the
+ * schema and GraphQL step-structure rules stay single-sourced.
+ *
+ * Usage:
+ *   npx tsx scripts/lint-test-cases.ts <suite.csv> [--json] [--fail-on=Blocker|Critical|High|Medium]
+ *
+ * Exit code: 0 if no finding at/above the fail-on severity (default High); 1 otherwise.
+ */
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { COLUMNS, parseSuite, type Row } from "./append-test-cases-to-suite.js";
+import { parseSteps, validateStepBlocks } from "../lib/graphql-case-parser.js";
+
+type Severity = "Blocker" | "Critical" | "High" | "Medium" | "Informational";
+const SEVERITY_ORDER: Severity[] = ["Informational", "Medium", "High", "Critical", "Blocker"];
+
+interface Finding {
+  rule: string;
+  severity: Severity;
+  caseId: string;
+  message: string;
+}
+
+const KNOWN_VARS = new Set([
+  "FRONT_URL", "BACK_URL", "USER_EMAIL", "USER_PASSWORD", "ORG_USER_EMAIL",
+  "ORG_USER_PASSWORD", "TEST_CARD_NUMBER", "TEST_CARD_EXP", "TEST_CARD_CVV",
+  "TEST_SKU", "STORE_ID", "CULTURE_NAME", "CURRENCY_CODE", "ADMIN_URL",
+  "ADMIN_EMAIL", "ADMIN_PASSWORD",
+]);
+const CANONICAL_PRIORITIES = new Set(["Critical", "High", "Medium", "Low"]);
+const ALIAS_PRIORITIES = new Set(["P0", "P1", "P2", "P3"]);
+const HIGH_PRIORITIES = new Set(["Critical", "High", "P0", "P1"]);
+const AUTOMATION_STATUSES = new Set([
+  "Draft", "Reviewed", "Automated", "Manual", "Semi-Automated",
+  // "Deprecated" — a case explicitly retired (superseded/redundant, kept only for
+  // traceability) but not deleted, e.g. 050m SR-GQL-038 (superseded by SR-GQL-011,
+  // VCST-5304/5469 sync 2026-07-17). Never PROMOTED_STATUSES — it's excluded from
+  // regression-eligibility by definition, not merely un-reviewed.
+  "Deprecated",
+]);
+// A promoted case (past Draft) must have every assertion grounded (Dim 10 / GRD-001).
+const PROMOTED_STATUSES = new Set(["Reviewed", "Automated", "Manual", "Semi-Automated"]);
+
+// PREFIX-NNN, with an optional trailing variant letter (e.g. CFG-GQL-VCST4961-A).
+// Requires at least one digit so plain words are rejected.
+const ID_RE = /^(?=.*\d)[A-Z0-9]+(?:-[A-Z0-9]+)*-(?:\d+[A-Z]?|[A-Z])$/;
+const STEP_TAG_RE = /^\s*(?:\[[A-Z][A-Z0-9:_-]*\b[^\]]*\]|---\s*[A-Z]+\s*---)/;
+const E2E_MARKER_RE = /^---\s*[A-Z]+\s*---$/;
+const REFERENCE_RE = /(VCST-\d+|REQ-[A-Z0-9-]+|smoke-baseline|https?:\/\/\S+)/i;
+const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+const VAGUE_RE = /\b(correctly|properly|as expected|looks good|works fine|works as|displays? properly|successfully)\b/i;
+const AMBIGUOUS_VERB_RE = /^\s*\[ACT\][^\n]*\b(check|ensure|validate|verify)\b/i;
+const COMPOUND_RE = /^\s*\[(?:ACT|NAV)\][^\n]*(?:\band\b|\bthen\b|;)/i;
+const MUTATION_HINT_RE = /\b(addItem|removeItem|removeCartItem|createOrder|createQuote|addOrUpdate|updateCart|placeOrder|create[A-Z]\w+|update[A-Z]\w+|delete[A-Z]\w+|place order|add to cart|submit|save|checkout)\b/i;
+const GRAPHQL_MUTATION_RE = /\b(addItem|removeItem|removeCartItem|createOrder|create\w+|update\w+|delete\w+|merge\w+|clearCart)\b/;
+const ORDERING_RE = /\b(after running|following\s+[A-Z]+-\d+|requires?\s+[A-Z]+-\d+\s+to have (?:passed|run)|must be run first|run\s+[A-Z]+-\d+\s+first)\b/i;
+// Provenance suffix on an assertion (Dim 10). GROUNDED = may be a hard assertion;
+// {HYPOTHESIS} is a guess (question form only); no tag at all = ungrounded.
+const PROVENANCE_RE = /\{(?:SPEC|BL|DOC|OBSERVED|HYPOTHESIS)\}/;
+const GROUNDED_PROV_RE = /\{(?:SPEC|BL|DOC|OBSERVED)\}/;
+
+const find = (rule: string, severity: Severity, caseId: string, message: string): Finding => ({
+  rule, severity, caseId, message,
+});
+
+function lines(cell: string): string[] {
+  return (cell ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+}
+
+/** Tokens like {{FOO}} captured downstream (`... → FOO`) are not env vars. */
+function capturedVars(row: Row): Set<string> {
+  const out = new Set<string>();
+  const all = COLUMNS.map((c) => row[c]).join("\n");
+  for (const m of all.matchAll(/(?:→|->)\s*([A-Z][A-Z0-9_]*)\b/g)) out.add(m[1]);
+  return out;
+}
+
+function isRunnerGraphql(row: Row): boolean {
+  return /\[GQL-OP\b/i.test(row.Steps);
+}
+
+function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[] {
+  const f: Finding[] = [];
+  const id = row.ID || `<row ${idx + 1}>`;
+  const push = (rule: string, sev: Severity, msg: string) => f.push(find(rule, sev, id, msg));
+
+  // --- Dimension 1: Structure ---
+  if (!row.ID) push("S-002", "Blocker", "missing test case ID");
+  else if (!ID_RE.test(row.ID)) push("S-004", "High", `ID "${row.ID}" not in PREFIX-NNN format`);
+  if (row.ID) {
+    if (seenIds.has(row.ID)) push("S-003", "Blocker", `duplicate ID (also row ${seenIds.get(row.ID)! + 1})`);
+    else seenIds.set(row.ID, idx);
+  }
+  if (!row.Title) push("S-006", "High", "empty Title");
+  if (!row.Steps) push("S-006", "High", "empty Steps");
+  if (!row.Assertions) push("S-006", "High", "empty Assertions");
+
+  if (!CANONICAL_PRIORITIES.has(row.Priority)) {
+    if (ALIAS_PRIORITIES.has(row.Priority))
+      push("S-005", "Informational", `non-canonical priority "${row.Priority}" (template canon is Critical|High|Medium|Low)`);
+    else
+      push("S-005", "High", `invalid priority "${row.Priority}" (expected Critical|High|Medium|Low)`);
+  }
+  if (row.Automation_Status && !AUTOMATION_STATUSES.has(row.Automation_Status))
+    push("S-006", "High", `invalid Automation_Status "${row.Automation_Status}"`);
+
+  const stepLines = lines(row.Steps);
+  const assertionLines = lines(row.Assertions);
+
+  // --- Dimension 2: Determinism ---
+  if (isRunnerGraphql(row)) {
+    // DV-019: delegate GraphQL step-structure to the shared parser.
+    const errs = validateStepBlocks(parseSteps(row.Steps));
+    for (const e of errs) push("DV-019", "Critical", e);
+  } else {
+    // D-001: every non-blank step line must carry a tag (UI/Admin/simple cases).
+    for (const ln of stepLines) {
+      if (E2E_MARKER_RE.test(ln)) continue;
+      if (!STEP_TAG_RE.test(ln)) push("D-001", "Critical", `step line lacks a type tag: "${truncate(ln)}"`);
+    }
+    // D-004: a state-changing [ACT] should be followed by [WAIT].
+    for (let i = 0; i < stepLines.length; i++) {
+      const ln = stepLines[i];
+      if (/^\[ACT\]/i.test(ln) && /\b(click|submit|place|save|checkout|add|proceed|confirm|apply)\b/i.test(ln)) {
+        const next = stepLines[i + 1] ?? "";
+        if (!/^\[WAIT\]/i.test(next))
+          push("D-004", "Critical", `state-changing [ACT] not followed by [WAIT]: "${truncate(ln)}"`);
+      }
+    }
+  }
+  for (const ln of stepLines) {
+    if (AMBIGUOUS_VERB_RE.test(ln)) push("D-003", "High", `ambiguous verb in step (belongs in Assertions): "${truncate(ln)}"`);
+    if (COMPOUND_RE.test(ln)) push("D-005", "High", `compound step (split it): "${truncate(ln)}"`);
+    if (/^\[ACT\][^\n]*\b(the\s+\w+\s+(button|link|field|icon|menu|dropdown))\b/i.test(ln) &&
+        !/['"]/.test(ln))
+      push("D-002", "Critical", `generic element reference (use the label in quotes): "${truncate(ln)}"`);
+  }
+  // D-006: final-verdict [ASSERT] in Steps (mid-flow gate is allowed → Medium).
+  if (stepLines.some((l) => /^\[ASSERT\]/i.test(l)))
+    push("D-006", "Medium", "Steps contains [ASSERT] — confirm it gates a step, else move to Assertions");
+
+  // --- Dimension 3: Completeness ---
+  if (!row.Preconditions || /^none$/i.test(row.Preconditions.trim()))
+    push("C-001", "High", "missing Preconditions (state the required starting state)");
+  if (ORDERING_RE.test(row.Preconditions))
+    push("C-008", "High", "Preconditions describe prior-case execution, not state (cases must be independent)");
+
+  // C-002: {{VAR}} used in Steps but absent from Test_Data.
+  const stepVars = new Set([...row.Steps.matchAll(/\{\{([A-Z][A-Z0-9_]*)\}\}/g)].map((m) => m[1]));
+  const dataVars = new Set([...row.Test_Data.matchAll(/\{\{([A-Z][A-Z0-9_]*)\}\}/g)].map((m) => m[1]));
+  const captured = capturedVars(row);
+  // Env vars (KNOWN_VARS) are resolved globally by the runner — they need not
+  // be redeclared per case. C-002 targets undeclared test-specific vars.
+  for (const v of stepVars)
+    if (!dataVars.has(v) && !captured.has(v) && !KNOWN_VARS.has(v))
+      push("C-002", "High", `{{${v}}} used in Steps but not bound in Test_Data`);
+
+  if (assertionLines.length < 2) push("C-003", "High", `only ${assertionLines.length} assertion(s) — need ≥2`);
+  // Failure_Signals are comma- OR semicolon-separated (the documented separator).
+  const failSignals = row.Failure_Signals.split(/[;,\n]/).map((s) => s.trim()).filter(Boolean);
+  if (failSignals.length < 2) push("C-006", "High", `fewer than 2 Failure_Signals (found ${failSignals.length})`);
+  if (!row.Cleanup) push("C-007", "Medium", "empty Cleanup (use 'none' if no side effects)");
+
+  // C-004 / C-005: mutations need cross-layer / errors[] checks.
+  const hasMutation = MUTATION_HINT_RE.test(row.Steps);
+  if (hasMutation && !row.Cross_Layer_Checks.trim())
+    push("C-004", "Critical", "Steps mutate state but Cross_Layer_Checks is empty");
+  const hasGqlMutation = (isRunnerGraphql(row) && /mutation\b/i.test(row.Steps)) || GRAPHQL_MUTATION_RE.test(row.Steps);
+  if (hasGqlMutation && !/errors\s*\[\s*\]|\[ERRORS/i.test(row.Cross_Layer_Checks + row.Assertions))
+    push("C-005", "Critical", "GraphQL mutation without an errors[] emptiness check");
+
+  // --- Dimension 4: Testability ---
+  for (const a of assertionLines) {
+    if (VAGUE_RE.test(a)) push("T-001", "High", `vague assertion predicate: "${truncate(a)}"`);
+    if (/^\[DOM\]/i.test(a) && !/['"]/.test(a) && !/\b(visible|enabled|disabled|hidden|present|absent|checked)\b/i.test(a))
+      push("T-002", "High", `[DOM] assertion lacks element/text specifics: "${truncate(a)}"`);
+    if (/^\[MATH\]/i.test(a) && !a.includes("="))
+      push("T-003", "High", `[MATH] assertion has no formula (=): "${truncate(a)}"`);
+  }
+
+  // --- Dimension 5: Data Validity (regex-based + delegated) ---
+  for (const v of stepVars) if (!KNOWN_VARS.has(v) && !captured.has(v))
+    push("DV-001", "High", `unknown {{${v}}} token (not a known env var, not runtime-captured)`);
+  const scan = `${row.Steps}\n${row.Test_Data}`;
+  if (/https?:\/\/(?!\{\{)/i.test(scan)) push("DV-002", "High", "hardcoded URL in Steps/Test_Data (use {{FRONT_URL}}/{{BACK_URL}}/{{ADMIN_URL}})");
+  const credScan = lines(row.Steps).filter((l) => /\bfill\b.*(email|password)/i.test(l));
+  for (const l of credScan) if (EMAIL_RE.test(l) && !/\{\{/.test(l))
+    push("DV-003", "Critical", `hardcoded credential literal: "${truncate(l)}"`);
+  // DV-013 (bare GUID/32-hex) is intentionally NOT duplicated here: it is the
+  // canonical build gate `npx tsx scripts/validate-td-refs.ts`, which carries
+  // the env-constant allowlist (virtual-catalog root, store IDs, sentinel
+  // 00000000-…). Reimplementing it inline diverged and false-flagged clean
+  // rows, so this linter delegates DV-013 to that gate (noted in the footer).
+
+  // --- Dimension 6: BL/ECL + traceability ---
+  if (HIGH_PRIORITIES.has(row.Priority)) {
+    if (!row.Business_Rule.trim()) push("BL-001", "Medium", `${row.Priority} case has no Business_Rule (BL-*)`);
+    if (!row.References.trim() || !REFERENCE_RE.test(row.References))
+      push("REQ-001", "High", `${row.Priority} case lacks a requirement link (VCST-/REQ-/story/smoke-baseline)`);
+  }
+
+  // --- Dimension 10: Assertion Grounding (GRD-001) ---
+  // Anti-hallucination gate. Provenance is opt-in per case, so the backlog stays
+  // green: a fully-untagged legacy case gets only an Informational nudge (below the
+  // default --fail-on=High). Once a case is "provenance-adopted" (any assertion
+  // carries {SPEC}/{BL}/{DOC}/{OBSERVED}/{HYPOTHESIS}) — i.e. new/touched cases from
+  // the generator — the rule bites: an untagged line is High, and a {HYPOTHESIS}
+  // line in a PROMOTED (past-Draft) case is a Blocker (must be grounded live via
+  // --verify → {OBSERVED}, or by {SPEC}/{BL}/{DOC}, before promotion).
+  // GRD-002 (invented literal message string) needs judgment → left to the skill.
+  // A fully-untagged legacy case is tallied once at file level in lintCrossRow (a
+  // per-case Informational floods the report) — here we only enforce once a case is
+  // provenance-adopted (any assertion tagged): new/touched cases from the generator.
+  const provAdopted = assertionLines.some((a) => PROVENANCE_RE.test(a));
+  const promoted = PROMOTED_STATUSES.has(row.Automation_Status);
+  if (provAdopted) {
+    for (const a of assertionLines) {
+      if (E2E_MARKER_RE.test(a)) continue;
+      const hasProv = PROVENANCE_RE.test(a);
+      const grounded = GROUNDED_PROV_RE.test(a);
+      if (!hasProv)
+        push("GRD-001", "High", `assertion missing a provenance tag (case uses provenance elsewhere): "${truncate(a)}"`);
+      else if (!grounded && promoted)
+        push("GRD-001", "Blocker", `{HYPOTHESIS} assertion cannot be in a ${row.Automation_Status} case — ground it ({SPEC}/{BL}/{DOC}) or run --verify to observe it live: "${truncate(a)}"`);
+    }
+  }
+
+  return f;
+}
+
+function truncate(s: string, n = 70): string {
+  return s.length > n ? s.slice(0, n - 1) + "…" : s;
+}
+
+/** Normalised tagged-step token set for Jaccard similarity. */
+function stepTokens(steps: string): Set<string> {
+  return new Set(
+    lines(steps)
+      .map((l) => l.replace(/\[[^\]]*\]/g, "").replace(/\{\{[^}]*\}\}/g, "").replace(/@td\([^)]*\)/g, "").toLowerCase().replace(/\s+/g, " ").trim())
+      .filter(Boolean),
+  );
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 && b.size === 0) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  return inter / (a.size + b.size - inter);
+}
+
+/** Dim 7 (DUP-001 / DUP-004) + Dim 9 (TC-001) operate across rows. */
+function lintCrossRow(rows: Row[]): Finding[] {
+  const f: Finding[] = [];
+  const tokenSets = rows.map((r) => stepTokens(r.Steps));
+  // DUP-001/004 target UI login/add-to-cart repetition. Runner-native GraphQL
+  // cases share [AUTH]/[SETUP]/query scaffolding by design and have no
+  // "state from <ID>" reference form, so comparing them is pure noise.
+  const dupEligible = rows.map((r) => !isRunnerGraphql(r));
+
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = i + 1; j < rows.length; j++) {
+      if (!dupEligible[i] || !dupEligible[j]) continue;
+      const sim = jaccard(tokenSets[i], tokenSets[j]);
+      if (sim > 0.8 && tokenSets[i].size >= 2)
+        f.push(find("DUP-001", "Medium", rows[j].ID, `≥80% step overlap with ${rows[i].ID} (${Math.round(sim * 100)}%) — consolidate or differentiate`));
+      else if (sim >= 0.7 && tokenSets[i].size >= 3)
+        f.push(find("DUP-004", "Medium", rows[j].ID, `repeats ≥70% of ${rows[i].ID}'s setup steps — reference via "state from ${rows[i].ID}"`));
+    }
+  }
+
+  // Dim 9: TC-001 — positive/negative/boundary mix per Section-parent group.
+  const groups = new Map<string, Row[]>();
+  for (const r of rows) {
+    const parent = (r.Section.split(">").slice(0, 2).join(">").trim()) || r.Section || "(none)";
+    (groups.get(parent) ?? groups.set(parent, []).get(parent)!).push(r);
+  }
+  const NEG = /\b(invalid|error|expired|rejected|fail|denied|unauthor|forbidden|missing|empty|duplicate|negative)\b/i;
+  const BOUND = /\b(max|min|maximum|minimum|boundary|limit|zero|first|last|over|exceed|cap|threshold|0\b|page)\b/i;
+  for (const [parent, group] of groups) {
+    if (group.length < 3) continue;
+    const hasNeg = group.some((r) => NEG.test(r.Title));
+    const hasPos = group.some((r) => !NEG.test(r.Title));
+    const numeric = group.some((r) => /\b(price|quantity|qty|date|length|count|amount|page|discount)\b/i.test(r.Title + r.Steps));
+    const hasBound = group.some((r) => BOUND.test(r.Title));
+    const missing: string[] = [];
+    if (!hasPos) missing.push("positive");
+    if (!hasNeg) missing.push("negative");
+    if (numeric && !hasBound) missing.push("boundary");
+    if (missing.length)
+      f.push(find("TC-001", "Medium", group[0].ID, `feature group "${parent}" (${group.length} cases) missing: ${missing.join(", ")}`));
+  }
+
+  // Dim 10 (GRD-001) legacy tally — one file-level nudge instead of per-case spam.
+  // Backlog-safe: Informational is below the default --fail-on=High gate.
+  const legacyUngrounded = rows.filter((r) => r.Assertions.trim() && !PROVENANCE_RE.test(r.Assertions));
+  if (legacyUngrounded.length)
+    f.push(find("GRD-001", "Informational", legacyUngrounded[0].ID || "<file>",
+      `${legacyUngrounded.length} case(s) have no assertion provenance tags (Dim 10) — grounded on next touch/regeneration`));
+
+  return f;
+}
+
+function rank(s: Severity): number {
+  return SEVERITY_ORDER.indexOf(s);
+}
+
+function main(): void {
+  const argv = process.argv.slice(2);
+  const file = argv.find((a) => !a.startsWith("--"));
+  const json = argv.includes("--json");
+  const failOnArg = (argv.find((a) => a.startsWith("--fail-on=")) ?? "--fail-on=High").split("=")[1] as Severity;
+  const failOn = SEVERITY_ORDER.includes(failOnArg) ? failOnArg : "High";
+
+  if (!file) {
+    console.error("Usage: lint-test-cases.ts <suite.csv> [--json] [--fail-on=Blocker|Critical|High|Medium]");
+    process.exit(1);
+  }
+
+  const raw = readFileSync(file, "utf-8");
+  const findings: Finding[] = [];
+
+  // S-001: header check (tolerant of quoted/unquoted styles via parseSuite).
+  let rows: Row[] = [];
+  try {
+    const parsed = parseSuite(raw);
+    if (parsed.header.join(",") !== COLUMNS.join(","))
+      findings.push(find("S-001", "Blocker", "<header>", `header is not the 15-column enriched format: found ${parsed.header.length} cols`));
+    rows = parsed.rows;
+  } catch (e) {
+    // S-007: CSV cannot be field-parsed — a Blocker; row-level analysis aborts.
+    findings.push(find("S-007", "Blocker", "<file>", `CSV parse error (unescaped quote / column mismatch): ${(e as Error).message}`));
+    report(findings, file, json, failOn);
+    return;
+  }
+
+  const seenIds = new Map<string, number>();
+  rows.forEach((r, i) => findings.push(...lintRow(r, i, seenIds)));
+  findings.push(...lintCrossRow(rows));
+
+  report(findings, file, json, failOn);
+}
+
+function report(findings: Finding[], file: string, json: boolean, failOn: Severity): void {
+  const blocking = findings.filter((x) => rank(x.severity) >= rank(failOn));
+
+  if (json) {
+    console.log(JSON.stringify({ file, total: findings.length, blocking: blocking.length, findings }, null, 2));
+  } else {
+    const counts = SEVERITY_ORDER.slice().reverse()
+      .map((s) => [s, findings.filter((x) => x.severity === s).length] as const)
+      .filter(([, n]) => n > 0);
+    console.log(`\n${file}`);
+    console.log(`  ${findings.length} finding(s): ${counts.map(([s, n]) => `${n} ${s}`).join(", ") || "none"}`);
+    for (const s of SEVERITY_ORDER.slice().reverse()) {
+      const group = findings.filter((x) => x.severity === s);
+      for (const x of group) console.log(`  [${x.severity}] ${x.rule} ${x.caseId}: ${x.message}`);
+    }
+    console.log(
+      `\n  Static dims 1-7,9,10 only. Run alongside: \`npm run graphql:lint-labels -- <csv>\` (DV-019) and ` +
+        `\`npx tsx scripts/validate-td-refs.ts\` (DV-013). Dimension 8 (live env) and the live half of Dim 10 ` +
+        `(grounding {HYPOTHESIS}/{SPEC} → {OBSERVED}) need a browser via /qa-review-tests --verify. Schema rules ` +
+        `DV-006..012/016/020, GRD-002 (invented literal), and BL-002/004/005 need knowledge-file/LLM judgment.`,
+    );
+  }
+  process.exit(blocking.length > 0 ? 1 : 0);
+}
+
+const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isCli) main();

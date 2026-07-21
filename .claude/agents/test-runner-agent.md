@@ -40,7 +40,7 @@ Mixed suites (some runner-native, some legacy GraphiQL UI) → use the browser p
 
 ## GraphQL Runner Fast Path (browserless — runner-native GraphQL suites only)
 
-**Why:** `[GQL-OP]`/`[GQL-EXEC]` cases execute via `scripts/graphql-runner.ts` (direct `fetch` to `/graphql`), ~10-30× faster than the GraphiQL UI flow. Schema-validate-before-send catches DV-006…DV-011 at lint time, **zero browser slots consumed** — GraphQL suites run in parallel to browser suites without competing for the 3-slot pool.
+**Why:** `[GQL-OP]`/`[GQL-EXEC]` cases execute via `scripts/graphql/graphql-runner.ts` (direct `fetch` to `/graphql`), ~10-30× faster than the GraphiQL UI flow. Schema-validate-before-send catches DV-006…DV-011 at lint time, **zero browser slots consumed** — GraphQL suites run in parallel to browser suites without competing for the 3-slot pool.
 
 ### GQL-1. Structural lint (DV-019 / S-007)
 
@@ -56,7 +56,7 @@ npm run graphql:lint-labels -- {{SUITE_CSV_PATH}}
 For every row with a non-empty `Steps` column (the linter has already confirmed they are structurally valid runner-native cases):
 
 ```bash
-npx tsx scripts/graphql-runner.ts --case {{SUITE_CSV_PATH}}:<CASE_ID> --evidence-dir reports/regression/{{RUN_ID}}/graphql-evidence
+npx tsx scripts/graphql/graphql-runner.ts --case {{SUITE_CSV_PATH}}:<CASE_ID> --evidence-dir reports/regression/{{RUN_ID}}/graphql-evidence
 ```
 
 The runner handles token acquisition (`[AUTH role=X]` via `TokenCache`), schema validation, `{{VAR}}` + `@td()` substitution, POST to `{{BACKEND_URL}}/graphql`, capture chaining, assertion evaluation, and best-effort cleanup (parses the `Cleanup` column for `[AUTH]` + `[REST METHOD path]` blocks and executes them after the verdict; cleanup failures never alter the verdict). Per-case evidence JSON lands at `reports/regression/{{RUN_ID}}/graphql-evidence/<CASE_ID>-<ts>.json`.

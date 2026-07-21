@@ -1,8 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.31",
+    "version": "1.5.32",
     "updated": "GENERATED",
+    "changelog_1_5_32": "VCST-5482 order/quote state fixtures (JSON-shaped-to-Swagger pilot): added 5 JSON-fixture aliases — COMPLETED_ORDER, SHIPPED_ORDER, PROCESSING_ORDER (test-data/orders/*.json), QUOTE_WITH_ADMIN_RESPONSE, ACCEPTED_QUOTE (test-data/quotes/*.json). These are the first `json`-backed aliases: static fields (number/status/currency/total) resolve from the Swagger-shaped fixture body, the runtime id resolves from aliases.<env>.json (seeded by scripts/seed-data/seed-order-states.mjs / seed-quotes.mjs, `npm run seed:orders`/`seed:quotes`). Single source of truth for state/transitions/aliases: scripts/seed-data/orders-specs.mjs; drift-guard: `npm run td:validate:orders`. Unblocks previously-DEFERRED order/quote states in suites 014/015. Feature-gated states (invoice/returns/substitution/negotiation/OOS/discontinued/expired) stay DEFERRED (see test-data/README.md).",
     "changelog_1_5_30": "VCST-5304/5469 TLC Phase-2/3 sync (2026-07-17, sales-rep pr-2-8c40 / theme 2.54.0-pr-2380-230b live verification): added platform_id field to ORG_SUSPENDED (was missing — needed so 050m's organizationId-vs-business-key drift fix (D1) can retarget not_served_org/unassigned_org assertions to the real platform GUID). Added SR_REP_NOCUSTOMERS_ORGCTX gap-fixture alias (test-data/sales-rep/sales-reps.csv, seeded=false — NOT ready for /qa-seed-data, needs a seeder enhancement to grant org-context membership without registering a served customer). Also fixed a pre-existing unquoted-comma data bug in sales-reps.csv row SR_REP_LOCKED's test_purpose field (silently absorbed before the context_org column existed; surfaced as a column-misalignment once the trailing column was added).",
     "changelog_1_5_31": "VCST-5304/5469 CORRECTED test design (TLC-2026-07-17-1603, live verification on vcst-qa): SR-FE-030 (089) and its SR_REP_NOCUSTOMERS_ORGCTX gap-fixture (added in 1.5.30) proved architecturally unreachable — a sales-rep org membership IS the served-customer relationship, so 'permissioned rep + org context + zero served customers' cannot exist; the seed-sales-rep.mjs enhancement it depended on is the WRONG fix and was NOT built. SR_REP_NOCUSTOMERS_ORGCTX stays seeded=false and is retired (do not seed). Added the SALES_REP_NOCUSTOMERS auth-role alias (mirrors SALES_REP) backing the genuinely-reachable case 050m SR-GQL-041, which proves the real invariant live-verified this run: a rep holding sales-rep:access as a GLOBAL role (SR_REP_NOCUSTOMERS, zero org memberships) gets a clean salesRepCustomers 200/totalCount=0/errors[] empty — not a redirect, not an error.",
     "changelog_1_5_25": "VCST-5028 suite 027b re-auth: added MULTI_ORG_TF_BR_EMPLOYEE and MULTI_ORG_TF_BR_MAINTAINER inline aliases. Both resolve to the same physical MULTI_ORG_TF_BR account (email/password/store_id identical) but are semantically distinct: EMPLOYEE = BuildRight org-employee context (no xapi:my_organization:edit → changeRole/lock/invite MUST reject); MAINTAINER = TechFlow org-maintainer context (should carry xapi:my_organization:edit → Finding #1 guard). Used by ORGM-003/007/012 and ORGM-017/018 respectively. resolveRole falls back to *_EMAIL/*_PASSWORD env vars; for these aliases the env vars are identical to MULTI_ORG_TF_BR_EMAIL/PASSWORD — no new .env entries needed beyond already-set MULTI_ORG_TF_BR_* vars.",
@@ -37,6 +38,31 @@
     "changelog_1_5_27": "VCST-5406: reseeded vcst-qa via the unified scripts/seed-data/seed-company-users.mjs (all kinds) on 2026-07-01 after teardown; refreshed org + contact platform_id caches in b2b/organizations.csv (19) + b2b/contacts.csv (14) from the fresh seed. Impersonation re-seed hints now point to `npm run seed:impersonation`. B2B graph reconciles clean (org-scoped roles only, VCST-5028). Note: b2b/users.csv user platform_id caches remain informational (resolved live by email); a handful of orgs (child AcmeWest + ORG-005..008) exist in DB but lag the Member search index.",
     "changelog_1_5_28": "VCST-5406 follow-up: swept the last password literals into the {{VAR}} pattern. 4 alias password fields (AGENT_TEST_IMP_CUSTOMER, MULTI_ORG_TF_BR[/_EMPLOYEE/_MAINTAINER]) → {{DEFAULT_TEST_PASSWORD}}; 15 real-credential Password1! literals in create-account bodies of suites 027/027b/050d → {{DEFAULT_TEST_PASSWORD}}. Left intentional test inputs alone (031/082 Test/Any/WrongPassword1! are registration/negative inputs, not stored secrets).",
     "changelog_1_5_29": "VCST-5089 (Per-store Asset Public URL rewrite in XAPI) regression authoring: added STORE_ASSET_TEST_URL inline alias (stable placeholder CDN host for setting/resetting Store.assetPublicUrl in tests — value is intentionally non-resolving DNS, same pattern as the live QA verification's cdn-test-vcst5089.govirto.com; only the HOST is asserted, 404/ERR_NAME_NOT_RESOLVED on the image itself is expected and acceptable). Added EXTERNAL_HOST_IMAGE_PRODUCT inline alias pinning the one concrete external-image product captured live during QA verification (product name + external host) for the BUG-1 regression guard (external URLs must NOT be rewritten when VirtoCommerce:StoreAssets:KnownAssetHosts is configured) — captured on vcptcore-qa 2026-07-14, see tests/Sprint-current/VCST-5089/test-execution-report.md; flagged env-portable-with-caveat since catalog composition diverges per env (per feedback reference_per_env_aliases_overlay) — the consuming case is marked Automation_Status=Draft pending per-env confirmation that the pinned product name resolves."
+  },
+  "COMPLETED_ORDER": {
+    "json": "orders/completed-order",
+    "fields": { "number": "number", "status": "status", "currency": "currency", "total": "total", "id": "id" },
+    "notes": "VCST-5482 — customer order in Completed state (shipment Delivered), owned by {{USER_EMAIL}}. Static fields from the JSON fixture; runtime id from aliases.<env>.json (npm run seed:orders). Unblocks suite 014 CHK-025/039/040, ORD-001/003/007/008/009/010/035."
+  },
+  "SHIPPED_ORDER": {
+    "json": "orders/shipped-order",
+    "fields": { "number": "number", "status": "status", "currency": "currency", "total": "total", "id": "id" },
+    "notes": "VCST-5482 — customer order in Shipped state (shipment Sent + tracking number), owned by {{USER_EMAIL}}. Runtime id from aliases.<env>.json (npm run seed:orders). Unblocks suite 014 CHK-013, ORD-006/012/030."
+  },
+  "PROCESSING_ORDER": {
+    "json": "orders/processing-order",
+    "fields": { "number": "number", "status": "status", "currency": "currency", "total": "total", "id": "id" },
+    "notes": "VCST-5482 — customer order in Processing state, owned by {{USER_EMAIL}}. Runtime id from aliases.<env>.json (npm run seed:orders). Unblocks suite 014 CHK-024, ORD-047."
+  },
+  "QUOTE_WITH_ADMIN_RESPONSE": {
+    "json": "quotes/quote-admin-response",
+    "fields": { "number": "number", "status": "status", "currency": "currency", "id": "id" },
+    "notes": "VCST-5482 — RFQ submitted by {{ORG_USER_EMAIL}} with admin per-line pricing applied. Runtime id from aliases.<env>.json (npm run seed:quotes). Unblocks suite 015 QUOTE-004/005/006/008/009/018/020/021/025."
+  },
+  "ACCEPTED_QUOTE": {
+    "json": "quotes/quote-accepted",
+    "fields": { "number": "number", "status": "status", "currency": "currency", "id": "id" },
+    "notes": "VCST-5482 — admin-priced RFQ accepted by the buyer (ready to convert). Runtime id from aliases.<env>.json (npm run seed:quotes). Unblocks suite 015 QUOTE-007/024/027/028/030."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -3681,6 +3707,28 @@
     "id": "",
     "name": "AGENT-TEST-SR-Owner-Acme",
     "phone": "+1-206-555-0142"
+  },
+  "SR_ADMIN_CUSTOMER_ONLY": {
+    "file": "sales-rep/admin-users",
+    "filter": {
+      "user_key": "SR_ADMIN_CUSTOMER_ONLY"
+    },
+    "fields": {
+      "email": "email",
+      "userName": "user_name",
+      "roleName": "role_name"
+    }
+  },
+  "SR_ADMIN_NO_READ": {
+    "file": "sales-rep/admin-users",
+    "filter": {
+      "user_key": "SR_ADMIN_NO_READ"
+    },
+    "fields": {
+      "email": "email",
+      "userName": "user_name",
+      "roleName": "role_name"
+    }
   },
   "SR_REP_ACME2": {
     "file": "sales-rep/sales-reps",

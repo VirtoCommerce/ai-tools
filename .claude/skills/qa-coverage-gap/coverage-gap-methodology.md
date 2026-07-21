@@ -125,12 +125,12 @@ Each generated case must satisfy:
 6. Record outcome in `Automation_Status`.
 
 ### GraphQL Runner Validation (Backend/graphql/050a-k)
-1. Execute via `npx tsx scripts/graphql-runner.ts --case <csv>:<ID>` — never via custom JS scripts (see `feedback_use_canonical_graphql_runner` memory).
+1. Execute via `npx tsx scripts/graphql/graphql-runner.ts --case <csv>:<ID>` — never via custom JS scripts (see `feedback_use_canonical_graphql_runner` memory).
 2. The runner performs schema validation, variable substitution, and evidence capture automatically.
 3. Failure recovery: same as browser validation but without screenshots.
 
 ### Static Validation (always)
-- `npx tsx scripts/validate-td-refs.ts` — every `@td()` reference must resolve. Failure blocks Cycle 3.
+- `npx tsx scripts/test-data/validate-td-refs.ts` — every `@td()` reference must resolve. Failure blocks Cycle 3.
 - For suites in critical-UI scope: `npm run scope:validate` must exit 0 before Cycle 4 commits.
 
 ### Cleanup

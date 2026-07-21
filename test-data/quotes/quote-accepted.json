@@ -1,0 +1,37 @@
+{
+  "_fixture": "ACCEPTED_QUOTE — Swagger-shaped QuoteRequest body (VirtoCommerce.Quote module) for VCST-5482. Admin-priced RFQ that the buyer has accepted (ready to convert to an order). Submitter resolved at seed time from {{ORG_USER_EMAIL}}. Quote REST route + status vocabulary confirmed LIVE on first run per quality-gates G6; orders-specs.mjs is the single place to correct the status string. No runtime GUIDs here; created id → aliases.<env>.json.",
+  "number": "AGENT-TEST-QTE-ACCEPTED",
+  "storeId": "{{STORE_ID}}",
+  "currency": "USD",
+  "status": "Ordered",
+  "customerName": "AGENT-TEST Org Buyer",
+  "comment": "AGENT-TEST admin-priced RFQ accepted by buyer",
+  "items": [
+    {
+      "sku": "AGENT-TEST-QTE-SKU-1",
+      "productId": "agent-test-qte-prod-1",
+      "name": "AGENT-TEST Quoted Item 1",
+      "quantity": 20,
+      "listPrice": 49.99,
+      "salePrice": 49.99,
+      "proposalPrices": [
+        { "quantity": 20, "price": 39.99 }
+      ]
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Shipping",
+      "firstName": "AGENT-TEST",
+      "lastName": "Org Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{ORG_USER_EMAIL}}"
+    }
+  ]
+}

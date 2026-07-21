@@ -341,7 +341,7 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 ## VC-EXEC — Test Execution & Tooling
 
 ### VC-EXEC-001 — Always use the canonical GraphQL runner
-- **Pattern:** NEVER write custom JS scripts to execute GraphQL CSV cases. Always use `npx tsx scripts/graphql-runner.ts --case <csv>:<ID>`. The runner does schema validation, var substitution, evidence capture.
+- **Pattern:** NEVER write custom JS scripts to execute GraphQL CSV cases. Always use `npx tsx scripts/graphql/graphql-runner.ts --case <csv>:<ID>`. The runner does schema validation, var substitution, evidence capture.
 - **Detection probe:** If you see a custom GraphQL JS runner in PR diff, flag it
 - **Cross-ref:** `feedback_use_canonical_graphql_runner` in MEMORY
 

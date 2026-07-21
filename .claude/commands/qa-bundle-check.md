@@ -35,7 +35,7 @@ npm run bundle:check -- v12
 npm run bundle:check -- "<vN | bundle-url>" [--json] [--no-platform] [--no-theme] [--no-trace]
 ```
 
-- `scripts/bundle-version-check.ts` parses the bundle (modules from `Sources[].Modules[]`,
+- `scripts/hotfix/bundle-version-check.ts` parses the bundle (modules from `Sources[].Modules[]`,
   `PlatformVersion` → `vc-platform`, `ThemeB2BVue` → `vc-frontend`), resolves each module Id →
   repo via `config/module-repo-map.json` (a **self-healing cache** — unmapped modules are
   auto-resolved at runtime and appended), and probes tags on the **same major.minor line** for a

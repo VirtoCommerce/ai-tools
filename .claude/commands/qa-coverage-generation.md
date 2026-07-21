@@ -218,7 +218,7 @@ After all batches return:
 
 1. **Cross-batch dedup** — compare `Title + Steps` across all three results. If two batches generated the same scenario (e.g., both Batch A and Batch C touched a Backend/graphql/* suite), keep the case with richer assertions and flag the duplicate in `coverage-generation-report.md`.
 2. **Suite-write conflicts** — if two batches modified the same CSV, merge IDs sequentially and re-sort by domain prefix.
-3. **Cross-batch test-data sanity** — run `npx tsx scripts/validate-td-refs.ts` against modified files; any unresolved `@td()` reference is a blocker (Definition of Done).
+3. **Cross-batch test-data sanity** — run `npx tsx scripts/test-data/validate-td-refs.ts` against modified files; any unresolved `@td()` reference is a blocker (Definition of Done).
 
 ### Step 6 — Manifest & Scope Maintenance
 

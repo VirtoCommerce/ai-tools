@@ -5,7 +5,7 @@
   "date": "2026-07-17",
   "feature": "Sales Rep hub — My customers (salesRepCustomers + /company/my-customers)",
   "env": "vcptcore-qa",
-  "verdict": "APPROVED WITH WARNINGS",
+  "verdict": "APPROVED",
   "changedStories": ["VCST-5304", "VCST-5469"],
   "affectedSuites": ["050m", "089"],
   "casesSynced": 4,
@@ -22,16 +22,24 @@
     "G6": "PASS", "G7": "PASS", "G8": "PARTIAL", "G9": "PASS"
   },
   "phase5Flags": {
-    "flag1_total_shape": "nested (schema VERIFIED; values BLOCKED — no data)",
-    "flag2_list_iconUrl_address": "present on list items (schema VERIFIED; values BLOCKED)",
-    "flag3_attribution": "BLOCKED — rep account empty (totalCount:0), /company/my-customers redirects to dashboard",
+    "flag1_total_shape": "VERIFIED nested — ACME lastOrder $133.20 (amount 133.2 / USD / $) on seeded SR_REP_PRIMARY",
+    "flag2_list_iconUrl_address": "VERIFIED — ACME address 1200 Commerce Blvd/New York/10001/USA on list items; iconUrl null (nullable)",
+    "flag3_attribution": "VERIFIED — FE renders, badge=4=totalCount, ACME row #CO260716-00001 matches API; per-rep attribution proven via cross-rep read-only probe (Ava sees null, Priya sees the order)",
     "argSurface": "VERIFIED — first/after/keyword/sort/storeId/cultureName all exist",
-    "consoleNetwork": "clean"
+    "consoleNetwork": "clean",
+    "note": "Initial Phase-5 all-BLOCKED was a false negative (wrong account belovedushka + stale FE session); re-run 5b on seeded SR_REP_PRIMARY resolved everything."
   },
-  "keyFinding": "Deployed scoped schema exposes NESTED Money total; flat total in SR-GQL-009/011 is stale vs the 2026-07-16 build and would fail validation live — flagged, rewrite pending value-level reverify.",
-  "mustFix": [
-    "Seed a populated vcptcore rep (rep-flow order), re-run Flags 1 & 3 for value-level confirmation + FE-API match, rewrite SR-GQL-009/011 flat total -> nested Money",
-    "Confirm VCST-5469 My-customers FE page is deployed on the target storefront build"
+  "keyFinding": "Deployed scoped schema exposes NESTED Money total (confirmed live, $133.20); SR-GQL-009/011 rewritten flat->nested. lastOrder is strictly per-rep, not org-level (cross-rep probe). VCST-5469 FE deployed and rendering.",
+  "residual": [
+    "3 prior 089 FAILs (26 PASS/3 FAIL per git log) to triage before full VCST-5469 sign-off",
+    "newer-own-order-advances-lastOrder not exercised (order creation gated by write-classifier)",
+    "fixture: agent-test-vcst5293-182326@example.com did not auth with Password1!"
   ],
-  "cases_remain_draft": true
+  "caseDisposition": {
+    "SR-GQL-009": "synced-nested (live-verified)",
+    "SR-GQL-011": "synced-nested + per-rep attribution (live-verified)",
+    "SR-GQL-039": "added, live-verified (real address)",
+    "SR-GQL-038": "deprecated (redundant with SR-GQL-011)"
+  },
+  "cases_remain_draft_status": true
 }

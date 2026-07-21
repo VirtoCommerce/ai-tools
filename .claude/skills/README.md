@@ -162,7 +162,7 @@ Manual invocation, cross-team best practices. Process framework, reactive (post-
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-investigate` | 5-phase bug investigation, common VC patterns (P1-P8), ordered evidence-capture pass + evidence-to-claim root-cause worksheet (gated by `scripts/bundle-evidence.ts`) | bug-investigation-flow.md, evidence-and-root-cause.md |
+| `/qa-investigate` | 5-phase bug investigation, common VC patterns (P1-P8), ordered evidence-capture pass + evidence-to-claim root-cause worksheet (gated by `scripts/regression/bundle-evidence.ts`) | bug-investigation-flow.md, evidence-and-root-cause.md |
 | `/qa-evidence` | Evidence capture policy, 3-tier report verbosity, output paths | evidence-capture-policy.md, output-paths.md, sign-off-templates.md |
 | `/qa-defect` | Defect management lifecycle: JIRA Bug Workflow (16 statuses), triage, classification, verification, metrics | defect-lifecycle-workflow.md, defect-report-templates.md |
 
