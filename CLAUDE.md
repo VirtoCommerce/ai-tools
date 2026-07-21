@@ -90,14 +90,9 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 
 **Agent Teams:**
 - Mode: `teammateMode: "in-process"` in settings.json
-- Max 3 concurrent browser agents.
+- `post_edit` hook: `npx tsc --noEmit -p ci/tsconfig.json` (wired in `.claude/settings.json`; `typescript`
+  is a devDependency). Max 3 concurrent browser agents.
 - Browser assignments: see `.claude/rules/agents.md`
-
-**Note:** a `post_edit` → `npx tsc --noEmit` hook was previously documented here but was never actually
-wired (`.claude/settings.json` didn't exist until recently, and `typescript` isn't installed in this
-repo — bare `npx tsc` resolves to an unrelated package). Wiring it for real also surfaces 4 pre-existing
-`ci/` type errors (a `rootDir` mismatch + two implicit-`any` indexes) unrelated to whatever a future edit
-touches. Re-adding it needs those fixed first, or scoping/suppressing the pre-existing noise.
 
 ## Critical Revenue Flows (must pass before deployment)
 
