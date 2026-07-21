@@ -56,7 +56,9 @@
  *    the agent (`systemMessage` is not rendered — CC issue #50542; plain stdout goes to
  *    the debug log only), so the CLEAN path stays silent-but-recorded by design.
  *    Opt-in VC_FIX_DIAG_LINE=always resumes the agent on a clean plugin turn too, to
- *    print a "no issues detected" line — a deliberate one-extra-turn cost, OFF by default.
+ *    print a "no plugin issues detected" line — a deliberate one-extra-turn cost, OFF by default.
+ *    (The line is scoped to the PLUGIN's own skills — it never endorses the env or the task
+ *    verdict; a skill that correctly reports NOT READY / BAIL is itself healthy.)
  *
  * INVARIANTS (all enforced here):
  *   - GATED on capture: init/prompt/record/agentstop/finalize run ONLY when the
@@ -891,10 +893,13 @@ async function cmdFinalize(ev) {
   } else if (cleanBlock) {
     // VC_FIX_DIAG_LINE=always — resume the agent ONCE to print the clean-status line, then stop.
     const reason = [
-      "The vc-fix self-diagnostics collector evaluated this session's plugin activity and ",
-      "found NO issues (all spans clean/recovered). Print EXACTLY one short line to the user — ",
-      "`vc-fix self-check: no issues detected` — and then stop. Do NOT run any skill, do NOT ",
-      "take any other action; this is an informational status line only.",
+      "The vc-fix self-diagnostics collector evaluated this session's plugin activity and found ",
+      "NO PLUGIN issues (all skill/command spans ran clean/recovered). This judges ONLY whether ",
+      "the plugin's own skills executed correctly — it does NOT endorse your environment health ",
+      "or the task's own verdict (a skill that correctly reports NOT READY / BAIL / 'bug found' ",
+      "is itself healthy). Print EXACTLY one short line to the user — ",
+      "`vc-fix self-check: no plugin issues detected` — and then stop. Do NOT run any skill, do ",
+      "NOT take any other action; this is an informational status line only.",
     ].join("");
     process.stdout.write(JSON.stringify({ decision: "block", reason }));
   }

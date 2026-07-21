@@ -426,7 +426,7 @@ test("VC_FIX_DIAG_LINE=always: a clean plugin turn resumes the agent to print th
 
     const dec = JSON.parse(out);
     assert.equal(dec.decision, "block", "always mode resumes the agent on a clean plugin turn");
-    assert.match(dec.reason, /no issues detected/i);
+    assert.match(dec.reason, /no plugin issues detected/i);
     assert.doesNotMatch(dec.reason, /vc-self-check|run the/i, "the clean line must not trigger a skill");
 
     const fin = readSpans(home, sid).find((r) => r.type === "finalize");
