@@ -348,32 +348,34 @@ test("/vc-feedback: the namespaced form (/vc-fix:vc-feedback) is captured too", 
   }
 });
 
-// ─── decision moment (Task 2.1): every finalize records a decision verdict ──────────
+// ─── decision moment: every finalize records a decision verdict ──────────────────
 const finalizeOf = (records) => records.find((r) => r.type === "finalize");
+const finalizesOf = (records) => records.filter((r) => r.type === "finalize");
+const LINE_OFF = { VC_FIX_DIAG_LINE: "off" };
 
-test("decision record: a clean plugin turn is recorded clean + not surfaced (no visible line)", () => {
+test("decision record: a clean plugin turn is recorded clean (line silenced with VC_FIX_DIAG_LINE=off)", () => {
   const home = setupHome();
   try {
     const sid = "decision-clean";
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, "");
-    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
-    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" }, LINE_OFF);
     appendLines(transcriptPath, [
       toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "export const env = {...}"),
       assistantText("2026-01-01T00:00:02Z", "Readiness table: all checks PASS — READY."),
     ]);
-    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, LINE_OFF);
 
-    // Clean path never resumes the agent → empty stdout (no decision:block).
-    assert.equal(out.trim(), "", "a clean turn must not block/resume the agent");
+    // With the line silenced the clean path never resumes the agent → empty stdout.
+    assert.equal(out.trim(), "", "VC_FIX_DIAG_LINE=off → a clean turn must not block/resume the agent");
 
     const fin = finalizeOf(readSpans(home, sid));
     assert.ok(fin && fin.decision, "finalize must carry a decision object");
     assert.equal(fin.decision.verdict, "clean");
     assert.equal(fin.decision.pluginActivity, true, "a /qa-env-check command ran");
-    assert.equal(fin.decision.surfaced, false, "clean = silent-but-recorded");
+    assert.equal(fin.decision.surfaced, false, "line off = silent-but-recorded");
     assert.equal(fin.decision.suppressReason, "clean");
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -406,30 +408,28 @@ test("decision record: a finding is recorded flagged + surfaced (visible line vi
   }
 });
 
-// ─── VC_FIX_DIAG_LINE=always — opt-in visible line on a clean plugin turn ───────────
-const ALWAYS = { VC_FIX_DIAG_LINE: "always" };
-
-test("VC_FIX_DIAG_LINE=always: a clean plugin turn resumes the agent to print the no-issues line", () => {
+// ─── visible clean line — ON by default on a TERMINAL plugin turn ───────────────────
+test("clean line (default ON): a clean plugin terminal turn resumes the agent to print the no-issues line", () => {
   const home = setupHome();
   try {
-    const sid = "line-always-clean";
+    const sid = "line-default-clean";
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, "");
-    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, ALWAYS);
-    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" }, ALWAYS);
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
     appendLines(transcriptPath, [
       toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
       assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
     ]);
-    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, ALWAYS);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
     const dec = JSON.parse(out);
-    assert.equal(dec.decision, "block", "always mode resumes the agent on a clean plugin turn");
+    assert.equal(dec.decision, "block", "default: a clean plugin turn resumes to print the line");
     assert.match(dec.reason, /no plugin issues detected/i);
     assert.doesNotMatch(dec.reason, /vc-self-check|run the/i, "the clean line must not trigger a skill");
 
-    const fin = readSpans(home, sid).find((r) => r.type === "finalize");
+    const fin = finalizeOf(readSpans(home, sid));
     assert.equal(fin.decision.verdict, "clean");
     assert.equal(fin.decision.surfaced, true);
   } finally {
@@ -437,68 +437,217 @@ test("VC_FIX_DIAG_LINE=always: a clean plugin turn resumes the agent to print th
   }
 });
 
-test("VC_FIX_DIAG_LINE=always: a plain dev turn (no plugin activity) is NOT resumed", () => {
+test("clean line: a plain dev turn (no plugin activity) is NOT resumed", () => {
   const home = setupHome();
   try {
-    const sid = "line-always-noact";
+    const sid = "line-default-noact";
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, "");
-    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, ALWAYS);
-    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "refactor this" }, ALWAYS);
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "refactor this" });
     appendLines(transcriptPath, [
       toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "u.ts" }),
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "code"),
     ]);
-    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, ALWAYS);
-    assert.equal(out.trim(), "", "no plugin activity → no line even in always mode");
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(out.trim(), "", "no plugin activity → no line");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.pluginActivity, false);
+    assert.equal(fin.decision.suppressReason, "no-plugin-activity");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
 });
 
-test("VC_FIX_DIAG_LINE=always: the clean line blocks at most once per turn (no resume loop)", () => {
+test("clean line: blocks at most once per turn (no resume loop)", () => {
   const home = setupHome();
   try {
-    const sid = "line-always-loop";
+    const sid = "line-default-loop";
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, "");
-    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, ALWAYS);
-    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" }, ALWAYS);
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
     appendLines(transcriptPath, [
       toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
       toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
       assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
     ]);
-    const first = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, ALWAYS);
+    const first = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
     assert.equal(JSON.parse(first).decision, "block");
     // The resumed print-turn's own Stop fires finalize again with NO new UserPromptSubmit —
     // promptedThisTurn is still set, so it must NOT re-block (else an infinite resume loop).
-    const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, ALWAYS);
+    const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
     assert.equal(second.trim(), "", "a repeat finalize in the same turn must not re-block");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
 });
 
-test("decision record: a plain dev turn (no plugin skill/command) is recorded no-plugin-activity", () => {
+test("VC_FIX_DIAG_LINE=off: a clean plugin terminal turn prints nothing (but is still recorded)", () => {
   const home = setupHome();
   try {
-    const sid = "decision-noact";
+    const sid = "line-off-clean";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" }, LINE_OFF);
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, LINE_OFF);
+    assert.equal(out.trim(), "", "VC_FIX_DIAG_LINE=off silences the clean line");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "clean");
+    assert.equal(fin.decision.pluginActivity, true);
+    assert.equal(fin.decision.surfaced, false);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── stop_hook_active guard — a Stop from OUR OWN resume-turn must not re-fire ───────
+test("stop_hook_active:true suppresses the clean line block", () => {
+  const home = setupHome();
+  try {
+    const sid = "sha-clean";
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, "");
     run(home, "init", { session_id: sid, transcript_path: transcriptPath });
-    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "please refactor this function" });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
     appendLines(transcriptPath, [
-      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "util.ts" }),
-      toolResult("2026-01-01T00:00:01Z", "tu1", false, "export function x() {}"),
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
     ]);
-    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", stop_hook_active: true });
+    assert.equal(out.trim(), "", "stop_hook_active must suppress the clean line block");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
 
-    assert.equal(out.trim(), "", "a no-plugin turn must not block");
+test("stop_hook_active:true suppresses the findings block", () => {
+  const home = setupHome();
+  try {
+    const sid = "sha-findings";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-12" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", true, "permission denied: token missing pull-request scope"),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", stop_hook_active: true });
+    assert.equal(out.trim(), "", "stop_hook_active must suppress even the findings block");
+    // still recorded flagged, just not surfaced
     const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.verdict, "clean");
-    assert.equal(fin.decision.pluginActivity, false, "no plugin skill/command ran");
-    assert.equal(fin.decision.suppressReason, "no-plugin-activity");
+    assert.equal(fin.decision.verdict, "flagged");
+    assert.equal(fin.decision.surfaced, false);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── checkpoint vs terminal — a Stop while a background sub-agent is still running ──
+test("checkpoint (background_tasks): a Stop with a pending bg task records `deferred` and closes nothing", () => {
+  const home = setupHome();
+  try {
+    const sid = "cp-bg";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-13" });
+    // A Task handed off to a sub-agent — NO tool_result yet (it's still running).
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-backend", description: "fix bug" }),
+    ]);
+    const out = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      background_tasks: [{ agent_id: "ta1", agent_type: "fullstack-backend" }],
+    });
+    assert.equal(out.trim(), "", "a checkpoint Stop must not print anything");
+
+    const recs = readSpans(home, sid);
+    const fin = finalizeOf(recs);
+    assert.equal(fin.decision.verdict, "deferred");
+    assert.equal(fin.decision.suppressReason, "subagent-running");
+    assert.equal(fin.decision.surfaced, false);
+    assert.ok(fin.decision.pendingSubagents >= 1, "pendingSubagents must be counted");
+    assert.equal(spansOf(recs, "command", "qa-fix").length, 0, "the command span must NOT be closed at a checkpoint");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("checkpoint (fallback): an open agent op with no background_tasks field still defers", () => {
+  const home = setupHome();
+  try {
+    const sid = "cp-fallback";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-14" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-frontend", description: "fix" }),
+    ]);
+    // No background_tasks on the event → must fall back to the open agent op.
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(out.trim(), "", "the open-agent-op fallback must also defer silently");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "deferred");
+    assert.equal(fin.decision.pendingSubagents, 1);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("E2E: /qa-fix hands off to a background sub-agent (checkpoint), then terminates clean when it returns", () => {
+  const home = setupHome();
+  try {
+    const sid = "e2e-subagent";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-15" });
+
+    // 1) The command hands work to a sub-agent (Task) — no result yet.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-backend", description: "reproduce + fix" }),
+    ]);
+    // 2) CHECKPOINT Stop — the sub-agent is still running in the background.
+    const cp = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      background_tasks: [{ agent_id: "ta1", agent_type: "fullstack-backend" }],
+    });
+    assert.equal(cp.trim(), "", "the checkpoint must print no line mid-task");
+    let recs = readSpans(home, sid);
+    assert.equal(spansOf(recs, "command", "qa-fix").length, 0, "command still open at the checkpoint");
+    assert.equal(finalizesOf(recs)[0].decision.verdict, "deferred");
+
+    // 3) The sub-agent returns — its Task result lands in the MAIN transcript.
+    appendLines(transcriptPath, [
+      toolResult("2026-01-01T00:00:05Z", "ta1", false, "Done — opened PR pull/42 with the fix and repro test."),
+    ]);
+    run(home, "agentstop", { session_id: sid, transcript_path: transcriptPath });
+
+    // 4) TERMINAL Stop — nothing pending now.
+    const term = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop", background_tasks: [],
+    });
+    const dec = JSON.parse(term);
+    assert.equal(dec.decision, "block", "the terminal Stop surfaces the clean line once");
+    assert.match(dec.reason, /no plugin issues detected/i);
+
+    recs = readSpans(home, sid);
+    const cmd = spansOf(recs, "command", "qa-fix");
+    assert.equal(cmd.length, 1, "the command span is emitted exactly once, at the terminal Stop");
+    assert.notEqual(cmd[0].outcome, "silent_suspect", "the Task result carried expected output → not silent");
+    const fins = finalizesOf(recs);
+    assert.equal(fins[fins.length - 1].decision.verdict, "clean");
+    assert.equal(fins[fins.length - 1].decision.surfaced, true);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

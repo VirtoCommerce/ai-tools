@@ -42,23 +42,37 @@
  *  • ESCALATE (Tier 2) — tail-based. At Stop, if any span's outcome is
  *    failed/degraded/silent_suspect AND its signature is NEW (deduped across the
  *    session), a `Stop`{decision:"block"} resumes the agent with an instruction to
- *    run `/vc-self-check` SILENTLY (no Yes/No modal) and print ONE info line. The
- *    happy path emits nothing. Loop guards: `vc-self-check`'s own spans are dropped,
- *    `selfCheckSeen` suppresses re-trigger, per-signature dedup prevents re-nag.
+ *    run `/vc-self-check` SILENTLY (no Yes/No modal) and print ONE info line. Loop
+ *    guards: `vc-self-check`'s own spans are dropped, `selfCheckSeen` suppresses
+ *    re-trigger, per-signature dedup + `stop_hook_active` prevent re-nag.
  *
- *  • DECISION MOMENT (Task 2.1) — every finalize records a `decision` object on its
- *    `finalize` jsonl record: { verdict:"clean|flagged", pluginActivity, freshCount,
- *    flaggedTotal, surfaced, suppressReason }. This is the DURABLE, deterministic
- *    audit of "when did the collector decide, and what did it decide" — greppable
- *    (`"type":"finalize"` / `"decision"`) without printing anything. A VISIBLE line is
- *    only produced when there is a finding (the block above → the model prints it):
- *    a Stop hook on this platform cannot surface a user-visible line WITHOUT resuming
- *    the agent (`systemMessage` is not rendered — CC issue #50542; plain stdout goes to
- *    the debug log only), so the CLEAN path stays silent-but-recorded by design.
- *    Opt-in VC_FIX_DIAG_LINE=always resumes the agent on a clean plugin turn too, to
- *    print a "no plugin issues detected" line — a deliberate one-extra-turn cost, OFF by default.
- *    (The line is scoped to the PLUGIN's own skills — it never endorses the env or the task
- *    verdict; a skill that correctly reports NOT READY / BAIL is itself healthy.)
+ *  • CHECKPOINT vs TERMINAL — `Stop` fires at the END OF EVERY TURN, including a
+ *    turn that only handed work to a BACKGROUND SUB-AGENT and is now waiting. That
+ *    sub-agent's work lives in a sidechain the scanner skips, so finalizing there
+ *    would judge an INCOMPLETE session and (worse) print a "no issues" verdict
+ *    mid-task. So finalize first checks `ev.background_tasks` (still-running bg
+ *    tasks/sub-agents) — with a fallback to any still-open agent op in our own state
+ *    — and if anything is pending it treats the Stop as a CHECKPOINT: it records a
+ *    durable `{verdict:"deferred"}` decision to the jsonl and RETURNS without
+ *    draining/closing spans or surfacing anything. The real verdict is deferred to
+ *    the TERMINAL Stop, once the sub-agent has returned (its Task result now in the
+ *    MAIN transcript). `SubagentStop`→`agentstop` keeps the scan current in between.
+ *
+ *  • DECISION MOMENT — every finalize records a `decision` object on its `finalize`
+ *    jsonl record: TERMINAL → { verdict:"clean|flagged", pluginActivity, freshCount,
+ *    flaggedTotal, surfaced, suppressReason }; CHECKPOINT → { verdict:"deferred",
+ *    pendingSubagents, surfaced:false, suppressReason:"subagent-running" }. This is
+ *    the DURABLE, deterministic audit of "when did the collector decide, and what did
+ *    it decide" — greppable (`"type":"finalize"` / `"decision"`) without printing.
+ *    A VISIBLE line costs one extra model turn: a Stop hook on this platform cannot
+ *    surface a user-visible line WITHOUT resuming the agent (`systemMessage` is not
+ *    rendered — CC issue #50542; plain stdout goes to the debug log only). On a
+ *    TERMINAL Stop the model is resumed to print a line whenever there was real plugin
+ *    activity: a finding → run `/vc-self-check` + report it; a clean turn → print
+ *    "vc-fix self-check: no plugin issues detected" (default ON; silence with
+ *    VC_FIX_DIAG_LINE=off). A CHECKPOINT never prints. (The line is scoped to the
+ *    PLUGIN's own skills — it never endorses the env or the task verdict; a skill that
+ *    correctly reports NOT READY / BAIL is itself healthy.)
  *
  * INVARIANTS (all enforced here):
  *   - GATED on capture: init/prompt/record/agentstop/finalize run ONLY when the
@@ -71,10 +85,11 @@
  *     the plugin install dir. `.vc-fix/` is gitignored.
  *   - Never throws, never blocks a tool, never writes a secret (Authorization/
  *     token/password/PAN redacted from every snippet). Always exits 0.
- *   - The auto-diagnosis trigger can be suppressed with VC_FIX_DIAG_CONSENT=off
- *     (kill switch) — capture still runs; nothing is surfaced. Independently,
- *     VC_FIX_DIAG_LINE=always opts INTO a visible "no issues" line on clean plugin turns
- *     (default: clean is silent-but-recorded). The kill switch overrides both.
+ *   - The auto-diagnosis trigger AND the visible line can both be suppressed with
+ *     VC_FIX_DIAG_CONSENT=off (kill switch) — capture still runs; nothing is surfaced.
+ *     Independently, VC_FIX_DIAG_LINE=off silences ONLY the clean "no plugin issues
+ *     detected" line (default ON on a terminal plugin turn) while leaving the findings
+ *     trigger intact. The kill switch overrides both.
  *
  * NOTE: this collector is the canonical `plugins/vc-fix/` copy. The `.claude/`
  * mirror predates VCST-5509 and is intentionally NOT kept in lock-step here.
@@ -791,6 +806,36 @@ async function cmdFinalize(ev) {
   const state = loadState(statePath, ev, sid);
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
   scanTranscript(jsonl, transcriptPath, state);
+  state.transcriptPath = transcriptPath;
+
+  // ─── CHECKPOINT vs TERMINAL (subagent-timing fix) ───────────────────────────
+  // `Stop` fires at the end of EVERY turn — including a turn that only handed work
+  // to a background sub-agent and is now waiting. That sub-agent's work lives in a
+  // sidechain the scanner skips, so finalizing here would judge an INCOMPLETE
+  // session and (worse) print a "no plugin issues" verdict mid-task. So: if any
+  // background task is still running (`ev.background_tasks`) OR any agent op is
+  // still open in our own reconstructed state (fallback when the field is absent),
+  // treat this Stop as a CHECKPOINT — record a durable `deferred` decision to the
+  // jsonl (greppable), but DON'T drain openOps, DON'T close the trailing skill/
+  // command, DON'T surface a line, DON'T run diagnostics. The open spans/ops carry
+  // over so the TERMINAL Stop (once the sub-agent has returned) does the real work.
+  const bgTasks = Array.isArray(ev.background_tasks) ? ev.background_tasks : [];
+  let openAgents = 0;
+  for (const [, sp] of state.openOps) if (sp && sp.kind === "agent") openAgents++;
+  const pendingBg = bgTasks.length > 0 || openAgents > 0;
+  const stopHookActive = ev.stop_hook_active === true;
+  if (pendingBg) {
+    const pendingSubagents = bgTasks.length || openAgents;
+    appendRecord(jsonl, {
+      type: "finalize",
+      sessionId: sid,
+      ts: nowIso(),
+      reason: ev.reason ?? null,
+      decision: { verdict: "deferred", pendingSubagents, surfaced: false, suppressReason: "subagent-running" },
+    });
+    saveState(statePath, state);
+    return;
+  }
 
   // Drain any tool/agent op still open at Stop (interrupted session — no tool_result
   // seen) so its span is recorded and its op reaches the parent (A-F8), instead of
@@ -825,18 +870,22 @@ async function cmdFinalize(ev) {
   // (plain stdout → debug log only; `systemMessage` is not rendered — CC issue #50542).
   // So a visible line always costs one extra model turn.
   //   • FINDINGS → block+run /vc-self-check (the resume is justified — we want the diag).
-  //   • CLEAN    → silent-but-recorded by DEFAULT (the `decision` record below is the free,
-  //     durable audit). Opt-in VC_FIX_DIAG_LINE=always resumes the agent to print a
-  //     "no issues" line on a clean plugin turn too — a deliberate cost (one extra turn per
-  //     clean plugin skill/command), OFF by default so it never lands on every install.
+  //   • CLEAN    → resume ONCE to print a "no plugin issues detected" line by DEFAULT (on a
+  //     TERMINAL Stop that had real plugin activity), a deliberate one-extra-turn cost. Silence
+  //     it with VC_FIX_DIAG_LINE=off. The `decision` record below stays the free durable audit
+  //     regardless of whether a line was printed.
   const consentOff = /^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CONSENT || "");
-  const cleanLineAlways = /^(always|on|1|true|verbose)$/i.test(process.env.VC_FIX_DIAG_LINE || "");
-  const shouldPrompt = !consentOff && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
+  const lineOff = /^(off|never|0|false|no)$/i.test(process.env.VC_FIX_DIAG_LINE || "");
+  // `!stopHookActive` is a belt-and-suspenders guard alongside `promptedThisTurn`: the Stop that
+  // fires from OUR OWN resume-turn carries stop_hook_active:true, so neither the findings block
+  // nor the clean line re-fires and no resume loop can form.
+  const shouldPrompt = !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
   const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen);
-  // Clean-line opt-in: only on a clean turn that had real plugin activity, once per turn,
-  // never when the kill switch is on. `promptedThisTurn` (reset ONLY by a new UserPromptSubmit)
-  // is what stops the resumed print-turn's own Stop from re-blocking → no infinite loop.
-  const cleanBlock = cleanLineAlways && !consentOff && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && pluginActivity;
+  // Clean line (default ON): only on a clean TERMINAL turn that had real plugin activity, once
+  // per turn, never when the kill switch or VC_FIX_DIAG_LINE=off is set. `promptedThisTurn`
+  // (reset ONLY by a new UserPromptSubmit) is what stops the resumed print-turn's own Stop from
+  // re-blocking → no infinite loop.
+  const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && pluginActivity;
   const surfaced = shouldPrompt || cleanBlock;
   // A durable, deterministic audit of every decision moment — greppable with
   // `"type":"finalize"` / `decision` in the session jsonl. This is how "when did the hook
@@ -891,7 +940,7 @@ async function cmdFinalize(ev) {
     ].join("");
     process.stdout.write(JSON.stringify({ decision: "block", reason }));
   } else if (cleanBlock) {
-    // VC_FIX_DIAG_LINE=always — resume the agent ONCE to print the clean-status line, then stop.
+    // Default clean line — resume the agent ONCE to print the clean-status line, then stop.
     const reason = [
       "The vc-fix self-diagnostics collector evaluated this session's plugin activity and found ",
       "NO PLUGIN issues (all skill/command spans ran clean/recovered). This judges ONLY whether ",

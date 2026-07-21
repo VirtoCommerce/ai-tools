@@ -222,14 +222,16 @@ processed session's local artifacts are removed. Scope is the **processed sessio
 
 ## Notes
 - **Decision trail (when did the collector run, what did it decide).** Every `finalize`
-  writes a `decision` object on its jsonl `finalize` record —
+  writes a `decision` object on its jsonl `finalize` record. A **terminal** Stop records
   `{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
-  suppressReason }`. A visible line is only printed on a finding (a `Stop` hook can't show
-  a line without resuming the agent), so the clean path is silent-but-recorded. To review
-  the decisions of a session:
-  `grep '"type":"finalize"' <outputRoot>/.vc-fix/diagnostics/<session-id>.jsonl`.
-  Opt-in `VC_FIX_DIAG_LINE=always` makes a clean plugin turn ALSO print a "no issues
-  detected" line — at the cost of one extra model turn per clean run (OFF by default).
+  suppressReason }`; a **checkpoint** Stop (a sub-agent is still running in the background)
+  records `{ verdict:"deferred", pendingSubagents, surfaced:false,
+  suppressReason:"subagent-running" }` and does nothing else. To review a session's
+  decisions: `grep '"type":"finalize"' <outputRoot>/.vc-fix/diagnostics/<session-id>.jsonl`.
+- **The visible line.** On a **terminal** plugin turn the hook resumes the agent to print one
+  line (costing one extra model turn): a finding → run `/vc-self-check` + report; a clean turn
+  → `vc-fix self-check: no plugin issues detected` (default ON — silence it with
+  `VC_FIX_DIAG_LINE=off`). A checkpoint Stop never prints, so the line can't land mid-task.
 - Verdict/severity semantics + the (signal × expectation) table live in the oracle —
   cite them, don't restate.
 - If two spans share a root cause (e.g. the same `tsc` hook failing across skills), merge

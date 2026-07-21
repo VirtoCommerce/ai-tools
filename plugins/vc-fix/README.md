@@ -62,9 +62,15 @@ recorded silently; only *interesting* (non-clean) work is ever surfaced or sent.
   its expected output — a *silent* failure). The old numeric `>= 6` anomaly gate is gone.
 - **One silent auto-diagnosis, deduped.** When a span is `failed`/`degraded`/`silent_suspect` with a
   **new** signature, the end-of-turn hook runs `/vc-self-check` **silently** (no yes/no modal) to
-  write a **local** `DIAG-*.md` and prints one info line. The same signature never re-triggers; the
-  happy path stays silent. Kill switch: `VC_FIX_DIAG_CONSENT=off` suppresses the auto-run (capture
-  still records).
+  write a **local** `DIAG-*.md` and prints one info line. On a **clean** plugin turn it instead prints
+  a single `vc-fix self-check: no plugin issues detected` line (default ON; silence with
+  `VC_FIX_DIAG_LINE=off`). The same signature never re-triggers. Kill switch:
+  `VC_FIX_DIAG_CONSENT=off` suppresses both the auto-run and the clean line (capture still records).
+- **Timed around sub-agents.** `Stop` fires at the end of *every* turn, including one that just handed
+  work to a background sub-agent and is waiting. The hook detects that (`background_tasks`, with a
+  fallback to any still-open agent op) and treats such a Stop as a **checkpoint** — it records a
+  `deferred` decision to the jsonl and prints nothing; the real verdict + line wait for the
+  **terminal** Stop after the sub-agent returns.
 - **Tell it directly.** `/vc-feedback "<what happened>" [👍|👎]` attaches your verdict to the
   session — the highest-value signal, and the main way a *silent* failure (looked fine, was wrong)
   gets caught.

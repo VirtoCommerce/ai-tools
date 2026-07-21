@@ -46,13 +46,16 @@ The **numeric `anomalyScore >= 6` gate is GONE** (VCST-5509). Escalation is driv
 the per-span `outcome` (§1a), not a weighted count. `finalize` carries `spanCounts`
 (outcome histogram), `flagged[]` (the non-`success`/non-`recovered` skill/command
 spans with their dedup `signature`), `feedbackCount`, `anySkillSeen`, and a **`decision`**
-object (Task 2.1) — the durable, deterministic audit of the decision moment:
-`{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
-suppressReason }`. `surfaced` is whether a user-visible line was produced (only on a
-finding — a `Stop` hook cannot show a line without resuming the agent, so the clean path
-is silent-but-recorded). The opt-in `VC_FIX_DIAG_LINE=always` additionally resumes the
-agent to print a "no plugin issues detected" line on a clean plugin turn (one extra turn per clean
-run — OFF by default). Grep `"type":"finalize"` to see when the collector ran and what it
+object — the durable, deterministic audit of the decision moment. A **terminal** Stop
+records `{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
+suppressReason }`; a **checkpoint** Stop (a background sub-agent is still running — detected
+via `background_tasks`, fallback to an open agent op) records `{ verdict:"deferred",
+pendingSubagents, surfaced:false, suppressReason:"subagent-running" }` and returns without
+closing spans or surfacing anything, so a verdict/line never lands mid-task. `surfaced` is
+whether a user-visible line was produced (a `Stop` hook cannot show a line without resuming
+the agent). On a terminal plugin turn the hook resumes to print one line: a finding →
+`/vc-self-check`; a clean turn → "no plugin issues detected" (default ON — silence with
+`VC_FIX_DIAG_LINE=off`). Grep `"type":"finalize"` to see when the collector ran and what it
 decided.
 
 **Load-bearing nuance (quality-gates §3):** a `stop_bail` is a **SUCCESS**, not an
