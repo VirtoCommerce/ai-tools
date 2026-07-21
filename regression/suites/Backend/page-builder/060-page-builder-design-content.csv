@@ -1,4 +1,4 @@
-﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CMS-009","Verify Draft status badge in grid","Grid View","Medium",,,"Draft page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 2. Locate draft page in grid
 3. Verify Draft badge is displayed in Status column","Draft badge (pill) visible next to the page name in Status column; page may also show Personalized badge",,"No Draft badge visible; page appears in wrong lifecycle tab",,"C415407 C415436; Synced: PR #105 (2026-03-25)",
@@ -95,42 +95,6 @@
 [ACT] Switch to Settings tab
 [ASSERT] Settings tab shows image display options
 [ACT] Click Save","[DOM] Image block appears in sections panel after selection; [BLADE] Asset Library picker dialog opens (dialog heading CONTAINS 'asset library', case-insensitive); [DOM] 'Select' button disabled until asset chosen; [DOM] image thumbnail preview shown in General tab after selection; [TOAST] Save completes without error; [GRID] Settings tab has display options","[CONSOLE] no JS errors during open/select/save; [NETWORK] no 4xx/5xx on asset-related requests","Dialog fails to open; 'Select' button stays disabled after selection; preview not shown; Save fails; JS errors on open","none — image selection is not destructive","C221968 C221969 C221060 VCST-4932; Synced: VCST-4932 (2026-06-11)","synced"
-"CMS-041","Text over image block - add and preview via Asset Library","Content Blocks","High",,,"Page open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id); at least one image asset exists in store Asset Library",,"[NAV] Open a draft page in the PageBuilder designer
-[ACT] Click 'Add block' in the designer
-[ACT] Select 'Text Over Image' from the block library
-[WAIT] Block section appears in left panel
-[ACT] Click the background image field control (button label CONTAINS 'Asset Library')
-[WAIT] Asset Library picker dialog opens (dialog heading CONTAINS 'asset library', case-insensitive)
-[ASSERT] Dialog shows breadcrumbs, file list, Search field, and disabled Select button
-[ACT] Click an existing image asset to select it
-[WAIT] 'Select' button becomes enabled
-[ACT] Click 'Select' button
-[WAIT] Dialog closes; background image preview appears in configuration panel
-[ACT] Enter overlay text in the text field
-[WAIT] Text entered
-[ASSERT] Live preview shows text overlaid on the selected background image
-[ACT] Click Save","[DOM] Text Over Image block appears in sections panel; [BLADE] Asset Library picker dialog opens (dialog heading CONTAINS 'asset library', case-insensitive); [DOM] 'Select' button disabled until image chosen; [DOM] image and text fields both present in configuration panel; [DOM] preview renders text overlaid on image; [TOAST] Save completes","[CONSOLE] no JS errors during dialog open/select/save; [NETWORK] no 4xx/5xx on asset requests","Block not in library; Asset Library dialog does not open; image or text field missing; text not overlaid in preview; Save fails","none","C221970 C221971 C221054 VCST-4932; Synced: VCST-4932 (2026-06-11)","synced"
-"CMS-042","Cards list block - add and preview with Asset Library images","Content Blocks","Medium",,,"Page open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id); at least one image asset exists in store Asset Library",,"[NAV] Open a draft page in the PageBuilder designer
-[ACT] Click 'Add block' in the designer
-[ACT] Select 'Cards List' from the block library
-[WAIT] Block section appears in left panel
-[ACT] Click 'Add card item' (+ or Add Item button)
-[WAIT] Card item row appears with fields for title, description, and image
-[ACT] Fill title and description fields for the first card
-[ACT] Click the card image field control (button label CONTAINS 'Asset Library')
-[WAIT] Asset Library picker dialog opens (dialog heading CONTAINS 'asset library', case-insensitive)
-[ACT] Select an existing image asset and click 'Select'
-[WAIT] Dialog closes; image preview shown for first card
-[ACT] Click 'Add card item' again to add a second card; fill title, description, and select image via Asset Library
-[WAIT] Second card added with image preview
-[ASSERT] Live preview renders 2 cards in grid layout
-[ACT] Click Save","[DOM] Cards List block in sections panel; [DOM] card items added with title/description/image via Asset Library picker dialog (heading CONTAINS 'asset library'); [DOM] preview renders card grid with at least 2 cards showing images; [TOAST] Save completes","[CONSOLE] no JS errors; [NETWORK] no 4xx/5xx","Block not in library; card add button missing; Asset Library dialog does not open from card image field; preview not rendering cards; Save fails","none","C221972 C221973 C221094 VCST-4932; Synced: VCST-4932 (2026-06-11)","synced"
-"CMS-043","Two columns list block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Two Columns section
-2. Configure both columns
-3. Preview","","","","deprecated — block type removed from designer library (COV-2026-03-25-1630)","C221974 C221975 C221057","deprecated"
-"CMS-044","Video and text block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Video and Text section
-2. Configure video URL and text
-3. Preview","","","","deprecated — block type removed from designer library (COV-2026-03-25-1630)","C221976 C221977","deprecated"
 "CMS-045","Page builder field types - text, rich text, and image via Asset Library","Field Types","High",,,"Section editing open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id); use a section containing an 'Image' block (block library label: 'Image') that exposes text, rich text, image, and select field types; at least one image asset exists in store Asset Library",,"[NAV] Open a page in the PageBuilder designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) and open or add a section containing text, rich text, image, and select field types (e.g. add an 'Image' block)
 [ACT] In the text field: enter plain text
 [WAIT] Text entered
@@ -180,11 +144,12 @@
 2. Locate pages with multiple badges: Published+Scheduled, Published+Personalized, Published+Scheduled+Personalized
 3. Navigate to Archived tab — locate pages with Archived+Scheduled badges
 4. Verify all badge combinations render correctly without overlap","Multiple badges display side by side in Status column (e.g. 'Published Scheduled Personalized'); badges are legible and don't overflow the cell",,"Badges overlapping; missing badges on pages with multiple statuses; layout broken with 3 badges",,"C415441 C415442 C415443 C415444; Synced: PR #105 (2026-03-25)",
-"CMS-054","Cross-browser compatibility - Chrome and Edge","Cross-Browser","Medium",,,"CMS module accessible; admin user credentials available",,"1. Open ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) in Chrome
+"CMS-054","Cross-browser compatibility - Chrome and Edge","Cross-Browser","Medium","","","CMS module accessible; admin user credentials available","","[MANUAL] Not automatable as a single case: comparing rendering/behavior across two distinct browser engines (Chrome vs Edge) in one pass requires two separate browser sessions, but this suite's automated run executes in a single browser lane for its whole duration (see .claude/rules/mcp-browsers.md — one Playwright MCP server per suite run). The steps below remain the manual execution procedure.
+1. Open ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) in Chrome
 2. Verify page list loads, grid columns render, and badge display is correct
 3. Open ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) in Edge
 4. Repeat grid and badge verification steps
-5. Compare results between browsers","PageBuilder shell loads and functions identically in Chrome and Edge; no layout differences in grid columns or badge display; all toolbar buttons accessible in both browsers","","Page fails to load in one browser; grid columns missing or misaligned; badges rendering differently across browsers; JS errors in console","","C415427 C415428",
+5. Compare results between browsers","PageBuilder shell loads and functions identically in Chrome and Edge; no layout differences in grid columns or badge display; all toolbar buttons accessible in both browsers","","Page fails to load in one browser; grid columns missing or misaligned; badges rendering differently across browsers; JS errors in console","","C415427 C415428","Manual"
 "CMS-056","Rich Text Field Type — Add Rich Text Content Block","Field Types","High",,,"Admin logged in to Backend; page exists in Page Builder designer",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) and open an existing page
 2. Click Open Designer to enter the page builder
 3. Add a new section or open an existing section that contains a Rich Text field
@@ -302,13 +267,14 @@
 5. Enter heading text and select heading level (H1-H6)
 6. Configure alignment and styling options
 7. Check live preview renders the heading correctly","Title block added; heading text and level configurable; preview renders heading with correct size and alignment",,"Block not adding; heading level selector missing; preview not showing title",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
-"CMS-072","Designer — Section reorder via drag and drop","Designer Sections","High",,,"Page has at least 3 sections in the designer",,"1. Open a page with multiple sections in the designer
+"CMS-072","Designer — Section reorder via drag and drop","Designer Sections","High","","","Page has at least 3 sections in the designer","","[MANUAL] Not reliably automatable with the current MCP browser toolset: this reorder uses Angular CDK Drag & Drop (@angular/cdk/drag-drop), pointer-events-based (no HTML5 draggable=true anywhere). The drag must originate on a dedicated 24x24 app-drag-handle grip that only appears on row hover, and that handle carries no accessible role/name — it gets no snapshot uid, so uid-based MCP drag/click/hover tools (Chrome DevTools MCP) cannot target it at all. Even a coordinate-capable driver would need a real multi-step pointer sequence (mousedown -> incremental mousemove -> mouseup) on that handle, not a synthetic HTML5 dragstart/drop dispatch. Confirmed live 2026-07-21: a row-body drag only selects the row; Save stays disabled (no reorder committed). The steps below remain the manual execution procedure.
+1. Open a page with multiple sections in the designer
 2. Identify the order of sections in the left panel
-3. Drag the first section below the second section
+3. Drag the first section below the second section (grab the drag-handle grip that appears on hover, not the row body)
 4. Verify the sections reorder in the left panel
 5. Verify the live preview updates to reflect the new section order
 6. Save the page
-7. Reopen the page and verify the order is persisted","Sections can be dragged to reorder; left panel reflects new order immediately; preview updates; order persists after save and reload",,"Drag not working; order reverting on save; preview not reflecting reorder",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+7. Reopen the page and verify the order is persisted","Sections can be dragged to reorder; left panel reflects new order immediately; preview updates; order persists after save and reload","","Drag not working; order reverting on save; preview not reflecting reorder","","Coverage Gap Analysis COV-2026-03-25-1630","Manual"
 "CMS-073","Designer — Theme settings panel","Design Presets","High",,,"Page open in designer",,"1. Click 'Theme settings' button in the top toolbar
 2. Verify theme settings panel opens
 3. Locate color preset options (Presets section with search)
@@ -491,14 +457,19 @@
 5. Verify the storefront renders correctly with all blocks
 6. Exit preview mode (click back or close)
 7. Verify you return to the designer editing mode","Preview mode shows full storefront rendering with all blocks; interactive (scrollable, links clickable); exiting returns to designer without losing unsaved changes","","Preview button disabled; preview blank or showing error; cannot exit preview; unsaved changes lost after preview","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
-"CMS-093","API — Page search with lifecycle filter","API Layer","High","BL-CMS-009",,"Admin authenticated; API access available","storeId=@td(STORE_PRIMARY.id)","1. Call GET ${BACK_URL}/api/page-builder/grouped-pages/search with body: {storeId: '@td(STORE_PRIMARY.id)', lifecycle: 'Drafts', take: 10}
-2. Verify response contains only Draft pages
-3. Call with lifecycle: 'Active'
-4. Verify response contains only Published pages within date range
-5. Call with lifecycle: 'Archived'
-6. Verify response contains only Archived pages or pages past EndDate
-7. Call with lifecycle: 'Pending'
-8. Verify response contains only Published pages with future StartDate","Each lifecycle filter returns correctly filtered pages; response includes page metadata (name, permalink, status, dates, language); total count matches filter","","Wrong pages returned for lifecycle filter; mixed statuses in results; API error on filter value; pagination broken","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-093","API — Page search with lifecycle filter","API Layer","High","BL-CMS-009","","Admin authenticated via OAuth2 password grant (no client_id); PageBuilder module deployed","storeId=@td(STORE_PRIMARY.id)","[AUTH] Obtain Bearer token via POST {{BACK_URL}}/connect/token (OAuth2 password grant)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search with body {storeId: '@td(STORE_PRIMARY.id)', lifecycle: 'drafts', take: 10} and Bearer token
+[STATUS] Verify HTTP 200
+[BODY] Verify results[] only includes groups where at least one page has status=Draft (lifecycle matches ANY page in the group, not the group's single top-level status field)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search with body {storeId: '@td(STORE_PRIMARY.id)', lifecycle: 'active', take: 10}
+[STATUS] Verify HTTP 200
+[BODY] Verify results[] only includes groups with a Published page whose StartDate/EndDate window includes now
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search with body {storeId: '@td(STORE_PRIMARY.id)', lifecycle: 'archived', take: 10}
+[STATUS] Verify HTTP 200
+[BODY] Verify results[] only includes groups where every page is Archived, or the group's EndDate has passed
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search with body {storeId: '@td(STORE_PRIMARY.id)', lifecycle: 'pending', take: 10}
+[STATUS] Verify HTTP 200
+[BODY] Verify results[] only includes groups with a Published page whose StartDate is in the future","Each lifecycle value ('drafts'|'active'|'archived'|'pending' — lowercase, case-sensitive; the filter is a C# switch on the exact string, unmatched/mismatched values fall through to the unfiltered default) returns HTTP 200 with results[] matching its grouped-page semantics (ApplyLifecycleFilter in GroupedPageSearchService); response includes totalCount and results[] with page metadata (name, permalink, status, startDate, endDate, cultureName)","","404 on POST /api/page-builder-pages/search (endpoint contract regressed back to a removed path); a capitalized or mismatched lifecycle value (e.g. 'Drafts','Active') silently returns the unfiltered set instead of erroring — no HTTP error, but zero filtering applied; 500 on a valid lowercase lifecycle value; pagination broken","","Coverage Gap Analysis COV-2026-03-25-1630; endpoint verified live + against VirtoCommerce.PageBuilderModule Swagger and vc-module-pagebuilder source (GroupedPageSearchService.ApplyLifecycleQuery, ModuleConstants.PageLifecycleFilters) 2026-07-21 — was calling a nonexistent GET /api/page-builder/grouped-pages/search","generated"
 "CMS-094","API — Page CRUD operations","API Layer","High","BL-CMS-010",,"Admin authenticated via API","storeId=@td(STORE_PRIMARY.id); test page data","1. POST ${BACK_URL}/api/page-builder/grouped-pages — create a new page with name, permalink, language, storeId
 2. Verify response returns created page with ID and Draft status
 3. PUT ${BACK_URL}/api/page-builder/grouped-pages/{id} — update page name
@@ -537,28 +508,20 @@
 3. Open DevTools Console — verify new shell console is clean (SignalR info and preloaded resource warning are acceptable; no LOG flooding)
 4. Verify all 5 lifecycle tabs show count badges with numeric values
 5. Verify VC branding visible in sidebar","Shell loads without blank screen or JS errors; 5 lifecycle tabs with count badges; console clean (no debug flooding from new shell); VC branding visible",,"Blank screen; sidebar tabs missing; console flooding with debug LOG entries; no page counts in badges; JS errors in console","","VCST-4756; PR #105; Checklist 1.1 1.2 1.3",
-"CMS-104","Calendar control — natural language date input resolution","Field Types","Medium",,,"Page open in old designer with calendar field (ngv-datepicker)","Natural language inputs: today, tomorrow, next week, in 7 days","1. Open a page in old designer at ${BACK_URL}/Modules/$(VirtoCommerce.PageBuilderModule)/Content/page-builder-designer/index.html?storeId=@td(STORE_PRIMARY.id)
-2. Navigate to a section with a calendar field (ngv-datepicker)
-3. Click the calendar input field and type 'tomorrow'
-4. Verify field resolves to tomorrow's date
-5. Clear and type 'next week' — verify resolves to ~7 days from today
-6. Clear and type 'in 7 days' — verify resolves correctly
-7. Clear and type 'today' — verify resolves to today's date
-8. Save — verify resolved date persists after reload","All four natural language inputs resolve to correct dates via chrono-node; resolved dates persist after Save",,"Input not recognized (stays empty or shows raw text); wrong date resolved; chrono-node not bundled (TypeError); resolved date not persisting after save","","VCST-4756; PR #105; Checklist 6.1.4",
-"CMS-105","String control — multiline textarea renders and respects row limits","Field Types","Medium",,,"Page open in old designer with multi-line string field (textarea)","Multi-line string schema with multiline=true, minRowsCount=3, maxRowsCount=10","1. Open page in old designer
-2. Navigate to section with multi-line string field
-3. Verify field renders as textarea (not single-line input)
-4. Enter multiple lines with Enter key — verify textarea auto-expands
-5. Continue adding lines beyond maxRowsCount limit
-6. Verify scrollbar appears inside textarea (no further expansion)
-7. Save — verify multi-line content persists with newlines after reload","Multi-line field renders as textarea; auto-expands up to maxRowsCount; scrollbar appears at limit; content saves with newlines intact",,"Renders as single-line input; no expansion; scrollbar missing at limit; newlines lost after save","","VCST-4756; PR #105; Checklist 6.2.2 6.2.3",
-"CMS-106","Markdown control — EasyMDE editor renders with formatting toolbar","Field Types","Medium",,,"Page open in old designer with markdown field","Markdown content with bold, italic, heading, link","1. Open page in old designer
-2. Navigate to section with markdown field (EasyMDE)
-3. Verify EasyMDE editor renders with formatting toolbar
-4. Verify toolbar includes: Bold, Italic, Heading, Link, Preview buttons
-5. Click Bold and type 'Bold text' — verify **Bold text** syntax appears
-6. Click Preview — verify formatted HTML renders (bold text appears bold)
-7. Save — verify markdown content persists after reload","EasyMDE editor with toolbar renders; formatting controls insert correct markdown syntax; Preview renders HTML; content persists after Save",,"Plain textarea without EasyMDE; toolbar missing; bold/italic not inserting syntax; preview showing raw markdown; content lost after save","","VCST-4756; PR #105; Checklist 6.3.6",
+"CMS-106","Markdown control — EasyMDE editor renders with formatting toolbar","Field Types","Medium","","","Page open in the PageBuilder designer (Template Builder v3.0, the live app reached via 'Open Designer' from the page blade) with a 'Text' block's Content field","Markdown content with bold, italic, heading, link","[NAV] Open a page in the designer; add or open a 'Text' block
+[ACT] Click into the Content field
+[WAIT] Markdown editor renders with a formatting toolbar
+[ASSERT] Toolbar includes: Bold, Italic, Heading, Quote, Lists, Link, Image, Markdown Guide
+[ACT] Click Bold and type 'Bold text'
+[WAIT] Raw markdown syntax **Bold text** appears in the editor
+[ACT] Click Link and enter a URL
+[WAIT] Raw markdown link syntax appears in the editor
+[ACT] Click Save
+[WAIT] Save completes","Markdown editor toolbar renders with Bold, Italic, Heading, Quote, Lists, Link, Image, and Markdown Guide controls
+Bold control inserts **text** syntax at the cursor
+Link control inserts markdown link syntax
+Editor shows raw markdown text (no live HTML rendering) plus a lines/words counter
+Content persists after Save and reload","[CONSOLE] no JS errors while using the toolbar or saving","Toolbar missing one or more of Bold/Italic/Heading/Quote/Lists/Link/Image/Markdown Guide; Bold or Link not inserting correct markdown syntax; content lost after save","none","VCST-4756; PR #105; Checklist 6.3.6; rewritten 2026-07-21 (REG-2026-07-21-1438 triage) — confirmed live the EasyMDE-style editor and its Bold/Italic/Heading/Quote/Lists/Link/Image/Markdown Guide toolbar still exist, but there is NO Preview/side-by-side/fullscreen toggle in the current toolbar; the Preview-specific assertion is dropped, not tested as absent",""
 "CMS-107","Collection control — add, remove, and reorder list items","Field Types","Medium",,,"Page open in old designer with collection/repeatable list field","List items with title and description fields","1. Open page in old designer with collection field
 2. Verify Add button (+ or Add Item) is present
 3. Click Add — verify new item row appears
@@ -568,12 +531,13 @@
 7. Click remove on first item — verify removed from list
 8. If drag handles visible, drag to reorder — verify order changes in preview
 9. Save — verify remaining items persist with correct values and order","Add creates item rows; remove deletes them; content saves and persists; reorder persists if drag handles present",,"Add button missing; remove not functional; items not saving; content lost on reload; drag handle not functional","","VCST-4756; PR #105; Checklist 6.3.7",
-"CMS-108","Unknown control type — fallback renderer prevents crash","Field Types","Low","","ECL-13.1","Access to a page section using an unregistered control type (requires dev/test schema modification)",,"1. Open page in old designer containing a section with an unregistered control type
+"CMS-108","Unknown control type — fallback renderer prevents crash","Field Types","Low","","ECL-13.1","Access to a page section using an unregistered control type (requires dev/test schema modification)","","[MANUAL] Not automatable via black-box UI alone: requires a deliberately-broken/unregistered control-type schema that is not reachable through the Admin UI. Confirmed live 2026-07-21 — the designer referenced here (page-builder-designer/index.html) is the current live Template Builder v3.0 app, not a dead legacy one, but there is no UI path to register an unknown control type; this needs a dev-injected malformed schema. Kept as manual/dev-verification coverage rather than removed from the suite, since the fallback-rendering behavior itself is still a real defensive code path worth a developer re-checking whenever the control registry changes.
+1. Open page in designer containing a section with an unregistered control type (requires dev/test schema modification)
 2. Navigate to that section in the left panel
 3. Verify designer does NOT crash or show blank/broken panel
 4. Verify fallback 'unknown editor' or placeholder widget renders
 5. Verify other sections remain functional and editable
-6. Verify no unhandled JS exception in DevTools console","Fallback unknown-editor placeholder renders for unregistered types; no crash; other sections remain editable; no unhandled console exceptions",,"Designer crashes; blank panel; JS exception thrown; other sections become uneditable","","VCST-4756; PR #105; Checklist 6.3.9",
+6. Verify no unhandled JS exception in DevTools console","Fallback unknown-editor placeholder renders for unregistered types; no crash; other sections remain editable; no unhandled console exceptions","","Designer crashes; blank panel; JS exception thrown; other sections become uneditable","","VCST-4756; PR #105; Checklist 6.3.9; confirmed dev-only 2026-07-21 (REG-2026-07-21-1438 triage) — designer is live (Template Builder v3.0), only the unregistered-schema precondition is UI-unreachable","Manual"
 "CMS-109","Regression — String field value persists after save in designer Settings","Designer Core","High","","ECL-2.3","Old designer open with Settings section visible; Page Header / H1 string field present",,"1. Open page in old designer at ${BACK_URL}/Modules/$(VirtoCommerce.PageBuilderModule)/Content/page-builder-designer/index.html?storeId=@td(STORE_PRIMARY.id)
 2. Click Settings section in left panel
 3. Locate 'Page Header / H1' text field
@@ -640,21 +604,23 @@
 [WAIT] 'Select' button becomes enabled
 [ACT] Click 'Select'
 [WAIT] Dialog closes; image preview shown in control","[DOM] 'Upload' button present in dialog; [DOM] uploaded file appears in folder list after upload; [DOM] uploaded file is selectable (not greyed out); [BLADE] dialog closes and image applied after selecting uploaded file","[CONSOLE] no JS errors during upload; [NETWORK] POST asset upload request succeeds (2xx); no 4xx/5xx","Upload button absent in dialog; upload fails; uploaded file does not appear in list; uploaded file not selectable immediately; dialog freezes during upload","Delete AGENT-TEST-image-4932.jpg from Asset Library via Admin Asset Library workspace after test","VCST-4932","Draft"
-"CMS-116","Asset Library Picker — drag-and-drop upload into dialog","Asset Library Picker","Medium","","ECL-7.3","Admin logged in; dialog open at a folder location; local test file available","storeId=@td(STORE_PRIMARY.id); drag-and-drop test file: AGENT-TEST-dnd-4932.png","[NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
+"CMS-116","Asset Library Picker — drag-and-drop upload into dialog","Asset Library Picker","Medium","","ECL-7.3","Admin logged in; dialog open at a folder location; local test file available","storeId=@td(STORE_PRIMARY.id); drag-and-drop test file: AGENT-TEST-dnd-4932.png","[MANUAL] Not automatable with the current MCP browser toolset: this drags a LOCAL OS FILESYSTEM file onto an in-browser drop zone. Playwright/Chrome DevTools MCP expose DOM-to-DOM drag primitives and a file-chooser upload primitive (browser_file_upload), but no native OS-level drag-source (there is no ""drag this local file from the OS into the page"" tool). The equivalent upload capability into the Asset Library is already covered automatically via CMS-115 (click Upload -> native file chooser -> select file), which exercises the same backend upload endpoint; only the drag GESTURE itself is untestable here. The steps below remain the manual execution procedure.
+[NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
 [WAIT] Dialog opens
 [ACT] Navigate into a target folder
 [ACT] Drag a local image file (AGENT-TEST-dnd-4932.png) and drop it onto the dialog file list area
 [WAIT] Upload progress; file appears in list
 [ASSERT] Dropped file visible in file list at the current folder level
 [ACT] Select the uploaded file and click 'Select'
-[WAIT] Dialog closes; image applied to control","[DOM] drag-and-drop area accepts file drop (no 'invalid drop target' browser default); [DOM] dropped file uploads and appears in current folder list; [DOM] file selectable immediately after drop; [BLADE] file applied to image control after Select","[CONSOLE] no JS errors; [NETWORK] POST upload request succeeds after drop","Drop has no effect; file not uploaded; file not appearing after drop; dialog freezes; upload error message shown","Delete AGENT-TEST-dnd-4932.png from Asset Library after test","VCST-4932","Draft"
-"CMS-117","Asset Library Picker — drag file onto a folder uploads into that folder","Asset Library Picker","Medium",,,"Admin logged in; dialog open at root level with at least one folder visible; local test file available","storeId=@td(STORE_PRIMARY.id); drag test file: AGENT-TEST-folder-drop-4932.jpg","[NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
+[WAIT] Dialog closes; image applied to control","[DOM] drag-and-drop area accepts file drop (no 'invalid drop target' browser default); [DOM] dropped file uploads and appears in current folder list; [DOM] file selectable immediately after drop; [BLADE] file applied to image control after Select","[CONSOLE] no JS errors; [NETWORK] POST upload request succeeds after drop","Drop has no effect; file not uploaded; file not appearing after drop; dialog freezes; upload error message shown","Delete AGENT-TEST-dnd-4932.png from Asset Library after test","VCST-4932","Manual"
+"CMS-117","Asset Library Picker — drag file onto a folder uploads into that folder","Asset Library Picker","Medium","","","Admin logged in; dialog open at root level with at least one folder visible; local test file available","storeId=@td(STORE_PRIMARY.id); drag test file: AGENT-TEST-folder-drop-4932.jpg","[MANUAL] Not automatable with the current MCP browser toolset — same OS-level filesystem drag-drop limitation as CMS-116 (no native drag-source primitive for filesystem-to-browser), here targeting a specific folder drop zone rather than the general list area. The steps below remain the manual execution procedure.
+[NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
 [WAIT] Dialog opens at root; folders visible
 [ACT] Drag a local image (AGENT-TEST-folder-drop-4932.jpg) and drop it ONTO a visible folder in the list (not the general drop area)
 [WAIT] Upload completes
 [ACT] Navigate into that folder
 [ASSERT] AGENT-TEST-folder-drop-4932.jpg appears inside the folder
-[ASSERT] File is NOT visible at root level","[DOM] dragging onto a folder icon uploads into that specific folder; [DOM] file appears inside target folder after drop, not at root level","[CONSOLE] no JS errors; [NETWORK] upload request includes correct folder path","Drop onto folder uploads to root instead; file not uploaded; file visible at root AND in folder (duplicate); navigation to folder shows no file","Delete AGENT-TEST-folder-drop-4932.jpg from folder after test","VCST-4932","Draft"
+[ASSERT] File is NOT visible at root level","[DOM] dragging onto a folder icon uploads into that specific folder; [DOM] file appears inside target folder after drop, not at root level","[CONSOLE] no JS errors; [NETWORK] upload request includes correct folder path","Drop onto folder uploads to root instead; file not uploaded; file visible at root AND in folder (duplicate); navigation to folder shows no file","Delete AGENT-TEST-folder-drop-4932.jpg from folder after test","VCST-4932","Manual"
 "CMS-118","Asset Library Picker — unsupported file type rejected for image control","Asset Library Picker","High","","ECL-2.1","Admin logged in; image control dialog open; have a non-image file (e.g. .pdf or .exe) locally available","storeId=@td(STORE_PRIMARY.id); unsupported test file: AGENT-TEST-unsupported-4932.pdf","[NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
 [WAIT] Dialog opens
 [ACT] Attempt to upload a non-image file (AGENT-TEST-unsupported-4932.pdf) via the Upload button
@@ -662,13 +628,14 @@
 [ASSERT] Unsupported file is rejected via EITHER: (a) the file chooser filters to image types only so the non-image file cannot be selected, OR (b) a clear error/validation message is shown after upload attempt; in both cases the dialog remains open and usable
 [ASSERT] Dialog remains usable (not crashed or frozen) after the rejection
 [ACT] Verify the image control still has its previous state (not corrupted)","[DOM] unsupported file type rejected: EITHER file chooser restricts to image types (filter-based prevention — current build observed on vcptcore-qa 2026-06-11) OR a clear validation message is shown; [BLADE] dialog remains open and functional after rejection in either case; [FORM] image control not corrupted; [DOM] no partial upload state visible; NOTE: current build uses silent client-side file-chooser filtering — no explicit error message shown; the dialog staying usable is the pass criterion","[CONSOLE] no uncaught exceptions; no 500 errors in Network","No type restriction AND no error shown for unsupported type; .pdf accepted and stored as image; dialog freezes after rejection; image control shows broken link","none — rejection leaves no persistent state","VCST-4932","Draft"
-"CMS-119","Asset Library Picker — oversized file rejected with clear error","Asset Library Picker","High","","ECL-2.1","Admin logged in; dialog open; have a file that exceeds the store's configured max upload size (NOTE: confirm the current configured limit before authoring the fixture — on vcptcore-qa 2026-06-11 a 16.5 MB file was accepted, so the limit is larger; do NOT hardcode 10 MB)","storeId=@td(STORE_PRIMARY.id); oversized test file: AGENT-TEST-oversized-4932.jpg (must exceed the store's currently configured max upload size — verify limit in store config before test)","[NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
+"CMS-119","Asset Library Picker — oversized file rejected with clear error","Asset Library Picker","High","","ECL-2.1","Admin logged in; dialog open; have a file that exceeds the store's configured max upload size (NOTE: confirm the current configured limit before authoring the fixture — on vcptcore-qa 2026-06-11 a 16.5 MB file was accepted, so the limit is larger; do NOT hardcode 10 MB)","storeId=@td(STORE_PRIMARY.id); oversized test file: AGENT-TEST-oversized-4932.jpg (must exceed the store's currently configured max upload size — verify limit in store config before test)","[MANUAL] Not currently enforceable/testable as written: confirmed live 2026-07-21 via two independent methods (a full audit of all Platform Settings groups, and a live 22 MB file upload accepted with zero validation error) that NO max-upload-size limit is configured or enforced anywhere for PageBuilder's Asset Library. The only similarly-named setting, Quotes.FileUploadScopeName, is an unrelated storage-scope key for the Quotes/RFQ module, not a size limit. Kept as manual/reassess-later — re-automate against a real value if a size limit is ever configured; do not assert a limit that isn't enforced.
+[NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
 [WAIT] Dialog opens
 [ACT] Click 'Upload' and select a file that exceeds the store's configured maximum upload size limit
 [WAIT] System attempts upload
 [ASSERT] Upload fails with a clear error message indicating size limit exceeded
 [ASSERT] Dialog remains open and usable after the error (not frozen or broken)
-[ASSERT] File does NOT appear in the folder list","[DOM] clear size-exceeded error message shown; [BLADE] dialog stays open after rejection; [DOM] oversized file absent from folder list; [DOM] Upload button re-enabled for retry","[CONSOLE] no unhandled exception; [NETWORK] upload request returns 4xx (e.g. 413) or client-side rejection before request","No error message shown; file silently accepted despite exceeding limit; dialog frozen after rejection; file partially visible in list; 500 Server Error","none","VCST-4932","Draft"
+[ASSERT] File does NOT appear in the folder list","[DOM] clear size-exceeded error message shown; [BLADE] dialog stays open after rejection; [DOM] oversized file absent from folder list; [DOM] Upload button re-enabled for retry","[CONSOLE] no unhandled exception; [NETWORK] upload request returns 4xx (e.g. 413) or client-side rejection before request","No error message shown; file silently accepted despite exceeding limit; dialog frozen after rejection; file partially visible in list; 500 Server Error","none","VCST-4932; confirmed no enforced limit 2026-07-21 (REG-2026-07-21-1438 triage) — 22 MB accepted, no PageBuilder/CMS/Assets size setting found in any Platform Settings group","Manual"
 "CMS-120","Asset Library Picker — persistence after save, refresh, and reopen","Asset Library Picker","Critical",,,"Admin logged in; 'Image' block (block library label: 'Image') added to a draft page; image asset selected via Asset Library","storeId=@td(STORE_PRIMARY.id)","[NAV] Open a draft page in designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
 [WAIT] Dialog opens
 [ACT] Select an image asset and click 'Select'
@@ -784,14 +751,6 @@
 [ASSERT] Deletion does NOT proceed silently without this warning — user must consciously confirm
 [ACT] Cancel the deletion (click Cancel or dismiss)
 [ASSERT] Asset remains in the folder list after cancellation","[DOM] delete confirmation/warning shown when asset has references; [DOM] warning message lists the referencing pages (name and/or count); [DOM] asset NOT deleted on dismiss/Cancel; [DOM] asset remains in folder after cancellation","[CONSOLE] no JS errors during delete initiation; [NETWORK] reference check request precedes delete (2xx)","Asset deleted silently with no warning (references not checked); delete proceeds immediately without confirmation; warning shown but no page details; cancellation fails (asset deleted anyway)","none — test verifies the warning and cancels","VCST-4932","Draft"
-"CMS-132","Asset Library Picker — file control (non-image) selection via Asset Library","Asset Library Picker","High",,,"Admin logged in; page has a block with a file-type control (e.g. PDF download block or file attachment field); at least one non-image file (e.g. .pdf) exists in Asset Library","storeId=@td(STORE_PRIMARY.id)","[NAV] Open designer; navigate to a section with a file-type control (not image-type); click 'Choose from Asset Library' on the file field
-[WAIT] Asset Library picker dialog opens
-[ASSERT] Dialog is NOT restricted to image files only — non-image files (e.g. .pdf, .zip) are visible
-[ACT] Navigate to a folder containing a .pdf or other document file
-[ACT] Click the file to select it; click 'Select'
-[WAIT] Dialog closes; file reference applied to control
-[ASSERT] File control shows the selected file name or a preview indicator
-[ACT] Click Save","[DOM] file-type control opens Asset Library dialog; [DOM] non-image files visible in dialog for file control (not filtered to images only); [FORM] selected non-image file applied to file control after Select; [TOAST] Save completes","[CONSOLE] no JS errors; [NETWORK] no 4xx/5xx","Dialog for file control filters to images only (incorrect for file type); non-image files not selectable; file control field empty after Select; Save fails","none","VCST-4932","Draft"
 "CMS-133","Asset Library Picker — console clean and no 4xx/5xx during core flow","Asset Library Picker","High",,,"Admin logged in; designer open with a page that has an image control; store Asset Library has at least one image","storeId=@td(STORE_PRIMARY.id)","[NAV] Open designer; open a section with an image control
 [ACT] Open DevTools Console and Network tab (clear both before starting)
 [ACT] Click 'Choose from Asset Library'

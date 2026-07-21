@@ -607,5 +607,36 @@
   "ACCEPTED_QUOTE": {
     "id": "56da2e96-e32b-42f4-885e-57261ce60e12",
     "number": "AGENT-TEST-QTE-ACCEPTED"
+  },
+  "RESTRICTED_CMS_ADMIN": {
+    "_inline": true,
+    "platform_id": "6e261ed3-9bf7-44ac-8e9b-324babab3d84",
+    "user_id": "6e261ed3-9bf7-44ac-8e9b-324babab3d84",
+    "role_id": "AGENT-TEST-Restricted-CMS-Viewer"
+  },
+  "PB_HOMEPAGE": {
+    "_inline": true,
+    "group_id": "cf53deac-0eb8-466c-8785-df8b0cbd5a35",
+    "permalink": "/qa-homepage-spring-sale"
+  },
+  "PB_WHOLESALE_GUIDE": {
+    "_inline": true,
+    "group_id": "2ee75ae8-7f45-4974-b6f8-70dcd0c9a0b7",
+    "permalink": "/qa-wholesale-buyer-guide"
+  },
+  "PB_SUMMER_PREVIEW": {
+    "_inline": true,
+    "group_id": "b6b4c481-02af-4b9f-8184-a5c8e26b5d68",
+    "permalink": "/qa-summer-collection-preview"
+  },
+  "PB_PARTNER_SUPPORT": {
+    "_inline": true,
+    "group_id": "52bdc541-c5a3-4d1e-8df0-5d1970a30eef",
+    "permalink": "/qa-partner-portal-support"
+  },
+  "PB_RETURN_POLICY": {
+    "_inline": true,
+    "group_id": "a08d0245-f089-4d27-8526-3191ba17ee7b",
+    "permalink": "/qa-return-policy"
   }
 }

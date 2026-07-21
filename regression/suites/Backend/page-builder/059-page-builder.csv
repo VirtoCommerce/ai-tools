@@ -40,11 +40,23 @@
 4. Click Active tab — verify counter increased by 1","Draft counter decreases by 1 after publish; Active counter increases by 1; page appears in Active list with Published badge",,"Counters not updating after status change; page still appears in Draft list after publish",,"C415384; Synced: PR #105 (2026-03-25)",
 "CMS-022","Page blade - Basic information fields","Page Configuration","High",,,"Page blade is open",,"1. Open a page
 2. Verify Basic information section",,,,,"C415391 C415392 C415393 C415394",
-"CMS-023","Scheduling section - set start and end dates","Page Configuration","High",,,"PAGE-4 seeded or PAGE-1 available in Draft","PAGE-4 from test-data/cms/pagebuilder-pages.md","1. Open page
-2. Expand Scheduling section
-3. Set Start date via datepicker
-4. Set End date via datepicker
-5. Save","Start and End dates saved; Scheduling section displays saved dates; page shows Scheduled badge in grid after publish",,,,"C415395 C415396 C415397 C415398",
+"CMS-023","Scheduling section - set start and end dates","Page Configuration","High","","","PAGE-4 seeded or PAGE-1 available in Draft","PAGE-4 from test-data/cms/pagebuilder-pages.md","[NAV] Open PAGE-4 (or PAGE-1) from the Draft list
+[WAIT] Page detail blade slides in and settles (a click during the slide-in animation can race and time out)
+[ACT] Expand the Scheduling section
+[WAIT] Start date / End date fields are visible
+[ACT] Click the Start date field (data-test-id 'dp-input', a readonly @vuepic/vue-datepicker input wrapped by vc-shell VcDatePicker — it does not accept typed/keyboard input)
+[WAIT] Date picker calendar popup opens (a day grid; each day cell has data-test-id 'dp-YYYY-MM-DD')
+[ACT] Click the target Start day cell (e.g. data-test-id 'dp-2026-08-01') — clicking a day auto-applies the date, there is no separate confirm/OK button
+[WAIT] Popup closes; Start date field shows the selected date
+[ACT] Click the End date field ('dp-input')
+[WAIT] Its calendar popup opens
+[ACT] Click the target End day cell
+[WAIT] Popup closes; End date field shows the selected date
+[ACT] Click Save
+[WAIT] Save completes","Start date field shows the selected day immediately after its calendar popup click
+End date field shows the selected day immediately after its calendar popup click
+Save persists both dates — reopening the page shows the same Scheduling values
+Page shows Scheduled badge in grid after publish","[CONSOLE] no JS errors while opening either calendar popup or clicking a day cell","Clicking the 'dp-input' field does not open the calendar popup; clicking a day cell does not apply the date or close the popup; Save does not persist the selected dates; Scheduled badge missing from the grid after publish","Restore PAGE-4's original scheduling dates (see test-data/cms/pagebuilder-pages.md) if this run used the shared PAGE-4 fixture rather than a disposable page","C415395 C415396 C415397 C415398; automatability confirmed live 2026-07-21 (REG-2026-07-21-1438 triage) — the field is a clickable DOM calendar popup (@vuepic/vue-datepicker), not a native OS date picker; selectors: 'dp-input' trigger, 'dp-YYYY-MM-DD' day cells",""
 "CMS-024","Personalization - visibility toggle","Page Configuration","High",,,"PAGE-2 or PAGE-5 seeded (Published with personalization)","PAGE-2 or PAGE-5 from test-data/cms/pagebuilder-pages.md","1. Open page
 2. Expand Personalization section
 3. Toggle Visibility OFF
