@@ -576,8 +576,102 @@ test("checkpoint (background_tasks): a Stop with a pending bg task records `defe
     assert.equal(fin.decision.verdict, "deferred");
     assert.equal(fin.decision.suppressReason, "subagent-running");
     assert.equal(fin.decision.surfaced, false);
-    assert.ok(fin.decision.pendingSubagents >= 1, "pendingSubagents must be counted");
+    assert.equal(fin.decision.pendingSubagents, 1, "exactly one pending sub-agent");
     assert.equal(spansOf(recs, "command", "qa-fix").length, 0, "the command span must NOT be closed at a checkpoint");
+    assert.equal(spansOf(recs, "agent", "fullstack-backend").length, 0, "the open agent op must NOT be drained/emitted at a checkpoint");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("checkpoint (background_tasks isolated): the field defers even with NO open agent op", () => {
+  const home = setupHome();
+  try {
+    const sid = "cp-bg-isolated";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-17" });
+    // A COMPLETED op (paired) so openOps is empty → the ONLY pending signal is the field.
+    // This isolates the `background_tasks`-driven branch: if the detection fell back to
+    // `openAgents` here it would (wrongly) drain instead of defer, failing this test.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "e1", "Edit", { file_path: "a.cs" }),
+      toolResult("2026-01-01T00:00:01Z", "e1", false, "edited"),
+    ]);
+    const out = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      background_tasks: [{ agent_id: "bg1", agent_type: "fullstack-backend" }],
+    });
+    assert.equal(out.trim(), "", "a field-driven checkpoint must not print");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "deferred", "background_tasks alone (no open agent op) must defer");
+    assert.equal(fin.decision.pendingSubagents, 1);
+    assert.equal(spansOf(readSpans(home, sid), "command", "qa-fix").length, 0, "command not closed at checkpoint");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("terminal drain: an orphaned agent op + empty background_tasks must DRAIN, not defer forever", () => {
+  const home = setupHome();
+  try {
+    const sid = "orphan-drain";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-16" }, LINE_OFF);
+    // A sub-agent Task that NEVER returns (orphaned — interrupted/crashed, or its result
+    // landed in a skipped sidechain). openAgents === 1, but the platform reports NO pending
+    // background task (field present, empty) → this is a TERMINAL Stop and must drain.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-backend", description: "fix" }),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", background_tasks: [] }, LINE_OFF);
+    assert.equal(out.trim(), "", "line off → no stdout");
+
+    const recs = readSpans(home, sid);
+    const fins = finalizesOf(recs);
+    assert.equal(fins.length, 1, "exactly one finalize (terminal), not an endless defer");
+    assert.notEqual(fins[0].decision.verdict, "deferred", "empty background_tasks on a terminal Stop must DRAIN, not defer");
+    assert.equal(spansOf(recs, "command", "qa-fix").length, 1, "the trailing command span is closed at the terminal Stop");
+    assert.equal(spansOf(recs, "agent", "fullstack-backend").length, 1, "the orphaned agent op is drained (emitted), not lost");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("checkpoint suppresses a findings escalation until the terminal Stop", () => {
+  const home = setupHome();
+  try {
+    const sid = "cp-findings";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-18" });
+    // A blocking error (would flag) AND a sub-agent still running in the same turn.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", true, "permission denied: token missing pull-request scope"),
+      toolUse("2026-01-01T00:00:02Z", "ta1", "Task", { subagent_type: "fullstack-backend", description: "fix" }),
+    ]);
+    // Checkpoint: sub-agent pending → the finding must NOT be surfaced mid-task.
+    const cp = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      background_tasks: [{ agent_id: "ta1", agent_type: "fullstack-backend" }],
+    });
+    assert.equal(cp.trim(), "", "a finding must not be surfaced while a sub-agent is still running");
+    assert.equal(finalizesOf(readSpans(home, sid))[0].decision.verdict, "deferred");
+
+    // Sub-agent returns; terminal Stop → NOW the finding surfaces.
+    appendLines(transcriptPath, [toolResult("2026-01-01T00:00:05Z", "ta1", false, "done")]);
+    run(home, "agentstop", { session_id: sid, transcript_path: transcriptPath });
+    const term = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", background_tasks: [] });
+    const dec = JSON.parse(term);
+    assert.equal(dec.decision, "block", "the finding surfaces at the terminal Stop");
+    assert.match(dec.reason, /vc-self-check/);
+    const fins = finalizesOf(readSpans(home, sid));
+    assert.equal(fins[fins.length - 1].decision.verdict, "flagged");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

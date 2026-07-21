@@ -586,14 +586,20 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> 
 
 - `scaffold-env` writes `.env.<new>` — the new deployment's URLs/identifiers (`FRONT_URL`,
   `BACK_URL`, store/culture, `ADO_ORG`/`ADO_PROJECT` if Azure). All empty for the operator to fill.
+  It also re-emits the **project-level** connection placeholders (`JIRA_BASE_URL`/`JIRA_PROJECT_KEY`,
+  or `ADO_ORG`/`ADO_PROJECT`, or `CLIENT_REPO_ORG`). **Those are safe to leave empty in `.env.<new>`
+  — they are already in `project-profile.json`, and every runtime consumer falls back to the profile
+  (`process.env.X || profile.…`).** Only the per-env **URLs** genuinely need filling; don't ask the
+  operator to re-enter tracker/org values they already gave at onboarding.
 - `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
   (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Cross-env
   tokens** (`GITHUB_FIX_BUGS_TOKEN` / `JIRA_API_TOKEN` / `ADO_PAT`) are single-instance and
   already present from the first env — idempotent add-only leaves them untouched. (A new env
   reachable only with a *different* tracker/GitHub token is the "different project" case above.)
 
-Tell the operator both were touched, what to fill (the new env's URLs + its admin/user
-passwords), then **pause** with the unmistakable waiting banner (§3c) — no tool calls after it.
+Tell the operator both were touched and what genuinely needs filling — **the new env's URLs + its
+admin/user passwords** (the empty project-level tracker/org placeholders are covered by the profile) —
+then **pause** with the unmistakable waiting banner (§3c) — no tool calls after it.
 
 ### Step D — verify the new environment
 

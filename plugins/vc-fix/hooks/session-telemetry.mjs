@@ -50,10 +50,11 @@
  *    turn that only handed work to a BACKGROUND SUB-AGENT and is now waiting. That
  *    sub-agent's work lives in a sidechain the scanner skips, so finalizing there
  *    would judge an INCOMPLETE session and (worse) print a "no issues" verdict
- *    mid-task. So finalize first checks `ev.background_tasks` (still-running bg
- *    tasks/sub-agents) — with a fallback to any still-open agent op in our own state
- *    — and if anything is pending it treats the Stop as a CHECKPOINT: it records a
- *    durable `{verdict:"deferred"}` decision to the jsonl and RETURNS without
+ *    mid-task. So finalize checks `ev.background_tasks` (the platform's still-running
+ *    bg-tasks/sub-agents signal, supplied on every Stop) — trusted EXCLUSIVELY when
+ *    present, with an open-agent-op count as the fallback ONLY when the field is absent
+ *    (so an orphaned op can't defer forever) — and if anything is pending it treats the
+ *    Stop as a CHECKPOINT: it records a durable `{verdict:"deferred"}` decision and RETURNS without
  *    draining/closing spans or surfacing anything. The real verdict is deferred to
  *    the TERMINAL Stop, once the sub-agent has returned (its Task result now in the
  *    MAIN transcript). `SubagentStop`→`agentstop` keeps the scan current in between.
@@ -633,8 +634,8 @@ function appendRecord(jsonlPath, record) {
 // older than the cutoff — never the current session's files, never a still-fresh
 // (in-flight) session's. Best-effort; never throws.
 function diagMaxAgeHours() {
-  const raw = process.env.VC_FIX_DIAG_MAX_AGE_H;
-  if (raw == null || raw === "") return 24;
+  const raw = (process.env.VC_FIX_DIAG_MAX_AGE_H ?? "").trim();
+  if (raw === "") return 24; // unset / whitespace-only ⇒ default
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 0) return 24; // garbage ⇒ safe default
   return n; // 0 ⇒ disabled
@@ -867,17 +868,25 @@ async function cmdFinalize(ev) {
   // `Stop` fires at the end of EVERY turn — including a turn that only handed work
   // to a background sub-agent and is now waiting. That sub-agent's work lives in a
   // sidechain the scanner skips, so finalizing here would judge an INCOMPLETE
-  // session and (worse) print a "no plugin issues" verdict mid-task. So: if any
-  // background task is still running (`ev.background_tasks`) OR any agent op is
-  // still open in our own reconstructed state (fallback when the field is absent),
-  // treat this Stop as a CHECKPOINT — record a durable `deferred` decision to the
-  // jsonl (greppable), but DON'T drain openOps, DON'T close the trailing skill/
-  // command, DON'T surface a line, DON'T run diagnostics. The open spans/ops carry
-  // over so the TERMINAL Stop (once the sub-agent has returned) does the real work.
+  // session and (worse) print a "no plugin issues" verdict mid-task. So if work is
+  // still pending we treat this Stop as a CHECKPOINT — record a durable `deferred`
+  // decision to the jsonl (greppable), but DON'T drain openOps, DON'T close the
+  // trailing skill/command, DON'T surface a line, DON'T run diagnostics. The open
+  // spans/ops carry over so the TERMINAL Stop (sub-agent returned) does the real work.
+  //
+  // `background_tasks` is the AUTHORITATIVE signal: the platform supplies it on every
+  // Stop/SubagentStop (possibly empty). When it's present we trust it EXCLUSIVELY — an
+  // empty array on a terminal Stop means nothing is pending, so we must NOT also defer on
+  // a lingering `openAgents`. Otherwise an ORPHANED agent op — a sub-agent that was
+  // interrupted/crashed, or whose result landed in a skipped sidechain, so its op never
+  // gets a matching tool_result and never closes — would defer FOREVER, and the drain
+  // safety-net below (A-F8: record the orphan as `incomplete`, close the trailing spans,
+  // emit the terminal verdict) would never run. The `openAgents` count is the fallback
+  // ONLY when the field is entirely absent (an older/edge harness that doesn't send it).
   const bgTasks = Array.isArray(ev.background_tasks) ? ev.background_tasks : [];
   let openAgents = 0;
   for (const [, sp] of state.openOps) if (sp && sp.kind === "agent") openAgents++;
-  const pendingBg = bgTasks.length > 0 || openAgents > 0;
+  const pendingBg = ("background_tasks" in ev) ? bgTasks.length > 0 : openAgents > 0;
   const stopHookActive = ev.stop_hook_active === true;
   if (pendingBg) {
     const pendingSubagents = bgTasks.length || openAgents;
