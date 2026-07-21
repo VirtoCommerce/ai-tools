@@ -542,10 +542,11 @@ test("stop_hook_active:true suppresses the findings block", () => {
     ]);
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", stop_hook_active: true });
     assert.equal(out.trim(), "", "stop_hook_active must suppress even the findings block");
-    // still recorded flagged, just not surfaced
+    // still recorded flagged, just not surfaced — and the suppression reason is accurate
     const fin = finalizeOf(readSpans(home, sid));
     assert.equal(fin.decision.verdict, "flagged");
     assert.equal(fin.decision.surfaced, false);
+    assert.equal(fin.decision.suppressReason, "stop-hook-active", "suppression by our own resume-turn is logged as stop-hook-active, not already-surfaced");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

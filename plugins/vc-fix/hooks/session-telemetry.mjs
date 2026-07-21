@@ -896,15 +896,20 @@ async function cmdFinalize(ev) {
     freshCount: uniqueFresh.length,
     flaggedTotal: state.flagged.length,
     surfaced, // did we resume + print a visible line this turn
+    // Why nothing surfaced this turn (audit only — never affects behavior). `stopHookActive`
+    // is checked before the dedup fallback so a suppression caused by OUR OWN resume-turn's
+    // Stop is logged as "stop-hook-active", not misreported as "already-surfaced".
     suppressReason: surfaced
       ? null
       : uniqueFresh.length === 0
         ? (pluginActivity ? "clean" : "no-plugin-activity")
         : consentOff
           ? "consent-off"
-          : state.selfCheckSeen
-            ? "self-check-session"
-            : "already-surfaced",
+          : stopHookActive
+            ? "stop-hook-active"
+            : state.selfCheckSeen
+              ? "self-check-session"
+              : "already-surfaced",
   };
 
   appendRecord(jsonl, {
