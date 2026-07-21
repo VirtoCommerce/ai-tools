@@ -20,6 +20,7 @@ prove it with a red→green test, and open a **pull request for human review**. 
 of `ci/agents/fix-frontend-agent.md` (design heritage; the `ci/` tree is not shipped in the plugin).
 
 > **Shared framework:** `knowledge/agents/developers/shared-instructions.md` — write-tool discipline,
+> fast local navigation/editing (an LSP-backed tool such as Serena, when your environment has one),
 > single-repo / no-auto-merge / never-edit-tests rules, escalation, reporting. **Gate ladder:**
 > `.claude/rules/quality-gates.md` (you own G2, G3; you feed G4–G7).
 
@@ -57,9 +58,12 @@ historical storefront failure pattern.
 > Plus `storefront-selectors.md` (`data-test-id` map) and `storefront-config-flags.md` (`$cfg.*`).
 
 - **Find the seam:** route/page → component (`.vue`) → composable (`use*`) → store / provide-inject →
-  GraphQL xAPI query → util. `Grep`/`Glob` on the component name, `data-test-id`, composable, route
-  name, i18n key, or GraphQL operation. Verify the real GraphQL field (storefront mirrors the backend
-  "wrong field silently no-ops" trap; generated `core/api/graphql/**/types.ts` is **not** hand-edited).
+  GraphQL xAPI query → util. Once checked out (workflow step 2), prefer an available LSP-backed symbol
+  tool (e.g. Serena's `get_symbols_overview`/`find_symbol`) to jump straight to the component/composable —
+  `Grep`/`Glob` on the component name, `data-test-id`, route name, i18n key, or GraphQL operation is the
+  fallback, and the default when no such tool is enabled this session (`shared-instructions.md` §Fast
+  local navigation & editing). Verify the real GraphQL field (storefront mirrors the backend "wrong field
+  silently no-ops" trap; generated `core/api/graphql/**/types.ts` is **not** hand-edited).
 - **The UI kit ships in-repo** at `client-app/ui-kit/` → a UI-kit component bug is **still single-repo**
   (Gate 1 passes), your lane. In `vc-frontend` specifically, a separately *published* design-system npm
   package (`@vc-shell/*` etc. in `package.json` **dependencies**, imported as an external library) is
@@ -117,7 +121,12 @@ Invoke the development skills:
    may differ — do not assume). Clone URL + auth = `contribution.cloneUrl` + `contribution.authEnv`
    (Azure Repos: embed `$ADO_PAT`, never print it). Use **absolute paths** and `git -C "<checkout>"`;
    never `cd` into the workspace as a persisted directory.
-3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once.
+3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once. **If
+   an LSP-backed symbol tool is available this session (e.g. Serena), activate the checkout as its
+   project now** (`activate_project` on the absolute path), not before — the TS server can't resolve
+   the `@/` → `client-app/` alias (or anything in `node_modules`) until install has run, so activating
+   any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md` §Fast local
+   navigation & editing).
 4. **Reproduce (red)** — add a NEW `*.spec.ts` asserting expected behavior; confirm it fails by running
    **only that spec file** — `npx vitest run <path/to/new.spec.ts>`. Trivial-skip only for a one-line
    template/typo/binding with no assertable logic (note in PR body + manual verification steps).
@@ -179,7 +188,8 @@ Invoke the development skills:
 | Clone / branch / commit / push | **Bash** `git`, `gh repo clone` (via `skills/qa-fix-routing/repo-router.ts` semantics) |
 | Install / build | **Bash** `yarn install --frozen-lockfile \|\| npm ci`, `yarn build \|\| npm run build` (per `REPO_PROFILES.frontend`) |
 | Typecheck / lint / test | **Bash** `yarn typecheck \|\| npx vue-tsc --noEmit`, repo lint cmd, `yarn test:unit \|\| npx vitest run` (`-t VCST-XXXX` to filter the repro) |
-| Source edits | **Write/Edit** in `.fix-workspace/<repo-basename>/`, or `.fix-workspace/<module-repo>/<subApp.path>/` when routed to a module sub-app |
+| Find/read the seam (post-clone) | an LSP-backed symbol tool if available (e.g. Serena `get_symbols_overview`/`find_symbol`/`find_referencing_symbols`) — else `Grep`/`Glob`/`Read` |
+| Source edits | an LSP-backed symbol tool's precise edit if available (e.g. Serena `replace_symbol_body`/`insert_after_symbol`/`insert_before_symbol`) — else **Write/Edit** in `.fix-workspace/<repo-basename>/`, or `.fix-workspace/<module-repo>/<subApp.path>/` when routed to a module sub-app |
 | Repo read (pre-clone) | `mcp__github__search_code`, `get_file_contents`, `get_pull_request*` |
 | PR open + CI status | `gh pr create`, `gh pr checks`, `mcp__github__get_pull_request_status` |
 

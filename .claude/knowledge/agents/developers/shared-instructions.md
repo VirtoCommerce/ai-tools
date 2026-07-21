@@ -34,6 +34,72 @@ gate ladder — never diverge from it.
 | Branch | `claude/qa-autofix/VCST-XXXX` |
 | Output | `reports/fixes/FIX-*/` |
 
+## Checkout hygiene — absolute paths only, never a `cd`-chain
+`checkoutForFix` clones into `.fix-workspace/<repo>/`, which is itself a git repository nested one
+level inside this repo's own working tree. **Never re-derive the checkout path via a relative `cd` +
+`git rev-parse --show-toplevel`**: run from inside `.fix-workspace/<repo>/`, `--show-toplevel`
+correctly (and unhelpfully) returns *that nested repo's* root, not this outer one — chaining a further
+`cd`/clone off that result silently nests a second copy inside the first. Verified 2026-07-21: this
+produced `.fix-workspace/<repo>/.fix-workspace/<repo>/`, which then broke Serena's `activate_project`
+on a Windows long-path error deep in a GraphQL folder (see below). Always use the **absolute path**
+`checkoutForFix` returned (or one computed once, up front) for every later `git -C`, Bash, Read/Edit,
+and Serena call — never `cd` into the workspace as a persisted directory, and never rely on
+`git rev-parse` from inside it to relocate yourself.
+
+## Fast local navigation & editing — use Serena when available, don't assume it
+Serena (`mcp__plugin_serena_serena__*`) is LSP-backed symbol navigation + precise editing.
+`.claude/settings.json`'s `enabledPlugins.serena` only *enables* it for whoever already has the plugin
+installed — it does **not** install Serena itself, so **check once per run whether its tools are
+actually present this session** before relying on them; a fresh clone or a CI runner that hasn't run
+`/plugin install serena` won't have it, same assumption the `plugins/vc-fix/` copy of this file already
+makes. When it IS available (repo checked out **and** dependencies installed — see below), it's the
+preferred tool for "find the seam" and "apply the fix" — it cuts the token/round-trip cost of the naive
+loop (`Grep` for a string → `Read` the whole file → hand-match an `old_string` in `Edit`), which is slow
+on VC modules' larger C# files and vc-frontend's `.vue` SFCs. If it isn't available this session, use
+`Grep`/`Glob`/`Read`/`Edit` exactly as documented elsewhere in this file — nothing below is a new hard
+rule, just a faster path when it's there.
+
+**Activate the checkout as Serena's project only *after* dependencies are installed** (workflow step 3
+in both dev agents — `dotnet restore` / `yarn install` — not step 2's checkout) — `activate_project` on
+the absolute `.fix-workspace/<repo>/` path, before any Grep/Read. Activating any earlier leaves
+symbol/reference lookups unreliable: Roslyn can't resolve cross-project/NuGet types until `restore`
+produces `obj/project.assets.json`, and the Vue/TS server can't resolve the `@/` → `client-app/` alias
+until `node_modules` exists.
+
+**Prefer, in order, when available:**
+1. `get_symbols_overview(file)` — the file's symbol tree (classes/methods/properties), no bodies.
+   Locates the RCA method without reading the whole file into context.
+2. `find_symbol(name_path, include_body=true)` — fetch just the target symbol's body (a controller
+   action, service method, or `<script setup>` function), not the surrounding file.
+3. `find_referencing_symbols(name_path)` — before touching a signature/contract, see every caller
+   *within this checked-out repo* in one call instead of a repo-wide `Grep`. This confirms in-repo
+   callers aren't broken; it does **not** cover external/cross-repo contract consumers (another repo's
+   REST/GraphQL/DTO/manifest usage) — the public-contract check (G1/G4) is unchanged and still required
+   regardless of what this tool reports.
+4. `replace_symbol_body` / `insert_after_symbol` / `insert_before_symbol` — apply the fix directly to
+   the symbol (swap a method body, add a guard clause, add an overload) instead of
+   Read-whole-file-then-Edit-by-string-match, which retries on whitespace or non-unique matches in a
+   large file. **Keep the replaced body byte-identical outside the actual fix lines** — a whole-body
+   replacement that also reformats or re-emits untouched lines produces a noisier diff than a surgical
+   edit, and `backend-reviewer`/`frontend-reviewer` diff-check for minimality (G4).
+
+**Fall back to `Grep`/`Glob`/`Read`/`Edit`** for anything Serena's language server doesn't index well —
+JSON/CSV config, `.csproj`/`.sln`, `module.manifest`, test-data CSVs, markdown — or if the language
+server errors/times out for that repo. Never block the fix on Serena; it is a **speed optimization,
+not a new hard rule** — every existing constraint (single repo, ADD-only tests, minimal diff, no
+breaking changes, BL-* preserved) is unchanged regardless of which tool made the edit.
+
+**If `activate_project` doesn't report a real language (e.g. its result reads like "Programming
+languages: ." instead of naming one), or the first symbol-tool call errors with "language server
+manager is not initialized" — don't retry the same project/path.** Verified 2026-07-21: once a
+project's first initialization fails (e.g. a Windows long-path error while gathering its
+`.gitignore` spec), Serena caches that broken state under the project name and does **not** self-heal
+on a later `activate_project` call, even against a corrected path — only a genuinely new,
+never-before-activated project name/directory initializes cleanly. `restart_language_server` is not
+in the exposed toolset in this Serena build, so it isn't available to force recovery either. Treat a
+failed first activation as terminal for that run: fall back to `Grep`/`Glob`/`Read`/`Edit` for the
+rest of the fix rather than spending a retry loop on it.
+
 ## Where the fix goes — ownership routing (client vs platform)
 A deployment may be the native VirtoCommerce platform **or** a CLIENT project with its own custom
 modules / theme / storefront fork. The routed repo's **ownership** decides where your PR (or, when

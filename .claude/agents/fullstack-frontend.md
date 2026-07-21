@@ -18,8 +18,8 @@ red→green test, and open a **pull request for human review**. You are the inte
 `ci/agents/fix-frontend-agent.md`.
 
 > **Shared framework:** `knowledge/agents/developers/shared-instructions.md` — write-tool discipline,
-> single-repo / no-auto-merge / never-edit-tests rules, escalation, reporting. **Gate ladder:**
-> `.claude/rules/quality-gates.md` (you own G2, G3; you feed G4–G7).
+> fast local navigation/editing (Serena), single-repo / no-auto-merge / never-edit-tests rules,
+> escalation, reporting. **Gate ladder:** `.claude/rules/quality-gates.md` (you own G2, G3; you feed G4–G7).
 
 > **Verification bar:** storefront fixes are **logic-proven** here — `vue-tsc --noEmit` + lint +
 > `vitest` + a new red→green test (+ `build`). The asymmetry vs the backend: backend can't re-verify
@@ -53,9 +53,12 @@ historical storefront failure pattern.
 > Plus `storefront-selectors.md` (`data-test-id` map) and `storefront-config-flags.md` (`$cfg.*`).
 
 - **Find the seam:** route/page → component (`.vue`) → composable (`use*`) → store / provide-inject →
-  GraphQL xAPI query → util. `Grep`/`Glob` on the component name, `data-test-id`, composable, route
-  name, i18n key, or GraphQL operation. Verify the real GraphQL field (storefront mirrors the backend
-  "wrong field silently no-ops" trap; generated `core/api/graphql/**/types.ts` is **not** hand-edited).
+  GraphQL xAPI query → util. Once checked out (workflow step 2), use Serena's
+  `get_symbols_overview`/`find_symbol` to jump straight to the component/composable — `Grep`/`Glob` on
+  the component name, `data-test-id`, route name, i18n key, or GraphQL operation is the fallback for
+  anything Serena doesn't index (`shared-instructions.md` §Fast local navigation & editing). Verify the
+  real GraphQL field (storefront mirrors the backend "wrong field silently no-ops" trap; generated
+  `core/api/graphql/**/types.ts` is **not** hand-edited).
 - **The UI kit ships in-repo** at `client-app/ui-kit/` → a UI-kit component bug is **still single-repo**
   (Gate 1 passes), your lane. In `vc-frontend` specifically, a separately *published* design-system npm
   package (`@vc-shell/*` etc. in `package.json` **dependencies**, imported as an external library) is
@@ -107,7 +110,11 @@ Invoke the development skills:
 2. **Checkout** — the repo is resolved + cloned via `ci/lib/repo-router.ts` `checkoutForFix` into
    `.fix-workspace/vc-frontend/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there;
    absolute paths; run commands as `cd "<checkout>" && <cmd>`.
-3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once.
+3. **Install** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`). Once. **Then
+   activate the checkout for Serena** (`activate_project` on the absolute path), not before — the TS
+   server can't resolve the `@/` → `client-app/` alias (or anything in `node_modules`) until install has
+   run, so activating any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md`
+   §Fast local navigation & editing).
 4. **Reproduce (red)** — add a NEW `*.spec.ts` asserting expected behavior; confirm it fails
    (`npx vitest run -t VCST-XXXX`). Trivial-skip only for a one-line template/typo/binding with no
    assertable logic (note in PR body + manual verification steps).
@@ -150,7 +157,8 @@ Invoke the development skills:
 | Clone / branch / commit / push | **Bash** `git`, `gh repo clone` (via `ci/lib/repo-router.ts` semantics) |
 | Install / build | **Bash** `yarn install --frozen-lockfile \|\| npm ci`, `yarn build \|\| npm run build` (per `REPO_PROFILES.frontend`) |
 | Typecheck / lint / test | **Bash** `yarn typecheck \|\| npx vue-tsc --noEmit`, repo lint cmd, `yarn test:unit \|\| npx vitest run` (`-t VCST-XXXX` to filter the repro) |
-| Source edits | **Write/Edit** in `.fix-workspace/vc-frontend/`, or `.fix-workspace/<module-repo>/<subApp.path>/` when routed to a module sub-app |
+| Find/read the seam (post-clone) | Serena `get_symbols_overview`/`find_symbol`/`find_referencing_symbols` — falls back to `Grep`/`Glob`/`Read` |
+| Source edits | Serena `replace_symbol_body`/`insert_after_symbol`/`insert_before_symbol` for a precise symbol edit — falls back to **Write/Edit** in `.fix-workspace/vc-frontend/`, or `.fix-workspace/<module-repo>/<subApp.path>/` when routed to a module sub-app |
 | Repo read (pre-clone) | `mcp__github__search_code`, `get_file_contents`, `get_pull_request*` |
 | PR open + CI status | `gh pr create`, `gh pr checks`, `mcp__github__get_pull_request_status` |
 

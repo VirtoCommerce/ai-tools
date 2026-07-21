@@ -8,6 +8,16 @@ export interface ProfileRepo {
   kind?: "frontend" | "module" | "platform";
   host?: "github" | "azure-repos";
   defaultBranch?: string;
+  /** Per-repo toolchain overrides (else the kind default) — see ClientRepoMeta in ci/lib/repo-router.ts. */
+  installCmd?: string;
+  buildCmd?: string;
+  typecheckCmd?: string;
+  lintCmd?: string;
+  testCmd?: string;
+  /** The platform repo this was forked/derived from (provenance). */
+  upstream?: string;
+  /** The platform version/tag the fork was cut from (provenance anchor). */
+  upstreamRef?: string;
 }
 
 export interface ProjectProfile {

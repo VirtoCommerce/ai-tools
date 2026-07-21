@@ -34,6 +34,67 @@ gate ladder — never diverge from it.
 | Branch | `claude/qa-autofix/VCST-XXXX` |
 | Output | `reports/fixes/FIX-*/` |
 
+## Checkout hygiene — absolute paths only, never a `cd`-chain
+The checkout lands in `.fix-workspace/<repo-basename>/`, which is itself a git repository nested one
+level inside this repo's own working tree. **Never re-derive the checkout path via a relative `cd` +
+`git rev-parse --show-toplevel`**: run from inside `.fix-workspace/<repo-basename>/`,
+`--show-toplevel` correctly (and unhelpfully) returns *that nested repo's* root, not this outer one —
+chaining a further `cd`/clone off that result silently nests a second copy inside the first. Verified
+2026-07-21: this produced `.fix-workspace/<repo>/.fix-workspace/<repo>/`, which then broke an
+LSP-backed tool's project activation on a Windows long-path error deep in a GraphQL folder (see
+below). Always use the **absolute path** the checkout step returned (or one computed once, up front)
+for every later `git -C`, Bash, Read/Edit, and symbol-tool call — never `cd` into the workspace as a
+persisted directory, and never rely on `git rev-parse` from inside it to relocate yourself.
+
+## Fast local navigation & editing — use an LSP-backed tool (e.g. Serena) when available
+`vc-fix` doesn't bundle or require one, but if this session has an LSP-backed code-navigation MCP
+enabled (commonly **Serena** — tool names like `mcp__*serena*__*`; check once per run, don't assume),
+**prefer it over blind `Grep`+full-file-`Read`+string-match-`Edit`** for "find the seam" and "apply the
+fix" once the repo is checked out. It materially cuts token/round-trip cost on VC modules' larger C#
+files and the storefront's `.vue` SFCs. If the tools aren't present this session, use
+`Grep`/`Glob`/`Read`/`Edit` exactly as documented elsewhere in this file — nothing below is a new hard
+rule, just a faster path when it's there.
+
+**Activate the checkout as the tool's project only *after* dependencies are installed** — the checkout
+step's own install/restore command comes first, *then* `activate_project` (Serena) on the absolute
+`.fix-workspace/<repo-basename>/` path, before any `Grep`/`Read`. Activating any earlier leaves
+symbol/reference lookups unreliable: Roslyn can't resolve cross-project/NuGet types until `restore`
+produces `obj/project.assets.json`, and the Vue/TS server can't resolve the `@/` → `client-app/` alias
+until `node_modules` exists.
+
+**Prefer, in order, when available:**
+1. A symbol overview of the RCA file (Serena: `get_symbols_overview`) — the class/method tree, no
+   bodies — to locate the seam without reading the whole file into context.
+2. Fetch just the target symbol's body (Serena: `find_symbol(..., include_body=true)`) — a controller
+   action, service method, or `<script setup>` function — instead of the surrounding file.
+3. Find every caller *within this checked-out repo* before touching a signature/contract (Serena:
+   `find_referencing_symbols`) — one call instead of a repo-wide `Grep`. This confirms in-repo callers
+   aren't broken; it does **not** cover external/cross-repo contract consumers (another repo's
+   REST/GraphQL/DTO/manifest usage) — the public-contract check (G1/G4) is unchanged and still required
+   regardless of what this tool reports.
+4. Apply the fix directly to the symbol (Serena: `replace_symbol_body` /
+   `insert_after_symbol`/`insert_before_symbol`) instead of Read-whole-file + Edit-by-string-match,
+   which retries on whitespace or non-unique matches in a large file. **Keep the replaced body
+   byte-identical outside the actual fix lines** — a whole-body replacement that also reformats or
+   re-emits untouched lines produces a noisier diff than a surgical edit, and
+   `backend-reviewer`/`frontend-reviewer` diff-check for minimality (G4).
+
+**Always fall back to `Grep`/`Glob`/`Read`/`Edit`** for config/data files a code-symbol tool won't index
+well (JSON/CSV, `.csproj`/`.sln`, `module.manifest`, markdown) or if it errors for this repo/language.
+This is a speed optimization only — every existing constraint (single repo, ADD-only tests, minimal
+diff, no breaking changes, BL-* preserved) is unchanged regardless of which tool made the edit.
+
+**If activation doesn't report a real language (e.g. Serena's result reads like "Programming
+languages: ." instead of naming one), or the first symbol-tool call errors with "language server
+manager is not initialized" — don't retry the same project/path.** Verified 2026-07-21 (Serena): once
+a project's first initialization fails (e.g. a Windows long-path error while gathering its
+`.gitignore` spec), the broken state is cached under that project name and does **not** self-heal on
+a later activation call, even against a corrected path — only a genuinely new, never-before-activated
+project name/directory initializes cleanly. A force-recovery tool (e.g. Serena's
+`restart_language_server`) may not even be exposed in a given install. Treat a failed first activation
+as terminal for that run: fall back to `Grep`/`Glob`/`Read`/`Edit` for the rest of the fix rather than
+spending a retry loop on it.
+
 ## Where the fix goes — ownership routing (client vs platform)
 A deployment may be the native VirtoCommerce platform **or** a CLIENT project with its own custom
 modules / theme / storefront fork. The routed repo's **ownership** decides where your PR (or, when

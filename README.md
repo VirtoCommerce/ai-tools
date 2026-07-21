@@ -199,7 +199,7 @@ vc-mcp-testing-module/
 └── config.js             # vc-qa: Layered env loader (TEST_ENV-keyed)
 ```
 
-**Gitignored:** `.env`, `.env.local`, `.mcp.json`, `settings.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `project-profile.json`, `.claude/settings.local.json`. (`ci/` and `.github/` are tracked and ship.)
+**Gitignored:** `.env`, `.env.local`, `.mcp.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `project-profile.json`, `.claude/settings.local.json`. (`ci/` and `.github/` are tracked and ship.) `.claude/settings.json` is tracked — the shared project config (hooks + `enabledPlugins`, incl. Serena).
 
 ### Regression Suites
 
