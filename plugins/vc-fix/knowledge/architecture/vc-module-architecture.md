@@ -55,7 +55,8 @@ module.manifest                 # id, version, Dependencies[] (resolve as NuGet 
 
 A module MAY additionally ship one or more standalone frontend apps under `Apps/<name>/` on a stack
 **other** than the module's own legacy AngularJS `Web/Scripts/` (§2 above). Example: `vc-module-pagebuilder`
-ships a **Vue 3 "shell"** at `Apps/page-builder-shell/` (`@vc-shell/framework` + Vite + vee-validate —
+ships a **Vue 3 "shell"** at `src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/`
+(`@vc-shell/framework` + Vite + vee-validate —
 the user-facing "details blade" lives here), plus a separate **Angular 21 "designer"** that has **no
 agent support today** (see `fullstack-frontend.md` — a bug there is a clean STOP, not silently routed
 anywhere).

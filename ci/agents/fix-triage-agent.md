@@ -55,7 +55,7 @@ OWNERSHIP: platform                     # or client — your reading of ROUTE_RE
 COMPONENT: <component/area, short>
 RCA_ANCHOR: src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/src/composables/usePublishState.ts
                                          # optional but valuable when GO on a `vc-module-*` repo: the repo-relative
-                                         # file/path path you believe holds the root cause (from the bug report's
+                                         # file/path you believe holds the root cause (from the bug report's
                                          # own RCA-anchor line, or your own best guess if the report has none). The
                                          # pipeline uses this to detect a bug that actually lives in a declared
                                          # embedded frontend sub-app (e.g. a Vue 3 "shell") rather than the module's
