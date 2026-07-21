@@ -182,6 +182,14 @@ function browserVariant(name) {
 // clean BAIL/STOP is an accepted output (never silent_suspect). Keep this table
 // in lock-step with knowledge/diagnostics/skill-expectations.md §expected-output.
 const BAIL_OK_RE = /(FIX_STATUS:\s*FAILED|\bBAIL(?:_CLASS)?\b|out-of-auto-fix-scope|hand(?:ed)?[ -]off|STOP\s*[—-]\s*hand|no (?:issues|anomal|bug|error)|all clear|nothing to (?:fix|report))/i;
+// Developer skills (`/qa-fix`'s reproduce→fix sub-steps). Their expected output is a
+// red→green unit test proven and/or a minimal code diff (or a justified BAIL). NOTE: in
+// normal operation these run INSIDE the fullstack-backend/fullstack-frontend sub-agents,
+// whose transcripts are SIDECHAINS the scanner skips — so the collector never opens a skill
+// span for them and this entry is a DEFENSIVE fallback for a standalone main-session
+// invocation (e.g. developing/testing the skill directly). Their real outcome rolls up to
+// the enclosing `/qa-fix` command span (PR marker) via the sub-agent's Task result.
+const DEV_SKILL_OUTPUT = [/\b(?:vitest|tsx --test|dotnet test|xunit|vue-tsc|npm (?:run )?test|red→green|reproduc)/i, /\b(?:Edit|MultiEdit|Write)\b/, /\b(?:pass(?:ed|ing)?|green|failing|red)\b/i, BAIL_OK_RE];
 const EXPECTED_OUTPUT = {
   "qa-bug": [/reports[\/\\]bugs[\/\\]/i, /createJiraIssue|create_issue|work item|filed\b/i, BAIL_OK_RE],
   "qa-fix": [/create_pull_request|gh pr create|pull\/\d+|PR #?\d+|opened a? PR/i, BAIL_OK_RE],
@@ -190,6 +198,13 @@ const EXPECTED_OUTPUT = {
   "qa-env-check": [/readiness|env:check|✅|✓|PASS|FAIL|table/i],
   "project-init": [/project-profile\.json|\.mcp\.json|\.env\.|readiness|verify-access/i],
   "vc-docs": [/./], // any activity counts — a lookup skill
+  // developer skills — see DEV_SKILL_OUTPUT above (defensive; normally sidechain-invisible)
+  "dotnet-unit-test": DEV_SKILL_OUTPUT,
+  "dotnet-fix": DEV_SKILL_OUTPUT,
+  "angular-admin": DEV_SKILL_OUTPUT,
+  "vue-unit-test": DEV_SKILL_OUTPUT,
+  "vue-fix": DEV_SKILL_OUTPUT,
+  "vc-shell-fix": DEV_SKILL_OUTPUT,
 };
 
 // ─── struggle thresholds (documented consts) ─────────────────────────────────

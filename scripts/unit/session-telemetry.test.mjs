@@ -934,6 +934,59 @@ test("testEnv: recovered from an inline TEST_ENV= in tool args onto the finalize
   }
 });
 
+// ─── developer skills — EXPECTED_OUTPUT (defensive; normally sidechain-invisible) ──────
+function skillUse(ts, id, skill) {
+  return JSON.stringify({ timestamp: ts, message: { content: [{ type: "tool_use", id, name: "Skill", input: { skill } }] } });
+}
+test("dev skill: a /vc-shell-fix skill span with a red→green test run has its expected output (not silent_suspect)", () => {
+  const home = setupHome();
+  try {
+    const sid = "devskill-ok";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-99" });
+    appendLines(transcriptPath, [
+      skillUse("2026-01-01T00:00:00Z", "sk1", "vc-shell-fix"),
+      toolUse("2026-01-01T00:00:01Z", "e1", "Edit", { file_path: "page-builder-shell/store.ts" }),
+      toolResult("2026-01-01T00:00:02Z", "e1", false, "edited"),
+      toolUse("2026-01-01T00:00:03Z", "b1", "Bash", { command: "npx vitest run store.spec.ts" }),
+      toolResult("2026-01-01T00:00:04Z", "b1", false, "2 passed"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const sk = spansOf(readSpans(home, sid), "skill", "vc-shell-fix");
+    assert.equal(sk.length, 1, "the /vc-shell-fix skill span is captured");
+    assert.equal(sk[0].outcome, "success", "vitest run + Edit satisfy the DEV_SKILL_OUTPUT markers → not silent_suspect");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("dev skill: a /vc-shell-fix skill span that produced NONE of its markers is silent_suspect (entry is wired)", () => {
+  const home = setupHome();
+  try {
+    const sid = "devskill-silent";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-100" });
+    // Two reads, no edit / no test run / no BAIL → no expected-output marker, ≥ SILENT_MIN_OPS.
+    appendLines(transcriptPath, [
+      skillUse("2026-01-01T00:00:00Z", "sk1", "vc-shell-fix"),
+      toolUse("2026-01-01T00:00:01Z", "r1", "Read", { file_path: "a.ts" }),
+      toolResult("2026-01-01T00:00:02Z", "r1", false, "file contents"),
+      toolUse("2026-01-01T00:00:03Z", "r2", "Read", { file_path: "b.ts" }),
+      toolResult("2026-01-01T00:00:04Z", "r2", false, "more contents"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const sk = spansOf(readSpans(home, sid), "skill", "vc-shell-fix");
+    assert.equal(sk.length, 1);
+    assert.equal(sk[0].outcome, "silent_suspect", "no marker + real work ⇒ silent_suspect (proves the EXPECTED_OUTPUT entry gates, not an absent-entry pass-through)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── cleanup offer — leftover artifacts from OTHER inactive sessions ────────────────
 test("cleanup offer: leftover inactive-session artifacts surface a one-shot AskUserQuestion offer at the terminal Stop", () => {
   const home = setupHome();

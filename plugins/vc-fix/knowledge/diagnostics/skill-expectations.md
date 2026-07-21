@@ -96,10 +96,12 @@ in lock-step with `EXPECTED_OUTPUT` in `hooks/session-telemetry.mjs`.
 | `/qa-env-check` | a readiness/`PASS`/`FAIL` verdict table |
 | `/project-init` | a `project-profile.json`/`.mcp.json`/`.env.*` write · a readiness/verify-access table (any mode: full onboarding, `--add-env` = an `.env.*` write + verify table, `--check` = a reconcile summary + verify table) |
 | `/vc-docs` | any activity (lookup skill — never silent_suspect) |
+| **developer skills** (`/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`, `/vue-unit-test`, `/vue-fix`, `/vc-shell-fix`) | a red→green test run (`vitest`/`tsx --test`/`dotnet test`/`vue-tsc`/…) · a code edit (`Edit`/`Write`) · a pass/fail verdict · a clean BAIL. **NOTE:** these run inside the `fullstack-*` sub-agents, whose transcripts are sidechains the collector **skips** — so this is a DEFENSIVE fallback for a standalone main-session invocation; normally their outcome rolls up to the enclosing `/qa-fix` command span. |
 
 A skill with **no** entry above is never `silent_suspect` (the collector treats an
 absent oracle entry as "output produced"). Add an entry here **and** in the collector
-const when a new user-facing skill ships.
+const when a new user-facing skill ships. A new **developer** skill shipped for `/qa-fix`
+should be added to the developer-skills row + `DEV_SKILL_OUTPUT` in the collector.
 
 ### 1d. Struggle sub-signals (Tier 1 `degraded` — machine-readable)
 
