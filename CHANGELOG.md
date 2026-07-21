@@ -29,6 +29,15 @@ The ephemeral lifecycle (`deliver.mjs` delete-after-delivery) only reclaims **de
 - **Never** the current session's files, and never a still-fresh (in-flight) session's — the mtime cutoff handles the latter. Best-effort, never throws, `exit 0`.
 - Complements (does not replace) delete-after-delivery; the reclaimed count is surfaced as `prunedOldArtifacts` on the `session_start` record.
 
+### Changed — self-diagnostics: checkpoint Stop on pending sub-agents + clean self-check line ON by default
+
+The `Stop` hook fires at the end of **every** turn, including a turn that only handed work to a background sub-agent and is now waiting. Since the sub-agent's work lives in a sidechain the collector skips, `cmdFinalize` would judge an **incomplete** session — and (with the line on) print a "no plugin issues detected" verdict **mid-task**. `session-telemetry.mjs cmdFinalize` now distinguishes **checkpoint** vs **terminal**:
+
+- **Checkpoint** — if `ev.background_tasks` is non-empty (fallback: any still-open agent op in the reconstructed state), record a durable `{verdict:"deferred", pendingSubagents, suppressReason:"subagent-running"}` decision to the jsonl and **return** without draining/closing spans or surfacing anything. The real verdict + line wait for the **terminal** Stop after the sub-agent returns (its Task result now in the main transcript).
+- **Visible clean line ON by default** on a terminal plugin turn (was the opt-in `VC_FIX_DIAG_LINE=always`): a clean run now prints `vc-fix self-check: no plugin issues detected`. Silence it with **`VC_FIX_DIAG_LINE=off`**; the global `VC_FIX_DIAG_CONSENT=off` kill switch still gates everything.
+- **`stop_hook_active` guard** added to both the findings block and the clean line — a belt-and-suspenders companion to `promptedThisTurn` so the Stop from our own resume-turn can't re-fire (no resume loop). When it suppresses, the decision record logs `suppressReason:"stop-hook-active"` (was misreported as `already-surfaced`).
+- Tests: checkpoint (background_tasks + open-agent-op fallback), terminal clean/findings, `VC_FIX_DIAG_LINE=off`, `stop_hook_active`, and a full sub-agent hand-off E2E sequence.
+
 ### Fixed — code-review follow-ups (Azure tooling + reconcile + telemetry)
 
 Addresses the findings from the PR review:
