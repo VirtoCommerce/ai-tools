@@ -74,7 +74,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ├── test-data/            # Orgs, search queries, uploads
 ```
 
-**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `settings.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `.vc-fix/` (self-diagnostics telemetry), `project-profile.json`, `.claude/settings.local.json` (note: `ci/` and `.github/` ARE tracked and ship with the plugin — only transient sub-paths like `ci/config/.module-registry.cache.json` are ignored)
+**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `.vc-fix/` (self-diagnostics telemetry), `project-profile.json`, `.claude/settings.local.json` (note: `ci/` and `.github/` ARE tracked and ship with the plugin — only transient sub-paths like `ci/config/.module-registry.cache.json` are ignored). `.claude/settings.json` **is tracked** — it's the shared project config (hooks + `enabledPlugins`, incl. Serena); per-developer overrides go in the gitignored `.claude/settings.local.json` instead.
 
 ## Essential Rules
 

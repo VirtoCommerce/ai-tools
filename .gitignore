@@ -14,7 +14,6 @@ node_modules
 .env.test-env
 .playwright-mcp/
 .vscode/
-settings.json
 test-results/
 results/
 .claude/settings.local.json
