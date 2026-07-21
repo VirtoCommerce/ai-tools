@@ -74,6 +74,9 @@ Stray leftovers from prior runs seen in the shell — candidates for a teardown 
 - `config/test-suites.json` — 059/060 display names; 059 testCount 46→50, est 35→42
 - `regression/suites/Backend/page-builder/059-page-builder.csv` (renamed from `Backend/cms/059-cms-page-management.csv`) — +4 cases (CMS-131..134), refined after Phase 5
 
+## Live Execution (2026-07-21, qa-backend-expert, playwright-edge)
+Ran CMS-131..134 live on vcst-qa @ PageBuilderModule `3.1017.0-pr-156-59d4` — **all 4 PASS**. One CSV correction applied afterward: CMS-132's REST assertion expected `hasChanges:false` after unpublish, but the server correctly returns `hasChanges:true` (an unpublished Draft now exists) — the defect surface is the absent banner, not that flag; assertion + failure-signal reworded. Bug report moved `reports/bugs/open/` → `reports/bugs/fixed/`.
+
 ## Next Steps
-- [ ] (optional) `/qa-regression 059` (or `cms`) once PR #156 merges + deploys — confirms CMS-131..134 run green live
+- [x] Live-ran CMS-131..134 → all PASS (see above)
 - [ ] Close VCST-5515 → Done after PR #156 human review + merge (verification already PASS)
