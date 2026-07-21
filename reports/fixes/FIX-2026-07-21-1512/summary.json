@@ -1,0 +1,30 @@
+{
+  "runId": "FIX-2026-07-21-1512",
+  "ticket": "VCST-5515",
+  "status": "SUCCESS",
+  "terminalGate": "G7",
+  "repo": "VirtoCommerce/vc-module-pagebuilder",
+  "repoKind": "module",
+  "owningSubApp": "page-builder-shell (Vue3 / @vc-shell/framework)",
+  "devAgent": "fullstack-frontend + /vc-shell-fix",
+  "branch": "claude/qa-autofix/VCST-5515",
+  "commit": "59d4991",
+  "prUrl": "https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/156",
+  "prNumber": 156,
+  "prBase": "dev",
+  "merged": false,
+  "ticketState": "In review",
+  "gates": {
+    "G0": "PASS", "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "APPROVE",
+    "G5": "ci+sonar+cla+deploy green; auto-tests pending at handoff",
+    "G6": "deferred (needs deploy) -> /qa-verify-fix",
+    "G7": "STOP (PR open for human review, not merged)"
+  },
+  "diff": "PageDetails.vue +2 (setBaseline() after publishGroup/unpublishGroup)",
+  "confidence": "HIGH",
+  "followUps": [
+    "human review + merge of PR #156",
+    "confirm auto-tests green on #156 (re-run once if flaky)",
+    "/qa-verify-fix VCST-5515 post-deploy (visual banner)"
+  ]
+}
