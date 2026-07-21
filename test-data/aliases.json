@@ -1,8 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.32",
+    "version": "1.5.33",
     "updated": "GENERATED",
+    "changelog_1_5_33": "VCST-5233 CPN-062 collision fix: added COUPON_LC_CASEFIDELITY alias (CSV-backed → promotions/coupons COU-027, promo P21 'AGENT-TEST Lowercase Coupon Case Fidelity', 5% off cart, public+active). Its code 'agenttestlc062' is lowercase (/[a-z]/) and its all-uppercase form 'AGENTTESTLC062' is NOT a valid/existing coupon on vcst-qa (probed 2026-07-21: 0 matches), so the VCST-5233 uppercasing bug turns it INVALID (ValidateCoupon false) — a clean fail signal — instead of matching a wrong coupon. This replaces COUPON_SUPER('super') for CPN-062's apply/validate step, where uppercasing 'super' silently matched the UNRELATED live 'SUPER'/'Super Discount' coupon (20% off) and confounded the guard. COUPON_SUPER + COU-024 left intact for CPN-015 (display/copy case). New promo P21 (promotions.csv) + coupon COU-027 (coupons.csv) seeded via seed-promotions.mjs; drift guard: npm run td:validate:marketing; teardown: npm run seed:promotions:teardown -- --only P21.",
     "changelog_1_5_32": "VCST-5482 order/quote state fixtures (JSON-shaped-to-Swagger pilot): added 5 JSON-fixture aliases — COMPLETED_ORDER, SHIPPED_ORDER, PROCESSING_ORDER (test-data/orders/*.json), QUOTE_WITH_ADMIN_RESPONSE, ACCEPTED_QUOTE (test-data/quotes/*.json). These are the first `json`-backed aliases: static fields (number/status/currency/total) resolve from the Swagger-shaped fixture body, the runtime id resolves from aliases.<env>.json (seeded by scripts/seed-data/seed-order-states.mjs / seed-quotes.mjs, `npm run seed:orders`/`seed:quotes`). Single source of truth for state/transitions/aliases: scripts/seed-data/orders-specs.mjs; drift-guard: `npm run td:validate:orders`. Unblocks previously-DEFERRED order/quote states in suites 014/015. Feature-gated states (invoice/returns/substitution/negotiation/OOS/discontinued/expired) stay DEFERRED (see test-data/README.md).",
     "changelog_1_5_30": "VCST-5304/5469 TLC Phase-2/3 sync (2026-07-17, sales-rep pr-2-8c40 / theme 2.54.0-pr-2380-230b live verification): added platform_id field to ORG_SUSPENDED (was missing — needed so 050m's organizationId-vs-business-key drift fix (D1) can retarget not_served_org/unassigned_org assertions to the real platform GUID). Added SR_REP_NOCUSTOMERS_ORGCTX gap-fixture alias (test-data/sales-rep/sales-reps.csv, seeded=false — NOT ready for /qa-seed-data, needs a seeder enhancement to grant org-context membership without registering a served customer). Also fixed a pre-existing unquoted-comma data bug in sales-reps.csv row SR_REP_LOCKED's test_purpose field (silently absorbed before the context_org column existed; surfaced as a column-misalignment once the trailing column was added).",
     "changelog_1_5_31": "VCST-5304/5469 CORRECTED test design (TLC-2026-07-17-1603, live verification on vcst-qa): SR-FE-030 (089) and its SR_REP_NOCUSTOMERS_ORGCTX gap-fixture (added in 1.5.30) proved architecturally unreachable — a sales-rep org membership IS the served-customer relationship, so 'permissioned rep + org context + zero served customers' cannot exist; the seed-sales-rep.mjs enhancement it depended on is the WRONG fix and was NOT built. SR_REP_NOCUSTOMERS_ORGCTX stays seeded=false and is retired (do not seed). Added the SALES_REP_NOCUSTOMERS auth-role alias (mirrors SALES_REP) backing the genuinely-reachable case 050m SR-GQL-041, which proves the real invariant live-verified this run: a rep holding sales-rep:access as a GLOBAL role (SR_REP_NOCUSTOMERS, zero org memberships) gets a clean salesRepCustomers 200/totalCount=0/errors[] empty — not a redirect, not an error.",
@@ -746,7 +747,19 @@
       "promo_name": "promo_name",
       "id": "coupon_id"
     },
-    "_notes": "COU-024 'Test 100%' promotion, code='super' (stored lowercase). No endDate, no cart-subtotal threshold. Used by CPN-015 and CPN-062 as the canonical lowercase-stored coupon for VCST-5233 case-fidelity regression. toUpperCase() in coupon-item.vue force-uppercases to 'SUPER' on /account/coupons — the bug this alias guards against. ValidateCoupon is case-sensitive: 'SUPER' -> false, 'super' -> true."
+    "_notes": "COU-024 'Test 100%' promotion, code='super' (stored lowercase). No endDate, no cart-subtotal threshold. Used by CPN-015 as a lowercase-stored coupon for VCST-5233 case-fidelity display/copy regression. toUpperCase() in coupon-item.vue force-uppercases to 'SUPER' on /account/coupons — the bug this alias guards against. NOTE: on vcst-qa an UNRELATED uppercase coupon 'SUPER' (promo 'Super Discount', 20% off cart) also exists, so uppercasing 'super' matches that WRONG coupon rather than returning invalid — which confounds the APPLY-step guard. For the CPN-062 apply/validate case use COUPON_LC_CASEFIDELITY instead (collision-free). ValidateCoupon is case-sensitive: 'SUPER' -> matches the other coupon, 'super' -> its own."
+  },
+  "COUPON_LC_CASEFIDELITY": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-027"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id"
+    },
+    "_notes": "COU-027 (promo P21 'AGENT-TEST Lowercase Coupon Case Fidelity', 5% off cart subtotal, public + active, no endDate, no threshold). Dedicated collision-free lowercase coupon for the CPN-062 VCST-5233 apply/validate case-fidelity guard. code='agenttestlc062' satisfies /[a-z]/; its all-uppercase form 'AGENTTESTLC062' is NOT a valid/existing coupon on the env (probed vcst-qa 2026-07-21: 0 matches), so uppercasing (VCST-5233 bug) => ValidateCoupon false => 'This code is not valid' (clean fail signal while unfixed); lowercase preserved (once fixed) => applies. Unlike COUPON_SUPER('super'), uppercasing does NOT hit the unrelated 'SUPER'/'Super Discount' coupon. Seeded by seed-promotions.mjs; teardown: npm run seed:promotions:teardown -- --only P21. No runtime GUID here — resolves by static business key (coupon_id/code)."
   },
   "LOYALTY_SETTINGS": {
     "_inline": true,
@@ -2086,6 +2099,23 @@
     "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-TIER-001 (matches sku field). Product GUID: 9d709714-7905-429f-88e9-d5e342854425. Tier pricing: list=$29.99 minQty=1, sale=$26.99 minQty=10, sale=$23.99 minQty=20. stock=200. Unblocks CART-078. Env var: TIER_PRICED_SKU.",
     "_status": "seeded-20260519"
   },
+  "PROD_SALE_SIMPLE": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-105"
+    },
+    "fields": {
+      "sku": "sku",
+      "code": "sku",
+      "name": "product_name",
+      "listPrice": "price",
+      "salePrice": "sale_price",
+      "currency": "currency",
+      "category": "category"
+    },
+    "notes": "Fresh, fully-seeded on-sale product (list 29.99 / sale 19.99) for CPN-059 BL-CART-003 — coupon discount must compute from the SALE price, not the list price. Seeded by scripts/seed-data/seed-standard-products.mjs from test-products.csv PROD-105 (sale via the sale_price column -> pricelist sale). Resolved by SKU (SALE-001) — NO runtime GUID committed, so no aliases.<env>.json writeback is needed (same pattern as every PROD_* alias). The pricelist is assigned to the store virtual catalog with no membership condition, so the sale is visible to guest / personal (USER_DEFAULT) / org users alike; stock is placed on the store MAIN fulfillment center. Replaces PROD_VARIATION_PARENT_SALE (STD-002 / EKJ-76373636), whose imported product was deleted from vcst-qa (id e5c00858 now 404s / xAPI totalCount=0). Env-invariant business keys only; multi-env-safe by construction.",
+    "_status": "seeded-20260721"
+  },
   "PROD_CONFIGURABLE": {
     "file": "products/configurable-products",
     "filter": {
@@ -2324,7 +2354,9 @@
     "_inline": true,
     "percentageCode": "QA10OFF",
     "percentageCode_alias": "COUPON_10PCT",
+    "percentagePct": "10",
     "percentageCode_value": "10% off cart, unlimited uses, expires 2026-12-31",
+    "percentageCode_verified": "Verified live on vcst-qa 2026-07-21: promotion P01 'QA Test - VCST-4590 Coupon Public' (05470c48-33f2-4a93-a0a5-2eaf6981ee68) isActive=true isPublic=true, reward RewardCartGetOfRelSubtotal amount=10 (genuine 10% of cart subtotal — NOT a flat amount). Coupon QA10OFF: unlimited uses (maxUsesNumber=0), 0 uses, expires 2026-12-31. Use @td(COUPONS.percentagePct)=10 for the discount computation in CPN-059. Distinct from the misconfigured env preset ZUR10 (labelled 10% but applies a flat ~$50) — do NOT use ZUR10. NOTE: the cart sidebar renders promotionCoupons(first:4, sort:endDate:asc); QA10OFF (endDate 2026-12-31) is NOT guaranteed to appear among the 4 preset cards, so apply it via the sidebar's Custom-code entry field.",
     "fixedAmountCode": "FIXED5",
     "fixedAmountCode_alias": "COUPON_FIXED5",
     "fixedAmountCode_value": "$5 fixed off cart subtotal, expires 2026-12-31",
