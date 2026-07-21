@@ -74,7 +74,10 @@ until `node_modules` exists.
    regardless of what this tool reports.
 4. Apply the fix directly to the symbol (Serena: `replace_symbol_body` /
    `insert_after_symbol`/`insert_before_symbol`) instead of Read-whole-file + Edit-by-string-match,
-   which retries on whitespace or non-unique matches in a large file.
+   which retries on whitespace or non-unique matches in a large file. **Keep the replaced body
+   byte-identical outside the actual fix lines** — a whole-body replacement that also reformats or
+   re-emits untouched lines produces a noisier diff than a surgical edit, and
+   `backend-reviewer`/`frontend-reviewer` diff-check for minimality (G4).
 
 **Always fall back to `Grep`/`Glob`/`Read`/`Edit`** for config/data files a code-symbol tool won't index
 well (JSON/CSV, `.csproj`/`.sln`, `module.manifest`, markdown) or if it errors for this repo/language.

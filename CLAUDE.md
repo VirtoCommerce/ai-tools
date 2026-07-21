@@ -74,7 +74,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ├── test-data/            # Orgs, search queries, uploads
 ```
 
-**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `.vc-fix/` (self-diagnostics telemetry), `project-profile.json`, `.claude/settings.local.json` (note: `ci/` and `.github/` ARE tracked and ship with the plugin — only transient sub-paths like `ci/config/.module-registry.cache.json` are ignored). `.claude/settings.json` **is tracked** — it's the shared project config (hooks + `enabledPlugins`, incl. Serena); per-developer overrides go in the gitignored `.claude/settings.local.json` instead.
+**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `.vc-fix/` (self-diagnostics telemetry), `project-profile.json`, `.claude/settings.local.json` (note: `ci/` and `.github/` ARE tracked and ship with the plugin — only transient sub-paths like `ci/config/.module-registry.cache.json` are ignored). `.claude/settings.json` **is tracked** — it's the shared project config (hooks + `enabledPlugins`, incl. Serena); per-developer overrides go in the gitignored `.claude/settings.local.json` instead. **Serena dependency note:** `enabledPlugins.serena` only *enables* the official `claude-plugins-official`-marketplace Serena plugin for whoever has it installed (a no-op otherwise, never auto-installed) — when active it's a source-indexing LSP tool that runs against whatever gets checked out into `.fix-workspace/<repo>/`, which on a client deployment can be client code (§2a).
 
 ## Essential Rules
 

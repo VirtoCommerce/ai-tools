@@ -79,7 +79,9 @@ until `node_modules` exists.
 4. `replace_symbol_body` / `insert_after_symbol` / `insert_before_symbol` — apply the fix directly to
    the symbol (swap a method body, add a guard clause, add an overload) instead of
    Read-whole-file-then-Edit-by-string-match, which retries on whitespace or non-unique matches in a
-   large file.
+   large file. **Keep the replaced body byte-identical outside the actual fix lines** — a whole-body
+   replacement that also reformats or re-emits untouched lines produces a noisier diff than a surgical
+   edit, and `backend-reviewer`/`frontend-reviewer` diff-check for minimality (G4).
 
 **Fall back to `Grep`/`Glob`/`Read`/`Edit`** for anything Serena's language server doesn't index well —
 JSON/CSV config, `.csproj`/`.sln`, `module.manifest`, test-data CSVs, markdown — or if the language
