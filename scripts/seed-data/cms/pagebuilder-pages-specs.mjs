@@ -42,11 +42,14 @@ export const CANONICAL_PAGES = [
     userGroups: ['B2B Wholesale'] },
   // Multi-language: the platform models EN+DE+FR as SEPARATE single-culture pages that SHARE the
   // permalink (verified live — not one group with pages[]). deName/frName are the de-DE/fr-FR versions'
-  // canonical names; the seeder ensures each is Published with content at the shared permalink, and
+  // canonical names; the seeder ensures EN+DE are Published with content at the shared permalink, while
+  // FR stays DRAFT (frStatus) ON PURPOSE — it is the CMS-028 untranslated-language subject: with FR
+  // unpublished, /fr/qa-return-policy must fall back to the default-language (EN) content (by-design
+  // fallback, see project_storefront_default_language_fallback), NOT serve FR and NOT 404. The seeder
   // creates a missing sibling (then re-asserts every sibling's cultureName — a create at a shared
   // permalink can flip a sibling's culture). familyPrefix + promoteNameRe promote a drifted EN copy.
   { alias: 'PB_RETURN_POLICY',   name: 'QA Return Policy',             permalink: '/qa-return-policy',             culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none',       cases: 'CMS-027/028/031/035',
-    multiLang: true, deName: 'QA Rückgaberichtlinie', frName: 'QA Politique de retour et de remboursement', frAlias: 'PB_RETURN_POLICY_FR', familyPrefix: '/qa-return-policy', promoteNameRe: '^QA Return Policy' },
+    multiLang: true, deName: 'QA Rückgaberichtlinie', frName: 'QA Politique de retour et de remboursement', frAlias: 'PB_RETURN_POLICY_FR', frStatus: STATUS.DRAFT, familyPrefix: '/qa-return-policy', promoteNameRe: '^QA Return Policy' },
   // Scheduled promo. IMPORTANT (verified live 2026-07-21): a FUTURE-dated (Pending) page HIDES its
   // content in BOTH the draft and published projections (content API returns 0 blocks until the
   // window opens) — so a future baseline would render empty AND can't be content-verified/idempotent.

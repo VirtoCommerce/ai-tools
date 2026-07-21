@@ -93,6 +93,8 @@ test('PB_RETURN_POLICY declares de-DE + fr-FR siblings with a dedicated FR alias
   assert.equal(rp.deName, 'QA Rückgaberichtlinie');
   assert.equal(rp.frName, 'QA Politique de retour et de remboursement');
   assert.equal(rp.frAlias, 'PB_RETURN_POLICY_FR');
+  // FR is deliberately UNPUBLISHED (CMS-028 untranslated-language subject) — EN+DE stay Published.
+  assert.equal(rp.frStatus, STATUS.DRAFT);
 });
 
 test('page-content.json has fr-FR return-policy blocks + PB_RETURN_POLICY_FR alias registered', () => {

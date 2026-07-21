@@ -185,6 +185,25 @@ async function ensurePublished(page) {
   return after?.status === STATUS.PUBLISHED ? 'republished' : `still-${after?.status}`;
 }
 
+/** Ensure `page` is Draft (unpublished). Published → publishing?publish=false, which the module
+ * turns the published page back to Draft (content preserved). Idempotent: re-fetches the true status
+ * and no-ops when already non-Published. Tolerant: reports (never throws) if the unpublish is refused
+ * (e.g. the group has a pending Draft → module blocks unpublish). Used for a deliberately-unpublished
+ * multi-lang sibling (frStatus: Draft) — the CMS-028 untranslated-language subject. */
+async function ensureDraft(page) {
+  const full = await getGrouped(page.id);
+  const status = full?.status ?? page.status;
+  if (status !== STATUS.PUBLISHED) { verbose(`already ${status}: ${page.name}`); return 'ok'; }
+  if (DRY_RUN) { log(`  [DRY] would unpublish ${page.name} (Published → Draft)`); return 'would-unpublish'; }
+  try {
+    await api('POST', `/api/page-builder-pages/grouped/publishing/${page.id}?publish=false`, null, { expectStatus: [200, 201, 204] });
+  } catch (e) {
+    return `unpublish-failed (${String(e.message).slice(0, 80)})`;
+  }
+  const after = await getGrouped(page.id);
+  return after?.status !== STATUS.PUBLISHED ? 'unpublished' : `still-${after?.status}`;
+}
+
 /** Apply a metadata patch (name / permalink / startDate / endDate) then re-publish so it takes. */
 async function applyPatchAndPublish(page, patch) {
   if (DRY_RUN) { log(`  [DRY] would patch ${page.name}: ${JSON.stringify(patch)}`); return; }
@@ -246,21 +265,28 @@ async function reconcileMultiLang(spec, pages) {
   }
   if (de?.id) { const c = await ensurePageState(de, spec, 'de-DE'); notes.push(`DE ${c}`); }
   // --- FR canonical (a third single-culture page sharing the permalink) ---
+  // frStatus:'Draft' keeps FR deliberately UNPUBLISHED (CMS-028 untranslated-language subject): create
+  // it if missing but never publish/fill, and unpublish an existing Published FR back to Draft — so
+  // /fr/<permalink> falls back to the default-language content instead of serving FR.
   let fr = null;
   if (spec.frName) {
+    const frDraft = spec.frStatus === STATUS.DRAFT;
     fr = pickByNameCulture(pages, spec.frName, 'fr-FR');
     if (!fr) {
-      if (DRY_RUN) { log(`  [DRY] would CREATE FR "${spec.frName}" @ ${spec.permalink} + fill content`); notes.push(`[DRY] would create FR "${spec.frName}"`); anyCreated = true; }
+      if (DRY_RUN) { log(`  [DRY] would CREATE FR "${spec.frName}" @ ${spec.permalink}${frDraft ? ' (Draft)' : ' + fill content'}`); notes.push(`[DRY] would create FR "${spec.frName}"`); anyCreated = true; }
       else {
         fr = await createPage(spec, { culture: 'fr-FR', name: spec.frName, permalink: spec.permalink });
         if (!fr) notes.push(`⚠ FR "${spec.frName}" create returned no groupId — needs manual creation`);
-        else { anyCreated = true; notes.push(`CREATED FR "${spec.frName}" @ ${spec.permalink}`); }
+        else { anyCreated = true; notes.push(`CREATED FR "${spec.frName}" @ ${spec.permalink}${frDraft ? ' (Draft)' : ''}`); }
       }
-    } else {
+    } else if (!frDraft) {
       if (fr.permalink !== spec.permalink && !DRY_RUN) { await applyPatchAndPublish(fr, { permalink: spec.permalink }); notes.push(`FR permalink ${fr.permalink} → ${spec.permalink}`); }
       const st = await ensurePublished(fr); if (st !== 'ok') notes.push(`FR(${spec.frName}) status ${st}`);
     }
-    if (fr?.id) { const c = await ensurePageState(fr, spec, 'fr-FR'); notes.push(`FR ${c}`); }
+    if (fr?.id) {
+      if (frDraft) { const st = await ensureDraft(fr); notes.push(`FR "${spec.frName}" Draft (${st})`); }
+      else { const c = await ensurePageState(fr, spec, 'fr-FR'); notes.push(`FR ${c}`); }
+    }
   }
   // --- culture-heal: creating/publishing a page at a SHARED permalink can flip a sibling's
   // cultureName (proven live — an FR create flipped EN → fr-FR). Re-assert each sibling's culture via
