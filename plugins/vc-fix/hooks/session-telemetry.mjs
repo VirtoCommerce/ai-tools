@@ -192,7 +192,13 @@ const BAIL_RE = /(FIX_STATUS:\s*FAILED|\bBAIL(?:_CLASS)?\b|out-of-auto-fix-scope
 // deliberately ABSENT — cmdPrompt records a feedback record and returns before
 // COMMAND_RE, so it never opens a command span.
 const PLUGIN_COMMANDS = ["project-init", "qa-bug", "qa-fix", "qa-verify-fix", "qa-monitoring", "qa-env-check", "vc-self-check", "vc-docs"];
-const COMMAND_RE = new RegExp(`^\\s*/(${PLUGIN_COMMANDS.join("|")})\\b`, "i");
+// Accept an optional `<plugin>:` namespace prefix — a slash command invoked from an
+// installed plugin arrives as `/vc-fix:qa-env-check`, not the bare `/qa-env-check`. Without
+// the `(?:[\w.-]+:)?` group the namespaced form never matched, so a whole plugin-command
+// session was recorded as `no-plugin-activity` (the command span never opened → no clean
+// line AND no findings escalation). Capture group 1 stays the bare command name. Mirrors
+// normalizeName()'s namespace strip.
+const COMMAND_RE = new RegExp(`^\\s*/(?:[\\w.-]+:)?(${PLUGIN_COMMANDS.join("|")})\\b`, "i");
 
 // Normalize a skill/command name for the oracle lookup: strip a leading "/" and a
 // leading "<plugin>:" namespace (a Skill invoked as `vc-fix:qa-bug` must still map
@@ -728,15 +734,21 @@ async function cmdPrompt(ev) {
   state.promptedThisTurn = false; // new turn
 
   const prompt = String(ev.prompt ?? "").trim();
+  // Unwrap the `<command-name>/…</command-name>` form the harness records for a slash
+  // command, so COMMAND_RE (and /vc-feedback) match whether ev.prompt is the literal
+  // `/vc-fix:qa-env-check` or the wrapped transcript form.
+  const cmdTag = /<command-name>\s*(\/\S+)\s*<\/command-name>/i.exec(prompt);
+  const cmdLine = cmdTag ? cmdTag[1] : prompt;
 
   // /vc-feedback "<text>" [👍|👎] — attach an explicit operator verdict to the trace.
-  if (/^\/vc-feedback\b/i.test(prompt)) {
+  // Namespace-aware (`/vc-fix:vc-feedback` too), like COMMAND_RE.
+  if (/^\/(?:[\w.-]+:)?vc-feedback\b/i.test(cmdLine)) {
     // Verdict from an EXPLICIT marker only — emoji / :±1: / :thumbs*: / a trailing
     // ±1 / a whole-word up|down|good|bad as the LAST token. Substring sentiment on
     // prose ("not bad", "the dropdown", "up to date") is too unreliable and would
     // spuriously force a `down` (→ upstream delivery via hasNegFeedback) — so it is
     // NOT used (B-F2/D7).
-    const tail = prompt.replace(/^\/vc-feedback\b/i, "").trim();
+    const tail = cmdLine.replace(/^\/(?:[\w.-]+:)?vc-feedback\b/i, "").trim();
     const neg = /(👎|:-1:|:thumbsdown:)/.test(tail) || /(^|\s)(-1|down|bad)\s*$/i.test(tail);
     const pos = /(👍|:\+1:|:thumbsup:)/.test(tail) || /(^|\s)(\+1|up|good)\s*$/i.test(tail);
     const verdict = neg ? "down" : pos ? "up" : "neutral";
@@ -747,7 +759,7 @@ async function cmdPrompt(ev) {
     return; // feedback does NOT open a command span
   }
 
-  const m = COMMAND_RE.exec(prompt);
+  const m = COMMAND_RE.exec(cmdLine);
   if (m) {
     // A new command turn — the previous command's trailing skill (if any) stays
     // open until the scanner meets the next Skill or finalize closes it.

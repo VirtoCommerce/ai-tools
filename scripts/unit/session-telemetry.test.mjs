@@ -283,6 +283,71 @@ test("/vc-feedback: an explicit 👎 verdict is recorded as a feedback record, n
   }
 });
 
+// ─── namespaced slash command: /vc-fix:qa-env-check must open a command span ─────────
+test("command span: a namespaced slash command (/vc-fix:qa-env-check) is recognized as plugin activity", () => {
+  const home = setupHome();
+  try {
+    const sid = "ns-cmd";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    // The installed-plugin invocation form — namespace prefix `vc-fix:` before the command.
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/vc-fix:qa-env-check" });
+    // The skill then runs via Bash (as it does live) — no Skill tool_use, only Bash ops.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "node verify-access.mjs" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "Readiness: all PASS — READY"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    const records = readSpans(home, sid);
+    const cmd = spansOf(records, "command", "qa-env-check");
+    assert.equal(cmd.length, 1, "the namespaced /vc-fix:qa-env-check must open a qa-env-check command span");
+    const fin = records.find((r) => r.type === "finalize");
+    assert.equal(fin.decision.pluginActivity, true, "a namespaced plugin command IS plugin activity");
+    assert.equal(fin.decision.verdict, "clean");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("command span: the <command-name> wrapper form is also recognized", () => {
+  const home = setupHome();
+  try {
+    const sid = "ns-wrap";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "<command-name>/vc-fix:qa-fix</command-name> <command-args>VCST-9</command-args>" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "git status" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "clean"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(spansOf(readSpans(home, sid), "command", "qa-fix").length, 1);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("/vc-feedback: the namespaced form (/vc-fix:vc-feedback) is captured too", () => {
+  const home = setupHome();
+  try {
+    const sid = "ns-fb";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: '/vc-fix:vc-feedback "wrong repo routed" 👎' });
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const fb = readSpans(home, sid).filter((r) => r.type === "feedback");
+    assert.equal(fb.length, 1);
+    assert.equal(fb[0].verdict, "down");
+    assert.match(fb[0].text, /wrong repo routed/);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── decision moment (Task 2.1): every finalize records a decision verdict ──────────
 const finalizeOf = (records) => records.find((r) => r.type === "finalize");
 
