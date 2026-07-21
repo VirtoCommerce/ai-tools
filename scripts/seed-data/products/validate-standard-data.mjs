@@ -93,6 +93,25 @@ console.log(`\n[5] ${CSV_SOURCE.file}: has seeded=true rows`);
 if (!seededIds.size) fail(`no seeded=true rows — the seeder would abort`);
 else ok(`${seededIds.size} seeded=true row(s): ${[...seededIds].join(', ')}`);
 
+// 6. Sale-price coherence — any row carrying a sale_price must be a genuine sale (0 < sale < list).
+// A blank sale_price is fine (no sale). An inverted / zero / non-numeric sale would silently degrade
+// to list-only at seed time (buildPrices guards it), but it almost always signals a fixture typo.
+console.log(`\n[6] ${CSV_SOURCE.file}: sale_price rows are genuine sales (0 < sale < list)`);
+const saleCol = CSV_SOURCE.map.salePrice;
+const listCol = CSV_SOURCE.map.listPrice;
+let saleRows = 0;
+for (const r of tp) {
+  const raw = String(r[saleCol] ?? '').trim();
+  if (!raw) continue;
+  saleRows++;
+  const sale = Number(raw), list = Number(r[listCol]);
+  if (!Number.isFinite(sale) || sale <= 0) fail(`${CSV_SOURCE.file} row ${r.product_id}: sale_price "${raw}" is not a positive number`);
+  else if (!Number.isFinite(list)) fail(`${CSV_SOURCE.file} row ${r.product_id}: has sale_price ${sale} but no numeric list price ("${r[listCol]}")`);
+  else if (sale >= list) fail(`${CSV_SOURCE.file} row ${r.product_id}: sale_price ${sale} must be strictly below list price ${list}`);
+  else ok(`${r.product_id}: sale ${sale} < list ${list} (${Math.round((1 - sale / list) * 100)}% off)`);
+}
+if (!saleRows) ok('no sale_price rows to check');
+
 console.log('\n=== standard-products drift/leak check ===');
 console.log(`  standard.csv rows: ${std.length} | ${CSV_SOURCE.file} rows: ${tp.length} | seeded: ${seededIds.size} | discovered: ${DISCOVERED_FIXTURES.length}`);
 console.log(`  hard problems: ${problems.length} | warnings: ${notes.length}`);
