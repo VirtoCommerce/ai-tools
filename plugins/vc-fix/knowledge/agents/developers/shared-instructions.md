@@ -34,6 +34,35 @@ gate ladder — never diverge from it.
 | Branch | `claude/qa-autofix/VCST-XXXX` |
 | Output | `reports/fixes/FIX-*/` |
 
+## Fast local navigation & editing — use an LSP-backed tool (e.g. Serena) when available
+`vc-fix` doesn't bundle or require one, but if this session has an LSP-backed code-navigation MCP
+enabled (commonly **Serena** — tool names like `mcp__*serena*__*`; check once per run, don't assume),
+**prefer it over blind `Grep`+full-file-`Read`+string-match-`Edit`** for "find the seam" and "apply the
+fix" once the repo is checked out. It materially cuts token/round-trip cost on VC modules' larger C#
+files and the storefront's `.vue` SFCs. If the tools aren't present this session, use
+`Grep`/`Glob`/`Read`/`Edit` exactly as documented elsewhere in this file — nothing below is a new hard
+rule, just a faster path when it's there.
+
+**Right after checkout, activate the checkout as the tool's project** (Serena: `activate_project` on
+the absolute `.fix-workspace/<repo-basename>/` path) before any `Grep`/`Read`, so symbol lookups resolve
+against this checkout, not a stale index.
+
+**Prefer, in order, when available:**
+1. A symbol overview of the RCA file (Serena: `get_symbols_overview`) — the class/method tree, no
+   bodies — to locate the seam without reading the whole file into context.
+2. Fetch just the target symbol's body (Serena: `find_symbol(..., include_body=true)`) — a controller
+   action, service method, or `<script setup>` function — instead of the surrounding file.
+3. Find every caller before touching a signature/contract (Serena: `find_referencing_symbols`) — one
+   call instead of a repo-wide `Grep`, and how you self-check the "no breaking changes" hard rule.
+4. Apply the fix directly to the symbol (Serena: `replace_symbol_body` /
+   `insert_after_symbol`/`insert_before_symbol`) instead of Read-whole-file + Edit-by-string-match,
+   which retries on whitespace or non-unique matches in a large file.
+
+**Always fall back to `Grep`/`Glob`/`Read`/`Edit`** for config/data files a code-symbol tool won't index
+well (JSON/CSV, `.csproj`/`.sln`, `module.manifest`, markdown) or if it errors for this repo/language.
+This is a speed optimization only — every existing constraint (single repo, ADD-only tests, minimal
+diff, no breaking changes, BL-* preserved) is unchanged regardless of which tool made the edit.
+
 ## Where the fix goes — ownership routing (client vs platform)
 A deployment may be the native VirtoCommerce platform **or** a CLIENT project with its own custom
 modules / theme / storefront fork. The routed repo's **ownership** decides where your PR (or, when

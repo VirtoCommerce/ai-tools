@@ -16,8 +16,8 @@ are the interactive twin of `ci/agents/fix-backend-agent.md` (+ `fix-frontend-ag
 Admin UI).
 
 > **Shared framework:** `knowledge/agents/developers/shared-instructions.md` — write-tool discipline,
-> single-repo / no-auto-merge / never-edit-tests rules, escalation, reporting. **Gate ladder:**
-> `.claude/rules/quality-gates.md` (you own G2, G3; you feed G4–G7).
+> fast local navigation/editing (Serena), single-repo / no-auto-merge / never-edit-tests rules,
+> escalation, reporting. **Gate ladder:** `.claude/rules/quality-gates.md` (you own G2, G3; you feed G4–G7).
 
 > **Verification bar:** backend fixes are **statically** proven here — `dotnet build` + `dotnet test` +
 > a new red→green test. The live storefront symptom **cannot** be re-verified locally (needs a module
@@ -45,9 +45,12 @@ fix doesn't re-introduce a historical VC failure pattern.
 > `*.Data` → `*.Web` (+ `Web/Scripts/` Admin Angular UI) → `*.Tests`), build/test `REPO_PROFILES`
 > (`ci/lib/repo-router.ts`), .NET 10 idioms, xUnit conventions, dependency boundary.
 
-- **Find the seam:** controller → service → domain → repository → events. `Grep`/`Glob` on the RCA's
-  type/method/endpoint/GraphQL-field/settings-key. Verify the real contract (VC "wrong field silently
-  no-ops" traps: `sections` vs `configurationSections`; coupons a separate entity).
+- **Find the seam:** controller → service → domain → repository → events. Once checked out (workflow
+  step 2), use Serena's `get_symbols_overview`/`find_symbol` to jump straight to the RCA's
+  type/method — `Grep`/`Glob` on the endpoint/GraphQL-field/settings-key name is the fallback for
+  anything Serena doesn't index (`shared-instructions.md` §Fast local navigation & editing). Verify the
+  real contract (VC "wrong field silently no-ops" traps: `sections` vs `configurationSections`; coupons
+  a separate entity).
 - **Module Admin UI** lives in `Web/Scripts/` of the SAME repo → still single-repo; use `/angular-admin`.
 - **Dependencies resolve as NuGet** — you can't edit them. Root cause in a dependency → STOP.
 
@@ -69,7 +72,10 @@ Invoke the development skills:
 1. **Understand the bug** — read the ticket JSON + `/qa-bug` report (STR, expected/actual, owning
    layer, RCA). Confirm root cause, not symptom.
 2. **Checkout** — the repo is resolved + cloned via `ci/lib/repo-router.ts` `checkoutForFix` into
-   `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute paths.
+   `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute
+   paths. **Immediately activate the checkout for Serena** (`activate_project` on the absolute path) so
+   the rest of the fix uses fast symbol navigation instead of blind Grep+Read (`shared-instructions.md`
+   §Fast local navigation & editing).
 3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see `/dotnet-unit-test`).
 4. **Reproduce (red)** — add a NEW test asserting expected behavior; confirm it fails. Trivial-skip
    only for one-line guards/typos (note in PR body). **Admin SPA layout/CSS bug:** instead, scaffold the
@@ -113,7 +119,8 @@ Invoke the development skills:
 |---------|------|
 | Clone / branch / commit / push | **Bash** `git`, `gh repo clone` (via `ci/lib/repo-router.ts` semantics) |
 | Build / test | **Bash** `dotnet restore`/`build`/`test`, `npm ci`/`npm test` (per `REPO_PROFILES`) |
-| Source edits | **Write/Edit** in `.fix-workspace/<repo>/` |
+| Find/read the seam (post-clone) | Serena `get_symbols_overview`/`find_symbol`/`find_referencing_symbols` — falls back to `Grep`/`Glob`/`Read` |
+| Source edits | Serena `replace_symbol_body`/`insert_after_symbol`/`insert_before_symbol` for a precise symbol edit — falls back to **Write/Edit** in `.fix-workspace/<repo>/` |
 | Repo read (pre-clone) | `mcp__github__search_code`, `get_file_contents`, `get_pull_request*` |
 | PR open + CI status | `gh pr create`, `gh pr checks`, `mcp__github__get_pull_request_status` |
 

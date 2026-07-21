@@ -34,6 +34,36 @@ gate ladder — never diverge from it.
 | Branch | `claude/qa-autofix/VCST-XXXX` |
 | Output | `reports/fixes/FIX-*/` |
 
+## Fast local navigation & editing — use Serena, not blind Grep+Read+Edit
+Serena (`mcp__plugin_serena_serena__*`, enabled repo-wide via `.claude/settings.json` →
+`enabledPlugins`) is LSP-backed symbol navigation + precise editing. Once the repo is checked out, it
+is the **default tool for "find the seam" and "apply the fix"** — it cuts the token/round-trip cost of
+the naive loop (`Grep` for a string → `Read` the whole file → hand-match an `old_string` in `Edit`),
+which is slow on VC modules' larger C# files and vc-frontend's `.vue` SFCs.
+
+**Right after `checkoutForFix` (workflow step 2 in both dev agents), activate the checkout as Serena's
+project** — `activate_project` on the absolute `.fix-workspace/<repo>/` path — before any Grep/Read, so
+symbol lookups resolve against this checkout, not a stale index from a previous run.
+
+**Prefer, in order:**
+1. `get_symbols_overview(file)` — the file's symbol tree (classes/methods/properties), no bodies.
+   Locates the RCA method without reading the whole file into context.
+2. `find_symbol(name_path, include_body=true)` — fetch just the target symbol's body (a controller
+   action, service method, or `<script setup>` function), not the surrounding file.
+3. `find_referencing_symbols(name_path)` — before touching a signature/contract, see every caller in
+   one call instead of a repo-wide `Grep` — this is also how you self-check the "no breaking changes"
+   hard rule below.
+4. `replace_symbol_body` / `insert_after_symbol` / `insert_before_symbol` — apply the fix directly to
+   the symbol (swap a method body, add a guard clause, add an overload) instead of
+   Read-whole-file-then-Edit-by-string-match, which retries on whitespace or non-unique matches in a
+   large file.
+
+**Fall back to `Grep`/`Glob`/`Read`/`Edit`** for anything Serena's language server doesn't index well —
+JSON/CSV config, `.csproj`/`.sln`, `module.manifest`, test-data CSVs, markdown — or if the language
+server errors/times out for that repo. Never block the fix on Serena; it is a **speed optimization,
+not a new hard rule** — every existing constraint (single repo, ADD-only tests, minimal diff, no
+breaking changes, BL-* preserved) is unchanged regardless of which tool made the edit.
+
 ## Where the fix goes — ownership routing (client vs platform)
 A deployment may be the native VirtoCommerce platform **or** a CLIENT project with its own custom
 modules / theme / storefront fork. The routed repo's **ownership** decides where your PR (or, when
