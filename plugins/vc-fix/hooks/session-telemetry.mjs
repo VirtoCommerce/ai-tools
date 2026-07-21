@@ -1095,27 +1095,31 @@ async function cmdFinalize(ev) {
     cleanupOffered: cleanupBlock, // did we surface the stale-artifact cleanup offer this turn
     completeSignalled: completePending, // did a skill signal its terminal step this run
     completedSkill: completePending ? (state.skillCompletePending?.skill ?? null) : null,
-    // Why nothing surfaced this turn (audit only — never affects behavior). "awaiting-completion"
-    // is the NORMAL intermediate-pause state: a plugin skill ran but hasn't signalled `complete`
-    // yet, so the clean line is deliberately withheld until its terminal step. `stopHookActive` is
-    // checked before the dedup fallback so a suppression caused by OUR OWN resume-turn's Stop is
-    // logged as "stop-hook-active", not misreported as "already-surfaced".
+    // Why nothing surfaced this turn (audit only — never affects behavior). The "already handled /
+    // our own resume" guards are checked FIRST so a suppression caused by OUR OWN resume-turn's Stop
+    // (which fires AFTER we surfaced + consumed the marker) is logged as "stop-hook-active" /
+    // "already-surfaced" — NOT misreported as "awaiting-completion" (the marker is null there because
+    // we consumed it, not because the run is still mid-flight). "awaiting-completion" is reserved for
+    // the genuine intermediate-pause state: a plugin skill ran, we have NOT surfaced this turn, and it
+    // has not signalled `complete` yet, so the clean line is deliberately withheld until its terminal step.
     suppressReason: surfaced
       ? null
       : uniqueFresh.length === 0
         ? (!pluginActivity
             ? "no-plugin-activity"
-            : !cleanEligible
-              ? "awaiting-completion"
-              : lineOff
-                ? "line-off"
-                : consentOff
-                  ? "consent-off"
-                  : stopHookActive
-                    ? "stop-hook-active"
-                    : state.selfCheckSeen
-                      ? "self-check-session"
-                      : "already-surfaced")
+            : stopHookActive
+              ? "stop-hook-active"
+              : state.promptedThisTurn
+                ? "already-surfaced"
+                : state.selfCheckSeen
+                  ? "self-check-session"
+                  : consentOff
+                    ? "consent-off"
+                    : lineOff
+                      ? "line-off"
+                      : !cleanEligible
+                        ? "awaiting-completion"
+                        : "clean")
         : consentOff
           ? "consent-off"
           : stopHookActive
@@ -1224,6 +1228,15 @@ function parseCompleteArgs(argv) {
 // The most-recently-modified `<sid>.state.json` in the diagnostics dir → its sid. During an
 // active skill run that session's state was just written by the last hook firing, so it is
 // the active session. "" when the dir is absent/empty. Never throws.
+//
+// CAVEAT (bounded, cosmetic): with TWO concurrent sessions sharing one outputRoot, if the other
+// session's hooks wrote AFTER this session's last hook but before this `complete` runs, the marker
+// lands on the other session's state file. Blast radius is small and never touches findings/consent
+// (`shouldPrompt` is independent of the marker): at worst this session's clean line is skipped and
+// the other session prints one clean line on its next pause — a stray status line, no data loss.
+// It never fires unless that other session is ALSO a clean vc-fix plugin session (cleanBlock still
+// requires its own pluginActivity + uniqueFresh===0). Pass `--session <id>` to disambiguate when the
+// id is known. (No session_id is available to a Bash-invoked command, hence the mtime heuristic.)
 function newestSessionId(dir) {
   let entries;
   try { entries = readdirSync(dir); } catch { return ""; }

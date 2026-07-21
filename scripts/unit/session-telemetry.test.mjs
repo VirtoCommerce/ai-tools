@@ -514,6 +514,12 @@ test("clean line: blocks at most once per turn (no resume loop)", () => {
     // re-block (else an infinite resume loop).
     const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
     assert.equal(second.trim(), "", "a repeat finalize in the same turn must not re-block");
+    // The resume-turn's own Stop (marker consumed, promptedThisTurn set) must be audited as
+    // already-surfaced — NOT misreported as awaiting-completion (the marker is null because we
+    // consumed it, not because the run is still mid-flight).
+    const last = finalizesOf(readSpans(home, sid)).pop();
+    assert.equal(last.decision.suppressReason, "already-surfaced");
+    assert.notEqual(last.decision.suppressReason, "awaiting-completion");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -742,6 +748,7 @@ test("stop_hook_active:true suppresses the clean line block", () => {
     complete(home, "qa-env-check"); // armed — but the resume-turn's own Stop (stop_hook_active) must still suppress it
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop", stop_hook_active: true });
     assert.equal(out.trim(), "", "stop_hook_active must suppress the clean line block");
+    assert.equal(finalizeOf(readSpans(home, sid)).decision.suppressReason, "stop-hook-active", "the suppression is audited as stop-hook-active, not awaiting-completion");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
