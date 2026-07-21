@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Everything else — whether it is a native-platform or a CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local + .mcp.json and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client custom code vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer. Day-2 modes skip the interview: `add-env [name]` adds another environment (URLs + per-env access keys) to an already-onboarded project; `--check` reconciles an existing profile to the current schema then verifies.
+description: Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Everything else — whether it is a native-platform or a CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local + .mcp.json and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client custom code vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env access keys) to an already-onboarded project; `--check` reconciles an existing profile to the current schema then verifies.
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -23,10 +23,10 @@ platform) and to the correct bug tracker.
 > no profile, the plugin keeps its original behaviour (native-platform, Jira,
 > GitHub). Nothing existing is rewritten.
 
-> **Two day-2 modes** (skip the interview): **`add-env [name]`** — add another
-> environment (URLs + per-env access creds) to an already-onboarded project (§`add-env`
-> below); **`--check`** — reconcile an existing profile to the current schema after a
-> plugin upgrade, then verify (§`--check`).
+> **Two day-2 modes** (skip the interview): **`--add-env`** — add another environment
+> (URLs + per-env access creds) to an already-onboarded project (§`--add-env` below);
+> **`--check`** — reconcile an existing profile to the current schema after a plugin
+> upgrade, then verify (§`--check`).
 
 ## What it produces
 
@@ -532,9 +532,9 @@ and point the operator at the first run:
 
 ---
 
-## `add-env` — add another environment to an already-onboarded project
+## `--add-env` — add another environment to an already-onboarded project
 
-`/project-init add-env [name]` is for a deployment that is ALREADY onboarded (a
+`/project-init --add-env` is for a deployment that is ALREADY onboarded (a
 `project-profile.json` exists) and you want to point the plugin at **another deployment
 target** — a second QA env, staging, a customer's second storefront — that shares the
 **same project topology**.
@@ -544,7 +544,7 @@ target** — a second QA env, staging, a customer's second storefront — that s
 tracker role model — all describe the PROJECT (where bugs are filed, where code lives, which
 repos exist), not a single deployment. An *environment* is only a **URL set + its access
 creds** (`.env.<name>` + the `_<ENV>`-suffixed passwords in `.env.local`), selected at
-runtime by `TEST_ENV`. So `add-env`:
+runtime by `TEST_ENV`. So `--add-env`:
 
 - **does NOT** re-run the interview, re-scan repos (`discover-repos`), re-derive
   (`derive-context`), rewrite `project-profile.json`, or regenerate `.mcp.json` — all
@@ -554,7 +554,7 @@ runtime by `TEST_ENV`. So `add-env`:
 
 > A different **tracker or code host** is a different *project*, not an environment — those
 > live in `project-profile.json`. For that, run a fresh full `/project-init` in its own
-> project directory; don't try to bend `add-env` to it.
+> project directory; don't try to bend `--add-env` to it.
 
 ### Step A — precondition + read the project topology (no questions)
 
@@ -566,13 +566,14 @@ runtime by `TEST_ENV`. So `add-env`:
    or just read the file). **Do NOT ask them again** — they are project-level and already
    decided. These become the `--tracker` / `--client-vcs` flags below.
 
-### Step B — env name + existing-env guard
+### Step B — ask the env name, then the existing-env guard
 
-- Take the env name from the `[name]` argument, or ask it as a **plain chat** question (§2a);
-  normalise to `[a-z0-9_]+` and tell the operator what you used.
+- **Ask the env name** as a **plain chat** question (like §2a — *"what should the new
+  environment be named?"*; not `AskUserQuestion`/widget, and no positional arg). The operator
+  replies; normalise to `[a-z0-9_]+` (e.g. `Staging 2` → `staging_2`) and tell them what you used.
 - **Existing-env guard** (§2c): check `.env.<name>` first. Found → `AskUserQuestion` to
   **reuse** it (scaffolding is add-only, never clobbers filled values) or **pick a new name**
-  (re-check). Not found → proceed.
+  (re-ask the plain-chat name question + re-check). Not found → proceed.
 
 ### Step C — scaffold the new env's two files, then pause
 
