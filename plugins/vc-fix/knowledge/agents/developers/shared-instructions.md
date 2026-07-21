@@ -34,6 +34,18 @@ gate ladder — never diverge from it.
 | Branch | `claude/qa-autofix/VCST-XXXX` |
 | Output | `reports/fixes/FIX-*/` |
 
+## Checkout hygiene — absolute paths only, never a `cd`-chain
+The checkout lands in `.fix-workspace/<repo-basename>/`, which is itself a git repository nested one
+level inside this repo's own working tree. **Never re-derive the checkout path via a relative `cd` +
+`git rev-parse --show-toplevel`**: run from inside `.fix-workspace/<repo-basename>/`,
+`--show-toplevel` correctly (and unhelpfully) returns *that nested repo's* root, not this outer one —
+chaining a further `cd`/clone off that result silently nests a second copy inside the first. Verified
+2026-07-21: this produced `.fix-workspace/<repo>/.fix-workspace/<repo>/`, which then broke an
+LSP-backed tool's project activation on a Windows long-path error deep in a GraphQL folder (see
+below). Always use the **absolute path** the checkout step returned (or one computed once, up front)
+for every later `git -C`, Bash, Read/Edit, and symbol-tool call — never `cd` into the workspace as a
+persisted directory, and never rely on `git rev-parse` from inside it to relocate yourself.
+
 ## Fast local navigation & editing — use an LSP-backed tool (e.g. Serena) when available
 `vc-fix` doesn't bundle or require one, but if this session has an LSP-backed code-navigation MCP
 enabled (commonly **Serena** — tool names like `mcp__*serena*__*`; check once per run, don't assume),
@@ -62,6 +74,17 @@ against this checkout, not a stale index.
 well (JSON/CSV, `.csproj`/`.sln`, `module.manifest`, markdown) or if it errors for this repo/language.
 This is a speed optimization only — every existing constraint (single repo, ADD-only tests, minimal
 diff, no breaking changes, BL-* preserved) is unchanged regardless of which tool made the edit.
+
+**If activation doesn't report a real language (e.g. Serena's result reads like "Programming
+languages: ." instead of naming one), or the first symbol-tool call errors with "language server
+manager is not initialized" — don't retry the same project/path.** Verified 2026-07-21 (Serena): once
+a project's first initialization fails (e.g. a Windows long-path error while gathering its
+`.gitignore` spec), the broken state is cached under that project name and does **not** self-heal on
+a later activation call, even against a corrected path — only a genuinely new, never-before-activated
+project name/directory initializes cleanly. A force-recovery tool (e.g. Serena's
+`restart_language_server`) may not even be exposed in a given install. Treat a failed first activation
+as terminal for that run: fall back to `Grep`/`Glob`/`Read`/`Edit` for the rest of the fix rather than
+spending a retry loop on it.
 
 ## Where the fix goes — ownership routing (client vs platform)
 A deployment may be the native VirtoCommerce platform **or** a CLIENT project with its own custom
