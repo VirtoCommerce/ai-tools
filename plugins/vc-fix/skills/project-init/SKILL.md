@@ -458,14 +458,33 @@ password grant) · storefront user login (soft WARN) · tracker token (Jira `GET
 or a **real ADO org probe**) · **GitHub fix token / gh session** (validates the token and
 its permission on the upstream — shared with the derive block via `probe-lib.mjs`, so
 what verify reports and what the profile stored can't drift) · **client repos** (for a
-client deployment, each `repos.client` entry is probed for reach + push on its own host —
+client deployment, each `repos.client` entry is probed for reach on its own host —
 GitHub `permissions.push` or an Azure Repos `_apis/git/repositories/<repo>` JSON hit — so a
 dead client-repo token surfaces here, not at Gate 2; native platform ⇒ SKIP) · **Storefront
 upstream ref** (a client frontend fork's `upstreamRef` resolves in `vc-frontend` — PASS; missing /
 `upstreamRefResolved:false` / doesn't resolve — WARN, since Gate 1b reconstructs/asks; no fork ⇒
-SKIP). Resolve every **FAIL**
-(exit code is non-zero while any FAIL remains); **WARN** is non-blocking; **SKIP** means
-a feature isn't configured.
+SKIP).
+
+**WRITE-capability probes (the axes `/qa-fix` must write to).** A PAT/session with only
+READ scope passes every read probe above but 401s the moment `/qa-fix` transitions a
+ticket or pushes a branch — the gap found live in a client deployment (ADO PAT: `whoami` /
+`get-workitem` / `list-refs` 200, but transition / comment / push 401). So the table also
+probes write, **without mutating anything** — it sends a deliberately-invalid write request
+and reads the status split (`401/403` = no write scope; `400/409/422` = scope present, the
+bad request was rejected at validation; anything else ⇒ WARN "write scope unverified"):
+
+| Row | Axis | Probe (non-mutating) | Verdict |
+|-----|------|----------------------|---------|
+| **Azure Boards write (transition)** | tracker (Azure Boards only) | `PATCH _apis/wit/workitems/<known id>` with an invalid JSON-Patch body | no scope ⇒ **FAIL** · present ⇒ PASS · no item to probe / inconclusive ⇒ WARN |
+| **GitHub auth (direct/fork PR)** | platform upstream (GitHub) | existing `permissions.push` on the upstream repo | direct + no push ⇒ **FAIL** · fork (own fork) ⇒ PASS · unreadable perm ⇒ WARN |
+| **Client repo `<name>`** | client code host | GitHub `permissions.push`; Azure Repos `POST _apis/git/repositories/<repo>/pushes` with an empty body | reachable but no write ⇒ **FAIL** · reachable + write ⇒ PASS · inconclusive ⇒ WARN |
+
+A missing write scope on a required axis is a **FAIL → NOT READY** (Jira stays WARN — its
+runtime path is the Atlassian MCP OAuth, not this token). The `To resolve:` block names the
+exact scopes to grant — **Azure: Work Items (Read & Write) + Code (Read & Write) + Pull
+Request (contribute); GitHub: repo/PR write** — and never prints the token. Resolve every
+**FAIL** (exit code is non-zero while any FAIL remains); **WARN** is non-blocking; **SKIP**
+means a feature isn't configured.
 
 **Session auth is really probed, not assumed.** For an `az-login` / `gh-cli` axis the
 check mints a real token and hits the org / upstream — an active session that is not a

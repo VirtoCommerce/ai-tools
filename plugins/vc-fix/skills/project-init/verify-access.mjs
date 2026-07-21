@@ -16,8 +16,15 @@
  *   - Storefront user login — soft probe (WARN, not FAIL: storefront users may auth via xAPI)
  *   - Jira API token — GET /rest/api/3/myself  (jira tracker; WARN not FAIL — the runtime
  *     path is the Atlassian MCP OAuth, the token is only an optional probe)  OR  Azure DevOps auth present
+ *   - Azure Boards WRITE (transition) — non-mutating write-scope probe (PATCH a known item
+ *     with an invalid body: 401/403 = no Work-Items-write scope ⇒ FAIL; 400 = scope present).
+ *     /qa-fix transitions/comments the ticket, so a read-only PAT must FAIL here, not mid-fix.
  *   - GitHub fix token (GITHUB_FIX_BUGS_TOKEN) — validate token + push perm on the upstream repo
+ *     (direct mode: no push ⇒ FAIL; fork mode: read is enough since you PR from your own fork)
  *   - gh CLI session — gh auth status
+ *   - Client repos — reachable AND WRITABLE on their own host (GitHub permissions.push; Azure
+ *     Repos non-mutating /pushes probe). /qa-fix pushes here, so no write ⇒ FAIL (the LEO gap:
+ *     read-only PAT reaches get-repo 200 but push 401).
  *
  * Usage: node skills/project-init/verify-access.mjs
  */
@@ -28,7 +35,10 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { pluginRoot } from "./lib/paths.mjs";
-import { probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE } from "./probe-lib.mjs";
+import {
+  probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
+  githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
+} from "./probe-lib.mjs";
 
 let TEST_ENV;
 try {
@@ -222,6 +232,26 @@ async function main() {
           detail = `az session not accepted for '${org}' (→ ${r.status}) — run \`az login --tenant ${tenant || "<org-tenant>"}\` or set ADO_PAT`;
         } else detail = `ADO_PAT not accepted for '${org}' (→ ${r.status}) — check scopes (Work Items R/W, Code R/W)`;
         add("Azure DevOps auth", okJson ? "PASS" : "FAIL", detail);
+
+        // Boards WRITE scope — /qa-fix transitions + comments the ticket via ado.mjs, so a
+        // read-only PAT (reads above PASS, but 401 on the first transition) must FAIL here,
+        // not surface mid-fix. Non-mutating: PATCH a KNOWN item with an invalid body →
+        // 401/403 = no write scope, 400 = scope present (rejected at validation, nothing
+        // changed). See probe-lib.classifyWriteProbe. Only meaningful once reads PASS.
+        if (okJson) {
+          const apiBase = az.apiBase || `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
+          const wid = await discoverAdoWorkItemId({ apiBase, authHeader });
+          if (!wid) {
+            add("Azure Boards write (transition)", "WARN",
+              `write scope unverified — no work item found to probe (WIQL empty/denied) via ${via}; confirm the PAT has Work Items (Read & Write)`);
+          } else {
+            const wp = await probeAdoWorkItemsWrite({ apiBase, authHeader, workItemId: wid });
+            if (wp.scope === "present") add("Azure Boards write (transition)", "PASS", `Work Items write confirmed (probe → ${wp.status}) via ${via}`);
+            else if (wp.scope === "absent") add("Azure Boards write (transition)", "FAIL",
+              `PAT/session lacks Work Items write (probe → ${wp.status}) — /qa-fix cannot transition/comment; grant Azure DevOps scope: Work Items (Read & Write)`);
+            else add("Azure Boards write (transition)", "WARN", `write scope unverified (probe → ${wp.status}) via ${via} — confirm Work Items (Read & Write)`);
+          }
+        }
       } catch (e) { add("Azure DevOps auth", "FAIL", e.message); }
     }
   }
@@ -238,11 +268,14 @@ async function main() {
     const label = `GitHub auth (${forkMode ? "fork-PR" : "direct PR"})`;
     const p = await probeGithubUpstream({ upstreamOrg: profile.upstream.org || "VirtoCommerce", token: ghtok });
     if (p.ok && p.login) {
-      // fork mode: read is enough (fork + PR from own account); direct: needs push+.
-      const enough = p.perm !== "unknown" && (forkMode || ["push", "maintain", "admin"].includes(p.perm));
+      // fork mode: read is enough (you PR from your OWN fork, which you can always write).
+      // direct mode: /qa-fix pushes to the upstream, so no push = NOT READY (FAIL), not WARN.
+      // perm "unknown" = the repo read itself failed (rate limit / offline) → WARN, can't judge.
       const scopesNote = ghScopes ? ` [scopes: ${ghScopes}]` : "";
-      add(label, enough ? "PASS" : "WARN",
-        `${ghVia}, login '${p.login}'; ${p.repo}: ${p.perm}${scopesNote}` + (enough ? "" : forkMode ? "" : " — direct PR needs push; use fork mode or a token with write"));
+      const base = `${ghVia}, login '${p.login}'; ${p.repo}: ${p.perm}${scopesNote}`;
+      if (p.perm === "unknown") add(label, "WARN", `${base} — could not read the upstream repo permission; re-run to confirm`);
+      else if (forkMode || githubCanWrite(p.perm)) add(label, "PASS", base);
+      else add(label, "FAIL", `${base} — direct PR pushes to ${p.repo} and needs write; grant GitHub repo/PR write or switch to fork mode`);
     } else add(label, "FAIL", `${ghVia}: GET /user → ${p.status || "error"}`);
   } else add("GitHub auth", "FAIL", "no GITHUB_FIX_BUGS_TOKEN and no gh CLI session — set the PAT or run `gh auth login`");
 
@@ -269,10 +302,19 @@ async function main() {
         if (!ado.header) { add(label, "FAIL", "no ADO_PAT / az session to reach Azure Repos"); continue; }
         if (!org || !project) { add(label, "FAIL", "missing vcs.azure.organization / project"); continue; }
         try {
-          const url = `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories/${encodeURIComponent(name)}?api-version=7.1`;
+          const apiBase = `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
+          const url = `${apiBase}/_apis/git/repositories/${encodeURIComponent(name)}?api-version=7.1`;
           const res = await fetch(url, { headers: { Authorization: ado.header, Accept: "application/json" } });
           const okJson = res.ok && (res.headers.get("content-type") || "").includes("application/json");
-          add(label, okJson ? "PASS" : "FAIL", okJson ? `reachable via ${ado.via}` : `→ ${res.status} (${ado.via} not accepted — check PAT Code R/W or az tenant)`);
+          if (!okJson) { add(label, "FAIL", `→ ${res.status} (${ado.via} not accepted — check PAT Code R/W or az tenant)`); continue; }
+          // Reachable — now confirm PUSH scope (the /qa-fix operation), not just read. This is
+          // the LEO gap: get-repo 200 but push 401. Non-mutating: empty push body → 400 when
+          // authorized, 401/403 when Code-write scope is absent.
+          const wp = await probeAdoCodeWrite({ apiBase, authHeader: ado.header, repo: name });
+          if (wp.scope === "present") add(label, "PASS", `reachable + Code write via ${ado.via} (probe → ${wp.status})`);
+          else if (wp.scope === "absent") add(label, "FAIL",
+            `reachable but NO Code write (push probe → ${wp.status}) — /qa-fix pushes here; grant ADO PAT scopes: Code (Read & Write) + Pull Request (contribute)`);
+          else add(label, "WARN", `reachable via ${ado.via}; Code write unverified (push probe → ${wp.status}) — confirm PAT Code (Read & Write)`);
         } catch (e) { add(label, "FAIL", e.message); }
       } else {
         // github client repo
@@ -285,7 +327,10 @@ async function main() {
           if (res.ok) {
             const repo = await res.json();
             const push = Boolean(repo.permissions?.push);
-            add(label, push ? "PASS" : "WARN", push ? `push access via ${ghVia}` : `reachable (${ghVia}) but no push perm — PR needs write`);
+            // /qa-fix pushes + opens the PR here, so no push = NOT READY (FAIL), not WARN.
+            add(label, push ? "PASS" : "FAIL", push
+              ? `push access via ${ghVia}`
+              : `reachable (${ghVia}) but NO push perm — /qa-fix pushes here; grant GitHub repo/PR write on ${owner}/${name}`);
           } else add(label, "FAIL", `GET repos/${owner}/${name} → ${res.status}`);
         } catch (e) { add(label, "FAIL", e.message); }
       }
