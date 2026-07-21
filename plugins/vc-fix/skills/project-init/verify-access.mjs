@@ -249,6 +249,8 @@ async function main() {
             if (wp.scope === "present") add("Azure Boards write (transition)", "PASS", `Work Items write confirmed (probe → ${wp.status}) via ${via}`);
             else if (wp.scope === "absent") add("Azure Boards write (transition)", "FAIL",
               `PAT/session lacks Work Items write (probe → ${wp.status}) — /qa-fix cannot transition/comment; grant Azure DevOps scope: Work Items (Read & Write)`);
+            else if (wp.scope === "restricted") add("Azure Boards write (transition)", "WARN",
+              `probe → 403 on the sampled work item (via ${via}) — this item is ACL-restricted, NOT proof the PAT lacks Work Items write; confirm the target area is writable`);
             else add("Azure Boards write (transition)", "WARN", `write scope unverified (probe → ${wp.status}) via ${via} — confirm Work Items (Read & Write)`);
           }
         }
@@ -269,13 +271,17 @@ async function main() {
     const p = await probeGithubUpstream({ upstreamOrg: profile.upstream.org || "VirtoCommerce", token: ghtok });
     if (p.ok && p.login) {
       // fork mode: read is enough (you PR from your OWN fork, which you can always write).
-      // direct mode: /qa-fix pushes to the upstream, so no push = NOT READY (FAIL), not WARN.
+      // direct mode: /qa-fix pushes to the upstream. `${p.repo}` (vc-platform) is only a PROXY
+      // probe — the ACTUAL push target is per-bug (the routed module repo) and unknown at
+      // onboarding. So no-push on the proxy is a WARN, NOT a NOT-READY FAIL: a virto-engineer whose
+      // token can push the routed module but not vc-platform specifically must not be blocked here
+      // (the real gate is push access to the routed repo at /qa-fix Gate 1). It surfaces at G1/G5.
       // perm "unknown" = the repo read itself failed (rate limit / offline) → WARN, can't judge.
       const scopesNote = ghScopes ? ` [scopes: ${ghScopes}]` : "";
       const base = `${ghVia}, login '${p.login}'; ${p.repo}: ${p.perm}${scopesNote}`;
       if (p.perm === "unknown") add(label, "WARN", `${base} — could not read the upstream repo permission; re-run to confirm`);
       else if (forkMode || githubCanWrite(p.perm)) add(label, "PASS", base);
-      else add(label, "FAIL", `${base} — direct PR pushes to ${p.repo} and needs write; grant GitHub repo/PR write or switch to fork mode`);
+      else add(label, "WARN", `${base} — no push on the ${p.repo} PROXY probe; the real push target is the per-bug routed repo (checked at /qa-fix Gate 1). Grant GitHub repo/PR write on the modules you fix, or switch to fork mode`);
     } else add(label, "FAIL", `${ghVia}: GET /user → ${p.status || "error"}`);
   } else add("GitHub auth", "FAIL", "no GITHUB_FIX_BUGS_TOKEN and no gh CLI session — set the PAT or run `gh auth login`");
 
@@ -314,6 +320,8 @@ async function main() {
           if (wp.scope === "present") add(label, "PASS", `reachable + Code write via ${ado.via} (probe → ${wp.status})`);
           else if (wp.scope === "absent") add(label, "FAIL",
             `reachable but NO Code write (push probe → ${wp.status}) — /qa-fix pushes here; grant ADO PAT scopes: Code (Read & Write) + Pull Request (contribute)`);
+          else if (wp.scope === "restricted") add(label, "WARN",
+            `reachable via ${ado.via}; push probe → 403 — this repo/branch is ACL-restricted, NOT proof the PAT lacks Code write; confirm branch policies / repo permissions allow the fix branch`);
           else add(label, "WARN", `reachable via ${ado.via}; Code write unverified (push probe → ${wp.status}) — confirm PAT Code (Read & Write)`);
         } catch (e) { add(label, "FAIL", e.message); }
       } else {

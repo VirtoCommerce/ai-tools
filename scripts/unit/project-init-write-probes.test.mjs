@@ -31,9 +31,15 @@ function fakeFetch({ status = 200, json = {}, ok } = {}) {
 }
 
 // ── classifyWriteProbe — the 401-vs-400 signal (pure) ────────────────────────────────
-test("classifyWriteProbe: 401/403 → absent (authorized, but no write scope)", () => {
+test("classifyWriteProbe: 401 → absent (authorized, but the write SCOPE is missing)", () => {
   assert.equal(classifyWriteProbe(401).scope, "absent");
-  assert.equal(classifyWriteProbe(403).scope, "absent");
+});
+
+test("classifyWriteProbe: 403 → restricted (scope may be present; the object is ACL-restricted → WARN, not FAIL)", () => {
+  // 403 is NOT proof the PAT lacks the write scope — the sampled work item / branch may sit in an
+  // area/policy the identity can't touch. Conflating it with 401 caused false NOT-READY for a
+  // correctly-scoped PAT, so it gets its own verdict that consumers treat as WARN.
+  assert.equal(classifyWriteProbe(403).scope, "restricted");
 });
 
 test("classifyWriteProbe: 400/409/422 → present (scope OK, invalid body rejected at validation)", () => {
@@ -101,9 +107,12 @@ test("probeAdoWorkItemsWrite: missing args ⇒ unverified, no network call", asy
 });
 
 // ── ADO Code (Git) write probe (injected fetch) ──────────────────────────────────────
-test("probeAdoCodeWrite: 403 ⇒ absent; 422 ⇒ present; targets the /pushes endpoint", async () => {
-  const absent = await probeAdoCodeWrite({ apiBase: "https://dev.azure.com/org/proj", authHeader: "Basic x", repo: "leo-main", fetchImpl: fakeFetch({ status: 403 }) });
+test("probeAdoCodeWrite: 401 ⇒ absent; 403 ⇒ restricted; 422 ⇒ present; targets the /pushes endpoint", async () => {
+  const absent = await probeAdoCodeWrite({ apiBase: "https://dev.azure.com/org/proj", authHeader: "Basic x", repo: "leo-main", fetchImpl: fakeFetch({ status: 401 }) });
   assert.equal(absent.scope, "absent");
+
+  const restricted = await probeAdoCodeWrite({ apiBase: "https://dev.azure.com/org/proj", authHeader: "Basic x", repo: "leo-main", fetchImpl: fakeFetch({ status: 403 }) });
+  assert.equal(restricted.scope, "restricted", "403 (branch/repo ACL) must NOT read as absent — it's a WARN, not a NOT-READY FAIL");
 
   const f = fakeFetch({ status: 422 });
   const present = await probeAdoCodeWrite({ apiBase: "https://dev.azure.com/org/proj", authHeader: "Basic x", repo: "leo-main", fetchImpl: f });

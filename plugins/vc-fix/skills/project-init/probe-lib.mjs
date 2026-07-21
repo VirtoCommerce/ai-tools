@@ -114,20 +114,26 @@ export async function probeGithubUpstream({ upstreamOrg = "VirtoCommerce", repo 
 // the missing write scope only bites later at /qa-fix time (401 on transition / comment /
 // push). These probes distinguish "no write scope" from "write scope present" WITHOUT
 // mutating anything, by sending a deliberately-INVALID write request and reading the
-// status: ADO answers 401/403 when the PAT/session lacks the write scope (the request is
-// rejected at authorization, before body validation), and 400/409/422 when the scope IS
-// present but the body is rejected (nothing is created/changed).
+// status: ADO answers 401 when the PAT/session lacks the write scope (rejected at authorization,
+// before body validation), 403 when the scope is present but THIS object is ACL-restricted, and
+// 400/409/422 when the scope IS present but the body is rejected (nothing is created/changed).
 
 /**
  * Interpret an ADO WRITE-endpoint probe's HTTP status into a write-scope verdict.
  * Pure — the whole 401-vs-400 signal lives here so it is unit-testable in isolation.
- *   401 / 403          → "absent"      (authorized token, but no write scope)
+ *   401                → "absent"      (authorized token, but the WRITE SCOPE is missing)
+ *   403                → "restricted"  (scope may be present, but THIS object is ACL-restricted —
+ *                                       e.g. the probed work-item sits in an Area Path the identity
+ *                                       can't edit; NOT proof the PAT lacks Work-Items-Write). A
+ *                                       false-negative FAIL here would block a correctly-scoped PAT,
+ *                                       so consumers treat it as WARN, not NOT-READY.
  *   400 / 409 / 422    → "present"     (scope OK; the invalid body was rejected at validation)
  *   anything else      → "unverified"  (2xx / 404 / sign-in redirect / network error — inconclusive)
- * → { scope: "present" | "absent" | "unverified", status }
+ * → { scope: "present" | "absent" | "restricted" | "unverified", status }
  */
 export function classifyWriteProbe(status) {
-  if (status === 401 || status === 403) return { scope: "absent", status };
+  if (status === 401) return { scope: "absent", status };
+  if (status === 403) return { scope: "restricted", status };
   if (status === 400 || status === 409 || status === 422) return { scope: "present", status };
   return { scope: "unverified", status };
 }
