@@ -118,7 +118,7 @@ sync, never invent a different one.
 |---|---|---|---|
 | **Layer 4** REST | `module` (or `platform`) | `vc-module-<name>`; `vc-platform` if security/RBAC/users/dynamic-properties/platform-settings | Lowest layer wins — REST wrong = the whole stack inherits it. |
 | **Layer 3** xAPI only | `module` | `vc-module-x-<name>` (xCart/xCatalog/xOrder/xProfile/xCMS) | REST correct + GraphQL wrong = resolver/aggregation bug in the **x-** module. |
-| **Layer 2** Admin only | `module` | `vc-module-<name>` (**same repo as Layer 4** — the Admin SPA Angular UI ships *inside* the module repo) | Admin-UI-only bug → the module's `*.Web`/Angular SPA, not a separate repo. |
+| **Layer 2** Admin only | `module` | `vc-module-<name>` (**same repo as Layer 4** — the Admin SPA Angular UI ships *inside* the module repo) | Admin-UI-only bug → the module's `*.Web`/legacy AngularJS SPA, **or a declared embedded frontend sub-app on a different stack** (e.g. a Vue 3 "shell" under `Apps/<name>/` — see `moduleFrontendSubApps` in `skills/qa-fix-routing/fix-repos.json`); either way, not a separate repo. Capture the RCA anchor precisely enough (file:line under the legacy Admin UI vs. under the sub-app's `Apps/<name>/` path) that `/qa-fix` Gate 1's `resolveOwningSubApp()` can tell them apart and route to the right developer agent. |
 | **Layer 1** Storefront only | `frontend` | `vc-frontend` (native) **or the client's storefront fork** | REST + GraphQL + Admin all correct, only the storefront UI is wrong = theme/component/client-state bug. |
 
 > **Heuristic, not authority.** This table fixes the *kind*; the *exact* repo is confirmed in Step 3 via

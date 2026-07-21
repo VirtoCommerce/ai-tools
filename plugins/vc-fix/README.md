@@ -2,7 +2,7 @@
 
 Agentic **bug lifecycle** plugin for the Virto Commerce B2B e-commerce platform: project setup,
 bug filing, autonomous bug fixing, fix verification, and online bug monitoring — as a fully
-self-contained Claude Code plugin. **8 agents, 8 commands, 15 skills.**
+self-contained Claude Code plugin. **8 agents, 8 commands, 16 skills.**
 
 Part of the [`vc-tools`](../../.claude-plugin/marketplace.json) marketplace hosted in
 [`vc-mcp-testing-module`](https://github.com/VirtoCommerce/vc-mcp-testing-module) — currently the
