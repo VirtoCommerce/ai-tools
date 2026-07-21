@@ -10,7 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.8.0`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
+
+### Changed — the clean self-check line now fires on an EXPLICIT completion signal, not per-turn
+
+The clean status line (`vc-fix self-check: no plugin issues detected`) was gated on per-turn plugin activity. But the `Stop` hook fires at the **end of every turn** — including every pause where a multi-turn skill (`/project-init`'s interview, `/qa-fix`'s sub-agent hand-off) waits for the operator — so the line **repeated after every pause**. A per-turn guard structurally cannot express "once, at the end".
+
+- New **`session-telemetry.mjs complete --skill "<name>"`** subcommand sets a one-shot `state.skillCompletePending` marker; `cmdFinalize` gates the clean line on it (consumed on surfacing) so it prints **at most once per skill run, only after its terminal step**. Bash-invoked (no hook stdin) → targets the newest `.state.json` (or `--session`); never throws/blocks; a no-op when capture is off (NOT gated on consent — consent gates *surfacing*, not the marker write).
+- All **6 terminal commands** emit it as their LAST action (incl. early-BAIL paths): `/project-init` (×3 paths — §9 Done, `--add-env` Step D, `--check` Step C), `/qa-fix`, `/qa-bug`, `/qa-monitoring`, `/qa-verify-fix`, `/qa-env-check`. Authoring contract + checklist in `knowledge/diagnostics/skill-expectations.md` §Signal completion; MUST-note in `agent-dispatch.md` (top-level orchestrator only — a dispatched sub-agent must NOT emit).
+- Opt-in **`VC_FIX_DIAG_LINE_FALLBACK=on`** gives a once-per-session line for an un-migrated skill; new `awaiting-completion` audit `suppressReason` marks the normal intermediate-pause state.
+
+### Fixed — PR-review audit (4 independent reviewers): secret leak, misclassification, write-probe false NOT-READY
+
+- **Secret redaction (security, HIGH):** `redact()` stripped only the scheme word — `Authorization: Bearer <token>` **LEAKED the token** — and did not redact JSON-shaped secrets (`{"password":"…"}`, `{"apiKey":"…"}`). These flow into `<sid>.jsonl` `details[].snippet` → the DIAG/DELIVERY contributed to the **public** upstream. Rewrote the regexes to consume the credential (not the scheme word) and to redact quoted key/value forms; added an end-to-end test asserting no secret reaches a span snippet or the block reason.
+- **Misclassification:** a span with BOTH a self-corrected op-keyed error AND an **untied** `hook_failure` (the tsc-on-every-Edit pattern) was wrongly tagged `recovered` (not escalated). New `span.sawUntiedFailure` vetoes `recovered`, matching the invariant the comment already claimed.
+- **`--self-diagnostics` enum-validated:** a malformed value (`yes` / `True` / `1`) silently coerced to `false` (capture OFF); now rejected like `--feedback-mode`.
+- **Write-probe false NOT-READY (M2/M3):** ADO `403` (the sampled work-item/branch is ACL-restricted) is now a distinct **`restricted`** verdict → WARN, no longer conflated with `401` (missing scope) → FAIL; and GitHub direct-mode no-push on the `vc-platform` **proxy** probe is WARN (the real push target is the per-bug routed repo, gated at `/qa-fix` Gate 1) instead of blocking onboarding. Neither weakens the real gate.
+- **Docs/lifecycle:** dropped the wrong `VC_FIX_DIAG_CONSENT=off` from `complete`'s no-op list (oracle + code comment); the age-cap now exempts the current session's `DELIVERY-<sid>-*` for symmetry.
+
+**Deferred (tracked separately, not in this PR):** live ADO verification of the write-probe *auth-before-validate* premise (a read-only PAT must 401/403 before body validation, else the probe can false-PASS); a `gen-profile` reconcile/merge value-preservation test.
 
 ### Changed — self-diagnostics capture is now DEFAULT-ON (opt-out), so `/project-init` is diagnosed
 
