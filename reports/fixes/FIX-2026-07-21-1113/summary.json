@@ -1,0 +1,16 @@
+{
+  "runId": "FIX-2026-07-21-1113",
+  "ticket": "VCST-5515",
+  "status": "STOPPED",
+  "stoppedAtGate": "G1",
+  "repo": "VirtoCommerce/vc-module-pagebuilder",
+  "repoKind": "module",
+  "owningSubApp": "page-builder-shell (Vue 3 / @vc-shell/framework)",
+  "branch": null,
+  "prUrl": null,
+  "cloned": false,
+  "reason": "Owning code is a Vue 3 @vc-shell app embedded in a kind:module repo; no auto-fix developer agent is equipped for that framework, and the shell has no component-mount test harness (Gate 2 blocked). Low-severity cosmetic bug + unpinned RCA anchor.",
+  "confidence": "HIGH",
+  "ticketLeftAt": "Draft (unchanged)",
+  "handoff": "Page Builder frontend engineer (page-builder-shell)"
+}
