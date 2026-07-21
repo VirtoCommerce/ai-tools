@@ -22,11 +22,11 @@ const HOOK = resolve(dirname(fileURLToPath(import.meta.url)), "../../plugins/vc-
 // VC_FIX_HOME must be passed explicitly in `env` — without it resolveOutputRoot() falls back
 // to process.cwd(), which on a dev machine may be a real checkout with its OWN real
 // project-profile.json / .vc-fix/, silently redirecting writes there instead of `home`.
-function run(home, sub, ev) {
+function run(home, sub, ev, extraEnv = {}) {
   return execFileSync(process.execPath, [HOOK, sub], {
     input: JSON.stringify(ev),
     encoding: "utf8",
-    env: { ...process.env, VC_FIX_HOME: home },
+    env: { ...process.env, VC_FIX_HOME: home, ...extraEnv },
   });
 }
 
@@ -336,6 +336,80 @@ test("decision record: a finding is recorded flagged + surfaced (visible line vi
     assert.equal(fin.decision.freshCount, 1);
     assert.equal(fin.decision.surfaced, true);
     assert.equal(fin.decision.suppressReason, null);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── VC_FIX_DIAG_LINE=always — opt-in visible line on a clean plugin turn ───────────
+const ALWAYS = { VC_FIX_DIAG_LINE: "always" };
+
+test("VC_FIX_DIAG_LINE=always: a clean plugin turn resumes the agent to print the no-issues line", () => {
+  const home = setupHome();
+  try {
+    const sid = "line-always-clean";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, ALWAYS);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" }, ALWAYS);
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, ALWAYS);
+
+    const dec = JSON.parse(out);
+    assert.equal(dec.decision, "block", "always mode resumes the agent on a clean plugin turn");
+    assert.match(dec.reason, /no issues detected/i);
+    assert.doesNotMatch(dec.reason, /vc-self-check|run the/i, "the clean line must not trigger a skill");
+
+    const fin = readSpans(home, sid).find((r) => r.type === "finalize");
+    assert.equal(fin.decision.verdict, "clean");
+    assert.equal(fin.decision.surfaced, true);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("VC_FIX_DIAG_LINE=always: a plain dev turn (no plugin activity) is NOT resumed", () => {
+  const home = setupHome();
+  try {
+    const sid = "line-always-noact";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, ALWAYS);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "refactor this" }, ALWAYS);
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "u.ts" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "code"),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, ALWAYS);
+    assert.equal(out.trim(), "", "no plugin activity → no line even in always mode");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("VC_FIX_DIAG_LINE=always: the clean line blocks at most once per turn (no resume loop)", () => {
+  const home = setupHome();
+  try {
+    const sid = "line-always-loop";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, ALWAYS);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" }, ALWAYS);
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
+    ]);
+    const first = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, ALWAYS);
+    assert.equal(JSON.parse(first).decision, "block");
+    // The resumed print-turn's own Stop fires finalize again with NO new UserPromptSubmit —
+    // promptedThisTurn is still set, so it must NOT re-block (else an infinite resume loop).
+    const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, ALWAYS);
+    assert.equal(second.trim(), "", "a repeat finalize in the same turn must not re-block");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

@@ -228,6 +228,8 @@ processed session's local artifacts are removed. Scope is the **processed sessio
   a line without resuming the agent), so the clean path is silent-but-recorded. To review
   the decisions of a session:
   `grep '"type":"finalize"' <outputRoot>/.vc-fix/diagnostics/<session-id>.jsonl`.
+  Opt-in `VC_FIX_DIAG_LINE=always` makes a clean plugin turn ALSO print a "no issues
+  detected" line — at the cost of one extra model turn per clean run (OFF by default).
 - Verdict/severity semantics + the (signal × expectation) table live in the oracle —
   cite them, don't restate.
 - If two spans share a root cause (e.g. the same `tsc` hook failing across skills), merge

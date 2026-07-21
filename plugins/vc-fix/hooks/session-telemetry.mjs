@@ -55,6 +55,8 @@
  *    a Stop hook on this platform cannot surface a user-visible line WITHOUT resuming
  *    the agent (`systemMessage` is not rendered — CC issue #50542; plain stdout goes to
  *    the debug log only), so the CLEAN path stays silent-but-recorded by design.
+ *    Opt-in VC_FIX_DIAG_LINE=always resumes the agent on a clean plugin turn too, to
+ *    print a "no issues detected" line — a deliberate one-extra-turn cost, OFF by default.
  *
  * INVARIANTS (all enforced here):
  *   - GATED on capture: init/prompt/record/agentstop/finalize run ONLY when the
@@ -68,7 +70,9 @@
  *   - Never throws, never blocks a tool, never writes a secret (Authorization/
  *     token/password/PAN redacted from every snippet). Always exits 0.
  *   - The auto-diagnosis trigger can be suppressed with VC_FIX_DIAG_CONSENT=off
- *     (kill switch) — capture still runs; nothing is surfaced.
+ *     (kill switch) — capture still runs; nothing is surfaced. Independently,
+ *     VC_FIX_DIAG_LINE=always opts INTO a visible "no issues" line on clean plugin turns
+ *     (default: clean is silent-but-recorded). The kill switch overrides both.
  *
  * NOTE: this collector is the canonical `plugins/vc-fix/` copy. The `.claude/`
  * mirror predates VCST-5509 and is intentionally NOT kept in lock-step here.
@@ -801,25 +805,35 @@ async function cmdFinalize(ev) {
     uniqueFresh.push(f);
   }
 
-  // ─── the decision moment (Task 2.1 — always recorded, never resumes the agent) ───
-  // Whether the tail-trigger will surface a VISIBLE line this turn. Computed BEFORE the
-  // finalize record so the record can carry the verdict. `shouldPrompt` gates the ONLY
-  // user-visible surface we have from a Stop hook (decision:block → the model prints the
-  // line + runs /vc-self-check); on this platform a Stop hook cannot show a line without
-  // resuming the agent, so the CLEAN path stays silent-but-recorded (operator choice).
+  // ─── the decision moment (Task 2.1 — always recorded) ───────────────────────
+  // The ONLY user-visible surface a Stop hook has on this platform is a
+  // `{decision:"block", reason}` that RESUMES the agent so the model prints the line
+  // (plain stdout → debug log only; `systemMessage` is not rendered — CC issue #50542).
+  // So a visible line always costs one extra model turn.
+  //   • FINDINGS → block+run /vc-self-check (the resume is justified — we want the diag).
+  //   • CLEAN    → silent-but-recorded by DEFAULT (the `decision` record below is the free,
+  //     durable audit). Opt-in VC_FIX_DIAG_LINE=always resumes the agent to print a
+  //     "no issues" line on a clean plugin turn too — a deliberate cost (one extra turn per
+  //     clean plugin skill/command), OFF by default so it never lands on every install.
   const consentOff = /^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CONSENT || "");
+  const cleanLineAlways = /^(always|on|1|true|verbose)$/i.test(process.env.VC_FIX_DIAG_LINE || "");
   const shouldPrompt = !consentOff && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
   const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen);
+  // Clean-line opt-in: only on a clean turn that had real plugin activity, once per turn,
+  // never when the kill switch is on. `promptedThisTurn` (reset ONLY by a new UserPromptSubmit)
+  // is what stops the resumed print-turn's own Stop from re-blocking → no infinite loop.
+  const cleanBlock = cleanLineAlways && !consentOff && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && pluginActivity;
+  const surfaced = shouldPrompt || cleanBlock;
   // A durable, deterministic audit of every decision moment — greppable with
-  // `type":"decision"` in the session jsonl. This is how "when did the hook run and what
-  // did it decide" stays observable without printing a line on every clean turn.
+  // `"type":"finalize"` / `decision` in the session jsonl. This is how "when did the hook
+  // run and what did it decide" stays observable WITHOUT printing a line on every turn.
   const decision = {
     verdict: uniqueFresh.length ? "flagged" : "clean",
     pluginActivity,
     freshCount: uniqueFresh.length,
     flaggedTotal: state.flagged.length,
-    surfaced: shouldPrompt, // did we resume + print a visible line this turn
-    suppressReason: shouldPrompt
+    surfaced, // did we resume + print a visible line this turn
+    suppressReason: surfaced
       ? null
       : uniqueFresh.length === 0
         ? (pluginActivity ? "clean" : "no-plugin-activity")
@@ -843,10 +857,10 @@ async function cmdFinalize(ev) {
     decision,
   });
 
-  if (shouldPrompt) {
-    state.promptedThisTurn = true;
-    for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
-  }
+  // Set the one-shot guard for ANY block we emit this turn (findings OR clean-line), so a
+  // repeat finalize in the same turn (incl. the resumed print-turn's own Stop) never re-blocks.
+  if (surfaced) state.promptedThisTurn = true;
+  if (shouldPrompt) for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
   saveState(statePath, state);
 
   if (shouldPrompt) {
@@ -860,6 +874,15 @@ async function cmdFinalize(ev) {
       "finishes, print ONE short info line: the finding count + the DIAG path (e.g. ",
       '"vc-fix self-check: 1 BROKEN, 1 DEGRADED → .vc-fix/diagnostics/DIAG-….md"). ',
       "Then continue. Nothing leaves the machine — the local report is not sent anywhere.",
+    ].join("");
+    process.stdout.write(JSON.stringify({ decision: "block", reason }));
+  } else if (cleanBlock) {
+    // VC_FIX_DIAG_LINE=always — resume the agent ONCE to print the clean-status line, then stop.
+    const reason = [
+      "The vc-fix self-diagnostics collector evaluated this session's plugin activity and ",
+      "found NO issues (all spans clean/recovered). Print EXACTLY one short line to the user — ",
+      "`vc-fix self-check: no issues detected` — and then stop. Do NOT run any skill, do NOT ",
+      "take any other action; this is an informational status line only.",
     ].join("");
     process.stdout.write(JSON.stringify({ decision: "block", reason }));
   }

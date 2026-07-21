@@ -50,8 +50,10 @@ object (Task 2.1) — the durable, deterministic audit of the decision moment:
 `{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
 suppressReason }`. `surfaced` is whether a user-visible line was produced (only on a
 finding — a `Stop` hook cannot show a line without resuming the agent, so the clean path
-is silent-but-recorded). Grep `"type":"finalize"` to see when the collector ran and what
-it decided.
+is silent-but-recorded). The opt-in `VC_FIX_DIAG_LINE=always` additionally resumes the
+agent to print a "no issues detected" line on a clean plugin turn (one extra turn per clean
+run — OFF by default). Grep `"type":"finalize"` to see when the collector ran and what it
+decided.
 
 **Load-bearing nuance (quality-gates §3):** a `stop_bail` is a **SUCCESS**, not an
 anomaly, when the run reached the bail *legitimately* (a G0/G1 BAIL with a reason
