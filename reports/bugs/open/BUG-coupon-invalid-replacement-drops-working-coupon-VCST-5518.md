@@ -1,6 +1,8 @@
 # BUG — Applying an invalid coupon over a working one silently drops the working coupon (no rollback)
 
-## Status: CONFIRMED
+## Status: READY_TO_SUBMIT
+
+**JIRA:** [VCST-5518](https://virtocommerce.atlassian.net/browse/VCST-5518) (filed 2026-07-21)
 
 **Severity:** Medium (functional — silent loss of an already-applied discount; no warning that the prior coupon was removed)
 **Env:** vcst-qa storefront @ https://vcst-qa-storefront.govirto.com · XCart `3.1020.0-pr-123-f160`
@@ -27,8 +29,22 @@ On clicking Apply for `FriDAY`, in order:
 
 ![QA lost after invalid FriDAY apply](../screenshots/BUG-coupon-invalid-replacement-QA-lost.png)
 
-## Root Cause (shape — frontend orchestration)
-The replace logic orchestrates `removeCoupon → validateCoupon → (conditional) addCoupon` client-side and has no failure rollback: when `validateCoupon` returns false it stops, leaving the cart coupon-less. Fix options: (a) `validateCoupon` the new code **before** `removeCoupon`-ing the old one, only proceeding if valid; or (b) on validation failure, re-`addCoupon` the original. This is the storefront's coupon-section replace flow, not the cart aggregate.
+## Root Cause (CONFIRMED in source)
+`client-app/shared/cart/composables/useCoupon.ts` › `applyCoupon()` on `vc-frontend` `dev` HEAD (present in current builds — not already fixed):
+
+```ts
+if (appliedCouponCode.value && appliedCouponCode.value !== trimmed) {
+  await removeCartCoupon(appliedCouponCode.value);   // removes the working coupon FIRST, unconditionally
+}
+const isValid = await validateCartCoupon(trimmed);   // validates only AFTER the remove
+if (!isValid) {
+  couponError.value = { code: trimmed, type: "invalid" };
+  return;                                             // returns with NO re-add / rollback
+}
+await addCartCoupon(trimmed);
+```
+
+The three primitives (`validateCartCoupon`/`addCartCoupon`/`removeCartCoupon` in `useCart.ts`) each behave correctly in isolation — the defect is purely the **ordering + missing failure path** in `applyCoupon`. Fix options: (a) `validateCartCoupon` **before** `removeCartCoupon`, only proceeding if valid; or (b) on `!isValid`, re-`addCartCoupon(appliedCouponCode.value)` to restore the original.
 
 ## Layer Validation
 | Layer | Result | Evidence |
@@ -40,10 +56,11 @@ The replace logic orchestrates `removeCoupon → validateCoupon → (conditional
 ## Fix Routing
 - **Owning layer:** Layer 1 — storefront (`vc-frontend`)
 - **Suggested repo:** VirtoCommerce/vc-frontend · **repoKind:** frontend
-- **RCA anchor:** the coupon-section apply/replace handler that calls `removeCoupon` then `addCoupon` (the BL-CART-009 transition) — add validate-before-remove or rollback-on-failure
-- **Routing confidence:** HIGH (layer) · MEDIUM (exact component — needs source confirmation)
+- **RCA anchor:** `client-app/shared/cart/composables/useCoupon.ts` › `applyCoupon()` — the remove-before-validate block (add validate-before-remove or rollback-on-failure)
+- **Routing confidence:** HIGH (layer + exact file/function confirmed against `dev` HEAD)
 - **Invariant:** BL-CART-009 (coupon-state integrity / radio-button coupon transition) — the documented sequence `removeCoupon → validateCoupon → addCoupon` lacks a failure path that preserves the prior coupon.
 
 ## Notes
-- Found during VCST-5233 exploratory Save-for-Later testing (2026-06-12); confirmed with a dedicated single-scenario repro. Not yet filed to JIRA.
+- Found during VCST-5233 exploratory Save-for-Later testing (2026-06-12); confirmed with a dedicated single-scenario repro. Filed as **VCST-5518** (2026-07-21).
+- **Consolidates** `reports/bugs/BUG-invalid-coupon-removes-valid-coupon.md` (regression case CART-015 / suite 028, typed-`FAKECODE`-over-`FIXED5` path). Same defect, same `applyCoupon()` root cause — one ticket (VCST-5518) covers both discovery paths.
 - Related UX observation (separate, lower priority): while a coupon is applied, the single "Custom code" text input is `readonly` — a new *custom* code can't be typed until the current coupon is removed (available-coupon cards still apply/replace independently).

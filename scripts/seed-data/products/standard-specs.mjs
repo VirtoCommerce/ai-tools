@@ -36,12 +36,35 @@ export const CSV_SOURCE = {
     name: 'product_name',
     categoryPath: 'category',   // "Electronics > Audio" → leaf category under the seed catalog
     listPrice: 'price',
+    salePrice: 'sale_price',    // optional per-row sale (actual < list); blank → no sale
     currency: 'currency',
     stock: 'stock_qty',
     description: 'description',
     seeded: 'seeded',           // 'true' → the seeder creates it; else @td-only
   },
 };
+
+/**
+ * Build the price rows for a record — SINGLE, side-effect-free source of the seeder's price shape so a
+ * unit test can assert it without running a seed. Precedence:
+ *   1. tierPrices (SPEC_OVERLAYS, e.g. PROD-104) pass through unchanged;
+ *   2. a flat listPrice → one row { list, minQuantity:1 }, with `sale` added when the row carries a
+ *      salePrice (the `sale_price` CSV column) — this is what makes a product show an actual < list
+ *      price for EVERY pricing context (the seeder assigns the pricelist to the store catalog with no
+ *      membership condition, so guest / personal / org users all see the sale);
+ *   3. no price → [] (unpriced product).
+ * salePrice is ignored unless it is a positive number strictly below listPrice (a non-sale or a
+ * malformed value degrades to list-only rather than emitting an inverted/zero sale).
+ */
+export function buildPrices(rec) {
+  if (rec.tierPrices) return rec.tierPrices;
+  if (rec.listPrice == null) return [];
+  const row = { list: rec.listPrice, minQuantity: 1 };
+  if (rec.salePrice != null && Number(rec.salePrice) > 0 && Number(rec.salePrice) < Number(rec.listPrice)) {
+    row.sale = Number(rec.salePrice);
+  }
+  return [row];
+}
 
 // Extra create-time fields the flat CSV can't express, merged onto the matching row by product_id.
 export const SPEC_OVERLAYS = {

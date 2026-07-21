@@ -1,6 +1,8 @@
 # BUG: Page Builder shows a stale "Has unsaved changes" banner after a clean Publish
 
-## Status: CONFIRMED
+## Status: READY_TO_SUBMIT
+
+## JIRA: [VCST-5515](https://virtocommerce.atlassian.net/browse/VCST-5515) (filed 2026-07-21, Bug / Low)
 
 ## Severity: Low (cosmetic — misleading status only; publish actually succeeded, no data impact)
 

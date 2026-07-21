@@ -1,5 +1,7 @@
 # Entering an invalid coupon removes the already-applied valid coupon `[P1]` `[BL-CART-003]`
 
+> **CONSOLIDATED → [VCST-5518](https://virtocommerce.atlassian.net/browse/VCST-5518)** (filed 2026-07-21). Same defect as `reports/bugs/open/BUG-coupon-invalid-replacement-drops-working-coupon-VCST-5518.md` — both discovery paths (typed `FAKECODE`/CART-015 here; available-coupon card there) funnel through the same `useCoupon.ts › applyCoupon()` remove-before-validate root cause. Do not re-file; kept for CART-015 regression reference.
+
 **Env:** vcst-qa @ Platform 3.1043.0, Theme 2.53.0-pr-2368
 **Case:** CART-015 (suite 028)
 

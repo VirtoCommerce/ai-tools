@@ -36,7 +36,7 @@ loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
 import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, seedCategoryTree, buildStoreSeo, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam } from '../../lib/seed-common.mjs';
 // Orchestration source (single source of truth) — side-effect-free, shared with the guard.
-import { CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES } from './standard-specs.mjs';
+import { CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES, buildPrices } from './standard-specs.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -94,6 +94,7 @@ function loadRecords() {
       name: (r[m.name] || '').trim(),
       categoryPath: (r[m.categoryPath] || '').trim(),
       listPrice: num(r[m.listPrice]),
+      salePrice: num(r[m.salePrice]),
       currency: (r[m.currency] || 'USD').trim(),
       stock: num(r[m.stock]) ?? 0,
       description: (r[m.description] || '').trim(),
@@ -303,8 +304,9 @@ async function seedRecord(rec, priceListId, ffcId) {
 
   const product = await ensureProduct(loc.catalogId, loc.categoryId, body);
   if (!DRY_RUN && product.id && !product.id.startsWith('dry-')) {
-    // Prices: tier-priced record passes multiple rows; a priced record passes one; unpriced → skip.
-    const prices = rec.tierPrices ?? (rec.listPrice != null ? [{ list: rec.listPrice, minQuantity: 1 }] : []);
+    // Prices: tier-priced record passes multiple rows; a flat record passes one (with `sale` when the
+    // row has a salePrice); unpriced → skip. buildPrices() is the single, unit-tested source of shape.
+    const prices = buildPrices(rec);
     if (prices.length) await setPrices(priceListId, product.id, prices);
 
     await ensureInventory(ffcId, product.id, rec.stock);
@@ -323,6 +325,7 @@ async function seedRecord(rec, priceListId, ffcId) {
     code: rec.code,
     productId: product.id,
     listPrice: rec.listPrice,
+    salePrice: rec.salePrice ?? null,
     stock: rec.stock,
     minQuantity: rec.minQuantity ?? null,
     packSize: rec.packSize ?? null,
@@ -383,7 +386,7 @@ async function main() {
   console.log(`\n✅ Standards: ${ok}/${seeded.length} products seeded`);
   for (const s of seeded) {
     if (s.error) console.log(`  ❌ ${s.csvId}: ${s.error.slice(0, 100)}`);
-    else console.log(`  ✓ ${s.csvId} sku=${s.sku} id=${s.productId} stock=${s.stock} price=${s.listPrice}${s.minQuantity ? ` MOQ=${s.minQuantity}` : ''}${s.tierPrices ? ` tiers=${s.tierPrices.length}` : ''}`);
+    else console.log(`  ✓ ${s.csvId} sku=${s.sku} id=${s.productId} stock=${s.stock} price=${s.listPrice}${s.salePrice != null ? ` sale=${s.salePrice}` : ''}${s.minQuantity ? ` MOQ=${s.minQuantity}` : ''}${s.tierPrices ? ` tiers=${s.tierPrices.length}` : ''}`);
   }
 }
 
