@@ -10,7 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -74,6 +74,35 @@ test("gen-profile: an invalid --feedback-mode is rejected (non-zero exit)", () =
     assert.ok(err, "gen-profile must exit non-zero on an invalid enum");
     assert.equal(err.status, 1);
     assert.match(String(err.stderr || ""), /Invalid --feedback-mode/);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("gen-profile --merge: layers the provided flag over an existing profile WITHOUT resetting unspecified user values", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-genprofile-"));
+  try {
+    // A prior profile carrying several NON-default user answers (defaults are: projectType
+    // "platform", selfDiagnostics true, feedback.mode "ask", clientHost "github", contributionMode
+    // "fork"). --merge must preserve every one that the new invocation does not explicitly set.
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      selfDiagnostics: false,
+      feedback: { mode: "auto" },
+      vcs: { clientHost: "azure-repos", clientOrg: "acme" },
+      upstream: { contributionMode: "direct" },
+    }));
+    // Re-run with --merge and ONE unrelated flag (change only vcs.clientOrg).
+    const p = genProfile(home, ["--merge", "--client-org", "newcorp"]);
+    // the single provided field changed…
+    assert.equal(p.vcs.clientOrg, "newcorp");
+    // …and every unspecified user value SURVIVED. A deepMerge/patch-builder regression that reset
+    // unspecified fields to PROFILE_DEFAULTS would flip each of these back to its default.
+    assert.equal(p.projectType, "client", "projectType preserved (not reset to 'platform')");
+    assert.equal(p.selfDiagnostics, false, "selfDiagnostics preserved (not reset to true)");
+    assert.equal(p.feedback.mode, "auto", "feedback.mode preserved (not reset to 'ask')");
+    assert.equal(p.vcs.clientHost, "azure-repos", "clientHost preserved (not reset to 'github')");
+    assert.equal(p.upstream.contributionMode, "direct", "contributionMode preserved (not reset to 'fork')");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
