@@ -8,6 +8,8 @@ argument-hint: "page URL | component name | full audit"
 
 Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical baseline — 2.2 is the current W3C Recommendation since 2023-10-05 and is backward-compatible with 2.1; 4.1.1 Parsing was retired). Covers POUR plus the six new 2.2 AA criteria (Focus Not Obscured, Dragging Movements, Target Size Minimum, Consistent Help, Redundant Entry, Accessible Authentication).
 
+> **The six 2.2 additions are manual-first.** Automated tooling covers only **2.5.8 Target Size** (nascently); the other five — 2.4.11, 2.5.7, 3.2.6, 3.3.7, 3.3.8 — **cannot be caught by axe** and must be verified in the keyboard/manual pass. A clean axe run says nothing about them.
+
 ## Usage
 ```
 /qa-accessibility https://example.com/checkout    # Audit a specific page
@@ -44,11 +46,12 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
    - **Layer C — keyboard walk:** Press Tab through the page; after each press capture `document.activeElement` with `ACTIVE_ELEMENT_SNIPPET` (from `scripts/lib/axe-runner.ts`) into an ordered trail, then `classifyKeyboardTrail(trail)` flags traps (P0), off-screen focus (FAIL), and non-monotonic order (WARN). Verify Escape closes modals and focus returns to the trigger.
    - **Layer D — dynamic rescans:** Re-run Layer A after each significant state change (modal open, accordion expand, form error displayed, toast shown, mega-menu opened, async route load). Scanning only the initial DOM is the #1 cause of missed real bugs.
 
-5. **POUR checklist (per WCAG 2.2 AA):**
+5. **POUR checklist (per WCAG 2.2 AA)** — the 2.2 additions marked `[MANUAL]` cannot come from axe; verify them by hand in the keyboard pass:
    - **Perceivable:** Alt text, color contrast ≥ 4.5:1 / 3:1 (UI ≥ 3:1), text resizing to 200%, reflow at 320px, time-based media captions.
-   - **Operable:** Keyboard nav, focus indicators, no traps, skip links, **2.4.11 Focus Not Obscured (sticky elements must not cover focused field)**, **2.5.7 alternative to drag**, **2.5.8 target size ≥ 24×24 CSS px** (44×44 stays the mobile guidance).
-   - **Understandable:** Lang attributes, consistent nav, error identification and helpful messages, **3.2.6 Consistent Help placement**, **3.3.7 Redundant Entry (don't re-ask for known data)**, **3.3.8 Accessible Authentication (no cognitive-function tests without alternative; password managers must work)**.
+   - **Operable:** Keyboard nav, focus indicators, no traps, skip links, **2.4.11 Focus Not Obscured `[MANUAL]` (sticky elements must not cover focused field)**, **2.5.7 alternative to drag `[MANUAL]`**, **2.5.8 target size ≥ 24×24 CSS px** (44×44 stays the mobile guidance). For composite widgets, exercise the widget-specific keys (arrows/Home/End/Escape) against the matching **ARIA APG** pattern.
+   - **Understandable:** Lang attributes, consistent nav, error identification and helpful messages, **3.2.6 Consistent Help placement `[MANUAL]`**, **3.3.7 Redundant Entry `[MANUAL]` (don't re-ask for known data)**, **3.3.8 Accessible Authentication `[MANUAL]` (no cognitive-function tests without alternative; password managers must work)**.
    - **Robust:** ARIA name/role/value for custom controls, state changes announced (aria-live, aria-expanded). Note: 4.1.1 Parsing was removed in 2.2 — don't report duplicate-ID issues against it.
+   - **EAA (public storefront):** confirm a **published, linked accessibility statement** exists (footer / T&Cs). Its absence is a **P1** compliance finding — flag it even when axe is clean (see Rules → EU exposure).
 
 6. **Output:**
    - Audit report with pass/fail per criterion + measured values (contrast ratios, target sizes, focus-order delta from visual order)
@@ -61,11 +64,13 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
 
 ## Rules
 - **WCAG 2.2 AA is the gate** — not 2.1, not 3.0. APCA may be cited as an *advisory* signal for designer review but never as a pass/fail (no scanner enforces APCA in 2026).
-- **Automated PASS is necessary but not sufficient** — axe catches ~30–57% of real WCAG issues. Always pair with a manual keyboard pass and an explicit "manual verification needed" section.
+- **WCAG 3.0 is horizon-only.** It is a **March-2026 Working Draft** (W3C Accessibility Guidelines — 174 outcome-based *requirements*, graded scoring, final Recommendation est. **2028–2030**). Track it; never audit or gate against it in 2026.
+- **The six 2.2 additions are manual-first** — only 2.5.8 Target Size has (nascent) axe support; **2.4.11 / 2.5.7 / 3.2.6 / 3.3.7 / 3.3.8 must be verified in the keyboard/manual pass** and never assumed clean from an axe PASS.
+- **Automated PASS is necessary but not sufficient** — axe catches roughly **20–40%** of real WCAG issues (it reliably catches the six dominant failures: low contrast, missing alt text, missing form labels, empty links, empty buttons, missing document language). Always pair with a manual keyboard pass and an explicit "manual verification needed" section.
 - **Test keyboard navigation, not just visual rendering** — the agent must walk Tab order programmatically and assert against expected DOM sequence.
 - **Color contrast from computed CSS only** — never eyeball. Compute from `getComputedStyle` color + effective background; assert WCAG 2.x luminance ratio (4.5:1 normal text, 3:1 large/UI/focus indicator).
-- **Custom interactive elements** (dropdowns, modals, tabs, comboboxes) need a full ARIA audit — name, role, value, expanded/selected/pressed states.
+- **Custom interactive elements** (dropdowns, modals, tabs, comboboxes) need a full ARIA audit — name, role, value, expanded/selected/pressed states. Use the **ARIA Authoring Practices Guide (APG)** patterns as the oracle for expected keyboard interaction + roles/states, and **ARIA-AT** for expected screen-reader output; a widget that diverges from its APG pattern is a finding even if axe passes.
 - **Filter axe `best-practice` tag** — those are advisory, not WCAG failures. Treating them as conformance bugs creates noise and erodes the team's trust in the report.
 - **Group by pattern, not instance** — one entry per (rule ID × component family) with a count, not one row per DOM node. >~50 violations on a route → report top patterns and stop, don't dump. Locate each finding by `data-test-id` → role + accessible name → DOM path; never invent a `file:line`.
 - **Re-scan dynamic states** — modal open, accordion expand, form-error displayed, toast shown, async chunk loaded. Initial-DOM-only scanning misses most real bugs in SPA storefronts.
-- **EU exposure:** The European Accessibility Act has been enforceable since 2025-06-28; treat public-storefront a11y violations as P0/P1 for any EU-reachable site.
+- **EU exposure:** The **European Accessibility Act (EAA)** has been enforceable since 2025-06-28; its technical standard is **EN 301 549** (references WCAG 2.1 AA — auditing to 2.2 AA is a safe superset). Treat public-storefront a11y violations as P0/P1 for any EU-reachable site. **Check for a published, linked accessibility statement** (footer / T&Cs) describing conformance status and known barriers — a missing statement is the single most-cited enforcement trigger (French/Swedish surveillance) and is itself a **P1** finding, independent of the scan result.
