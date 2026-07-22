@@ -32,6 +32,14 @@ const ALLOWED_PATTERNS = [
   /\bgetComputedStyle\s*\(/, // spacing, contrast, focus-indicator, overflow audits
   /\bdocument\.fonts\b/, // FOUC / font-swap readiness
   /\b(naturalWidth|naturalHeight)\b/, // image aspect-ratio audit (BL-UI-010)
+  // Read-only axe-core a11y scan — /qa-accessibility (ui-ux-expert). The canonical
+  // axeRunSnippet() from scripts/lib/axe-runner.ts self-loads axe-core and calls
+  // window.axe.run() to READ WCAG violations; no clicks, typing, or page-state
+  // mutation — same read-only spirit as the layout/measurement exceptions above.
+  // Previously blocked, forcing a per-run /* @allow-eval */ sentinel on every audit.
+  /\baxe\.run\s*\(/, // axe-core scan invocation
+  /\bwindow\.axe\b/, // axe global presence/self-load check
+  /['"]axe-core['"]/, // axe-core CDN/local script injection
   // Read-only SEO <head> inspection — PreRender/SEO verification (VCST-5108).
   // These snippets only READ document head meta/link/JSON-LD to compare the
   // hydrated SPA's SEO output against the prerendered snapshot. No clicks,
@@ -71,6 +79,8 @@ const BLOCK_MESSAGE = [
   "  - getBoundingClientRect / getComputedStyle / __layoutAudit /",
   "    PerformanceObserver('layout-shift') / document.fonts / naturalWidth",
   "                                 — read-only layout & a11y measurement (suite 048b, /qa-design)",
+  "  - axe.run / window.axe / 'axe-core'",
+  "                                 — read-only axe-core WCAG scan (/qa-accessibility)",
   "  - /* @allow-eval: <reason> */  — explicit opt-in for a UI-FIX / DEBUG DOM",
   "                                 experiment (move/toggle a node to validate a fix live),",
   "                                 NOT for test runs. Re-measure to prove the result.",
