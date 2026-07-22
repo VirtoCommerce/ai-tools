@@ -135,8 +135,8 @@ push to a tracker (bug filing, `/qa-fix` status, `/qa-verify-fix` verdict, `/qa-
 note) MUST be:
 - **Structured, never a wall of text.** Use Markdown headings/short bullets/a small table over one
   long paragraph. A one-line status is a single sentence, not a screenshot dump.
-- **Brief — lead with the outcome.** State the verdict/result first (`✅ Verified fixed on vcst-qa @
-  build X`, `⚠️ Still reproduces`, `Routed to vc-module-cart, PR #NN`), then only the evidence that
+- **Brief — lead with the outcome.** State the verdict/result first (`✅ Verified fixed @ build X`,
+  `⚠️ Still reproduces`, `Routed to vc-module-cart, PR #NN`), then only the evidence that
   matters. No investigation logs, no step-by-step narration, no restating the whole ticket.
 - **Understandable to a human skimming on a deadline.** Reference evidence (PR link, screenshot,
   `@td` alias, BL-* id), don't inline it. Obey the size discipline in `.claude/rules/reports.md`.
