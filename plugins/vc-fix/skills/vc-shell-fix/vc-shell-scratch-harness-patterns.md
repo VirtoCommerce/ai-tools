@@ -33,12 +33,24 @@ git diff --stat package.json package-lock.json yarn.lock 2>/dev/null   # expect:
 If either check shows a diff, `git checkout -- package.json package-lock.json` before proceeding — the
 scratch install must never touch tracked files.
 
-**Yarn Berry (`yarn@4`, e.g. page-builder) caveat:** `npm install --no-save` still populates
-`node_modules` even in a Yarn repo — just confirm the AFTER `git status` shows **no** change to
-`yarn.lock` or `.yarn/` (npm won't write them, but verify). If for any reason it dirties a tracked file,
-install into a throwaway directory *outside* the checkout instead (a scratch dir with its own disposable
-`package.json`) and point the scratch config's module resolution there — never mutate the sub-app's own
-manifest.
+**Yarn Berry (`yarn@4`, e.g. page-builder) caveat — check the linker mode BEFORE running the npm
+install.** Yarn Berry defaults to **PnP** (`nodeLinker: pnp` — no `node_modules` at all; resolution is
+enforced by a `.pnp.cjs` require hook), where `npm install --no-save` won't give `vite`/`vitest` anything
+they can actually resolve — the resulting "cannot find module" failure will look like a broken install,
+not a package-manager mismatch, and burn time debugging the wrong problem. Check first:
+
+```bash
+grep -m1 '^nodeLinker' .yarnrc.yml 2>/dev/null    # "pnp" (or absent under yarn@4+) = PnP mode
+test -d node_modules && echo "node_modules present" || echo "no node_modules (likely PnP)"
+```
+
+- **`nodeLinker: node-modules` (or `node_modules/` already present):** proceed with `npm install --no-save`
+  as above — just confirm the AFTER `git status` shows no change to `yarn.lock`/`.yarn/` (npm won't write
+  them, but verify).
+- **PnP (`nodeLinker` unset/`pnp`, no `node_modules`):** skip the npm install — go straight to a
+  throwaway directory *outside* the checkout instead (a scratch dir with its own disposable
+  `package.json`, installed with `npm`/`yarn` there) and point the scratch vitest config's module
+  resolution at it. Never mutate the sub-app's own manifest or `.pnp.cjs`.
 
 ## 2. Ephemeral vitest config — reuse the sub-app's REAL vite config
 

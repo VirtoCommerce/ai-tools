@@ -14,9 +14,12 @@ since the sub-app is a genuinely different stack from the module's own C#/Angula
 ## Reality check (read this first)
 
 The sub-app is a **real** Vue 3 + Vite + vee-validate app with its own `package.json`/`vite.config.ts`/
-`tsconfig.json` — NOT hand-rolled like the legacy AngularJS Admin SPA (`/angular-admin`). Its **only**
-shipped test tooling is Node's built-in `tsx --test` over `tests/**/*.test.ts` — no `@vue/test-utils`, no
-jsdom, no Storybook.
+`tsconfig.json` — NOT hand-rolled like the legacy AngularJS Admin SPA (`/angular-admin`). As of today's
+only declared sub-app (page-builder), its shipped test tooling is Node's built-in `tsx --test` over
+`tests/**/*.test.ts` — no `@vue/test-utils`, no jsdom, no Storybook. **Don't treat that as a permanent
+fact** — `moduleFrontendSubApps` can grow, and a future sub-app might ship `vitest`/`@vue/test-utils`
+natively. Confirm from the actual sub-app's `package.json` (`scripts` + `devDependencies` — see "Ground
+yourself in the checked-out repo first" below) before assuming Path 2's ephemeral harness is needed.
 
 Because Vue 3's reactivity primitives (`ref`/`computed`/`watch`/`effectScope`) run **standalone in plain
 Node** — no DOM needed — a bug whose root cause is **state/reactivity logic** (a composable, a store, a
@@ -79,13 +82,13 @@ names from this skill (they drift; the page-builder shell's own `.claude` docs a
    `effectScope()` where needed (same technique as `vue-unit-test`'s `vitest-patterns.md` composable
    recipe — different runner, same idea), assert the **expected** behavior.
 4. Confirm **RED** by running just the new file with the sub-app's runner (e.g.
-   `yarn tsx --test tests/<new>.test.ts` — the runner + PM from step 1). If it passes on current code,
-   the RCA is wrong — re-investigate, don't proceed.
+   `yarn tsx --test tests/<new>.test.ts` — the runner + PM from "Ground yourself" step 1 above). If it
+   passes on current code, the RCA is wrong — re-investigate, don't proceed.
 5. Fix the smallest correct change to product code; re-run until **GREEN**. Existing tests untouched.
 6. Gate: run the sub-app's **declared** `type-check`, `lint`, and `test` scripts via its `packageManager`
-   (e.g. `yarn type-check && yarn lint && yarn test` when `packageManager` is yarn — see step 1). Note
-   `lint` is often `eslint --fix` (it mutates files): review that its auto-fixes stay within your fix
-   scope before committing.
+   (e.g. `yarn type-check && yarn lint && yarn test` when `packageManager` is yarn — see "Ground yourself"
+   step 1 above). Note `lint` is often `eslint --fix` (it mutates files): review that its auto-fixes stay
+   within your fix scope before committing.
 
 ### Path 2 — mounted-component/DOM, the ephemeral harness
 
