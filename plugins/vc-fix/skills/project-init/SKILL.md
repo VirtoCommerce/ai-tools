@@ -651,8 +651,11 @@ then **pause** with the unmistakable waiting banner (§3c) — no tool calls aft
 
 ### Step D — verify the new environment
 
+`--existing` (day-2 mode, like `--check`): a client-repo token that lacks push is a **WARN** here,
+not a hard **FAIL** — the project was already onboarded, so don't block adding an env on it.
+
 ```bash
-FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs" --existing
 ```
 
 Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new env's URLs +
@@ -736,10 +739,12 @@ only if the removals are genuinely intended, re-run with `--force`.
 
 ### Step C — verify access
 
-Run the readiness table (§8) so a stale token / URL / login surfaces too:
+Run the readiness table (§8) so a stale token / URL / login surfaces too. Pass **`--existing`** —
+this is a day-2 re-verify, so a client-repo token that regressed to read-only is a **WARN** (heads-up),
+not a hard **FAIL** that would block a routine re-check (fresh onboarding, §8, omits the flag = FAIL):
 
 ```bash
-FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs" --existing
 ```
 
 **Restate BOTH** the reconciliation summary (added / removed / decided) **and** the

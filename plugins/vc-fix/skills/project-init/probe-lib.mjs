@@ -141,14 +141,21 @@ export function classifyWriteProbe(status) {
 /**
  * Map a WRITE-probe `scope` (from classifyWriteProbe / probeAdoCodeWrite, or a GitHub push
  * boolean coerced to "present"/"absent") to the /project-init readiness-table SEVERITY for a
- * CLIENT-repo push row. This is the user-visible bit that changed in the LEO-gap fix — a
- * read-only client token (no push) must be **FAIL**, not a false-PASS/ WARN, because `/qa-fix`
- * clones+PRs on the client's own repos. An ACL-restricted 403 stays **WARN** (not proof the PAT
- * lacks Code write); an inconclusive probe stays **WARN** (never a false FAIL). Pure — unit-tested.
+ * CLIENT-repo push row. `/qa-fix` clones+PRs on the client's own repos, so a read-only client
+ * token (no push) is a real blocker — but the SEVERITY is mode-aware:
+ *   - FRESH onboarding (`existing:false`, the default) → **FAIL**: you must not finish onboarding
+ *     with a token that can't push (the LEO gap: passed readiness, then 401'd mid-fix).
+ *   - DAY-2 re-verify (`existing:true`, from `/project-init --check` / `--add-env`) → **WARN**: an
+ *     already-onboarded project whose client token later regressed to read-only should be told,
+ *     not hard-blocked on a routine re-check (`/qa-fix` will still fail to push until re-granted —
+ *     the WARN says exactly that).
+ * `present` ⇒ PASS. `restricted` (ACL 403) / `unverified` (inconclusive) ⇒ WARN, never a false
+ * FAIL, in EITHER mode. Default is strict (FAIL) so forgetting the `existing` flag over-blocks
+ * (safe) rather than under-blocks. Pure — unit-tested.
  */
-export function clientRepoWriteSeverity(scope) {
+export function clientRepoWriteSeverity(scope, { existing = false } = {}) {
   if (scope === "present") return "PASS";
-  if (scope === "absent") return "FAIL";
+  if (scope === "absent") return existing ? "WARN" : "FAIL";
   return "WARN"; // "restricted" (ACL) or "unverified" (inconclusive) — never a false FAIL
 }
 

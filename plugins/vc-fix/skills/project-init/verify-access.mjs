@@ -41,6 +41,12 @@ import {
   clientRepoWriteSeverity,
 } from "./probe-lib.mjs";
 
+// `--existing`: this is a DAY-2 re-verify of an already-onboarded project (`/project-init --check`
+// / `--add-env`), NOT a fresh onboarding. It relaxes a missing client-repo push from FAIL to WARN
+// (see clientRepoWriteSeverity) — don't hard-block a routine re-check on a token that regressed to
+// read-only. Absent ⇒ default is strict FAIL (fresh onboarding), so forgetting the flag over-blocks.
+const EXISTING = process.argv.slice(2).includes("--existing");
+
 let TEST_ENV;
 try {
   TEST_ENV = loadLayeredEnv("vcst");
@@ -336,7 +342,7 @@ async function main() {
             : wp.scope === "absent" ? `reachable but NO Code write (push probe → ${wp.status}) — /qa-fix pushes here; grant ADO PAT scopes: Code (Read & Write) + Pull Request (contribute)`
             : wp.scope === "restricted" ? `reachable via ${ado.via}; push probe → 403 — this repo/branch is ACL-restricted, NOT proof the PAT lacks Code write; confirm branch policies / repo permissions allow the fix branch`
             : `reachable via ${ado.via}; Code write unverified (push probe → ${wp.status}) — confirm PAT Code (Read & Write)`;
-          add(label, clientRepoWriteSeverity(wp.scope), adoDetail);
+          add(label, clientRepoWriteSeverity(wp.scope, { existing: EXISTING }), adoDetail);
         } catch (e) { add(label, "FAIL", e.message); }
       } else {
         // github client repo
@@ -352,7 +358,7 @@ async function main() {
             // /qa-fix pushes + opens the PR here, so no push = NOT READY (FAIL), not WARN.
             // Route through clientRepoWriteSeverity (push→present/absent) so the severity mapping
             // is the SAME tested pure function as the Azure path.
-            add(label, clientRepoWriteSeverity(push ? "present" : "absent"), push
+            add(label, clientRepoWriteSeverity(push ? "present" : "absent", { existing: EXISTING }), push
               ? `push access via ${ghVia}`
               : `reachable (${ghVia}) but NO push perm — /qa-fix pushes here; grant GitHub repo/PR write on ${owner}/${name}`);
           } else add(label, "FAIL", `GET repos/${owner}/${name} → ${res.status}`);

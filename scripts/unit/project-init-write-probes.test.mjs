@@ -49,7 +49,7 @@ test("classifyWriteProbe: 400/409/422 → present (scope OK, invalid body reject
   assert.equal(classifyWriteProbe(422).scope, "present");
 });
 
-test("clientRepoWriteSeverity: the user-visible client-push severity mapping (LEO-gap: no push ⇒ FAIL)", () => {
+test("clientRepoWriteSeverity: fresh onboarding (default) — no push ⇒ FAIL (the LEO gap)", () => {
   // The row severity the /project-init readiness table shows for a client-repo push, shared by the
   // GitHub (push→present/absent) and Azure (probe scope) paths in verify-access main().
   assert.equal(clientRepoWriteSeverity("present"), "PASS", "write confirmed ⇒ READY");
@@ -59,6 +59,20 @@ test("clientRepoWriteSeverity: the user-visible client-push severity mapping (LE
   // A GitHub push boolean is coerced to present/absent by the caller — verify that contract holds.
   assert.equal(clientRepoWriteSeverity(true ? "present" : "absent"), "PASS");
   assert.equal(clientRepoWriteSeverity(false ? "present" : "absent"), "FAIL");
+});
+
+test("clientRepoWriteSeverity: day-2 re-verify (existing:true) — no push ⇒ WARN, not FAIL", () => {
+  // /project-init --check / --add-env re-verify an already-onboarded project: a client token that
+  // regressed to read-only is a heads-up (WARN), not a hard block on a routine re-check.
+  assert.equal(clientRepoWriteSeverity("absent", { existing: true }), "WARN", "existing project + no push ⇒ WARN (don't hard-block a re-check)");
+  // Everything else is mode-independent.
+  assert.equal(clientRepoWriteSeverity("present", { existing: true }), "PASS");
+  assert.equal(clientRepoWriteSeverity("restricted", { existing: true }), "WARN");
+  assert.equal(clientRepoWriteSeverity("unverified", { existing: true }), "WARN");
+  // Default stays strict: an unspecified / falsy `existing` keeps the fresh-onboarding FAIL, so
+  // forgetting the flag over-blocks (safe) rather than under-blocks.
+  assert.equal(clientRepoWriteSeverity("absent", {}), "FAIL");
+  assert.equal(clientRepoWriteSeverity("absent"), "FAIL");
 });
 
 test("classifyWriteProbe: 2xx / 404 / redirect / network error → unverified (inconclusive)", () => {
