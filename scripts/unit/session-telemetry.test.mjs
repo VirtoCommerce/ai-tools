@@ -431,6 +431,11 @@ test("redaction: secrets in a tool_result never reach a span's details[].snippet
       toolResult("2026-01-01T00:00:05Z", "b3", true, "HTTP 401 Authorization: Basic dXNlcjpMRUFLYmFzaWNQQVQ="),
       toolUse("2026-01-01T00:00:06Z", "b4", "Bash", { command: "psql" }),
       toolResult("2026-01-01T00:00:07Z", "b4", true, "url postgres://svc:LEAKdbpw@h/x key AccountKey=LEAKacct== jwt eyJLEAKhdrABCDEFGHIJKLMNOP.z"),
+      // JSON-QUOTED Authorization header (axios/requests/curl error dumps) — the old rule stopped
+      // `\S+` at `"Bearer` and LEAKED the token (PR #143 review, Lenajava1). The value now carries an
+      // optional opening quote so the credential is consumed.
+      toolUse("2026-01-01T00:00:08Z", "b5", "Bash", { command: "node call" }),
+      toolResult("2026-01-01T00:00:09Z", "b5", true, 'error {"headers":{"Authorization":"Bearer LEAKjsonquotedTOKEN9876543210"}}'),
     ]);
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
@@ -441,6 +446,7 @@ test("redaction: secrets in a tool_result never reach a span's details[].snippet
       "opaqueLEAKtokenAAAA1234567890", "ghp_LEAKTOKENabcdef1234567890", "LEAKPASSs3cret", "4111 1111 1111 1111",
       "dXNlcjpMRUFLYmFzaWNQQVQ=",                              // Basic-auth base64 blob (ADO PAT)
       "LEAKdbpw", "LEAKacct==", "eyJLEAKhdrABCDEFGHIJKLMNOP",  // conn-string pw, Azure AccountKey, JWT
+      "LEAKjsonquotedTOKEN9876543210",                        // JSON-quoted "Authorization":"Bearer …"
     ]) {
       assert.ok(!haystack.includes(secret), `secret must be redacted from spans + block reason, but leaked: ${secret}`);
     }

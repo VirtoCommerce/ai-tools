@@ -150,7 +150,10 @@ const REDACTIONS = [
   // Bearer, so a `Basic <b64>` (an ADO PAT: base64(":"+PAT)) or Digest/NTLM blob LEAKED into the
   // jsonl → the public upstream via deliver. A `:`/`=` is required so prose "authorization" is not
   // mangled; a header-less `Bearer/Basic <cred>` is caught by the next rule.
-  [/\b(authorization)\b"?\s*[:=]\s*(?:(?:bearer|basic|digest|negotiate|ntlm)\s+)?\S+/gi, "$1 «redacted»"],
+  // The `"?` before the scheme group consumes an opening quote on the VALUE too, so the JSON-quoted
+  // shape `"Authorization":"Bearer <tok>"` (axios/requests/curl error dumps) redacts the token — the
+  // old rule stopped `\S+` at `"Bearer` and LEAKED the credential (PR #143 review, Lenajava1).
+  [/\b(authorization)\b"?\s*[:=]\s*"?(?:(?:bearer|basic|digest|negotiate|ntlm)\s+)?\S+/gi, "$1 «redacted»"],
   [/\b(bearer|basic|digest|negotiate|ntlm)\s+\S+/gi, "$1 «redacted»"],
   // key/value secrets — optional quotes around BOTH key and value so the JSON form
   // (`"password":"x"`, `"apiKey": "x"`), the shell form (`password=x`), the header form
