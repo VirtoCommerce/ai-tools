@@ -10,7 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Ships as **plugin `0.7.1`** (marketplace `0.9.1`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.8.1`** (marketplace `0.9.3`). Pin to a tagged release for stability; this branch tip is unstable.
+
+### Fixed — `/vc-shell-fix` hardened against the real page-builder shell
+
+Cross-checked the skill's own claims against `vc-module-pagebuilder`'s live `package.json` and its first-party `.claude/` docs (which were already drifting — they cite `@vc-shell/framework` `1.2.2`/`1.2.3` against the real `^2.1.0`). Applied the corrections directly rather than copying facts that will rot again:
+
+- **Package-manager-agnostic fix guidance.** The skill previously hardcoded `npm install --no-save` and bare `npx`, but the real sub-app is Yarn Berry (`yarn@4.9.2`). Path 1's red/green gate and Path 2's scratch-install now read the sub-app's own `package.json` `scripts`/`packageManager` at fix time instead of assuming a package manager.
+- **New "Ground yourself in the checked-out repo first" step** — read `package.json` (authoritative) and the module's own `.claude/agents|skills` docs (if present) before trusting anything hardcoded in this skill.
+- **New `src/api_client/` STOP rule** — it's auto-generated (`@vc-shell/api-client-generator`); an RCA anchor there is an upstream root cause, not a shell fix.
+- **Cross-frame (iframe/`BroadcastChannel`) bugs routed to Gate-6**, not invented into a new harness — neither Path 1 (Node) nor Path 2 (single-frame jsdom) can reproduce a real designer↔shell iframe boundary.
+- **Fixed a real doubled-path bug** in `vc-shell-scratch-harness-patterns.md` (a repeated `.../PageBuilderModule.Web/src/VirtoCommerce.PageBuilderModule.Web/...` segment, 3 occurrences) that would have broken every scratch-harness import path.
+- **Follow-up hardening after review:** reconciled the "Reality check" section's now-contradicted claim ("only ever `tsx --test`") with the new grounding step; disambiguated a "step 1" cross-reference that collided with an unrelated numbered list; added a PnP-mode check (`nodeLinker` in `.yarnrc.yml`) before the npm-based scratch-install, since Yarn Berry defaults to PnP (no `node_modules`) and the prior recipe would fail silently there.
+- Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
 
 ### Fixed — code-review follow-ups (Azure tooling + reconcile + telemetry)
 
