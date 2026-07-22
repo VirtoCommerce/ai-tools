@@ -10,6 +10,11 @@
 > silent** on an implementation/UX-mechanics detail (source + live agree), not because anything was
 > contradicted. The four **Priority** items below are high-confidence and low-risk; the rest are re-run
 > candidates.
+>
+> **✅ APPLIED 2026-07-22 (user-approved):** `BL-GQL-001` (HTTP 200 not 400), `BL-PROFILE-001` (stale
+> Origin footnote refreshed), and `BL-ORD-005` (per-period-reset order numbers) were promoted to
+> `business-logic.md` with an `Amended: (approved from bl-proposals-2026-07-22)` stamp. They remain
+> documented below for the record. Everything else is still pending.
 
 ---
 
@@ -203,6 +208,57 @@ The entire BL-LOY domain is a **project-specific extension (VCST-5101 / Epic VCS
 ## Policy note for the skill maintainers (recurring across both batches)
 
 The strict "**all three axes present + agree**" bar structurally blocks auto-apply for two invariant classes that source+live (or docs+live) prove cleanly: (1) **implementation/UX-mechanics** invariants VirtoOZ doesn't narrate (rounding, money-type, coupon-slot UX, quantity-reject, ZIP-required, order-number reset, facet mechanics), and (2) **project-specific extensions** with no upstream doc surface at all (the whole BL-LOY Mixed-Cart domain, BOPIS-007). Net auto-apply across 109 audited invariants = **0 Rule changes, 12 Source-anchor refreshes**. Candidate criteria refinement (human decision): allow `source + live` (2 strong axes) with an explicit `docs: N/A — implementation-detail | project-specific` tag to count as confirmed for non-user-facing invariants. Flagged, not acted on.
+
+---
+
+# Batch 3 — final non-P0 (CROSS, PROFILE, GQL, IMPEX, NOTIF, UI, WL, SEO · 40 invariants)
+
+Completes the full 149-invariant sweep. Auto-applied: **2 Source-anchor refreshes** (NOTIF-001 added; WL-001 already stamped 2026-07-02 → recorded only), **0 Rule-text changes**.
+
+## Priority 1 — DRIFT (source + live proven; docs axis absent/N-A → not auto-applied)
+
+### BL-GQL-001 — GraphQL returns HTTP 200 uniformly, not HTTP 400 for validation errors  ⟵ factual error in current Rule
+- **Problem:** the Rule states validation/parse failures return **HTTP 400**. Source + live show **HTTP 200 uniformly** (errors in `errors[]`).
+- **Evidence:** Source `vc-module-x-api GraphQLHttpMiddlewareWithLogs` (no status-code override) + `AuthorizationError : ExecutionError` (error → `extensions.code`, not an HTTP throw). Live: `{ nonExistentField }` → HTTP 200, `errors[0].extensions.code=FIELDS_ON_CORRECT_TYPE`; anonymous `orders` → HTTP 200, `code=Unauthorized`, `data.orders=null`.
+- **Proposed Rule fix:** both validation/parse failures AND execution/resolver errors return **HTTP 200** with `errors[]` populated (no distinct 400 status on this platform); the server never returns 5xx for client-side errors.
+
+### BL-PROFILE-001 — `Origin` footnote is stale (claims a fixed bug is still broken)
+- **Problem:** the `Origin` footnote (2026-04-24) still says Organization-path write-dedup is "❌ broken" and `checkDuplicateAddress` "❌ always false." Current `dev` source shows **both fixed** via a unified `MemberAggregateRootBase.IsDuplicateAddress` shared by Contact + Organization (no per-type override); the read path delegates to the same method. The Rule/Verify text itself is accurate — only the footnote's bug-status is wrong.
+- **Evidence:** Source `vc-module-profile-experience-api MemberAggregateRootBase.cs` (comparer + `IsDuplicateAddress`), `CheckDuplicateAddressQueryHandler.cs`, `OrganizationAggregate.cs`/`ContactAggregate.cs` (no override). Live: Contact-path byte-identical address silently skipped (table stayed 1 row).
+- **Proposed edit:** replace the stale `Origin` footnote with the "both defects fixed via shared base aggregate; live-reconfirmed on the Contact path" wording (full text in the agent return). HIGH priority — the current footnote actively misleads agents into treating a fixed path as buggy.
+
+## Priority 2 — suspected DRIFT (drift-lean; 1–2 axes)
+
+- **BL-CROSS-009** — the "120 s (2 reindex cycles)" framing assumes a polling cadence, but event-based reindex is the **default** (immediate); time-based poll is disabled by default. Same finding as **BL-CAT-003 / BL-SRCH-003** — resolve the three together: reframe to event-driven latency; keep 120 s as a valid upper bound.
+- **BL-IMPEX-004** — possible **over-claim**: source shows file-level/format validation messages but **no** per-row batch messages and **no** dry-run mode. Re-scope the Rule (don't retire without a 3rd axis).
+
+## Strong 2/3 near-misses (evidence agrees; one axis missing → fast-track re-verify, likely CONFIRM)
+
+| BL | Present axes | Missing | Note |
+|----|--------------|---------|------|
+| BL-GQL-004 | Source+Live (exact) | Docs | soft-gate `me` (nulls) vs hard-gate `orders` (Unauthorized) |
+| BL-CROSS-012 | Docs+Source (2 repos) | Live (destructive) | zero-price purchase block (`CheckPricePolicy => ActualPrice != 0`) |
+| BL-IMPEX-002 | Docs+Source | Live | export = Hangfire job + ExportNotification + blob URL |
+| BL-IMPEX-003 | Source (strong) | Docs+Live | partial-success + `MaxErrorsCountThreshold` abort |
+| BL-SEO-002 | Docs+Live (exact) | Source | soft-404: nonexistent slug → HTTP 200 + 404 page |
+| BL-SEO-001 | Docs+Source (exact) | Live | duplicate-slug detection (`ISeoDuplicatesDetector`, Debug SEO Links) |
+| BL-SEO-003 | Source (exact) | Docs+Live | og:url set, no canonical (`useCategorySeo.ts`) |
+| BL-UI-002 | Docs+Source (exact) | Live (JS-blocked) | tailwind spacing scale (4.5/17/18/19) byte-match |
+| BL-WL-002/003/004/006 | Docs+Source (exact) | Live (admin-mutation) | per-field org-preferred merge; master switch + record `IsEnabled`; footer fallback naming; logo/favicon filetype allow-lists |
+
+## Policy-note classes (structurally cannot reach 3/3 under the current bar)
+
+- **BL-GQL-002** — a QA-authored **perf SLA baseline**, not documented/implemented platform behavior → treat as a **"live-only" evidence type**, not routed to proposals indefinitely.
+- **BL-UI-001..006** — QA-authored **layout/CLS/a11y methodology** invariants (emergent correctness properties, not a single enforced function) VirtoOZ/source don't codify. BL-UI-003/005/006 were **live-confirmed** (no hover shift; row-height parity; sub-44px touch targets exactly as the Rule predicts) but lack docs+source. Same "docs: N/A" class as the whole BL-LOY domain (batch 2).
+
+## Batch-3 UNGROUNDED "not reconfirmed" (no contradiction; re-run)
+
+`BL-CROSS-001/002/003/005/006/007/010/011` (live needs destructive/multi-step actions unsafe on the shared env; CROSS-006 has strong docs — public store settings read per-request, no restart), `BL-CROSS-004/008` (**partial live preserved** — currency-switch exclusion; org-switch swapped ship-to/orders/nav for 3 of 6 contexts), `BL-GQL-003`, `BL-IMPEX-001` (docs-strong), `BL-NOTIF-002/003` (NOTIF-003 P0 can't safely fault-inject → carve-out), `BL-SEO-004`, `BL-WL-005`.
+
+## Notes (batch 3)
+
+- **Security caution (good):** the UI/WL/SEO agent **declined an Admin login** because it couldn't confirm `--secrets` redaction was active for its browser session — so several WL/SEO live axes are intentionally absent rather than risk exposing the admin password. Aligns with `feedback_never_write_tokens_to_disk`.
+- **BL-CROSS-008 side-finding:** the org dashboard "Monthly spend report" widget showed **identical figures across two different orgs** — outside the BL's 6 listed contexts (so not a rule violation), but a candidate **non-org-scoped dashboard-stat** bug for a future exploratory pass.
 
 ## Application Notes
 
