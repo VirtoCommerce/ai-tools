@@ -63,7 +63,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 // Default admin password resolution (no --password / $ADMIN_PASSWORD given):
 // after provision's init-admin the local admin is Password1! and that value is written to

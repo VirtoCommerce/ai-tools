@@ -1,39 +1,25 @@
 {
-  "runId": "REG-2026-07-21-1438",
-  "status": "in_progress",
+  "runId": "REG-2026-07-22-1816",
+  "status": "completed",
   "environment": "vcst",
-  "selection": "059,060",
-  "startedAt": "2026-07-21T12:38:03.000Z",
-  "finishedAt": null,
-  "context": "VCST-5515 PageBuilderModule 3.1017.0-pr-156 setBaseline() post-publish/unpublish fix verification",
+  "selection": "053",
+  "startedAt": "2026-07-22T16:16:46.000Z",
+  "finishedAt": "2026-07-22T17:17:17.000Z",
+  "context": "Suite 053 catalog-admin-categories quality-verified in TLC-2026-07-22-1814 (VCST-5318 CAT-058-061); Platform 3.1046.0 / Catalog 3.1037.0",
   "suites": [
     {
-      "id": "059",
-      "name": "CMS Page Management",
-      "file": "regression/suites/Backend/cms/059-cms-page-management.csv",
-      "testCount": 46,
+      "id": "053",
+      "name": "Catalog Admin Categories",
+      "file": "regression/suites/Backend/catalog/053-catalog-admin-categories.csv",
+      "testCount": 25,
       "agent": "qa-backend-expert",
       "lane": "browser",
       "browser": "playwright-edge",
-      "status": "running",
-      "pass": null,
-      "fail": null,
-      "blocked": null,
-      "attempts": 0
-    },
-    {
-      "id": "060",
-      "name": "CMS Design & Content",
-      "file": "regression/suites/Backend/cms/060-cms-design-content.csv",
-      "testCount": 108,
-      "agent": "qa-backend-expert",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "status": "running",
-      "pass": null,
-      "fail": null,
-      "blocked": null,
-      "attempts": 0
+      "status": "done",
+      "pass": 19,
+      "fail": 0,
+      "blocked": 6,
+      "attempts": 1
     }
   ]
 }

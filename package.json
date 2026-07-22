@@ -114,6 +114,8 @@
     "suites:lint": "npx tsx scripts/test-cases/sync-test-suites.ts --check",
     "suites:append": "npx tsx scripts/test-cases/append-test-cases-to-suite.ts",
     "suites:review": "npx tsx scripts/test-cases/lint-test-cases.ts",
+    "bl:lint": "npx tsx scripts/knowledge/lint-bl.ts",
+    "bl:audit:collect": "npx tsx scripts/knowledge/lint-bl.ts --json",
     "metrics:compute": "npx tsx scripts/regression/compute-metrics.ts",
     "triage:collect": "npx tsx scripts/lib/regression-triage.ts collect",
     "triage:history": "npx tsx scripts/lib/regression-triage.ts history",
