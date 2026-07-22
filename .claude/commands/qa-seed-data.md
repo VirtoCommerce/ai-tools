@@ -66,5 +66,6 @@ After seeding, runtime platform IDs resolve via `@td()`: on `vcst` from `aliases
 
 | Agent | Role |
 |-------|------|
-| `qa-backend-expert` | Primary — authors Postman seed collections via MCP, then executes them via Newman / Postman CLI; writes seeded IDs back into `test-data/` |
+| `test-data-engineer` | **Owner** — owns `/qa-seed-data` end-to-end: authors the seeders/fixtures/validators/`@td()` aliases and RUNS them live (real seed/teardown against a non-prod env + `td:reconcile`, Node + Platform-API, no browser). Write-capable in THIS repo only. |
+| `qa-backend-expert` | Authors Postman seed collections via MCP, then executes them via Newman / Postman CLI; writes seeded IDs back into `test-data/`. Provides the browser-based Admin-SPA/suite verification the engineer can't. |
 | `qa-frontend-expert` | Verifies seeded data on storefront |

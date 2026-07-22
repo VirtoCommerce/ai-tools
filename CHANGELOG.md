@@ -10,11 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Ships as **plugin `0.8.0`** (marketplace `0.9.2`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `0.8.1`** (marketplace `0.9.3`). Pin to a tagged release for stability; this branch tip is unstable.
 
-### Changed — self-diagnostics capture reverted to OPT-IN, with consent asked as `/project-init`'s FIRST step
+### Changed — self-diagnostics capture is OPT-IN, with consent asked as `/project-init`'s FIRST step
 
-The earlier same-cycle change ("capture is now DEFAULT-ON", below — now marked superseded) is **reverted to opt-in**. Capture runs **only** when `project-profile.json` explicitly sets `selfDiagnostics: true` (the env kill-switch `VC_FIX_DIAG_CAPTURE=off` still forces off regardless). No profile / no flag / any non-`true` value ⇒ a **full no-op** — no `.vc-fix/` is created. The `/project-init` blind spot the default-on change targeted is closed a different way: **consent first + immediate flag write.**
+The passive session-telemetry collector captures **only** when `project-profile.json` explicitly sets `selfDiagnostics: true` (the env kill-switch `VC_FIX_DIAG_CAPTURE=off` still forces off regardless). No profile / no flag / any non-`true` value ⇒ a **full no-op** — no `.vc-fix/` is created. The `/project-init` onboarding blind spot — its profile is written only at the *end* of onboarding, so its own run would otherwise never be captured — is closed by **consent first + immediate flag write.**
 
 - `captureEnabled()` now returns `readProfile(root)?.selfDiagnostics === true` (absent/unreadable ⇒ off). `plugins/vc-fix/hooks/session-telemetry.mjs` only.
 - **`/project-init` asks the capture consent as its FIRST step** (new §0b — before installing tooling and before the interview) and, on Yes, writes `selfDiagnostics: true` **immediately** via `gen-profile --self-diagnostics true`, so its OWN remaining run is captured from that point on. The duplicate mid-interview `selfDiagnostics` prompt (old "step 2e") is removed — step 2e now asks **only** the `feedback.mode` upstream-delivery consent (and is skipped entirely when §0b was answered No). The `session_start` record still misses this run (SessionStart fired before the flag existed) — accepted; spans + the finalize verdict are captured from the flag write onward.
@@ -51,7 +51,7 @@ The clean status line (`vc-fix self-check: no plugin issues detected`) was gated
 
 ### Fixed — PR-review audit (4 independent reviewers): secret leak, misclassification, write-probe false NOT-READY
 
-- **Secret redaction (security, HIGH):** `redact()` stripped only the scheme word — `Authorization: Bearer <token>` **LEAKED the token** — and did not redact JSON-shaped secrets (`{"password":"…"}`, `{"apiKey":"…"}`). These flow into `<sid>.jsonl` `details[].snippet` → the DIAG/DELIVERY contributed to the **public** upstream. Rewrote the regexes to consume the credential (not the scheme word) and to redact quoted key/value forms; added an end-to-end test asserting no secret reaches a span snippet or the block reason.
+- **Secret redaction (security, HIGH):** `redact()` stripped only the scheme word — `Authorization: Bearer <token>` **LEAKED the token** — and did not redact JSON-shaped secrets (`{"password":"…"}`, `{"apiKey":"…"}`). These flow into `<sid>.jsonl` `details[].snippet` → the DIAG/DELIVERY contributed to the **public** upstream. Rewrote the regexes to consume the credential (not the scheme word) and to redact quoted key/value forms; added an end-to-end test asserting no secret reaches a span snippet or the block reason. **Follow-up (PR #143 review, Lenajava1):** the JSON-quoted `"Authorization":"Bearer <tok>"` shape still leaked (the value's opening quote wasn't consumed, so `\S+` stopped at `"Bearer`) — the rule now consumes it, with a matching test.
 - **Misclassification:** a span with BOTH a self-corrected op-keyed error AND an **untied** `hook_failure` (the tsc-on-every-Edit pattern) was wrongly tagged `recovered` (not escalated). New `span.sawUntiedFailure` vetoes `recovered`, matching the invariant the comment already claimed.
 - **`--self-diagnostics` enum-validated:** a malformed value (`yes` / `True` / `1`) silently coerced to `false` (capture OFF); now rejected like `--feedback-mode`.
 - **Write-probe false NOT-READY (M2/M3):** ADO `403` (the sampled work-item/branch is ACL-restricted) is now a distinct **`restricted`** verdict → WARN, no longer conflated with `401` (missing scope) → FAIL; and GitHub direct-mode no-push on the `vc-platform` **proxy** probe is WARN (the real push target is the per-bug routed repo, gated at `/qa-fix` Gate 1) instead of blocking onboarding. Neither weakens the real gate.
@@ -59,17 +59,9 @@ The clean status line (`vc-fix self-check: no plugin issues detected`) was gated
 
 **Deferred (tracked separately, not in this PR):** live ADO verification of the write-probe *auth-before-validate* premise (a read-only PAT must 401/403 before body validation, else the probe can false-PASS); a `gen-profile` reconcile/merge value-preservation test.
 
-### Changed — self-diagnostics capture is now DEFAULT-ON (opt-out), so `/project-init` is diagnosed  _(SUPERSEDED — reverted to opt-in, see the entry at the top of [Unreleased])_
-
-The passive session-telemetry collector was gated on `project-profile.json` `selfDiagnostics === true`. But that profile is written only at the **end** of `/project-init`, so during onboarding there was no profile → the hooks no-op'd → **`/project-init` — the very first, most failure-prone skill a client runs — was the subsystem's blind spot**. Capture is now default-on (`plugins/vc-fix/hooks/session-telemetry.mjs`):
-
-- `captureEnabled()` (was `selfDiagnosticsEnabled()`) records for **every** session UNLESS the output-root profile **explicitly** sets `selfDiagnostics: false`, or the env kill-switch **`VC_FIX_DIAG_CAPTURE`** is `off`/`0`/`false`/`no`. Absent profile / absent field / any non-`false` value ⇒ capture ON.
-- The `selfDiagnostics` profile field is kept as the per-project opt-out (`false` ⇒ full no-op, no `.vc-fix/`); `/project-init` still writes it `true` by default. Docs updated (README, `vc-feedback.md`, `/vc-self-check` SKILL, `project-profile.mjs` JSDoc).
-- `plugins/vc-fix` only — the `.claude/` mirror intentionally stays on the pre-5509 model.
-
 ### Fixed — self-diagnostics was blind to sessions that crossed a resume/compact (found by `/vc-self-check` itself)
 
-A resumed `/project-init` session self-diagnosed this: the collector classified a whole `/project-init` run as `clean` / `pluginActivity:false` ("the plugin never ran"). Root cause — a command span is opened in `cmdPrompt` and lives only in `state.currentCommand` until it CLOSES at `finalize`; a `resume`/`compact` `SessionStart` fires mid-command, and `cmdInit` unconditionally did `saveState(freshState())`, **wiping** the open span + the scan cursor + the `sawPluginSpan`/`anySkillSeen` aggregates. Every tool span then orphaned (`parentId:null`) and the run escaped both the clean line and findings escalation. Since `/project-init` is long and frequently compacts, this defeated the default-on capture above for exactly the skill it was meant to cover.
+A resumed `/project-init` session self-diagnosed this: the collector classified a whole `/project-init` run as `clean` / `pluginActivity:false` ("the plugin never ran"). Root cause — a command span is opened in `cmdPrompt` and lives only in `state.currentCommand` until it CLOSES at `finalize`; a `resume`/`compact` `SessionStart` fires mid-command, and `cmdInit` unconditionally did `saveState(freshState())`, **wiping** the open span + the scan cursor + the `sawPluginSpan`/`anySkillSeen` aggregates. Every tool span then orphaned (`parentId:null`) and the run escaped both the clean line and findings escalation. Since `/project-init` is long and frequently compacts, this defeated capture for exactly the skill it was meant to cover.
 
 - **Fix:** `cmdInit` now carries the persisted state over (`loadState`) when `ev.source === "resume" | "compact"` instead of resetting. `loadState` falls back to `freshState` when no state file exists, so brand-new sessions are unaffected; a plain `startup`/`clear` still fully resets.
 - **Also (S3, cosmetic):** `session_start.testEnv` was null when `TEST_ENV` was passed inline per-command (`TEST_ENV=… node …`, never exported to the hook env). The scanner now recovers it from the first tool arg carrying `TEST_ENV=` and records it on the `finalize` record; `/vc-self-check` prefers `finalize.testEnv` when `session_start.testEnv` is null.
@@ -108,6 +100,17 @@ The `Stop` hook fires at the end of **every** turn, including a turn that only h
 - **Visible clean line ON by default** on a terminal plugin turn (was the opt-in `VC_FIX_DIAG_LINE=always`): a clean run now prints `vc-fix self-check: no plugin issues detected`. Silence it with **`VC_FIX_DIAG_LINE=off`**; the global `VC_FIX_DIAG_CONSENT=off` kill switch still gates everything.
 - **`stop_hook_active` guard** added to both the findings block and the clean line — a belt-and-suspenders companion to `promptedThisTurn` so the Stop from our own resume-turn can't re-fire (no resume loop). When it suppresses, the decision record logs `suppressReason:"stop-hook-active"` (was misreported as `already-surfaced`).
 - Tests: checkpoint (background_tasks + open-agent-op fallback), terminal clean/findings, `VC_FIX_DIAG_LINE=off`, `stop_hook_active`, and a full sub-agent hand-off E2E sequence.
+### Fixed — `/vc-shell-fix` hardened against the real page-builder shell
+
+Cross-checked the skill's own claims against `vc-module-pagebuilder`'s live `package.json` and its first-party `.claude/` docs (which were already drifting — they cite `@vc-shell/framework` `1.2.2`/`1.2.3` against the real `^2.1.0`). Applied the corrections directly rather than copying facts that will rot again:
+
+- **Package-manager-agnostic fix guidance.** The skill previously hardcoded `npm install --no-save` and bare `npx`, but the real sub-app is Yarn Berry (`yarn@4.9.2`). Path 1's red/green gate and Path 2's scratch-install now read the sub-app's own `package.json` `scripts`/`packageManager` at fix time instead of assuming a package manager.
+- **New "Ground yourself in the checked-out repo first" step** — read `package.json` (authoritative) and the module's own `.claude/agents|skills` docs (if present) before trusting anything hardcoded in this skill.
+- **New `src/api_client/` STOP rule** — it's auto-generated (`@vc-shell/api-client-generator`); an RCA anchor there is an upstream root cause, not a shell fix.
+- **Cross-frame (iframe/`BroadcastChannel`) bugs routed to Gate-6**, not invented into a new harness — neither Path 1 (Node) nor Path 2 (single-frame jsdom) can reproduce a real designer↔shell iframe boundary.
+- **Fixed a real doubled-path bug** in `vc-shell-scratch-harness-patterns.md` (a repeated `.../PageBuilderModule.Web/src/VirtoCommerce.PageBuilderModule.Web/...` segment, 3 occurrences) that would have broken every scratch-harness import path.
+- **Follow-up hardening after review:** reconciled the "Reality check" section's now-contradicted claim ("only ever `tsx --test`") with the new grounding step; disambiguated a "step 1" cross-reference that collided with an unrelated numbered list; added a PnP-mode check (`nodeLinker` in `.yarnrc.yml`) before the npm-based scratch-install, since Yarn Berry defaults to PnP (no `node_modules`) and the prior recipe would fail silently there.
+- Shipped symmetrically in `plugins/vc-fix/` and `.claude/`.
 
 ### Fixed — code-review follow-ups (Azure tooling + reconcile + telemetry)
 

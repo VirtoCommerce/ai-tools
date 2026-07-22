@@ -2,7 +2,6 @@
 name: qa-accessibility
 description: "[Testing] WCAG 2.2 AA accessibility audit: POUR + 2.2 additions, axe-core injection, Lighthouse MCP, keyboard walk, ARIA."
 argument-hint: "page URL | component name | full audit"
-disable-model-invocation: true
 ---
 
 # /qa-accessibility — WCAG 2.2 AA Accessibility Audit
@@ -54,6 +53,9 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
 6. **Output:**
    - Audit report with pass/fail per criterion + measured values (contrast ratios, target sizes, focus-order delta from visual order)
    - Group findings by **severity** (Critical / Serious / Moderate / Minor — match axe-core severity) and **WCAG criterion ID** (e.g., `1.4.3`, `2.4.11`)
+   - **Deduplicate by pattern, don't enumerate instances.** Collapse repeated violations of the same rule on the same component family into **one** entry with an instance count (`color-contrast — VcButton ×14`), not 14 rows. Repeated low-impact violations of one rule are usually a **single root-cause fix** — report the fix once. Listing every instance blows the `reports.md` size caps and buries the signal.
+   - **If a single route's scan returns more than ~50 violations, STOP and report the top patterns instead of the full list** — a 200-line dump isn't actionable; surface the ~3 highest-impact patterns and ask whether to go deeper.
+   - **Locate every finding precisely** — never fabricate a source location. Pin each to the first available of: `data-test-id` (see `.claude/knowledge/domain/storefront-selectors.md`) → `role` + accessible name → DOM path / tree position. Use the tag/role/label the keyboard walk already captured; if a finding can't be located, say so ("located by selector only").
    - Explicit **"Requires manual verification"** section listing what automation cannot decide (alt-text quality, focus visibility quality, screen-reader narrative coherence, cognitive load, form-error helpfulness, modal focus-trap correctness on edge transitions, aria-live timing)
    - Bug reports follow `.claude/rules/reports.md` (hard cap 80–150 lines per bug); include WCAG criterion ID, measured vs required values, and one annotated screenshot
 
@@ -64,5 +66,6 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
 - **Color contrast from computed CSS only** — never eyeball. Compute from `getComputedStyle` color + effective background; assert WCAG 2.x luminance ratio (4.5:1 normal text, 3:1 large/UI/focus indicator).
 - **Custom interactive elements** (dropdowns, modals, tabs, comboboxes) need a full ARIA audit — name, role, value, expanded/selected/pressed states.
 - **Filter axe `best-practice` tag** — those are advisory, not WCAG failures. Treating them as conformance bugs creates noise and erodes the team's trust in the report.
+- **Group by pattern, not instance** — one entry per (rule ID × component family) with a count, not one row per DOM node. >~50 violations on a route → report top patterns and stop, don't dump. Locate each finding by `data-test-id` → role + accessible name → DOM path; never invent a `file:line`.
 - **Re-scan dynamic states** — modal open, accordion expand, form-error displayed, toast shown, async chunk loaded. Initial-DOM-only scanning misses most real bugs in SPA storefronts.
 - **EU exposure:** The European Accessibility Act has been enforceable since 2025-06-28; treat public-storefront a11y violations as P0/P1 for any EU-reachable site.

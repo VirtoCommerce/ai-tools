@@ -1,6 +1,6 @@
 {
   "name": "vc-mcp-testing-module",
-  "version": "0.7.1",
+  "version": "0.8.1",
   "description": "",
   "main": "config.js",
   "scripts": {
@@ -128,7 +128,13 @@
     "local:manifest": "node skills/qa-local-env/gen-manifest.mjs",
     "local:health": "node skills/qa-local-env/healthcheck.mjs",
     "seed:reviews": "node scripts/seed-data/products/seed-reviews.mjs",
-    "seed:reviews:teardown": "node scripts/seed-data/products/seed-reviews.mjs --teardown"
+    "seed:reviews:teardown": "node scripts/seed-data/products/seed-reviews.mjs --teardown",
+    "seed:rbac": "node scripts/seed-data/platform/seed-backoffice-rbac.mjs",
+    "seed:rbac:teardown": "node scripts/seed-data/platform/seed-backoffice-rbac.mjs --teardown",
+    "td:validate:rbac": "node scripts/seed-data/platform/validate-backoffice-rbac-data.mjs",
+    "seed:cms-pages": "node scripts/seed-data/cms/seed-pagebuilder-pages.mjs",
+    "seed:cms-pages:teardown": "node scripts/seed-data/cms/seed-pagebuilder-pages.mjs --teardown",
+    "td:validate:cms-pages": "node scripts/seed-data/cms/validate-pagebuilder-pages-data.mjs"
   },
   "repository": {
     "type": "git",
@@ -157,6 +163,7 @@
     "cross-env": "^7.0.3",
     "csv-stringify": "^6.7.0",
     "playwright": "^1.61.1",
-    "tsx": "^4.0.0"
+    "tsx": "^4.0.0",
+    "typescript": "^7.0.2"
   }
 }

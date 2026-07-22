@@ -33,6 +33,7 @@ You need each of these before you start. If any are missing, the install will fa
 | A VC Admin SPA / platform URL (`BACK_URL`) | Where the admin + API tests will run. | Browse to `${BACK_URL}/health` — should return JSON with module status. |
 | Two test accounts | One non-admin storefront user, one admin SPA user. | See [Test accounts](#test-accounts) below. |
 | Your customer's JIRA project key (e.g. `ACME`) | For bug filing. Default falls back to `VCST` if not set. | Atlassian → Projects → your project → Settings → Details. |
+| Serena plugin + `uv`/`uvx` | Shared semantic code-navigation for the whole team (enabled in tracked config; install per machine). | `uvx --version`; see [Serena setup](#serena--semantic-code-navigation-whole-team-one-time-per-machine). |
 
 ## Install
 
@@ -186,6 +187,29 @@ Optional (each gates specific skills):
 - **figma-remote-mcp** — enables `/qa-design` Figma comparison
 
 `npm run plugin:check` will warn if a required MCP server is missing.
+
+## Serena — semantic code navigation (whole-team, one-time per machine)
+
+Serena is an LSP-backed code-navigation + editing MCP server (symbol search, find-references, precise
+symbol edits). The developer agents (`fullstack-backend` / `fullstack-frontend`) use it to find and
+apply fixes faster than the `Grep → Read → Edit` loop, and it's just as useful when *you* are reading
+this repo's TypeScript/JS tooling (`scripts/`, `ci/`, `config.js`). **Every teammate should have it.**
+
+`.claude/settings.json` (git-tracked) already ships `enabledPlugins."serena@claude-plugins-official": true`,
+and `.serena/project.yml` (git-tracked) ships the shared project config — so once you install the
+plugin, it's on and pre-configured with no extra steps. **Installing is per-machine**, though; the
+enabled flag is a no-op until you do it once:
+
+```
+/plugin marketplace add anthropics/claude-plugins-official
+/plugin install serena@claude-plugins-official
+```
+
+Then **restart Claude Code** (plugin MCP tools bind at session start). Verify with `claude mcp list`
+— you should see `plugin:serena:serena … ✔ Connected` — and the `mcp__plugin_serena_serena__*` tools
+become available in-session. Requires [`uv`/`uvx`](https://docs.astral.sh/uv/) on PATH (Serena runs via
+`uvx`); the first activation builds a local symbol cache under `.serena/cache/` (gitignored). Per-developer
+tweaks go in `.serena/project.local.yml` (gitignored), never in the shared `project.yml`.
 
 ## Atlassian / JIRA setup
 

@@ -15,6 +15,7 @@ This repo hosts the **`vc-tools` Claude Code marketplace** (`.claude-plugin/mark
 - **IDE**: Cursor, Windsurf, or VS Code with Claude Code extension
 - **Node.js**: 18+
 - **Plugin install**: `/plugin install` (Claude Code) → `npm run plugin:configure` (env setup; `plugin:check` to verify). See `docs/onboarding.md`.
+- **Serena** (whole-team, one-time per machine): semantic code-navigation MCP. Enabled in the tracked `.claude/settings.json` and pre-configured by the tracked `.serena/project.yml`, but **installing is per-machine** (the enabled flag is a no-op until you do). Needs `uv`/`uvx` on PATH. Run `/plugin marketplace add anthropics/claude-plugins-official` → `/plugin install serena@claude-plugins-official`, then restart Claude Code (plugin MCP tools bind at session start). Verify: `claude mcp list` → `plugin:serena:serena … ✔ Connected`. See `docs/onboarding.md` §Serena.
 - **MCP Servers**: `.mcp.json` (gitignored, create locally)
 - **New deployment / new customer?** Run **`/project-init`** — a derive-driven wizard. It installs deps, then asks only what genuinely shapes config (env **name**, bug **tracker** — Jira/Azure Boards, code **host** — GitHub/Azure Repos, **auth** per axis — PAT recommended else browser/CLI login) and **derives** the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + a live module/repo scan. Writes `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` and verifies access with a readiness table. That profile is what makes `/qa-fix` route each bug to the right repo + tracker. **Absent profile ⇒ native-platform / Jira / GitHub defaults = the original behaviour.**
 - **New here?** See `.claude/ROUTING.md`
@@ -74,7 +75,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ├── test-data/            # Orgs, search queries, uploads
 ```
 
-**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `settings.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `.vc-fix/` (self-diagnostics telemetry), `project-profile.json`, `.claude/settings.local.json` (note: `ci/` and `.github/` ARE tracked and ship with the plugin — only transient sub-paths like `ci/config/.module-registry.cache.json` are ignored)
+**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `.vc-fix/` (self-diagnostics telemetry), `project-profile.json`, `.claude/settings.local.json` (note: `ci/` and `.github/` ARE tracked and ship with the plugin — only transient sub-paths like `ci/config/.module-registry.cache.json` are ignored). `.claude/settings.json` **is tracked** — it's the shared project config (hooks + `enabledPlugins`, incl. Serena); per-developer overrides go in the gitignored `.claude/settings.local.json` instead. **Serena dependency note:** `enabledPlugins.serena` only *enables* the official `claude-plugins-official`-marketplace Serena plugin for whoever has it installed (a no-op otherwise, never auto-installed) — when active it's a source-indexing LSP tool that runs against whatever gets checked out into `.fix-workspace/<repo>/`, which on a client deployment can be client code (§2a).
 
 ## Essential Rules
 
@@ -90,7 +91,8 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 
 **Agent Teams:**
 - Mode: `teammateMode: "in-process"` in settings.json
-- `post_edit` hook: `npx tsc --noEmit`. Max 3 concurrent browser agents.
+- `post_edit` hook: `npx tsc --noEmit -p ci/tsconfig.json` (wired in `.claude/settings.json`; `typescript`
+  is a devDependency). Max 3 concurrent browser agents.
 - Browser assignments: see `.claude/rules/agents.md`
 
 ## Critical Revenue Flows (must pass before deployment)

@@ -14,9 +14,12 @@ node_modules
 .env.test-env
 .playwright-mcp/
 .vscode/
-settings.json
 test-results/
 results/
+# settings.json is ignored tree-wide by default (IDE/tool-local config); the
+# project's own shared config is the one deliberate exception.
+settings.json
+!/.claude/settings.json
 .claude/settings.local.json
 .claude/worktrees/
 .mcp.json
@@ -112,3 +115,7 @@ test-data/b2b/.seed-fingerprint.json
 # vc-fix plugin self-diagnosis working report — may reference client identifiers /
 # session context; kept local, never committed to the public upstream (§2a containment).
 reports/vc-fix-plugin-diagnosis.md
+
+# Serena (semantic code navigation): the shared .serena/project.yml + .serena/.gitignore
+# ARE committed so every teammate gets the same project config. The machine-specific parts
+# (cache/, logs/, project.local.yml) are excluded by .serena/.gitignore itself.

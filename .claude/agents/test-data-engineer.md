@@ -144,6 +144,17 @@ under per-domain subfolders of `scripts/seed-data/`.
   `node`/`npm`/`npx tsx` gates, `--dry-run` **and real** seeds/teardowns, and the live `td:reconcile`
   probe — all Node + Platform-API, so you run them yourself. **No browser** — delegate only the
   storefront/Admin-SPA rendering check or a full suite run to `qa-backend/frontend-expert`.
+- **Serena (optional speed-up for the shared TS core):** `scripts/lib/` is heavily reused —
+  `seed-common.mjs` helpers (`writeEnvAliasOverride`/`syncEnvAliases`/`verifyRemoved`/`api`),
+  `test-data-resolver.ts`, `live-discover.ts`, `random-data.ts`. When Serena's tools
+  (`mcp__plugin_serena_serena__*`) are present this session — it is *enabled*, not auto-installed, so
+  **check once before relying on them** — `find_symbol`/`find_referencing_symbols` answers "who calls
+  `syncEnvAliases`" or "every consumer of this `@td` resolver" faster and more precisely than a text
+  grep, and `replace_symbol_body`/`insert_*` gives symbol-scoped edits. Unlike the developers team, you
+  work **in THIS repo**, whose committed `.serena/project.yml` already targets it (TypeScript) — **no
+  per-checkout `activate_project`** and no `.fix-workspace/` clone. It's a speed optimization, not a
+  rule: fall back to `Grep`/`Glob`/`Read`/`Edit` for the `.mjs` seeders, CSV/JSON fixtures, `package.json`,
+  and anything the language server doesn't index well; never block a seeder on it.
 - **Write scope — THIS repo only:** `scripts/seed-data/`, `scripts/lib/` (shared seed helpers),
   `test-data/` (fixtures + `aliases.json`), `package.json` (npm scripts), and the docs those changes
   require (`.claude/rules/test-data.md`, `test-data/README.md`, CLAUDE.md counts).

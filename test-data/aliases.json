@@ -1,8 +1,13 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.33",
+    "version": "1.5.38",
     "updated": "GENERATED",
+    "changelog_1_5_38": "PAGE-3 fr-FR: added a French sibling of the return-policy page (store cultures en-GB default / de-DE / fr-FR). /qa-return-policy now serves THREE separate single-culture pages (the platform's multi-lang model): en-US 'QA Return Policy', de-DE 'QA Rückgaberichtlinie', fr-FR 'QA Politique de retour et de remboursement' — all Published, 5 blocks each, on vcst. New alias PB_RETURN_POLICY_FR (group_id in aliases.vcst.json). FR content authored in test-data/cms/page-content.json (PB_RETURN_POLICY.fr-FR). Spec gained frName/frAlias; seed-pagebuilder-pages.mjs reconcileMultiLang gained an FR branch + a culture-heal step (enforceCulture, content-safe metadata upsert — a create/publish at a SHARED permalink can flip a sibling's cultureName, proven live when the FR create flipped EN→fr-FR; healed back). Idempotent; td:validate:cms-pages + 168 unit tests + td:reconcile green. NOTE (not a fix): this only gives PAGE-3 an FR version — it does NOT fix the underlying content-leak defect where an UNPUBLISHED language serves default-language content instead of 404. CMS-028's 'unpublished-language → 404' coverage should be re-pointed to a genuinely-unpublished culture and the product defect filed separately. Browser DOM render of /en|/de|/fr/qa-return-policy remains delegated to qa-frontend-expert.",
+    "changelog_1_5_37": "REG-2026-07-21-1438 PageBuilder CONTENT: audited canonical qa-* pages' block content and found 3 of 5 were EMPTY shells (rendered blank despite Published): PB_HOMEPAGE, PB_RETURN_POLICY(en-US), PB_SUMMER_PREVIEW = 0 blocks (PB_WHOLESALE_GUIDE/PB_RETURN_POLICY(de-DE)/PB_PARTNER_SUPPORT had 5 each). Added content-block fixture test-data/cms/page-content.json (JSON-shaped to POST /api/page-builder-pages/grouped/{id}/content — {settings,content:[title|text|predefined-product-list]}; SKUs use the @discover:N marker resolved live, no hardcoded SKUs/GUIDs). seed-pagebuilder-pages.mjs now fills EMPTY shells from the fixture (preserving existing content on populated pages) via ensurePageState(). Live result: HOMEPAGE 7, RP(en) 5, SUMMER 6 blocks filled; the 3 populated pages kept. Two proven platform facts drove the impl (documented in pagebuilder-pages-specs.mjs): (1) content+schedule MUST land in ONE publish — a 2nd publish drains the just-promoted empty draft and wipes content; (2) a future/Pending page hides content in every projection. Consequently PB_SUMMER_PREVIEW's baseline is IN-WINDOW/Active (start -1d, end +60d) — the only state with verifiable live content (CMS-034 200); CMS-033 (future→404) toggles start to future in its own steps. Fixture drift-guard folded into td:validate:cms-pages; unit tests in scripts/unit/seed-pagebuilder-pages.test.mjs. CAVEAT (browser, delegated): storefront DOM render of all pages + the CMS-033/034 date-toggle reveal remain to be confirmed by qa-frontend-expert in the re-run.",
+    "changelog_1_5_36": "REG-2026-07-21-1438 PAGE-3/PAGE-4 reconcile completed on vcst (coordinator-approved). PAGE-3 (return policy): the PageBuilder multi-language model is TWO single-culture pages SHARING a permalink (not one group with pages[]) — reconciled /qa-return-policy to serve BOTH en-US 'QA Return Policy' (Published, group a08d0245 — promoted from the drifted 'QA Return Policy-2') AND de-DE 'QA Rückgaberichtlinie' (Published, group 216bcc85). Archived (reversible, NOT deleted) 5 drifted duplicates: QA Return Policy (copy)/(copy 2), QA Rückgaberichtlinie-DE -2, QA Rückgaberichtlinießde, QA Rückgaberichtlinie (copy 2). PB_RETURN_POLICY group_id now written to aliases.vcst.json (= EN group). PAGE-4 (summer): schedule set to future-launch baseline StartDate=+7d / EndDate=+60d (relative-to-now, recomputed each seed) per pagebuilder-pages.md — the CMS-033 not-yet-live→404 precondition; CMS-034 toggles StartDate to past per its own steps. seed-pagebuilder-pages.mjs extended with multiLang + schedule handling (idempotent); specs + unit tests + td:validate:cms-pages updated. CAVEAT (needs browser, delegated): the vcst storefront is an SPA returning HTTP 200 for every route, so EN-renders / DE-renders / wrong-language-404 (CMS-027/028/035) must be confirmed at DOM level by qa-frontend-expert; and the EN page's block content (content API returns null) may need UI re-authoring if the render is thin.",
+    "changelog_1_5_35": "REG-2026-07-21-1438 published-page unblock: added 5 inline PageBuilder page aliases (PB_HOMEPAGE, PB_WHOLESALE_GUIDE, PB_RETURN_POLICY, PB_SUMMER_PREVIEW, PB_PARTNER_SUPPORT) for the canonical qa-* pages (test-data/cms/pagebuilder-pages.md). ~22 published-page cases (CMS-027–035, 078–085, 121–125) were BLOCKED by test-data drift on vcst-qa (not a product bug): qa-homepage-spring-sale was Archived and qa-return-policy was displaced by drifted DE/copy variants. New reconcile seeder scripts/seed-data/cms/seed-pagebuilder-pages.mjs (npm run seed:cms-pages) restores canonical pages to Published + expected permalink via the PageBuilder REST API (POST /grouped upsert→Draft then /grouped/publishing/{id}?publish=true), idempotently, matching pages by EXACT name (never a '(copy)'/'-2' clone), reporting permalink conflicts instead of forcing. Single source of truth pagebuilder-pages-specs.mjs; drift-guard td:validate:cms-pages; unit tests scripts/unit/seed-pagebuilder-pages.test.mjs. Runtime group_id in aliases.vcst.json. Reconcile result on vcst 2026-07-21: PAGE-1 republished; PAGE-2/4/5 already Published; PAGE-3 (return-policy) CONFLICT — /qa-return-policy held by de-DE 'QA Rückgaberichtlinie', no clean en-US 'QA Return Policy' page exists → reported for manual cleanup.",
+    "changelog_1_5_34": "REG-2026-07-21-1438 unblock: added RESTRICTED_CMS_ADMIN inline alias — a restricted back-office Manager account (email AGENT-TEST-restricted-cms@test.virtocommerce.com, read-only Page Builder role AGENT-TEST-Restricted-CMS-Viewer = builder:access+builder:read, NO builder:update, isAdministrator=false) for suite 059 CMS-123 (Save/Load/Clone hidden/disabled) + CMS-124 (copy endpoint POST /api/page-builder-pages/grouped/{tgt}/content/{src} → 403 for restricted token). Both were BLOCKED because no such account existed (only Administrator + storefront/B2B accounts; storefront users 400 user_cannot_login_in_store on back-office /connect/token). Provisioned on vcst via scripts/seed-data/platform/seed-backoffice-rbac.mjs (npm run seed:rbac); single source of truth backoffice-rbac-specs.mjs; drift-guard td:validate:rbac; unit tests scripts/unit/seed-backoffice-rbac.test.mjs. Runtime platform_id/user_id/role_id in aliases.vcst.json; password is {{RESTRICTED_CMS_ADMIN_PASSWORD}} from .env.local (VCST-5406).",
     "changelog_1_5_33": "VCST-5233 CPN-062 collision fix: added COUPON_LC_CASEFIDELITY alias (CSV-backed → promotions/coupons COU-027, promo P21 'AGENT-TEST Lowercase Coupon Case Fidelity', 5% off cart, public+active). Its code 'agenttestlc062' is lowercase (/[a-z]/) and its all-uppercase form 'AGENTTESTLC062' is NOT a valid/existing coupon on vcst-qa (probed 2026-07-21: 0 matches), so the VCST-5233 uppercasing bug turns it INVALID (ValidateCoupon false) — a clean fail signal — instead of matching a wrong coupon. This replaces COUPON_SUPER('super') for CPN-062's apply/validate step, where uppercasing 'super' silently matched the UNRELATED live 'SUPER'/'Super Discount' coupon (20% off) and confounded the guard. COUPON_SUPER + COU-024 left intact for CPN-015 (display/copy case). New promo P21 (promotions.csv) + coupon COU-027 (coupons.csv) seeded via seed-promotions.mjs; drift guard: npm run td:validate:marketing; teardown: npm run seed:promotions:teardown -- --only P21.",
     "changelog_1_5_32": "VCST-5482 order/quote state fixtures (JSON-shaped-to-Swagger pilot): added 5 JSON-fixture aliases — COMPLETED_ORDER, SHIPPED_ORDER, PROCESSING_ORDER (test-data/orders/*.json), QUOTE_WITH_ADMIN_RESPONSE, ACCEPTED_QUOTE (test-data/quotes/*.json). These are the first `json`-backed aliases: static fields (number/status/currency/total) resolve from the Swagger-shaped fixture body, the runtime id resolves from aliases.<env>.json (seeded by scripts/seed-data/seed-order-states.mjs / seed-quotes.mjs, `npm run seed:orders`/`seed:quotes`). Single source of truth for state/transitions/aliases: scripts/seed-data/orders-specs.mjs; drift-guard: `npm run td:validate:orders`. Unblocks previously-DEFERRED order/quote states in suites 014/015. Feature-gated states (invoice/returns/substitution/negotiation/OOS/discontinued/expired) stay DEFERRED (see test-data/README.md).",
     "changelog_1_5_30": "VCST-5304/5469 TLC Phase-2/3 sync (2026-07-17, sales-rep pr-2-8c40 / theme 2.54.0-pr-2380-230b live verification): added platform_id field to ORG_SUSPENDED (was missing — needed so 050m's organizationId-vs-business-key drift fix (D1) can retarget not_served_org/unassigned_org assertions to the real platform GUID). Added SR_REP_NOCUSTOMERS_ORGCTX gap-fixture alias (test-data/sales-rep/sales-reps.csv, seeded=false — NOT ready for /qa-seed-data, needs a seeder enhancement to grant org-context membership without registering a served customer). Also fixed a pre-existing unquoted-comma data bug in sales-reps.csv row SR_REP_LOCKED's test_purpose field (silently absorbed before the context_org column existed; surfaced as a column-misalignment once the trailing column was added).",
@@ -3823,5 +3828,63 @@
       "context_org": "context_org"
     },
     "_notes": "RETIRED (TLC-2026-07-17-1603, VCST-5304/5469) — was a GAP fixture for the since-deprecated 089 SR-FE-030 (formerly SR-FE-013b). Live verification proved the state it targeted (permissioned rep + org context + zero served customers) is architecturally unreachable: a sales-rep org membership IS the served-customer relationship, so the seed-sales-rep.mjs enhancement this fixture depended on was the WRONG fix and was never built. Stays seeded=false permanently — do NOT seed, do NOT resolve @td(SR_REP_NOCUSTOMERS_ORGCTX.id) in any live run. Kept only for traceability of the retracted approach; see SALES_REP_NOCUSTOMERS for the genuinely-reachable replacement case (050m SR-GQL-041)."
+  },
+  "RESTRICTED_CMS_ADMIN": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account for CMS RBAC tests CMS-123/124 (suite 059-page-builder): authenticates into the back office but LACKS Page Builder update (builder:update) — read-only Page Builder role (builder:access + builder:read). isAdministrator=false so permission checks apply (an admin would get 204, not the 403 CMS-124 asserts). email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{RESTRICTED_CMS_ADMIN_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (written by scripts/seed-data/platform/seed-backoffice-rbac.mjs — npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
+    "email": "AGENT-TEST-restricted-cms@test.virtocommerce.com",
+    "login": "AGENT-TEST-restricted-cms@test.virtocommerce.com",
+    "password_var": "RESTRICTED_CMS_ADMIN_PASSWORD",
+    "role": "AGENT-TEST-Restricted-CMS-Viewer",
+    "excluded_permission": "builder:update",
+    "user_type": "Manager"
+  },
+  "PB_HOMEPAGE": {
+    "_inline": true,
+    "_comment": "Canonical PageBuilder page PAGE-1 (test-data/cms/pagebuilder-pages.md). Reconciled to Published @ /qa-homepage-spring-sale by scripts/seed-data/cms/seed-pagebuilder-pages.mjs (npm run seed:cms-pages). Runtime group_id in aliases.<env>.json. Suites 059/060 CMS-027/029/031/078-085.",
+    "name": "QA Homepage Spring Sale",
+    "permalink": "/qa-homepage-spring-sale",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_WHOLESALE_GUIDE": {
+    "_inline": true,
+    "_comment": "Canonical PageBuilder page PAGE-2 — user-group personalized (B2B Wholesale). Published @ /qa-wholesale-buyer-guide. Runtime group_id in aliases.<env>.json. CMS-024/025/121-125.",
+    "name": "QA Wholesale Buyer Guide 2026",
+    "permalink": "/qa-wholesale-buyer-guide",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_RETURN_POLICY": {
+    "_inline": true,
+    "_comment": "Canonical PageBuilder page PAGE-3 (EN) — multi-language EN+DE+FR sharing /qa-return-policy (separate single-culture pages, per the platform model). Runtime group_id in aliases.<env>.json. CMS-027/028/031/035.",
+    "name": "QA Return Policy",
+    "permalink": "/qa-return-policy",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_RETURN_POLICY_FR": {
+    "_inline": true,
+    "_comment": "fr-FR sibling of PAGE-3 sharing /qa-return-policy (serves /fr/qa-return-policy). Store cultures: en-GB (default), de-DE, fr-FR. Content in test-data/cms/page-content.json PB_RETURN_POLICY.fr-FR; runtime group_id in aliases.<env>.json (seed:cms-pages). CMS-027/035 FR coverage.",
+    "name": "QA Politique de retour et de remboursement",
+    "permalink": "/qa-return-policy",
+    "culture": "fr-FR",
+    "expect_status": "Published"
+  },
+  "PB_SUMMER_PREVIEW": {
+    "_inline": true,
+    "_comment": "Canonical PageBuilder page PAGE-4 — scheduled promo @ /qa-summer-collection-preview. Runtime group_id in aliases.<env>.json. CMS-030/033/034.",
+    "name": "QA Summer Collection Preview",
+    "permalink": "/qa-summer-collection-preview",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_PARTNER_SUPPORT": {
+    "_inline": true,
+    "_comment": "Canonical PageBuilder page PAGE-5 — org-restricted (TechFlow) @ /qa-partner-portal-support. Runtime group_id in aliases.<env>.json. CMS-024/025/026/030.",
+    "name": "QA Partner Portal Support",
+    "permalink": "/qa-partner-portal-support",
+    "culture": "en-US",
+    "expect_status": "Published"
   }
 }
