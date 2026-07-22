@@ -56,8 +56,9 @@ The clean status line (`vc-fix self-check: no plugin issues detected`) was gated
 - **`--self-diagnostics` enum-validated:** a malformed value (`yes` / `True` / `1`) silently coerced to `false` (capture OFF); now rejected like `--feedback-mode`.
 - **Write-probe false NOT-READY (M2/M3):** ADO `403` (the sampled work-item/branch is ACL-restricted) is now a distinct **`restricted`** verdict → WARN, no longer conflated with `401` (missing scope) → FAIL; and GitHub direct-mode no-push on the `vc-platform` **proxy** probe is WARN (the real push target is the per-bug routed repo, gated at `/qa-fix` Gate 1) instead of blocking onboarding. Neither weakens the real gate.
 - **Docs/lifecycle:** dropped the wrong `VC_FIX_DIAG_CONSENT=off` from `complete`'s no-op list (oracle + code comment); the age-cap now exempts the current session's `DELIVERY-<sid>-*` for symmetry.
+- **Code-quality follow-ups (PR #143 review, Lenajava1):** extracted `cmdFinalize`'s deeply-nested `suppressReason` ternary into a pure `computeSuppressReason()` with early returns (behavior-identical, still audit-only); and lifted the client-repo push→severity mapping (the user-visible WARN→FAIL bit) into a pure, unit-tested `clientRepoWriteSeverity()` in `probe-lib.mjs`, now shared by both the GitHub and Azure client-repo paths in `verify-access.mjs`.
 
-**Deferred (tracked separately, not in this PR):** live ADO verification of the write-probe *auth-before-validate* premise (a read-only PAT must 401/403 before body validation, else the probe can false-PASS); a `gen-profile` reconcile/merge value-preservation test.
+**Deferred (tracked separately, not in this PR):** live ADO verification of the write-probe *auth-before-validate* premise (a read-only PAT must 401/403 before body validation, else the probe can false-PASS).
 
 ### Fixed — self-diagnostics was blind to sessions that crossed a resume/compact (found by `/vc-self-check` itself)
 

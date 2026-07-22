@@ -1023,6 +1023,31 @@ async function cmdScan(ev) {
   saveState(statePath, state);
 }
 
+// Why nothing surfaced this turn — AUDIT ONLY, never affects behavior (extracted from cmdFinalize's
+// decision record for readability). Two branches:
+//   • CLEAN (freshCount === 0): the clean line was withheld. The "already handled / our own resume"
+//     guards (stop-hook-active, already-surfaced, self-check-session) are ordered BEFORE
+//     "awaiting-completion" so OUR OWN resume-turn's Stop (which fires after we surfaced + consumed
+//     the marker) is logged accurately, not mislabelled as a genuine mid-flight pause.
+//   • FLAGGED (freshCount > 0): a finding existed but its block was withheld by a guard.
+// `surfaced` ⇒ null (we DID surface). Pure; unit-covered via the finalize decision assertions.
+function computeSuppressReason({ surfaced, freshCount, pluginActivity, stopHookActive, promptedThisTurn, selfCheckSeen, consentOff, lineOff }) {
+  if (surfaced) return null;
+  if (freshCount === 0) {
+    if (!pluginActivity) return "no-plugin-activity";
+    if (stopHookActive) return "stop-hook-active";
+    if (promptedThisTurn) return "already-surfaced";
+    if (selfCheckSeen) return "self-check-session";
+    if (consentOff) return "consent-off";
+    if (lineOff) return "line-off";
+    return "awaiting-completion";
+  }
+  if (consentOff) return "consent-off";
+  if (stopHookActive) return "stop-hook-active";
+  if (selfCheckSeen) return "self-check-session";
+  return "already-surfaced";
+}
+
 async function cmdFinalize(ev) {
   const { root, dir, sid, jsonl, state: statePath } = await paths(ev);
   if (!captureEnabled(root)) return;
@@ -1169,40 +1194,17 @@ async function cmdFinalize(ev) {
     cleanupOffered: cleanupBlock, // did we surface the stale-artifact cleanup offer this turn
     completeSignalled: completePending, // did a skill signal its terminal step this run
     completedSkill: completePending ? (state.skillCompletePending?.skill ?? null) : null,
-    // Why nothing surfaced this turn (audit only — never affects behavior). The "already handled /
-    // our own resume" guards are checked FIRST so a suppression caused by OUR OWN resume-turn's Stop
-    // (which fires AFTER we surfaced + consumed the marker) is logged as "stop-hook-active" /
-    // "already-surfaced" — NOT misreported as "awaiting-completion" (the marker is null there because
-    // we consumed it, not because the run is still mid-flight). "awaiting-completion" is reserved for
-    // the genuine intermediate-pause state: a plugin skill ran, we have NOT surfaced this turn, and it
-    // has not signalled `complete` yet, so the clean line is deliberately withheld until its terminal step.
-    suppressReason: surfaced
-      ? null
-      : uniqueFresh.length === 0
-        ? (!pluginActivity
-            ? "no-plugin-activity"
-            : stopHookActive
-              ? "stop-hook-active"
-              : state.promptedThisTurn
-                ? "already-surfaced"
-                : state.selfCheckSeen
-                  ? "self-check-session"
-                  : consentOff
-                    ? "consent-off"
-                    : lineOff
-                      ? "line-off"
-                      : "awaiting-completion")
-        // ^ the residual clean-branch reason. Reaching here means clean + pluginActivity + none of
-        //   the guards above blocked; if cleanEligible were ALSO true, cleanBlock would have fired
-        //   and surfaced=true (→ null), so we can only be here with cleanEligible false — i.e.
-        //   awaiting the completion signal. (A separate "clean" leaf was unreachable — removed.)
-        : consentOff
-          ? "consent-off"
-          : stopHookActive
-            ? "stop-hook-active"
-            : state.selfCheckSeen
-              ? "self-check-session"
-              : "already-surfaced",
+    // Why nothing surfaced this turn (audit only — never affects behavior). See computeSuppressReason.
+    suppressReason: computeSuppressReason({
+      surfaced,
+      freshCount: uniqueFresh.length,
+      pluginActivity,
+      stopHookActive,
+      promptedThisTurn: state.promptedThisTurn,
+      selfCheckSeen: state.selfCheckSeen,
+      consentOff,
+      lineOff,
+    }),
   };
 
   appendRecord(jsonl, {

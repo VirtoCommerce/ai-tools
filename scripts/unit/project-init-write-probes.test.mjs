@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   classifyWriteProbe,
+  clientRepoWriteSeverity,
   githubCanWrite,
   permFromGithubPermissions,
   probeAdoWorkItemsWrite,
@@ -46,6 +47,18 @@ test("classifyWriteProbe: 400/409/422 → present (scope OK, invalid body reject
   assert.equal(classifyWriteProbe(400).scope, "present");
   assert.equal(classifyWriteProbe(409).scope, "present");
   assert.equal(classifyWriteProbe(422).scope, "present");
+});
+
+test("clientRepoWriteSeverity: the user-visible client-push severity mapping (LEO-gap: no push ⇒ FAIL)", () => {
+  // The row severity the /project-init readiness table shows for a client-repo push, shared by the
+  // GitHub (push→present/absent) and Azure (probe scope) paths in verify-access main().
+  assert.equal(clientRepoWriteSeverity("present"), "PASS", "write confirmed ⇒ READY");
+  assert.equal(clientRepoWriteSeverity("absent"), "FAIL", "no push ⇒ NOT READY (the LEO gap), not a false PASS/WARN");
+  assert.equal(clientRepoWriteSeverity("restricted"), "WARN", "ACL 403 is not proof the token lacks write ⇒ WARN, never a false FAIL");
+  assert.equal(clientRepoWriteSeverity("unverified"), "WARN", "inconclusive probe ⇒ WARN, never a false FAIL");
+  // A GitHub push boolean is coerced to present/absent by the caller — verify that contract holds.
+  assert.equal(clientRepoWriteSeverity(true ? "present" : "absent"), "PASS");
+  assert.equal(clientRepoWriteSeverity(false ? "present" : "absent"), "FAIL");
 });
 
 test("classifyWriteProbe: 2xx / 404 / redirect / network error → unverified (inconclusive)", () => {

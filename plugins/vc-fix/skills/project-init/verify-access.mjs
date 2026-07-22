@@ -38,6 +38,7 @@ import { pluginRoot } from "./lib/paths.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
+  clientRepoWriteSeverity,
 } from "./probe-lib.mjs";
 
 let TEST_ENV;
@@ -330,12 +331,12 @@ async function main() {
           // the LEO gap: get-repo 200 but push 401. Non-mutating: empty push body → 400 when
           // authorized, 401/403 when Code-write scope is absent.
           const wp = await probeAdoCodeWrite({ apiBase, authHeader: ado.header, repo: name });
-          if (wp.scope === "present") add(label, "PASS", `reachable + Code write via ${ado.via} (probe → ${wp.status})`);
-          else if (wp.scope === "absent") add(label, "FAIL",
-            `reachable but NO Code write (push probe → ${wp.status}) — /qa-fix pushes here; grant ADO PAT scopes: Code (Read & Write) + Pull Request (contribute)`);
-          else if (wp.scope === "restricted") add(label, "WARN",
-            `reachable via ${ado.via}; push probe → 403 — this repo/branch is ACL-restricted, NOT proof the PAT lacks Code write; confirm branch policies / repo permissions allow the fix branch`);
-          else add(label, "WARN", `reachable via ${ado.via}; Code write unverified (push probe → ${wp.status}) — confirm PAT Code (Read & Write)`);
+          const adoDetail =
+            wp.scope === "present" ? `reachable + Code write via ${ado.via} (probe → ${wp.status})`
+            : wp.scope === "absent" ? `reachable but NO Code write (push probe → ${wp.status}) — /qa-fix pushes here; grant ADO PAT scopes: Code (Read & Write) + Pull Request (contribute)`
+            : wp.scope === "restricted" ? `reachable via ${ado.via}; push probe → 403 — this repo/branch is ACL-restricted, NOT proof the PAT lacks Code write; confirm branch policies / repo permissions allow the fix branch`
+            : `reachable via ${ado.via}; Code write unverified (push probe → ${wp.status}) — confirm PAT Code (Read & Write)`;
+          add(label, clientRepoWriteSeverity(wp.scope), adoDetail);
         } catch (e) { add(label, "FAIL", e.message); }
       } else {
         // github client repo
@@ -349,7 +350,9 @@ async function main() {
             const repo = await res.json();
             const push = Boolean(repo.permissions?.push);
             // /qa-fix pushes + opens the PR here, so no push = NOT READY (FAIL), not WARN.
-            add(label, push ? "PASS" : "FAIL", push
+            // Route through clientRepoWriteSeverity (push→present/absent) so the severity mapping
+            // is the SAME tested pure function as the Azure path.
+            add(label, clientRepoWriteSeverity(push ? "present" : "absent"), push
               ? `push access via ${ghVia}`
               : `reachable (${ghVia}) but NO push perm — /qa-fix pushes here; grant GitHub repo/PR write on ${owner}/${name}`);
           } else add(label, "FAIL", `GET repos/${owner}/${name} → ${res.status}`);
