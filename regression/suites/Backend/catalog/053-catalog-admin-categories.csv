@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CAT-008","Add New Category","Catalog > Categories","Critical","BL-CAT-002","ECL-8.1","Admin logged in, at least one catalog exists","categoryName=AGENT-TEST-CAT-{run}; categoryCode=AGENT-TEST-CODE-{run}; descText=AGENT-TEST-DESC-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > Click on any catalog
+"CAT-008","Add New Category","Catalog > Categories","Critical","BL-CAT-009","ECL-8.1","Admin logged in, at least one catalog exists","categoryName=AGENT-TEST-CAT-{run}; categoryCode=AGENT-TEST-CODE-{run}; descText=AGENT-TEST-DESC-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > Click on any catalog
 [ACT] Click Add > Category
 [ASSERT] Verify new category screen displays
 [ASSERT] 'Category name' and 'Code' fields are marked required (asterisk visible)
@@ -15,32 +15,33 @@
 [STATE] System saves new category
 [DOM] Category appears in catalog tree","[API] GET /api/catalog/categories — verify new category returned
 [CONSOLE] No errors on create","Category not in tree after save; required field validation bypassed; code field not enforced","delete created category via Admin","VP-660, C123087","Automated"
-"CAT-009","Edit Existing Category","Catalog > Categories","High","BL-CAT-002","ECL-8.1","Admin logged in, test category exists","categoryName=AGENT-TEST-CAT-UPDATED-{run}; adminUrl={{BACK_URL}}","[NAV] Right-click on category > Manage
-[ASSERT] Verify edit screen displays with blocks: Name (required), Priority, Visible toggle, Code (required), Property block, Image, Tax type, Tags, SEO block, Search index block, Description
+"CAT-009","Edit Existing Category","Catalog > Categories","High","BL-CAT-009","ECL-8.1","Admin logged in, test category exists","categoryName=AGENT-TEST-CAT-UPDATED-{run}; adminUrl={{BACK_URL}}","[NAV] Right-click on category > Manage
+[ASSERT] Verify edit screen displays with blocks: Name (required), Localized name, Priority, Visible toggle, Code (required), Property block, Image, Tax type, SEO block, Search index block, Description
 [ACT] Fill 'Category name' with categoryName
 [ACT] Click Save
 [WAIT] Wait for save to complete (success toast visible)","[STATE] Edit screen displays with all data blocks
 [STATE] Required fields enforced
-[STATE] All listed data blocks render (Name, Priority, Visible, Code, Property, Image, Tax type, Tags, SEO, Search index, Description)
+[STATE] All listed data blocks render (Name, Localized name, Priority, Visible, Code, Property, Image, Tax type, SEO, Search index, Description)
 [TOAST] Success toast visible after save
 [DOM] Category tree shows categoryName after save","[API] GET /api/catalog/categories/{id} — verify updated data
 [CONSOLE] No errors on save","Blocks missing from edit screen; save fails silently; changes not reflected after save","restore original category name via Admin","VP-660, C123088","Automated"
-"CAT-010","Delete Category - Cancel","Catalog > Categories","High","BL-CAT-002","","Admin logged in, categories exist","adminUrl={{BACK_URL}}","[NAV] Right-click on category > Delete
+"CAT-010","Delete Category - Cancel","Catalog > Categories","High","BL-CAT-009","","Admin logged in, categories exist","adminUrl={{BACK_URL}}","[NAV] Right-click on category > Delete
 [ASSERT] Verify confirmation dialog
 [ACT] Click Cancel","[STATE] Confirmation dialog displays
 [STATE] System does not delete category
 [DOM] Category remains in catalog tree","[API] GET /api/catalog/categories — verify category still listed
 [CONSOLE] No errors","Category deleted despite Cancel; dialog not shown; tree item disappears","none","VP-660, C123089","Automated"
-"CAT-011","Delete Category - Confirm","Catalog > Categories","High","BL-CAT-002","ECL-5.1","Admin logged in, test category exists","adminUrl={{BACK_URL}}","[NAV] Right-click on test category > Delete
+"CAT-011","Delete Category - Confirm","Catalog > Categories","High","BL-CAT-009","ECL-5.1","Admin logged in, test category exists","adminUrl={{BACK_URL}}","[NAV] Right-click on test category > Delete
 [ASSERT] Verify confirmation dialog
-[ACT] Type 'Yes'
+[ACT] Type 'yes'
 [ACT] Click Confirm
-[ASSERT] Verify category removed","[STATE] Confirmation requires typing 'Yes'
+[WAIT] Wait for deletion to complete (confirmation dialog closes)
+[ASSERT] Verify category removed","[STATE] Confirmation requires typing 'yes' (lowercase, per live Admin copy)
 [STATE] System deletes category
 [STATE] Subcategories also deleted (GET /api/catalog/categories/{subId} returns 404)
 [STATE] Products in deleted category unassigned per cascade rules (not orphaned)","[API] GET /api/catalog/categories — verify absent
-[CONSOLE] No errors on delete","Category not removed; 'Yes' not required; subcategories become orphaned; products lost","none (category was created for deletion)","VP-660, C123089","Automated"
-"CAT-012","Add Tax Type to Category","Catalog > Categories","High","BL-CAT-003","","Admin logged in, category exists","taxTypeName=AGENT-TEST-TAX-{run}; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
+[CONSOLE] No errors on delete","Category not removed; 'yes' not required; subcategories become orphaned; products lost","none (category was created for deletion)","VP-660, C123089","Automated"
+"CAT-012","Add Tax Type to Category","Catalog > Categories","High","BL-CAT-012","","Admin logged in, category exists","taxTypeName=AGENT-TEST-TAX-{run}; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
 [NAV] Right-click on category > Manage
 [ACT] Click Edit button next to Tax type
 [ACT] Type taxTypeName into the tax type name field
@@ -52,19 +53,20 @@
 [TOAST] Save confirmation visible
 [DOM] New tax type appears in dropdown","[API] GET /api/catalog/categories/{id} — verify taxType in response
 [CONSOLE] No errors","Tax type not in dropdown; dictionary screen not accessible; save fails","delete added tax type via Admin","C180485","Automated"
-"CAT-013","Delete Tax Type from Category","Catalog > Categories","Medium","BL-CAT-003","","Admin logged in, tax type exists","adminUrl={{BACK_URL}}","[NAV] Navigate to category > Manage
+"CAT-013","Delete Tax Type from Category","Catalog > Categories","Medium","BL-CAT-012","","Admin logged in; a category exists (test creates and deletes its OWN throwaway tax type, never a pre-existing/shared value)","taxTypeName=AGENT-TEST-TAXDEL-{run}; adminUrl={{BACK_URL}}","[NAV] Navigate to category > Manage
 [ACT] Click Edit next to Tax type
-[ACT] Select checkbox opposite one tax type value
+[SETUP] Type taxTypeName into the tax type name field > Click Add (create a throwaway value to delete; do NOT touch pre-existing shared values)
+[ACT] Select the checkbox opposite taxTypeName (the throwaway just added)
 [ACT] Click Delete button
 [ACT] Click Save
 [WAIT] Wait for save to complete (success toast visible)
-[ASSERT] Verify tax type removed from list","[STATE] Manage dictionary values screen displays
+[ASSERT] Verify taxTypeName removed from the list","[STATE] Manage dictionary values screen displays
 [STATE] Checkbox selection works
-[STATE] Tax deleted from list
+[STATE] taxTypeName (the throwaway) deleted from the Current values list; pre-existing shared values untouched
 [STATE] Save button becomes active
 [STATE] Changes saved successfully","[API] GET /api/catalog/categories/{id} — verify taxType removed
-[CONSOLE] No errors","Tax type still appears after delete; checkbox not selectable; save button stays inactive","none","C345251","Automated"
-"CAT-014","Add New Image to Category","Catalog > Categories","High","BL-CAT-002","","Admin logged in, category exists, image file ready","imageFile=test-image.jpg; imageCategory=Main; lang=en-US; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
+[CONSOLE] No errors","Tax type still appears after delete; checkbox not selectable; save button stays inactive; a shared/pre-existing tax type deleted instead of the throwaway","delete taxTypeName via Admin if the delete step failed and it still remains","C345251","Automated"
+"CAT-014","Add New Image to Category","Catalog > Categories","High","BL-CAT-012","","Admin logged in, category exists, image file ready","imageFile=test-image.jpg; imageCategory=Main; lang=en-US; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
 [NAV] Right-click on category > Manage
 [ACT] Click on Images widget
 [ACT] Click Add button
@@ -82,7 +84,7 @@
 [DOM] Uploaded image findable in images list","[API] GET /api/catalog/categories/{id} — verify images array
 [NETWORK] Image URL returns 200
 [CONSOLE] No upload errors","Upload dialog not opening; drag-drop not working; image not persisted after save","delete uploaded image via Admin","C180491","Automated"
-"CAT-015","Add New SEO to Category","Catalog > Categories","High","BL-CAT-002","ECL-8.1","Admin logged in, category exists","seoUrl=AGENT-TEST-SEO-{run}; seoTitle=AGENT-TEST-TITLE-{run}; metaDesc=AGENT-TEST-META-{run}; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
+"CAT-015","Add New SEO to Category","Catalog > Categories","High","BL-CAT-012","ECL-8.1","Admin logged in, category exists","seoUrl=AGENT-TEST-SEO-{run}; seoTitle=AGENT-TEST-TITLE-{run}; metaDesc=AGENT-TEST-META-{run}; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
 [NAV] Right-click on category > Manage
 [ACT] Click on SEO widget
 [ACT] Click Add
@@ -96,7 +98,7 @@
 [STATE] SEO data applied to category","[API] GET /api/catalog/categories/{id} — verify SEO block
 [NAV] Navigate to {{FRONT_URL}} category URL — verify meta tags
 [CONSOLE] No errors","SEO widget not accessible; SEO data not saved; meta tags not rendered on storefront","delete SEO record via Admin","C180492","Automated"
-"CAT-016","Add QuickReview Description to Category","Catalog > Categories","High","BL-CAT-002","","Admin logged in, catalog with categoryName created","categoryName=AGENT-TEST-CAT-{run}; descText=AGENT-TEST-QR-{run}; lang=en-US; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Select categoryName
+"CAT-016","Add QuickReview Description to Category","Catalog > Categories","High","BL-CAT-012","","Admin logged in, catalog with categoryName created","categoryName=AGENT-TEST-CAT-{run}; descText=AGENT-TEST-QR-{run}; lang=en-US; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Select categoryName
 [ACT] Click Description widget
 [ACT] Click Add > Choose QuickReview type
 [ACT] Select 'EN-en' from the language dropdown
@@ -113,7 +115,7 @@
 [DOM] Description visible on storefront (via Liquid template)","[API] GET /api/catalog/categories/{id} — verify descriptions array
 [NAV] {{FRONT_URL}} category page — verify QuickReview content rendered
 [CONSOLE] No errors","Counter not incrementing; description not visible on storefront; Liquid template error in console","delete added description via Admin","C315282","Automated"
-"CAT-017","Add FullReview Description to Category","Catalog > Categories","Medium","BL-CAT-002","","Admin logged in, catalog with categoryName created","categoryName=AGENT-TEST-CAT-{run}; descText=AGENT-TEST-FR-{run}; lang=de-DE; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Select categoryName
+"CAT-017","Add FullReview Description to Category","Catalog > Categories","Medium","BL-CAT-012","","Admin logged in, catalog with categoryName created","categoryName=AGENT-TEST-CAT-{run}; descText=AGENT-TEST-FR-{run}; lang=de-DE; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Select categoryName
 [ACT] Click Description widget
 [ACT] Click Add > Choose FullReview type
 [ACT] Select 'DE-de' from the language dropdown
@@ -131,7 +133,7 @@
 [STATE] Language switching works correctly","[API] GET /api/catalog/categories/{id} — verify descriptions array includes DE entry
 [NAV] {{FRONT_URL}} category page with DE locale — verify FullReview content
 [CONSOLE] No errors","Localized content not rendered; language switch breaks layout; counter not updating","delete added description via Admin","C315289","Automated"
-"CAT-018","Delete Category with Descriptions","Catalog > Categories","High","BL-CAT-002","ECL-5.1","Catalog with categoryName created, description_1 added to categoryName","categoryName=AGENT-TEST-CAT-{run}; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Locate categoryName with description_1
+"CAT-018","Delete Category with Descriptions","Catalog > Categories","High","BL-CAT-009","ECL-5.1","Catalog with categoryName created, description_1 added to categoryName","categoryName=AGENT-TEST-CAT-{run}; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Locate categoryName with description_1
 [ACT] Right-click > Delete categoryName
 [ACT] Confirm deletion
 [NAV] Check on storefront
@@ -142,7 +144,7 @@
 [STATE] Deletion properly cascades","[API] GET /api/catalog/categories — verify absent
 [NAV] {{FRONT_URL}} — verify category not in navigation
 [CONSOLE] No errors","Orphaned descriptions remain; category still visible on storefront; 500 error on storefront after delete","none (category was created for deletion)","C315283","Automated"
-"CAT-036","Category Image Upload - File Picker Method (distinct from CAT-014 drag-drop)","Catalog > Category > Images","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}), a test image file (JPG or PNG under 5 MB) ready for upload","imageFile=test-category.jpg; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+"CAT-036","Category Image Upload - File Picker Method (distinct from CAT-014 drag-drop)","Catalog > Category > Images","Medium","BL-CAT-012","","Admin logged in to Backend ({{BACK_URL}}), a test image file (JPG or PNG under 5 MB) ready for upload","imageFile=test-category.jpg; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
 [NAV] Open an existing category or create a new one
 [ACT] Click on the Images tab within the category blade
 [ACT] Click the Upload or Add Image button
@@ -156,7 +158,7 @@
 [NETWORK] Image URL is accessible and renders in the browser","[NETWORK] Image URL returns 200
 [API] GET /api/catalog/categories/{id} — verify images array
 [CONSOLE] No upload errors","Upload dialog not opening; upload fails with no error; thumbnail not shown after upload","delete uploaded image via Admin","C180491","Not Automated"
-"CAT-037","Category SEO Configuration - Store-Scoped (distinct from CAT-015 general SEO widget)","Catalog > Category > SEO","Medium","BL-CAT-002","ECL-8.1","Admin logged in to Backend ({{BACK_URL}}), Stores module accessible with at least one store configured","seoSlug=AGENT-TEST-SLUG-{run}; pageTitle=AGENT-TEST-PT-{run}; metaDesc=AGENT-TEST-MD-{run}; storeId={{STORE_ID}}; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+"CAT-037","Category SEO Configuration - Store-Scoped (distinct from CAT-015 general SEO widget)","Catalog > Category > SEO","Medium","BL-CAT-012","ECL-8.1","Admin logged in to Backend ({{BACK_URL}}), Stores module accessible with at least one store configured","seoSlug=AGENT-TEST-SLUG-{run}; pageTitle=AGENT-TEST-PT-{run}; metaDesc=AGENT-TEST-MD-{run}; storeId={{STORE_ID}}; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
 [NAV] Open an existing category
 [ACT] Click on the SEO tab within the category blade
 [ACT] Click Add SEO or select a store to configure SEO
@@ -184,7 +186,7 @@
 [STATE] Reopened category shows the updated Visible value
 [STATE] No errors occur on save","[API] GET /api/catalog/categories/{id} — verify isVisible field toggled
 [CONSOLE] No errors","Checkbox not toggling; state reverts after save; API not reflecting UI change","restore original Visible state via Admin","C292384","Not Automated"
-"CAT-040","Unit of Measure Group CRUD","Catalog > Units of Measure","Medium","BL-CAT-008","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), Catalog module with UoM feature enabled","groupName=AGENT-TEST-UOM-{run}; updatedName=AGENT-TEST-UOM-UPD-{run}; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module > Units of Measure section
+"CAT-040","Unit of Measure Group CRUD","Catalog > Measures","Medium","BL-CAT-008","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), Catalog module with Measures feature enabled","groupName=AGENT-TEST-UOM-{run}; updatedName=AGENT-TEST-UOM-UPD-{run}; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module > Measures section
 [ACT] Click Add to create a new UoM group
 [ACT] Enter group name groupName
 [ACT] Click Save
@@ -201,9 +203,9 @@
 [STATE] Group name updates correctly on edit
 [STATE] Delete action removes the group permanently
 [STATE] No orphaned data remains after deletion
-[STATE] All CRUD operations complete without errors","[API] GET /api/catalog/measureunits — verify group lifecycle
+[STATE] All CRUD operations complete without errors","[API] GET /api/catalog/measures — verify group lifecycle
 [CONSOLE] No errors","Group not created; edit not saved; delete leaves orphaned units; API returns stale data","none (group created and deleted within test)","Catalog admin coverage gap (TLC-2026-06-23); see BL-CAT-008","Not Automated"
-"CAT-041","Unit of Measure Unit CRUD","Catalog > Units of Measure","Medium","BL-CAT-008","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), at least one UoM group exists","unitName=AGENT-TEST-UNIT-{run}; shortName=ATU; conversionFactor=1.0; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module > Units of Measure
+"CAT-041","Unit of Measure Unit CRUD","Catalog > Measures","Medium","BL-CAT-008","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), at least one Measure group exists","unitName=AGENT-TEST-UNIT-{run}; shortName=ATU; conversionFactor=1.0; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module > Measures
 [NAV] Open an existing UoM group
 [ACT] Click Add Unit
 [ACT] Fill 'Unit name' with unitName
@@ -223,7 +225,7 @@
 [STATE] Unit name, short name, and conversion factor save correctly
 [STATE] Edited values persist after save
 [STATE] Deleted unit no longer appears in the group list
-[STATE] Group integrity is maintained after unit deletion","[API] GET /api/catalog/measureunits/{groupId} — verify unit lifecycle
+[STATE] Group integrity is maintained after unit deletion","[API] GET /api/catalog/measures/{groupId} — verify unit lifecycle
 [CONSOLE] No errors","Unit not created; conversion factor not saved; delete leaves unit in UI; group integrity broken","none (unit created and deleted within test)","Catalog admin coverage gap (TLC-2026-06-23); see BL-CAT-008","Not Automated"
 "CAT-044","Category Automatic Links","Catalog > Category > Links","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}), category linked to a virtual catalog","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
 [NAV] Open a category that has virtual catalog associations
@@ -236,7 +238,7 @@
 [STATE] Stale links from deleted associations are not shown
 [STATE] No errors appear when viewing the Links tab","[API] GET /api/catalog/categories/{id}/links — verify links array
 [CONSOLE] No errors","Stale links shown after reassignment; broken link navigation; links tab errors","none","Catalog admin coverage gap (TLC-2026-06-23)","Not Automated"
-"CAT-054","Move Category Across Catalogs - Cascade CatalogId to Subcategories","Catalog > Categories > Move","High","BL-CAT-002","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs exist (source + destination)","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; parentCat=AGENT-TEST-MOVE-PARENT-{run}; childCat=AGENT-TEST-MOVE-CHILD-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
+"CAT-054","Move Category Across Catalogs - Cascade CatalogId to Subcategories","Catalog > Categories > Move","High","BL-CAT-011","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs exist (source + destination)","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; parentCat=AGENT-TEST-MOVE-PARENT-{run}; childCat=AGENT-TEST-MOVE-CHILD-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
 [ACT] Create category parentCat in srcCatalog root
 [ACT] Open parentCat > create subcategory childCat inside it
 [ASSERT] Both parentCat and childCat report CatalogId = srcCatalog
@@ -252,7 +254,7 @@
 [API] GET /api/catalog/categories/{parentCatId} — verify catalogId == dstCatalog id
 [API] GET /api/catalog/categories/{childCatId} — verify catalogId == dstCatalog id (cascade)
 [CONSOLE] No errors during move","childCat retains source catalogId after move (PR #882 regression); descendant orphaned across catalogs; parentCat moved but subcategories left in source catalog; move returns 500 or times out","delete parentCat (cascades childCat) from dstCatalog via Admin","VCST-5082, PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"
-"CAT-055","Move Category Across Catalogs - Cascade CatalogId to Products","Catalog > Categories > Move","High","BL-CAT-002","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs exist (source + destination)","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; parentCat=AGENT-TEST-MOVE-PARENT-{run}; childCat=AGENT-TEST-MOVE-CHILD-{run}; prodInParent=AGENT-TEST-MOVE-PRODA-{run}; prodInChild=AGENT-TEST-MOVE-PRODB-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
+"CAT-055","Move Category Across Catalogs - Cascade CatalogId to Products","Catalog > Categories > Move","High","BL-CAT-011","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs exist (source + destination)","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; parentCat=AGENT-TEST-MOVE-PARENT-{run}; childCat=AGENT-TEST-MOVE-CHILD-{run}; prodInParent=AGENT-TEST-MOVE-PRODA-{run}; prodInChild=AGENT-TEST-MOVE-PRODB-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
 [ACT] Create category parentCat in srcCatalog root and subcategory childCat inside it
 [ACT] Create physical product prodInParent inside parentCat
 [ACT] Create physical product prodInChild inside childCat
@@ -268,7 +270,7 @@
 [API] GET /api/catalog/products/{prodInParentId} — verify catalogId == dstCatalog id
 [API] GET /api/catalog/products/{prodInChildId} — verify catalogId == dstCatalog id (cascade through subcategory)
 [CONSOLE] No errors during move","Product retains source catalogId after move (PR #882 regression) — product becomes mis-indexed / invisible / orphaned; products under nested subcategories not updated; move returns 500","delete parentCat (cascades childCat and both products) from dstCatalog via Admin","VCST-5082, PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"
-"CAT-056","Move Category Within Same Catalog - CatalogId Unchanged","Catalog > Categories > Move","Medium","BL-CAT-002","ECL-5.1","Admin logged in; at least one physical catalog exists","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); parentCat=AGENT-TEST-MOVE-INTRA-{run}; childCat=AGENT-TEST-MOVE-INTRACHILD-{run}; targetCat=AGENT-TEST-MOVE-TARGET-{run}; prodInChild=AGENT-TEST-MOVE-INTRAPROD-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
+"CAT-056","Move Category Within Same Catalog - CatalogId Unchanged","Catalog > Categories > Move","Medium","BL-CAT-011","ECL-5.1","Admin logged in; at least one physical catalog exists","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); parentCat=AGENT-TEST-MOVE-INTRA-{run}; childCat=AGENT-TEST-MOVE-INTRACHILD-{run}; targetCat=AGENT-TEST-MOVE-TARGET-{run}; prodInChild=AGENT-TEST-MOVE-INTRAPROD-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
 [ACT] Create category targetCat in srcCatalog root
 [ACT] Create category parentCat in srcCatalog root with subcategory childCat and product prodInChild inside childCat
 [ASSERT] parentCat, childCat and prodInChild report CatalogId = srcCatalog
@@ -283,7 +285,7 @@
 [API] GET /api/catalog/categories/{parentCatId} and {childCatId} — verify catalogId == srcCatalog id (unchanged)
 [API] GET /api/catalog/products/{prodInChildId} — verify catalogId == srcCatalog id (unchanged)
 [CONSOLE] No errors during move","CatalogId changed on intra-catalog move (over-eager cascade from PR #882 fix); subtree dropped or duplicated; move fails for same-catalog reparent","delete parentCat and targetCat from srcCatalog via Admin","VCST-5082, PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"
-"CAT-057","Move Category Across Catalogs - Linked Product Not Cascaded","Catalog > Categories > Move","Medium","BL-CAT-002","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs (source + destination) exist; a third physical catalog owns a product","srcCatalog=physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; ownerCatalog=a third physical catalog (isVirtual=false, distinct from src/dst); linkedProduct=AGENT-TEST-LINK-PROD-{run} created in ownerCatalog; movingCat=AGENT-TEST-LINK-CAT-{run} in srcCatalog; adminUrl={{BACK_URL}}","[NAV] Open Catalog module
+"CAT-057","Move Category Across Catalogs - Linked Product Not Cascaded","Catalog > Categories > Move","Medium","BL-CAT-011","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs (source + destination) exist; a third physical catalog owns a product","srcCatalog=physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; ownerCatalog=a third physical catalog (isVirtual=false, distinct from src/dst); linkedProduct=AGENT-TEST-LINK-PROD-{run} created in ownerCatalog; movingCat=AGENT-TEST-LINK-CAT-{run} in srcCatalog; adminUrl={{BACK_URL}}","[NAV] Open Catalog module
 [ACT] Create physical product linkedProduct in ownerCatalog (its CatalogId = ownerCatalog)
 [ACT] Create category movingCat in srcCatalog
 [ACT] Link linkedProduct into movingCat (Admin: open movingCat > add existing product as link; API equivalent POST /api/catalog/listentrylinks with entryId=linkedProduct, categoryId=movingCat, catalogId=srcCatalog)
@@ -297,33 +299,36 @@
 [DOM] linkedProduct still resolves under ownerCatalog","[API] GET /api/catalog/categories/{movingCatId} — verify catalogId == dstCatalog id
 [API] GET /api/catalog/products/{linkedProductId} — verify catalogId == ownerCatalog id (NOT dstCatalog)
 [CONSOLE] No errors during move","Linked (non-owned) product CatalogId rewritten to destination catalog (cascade over-reach corrupting a foreign-catalog product); linked product deleted or duplicated by the move; move returns 500","delete movingCat from dstCatalog and linkedProduct from ownerCatalog via Admin","VCST-5082, PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"
-"CAT-058","Catalog Link Permissions Registered (categories:link / products:link)","Catalog > Security > Permissions","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}); Catalog module installed (v14 line >= 3.1002.9 / v15 line >= 3.1029.3)","adminUrl={{BACK_URL}}","[NAV] Open Security > Roles > Add (or open any existing role)
+"CAT-058","Catalog Link Permissions Registered (categories:link / products:link)","Catalog > Security > Permissions","Medium","BL-CAT-010","","Admin logged in to Backend ({{BACK_URL}}); Catalog module installed (v14 line >= 3.1002.9 / v15 line >= 3.1029.3)","adminUrl={{BACK_URL}}","[NAV] Open Security > Roles > Add (or open any existing role)
 [NAV] Open the permission picker and filter the Catalog permission group
 [ASSERT] Permission 'catalog:categories:link' ('Link categories to other categories/catalogs') is listed
-[ASSERT] Permission 'catalog:products:link' ('Link products/variations to categories/catalogs') is listed","[STATE] Both catalog link permissions appear in the Catalog permission group
-[STATE] Descriptions render as text (not raw i18n resource keys)","[API] GET /api/platform/security/permissions — response contains 'catalog:categories:link' and 'catalog:products:link'
+[ASSERT] Permission 'catalog:products:link' ('Link products/variations to categories/catalogs') is listed","[STATE] Both catalog link permissions appear in the Catalog permission group {SPEC}
+[STATE] Descriptions render as text (not raw i18n resource keys) {SPEC}","[API] GET /api/platform/security/permissions — response contains 'catalog:categories:link' and 'catalog:products:link'
 [CONSOLE] No errors","Either permission missing (Module.cs registration not applied on this build); permission shows a raw i18n key instead of a description","none","VCST-5318, PR #898 (VirtoCommerce/vc-module-catalog); backported 3.1002.9 (v14) / 3.1029.3 (v15)","Not Automated"
-"CAT-059","Mapping Picker Default - Categories And Items Both Selectable (No Restriction)","Catalog > Category > Map","High","BL-CAT-002","","Admin logged in ({{BACK_URL}}) with full permissions (includes catalog:categories:link); a virtual catalog containing at least one category and one product exists","virtualCatalog=live-discover first virtual catalog (POST /api/catalog/catalogs/search, isVirtual=true); adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open the virtual catalog (or a category within it)
+"CAT-059","Mapping Picker Default - Categories And Items Both Selectable (No Restriction)","Catalog > Category > Map","High","BL-CAT-010","","Admin logged in ({{BACK_URL}}) with full permissions (includes catalog:categories:link); a virtual catalog containing at least one category and one product exists","virtualCatalog=live-discover first virtual catalog (POST /api/catalog/catalogs/search, isVirtual=true); adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open the virtual catalog (or a category within it)
 [ACT] Click Add > Link
 [ACT] Select a source catalog that contains both categories and products
 [ASSERT] The 'Choose categories and items for mapping' picker opens
-[ACT] Toggle a category row checkbox and a product/item row checkbox","[STATE] Both CATEGORY rows and PRODUCT/ITEM rows expose working selection checkboxes
-[STATE] A category can be checked and the 'Map' action becomes enabled
-[STATE] Behaviour unchanged vs pre-VCST-5318 (backward-compatible default, AC-4)","[DOM] Category rows expose an enabled checkbox in the picker
-[CONSOLE] No errors","Categories NOT selectable even though the user HAS catalog:categories:link (over-restriction / regression of the default behaviour)","Cancel the picker without saving; if a link was saved, delete it via Admin","VCST-5318 AC-4, PR #898 (VirtoCommerce/vc-module-catalog)","Not Automated"
-"CAT-060","Mapping Picker Restricted - Categories Not Selectable Without categories:link","Catalog > Category > Map","High","BL-CAT-002","","Admin can manage Security roles; a virtual catalog with categories + products exists. The restricted role MUST carry full base platform/manager access MINUS catalog:categories:link, else the user is denied platform access at login and never reaches the picker","restrictedRole=AGENT-TEST-NoCatLink-{run} (duplicate of a full-access role, remove ONLY catalog:categories:link, keep catalog:products:link); restrictedUser=AGENT-TEST-nocatlink-{run}; restrictedUserPwd={{DEFAULT_TEST_PASSWORD}}; adminUrl={{BACK_URL}}","[ACT] As admin, create restrictedRole = duplicate of a full-access role, then remove ONLY 'catalog:categories:link' (keep 'catalog:products:link' and all base access)
+[ACT] Toggle a category row checkbox
+[ACT] Toggle a product/item row checkbox","[STATE] Both CATEGORY rows and PRODUCT/ITEM rows expose working selection checkboxes {SPEC}
+[STATE] A category can be checked and the 'Map' action becomes enabled {SPEC}
+[STATE] Behaviour unchanged vs pre-VCST-5318 (backward-compatible default, AC-4) {SPEC}","[DOM] Category rows expose an enabled checkbox in the picker
+[CONSOLE] No errors","Categories NOT selectable even though the user HAS catalog:categories:link (over-restriction / regression of the default behaviour); picker fails to open at all (blocking the whole mapping flow)","Cancel the picker without saving; if a link was saved, delete it via Admin","VCST-5318 AC-4, PR #898 (VirtoCommerce/vc-module-catalog)","Not Automated"
+"CAT-060","Mapping Picker Restricted - Categories Not Selectable Without categories:link","Catalog > Category > Map","High","BL-CAT-010","","Admin can manage Security roles; a virtual catalog with categories + products exists. The restricted role MUST carry full base platform/manager access MINUS catalog:categories:link, else the user is denied platform access at login and never reaches the picker","restrictedRole=AGENT-TEST-NoCatLink60-{run} (duplicate of a full-access role, remove ONLY catalog:categories:link, keep catalog:products:link); restrictedUser=AGENT-TEST-nocatlink60-{run}; restrictedUserPwd={{DEFAULT_TEST_PASSWORD}}; adminUrl={{BACK_URL}}","[ACT] As admin, create restrictedRole = duplicate of a full-access role, then remove ONLY 'catalog:categories:link' (keep 'catalog:products:link' and all base access)
 [ACT] Create restrictedUser and assign only restrictedRole
 [NAV] In a fresh browser context, log in as restrictedUser
 [ASSERT] restrictedUser reaches the Admin manager (base access intact)
 [NAV] Open Catalog > the virtual catalog > Add > Link > select a source catalog
-[ASSERT] The 'Choose categories and items for mapping' picker opens","[STATE] CATEGORY rows are NOT selectable — checkbox hidden/disabled/greyed (AC-1)
-[STATE] PRODUCT/ITEM rows ARE still selectable (AC-2)
-[STATE] A category cannot be checked; the user cannot map an entire category tree","[DOM] Category rows have no usable checkbox; product/item rows do
-[CONSOLE] No errors","Categories STILL selectable for the restricted user (fix not enforced on this build — the important negative); restricted user denied platform access at login (base-access misconfig in the test role, not a product defect — fix the role scope)","Delete restrictedUser and restrictedRole; never save a mapping","VCST-5318 AC-1/AC-2, PR #898 (VirtoCommerce/vc-module-catalog); backported 3.1002.9 (v14) / 3.1029.3 (v15)","Not Automated"
-"CAT-061","Category Link Rejected For Restricted Role (API + UI)","Catalog > Category > Map","Medium","BL-CAT-002","","restrictedUser from CAT-060 exists (role has catalog:products:link but NOT catalog:categories:link); a virtual catalog + a source category available to attempt linking","restrictedUser=AGENT-TEST-nocatlink-{run}; restrictedUserPwd={{DEFAULT_TEST_PASSWORD}}; adminUrl={{BACK_URL}}","[AUTH] Obtain an access token for restrictedUser (POST /connect/token, password grant)
-[ACT] Attempt to link a CATEGORY entry via API: POST /api/catalog/listentrylinks with a category entry (entryId=categoryId, mapping a whole category)
-[ASSERT] The request is rejected (403 Forbidden / clear permission error)
-[ACT] Attempt to link a PRODUCT/ITEM entry via API for the same user
-[ASSERT] The product link succeeds (2xx)","[STATE] Category link attempt rejected with a clear permission message; no category link is created (AC-3)
-[STATE] Product/item link still allowed (catalog:products:link retained)","[API] POST /api/catalog/listentrylinks (category entry) -> 403; (product entry) -> 2xx
-[CONSOLE] No errors","Category link created despite missing catalog:categories:link (server-side enforcement missing on this build); product link also blocked (over-restriction)","Delete any product link created; delete restrictedUser/role (shared with CAT-060)","VCST-5318 AC-3, PR #898 (VirtoCommerce/vc-module-catalog); CatalogModuleListEntryController","Not Automated"
+[ASSERT] The 'Choose categories and items for mapping' picker opens","[STATE] CATEGORY rows are NOT selectable — checkbox hidden/disabled/greyed (AC-1) {SPEC}
+[STATE] PRODUCT/ITEM rows ARE still selectable (AC-2) {SPEC}
+[STATE] A category cannot be checked; the user cannot map an entire category tree {SPEC}","[DOM] Category rows have no usable checkbox; product/item rows do
+[CONSOLE] No errors","Categories STILL selectable for the restricted user (fix not enforced on this build — the important negative); restricted user denied platform access at login (base-access misconfig in the test role, not a product defect — fix the role scope)","Never save a mapping. Delete restrictedUser and restrictedRole via Admin (CAT-060 owns its own fixture; CAT-061 is now independent)","VCST-5318 AC-1/AC-2, PR #898 (VirtoCommerce/vc-module-catalog); backported 3.1002.9 (v14) / 3.1029.3 (v15)","Not Automated"
+"CAT-061","Category Link Rejected For Restricted Role (API + UI)","Catalog > Category > Map","Medium","BL-CAT-010","","Admin can manage Security roles; a virtual catalog + a source category and product available to attempt linking. Self-contained: this case creates and tears down its OWN restricted role/user (independent of CAT-060)","restrictedRole=AGENT-TEST-NoCatLink61-{run} (duplicate of a full-access role, remove ONLY catalog:categories:link, keep catalog:products:link + all base access); restrictedUser=AGENT-TEST-nocatlink61-{run}; restrictedUserPwd={{DEFAULT_TEST_PASSWORD}}; adminUrl={{BACK_URL}}","[SETUP] As admin, create restrictedRole = duplicate of a full-access role, then remove ONLY 'catalog:categories:link' (keep 'catalog:products:link' and all base access)
+[SETUP] Create restrictedUser with password restrictedUserPwd and assign only restrictedRole
+[AUTH] Obtain an access token for restrictedUser (POST /connect/token, password grant)
+[HTTP] POST /api/catalog/listentrylinks with a CATEGORY entry (entryId=categoryId, mapping a whole category)
+[ASSERT] Response rejected (403 Forbidden / clear permission error)
+[HTTP] POST /api/catalog/listentrylinks with a PRODUCT/ITEM entry for the same user
+[ASSERT] Response succeeds (2xx)","[STATUS] Category-entry link request returns 403 Forbidden with a permission-denied error (AC-3) {SPEC}
+[STATUS] Product/item-entry link request returns 2xx (catalog:products:link retained) {SPEC}","[API] POST /api/catalog/listentrylinks (category entry) -> 403; (product entry) -> 2xx
+[CONSOLE] No errors","Category link created despite missing catalog:categories:link (server-side enforcement missing on this build); product link also blocked (over-restriction)","Delete any category/product link created; delete restrictedUser and restrictedRole via Admin (owns its own fixture)","VCST-5318 AC-3, PR #898 (VirtoCommerce/vc-module-catalog); CatalogModuleListEntryController","Not Automated"

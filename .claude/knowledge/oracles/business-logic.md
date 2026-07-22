@@ -560,6 +560,30 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Group/unit not created; edit not persisted; delete leaves orphaned units or stale API data; group integrity broken after a unit deletion.
 - **Agents:** qa-backend-expert (Admin SPA + REST `/api/catalog/measures`; permissions `Measures*`)
 
+### BL-CAT-009: Category CRUD & cascade-delete integrity `[P1-data]`
+- **Rule:** Creating, editing, or deleting a category persists atomically. Required fields (Name, Code) are enforced on create. Deleting a category **cascades** to its subcategories and its descriptions, and unassigns (does not orphan) products per cascade rules. A cancelled delete makes no change.
+- **Verify:** Create category → appears in tree + `GET /api/catalog/categories`. Edit name → persists. Delete-confirm removes it + subcategories (`GET …/{subId}` → 404) + descriptions; Delete-cancel leaves it intact.
+- **Violation signal:** Required-field validation bypassed; category not in tree after save; subcategories/descriptions orphaned after delete; category deleted despite Cancel.
+- **Agents:** qa-backend-expert (Catalog API, Admin SPA)
+
+### BL-CAT-010: Catalog link-permission enforcement (RBAC) `[P1-data]`
+- **Rule:** Linking a whole **category** into another category/catalog requires the `catalog:categories:link` permission; linking a **product/variation** requires `catalog:products:link`. Enforcement is **server-side** on `POST /api/catalog/listentrylinks` (403 without the permission) **and** reflected in the Admin mapping picker (category rows non-selectable without `categories:link`; product/item rows follow `products:link`). With full permissions both remain selectable (backward-compatible default).
+- **Verify:** Full-perm user → mapping picker shows category + item checkboxes. Role minus `categories:link` → category rows non-selectable, product rows still selectable; `POST /api/catalog/listentrylinks` with a category entry → 403, with a product entry → 2xx. Both permissions registered with human-readable descriptions (`GET /api/platform/security/permissions`).
+- **Violation signal:** Categories selectable / category link created despite missing `categories:link` (server enforcement absent); product link blocked when `products:link` retained (over-restriction); permission renders a raw i18n key instead of a description.
+- **Agents:** qa-backend-expert (CatalogModuleListEntryController, Admin SPA mapping picker, security permissions)
+
+### BL-CAT-011: Cross-catalog move cascades CatalogId to owned entities, not linked `[P1-data]`
+- **Rule:** Moving a category **across** physical catalogs cascades the destination `CatalogId` to every **owned** descendant category and **owned** product in the moved subtree. An **intra-catalog** move leaves `CatalogId` unchanged (no spurious cascade). A **linked (non-owned)** product referenced by the moved subtree is never rewritten, relocated, duplicated, or deleted.
+- **Verify:** Cross-catalog move → parent + child + owned products report the destination `CatalogId` (`GET …/categories|products/{id}`; `POST /api/catalog/listentries/move`). Intra-catalog move → `CatalogId` unchanged. Linked foreign-catalog product → `CatalogId` stays its owner catalog.
+- **Violation signal:** Descendant/product retains source `CatalogId` after move → mis-indexed/orphaned; intra-catalog move changes `CatalogId` (over-eager cascade); linked non-owned product rewritten to the destination catalog.
+- **Agents:** qa-backend-expert (`POST /api/catalog/listentries/move`, catalog API)
+
+### BL-CAT-012: Category dictionary-value & metadata management `[P2-ux]`
+- **Rule:** Adding or removing a category **tax-type dictionary value**, **SEO** record (store-scoped), **image**, or **localized description** persists to the category and is **scoped to the value acted on** — deleting one dictionary value must not remove other shared values. SEO/description changes render on the storefront, respecting locale.
+- **Verify:** Add a tax-type value → in dropdown + `GET …/{id}`. Delete a self-created value → only that value gone, shared values intact. Add SEO/image/description → persists + renders on the storefront for the correct locale.
+- **Violation signal:** Save fails silently; a shared/pre-existing dictionary value deleted instead of the target; SEO/description not rendered on storefront; localized description shown under the wrong locale.
+- **Agents:** qa-backend-expert (Catalog API, Admin SPA), qa-frontend-expert (storefront SEO/description render)
+
 ---
 
 ## Domain 8: Cross-Domain Invariants (BL-CROSS)
@@ -1154,7 +1178,7 @@ P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-dat
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 |
 | Users & Auth | BL-AUTH-001–013 | 13 | 3 | 9 | 1 |
 | B2B / Organization | BL-B2B-001–011 | 11 | 4 | 7 | 0 |
-| Catalog & Inventory | BL-CAT-001–008 | 8 | 2 | 3 | 3 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 |
 | Cross-Domain | BL-CROSS-001–012 | 12 | 7 | 5 | 0 |
 | Search | BL-SRCH-001–005 | 5 | 0 | 3 | 2 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 |
