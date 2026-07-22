@@ -1,3 +1,9 @@
+---
+description: "Comprehensive code review: 9 parallel review agents (tests, lint, quality, security, style, test quality, performance, deps/deployment, simplification) + synthesized verdict."
+argument-hint: "[branch | commit SHA | PR number/URL | file path(s)] (defaults to current branch/staged/HEAD diff)"
+disable-model-invocation: true
+---
+
 # Code Review
 
 Run a comprehensive code review using parallel agents, then synthesize findings.
