@@ -18,7 +18,8 @@
  *   BLL-004 [Medium]   ID domain-prefix not declared by its `## Domain` heading (misfiled)
  *   BLL-005 [Informational] non-contiguous NNN within a domain (amend/supersede gaps are legit)
  * Coverage cross-ref against regression/suites/**.csv (mechanical half of Dim-6 BL-002/BL-004):
- *   BLC-002 [High]     a suite's Business_Rule cites a BL-* ID absent from the oracle (false traceability)
+ *   BLC-002 [High]     a suite's Business_Rule cites a BL-* ID absent from the oracle (false traceability).
+ *                      `PROPOSED-BL-*` forward-references (awaiting promotion) are exempt — not flagged.
  *   BLC-004 [Medium]   a P0/P1 invariant referenced by NO test case (uncovered) — P2 downgraded to Informational
  *
  * NOT here (need docs/live/source or knowledge judgment → the skill):
@@ -171,6 +172,24 @@ function walkCsv(dir: string): string[] {
   return out;
 }
 
+/**
+ * BL-* ids genuinely cited in a Business_Rule cell, EXCLUDING `PROPOSED-BL-*`
+ * forward-references. A `PROPOSED-BL-XXX-NNN` cite deliberately points at an invariant
+ * still awaiting promotion (see /qa-review-bl proposals) — it is neither coverage of an
+ * existing invariant nor a dangling reference, so it must not drive BLC-002/BLC-004.
+ * (The `\b` in BL_TOKEN_RE sits at the `-`→`B` boundary inside `PROPOSED-BL-…`, so
+ * without this guard the bare `BL-XXX-NNN` leaks out and gets mis-flagged.)
+ */
+export function extractReferencedBlIds(cell: string): string[] {
+  const out: string[] = [];
+  for (const m of cell.matchAll(BL_TOKEN_RE)) {
+    const at = m.index ?? 0;
+    if (cell.slice(Math.max(0, at - 9), at).toUpperCase().endsWith("PROPOSED-")) continue;
+    out.push(m[0]);
+  }
+  return out;
+}
+
 /** Map BL-* ID → list of case IDs whose Business_Rule column references it. */
 function buildCoverage(suitesRoot: string): { byBl: Map<string, string[]>; referenced: Set<string> } {
   const byBl = new Map<string, string[]>();
@@ -184,11 +203,11 @@ function buildCoverage(suitesRoot: string): { byBl: Map<string, string[]>; refer
     }
     for (const r of rows) {
       const cell = r["Business_Rule"] ?? "";
-      for (const m of cell.matchAll(BL_TOKEN_RE)) {
-        referenced.add(m[0]);
-        const arr = byBl.get(m[0]) ?? [];
+      for (const id of extractReferencedBlIds(cell)) {
+        referenced.add(id);
+        const arr = byBl.get(id) ?? [];
         if (r.ID && !arr.includes(r.ID)) arr.push(r.ID);
-        byBl.set(m[0], arr);
+        byBl.set(id, arr);
       }
     }
   }

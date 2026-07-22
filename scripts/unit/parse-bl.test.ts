@@ -4,7 +4,7 @@
 // Run: `npx tsx --test scripts/unit/parse-bl.test.ts` / `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseOracle, lint } from "../knowledge/lint-bl.ts";
+import { parseOracle, lint, extractReferencedBlIds } from "../knowledge/lint-bl.ts";
 
 const ORACLE = `---
 applicability: reference
@@ -137,4 +137,21 @@ test("BLC-002 Medium when a suite cites a BL id absent from the oracle", () => {
   // a real, referenced invariant must NOT produce BLC-002 or BLC-004
   assert.ok(!findings.some((x) => x.rule === "BLC-002" && x.id === "BL-PRICE-001"));
   assert.ok(!findings.some((x) => x.rule === "BLC-004" && x.id === "BL-PRICE-001"));
+});
+
+test("extractReferencedBlIds skips PROPOSED- forward-refs but keeps bare cites (BLC-002 false-positive fix)", () => {
+  // A cell mixing a real cite, a bare ghost cite, and a PROPOSED- forward-reference.
+  const ids = extractReferencedBlIds("BL-PRICE-001; BL-GHOST-002; PROPOSED-BL-ORD-011");
+  assert.deepEqual(ids, ["BL-PRICE-001", "BL-GHOST-002"], "PROPOSED-BL-ORD-011 must be excluded; bare cites kept");
+
+  // The same bare id IS captured when it appears without the PROPOSED- prefix elsewhere,
+  // so a genuine bare false-traceability cite still surfaces even if a PROPOSED- form also exists.
+  assert.deepEqual(
+    extractReferencedBlIds("PROPOSED-BL-SEC-001; BL-SEC-001"),
+    ["BL-SEC-001"],
+    "the bare BL-SEC-001 is kept; only the PROPOSED- form is skipped",
+  );
+
+  // Suffixed ids (e.g. BL-CFG-058A) and the prefix guard both hold.
+  assert.deepEqual(extractReferencedBlIds("PROPOSED-BL-CART-015"), []);
 });
