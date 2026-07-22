@@ -297,3 +297,33 @@
 [DOM] linkedProduct still resolves under ownerCatalog","[API] GET /api/catalog/categories/{movingCatId} — verify catalogId == dstCatalog id
 [API] GET /api/catalog/products/{linkedProductId} — verify catalogId == ownerCatalog id (NOT dstCatalog)
 [CONSOLE] No errors during move","Linked (non-owned) product CatalogId rewritten to destination catalog (cascade over-reach corrupting a foreign-catalog product); linked product deleted or duplicated by the move; move returns 500","delete movingCat from dstCatalog and linkedProduct from ownerCatalog via Admin","VCST-5082, PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"
+"CAT-058","Catalog Link Permissions Registered (categories:link / products:link)","Catalog > Security > Permissions","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}); Catalog module installed (v14 line >= 3.1002.9 / v15 line >= 3.1029.3)","adminUrl={{BACK_URL}}","[NAV] Open Security > Roles > Add (or open any existing role)
+[NAV] Open the permission picker and filter the Catalog permission group
+[ASSERT] Permission 'catalog:categories:link' ('Link categories to other categories/catalogs') is listed
+[ASSERT] Permission 'catalog:products:link' ('Link products/variations to categories/catalogs') is listed","[STATE] Both catalog link permissions appear in the Catalog permission group
+[STATE] Descriptions render as text (not raw i18n resource keys)","[API] GET /api/platform/security/permissions — response contains 'catalog:categories:link' and 'catalog:products:link'
+[CONSOLE] No errors","Either permission missing (Module.cs registration not applied on this build); permission shows a raw i18n key instead of a description","none","VCST-5318, PR #898 (VirtoCommerce/vc-module-catalog); backported 3.1002.9 (v14) / 3.1029.3 (v15)","Not Automated"
+"CAT-059","Mapping Picker Default - Categories And Items Both Selectable (No Restriction)","Catalog > Category > Map","High","BL-CAT-002","","Admin logged in ({{BACK_URL}}) with full permissions (includes catalog:categories:link); a virtual catalog containing at least one category and one product exists","virtualCatalog=live-discover first virtual catalog (POST /api/catalog/catalogs/search, isVirtual=true); adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open the virtual catalog (or a category within it)
+[ACT] Click Add > Link
+[ACT] Select a source catalog that contains both categories and products
+[ASSERT] The 'Choose categories and items for mapping' picker opens
+[ACT] Toggle a category row checkbox and a product/item row checkbox","[STATE] Both CATEGORY rows and PRODUCT/ITEM rows expose working selection checkboxes
+[STATE] A category can be checked and the 'Map' action becomes enabled
+[STATE] Behaviour unchanged vs pre-VCST-5318 (backward-compatible default, AC-4)","[DOM] Category rows expose an enabled checkbox in the picker
+[CONSOLE] No errors","Categories NOT selectable even though the user HAS catalog:categories:link (over-restriction / regression of the default behaviour)","Cancel the picker without saving; if a link was saved, delete it via Admin","VCST-5318 AC-4, PR #898 (VirtoCommerce/vc-module-catalog)","Not Automated"
+"CAT-060","Mapping Picker Restricted - Categories Not Selectable Without categories:link","Catalog > Category > Map","High","BL-CAT-002","","Admin can manage Security roles; a virtual catalog with categories + products exists. The restricted role MUST carry full base platform/manager access MINUS catalog:categories:link, else the user is denied platform access at login and never reaches the picker","restrictedRole=AGENT-TEST-NoCatLink-{run} (duplicate of a full-access role, remove ONLY catalog:categories:link, keep catalog:products:link); restrictedUser=AGENT-TEST-nocatlink-{run}; restrictedUserPwd={{DEFAULT_TEST_PASSWORD}}; adminUrl={{BACK_URL}}","[ACT] As admin, create restrictedRole = duplicate of a full-access role, then remove ONLY 'catalog:categories:link' (keep 'catalog:products:link' and all base access)
+[ACT] Create restrictedUser and assign only restrictedRole
+[NAV] In a fresh browser context, log in as restrictedUser
+[ASSERT] restrictedUser reaches the Admin manager (base access intact)
+[NAV] Open Catalog > the virtual catalog > Add > Link > select a source catalog
+[ASSERT] The 'Choose categories and items for mapping' picker opens","[STATE] CATEGORY rows are NOT selectable — checkbox hidden/disabled/greyed (AC-1)
+[STATE] PRODUCT/ITEM rows ARE still selectable (AC-2)
+[STATE] A category cannot be checked; the user cannot map an entire category tree","[DOM] Category rows have no usable checkbox; product/item rows do
+[CONSOLE] No errors","Categories STILL selectable for the restricted user (fix not enforced on this build — the important negative); restricted user denied platform access at login (base-access misconfig in the test role, not a product defect — fix the role scope)","Delete restrictedUser and restrictedRole; never save a mapping","VCST-5318 AC-1/AC-2, PR #898 (VirtoCommerce/vc-module-catalog); backported 3.1002.9 (v14) / 3.1029.3 (v15)","Not Automated"
+"CAT-061","Category Link Rejected For Restricted Role (API + UI)","Catalog > Category > Map","Medium","BL-CAT-002","","restrictedUser from CAT-060 exists (role has catalog:products:link but NOT catalog:categories:link); a virtual catalog + a source category available to attempt linking","restrictedUser=AGENT-TEST-nocatlink-{run}; restrictedUserPwd={{DEFAULT_TEST_PASSWORD}}; adminUrl={{BACK_URL}}","[AUTH] Obtain an access token for restrictedUser (POST /connect/token, password grant)
+[ACT] Attempt to link a CATEGORY entry via API: POST /api/catalog/listentrylinks with a category entry (entryId=categoryId, mapping a whole category)
+[ASSERT] The request is rejected (403 Forbidden / clear permission error)
+[ACT] Attempt to link a PRODUCT/ITEM entry via API for the same user
+[ASSERT] The product link succeeds (2xx)","[STATE] Category link attempt rejected with a clear permission message; no category link is created (AC-3)
+[STATE] Product/item link still allowed (catalog:products:link retained)","[API] POST /api/catalog/listentrylinks (category entry) -> 403; (product entry) -> 2xx
+[CONSOLE] No errors","Category link created despite missing catalog:categories:link (server-side enforcement missing on this build); product link also blocked (over-restriction)","Delete any product link created; delete restrictedUser/role (shared with CAT-060)","VCST-5318 AC-3, PR #898 (VirtoCommerce/vc-module-catalog); CatalogModuleListEntryController","Not Automated"
