@@ -85,7 +85,7 @@ After synthesis and before writing the final report:
 4. If any proposals remain after steps 2–3, write `reports/ba/bl-proposals-{date}.md` using the template below. If both arrays are empty, skip the file.
 5. **`/ba-analyze` itself never writes to `knowledge/oracles/business-logic.md`.** Its BL candidates come from opportunistic, often single-axis observation during analysis — that is by definition **not confirmed**, so it only ever stages drafts to `bl-proposals-{date}.md`. Do not bulk-promote, do not promote "all approved," do not infer approval from silence from a `/ba-analyze` run. **Auto-apply to the oracle happens only through `/qa-review-bl`** — the dedicated triangulation flow that confirms each candidate against **docs + live + source** (all three) before a body-only edit, and routes anything unconfirmed back to this same `bl-proposals-{date}.md`. So: `/ba-analyze` → drafts; `/qa-review-bl` → confirmed auto-apply + drafts for the rest. To act on this run's drafts, hand them to `/qa-review-bl` (or promote a specific approved entry by hand).
 
-**`bl-proposals-{date}.md` template** (identical to the `/qa-test-lifecycle --update-bl` format so promoters see a consistent shape regardless of source):
+**`bl-proposals-{date}.md` template** (identical to the format `/qa-test-lifecycle` Phase 4c and `/qa-review-bl` use for unconfirmed items, so a human sees a consistent shape regardless of source):
 
 ```markdown
 # Business Logic Proposals — BA-{date}

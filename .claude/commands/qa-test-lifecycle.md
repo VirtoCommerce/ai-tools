@@ -36,7 +36,8 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | `--layer <name>` | Scope to a specific layer: `api`, `graphql`, `admin`, `storefront`, `e2e` |
 | `--report-only` | Run all phases but don't modify any CSV files — output report only |
 | `--ci` | CI mode: skip browser verification, apply all updates without confirmation, output machine-readable JSON |
-| `--update-bl` | Run the **BL-audit phase (4c)**: collect BL candidates + staleness signals from Phases 2–3, then invoke `/qa-review-bl` to triangulate each against **docs + live + source** and **auto-apply the confirmed ones** to `business-logic.md` (body-only, gated by a 3-source evidence bar, not human approval). Unconfirmed/contradictory/retire items are drafted to `reports/ba/bl-proposals-<date>.md`; the audit trail is `reports/knowledge/BL-AUDIT-<date>.md`. |
+
+> **BL audit is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (stale refs + new-rule candidates); **Phase 4c always runs, scoped to exactly those candidates** — triangulating each against docs + live + source via `/qa-review-bl` and auto-applying the confirmed ones. No candidates ⇒ 4c is a no-op. For a broader sweep (a whole domain, not just what this run touched), use standalone `/qa-review-bl domain <name>`. (The former `--update-bl` opt-in flag is retired — the audit is safe by default because it's gated by the 3-source evidence bar, so there's nothing to opt into.)
 
 ---
 
@@ -247,8 +248,8 @@ Reclassify each case:
 - Re-run structural validation (CSV format, required fields, ID uniqueness)
 - Update `config/test-suites.json` testCount if cases were added/removed
 
-**BL staleness detection (when `--update-bl` is set):**
-- For each BL-* referenced by a STALE/BROKEN case, note it as a candidate for the **BL-audit phase** (Phase 4b) — record `{id, currentRule, observedBehavior, sourceOfChange, affectedCases}` so `/qa-review-bl` triangulates it against docs + live + source before any edit.
+**BL staleness detection (always):**
+- For each BL-* referenced by a STALE/BROKEN case, note it as a candidate for the **BL-audit phase** (Phase 4c) — record `{id, currentRule, observedBehavior, sourceOfChange, affectedCases}` so `/qa-review-bl` triangulates it against docs + live + source before any edit.
 - Phase 2 itself never edits `business-logic.md`; it only feeds the audit phase. A single-signal staleness note is not confirmation.
 
 **Phase 2 output:**
@@ -322,9 +323,9 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
    - Read `knowledge/api/graphql-schema.md`
    - Validate every query/mutation: name exists, args match, `command` wrapper on mutations, response fields match return types
    - If query/mutation doesn't exist in schema → do NOT generate a case for it
-7. **BL candidate collection (when `--update-bl` is set):**
+7. **BL candidate collection (always):**
    - For each generated case whose gap maps to a testable business rule not already in `business-logic.md`, record a BL **candidate** (`BL-<DOMAIN>-<NNN>` shape, severity, **Rule**/**Verify**/**Violation signal**/**Agents**, `PROPOSED-` prefix, mandatory source).
-   - Add to `blProposals.new[]` in the delegation output. Phase 3 does NOT edit `business-logic.md` — candidates are handed to the **BL-audit phase (4b)**, which triangulates each against docs + live + source and auto-applies only the confirmed ones.
+   - Add to `blProposals.new[]` in the delegation output. Phase 3 does NOT edit `business-logic.md` — candidates are handed to the **BL-audit phase (4c)**, which triangulates each against docs + live + source and auto-applies only the confirmed ones.
 8. **Present to user** as Feature Test Matrix for approval before proceeding
 
 ---
@@ -370,14 +371,16 @@ The core seven:
 
 After fixes: re-run structure validation to confirm no regressions.
 
-#### 4c. BL Audit (when `--update-bl` is set)
+#### 4c. BL Audit (always — scoped to the run's BL candidates)
 
-Run the **BL-audit phase** — the triangulation that replaces the old draft-only
-`--update-bl` behavior. Invoke **`/qa-review-bl`** on the affected domains (and on the
-`blProposals.new[]` / staleness candidates from Phases 2–3), delegating to
-`ba-system-analyzer`:
+Run the **BL-audit phase** automatically. Its scope is exactly the `BL-*` this run
+surfaced — the `blProposals.new[]` new-rule candidates (Phase 3) + the staleness
+candidates (Phase 2). **If neither produced any candidates, 4c is a no-op** (nothing to
+audit). It does NOT audit a whole domain — for that, run standalone `/qa-review-bl
+domain <name>`. Invoke **`/qa-review-bl`** on the surfaced candidates, delegating to
+`ba-system-analyzer` (parallel fan-out, single-writer apply):
 
-- Each candidate/affected `BL-*` is triangulated against **docs + live + source code**.
+- Each candidate `BL-*` is triangulated against **docs + live + source code**.
 - **CONFIRMED / DRIFT / MISSING** (unanimous evidence) → auto-applied to `business-logic.md` (body-only, `Amended:`+`Source:` stamp, env-agnostic).
 - **CONTRADICTORY / UNGROUNDED / STALE-RETIRE** → drafted to `reports/ba/bl-proposals-<date>.md` for a human (retiring is never auto-applied).
 - The run's `reports/knowledge/BL-AUDIT-<date>.md` is the audit trail; its outcome feeds the Phase 6 **G6** gate.
@@ -426,7 +429,7 @@ The orchestrator (you) evaluates all phases:
 | G3: Completeness | <=3 High findings | Yes |
 | G4: Testability | 0 Critical findings | Yes |
 | G5: Data Validity | 0 Critical/Blocker findings | Yes |
-| G6: Coverage | BL-* mapping >= 80% for P0/P1 cases; **and (if `--update-bl` ran) the BL-audit (4c) left 0 CONTRADICTORY invariants unresolved** | Recommended |
+| G6: Coverage | BL-* mapping >= 80% for P0/P1 cases; **and (if 4c surfaced candidates) the BL-audit left 0 CONTRADICTORY invariants unresolved** | Recommended |
 | G7: Duplication | No same-layer duplicates | Recommended |
 | G8: Environment | 0 BROKEN findings | Yes (if verified) |
 | G9: Sync | All STALE cases updated, all BROKEN addressed | Yes (if synced) |
@@ -516,8 +519,8 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 ## Files Modified
 - [list of CSV files with change summary]
 
-## BL Audit (if `--update-bl`)
-- Triangulated K invariants — X CONFIRMED/DRIFT/MISSING **auto-applied** to `business-logic.md`; Y drafted to `reports/ba/bl-proposals-<date>.md` (unconfirmed/contradictory/retire). Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`.
+## BL Audit (when the run surfaced BL candidates)
+- Triangulated K invariants — X CONFIRMED/DRIFT/MISSING **auto-applied** to `business-logic.md`; Y drafted to `reports/ba/bl-proposals-<date>.md` (unconfirmed/contradictory/retire). Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`. (Omit this section if 4c had no candidates.)
 
 ## Next Steps
 - [ ] Address "Must Fix" items
@@ -526,7 +529,7 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 - [ ] Review `reports/ba/bl-proposals-<date>.md` — the items the audit could NOT confirm (human decision); confirmed items already landed in `business-logic.md`
 ```
 
-### `bl-proposals.md` (only when `--update-bl` ran)
+### `bl-proposals.md` (only when 4c could not confirm an item)
 
 ```markdown
 # Business Logic Proposals — {RUN_ID}
@@ -680,7 +683,7 @@ Output: structured JSON with:
   - reviewFindings: [{caseId, dimension, severity, issue, suggestedFix}]
   - fixesApplied: [{caseId, issue, fixAction}]
   - manualItems: [{caseId, issue, dimension}]
-  - blProposals (only when --update-bl): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, currentRule, observedBehavior, source, affectedCases, suggestedAction}]}
+  - blProposals (candidates surfaced this run, fed to Phase 4c): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, currentRule, observedBehavior, source, affectedCases, suggestedAction}]}
   - statistics: {totalCases, synced, generated, findings, autoFixed, manualRemaining}
   - filesModified: [paths]
 ```
@@ -742,4 +745,4 @@ Output: per-case verification:
 - **Report always written** — even with `--report-only`, produce the full report
 - **Build verification before pipeline** — always run pre-flight build verification and include version info in report
 - **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `graphql-schema.md`
-- **BL updates run through the audit (`--update-bl` → Phase 4c → `/qa-review-bl`).** Confirmed invariants (CONFIRMED/DRIFT/MISSING with agreeing docs + live + source evidence) are **auto-applied** to `business-logic.md`, body-only, gated by the 3-source evidence bar — not by human approval. Unconfirmed/contradictory items, and any retire, are drafted to `reports/ba/bl-proposals-<date>.md` for a human. Every entry — applied or drafted — must cite its sources; env-agnostic, no env names/URLs/slugs.
+- **BL updates run through the audit (Phase 4c → `/qa-review-bl`), automatically.** Phase 4c always runs, scoped to the `BL-*` this run surfaced (no candidates ⇒ no-op); there is no opt-in flag. Confirmed invariants (CONFIRMED/DRIFT/MISSING with agreeing docs + live + source evidence) are **auto-applied** to `business-logic.md`, body-only, gated by the 3-source evidence bar — not by human approval. Unconfirmed/contradictory items, and any retire, are drafted to `reports/ba/bl-proposals-<date>.md` for a human. Every entry — applied or drafted — must cite its sources; env-agnostic, no env names/URLs/slugs.

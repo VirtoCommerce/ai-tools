@@ -49,9 +49,11 @@ Audit the Business Logic oracle (`.claude/knowledge/oracles/business-logic.md`) 
    ```
    `scripts/knowledge/lint-bl.ts` parses all 149 invariants into structured fields, flags structural issues (**BLL-001** dup ID, **BLL-002** bad severity tag, **BLL-003** missing required field, **BLL-004** misfiled prefix, **BLL-005** sequence gaps), and cross-references `regression/suites/**` (**BLC-002** a suite cites a BL absent from the oracle; **BLC-004** an invariant no test case covers). Use its `invariants[]` as the work-list and its `findings[]` to seed the audit (a BLC-002 is a candidate rename/MISSING; a BLC-004 is a coverage gap for Step 4).
 
-### Step 1: Triangulate each in-scope invariant (ba-system-analyzer)
+### Step 1: Triangulate each in-scope invariant — PARALLEL fan-out (ba-system-analyzer)
 
-Dispatch **ba-system-analyzer** to gather all three evidence axes for each invariant (see bl-audit-criteria.md for the per-domain source map). For every BL, capture concrete evidence, never a bare opinion:
+Triangulation is read-only and per-invariant, so **run it in parallel**. Split the in-scope invariants into disjoint batches (by domain, then chunk) and dispatch **up to 3 `ba-system-analyzer` agents concurrently** (one Agent-tool call per batch, all in a single message — matches the 3-slot browser pool, `.claude/rules/agents.md` "batch in groups of 3"). Each parallel agent gets its **own isolated browser slot** (`playwright-firefox` / `playwright-chrome` / `playwright-edge` — never shared), and a **distinct test/org user** if the live axis needs auth (shared org cart contaminates — `feedback_concurrent_runners_distinct_org_users_taskstop`). A parallel agent **gathers evidence + assigns a verdict + returns the proposed edit only — it does NOT write to `business-logic.md`** (that is the serialized Step 3).
+
+For every BL, each agent captures the three axes with concrete evidence, never a bare opinion (see bl-audit-criteria.md for the per-domain source map):
 
 - **Docs axis** — `/vc-docs` (VirtoOZ MCP). Pick the topic-scoped tool by domain (e.g. `StorefrontUserGuide`/`StorefrontDeveloperGuide` for cart/checkout UX, `PlatformDeveloperGuide` for platform/admin, `*SourceCode` for "where is this implemented"). Capture a **quote + doc reference**.
 - **Source axis** — GitHub MCP `search_code` / `get_file_contents` on `org:VirtoCommerce` (read-only; QA never clones). Capture a **`file:line` anchor** and the relevant code shape.
@@ -61,7 +63,9 @@ Dispatch **ba-system-analyzer** to gather all three evidence axes for each invar
 
 Apply the taxonomy above using the decision table in bl-audit-criteria.md. A verdict of CONFIRMED/DRIFT/MISSING **requires** an evidence tuple from all three axes that agree; any missing or conflicting axis ⇒ UNGROUNDED / CONTRADICTORY.
 
-### Step 3: Apply policy
+### Step 3: Apply policy — SINGLE-WRITER fan-in
+
+Collect the verdicts from all parallel agents, then apply **serially, one entry at a time, in this one orchestrator process**. Concurrent writes to `business-logic.md` race and corrupt the file — the parallel agents returned proposed edits (Step 1), they did not write. For MISSING, re-read the current max `BL-<DOMAIN>-NNN` immediately before each insert so two parallel-discovered new invariants can't claim the same ID.
 
 - **CONFIRMED / DRIFT / MISSING (unanimous, evidenced)** → **auto-apply** to `business-logic.md`:
   - Edit the **entry body only** — never rewrite the meta Severity-Tags table (a separate edit if ever needed).
@@ -87,6 +91,7 @@ Write `reports/knowledge/BL-AUDIT-<date>.md` (see `.claude/rules/reports.md` —
 ## Rules
 
 - **Auto-apply is gated by evidence, never by silence.** A change lands ONLY as CONFIRMED/DRIFT/MISSING with concrete, agreeing evidence from all three axes. No evidence on an axis ⇒ not confirmed ⇒ proposals file. (This deliberately replaces the former "never auto-edit business-logic.md / human per-entry approval" rule; see the memory update in the design.)
+- **Parallel fan-out, single-writer fan-in.** Triangulate in parallel (≤3 browser agents, disjoint batches, isolated sessions), but apply to `business-logic.md` from **one** serialized writer (the orchestrator). Parallel agents return proposed edits; they never write the oracle themselves — concurrent writes race and corrupt it.
 - **Body-only edits.** Never rewrite the Severity-Tags meta table as a side effect (`feedback_bl_promotion_table_separately`).
 - **Env-agnostic** (`feedback_bl_oracle_env_agnostic`). No env names, URLs, or slugs in any applied entry — even in a `Source:`/evidence note.
 - **Reversible.** Every applied edit is recorded in the BL-AUDIT report and lives in a git-tracked file; keep edits minimal and per-entry so a single one can be reverted.
@@ -97,14 +102,15 @@ Write `reports/knowledge/BL-AUDIT-<date>.md` (see `.claude/rules/reports.md` —
 
 | Situation | Agent | Browser |
 |-----------|-------|---------|
-| Triangulation (docs + source + verdict + apply) | **ba-system-analyzer** | playwright-firefox (own live checks) |
-| Live behavior confirmation (the `{OBSERVED}` axis) | **qa-testing-expert** | playwright-firefox |
+| Triangulation batch (docs + source + live + verdict) — **up to 3 in parallel** | **ba-system-analyzer** ×N | one distinct slot each: `playwright-firefox` / `playwright-chrome` / `playwright-edge` |
+| A single complex/high-risk live repro the batch agent can't safely observe | **qa-testing-expert** | its own slot (sequential, not a 4th concurrent browser) |
+| Apply to `business-logic.md` (Step 3) | the **orchestrator** (this skill) — single writer, serialized | — |
 | Test-case `Business_Rule` remap (Step 4) | **test-management-specialist** via `/qa-review-tests --fix` | — |
 
-Schedule ba-system-analyzer's firefox NOT in parallel with a QA firefox session (max 3 concurrent browser agents; see `.claude/rules/agents.md`).
+**Concurrency cap: 3 browser agents total** (`.claude/rules/agents.md`). In parallel mode each batch agent does its **own** live observation on its assigned slot — it does NOT additionally sub-delegate the live axis to `qa-testing-expert` (that would exceed the cap). Reserve `qa-testing-expert` for a follow-up single-invariant deep-dive, run sequentially. Each parallel agent uses a **distinct browser session + distinct test user**; never share.
 
 ## Integration with Other Skills
 
 - **`/qa-review-tests`** — the downstream reconciliation (Step 4). BL-002/BL-004 there are the judgment twins of this skill's BLC-002/BLC-004.
-- **`/qa-test-lifecycle`** — runs this skill as its **BL-audit phase** (replacing the old draft-only `--update-bl` step); its Phase 6 G6 gate reads the audit outcome.
+- **`/qa-test-lifecycle`** — runs this skill as its **always-on BL-audit phase (4c)**, scoped to the `BL-*` a run surfaced (no opt-in flag — the old draft-only `--update-bl` step is retired); its Phase 6 G6 gate reads the audit outcome.
 - **`/ba-analyze`** — the other producer of BL candidates; unconfirmed items from both flows share `reports/ba/bl-proposals-<date>.md`.
