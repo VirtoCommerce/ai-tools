@@ -189,8 +189,13 @@ test("opt-in mid-run: a `complete` signal surfaces the clean line even with no c
     assert.equal(fin.decision.pluginActivity, true, "the `complete` signal establishes pluginActivity despite no command span");
     assert.equal(fin.decision.completeSignalled, true);
     assert.equal(fin.decision.surfaced, true);
-    // No command span exists (the /project-init prompt predated the flag) — the tool spans are still captured.
-    assert.equal(spansOf(readSpans(home, "midrun"), "command", "project-init").length, 0, "no command span for the missed prompt");
+    // UPDATED (Fix 2): the run is now represented by ONE synthesized command span (the /project-init
+    // prompt predated the flag, so no span opened at UserPromptSubmit — the `complete` marker triggers
+    // synthesis at the terminal Stop so its tool ops roll up and any failure becomes flaggable). A clean
+    // run → a `success` command span (no blocking errors in the two Bash ops).
+    const cmd = spansOf(readSpans(home, "midrun"), "command", "project-init");
+    assert.equal(cmd.length, 1, "the missed /project-init run is represented by a synthesized command span");
+    assert.equal(cmd[0].outcome, "success", "a clean synthesized run classifies success");
     assert.ok(spansOf(readSpans(home, "midrun"), "tool", "Bash").length >= 1, "tool spans are captured from the flag write onward");
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -1081,30 +1086,37 @@ test("checkpoint (background_tasks): a Stop with a pending bg task records `defe
   }
 });
 
-test("checkpoint (background_tasks isolated): the field defers even with NO open agent op", () => {
+// UPDATED (Fix 1, LEO 2026-07-22): this test previously asserted that a non-empty `background_tasks`
+// with NO open agent op DEFERS. That encoded the exact bug we now fix — a FOREIGN background task (a
+// run_in_background SHELL task, or another session's work) is not scoped to this session and must not
+// force perpetual deferral. `background_tasks` is now matched against THIS session's own open agent ops;
+// a bg entry whose id matches none of ours is foreign and ignored, and the hard guard (zero open agent
+// ops → never defer) forces a TERMINAL finalize. This is the LEO /project-init scenario (agent_calls:0,
+// empty openOps, yet the platform surfaced a foreign shell task).
+test("terminal (foreign background_task): a bg task matching NO open agent op does NOT defer", () => {
   const home = setupHome();
   try {
     const sid = "cp-bg-isolated";
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, "");
-    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
-    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-17" });
-    // A COMPLETED op (paired) so openOps is empty → the ONLY pending signal is the field.
-    // This isolates the `background_tasks`-driven branch: if the detection fell back to
-    // `openAgents` here it would (wrongly) drain instead of defer, failing this test.
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-17" }, LINE_OFF);
+    // A COMPLETED op (paired) so openOps is empty → NO open agent op of ours. The bg task's id
+    // matches none of our agent ops → it is foreign and must be ignored (hard guard: openAgents===0).
     appendLines(transcriptPath, [
       toolUse("2026-01-01T00:00:00Z", "e1", "Edit", { file_path: "a.cs" }),
       toolResult("2026-01-01T00:00:01Z", "e1", false, "edited"),
     ]);
     const out = run(home, "finalize", {
       session_id: sid, transcript_path: transcriptPath, reason: "stop",
-      background_tasks: [{ agent_id: "bg1", agent_type: "fullstack-backend" }],
-    });
-    assert.equal(out.trim(), "", "a field-driven checkpoint must not print");
-    const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.verdict, "deferred", "background_tasks alone (no open agent op) must defer");
-    assert.equal(fin.decision.pendingSubagents, 1);
-    assert.equal(spansOf(readSpans(home, sid), "command", "qa-fix").length, 0, "command not closed at checkpoint");
+      background_tasks: [{ agent_id: "foreign-shell-1", agent_type: "bash" }],
+    }, LINE_OFF);
+    assert.equal(out.trim(), "", "line off → no stdout");
+    const recs = readSpans(home, sid);
+    const fins = finalizesOf(recs);
+    assert.equal(fins.length, 1, "exactly one finalize (terminal), not a defer");
+    assert.notEqual(fins[0].decision.verdict, "deferred", "a foreign bg task with no matching agent op must NOT defer");
+    assert.equal(spansOf(recs, "command", "qa-fix").length, 1, "the trailing command span is closed at the terminal Stop");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -1266,6 +1278,100 @@ test("E2E: /qa-fix hands off to a background sub-agent (checkpoint), then termin
     const fins = finalizesOf(recs);
     assert.equal(fins[fins.length - 1].decision.verdict, "clean");
     assert.equal(fins[fins.length - 1].decision.surfaced, true);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── Fix 1 (LEO 2026-07-22): defer/terminal ownership matrix ────────────────────────
+// The exact LEO reproduction: a /project-init turn with NO subagent (agent_calls:0, empty openOps)
+// but a FOREIGN run_in_background shell task surfaced in ev.background_tasks. It must reach a TERMINAL
+// finalize with a computed verdict — never the perpetual `deferred` the old length-only check produced.
+test("Fix 1: agent_calls:0 + foreign background_task reaches a TERMINAL finalize (LEO repro)", () => {
+  const home = setupHome();
+  try {
+    const sid = "leo-repro";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/project-init" }, LINE_OFF);
+    // Only completed tool ops — no Task, so agent_calls stays 0 and openOps is empty.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "node discover-repos.mjs" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "ok"),
+    ]);
+    const out = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      // A run_in_background SHELL task belonging to a DIFFERENT session — the phantom "1 pending".
+      background_tasks: [{ id: "shell-99", type: "bash", command: "npm run watch" }],
+    }, LINE_OFF);
+    assert.equal(out.trim(), "", "line off → no stdout");
+    const fins = finalizesOf(readSpans(home, sid));
+    assert.equal(fins.length, 1, "exactly one, TERMINAL finalize");
+    assert.notEqual(fins[0].decision.verdict, "deferred", "a foreign shell task must not force deferral (agent_calls:0)");
+    assert.ok(["clean", "flagged"].includes(fins[0].decision.verdict), "the terminal Stop computes a real verdict");
+    assert.equal(fins[0].totals.agent_calls, 0, "no subagent ran this session");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("Fix 1: a foreign shell task is IGNORED but our own open agent op still defers (regression guard)", () => {
+  const home = setupHome();
+  try {
+    const sid = "own-plus-foreign";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-99" });
+    // Our OWN subagent handed off (Task ta1, no result yet) — genuinely still running.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-backend", description: "fix" }),
+    ]);
+    const out = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      // A foreign shell task PLUS our own pending subagent. Only the owned one counts.
+      background_tasks: [
+        { id: "shell-1", type: "bash", command: "tail -f log" },
+        { agent_id: "ta1", agent_type: "fullstack-backend" },
+      ],
+    });
+    assert.equal(out.trim(), "", "still deferring on our own subagent → no line");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "deferred", "our own open agent op must still defer");
+    assert.equal(fin.decision.pendingSubagents, 1, "the count reflects OUR pending agents (1), not the 2 background_tasks");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── Fix 2: a mid-run `complete` with a FAILED tool op synthesizes a FLAGGED command span ──
+test("Fix 2: a synthesized command span makes an orphaned failed tool op flaggable", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-telemetry-synth-"));
+  try {
+    const sid = "synth-fail";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    // capture OFF at start, no command span for the /project-init prompt (LEO opt-in blind spot).
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/project-init" }, LINE_OFF);
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({ projectType: "client", selfDiagnostics: true }));
+    // A BLOCKING failure (permission denied), with NO command/skill parent open.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", true, "permission denied: token missing pull-request scope"),
+    ]);
+    run(home, "record", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    complete(home, "project-init");
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, LINE_OFF);
+
+    const recs = readSpans(home, sid);
+    const cmd = spansOf(recs, "command", "project-init");
+    assert.equal(cmd.length, 1, "the run is represented by ONE synthesized command span");
+    assert.equal(cmd[0].outcome, "failed", "the orphaned blocking failure rolls up → the command span is failed");
+    const fin = finalizeOf(recs);
+    assert.equal(fin.decision.verdict, "flagged", "a synthesized failed span is flaggable");
+    assert.ok(fin.flagged.some((f) => f.kind === "command" && f.name === "project-init"), "the synthesized span appears in flagged[]");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

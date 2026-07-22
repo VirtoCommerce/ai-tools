@@ -774,6 +774,7 @@ function freshState(ev, sid) {
     sid,
     spanSeq: 0,
     processedLines: 0,
+    startTs: nowIso(), // session-start anchor (init time) — the synthesized-command-span start (Fix 2)
     transcriptPath: ev.transcript_path ?? null,
     currentCommand: null,
     currentSkill: null,
@@ -812,6 +813,7 @@ function loadState(statePath, ev, sid) {
       j.flagged = j.flagged || [];
       j.seenSignatures = j.seenSignatures || [];
       j.spanSeq = j.spanSeq || 0;
+      j.startTs = j.startTs || nowIso(); // forward-compat for pre-Fix-2 state files
       j.sid = j.sid || sid;
       j.cleanupPending = j.cleanupPending || false;
       j.cleanupOffered = j.cleanupOffered || false;
@@ -1055,15 +1057,27 @@ async function cmdFinalize(ev) {
   // (A-F8: record the orphan as `incomplete`, close the trailing spans, emit the terminal
   // verdict) would be delayed. The `openAgents` count is the fallback ONLY when the field is
   // entirely absent (an older/edge harness that doesn't send it — current CC always sends it).
+  // `background_tasks` is present on every current-CC Stop/SubagentStop but is NOT scoped to this
+  // session: it also lists `run_in_background` SHELL tasks and background work owned by OTHER
+  // sessions. Trusting its length EXCLUSIVELY made a foreign shell task force perpetual deferral —
+  // the LEO /project-init run (2026-07-22) recorded 3× `deferred` with agent_calls:0 and an empty
+  // openOps because a different session's background shell task showed up here. So we defer ONLY
+  // when a pending background item corresponds to one of THIS session's OWN open AGENT ops.
   const bgTasks = Array.isArray(ev.background_tasks) ? ev.background_tasks : [];
   // Session-relative "now" for the orphan backstop below: the newest transcript event ts (the session's
   // own clock), NOT wall-clock — the hook can fire long after the events, and the transcript timestamps
   // are what every other duration here is measured against. Falls back to wall-clock only if no scan ts.
   const refNowMs = Date.parse(state.lastScanTs || "") || Date.now();
+  // This session's own open AGENT ops, indexed by every id the platform might key a bg task on: the
+  // openOps Map key IS the tool_use_id, and sp.id is the span id. `freshOpenAgents` is the field-absent
+  // fallback's "plausibly still running" subset (the STALL_MS orphan backstop, unchanged).
   let openAgents = 0;
   let freshOpenAgents = 0;
-  for (const [, sp] of state.openOps) if (sp && sp.kind === "agent") {
+  const ownAgentIds = new Set();
+  for (const [key, sp] of state.openOps) if (sp && sp.kind === "agent") {
     openAgents++;
+    if (key != null) ownAgentIds.add(String(key));
+    if (sp.id) ownAgentIds.add(String(sp.id));
     // An agent op is a fallback deferral signal ONLY while it is plausibly still running. An op open
     // longer than STALL_MS (measured on the SESSION clock — the newest transcript ts) with no matching
     // tool_result is an ORPHAN (crashed/interrupted sub-agent, or a result that landed in a skipped
@@ -1076,10 +1090,29 @@ async function cmdFinalize(ev) {
     const started = Date.parse(sp.startTs || sp.lastTs || "") || refNowMs;
     if (refNowMs - started <= T.STALL_MS) freshOpenAgents++;
   }
-  const pendingBg = ("background_tasks" in ev) ? bgTasks.length > 0 : freshOpenAgents > 0;
+  // Count the `background_tasks` entries that are OURS. Match by id/tool_use_id when the platform
+  // supplies one; an entry whose id matches NONE of our agent ops is foreign (a shell task, or
+  // another session's) → ignored. Only an entry with NO id at all falls back to kind — and then
+  // ONLY a genuine agent/subagent, NEVER a shell/bash task.
+  let ownedPendingAgents = 0;
+  for (const bt of bgTasks) {
+    if (!bt || typeof bt !== "object") continue;
+    const ids = [bt.tool_use_id, bt.id, bt.agent_id].filter((x) => x != null).map(String);
+    if (ids.length) { if (ids.some((x) => ownAgentIds.has(x))) ownedPendingAgents++; continue; }
+    const kind = String(bt.kind ?? bt.type ?? (bt.agent_type || bt.subagent_type ? "agent" : "")).toLowerCase();
+    const isShell = kind === "bash" || kind === "shell" || kind === "command" || kind === "local_shell";
+    const isAgent = kind === "agent" || kind === "subagent" || kind === "task";
+    if (isAgent && !isShell) ownedPendingAgents++;
+  }
+  // Hard guard (belt-and-suspenders): with ZERO open agent ops of ours, nothing of ours can be in a
+  // sidechain — NEVER defer, whatever `background_tasks` says. Otherwise the field, when present, is
+  // authoritative via ownedPendingAgents; when absent, fall back to freshOpenAgents (unchanged).
+  const pendingBg = openAgents === 0 ? false
+    : ("background_tasks" in ev) ? ownedPendingAgents > 0 : freshOpenAgents > 0;
   const stopHookActive = ev.stop_hook_active === true;
   if (pendingBg) {
-    const pendingSubagents = bgTasks.length || openAgents;
+    // Reflect OUR pending agents, not global background noise (was `bgTasks.length`).
+    const pendingSubagents = ("background_tasks" in ev) ? ownedPendingAgents : (freshOpenAgents || openAgents);
     appendRecord(jsonl, {
       type: "finalize",
       sessionId: sid,
@@ -1089,6 +1122,33 @@ async function cmdFinalize(ev) {
     });
     saveState(statePath, state);
     return;
+  }
+
+  // ─── synthesize a command span for a capture-enabled-mid-session run (Fix 2) ──
+  // A skill that turns capture ON during its OWN run (e.g. /project-init's §0b consent writes
+  // selfDiagnostics:true) fired its UserPromptSubmit BEFORE the flag existed, so cmdPrompt was a
+  // no-op and NO command span opened. Its `complete --skill "<name>"` marker is then the ONLY proof
+  // it ran. Without a span the run is a mere boolean (pluginActivity), and ITS tool-level failures
+  // can never be flagged. So represent it with a REAL command span (start = session start, end =
+  // now): the still-open ops drain into it below, and its orphaned blocking-error counts roll up so
+  // classify() can flag it. Guarded to the exact blind spot — a THIS-session complete marker with NO
+  // command/skill span of any kind. The sid-scoped marker guard blocks a stray cross-session marker,
+  // and a plain-dev turn emits no `complete` at all, so this never over-fires. The marker is consumed
+  // (state.skillCompletePending = null) later, at line ~1243, on this same terminal Stop.
+  const marker = state.skillCompletePending;
+  const completeForThisSession = Boolean(marker) && (!marker.sid || marker.sid === state.sid);
+  if (completeForThisSession && !state.currentCommand && !state.currentSkill && !state.sawPluginSpan) {
+    const synth = newSpan(state, "command", marker.skill || "unknown", state.startTs || state.lastScanTs || nowIso(), null);
+    // Roll the session's orphaned (parentless) blocking-error counts onto the synthesized span so
+    // classify() flags it `failed` when the run had real tool failures; a run that reached `complete`
+    // cleanly has zero here → success. sawExpected:true (the completion marker IS the expected-output
+    // proof) prevents a false silent_suspect from the orphaned op volume.
+    synth.signals.tool_error = state.totals.tool_error || 0;
+    synth.signals.permission_denied = state.totals.permission_denied || 0;
+    synth.signals.hook_failure = state.totals.hook_failure || 0;
+    synth.opCount = (state.totals.tool_calls || 0) + (state.totals.agent_calls || 0);
+    synth.sawExpected = true;
+    state.currentCommand = synth;
   }
 
   // Drain any tool/agent op still open at Stop (interrupted session — no tool_result
@@ -1140,9 +1200,8 @@ async function cmdFinalize(ev) {
   // stale/mis-targeted write, or a future --session flow), `marker.sid !== state.sid` makes this
   // session ignore it — so a stray marker landed by the mtime race can't become the SOLE "plugin
   // activity" of an unrelated plain-dev session (PR #143 review, Finding 4). A pre-#143 marker with
-  // no `sid` field is honoured (back-compat).
-  const marker = state.skillCompletePending;
-  const completeForThisSession = Boolean(marker) && (!marker.sid || marker.sid === state.sid);
+  // no `sid` field is honoured (back-compat). NOTE: `marker` / `completeForThisSession` are computed
+  // once above (the Fix-2 synthesis needs them before the drain) and reused here.
   // pluginActivity = a plugin skill/command was active this session. Normally proven by a closed
   // skill/command span (sawPluginSpan) or a seen Skill (anySkillSeen). A THIRD proof: an explicit
   // `complete --skill "<name>"` completion signal — only a plugin skill/command emits it (as its

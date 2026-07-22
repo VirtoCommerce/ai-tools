@@ -41,8 +41,8 @@
  *    unless feedback.mode=auto.)
  */
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync, unlinkSync } from "node:fs";
-import { resolve, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { resolve, join, dirname } from "node:path";
+import { pathToFileURL, fileURLToPath } from "node:url";
 import { resolveGithubToken, probeGithubUpstream } from "../project-init/probe-lib.mjs";
 import { redact } from "../../hooks/redact.mjs";
 
@@ -239,13 +239,61 @@ const SAFE_TERMS = new Set([
   "ElasticSearch", "Kibana",
 ]);
 
+// ─── plugin-symbol allowlist (Fix 3, LEO 2026-07-22) ─────────────────────────
+// The token shape heuristic in (3) below must NOT treat the plugin's OWN code identifiers
+// (pendingSubagents, sawPluginSpan, openOps, currentCommand, freshOpenAgents, roleStates,
+// anySkillSeen, …) as client data — doing so withheld genuine plugin evidence and downgraded
+// every finding row to "(client-specific evidence withheld)". So derive an allowlist by scanning
+// the plugin's OWN source for DECLARED identifiers (const/let/var/function/class names + object/
+// class field keys) and union it with SAFE_TERMS. The scan is bounded to the plugin dir via
+// pluginRoot() (NEVER the project/client tree — the source must be trusted), and cached per process.
+// This is SAFE regardless of breadth: the allowlist is built ONLY from plugin source, which contains
+// no client identifiers, so it can never whitelist a real client name. A read error just yields a
+// smaller allowlist (the fail-safe direction). The narrowed shape rule in (3) already spares the
+// lowercase-first plugin symbols on its own; this additionally rescues any PascalCase plugin symbol.
+const __deliverDir = dirname(fileURLToPath(import.meta.url));
+function pluginRoot() {
+  return resolve(__deliverDir, "..", ".."); // skills/vc-self-check → plugins/vc-fix (or .claude mirror)
+}
+const ID_DECL_RES = [
+  /\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g, // declaration names
+  /(?:^|[\s,{[(])([A-Za-z_$][\w$]*)\s*:/gm, // object-literal / class-field / destructured-rename keys
+];
+let _pluginSymbols = null;
+function pluginSymbols() {
+  if (_pluginSymbols) return _pluginSymbols;
+  const syms = new Set(SAFE_TERMS);
+  const exts = new Set([".mjs", ".js", ".ts", ".cjs", ".md"]);
+  const walk = (d, depth) => {
+    if (depth > 8) return;
+    let entries;
+    try { entries = readdirSync(d, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const p = join(d, e.name);
+      if (e.isDirectory()) { if (e.name !== "node_modules" && e.name !== ".git") walk(p, depth + 1); continue; }
+      const dot = e.name.lastIndexOf(".");
+      if (dot < 0 || !exts.has(e.name.slice(dot))) continue;
+      let src;
+      try { src = readFileSync(p, "utf8"); } catch { continue; }
+      if (src.length > 2_000_000) src = src.slice(0, 2_000_000);
+      for (const re of ID_DECL_RES) { re.lastIndex = 0; let m; while ((m = re.exec(src))) if (m[1]) syms.add(m[1]); }
+    }
+  };
+  const root = pluginRoot();
+  for (const sub of ["hooks", "skills", "commands", "ci/lib"]) walk(join(root, sub), 0);
+  _pluginSymbols = syms;
+  return _pluginSymbols;
+}
+
 /**
  * Positive detection of CLIENT-SHAPED content the blacklist scrubber can't catch, in
  * three layers: (1) a configured client identifier (any case) from the profile; (2)
  * paths / source files (Windows drive, UNC, any-slash path or source file that is NOT an
- * anchored plugin reference); (3) residual identifier tokens — a compound camel/Pascal
- * token or a single Capitalized proper-noun word not in the safe vocabulary. A plugin
- * reference is masked out first so it never trips (2)/(3). Bias is fail-safe.
+ * anchored plugin reference); (3) residual identifier tokens — a PascalCase / Capital-first
+ * COMPOUND (client class / namespace) or a single Capitalized proper-noun word, unless it is a
+ * plugin symbol / SAFE term / plugin-file reference. A lowercase-first camelCase token is a CODE
+ * identifier, NOT flagged on shape. A plugin reference is masked out first so it never trips
+ * (2)/(3). Bias is fail-safe — layers (1)+(2) are the hard client-data gates.
  */
 function containsClientShape(text) {
   const t = String(text ?? "");
@@ -272,8 +320,15 @@ function containsClientShape(text) {
   // scanning the raw text does not over-flag them. (The extension rule above stays on
   // `masked` — else a legit plugin `repo-router.ts` reference would trip it.)
   for (const tok of t.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
-    if (SAFE_TERMS.has(tok)) continue;
-    if (/[a-z][A-Z]/.test(tok)) return true; // compound camel/PascalCase (AcmeCorp, CartController)
+    // Plugin-safe: a SAFE term, a declared plugin symbol, or a plugin-file reference survives
+    // even when PascalCase (Fix 3 req #4). This is what keeps genuine plugin evidence in the report.
+    if (SAFE_TERMS.has(tok) || pluginSymbols().has(tok) || referencesPlugin(tok)) continue;
+    // PascalCase / Capital-first COMPOUND (AcmeCorp, CartController) — the actual client class /
+    // namespace threat. A LOWERCASE-first camelCase token (pendingSubagents, freshOpenAgents) is a
+    // CODE identifier, NOT a client proper noun, so it is NOT flagged on shape alone (Fix 3): reserve
+    // compound-flagging for Capital-first tokens (and dotted namespaces like Acme.Cart.Domain, whose
+    // PascalCase segments are each caught here). Was `/[a-z][A-Z]/`, which flagged every camelCase.
+    if (/^[A-Z]/.test(tok) && /[a-z][A-Z]/.test(tok)) return true;
     if (/^[A-Z][a-z][A-Za-z0-9]*$/.test(tok)) return true; // single Capitalized proper noun (Acme, Contoso) — requires a lowercase LETTER after the capital so gate/severity codes (G0-G7, S0-S3, P0) are NOT flagged
   }
   return false;
