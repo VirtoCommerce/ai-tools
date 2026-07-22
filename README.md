@@ -9,7 +9,7 @@ This repo hosts two things:
 1. **[`vc-fix`](plugins/vc-fix/)** — a self-contained Claude Code plugin (bug lifecycle: setup,
    filing, autonomous fixing, verification, monitoring). **This is the flagship, marketplace-installable
    offering** — see Quick Start below.
-2. **The full `vc-qa` agent crew** (regression, BA analysis, 110 suites, 18 agents) — the source
+2. **The full `vc-qa` agent crew** (regression, BA analysis, 110 suites, 19 agents) — the source
    `vc-fix` was extracted from. It now lives project-scoped under `.claude/` (auto-discovered on any
    clone, no plugin manifest) but is **not marketplace-installable**: not listed in the marketplace,
    not currently packaged as a plugin. Kept for direct-clone use and as the
@@ -74,6 +74,7 @@ Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` 
 
 - **Node.js 18+**, **Git**, and an IDE with Claude Code (VS Code + [extension](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code), Cursor, or Windsurf).
 - From your team lead: **Anthropic API key**, **QA env credentials** (URLs + admin/test users), **GitHub PAT**, **JIRA** access, **Postman key**, **payment test cards**. Figma key + BrowserStack are optional.
+- **Serena** (optional, whole-team semantic code-navigation MCP): enabled in the tracked `.claude/settings.json` (a no-op until installed **per machine**). Needs `uv`/`uvx` on PATH. Install: `/plugin marketplace add anthropics/claude-plugins-official` → `/plugin install serena@claude-plugins-official`, then restart Claude Code. Speeds up `/qa-fix` symbol navigation/editing. See `docs/onboarding.md` §Serena.
 
 ### Configuration
 
@@ -147,9 +148,9 @@ Five pipelines, each with an interactive + headless-CI twin:
 
 Full reference: [`.claude/rules/skills-commands.md`](.claude/rules/skills-commands.md).
 
-- **23 slash commands** — `/project-init`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-hotfix`, `/qa-bundle-check`, `/qa-monitoring`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-onboarding`, `/ba-analyze`, `/ba-stories`, …
-- **30 skills** in [`skills/`](.claude/skills) (VC knowledge, testing, QA methodology, development) + 2 root-level (`project-init`, `run-vc-mcp-testing-module`).
-- **18 agents** in [`agents/`](.claude/agents) across three teams (QA 10, BA 4, Developers 4). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
+- **28 slash commands** — `/project-init`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-monitoring`, `/qa-triage-results`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-sitemap`, `/qa-local-env`, `/qa-onboarding`, `/code-review-full`, `/vc-self-check`, `/ba-analyze`, `/ba-stories`, …
+- **36 skills** in [`skills/`](.claude/skills) (1 VC knowledge, 12 testing, 14 QA methodology, 6 development) + 3 root-level (`project-init`, `run-vc-mcp-testing-module`, `vc-self-check`).
+- **19 agents** in [`agents/`](.claude/agents) across three teams (QA 11, BA 4, Developers 4). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
 
 Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
 
@@ -180,9 +181,9 @@ vc-mcp-testing-module/
 ├── plugins/vc-fix/       # THE marketplace-listed plugin — self-contained bug-lifecycle slice (own
 │                         #   agents/skills/commands + own copies of knowledge/.claude/scripts/config.js)
 ├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)
-│   ├── agents/           #   18 agents, flat *.md (QA 10, BA 4, Developers 4) — no subfolders
-│   ├── skills/           #   32 skills, each skills/<name>/SKILL.md (30 categorized + project-init + run-vc-mcp-testing-module)
-│   ├── commands/         #   23 slash commands, flat *.md
+│   ├── agents/           #   19 agents, flat *.md (QA 11, BA 4, Developers 4) — no subfolders
+│   ├── skills/           #   36 skills, each skills/<name>/SKILL.md (33 categorized + project-init + run-vc-mcp-testing-module + vc-self-check)
+│   ├── commands/         #   28 slash commands, flat *.md
 │   ├── hooks/            #   hooks.json (2 hooks) + enforce-real-user.mjs
 │   ├── knowledge/        #   28 shared reference files (api/ oracles/ execution/ domain/ …) + agents/ team instructions
 │   ├── rules/            #   reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)

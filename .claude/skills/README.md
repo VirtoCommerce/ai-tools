@@ -1,137 +1,71 @@
 # skills/ — Skill Directory
 
-> 32 skills organized in 4 category groups (vc-knowledge, testing, qa-methodology, development), plus 3 root-level skills (35 total). Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> **36 skills**, each a `skills/<name>/SKILL.md` with YAML frontmatter and optional supporting
+> reference files. Discovery is **one level, flat — there are no category subfolders**; the four
+> categories below (VC Knowledge · Testing · QA Methodology · Development) are `[Category]` **tags in
+> each skill's `description`**, not directories. Breakdown: **1 VC Knowledge + 12 Testing +
+> 14 QA Methodology + 6 Development + 3 root-level** (uncategorized: `project-init`,
+> `run-vc-mcp-testing-module`, `vc-self-check`).
 
-## Directory Structure
+## Directory Layout (flat)
 
 ```
 skills/
-├── vc-knowledge/                    # VC Knowledge (1) — auto-invocable, read-only
-│   └── vc-docs/
-│       └── SKILL.md                 # Documentation lookup via Context7
+├── vc-docs/                         # [VC Knowledge] Documentation lookup (VirtoOZ primary, Context7 fallback)
 │
-├── testing/                         # Testing (11) — manual invocation
-│   ├── qa-storybook/
-│   │   ├── SKILL.md                 # Storybook visual regression
-│   │   ├── visual-regression-testing.md
-│   │   ├── responsive-component-testing.md
-│   │   └── how-to-test-storybook.md # Storybook testing reference guide
-│   ├── qa-accessibility/
-│   │   ├── SKILL.md                 # WCAG 2.1 AA accessibility audit
-│   │   └── wcag-accessibility-checklist.md
-│   ├── qa-design/
-│   │   ├── SKILL.md                 # Design system & UX heuristics
-│   │   ├── design-system-consistency.md
-│   │   └── ux-heuristic-evaluation.md
-│   ├── qa-plan/
-│   │   ├── SKILL.md                 # Test plans from E2E catalog
-│   │   └── e2e-scenario-catalog.md
-│   ├── qa-checklist/
-│   │   ├── SKILL.md                 # Test case writing checklist creation
-│   │   ├── domain-checklists.md     # 23 domain checklists + Bug Fix Verification (279 items)
-│   │   ├── graphql-checklist.md     # GraphQL-specific test checklist
-│   │   └── checklist-creation-guide.md
-│   ├── qa-api/
-│   │   ├── SKILL.md                 # REST API & GraphQL xAPI testing
-│   │   ├── xapi-query-ref.md        # Ready-to-use GraphQL queries, mutations, and REST request templates
-│   │   ├── test-cases-api-graphql.md
-│   │   └── api-test-case-patterns.md # Coverage checklists and writing guide for generating new test cases
-│   ├── qa-coverage-gap/
-│   │   ├── SKILL.md                 # Autonomous test coverage gap analysis
-│   │   ├── coverage-gap-methodology.md
-│   │   └── feature-domain-map.md
-│   ├── qa-postman/
-│   │   ├── SKILL.md                          # Postman MCP collection builder (entry point + index)
-│   │   ├── mcp-tools.md                      # Tool inventory, workspace, ID formats
-│   │   ├── variables-and-environments.md     # Variable scoping, .env mapping, env creation
-│   │   ├── collections-and-requests.md       # Collection schema, requests, auth, chaining
-│   │   ├── graphql-authoring.md              # GraphQL bodies + xrefs to graphql-schema.md
-│   │   ├── test-data-fixtures.md             # @td() resolver, aliases.json, fixture conventions
-│   │   ├── execution.md                      # Verify checklist, Newman/Postman CLI, endpoints
-│   │   ├── common-mistakes.md                # 15-item mistake catalog
-│   │   └── examples.md                       # Auth-only, CRUD, env quick-copy examples
-│   ├── qa-seed-data/
-│   │   ├── SKILL.md                 # Test data generation via Postman MCP
-│   │   └── test-data-generation.md  # Data generation methodology and Postman collection reference
-│   ├── qa-generate-data/
-│   │   └── SKILL.md                 # Author test-data fixtures from scratch into test-data/ (offline) + wire @td() aliases + validate
-│   └── qa-review-tests/
-│       ├── SKILL.md                 # Test case quality review (8-dimension analysis)
-│       └── review-criteria.md       # 8-dimension review criteria reference
+├── qa-storybook/                    # [Testing]  Storybook visual regression
+├── qa-accessibility/                # [Testing]  WCAG 2.2 AA accessibility audit
+├── qa-design/                       # [Testing]  Design system & UX heuristics
+├── qa-plan/                         # [Testing]  Test plans from E2E catalog
+├── qa-checklist/                    # [Testing]  Test-case writing checklists
+├── qa-api/                          # [Testing]  REST API & GraphQL xAPI testing
+├── qa-coverage-gap/                 # [Testing]  Autonomous coverage gap analysis
+├── qa-postman/                      # [Testing]  Postman MCP collection builder
+├── qa-seed-data/                    # [Testing]  Seed / tear down test data
+├── qa-generate-data/                # [Testing]  Design + author test-data combinations (offline)
+├── qa-review-tests/                 # [Testing]  8-dimension test-case quality review
+├── qa-local-env/                    # [Testing]  Local VC stack via start-local (fresh DB per run)
 │
-├── qa-methodology/                  # QA Methodology (10) — cross-team practices
-│   ├── qa-monitoring/
-│   │   └── SKILL.md                 # Online bug monitoring from App Insights (KQL probes + triage taxonomy + dedup)
-│   ├── qa-test-cases-generator/
-│   │   ├── SKILL.md                 # Generate agent-native test cases in enriched CSV format
-│   │   ├── test-case-template.md    # Enriched CSV column spec with step type tags
-│   │   └── test-case-examples.md    # Concrete examples per layer (companion to template)
-│   ├── qa-investigate/
-│   │   ├── SKILL.md                 # Bug investigation (5 phases)
-│   │   └── bug-investigation-flow.md
-│   ├── qa-evidence/
-│   │   ├── SKILL.md                 # Evidence capture & report formatting
-│   │   ├── evidence-capture-policy.md
-│   │   ├── output-paths.md
-│   │   └── sign-off-templates.md    # Frontend + backend sign-off tables
-│   ├── qa-test-design/
-│   │   ├── SKILL.md                 # Systematic test case derivation
-│   │   └── test-design-techniques.md
-│   ├── qa-risk/
-│   │   ├── SKILL.md                 # Risk-based test prioritization
-│   │   └── risk-prioritization-framework.md
-│   ├── qa-metrics/
-│   │   ├── SKILL.md                 # Quality metrics & gate enforcement
-│   │   ├── quality-metrics-catalog.md
-│   │   └── quality-gates.md
-│   ├── qa-sbtm/
-│   │   ├── SKILL.md                 # Session-based exploratory testing
-│   │   └── session-based-testing.md
-│   ├── qa-process/
-│   │   ├── SKILL.md                 # ISTQB test process lifecycle (7 phases)
-│   │   └── test-process-lifecycle.md
-│   └── qa-defect/
-│       ├── SKILL.md                 # Defect management lifecycle
-│       ├── defect-lifecycle-workflow.md
-│       └── defect-report-templates.md
+├── qa-process/                      # [QA Methodology]  ISTQB 7-phase lifecycle
+├── qa-investigate/                  # [QA Methodology]  Bug investigation (5 phases)
+├── qa-evidence/                     # [QA Methodology]  Evidence capture & report formatting
+├── qa-defect/                       # [QA Methodology]  Defect management lifecycle
+├── qa-test-design/                  # [QA Methodology]  Test case derivation techniques
+├── qa-risk/                         # [QA Methodology]  Risk-based prioritization
+├── qa-metrics/                      # [QA Methodology]  Quality metrics & gates
+├── qa-sbtm/                         # [QA Methodology]  Session-based exploratory testing
+├── qa-monitoring/                   # [QA Methodology]  Online bug monitoring (App Insights)
+├── qa-test-cases-generator/         # [QA Methodology]  Generate agent-native CSV test cases
+├── qa-triage-results/               # [QA Methodology]  Triage a completed regression run's FAILs
+├── qa-hotfix/                       # [QA Methodology]  Release a hotfix into stable bundles
+├── qa-hotfix-check/                 # [QA Methodology]  Deliver a released hotfix onto deployed envs
+├── qa-bundle-check/                 # [QA Methodology]  Audit a stable bundle for available hotfixes
 │
-├── development/                     # Development (6) — used by the developers/ team in /qa-fix
-│   ├── dotnet-unit-test/            # Reproduce a backend bug as a failing xUnit test (red)
-│   ├── dotnet-fix/                  # Minimal .NET 10 fix → green
-│   ├── angular-admin/               # Fix a module's Admin SPA (AngularJS) UI (scratch-harness red→green)
-│   ├── vue-unit-test/               # Reproduce a vc-frontend bug as a failing vitest test (red)
-│   ├── vue-fix/                     # Minimal Vue 3 / TS fix → green
-│   └── vc-shell-fix/                # Fix a module-embedded Vue 3 shell sub-app (real tsx --test, or ephemeral harness)
+├── dotnet-unit-test/                # [Development]  Reproduce a backend bug as a failing xUnit test
+├── dotnet-fix/                      # [Development]  Minimal .NET 10 fix → green
+├── angular-admin/                   # [Development]  Fix a module's Admin SPA (AngularJS) UI
+├── vue-unit-test/                   # [Development]  Reproduce a vc-frontend bug as a failing vitest test
+├── vue-fix/                         # [Development]  Minimal Vue 3 / TS fix → green
+├── vc-shell-fix/                    # [Development]  Fix a module-embedded Vue 3 shell sub-app
 │
-├── run-vc-mcp-testing-module/       # Repo tooling (not a QA category): build / launch / smoke-test / health-check this repo
-│   └── SKILL.md
-│
-├── project-init/                    # Onboarding (not a QA category): deploy this plugin for a customer
-│   ├── SKILL.md                     # native-platform vs client; tracker + VCS host; profile + .mcp.json; verify access
-│   ├── scaffold-env.mjs             # write commented .env.<env> template (URLs/identifiers/tracker) to fill
-│   ├── scaffold-secrets.mjs         # write commented .env.local template (what/why/where per secret) to fill
-│   ├── write-env.mjs                # (helper) write .env.<env>/.env.local from STDIN JSON when values are known
-│   ├── gen-profile.mjs              # write/merge project-profile.json
-│   ├── discover-repos.mjs           # Platform API → client/platform repo split
-│   ├── gen-mcp.mjs                  # OS-aware .mcp.json from template + per-tracker/VCS servers
-│   └── verify-access.mjs            # preflight: tracker + VCS + env reachability
+├── project-init/                    # (root-level) Onboard the toolset onto a deployment
+├── run-vc-mcp-testing-module/       # (root-level) Build / launch / smoke-test / health-check this repo
+├── vc-self-check/                   # (root-level) Self-diagnostician (Tier B) → local DIAG-*.md
 │
 └── README.md                        # This file
 ```
 
-> Plus three root-level skills outside the 4 QA category groups: `/run-vc-mcp-testing-module` (env:check, @td() resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run); `/project-init` (onboard the plugin onto a deployment — choose native-platform vs client, pick the bug tracker + code host, write `project-profile.json` + `.mcp.json`, verify access; the profile is what makes `/qa-fix` route each bug to the right repo + tracker); and `/vc-self-check` (Tier-B self-diagnostician — reads the passive session-telemetry jsonl + the transcript + the skill-expectations oracle and emits a per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce).
+## VC Knowledge (1)
 
-## VC Knowledge (1) — `vc-knowledge/`
-
-Auto-invocable, read-only reference skills. No side effects.
+Auto-invocable, read-only reference. No side effects.
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/vc-docs` | Documentation lookup via Context7 | -- (Context7 MCP) |
+| `/vc-docs` | Documentation lookup — **primary: VirtoOZ MCP** (12 topic-scoped tools); Context7 (`/virtocommerce/vc-docs`) is the fallback | — (VirtoOZ + Context7 MCP) |
 
-> **Note:** Module suite mapping (`module-suite-map.md`), storefront sitemap (`sitemap.md`), and product type reference (`products.md`) are now in `knowledge/` and accessed directly by agents. xAPI & REST API reference (`xapi-query-ref.md`) is now in `testing/qa-api/` — use `/qa-api ref <module>` to look up queries.
+> **Note:** Module suite mapping (`module-suite-map.md`), storefront sitemap (`sitemap.md`), and product-type reference (`products.md`) live in `knowledge/` and are accessed directly by agents. xAPI & REST API reference (`xapi-query-ref.md`) lives in `qa-api/` — use `/qa-api ref <module>`.
 
-## Testing (11) — `testing/`
+## Testing (12)
 
 Manual invocation, delegates to specialist agents.
 
@@ -141,54 +75,59 @@ Manual invocation, delegates to specialist agents.
 | `/qa-accessibility` | ui-ux-expert | wcag-accessibility-checklist.md |
 | `/qa-design` | ui-ux-expert | design-system-consistency.md, ux-heuristic-evaluation.md |
 | `/qa-plan` | test-management-specialist | e2e-scenario-catalog.md |
-| `/qa-checklist` | test-management-specialist | domain-checklists.md, graphql-checklist.md, checklist-creation-guide.md |
+| `/qa-checklist` | test-management-specialist | domain-checklists.md, backend-admin-checklists.md, graphql-checklist.md, checklist-creation-guide.md |
 | `/qa-api` | qa-backend-expert | xapi-query-ref.md, test-cases-api-graphql.md, api-test-case-patterns.md |
-| `/qa-postman` | qa-backend-expert | mcp-tools.md, variables-and-environments.md, collections-and-requests.md, graphql-authoring.md, test-data-fixtures.md, execution.md, common-mistakes.md, examples.md |
 | `/qa-coverage-gap` | test-management-specialist | coverage-gap-methodology.md, feature-domain-map.md |
-| `/qa-seed-data` | qa-backend-expert | `knowledge/test-data-generation.md` (agent knowledge file) |
-| `/qa-generate-data` | test-management-specialist | SKILL.md (generation model + no-hardcode rules + domain quick-map) |
+| `/qa-postman` | qa-backend-expert | mcp-tools.md, variables-and-environments.md, collections-and-requests.md, graphql-authoring.md, test-data-fixtures.md, execution.md, common-mistakes.md, examples.md |
+| `/qa-seed-data` | test-data-engineer | test-data-generation.md (knowledge file) |
+| `/qa-generate-data` | test-data-engineer | SKILL.md (combination-design flow + no-hardcode rules) |
 | `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |
+| `/qa-local-env` | (deterministic scripts) | resolve-task.mjs, resolve-theme.mjs, gen-manifest.mjs, provision.ps1, healthcheck.mjs, init-admin.mjs |
 
-## QA Methodology (10) — `qa-methodology/`
+## QA Methodology (14)
 
-Manual invocation, cross-team best practices. Process framework, reactive (post-bug), proactive (pre-testing), monitoring, and generation methodology.
+Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocable reference-only), cross-team best practices.
 
 ### Process Framework
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-process` | ISTQB 7-phase lifecycle: Plan, Analyze, Design, Implement, Execute, Report, Close — entry/exit criteria, phase-to-skill mapping, Analyze & Close deep dives | test-process-lifecycle.md |
+| `/qa-process` | ISTQB 7-phase lifecycle: Plan, Analyze, Design, Implement, Execute, Report, Close | test-process-lifecycle.md |
 
 ### Reactive (post-bug)
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-investigate` | 5-phase bug investigation, common VC patterns (P1-P8), ordered evidence-capture pass + evidence-to-claim root-cause worksheet (gated by `scripts/regression/bundle-evidence.ts`) | bug-investigation-flow.md, evidence-and-root-cause.md |
+| `/qa-investigate` | 5-phase bug investigation + evidence-to-claim root-cause worksheet (gated by `scripts/regression/bundle-evidence.ts`) | bug-investigation-flow.md, evidence-and-root-cause.md |
 | `/qa-evidence` | Evidence capture policy, 3-tier report verbosity, output paths | evidence-capture-policy.md, output-paths.md, sign-off-templates.md |
-| `/qa-defect` | Defect management lifecycle: JIRA Bug Workflow (16 statuses), triage, classification, verification, metrics | defect-lifecycle-workflow.md, defect-report-templates.md |
+| `/qa-defect` | Defect management lifecycle: JIRA Bug Workflow, triage, classification, verification, metrics | defect-lifecycle-workflow.md, defect-report-templates.md |
+| `/qa-triage-results` | Triage a completed regression run's FAILs: classify real-bug vs test-defect vs flaky, live-verify, route fixes (never files a ticket) | triage-taxonomy.md, routing-and-fix.md |
 
 ### Proactive (pre-testing)
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-test-design` | Systematic test case derivation: EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md |
-| `/qa-risk` | Risk-based test prioritization: 5x5 matrix, severity/priority classification, test depth allocation | risk-prioritization-framework.md |
-| `/qa-metrics` | Quality metrics & gates: pass rate, defect density, DRE, coverage, gate enforcement | quality-metrics-catalog.md, quality-gates.md |
-| `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT heuristics, tours, debrief | session-based-testing.md |
+| `/qa-test-design` | EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md |
+| `/qa-risk` | Risk-based prioritization: 5x5 matrix, severity/priority, test depth | risk-prioritization-framework.md |
+| `/qa-metrics` | Quality metrics & gates: pass rate, defect density, DRE, coverage | quality-metrics-catalog.md, quality-gates.md |
+| `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT | session-based-testing.md |
 
-### Monitoring (online)
-
-| Skill | Purpose | Supporting Files |
-|-------|---------|-----------------|
-| `/qa-monitoring` | Online bug monitoring from Application Insights: query both layers → dedup by fingerprint → triage new/spiking signatures → reproduce HIGH-confidence bugs live → draft reports + Teams alert. Detect-and-report only (twin of `ci/run-monitor.ts`) | SKILL.md (KQL probe library + triage taxonomy + dedup model) |
-
-### Generation
+### Monitoring & Generation
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-test-cases-generator` | Generate agent-native test cases in enriched CSV format from JIRA tickets, features, checklists, or legacy suites | test-case-template.md, test-case-examples.md |
+| `/qa-monitoring` | Online bug monitoring from App Insights: query → dedup → triage → live repro → report (detect-and-report only; twin of `ci/run-monitor.ts`) | SKILL.md (KQL probes + triage taxonomy + dedup) |
+| `/qa-test-cases-generator` | Generate agent-native CSV test cases from JIRA tickets, features, checklists, or legacy suites | test-case-template.md, test-case-examples.md |
 
-## Development (6) — `development/`
+### Hotfix / Release
+
+| Skill | Purpose | Supporting Files |
+|-------|---------|-----------------|
+| `/qa-bundle-check` | Audit a stable bundle for module/Platform/Theme hotfixes available on the same major.minor line | SKILL.md (bundle resolution + same-line hotfix detection + PR/JIRA tracing) |
+| `/qa-hotfix` | Release a hotfix of a merged+released fix into the current latest-stable bundles (gated writes, never auto-merges) | SKILL.md (ask-bundles step + hotfix mechanics + gate ladder) |
+| `/qa-hotfix-check` | Deliver an already-released hotfix onto the deployed stable + regression envs; verify live, transition tickets, bump bundles | SKILL.md (env wiring + deploy-poll + verification + transition) |
+
+## Development (6)
 
 Manual invocation, used by the **developers/** team in `/qa-fix` (the only write-capable team). One
 test-skill + one fix-skill per repo kind; backend adds the Admin-SPA path; frontend adds the
@@ -198,47 +137,26 @@ module-embedded Vue 3 sub-app path.
 |-------|-----------|---------|-----------------|
 | `/dotnet-unit-test` | fullstack-backend | Reproduce a VC backend bug as a failing xUnit test (red) | xunit-patterns.md |
 | `/dotnet-fix` | fullstack-backend | Minimal, idiomatic .NET 10 fix → green; build+test gate | fix-patterns.md, dotnet10-best-practices.md |
-| `/angular-admin` | fullstack-backend | Fix a module's Admin SPA (AngularJS) UI in-repo; red→green via uncommitted Node scratch harness | angular-patterns.md, scratch-harness-patterns.md |
+| `/angular-admin` | fullstack-backend | Fix a module's Admin SPA (AngularJS) UI in-repo; logic red→green via Node scratch harness, layout/CSS via platform class catalog + visual render harness | admin-spa-ui-conventions.md, css-layout-patterns.md, visual-render-harness.md, angular-patterns.md, scratch-harness-patterns.md |
 | `/vue-unit-test` | fullstack-frontend | Reproduce a vc-frontend storefront bug as a failing vitest test (red); `@vue/test-utils` + `effectScope` | vitest-patterns.md |
 | `/vue-fix` | fullstack-frontend | Minimal, idiomatic Vue 3 / TS fix → green; vue-tsc + lint + vitest + build gate | vue-fix-patterns.md, vue3-best-practices.md |
 | `/vc-shell-fix` | fullstack-frontend | Fix a module-embedded Vue 3 "shell" sub-app (`@vc-shell/framework`); state/logic red→green via the sub-app's own real `tsx --test` runner, mounted-component/DOM via an ephemeral never-committed harness | vc-shell-scratch-harness-patterns.md |
 
 > `/storybook-test` (UI-kit Storybook play-function interaction tests) is planned/optional — `fullstack-frontend` degrades to a `/vue-unit-test` component test when it's absent.
 
-## Dependency Graph
+## Root-level (3)
 
-```
-qa-api (ref mode) --> supplement with vc-docs (Context7)
-qa-postman --> prerequisite for qa-api (test mode) and qa-seed-data (collection building)
-qa-seed-data --> references qa-postman (collection/environment creation patterns)
-qa-process --> orchestrates all qa-methodology skills (the umbrella lifecycle)
-qa-process (Analyze) --> feeds into qa-test-design (test condition → test case)
-qa-process (Close) --> feeds back into qa-process (Plan) via retrospective loop
-qa-investigate --> references qa-evidence (capture policy)
-qa-investigate --> feeds into qa-defect (triage, classification)
-qa-defect --> references qa-risk (severity/priority classification)
-qa-defect --> references qa-evidence (report validation, sign-off)
-qa-defect --> feeds into qa-metrics (defect counts, escape rates, reopen rates)
-qa-test-design --> feeds into qa-plan (test suite composition)
-qa-checklist --> feeds into qa-plan (ensures domain coverage)
-qa-checklist --> references qa-test-design (expand items into test cases)
-qa-risk --> informs qa-test-design (technique selection by risk level)
-qa-risk --> informs qa-sbtm (charter prioritization)
-qa-metrics --> enforced by regression-orchestrator (gate evaluation)
-qa-sbtm --> references qa-risk (high-risk areas), qa-test-design (error guessing)
-qa-coverage-gap --> references qa-plan (E2E catalog), qa-checklist (domain coverage)
-qa-test-cases-generator --> references qa-test-design (derivation techniques), qa-checklist (domain items)
-qa-coverage-gap --> feeds into qa-test-cases-generator (generates missing cases)
-qa-storybook, qa-accessibility, qa-design --> delegate to ui-ux-expert agent
-qa-plan --> delegates to test-management-specialist agent
-qa-api --> delegates to qa-backend-expert agent
-qa-coverage-gap --> delegates to test-management-specialist agent
-Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) --> qa-sbtm (charter) --> qa-metrics (coverage)
-```
+Outside the four QA categories.
 
-## Agent -> Skill Map
+| Skill | Purpose | Supporting Files |
+|-------|---------|-----------------|
+| `/project-init` | Onboard the toolset onto a deployment — native-platform vs client; tracker + VCS host; write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json`; verify access. The profile is what routes each `/qa-fix` to the right repo + tracker | scaffold-env.mjs, scaffold-secrets.mjs, write-env.mjs, gen-profile.mjs, discover-repos.mjs, gen-mcp.mjs, verify-access.mjs |
+| `/run-vc-mcp-testing-module` | Build / launch / smoke-test / health-check this tooling repo (env:check, `@td()` resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run) | SKILL.md |
+| `/vc-self-check` | Tier-B self-diagnostician — reads the passive session-telemetry jsonl + transcript + skill-expectations oracle → per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce. Never modifies the install | SKILL.md, deliver.mjs |
 
-> **Note:** All QA agents also reference the auto-invocable `vc-knowledge` skill (`/vc-docs`) and may access knowledge files in `knowledge/` directly. These are omitted from the map below for brevity.
+## Agent → Skill Map
+
+> All QA agents also reference the auto-invocable `/vc-docs` and may read `knowledge/` files directly. Omitted below for brevity.
 
 | Agent | Skills Referenced |
 |-------|-----------------|
@@ -247,9 +165,12 @@ Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) 
 | qa-backend-expert | qa-api, qa-postman, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
 | qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api, qa-postman |
 | ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate, qa-defect |
-| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-process, qa-sbtm, qa-metrics |
+| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-process, qa-sbtm, qa-metrics, qa-review-tests, qa-coverage-gap |
+| test-data-engineer | qa-generate-data, qa-seed-data |
+| fullstack-backend | dotnet-unit-test, dotnet-fix, angular-admin |
+| fullstack-frontend | vue-unit-test, vue-fix, vc-shell-fix |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |
-| autonomous-regression-orchestrator | — (orchestration only, no skill references) |
+| autonomous-regression-orchestrator | — (orchestration only) |
 
 ## Frontmatter Reference
 
@@ -262,9 +183,8 @@ Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) 
 ## File Structure Convention
 
 ```
-group-name/                   # Category group (vc-knowledge, testing, qa-methodology)
-  skill-name/
-    SKILL.md                  # Main instructions (required)
-    supporting-file-1.md      # Reference docs read on demand
-    supporting-file-2.md      # Additional reference material
+skill-name/
+  SKILL.md                  # Main instructions (required)
+  supporting-file-1.md      # Reference docs read on demand
+  supporting-file-2.md      # Additional reference material
 ```
