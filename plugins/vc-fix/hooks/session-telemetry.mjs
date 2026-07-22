@@ -769,6 +769,23 @@ function collectInactiveArtifacts(dir, sid, nowMs) {
   return out;
 }
 
+// Total vc-fix artifact files currently in the dir + distinct sessions (one .jsonl each), across
+// ALL sessions INCLUDING the current one. Used only for the end-of-session cleanup dialog wording
+// (the "delete all" option spans everything). Never throws.
+function countArtifacts(dir) {
+  let entries;
+  try { entries = readdirSync(dir); } catch { return { sessions: 0, files: 0 }; }
+  let files = 0;
+  let sessions = 0;
+  for (const f of entries) {
+    const isOurs = f.endsWith(".jsonl") || f.endsWith(".state.json") || (f.startsWith("DIAG-") && f.endsWith(".md")) || (f.startsWith("DELIVERY-") && f.endsWith(".md"));
+    if (!isOurs) continue;
+    files++;
+    if (f.endsWith(".jsonl")) sessions++;
+  }
+  return { sessions, files };
+}
+
 function freshState(ev, sid) {
   return {
     sid,
@@ -1104,13 +1121,16 @@ async function cmdFinalize(ev) {
   const fallbackClean = lineFallback && !completePending && !state.cleanLineOffered;
   const cleanEligible = pluginActivity && (completePending || fallbackClean);
   const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && cleanEligible;
-  // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were
-  // detected at init. Independent of plugin activity (worth offering even on a plain dev turn),
-  // but rides the SAME resume (appended to the findings/clean reason) when one is already firing,
-  // so it never costs a second turn. Suppressed by the kill switch; guarded to once via
-  // `cleanupOffered` (persisted, NOT reset per turn) and `promptedThisTurn`.
+  // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were detected
+  // at init. It surfaces ONLY when it can ride a findings/clean line (`shouldPrompt || cleanBlock`)
+  // OR on a plain turn with no plugin activity (`!pluginActivity`) — NEVER during an intermediate
+  // pause of a still-running skill (the `awaiting-completion` state: pluginActivity but nothing
+  // surfacing). Otherwise, e.g. `/project-init`'s first interview pause would pop a cleanup
+  // AskUserQuestion MID-onboarding, which reads as an interruption; instead it rides the terminal
+  // clean line at the skill's end. Suppressed by the kill switch; once per session via
+  // `cleanupOffered` (persisted, NOT reset per turn) + `promptedThisTurn`.
   const cleanupPending = Boolean(state.cleanupPending) && !state.cleanupOffered;
-  const cleanupBlock = cleanupPending && !consentOff && !stopHookActive && !state.promptedThisTurn;
+  const cleanupBlock = cleanupPending && !consentOff && !stopHookActive && !state.promptedThisTurn && (shouldPrompt || cleanBlock || !pluginActivity);
   const surfaced = shouldPrompt || cleanBlock || cleanupBlock;
   // A durable, deterministic audit of every decision moment — greppable with
   // `"type":"finalize"` / `decision` in the session jsonl. This is how "when did the hook
@@ -1192,47 +1212,32 @@ async function cmdFinalize(ev) {
 
   // Build the ONE decision:block reason. At most one of findings/clean fires (findings wins);
   // the cleanup offer is APPENDED to whichever is firing, or stands alone if neither is.
+  // The block `reason` is DISPLAYED to the user verbatim (Claude Code renders it as
+  // "Stop hook error: …"), so keep it to ONE short instruction — the operator should see
+  // essentially just the status line, not a paragraph. The rich rationale lives in this comment
+  // + the oracle, not in the surfaced text.
   let reason = null;
   if (shouldPrompt) {
     const summary = uniqueFresh.map((f) => `${f.outcome} in /${f.name}${f.struggle?.length ? ` (${f.struggle.join(",")})` : ""}`).join("; ");
-    reason = [
-      "The vc-fix self-diagnostics collector flagged this session's plugin activity as ",
-      `not-clean: ${summary}.\n\n`,
-      "Silently run the `vc-self-check` skill NOW (invoke it via the Skill tool with the ",
-      "argument `latest`) to diagnose these spans against the oracle and write a local ",
-      "DIAG-*.md. Do NOT ask the user a Yes/No question first — just run it. When it ",
-      "finishes, print ONE short info line: the finding count + the DIAG path (e.g. ",
-      '"vc-fix self-check: 1 BROKEN, 1 DEGRADED → .vc-fix/diagnostics/DIAG-….md"). ',
-      "Then continue. Nothing leaves the machine — the local report is not sent anywhere.",
-    ].join("");
+    reason = `vc-fix self-diagnostics flagged this run (${summary}). Silently run the vc-self-check skill (Skill tool, argument "latest"), then print ONE line — the finding count + DIAG path — and stop. Nothing is sent anywhere.`;
   } else if (cleanBlock) {
-    // Default clean line — resume the agent ONCE to print the clean-status line, then stop.
-    reason = [
-      "The vc-fix self-diagnostics collector evaluated this session's plugin activity and found ",
-      "NO PLUGIN issues (all skill/command spans ran clean/recovered). This judges ONLY whether ",
-      "the plugin's own skills executed correctly — it does NOT endorse your environment health ",
-      "or the task's own verdict (a skill that correctly reports NOT READY / BAIL / 'bug found' ",
-      "is itself healthy). Print EXACTLY one short line to the user — ",
-      "`vc-fix self-check: no plugin issues detected` — and then stop. Do NOT run any skill, do ",
-      "NOT take any other action; this is an informational status line only.",
-    ].join("");
+    reason = "Print this one line to the user verbatim, then stop — no other action: vc-fix self-check: no plugin issues detected";
   }
   if (cleanupBlock) {
     const script = join(pluginRoot(), "hooks", "session-telemetry.mjs");
-    const purgeCmd = `node "${script}" purge-inactive --keep "${sid}" --dir "${dir}"`;
-    const cleanup = [
-      `The vc-fix self-diagnostics collector found leftover diagnostic files from `,
-      `${state.staleInactiveSessions} older inactive session(s) (${state.staleInactiveFiles} file(s)) `,
-      "in the local `.vc-fix/diagnostics/` folder. Ask the user — via the AskUserQuestion tool — ",
-      'whether to delete them now. Question: "Detected diagnostic files from old inactive sessions. ',
-      'Delete them now? (Session files older than 24h are auto-deleted at the next session start anyway.)" ',
-      'Options: "Delete now" and "Keep (I\'ll remove them myself)". On "Delete now", run this exact ',
-      "command with the Bash tool and report how many files were removed:\n  ",
-      purgeCmd,
-      '\nOn "Keep", do nothing. This only removes vc-fix\'s OWN local diagnostic artifacts from ',
-      "previous sessions — never your code, and never the current session.",
-    ].join("");
-    reason = reason ? `${reason}\n\nADDITIONALLY — ${cleanup}` : cleanup;
+    // `--all` ignores the 1h inactivity floor so "all existing" is literal; option 1 omits --keep
+    // (so the current session's own files go too), option 2 keeps the current session.
+    const purgeAll = `node "${script}" purge-inactive --all --dir "${dir}"`;
+    const purgeOthers = `node "${script}" purge-inactive --all --keep "${sid}" --dir "${dir}"`;
+    const { sessions: totalSessions, files: totalFiles } = countArtifacts(dir);
+    const cleanup =
+      `vc-fix's local .vc-fix/diagnostics/ folder holds ${totalFiles} diagnostic file(s) from ${totalSessions} session(s). ` +
+      `Ask the user via AskUserQuestion — "Clean up vc-fix diagnostic files?" — with THREE options, then run the matching Bash command and report the count:\n` +
+      `• "Delete all sessions (incl. this one)" → ${purgeAll}\n` +
+      `• "Delete all except this session" → ${purgeOthers}\n` +
+      `• "Keep them (auto-deleted after 24h)" → do nothing.\n` +
+      `This only removes vc-fix's OWN diagnostic artifacts — never your code.`;
+    reason = reason ? `${reason}\n\nAlso — ${cleanup}` : cleanup;
   }
   if (reason) process.stdout.write(JSON.stringify({ decision: "block", reason }));
 }

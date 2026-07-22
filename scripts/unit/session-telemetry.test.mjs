@@ -1356,14 +1356,57 @@ test("cleanup offer: leftover inactive-session artifacts surface a one-shot AskU
 
     const dec = JSON.parse(out);
     assert.equal(dec.decision, "block", "the cleanup offer surfaces via decision:block");
-    assert.match(dec.reason, /Detected diagnostic files from old inactive sessions/);
-    assert.match(dec.reason, /purge-inactive --keep "cur-cleanup"/, "the exact purge command is handed to the model");
+    assert.match(dec.reason, /Clean up vc-fix diagnostic files/, "the 3-option AskUserQuestion is set up");
+    assert.match(dec.reason, /Delete all sessions \(incl\. this one\)/);
+    assert.match(dec.reason, /Delete all except this session/);
+    assert.match(dec.reason, /Keep them \(auto-deleted after 24h\)/);
+    assert.match(dec.reason, /purge-inactive --all --dir/, "option 1 command (all sessions incl. this one)");
+    assert.match(dec.reason, /purge-inactive --all --keep "cur-cleanup"/, "option 2 command (all except this session)");
     const fin = finalizeOf(readSpans(home, sid));
     assert.equal(fin.decision.cleanupOffered, true);
 
     // A repeat finalize (same turn / resume) must NOT re-offer — once per session.
     const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
     assert.equal(second.trim(), "", "the cleanup offer fires at most once per session");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("cleanup offer: NOT surfaced mid-skill (awaiting-completion) — rides the terminal clean line at the skill's end", () => {
+  const home = setupHome();
+  try {
+    const dir = diagDirOf(home);
+    mkdirSync(dir, { recursive: true });
+    seedFile(dir, "old-inactive.jsonl", 2);
+    seedFile(dir, "old-inactive.state.json", 2);
+    const sid = "cleanup-midskill";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/project-init" });
+
+    // Interview pause — a trivial turn mid-/project-init. pluginActivity is true (the command span
+    // closed) but no `complete` yet → awaiting-completion. The cleanup offer MUST NOT interrupt here.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "r1", "Read", { file_path: "project-profile.json" }),
+      toolResult("2026-01-01T00:00:01Z", "r1", false, "no profile yet"),
+    ]);
+    const pause = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(pause.trim(), "", "no cleanup dialog (and no clean line) mid-onboarding");
+    const finPause = finalizeOf(readSpans(home, sid));
+    assert.equal(finPause.decision.suppressReason, "awaiting-completion");
+    assert.equal(finPause.decision.cleanupOffered, false, "cleanup withheld during the skill");
+
+    // Terminal step — the skill signals completion; the clean line fires AND the cleanup rides it.
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "finish" });
+    complete(home, "project-init");
+    const term = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const dec = JSON.parse(term);
+    assert.equal(dec.decision, "block");
+    assert.match(dec.reason, /no plugin issues detected/i, "the clean line surfaces at the terminal step");
+    assert.match(dec.reason, /Clean up vc-fix diagnostic files/, "the cleanup offer rides the same terminal resume");
+    assert.equal(finalizesOf(readSpans(home, sid)).pop().decision.cleanupOffered, true);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

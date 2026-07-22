@@ -12,6 +12,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.8.0`** (marketplace `0.9.2`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Changed — self-diagnostics UX polish: terse surfaced line + a 3-option end-of-session cleanup
+
+- **Surfaced block reason is now one short line, not a paragraph.** Claude Code renders a Stop-hook
+  `decision:block` reason verbatim (as "Stop hook error: …"), so the old multi-sentence clean/findings
+  text read as a scary error. The reason is now a single terse instruction; the operator sees
+  essentially just the status line (`vc-fix self-check: no plugin issues detected`).
+- **Cleanup offer is a 3-option AskUserQuestion at the session's end** — *Delete all sessions (incl.
+  this one)* / *Delete all except this session* / *Keep (auto-deleted after 24h)* — backed by
+  `purge-inactive --all [--keep <sid>]`. It **no longer interrupts a running skill**: during a
+  multi-turn skill's intermediate pause (the `awaiting-completion` state) it is withheld and instead
+  rides the terminal clean line at the skill's end (a `SessionStart` hook cannot open an interactive
+  prompt — only a Stop-hook resume can, confirmed against the hooks docs).
+
 ### Changed — the clean self-check line now fires on an EXPLICIT completion signal, not per-turn
 
 The clean status line (`vc-fix self-check: no plugin issues detected`) was gated on per-turn plugin activity. But the `Stop` hook fires at the **end of every turn** — including every pause where a multi-turn skill (`/project-init`'s interview, `/qa-fix`'s sub-agent hand-off) waits for the operator — so the line **repeated after every pause**. A per-turn guard structurally cannot express "once, at the end".
