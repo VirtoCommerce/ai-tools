@@ -110,7 +110,7 @@ $script:StepVerdict = 'ok'
 $script:StepStart = [DateTime]::UtcNow
 
 $SkillDir = $PSScriptRoot
-$RepoRoot = (Resolve-Path "$PSScriptRoot/../../../..").Path
+$RepoRoot = (Resolve-Path "$PSScriptRoot/../../..").Path
 # WorkDir lives OUTSIDE the repo (stable temp path) so the repo stays clean and vc-build's .nuke
 # (which Nuke anchors to the nearest .git ancestor) lands in temp instead of the git tree.
 if (-not $BaseTempDir) {

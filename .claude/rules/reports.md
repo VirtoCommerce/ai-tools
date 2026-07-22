@@ -16,6 +16,8 @@
 
 **Not a report category — self-diagnostics artifacts.** The `vc-fix` self-diagnostics subsystem writes to `<outputRoot>/.vc-fix/diagnostics/` — the passive collector's `<session_id>.jsonl` (+ `.state.json`), the `/vc-self-check` `DIAG-*.md`, and the `deliver` `DELIVERY-*.md`. These are **gitignored diagnostic artifacts**, NOT one of the five report categories above; the `DIAG-*.md`/`DELIVERY-*.md` still obey the monitoring-summary size discipline (§2, target 15–40, cap ~100). They are **ephemeral, not archived**: the lifecycle is log → analyze (`/vc-self-check`) → contribute (`deliver` PR/issue) → **delete**. Once a finding is contributed upstream the PR/issue is the source of truth, so `deliver` removes the processed session's own artifacts (only that session — never others); nothing is deleted when nothing was delivered. So they don't accumulate and need no manual cleanup.
 
+**Not a report category — knowledge-maintenance artifacts.** `/qa-review-bl` writes `reports/knowledge/BL-AUDIT-<date>.md` — the audit trail of a BL triangulation run (per-BL verdict, 3-axis evidence refs, what was auto-applied to `business-logic.md`, what was routed to `reports/ba/bl-proposals-<date>.md`). This is NOT one of the five categories above; it obeys the **monitoring-summary size discipline** (§2, target 15–40, cap ~100 — verdict table + Applied + Not-applied + coverage reconciliation, reference the `git diff` for the full oracle change rather than inlining it). The confirmed edits themselves live in the git-tracked `business-logic.md`; the unconfirmed drafts live in the shared `bl-proposals-<date>.md`. BL-AUDIT is the receipt, not the source of truth.
+
 ## 2. Hard Size Caps (lines)
 
 | Report type | Target | Hard cap |

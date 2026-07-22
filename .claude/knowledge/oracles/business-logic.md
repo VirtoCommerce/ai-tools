@@ -34,12 +34,16 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** `cart.items[].placedPrice` reflects the stacked discount. Coupon savings are calculated on the post-tier price, not the list price.
 - **Violation signal:** Cart total higher than expected; coupon discount amount equals percentage of list price instead of sale/tier price.
 - **Agents:** qa-frontend-expert (UI totals), qa-backend-expert (xAPI `cart` query response)
+- **Source:** vc-module-marketing `BestRewardPromotionPolicy.cs` — coupon/promo reward evaluated against the already-computed `CartTotal` (post catalog/tier price), not the list price.
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-PRICE-002: Tax calculation position `[P0-revenue]`
 - **Rule:** Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
 - **Verify:** In cart/checkout, compare: `taxTotal` should equal `taxRate × (subtotal - totalDiscount)`, not `taxRate × subtotal`.
 - **Violation signal:** Tax amount is higher than expected (calculated on pre-discount price), or tax changes when discount is applied/removed but the math doesn't align.
 - **Agents:** qa-frontend-expert (checkout totals), qa-backend-expert (order API)
+- **Source:** vc-module-order `OrderTotalsCalculationTest.cs` + vc-module-cart `CartTotalsCalculationTests.cs` — tax computed on the post-discount total.
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-PRICE-003: Price rounding `[P0-revenue]`
 - **Rule:** All monetary amounts round half-up to 2 decimal places in the display currency. Intermediate calculations may use higher precision, but all customer-visible prices (line totals, subtotal, tax, grand total) display exactly 2 decimals.
@@ -52,6 +56,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** Add 9 units → price = $10/unit. Add 1 more (qty=10) → price drops to $8/unit for ALL 10 units. Line total = $80, not $90+$8.
 - **Violation signal:** "From $X" label on listing doesn't match lowest tier; adding 1 unit at threshold doesn't change all units; split pricing applied.
 - **Agents:** qa-frontend-expert (PDP price, cart), qa-backend-expert (pricing API)
+- **Source:** vc-module-x-cart `CartAggregate.SetLineItemTierPrice` — tier price selected once per add and applied uniformly to the whole line (no split-pricing branch).
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-PRICE-005: Currency-specific price lists `[P0-revenue]`
 - **Rule:** Each currency has its own price list. Switching currency activates the corresponding price list — prices are NOT converted by exchange rate. If no price list exists for the selected currency, the product shows as unavailable.
@@ -82,10 +88,12 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 ## Domain 2: Cart (BL-CART)
 
 ### BL-CART-001: Max quantity enforcement `[P0-revenue]`
-- **Rule:** Per-product max quantity is enforced by available stock (inventory). Per-cart there is no global max unless configured. When a user enters a quantity exceeding available stock, the system must either reject the input or cap it to available stock with a notification.
-- **Verify:** Enter quantity > stock → error message or auto-cap. Stepper "+" disabled at max stock. Direct input of 999 when stock=50 → qty set to 50 with message.
-- **Violation signal:** Quantity accepted exceeding stock without warning; order placed for more units than in inventory.
+- **Rule:** Per-product max quantity is enforced by available stock (inventory). Per-cart there is no global max unless configured. When a user enters a quantity exceeding available stock, the system **rejects** the input with an inline range message (e.g. "Order from X to Y item(s)") and does NOT add/update the line until corrected — there is no automatic silent cap to available stock.
+- **Verify:** Enter quantity > stock → inline range-validation message shown, the Increase control disables, and the cart line is unchanged until corrected. A direct API `addItem` with qty > stock → validation error (quantity-changed), not a silently-capped success.
+- **Violation signal:** Quantity silently capped to available stock without an error/message; OR quantity accepted exceeding stock without any validation signal; order placed for more units than in inventory.
 - **Agents:** qa-frontend-expert (cart UI), qa-backend-expert (addToCart mutation validation)
+- **Source:** vc-module-x-cart `CartLineItemValidator.ValidateMinMaxQuantity` → `CartErrorDescriber.ProductQtyChangedError` (reject-with-message path; no auto-cap branch).
+- **Amended:** 2026-07-22 (approved from bl-proposals-2026-07-22 — BL-AUDIT-2026-07-22: corrected the "reject OR auto-cap" disjunction to reject-only; triangulated source + live).
 
 ### BL-CART-002: Out-of-stock mid-session `[P0-revenue]`
 - **Rule:** If a product's stock reaches 0 after the user has added it to cart but before checkout completes, the system must prevent the order from being placed. The cart should show an error state for the affected item.
@@ -118,6 +126,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** Product with pack size 6 → add to cart → qty = 6. Try to change qty to 7 → rejected or auto-rounded to 12. Stepper increments: 6 → 12 → 18.
 - **Violation signal:** Quantity 7 accepted for a pack-size-6 product; stepper increments by 1 instead of pack size; order placed with non-multiple quantity.
 - **Agents:** qa-frontend-expert (cart stepper), qa-backend-expert (addToCart validation)
+- **Source:** vc-module-x-cart `CartLineItemValidator.IsPackSizeLimit` → `PackSizeLimitSpecification` → `CartErrorDescriber.ProductPackSizeError` (reject path, not silent round-up).
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-CART-007: Same product adds quantity, not duplicate line `[P1-data]`
 - **Rule:** Adding the same SKU to the cart a second time increments the existing line item's quantity — it does not create a duplicate line. This applies regardless of whether the add came from PDP, quick-add, or xAPI. Exception: different product configurations (variants) create separate lines.
@@ -131,11 +141,14 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Cart empty after sign-in; guest cart items lost on authentication; duplicate lines after merge; quantities not combined.
 - **Agents:** qa-frontend-expert (sign-in flow), qa-backend-expert (cart merge API)
 
-### BL-CART-009: Radio-button coupon transition `[P1-data]`
-- **Rule:** When the storefront `applyCoupon(code)` is called with a code different from the currently applied coupon, the system MUST first call `removeCoupon` on the existing coupon and complete that mutation before calling `validateCoupon` + `addCoupon` for the new code. The cart MUST NOT hold two coupons simultaneously during the transition. The intermediate state (after remove, before add) MUST NOT be visible to the user — the UI shows the previous card returning to default state and the new card transitioning to applied state, but never two applied cards at once.
-- **Verify:** Apply coupon A → assert `cart.coupons[]` contains exactly one entry with `code: A, isAppliedSuccessfully: true`. Apply coupon B (different code) → network trace shows: `removeCoupon` mutation 200 → `validateCoupon` query → `addCoupon` mutation 200, in that order. Final `cart.coupons[]` contains only B. Discount math reflects only B's reward.
-- **Violation signal:** `cart.coupons[]` briefly or permanently contains 2 entries; `addCoupon` mutation fires before `removeCoupon` completes (out-of-order or parallel); UI flashes both cards in applied state; second coupon's discount stacks on top of the first.
-- **Agents:** qa-frontend-expert (UI state transitions on `<CouponsSection>` widget), qa-backend-expert (mutation sequencing & cart state)
+### BL-CART-009: Storefront cart enforces a single active coupon slot `[P1-data]`
+- **Rule:** The storefront cart "Discount & coupons" section applies at most ONE coupon at a time across BOTH facets — the preset promotion cards (up to 4, authenticated + marketing-experience module only) and the single "Custom code" input. The applied-coupon slot is shared: exactly one card/input is ever in the "applied" state (button "Remove coupon"), never two simultaneously. Two transition paths exist: (a) clicking "Apply" on a DIFFERENT preset card auto-replaces the current coupon — `applyCoupon(new)` first awaits `removeCoupon(current)`, then `validateCoupon(new)`, then `addCoupon(new)`, in that order; (b) the custom-code input becomes read-only once a coupon is applied, so changing the coupon via that single input requires the user to click "Remove coupon" first. NOTE: this single-slot guarantee is enforced by the storefront UI only — the platform cart (`CartAggregate.AddCouponAsync`) appends coupons (case-insensitive dedupe) and does not auto-replace, so a non-UI/API caller can hold multiple coupons.
+- **Verify:** Apply coupon A → exactly one card/input shows "applied"/"Remove coupon"; `cart.coupons[]` contains one successfully-applied entry (code A). Apply a different preset B → network shows `removeCoupon`(A) 200 → `validateCoupon`(B) → `addCoupon`(B) 200, in order; final applied slot = B only; discount reflects only B's reward (assert against the `AddCoupon` response `discountTotal`, not a computed %, per BL-CHK-006). Via the custom input: after applying A the input is read-only and only "Remove coupon" is offered. Anonymous carts render only the custom-code input (no preset cards; `promotionCoupons` not queried).
+- **Violation signal:** two cards/inputs simultaneously in the applied state via the storefront UI; a preset "Apply" that adds B without first removing A (cart briefly/permanently holds 2 coupons through the UI); the custom input remaining editable while a coupon is applied; a replacement coupon's discount stacking on top of the prior one. (Separately tracked, not this invariant: an INVALID replacement code silently dropping the prior valid coupon because remove precedes validate — see VCST-5518 / `BUG-invalid-coupon-removes-valid-coupon`.)
+- **Agents:** qa-frontend-expert (coupon section UI state), qa-backend-expert (mutation sequencing & cart coupon state)
+- **Docs:** N/A — implementation-detail (coupon-slot UX mechanics; VirtoOZ guides do not narrate the apply/remove sequencing or read-only-input behavior).
+- **Source:** vc-frontend `useCoupon.ts` (`applyCoupon` → `removeCartCoupon`→`validateCartCoupon`→`addCartCoupon`), `coupons-section.vue` / `coupon-card.vue` (preset cards `promotionCoupons(first:4)` auth-only; always-readonly preset inputs; custom input read-only when applied); vc-module-x-cart `CartAggregate.AddCouponAsync` (appends, case-insensitive dedupe — no auto-replace).
+- **Amended:** 2026-07-22 (approved from bl-proposals-2026-07-22 — BL-AUDIT-2026-07-22: reconciled both coupon-UI facets under one single-slot rule; source + live (custom-input facet this run; preset auto-replace source + prior live), docs N/A per §1a. Supersedes the "Radio-button coupon transition" framing; corrects the batch-1 "no preceding remove" claim, which was stale vs current `useCoupon.ts`).
 
 ### BL-CART-010: Configuration-item selection reprices the parent configurable lineItem `[P0-revenue]`
 - **Rule:** When `selectedForCheckout` is flipped on a `ConfigurationItem` belonging to a configurable lineItem, the parent lineItem's `listPrice` MUST be recalculated immediately as the sum of all placements whose `selectedForCheckout = true`. The updated `listPrice` propagates into cart subtotal, taxes, and shipping via `SaveAsync → RecalculateAsync`. Deselecting a config item reduces `listPrice`; reselecting restores it. **Asymmetry:** lineItem-level selection (`changeCartItemSelected` family) does NOT change `lineItem.listPrice` — only configuration-item selection does.
@@ -172,6 +185,15 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-backend-expert
 - **Source:** vc-module-x-cart PR #114 — `ConfigurationSectionKeyInput.cs` and `ConfigurableProductOptionKeyInput.cs`.
 
+### BL-CART-015: Configuration items survive a Saved-for-Later round trip `[P1-data]`
+- **Rule:** Moving a configurable lineItem to Saved for Later (`moveToSavedForLater`) and back into the cart (`moveFromSavedForLater`) MUST preserve its `configurationItems` (customText, selected option/productId, files, section) unchanged. The lineItem is re-created with a new `lineItemId` on each leg, but its configuration payload is not lost, truncated, or reset to defaults.
+- **Verify:** Add a configurable product with a Text-section custom value to cart; confirm via the cart's line-item configuration view. Move it to Saved for Later. Move it back to cart. Confirm the configuration view shows the identical custom value on the new lineItem.
+- **Violation signal:** The custom text/option/file is blank, reset to a default, or the section is missing entirely after the item returns to cart.
+- **Agents:** qa-frontend-expert (storefront round trip), qa-backend-expert (GraphQL fragment/response verification)
+- **Source:** vc-frontend `client-app/core/api/graphql/cart/fragments/fullLineItem.graphql` (`configurationItems` block on `LineItemType`); `.../mutations/moveToSavedForLater/moveToSavedForLaterMutation.graphql` and `.../moveFromSavedForLater/moveFromSavedForLaterMutation.graphql` (both return `cart { ...fullCart }`).
+- **Docs:** N/A — implementation detail: the user guide documents the Save-for-Later and product-configuration features but not this field-level persistence guarantee across the move mutations (§1a).
+- **Amended:** 2026-07-22 (auto-applied, triangulated — BL-AUDIT-2026-07-22; MISSING → new entry, Source + Live agree, Docs N/A per §1a; scoped to single-item move, bulk not independently verified).
+
 ---
 
 ## Domain 3: Checkout (BL-CHK)
@@ -181,6 +203,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** With flag OFF → "Add to cart" → "Checkout" → redirect to sign-in. With flag ON → anonymous user can complete full checkout without account.
 - **Violation signal:** Anonymous user reaches checkout when flag is OFF; guest order appears in a registered user's order history; saved addresses shown to guest.
 - **Agents:** qa-frontend-expert (checkout flow), qa-backend-expert (store settings API)
+- **Source:** vc-frontend `client-app/pages/checkout/index.vue` — no auth guard on the checkout route; a guest may initialize and complete checkout, and the guest order is not linked to an account.
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-CHK-002: Double-submit prevention (Place Order idempotency) `[P0-revenue]`
 - **Rule:** Clicking "Place Order" twice in rapid succession must NOT create two orders. The button must be disabled after first click, and the backend must enforce idempotency (same cart token → same order).
@@ -189,10 +213,12 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert (button state), qa-testing-expert (rapid click test), qa-backend-expert (order API dedup)
 
 ### BL-CHK-003: Address validation by country `[P1-data]`
-- **Rule:** Checkout address forms must adapt required fields based on the selected country. US addresses require state and ZIP code. Countries without postal codes (e.g., some African nations) must not require ZIP. Invalid state/ZIP combinations should be flagged. The address must be validated before proceeding to payment.
-- **Verify:** Select US → state and ZIP required. Select a country without postal codes → ZIP field optional or hidden. Enter invalid ZIP for US state → validation error before payment step.
-- **Violation signal:** ZIP required for countries that don't use postal codes; invalid state/ZIP accepted; address form fields identical regardless of country.
+- **Rule:** Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
+- **Verify:** Select US → State and ZIP required. Select a country with no regions → State/Province hidden/optional, but ZIP/Postal code **still required**. Attempt to submit without ZIP → blocked before the payment step regardless of country.
+- **Violation signal:** State/Province required for a country that has no regions; the address form is identical regardless of country (no region-conditional State field); ZIP silently not enforced. (Note: the earlier expectation that "countries without postal codes must not require ZIP" does NOT match the form — ZIP is always required.)
 - **Agents:** qa-frontend-expert (checkout form), qa-backend-expert (address validation API)
+- **Source:** vc-frontend `address-form.vue` — `postalCode: yup.string().trim().max(32).required()` (no country branch); `regionRules: .when("countryCode", { is: () => !!country.regions.length, then: required, otherwise: nullable })`.
+- **Amended:** 2026-07-22 (approved from bl-proposals-2026-07-22 — BL-AUDIT-2026-07-22: corrected the ZIP clause — ZIP is unconditional, only State/Province is country-conditional; triangulated source + live).
 
 ### BL-CHK-004: Payment retry after decline `[P0-revenue]`
 - **Rule:** When a payment is declined by the gateway (insufficient funds, expired card, etc.), the user must be able to retry with a different card or correct the issue — without losing their cart or shipping selections. The checkout state (address, shipping method) must persist through payment retries. After 3 consecutive declines, the system may lock the checkout temporarily.
@@ -205,6 +231,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** Enter domestic address → see standard/express options. Change to international address → shipping methods update → rates change. Select BOPIS → change to address far from any store → BOPIS option disappears.
 - **Violation signal:** Shipping methods don't update when address changes; unavailable method remains selected; rates don't change for different destinations.
 - **Agents:** qa-frontend-expert (checkout shipping step), qa-backend-expert (shipping API)
+- **Source:** vc-frontend `shipping-details-section.vue` — binds `availableShippingMethods` (server-computed per cart/address); `onShipmentMethodChange` → `updateShipment`.
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-CHK-006: Order total formula `[P0-revenue]`
 - **Rule:** The order total must always equal: `subTotal (sum of the list totals of items flagged selectedForCheckout) + shipping subtotal + tax total + payment subtotal + fee total − discount total (the aggregate of line-item, shipping, payment, and cart-level discounts)`. Every component is an explicit line — no hidden or unexplained differences. The total displayed at checkout must match the total on the order confirmation page and in the Admin order detail. (Source: vc-module-cart `DefaultShoppingCartTotalsCalculator.CalculateTotals` — `cart.Total = SubTotal + ShippingSubTotal + TaxTotal + PaymentSubTotal + FeeTotal − DiscountTotal`.)
@@ -237,6 +265,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
 - **Violation signal:** Payment captured without prior authorization; shipment marked "Send" while still "New"; state skipped without error.
 - **Agents:** qa-backend-expert (order API, state transitions), qa-testing-expert (Admin SPA)
+- **Source:** vc-module-order `PaymentFlowService.cs` — `CaptureAllowedPaymentStatuses => [Authorized, Paid]`, `RefundAllowedPaymentStatuses => [Paid, PartiallyRefunded, Refunded]` (Voided excluded); shipment status enum = New / Pick & Pack / Ready to Send / Send (no "Delivered").
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-ORD-002: Cancellation restores inventory conditionally `[P1-data]`
 - **Rule:** When an order is cancelled, inventory is restored ONLY if the "Adjust inventory on order cancellation" flag is enabled in store settings. Without the flag, cancellation does NOT restore stock — manual inventory adjustment required.
@@ -257,10 +287,12 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-backend-expert (payment API), qa-testing-expert (Admin refund flow)
 
 ### BL-ORD-005: Order number format and uniqueness `[P1-data]`
-- **Rule:** Every order receives a unique, sequential order number upon creation. The format is store-configurable (e.g., prefix + auto-increment). Order numbers must never be reused, even after cancellation. The order number is immutable after creation.
-- **Verify:** Place 3 orders → numbers are sequential (e.g., CO00001, CO00002, CO00003). Cancel CO00002 → place another order → number is CO00004 (not CO00002 reused). Check Admin → order number matches confirmation page.
-- **Violation signal:** Duplicate order numbers; gap-less numbering after cancellation (number reused); order number changes after creation.
+- **Rule:** Every order receives a unique order number upon creation from the store-configurable `Order.CustomerOrderNewNumberTemplate` (default format `CO{date:yyMMdd}-{counter:D5}`, counter reset type `Daily` by default — configurable to `None`/`Weekly`/`Monthly`/`Yearly`). Because the counter resets each period, sequential numbering is only guaranteed **within the active reset period**, not globally — uniqueness across periods comes from the date component, not the counter alone. Order numbers must never be reused within the same reset period, even after cancellation. The order number is immutable after creation.
+- **Verify:** Place 3 orders on the same day → numbers share the day's date prefix and increment sequentially (e.g. `CO<date>-00001`, `-00002`, `-00003`). Cancel the middle order → place another same-day order → the next number continues the same-day sequence (not reused). Placing an order on a new day resets the counter to `00001` under the new date prefix — expected, not a bug.
+- **Violation signal:** Duplicate order numbers *within the same reset period*; counter fails to reset at the configured boundary; order number changes after creation.
 - **Agents:** qa-backend-expert (order API), qa-frontend-expert (confirmation page)
+- **Source:** vc-module-core `CounterOptions.cs` — default `ResetCounterType.Daily`; `SequenceNumberGeneratorService.ShouldResetCounter` resets the sequence at the UTC day boundary.
+- **Amended:** 2026-07-22 (approved from bl-proposals-2026-07-22 — BL-AUDIT-2026-07-22: corrected globally-sequential → per-period-reset numbering, triangulated source + live).
 
 ### BL-ORD-006: Payment state machine (detailed) `[P0-revenue]`
 - **Rule:** Payment states and allowed transitions:
@@ -288,21 +320,15 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-backend-expert (shipment API), qa-testing-expert (Admin SPA)
 
 ### BL-ORD-009: Order status vocabulary `[P1-data]`
-- **Rule:** Admin Order → Status dropdown exposes exactly 7 settable system values (verified 2026-04-22 on the environment via Settings → Order Statuses dictionary):
-  - `New` — order created, no payment activity yet
-  - `Pending` — awaiting fulfillment action
-  - `Payment required` — payment not yet authorized/captured
-  - `Ready for pickup` (system value `ReadyForPickup`) — BOPIS: items prepared at store for customer pickup
-  - `Completed` — delivered/fulfilled; terminal success state
-  - `Cancelled` — terminal cancelled state (see BL-ORD-002 for inventory rules)
-  - `Custom` — extensibility slot for store-specific workflows
-- **Read-only computed status (NOT in the dropdown):**
-  - `Processing` — auto-assigned when payment is captured; visible in Orders grid but cannot be set directly via admin UI.
-- **System value vs display label:** The dictionary stores PascalCase system values (`ReadyForPickup`), while Admin UI and storefront render localized labels (`Ready for pickup` / "Ready for pickup"). Tests must assert against the correct surface — see `project_order_status_vocab` memory.
+- **Rule:** The order status vocabulary is an **admin-editable, localizable dictionary** (`Order.Status` setting, `IsDictionary = true`, `IsLocalizable = true`) — **not** a fixed enum. Every value in the dictionary is **settable** via the Admin Order → Status dropdown (the dropdown is populated from the dictionary), and a deployment may add, rename, or remove values. The platform ships a default seed of settable values — `New`, `Not payed`, `Pending`, `Processing`, `Ready to send`, `Cancelled`, `Partially sent`, `Completed` — which deployments commonly customize (e.g. `Payment required`, `Ready for pickup`, `Custom`). The exact list and count are therefore environment-configurable; the invariant is the dictionary mechanism, not a fixed set or count.
+- **`Processing` is a normal settable dictionary value — NOT read-only/computed.** It is one of the seeded `Order.Status` values and is selectable from the Status dropdown. It also serves as the default `Order.InitialProcessingStatus` (the status auto-assigned when order processing begins — mirroring `Order.InitialStatus`, default `New`, at creation), but auto-assignment does not make it read-only: an admin can set it manually and it persists.
+- **System value vs display label:** The dictionary stores system values (e.g. `ReadyForPickup`), while Admin UI and storefront render localized labels (`Ready for pickup`). Tests must assert against the correct surface — see `project_order_status_vocab` memory.
 - **Storefront labels may differ:** Storefront applies user-facing relabeling on top of platform status (e.g. admin `Pending` + shipment `Send` → storefront "Shipped"). Do not assume 1:1 label mapping between admin and storefront.
-- **Verify:** Open Admin → Orders → any order → Status dropdown shows exactly the 7 settable values above (no `Processing`). Create a BOPIS order → after pickup-ready trigger → status = `Ready for pickup`. Capture payment on a `New` order → grid shows `Processing` but the per-order Status dropdown still only offers the 7 settable values.
-- **Violation signal:** Dropdown exposes `Processing` as settable; missing `Custom` slot; a value set via API not reflected in dropdown; storefront shows raw system value (`ReadyForPickup`) instead of localized label.
-- **Agents:** qa-backend-expert (order API + status dictionary), qa-testing-expert (Admin SPA Status dropdown, storefront order history labels)
+- **Verify:** Open Admin → Orders → any order → the Status dropdown lists the deployment's configured `Order.Status` dictionary values, with `Processing` among the selectable options. Set an `AGENT-TEST-` order to `Processing` → Save → reopen → status persists as `Processing` in the editable Status control. Confirm the settable set matches Settings → Orders → General settings → order status dictionary.
+- **Violation signal:** Status dropdown does not reflect the `Order.Status` dictionary; a configured dictionary value is missing from the dropdown; a saved value does not persist; storefront shows the raw system value (`ReadyForPickup`) instead of the localized label.
+- **Agents:** qa-backend-expert (order API + `Order.Status` dictionary setting), qa-testing-expert (Admin SPA Status dropdown, storefront order history labels)
+- **Source:** vc-module-order `ModuleConstants.cs` — `CustomerOrderStatus` + `Settings.General.OrderStatus` (`IsDictionary=true`, `AllowedValues` = the 8 seed values incl. `Processing`) + `OrderInitialStatus` (default `New`) / `OrderInitialProcessingStatus` (default `Processing`). Docs: PlatformUserGuide "Order management → Settings → General settings" (order statuses are admin-configurable). Live-verified: an order persists in `Processing`, shown in the editable Status control.
+- **Amended:** 2026-07-22 (auto-applied, triangulated — BL-AUDIT-2026-07-22: corrected the stale "Processing is read-only / exactly 7 settable" claim — `Processing` is a settable dictionary value and the set is an env-configurable dictionary, not a fixed enum; 3/3 docs+source+live).
 
 ### BL-ORD-008: Audit trail completeness `[P1-data]`
 - **Rule:** Every order state change (status, payment, shipment) must be recorded in the order's change log with: actor (user/system), timestamp, previous state, and new state. The audit trail is append-only — entries cannot be edited or deleted. Admin users can view the full change log from the order detail blade.
@@ -340,6 +366,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** No lockout after many failures; lockout message reveals account existence ("Account locked" vs "No such user"); lockout doesn't expire; counter not reset after success.
 - **Scope:** This invariant covers **authentication-failure** lockout only (sets the global `ApplicationUser.LockoutEnd`). The **administrative org-scoped lockout** introduced by VCST-5028 (`OrganizationMembership.IsLocked`) is a distinct mechanism that deliberately does NOT set `LockoutEnd` and is governed by BL-AUTH-012 / BL-AUTH-013.
 - **Agents:** qa-frontend-expert (login page), qa-backend-expert (auth API), qa-testing-expert (brute-force scenario)
+- **Source:** vc-platform `AuthorizationController.Exchange()` password branch — `CheckPasswordSignInAsync(..., lockoutOnFailure: true)`.
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-AUTH-004: Returning vs new customer defaults `[P2-ux]`
 - **Rule:** A returning customer (previously placed orders) sees pre-filled saved addresses and payment methods at checkout. A new customer (first order) sees empty address forms and no saved payment methods. The system must not show addresses or payment methods from other accounts, even if the email was reused across organizations.
@@ -431,7 +459,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert (quotes UI), qa-backend-expert (quotes API)
 
 ### BL-B2B-004: Pre-purchase approval is quote-based; no native per-order spending limit `[P0-revenue]`
-- **Rule:** Virto Commerce has **no** native per-order spending-limit / budget-threshold gate, and **no** auto-approval order status (live-verified 2026-07-15: the settable `Order.Status` set is New, Pending, Payment required, Ready for pickup, Completed, Cancelled, Custom, plus read-only Processing — there is **no** "Pending approval"). Pre-purchase approval is **quote-based**: a buyer submits a Purchase Request / Quote (`submitQuoteRequest`), which an organization approver accepts or declines (`approveQuoteRequest` / `declineQuoteRequest`) before it can become an order. The `CustomerOrderType.isApproved` boolean is a passive data flag with no workflow or mutation behind it — not a spending-limit gate. Any budget-threshold / delegated-limit enforcement is a **custom or roadmap** capability, not stock platform behavior.
+- **Rule:** Virto Commerce has **no** native per-order spending-limit / budget-threshold gate, and **no** auto-approval order status (live-verified 2026-07-15: the settable `Order.Status` set is an admin-editable dictionary (e.g. New, Pending, Payment required, Ready for pickup, Completed, Cancelled, Custom, and Processing — all settable, not a fixed enum; see BL-ORD-009) — there is **no** "Pending approval"). Pre-purchase approval is **quote-based**: a buyer submits a Purchase Request / Quote (`submitQuoteRequest`), which an organization approver accepts or declines (`approveQuoteRequest` / `declineQuoteRequest`) before it can become an order. The `CustomerOrderType.isApproved` boolean is a passive data flag with no workflow or mutation behind it — not a spending-limit gate. Any budget-threshold / delegated-limit enforcement is a **custom or roadmap** capability, not stock platform behavior.
 - **Verify:** As an org member, create a Purchase Request / Quote → `submitQuoteRequest` → an org approver `approveQuoteRequest` / `declineQuoteRequest` before it is ordered. Introspect xAPI: order-status enum has **no** `PendingApproval`; there is **no** `approveOrder`/`rejectOrder` mutation and no org/member `limit`/`budget` field.
 - **Violation signal:** A test asserts a stock budget-limit order-approval workflow ("Pending approval" order status, per-order spending cap, self-approval block) — this feature does not exist in the base platform and must not be asserted as native. (A custom deployment MAY add one; scope such tests to that deployment.)
 - **Agents:** qa-frontend-expert (quote request/approval flow), qa-backend-expert (quote xAPI + order-status enum)
@@ -671,12 +699,16 @@ These invariants span multiple modules and are where the most expensive producti
 - **Verify:** Note facet count for Brand X = 15 → click filter → verify exactly 15 products listed. Apply a second filter (e.g., price range) → facet counts for all other facets update to reflect the combined filter.
 - **Violation signal:** Facet shows 15 but filter returns 12 products; facet counts don't update after second filter; total count mismatches; empty facets still shown (count > 0 but no results).
 - **Agents:** qa-frontend-expert (catalog page), qa-backend-expert (xCatalog facet API)
+- **Source:** vc-module-x-catalog `ChildCategoriesQueryHandler` — server-side `TermFacetResult` term counts (`term_facets.terms.count`).
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-SRCH-002: Zero-result query shows an intact empty state `[P2-ux]`
 - **Rule:** When a search query returns zero results, the search-results page (rendered by `category.vue` → `category-products.vue`) must render an intact empty state and never a blank grid, broken layout, or error. It must display (1) a clear no-results message via a `VcEmptyView` (variant `search`, icon `outline-stock`) using i18n key `pages.catalog.no_products_filtered_message` when a keyword/filters are active (else `pages.catalog.no_products_message`), with the searched term echoed in the page heading via i18n key `pages.search.header_empty`; and (2) a recovery action — a reset button (i18n key `pages.catalog.no_products_button`) that clears the keyword/filters (emits `resetFilterKeyword`). NOTE: vc-frontend does **NOT** implement spelling "Did you mean…" suggestions nor a popular-products/categories fallback — do not assert them.
 - **Verify:** Search for a nonsense term → the `VcEmptyView` no-results message shows with the term echoed in the heading → page layout intact → the reset button is present and clears the keyword/filters. (Do not assert a "Did you mean…" suggestion — it does not exist.)
 - **Violation signal:** Blank product grid; broken layout on zero results; no `VcEmptyView`/message on zero results; error/500 on uncommon search terms.
 - **Agents:** qa-frontend-expert (search results page), ui-ux-expert (UX evaluation)
+- **Source:** vc-frontend `vc-empty-view.vue` (`VcEmptyViewVariantType "search"`); RESET SEARCH clears keyword/filters. Live zero-result state confirmed intact.
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-SRCH-003: Search index consistency after catalog change `[P1-data]`
 - **Rule:** After a product is created, updated, or deleted in Admin, the search index must reflect the change within the consistency window (BL-CROSS-009: 120s). Specifically: new product appears in search, updated product name/description changes in results, deleted product disappears from search. No ghost results for deleted products.
@@ -705,6 +737,8 @@ These invariants span multiple modules and are where the most expensive producti
 - **Verify:** Confirm options derive from the delivery address, not billing. Default install (Fixed Rate): Ground/Air appear at their configured flat rates regardless of destination. Store with a zone/address-aware provider: changing to an out-of-zone address removes uncovered methods and updates rates; an uncovered zone blocks checkout with a message.
 - **Violation signal:** Billing address used instead of shipping to compute methods/rates; a zone-aware provider's methods/rates don't change when the delivery address changes; methods shown for an uncovered zone; rates don't update for a new destination on a zone-aware provider.
 - **Agents:** qa-frontend-expert (checkout shipping step), qa-backend-expert (shipping API)
+- **Source:** vc-module-shipping `FixedRateShippingMethod.CalculateRates` — flat Ground/Air rates from settings, independent of the shipping context destination (no built-in zones).
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-SHIP-002: BOPIS requires store pickup location `[P1-data]`
 - **Rule:** Buy Online, Pick Up In Store (BOPIS) is only available when at least one fulfillment center is configured for store pickup in the customer's area. The customer must select a specific pickup location during checkout. BOPIS orders skip the shipping address step but still require a billing address.
@@ -748,6 +782,8 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Verify:** FFC-A has qty=5 → location shows the "Today" note. Set FFC-A qty=0 → wait 120s → the location **disappears** from the selector (or, if global transfer is enabled, downgrades to the transfer note). Set qty at a transfer FFC → location shows the "Via transfer" note.
 - **Violation signal:** "Today"/in-stock note shown when the FFC qty=0; transfer note shown for direct-availability stock; label stale beyond 120s; a wholly-unavailable location rendered with a visible "Not Available" row instead of being dropped.
 - **Agents:** qa-frontend-expert (BOPIS modal labels), qa-backend-expert (inventory API, FFC data)
+- **Source:** vc-module-x-pickup `ProductPickupAvailability.cs` (Today / Transfer / GlobalTransfer constants) + `ProductPickupLocation.cs` (`AvailabilityType`, `AvailabilityNote`, nullable `AvailableQuantity`).
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED — Today/Transfer tier core 3/3; null-exclusion + 120s clauses not re-exercised this pass; Rule unchanged)
 
 ### BL-BOPIS-004: BOPIS store-selector modal is view-only on PDP `[P1-data]`
 - **Rule:** The "Check Availability" / "Pick Up In Store" modal on the Product Detail Page (PDP) is a read-only view. It shows which stores have the product available but does NOT add the product to cart or select a pickup location. Cart addition and pickup-store selection happen from the cart page, not the PDP modal. The modal must close cleanly without side effects.
@@ -791,6 +827,8 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Verify:** Place order → check email inbox → exactly 1 confirmation received. Check Admin → Notification feed → sent status shown. Simulate email service failure → retry mechanism sends email after service recovery → still only 1 email total.
 - **Violation signal:** 0 or 2+ confirmation emails; email silently dropped on service failure; no retry mechanism; notification feed shows no record.
 - **Agents:** qa-backend-expert (notification API), qa-testing-expert (email verification)
+- **Source:** vc-module-order `SendNotificationsOrderChangedEventHandler.Handle(OrderChangedEvent)` — `SendOrderNotifications`-gated, `IsNewlyAdded` → one `OrderCreateEmailNotification` via `BackgroundJob.Enqueue` → `ScheduleSendNotificationAsync`; failures surface in the Admin Notification activity feed (attempt count / status).
+- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
 
 ### BL-NOTIF-002: Email content matches order data `[P1-data]`
 - **Rule:** Order confirmation email content must match the actual order: order number, item names, quantities, prices, subtotal, shipping cost, tax, and grand total. The email uses the same currency as the order. Personalization tokens (customer name, shipping address) must be resolved — no `{{customerName}}` or blank fields.
@@ -871,8 +909,10 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Verify (read path):** With a valid bearer token, call `checkDuplicateAddress(memberId: <own>, address: {…byte-identical fields of an existing saved address})` → `isDuplicated: true`. Call with a novel address → `isDuplicated: false`. Call anonymously (no Authorization header) → request rejected with 401 or equivalent authz error; not HTTP 200. Call with a foreign memberId (different user) → authz error, no data returned.
 - **Violation signal:** `totalCount` = N+1 after single-element submission; two rows with identical key fields appear in `items[]`; the mutation raises an error instead of silently skipping. For the read path: `checkDuplicateAddress` returns `isDuplicated: false` for an address that clearly exists on the member; or returns data to an unauthenticated caller (HTTP 200 without 401); or returns data when a foreign memberId is used.
 - **Agents:** qa-backend-expert (GraphQL direct — see GQL-056, and planned GQL-060/061 for checkDuplicate detection), qa-frontend-expert (storefront UI — see B2C-SHIP-014), test-management-specialist (cross-layer coverage audit)
-- **Origin:** PR [VirtoCommerce/vc-module-profile-experience-api#129](https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/129) — adds both `MemberAggregateRootBase.UpdateAddresses` dedup AND `checkDuplicateAddress` query. As of 2026-04-24 the PR delivers: Contact-path write dedup ✅ works; Organization-path write dedup ❌ broken (`BUG-updateMemberAddresses-Single-Append-Dedup-Miss.md`); `checkDuplicateAddress` detection ❌ always returns false (`BUG-checkDuplicateAddress-Non-Functional.md`).
+- **Origin:** PR [VirtoCommerce/vc-module-profile-experience-api#129](https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/129) — adds both `MemberAggregateRootBase.UpdateAddresses` dedup AND the `checkDuplicateAddress` query, implemented once in the shared base aggregate (no per-member-type override), so the Contact and Organization paths use identical logic and the write-path silent-skip and read-path detection share one method (`IsDuplicateAddress`). The previously-reported Organization-path write-dedup miss and `checkDuplicateAddress`-always-false defects are **no longer reproducible in current source** (both resolved via the unified base aggregate); live-reconfirmed on the Contact path.
 - **Promoted:** 2026-04-23 (from `PROPOSED-BL-PROFILE-001` in `reports/test-lifecycle/TLC-2026-04-23-1700/bl-proposals.md`).
+- **Source:** `vc-module-profile-experience-api` `MemberAggregateRootBase.cs` (address comparer + `IsDuplicateAddress`), `CheckDuplicateAddressQueryHandler.cs` (delegates to the same method), `OrganizationAggregate.cs` / `ContactAggregate.cs` (no override — inherit the shared logic).
+- **Amended:** 2026-07-22 (approved from bl-proposals-2026-07-22 — BL-AUDIT-2026-07-22: refreshed the stale Origin footnote — the Organization-path + `checkDuplicateAddress` defects are fixed in current source, triangulated source + live Contact path; Rule/Verify unchanged).
 
 ---
 
@@ -936,12 +976,13 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`. These rules apply across every GraphQL operation regardless of resolver domain, and are enforced by `scripts/graphql/graphql-runner.ts` for runner-native test cases. See `graphql-schema.md` for the schema reference and `graphql-test-cases-runner.md` for the authoring contract.
 
 ### BL-GQL-001: GraphQL error contract `[P1-data]`
-- **Rule:** Invalid, malformed, or forbidden GraphQL operations return a structured response with `errors[]` non-empty and `data: null` (or partial-null per spec). Per the xAPI GraphQL-over-HTTP contract (graphql-dotnet): **query validation/parse failures** (unknown field, unknown root field, missing required arg, syntax error, missing `command` wrapper on mutations) return **HTTP 400**; **execution/resolver errors, including auth denials**, return **HTTP 200** with the error inside `errors[]`. The server must NEVER (a) return HTTP 5xx for *any* client-side error (validation OR execution), (b) leak internal details in error messages — stack traces (`at System.`), SQL fragments (`SqlException`, `Microsoft.Data`, `SELECT … FROM`), connection strings, file paths, (c) crash instead of returning a structured error.
-- **Verify:** Validation cases (`INVALID_FIELD`, `nonExistentTopLevelField`, missing `command` arg) → HTTP 400 with `errors[]` populated referencing the field/arg name and the `data` entry **absent** (omitted per GraphQL spec §7.1; present-but-null only for partial-failure/execution errors); resolver/auth-level failures → HTTP 200 with `errors[]`. In all cases the message does not match the internal-leak regex `/^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i`.
+- **Rule:** Invalid, malformed, or forbidden GraphQL operations return a structured response with `errors[]` non-empty and `data: null` (or partial-null per spec). Per the xAPI GraphQL-over-HTTP contract (graphql-dotnet): **both query validation/parse failures** (unknown field, unknown root field, missing required arg, syntax error, missing `command` wrapper on mutations) **and execution/resolver errors, including auth denials, return HTTP 200** with the error inside `errors[]` — this platform does NOT return a distinct HTTP 400 for validation failures (live-verified 2026-07-22: an unknown root field → HTTP 200 with `errors[0].extensions.code=FIELDS_ON_CORRECT_TYPE`; an anonymous `orders` query → HTTP 200 with `code=Unauthorized` and `data.orders=null`). The server must NEVER (a) return HTTP 5xx for *any* client-side error (validation OR execution), (b) leak internal details in error messages — stack traces (`at System.`), SQL fragments (`SqlException`, `Microsoft.Data`, `SELECT … FROM`), connection strings, file paths, (c) crash instead of returning a structured error.
+- **Verify:** Validation cases (`INVALID_FIELD`, `nonExistentTopLevelField`, missing `command` arg) → **HTTP 200** with `errors[]` populated referencing the field/arg name and the `data` entry **absent** (omitted per GraphQL spec §7.1; present-but-null only for partial-failure/execution errors); resolver/auth-level failures → HTTP 200 with `errors[]` too. In all cases the message does not match the internal-leak regex `/^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i`.
 - **Violation signal:** HTTP 5xx on schema-validation error; `errors[]` empty on an obviously-invalid query; stack trace or SQL fragment exposed in `errors[0].message`; thrown exception bubbles to transport layer.
 - **Agents:** qa-backend-expert (xAPI), test-runner-agent (graphql-runner.ts client-side validator enforces this contract).
 - **Suite coverage:** `050g` XCC-GQL-015 (direct test); referenced by ~183 cases across all 14 GraphQL suites as the "no HTTP 500 / graceful failure" invariant.
 - **Promoted:** 2026-05-15 (from `bl-proposals.md` TLC-2026-05-15-1830; 264 phantom references cleaned up across all GraphQL suites).
+- **Amended:** 2026-07-22 (approved from bl-proposals-2026-07-22 — BL-AUDIT-2026-07-22: corrected the validation-error HTTP status 400 → 200, triangulated source `GraphQLHttpMiddlewareWithLogs`/`AuthorizationError:ExecutionError` + live; the prior "HTTP 400 for validation failures" clause was factually wrong on this platform).
 
 ### BL-GQL-002: GraphQL query performance thresholds `[P2-ux]`
 - **Rule:** Happy-path GraphQL operations against the xAPI complete within target wall-clock thresholds measured from request-send to response-received: simple single-resolver queries (`me`, `categories(first:1)`, flat `orders(first:10)`) **< 500 ms**; deep nested queries (`orders { items addresses inPayments shipments }`) **< 1000 ms**; introspection (`__schema { types }`) **< 1000 ms**. Thresholds are environment-specific — these are baselines for one deployment; other environments may differ.
