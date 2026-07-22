@@ -249,8 +249,9 @@ const SAFE_TERMS = new Set([
 // pluginRoot() (NEVER the project/client tree — the source must be trusted), and cached per process.
 // This is SAFE regardless of breadth: the allowlist is built ONLY from plugin source, which contains
 // no client identifiers, so it can never whitelist a real client name. A read error just yields a
-// smaller allowlist (the fail-safe direction). The narrowed shape rule in (3) already spares the
-// lowercase-first plugin symbols on its own; this additionally rescues any PascalCase plugin symbol.
+// smaller allowlist (the fail-safe direction). The allowlist is the SOLE mechanism sparing plugin
+// symbols — the shape rule in (3) stays BROAD (any compound camelCase) so client CODE identifiers,
+// which are overwhelmingly lowercase-first camelCase, keep being withheld from the public upstream.
 const __deliverDir = dirname(fileURLToPath(import.meta.url));
 function pluginRoot() {
   return resolve(__deliverDir, "..", ".."); // skills/vc-self-check → plugins/vc-fix (or .claude mirror)
@@ -289,11 +290,11 @@ function pluginSymbols() {
  * Positive detection of CLIENT-SHAPED content the blacklist scrubber can't catch, in
  * three layers: (1) a configured client identifier (any case) from the profile; (2)
  * paths / source files (Windows drive, UNC, any-slash path or source file that is NOT an
- * anchored plugin reference); (3) residual identifier tokens — a PascalCase / Capital-first
- * COMPOUND (client class / namespace) or a single Capitalized proper-noun word, unless it is a
- * plugin symbol / SAFE term / plugin-file reference. A lowercase-first camelCase token is a CODE
- * identifier, NOT flagged on shape. A plugin reference is masked out first so it never trips
- * (2)/(3). Bias is fail-safe — layers (1)+(2) are the hard client-data gates.
+ * anchored plugin reference); (3) residual identifier tokens — ANY compound camel/PascalCase token
+ * (client identifier / class / namespace) or a single Capitalized proper-noun word, unless it is a
+ * plugin symbol / SAFE term / plugin-file reference (the allowlist, checked first, is what spares
+ * plugin code identifiers). A plugin reference is masked out first so it never trips (2)/(3). Bias
+ * is fail-safe — over-withholding a non-client compound is acceptable; leaking a client one is not.
  */
 function containsClientShape(text) {
   const t = String(text ?? "");
@@ -320,15 +321,19 @@ function containsClientShape(text) {
   // scanning the raw text does not over-flag them. (The extension rule above stays on
   // `masked` — else a legit plugin `repo-router.ts` reference would trip it.)
   for (const tok of t.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
-    // Plugin-safe: a SAFE term, a declared plugin symbol, or a plugin-file reference survives
-    // even when PascalCase (Fix 3 req #4). This is what keeps genuine plugin evidence in the report.
+    // Plugin-safe: a SAFE term, a declared plugin symbol, or a plugin-file reference survives — even
+    // when compound (Fix 3). The plugin-symbol ALLOWLIST is the mechanism that keeps genuine plugin
+    // evidence (pendingSubagents, sawPluginSpan, openOps, freshOpenAgents, …) in the report; it is
+    // checked FIRST, before the shape rules below.
     if (SAFE_TERMS.has(tok) || pluginSymbols().has(tok) || referencesPlugin(tok)) continue;
-    // PascalCase / Capital-first COMPOUND (AcmeCorp, CartController) — the actual client class /
-    // namespace threat. A LOWERCASE-first camelCase token (pendingSubagents, freshOpenAgents) is a
-    // CODE identifier, NOT a client proper noun, so it is NOT flagged on shape alone (Fix 3): reserve
-    // compound-flagging for Capital-first tokens (and dotted namespaces like Acme.Cart.Domain, whose
-    // PascalCase segments are each caught here). Was `/[a-z][A-Z]/`, which flagged every camelCase.
-    if (/^[A-Z]/.test(tok) && /[a-z][A-Z]/.test(tok)) return true;
+    // ANY compound camel/PascalCase token (orderSyncService, leocorpCheckout, AcmeCorp, CartController)
+    // is a client CODE identifier / class / namespace and is withheld. This stays BROAD on purpose:
+    // client source identifiers are overwhelmingly LOWERCASE-first camelCase, and §2a requires scrubbing
+    // "identifiers" from anything sent to the PUBLIC upstream. Narrowing this to Capital-first only
+    // (an earlier draft) leaked lowercase-first client identifiers — three independent reviewers flagged
+    // it as a client-data-containment BLOCKER. Plugin symbols are ALREADY spared by the allowlist above,
+    // so keeping this broad costs nothing for plugin evidence while restoring client-identifier coverage.
+    if (/[a-z][A-Z]/.test(tok)) return true; // compound camel/PascalCase (client identifier / class / namespace)
     if (/^[A-Z][a-z][A-Za-z0-9]*$/.test(tok)) return true; // single Capitalized proper noun (Acme, Contoso) — requires a lowercase LETTER after the capital so gate/severity codes (G0-G7, S0-S3, P0) are NOT flagged
   }
   return false;

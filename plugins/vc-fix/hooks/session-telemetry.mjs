@@ -1090,29 +1090,35 @@ async function cmdFinalize(ev) {
     const started = Date.parse(sp.startTs || sp.lastTs || "") || refNowMs;
     if (refNowMs - started <= T.STALL_MS) freshOpenAgents++;
   }
-  // Count the `background_tasks` entries that are OURS. Match by id/tool_use_id when the platform
-  // supplies one; an entry whose id matches NONE of our agent ops is foreign (a shell task, or
-  // another session's) → ignored. Only an entry with NO id at all falls back to kind — and then
-  // ONLY a genuine agent/subagent, NEVER a shell/bash task.
+  // Classify the `background_tasks` entries. `ownedPendingAgents` = entries that match one of OUR
+  // agent ops by id/tool_use_id. `sawAgentKindBg` = at least one entry is an AGENT/subagent (not a
+  // shell/bash task), regardless of id. The kind split is the LEO fix's core: a `run_in_background`
+  // SHELL task (foreign or ours) must NEVER cause a defer; only a genuine agent can.
   let ownedPendingAgents = 0;
+  let sawAgentKindBg = false;
   for (const bt of bgTasks) {
     if (!bt || typeof bt !== "object") continue;
-    const ids = [bt.tool_use_id, bt.id, bt.agent_id].filter((x) => x != null).map(String);
-    if (ids.length) { if (ids.some((x) => ownAgentIds.has(x))) ownedPendingAgents++; continue; }
     const kind = String(bt.kind ?? bt.type ?? (bt.agent_type || bt.subagent_type ? "agent" : "")).toLowerCase();
     const isShell = kind === "bash" || kind === "shell" || kind === "command" || kind === "local_shell";
-    const isAgent = kind === "agent" || kind === "subagent" || kind === "task";
-    if (isAgent && !isShell) ownedPendingAgents++;
+    const isAgent = !isShell && (kind === "agent" || kind === "subagent" || kind === "task" || Boolean(bt.agent_type || bt.subagent_type));
+    if (isAgent) sawAgentKindBg = true;
+    const ids = [bt.tool_use_id, bt.id, bt.agent_id].filter((x) => x != null).map(String);
+    if (ids.some((x) => ownAgentIds.has(x))) ownedPendingAgents++;
   }
   // Hard guard (belt-and-suspenders): with ZERO open agent ops of ours, nothing of ours can be in a
-  // sidechain — NEVER defer, whatever `background_tasks` says. Otherwise the field, when present, is
-  // authoritative via ownedPendingAgents; when absent, fall back to freshOpenAgents (unchanged).
+  // sidechain — NEVER defer, whatever `background_tasks` says (this is the LEO agent_calls:0 case).
+  // Otherwise, when the field is present, defer if either (a) a bg entry matches one of our agent ops
+  // by id, OR (b) a bg entry is agent-KIND and we have a FRESH open agent op — this covers a platform
+  // that keys an agent bg task by a distinct `agent_id` (≠ our tool_use_id), so a genuinely-running
+  // subagent is not finalized early; the `freshOpenAgents` gate (STALL_MS on the session clock) bounds
+  // it so an ORPHANED own-op + a persistent foreign agent-kind entry can't defer forever. When the
+  // field is absent, fall back to freshOpenAgents (unchanged).
   const pendingBg = openAgents === 0 ? false
-    : ("background_tasks" in ev) ? ownedPendingAgents > 0 : freshOpenAgents > 0;
+    : ("background_tasks" in ev) ? (ownedPendingAgents > 0 || (sawAgentKindBg && freshOpenAgents > 0)) : freshOpenAgents > 0;
   const stopHookActive = ev.stop_hook_active === true;
   if (pendingBg) {
     // Reflect OUR pending agents, not global background noise (was `bgTasks.length`).
-    const pendingSubagents = ("background_tasks" in ev) ? ownedPendingAgents : (freshOpenAgents || openAgents);
+    const pendingSubagents = ("background_tasks" in ev) ? (ownedPendingAgents || freshOpenAgents || openAgents) : (freshOpenAgents || openAgents);
     appendRecord(jsonl, {
       type: "finalize",
       sessionId: sid,

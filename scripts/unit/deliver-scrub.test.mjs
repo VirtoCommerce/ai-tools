@@ -70,6 +70,26 @@ test("Fix 3: a PascalCase client class name is still flagged (heuristic not over
   assert.equal(isClientSpecific("the Contoso integration"), true, "single Capitalized proper noun stays flagged");
 });
 
+// REGRESSION GUARD (3 independent reviewers, BLOCKER): a LOWERCASE-first camelCase CLIENT identifier
+// must stay withheld. An earlier draft narrowed the shape rule to Capital-first only, which leaked
+// exactly these (client source symbols are overwhelmingly lowercase-first camelCase, and layer-1's
+// alphanumeric boundary does NOT match an org fused into a camelCase token). The shape rule is BROAD
+// again; the plugin-symbol allowlist (asserted above) is what spares the plugin's OWN camelCase.
+test("Fix 3 (regression): a lowercase-first camelCase CLIENT identifier is withheld", () => {
+  // arbitrary client code symbols (not the configured org, not plugin symbols)
+  for (const id of ["orderSyncService", "checkoutTotals", "customerTaxProfile", "useAcmeCheckout"]) {
+    assert.equal(isClientSpecific(`root cause: ${id} returned null`), true, `client identifier ${id} must be withheld`);
+  }
+  // the configured org fused into a camelCase identifier (no separator) — the exact leak reviewers found
+  for (const id of ["leocorpCheckout", "leocorpService", "useLeocorpCart"]) {
+    assert.equal(isClientSpecific(`the ${id} broke`), true, `org-fused camelCase ${id} must be withheld`);
+  }
+  // and the plugin's OWN lowercase-first camelCase symbols must STILL survive (the allowlist)
+  for (const sym of ["pendingSubagents", "freshOpenAgents", "sawPluginSpan", "openOps"]) {
+    assert.equal(isClientSpecific(`the ${sym} counter`), false, `plugin symbol ${sym} must survive`);
+  }
+});
+
 test("cell #5: an embedded JWT / PAT is redacted regardless of the shape rules", () => {
   const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
   const pat = "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

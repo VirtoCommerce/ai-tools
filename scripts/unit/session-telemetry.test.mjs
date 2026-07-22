@@ -1109,13 +1109,13 @@ test("terminal (foreign background_task): a bg task matching NO open agent op do
     ]);
     const out = run(home, "finalize", {
       session_id: sid, transcript_path: transcriptPath, reason: "stop",
-      background_tasks: [{ agent_id: "foreign-shell-1", agent_type: "bash" }],
+      background_tasks: [{ id: "foreign-shell-1", type: "bash", command: "tail -f log" }],
     }, LINE_OFF);
     assert.equal(out.trim(), "", "line off → no stdout");
     const recs = readSpans(home, sid);
     const fins = finalizesOf(recs);
     assert.equal(fins.length, 1, "exactly one finalize (terminal), not a defer");
-    assert.notEqual(fins[0].decision.verdict, "deferred", "a foreign bg task with no matching agent op must NOT defer");
+    assert.notEqual(fins[0].decision.verdict, "deferred", "a foreign shell bg task with no matching agent op must NOT defer");
     assert.equal(spansOf(recs, "command", "qa-fix").length, 1, "the trailing command span is closed at the terminal Stop");
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -1340,6 +1340,34 @@ test("Fix 1: a foreign shell task is IGNORED but our own open agent op still def
     const fin = finalizeOf(readSpans(home, sid));
     assert.equal(fin.decision.verdict, "deferred", "our own open agent op must still defer");
     assert.equal(fin.decision.pendingSubagents, 1, "the count reflects OUR pending agents (1), not the 2 background_tasks");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("Fix 1: an agent-kind bg task keyed by a distinct agent_id still defers (fresh own agent op)", () => {
+  const home = setupHome();
+  try {
+    const sid = "mismatched-id";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-42" });
+    // Our own subagent is genuinely running (Task op open, no result). The platform reports it as a
+    // bg task keyed by a DISTINCT agent_id (a UUID ≠ the transcript tool_use_id "ta1"). id matching
+    // alone would miss it → premature finalize; the agent-KIND + fresh-open-agent fallback catches it.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-backend", description: "fix" }),
+    ]);
+    const out = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      background_tasks: [{ agent_id: "b3f9-uuid-not-the-tooluse-id", agent_type: "fullstack-backend" }],
+    });
+    assert.equal(out.trim(), "", "a genuinely-running subagent must still defer, even with a mismatched bg id");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "deferred", "agent-kind bg + fresh own agent op ⇒ defer");
+    assert.equal(fin.decision.pendingSubagents, 1, "reflects our one fresh open agent op");
+    assert.equal(spansOf(readSpans(home, sid), "command", "qa-fix").length, 0, "command not closed at the checkpoint");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
