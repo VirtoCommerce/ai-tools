@@ -150,6 +150,53 @@ test("capture gate: VC_FIX_DIAG_CAPTURE=off forces a full no-op even with selfDi
   }
 });
 
+// ─── opt-in mid-run: /project-init's OWN run surfaces its clean line via `complete` ──
+// Reproduces the LEO deployment (2026-07-22): capture starts OFF (no profile), /project-init's
+// §0b consent step writes selfDiagnostics:true MID-session, so the `/project-init` prompt (fired
+// before the flag) opened NO command span. pluginActivity must still be true — the explicit
+// `complete --skill project-init` signal proves the plugin ran — so the clean line surfaces.
+test("opt-in mid-run: a `complete` signal surfaces the clean line even with no command span", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-telemetry-midrun-"));
+  try {
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    // 1) capture OFF at session start — no profile yet (init/prompt are full no-ops).
+    run(home, "init", { session_id: "midrun", transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: "midrun", transcript_path: transcriptPath, prompt: "/project-init" });
+    assert.ok(!existsSync(join(home, ".vc-fix")), "capture is off until the flag is written");
+    // 2) §0b writes the flag mid-run → capture turns ON.
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({ projectType: "client", selfDiagnostics: true }));
+    // 3) the rest of the run: only tool ops (no Skill, no command span — the /project-init prompt
+    //    was missed while capture was off). A `record` firing creates the state + captures them.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "node gen-profile.mjs --self-diagnostics true" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "[gen-profile] wrote project-profile.json"),
+      toolUse("2026-01-01T00:00:02Z", "b2", "Bash", { command: "node verify-access.mjs" }),
+      toolResult("2026-01-01T00:00:03Z", "b2", false, "Readiness: all PASS — READY"),
+    ]);
+    run(home, "record", { session_id: "midrun", transcript_path: transcriptPath });
+    assert.ok(existsSync(join(home, ".vc-fix")), "capture is on once the flag exists");
+    // 4) terminal step: /project-init signals completion, then the turn ends.
+    complete(home, "project-init");
+    const out = run(home, "finalize", { session_id: "midrun", transcript_path: transcriptPath, reason: "stop" });
+
+    const dec = JSON.parse(out);
+    assert.equal(dec.decision, "block", "the clean line must surface for /project-init's own run");
+    assert.match(dec.reason, /no plugin issues detected/i);
+
+    const fin = finalizeOf(readSpans(home, "midrun"));
+    assert.equal(fin.decision.verdict, "clean");
+    assert.equal(fin.decision.pluginActivity, true, "the `complete` signal establishes pluginActivity despite no command span");
+    assert.equal(fin.decision.completeSignalled, true);
+    assert.equal(fin.decision.surfaced, true);
+    // No command span exists (the /project-init prompt predated the flag) — the tool spans are still captured.
+    assert.equal(spansOf(readSpans(home, "midrun"), "command", "project-init").length, 0, "no command span for the missed prompt");
+    assert.ok(spansOf(readSpans(home, "midrun"), "tool", "Bash").length >= 1, "tool spans are captured from the flag write onward");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── recovered: same tool+arg_hash fails then succeeds ──────────────────────────
 test("classify: a retried invocation that eventually succeeds is `recovered`, not `failed`", () => {
   const home = setupHome();

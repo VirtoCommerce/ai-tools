@@ -1109,7 +1109,17 @@ async function cmdFinalize(ev) {
   // fires from OUR OWN resume-turn carries stop_hook_active:true, so neither the findings block
   // nor the clean line re-fires and no resume loop can form.
   const shouldPrompt = !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
-  const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen);
+  // pluginActivity = a plugin skill/command was active this session. Normally proven by a closed
+  // skill/command span (sawPluginSpan) or a seen Skill (anySkillSeen). A THIRD proof: an explicit
+  // `complete --skill "<name>"` completion signal (state.skillCompletePending) — only a plugin
+  // skill/command emits it (as its terminal action), so its presence is authoritative. This matters
+  // for the OPT-IN capture case: `/project-init`'s OWN run turns capture on mid-session (its §0b
+  // consent step writes the flag), so its `/project-init` UserPromptSubmit — which fired BEFORE the
+  // flag existed — was a no-op and NO command span opened. Its `complete` signal is then the only
+  // proof the plugin ran; without this OR the healthy run would be misjudged "no-plugin-activity"
+  // and its clean line withheld (residual opt-in blind spot, reported from the LEO deployment
+  // 2026-07-22). It never over-fires on a plain dev turn (no `complete` is emitted there).
+  const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen) || Boolean(state.skillCompletePending);
   // Clean line (default ON): gated on an EXPLICIT completion signal, NOT on per-turn plugin
   // activity. `Stop` fires at the end of EVERY turn (including every interview/"fill the files"
   // pause of a multi-turn skill) and cannot know whether another user turn is coming, so a
