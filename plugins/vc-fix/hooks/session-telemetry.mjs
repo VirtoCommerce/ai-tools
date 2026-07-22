@@ -1139,15 +1139,20 @@ async function cmdFinalize(ev) {
   const cleanEligible = pluginActivity && (completePending || fallbackClean);
   const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && cleanEligible;
   // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were detected
-  // at init. It surfaces ONLY when it can ride a findings/clean line (`shouldPrompt || cleanBlock`)
-  // OR on a plain turn with no plugin activity (`!pluginActivity`) — NEVER during an intermediate
-  // pause of a still-running skill (the `awaiting-completion` state: pluginActivity but nothing
-  // surfacing). Otherwise, e.g. `/project-init`'s first interview pause would pop a cleanup
-  // AskUserQuestion MID-onboarding, which reads as an interruption; instead it rides the terminal
-  // clean line at the skill's end. Suppressed by the kill switch; once per session via
-  // `cleanupOffered` (persisted, NOT reset per turn) + `promptedThisTurn`.
+  // at init. It ALWAYS rides a DIAGNOSTIC surface — it fires ONLY when a findings block
+  // (`shouldPrompt`) or the clean line (`cleanBlock`) is ALSO firing this turn, and is APPENDED
+  // after it. So the ordering the operator sees is: diagnostic verdict FIRST (clean → "no issues";
+  // findings → run /vc-self-check + report), THEN the cleanup offer. It NEVER surfaces standalone:
+  //   • not on a plain dev turn with no plugin activity (would pop a cleanup dialog out of nowhere,
+  //     with no verdict to justify it — the age-cap silently reclaims >24h leftovers, and the next
+  //     real plugin session offers cleanup after its verdict). [was `|| !pluginActivity` — removed
+  //     per operator feedback 2026-07-22: "deletion should come AFTER the no-problems check; if
+  //     problems are found, self-analysis + feedback first, THEN the cleanup offer".]
+  //   • not during an intermediate pause of a still-running skill (`awaiting-completion`: neither
+  //     surfaces, so cleanup doesn't either — no MID-onboarding interruption).
+  // Suppressed by the kill switch; once per session via `cleanupOffered` (persisted) + `promptedThisTurn`.
   const cleanupPending = Boolean(state.cleanupPending) && !state.cleanupOffered;
-  const cleanupBlock = cleanupPending && !consentOff && !stopHookActive && !state.promptedThisTurn && (shouldPrompt || cleanBlock || !pluginActivity);
+  const cleanupBlock = cleanupPending && !consentOff && !stopHookActive && !state.promptedThisTurn && (shouldPrompt || cleanBlock);
   const surfaced = shouldPrompt || cleanBlock || cleanupBlock;
   // A durable, deterministic audit of every decision moment — greppable with
   // `"type":"finalize"` / `decision` in the session jsonl. This is how "when did the hook

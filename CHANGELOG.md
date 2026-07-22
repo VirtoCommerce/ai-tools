@@ -34,6 +34,11 @@ The earlier same-cycle change ("capture is now DEFAULT-ON", below — now marked
   multi-turn skill's intermediate pause (the `awaiting-completion` state) it is withheld and instead
   rides the terminal clean line at the skill's end (a `SessionStart` hook cannot open an interactive
   prompt — only a Stop-hook resume can, confirmed against the hooks docs).
+- **Cleanup offer never surfaces standalone** (operator feedback 2026-07-22). It now rides a
+  DIAGNOSTIC surface only — the clean line ("no problems"), or after the findings→`/vc-self-check`
+  flow — never on its own on a plain dev turn with no plugin verdict (the old `|| !pluginActivity`
+  path is removed; >24h leftovers still auto-reclaim via the age-cap, and the next real plugin
+  session offers cleanup after its verdict). Ordering is always: verdict FIRST, cleanup offer AFTER.
 
 ### Changed — the clean self-check line now fires on an EXPLICIT completion signal, not per-turn
 

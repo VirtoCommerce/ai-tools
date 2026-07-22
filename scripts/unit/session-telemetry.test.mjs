@@ -1410,7 +1410,10 @@ test("dev skill: a /vc-shell-fix skill span that produced NONE of its markers is
 });
 
 // ─── cleanup offer — leftover artifacts from OTHER inactive sessions ────────────────
-test("cleanup offer: leftover inactive-session artifacts surface a one-shot AskUserQuestion offer at the terminal Stop", () => {
+test("cleanup offer: NOT standalone on a plain dev turn — it rides a diagnostic (clean) surface only", () => {
+  // Operator rule (2026-07-22): the deletion offer must come AFTER the no-problems check — never
+  // pop out of nowhere on a plain dev turn with no plugin verdict. It rides the clean line / the
+  // findings→self-check flow, appended after it.
   const home = setupHome();
   try {
     const dir = diagDirOf(home);
@@ -1430,21 +1433,35 @@ test("cleanup offer: leftover inactive-session artifacts surface a one-shot AskU
     assert.equal(start.staleInactiveSessions, 1, "one inactive session detected");
     assert.equal(start.staleInactiveFiles, 2, "two leftover files detected");
 
-    // A plain dev turn (no plugin activity) — the cleanup offer stands alone.
+    // 1) A plain dev turn (no plugin activity) — the cleanup offer must NOT surface standalone.
     run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "refactor this" });
+    const plain = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    assert.equal(plain.trim(), "", "no plugin verdict → no standalone cleanup offer");
+    const finPlain = finalizeOf(readSpans(home, sid));
+    assert.equal(finPlain.decision.cleanupOffered, false);
+    assert.equal(finPlain.decision.suppressReason, "no-plugin-activity");
+
+    // 2) A clean PLUGIN turn — the clean line fires AND the cleanup offer rides it (after it).
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "t1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "t1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
+    ]);
+    complete(home, "qa-env-check");
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
     const dec = JSON.parse(out);
-    assert.equal(dec.decision, "block", "the cleanup offer surfaces via decision:block");
-    assert.match(dec.reason, /Clean up vc-fix diagnostic files/, "the 3-option AskUserQuestion is set up");
+    assert.equal(dec.decision, "block", "the clean line + cleanup offer surface via decision:block");
+    assert.match(dec.reason, /no plugin issues detected/i, "the clean verdict comes FIRST");
+    assert.match(dec.reason, /Clean up vc-fix diagnostic files/, "the 3-option AskUserQuestion is set up, AFTER the verdict");
     assert.match(dec.reason, /Delete all sessions \(incl\. this one\)/);
     assert.match(dec.reason, /Delete all except this session/);
     assert.match(dec.reason, /Keep them \(auto-deleted after 24h\)/);
     assert.match(dec.reason, /purge-inactive --all --dir/, "option 1 (all incl. this) ignores the 1h floor");
     assert.match(dec.reason, /purge-inactive --keep "cur-cleanup" --dir/, "option 2 (all except this) keeps the 1h floor → spares a live parallel session");
     assert.doesNotMatch(dec.reason, /purge-inactive --all --keep/, "option 2 must NOT use --all (that would delete a live parallel session)");
-    const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.cleanupOffered, true);
+    assert.equal(finalizesOf(readSpans(home, sid)).pop().decision.cleanupOffered, true);
 
     // A repeat finalize (same turn / resume) must NOT re-offer — once per session.
     const second = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
@@ -1524,9 +1541,17 @@ test("cleanup offer: VC_FIX_DIAG_CONSENT=off suppresses the offer (capture still
     writeFileSync(transcriptPath, "");
     const OFF = { VC_FIX_DIAG_CONSENT: "off" };
     run(home, "init", { session_id: sid, transcript_path: transcriptPath }, OFF);
-    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "refactor this" }, OFF);
+    // A clean PLUGIN turn that WOULD ride a clean line + cleanup offer — the kill switch must
+    // suppress both (so this isn't a vacuous pass on a no-verdict turn post the standalone-removal).
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-env-check" }, OFF);
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "t1", "Read", { file_path: "config.js" }),
+      toolResult("2026-01-01T00:00:01Z", "t1", false, "env ok"),
+      assistantText("2026-01-01T00:00:02Z", "Readiness table: all PASS — READY."),
+    ]);
+    complete(home, "qa-env-check", OFF);
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, OFF);
-    assert.equal(out.trim(), "", "the kill switch suppresses the cleanup offer");
+    assert.equal(out.trim(), "", "the kill switch suppresses the cleanup offer (and the clean line)");
     assert.ok(existsSync(join(home, ".vc-fix")), "capture still ran (consent gates surfacing, not capture)");
   } finally {
     rmSync(home, { recursive: true, force: true });
