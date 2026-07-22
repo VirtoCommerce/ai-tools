@@ -72,7 +72,7 @@ function readSpans(home, sid) {
 }
 const spansOf = (records, kind, name) => records.filter((r) => r.type === "span" && r.kind === kind && r.name === name);
 
-// ─── capture gate (DEFAULT-ON, opt-out) ─────────────────────────────────────────
+// ─── capture gate (OPT-IN) ───────────────────────────────────────────────────────
 test("capture gate: selfDiagnostics:false is an explicit opt-out (no .vc-fix/ created)", () => {
   const home = setupHome({ selfDiagnostics: false });
   try {
@@ -87,18 +87,51 @@ test("capture gate: selfDiagnostics:false is an explicit opt-out (no .vc-fix/ cr
   }
 });
 
-test("capture gate: DEFAULT-ON — an absent project-profile.json still captures (fixes the /project-init blind spot)", () => {
+test("capture gate: OPT-IN — an absent project-profile.json is a full no-op (no .vc-fix/)", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-telemetry-noprofile-"));
   try {
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, "");
-    // No project-profile.json — exactly the state DURING /project-init's own run.
+    // No project-profile.json — exactly the state DURING /project-init BEFORE its §0b consent
+    // step writes the flag. Opt-in ⇒ capture is OFF until selfDiagnostics:true is written, so
+    // the hook must be a full no-op here and create nothing.
     run(home, "init", { session_id: "no-profile", transcript_path: transcriptPath });
     run(home, "prompt", { session_id: "no-profile", transcript_path: transcriptPath, prompt: "/project-init" });
     run(home, "finalize", { session_id: "no-profile", transcript_path: transcriptPath, reason: "stop" });
-    assert.ok(existsSync(join(home, ".vc-fix")), "absent profile ⇒ capture ON (default-on)");
-    const recs = readSpans(home, "no-profile");
-    assert.ok(recs.some((r) => r.type === "session_start"), "session_start is recorded with no profile");
+    assert.ok(!existsSync(join(home, ".vc-fix")), "absent profile ⇒ capture OFF (opt-in) — no .vc-fix/ created");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("capture gate: OPT-IN — a profile WITHOUT a selfDiagnostics field is a full no-op", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-telemetry-noflag-"));
+  try {
+    // A profile exists but never opted in (no selfDiagnostics field). Any non-`true` value —
+    // including absent — must read as OFF.
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({ projectType: "native-platform" }));
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: "no-flag", transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: "no-flag", transcript_path: transcriptPath, prompt: "/qa-bug something" });
+    run(home, "finalize", { session_id: "no-flag", transcript_path: transcriptPath, reason: "stop" });
+    assert.ok(!existsSync(join(home, ".vc-fix")), "absent selfDiagnostics field ⇒ capture OFF (opt-in)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("capture gate: OPT-IN — selfDiagnostics:true captures (the flag /project-init §0b writes on Yes)", () => {
+  const home = setupHome(); // selfDiagnostics: true — the state after §0b consent = Yes
+  try {
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: "opt-in", transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: "opt-in", transcript_path: transcriptPath, prompt: "/project-init" });
+    run(home, "finalize", { session_id: "opt-in", transcript_path: transcriptPath, reason: "stop" });
+    assert.ok(existsSync(join(home, ".vc-fix")), "selfDiagnostics:true ⇒ capture ON");
+    const recs = readSpans(home, "opt-in");
+    assert.ok(recs.some((r) => r.type === "session_start"), "session_start is recorded once the flag is set");
     assert.equal(spansOf(recs, "command", "project-init").length, 1, "the /project-init command span is captured");
   } finally {
     rmSync(home, { recursive: true, force: true });

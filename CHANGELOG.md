@@ -12,6 +12,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.8.0`** (marketplace `0.9.2`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Changed — self-diagnostics capture reverted to OPT-IN, with consent asked as `/project-init`'s FIRST step
+
+The earlier same-cycle change ("capture is now DEFAULT-ON", below — now marked superseded) is **reverted to opt-in**. Capture runs **only** when `project-profile.json` explicitly sets `selfDiagnostics: true` (the env kill-switch `VC_FIX_DIAG_CAPTURE=off` still forces off regardless). No profile / no flag / any non-`true` value ⇒ a **full no-op** — no `.vc-fix/` is created. The `/project-init` blind spot the default-on change targeted is closed a different way: **consent first + immediate flag write.**
+
+- `captureEnabled()` now returns `readProfile(root)?.selfDiagnostics === true` (absent/unreadable ⇒ off). `plugins/vc-fix/hooks/session-telemetry.mjs` only.
+- **`/project-init` asks the capture consent as its FIRST step** (new §0b — before installing tooling and before the interview) and, on Yes, writes `selfDiagnostics: true` **immediately** via `gen-profile --self-diagnostics true`, so its OWN remaining run is captured from that point on. The duplicate mid-interview `selfDiagnostics` prompt (old "step 2e") is removed — step 2e now asks **only** the `feedback.mode` upstream-delivery consent (and is skipped entirely when §0b was answered No). The `session_start` record still misses this run (SessionStart fired before the flag existed) — accepted; spans + the finalize verdict are captured from the flag write onward.
+- Docs re-aligned to opt-in (`plugins/vc-fix/README.md`, `commands/vc-feedback.md`, `/vc-self-check` SKILL, `knowledge/diagnostics/skill-expectations.md`, `scripts/lib/project-profile.mjs` JSDoc). Tests flipped in `scripts/unit/session-telemetry.test.mjs`: an absent profile / a profile without the flag is now a full no-op; `selfDiagnostics: true` captures. Added a `gen-profile` §0b stub-write test.
+- `plugins/vc-fix` only — the `.claude/` mirror stays on the pre-5509 model.
+
 ### Changed — self-diagnostics UX polish: terse surfaced line + a 3-option end-of-session cleanup
 
 - **Surfaced block reason is now one short line, not a paragraph.** Claude Code renders a Stop-hook
@@ -43,7 +52,7 @@ The clean status line (`vc-fix self-check: no plugin issues detected`) was gated
 
 **Deferred (tracked separately, not in this PR):** live ADO verification of the write-probe *auth-before-validate* premise (a read-only PAT must 401/403 before body validation, else the probe can false-PASS); a `gen-profile` reconcile/merge value-preservation test.
 
-### Changed — self-diagnostics capture is now DEFAULT-ON (opt-out), so `/project-init` is diagnosed
+### Changed — self-diagnostics capture is now DEFAULT-ON (opt-out), so `/project-init` is diagnosed  _(SUPERSEDED — reverted to opt-in, see the entry at the top of [Unreleased])_
 
 The passive session-telemetry collector was gated on `project-profile.json` `selfDiagnostics === true`. But that profile is written only at the **end** of `/project-init`, so during onboarding there was no profile → the hooks no-op'd → **`/project-init` — the very first, most failure-prone skill a client runs — was the subsystem's blind spot**. Capture is now default-on (`plugins/vc-fix/hooks/session-telemetry.mjs`):
 

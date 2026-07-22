@@ -63,8 +63,9 @@ mentioned here, **never run from this flow**.
 - **`latest`** (default): the newest `*.jsonl` in that dir. A specific **`<session-id>`**
   arg reads `<session-id>.jsonl`.
 - If the dir or file is absent → tell the user telemetry hasn't been collected (the
-  plugin may be running without the hooks wired, or capture was opted out via
-  `selfDiagnostics: false` in `project-profile.json` / `VC_FIX_DIAG_CAPTURE=off`) and STOP.
+  plugin may be running without the hooks wired, or capture was never opted in — it is
+  opt-in, so it stays off until `project-profile.json` sets `selfDiagnostics: true`; also
+  off if `VC_FIX_DIAG_CAPTURE=off`) and STOP.
 - Read the `session_start` record for `transcriptPath`, `pluginVersion`, `testEnv`,
   `projectType`. Note: `session_start.testEnv` is null when `TEST_ENV` was passed inline
   per-command (not exported to the hook env) — the **`finalize`** record carries the value

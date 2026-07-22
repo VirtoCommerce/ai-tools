@@ -68,7 +68,7 @@ recorded silently; only *interesting* (non-clean) work is ever surfaced or sent.
   JSON-lines file to `<project>/.vc-fix/diagnostics/<session_id>.jsonl` (gitignored). **Raw payloads
   are never stored** — tool inputs are hashed (`arg_hash`) and **secrets are redacted** (tokens,
   passwords, card numbers, JWTs). The collector never blocks a tool and never fails your session.
-  Capture is **default-on**: it runs for every session unless `project-profile.json` explicitly sets `selfDiagnostics: false` (or the env kill-switch `VC_FIX_DIAG_CAPTURE=off` is set). Default-on is deliberate — it means the first skill a client runs, `/project-init` (which writes the profile only at the *end* of onboarding), is itself captured.
+  Capture is **opt-in**: it runs only when `project-profile.json` explicitly sets `selfDiagnostics: true` (and the env kill-switch `VC_FIX_DIAG_CAPTURE` is not off). No profile / no flag / any non-`true` value ⇒ a **full no-op** — no `.vc-fix/` is created. The opt-in is owned by `/project-init`, which asks the consent question as its **first** step and — on Yes — writes the flag **immediately** (before the interview), so its own remaining run is captured from that point on.
 - **Outcome, not error count, drives escalation.** Each skill/command span is classified with cheap
   heuristics (no LLM): `success` · `recovered` (a self-corrected error — **not** escalated) ·
   `degraded` (a *struggle* pattern: retry storm, search thrash, reread/fallback loop, low yield) ·

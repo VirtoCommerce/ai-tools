@@ -40,8 +40,25 @@ test("gen-profile: without consent flags the safe defaults hold (true / ask)", (
   const home = mkdtempSync(join(tmpdir(), "vc-fix-genprofile-"));
   try {
     const p = genProfile(home, ["--tracker", "jira"]);
-    assert.equal(p.selfDiagnostics, true, "capture defaults on");
+    // NB: `true` here is the RECOMMENDED written value (the interview's default answer), NOT the
+    // capture default — capture is opt-in and stays OFF with no profile on disk. The collector
+    // reads the raw written flag; a profile written by gen-profile always carries it.
+    assert.equal(p.selfDiagnostics, true, "the written recommended value is true");
     assert.equal(p.feedback.mode, "ask", "delivery defaults to ask (dry-run + confirm)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("gen-profile: the §0b consent stub — `--self-diagnostics true` alone writes an opt-in profile", () => {
+  // /project-init §0b writes the flag IMMEDIATELY on Yes, before the interview, so its own
+  // remaining run is captured. That stub is just `gen-profile --self-diagnostics true` — a
+  // complete-but-default profile carrying selfDiagnostics:true (step 6 rewrites it fully later).
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-genprofile-stub-"));
+  try {
+    const p = genProfile(home, ["--self-diagnostics", "true"]);
+    assert.equal(p.selfDiagnostics, true, "the stub opts capture in immediately");
+    assert.ok(p.projectType, "the stub is a complete profile (defaults filled), not a fragment");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -113,8 +130,8 @@ test("gen-profile: a malformed --self-diagnostics value is rejected, not silentl
   try {
     let err;
     try {
-      // "yes"/"True"/"1" used to fall through to selfDiagnostics:false (capture OFF) with no error —
-      // a plausible typo silently opting the project out of the default-on subsystem.
+      // "yes"/"True"/"1" used to fall through to selfDiagnostics:false with no error — a plausible
+      // typo silently writing the opt-OUT value when the operator meant to opt IN.
       execFileSync(process.execPath, [GEN, "--tracker", "jira", "--self-diagnostics", "yes"], {
         encoding: "utf8",
         env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },

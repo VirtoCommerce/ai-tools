@@ -91,8 +91,8 @@ function main() {
   for (const k of Object.keys(ENUMS)) validateEnum(args, k);
   // --self-diagnostics is boolean, not an ENUM, but must still reject a malformed value: a bare
   // flag (=== true) or "true"/"false" only. Otherwise a plausible typo (`--self-diagnostics yes`,
-  // `True`, `1`) used to silently coerce to `false` and opt the project OUT of default-on capture,
-  // asymmetric with the enum-validated --feedback-mode.
+  // `True`, `1`) used to silently coerce to `false` — writing the opt-OUT value when the operator
+  // meant to opt IN — asymmetric with the enum-validated --feedback-mode.
   if (args["self-diagnostics"] !== undefined && args["self-diagnostics"] !== true && !["true", "false"].includes(args["self-diagnostics"])) {
     fail(`Invalid --self-diagnostics "${args["self-diagnostics"]}". Allowed: true | false (or the bare flag = true)`);
   }
@@ -142,10 +142,11 @@ function main() {
   // Default stays "ask" (PROFILE_DEFAULTS) unless the operator picked one.
   set("feedback.mode", args["feedback-mode"]);
   // selfDiagnostics — opt-in for the passive session-telemetry CAPTURE hook
-  // (VCST-5475/5509). Default stays true (PROFILE_DEFAULTS); the fresh interview now
-  // asks it explicitly (symmetric with `/project-init --check` reconcile). Coerce the
-  // string flag → boolean: `--self-diagnostics false` ⇒ false, `--self-diagnostics true`
-  // or a bare `--self-diagnostics` ⇒ true.
+  // (VCST-5475/5509). The hook is a full no-op until this is EXPLICITLY true. The written
+  // default is `true` (PROFILE_DEFAULTS) as the RECOMMENDED value, but `/project-init` asks the
+  // operator FIRST (§0b) and always passes the answer — and writes the flag immediately on Yes so
+  // its own run is captured. Coerce the string flag → boolean: `--self-diagnostics false` ⇒ false,
+  // `--self-diagnostics true` or a bare `--self-diagnostics` ⇒ true.
   if (args["self-diagnostics"] !== undefined) {
     set("selfDiagnostics", args["self-diagnostics"] === true || args["self-diagnostics"] === "true");
   }

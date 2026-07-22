@@ -76,14 +76,17 @@
  *    correctly reports NOT READY / BAIL is itself healthy.)
  *
  * INVARIANTS (all enforced here):
- *   - CAPTURE IS DEFAULT-ON (opt-out): init/prompt/record/agentstop/finalize run
- *     UNLESS the output-root project-profile.json EXPLICITLY sets
- *     `selfDiagnostics: false`, OR the env kill-switch VC_FIX_DIAG_CAPTURE is
- *     off/0/false/no. Absent profile / absent field / any non-false value ⇒ capture
- *     ON — so `/project-init` (which writes project-profile.json only at the END of
- *     onboarding, so there is NO profile during its own run) is itself captured; it
- *     used to be the subsystem's blind spot. (Tier-3 DELIVERY consent is a separate
- *     `feedback.mode` gate read by deliver.mjs — never here.)
+ *   - CAPTURE IS OPT-IN: init/prompt/record/agentstop/finalize run ONLY when the
+ *     output-root project-profile.json EXPLICITLY sets `selfDiagnostics: true` (and
+ *     the env kill-switch VC_FIX_DIAG_CAPTURE is not off/0/false/no). Absent profile /
+ *     absent field / any non-`true` value ⇒ FULL NO-OP — nothing is read, nothing is
+ *     written, `.vc-fix/` is never created. `/project-init` closes the old blind spot
+ *     (it writes the profile only at the END of onboarding) by asking the consent
+ *     question as its FIRST step and writing `selfDiagnostics: true` IMMEDIATELY on
+ *     Yes — so its own remaining run is captured. (The session_start record still
+ *     misses that run: SessionStart fired before the flag existed. Accepted — spans +
+ *     finalize are captured from the flag write onward.) Tier-3 DELIVERY consent is a
+ *     separate `feedback.mode` gate read by deliver.mjs — never here.
  *   - Writes ONLY under <outputRoot>/.vc-fix/diagnostics/ (outputRoot =
  *     VC_FIX_HOME || cwd, matching skills/project-init/lib/paths.mjs). NEVER under
  *     the plugin install dir. `.vc-fix/` is gitignored.
@@ -892,17 +895,21 @@ function readProjectType(root) {
   const j = readProfile(root);
   return typeof j?.projectType === "string" ? j.projectType : null;
 }
-// Capture gate — DEFAULT-ON, opt-out. Telemetry runs UNLESS the output-root profile
-// EXPLICITLY sets `selfDiagnostics: false`, or the env kill-switch VC_FIX_DIAG_CAPTURE
-// is off/0/false/no. Absent profile / absent field / any non-false value ⇒ capture ON —
-// so `/project-init` (no profile yet during its own run) is captured too. (feedback.mode
-// gates DELIVERY, not capture — read by deliver.mjs, never here.)
+// Capture gate — OPT-IN. Telemetry runs ONLY when the output-root profile EXPLICITLY
+// sets `selfDiagnostics: true` (AND the env kill-switch VC_FIX_DIAG_CAPTURE is not
+// off/0/false/no). Absent profile / absent field / any non-`true` value ⇒ NO capture —
+// a full no-op, `.vc-fix/` is never created. The opt-in is owned by `/project-init`,
+// which asks the consent question as its FIRST step and — on Yes — writes the flag
+// IMMEDIATELY (before the interview) so its OWN remaining run is captured from that
+// point on. No profile ⇒ no capture: every other skill just reads the flag; consent is
+// never asked outside `/project-init`. (feedback.mode gates DELIVERY, not capture —
+// read by deliver.mjs, never here.)
 function captureEnabled(root) {
   if (/^(off|0|false|no)$/i.test(process.env.VC_FIX_DIAG_CAPTURE || "")) return false;
   try {
-    return readProfile(root)?.selfDiagnostics !== false;
+    return readProfile(root)?.selfDiagnostics === true;
   } catch {
-    return true; // absent / unreadable profile ⇒ default-on
+    return false; // absent / unreadable profile ⇒ opt-in default = OFF
   }
 }
 
