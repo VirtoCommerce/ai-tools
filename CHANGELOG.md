@@ -12,6 +12,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.8.1`** (marketplace `0.9.3`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Fixed — PR #143 review: compound-key secret redaction + orphan-agent backstop + guarded verify-access
+
+- **Security (BLOCKER):** the redaction rule for key/value secrets was anchored with `\b(keyword)\b`, which requires a word boundary on **both** sides of the keyword — so a keyword preceded by a word char (`access_token`, `refresh_token`, `client_secret`, `id_token`, `sessionToken`) or followed by one (`aws_secret_access_key`) had no boundary there and the value **leaked** into `<sid>.jsonl` → the public upstream via `deliver`. These are the most common OAuth2 / cloud-credential shapes, and opaque (non-JWT) tokens don't fall back to the `eyJ…` JWT rule. The rule now allows a bounded, length-capped word-char prefix/suffix around the keyword (`plugins/vc-fix/hooks/session-telemetry.mjs` `REDACTIONS`). New regression test `redaction: compound OAuth / cloud secret key names …` covers all six shapes.
+- **Robustness (LOW):** `cmdFinalize`'s checkpoint fallback (used only when the harness omits `background_tasks`) deferred on **any** open agent op, so an orphaned/crashed sub-agent op could defer the terminal verdict **forever**. It now counts only agent ops fresher than `STALL_MS` on the **session clock** (newest transcript event ts, not wall-clock); stale ops fall through to the drain safety-net. Regression test `checkpoint (fallback): a STALE open agent op … drains`.
+- **Robustness (LOW):** `skills/project-init/verify-access.mjs` invoked `main()` unguarded — an unexpected throw before the normal exit became an unhandled rejection and skipped the completion marker. Wrapped in `.catch` (crash ⇒ exit 1, clean line stays withheld — the safe direction).
+- `plugins/vc-fix` + `scripts/unit/` only — the `.claude/` mirror stays on the pre-5509 model.
+
 ### Changed — self-diagnostics capture is OPT-IN, with consent asked as `/project-init`'s FIRST step
 
 The passive session-telemetry collector captures **only** when `project-profile.json` explicitly sets `selfDiagnostics: true` (the env kill-switch `VC_FIX_DIAG_CAPTURE=off` still forces off regardless). No profile / no flag / any non-`true` value ⇒ a **full no-op** — no `.vc-fix/` is created. The `/project-init` onboarding blind spot — its profile is written only at the *end* of onboarding, so its own run would otherwise never be captured — is closed by **consent first + immediate flag write.**

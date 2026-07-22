@@ -513,4 +513,11 @@ function renderTable(rows) {
   console.log("");
 }
 
-main();
+// Guard the top-level promise: an unexpected throw before the normal exit (line ~408) must not
+// become an unhandled rejection. We do NOT fire the completion marker on a crash — a crash is not a
+// clean terminal step (the clean line stays withheld, the safe direction). A total-config-load
+// failure is already handled by the early `process.exit(1)` above.
+main().catch((err) => {
+  console.error(`[verify-access] ${err?.stack || err?.message || err}`);
+  process.exit(1);
+});

@@ -461,6 +461,49 @@ test("redaction: secrets in a tool_result never reach a span's details[].snippet
   }
 });
 
+// COMPOUND secret key names — the OAuth / cloud-credential shapes the `\b(keyword)\b` anchor MISSED
+// (PR #143 review): a keyword preceded by a word char (`access_token`, `refresh_token`, `client_secret`,
+// `id_token`, `sessionToken`) or followed by one (`aws_secret_access_key`) had no word boundary there, so
+// the value LEAKED into <sid>.jsonl → the public upstream via deliver. These are the single most common
+// secret shapes in HTTP/curl debug output (OAuth2 token responses, cloud creds). Non-JWT opaque tokens
+// specifically escape the `eyJ…` JWT rule, so they MUST be caught by the key/value rule.
+test("redaction: compound OAuth / cloud secret key names (access_token, client_secret, …) never leak", () => {
+  const home = setupHome();
+  try {
+    const sid = "redact-compound";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-99" });
+    appendLines(transcriptPath, [
+      // A realistic OAuth2 token-endpoint response body (opaque, NON-JWT values — the JWT rule can't help).
+      toolUse("2026-01-01T00:00:00Z", "c1", "Bash", { command: "curl token endpoint" }),
+      toolResult("2026-01-01T00:00:01Z", "c1", true,
+        'HTTP 200 {"access_token":"LEAKaccessOPAQUE1234567890","refresh_token":"LEAKrefreshOPAQUEabcdef","id_token":"LEAKidOPAQUEvalue"}'),
+      // OAuth client credentials (form-encoded) + a camelCase session token.
+      toolUse("2026-01-01T00:00:02Z", "c2", "Bash", { command: "curl auth" }),
+      toolResult("2026-01-01T00:00:03Z", "c2", true,
+        'grant_type=client_credentials&client_id=vc-app&client_secret=LEAKclientSECRET99 sessionToken=LEAKsessionTOK'),
+      // AWS secret access key — keyword FOLLOWED by a word char (`_access_key`).
+      toolUse("2026-01-01T00:00:04Z", "c3", "Bash", { command: "aws configure" }),
+      toolResult("2026-01-01T00:00:05Z", "c3", true, "aws_secret_access_key=LEAKawsSECRETkeyVALUE region us-east-1"),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const recs = readSpans(home, sid);
+    const snippets = recs.filter((r) => r.type === "span").flatMap((r) => (r.details || []).map((d) => d.snippet || ""));
+    const haystack = snippets.join("  ") + "  " + out;
+    for (const secret of [
+      "LEAKaccessOPAQUE1234567890", "LEAKrefreshOPAQUEabcdef", "LEAKidOPAQUEvalue",
+      "LEAKclientSECRET99", "LEAKsessionTOK", "LEAKawsSECRETkeyVALUE",
+    ]) {
+      assert.ok(!haystack.includes(secret), `compound-key secret must be redacted, but leaked: ${secret}`);
+    }
+    assert.ok(/«redacted»/.test(snippets.join(" ")), "compound-key values replaced with the redaction marker");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── dedup: the same signature must not re-trigger the block on a later finalize ──
 test("tail-trigger dedup: the same flagged signature only blocks once per session", () => {
   const home = setupHome();
@@ -1141,6 +1184,31 @@ test("checkpoint (fallback): an open agent op with no background_tasks field sti
     const fin = finalizeOf(readSpans(home, sid));
     assert.equal(fin.decision.verdict, "deferred");
     assert.equal(fin.decision.pendingSubagents, 1);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// Orphan backstop (PR #143 review, LOW): with NO background_tasks field, an agent op that has been
+// open longer than STALL_MS on the SESSION clock is an orphan (crashed sub-agent / sidechain result) —
+// it must NOT defer forever; the terminal verdict fires and the drain safety-net records it.
+test("checkpoint (fallback): a STALE open agent op (no background_tasks) drains, does not defer forever", () => {
+  const home = setupHome();
+  try {
+    const sid = "cp-orphan";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-14b" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-frontend", description: "fix" }),
+      // …then >STALL_MS (8min) of later activity with NO result for ta1 → the agent op is an orphan.
+      toolUse("2026-01-01T00:11:00Z", "b9", "Read", { file_path: "x" }),
+      toolResult("2026-01-01T00:11:01Z", "b9", false, "ok"),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.notEqual(fin.decision.verdict, "deferred", "a stale/orphaned agent op must not defer forever");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

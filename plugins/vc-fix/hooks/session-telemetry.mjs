@@ -158,9 +158,16 @@ const REDACTIONS = [
   // key/value secrets — optional quotes around BOTH key and value so the JSON form
   // (`"password":"x"`, `"apiKey": "x"`), the shell form (`password=x`), the header form
   // (`X-Api-Key: x`) and the Azure connection-string form (`AccountKey=…`, `SharedAccessSignature=…`)
-  // all redact the value. The old rule needed a literal `keyword[:=]` with no quote between them, so
-  // every JSON-shaped secret escaped it.
-  [/\b(token|api[_-]?key|secret|password|passwd|pwd|accountkey|sharedaccesssignature)\b"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
+  // all redact the value. A literal `keyword[:=]` with no quote between them (the pre-#143 rule) let
+  // every JSON-shaped secret escape it. The bounded `[\w-]{0,40}?` PREFIX + `[\w-]{0,40}` SUFFIX around
+  // the keyword are what redact COMPOUND key names: the old `\b(keyword)\b` anchor required a word
+  // boundary on BOTH sides of the keyword, so a keyword preceded by a word char (`access_token`,
+  // `refresh_token`, `client_secret`, `sessionToken`) OR followed by one (`aws_secret_access_key`)
+  // had no boundary there and LEAKED the value into the jsonl → the public upstream via deliver
+  // (PR #143 review — the OAuth-token / client_secret shapes the JSON-quoted-Authorization fix missed).
+  // The prefix is lazy + length-capped so backtracking stays linear; over-redaction of a benign
+  // `*secret*`-named field is the intended fail-safe direction. Group 1 keeps the FULL key as signal.
+  [/\b([\w-]{0,40}?(?:token|api[_-]?key|secret|password|passwd|pwd|accountkey|sharedaccesssignature)[\w-]{0,40})"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
   [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers
   [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub tokens
@@ -563,6 +570,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     }
     if (ev.isSidechain === true) continue; // sub-agent's own transcript — not our ops
     const ts = typeof ev.timestamp === "string" ? ev.timestamp : nowIso();
+    state.lastScanTs = ts; // newest event ts seen — the session's own clock (chronological scan)
     const msg = ev.message ?? ev;
     const content = msg?.content ?? ev?.content;
     const items = Array.isArray(content) ? content : content != null ? [content] : [];
@@ -801,6 +809,7 @@ function freshState(ev, sid) {
     currentCommand: null,
     currentSkill: null,
     openOps: new Map(), // tool_use_id → open tool/agent span
+    lastScanTs: null, // newest transcript event ts seen (the session clock; orphan-agent backstop)
     totals: zeroCounts(),
     spanCounts: {},
     flagged: [], // non-success/recovered spans this session
@@ -1077,9 +1086,25 @@ async function cmdFinalize(ev) {
   // emit the terminal verdict) would never run. The `openAgents` count is the fallback
   // ONLY when the field is entirely absent (an older/edge harness that doesn't send it).
   const bgTasks = Array.isArray(ev.background_tasks) ? ev.background_tasks : [];
+  // Session-relative "now" for the orphan backstop below: the newest transcript event ts (the session's
+  // own clock), NOT wall-clock — the hook can fire long after the events, and the transcript timestamps
+  // are what every other duration here is measured against. Falls back to wall-clock only if no scan ts.
+  const refNowMs = Date.parse(state.lastScanTs || "") || Date.now();
   let openAgents = 0;
-  for (const [, sp] of state.openOps) if (sp && sp.kind === "agent") openAgents++;
-  const pendingBg = ("background_tasks" in ev) ? bgTasks.length > 0 : openAgents > 0;
+  let freshOpenAgents = 0;
+  for (const [, sp] of state.openOps) if (sp && sp.kind === "agent") {
+    openAgents++;
+    // An agent op is a fallback deferral signal ONLY while it is plausibly still running. An op open
+    // longer than STALL_MS (measured on the session clock) with no matching tool_result is an ORPHAN
+    // (crashed/interrupted sub-agent, or a result that landed in a skipped sidechain) — deferring on it
+    // would defer FOREVER and the drain safety-net below would never run. So the fallback counts only
+    // FRESH (≤ STALL_MS) open agents; stale ones fall through to the drain. This only affects the
+    // fallback branch — when the harness sends `background_tasks` (current CC, always) that array is
+    // authoritative and this is unused.
+    const started = Date.parse(sp.startTs || sp.lastTs || "") || refNowMs;
+    if (refNowMs - started <= T.STALL_MS) freshOpenAgents++;
+  }
+  const pendingBg = ("background_tasks" in ev) ? bgTasks.length > 0 : freshOpenAgents > 0;
   const stopHookActive = ev.stop_hook_active === true;
   if (pendingBg) {
     const pendingSubagents = bgTasks.length || openAgents;
