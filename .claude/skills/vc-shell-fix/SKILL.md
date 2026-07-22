@@ -35,6 +35,24 @@ sub-app declared in `moduleFrontendSubApps` (e.g. `vc-module-pagebuilder`'s `src
 Working directory for install/build/test/typecheck/lint = `<checkout>/<subApp.path>`; repo-level git ops
 (`git diff`/`add`/`commit`/`push`) still happen at the **repo root** — one commit, one repo.
 
+## Ground yourself in the checked-out repo first
+
+The sub-app's own files are the source of truth — do NOT assume versions, a package manager, or script
+names from this skill (they drift; the page-builder shell's own `.claude` docs already disagree with its
+`package.json` on the `@vc-shell/framework` version).
+
+1. **Read the sub-app's `package.json`.** The `scripts` block tells you exactly how to run
+   `test` / `type-check` / `lint` / `build`; the `packageManager` field tells you *with what* (e.g.
+   `yarn@4.9.2` → invoke `yarn test`, not `npm`/bare `npx`). Its dependency versions (Vue, Vite, the
+   framework) are authoritative — never hardcode them.
+2. **If the module repo ships its own `.claude/agents/*` or `.claude/skills/*`, read them.** Some module
+   repos (e.g. `vc-module-pagebuilder`) carry first-party dev docs — structure, build commands, the
+   `api_client/` rule, framework conventions. Treat them as the module team's own guidance and prefer
+   them over generic assumptions — but where they disagree with `package.json`, **`package.json` wins**.
+3. **Know the layout** (typical `@vc-shell` shell): `src/composables/` (`useXxx`), `src/modules/`
+   (feature modules), `src/pages/` (route = file), `src/router/`, `src/locales/` (i18n), and
+   `src/api_client/` — **auto-generated, off-limits** (see Hard rules).
+
 ## Two fix paths
 
 1. **State/logic bug** (composable, store, service function — e.g. a stale reactive flag not resetting
@@ -45,31 +63,39 @@ Working directory for install/build/test/typecheck/lint = `<checkout>/<subApp.pa
    faithfully reproduce → this is **not** a tooling gap to solve here. It's the ordinary Gate-6 "needs
    deploy verification" path every module fix already uses (`.claude/rules/quality-gates.md` G6,
    `qa-backend-expert` post-deploy regression) — say so in the PR body, don't invent a new harness.
+   **This includes cross-frame bugs:** the Angular designer ↔ Vue shell communicate across an **iframe**
+   via `postMessage` + `BroadcastChannel('vc-module-content-channel')`, which neither Path 1 (Node) nor
+   Path 2 (single-frame jsdom) can reproduce — a "state doesn't update across the designer" symptom is a
+   Gate-6 case, not a harness case.
 
 ### Path 1 — state/logic, the real runner (preferred — try this first)
 
 1. Read `tests/**/*.test.ts` for the house style (Node's built-in `test`/`assert` from `node:test`,
    plain imports — no test framework config to discover).
-2. Locate the seam: the composable (`use*`)/store/service function that owns the bug's state. `Grep`/
-   `Glob` on the symptom (a flag name, an event handler, a store action).
+2. Locate the seam: the composable (`use*`)/store/service function that owns the bug's state — usually
+   under `src/composables/` or `src/modules/` (see the layout above). `Grep`/`Glob` on the symptom
+   (a flag name, an event handler, a store action). Never the seam: `src/api_client/` (generated).
 3. Write a **NEW** `*.test.ts` next to an existing one: import the real module, wrap reactive state in
    `effectScope()` where needed (same technique as `vue-unit-test`'s `vitest-patterns.md` composable
    recipe — different runner, same idea), assert the **expected** behavior.
-4. Confirm **RED**: `npx tsx --test tests/<new>.test.ts`. If it passes on current code, the RCA is wrong
-   — re-investigate, don't proceed.
+4. Confirm **RED** by running just the new file with the sub-app's runner (e.g.
+   `yarn tsx --test tests/<new>.test.ts` — the runner + PM from step 1). If it passes on current code,
+   the RCA is wrong — re-investigate, don't proceed.
 5. Fix the smallest correct change to product code; re-run until **GREEN**. Existing tests untouched.
-6. Gate: `vue-tsc --noEmit` + lint (sub-app's own commands) + the full `npx tsx --test tests/**/*.test.ts`.
+6. Gate: run the sub-app's **declared** `type-check`, `lint`, and `test` scripts via its `packageManager`
+   (e.g. `yarn type-check && yarn lint && yarn test` when `packageManager` is yarn — see step 1). Note
+   `lint` is often `eslint --fix` (it mutates files): review that its auto-fixes stay within your fix
+   scope before committing.
 
 ### Path 2 — mounted-component/DOM, the ephemeral harness
 
 1. **Confirm Path 1 genuinely can't reach the bug** — the symptom is in template/render output, not
    state (if you're not sure, try Path 1 first; it's cheaper and leaves no cleanup).
-2. **Scratch-install, never touching the sub-app's own `package.json`/lockfile:**
-   ```
-   npm install --no-save --no-package-lock vitest @vue/test-utils jsdom @vitejs/plugin-vue
-   ```
-   Run from the sub-app directory. Verify BEFORE and AFTER: `git diff package.json package-lock.json`
-   must be **empty** both times (`--no-save` keeps `package.json` untouched).
+2. **Scratch-install the mount deps (`vitest @vue/test-utils jsdom @vitejs/plugin-vue`) without touching
+   any tracked file** — no diff to `package.json`, `yarn.lock`, or `package-lock.json`. The deps only
+   need to land in the gitignored `node_modules`. Verify with a clean `git status` **before and after**,
+   whatever the package manager. The exact recipe (incl. the Yarn Berry caveat) is in
+   `vc-shell-scratch-harness-patterns.md` §1.
 3. Write an ephemeral `vitest.scratch.config.ts` in the sub-app dir (never staged) that imports the
    sub-app's **real** `vite.config.ts` via `mergeConfig`, setting `test.environment: "jsdom"` — see
    `vc-shell-scratch-harness-patterns.md` for the exact snippet.
@@ -87,13 +113,17 @@ Working directory for install/build/test/typecheck/lint = `<checkout>/<subApp.pa
 
 - **Single repo, single sub-app path.** Touching `Web/Scripts/` (legacy AngularJS Admin UI), the Angular
   21 designer, or the .NET solution in the same run → STOP. Stay within the declared sub-app path.
+- **`src/api_client/` is auto-generated** (`@vc-shell/api-client-generator`) — **never edit it.** An RCA
+  anchor inside `api_client/` means the real root cause is upstream (a C# DTO/controller or the generator
+  config), not the shell → **STOP / hand off**; this is not a shell fix.
 - **The ephemeral harness (Path 2) never ships.** No devDependency, lockfile, or scratch-config diff —
   verify with `git status`/`git diff` before opening the PR.
 - **Only ADD tests** (Path 1) — never edit or delete an existing `tests/*.test.ts`. An existing test
   going red after the fix = contract conflict → STOP.
 - **Never add a real dependency** to the sub-app's `package.json` just to compile a test.
-- Match the sub-app's existing Composition API / `<script setup>` / vee-validate conventions — don't
-  restyle or "modernize".
+- **Idiomatic minimal diff — match the sub-app's conventions**, don't restyle or "modernize":
+  `<script setup lang="ts">`, `readonly` refs where nothing mutates them, vee-validate for **all** form
+  validation (no custom validators), and i18n via `useI18n()` + `locales/` keys (**no hardcoded strings**).
 - Same gate ladder + no-auto-merge as every other developer path — `.claude/rules/quality-gates.md`.
 - If the correct fix is unclear or risky → `FIX_STATUS: FAILED`, don't push speculative changes.
 
