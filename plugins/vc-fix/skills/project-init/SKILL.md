@@ -561,8 +561,11 @@ and point the operator at the first run:
 /qa-fix VCST-1234        # (or your tracker's key) — now routes to the right repo
 ```
 
-**Signal completion (self-diagnostics — the LAST action of this step).** After the Step 9
-summary above, run this once — best-effort, silent, and it never blocks:
+**Signal completion (self-diagnostics).** This is now emitted **automatically** — `verify-access.mjs`
+(Step 8, the last script every path runs) fires the terminal-step marker itself, best-effort, so the
+clean self-check line prints reliably without depending on you remembering a trailing command. You only
+need to run it **manually as a fallback** if the run ended BEFORE reaching Step 8 verify-access (e.g. a
+hard precondition bail at Step 0), so the collector still knows the run finished:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"
@@ -658,7 +661,8 @@ Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new en
 readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (per run, or via
 your shell) selects the new environment for `/qa-fix`, `/qa-bug`, `/qa-verify-fix`.
 
-As the LAST action, signal completion (best-effort, silent, never blocks):
+Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
+marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
 `node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"`.
 
 ---
@@ -741,7 +745,8 @@ FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verif
 **Restate BOTH** the reconciliation summary (added / removed / decided) **and** the
 readiness table in your reply.
 
-As the LAST action, signal completion (best-effort, silent, never blocks):
+Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
+marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
 `node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"`.
 
 ---

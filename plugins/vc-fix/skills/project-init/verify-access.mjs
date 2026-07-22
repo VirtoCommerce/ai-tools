@@ -110,6 +110,19 @@ function splitRepo(full) {
   return i >= 0 ? { owner: full.slice(0, i), name: full.slice(i + 1) } : { owner: "", name: full || "" };
 }
 
+// Fire the self-diagnostics terminal-step marker via the collector's own `complete` subcommand
+// (reuses its exact logic + captureEnabled gate). Synchronous + fully swallowed: telemetry must
+// NEVER break onboarding, so any failure (missing hook, spawn error, timeout) is ignored.
+function signalSelfDiagnosticsComplete() {
+  try {
+    const hook = resolve(pluginRoot(), "hooks", "session-telemetry.mjs");
+    if (!existsSync(hook)) return;
+    execSync(`node "${hook}" complete --skill "project-init"`, { stdio: "ignore", timeout: 5000 });
+  } catch {
+    /* never throw */
+  }
+}
+
 async function main() {
   // 1. Profile
   const profile = loadProjectProfile();
@@ -375,6 +388,15 @@ async function main() {
 
   renderTable(results);
   renderMcp();
+  // Best-effort self-diagnostics COMPLETION signal. verify-access is the LAST script every
+  // /project-init path runs (fresh §9, --check §C, --add-env §D), so emitting the terminal-step
+  // marker HERE makes the clean self-check line ("no plugin issues detected") fire reliably —
+  // WITHOUT depending on the model remembering the trailing `complete` command (it can skip that
+  // silent afterthought in auto mode; observed on the LEO deployment 2026-07-22 → the healthy run
+  // surfaced nothing). The hook gates itself on captureEnabled (selfDiagnostics:true), so this is a
+  // no-op when capture is off. NEVER throws / never affects the readiness exit code. Emitted even on
+  // NOT READY — a correct NOT-READY verdict is itself a completed run (see skill-expectations §complete).
+  signalSelfDiagnosticsComplete();
   process.exit(results.some((r) => r.status === "FAIL") ? 1 : 0);
 }
 
