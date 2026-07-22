@@ -12,6 +12,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.8.1`** (marketplace `0.9.3`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Fixed — whole-PR adversarial review round (5 independent reviewers)
+
+- **Secret leak to the PUBLIC upstream (BLOCKER)** — `hooks/redact.mjs` covered only classic `gh[pousr]_` GitHub tokens, so a **fine-grained PAT** (`github_pat_…`, GitHub's default format since Oct 2022 — and what `GITHUB_FIX_BUGS_TOKEN` typically is) appearing **bare / space-separated / in prose** (e.g. a `.netrc` line, or "rotate github_pat_…") survived BOTH the persist-time `redact()` and `deliver`'s shape gate → it could be filed to `VirtoCommerce/vc-mcp-testing-module`. Added a `github_pat_` rule (and an AWS access-key-id `AKIA…` rule) to the single shared redaction array, added `aws-key` to `deliver`'s redacted-placeholder gate, and added a bare-secret regression test. Verified: `github_pat_…` / `AKIA…` now redact whether bare or `key=value`.
+- **Broken `test:containment` npm script** — pointed at `tests/self-check-containment.test.mjs`, deleted earlier in this branch; repointed to the migrated `scripts/unit/deliver-scrub.test.mjs` + `deliver-feedback.test.mjs`.
+- **`reconcile-profile.mjs` write not guarded** — `main()`'s `writeFileSync` could throw uncaught (read-only / ENOSPC / EACCES), exiting non-zero with an empty stdout and violating the file's "always exit 0 + JSON report" contract (asymmetric with the same-PR hardening of `verify-access.mjs`). Wrapped it to emit `{status:"error", …, wrote:false}` and return.
+- **Docs** — `CLAUDE.md` no longer claims the self-diagnostics subsystem is "shipped symmetrically" in `plugins/vc-fix/` and `.claude/`; the `.claude/` mirror deliberately lags the canonical plugin copy (documented).
+- Reviewers found NO other BLOCKER across routing/containment (§2a upstream path unreachable for client repos), project-init secret hygiene, and seed-data. Remaining non-blocking CONCERNs (defense-in-depth shape-gate blindness to all-caps/all-lowercase unconfigured slugs; plugin-vs-ci `repo-router` twin lacks a parity test + minor field drift; `computeOwnership` unknown-repo defaulting to platform; committed order `total` may diverge from the platform-recomputed value at live G6; `/qa-coverage-gap` docs referencing the deleted TestRail archive; "110 vs 119 suites" doc drift) are pre-existing or larger-scope — tracked, not fixed here.
+
 ### Fixed — self-diagnostics: phantom-background-task over-deferral + command-span attribution + scrubber whitelist (LEO 2026-07-22)
 
 A real `/project-init` run (session `ad669608-…`) recorded all three `finalize` records as `{verdict:"deferred", pendingSubagents:1, suppressReason:"subagent-running"}` while `totals.agent_calls:0` and `state.openOps` was empty — no subagent ever ran. Three chained defects, all in the self-diagnostics subsystem:

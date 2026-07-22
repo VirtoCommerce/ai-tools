@@ -99,3 +99,20 @@ test("cell #5: an embedded JWT / PAT is redacted regardless of the shape rules",
     assert.equal(isClientSpecific(cell), true, "a redacted secret makes the cell client-specific (withheld)");
   }
 });
+
+// REGRESSION GUARD (review round 2, BLOCKER): a BARE / space-separated / prose secret must be
+// redacted, not just the `keyword=value` shape. redact.mjs previously covered only classic gh[pousr]_
+// tokens — a GitHub FINE-GRAINED PAT (github_pat_…, the default format, and what GITHUB_FIX_BUGS_TOKEN
+// usually is) leaked bare to the PUBLIC upstream; AWS access key IDs likewise.
+test("cell #5b (regression): a bare github_pat_ / AWS key is redacted and the cell withheld", () => {
+  const secrets = [
+    "github_pat_11ABxz0aai0abcdefghijklmnopqrstuvwxyz012345",
+    "AKIAIOSFODNN7EXAMPLE",
+  ];
+  for (const secret of secrets) {
+    // bare / prose form — NO surrounding key=value
+    const cell = `machine github.com login x password ${secret} please rotate`;
+    assert.ok(!scrubText(cell).includes(secret), `bare secret must be redacted: ${secret.slice(0, 14)}…`);
+    assert.equal(isClientSpecific(cell), true, "a redacted bare secret makes the cell client-specific (withheld)");
+  }
+});

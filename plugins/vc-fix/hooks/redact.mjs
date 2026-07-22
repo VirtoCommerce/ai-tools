@@ -41,7 +41,14 @@ export const REDACTIONS = [
   [/\b([\w-]{0,40}?(?:token|api[_-]?key|secret|password|passwd|pwd|accountkey|sharedaccesssignature)[\w-]{0,40})"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
   [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers
-  [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub tokens (ghp_/gho_/ghu_/ghs_/ghr_)
+  [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub classic tokens (ghp_/gho_/ghu_/ghs_/ghr_)
+  // GitHub FINE-GRAINED PAT (`github_pat_…`, GitHub's default format since Oct 2022 — and what
+  // GITHUB_FIX_BUGS_TOKEN typically IS). The classic `gh[pousr]_` rule above does NOT match it
+  // (3rd char `i`), and the key/value rule fires only on `keyword[:=]value`, so a bare / space-
+  // separated / prose `github_pat_…` (e.g. a `.netrc` "password github_pat_…" line, or "rotate
+  // github_pat_…") leaked to the PUBLIC upstream. Underscores are \w so one class spans the whole token.
+  [/\bgithub_pat_[A-Za-z0-9_]{20,}\b/g, "«gh-token»"],
+  [/\bAKIA[0-9A-Z]{16}\b/g, "«aws-key»"], // AWS access key IDs (bare, no key=value wrapper)
   [/\bglpat-[A-Za-z0-9_-]{20,}/g, "«gitlab-token»"], // GitLab personal access tokens
   [/\bxox[baprs]-[A-Za-z0-9-]{10,}/g, "«slack-token»"], // Slack tokens (xoxb/xoxa/xoxp/xoxr/xoxs)
   [/\bsig=[^&\s]+/gi, "sig=«redacted»"], // Azure SAS signature query param

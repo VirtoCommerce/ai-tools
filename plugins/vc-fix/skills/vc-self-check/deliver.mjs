@@ -185,7 +185,7 @@ export function scrubText(input) {
 }
 
 /** Placeholders the scrubber leaves where it removed client-specific content. */
-const REDACTED_PLACEHOLDER_RE = /«(client|path|url|email|ticket|redacted|jwt|gh-token|gitlab-token|slack-token|pan)»/;
+const REDACTED_PLACEHOLDER_RE = /«(client|path|url|email|ticket|redacted|jwt|gh-token|gitlab-token|slack-token|aws-key|pan)»/;
 
 /** Does this text reference a vc-fix PLUGIN file/component? (whitelist positive) */
 export function referencesPlugin(text) {
