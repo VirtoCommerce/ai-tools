@@ -52,8 +52,11 @@
  *    would judge an INCOMPLETE session and (worse) print a "no issues" verdict
  *    mid-task. So finalize checks `ev.background_tasks` (the platform's still-running
  *    bg-tasks/sub-agents signal, supplied on every Stop) — trusted EXCLUSIVELY when
- *    present, with an open-agent-op count as the fallback ONLY when the field is absent
- *    (so an orphaned op can't defer forever) — and if anything is pending it treats the
+ *    present, with a FRESH-open-agent-op count (≤ STALL_MS on the session clock) as the
+ *    fallback ONLY when the field is absent. In that fallback, a crashed/orphaned op
+ *    defers until the next main-transcript event advances the session clock past
+ *    STALL_MS (then it drains); since current CC always sends `background_tasks`, this
+ *    fallback is edge-only. If anything is pending it treats the
  *    Stop as a CHECKPOINT: it records a durable `{verdict:"deferred"}` decision and RETURNS without
  *    draining/closing spans or surfacing anything. The real verdict is deferred to
  *    the TERMINAL Stop, once the sub-agent has returned (its Task result now in the
@@ -115,6 +118,7 @@
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, renameSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { dirname, resolve, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
+import { redact } from "./redact.mjs";
 
 // ─── output root resolution ────────────────────────────────────────────────
 // Canonical definition lives in skills/project-init/lib/paths.mjs `outputRoot()`
@@ -139,44 +143,9 @@ function pluginRoot() {
 }
 
 // ─── secret redaction ──────────────────────────────────────────────────────
-const REDACTIONS = [
-  // URL userinfo — scheme://user:PASSWORD@host (postgres/mysql/redis/amqp/http proxy connection
-  // strings, common in Bash tool inputs). Keep the username as signal, drop the password. Runs
-  // first so the password is gone before any later rule sees the line.
-  [/\b([a-z][\w+.-]*:\/\/)([^\s:@/]+):[^\s@/]+@/gi, "$1$2:«redacted»@"],
-  // Authorization header — redact the CREDENTIAL, not just the scheme word. An optional scheme
-  // (Bearer/Basic/Digest/Negotiate/NTLM) is consumed so `Authorization: Basic <b64>` and
-  // `Authorization: Bearer <tok>` alike lose the credential. The OLD `(?:bearer\s+)?` covered only
-  // Bearer, so a `Basic <b64>` (an ADO PAT: base64(":"+PAT)) or Digest/NTLM blob LEAKED into the
-  // jsonl → the public upstream via deliver. A `:`/`=` is required so prose "authorization" is not
-  // mangled; a header-less `Bearer/Basic <cred>` is caught by the next rule.
-  // The `"?` before the scheme group consumes an opening quote on the VALUE too, so the JSON-quoted
-  // shape `"Authorization":"Bearer <tok>"` (axios/requests/curl error dumps) redacts the token — the
-  // old rule stopped `\S+` at `"Bearer` and LEAKED the credential (PR #143 review, Lenajava1).
-  [/\b(authorization)\b"?\s*[:=]\s*"?(?:(?:bearer|basic|digest|negotiate|ntlm)\s+)?\S+/gi, "$1 «redacted»"],
-  [/\b(bearer|basic|digest|negotiate|ntlm)\s+\S+/gi, "$1 «redacted»"],
-  // key/value secrets — optional quotes around BOTH key and value so the JSON form
-  // (`"password":"x"`, `"apiKey": "x"`), the shell form (`password=x`), the header form
-  // (`X-Api-Key: x`) and the Azure connection-string form (`AccountKey=…`, `SharedAccessSignature=…`)
-  // all redact the value. A literal `keyword[:=]` with no quote between them (the pre-#143 rule) let
-  // every JSON-shaped secret escape it. The bounded `[\w-]{0,40}?` PREFIX + `[\w-]{0,40}` SUFFIX around
-  // the keyword are what redact COMPOUND key names: the old `\b(keyword)\b` anchor required a word
-  // boundary on BOTH sides of the keyword, so a keyword preceded by a word char (`access_token`,
-  // `refresh_token`, `client_secret`, `sessionToken`) OR followed by one (`aws_secret_access_key`)
-  // had no boundary there and LEAKED the value into the jsonl → the public upstream via deliver
-  // (PR #143 review — the OAuth-token / client_secret shapes the JSON-quoted-Authorization fix missed).
-  // The prefix is lazy + length-capped so backtracking stays linear; over-redaction of a benign
-  // `*secret*`-named field is the intended fail-safe direction. Group 1 keeps the FULL key as signal.
-  [/\b([\w-]{0,40}?(?:token|api[_-]?key|secret|password|passwd|pwd|accountkey|sharedaccesssignature)[\w-]{0,40})"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
-  [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
-  [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers
-  [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub tokens
-];
-function redact(s) {
-  let out = String(s ?? "");
-  for (const [re, rep] of REDACTIONS) out = out.replace(re, rep);
-  return out;
-}
+// The redaction rules are the SINGLE shared source in hooks/redact.mjs (imported as
+// `redact` above), used by BOTH this collector and skills/vc-self-check/deliver.mjs so
+// the persist path and the public-upstream scrubber can never drift.
 function snippet(text, max = 120) {
   const t = redact(String(text ?? "").replace(/\s+/g, " ").trim());
   return t.length > max ? t.slice(0, max - 3) + "…" : t;
@@ -1081,10 +1050,11 @@ async function cmdFinalize(ev) {
   // empty array on a terminal Stop means nothing is pending, so we must NOT also defer on
   // a lingering `openAgents`. Otherwise an ORPHANED agent op — a sub-agent that was
   // interrupted/crashed, or whose result landed in a skipped sidechain, so its op never
-  // gets a matching tool_result and never closes — would defer FOREVER, and the drain
-  // safety-net below (A-F8: record the orphan as `incomplete`, close the trailing spans,
-  // emit the terminal verdict) would never run. The `openAgents` count is the fallback
-  // ONLY when the field is entirely absent (an older/edge harness that doesn't send it).
+  // gets a matching tool_result and never closes — would keep deferring (until the session
+  // clock advances, see the `freshOpenAgents` note below), and the drain safety-net below
+  // (A-F8: record the orphan as `incomplete`, close the trailing spans, emit the terminal
+  // verdict) would be delayed. The `openAgents` count is the fallback ONLY when the field is
+  // entirely absent (an older/edge harness that doesn't send it — current CC always sends it).
   const bgTasks = Array.isArray(ev.background_tasks) ? ev.background_tasks : [];
   // Session-relative "now" for the orphan backstop below: the newest transcript event ts (the session's
   // own clock), NOT wall-clock — the hook can fire long after the events, and the transcript timestamps
@@ -1095,12 +1065,14 @@ async function cmdFinalize(ev) {
   for (const [, sp] of state.openOps) if (sp && sp.kind === "agent") {
     openAgents++;
     // An agent op is a fallback deferral signal ONLY while it is plausibly still running. An op open
-    // longer than STALL_MS (measured on the session clock) with no matching tool_result is an ORPHAN
-    // (crashed/interrupted sub-agent, or a result that landed in a skipped sidechain) — deferring on it
-    // would defer FOREVER and the drain safety-net below would never run. So the fallback counts only
-    // FRESH (≤ STALL_MS) open agents; stale ones fall through to the drain. This only affects the
-    // fallback branch — when the harness sends `background_tasks` (current CC, always) that array is
-    // authoritative and this is unused.
+    // longer than STALL_MS (measured on the SESSION clock — the newest transcript ts) with no matching
+    // tool_result is an ORPHAN (crashed/interrupted sub-agent, or a result that landed in a skipped
+    // sidechain). NOTE the session-clock dependency: if the sub-agent crashed with NO further main
+    // events, `lastScanTs` is frozen at the op's open time, so `refNowMs - started` stays ~0 and the
+    // op keeps deferring until the next main-transcript event advances the clock past STALL_MS — then
+    // it drains. So the fallback counts only FRESH (≤ STALL_MS) open agents; stale ones fall through to
+    // the drain. This only affects the fallback branch — when the harness sends `background_tasks`
+    // (current CC, always) that array is authoritative and this is unused.
     const started = Date.parse(sp.startTs || sp.lastTs || "") || refNowMs;
     if (refNowMs - started <= T.STALL_MS) freshOpenAgents++;
   }
@@ -1162,17 +1134,26 @@ async function cmdFinalize(ev) {
   // fires from OUR OWN resume-turn carries stop_hook_active:true, so neither the findings block
   // nor the clean line re-fires and no resume loop can form.
   const shouldPrompt = !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
+  // A completion marker counts for THIS session ONLY. cmdComplete is Bash-invoked (no hook stdin),
+  // so it targets a session by the newest `.state.json` (mtime heuristic) or an explicit `--session`,
+  // and stamps the RESOLVED sid INTO the marker. If a marker with a DIFFERENT sid is read here (a
+  // stale/mis-targeted write, or a future --session flow), `marker.sid !== state.sid` makes this
+  // session ignore it — so a stray marker landed by the mtime race can't become the SOLE "plugin
+  // activity" of an unrelated plain-dev session (PR #143 review, Finding 4). A pre-#143 marker with
+  // no `sid` field is honoured (back-compat).
+  const marker = state.skillCompletePending;
+  const completeForThisSession = Boolean(marker) && (!marker.sid || marker.sid === state.sid);
   // pluginActivity = a plugin skill/command was active this session. Normally proven by a closed
   // skill/command span (sawPluginSpan) or a seen Skill (anySkillSeen). A THIRD proof: an explicit
-  // `complete --skill "<name>"` completion signal (state.skillCompletePending) — only a plugin
-  // skill/command emits it (as its terminal action), so its presence is authoritative. This matters
-  // for the OPT-IN capture case: `/project-init`'s OWN run turns capture on mid-session (its §0b
-  // consent step writes the flag), so its `/project-init` UserPromptSubmit — which fired BEFORE the
-  // flag existed — was a no-op and NO command span opened. Its `complete` signal is then the only
-  // proof the plugin ran; without this OR the healthy run would be misjudged "no-plugin-activity"
-  // and its clean line withheld (residual opt-in blind spot, reported from the LEO deployment
-  // 2026-07-22). It never over-fires on a plain dev turn (no `complete` is emitted there).
-  const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen) || Boolean(state.skillCompletePending);
+  // `complete --skill "<name>"` completion signal — only a plugin skill/command emits it (as its
+  // terminal action), so its presence is authoritative. This matters for the OPT-IN capture case:
+  // `/project-init`'s OWN run turns capture on mid-session (its §0b consent step writes the flag), so
+  // its `/project-init` UserPromptSubmit — which fired BEFORE the flag existed — was a no-op and NO
+  // command span opened. Its `complete` signal is then the only proof the plugin ran; without this OR
+  // the healthy run would be misjudged "no-plugin-activity" and its clean line withheld (residual
+  // opt-in blind spot, LEO deployment 2026-07-22). It never over-fires on a plain dev turn (no
+  // `complete` is emitted there — and a stray cross-session marker is filtered by the sid guard above).
+  const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen) || completeForThisSession;
   // Clean line (default ON): gated on an EXPLICIT completion signal, NOT on per-turn plugin
   // activity. `Stop` fires at the end of EVERY turn (including every interview/"fill the files"
   // pause of a multi-turn skill) and cannot know whether another user turn is coming, so a
@@ -1182,7 +1163,7 @@ async function cmdFinalize(ev) {
   // only after that final step, and the marker is consumed on surfacing so it never repeats.
   // `promptedThisTurn` (reset ONLY by a new UserPromptSubmit) + `!stopHookActive` still stop the
   // resumed print-turn's own Stop from re-blocking → no infinite loop.
-  const completePending = Boolean(state.skillCompletePending);
+  const completePending = completeForThisSession;
   // Opt-in backward-compat (OFF by default): for a skill that never signals `complete`, fall back
   // to a once-per-SESSION clean line (persisted `cleanLineOffered` guard, mirroring
   // `cleanupOffered`) instead of per-turn. This rescues an un-migrated skill without regressing to
@@ -1324,12 +1305,13 @@ function parseCompleteArgs(argv) {
 //
 // CAVEAT (bounded, cosmetic): with TWO concurrent sessions sharing one outputRoot, if the other
 // session's hooks wrote AFTER this session's last hook but before this `complete` runs, the marker
-// lands on the other session's state file. Blast radius is small and never touches findings/consent
-// (`shouldPrompt` is independent of the marker): at worst this session's clean line is skipped and
-// the other session prints one clean line on its next pause — a stray status line, no data loss.
-// It never fires unless that other session is ALSO a clean vc-fix plugin session (cleanBlock still
-// requires its own pluginActivity + uniqueFresh===0). Pass `--session <id>` to disambiguate when the
-// id is known. (No session_id is available to a Bash-invoked command, hence the mtime heuristic.)
+// lands on the other session's state file. The marker now carries the RESOLVED sid, and finalize
+// ignores a marker whose `sid` doesn't match the finalizing session (Finding 4), so a mis-landed
+// marker cannot become the SOLE plugin-activity signal of an unrelated plain-dev session. Blast
+// radius is now just: this session's own clean line may be skipped (its marker went to the other
+// file) — a missing status line, never a false one, never any data loss, and findings/consent are
+// independent of the marker. Pass `--session <id>` to target precisely when the id is known. (No
+// session_id is available to a Bash-invoked command, hence the mtime heuristic.)
 function newestSessionId(dir) {
   let entries;
   try { entries = readdirSync(dir); } catch { return ""; }
@@ -1355,7 +1337,9 @@ async function cmdComplete() {
     const statePath = join(dir, `${sid}.state.json`);
     if (!existsSync(statePath)) return;
     const state = loadState(statePath, {}, sid);
-    state.skillCompletePending = { skill: a.skill || null, ts: nowIso() };
+    // Stamp the RESOLVED target sid into the marker so finalize can reject it if it is ever read by
+    // a DIFFERENT session (the mtime-race guard — PR #143 review, Finding 4).
+    state.skillCompletePending = { skill: a.skill || null, ts: nowIso(), sid };
     saveState(statePath, state);
   } catch {
     /* never throw / never block a tool */

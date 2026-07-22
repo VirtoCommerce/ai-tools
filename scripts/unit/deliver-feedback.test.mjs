@@ -16,6 +16,7 @@ import {
   buildDraft,
   feedbackMode,
   readSessionFeedback,
+  scrubText,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
 
 function withHome(home, fn) {
@@ -164,4 +165,25 @@ test("buildDraft: a client-specific feedback note is withheld even in mode=ask",
     mode: "ask",
   });
   assert.ok(!/AcmeCorp/.test(d.body), "a client-specific identifier must never reach the outbound draft");
+});
+
+// ─── scrubText secret redaction — shared hardened rules (PR #143 review, Finding 1) ──────────
+// deliver.mjs scrubs every outbound cell before it reaches the PUBLIC upstream. It used to carry
+// its OWN pre-#143 `\b(keyword)\b` array that leaked compound-key / Basic-auth / AccountKey / SAS
+// shapes; it now shares hooks/redact.mjs with the collector, so these must all be redacted.
+test("scrubText: shared redaction covers the shapes deliver's old weak array leaked", () => {
+  const cases = [
+    ['{"access_token":"AKtokenLEAK1234567890"}', "AKtokenLEAK1234567890"],
+    ['{"refresh_token":"RTtokenLEAK1234567890"}', "RTtokenLEAK1234567890"],
+    ["client_secret=CSsecretLEAK1234567890", "CSsecretLEAK1234567890"],
+    ["aws_secret_access_key=AWSsecretLEAK1234567890", "AWSsecretLEAK1234567890"],
+    ['body {"password":"PWjsonLEAK1234"}', "PWjsonLEAK1234"],
+    ["HTTP 401 Authorization: Basic dXNlcjpMRUFLYmFzaWNQQVQ=", "dXNlcjpMRUFLYmFzaWNQQVQ="], // base64 PAT blob
+    ["conn AccountKey=AcctKeyLEAK1234567890== end", "AcctKeyLEAK1234567890=="],
+  ];
+  for (const [input, secret] of cases) {
+    const out = scrubText(input);
+    assert.ok(!out.includes(secret), `scrubText must redact "${secret}" but leaked it: ${out}`);
+    assert.ok(/«redacted»/.test(out), `a redaction marker must appear for: ${input}`);
+  }
 });

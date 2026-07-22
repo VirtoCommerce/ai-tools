@@ -130,10 +130,17 @@ function signalSelfDiagnosticsComplete() {
 }
 
 async function main() {
-  // 1. Profile
+  // 1. Profile — loadProjectProfile() returns PROFILE_DEFAULTS even when the file is ABSENT, so
+  //    `profile ? PASS : FAIL` was ALWAYS PASS: a silently-failed profile write read as green with
+  //    default platform/jira values. Detect the file EXPLICITLY (mirror loadProjectProfile's path
+  //    logic) and FAIL when it's missing; the loaded defaults still drive the detail string.
+  const profilePath = process.env.PROJECT_PROFILE_PATH || resolve(process.cwd(), "project-profile.json");
+  const profileExists = existsSync(profilePath);
   const profile = loadProjectProfile();
-  add("Deployment profile", profile ? "PASS" : "FAIL",
-    `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`);
+  add("Deployment profile", profileExists ? "PASS" : "FAIL",
+    profileExists
+      ? `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`
+      : `no project-profile.json at ${profilePath} — run /project-init to create it (falling back to platform/jira/github defaults meanwhile)`);
 
   // 1b. The ACTIVE plugin install resolves at runtime + the routing helper is present.
   //     /qa-fix / /qa-bug launch `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` where

@@ -44,6 +44,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSy
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveGithubToken, probeGithubUpstream } from "../project-init/probe-lib.mjs";
+import { redact } from "../../hooks/redact.mjs";
 
 const PLUGIN_REPO = "VirtoCommerce/vc-mcp-testing-module";
 const ISSUE_TITLE_PREFIX = "[vc-fix self-check]";
@@ -111,16 +112,13 @@ export function readSessionFeedback(sid) {
 // (buildDraft downgrades any client-specific row); `scrubText` is defense-in-depth
 // for the cells that pass. A blacklist scrubber alone is unsafe — it leaks anything
 // it fails to anticipate — so the gate is positive-detection, not blacklist.
-const REDACTIONS = [
-  [/\b(authorization|bearer)\b\s*[:=]?\s*\S+/gi, "$1 «redacted»"],
-  [/\b(token|api[_-]?key|secret|password|passwd|pwd)\b\s*[:=]\s*\S+/gi, "$1=«redacted»"],
-  [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"],
-  [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"],
-  // PAN: 13–19 digits, space/dash separated. Anchored on a digit at BOTH ends so a
-  // trailing separator before the next word is NOT eaten ("4111 1111 1111 1111 used"
-  // → "«pan» used", not "«pan»used").
-  [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"],
-];
+//
+// SECRET redaction is the SINGLE shared `redact()` from hooks/redact.mjs (imported
+// above) — the SAME hardened rules the collector persists with, so deliver's outbound
+// scrub can never drift weaker than the collector's (PR #143 review: deliver used to
+// carry its own pre-#143 `\b(keyword)\b` array and leaked compound-key / Basic-auth /
+// AccountKey / SAS shapes to the PUBLIC upstream). scrubText layers the client-shape
+// scrubbing (paths / URLs / emails / tickets / configured client terms) AFTER it.
 
 /**
  * Recognizes a reference to a vc-fix PLUGIN file/component — the WHITELIST. The
@@ -174,7 +172,8 @@ export function scrubText(input) {
   // Treat `_ . / -` (and everything non-alphanumeric) as a separator so the configured
   // org is caught inside underscore/dot/slash/hyphen-joined tokens.
   for (const term of clientTerms()) s = s.replace(new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "gi"), "«client»");
-  for (const [re, rep] of REDACTIONS) s = s.replace(re, rep);
+  s = redact(s); // shared secret redaction (hooks/redact.mjs) — same rules as the collector
+
   s = s.replace(/[A-Za-z]:[\\/][^\s"'`]+/g, "«path»"); // Windows abs (back OR forward slash)
   s = s.replace(/\\\\[^\s"'`]+/g, "«path»"); // UNC \\server\share\...
   s = s.replace(/(?<![\w])\/(?:home|Users|root|tmp|var|opt|mnt|srv|c|d)\/[^\s"'`]+/gi, "«path»"); // POSIX/msys abs
@@ -186,7 +185,7 @@ export function scrubText(input) {
 }
 
 /** Placeholders the scrubber leaves where it removed client-specific content. */
-const REDACTED_PLACEHOLDER_RE = /«(client|path|url|email|ticket|redacted|jwt|gh-token|pan)»/;
+const REDACTED_PLACEHOLDER_RE = /«(client|path|url|email|ticket|redacted|jwt|gh-token|gitlab-token|slack-token|pan)»/;
 
 /** Does this text reference a vc-fix PLUGIN file/component? (whitelist positive) */
 export function referencesPlugin(text) {

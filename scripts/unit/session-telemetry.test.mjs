@@ -436,6 +436,10 @@ test("redaction: secrets in a tool_result never reach a span's details[].snippet
       // optional opening quote so the credential is consumed.
       toolUse("2026-01-01T00:00:08Z", "b5", "Bash", { command: "node call" }),
       toolResult("2026-01-01T00:00:09Z", "b5", true, 'error {"headers":{"Authorization":"Bearer LEAKjsonquotedTOKEN9876543210"}}'),
+      // Azure SAS signature, GitLab PAT, Slack token (redact.mjs Finding-2 rules) — kept compact so
+      // all three land inside the 120-char details snippet window.
+      toolUse("2026-01-01T00:00:10Z", "b6", "Bash", { command: "curl saas" }),
+      toolResult("2026-01-01T00:00:11Z", "b6", true, "u https://x?sig=LEAKsasSIG123 gl glpat-LEAKgitlabTOKEN12345678 sk xoxb-LEAKslackTOKEN12345"),
     ]);
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
@@ -447,6 +451,7 @@ test("redaction: secrets in a tool_result never reach a span's details[].snippet
       "dXNlcjpMRUFLYmFzaWNQQVQ=",                              // Basic-auth base64 blob (ADO PAT)
       "LEAKdbpw", "LEAKacct==", "eyJLEAKhdrABCDEFGHIJKLMNOP",  // conn-string pw, Azure AccountKey, JWT
       "LEAKjsonquotedTOKEN9876543210",                        // JSON-quoted "Authorization":"Bearer …"
+      "LEAKsasSIG123", "LEAKgitlabTOKEN12345678", "LEAKslackTOKEN12345", // Azure SAS sig, GitLab PAT, Slack token
     ]) {
       assert.ok(!haystack.includes(secret), `secret must be redacted from spans + block reason, but leaked: ${secret}`);
     }
@@ -456,6 +461,8 @@ test("redaction: secrets in a tool_result never reach a span's details[].snippet
     assert.ok(/«gh-token»/.test(joined), "the GitHub token shape was redacted");
     assert.ok(/«pan»/.test(joined), "the card number was redacted");
     assert.ok(/«jwt»/.test(joined), "the JWT was redacted");
+    assert.ok(/«gitlab-token»/.test(joined), "the GitLab PAT shape was redacted");
+    assert.ok(/«slack-token»/.test(joined), "the Slack token shape was redacted");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
