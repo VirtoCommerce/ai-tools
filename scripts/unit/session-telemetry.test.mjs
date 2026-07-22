@@ -1360,8 +1360,9 @@ test("cleanup offer: leftover inactive-session artifacts surface a one-shot AskU
     assert.match(dec.reason, /Delete all sessions \(incl\. this one\)/);
     assert.match(dec.reason, /Delete all except this session/);
     assert.match(dec.reason, /Keep them \(auto-deleted after 24h\)/);
-    assert.match(dec.reason, /purge-inactive --all --dir/, "option 1 command (all sessions incl. this one)");
-    assert.match(dec.reason, /purge-inactive --all --keep "cur-cleanup"/, "option 2 command (all except this session)");
+    assert.match(dec.reason, /purge-inactive --all --dir/, "option 1 (all incl. this) ignores the 1h floor");
+    assert.match(dec.reason, /purge-inactive --keep "cur-cleanup" --dir/, "option 2 (all except this) keeps the 1h floor → spares a live parallel session");
+    assert.doesNotMatch(dec.reason, /purge-inactive --all --keep/, "option 2 must NOT use --all (that would delete a live parallel session)");
     const fin = finalizeOf(readSpans(home, sid));
     assert.equal(fin.decision.cleanupOffered, true);
 

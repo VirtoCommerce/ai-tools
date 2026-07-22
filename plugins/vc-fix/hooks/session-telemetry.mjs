@@ -1225,16 +1225,17 @@ async function cmdFinalize(ev) {
   }
   if (cleanupBlock) {
     const script = join(pluginRoot(), "hooks", "session-telemetry.mjs");
-    // `--all` ignores the 1h inactivity floor so "all existing" is literal; option 1 omits --keep
-    // (so the current session's own files go too), option 2 keeps the current session.
+    // Option 1 (all incl. this) uses `--all` (ignores the 1h floor, omits --keep) → truly everything.
+    // Option 2 (all except this) OMITS `--all` so the 1h inactivity floor still applies — it deletes
+    // only INACTIVE others and spares this session AND any still-live PARALLEL session (<1h fresh).
     const purgeAll = `node "${script}" purge-inactive --all --dir "${dir}"`;
-    const purgeOthers = `node "${script}" purge-inactive --all --keep "${sid}" --dir "${dir}"`;
+    const purgeOthers = `node "${script}" purge-inactive --keep "${sid}" --dir "${dir}"`;
     const { sessions: totalSessions, files: totalFiles } = countArtifacts(dir);
     const cleanup =
       `vc-fix's local .vc-fix/diagnostics/ folder holds ${totalFiles} diagnostic file(s) from ${totalSessions} session(s). ` +
       `Ask the user via AskUserQuestion — "Clean up vc-fix diagnostic files?" — with THREE options, then run the matching Bash command and report the count:\n` +
       `• "Delete all sessions (incl. this one)" → ${purgeAll}\n` +
-      `• "Delete all except this session" → ${purgeOthers}\n` +
+      `• "Delete all except this session (spares a live parallel session)" → ${purgeOthers}\n` +
       `• "Keep them (auto-deleted after 24h)" → do nothing.\n` +
       `This only removes vc-fix's OWN diagnostic artifacts — never your code.`;
     reason = reason ? `${reason}\n\nAlso — ${cleanup}` : cleanup;
