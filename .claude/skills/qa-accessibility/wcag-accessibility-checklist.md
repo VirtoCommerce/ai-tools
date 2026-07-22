@@ -6,18 +6,36 @@
 
 **P** Perceivable | **O** Operable | **U** Understandable | **R** Robust
 
+## EU / EAA compliance (why the gate matters for public storefronts)
+
+The **European Accessibility Act (EAA)** has been enforceable since **2025-06-28**. Its technical
+standard is **EN 301 549** (currently references **WCAG 2.1 AA**; auditing to **2.2 AA** is a safe
+superset). For an EU-reachable storefront, treat AA violations on public routes as **P0/P1**.
+
+- **Accessibility statement is mandatory and is the #1 enforcement trigger.** Regulators (French
+  disability orgs, Swedish PTS market surveillance) check first for a **published, linked accessibility
+  statement** (commonly in the footer / T&Cs) describing conformance status and known barriers. Its
+  **absence is a P1 compliance finding** — flag it even when the page's axe run is clean.
+- A scanner-only pass is **not** EAA evidence. Surveillance scanners catch the six dominant
+  automatable failures (see "What Automation Cannot Catch"); the rest — including most 2.2 additions —
+  needs the manual/keyboard pass.
+
 ## What's new in WCAG 2.2 vs 2.1
 
-| SC | Level | Note |
-|---|---|---|
-| **2.4.11 Focus Not Obscured (Minimum)** | AA | Sticky header / footer / cookie banner must not cover the focused field — common on `/checkout` and `/cart` |
-| **2.5.7 Dragging Movements** | AA | Quantity steppers, address-map pins, carousels need single-pointer alternative |
-| **2.5.8 Target Size (Minimum)** | AA | Interactive targets ≥ **24×24 CSS px**. 44×44 stays as mobile guidance (and 2.5.5 AAA). |
-| **3.2.6 Consistent Help** | A | If Help/Chat appears on multiple pages, same relative location |
-| **3.3.7 Redundant Entry** | A | Don't re-ask for info already given in the same flow (billing = shipping must auto-fill) |
-| **3.3.8 Accessible Authentication (Minimum)** | AA | No cognitive-function puzzles unless alternative exists; password managers must work |
-| 2.4.12, 2.4.13, 3.3.9 | AAA | Out of scope for AA gate |
-| ~~4.1.1 Parsing~~ | — | **Removed in 2.2** — don't file duplicate-ID issues against it |
+> **Automation reality:** of the six new 2.2 criteria, axe-core covers **only 2.5.8 (nascent)**. The
+> other five are **manual/keyboard-pass items — a clean axe run says nothing about them.** Never mark
+> them PASS off an automated scan.
+
+| SC | Level | Automatable? | Note |
+|---|---|---|---|
+| **2.4.11 Focus Not Obscured (Minimum)** | AA | **Manual** | Sticky header / footer / cookie banner must not cover the focused field — common on `/checkout` and `/cart` |
+| **2.5.7 Dragging Movements** | AA | **Manual** | Quantity steppers, address-map pins, carousels need single-pointer alternative |
+| **2.5.8 Target Size (Minimum)** | AA | **Partial (axe nascent)** | Interactive targets ≥ **24×24 CSS px**. 44×44 stays as mobile guidance (and 2.5.5 AAA). |
+| **3.2.6 Consistent Help** | A | **Manual** | If Help/Chat appears on multiple pages, same relative location |
+| **3.3.7 Redundant Entry** | A | **Manual** | Don't re-ask for info already given in the same flow (billing = shipping must auto-fill) |
+| **3.3.8 Accessible Authentication (Minimum)** | AA | **Manual** | No cognitive-function puzzles unless alternative exists; password managers must work |
+| 2.4.12, 2.4.13, 3.3.9 | AAA | — | Out of scope for AA gate |
+| ~~4.1.1 Parsing~~ | — | — | **Removed in 2.2** — don't file duplicate-ID issues against it |
 
 ## Complete Checklist
 
@@ -93,16 +111,16 @@ UI components and navigation must be operable.
 [] Multiple ways to find pages (menu, search, sitemap)
 [] Headings and labels descriptive
 [] Focus indicator visible (≥ 3:1 contrast against background, ≥ 2 CSS px thick or equivalent)
-[] **2.4.11 Focus Not Obscured (AA, NEW in 2.2)** — sticky/floating elements (header, cookie banner,
-  chat widget, sticky CTA) must not cover the currently-focused field. Test by Tab-walking the
+[] **2.4.11 Focus Not Obscured (AA, NEW in 2.2) [MANUAL]** — sticky/floating elements (header, cookie
+  banner, chat widget, sticky CTA) must not cover the currently-focused field. Test by Tab-walking the
   checkout form with the sticky header pinned.
 
 2.5 Input Modalities:
-[] **2.5.7 Dragging Movements (AA, NEW in 2.2)** — any drag interaction (quantity slider, sortable
-  list, map pin, range input) must have a single-pointer alternative (button +/-, type-to-set, etc.)
-[] **2.5.8 Target Size Minimum (AA, NEW in 2.2)** — interactive targets ≥ 24×24 CSS px, OR an
-  equivalent invisible hit area, OR spacing ≥ 24 px between centers. Exceptions: inline text links,
-  user-agent-controlled controls, essential presentation. Mobile guidance remains 44×44.
+[] **2.5.7 Dragging Movements (AA, NEW in 2.2) [MANUAL]** — any drag interaction (quantity slider,
+  sortable list, map pin, range input) must have a single-pointer alternative (button +/-, type-to-set)
+[] **2.5.8 Target Size Minimum (AA, NEW in 2.2) [PARTIAL-AUTO]** — interactive targets ≥ 24×24 CSS px,
+  OR an equivalent invisible hit area, OR spacing ≥ 24 px between centers. Exceptions: inline text
+  links, user-agent-controlled controls, essential presentation. Mobile guidance remains 44×44.
 [] Functionality operable with single pointer (no required multi-touch gestures)
 
 PRINCIPLE 3: UNDERSTANDABLE
@@ -117,8 +135,8 @@ Information and operation of UI must be understandable.
 [] Components don't change context on input (no auto-submit without warning)
 [] Consistent navigation across pages
 [] Consistent identification — same icon/label means the same thing throughout
-[] **3.2.6 Consistent Help (A, NEW in 2.2)** — if Help / Contact / Chat / FAQ appears on multiple
-  pages, place it in the same relative location in the DOM order
+[] **3.2.6 Consistent Help (A, NEW in 2.2) [MANUAL]** — if Help / Contact / Chat / FAQ appears on
+  multiple pages, place it in the same relative location in the DOM order
 
 3.3 Input Assistance:
 [] Errors identified and described in text (not color alone)
@@ -126,9 +144,9 @@ Information and operation of UI must be understandable.
 [] Instructions provided when format is non-obvious (date format, password rules)
 [] Error suggestion provided ("Email must contain @"), not just "Invalid"
 [] Error prevention for critical actions (checkout, delete) — confirmation step, review opportunity
-[] **3.3.7 Redundant Entry (A, NEW in 2.2)** — info previously entered in the same process must be
-  auto-filled or selectable. Billing = shipping toggle, returning-user address picker, etc.
-[] **3.3.8 Accessible Authentication Minimum (AA, NEW in 2.2)** — sign-in MUST NOT require a
+[] **3.3.7 Redundant Entry (A, NEW in 2.2) [MANUAL]** — info previously entered in the same process
+  must be auto-filled or selectable. Billing = shipping toggle, returning-user address picker, etc.
+[] **3.3.8 Accessible Authentication Minimum (AA, NEW in 2.2) [MANUAL]** — sign-in MUST NOT require a
   cognitive function test (puzzle, memorisation, transcription) unless an alternative exists.
   Password managers MUST work (no paste blocking, no character-by-character inputs).
   CAPTCHA needs a non-cognitive alternative.
@@ -163,18 +181,29 @@ Initial-DOM-only scanning misses most SPA bugs. Re-run axe-core after each of th
 
 ## What Automation Cannot Catch
 
-axe-core catches ~30–57% of real WCAG issues. The rest requires human judgment — surface these in a **"Requires manual verification"** section in every report:
+axe-core catches roughly **20–40%** of real WCAG issues (engineered for near-zero false positives, so
+it stays deliberately narrow). It reliably catches the **six dominant automatable failures** — low
+contrast, missing alt text, missing form labels, empty links, empty buttons, missing document language.
+Everything else requires human judgment — surface these in a **"Requires manual verification"** section
+in every report:
 
+- **The five manual WCAG 2.2 additions** — 2.4.11 Focus Not Obscured, 2.5.7 Dragging Movements,
+  3.2.6 Consistent Help, 3.3.7 Redundant Entry, 3.3.8 Accessible Authentication. axe covers **none** of
+  these (only 2.5.8 Target Size, and that only nascently) — verify them in the keyboard/manual pass.
 - **Focus order quality** — axe sees focusable elements, not whether Tab order matches visual reading order
 - **Focus visibility quality** — passes contrast, but is the indicator easily lost on busy backgrounds?
 - **Alt text quality** — `alt="image1.jpg"` passes presence; useless to a screen reader
-- **Screen reader narrative coherence** — labels read isolated make sense; concatenated by NVDA/VoiceOver they may not. The MCP agent has no AT hook-up.
+- **Custom-widget conformance to its ARIA pattern** — a combobox/tab/menu/dialog that diverges from its
+  **ARIA APG** pattern (expected keyboard keys, roles, states) is a finding even when axe passes.
+  Verify widget-specific keys (arrows / Home / End / Escape) against the pattern; **ARIA-AT** documents
+  the expected screen-reader output per pattern.
+- **Screen reader narrative coherence** — labels read isolated make sense; concatenated by NVDA/VoiceOver they may not. The MCP agent has no AT hook-up; browser simulators don't reliably match real AT.
 - **Form error helpfulness** — copy clarity, recovery guidance
 - **Modal focus return on close** — does focus go back to the trigger, or to the body?
 - **`aria-live` timing** — region exists (axe-pass) but announcement fires before/after the visual change
 - **Cognitive load / reading level / plain-language**
 - **Keyboard traps only revealed by state transition** (expanded mega-menu, layered modals)
-- **Real assistive-tech user testing** — no substitute for it
+- **Real assistive-tech user testing** — no substitute for it (JAWS / NVDA / VoiceOver)
 
 ## Agent Automation Recipes
 
@@ -216,7 +245,7 @@ for (let i = 0; i < 40; i++) {
 // no element appears twice (no loop), no off-screen jumps without an intervening landmark.
 ```
 
-Repeat with `Shift+Tab` to verify reverse order. After opening any modal, assert focus is inside it; after ESC, assert focus returned to the trigger.
+Repeat with `Shift+Tab` to verify reverse order. After opening any modal, assert focus is inside it; after ESC, assert focus returned to the trigger. **For composite widgets** (combobox, tabs, menu, treegrid, listbox) Tab alone is not enough — exercise the **widget-specific keys** (arrows / Home / End / Escape / typeahead) against the matching **ARIA APG** pattern; a divergence is a finding even if axe passes.
 
 ### Recipe 4 — Contrast from computed style
 
