@@ -507,19 +507,22 @@ ticket or pushes a branch — the gap found live in a client deployment (ADO PAT
 `get-workitem` / `list-refs` 200, but transition / comment / push 401). So the table also
 probes write, **without mutating anything** — it sends a deliberately-invalid write request
 and reads the status split (`401/403` = no write scope; `400/409/422` = scope present, the
-bad request was rejected at validation; anything else ⇒ WARN "write scope unverified"):
+bad request was rejected at validation; anything else ⇒ "write scope unverified"):
 
 | Row | Axis | Probe (non-mutating) | Verdict |
 |-----|------|----------------------|---------|
-| **Azure Boards write (transition)** | tracker (Azure Boards only) | `PATCH _apis/wit/workitems/<known id>` with an invalid JSON-Patch body | no scope ⇒ **FAIL** · present ⇒ PASS · no item to probe / inconclusive ⇒ WARN |
-| **GitHub auth (direct/fork PR)** | platform upstream (GitHub) | existing `permissions.push` on the upstream repo | direct + no push ⇒ **FAIL** · fork (own fork) ⇒ PASS · unreadable perm ⇒ WARN |
-| **Client repo `<name>`** | client code host | GitHub `permissions.push`; Azure Repos `POST _apis/git/repositories/<repo>/pushes` with an empty body | reachable but no write ⇒ **FAIL** · reachable + write ⇒ PASS · inconclusive ⇒ WARN |
+| **Azure Boards write (transition)** | tracker (Azure Boards only) | `PATCH _apis/wit/workitems/<known id>` with an invalid JSON-Patch body | present ⇒ PASS · no scope / ACL-403 / inconclusive ⇒ **WARN** |
+| **GitHub auth (direct/fork PR)** | platform upstream (GitHub) | existing `permissions.push` on the upstream repo | fork (own fork) ⇒ PASS · no push on the proxy repo / unreadable perm ⇒ **WARN** |
+| **Client repo `<name>`** | client code host | GitHub `permissions.push`; Azure Repos `POST _apis/git/repositories/<repo>/pushes` with an empty body | reachable + write ⇒ PASS · reachable but no write / inconclusive ⇒ **WARN** |
 
-A missing write scope on a required axis is a **FAIL → NOT READY** (Jira stays WARN — its
-runtime path is the Atlassian MCP OAuth, not this token). The `To resolve:` block names the
-exact scopes to grant — **Azure: Work Items (Read & Write) + Code (Read & Write) + Pull
-Request (contribute); GitHub: repo/PR write** — and never prints the token. Resolve every
-**FAIL** (exit code is non-zero while any FAIL remains); **WARN** is non-blocking; **SKIP**
+A missing write scope is a **WARN, never a NOT-READY FAIL** (`probe-lib.writeProbeSeverity`):
+refusing to finish onboarding over a token that reaches the resource but lacks one write scope is
+too heavy — the WARN explains exactly what to grant, the operator grants it before running
+`/qa-fix`, and `/qa-fix` Gate 1 re-checks the ACTUAL routed repo anyway. The `To resolve:` block
+names the exact scopes — **Azure: Work Items (Read & Write) + Code (Read & Write) + Pull Request
+(contribute); GitHub: repo/PR write** — and never prints the token. Only **fundamentals** FAIL →
+NOT READY (missing core env, unreachable `FRONT_URL`/`BACK_URL`, bad admin login, or a totally
+absent/rejected credential that can't even reach the resource); **WARN** is non-blocking; **SKIP**
 means a feature isn't configured.
 
 **Session auth is really probed, not assumed.** For an `az-login` / `gh-cli` axis the
@@ -651,11 +654,8 @@ then **pause** with the unmistakable waiting banner (§3c) — no tool calls aft
 
 ### Step D — verify the new environment
 
-`--existing` (day-2 mode, like `--check`): a client-repo token that lacks push is a **WARN** here,
-not a hard **FAIL** — the project was already onboarded, so don't block adding an env on it.
-
 ```bash
-FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs" --existing
+FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
 ```
 
 Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new env's URLs +
@@ -739,12 +739,10 @@ only if the removals are genuinely intended, re-run with `--force`.
 
 ### Step C — verify access
 
-Run the readiness table (§8) so a stale token / URL / login surfaces too. Pass **`--existing`** —
-this is a day-2 re-verify, so a client-repo token that regressed to read-only is a **WARN** (heads-up),
-not a hard **FAIL** that would block a routine re-check (fresh onboarding, §8, omits the flag = FAIL):
+Run the readiness table (§8) so a stale token / URL / login surfaces too:
 
 ```bash
-FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs" --existing
+FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
 ```
 
 **Restate BOTH** the reconciliation summary (added / removed / decided) **and** the

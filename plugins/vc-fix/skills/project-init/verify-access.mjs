@@ -17,14 +17,19 @@
  *   - Jira API token — GET /rest/api/3/myself  (jira tracker; WARN not FAIL — the runtime
  *     path is the Atlassian MCP OAuth, the token is only an optional probe)  OR  Azure DevOps auth present
  *   - Azure Boards WRITE (transition) — non-mutating write-scope probe (PATCH a known item
- *     with an invalid body: 401/403 = no Work-Items-write scope ⇒ FAIL; 400 = scope present).
- *     /qa-fix transitions/comments the ticket, so a read-only PAT must FAIL here, not mid-fix.
+ *     with an invalid body: 401/403 = no Work-Items-write scope; 400 = scope present). A missing
+ *     write scope is a **WARN** (with a grant-this explanation), NOT an onboarding-blocking FAIL —
+ *     see probe-lib.writeProbeSeverity. /qa-fix transitions/comments the ticket, so the WARN says
+ *     to grant Work Items (Read & Write) before running it.
  *   - GitHub fix token (GITHUB_FIX_BUGS_TOKEN) — validate token + push perm on the upstream repo
- *     (direct mode: no push ⇒ FAIL; fork mode: read is enough since you PR from your own fork)
+ *     (the upstream repo is a PROXY probe; no push ⇒ WARN, the real target is the routed repo at
+ *     /qa-fix Gate 1. fork mode: read is enough since you PR from your own fork. A token that
+ *     doesn't authenticate at all ⇒ FAIL)
  *   - gh CLI session — gh auth status
- *   - Client repos — reachable AND WRITABLE on their own host (GitHub permissions.push; Azure
- *     Repos non-mutating /pushes probe). /qa-fix pushes here, so no write ⇒ FAIL (the LEO gap:
- *     read-only PAT reaches get-repo 200 but push 401).
+ *   - Client repos — reachable + write-probed on their own host (GitHub permissions.push; Azure
+ *     Repos non-mutating /pushes probe). A missing write scope is a **WARN** (grant-before-/qa-fix),
+ *     not a FAIL — the LEO gap (read-only PAT reaches get-repo 200 but push 401) is surfaced, not
+ *     hard-blocked. A totally unreachable repo / absent credential is still FAIL.
  *
  * Usage: node skills/project-init/verify-access.mjs
  */
@@ -38,14 +43,8 @@ import { pluginRoot } from "./lib/paths.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
-  clientRepoWriteSeverity,
+  writeProbeSeverity,
 } from "./probe-lib.mjs";
-
-// `--existing`: this is a DAY-2 re-verify of an already-onboarded project (`/project-init --check`
-// / `--add-env`), NOT a fresh onboarding. It relaxes a missing client-repo push from FAIL to WARN
-// (see clientRepoWriteSeverity) — don't hard-block a routine re-check on a token that regressed to
-// read-only. Absent ⇒ default is strict FAIL (fresh onboarding), so forgetting the flag over-blocks.
-const EXISTING = process.argv.slice(2).includes("--existing");
 
 let TEST_ENV;
 try {
@@ -254,10 +253,10 @@ async function main() {
         add("Azure DevOps auth", okJson ? "PASS" : "FAIL", detail);
 
         // Boards WRITE scope — /qa-fix transitions + comments the ticket via ado.mjs, so a
-        // read-only PAT (reads above PASS, but 401 on the first transition) must FAIL here,
-        // not surface mid-fix. Non-mutating: PATCH a KNOWN item with an invalid body →
-        // 401/403 = no write scope, 400 = scope present (rejected at validation, nothing
-        // changed). See probe-lib.classifyWriteProbe. Only meaningful once reads PASS.
+        // read-only PAT (reads above PASS, but 401 on the first transition) is surfaced here as a
+        // WARN (grant-this-scope heads-up), not an onboarding-blocking FAIL (writeProbeSeverity).
+        // Non-mutating: PATCH a KNOWN item with an invalid body → 401/403 = no write scope, 400 =
+        // scope present (rejected at validation, nothing changed). classifyWriteProbe. Reads-PASS only.
         if (okJson) {
           const apiBase = az.apiBase || `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
           const wid = await discoverAdoWorkItemId({ apiBase, authHeader });
@@ -266,12 +265,12 @@ async function main() {
               `write scope unverified — no work item found to probe (WIQL empty/denied) via ${via}; confirm the PAT has Work Items (Read & Write)`);
           } else {
             const wp = await probeAdoWorkItemsWrite({ apiBase, authHeader, workItemId: wid });
-            if (wp.scope === "present") add("Azure Boards write (transition)", "PASS", `Work Items write confirmed (probe → ${wp.status}) via ${via}`);
-            else if (wp.scope === "absent") add("Azure Boards write (transition)", "FAIL",
-              `PAT/session lacks Work Items write (probe → ${wp.status}) — /qa-fix cannot transition/comment; grant Azure DevOps scope: Work Items (Read & Write)`);
-            else if (wp.scope === "restricted") add("Azure Boards write (transition)", "WARN",
-              `probe → 403 on the sampled work item (via ${via}) — this item is ACL-restricted, NOT proof the PAT lacks Work Items write; confirm the target area is writable`);
-            else add("Azure Boards write (transition)", "WARN", `write scope unverified (probe → ${wp.status}) via ${via} — confirm Work Items (Read & Write)`);
+            const wDetail =
+              wp.scope === "present" ? `Work Items write confirmed (probe → ${wp.status}) via ${via}`
+              : wp.scope === "absent" ? `PAT/session lacks Work Items write (probe → ${wp.status}) via ${via} — /qa-fix cannot transition/comment the ticket until you grant Azure DevOps scope: Work Items (Read & Write)`
+              : wp.scope === "restricted" ? `probe → 403 on the sampled work item (via ${via}) — this item is ACL-restricted, NOT proof the PAT lacks Work Items write; confirm the target area is writable`
+              : `write scope unverified (probe → ${wp.status}) via ${via} — confirm Work Items (Read & Write)`;
+            add("Azure Boards write (transition)", writeProbeSeverity(wp.scope), wDetail);
           }
         }
       } catch (e) { add("Azure DevOps auth", "FAIL", e.message); }
@@ -342,7 +341,7 @@ async function main() {
             : wp.scope === "absent" ? `reachable but NO Code write (push probe → ${wp.status}) — /qa-fix pushes here; grant ADO PAT scopes: Code (Read & Write) + Pull Request (contribute)`
             : wp.scope === "restricted" ? `reachable via ${ado.via}; push probe → 403 — this repo/branch is ACL-restricted, NOT proof the PAT lacks Code write; confirm branch policies / repo permissions allow the fix branch`
             : `reachable via ${ado.via}; Code write unverified (push probe → ${wp.status}) — confirm PAT Code (Read & Write)`;
-          add(label, clientRepoWriteSeverity(wp.scope, { existing: EXISTING }), adoDetail);
+          add(label, writeProbeSeverity(wp.scope), adoDetail);
         } catch (e) { add(label, "FAIL", e.message); }
       } else {
         // github client repo
@@ -355,12 +354,12 @@ async function main() {
           if (res.ok) {
             const repo = await res.json();
             const push = Boolean(repo.permissions?.push);
-            // /qa-fix pushes + opens the PR here, so no push = NOT READY (FAIL), not WARN.
-            // Route through clientRepoWriteSeverity (push→present/absent) so the severity mapping
-            // is the SAME tested pure function as the Azure path.
-            add(label, clientRepoWriteSeverity(push ? "present" : "absent", { existing: EXISTING }), push
+            // Route through writeProbeSeverity (push→present/absent) so the severity mapping is the
+            // SAME tested pure function as the Azure path. Missing push is a WARN (not an onboarding
+            // block) — /qa-fix's Gate 1 re-checks the actual routed repo.
+            add(label, writeProbeSeverity(push ? "present" : "absent"), push
               ? `push access via ${ghVia}`
-              : `reachable (${ghVia}) but NO push perm — /qa-fix pushes here; grant GitHub repo/PR write on ${owner}/${name}`);
+              : `reachable (${ghVia}) but NO push perm — /qa-fix pushes here; grant GitHub repo/PR write on ${owner}/${name} before running it`);
           } else add(label, "FAIL", `GET repos/${owner}/${name} → ${res.status}`);
         } catch (e) { add(label, "FAIL", e.message); }
       }
