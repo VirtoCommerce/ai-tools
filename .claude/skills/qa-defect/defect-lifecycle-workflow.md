@@ -103,6 +103,11 @@ HOTFIX BRANCH (critical production bugs):
 
 QA directly controls these 5 transitions. Each requires a JIRA comment and evidence.
 
+> **Comment format (every transition comment below):** follow `knowledge/execution/tracker-ops.md` §5a
+> **Comment & body style** — Markdown (never Jira wiki markup: no `h2.`/`*bold*`/`{code}`), clear, brief,
+> outcome-first, evidence referenced not inlined. The blocks below are illustrative content, not a
+> literal wire format.
+
 ### 3.1 Ready for Test → TESTING (On QA)
 
 **Precondition:** Fix deployed to test environment, build version matches PR.

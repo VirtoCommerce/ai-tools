@@ -157,7 +157,7 @@ With the fix confirmed deployed, transition the ticket to the **`testing`** role
 **Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — including the
 QA-side `qaRoleStatesComplete` gate: only apply `auto`/`confirm-once` when it's `true`, else `ask`.
 
-Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed". **On Azure, write the comment as HTML** (`<b>`, `<br/>`, `<ul>/<li>`, `<code>`) per [`azure-html-format.md`](../knowledge/execution/azure-html-format.md) — a plain-text/Markdown comment collapses into one unreadable paragraph; the plain block below is illustrative content, not the literal wire format:
+Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed". Follow `tracker-ops.md` §2 **Comment & body style**: clear, brief, outcome-first, evidence referenced not inlined. **On Jira, write Markdown** (`##`/`**`/`` ` ``/`-` lists) — never Jira wiki markup. **On Azure, write the comment as HTML** (`<b>`, `<br/>`, `<ul>/<li>`, `<code>`) per [`azure-html-format.md`](../knowledge/execution/azure-html-format.md) — a plain-text/Markdown comment collapses into one unreadable paragraph; the plain block below is illustrative content, not the literal wire format:
 ```
 Starting QA verification.
 Platform: [PlatformVersion confirmed deployed in Step 2]
