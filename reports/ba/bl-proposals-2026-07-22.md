@@ -11,10 +11,24 @@
 > contradicted. The four **Priority** items below are high-confidence and low-risk; the rest are re-run
 > candidates.
 >
-> **✅ APPLIED 2026-07-22 (user-approved):** `BL-GQL-001` (HTTP 200 not 400), `BL-PROFILE-001` (stale
-> Origin footnote refreshed), and `BL-ORD-005` (per-period-reset order numbers) were promoted to
-> `business-logic.md` with an `Amended: (approved from bl-proposals-2026-07-22)` stamp. They remain
-> documented below for the record. Everything else is still pending.
+> **✅ APPLIED 2026-07-22 (user-approved), wave 1:** `BL-GQL-001` (HTTP 200 not 400), `BL-PROFILE-001`
+> (stale Origin footnote refreshed), `BL-ORD-005` (per-period-reset order numbers).
+>
+> **✅ APPLIED 2026-07-22 (user-approved), wave 2:** `BL-CART-001` (reject-not-auto-cap), `BL-CHK-003`
+> (ZIP unconditional), `BL-CART-009` (reconciled single-slot coupon model — both preset + custom-input
+> facets; the batch-1 "no preceding remove" claim was stale), `BL-ORD-009` (**resolved: BY-DESIGN
+> correction, not a bug** — `Processing` is a settable `Order.Status` dictionary value; set is an
+> env-configurable dictionary) + its `BL-B2B-004` parenthetical fix, and **new invariant `BL-CART-015`**
+> (config items survive a Saved-for-Later round trip — promoted via the §1a `docs: N/A` allowance).
+>
+> **Also this session:** `reports/bugs/open/BUG-guest-checkout-card-gateway-no-payment.md` drafted for
+> **PAY-001** (guest card-bypass reproduced — order placed with zero card data). `bl-audit-criteria.md`
+> gained the §1a `docs: N/A` allowance. `lint-bl.ts` BLC-002 `PROPOSED-` false-positive fixed (prior commit).
+>
+> **Still pending / NOT applied:** `BL-ORD-011` (cart-level "Products in PTS" grouping confirmed live, but
+> the order-**details**-page claim needs a Chrome/Edge checkout run — Firefox payment-dropdown quirk blocked
+> it); the `BL-CART-018 → BL-CART-015` suite remap in `050b3` (CRL-GQL-100/101/124/125/127/128/129) is gated
+> on those cases leaving `Draft` — do it via `/qa-review-tests suite 050b3 --fix`; and everything else below.
 
 ---
 

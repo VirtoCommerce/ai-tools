@@ -19,6 +19,30 @@ If any axis produces **no** evidence → **UNGROUNDED**. If the axes **disagree*
 (docs say X, live shows Y) → **CONTRADICTORY**. Neither is confirmed; both route to
 `reports/ba/bl-proposals-<date>.md` for a human.
 
+## 1a. `docs: N/A` allowance — invariants no documentation can cover
+
+Two invariant classes can **never** satisfy the Docs axis, regardless of search effort:
+
+1. **Implementation / UX mechanics** — rounding, decimal-money arithmetic, GraphQL HTTP
+   status codes, coupon-slot UX, quantity-reject-vs-auto-cap, order-number reset cadence,
+   facet-render mechanics — behaviors the VirtoOZ user/developer guides do not narrate.
+2. **Project-specific extensions** — capability layered on the platform with no upstream
+   doc surface (e.g. the Mixed-Cart Loyalty domain, a project-specific regression-fix
+   invariant, QA-authored layout/a11y methodology invariants).
+
+For such an invariant the **Docs axis may be marked `N/A` and treated as satisfied**, so
+`Source + Live` alone can reach CONFIRMED/DRIFT/MISSING — but **only** when ALL hold:
+
+- **Source AND Live are BOTH present this run and agree** — a fresh `file:line` anchor **and**
+  a fresh `{OBSERVED}` result. `N/A` never substitutes for a missing Source or Live axis; it
+  covers **only** Docs. (Live-unsafe P0 security invariants therefore stay UNGROUNDED, per §5.)
+- the entry records an explicit **`- **Docs:** N/A — <implementation-detail | project-specific>: <reason>`**
+  line, so the substitution is auditable.
+- the auditor judged the behavior **genuinely undocumentable** — NOT merely "no doc found this
+  session." A doc that exists but wasn't checked (rate-limit, budget) is a *missing* axis →
+  **UNGROUNDED**, not `N/A`. `N/A` never applies to a user-facing behavior a guide would
+  normally describe. **When in doubt, UNGROUNDED, not N/A.**
+
 ## 2. Per-domain source map (which tool per axis)
 
 Pick the VirtoOZ tool and the likely repo by the BL's domain prefix. This is a
@@ -48,6 +72,10 @@ all present axes describe the same behavior and match the BL `Rule` text.
 | ✓ | ✓ | ✓ | yes | **CONFIRMED** |
 | ✓ | ✓ | ✓ | no (evidence agrees, Rule stale) | **DRIFT** |
 | ✓ | ✓ | ✓ | (no BL exists for this behavior) | **MISSING** |
+| N/A (§1a) | ✓ | ✓ | yes | **CONFIRMED** |
+| N/A (§1a) | ✓ | ✓ | no (evidence agrees, Rule stale) | **DRIFT** |
+| N/A (§1a) | ✓ | ✓ | (no BL exists for this behavior) | **MISSING** |
+| Docs missing but a doc *could* exist (not §1a), third absent | — | — | — | **UNGROUNDED** |
 | any two present, third absent | — | — | — | **UNGROUNDED** |
 | present but conflicting | — | — | — | **CONTRADICTORY** |
 | all three say the behavior is gone | — | — | — | **STALE/RETIRE** |
