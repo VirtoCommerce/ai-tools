@@ -60,7 +60,22 @@ resolve/comment/transition ops and for commit/PR cross-links (Azure: `AB#12345`)
 > [`azure-html-format.md`](azure-html-format.md); `ado.mjs` also auto-converts Markdown→HTML as a safety
 > net (author HTML passes through). Pass `--raw` to `create-workitem`/`comment` to send the body
 > verbatim and skip the safety net (rarely needed — already-HTML content is detected and passed
-> through either way). This is Azure-only — Jira keeps its own markup.
+> through either way). This is Azure-only.
+>
+> **Jira content is Markdown, NOT wiki markup (VCST-5212).** Author every Jira description/comment in
+> **GitHub-flavored Markdown** (`## Heading`, `**bold**`, `` `code` ``, fenced ```` ``` ```` blocks,
+> `-`/`1.` lists, `|` tables) — the Atlassian MCP converts Markdown → ADF. **Never send Jira wiki
+> markup** (`h2.`, `*bold*`, `{code}…{code}`, `{{mono}}`) — it renders as literal text. Summaries/titles
+> are plain text, no markup.
+>
+> **Comment & body style — clear, brief, understandable (both trackers).** Format alone isn't enough;
+> the content must read fast. Every comment/field body you push (bug filing, `/qa-fix` status,
+> `/qa-verify-fix` verdict, `/qa-defect` note) is: **structured** (Markdown headings / short bullets /
+> a small table, never a wall of text); **brief — lead with the outcome** (`✅ Verified fixed @ build X`,
+> `Routed to vc-module-cart, PR #NN`), then only the evidence that matters — no investigation logs or
+> step-by-step narration; **evidence referenced, not inlined** (PR link, screenshot, BL-* id), obeying
+> the size caps in `.claude/rules/reports.md`; and **verified to render** (bold/lists/code actually
+> format) — a literal `**` / `| … |` wall means the wrong dialect was sent, so fix and re-post.
 Auth (never passwords): Jira via the Atlassian MCP OAuth (or `JIRA_API_TOKEN`+`JIRA_EMAIL`);
 Azure via `ADO_PAT` (Basic, empty user) or an `az login` session (`ADO_AUTH=az-login`) — same
 helpers as `ci/lib/ado-rest.ts`.

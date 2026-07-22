@@ -283,6 +283,10 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 2. **Never modify or delete an existing test** — only ADD. An existing test going red after the fix =
    contract conflict → STOP, do not edit the test.
 3. **Minimal diff.** No refactors, no nuget/dep bumps, no formatting churn, no unrelated files.
+   **Comments: brief, only when necessary.** Don't narrate the change or restate what the code
+   already says; add a comment only for genuinely non-obvious *why* (a subtle guard, a workaround, a
+   BL-* / edge-case rationale). No "// added for VCST-XXXX", no step-by-step play-by-play, no
+   re-commenting untouched code. Match the density of the surrounding file.
 4. **No breaking changes.** No public REST/GraphQL/DTO/contract change, DB schema/migration, domain
    event shape, or `module.manifest` change. Any of these → STOP (Gate 0 boundary).
 5. **No secrets.** Never read, echo, or commit credentials/connection strings/`.env*`/`*.Development.json`.

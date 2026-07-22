@@ -128,6 +128,22 @@ guessing custom-field ids.
 - The on-disk `reports/bugs/*.md` file stays plain Markdown regardless — this rule is only about
   what you push into a **tracker field**.
 
+### Comment & body style — clear, brief, understandable
+
+Format is not enough — the content must be **easy to read fast**. Every comment or field body you
+push to a tracker (bug filing, `/qa-fix` status, `/qa-verify-fix` verdict, `/qa-defect` transition
+note) MUST be:
+- **Structured, never a wall of text.** Use Markdown headings/short bullets/a small table over one
+  long paragraph. A one-line status is a single sentence, not a screenshot dump.
+- **Brief — lead with the outcome.** State the verdict/result first (`✅ Verified fixed @ build X`,
+  `⚠️ Still reproduces`, `Routed to vc-module-cart, PR #NN`), then only the evidence that
+  matters. No investigation logs, no step-by-step narration, no restating the whole ticket.
+- **Understandable to a human skimming on a deadline.** Reference evidence (PR link, screenshot,
+  `@td` alias, BL-* id), don't inline it. Obey the size discipline in `.claude/rules/reports.md`.
+- **Rendered Markdown, not raw markup.** Verify the comment renders (bold/lists/code actually
+  format) — a literal `**` / `| … |` wall means you sent the wrong dialect (Jira wiki instead of
+  Markdown, or Markdown into an Azure HTML field). Fix and re-post.
+
 ## 5. Build-version verification is platform-only
 
 The `vc-deploy-dev` manifest (used to confirm deployed module/Platform/Theme versions) is a

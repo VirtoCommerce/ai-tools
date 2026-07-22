@@ -227,7 +227,7 @@ non-issue with `GIT_TOKEN` (5000 req/h).
 ### After the hotfix
 
 - Re-run the precheck → the bundle should now read `◯ already-applied`.
-- Report per bundle: new patch version + release URL. Comment the outcome on the JIRA task (English).
+- Report per bundle: new patch version + release URL. Comment the outcome on the JIRA task (English; Markdown, never Jira wiki markup; clear/brief/outcome-first per `knowledge/execution/tracker-ops.md` §5a **Comment & body style**).
 - **Advance the JIRA status to `Hotfix ready`** (right after the outcome comment) — **only for
   issue type `Bug`.** The `Wait hotfixes` / `Hotfix ready` statuses live only in the Bug workflow;
   a hotfix can also target a **Story** (or any other type), and those have no such statuses — for

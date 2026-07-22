@@ -61,7 +61,10 @@ Fix: [brief description of what the dev fixed]
 
 Transition the JIRA ticket to TESTING status via Atlassian MCP (`transitionJiraIssue`, transition name: `On QA`).
 
-Add a JIRA comment:
+Add a JIRA comment (**and every JIRA comment in this command** — the verdict/reopen/blocked notes
+below): follow `knowledge/execution/tracker-ops.md` §5a **Comment & body style** — Markdown (never Jira
+wiki markup), clear, brief, outcome-first, evidence referenced not inlined. The blocks below are
+illustrative content, not a literal wire format.
 ```
 Starting QA verification.
 Platform: [PlatformVersion from packages.json]

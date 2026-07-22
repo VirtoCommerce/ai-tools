@@ -137,6 +137,11 @@ QA directly controls these 5 transitions (roles `testing` / `tested` / `reopen` 
 names below are the **Jira reference labels**; resolve the actual transition by role via `tracker-ops.md`.
 Each requires a tracker comment and evidence.
 
+> **Comment format (every transition comment below):** follow `tracker-ops.md` §2 **Comment & body
+> style** — Jira = Markdown (never wiki markup); Azure = HTML (`azure-html-format.md`); either way clear,
+> brief, outcome-first, evidence referenced not inlined. The blocks below are illustrative content, not a
+> literal wire format.
+
 ### 3.1 Ready for Test → TESTING (On QA)
 
 **Precondition:** Fix deployed to test environment, build version matches PR.

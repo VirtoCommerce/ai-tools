@@ -270,7 +270,9 @@ Ask the user before transitioning. Skip if Atlassian MCP is not configured.
 | PASS / PASS WITH NOTES | `Finish test` → TESTED |
 | FAIL | `Need fixes` → REOPEN with comment listing failures |
 
-Add a JIRA comment with:
+Add a JIRA comment with (Markdown, never Jira wiki markup; clear, brief, outcome-first, evidence
+referenced not inlined — `knowledge/execution/tracker-ops.md` §5a **Comment & body style**; the block
+below is illustrative content, not a literal wire format):
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
 AC review: [N] story ACs ([weak]/[ok]), [M] gap-ACs added; AC↔impl: [satisfied]/[drift]/[contradicts]/[not-found].
