@@ -250,7 +250,11 @@ const rect = el.getBoundingClientRect();
 
 ## Reporting
 
-Bug reports follow `.claude/rules/reports.md` — hard caps apply (simple UI/copy a11y bug ≤ 80 lines TOTAL; functional bug ≤ 120; cross-layer ≤ 150). Required fields for an a11y bug:
+Bug reports follow `.claude/rules/reports.md` — hard caps apply (simple UI/copy a11y bug ≤ 80 lines TOTAL; functional bug ≤ 120; cross-layer ≤ 150).
+
+**Deduplicate before you write.** Collapse repeated violations of the same rule across a component family into ONE finding with an instance count (`color-contrast — VcButton ×14`), not one row each — the fix is almost always a single root-cause change. If a route returns more than ~50 violations, report the ~3 highest-impact patterns and stop rather than dumping the full list. **Locate each finding** by the first available of `data-test-id` (see `storefront-selectors.md`) → `role` + accessible name → DOM path; never fabricate a `file:line` — if it can't be pinned, note "located by selector only".
+
+Required fields for an a11y bug:
 
 - Title: `[Component/Page] - A11y: WCAG <criterion-id> - <issue>` (e.g., `Checkout - A11y: WCAG 2.4.11 - Sticky header obscures focused address field`)
 - WCAG criterion ID + level (A / AA / AA-2.2)
