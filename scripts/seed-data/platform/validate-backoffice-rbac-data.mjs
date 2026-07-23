@@ -11,9 +11,9 @@
  *   1. each restricted role's permission set is correct (holds its base/link perms, EXCLUDES its
  *      boundary permission);
  *   2. no runtime GUID leaked into the spec module (VCST-5406 — ids live in aliases.<env>.json);
- *   3. each alias is registered in test-data/aliases.json, its email matches the spec, its declared
- *      excluded_permission is coherent (equals the spec's excluded perm AND is genuinely absent from
- *      the role), and it carries NO GUID.
+ *   3. each alias is registered in test-data/aliases.json, its email and role match the spec, its
+ *      declared excluded_permission is coherent (equals the spec's excluded perm AND is genuinely
+ *      absent from the role), and it carries NO GUID.
  *
  * Exit 1 on any violation.
  */
@@ -43,6 +43,10 @@ function checkAlias(role, account, excludedPermission) {
   const emailOk = (alias.email || alias.login) === account.email;
   if (!emailOk) fail(`alias ${account.aliasName}.email must equal the spec email ${account.email}`);
   else ok(`alias ${account.aliasName} registered (email matches spec)`);
+
+  if (alias.role !== role.role_name) {
+    fail(`alias ${account.aliasName}.role is "${alias.role}" but the spec role is "${role.role_name}"`);
+  } else ok(`alias ${account.aliasName}.role matches spec ("${role.role_name}")`);
 
   // excluded_permission must equal the spec's boundary AND be genuinely absent from the role.
   if (alias.excluded_permission !== excludedPermission) {

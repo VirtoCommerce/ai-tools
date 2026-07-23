@@ -138,8 +138,9 @@ export function assertRolePermissions(permissions = RESTRICTED_ROLE.permissions)
 export const CATALOG_LINK_EXCLUDED_PERMISSION = 'catalog:categories:link';
 
 // Every catalog link/write permission the products-only linker must NOT hold. Only the
-// category-link perm is excluded (products:link is precisely what it DOES hold).
-export const CATALOG_LINK_EXCLUDED_PERMISSIONS = ['catalog:categories:link'];
+// category-link perm is excluded (products:link is precisely what it DOES hold). Derived from
+// the singular constant so the two can never drift apart.
+export const CATALOG_LINK_EXCLUDED_PERMISSIONS = [CATALOG_LINK_EXCLUDED_PERMISSION];
 
 // The catalog permissions a usable products-only linker MUST hold (base access + read + the
 // create perms that gate the Map flow + the products link perm). Update/create allow reaching
