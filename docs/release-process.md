@@ -147,11 +147,17 @@ entry agrees on the version, and pushes it to `origin`. Manual equivalent, from 
 ```bash
 git checkout main
 git pull
-git tag vc-fix--vX.Y.Z <release-commit>
+git tag vc-fix--vX.Y.Z   # tags HEAD — the commit that landed the plugin.json version bump.
+                          # If this plugin's release merged earlier than main's current tip
+                          # (other plugins can land work after it), tag that earlier commit
+                          # instead: git tag vc-fix--vX.Y.Z <that-commit-sha>.
 git push origin vc-fix--vX.Y.Z
 ```
 
-(Substitute the plugin name being released for `vc-fix`.) Skipping this step doesn't break the
+(Substitute the plugin name being released for `vc-fix`.) Unlike Step 5's release tag, this is
+**lightweight, not annotated** — no `-a`/`-m` — matching the `vc-fix--v0.7.0`/`vc-fix--v0.8.1` tags
+already on this repo; `claude plugin tag`'s own `-m`/`--message` flag is there if the team ever wants
+to standardize on annotated dependency tags instead. Skipping this step doesn't break the
 dependent plugin's *installability* today — a dependency range like `>=0.7.0` still resolves against
 whatever tag is newest — but it silently freezes every dependent plugin's installers on the last
 tagged content snapshot instead of the version `plugin.json` now claims to be at, and a future
