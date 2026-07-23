@@ -14,6 +14,14 @@ Ships as **plugin `0.8.1`** (marketplace `0.9.3`). Pin to a tagged release for s
 
 > The entries below (`/qa-deploy-pr`, `/qa-review-bl`, the VCST-5318 catalog-mapping-permission coverage, the accessibility/code-review hardening) land in the **project-scoped `.claude/` `vc-qa` surface**, not the distributable `vc-fix` plugin — so the plugin/marketplace versions above are unchanged.
 
+### Removed — the legacy whole-repo-as-plugin install path (`manifest.json` + `bootstrap/install.ts`)
+
+Before v0.7.0 the entire repo was the `vc-qa` plugin, onboarded via an interactive `bootstrap/install.ts` wizard (`npm run plugin:configure` / `plugin:check`) backed by a root `manifest.json`. That model is gone — `vc-fix` is the only installable plugin, and `/project-init` is the onboarding path. The leftover scaffolding is now removed.
+
+- **Deleted** `manifest.json` (root) and `bootstrap/install.ts`; **removed** the `plugin:configure`, `plugin:check`, and `plugin:install` scripts from `package.json`. Nothing at runtime read `manifest.json` (`config.js` owns env validation), so there is no behavior change.
+- **Re-pointed every reference** at the current path: `npm run plugin:configure` → `/project-init`, `npm run plugin:check` → `npm run env:check`, across `README.md`, `CLAUDE.md`, `INDEX.md`, `docs/onboarding.md`, `docs/distribution.md`, `docs/marketing-onepager.md`, `docs/pilot-runbook.md`, `docs/pilot-rehearsal-protocol.md`, `docs/release-process.md`, `docs/support-runbook.md`, `docs/test-authoring.md`, `docs/troubleshooting.md`, both `qa-env-check` command surfaces, `qa-onboarding`, `.claude/architecture/TIER.md`, and the `project-init` SKILLs. `/qa-env-check`'s env-schema source-of-truth is now `config.js` (was `manifest.json` `envSchema`).
+- The broader whole-repo-as-plugin *narrative* in `docs/distribution.md` / `TIER.md` / `marketing-onepager.md` still needs a fuller reframe — tracked separately.
+
 ### Added — `/qa-deploy-pr`: deploy ALL of a change's fresh PR artifacts to the test env in one manifest update
 
 A change often produces prerelease artifacts across several repos (one or more modules + Platform + the vc-frontend theme); previously each had to be pinned into the deploy manifest by hand, so `/qa-test PR #N` and `/qa-verify-fix` were blocked until someone stitched them together. `/qa-deploy-pr <ticket-key>` gathers them all and deploys them together.
@@ -46,6 +54,15 @@ Business-logic invariants (`knowledge/oracles/business-logic.md`) drifted from t
 ### Docs — release process: per-plugin dependency-tag convention
 
 `docs/release-process.md` documents the per-plugin dependency-tag convention, references `claude plugin tag --push` (issue #156), and clarifies Step 5a's tag commit + the annotated-vs-lightweight tag choice.
+
+### Changed — self-diagnostics evolved into a client→vendor feedback loop (VCST-5509)
+
+The self-diagnostics subsystem (originally VCST-5475–5479, below) grew a second signal path and dropped the end-of-session Yes/No consent modal as the trigger. `vc-fix` now ships **8 commands** (the new `/vc-feedback` joins `/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-env-check`, `/vc-self-check`).
+
+- **New `/vc-feedback "<what happened>" 👍/👎`** — an explicit operator verdict on the current session, the **main detector of SILENT failures** (a command/skill/agent that did the wrong thing but *looked* fine, which no deterministic heuristic catches). The `UserPromptSubmit` hook (`session-telemetry.mjs prompt`) parses the verdict + text, redacts secrets, and appends a `{type:"feedback"}` record to the currently-open span; the model just acknowledges — it runs no tool and sends nothing.
+- **The passive collector now classifies spans** (`failed` / `degraded` / `silent_suspect`) and `/vc-self-check`'s scope is **outcome-based** — it diagnoses the flagged spans plus any `/vc-feedback` verdicts, rather than everything.
+- **Delivery is `feedback.mode`-gated**, and `/vc-self-check deliver` gained **`--batch`** (consolidate ALL local DIAGs into one deduped report with occurrence counts). Same hard invariants hold: opt-in via `selfDiagnostics: true`, local-only, client-code-scrubbed, ephemeral (log → analyze → contribute → delete), never mutates the install.
+- Shipped in `plugins/vc-fix/`.
 
 ### Fixed — `/vc-shell-fix` hardened against the real page-builder shell
 

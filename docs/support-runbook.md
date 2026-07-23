@@ -47,7 +47,7 @@ Customer reports issue
 
 ### §3.A — Plugin bug (issue with the plugin itself)
 
-Symptoms: `npm run plugin:check` fails on a clean install · A skill throws an error mentioning a plugin internal file · `npx tsx scripts/...` script crashes · Schema validation fails on a manifest the plugin shipped.
+Symptoms: `npm run env:check` fails on a clean install · A skill throws an error mentioning a plugin internal file · `npx tsx scripts/...` script crashes · Schema validation fails on a manifest the plugin shipped.
 
 Triage steps:
 1. Reproduce locally with `TEST_ENV` matching customer's. If you can't reproduce, document why (Windows vs Mac, Node version, MCP version).
@@ -60,10 +60,10 @@ Triage steps:
 
 ### §3.B — Customer config issue
 
-Symptoms: "It doesn't work" but `plugin:check` passes · Missing env var · Wrong MCP server configured · `TEST_ENV` validation rejection · `aliases.json` placeholder not replaced · Customer ran on wrong env (e.g. prod when they meant staging).
+Symptoms: "It doesn't work" but `npm run env:check` passes · Missing env var · Wrong MCP server configured · `TEST_ENV` validation rejection · `aliases.json` placeholder not replaced · Customer ran on wrong env (e.g. prod when they meant staging).
 
 Triage steps:
-1. Ask the customer to run `npm run plugin:check` and paste the output verbatim.
+1. Ask the customer to run `npm run env:check` and paste the output verbatim.
 2. Ask: "What's the value of `TEST_ENV` and `ENV_RISK` you're using?"
 3. Compare against [`docs/onboarding.md`](onboarding.md) § Troubleshooting — almost certainly one of:
 
@@ -103,7 +103,7 @@ To diagnose, please share:
 1. The exact command you ran.
 2. The full output (paste verbatim, including any colors/formatting).
 3. Your TEST_ENV name and ENV_RISK.
-4. Output of `npm run plugin:check`.
+4. Output of `npm run env:check`.
 5. Output of `node skills/run-vc-mcp-testing-module/driver.mjs`.
 6. Node version: `node --version`.
 7. OS + Claude Code version.
@@ -165,7 +165,7 @@ Looks like this is a config issue rather than a plugin bug. Specifically:
 
 Fix: {paste-able command / config snippet}.
 
-After applying, please confirm `npm run plugin:check` passes. If it still
+After applying, please confirm `npm run env:check` passes. If it still
 doesn't work, reopen this issue and I'll dig deeper.
 
 The relevant doc section is {linked URL to docs/onboarding.md anchor}. I've
@@ -225,7 +225,7 @@ The support runbook **is** the plugin's knowledge base. Every ticket either reso
 Things we don't do:
 
 - **Fix customer config bugs by editing files for them.** Always have them run the command themselves so they learn the system.
-- **Bypass `plugin:check`.** If it fails, it fails. Don't tell customers "ignore the warning."
+- **Bypass `npm run env:check`.** If it fails, it fails. Don't tell customers "ignore the warning."
 - **Promise features that aren't on the roadmap.** Refer them to `docs/versioning.md` + the strategic plan if they want a new capability.
 - **Argue with customer about their env naming.** It's their env. As long as it's `[a-z0-9_]+`, they're right.
 - **Apologize for the cost.** Document expected token spend up front so they're not surprised; if they think it's too expensive, that's a pricing-model conversation, not a support one.
@@ -236,5 +236,4 @@ Things we don't do:
 - Customer onboarding: [`./onboarding.md`](onboarding.md)
 - Pilot runbook: [`./pilot-runbook.md`](pilot-runbook.md)
 - Versioning + Tier A freeze: [`./versioning.md`](versioning.md)
-- Plugin manifest: [`../manifest.json`](../manifest.json)
 - CHANGELOG: [`../CHANGELOG.md`](../CHANGELOG.md)

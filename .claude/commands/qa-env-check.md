@@ -42,7 +42,7 @@ If `ENV_RISK=production`, add a prominent warning:
 
 ### 2. Environment Variables
 
-Run `npm run env:check` to verify required variables are set. Source of truth for the schema: **`manifest.json` `envSchema`** — the customer should consult that for what's required.
+Run `npm run env:check` to verify required variables are set. Source of truth for the schema: **`config.js`** (the layered env loader) — the customer should consult that for what's required.
 
 Layered loader order (later overrides earlier):
 1. `.env.defaults` — plugin-supplied constants (sandbox cards, Builder.io public URL). Same for every customer.
@@ -107,7 +107,6 @@ Quick checks on plugin local state:
 
 | Item | Check |
 |------|-------|
-| `manifest.json` | Exists at repo root, valid JSON. |
 | `config/test-suites.json` | Exists, valid JSON, schema lint passes (`npm run suites:lint`). |
 | `test-data/aliases.json` | Exists. |
 | `test-data/aliases.${TEST_ENV}.json` | Optional — note if present (env overrides active). |
@@ -157,7 +156,6 @@ Customer secrets  : 8/8 from .env.local (via _QA suffix promotion)
 ### Test Infrastructure
 | Item                          | Status |
 |-------------------------------|--------|
-| manifest.json                 | OK     |
 | config/test-suites.json       | OK (99 suites, schema valid) |
 | test-data/aliases.json        | OK     |
 | test-data/aliases.qa.json     | OK (env overrides active) |

@@ -55,7 +55,7 @@ booleans and the script runs anyway, writing a default file).**
 
 Run a detection pass, then **install whatever is missing** — do not just report a
 gap and move on (that leaves `/qa-fix` unable to open PRs). Confirm the current
-directory is the plugin repo root (`manifest.json` present).
+directory is the plugin repo root (`config.js` + `.claude-plugin/` present).
 
 - **Node 18+** and **git** — hard prerequisites. If absent, STOP and ask the
   operator to install them (cannot be auto-installed reliably).
@@ -453,5 +453,3 @@ with just those flags + `--merge`. To re-derive after a token/session change, re
 > per axis. Both env files are scaffolded as commented templates the operator fills;
 > the scan (step 4) derives projectType + clientOrg, the derive block (step 5) derives
 > contribution mode + fork account + operator, and verify-access (step 8) confirms.
-> The existing `bootstrap/install.ts` (`npm run plugin:configure`) wizard remains an
-> optional interactive fallback.
