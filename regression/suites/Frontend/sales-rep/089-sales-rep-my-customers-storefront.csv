@@ -225,3 +225,96 @@ DEPRECATED (TLC-2026-07-17-1603, VCST-5304/5469 corrected test design, 2026-07-1
 [PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS_ORGCTX] — NOT EXECUTABLE, fixture retired and never seeded (kept for traceability only)","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] page loads with no search keyword applied","[NAV] NOT EXECUTABLE — the precondition this case requires (a permissioned rep with org context serving zero customers) is architecturally unreachable per TLC-2026-07-17-1603; retained for traceability only {DEPRECATED}
 [DOM] the ""My customers"" empty-table state this case targeted is superseded by 089 SR-FE-013's ""/account/dashboard"" redirect (browser-verified this run) and 089 SR-FE-010's ""No customers match your search"" view {DEPRECATED}","none","N/A — deprecated case, not executed; the state it targeted was proven architecturally unreachable, not a product defect","none (read-only)","VCST-5469; Deprecated: TLC-2026-07-17-1603 (VCST-5304/5469 corrected test design, 2026-07-17) — state proven unreachable by live browser+xAPI verification; superseded coverage: SR-FE-013 (redirect) + SR-FE-010 (search-empty-state) + 050m SR-GQL-041 (backend equivalent)","Deprecated"
+"SR-FE-031","Actions Column Renders with Envelope Icon per Customer Row","Storefront > Sales Rep > My Customers > Actions","Critical","PROPOSED-BL-SR-COMM-UI","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+GAP-FILL for VCST-5310 (push/email broadcast entry point, vc-frontend PR #2392). SR_REP_PRIMARY serves >=1 org (e.g. @td(ORG_ACME.id)). New Actions column (i18n key sales_rep.my_customers.table.actions) ships alongside Customer/My last order.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] table rows loaded
+[ASSERT] row for @td(ORG_ACME.name) is visible","[DOM] the table renders an ""Actions"" column header alongside ""Customer"" and ""My last order"" {DOC}
+[DOM] every rendered row has an envelope/message icon button visible in the 'Actions' column {OBSERVED}","none","Actions column missing; envelope icon absent on a row despite the org being a valid communication target; icon renders on some rows but not others with no visual reason","none (read-only)","VCST-5310","verified"
+"SR-FE-032","Envelope Icon Click Opens the Customer Communication Modal","Storefront > Sales Rep > My Customers > Actions","Critical","PROPOSED-BL-SR-COMM-UI","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_ACME.id). Modal component is customer-communication-modal.vue per source (VCST-5310).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] table rows loaded
+[ACT] click the 'Send email' icon button (accessible name 'Send email') in the 'Actions' column on the @td(ORG_ACME.name) row
+[WAIT] modal opens","[DOM] a modal dialog opens with Title, Message, Email and Push fields visible {OBSERVED}
+[DOM] the modal subtitle text includes the organization name @td(ORG_ACME.name) (e.g. ""Reaches every member of {organization}"") {DOC}
+[DOM] a Send button and a way to dismiss/cancel the modal are both visible {OBSERVED}","none","clicking the envelope icon does nothing; modal opens with the wrong organization's name in the subtitle; modal fields missing","[ACT] close the modal without sending","VCST-5310","verified"
+"SR-FE-033","Send Button Disabled Until Message Valid AND At Least One Channel Selected","Storefront > Sales Rep > My Customers > Communication Modal","Critical","PROPOSED-BL-SR-COMM-VALIDATION","","state from SR-FE-032 (rep signed in, modal open for @td(ORG_ACME.id))","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM modal message","[ASSERT] Send button is disabled on initial modal open (no message, no channel selected)
+[ACT] fill 'Message' field: {{message}}
+[ASSERT] Send button remains disabled (no channel selected yet)
+[ACT] select the 'Email' channel checkbox
+[WAIT] form revalidates","[DOM] Send button is disabled immediately after the modal opens (empty message, no channel) {OBSERVED}
+[DOM] Send button remains disabled after filling Message alone, with no channel checked {OBSERVED}
+[DOM] Send button becomes enabled once Message is filled AND Email is checked {OBSERVED}","none","Send button is enabled with an empty message; Send button is enabled with a valid message but zero channels checked; Send stays disabled after both requirements are met","[ACT] close the modal without sending","VCST-5310","verified"
+"SR-FE-034","Field Validation — Title Optional (max 128), Message Required and Trimmed (max 1000)","Storefront > Sales Rep > My Customers > Communication Modal","High","PROPOSED-BL-SR-COMM-VALIDATION","ECL-7.1","state from SR-FE-032 (rep signed in, modal open for @td(ORG_ACME.id))","front_url={{FRONT_URL}}, title_129={{RANDOM_STRING_129}}, message_whitespace={{RANDOM_WHITESPACE_STRING}}","[ACT] leave 'Title' field empty
+[ACT] fill 'Message' field with a whitespace-only value: {{message_whitespace}}
+[ASSERT] validation error shown for Message (required, trimmed)
+[ACT] fill 'Title' field with a 129-character string: {{title_129}}
+[ASSERT] validation error shown for Title (exceeds 128 characters)","[DOM] no validation-error element is visible after leaving Title empty (Title is optional) {DOC}
+[DOM] a whitespace-only Message produces a ""required"" validation error visible beneath the field {OBSERVED}
+[DOM] the Title input hard-caps at 128 chars via its maxlength attribute — the 129th char is rejected at input (no separate inline max-length error shown), consistent with other capped inputs {OBSERVED}","none","empty Title blocks submission (contradicts optional-field design); whitespace-only Message is accepted as valid; Title input accepts a 129th character (maxlength cap not enforced)","[ACT] close the modal without sending","VCST-5310","verified"
+"SR-FE-035","At-Least-One-Channel Hint Shown When Neither Email Nor Push Is Checked","Storefront > Sales Rep > My Customers > Communication Modal","High","PROPOSED-BL-SR-COMM-VALIDATION","","state from SR-FE-032 (rep signed in, modal open for @td(ORG_ACME.id))","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM channel-hint message","[ACT] fill 'Message' field: {{message}}
+[ASSERT] neither Email nor Push checkbox is checked","[DOM] a hint/validation message is visible indicating at least one channel (Email or Push) must be selected {DOC}
+[DOM] the hint REMAINS visible after a channel is checked — it is always-rendered by design to reserve its space and prevent modal resize (PR #2392 commit 79c6aff1); Send enables once Message is valid AND ≥1 channel is selected {OBSERVED}","none","no hint shown when zero channels are selected; modal height jumps / hint collapses when toggling a channel (regresses the always-visible hint from PR #2392 79c6aff1)","[ACT] close the modal without sending","VCST-5310","verified"
+"SR-FE-036","Successful Send Shows a Success Toast and Closes the Modal","Storefront > Sales Rep > My Customers > Communication Modal","Critical","PROPOSED-BL-SR-COMM-CHANNEL","","state from SR-FE-032 (rep signed in, modal open for @td(ORG_ACME.id)). Mirrors 050m SR-GQL-042 at the UI layer — this case bridges the storefront send flow to the already-authored API contract, not re-testing the mutation's channel logic.","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM success-send message","[ACT] fill 'Message' field: {{message}}
+[ACT] select the 'Email' channel checkbox
+[ACT] click 'Send'
+[WAIT] request settles","[DOM] the communication modal is absent (closed) after a successful send {OBSERVED}
+[DOM] a success toast/notification is visible {OBSERVED}
+[STATE] the success toast is shown only once (not duplicated) {DOC}","[API] the sendCustomerCommunication mutation fires with sendEmail=true, message={{message}}, organizationId=@td(ORG_ACME.id); errors[] empty and the mutation returns true (mirrors 050m SR-GQL-042)","modal stays open after a successful send; no success toast shown; toast shown twice; network shows a 4xx/5xx despite a valid submission","none (dispatches a real push/email to @td(ORG_ACME.id)'s seeded members — acceptable, shared fixture org)","VCST-5310","verified"
+"SR-FE-037","Failed Send Shows an Error Toast, Modal Remains Open","Storefront > Sales Rep > My Customers > Communication Modal","High","PROPOSED-BL-SR-COMM-RESILIENCE","ECL-10.2","state from SR-FE-032 (rep signed in, modal open for @td(ORG_ACME.id)). Requires forcing the sendCustomerCommunication mutation to fail (devtools network interception/blocking), mirroring 089 SR-FE-025's error-resilience pattern.","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM failed-send message","[SETUP] block or force-fail the sendCustomerCommunication GraphQL request (devtools network interception)
+[ACT] fill 'Message' field: {{message}}
+[ACT] select the 'Email' channel checkbox
+[ACT] click 'Send'
+[WAIT] request settles","[DOM] an error toast/notification is visible after the failed send {OBSERVED}
+[DOM] the modal is still visible with the entered Message and channel selection preserved {OBSERVED}","[NETWORK] the sendCustomerCommunication mutation returns a failure (non-2xx or errors[]); useSalesRepCommunication catches it and returns false — handled gracefully (error toast shown, modal stays open), NOT surfaced as an uncaught console exception (swallowed by design)","modal closes despite a failed send (as if it succeeded); no error toast shown; entered form data is lost after the failure","[SETUP] remove the network block/interception
+[ACT] close the modal without sending","VCST-5310","verified"
+"SR-FE-038","Modal Subtitle Names the Clicked Row's Organization, Not a Stale One","Storefront > Sales Rep > My Customers > Communication Modal","Medium","PROPOSED-BL-SR-COMM-UI","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves >=2 distinctly-named orgs including @td(ORG_ACME.id) and @td(ORG_TECHFLOW.id) — proves the subtitle reflects the CLICKED row's org, not a stale/previous one.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] table rows loaded
+[ACT] click the 'Send email' icon button (accessible name 'Send email') in the 'Actions' column on the @td(ORG_ACME.name) row
+[WAIT] modal opens
+[ASSERT] subtitle recorded
+[ACT] close the modal
+[ACT] click the 'Send email' icon button (accessible name 'Send email') in the 'Actions' column on the @td(ORG_TECHFLOW.name) row
+[WAIT] modal opens","[DOM] the first modal's subtitle names @td(ORG_ACME.name), not @td(ORG_TECHFLOW.name) {OBSERVED}
+[DOM] the second modal's subtitle names @td(ORG_TECHFLOW.name), not @td(ORG_ACME.name) — proves the subtitle is not stuck on the first-opened org {OBSERVED}","none","subtitle names the wrong organization; subtitle is generic with no organization name at all; subtitle from the first modal persists into the second","[ACT] close the modal without sending","VCST-5310","verified"
+"SR-FE-039","Message Containing a URL Is Accepted (No False-Positive Validation)","Storefront > Sales Rep > My Customers > Communication Modal","Medium","PROPOSED-BL-SR-COMM-VALIDATION","","state from SR-FE-032 (rep signed in, modal open for @td(ORG_ACME.id)). Mirrors 050m SR-GQL-050 at the UI layer.","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM check out {{FRONT_URL}}/promo for details","[ACT] fill 'Message' field: {{message}}
+[ACT] select the 'Email' channel checkbox
+[ASSERT] no validation error shown for the URL-containing message
+[ACT] click 'Send'
+[WAIT] request settles","[DOM] no validation-error element is present for a message that contains a URL {DOC}
+[DOM] a success toast is visible and the communication modal is absent (closed) after Send {OBSERVED}","[API] the sendCustomerCommunication mutation succeeds (errors[] empty, returns true) with the URL-containing message (mirrors 050m SR-GQL-050)","a validation error incorrectly fires for a message containing a URL; Send is blocked/disabled solely because the message contains a URL","none (dispatches a real email to @td(ORG_ACME.id)'s seeded members)","VCST-5310","verified"
+"SR-FE-040","Communication Modal Renders Usable at Tablet Viewport (768px) from the My-Customers List Entry","Storefront > Sales Rep > My Customers > Communication Modal","Medium","PROPOSED-BL-SR-COMM-UI","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+GAP-FILL for VCST-5310 responsive coverage — SR-FE-032/033 cover the modal at desktop and SR-CP-026 covers it at mobile 375px from the PROFILE entry, but the my-customers LIST modal at tablet width was uncovered. At <=1024 (VcTable lg breakpoint) the list renders as stacked mobile-item cards, each carrying a 'Send email' button. LIVE-VERIFIED (2026-07-22, vcptcore-qa theme 2.54.0-pr-2392, 768x1024, served org [E2E Test] Contoso Ltd.): the modal opened from a list card renders full-width and usable — the dialog uses its fullscreen layout at this width, all fields reachable, footer visible, no clipping/overflow.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers (tablet viewport 768x1024)
+[WAIT] customer list rendered as stacked mobile-item cards
+[ACT] click the 'Send email' icon button (accessible name 'Send email') on the @td(ORG_ACME.name) card
+[WAIT] modal opens","[DOM] the modal opens with Title, Message, Email and Push channel fields all visible and not clipped at 768px width {OBSERVED}
+[DOM] the 'Select at least one channel.' hint and both channel checkboxes are fully visible {OBSERVED}
+[DOM] the Cancel and Send buttons are both visible and reachable in the modal footer (footer not pushed off-screen) {OBSERVED}
+[DOM] the modal subtitle names @td(ORG_ACME.name) {OBSERVED}
+[STATE] no horizontal overflow and no content clipped at 768px {OBSERVED}","[CONSOLE] no application-origin console errors on modal open (App Insights 'Invalid workspace' 400 + product-image 404s are known benign noise)","modal fields or footer clipped/overflowing at 768px; Send button unreachable; subtitle names the wrong org; modal fails to open from the mobile-item card","[ACT] close the modal without sending","VCST-5310; live-verified vcptcore-qa theme 2.54.0-pr-2392 2026-07-22","verified"
+"SR-FE-041","Communication Modal Renders is-mobile-fullscreen at Mobile Viewport (375px) from the My-Customers List Entry","Storefront > Sales Rep > My Customers > Communication Modal","Medium","PROPOSED-BL-SR-COMM-UI","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+GAP-FILL for VCST-5310 responsive coverage — SR-CP-026 covers the modal at mobile 375px from the PROFILE Quick-actions entry, but the my-customers LIST modal at mobile was uncovered. LIVE-VERIFIED (2026-07-22, vcptcore-qa theme 2.54.0-pr-2392, 375x812, served org [E2E Test] Contoso Ltd.): the modal opened from a list card renders edge-to-edge fullscreen (is-mobile-fullscreen) — the dialog fills the viewport with the footer (Cancel/Send) pinned at the bottom, all fields usable; filling Message + checking Email cleared the channel hint and enabled Send (form fully interactive at mobile).","front_url={{FRONT_URL}}, message=AGENT-TEST-SR-COMM mobile layout check","[NAV] {{FRONT_URL}}/company/my-customers (mobile viewport 375x812)
+[WAIT] customer list rendered as stacked mobile-item cards
+[ACT] click the 'Send email' icon button (accessible name 'Send email') on the @td(ORG_ACME.name) card
+[WAIT] modal opens
+[ACT] fill 'Message' field: {{message}}
+[ACT] select the 'Email' channel checkbox","[DOM] the modal renders full-viewport (is-mobile-fullscreen) — the dialog spans the full 375px width edge-to-edge with the footer pinned at the bottom {OBSERVED}
+[DOM] Title, Message, both channel checkboxes and the channel hint are all visible and not clipped {OBSERVED}
+[DOM] the modal subtitle names @td(ORG_ACME.name) {OBSERVED}
+[STATE] after filling Message and checking Email, the 'Select at least one channel.' hint remains visible (always-rendered by design, PR #2392 79c6aff1) and the Send button becomes enabled (form usable at mobile) {OBSERVED}","[CONSOLE] no application-origin console errors (App Insights 400 + product-image 404s are known benign noise)","modal does NOT go fullscreen at 375px (renders as a clipped centered dialog); fields/footer clipped or unreachable; Send never enables after Message+channel; subtitle names the wrong org","[ACT] close the modal without sending (no message dispatched)","VCST-5310; live-verified vcptcore-qa theme 2.54.0-pr-2392 2026-07-22","verified"
+"SR-FE-042","Multi-Org Member Notification Inbox Aggregates Sales-Rep Pushes Across Organizations (Not Filtered by Active Org) — DESIGN-CONFIRM","Storefront > Sales Rep > My Customers > Communication Channel","Medium","PROPOSED-BL-SR-COMM-CHANNEL","ECL-14.3","[PRE:CLEAR_SESSION]
+Requires a storefront MEMBER who belongs to 2+ organizations each served by a sales rep (so both orgs can receive a rep push). DISCOVERY (2026-07-22, vcptcore-qa): agent-test-vcst5293-182326@example.com ('AGENT-TEST Qqqqqqqqqq SalesRep') is a member of 10 organizations — the same orgs it serves — and its account-menu org switcher lists them all, so it doubles as a multi-org member (no dedicated fixture was needed on this env).
+OPEN PRODUCT QUESTION (VCST-5310): is a single per-user aggregated inbox the intended design, or should the notification inbox be filtered by the ACTIVE organization? Left Draft pending the design decision; the assertions below encode the ACTUAL observed behavior so they can be promoted (or inverted) once the intended behavior is confirmed.","front_url={{FRONT_URL}}","[NAV] as the rep, send a Push-notification message to org A (e.g. @td(ORG_ACME.name)) via the my-customers 'Send email' modal, and a second Push to org B — both orgs containing the multi-org member (or reuse existing org-targeted pushes already present in the member's inbox)
+[PRE:SIGNIN_AS: the multi-org member]
+[NAV] {{FRONT_URL}}/account/notifications
+[WAIT] notification list rendered
+[ASSERT] the set of notifications + unread count + the active org recorded
+[ACT] switch the active organization via the account-menu org switcher (org A -> org B)
+[NAV] reload {{FRONT_URL}}/account/notifications","[DOM] the inbox shows push notifications targeted at MULTIPLE different organizations together (e.g. an org-A push and an org-B push both visible) while a single organization is active {OBSERVED}
+[STATE] the notification set and the unread count are UNCHANGED after switching the active organization — the inbox is a single per-user inbox, NOT filtered by the active org {OBSERVED}
+[NOTE] DESIGN-CONFIRM: whether per-user aggregation is intended vs. per-active-org filtering is an open product-expectation question (VCST-5310); this assertion documents the shipped behavior, not a confirmed pass/fail contract {HYPOTHESIS}","[API] the pushMessages/notifications query for the member is keyed by the recipient user, not scoped by the active organization","N/A until the intended behavior is confirmed — IF per-org filtering is the decided design, the current per-user aggregation is the defect; IF per-user aggregation is intended, the current behavior is correct","none (read-only observation; any AGENT-TEST push is sent to a test org only)","VCST-5310; behavior discovered live vcptcore-qa theme 2.54.0-pr-2392 2026-07-22","Draft"

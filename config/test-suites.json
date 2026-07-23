@@ -1525,8 +1525,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 41,
-      "estimatedMinutes": 102,
+      "testCount": 54,
+      "estimatedMinutes": 134,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
@@ -2581,8 +2581,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 30,
-      "estimatedMinutes": 60,
+      "testCount": 42,
+      "estimatedMinutes": 84,
       "agent": "qa-frontend-expert",
       "tags": [
         "sales-rep",
@@ -2627,8 +2627,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 21,
-      "estimatedMinutes": 55,
+      "testCount": 27,
+      "estimatedMinutes": 71,
       "agent": "qa-frontend-expert",
       "tags": [
         "sales-rep",

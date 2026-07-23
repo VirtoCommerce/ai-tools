@@ -3740,6 +3740,13 @@
     "name": "AGENT-TEST-SR-Owner-Acme",
     "phone": "+1-206-555-0142"
   },
+  "ORG_REP_ONLY": {
+    "_inline": true,
+    "_notes": "Rep-only served org: SR_REP_PRIMARY is its ONLY member (no buyer contacts). Backs the sendCustomerCommunication initiator-exclusion boundary (commit 6d918d82) — a served org whose only member is the sending rep yields 0 effective recipients so the mutation returns false. Seeded by scripts/seed-data/sales-rep/seed-rep-only-org.mjs (idempotent, teardown-symmetric). Business key = the stable name below; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json, written by the seeder — never a GUID in this committed file.",
+    "name": "AGENT-TEST-Org-RepOnly-Primary",
+    "id": "",
+    "platform_id": ""
+  },
   "SR_ADMIN_CUSTOMER_ONLY": {
     "file": "sales-rep/admin-users",
     "filter": {

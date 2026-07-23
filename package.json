@@ -62,6 +62,8 @@
     "seed:bopis:teardown": "node scripts/seed-data/bopis/seed-bopis.mjs --teardown",
     "seed:sales-rep": "node scripts/seed-data/sales-rep/seed-sales-rep.mjs",
     "seed:sales-rep:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep.mjs --teardown",
+    "seed:rep-only-org": "node scripts/seed-data/sales-rep/seed-rep-only-org.mjs",
+    "seed:rep-only-org:teardown": "node scripts/seed-data/sales-rep/seed-rep-only-org.mjs --teardown",
     "seed:orders": "node scripts/seed-data/orders/seed-order-states.mjs",
     "seed:orders:teardown": "node scripts/seed-data/orders/seed-order-states.mjs --teardown",
     "seed:quotes": "node scripts/seed-data/orders/seed-quotes.mjs",
