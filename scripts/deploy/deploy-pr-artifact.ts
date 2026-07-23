@@ -212,7 +212,7 @@ async function artifactFromPr(ref: PrRef): Promise<{ target?: Target; state?: st
   return { state: pr.state, note: `${src} [${pr.state}]: artifact not recognised (${file})` };
 }
 
-function parsePrRef(ref: string): PrRef | null {
+export function parsePrRef(ref: string): PrRef | null {
   const url = /github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/.exec(ref);
   if (url) return { owner: url[1], repo: url[2], number: +url[3], source: '--pr' };
   const short = /^(?:([^/\s]+)\/)?([a-z0-9._-]+)#(\d+)$/i.exec(ref);
@@ -229,7 +229,7 @@ async function fetchFile(c: EnvCoords, path: string): Promise<ManifestFile> {
 /** Current pin of a module Id: its version + which source it sits in (blob vs GithubReleases).
  *  Recognises BOTH {Id,Version} entries AND BlobName-only AzureBlob entries ("<Id>_<version>.zip",
  *  which carry no Id field — the shape vc-deploy-dev uses for prerelease pins). */
-function pinnedModule(json: any, id: string): { version: string; source: string; blobName?: string } | null {
+export function pinnedModule(json: any, id: string): { version: string; source: string; blobName?: string } | null {
   for (const s of json.Sources ?? []) for (const m of s?.Modules ?? []) {
     if (m?.Id === id) return { version: String(m.Version), source: String(s.Name ?? ''), blobName: m.BlobName };
     if (typeof m?.BlobName === 'string') { const bm = m.BlobName.match(/^(.+)_(\d.*)\.zip$/i); if (bm && bm[1] === id) return { version: bm[2], source: String(s.Name ?? 'AzureBlob'), blobName: m.BlobName }; }
@@ -237,7 +237,7 @@ function pinnedModule(json: any, id: string): { version: string; source: string;
   return null;
 }
 /** Pin a module as a pre-release AzureBlob item (and drop it from GithubReleases). Mutates `json`. */
-function applyModule(json: any, id: string, version: string, blobName: string): void {
+export function applyModule(json: any, id: string, version: string, blobName: string): void {
   json.Sources ||= [];
   const gh = json.Sources.find((s: any) => /github/i.test(s?.Name || '')) || json.Sources.find((s: any) => Array.isArray(s?.Modules) && s.ModuleSources);
   let blob = json.Sources.find((s: any) => s?.Name === 'AzureBlob' || (s?.ServiceUri || '').includes('vc3prerelease'));
@@ -248,14 +248,14 @@ function applyModule(json: any, id: string, version: string, blobName: string): 
   if (existing) { existing.Version = version; existing.BlobName = blobName; }
   else blob.Modules.push({ Id: id, Version: version, BlobName: blobName });
 }
-function applyPlatform(json: any, version: string): void {
+export function applyPlatform(json: any, version: string): void {
   json.PlatformVersion = version;
   if (json.PlatformImageTag !== undefined) json.PlatformImageTag = version;
 }
 function serialize(json: any): string { return JSON.stringify(json, null, 2) + '\n'; }
 /** Lines added + removed (multiset symmetric difference) — handles insertions/deletions, so a
  *  minimal surgical edit reports a small number and a full reserialize reports a large one. */
-function countChangedLines(before: string, after: string): number {
+export function countChangedLines(before: string, after: string): number {
   const bag = (t: string) => { const m = new Map<string, number>(); for (const l of t.split('\n')) m.set(l, (m.get(l) || 0) + 1); return m; };
   const a = bag(before), b = bag(after);
   let diff = 0;
@@ -273,7 +273,7 @@ const enc = (p: string) => p.split('/').map(encodeURIComponent).join('/');
 const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Remove a GithubReleases {Id,Version} object (+ its adjacent comma). Unchanged text if the id
  *  isn't in GithubReleases; null if it's there but not in the canonical 4-line shape. */
-function removeGhReleaseEntry(text: string, id: string): string | null {
+export function removeGhReleaseEntry(text: string, id: string): string | null {
   const lines = text.split('\n');
   const idLine = lines.findIndex((l) => new RegExp(`"Id"\\s*:\\s*"${escRe(id)}"`).test(l));
   if (idLine < 0) return text;                                   // not in GithubReleases — nothing to remove
@@ -288,7 +288,7 @@ function removeGhReleaseEntry(text: string, id: string): string | null {
   return lines.join('\n');
 }
 /** Add (or replace) a BlobName-only entry in the AzureBlob source, matching existing indentation. */
-function upsertBlobEntry(text: string, id: string, blobName: string): string | null {
+export function upsertBlobEntry(text: string, id: string, blobName: string): string | null {
   const lines = text.split('\n');
   const existing = lines.findIndex((l) => new RegExp(`"BlobName"\\s*:\\s*"${escRe(id)}_`).test(l));
   if (existing >= 0) { lines[existing] = lines[existing].replace(/"BlobName"\s*:\s*"[^"]*"/, `"BlobName": "${blobName}"`); return lines.join('\n'); }
@@ -303,7 +303,7 @@ function upsertBlobEntry(text: string, id: string, blobName: string): string | n
   lines.splice(lastClose + 1, 0, `${braceIndent}{`, `${blobIndent}"BlobName": "${blobName}"`, `${braceIndent}}`);
   return lines.join('\n');
 }
-function bumpPlatformText(text: string, version: string): string | null {
+export function bumpPlatformText(text: string, version: string): string | null {
   let hit = 0;
   const out = text.replace(/("PlatformVersion"\s*:\s*")[^"]*(")/, (_m, a, b) => (hit++, a + version + b))
                   .replace(/("PlatformImageTag"\s*:\s*")[^"]*(")/, (_m, a, b) => (hit++, a + version + b));
@@ -311,7 +311,7 @@ function bumpPlatformText(text: string, version: string): string | null {
 }
 /** Apply all module moves + a platform bump. Prefer minimal surgery; verify (valid JSON + intended
  *  semantic delta) and fall back to a full reserialize if anything is off. */
-function editPackagesText(origText: string, origJson: any, modules: Target[], platformT?: Target): { text: string; minimal: boolean } {
+export function editPackagesText(origText: string, origJson: any, modules: Target[], platformT?: Target): { text: string; minimal: boolean } {
   let text: string | null = origText;
   for (const t of modules) {
     text = removeGhReleaseEntry(text!, t.id!); if (text == null) break;
@@ -334,7 +334,7 @@ function editPackagesText(origText: string, origJson: any, modules: Target[], pl
   if (platformT) applyPlatform(clone, platformT.version!);
   return { text: serialize(clone), minimal: false };
 }
-function editThemeText(text: string, newUrl: string): { text: string; from: string | null } {
+export function editThemeText(text: string, newUrl: string): { text: string; from: string | null } {
   const m = THEME_URL_RE.exec(text);
   return m ? { text: text.replace(m[0], newUrl), from: m[0] } : { text, from: null };
 }
@@ -583,12 +583,37 @@ async function main() {
     writeOwner = me; headSpec = `${me}:${headBranch}`;
   }
   const branchSha = direct ? baseSha : (refSha(me, c.deployRepo, c.branch) || baseSha);
-  if (!createRef(writeOwner, c.deployRepo, headBranch, branchSha)) { console.error('[deploy-pr] Could not create the deployment branch.'); return handoff(); }
-  let ok = true;
-  if (pkgTouched) ok = commitViaGh(writeOwner, c.deployRepo, c.packagesPath, newPkgText, headBranch, `${title}`) && ok;
-  if (newThemeText) ok = commitViaGh(writeOwner, c.deployRepo, c.themePath, newThemeText, headBranch, `${title}`) && ok;
-  if (!ok) { console.error('[deploy-pr] A commit failed (push rights?).'); return handoff(); }
+  // Surface (not silently resolve) a concurrent run: if this deterministic branch already existed
+  // before we touched it, someone else's in-flight/prior --apply may already have a commit here —
+  // our writes below will overwrite it without a merge. Warn loudly rather than clobber quietly.
+  const headExistedBefore = refSha(writeOwner, c.deployRepo, headBranch) !== null;
   const compareUrl = `https://github.com/${c.deployOwner}/${c.deployRepo}/compare/${c.branch}...${headSpec.replace(':', '%3A')}?expand=1`;
+  if (!createRef(writeOwner, c.deployRepo, headBranch, branchSha)) { console.error('[deploy-pr] Could not create the deployment branch.'); return handoff(); }
+  if (headExistedBefore && !asJson) {
+    console.log(`\n⚠ Branch ${writeOwner}/${c.deployRepo}@${headBranch} already existed before this run.`);
+    console.log(`  Possible concurrent /qa-deploy-pr run for the same ticket+env — the commits below will`);
+    console.log(`  overwrite whatever is currently on that branch (no merge). If unsure, stop and compare first:`);
+    console.log(`  ${compareUrl}`);
+  }
+  let pkgOk = true, themeOk = true;
+  if (pkgTouched) pkgOk = commitViaGh(writeOwner, c.deployRepo, c.packagesPath, newPkgText, headBranch, `${title}`);
+  if (newThemeText) themeOk = commitViaGh(writeOwner, c.deployRepo, c.themePath, newThemeText, headBranch, `${title}`);
+  const anyCommitted = (pkgTouched && pkgOk) || (newThemeText && themeOk);
+  const allCommitted = (!pkgTouched || pkgOk) && (!newThemeText || themeOk);
+  if (!allCommitted) {
+    if (anyCommitted) {
+      // A real commit already landed on headBranch — do NOT call handoff() (it implies nothing was
+      // written). Report the partial, inconsistent branch state explicitly so it can't be missed.
+      console.error(`[deploy-pr] ⚠ PARTIAL commit — the branch is now in an inconsistent state (push rights?).`);
+      if (pkgTouched) console.error(`  packages.json: ${pkgOk ? 'committed' : 'FAILED'}`);
+      if (newThemeText) console.error(`  theme/artifact.json: ${themeOk ? 'committed' : 'FAILED'}`);
+      console.error(`[deploy-pr] Inspect/fix directly on ${writeOwner}/${c.deployRepo}@${headBranch}, or delete that branch and re-run:`);
+      console.error(`  ${compareUrl}`);
+      throw new Exit(1);
+    }
+    console.error('[deploy-pr] A commit failed (push rights?).');
+    return handoff();
+  }
   const pr = createPr(c.deployOwner, c.deployRepo, c.branch, headSpec, title, body);
   if (asJson) { console.log(JSON.stringify({ env, branch: c.branch, account: me, direct, perm, headBranch, bundle, pr, compareUrl, applied: true }, null, 2)); throw new Exit(0); }
   console.log(`\n✅ Committed to ${writeOwner}/${c.deployRepo}@${headBranch} (${pkgMinimal ? 'minimal diff' : 'reserialized'})`);
@@ -608,8 +633,14 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  if (e instanceof Exit) { process.exitCode = e.code; return; }
-  console.error(`[deploy-pr] fatal: ${e.message}`);
-  process.exitCode = 2;
-});
+// Guarded so this module can be `import()`ed (e.g. by unit tests) without running the CLI.
+const isMain = (() => {
+  try { return !!process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]); } catch { return false; }
+})();
+if (isMain) {
+  main().catch((e) => {
+    if (e instanceof Exit) { process.exitCode = e.code; return; }
+    console.error(`[deploy-pr] fatal: ${e.message}`);
+    process.exitCode = 2;
+  });
+}

@@ -253,20 +253,28 @@ Environment: [URL]
 
 ---
 
-## Step 6A — Publish Evidence as a Claude Artifact
+## Step 6A — Assemble the Evidence Page (local by default; external publish is gated)
 
-For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict, build ONE self-contained HTML evidence page and publish it via the **Artifact** tool. It is the shareable proof linked from the ticket. **Load the `artifact-design` skill first**; use a utilitarian/technical treatment (theme-aware light+dark, semantic PASS/stale coloring, no flashy hero). Write the HTML to the scratchpad, then publish with an emoji `favicon` + one-line `description`.
+For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict, build ONE self-contained HTML evidence page from the Phase A/B captures. **Load the `artifact-design` skill first**; use a utilitarian/technical treatment (theme-aware light+dark, semantic PASS/stale coloring, no flashy hero).
 
 **Always include:** verdict badge · build/env strip (platform, module/theme, PR) · the bug + root cause (2–3 lines) · a **before → after table** (Phase A RED vs Phase B GREEN) · the 3× run tally · the checklist · footer notes (any held-at-Tested reason, temporary deploy-repin to revert, test-case ref, evidence file paths).
 
-**Layer-scoped code snippet — the core of the artifact:**
+**Layer-scoped code snippet — the core of the page:**
 
 | Bug layer | Snippet to embed |
 |---|---|
 | **xAPI / REST-API / module** | The real **request & response**: the trigger call (e.g. the REST write), the GraphQL/REST **request**, the **response JSON on the fixed build** (fresh values highlighted), and the **same request's pre-fix response** for contrast (stale values). Pull the actual payloads from the runner evidence (`scripts/.graphql-evidence/<CASE>-*.json`) — **never hand-write them**. Optionally append the fix diff (PR files via GitHub MCP) as a secondary snippet. |
 | **Storefront / Admin-SPA / visual** | Before/after screenshots (embed as data URIs) + the corrected computed style / DOM value. |
 
-Then **link the artifact URL** in both the JIRA verdict comment and `verification-summary.json` (`evidence_artifact`). Artifacts are **private until the user shares** them from the page's share menu — say so in your output. **Never publish client-owned code** to an artifact (quality-gates §2a client-code containment).
+**Where it goes — project-type aware, containment-first (this is what matters on a client deployment):**
+
+- **Default = a LOCAL file.** Write the page to `reports/tickets/{SPRINT}/VCST-XXXX/evidence.html` and link that path from the JIRA comment + summary. Nothing leaves the project — always safe, and the normal outcome.
+- **Publishing it as a hosted Claude Artifact uploads the content to an external host**, so it is **opt-in and gated by `project-profile.json`'s `projectType`** (read once, same field `qa-fix.md`/`qa-bug.md` already key off — absent profile ⇒ native platform, unchanged behavior):
+  - **Native-platform project** (`projectType` ≠ `client`, or no profile): the defect is VirtoCommerce's own on public repos → you MAY publish via the **Artifact** tool, after asking the operator. Write the HTML to the scratchpad, then publish with an emoji `favicon` + one-line `description`.
+  - **Client project** (`projectType === "client"`): do **NOT** auto-publish — the reproduction carries the client's endpoints, identifiers, and data. Publish **only** if the operator explicitly asks **and** the page is scrubbed of every client host / path / identifier / datum / secret — and **NEVER** for a **client-owned-code** bug (quality-gates §2a: client code and data never leave the client's project). When unsure, keep it local.
+- **Always** redact secrets (Authorization / token / password / PAN) regardless of destination.
+
+Record the result in `verification-summary.json`: `evidence` = the local path (always); `evidence_artifact` = the hosted URL **only when actually published** (`null` otherwise). Then reference whichever was produced in the JIRA verdict comment. Artifacts are **private until the user shares** them from the page's share menu — say so in your output if you did publish.
 
 ---
 
@@ -296,10 +304,13 @@ Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
   "jira_transition": "TESTED",
-  "evidence_artifact": "https://claude.ai/code/artifact/... (private until shared)",
+  "evidence": "reports/tickets/{SPRINT}/VCST-XXXX/evidence.html",
+  "evidence_artifact": null,
   "artifacts": "reports/tickets/{SPRINT}/VCST-XXXX/"
 }
 ```
+(`evidence` is the always-written local page; `evidence_artifact` stays `null` unless a hosted Artifact
+was actually published per Step 6A's `projectType` gate.)
 
 Output to the user: verdict, STR result, checklist score, regressions found, JIRA transition, and artifact paths.
 
@@ -326,7 +337,7 @@ Output to the user: verdict, STR result, checklist score, regressions found, JIR
 - Max 3 concurrent browser agents
 - Prove the fix with a **before/after reproduction** — RED on the pre-fix build (Phase A), GREEN on the fixed build (Phase B) — not just a lone GREEN. If the fix is already deployed, cite where the pre-fix baseline came from; never fabricate a RED.
 - Confirm the **live deployed version authoritatively** before Phase B (`/api/platform/modules` / the deployed page) — a merged deploy PR is not proof the deploy Action finished.
-- Publish the evidence as a **Claude Artifact** (Step 6A) and link the URL from the JIRA verdict comment + `verification-summary.json`. For xAPI / REST-API / module bugs, embed the real **request & response** payloads (pulled from the runner evidence, not hand-written); for UI bugs, before/after screenshots. Artifacts are private until the user shares them; never publish client-owned code.
+- Assemble the RED→GREEN evidence page (Step 6A) and link it from the JIRA verdict comment + `verification-summary.json`. **Default is a LOCAL file** (`reports/tickets/.../evidence.html`) — nothing leaves the project. Publishing it as a hosted Claude Artifact is **opt-in, gated by `project-profile.json`'s `projectType`**: fine for a native-platform bug after asking the operator; on a **client** project it needs operator consent **and** scrubbing of every client host/path/identifier/datum, and is **never** done for a client-owned-code bug (§2a). For xAPI / REST-API / module bugs, embed the real **request & response** payloads (pulled from the runner evidence, not hand-written); for UI bugs, before/after screenshots. Always redact secrets (Authorization/token/PAN).
 - STR must pass 3 consecutive times — 2/3 is not sufficient (marks as intermittent)
 - Always query Context7 in Step 0 to understand expected post-fix behavior
 - Ask the user before any JIRA transition
