@@ -12,6 +12,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.8.1`** (marketplace `0.9.3`). Pin to a tagged release for stability; this branch tip is unstable.
 
+> The entries below (`/qa-deploy-pr`, `/qa-review-bl`, the VCST-5318 catalog-mapping-permission coverage, the accessibility/code-review hardening) land in the **project-scoped `.claude/` `vc-qa` surface**, not the distributable `vc-fix` plugin — so the plugin/marketplace versions above are unchanged.
+
+### Added — `/qa-deploy-pr`: deploy ALL of a change's fresh PR artifacts to the test env in one manifest update
+
+A change often produces prerelease artifacts across several repos (one or more modules + Platform + the vc-frontend theme); previously each had to be pinned into the deploy manifest by hand, so `/qa-test PR #N` and `/qa-verify-fix` were blocked until someone stitched them together. `/qa-deploy-pr <ticket-key>` gathers them all and deploys them together.
+
+- **One combined manifest update.** Resolves the tracker ticket's linked PRs across all repos (or an explicit `--module Id=Ver` / `--platform Ver` / `--theme url` / `--pr owner/repo#N` set) → each PR's latest `vc3prerelease` CI build → a minimal-diff repin of `vc-deploy-dev@<env-branch>`'s `backend/packages.json` (AzureBlob/BlobName + `PlatformVersion`) and `theme/artifact.json` — all in ONE update.
+- **Safe by default, gated writes.** Dry-run combined diff by default; `--apply` commits to your fork and opens ONE gated cross-fork deploy PR (direct same-repo push when the account has write, else a fork PR; prints the web-edit URL on a 403). Never auto-merges — a human merges to deploy. `--verify` reports per-target deploy state (branch pin + live `/api/platform/modules`).
+- **Env-aware**, writes routed through `gh`'s keyring token. Deterministic core `scripts/deploy/deploy-pr-artifact.ts`; command `.claude/commands/qa-deploy-pr.md` + skill `.claude/skills/qa-deploy-pr/`. `.claude/`-only.
+
+### Added — `/qa-review-bl`: 3-source BL triangulation with gated auto-apply
+
+Business-logic invariants (`knowledge/oracles/business-logic.md`) drifted from the product and could only be corrected by hand. `/qa-review-bl` now triangulates each `BL-*` invariant against **docs (VirtoOZ) + live (Playwright) + source (GitHub MCP)** and **auto-applies confirmed changes** — gated by a 3-source evidence bar, not human approval.
+
+- **Confirmed** CONFIRMED/DRIFT/MISSING verdicts are written body-only (env-agnostic, with an `Amended:` + `Source:` stamp) directly to `business-logic.md`; **CONTRADICTORY/UNGROUNDED/RETIRE** route to `reports/ba/bl-proposals-<date>.md` for human review. Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`.
+- **This deliberately supersedes the former "never auto-edit business-logic.md" rule.** Delegated to `ba-system-analyzer` (parallel triangulation, single-writer apply) with the live axis on `qa-testing-expert`; also runs automatically as `/qa-test-lifecycle` Phase 4c, scoped to the `BL-*` a run touches (the `--update-bl` flag was retired).
+- Deterministic core `scripts/knowledge/lint-bl.ts` (`bl:lint` / `bl:audit:collect`); command `.claude/commands/qa-review-bl.md` + skill `.claude/skills/qa-review-bl/` (`bl-audit-criteria.md`). `.claude/`-only.
+
+### Added — VCST-5318 catalog-mapping permission gate: RBAC fixture + regression coverage + BL invariants
+
+- **`CATALOG_LINK_RESTRICTED` backoffice RBAC fixture** seeded for the catalog-mapping permission gate, with `CATALOG_LINK_EXCLUDED_PERMISSIONS` derived and the alias role verified in the RBAC drift-guard.
+- **Regression cases** added for the catalog mapping permission gate (suite 053), plus a quality-verify pass on suite 053 and new **BL-CAT-009..012** invariants.
+
+### Changed — accessibility & code-review tooling hardened
+
+- **`/qa-accessibility` sharpened for WCAG 2.2 AA** — corrected the `storefront-selectors.md` path in the skill, tightened the 2.2 guidance, and bumped the axe-core source. Added a Cart Coupons widget WCAG 2.2 AA audit report (VCST-5533).
+- **A11y report dedup hardened + a full code-review command added** to the QA surface.
+- **`enforce-real-user` hook** now allowlists the read-only axe-core accessibility scan (so an a11y audit isn't blocked as a non-real-user interaction).
+- **`.claude/rules`** now enforces concise code comments + Markdown/clear/brief tracker comments; internal env name dropped from the tracker-ops comment example.
+- **`test-data-engineer`** updated to use Serena; README files refreshed.
+
+### Docs — release process: per-plugin dependency-tag convention
+
+`docs/release-process.md` documents the per-plugin dependency-tag convention, references `claude plugin tag --push` (issue #156), and clarifies Step 5a's tag commit + the annotated-vs-lightweight tag choice.
+
 ### Fixed — `/vc-shell-fix` hardened against the real page-builder shell
 
 Cross-checked the skill's own claims against `vc-module-pagebuilder`'s live `package.json` and its first-party `.claude/` docs (which were already drifting — they cite `@vc-shell/framework` `1.2.2`/`1.2.3` against the real `^2.1.0`). Applied the corrections directly rather than copying facts that will rot again:
