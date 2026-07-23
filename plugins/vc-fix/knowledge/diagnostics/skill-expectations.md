@@ -252,6 +252,7 @@ the diagnostician still confirms the root cause and names the fix:
 - Gate ladder G0–G7 + no-auto-merge + client-code containment: [`../../.claude/rules/quality-gates.md`](../../.claude/rules/quality-gates.md)
 - Report categories + size caps + bloat patterns: [`../../.claude/rules/reports.md`](../../.claude/rules/reports.md)
 - Signal source + record schema: [`../../hooks/session-telemetry.mjs`](../../hooks/session-telemetry.mjs)
+- **Upstream contribution schema (default-deny, closed vocabulary):** [`upstream-schema.md`](./upstream-schema.md) + ADR [`adr-upstream-default-deny.md`](./adr-upstream-default-deny.md). The `deliver` step builds its outbound artifact ONLY from the structured jsonl reduced to this closed schema — the LLM DIAG free text (`signal`/`rootcause`/`fix`) never leaves the machine.
 - The 6 command definitions: [`../../commands/`](../../commands/)
 
 ---

@@ -45,6 +45,7 @@ import { resolve, join, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { resolveGithubToken, probeGithubUpstream } from "../project-init/probe-lib.mjs";
 import { redact } from "../../hooks/redact.mjs";
+import { reduce, validateUpstream, fingerprintStruct, findingStructSig } from "./upstream-reduce.mjs";
 
 const PLUGIN_REPO = "VirtoCommerce/vc-mcp-testing-module";
 const ISSUE_TITLE_PREFIX = "[vc-fix self-check]";
@@ -102,6 +103,78 @@ export function readSessionFeedback(sid) {
   } catch {
     return [];
   }
+}
+
+// Read the session's STRUCTURED collector records — the ONLY source for the upstream struct
+// (VCST default-deny redesign). Returns the raw span records, feedback verdicts, the finalize
+// roll-up, and the pluginVersion from session_start. reduce() consumes only these enum/number
+// records; the LLM-authored DIAG free text never enters the upstream path. Never throws — a
+// missing/unreadable jsonl yields an empty set (deliver then falls back to parseDiag's
+// enum-only fields).
+export function readSessionRecords(sid) {
+  const out = { spans: [], feedback: [], finalize: null, pluginVersion: "unknown" };
+  if (!sid) return out;
+  try {
+    const p = join(diagDir(), `${sid}.jsonl`);
+    if (!existsSync(p)) return out;
+    for (const line of readFileSync(p, "utf8").trim().split("\n")) {
+      if (!line) continue;
+      let r;
+      try { r = JSON.parse(line); } catch { continue; }
+      if (!r || typeof r !== "object") continue;
+      if (r.type === "span") out.spans.push(r);
+      else if (r.type === "feedback") out.feedback.push({ verdict: r.verdict, text: r.text || "" });
+      else if (r.type === "finalize") out.finalize = r;
+      else if (r.type === "session_start" && typeof r.pluginVersion === "string") out.pluginVersion = r.pluginVersion;
+    }
+  } catch {
+    /* ignore — degraded fallback handled by the caller */
+  }
+  return out;
+}
+
+/** Assemble the reducer input for a session from its DIAG (fallback enums + version) + jsonl. */
+function sessionLocal(md, sid) {
+  const parsed = parseDiag(md);
+  const records = readSessionRecords(sid);
+  return {
+    local: {
+      spans: records.spans,
+      feedback: records.feedback,
+      pluginVersion: records.pluginVersion !== "unknown" ? records.pluginVersion : parsed.pluginVersion,
+      // Drop parseDiag's synthetic "(session)" placeholder row (emitted when a DIAG has no
+      // parseable findings table) — it would otherwise become a low-fidelity spurious upstream
+      // finding on the jsonl-purged path (adversarial review #2). Real rows are kept.
+      fallbackFindings: parsed.findings.filter((f) => f.skill !== "(session)"),
+      sessionCount: 1,
+    },
+    parsed,
+  };
+}
+
+/** Merge per-session structs: dedup findings by structural signature (occurrence-count them),
+ *  sum feedback counts, keep the newest known pluginVersion. Used by --batch. Exported for tests. */
+export function mergeStructs(structs, pluginVersion) {
+  const byKey = new Map();
+  let up = 0;
+  let down = 0;
+  for (const s of structs) {
+    up += s.feedback.up;
+    down += s.feedback.down;
+    for (const f of s.findings) {
+      const k = findingStructSig(f);
+      const e = byKey.get(k);
+      if (e) e.occurrences += f.occurrences;
+      else byKey.set(k, { ...f });
+    }
+  }
+  return validateUpstream({
+    schemaVersion: 1,
+    pluginVersion: pluginVersion || "unknown",
+    findings: [...byKey.values()],
+    feedback: { up, down },
+    sessionCount: structs.length,
+  });
 }
 
 // ─── containment (§2a) — whitelist gate + defense-in-depth scrubber ──────────
@@ -407,30 +480,11 @@ export function resolveRoute({ token, probe, scopes, override }) {
 }
 
 // ─── fingerprint / dedup ─────────────────────────────────────────────────────
-/**
- * Stable, Date-free short hash (djb2 → base36) over the finding signatures AND the
- * operator feedback. Folding feedback in is load-bearing: a feedback-ONLY session
- * (no BROKEN/DEGRADED finding) would otherwise hash the empty findings list to a
- * CONSTANT fingerprint, collapsing every negative-feedback report from every client
- * into one upstream issue and losing the note (D2). Distinct notes → distinct
- * fingerprints → distinct issues; identical notes dedup (the note lives in the first
- * issue). Feedback text is scrubbed before hashing so the fingerprint carries no
- * client identifier.
- */
-/** Per-finding signature (identity of a single finding, ignoring session). Used
- *  both by fingerprint() and by batch aggregation to dedup the SAME finding across
- *  many sessions into one entry with an occurrence count. */
-export function findingSig(f) {
-  return `${f.skill}|${f.verdict}|${f.sev}|${(f.fix || "").replace(/\s+/g, " ").trim()}`;
-}
-export function fingerprint(findings, feedback = []) {
-  const parts = (findings || []).map(findingSig);
-  for (const f of feedback || []) parts.push(`fb|${f.verdict}|${scrubText(f.text || "").replace(/\s+/g, " ").trim().slice(0, 120)}`);
-  const sig = parts.sort().join("\n");
-  let h = 5381;
-  for (let i = 0; i < sig.length; i++) h = ((h * 33) ^ sig.charCodeAt(i)) >>> 0;
-  return h.toString(36);
-}
+// The fingerprint is computed over the STRUCTURED upstream tuple via `fingerprintStruct`
+// (upstream-reduce.mjs) — enum fields + feedback COUNTS only, never raw/LLM text — so dedup
+// can no longer smuggle client bytes into the hash, and a feedback-only struct still yields a
+// distinct fingerprint (up/down counts differ). The old text-derived `fingerprint`/`findingSig`
+// were removed together with the free-text upstream path.
 
 /** List open self-check issues on the repo and return one whose body carries `fp`, else null. */
 export async function findDuplicateIssue({ repo, token, fp }) {
@@ -453,72 +507,47 @@ export async function findDuplicateIssue({ repo, token, fp }) {
 }
 
 // ─── draft assembly ──────────────────────────────────────────────────────────
-export function buildDraft({ route, pluginVersion, findings, fp, feedback = [], mode = "ask" }) {
-  // The SKILL cell is untrusted too — a client-shaped skill label (e.g.
-  // "AcmeCheckoutSkill") would otherwise leak into the row AND the title, and
-  // `scrubText` alone misses it (word-boundary/shape gap). Gate it with the same
-  // `isClientSpecific` and use the GATED label everywhere it is shown.
-  const skillLabel = (f) => (isClientSpecific(f.skill) ? "(plugin skill)" : scrubText(f.skill));
-
-  // Whitelist gate + downgrade each finding.
-  const rows = findings.map((f) => {
-    // §2a downgrade: if ANY cell of the finding (skill / signal / root-cause / fix) is
-    // client-specific, withhold the shown cells — a client-specific row's fix would
-    // name client code, and its signal a client stack frame/path. Emit only a generic
-    // pointer; no client identifier can reach the outbound report. The scrubText on the
-    // kept branch is defense-in-depth (the gate already cleared it).
-    const clientSpecific =
-      isClientSpecific(f.skill) ||
-      isClientSpecific(f.signal) ||
-      isClientSpecific(f.rootcause) ||
-      isClientSpecific(f.fix);
-    const skill = skillLabel(f);
-    let signal, fix, note = "";
-    if (clientSpecific) {
-      signal = "(client-specific evidence withheld)";
-      fix = "(client-specific — generic: review the owning plugin skill)";
-      note = " _[generic — client evidence withheld]_";
-    } else {
-      signal = scrubText(f.signal);
-      fix = scrubText(f.fix);
-    }
-    // In a batch, a finding seen across several sessions carries an occurrence count.
-    if (f.occurrences > 1) note += ` _(×${f.occurrences} sessions)_`;
-    return `| ${skill} | ${f.verdict} | ${f.sev} | ${signal} | ${fix}${note} |`;
+/**
+ * Build the outbound draft PURELY from a validated `UpstreamSignal` struct
+ * (upstream-reduce.mjs). Every rendered value is a closed-vocabulary enum or a number —
+ * there is NO client-derived free text to scrub, so this no longer calls `scrubText`/
+ * `isClientSpecific` on any cell (those remain only as local defense-in-depth). The whole
+ * body is safe by construction (default-deny closed schema; see
+ * knowledge/diagnostics/upstream-schema.md + adr-upstream-default-deny.md).
+ */
+export function buildDraft({ struct, route }) {
+  const s = validateUpstream(struct); // idempotent re-check at the boundary (belt-and-suspenders)
+  const fp = fingerprintStruct(s);
+  const rows = s.findings.map((f) => {
+    const occ = f.occurrences > 1 ? ` _(×${f.occurrences} sessions)_` : "";
+    const struggle = f.struggle.length ? f.struggle.join(",") : "—";
+    return `| ${f.skill} | ${f.verdict} | ${f.severity} | ${f.outcome} | ${f.signalClass} | ${f.errorCode} | ${struggle} | ${f.toolFamily} | ${f.repoKind}${occ} |`;
   });
-  const worst = findings.some((f) => f.verdict === "BROKEN") ? "BROKEN" : findings.some((f) => f.verdict === "DEGRADED") ? "DEGRADED" : "OK";
-  const skills = [...new Set(findings.map((f) => `${skillLabel(f)} ${f.verdict}`))].slice(0, 3).join(", ");
-  const fbWorst = (feedback || []).some((f) => f.verdict === "down") ? "👎" : (feedback || []).some((f) => f.verdict === "up") ? "👍" : "";
-  // Title never says a bare "OK": a feedback-only report (no findings) reflects the
-  // operator verdict, not "OK" (D2).
-  const title = `${ISSUE_TITLE_PREFIX} ${skills || (feedback.length ? `operator feedback ${fbWorst}`.trim() : worst)}`;
-
-  // Operator /vc-feedback verdicts — the highest-value signal (and the main detector
-  // of silent failures). The note is FREE-FORM prose, and the §2a gate (isClientSpecific)
-  // is weaker on lowercase business identifiers than on structured cells. So the prose
-  // is included ONLY in `ask` mode (where the operator previews the full draft before
-  // Send). In `auto` mode — filed UNATTENDED — the note prose is DROPPED and only the
-  // 👍/👎 verdict is sent (B-F1). A client-specific note is withheld in every mode.
-  const fbLines = (feedback || []).map((f) => {
-    const mark = f.verdict === "down" ? "👎" : f.verdict === "up" ? "👍" : "•";
-    const drop = mode === "auto" || !f.text || isClientSpecific(f.text);
-    return drop ? `- ${mark}` : `- ${mark} ${scrubText(f.text)}`;
-  });
+  const skills = [...new Set(s.findings.map((f) => `${f.skill} ${f.verdict}`))].slice(0, 3).join(", ");
+  const fbMark = s.feedback.down > 0 ? "👎" : s.feedback.up > 0 ? "👍" : "";
+  const hasFb = s.feedback.up + s.feedback.down > 0;
+  // Title never says a bare "OK": a feedback-only report reflects the operator verdict (D2).
+  const title = `${ISSUE_TITLE_PREFIX} ${skills || (hasFb ? `operator feedback ${fbMark}`.trim() : "no findings")}`;
 
   const body = [
     `<!-- ${FP_MARKER} ${fp} -->`,
     `Automated quality report from the vc-fix self-diagnostics subsystem (\`/vc-self-check\`).`,
-    `Plugin version: ${scrubText(pluginVersion)}. Generated from local session telemetry.`,
-    ...(rows.length ? [``, `## Findings`, `| Skill | Verdict | Sev | Signal | Proposed fix (plugin file) |`, `|-------|---------|-----|--------|----------------------------|`, ...rows] : []),
-    ...(fbLines.length ? [``, `## Operator feedback`, ...fbLines] : []),
+    `Plugin version: ${s.pluginVersion}. Sessions: ${s.sessionCount}. Generated from local session telemetry.`,
+    ...(rows.length
+      ? [``, `## Findings`, `| Skill | Verdict | Sev | Outcome | Signal | Error | Struggle | Tool | Repo |`, `|-------|---------|-----|---------|--------|-------|----------|------|------|`, ...rows]
+      : []),
+    // Operator /vc-feedback: COUNTS ONLY. The free-form note never leaves the machine — it
+    // is not read into the struct (upstream-reduce reads only the `verdict`), so there is
+    // no prose to include here (default-deny closed schema).
+    ...(hasFb ? [``, `## Operator feedback`, `👍 ${s.feedback.up} · 👎 ${s.feedback.down}`] : []),
     ``,
     `## Containment`,
-    `Every findings cell was checked against a plugin-reference whitelist: any cell carrying`,
-    `client-shaped content (file paths, source files, namespaces/classes, org identifiers,`,
-    `URLs, emails, tickets, or secrets) was withheld and its row downgraded to a generic`,
-    `pointer. Only plugin-file references and generic advice remain (quality-gates §2a).`,
+    `This report is built ONLY from a closed, plugin-authored vocabulary of enum/number fields`,
+    `(see \`knowledge/diagnostics/upstream-schema.md\`). It carries NO free text, NO file paths,`,
+    `NO identifiers, NO client source, and NO secrets — safe by construction, not by scrubbing`,
+    `(quality-gates §2a; ADR \`adr-upstream-default-deny.md\`).`,
   ].join("\n");
-  return { title, body, route };
+  return { title, body, route, fingerprint: fp };
 }
 
 // ─── send (issue only, gated) ────────────────────────────────────────────────
@@ -654,39 +683,36 @@ async function mainBatch(args) {
     return;
   }
 
-  // Collect every DIAG + its session feedback; aggregate findings by signature.
-  const sessions = []; // { sid, diagPath }
-  const byKey = new Map(); // findingSig → { finding, occurrences, sessions:Set }
-  const allFeedback = [];
-  const fbSeen = new Set();
+  // Collect every DIAG's session records, reduce each to a closed-schema struct, then merge
+  // (findings deduped ACROSS sessions by their STRUCTURAL signature + occurrence-counted;
+  // feedback counts summed). The upstream contribution is built ONLY from the merged struct.
+  // `diags` is newest-first (listDiags sorts by mtime desc). Keep EVERY DIAG file in `sessions`
+  // for purge, but reduce a struct only ONCE per session id: two DIAG-<sid>-*.md for the same
+  // session both read the same <sid>.jsonl, so counting both double-inflates occurrences /
+  // feedback / sessionCount (adversarial review #2, break 5a). Dedup the struct by sid; the
+  // first (newest) DIAG of a sid wins, which also yields the NEWEST pluginVersion.
+  const sessions = []; // { sid, diagPath } — every file, for purge
+  const structs = [];
+  const seenSids = new Set();
   let pluginVersion = "unknown";
   for (const diagPath of diags) {
     let md;
     try { md = readFileSync(diagPath, "utf8"); } catch { continue; }
-    const parsed = parseDiag(md);
-    if (parsed.pluginVersion && parsed.pluginVersion !== "unknown") pluginVersion = parsed.pluginVersion;
     const sid = sessionIdFromDiag(md, diagPath);
-    const feedback = readSessionFeedback(sid);
     sessions.push({ sid, diagPath });
-    for (const f of parsed.findings) {
-      if (f.verdict !== "BROKEN" && f.verdict !== "DEGRADED") continue; // only actionable
-      const key = findingSig(f);
-      const e = byKey.get(key) || { finding: f, occurrences: 0, sessions: new Set() };
-      e.occurrences++;
-      e.sessions.add(sid);
-      byKey.set(key, e);
-    }
-    for (const fb of feedback) {
-      const k = `${fb.verdict}|${scrubText(fb.text || "")}`;
-      if (fbSeen.has(k)) continue;
-      fbSeen.add(k);
-      allFeedback.push(fb);
-    }
+    // A session with no resolvable sid ("") can't be deduped by id — treat each such DIAG as its
+    // own struct (rare; sessionIdFromDiag failed both header + filename).
+    if (sid && seenSids.has(sid)) continue;
+    if (sid) seenSids.add(sid);
+    const { local, parsed } = sessionLocal(md, sid);
+    if (pluginVersion === "unknown" && parsed.pluginVersion && parsed.pluginVersion !== "unknown") pluginVersion = parsed.pluginVersion;
+    structs.push(validateUpstream(reduce(local)));
   }
   const dir = diagDir();
-  const findings = [...byKey.values()].map((e) => ({ ...e.finding, occurrences: e.occurrences }));
-  const hasNeg = allFeedback.some((f) => f.verdict === "down");
-  const fp = fingerprint(findings, allFeedback);
+  const struct = mergeStructs(structs, pluginVersion);
+  const findings = struct.findings; // for count reporting
+  const hasNeg = struct.feedback.down > 0;
+  const fp = fingerprintStruct(struct);
 
   // --batch --purge: standalone cleanup of ALL local sessions, send nothing.
   if (args.purge) {
@@ -714,7 +740,7 @@ async function mainBatch(args) {
   const { token, via, scopes } = resolveGithubToken();
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
-  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback: allFeedback, mode });
+  const draft = buildDraft({ struct, route });
   const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
 
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -738,7 +764,7 @@ async function mainBatch(args) {
         `Batched ${sessions.length} session(s) → ${findings.length} unique finding(s).`,
         `Route: ${route} — ${reason}   (feedback.mode=${mode})`,
         dup ? `Dedup: matches open issue #${dup.number} — would add "+1 occurrence"` : `Dedup: none`,
-        `Draft written (scrubbed): ${deliveryPath}`,
+        `Draft written (closed-schema, enums only): ${deliveryPath}`,
         `--- draft ---\n# ${draft.title}\n\n${draft.body}\n-------------`,
         route === "issue" ? `Re-run with --batch --confirm to file (then all ${sessions.length} sessions are purged; --keep to retain).`
           : route === "local" ? `No token/rights → local only. Authenticate to deliver.`
@@ -786,8 +812,23 @@ async function mainBatch(args) {
   else process.stdout.write(`No token/rights → local batch report only: ${deliveryPath}\n`);
 }
 
+/** The self-check contribution may ONLY ever target the VirtoCommerce platform org. This is a
+ *  destination allowlist (defense-in-depth): the closed-schema body carries no client bytes, but a
+ *  `--repo` override must not misroute an issue/comment to an arbitrary token-writable repo
+ *  (adversarial review #4, A3). Not a client repo, not a personal fork target — VirtoCommerce/* only. */
+export function isAllowedUpstreamRepo(repo) {
+  return /^VirtoCommerce\/[\w.-]+$/i.test(String(repo ?? ""));
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
+  if (!isAllowedUpstreamRepo(args.repo)) {
+    const msg = `Refusing to target "${args.repo}": self-check contributions may only go to VirtoCommerce/*.`;
+    if (args.json) process.stdout.write(JSON.stringify({ error: msg, repo: args.repo }) + "\n");
+    else process.stderr.write(msg + "\n");
+    process.exitCode = 2;
+    return;
+  }
   if (args.batch) return mainBatch(args);
   const diagPath = args.diag ? resolve(args.diag) : newestDiag();
   if (!diagPath || !existsSync(diagPath)) {
@@ -799,11 +840,11 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const md = readFileSync(diagPath, "utf8");
-  const { pluginVersion, findings } = parseDiag(md);
   const sid = sessionIdFromDiag(md, diagPath);
-  const feedback = readSessionFeedback(sid);
+  const { local } = sessionLocal(md, sid);
+  const struct = validateUpstream(reduce(local)); // closed-schema, enums only — the ONLY upstream source
   const mode = feedbackMode(); // off | ask | auto (delivery consent — VCST-5509)
-  const fp = fingerprint(findings, feedback); // fold feedback so feedback-only reports don't collapse (D2)
+  const fp = fingerprintStruct(struct); // over the structural tuple (never raw text); feedback-only structs still differ (D2)
   const purgeHint = `node "$pluginRoot/skills/vc-self-check/deliver.mjs" --purge${args.diag ? ` --diag ${diagPath}` : ""}`;
 
   // --purge (standalone): the terminal "delete all" step of the log→analyze→contribute→
@@ -822,16 +863,16 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  // Nothing worthwhile to contribute → file nothing; offer the cleanup step. A negative
-  // /vc-feedback verdict IS worthwhile even with no BROKEN/DEGRADED finding (it's often
-  // the only signal on a silent failure).
-  const actionable = findings.filter((f) => f.verdict === "BROKEN" || f.verdict === "DEGRADED");
-  const hasNegFeedback = feedback.some((f) => f.verdict === "down");
-  if (!actionable.length && !hasNegFeedback) {
-    const out = { action: "none", session: sid || null, findings: findings.length, actionable: 0 };
+  // Nothing worthwhile to contribute → file nothing; offer the cleanup step. `reduce` only
+  // keeps flagged spans (degraded/failed/silent_suspect → BROKEN/DEGRADED), so every finding
+  // in the struct is actionable. A negative /vc-feedback verdict IS worthwhile even with no
+  // finding (it's often the only signal on a silent failure).
+  const hasNegFeedback = struct.feedback.down > 0;
+  if (!struct.findings.length && !hasNegFeedback) {
+    const out = { action: "none", session: sid || null, findings: struct.findings.length, actionable: 0 };
     if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
     else process.stdout.write(
-      `No worthwhile finding to contribute (no BROKEN/DEGRADED among ${findings.length}, no 👎 feedback). Nothing sent.\n` +
+      `No worthwhile finding to contribute (no BROKEN/DEGRADED finding, no 👎 feedback). Nothing sent.\n` +
         `To clear this session's local diagnostics:\n  ${purgeHint}\n`
     );
     return;
@@ -858,7 +899,7 @@ export async function main(argv = process.argv.slice(2)) {
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
 
-  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback, mode });
+  const draft = buildDraft({ struct, route });
   const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
 
   // Always write the draft locally (never under the plugin dir).
@@ -879,7 +920,7 @@ export async function main(argv = process.argv.slice(2)) {
     duplicate: dup,
     title: draft.title,
     deliveryDraft: deliveryPath,
-    findings: findings.length,
+    findings: struct.findings.length,
     sent: false,
   };
 

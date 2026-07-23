@@ -207,13 +207,28 @@ a single run; `--batch --purge` clears all batched sessions without sending.
 no-push → **fork-PR**; issues-only → **GitHub Issue**; no token → **local + auth
 instructions**.
 
-**Containment (§2a):** every outbound title/body is scrubbed of client source, paths,
-URLs, identifiers, tickets, and secrets — only plugin-file references + generic repro
-survive; a client-specific finding is downgraded to a generic line.
+**Containment (§2a) — default-deny closed schema, not scrubbing.** The outbound artifact is
+built ONLY from a validated `UpstreamSignal` struct
+([`upstream-reduce.mjs`](./upstream-reduce.mjs), spec in
+[`../../knowledge/diagnostics/upstream-schema.md`](../../knowledge/diagnostics/upstream-schema.md),
+rationale in [`../../knowledge/diagnostics/adr-upstream-default-deny.md`](../../knowledge/diagnostics/adr-upstream-default-deny.md)):
+every field is a closed-vocabulary enum or a number (skill, verdict, severity, outcome,
+signal-class, struggle, an error **taxonomy code**, tool-family, repo-**kind**, counts). It
+carries **NO free text** — `reduce()` reads ONLY the structured collector jsonl (span
+records + feedback verdicts); the LLM-authored DIAG cells (`signal`/`rootcause`/`fix`) and
+`/vc-feedback` prose NEVER enter the upstream path (feedback travels as 👍/👎 **counts**
+only). Error TEXT is classified LOCALLY to a code; only the code travels. Repo/module/org
+NAMES are never sent. A runtime validator rejects any out-of-vocabulary value. So there is
+structurally **nothing to leak** — the leak class is impossible by TYPE, not chased by a
+denylist. (`redact()`/`scrubText` remain as local defense-in-depth; the upstream path no
+longer depends on them.) Because the payload is tiny enums+numbers, `ask` mode shows the
+operator the exact struct before any send.
 
-**Fingerprint dedup:** an identical finding already upstream is NOT re-filed — `deliver`
-adds a "+1 occurrence" comment to the existing issue instead, so the same defect from
-many clients converges to one ticket with occurrence counts.
+**Fingerprint dedup:** the fingerprint is computed over the STRUCTURAL enum tuple
+(`fingerprintStruct`), never raw text — so dedup can't smuggle client bytes into the hash.
+An identical finding already upstream is NOT re-filed — `deliver` adds a "+1 occurrence"
+comment to the existing issue instead, so the same defect from many clients converges to one
+ticket with occurrence counts.
 
 **Lifecycle — log → analyze → contribute → delete.** Local diagnostics are EPHEMERAL:
 once a finding is contributed upstream the PR/issue is the source of truth, so the
