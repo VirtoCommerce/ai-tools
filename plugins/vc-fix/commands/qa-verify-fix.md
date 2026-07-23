@@ -148,6 +148,23 @@ VirtoCommerce-internal; a client deployment has no access):
 
 ---
 
+## Step 2A — Two-Phase Reproduction: RED (pre-fix) → GREEN (fixed)
+
+The strongest verification proves the **same** reproduction goes **RED on the pre-fix build and GREEN on the fixed build** — not merely GREEN once. Establish the baseline here; the Step 5 QA agent runs the identical repro as Phase B **with its own live MCP tools** (browser / API) — this plugin ships no regression runner, so there is no repo `--case` to invoke.
+
+**Phase A — Baseline (pre-fix, RED).** Step 2 forbids testing undeployed code live, so take the RED baseline from — in order:
+- the original `/qa-bug` reproduction already on file (`reports/tickets/.../test-execution-report.md` or `reports/bugs/`); **or**
+- a reproduction the QA agent runs against a **pre-fix build the deployment still has** — a prior release, or a second environment not yet updated; **or**
+- if you legitimately captured the live symptom *before* a deploy you triggered, that run.
+
+**Never fabricate a RED — always cite where the baseline came from.** Capture, by layer:
+- **Backend / xAPI / REST-API / module bug:** the failing **request + response** — the QA agent issues the call through its API/GraphQL MCP tools and saves the payloads under the ticket folder. Redact secrets (Authorization / token / PAN) on capture.
+- **Storefront / Admin-SPA / visual bug:** the broken-state screenshot (+ console / network).
+
+**Phase B — Post-fix (GREEN)** runs in Step 5: the dispatched QA agent repeats the *identical* repro against the confirmed-deployed build → passes **3 consecutive times**, capturing the now-correct request + response (or corrected screenshot). The RED→GREEN pair is what Step 6A assembles.
+
+---
+
 ## Step 3 — Transition to TESTING (only after Step 2 confirms DEPLOYED)
 
 With the fix confirmed deployed, transition the ticket to the **`testing`** role state (`tracker-ops.md` §Live transition discovery — resolve by ROLE, never a hardcoded name):
@@ -316,6 +333,31 @@ Environment: [URL]
 
 ---
 
+## Step 6A — Assemble the Evidence Page (local by default; external publish is gated)
+
+For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict, assemble ONE self-contained HTML evidence page from the Phase A/B captures. **Load the `artifact-design` skill first**; utilitarian/technical treatment (theme-aware light+dark, semantic PASS/stale coloring, no flashy hero).
+
+**Always include:** verdict badge · build/env strip (platform, module/theme, PR) · the bug + root cause (2–3 lines) · a **before → after table** (Phase A RED vs Phase B GREEN) · the run tally · the checklist · footer notes (any temporary deploy-repin to revert, evidence file paths).
+
+**Layer-scoped snippet — the core of the page:**
+
+| Bug layer | Snippet to embed |
+|---|---|
+| **xAPI / REST-API / module** | The real **request & response**: the trigger call, the GraphQL/REST **request**, the **fixed-build response** (fresh values highlighted), and the **same request's pre-fix response** for contrast (stale values). Use the payloads the QA agent captured in Phase A/B — **never hand-write them**. Optionally append the fix diff (PR files via the code host) as a secondary snippet. |
+| **Storefront / Admin-SPA / visual** | Before/after screenshots (embed as data URIs) + the corrected computed style / DOM value. |
+
+**Where it goes — profile-aware, containment-first (this is what matters on a client deployment):**
+
+- **Default = a LOCAL file.** Write the page to `reports/tickets/{SPRINT}/VCST-XXXX/evidence.html` and link that path from the tracker comment + summary. Nothing leaves the project — always safe, and the normal outcome.
+- **Publishing it as a hosted Claude Artifact uploads the content to an external host**, so it is **opt-in and gated by project type** (`profile.projectType`):
+  - **Native-platform project** (`projectType` ≠ `client`, or no profile): the defect is VirtoCommerce's own on public repos → you MAY publish, after asking the operator.
+  - **Client project** (`projectType === "client"`): do **NOT** auto-publish — the reproduction carries the client's endpoints, identifiers, and data. Publish **only** if the operator explicitly asks **and** the page is scrubbed of every client host / path / identifier / datum / secret — and **NEVER** for a **client-owned-code** bug (quality-gates §2a: client code and data never leave the client's project). When unsure, keep it local.
+- **Always** redact secrets (Authorization / token / password / PAN) regardless of destination.
+
+Record the result in `verification-summary.json`: `evidence` = the local path (always); `evidence_artifact` = the hosted URL **only when actually published**. If you did publish, note in your output that hosted artifacts are private until the operator shares them.
+
+---
+
 ## Step 7 — Deliver Summary
 
 Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
@@ -333,6 +375,7 @@ Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
   },
   "agent_used": "qa-frontend-expert",
   "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live) | from-qa-bug | pinned-build",
   "checklist_total": 10,
   "checklist_passed": 10,
   "checklist_failed": 0,
@@ -341,11 +384,14 @@ Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
   "tracker_transition": {"role": "tested", "state": "TESTED"},
+  "evidence": "reports/tickets/{SPRINT}/VCST-XXXX/evidence.html",
+  "evidence_artifact": null,
   "artifacts": "reports/tickets/{SPRINT}/VCST-XXXX/"
 }
 ```
 (`tracker_transition.role` is the lifecycle role applied; `state` is the resolved destination status —
-Jira `TESTED`, Azure `roleStates["tested"]` e.g. `Tested on QA`.)
+Jira `TESTED`, Azure `roleStates["tested"]` e.g. `Tested on QA`. `evidence` is the always-written local
+page; `evidence_artifact` stays `null` unless a hosted Artifact was actually published per Step 6A's gate.)
 
 Output to the user: verdict, STR result, checklist score, regressions found, tracker transition, and artifact paths.
 
@@ -374,6 +420,8 @@ Output to the user: verdict, STR result, checklist score, regressions found, tra
 - Read all URLs from config.js / .env — never hardcode
 - Max 3 concurrent browser agents
 - Always reproduce the original bug first before confirming the fix
+- Prove the fix with a **before/after reproduction** — RED baseline (pre-fix, Phase A) → GREEN on the fixed build (Phase B) — not just a lone GREEN. Cite where the RED baseline came from; never fabricate it
+- Assemble the RED→GREEN evidence page (Step 6A) and link it from the tracker comment + `verification-summary.json`. **Default is a LOCAL file** (`reports/tickets/.../evidence.html`) — nothing leaves the project. Publishing it as a hosted Claude Artifact is **opt-in**: fine for a native-platform bug after asking the operator; on a **client** project it needs operator consent **and** scrubbing of every client host/path/identifier/datum, and is **never** done for a client-owned-code bug (§2a). For backend/xAPI/API bugs embed the real request & response the QA agent captured (not hand-written); for UI bugs before/after screenshots. Always redact secrets (Authorization/token/PAN)
 - STR must pass 3 consecutive times — 2/3 is not sufficient (marks as intermittent)
 - Always query Context7 in Step 0 to understand expected post-fix behavior
 - Tracker transitions follow `profile.tracker.azure.transitionPolicy` (`auto` ⇒ silent by role; `confirm-once`/`ask` ⇒ confirm — the Jira / unscanned default), consistent with `/qa-fix` and `/qa-bug` — **but gated additionally on `qaRoleStatesComplete === true`** for this command's QA-side roles (`tracker-ops.md` §Live transition discovery point 4)
