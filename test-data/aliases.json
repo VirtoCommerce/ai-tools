@@ -3839,6 +3839,16 @@
     "excluded_permission": "builder:update",
     "user_type": "Manager"
   },
+  "CATALOG_LINK_RESTRICTED": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account for the VCST-5318 catalog Map/Link permission gate (products-only linker): authenticates into the back office and can link PRODUCTS/items into a virtual catalog but CANNOT link categories — holds catalog:products:link, EXCLUDES catalog:categories:link (the boundary the suite asserts). Includes catalog:*:create because reaching the Map flow (virtual catalog → Add (+) → Link → 'Choose categories and items for mapping') is create-gated; base back-office entry comes from userType Manager (does NOT depend on the build-variable platform:access). isAdministrator=false so the gate applies (an admin bypasses it). email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{CATALOG_LINK_RESTRICTED_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (written by scripts/seed-data/platform/seed-backoffice-rbac.mjs — npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
+    "email": "AGENT-TEST-catalog-link-restricted@test.virtocommerce.com",
+    "login": "AGENT-TEST-catalog-link-restricted@test.virtocommerce.com",
+    "password_var": "CATALOG_LINK_RESTRICTED_PASSWORD",
+    "role": "AGENT-TEST-Catalog-Link-Restricted",
+    "excluded_permission": "catalog:categories:link",
+    "user_type": "Manager"
+  },
   "PB_HOMEPAGE": {
     "_inline": true,
     "_comment": "Canonical PageBuilder page PAGE-1 (test-data/cms/pagebuilder-pages.md). Reconciled to Published @ /qa-homepage-spring-sale by scripts/seed-data/cms/seed-pagebuilder-pages.mjs (npm run seed:cms-pages). Runtime group_id in aliases.<env>.json. Suites 059/060 CMS-027/029/031/078-085.",
