@@ -1,4 +1,3 @@
-
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 CRX-GQL-013,"xOrder — createOrderFromCart Happy Path","GraphQL > xOrder",Critical,BL-GQL-001; BL-GQL-004; BL-CROSS-005; BL-ORD-005,ECL-10.2; ECL-2.1,"Runner-native. Full checkout → createOrderFromCart. Uses an isolated named cart (AGENT-TEST-ORDER-013) to avoid state leaks from other order-creation tests that run against the same default cart. CREATES A REAL ORDER — Admin cleanup required if needed.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
@@ -865,3 +864,52 @@ DECISIVE GUARDS (will FAIL until DefaultShoppingCartTotalsCalculator / CartTotal
 [DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount = 0
 [DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].taxTotal.amount = 0
 [DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0","[EVIDENCE] DECISIVE BACKEND GUARD — no Apollo cache in path. PRE: 2 items selected + Ground shipment; cartTotals[] 2 buckets non-zero. WITH_SHIP: confirms USD bucket total > 0 (shipping applied). UNSEL: flat fields all = 0 (PASS today); cartTotals[] USD bucket total/taxTotal = 0 (FAILS today: 180/30 leak). PTS bucket total = 0 (PASS today). FAIL on cartTotals[?isDefaultTotalCurrency=true].total/taxTotal guards = active backend bug confirmed. PASS on all guards = fix verified (CartTotals projection now selection-gated). [ADMIN] After the fix, the Admin order-creation flow for a cart with all items deselected should show $0.00 grand total.","add_shipment errors[] non-empty (rate mismatch — SHIP_PRICE capture null; check Ground method availability); read_with_ship shippingTotal = 0 (shipment not applied — BLOCKED; abort run); cartTotals[?isDefaultTotalCurrency=true].total.amount != 0 after unselect-all (active backend bug — EXPECTED FAIL until fix); cartTotals[?isDefaultTotalCurrency=true].taxTotal.amount != 0 after unselect-all (same root cause); flat total/tax/shipping != 0 after unselect-all (separate regression if this breaks); itemsCount drops to 0 (items removed not just unselected — wrong mutation used)","none — cleanup_post clears the default cart inline in Steps","VCST-5101; repro: tests/Sprint26-11/VCST-5101/repro-mixed-cart-unselect-totals.csv MC-UNSEL-001 (22/22 flat assertions PASS; cartTotals[] bucket assertions are the decisive guards); DefaultShoppingCartTotalsCalculator.cs L81-106; cartTotals[] CartTotal projection not gated by SelectedForCheckout (distinct from VCST-5238 Apollo currencyCode MissingFieldError — frontend-only defect); BL-CART-010; BL-LOY-001; BL-LOY-003; vc-module-x-cart","Automated"
+CRX-GQL-101,xCart — REST-Originated Quantity Change Invalidates xAPI Read Cache (VCST-5505),GraphQL > xCart > Cross-Domain,Critical,BL-CROSS-009,ECL-2.1; ECL-10.2,"Runner-native. Auth as ORG_USER. Reproduce-as-test for VCST-5505: the XCart CartAggregate read-cache must be invalidated by ANY CartChangedEvent, not only xAPI-originated writes (fix: vc-module-x-cart PR #135, new CartChangedEventHandler calling GenericCachingRegion<CartAggregate>.ExpireTokenForKey). Seeds a 1-line cart via xAPI addItem (primes the cache), mutates that SAME cart's line-item quantity via the platform REST Cart API (/api/carts — a writer entirely outside xAPI), then re-queries via xAPI. FAILS on XCart<=3.1026.0 (pre-fix: cache never invalidated, live-confirmed 2026-07-23); PASSES once PR #135 deploys (XCart>=3.1027.0).",prod_id=@td(BUYABLE_PRICED_PRODUCT.id); seed_qty=2; rest_new_qty=5,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP clear_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC clear_pre]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{prod_id}}"" quantity: {{seed_qty}} currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsQuantity } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP cart_before]
+  query { cart(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"" cultureName: ""en-US"") { id itemsQuantity subTotal { amount } items { id productId quantity extendedPrice { amount } } } }
+[GQL-EXEC cart_before]
+[WAIT until=cart_before timeout=30 interval=3] data.cart.itemsQuantity >= {{seed_qty}}
+[GQL-CAPTURE cart_before.data.cart.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE cart_before.data.cart.items.0.quantity → GQL_QTY_BEFORE]
+[REST-OP rest_get1]
+GET {{BACK_URL}}/api/carts/{{CART_ID}}
+[REST-EXEC rest_get1]
+[REST-CAPTURE rest_get1.body.items[?id={{LINE_ITEM_ID}}].quantity → REST_QTY_BEFORE]
+[REST-OP rest_put]
+PUT {{BACK_URL}}/api/carts/{{CART_ID}}/items?lineItemId={{LINE_ITEM_ID}}&quantity={{rest_new_qty}}
+[REST-EXEC rest_put]
+[REST-OP rest_get2]
+GET {{BACK_URL}}/api/carts/{{CART_ID}}
+[REST-EXEC rest_get2]
+[REST-CAPTURE rest_get2.body.items[?id={{LINE_ITEM_ID}}].quantity → REST_QTY_AFTER]
+[GQL-OP cart_after]
+  query { cart(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"" cultureName: ""en-US"") { id itemsQuantity subTotal { amount } items { id productId quantity extendedPrice { amount } } } }
+[GQL-EXEC cart_after]
+[WAIT until=cart_after timeout=30 interval=3] data.cart.items[?id={{LINE_ITEM_ID}}].quantity = {{rest_new_qty}}
+[GQL-CAPTURE cart_after.data.cart.items[?id={{LINE_ITEM_ID}}].quantity → GQL_QTY_AFTER]
+[GQL-OP clear_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC clear_post]","[ERRORS label=add_item] errors[] empty {BL}
+[ERRORS label=cart_before] errors[] empty {BL}
+[ERRORS label=rest_get1] HTTP 200 {OBSERVED}
+[ERRORS label=rest_put] HTTP 204 {OBSERVED}
+[ERRORS label=rest_get2] HTTP 200 {OBSERVED}
+[ERRORS label=cart_after] errors[] empty {BL}
+[VAR] {{GQL_QTY_BEFORE}} = {{seed_qty}} {OBSERVED}
+[VAR] {{REST_QTY_BEFORE}} = {{seed_qty}} {OBSERVED}
+[VAR] {{REST_QTY_AFTER}} = {{rest_new_qty}} {OBSERVED}
+[DATA label=cart_after] data.cart.items[?id={{LINE_ITEM_ID}}].quantity = {{rest_new_qty}} {SPEC}
+[DATA label=cart_after] data.cart.itemsQuantity = {{rest_new_qty}} {BL}
+[DATA label=cart_after] data.cart.subTotal.amount = data.cart.items[?id={{LINE_ITEM_ID}}].extendedPrice.amount {BL}","[ROUNDTRIP label=cart_after] xAPI read reflects a REST-originated write on the same cart — CartChangedEvent → CartChangedEventHandler → GenericCachingRegion<CartAggregate>.ExpireTokenForKey (vc-module-x-cart PR #135)
+[EVENT] CartChangedEventHandler (new in PR #135) subscribes to CartChangedEvent and expires the cache token for every distinct cart id in ChangedEntries — fires regardless of which writer (xAPI or platform REST) raised the save/remove","xAPI cart_after returns the stale pre-change quantity ({{seed_qty}}) instead of {{rest_new_qty}} after the REST write lands (VCST-5505 regression signature — cache not invalidated); REST_QTY_AFTER != {{rest_new_qty}} (the REST write itself did not land — a different bug, not a cache-invalidation issue); rest_put HTTP status != 204; errors[] non-empty on any GQL op",none — clear_post clears the cart inline in Steps,VCST-5505; vc-module-x-cart#135,Draft

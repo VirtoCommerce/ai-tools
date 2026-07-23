@@ -92,7 +92,25 @@ Before testing, verify the fix is actually deployed per `agent-dispatch.md § Bu
 5. If environment uses cache: note potential cache staleness — if STR still fails, ask user about cache invalidation before reopening
 6. **Record** platform version, theme version, and relevant module versions — include in verification report and JIRA comments
 
-If the fix is NOT deployed, warn user and ask whether to wait. Do NOT proceed with verification against old code.
+If the fix is NOT deployed, offer to run [`/qa-deploy-pr`](qa-deploy-pr.md) `<ticket-key>` — it gathers all the fix's fresh PR artifacts (module + platform + storefront) and prepares one gated cross-fork deploy PR onto the env branch (**ask before applying**; never auto-merges — a human merges to deploy). If the user declines, warn and ask whether to wait. Either way, do NOT proceed with the post-fix phase against old code.
+
+> **Deployment is authoritative, not inferred.** A *merged* deploy PR is not proof the fix is live — the "Cloud platform deployment" Action must have finished. Confirm the **live** running version directly: `GET {BACK_URL}/api/platform/modules` for a module (match the exact version, e.g. `3.1027.0-pr-135`), the deployed page/asset for a frontend fix. Only then run Phase B.
+
+---
+
+## Step 3A — Two-Phase Reproduction: RED before deploy → GREEN after
+
+The strongest verification proves the **same** reproduction goes **RED on the pre-fix build and GREEN on the fixed build** — not merely GREEN once. Run both phases; keep both as evidence.
+
+**Phase A — Baseline (pre-fix, RED).** Reproduce the bug on the *un-fixed* code and capture the failing state:
+- **Fix NOT yet deployed** (Step 3 shows old code live) → reproduce **now** against the live env. This is the ideal baseline — grab it *before* triggering the deploy.
+- **Fix ALREADY deployed** when you pick up the ticket → you can't get RED on live. Take the baseline, in order, from: the original `/qa-bug` reproduction (`reports/tickets/.../test-execution-report.md` or `reports/bugs/`); **or** reproduce against a pinned pre-fix build — a released version via `/qa-local-env VCST-XXXX`, or a second env still on the old version. **Never fabricate a RED — always cite where the baseline came from.**
+- **Backend / xAPI / REST-API / module bug:** encode the STR as a **canonical runner case** (`scripts/graphql/graphql-runner.ts --case <csv>:<ID>`, reproduce-as-test) and save the **request + response** payloads that show the defect (stale/wrong values). Never hand-roll a custom script — use the runner (`feedback_use_canonical_graphql_runner`).
+- **Storefront / Admin-SPA / visual bug:** screenshot the broken state (+ console/network).
+
+**Phase B — Post-fix (GREEN).** After the deploy gate above confirms the fixed build is **live**, re-run the *identical* STR / runner case / steps → passes **3 consecutive times**. Capture the now-correct request + response (or corrected screenshot).
+
+Both phases write to `reports/tickets/{SPRINT}/VCST-XXXX/`. The RED→GREEN pair is what Step 6A publishes.
 
 ---
 
@@ -235,6 +253,23 @@ Environment: [URL]
 
 ---
 
+## Step 6A — Publish Evidence as a Claude Artifact
+
+For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict, build ONE self-contained HTML evidence page and publish it via the **Artifact** tool. It is the shareable proof linked from the ticket. **Load the `artifact-design` skill first**; use a utilitarian/technical treatment (theme-aware light+dark, semantic PASS/stale coloring, no flashy hero). Write the HTML to the scratchpad, then publish with an emoji `favicon` + one-line `description`.
+
+**Always include:** verdict badge · build/env strip (platform, module/theme, PR) · the bug + root cause (2–3 lines) · a **before → after table** (Phase A RED vs Phase B GREEN) · the 3× run tally · the checklist · footer notes (any held-at-Tested reason, temporary deploy-repin to revert, test-case ref, evidence file paths).
+
+**Layer-scoped code snippet — the core of the artifact:**
+
+| Bug layer | Snippet to embed |
+|---|---|
+| **xAPI / REST-API / module** | The real **request & response**: the trigger call (e.g. the REST write), the GraphQL/REST **request**, the **response JSON on the fixed build** (fresh values highlighted), and the **same request's pre-fix response** for contrast (stale values). Pull the actual payloads from the runner evidence (`scripts/.graphql-evidence/<CASE>-*.json`) — **never hand-write them**. Optionally append the fix diff (PR files via GitHub MCP) as a secondary snippet. |
+| **Storefront / Admin-SPA / visual** | Before/after screenshots (embed as data URIs) + the corrected computed style / DOM value. |
+
+Then **link the artifact URL** in both the JIRA verdict comment and `verification-summary.json` (`evidence_artifact`). Artifacts are **private until the user shares** them from the page's share menu — say so in your output. **Never publish client-owned code** to an artifact (quality-gates §2a client-code containment).
+
+---
+
 ## Step 7 — Deliver Summary
 
 Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
@@ -252,6 +287,7 @@ Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
   },
   "agent_used": "qa-frontend-expert",
   "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live) | from-qa-bug | pinned-build",
   "checklist_total": 10,
   "checklist_passed": 10,
   "checklist_failed": 0,
@@ -260,6 +296,7 @@ Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
   "jira_transition": "TESTED",
+  "evidence_artifact": "https://claude.ai/code/artifact/... (private until shared)",
   "artifacts": "reports/tickets/{SPRINT}/VCST-XXXX/"
 }
 ```
@@ -287,7 +324,9 @@ Output to the user: verdict, STR result, checklist score, regressions found, JIR
 - Never assign two agents to the same browser server simultaneously
 - Read all URLs from config.js / .env — never hardcode
 - Max 3 concurrent browser agents
-- Always reproduce the original bug first before confirming the fix
+- Prove the fix with a **before/after reproduction** — RED on the pre-fix build (Phase A), GREEN on the fixed build (Phase B) — not just a lone GREEN. If the fix is already deployed, cite where the pre-fix baseline came from; never fabricate a RED.
+- Confirm the **live deployed version authoritatively** before Phase B (`/api/platform/modules` / the deployed page) — a merged deploy PR is not proof the deploy Action finished.
+- Publish the evidence as a **Claude Artifact** (Step 6A) and link the URL from the JIRA verdict comment + `verification-summary.json`. For xAPI / REST-API / module bugs, embed the real **request & response** payloads (pulled from the runner evidence, not hand-written); for UI bugs, before/after screenshots. Artifacts are private until the user shares them; never publish client-owned code.
 - STR must pass 3 consecutive times — 2/3 is not sufficient (marks as intermittent)
 - Always query Context7 in Step 0 to understand expected post-fix behavior
 - Ask the user before any JIRA transition

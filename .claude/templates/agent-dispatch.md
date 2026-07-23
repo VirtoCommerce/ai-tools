@@ -192,7 +192,7 @@ For `/qa-test PR #NNN` and `/qa-verify-fix`:
 1. Get PR details: `gh pr view <number> --json title,state,headRefName,labels` — note the branch and any CI build artifact version (often in PR description or CI checks)
 2. Identify which module/theme the PR belongs to (from the repo name)
 3. Cross-reference the module/theme version in `backend/packages.json` or `theme/artifact.json` — look for the PR's **build artifact version** (e.g., alpha/preview version like `2.44.0-alpha.2262`)
-4. If the deploy repo doesn't contain the PR's build version → the PR build is **not yet deployed** to QA. Warn user and ask whether to wait
+4. If the deploy repo doesn't contain the PR's build version → the PR build is **not yet deployed** to QA. Offer to run **`/qa-deploy-pr <ticket-key>`** — it gathers ALL of the change's fresh CI prerelease artifacts (across modules + platform + storefront) and prepares one gated cross-fork deploy PR onto the env branch (dry-run by default, **ask before `--apply`**, never auto-merges). Use `/qa-deploy-pr <ticket-key> --verify` for a quick "is it deployed yet?" check. If the user declines, warn and ask whether to wait
 5. Record the confirmed deployed version in the test report
 
 ### Scope-Based Verification
