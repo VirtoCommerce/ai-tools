@@ -192,10 +192,8 @@ These don't exist yet and must be created to ship the plugin to VC customers:
 
 | Artifact | Description | Where it lives |
 |----------|-------------|----------------|
-| `manifest.json` | Plugin metadata: name, version, required MCP servers, env-var schema, supported Claude Code version range. | Plugin root |
 | `templates/.env.local.template` | Customer fills in their URLs, credentials, payment cards, test users. Comments document each var. | `templates/` |
 | `templates/aliases.json.template` | Customer fills in their test entities (orgs, users, products, addresses). Privacy-by-default header. | `templates/` |
-| `bootstrap/install.ts` | Interactive onboarding: scaffolds `.env.local`, generates `aliases.json`, runs `/qa-env-check`. | `bootstrap/` |
 | `STOREFRONT_PROFILE` env var | `b2b\|b2c\|hybrid` — gates which suites run. Suite manifest tags `storefrontProfile[]`. | `.env.defaults` + `config/test-suites.json` |
 | `MODULES_ENABLED` env var | Comma-separated list of installed VC modules; orchestrator skips Backend suites whose `requiresModules[]` aren't satisfied. | `.env.{env}` + `config/test-suites.json` |
 | `ENV_RISK` env var | `dev\|test\|staging\|production` — safety-by-config, not by env name. Production-risk envs block admin-write suites by default. | `.env.{env}` |
@@ -206,7 +204,7 @@ These don't exist yet and must be created to ship the plugin to VC customers:
 | JIRA project key parameterization | `JIRA_PROJECT_KEY` env var; `qa-bug` skill reads it instead of vcst-default. | `skills/qa-bug/` + env |
 | PII / secret scanner | Lints `aliases.json` for real-looking emails/phones; scrubs HAR / screenshots before they land in `reports/`. | `scripts/lint-aliases-pii.ts`, `scripts/lib/evidence-sanitizer.ts` |
 | Distribution decision | Claude Code plugin (agents/skills/commands/knowledge) + npm package (scripts/ci) — confirmed in Phase 2. | `docs/distribution.md` |
-| **Skill→script dependency manifest** | Skills now hard-depend on `scripts/` helpers via `npm run` aliases (`suites:append`, `suites:review`, `metrics:compute`, plus `scripts/lib/axe-runner.ts` imported into snippets). These calls **cross the plugin↔npm-package boundary** — a customer who installs the plugin but not the npm package gets a skill that references a command that doesn't exist. Need: (a) an enumerated list of which `npm run` aliases each skill requires, validated in CI; (b) a graceful-degradation or hard-fail message in each skill when the alias is absent; (c) the bootstrap/install step verifies the npm package is present. | `docs/distribution.md` + `bootstrap/install.ts` |
+| **Skill→script dependency manifest** | Skills now hard-depend on `scripts/` helpers via `npm run` aliases (`suites:append`, `suites:review`, `metrics:compute`, plus `scripts/lib/axe-runner.ts` imported into snippets). These calls **cross the plugin↔npm-package boundary** — a customer who installs the plugin but not the npm package gets a skill that references a command that doesn't exist. Need: (a) an enumerated list of which `npm run` aliases each skill requires, validated in CI; (b) a graceful-degradation or hard-fail message in each skill when the alias is absent; (c) the `/project-init` step verifies the npm package is present. | `docs/distribution.md` + `skills/project-init/` |
 | Support runbook | Who answers customer questions, SLA, escalation, upgrade guide. | `docs/support-runbook.md` |
 | Versioning + changelog policy | Semver for Tier A (breaking changes forbidden post-v1.0), changelog mandatory on each release. | `CHANGELOG.md` + `docs/versioning.md` |
 

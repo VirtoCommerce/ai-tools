@@ -2,7 +2,7 @@
 
 > Greppable catalog of known failure modes + remediations. Use this when something fails on install or during a test run. Each entry has a unique anchor for support runbook references.
 >
-> Can't find your issue? File a GitHub Issue with the symptom + the full output of `npm run plugin:check`. See [`docs/support-runbook.md`](support-runbook.md) for the escalation path.
+> Can't find your issue? File a GitHub Issue with the symptom + the full output of `npm run env:check`. See [`docs/support-runbook.md`](support-runbook.md) for the escalation path.
 
 ## Quick index
 
@@ -113,17 +113,17 @@ Then rename your `.env.${TEST_ENV}` file accordingly. Update any per-env suffixe
 
 ### #config-2 · "Missing CORE environment variables"
 
-**Symptom:** `npm run env:check` or `npm run plugin:check` exits with:
+**Symptom:** `npm run env:check` or `npm run env:check` exits with:
 ```
 [config] Missing CORE environment variables (required for any run): FRONT_URL, BACK_URL, ...
-[config] Run: npm run plugin:configure   (or edit .env.${TEST_ENV} + .env.local manually)
+[config] Run: /project-init   (or edit .env.${TEST_ENV} + .env.local manually)
 ```
 
 **Cause:** One or more of the 7 CORE env vars isn't set: `FRONT_URL`, `BACK_URL`, `ADMIN`, `ADMIN_PASSWORD`, `USER_EMAIL`, `USER_PASSWORD`, `STORE_ID`.
 
 **Fix:** Run the configure wizard:
 ```bash
-npm run plugin:configure
+/project-init
 ```
 
 Or edit manually:
@@ -390,7 +390,7 @@ Most common causes (in order of frequency):
 
 | Severity | Action |
 |----------|--------|
-| Install fails on a fresh clone | File a GitHub Issue with the full `npm run plugin:check` output |
+| Install fails on a fresh clone | File a GitHub Issue with the full `npm run env:check` output |
 | Plugin breaks after a working install | Reproduce from a clean MCP cache (clear `~/.claude/cache/plugins/vc-fix` if exists), then file Issue |
 | Same suite fails on 2+ envs with same root cause | Real plugin bug — file Issue with the bug report from `/qa-bug` |
 | Customer storefront bug surfaced by a passing-suite assertion | Not a plugin bug — file in YOUR JIRA project |

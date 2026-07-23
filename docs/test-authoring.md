@@ -4,7 +4,7 @@
 >
 > **Time:** First suite ~1–2 hours. After 3–5 suites you'll be productive in 15–30 min each.
 >
-> **Prereq:** Plugin installed, `npm run plugin:check` green, you've run at least one `/qa-smoke` successfully.
+> **Prereq:** Plugin installed, `npm run env:check` green, you've run at least one `/qa-smoke` successfully.
 
 ## What you write vs what the plugin ships
 

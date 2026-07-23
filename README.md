@@ -60,11 +60,11 @@ inventory, self-containment rationale, gate ladder reference).
 git clone https://github.com/VirtoCommerce/vc-mcp-testing-module && cd vc-mcp-testing-module
 npm install
 npx playwright install chromium firefox   # Edge uses the system msedge channel
-npm run plugin:configure                   # scaffolds .env.<env> + .env.local, then env:check
+/project-init                   # scaffolds .env.<env> + .env.local, then env:check
 # Create .mcp.json (see below) → restart IDE → type: /qa-env-check
 ```
 
-> Prefer a manual clone? `git clone … && cd vc-mcp-testing-module && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` instead of `plugin:configure` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
+> Prefer a manual clone? `git clone … && cd vc-mcp-testing-module && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
 
 Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`.
 

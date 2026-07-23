@@ -56,7 +56,6 @@ vc-mcp-testing-module/
 ├── tests/                          # Active sprint/ticket evidence (root = current)
 ├── scripts/                        # lib/ resolvers, graphql-runner.ts, sync/lint utilities, seeders
 ├── docs/                           # Distribution, onboarding, runbooks, release/versioning
-├── bootstrap/install.ts            # Plugin installer
 ├── templates/                      # Customer config templates
 └── vc/                             # Layer 2 — VC internal data
     ├── shared/                     # Cross-env: docs/Sprint plans/, workshop/

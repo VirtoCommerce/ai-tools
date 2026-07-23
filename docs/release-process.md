@@ -76,7 +76,7 @@ npm run env:check
 npm run verify:multi-env
 npm run suites:lint
 npx tsx scripts/test-data/validate-td-refs.ts
-npm run plugin:check
+npm run env:check
 node skills/run-vc-mcp-testing-module/driver.mjs
 ```
 
@@ -100,7 +100,7 @@ PR description template:
 - [x] `npm run verify:multi-env` exits 0
 - [x] `npm run suites:lint` exits 0
 - [x] `npx tsx scripts/test-data/validate-td-refs.ts` exits 0
-- [x] `npm run plugin:check` green
+- [x] `npm run env:check` green
 - [x] `node skills/run-vc-mcp-testing-module/driver.mjs` 7/7 checks pass
 
 ### Changelog
