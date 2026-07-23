@@ -1,12 +1,13 @@
 # BUG: [Page Builder] Published page loses ALL content after rename → Save → Publish — VCST-5417
 
-## Status: NOT_REPRODUCED (fix verified present on deployed build)
+## Status: FIXED (verified via /qa-verify-fix — JIRA at Tested)
 
 ## Resolution
 - **Fixed in:** `vc-module-pagebuilder` PR #133 (VCST-5069, merged 2026-05-15) — seeds the new draft from the current Published content on metadata edit; enforces a single Published page per group. (PR #116 / VCST-4872 added the underlying `CopyPageContentAsync`.)
-- **JIRA:** VCST-5417
-- **Verified:** 2026-07-08 (live, vcptcore-qa)
-- **Verification method:** `/qa-bug reproduce` — safe empirical repro on a self-created throwaway page; final close-out should go through `/qa-verify-fix VCST-5417`.
+- **JIRA:** VCST-5417 → transitioned to **Tested** (final Done left to a human, per verify-fix policy).
+- **Verified:** 2026-07-23 (formal `/qa-verify-fix`, live on **vcst-qa**, PageBuilderModule `3.1018.0-pr-151-880b`); corroborates the earlier 2026-07-08 `/qa-bug` repro on vcptcore-qa.
+- **Verification method:** `/qa-verify-fix VCST-5417` — STR (rename→Save→Publish) run 3/3 consecutive cycles (name-only, name+permalink, permalink-only); content held via `GET …/grouped/{id}/content` every cycle; single Published version, no empty-version accumulation. Checklist 10 PASS / 0 FAIL. Artifacts: `reports/tickets/Sprint26-14/VCST-5417/`.
+- **Incidental (not this bug, no data loss):** the Admin designer stale/empty render on hash-only nav recurred — the separately-tracked double-fetch race (`BUG-PageBuilder-Designer-Empty-Render-Double-Fetch.md`); REST held content throughout.
 
 ## Env
 vcptcore-qa @ Platform `3.1042.0-pr-3068` · **PageBuilderModule `3.1014.0-pr-144-ca7d`** (confirmed via `/api/platform/modules`). Store `B2B-store` → Page Builder.
