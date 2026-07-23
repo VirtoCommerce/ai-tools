@@ -1,6 +1,7 @@
 # BUG: Admin Orders dashboard 500 — `InvalidCastException` (String→Boolean) on `GET /api/order/dashboardStatistics`
 
-## Status: CONFIRMED
+## Status: READY_TO_SUBMIT
+**Tracker:** [VCST-5554](https://virtocommerce.atlassian.net/browse/VCST-5554) (Jira Bug, filed 2026-07-23)
 
 **Severity:** High (P1) — the Admin SPA landing dashboard is broken for every operator on login; order management itself still works.
 
@@ -19,6 +20,7 @@ The Admin **Home → "Your store at a glance"** dashboard calls `GET /api/order/
 - **Actual:** `200`-wrapped tool? No — `500 application/json`, body `{"message":"Unable to cast object of type 'System.String' to type 'System.Boolean'.","stackTrace":null}`. Cards value-less, both widget panels blank.
 
 ## Evidence
+- **Re-confirmed 2026-07-23 (qa-backend-expert, `playwright-edge`, admin login via real UI):** still reproduces on Platform `3.1046.0` / Orders `3.1012.0` (unchanged). `GET /api/order/dashboardStatistics` (no query params) → `500`, body `{"message":"Unable to cast object of type 'System.String' to type 'System.Boolean'.","stackTrace":null}` (251ms). All 6 KPI card **labels** render but every value is blank + 2 empty chart slots. Console: `Failed to load resource: the server responded with a status of 500 () @ /api/order/dashboardStatistics`. Screenshot: `reports/bugs/screenshots/BUG-order-dashboard-statistics-500-2026-07-23.png`. (An unrelated "license expired Jan 1, 2026" banner is also shown.)
 - **Live repro (qa-backend-expert, 2/2):** `GET https://vcst-qa.govirto.com/api/order/dashboardStatistics` (no query params) → `500`, body above; console mirror `Failed to load resource: 500 @ /api/order/dashboardStatistics`.
 - **Telemetry (App Insights `vcst-qa`, 24h):** 8× `500 GET OrderModule/GetDashboardStatistics`, 21-Jul 15:09 → 22-Jul 12:55 UTC, distinct `operation_Id`s, durations 3ms–1854ms. **No `exceptions`/`traces` row is emitted** — only the request 500 (the raw .NET message is surfaced to the client but not tracked server-side; observability gap).
 - **Failing SQL behind the op:** reads `PlatformSetting` ⋈ `PlatformSettingValue` (`BooleanValue`, `ShortTextValue`, `ValueType`) `WHERE [Name] = N'Order.DashboardStatistics.Enable'` — i.e. the settings read below.
