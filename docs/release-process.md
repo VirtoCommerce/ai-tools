@@ -135,12 +135,19 @@ the tag format is `{plugin-name}--v{version}` (e.g. `vc-fix--v0.8.1`). Check the
 versions with `git tag -l '*--v*'`.
 
 **Every time a plugin that other plugins depend on bumps its version, push a matching dependency tag
-in the same release:**
+in the same release**, from the plugin's directory:
+
+```bash
+claude plugin tag --push
+```
+
+This derives the `{name}--v{version}` tag from that plugin's `plugin.json`, validates the marketplace
+entry agrees on the version, and pushes it to `origin`. Manual equivalent, from the repo root:
 
 ```bash
 git checkout main
 git pull
-git tag -a vc-fix--vX.Y.Z -m "vc-fix vX.Y.Z"
+git tag vc-fix--vX.Y.Z <release-commit>
 git push origin vc-fix--vX.Y.Z
 ```
 
@@ -151,7 +158,12 @@ tagged content snapshot instead of the version `plugin.json` now claims to be at
 `version` bump that *tightens* the range (e.g. to `>=0.9.0`) will hard-fail install with no matching
 tag until this step runs. This already happened once during `vc-perf`'s initial development (a
 same-content relabel to `0.2.0` wasn't re-tagged, so `claude plugin update` couldn't see the new
-content) — see PR [#136](https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/136).
+content) — see PR [#136](https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/136) and issue
+[#156](https://github.com/VirtoCommerce/vc-mcp-testing-module/issues/156).
+
+A CI/release check that fails when a plugin's `plugin.json` version has no matching
+`{name}--v{version}` tag would close this gap for good (tracked separately in #156) — this step is
+the process fix in the interim.
 
 ### Step 6 — Announce
 
