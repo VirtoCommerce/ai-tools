@@ -125,6 +125,34 @@ git push origin vX.Y.Z
 
 Tag format: `vX.Y.Z` (lowercase v + semver). Pre-releases: `vX.Y.Z-alpha.N` / `vX.Y.Z-beta.N` / `vX.Y.Z-rc.N`.
 
+### Step 5a — Push a per-plugin dependency tag (if any other plugin depends on this one)
+
+`.claude-plugin/marketplace.json` can list more than one plugin (e.g. `vc-fix` and `vc-perf`), and one
+plugin's `.claude-plugin/plugin.json` can declare a `dependencies` entry naming another in-repo plugin
+with a semver range (`{ "name": "vc-fix", "version": ">=0.7.0" }`). Claude Code's plugin installer
+resolves that range against **per-plugin git tags**, not the whole-repo `vX.Y.Z` tags from Step 5 —
+the tag format is `{plugin-name}--v{version}` (e.g. `vc-fix--v0.8.1`). Check the currently-tagged
+versions with `git tag -l '*--v*'`.
+
+**Every time a plugin that other plugins depend on bumps its version, push a matching dependency tag
+in the same release:**
+
+```bash
+git checkout main
+git pull
+git tag -a vc-fix--vX.Y.Z -m "vc-fix vX.Y.Z"
+git push origin vc-fix--vX.Y.Z
+```
+
+(Substitute the plugin name being released for `vc-fix`.) Skipping this step doesn't break the
+dependent plugin's *installability* today — a dependency range like `>=0.7.0` still resolves against
+whatever tag is newest — but it silently freezes every dependent plugin's installers on the last
+tagged content snapshot instead of the version `plugin.json` now claims to be at, and a future
+`version` bump that *tightens* the range (e.g. to `>=0.9.0`) will hard-fail install with no matching
+tag until this step runs. This already happened once during `vc-perf`'s initial development (a
+same-content relabel to `0.2.0` wasn't re-tagged, so `claude plugin update` couldn't see the new
+content) — see PR [#136](https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/136).
+
 ### Step 6 — Announce
 
 In order:
@@ -182,6 +210,7 @@ Tracks: plugin version × Claude Code version × required VC platform version. C
 | Don't | Why |
 |-------|-----|
 | Tag without bumping `plugin.json` + `marketplace.json` | Customers see the new tag but the manifest still shows the old version. Confusing + breaks Claude Code's version pin behavior. |
+| Bump a plugin's version without pushing its `{plugin-name}--v{version}` tag (Step 5a), when another plugin depends on it | Silently strands every dependent plugin's installer on the last tagged content — `plugin.json` claims the new version but nothing resolvable backs it. |
 | Skip the verification battery "because the change was small" | Small changes are how `@td()` refs and manifest schemas silently break. Every release runs the full battery. |
 | Amend a published tag | Once `git push origin vX.Y.Z` lands, the tag is immutable in customer lockfiles. To fix a bad release, cut a new patch — never re-tag. |
 | Backdate a changelog entry | `YYYY-MM-DD` is the tag date, not the work date. Customers correlate release dates to their CI run dates. |
