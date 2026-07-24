@@ -223,6 +223,9 @@
     "id": "0b6297e8-d100-4419-ac54-8bf240777271",
     "slug": "0b6297e8-d100-4419-ac54-8bf240777271"
   },
+  "BUYABLE_PRICED_PRODUCT": {
+    "id": "0b6297e8-d100-4419-ac54-8bf240777271"
+  },
   "PROD_VARIATION_PARENT_SALE": {
     "id": "e5c00858-be87-4df6-9a43-f68341e86c9a",
     "catalogId": "431d6cd4-2f8b-4bcf-b045-c1b3c7af7764"
@@ -643,5 +646,120 @@
     "_inline": true,
     "group_id": "3b556eab-f811-4d10-8c8a-48c209a4c2e1",
     "permalink": "/qa-return-policy"
+  },
+  "CFG_022_SECTIONS": {
+    "A": "4374665b-997a-4c69-91f5-a519305ee1f7",
+    "B": "c0d2212e-152d-4708-ab77-e424e3ffd76e",
+    "C": "0fffe046-af4d-4372-ad62-b0b2d47708b3",
+    "D": "0a22799a-b0c6-4a58-a4e4-46f3258cb743",
+    "config_id": "db10a28b-6e11-4e01-b567-9a6de73a06fa"
+  },
+  "CFG_023_SECTIONS": {
+    "Base": "d707dc6e-0087-42fb-a1fb-6819b31e729c",
+    "Creme": "162ee815-721c-433f-af67-877a491d48f3",
+    "Message": "93c47e7f-965f-4773-9b13-8df9c86f2bca",
+    "Text": "44dc99d3-e5e9-494a-bef3-9a7fbdae5159",
+    "Image": "bae96ccc-e6a8-4c9a-8563-f457d385eb31",
+    "config_id": "d38b8383-f15c-496e-91dd-026e2399f55a"
+  },
+  "CFG_023_OPTIONS": {
+    "Base_Default": "42b0c2b3-5351-4e25-945b-b0cbc908d8ef",
+    "Creme_Default": "0cb0634f-b442-4fe9-82c2-a78cd9b8b8a9",
+    "Message_Default": "538b5b7f-ca99-495f-8e54-9871883d37df"
+  },
+  "CFG_017_SECTIONS": {
+    "Text": "a2fc5823-2be8-44d4-9cc6-304f14470843",
+    "config_id": "f03082c4-11a8-4e62-ab66-21c62570fe40"
+  },
+  "PROD_FULL_FIELD_COVERAGE": {
+    "id": "0b6297e8-d100-4419-ac54-8bf240777271"
+  },
+  "TECHFLOW_ORG_ADDRESSES": {
+    "default_address_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62"
+  },
+  "TECHFLOW_ADDR_US_NEW_YORK": {
+    "platform_id": "79a1e94d-ae00-4214-bb6c-3440b5c702e8"
+  },
+  "TECHFLOW_ADDR_CA_TORONTO": {
+    "platform_id": "61eedc5f-5b01-4a31-8633-79b1235ca8e4"
+  },
+  "TECHFLOW_ADDR_UK_LONDON": {
+    "platform_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62"
+  },
+  "BOPIS": {
+    "location50Id": "7227b3d1-99fa-46e5-a2b2-371a72b8431d",
+    "location51Id": "a38178ee-0312-466c-80ae-0c9399e78e59",
+    "lastLocationId": "8de12f56-15f3-46ba-8bca-06c3be3ba5b5",
+    "testProductId": "2645e50b-baf1-43b9-99f6-7f525f4025f8"
+  },
+  "CFG_FILE_HOODIE": {
+    "productId": "a04bbb3c-c3a0-4ab0-9b03-4e69e0ce5556",
+    "fileSectionId": "8b7559d7-873b-4291-98e0-f64a45edc7e2"
+  },
+  "ADMIN_DEFAULT": {
+    "userId": "1eb2fa8ac6574541afdb525833dadb46"
+  },
+  "CFG_VARIATION_CAKE": {
+    "productId": "e0472ee1-bceb-4680-b913-fe94bded5420",
+    "variationSectionId": "66b3a9b5-5701-4146-8817-1ecc1507ed24",
+    "textSectionId": "9c3889cc-30a3-4eb9-9e06-c3ae26060a89",
+    "var1Id": "c56a12c0-548f-492a-8a8e-05e1a67376b5",
+    "var2Id": "116a85f5-8023-430f-b919-58cadede3e26"
+  },
+  "CFG_REQUIRED_FILE_HOODIE": {
+    "productId": "85b6f077-d59f-4a8f-8510-9920b9d64ee1",
+    "fileSectionId": "c356265f-2bdf-4afd-a820-105ead721465"
+  },
+  "CFG_OFFROAD_BIKE": {
+    "productId": "958d0762-404c-4a6f-a45a-46ed4943f5f0"
+  },
+  "CFG_WEDDING_CAKE_CONDITIONS": {
+    "productId": "f4f27033-d688-4d22-ade7-5106f4748add"
+  },
+  "LOYALTY_NOBAL_USER": {
+    "memberId": "31399071-7589-42a8-9013-75f805dfd48b",
+    "securityAccountId": "5a216728-c49f-4c4b-b611-227757f071c1"
+  },
+  "MULTI_ORG_TF_BR": {
+    "id": "86b8595a-3313-4a06-8752-38e8cd73b613",
+    "userId": "7174c560-d6e6-428a-9c4e-f8078ab754b0",
+    "techflow_membership_id": "0e3432270f2e409a8d2d05de3c4c1768",
+    "buildright_membership_id": "3a09bf010b634e9594da9f6ad129b7f6"
+  },
+  "BUYABLE_SIBLING_B2B": {
+    "id": "eae298de-0997-44d2-8b35-88e5512dbbe2"
+  },
+  "LOCKOUT_TEST_USERS": {
+    "sf_id": "71b4ca11-abd3-4450-a514-67a1dbc99c3d",
+    "admin_id": "6e9987d1-5ce7-43f3-a9a5-a829be1d4472",
+    "unlock_id": "af55646a-32fc-42be-a8ab-ac1692eedc8a",
+    "manager_id": "44a2978b-1c71-4b61-b882-195c48731ebc",
+    "target_id": "1d90a31b-31d7-4c0e-aa8d-fba1cbbe9f10"
+  },
+  "SEED_20260529_OOS": {
+    "id": "3c2b9e0c-2a1d-4757-96db-a6905efbfb9a",
+    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
+    "price_list_id": "0288950e-001c-4bf5-ab29-c9cd98397daa"
+  },
+  "SEED_20260529_TIER_PRICED": {
+    "id": "c20335d0-4894-45e8-adcf-5728333484a8",
+    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
+    "price_list_id": "0288950e-001c-4bf5-ab29-c9cd98397daa"
+  },
+  "SEED_20260529_PL_USD": {
+    "id": "0288950e-001c-4bf5-ab29-c9cd98397daa"
+  },
+  "SEED_20260529_PL_EUR": {
+    "id": "444d5682-0c7e-4754-a85e-2667fd00bab7"
+  },
+  "SEED_20260529_VARIATION_PARENT": {
+    "id": "0bbabbef-a14a-44a8-9890-7df0e814921f",
+    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
+    "variation_gray_id": "78543a7a-5cbc-4819-84a4-4bf927ce73b3",
+    "variation_white_id": "2cf1b2ae-68e0-40c2-ae87-f95d55268caa"
+  },
+  "LOYALTY_WHOLESALE_USER": {
+    "memberId": "47db2112-34a7-4fc1-9783-95523284ae10",
+    "securityAccountId": "3aaada1a-6c1b-417e-8cb3-d074258016a3"
   }
 }

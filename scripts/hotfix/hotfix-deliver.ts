@@ -88,7 +88,10 @@ function loadToken(): string | undefined {
     const p = resolve(REPO_ROOT, f);
     if (existsSync(p)) { const vars = parseDotenv(readFileSync(p)); for (const [k, v] of Object.entries(vars)) if (!process.env[k]) process.env[k] = v; }
   }
-  return process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+  // This script performs a WRITE (Contents PUT) to vc-deploy-dev, so prefer the write-scoped classic
+  // token (GITHUB_FIX_BUGS_TOKEN — the same PAT /qa-fix uses to push to VirtoCommerce repos) over the
+  // read-only GITHUB_TOKEN, which typically lacks contents:write on vc-deploy-dev (→ HTTP 403).
+  return process.env.GIT_TOKEN || process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 }
 let TOKEN: string | undefined;
 function ghHeaders(extra: Record<string, string> = {}): Record<string, string> {
