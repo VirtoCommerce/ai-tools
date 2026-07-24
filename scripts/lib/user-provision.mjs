@@ -461,13 +461,81 @@ export async function stripSeededGlobalRoles(email) {
 }
 
 // --- Org-scoped memberships (VCST-5028) ---
+// The OrganizationMembership entity + its /api/customer/organization-memberships API is a NEWER
+// Customer-module capability. On an older module (e.g. a frozen stable bundle) that endpoint 404s.
+// We detect the 404 ONCE, latch it, and fall back to the legacy membership model: membership is the
+// contact's `organizations` array (already set at contact creation), and there are no org-scoped
+// roles on that platform. This lets the seed COMPLETE on legacy envs instead of aborting.
+let _legacyMembershipApi = false;
+const isMissingEndpoint = (e) => /→ 404\b/.test(String(e?.message || ''));
+function latchLegacyMembership(where) {
+  if (_legacyMembershipApi) return;
+  _legacyMembershipApi = true;
+  console.warn(`    ⚠ organization-memberships API not found (legacy Customer module) at ${where} — falling back to the contact.organizations membership model for this and subsequent users`);
+}
+
 export async function searchMemberships(userId) {
   if (DRY_RUN && userId?.startsWith?.('dry-')) return [];
-  const r = await api('POST', '/api/customer/organization-memberships/search', { userId, take: 100 });
-  return r?.results || [];
+  if (_legacyMembershipApi) return [];
+  try {
+    const r = await api('POST', '/api/customer/organization-memberships/search', { userId, take: 100 });
+    return r?.results || [];
+  } catch (e) {
+    if (!isMissingEndpoint(e)) throw e;
+    latchLegacyMembership('search');
+    return [];
+  }
 }
-export async function ensureOrgMembership(userId, orgId, orgName, roleId, existing, locked = false) {
+
+// Legacy fallback: the older Customer module has no OrganizationMembership entity. Membership is the
+// contact's `organizations` array (set when the contact was created); org-scoped roles don't exist
+// there. Best-effort ensure the contact↔org link (usually already present) and no-op the role with a
+// documented note, so a legacy-bundle env still completes the seed. Never throws.
+async function ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email = null) {
+  try {
+    // Resolve by EMAIL when we have it — the legacy platform's GET-by-GUID returns 200 with an empty
+    // body (getUserById → null), so it can't load the account to edit roles; the by-userName GET works.
+    const user = email ? await findUserByEmail(email) : await getUserById(userId);
+    const contact = user?.memberId ? await findContactById(user.memberId) : null;
+    if (contact) {
+      const orgs = new Set(contact.organizations || []);
+      if (!orgs.has(orgId) && !DRY_RUN) {
+        contact.organizations = [...orgs, orgId];
+        await api('PUT', '/api/members', contact, { expectStatus: [200, 204] });
+      }
+    }
+    // A legacy Customer module has no org-scoped roles, so the storefront reads B2B permissions from
+    // the account's GLOBAL roles[] (the pre-VCST-5028 model). Assign the role there, accumulating the
+    // union across the user's orgs (a multi-org user can't have per-org roles on this platform).
+    let roleAdded = false;
+    if (user && roleId) {
+      const roles = Array.isArray(user.roles) ? user.roles : [];
+      if (!roles.some(r => (r?.id && r.id === roleId) || (r?.name && r.name === roleName))) {
+        user.roles = [...roles, { id: roleId, name: roleName }];
+        if (!DRY_RUN) await api('PUT', '/api/platform/security/users', user, { expectStatus: [200, 204] });
+        roleAdded = true;
+      }
+    }
+    console.log(`    ✓ legacy membership ${orgName} → ${roleName} [contact.organizations + ${roleAdded ? 'global account role' : 'role already present'} (no org-scoped roles on this Customer module)]`);
+  } catch (e) {
+    console.warn(`    ⚠ legacy membership best-effort failed for ${orgName}: ${String(e?.message || '').slice(0, 120)}`);
+  }
+  return 'legacy';
+}
+
+export async function ensureOrgMembership(userId, orgId, orgName, roleId, existing, locked = false, email = null) {
   const roleName = await resolveRoleName(roleId);
+  if (_legacyMembershipApi) return ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email);
+  try {
+    return await ensureOrgMembershipModern(userId, orgId, orgName, roleId, roleName, existing, locked);
+  } catch (e) {
+    if (!isMissingEndpoint(e)) throw e;
+    latchLegacyMembership('create/update');
+    return ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email);
+  }
+}
+
+async function ensureOrgMembershipModern(userId, orgId, orgName, roleId, roleName, existing, locked) {
   const found = (existing || []).find(m => m.organizationId === orgId);
   if (found) {
     const currentRoleIds = (found.roles || []).map(r => r.roleId || r.id);
@@ -564,7 +632,7 @@ export async function provisionContactLogins(contactMap, orgMap) {
       for (const { org, roleName } of pairs) {
         const roleId = roleIdByName(roleName);
         if (!roleId) { console.warn(`    ⚠ role "${roleName}" not found in roles.csv — skipping membership for ${email} @ ${org.name}`); continue; }
-        await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existing, locked);
+        await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existing, locked, email);
         nMem++;
       }
     }
