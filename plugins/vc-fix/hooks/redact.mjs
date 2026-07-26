@@ -1,17 +1,14 @@
 /**
- * hooks/redact.mjs — the SINGLE shared source of secret-redaction rules for the
+ * hooks/redact.mjs — the shared source of secret-redaction rules for the
  * vc-fix self-diagnostics subsystem.
  *
- * Imported by BOTH:
- *   - hooks/session-telemetry.mjs — the passive collector, which persists redacted
- *     snippets to <sid>.jsonl, AND
- *   - skills/vc-self-check/deliver.mjs — the scrubber that contributes a report to
- *     the PUBLIC VirtoCommerce repo (deliver layers its ADDITIONAL client-shape
- *     scrubbing — paths / URLs / emails / tickets / configured client identifiers —
- *     AFTER this secret pass).
+ * Used by hooks/session-telemetry.mjs — the passive collector — to scrub the snippets
+ * it persists to the LOCAL <sid>.jsonl. (Historically deliver.mjs also imported this to
+ * scrub its outbound report; since PR #143 R2 the upstream artifact is a closed-vocabulary
+ * enum/number struct with NO free text, so the former client-shape scrubbers were removed
+ * and deliver no longer imports redact — the closed schema is the sole upstream guard.)
  *
- * Sharing ONE array is the invariant: the persist path and the upstream path can
- * never drift, so a shape hardened for one is hardened for both. Each rule redacts
+ * Each rule redacts
  * the CREDENTIAL/VALUE and keeps just enough as signal (scheme word, key name,
  * username). Ordering matters — the URL-userinfo rule runs first so a connection-
  * string password is gone before any later rule sees the line.
