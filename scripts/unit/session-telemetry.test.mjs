@@ -1811,3 +1811,60 @@ test("purge-inactive --all: ignores the inactivity floor (removes even fresh non
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ─── S3: incremental transcript read (byte offset) ───────────────────────────────
+// PR #143 R2 Suggestion 3: scanTranscript reads only the bytes appended since the last scan.
+// These lock in the two edge cases the offset introduces: a partial trailing line must WAIT
+// until it is completed (never processed twice), and a rotated/truncated file re-scans safely.
+test("S3: a partial trailing line waits, then processes exactly once across record cycles", () => {
+  const home = setupHome();
+  try {
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: "s3a", transcript_path: tp });
+    run(home, "prompt", { session_id: "s3a", transcript_path: tp, prompt: "/qa-bug x" });
+    // cycle 1: a complete Bash tool_use line + a PARTIAL result line (no trailing newline yet)
+    appendLines(tp, [toolUse("2026-01-01T00:00:01Z", "id1", "Bash", { command: "ls" })]);
+    const resultLine = toolResult("2026-01-01T00:00:02Z", "id1", false, "ok");
+    const half = Math.floor(resultLine.length / 2);
+    appendFileSync(tp, resultLine.slice(0, half)); // partial — no '\n'
+    run(home, "record", { session_id: "s3a", transcript_path: tp });
+    assert.equal(spansOf(readSpans(home, "s3a"), "tool", "Bash").length, 0,
+      "the Bash op's result line is still partial → its span must not have closed yet");
+    // cycle 2: complete the partial line (append the rest + newline), nothing else
+    appendFileSync(tp, resultLine.slice(half) + "\n");
+    run(home, "record", { session_id: "s3a", transcript_path: tp });
+    assert.equal(spansOf(readSpans(home, "s3a"), "tool", "Bash").length, 1,
+      "the completed result line closes the Bash span EXACTLY once (no miss, no double-count)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("S3: a truncated/rotated transcript (shorter than the offset) re-scans and still captures spans", () => {
+  const home = setupHome();
+  try {
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: "s3b", transcript_path: tp });
+    run(home, "prompt", { session_id: "s3b", transcript_path: tp, prompt: "/qa-bug x" });
+    // a full open+close cycle → advances the byte offset well past 0
+    appendLines(tp, [
+      toolUse("2026-01-01T00:00:01Z", "id1", "Bash", { command: "one" }),
+      toolResult("2026-01-01T00:00:02Z", "id1", false, "ok"),
+    ]);
+    run(home, "record", { session_id: "s3b", transcript_path: tp });
+    assert.equal(spansOf(readSpans(home, "s3b"), "tool", "Bash").length, 1);
+    // rotate: replace the file with SHORTER content (size < scannedBytes → guard re-scans from 0)
+    writeFileSync(tp, [
+      toolUse("2026-01-01T00:00:03Z", "id2", "Grep", { pattern: "x" }),
+      toolResult("2026-01-01T00:00:04Z", "id2", false, "ok"),
+    ].map((l) => l).join("\n") + "\n");
+    run(home, "record", { session_id: "s3b", transcript_path: tp });
+    // the fresh post-rotation content is scanned → its Grep span is captured (no crash, no stall)
+    assert.equal(spansOf(readSpans(home, "s3b"), "tool", "Grep").length, 1,
+      "after rotation the new content is re-scanned and its span emitted");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

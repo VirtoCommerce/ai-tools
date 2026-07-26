@@ -389,7 +389,7 @@ function sessionIdFromDiag(md, diagPath) {
  * "delete the processed session after it's been delivered"). Best-effort per file;
  * never throws. Returns the basenames removed.
  */
-function purgeSession({ dir, sid, fp, extra = [] }) {
+export function purgeSession({ dir, sid, fp, extra = [] }) {
   const removed = [];
   const rm = (p) => { try { if (existsSync(p)) { unlinkSync(p); removed.push(String(p).split(/[\\/]/).pop()); } } catch { /* ignore */ } };
   const sidSafe = sid && sid.length >= 6 ? sid : null;

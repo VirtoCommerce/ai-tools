@@ -116,7 +116,7 @@
  * with the `.claude/` mirror for the self-diagnostics subsystem (the hardened secret
  * redaction from `./redact.mjs` ships on BOTH surfaces so neither can leak — PR #143 R2).
  */
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, renameSync, readdirSync, statSync, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, renameSync, readdirSync, statSync, unlinkSync, openSync, readSync, closeSync } from "node:fs";
 import { dirname, resolve, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { redact } from "./redact.mjs";
@@ -507,13 +507,47 @@ function closeSkill(jsonlPath, state, endTs) {
  */
 function scanTranscript(jsonlPath, transcriptPath, state) {
   if (!transcriptPath || !existsSync(transcriptPath)) return;
+  let size;
+  try { size = statSync(transcriptPath).size; } catch { return; }
+
+  // Incremental read (S3, PR #143 R2): read ONLY the bytes appended since the last scan, so a
+  // long session no longer re-reads + re-splits the WHOLE transcript on every skill-boundary /
+  // Stop (that was ~O(n²) over the session). `state.scannedBytes` is kept at a LINE BOUNDARY
+  // (right after the last processed '\n'), so a partial trailing line — and any torn multibyte
+  // char at EOF — is never consumed; it is re-read on the next scan.
   let lines;
-  try {
-    const content = readFileSync(transcriptPath, "utf8");
+  if (typeof state.scannedBytes !== "number" || size < state.scannedBytes) {
+    // Full read ONCE: a fresh session (processedLines 0), a pre-S3 `.state.json` picked up
+    // mid-upgrade (honor its processedLines cursor), or a shorter-than-offset file (rotated /
+    // truncated / replaced → re-scan from scratch). Then switch to the byte offset.
+    let content;
+    try { content = readFileSync(transcriptPath, "utf8"); } catch { return; }
     const parts = content.split("\n");
-    lines = parts.slice(0, Math.max(0, parts.length - 1)); // complete lines only
-  } catch {
-    return;
+    const allComplete = parts.slice(0, Math.max(0, parts.length - 1)); // complete lines only
+    if (size < state.scannedBytes) state.processedLines = 0; // rotated → old cursor is meaningless
+    lines = allComplete.slice(Math.min(state.processedLines || 0, allComplete.length));
+    state.processedLines = allComplete.length;
+    const lastNl = content.lastIndexOf("\n");
+    state.scannedBytes = lastNl >= 0 ? Buffer.byteLength(content.slice(0, lastNl + 1), "utf8") : 0;
+  } else if (size === state.scannedBytes) {
+    return; // nothing new appended
+  } else {
+    // Fast path: read ONLY the delta [scannedBytes, size) via a positioned read.
+    let text;
+    try {
+      const fd = openSync(transcriptPath, "r");
+      try {
+        const len = size - state.scannedBytes;
+        const buf = Buffer.allocUnsafe(len);
+        const n = readSync(fd, buf, 0, len, state.scannedBytes);
+        text = buf.toString("utf8", 0, n);
+      } finally { closeSync(fd); }
+    } catch { return; }
+    const lastNl = text.lastIndexOf("\n");
+    if (lastNl < 0) return; // bytes appended but no complete line yet — do not advance
+    lines = text.slice(0, lastNl).split("\n"); // all NEW complete lines
+    state.scannedBytes += Buffer.byteLength(text.slice(0, lastNl + 1), "utf8"); // past the '\n'
+    state.processedLines += lines.length;
   }
 
   const innerParent = () => state.currentSkill || state.currentCommand || null;
@@ -528,8 +562,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     state.totals[cls] = (state.totals[cls] ?? 0) + 1;
   };
 
-  for (let i = state.processedLines; i < lines.length; i++) {
-    state.processedLines = i + 1;
+  for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
     if (!raw || !raw.trim()) continue;
     let ev;
@@ -775,6 +808,7 @@ function freshState(ev, sid) {
     sid,
     spanSeq: 0,
     processedLines: 0,
+    scannedBytes: 0, // byte offset into the transcript, kept at a line boundary (S3 incremental read)
     startTs: nowIso(), // session-start anchor (init time) — the synthesized-command-span start (Fix 2)
     transcriptPath: ev.transcript_path ?? null,
     currentCommand: null,
