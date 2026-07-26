@@ -8,9 +8,10 @@
  *
  * Mirrors `contributionPlan`, pointed at the plugin repo. Reuses
  * `../project-init/probe-lib.mjs` (`resolveGithubToken` + `probeGithubUpstream`).
- * (This was byte-identical across the plugins/vc-fix/ and .claude/ trees before
- * VCST-5509; that story updated only the canonical plugins/vc-fix/ copy, so the
- * .claude/ mirror now lags — see the tech-debt note in the plan.)
+ * This file is kept BYTE-IDENTICAL across the plugins/vc-fix/ (canonical) and .claude/
+ * trees for the self-diagnostics subsystem: the closed-schema upstream path (PR #143 R2)
+ * ships on BOTH surfaces so neither can leak. Both trees supply the sibling
+ * `upstream-reduce.mjs` + `../project-init/probe-lib.mjs` + `../../hooks/redact.mjs`.
  *
  * CONSENT (VCST-5509): outbound delivery is gated by project-profile.json
  * `feedback.mode` — off (never send, DIAG stays local) / ask (DEFAULT: DRY draft +
@@ -41,10 +42,9 @@
  *    unless feedback.mode=auto.)
  */
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync, unlinkSync } from "node:fs";
-import { resolve, join, dirname } from "node:path";
-import { pathToFileURL, fileURLToPath } from "node:url";
+import { resolve, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { resolveGithubToken, probeGithubUpstream } from "../project-init/probe-lib.mjs";
-import { redact } from "../../hooks/redact.mjs";
 import { reduce, validateUpstream, fingerprintStruct, findingStructSig } from "./upstream-reduce.mjs";
 
 const PLUGIN_REPO = "VirtoCommerce/vc-mcp-testing-module";
@@ -83,26 +83,6 @@ function readProfileObj() {
 export function feedbackMode() {
   const m = readProfileObj()?.feedback?.mode;
   return m === "off" || m === "auto" || m === "ask" ? m : "ask"; // default = ask
-}
-
-// Read this session's explicit /vc-feedback verdicts from the collector jsonl so the
-// outbound report carries the highest-value signal. Text is already redacted by the
-// collector; buildDraft additionally §2a-gates it before it goes upstream.
-export function readSessionFeedback(sid) {
-  if (!sid) return [];
-  try {
-    const p = join(diagDir(), `${sid}.jsonl`);
-    if (!existsSync(p)) return [];
-    return readFileSync(p, "utf8")
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
-      .filter((r) => r && r.type === "feedback")
-      .map((r) => ({ verdict: r.verdict, text: r.text || "" }));
-  } catch {
-    return [];
-  }
 }
 
 // Read the session's STRUCTURED collector records — the ONLY source for the upstream struct
@@ -177,254 +157,6 @@ export function mergeStructs(structs, pluginVersion) {
   });
 }
 
-// ─── containment (§2a) — whitelist gate + defense-in-depth scrubber ──────────
-//
-// TRUST MODEL: every findings-table cell is untrusted. A cell may reach an
-// outbound report ONLY if it is plugin-safe (a recognized plugin-file reference
-// or generic advice with no client-shaped tokens). `isClientSpecific` is the GATE
-// (buildDraft downgrades any client-specific row); `scrubText` is defense-in-depth
-// for the cells that pass. A blacklist scrubber alone is unsafe — it leaks anything
-// it fails to anticipate — so the gate is positive-detection, not blacklist.
-//
-// SECRET redaction is the SINGLE shared `redact()` from hooks/redact.mjs (imported
-// above) — the SAME hardened rules the collector persists with, so deliver's outbound
-// scrub can never drift weaker than the collector's (PR #143 review: deliver used to
-// carry its own pre-#143 `\b(keyword)\b` array and leaked compound-key / Basic-auth /
-// AccountKey / SAS shapes to the PUBLIC upstream). scrubText layers the client-shape
-// scrubbing (paths / URLs / emails / tickets / configured client terms) AFTER it.
-
-/**
- * Recognizes a reference to a vc-fix PLUGIN file/component — the WHITELIST. The
- * plugin-dir / filename anchors use a negative lookbehind so a CLIENT path that merely
- * contains a plugin-dir NAME as a mid-path segment (e.g. `acme/skills/Secret.cs`) is
- * NOT mistaken for a plugin reference — only a token-boundary `hooks|skills|commands|
- * knowledge/…` (or a known plugin filename) counts.
- */
-const PLUGIN_FILE_RE =
-  /(?<![\w-])(?:session-telemetry|enforce-real-user|sweep-stray-screenshots|deliver|probe-lib|paths)\.mjs|(?<![\w/-])(?:hooks|skills|commands|knowledge)\/[\w./-]+|(?<![\w/-])\.claude\/rules\/[\w.-]+|(?<![\w-])\/(?:qa-[a-z-]+|vc-self-check|project-init|vc-docs)\b|(?<![\w-])(?:repo-router\.ts|fix-repos\.json|quality-gates\.md|reports\.md)/;
-const PLUGIN_FILE_RE_G = new RegExp(PLUGIN_FILE_RE.source, "g");
-
-/** Escape a string for use inside a RegExp. */
-function escapeRe(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-// Layer 1 — configured client identifiers (org / client-repo / github account) read
-// from project-profile.json. This is the ONLY reliable way to catch an arbitrary or
-// lowercase client name (e.g. `acme`, `acme-cart-service`). On a native-platform
-// deployment there is no profile ⇒ no client ⇒ nothing to catch here (correct).
-let _clientTerms = null;
-function clientTerms() {
-  if (_clientTerms) return _clientTerms;
-  _clientTerms = [];
-  try {
-    const p = join(outputRoot(), "project-profile.json");
-    if (existsSync(p)) {
-      const prof = JSON.parse(readFileSync(p, "utf8"));
-      const s = new Set();
-      const add = (v) => { if (typeof v === "string" && v.trim().length >= 3) s.add(v.trim()); };
-      add(prof.clientOrg); add(prof?.client?.org); add(prof?.vcs?.clientOrg);
-      add(prof?.upstream?.clientGithubAccount);
-      for (const r of prof?.repos?.client || []) (r && typeof r === "object") ? (add(r.name), add(r.repo)) : add(r);
-      _clientTerms = [...s];
-    }
-  } catch { _clientTerms = []; }
-  return _clientTerms;
-}
-
-/**
- * DEFENSE IN DEPTH (not the primary gate). Removes configured client identifiers,
- * secrets, absolute AND relative filesystem paths (Windows back/forward-slash, UNC,
- * source paths), URLs, emails, and tracker ticket keys. Plugin-file references and
- * slash-command names survive — they don't match these shapes.
- */
-export function scrubText(input) {
-  let s = String(input ?? "");
-  // Alphanumeric-only boundary (NOT \b): `_` is a \w char, so `\bacme\b` would miss
-  // "acme" inside a derived identifier like `acme_cart_service` / `ACME_API_KEY`.
-  // Treat `_ . / -` (and everything non-alphanumeric) as a separator so the configured
-  // org is caught inside underscore/dot/slash/hyphen-joined tokens.
-  for (const term of clientTerms()) s = s.replace(new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "gi"), "«client»");
-  s = redact(s); // shared secret redaction (hooks/redact.mjs) — same rules as the collector
-
-  s = s.replace(/[A-Za-z]:[\\/][^\s"'`]+/g, "«path»"); // Windows abs (back OR forward slash)
-  s = s.replace(/\\\\[^\s"'`]+/g, "«path»"); // UNC \\server\share\...
-  s = s.replace(/(?<![\w])\/(?:home|Users|root|tmp|var|opt|mnt|srv|c|d)\/[^\s"'`]+/gi, "«path»"); // POSIX/msys abs
-  s = s.replace(/\b[\w.-]+(?:[\\/][\w.-]+)+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql)\b/gi, "«path»"); // relative source path
-  s = s.replace(/\bhttps?:\/\/[^\s"'`)]+/gi, "«url»"); // client URLs / portal links
-  s = s.replace(/\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g, "«email»"); // emails
-  s = s.replace(/\b[A-Z][A-Z0-9]{1,9}-\d+\b/g, "«ticket»"); // tracker ticket keys
-  return s;
-}
-
-/** Placeholders the scrubber leaves where it removed client-specific content. */
-const REDACTED_PLACEHOLDER_RE = /«(client|path|url|email|ticket|redacted|jwt|gh-token|gitlab-token|slack-token|aws-key|pan)»/;
-
-/** Does this text reference a vc-fix PLUGIN file/component? (whitelist positive) */
-export function referencesPlugin(text) {
-  return PLUGIN_FILE_RE.test(String(text ?? ""));
-}
-
-// Known-safe vocabulary: plugin + platform + tooling + common QA/dev prose words that
-// are legitimately capitalized but NOT client identity. Any capitalized/compound token
-// NOT in this set is treated as a client class / namespace / org / proper noun. Missing
-// a safe word only over-downgrades a finding (the fail-safe direction); a client name
-// leaking through is the failure we refuse.
-const SAFE_TERMS = new Set([
-  // compound tech/platform terms (would otherwise trip the compound-PascalCase rule)
-  "GitHub", "GitLab", "SonarCloud", "DevOps", "GraphQL", "VirtoCommerce", "TypeScript",
-  "JavaScript", "AppInsights", "DevTools", "WebKit", "PostgreSQL", "MySQL", "SqlServer",
-  "SessionStart", "PostToolUse", "PreToolUse", "SubagentStop",
-  // single-word tech/tools/acronyms
-  "GitLab", "Azure", "Jira", "Node", "Vue", "Angular", "Playwright", "Chromium",
-  "Firefox", "Edge", "Chrome", "Windows", "Linux", "Mac", "POSIX", "REST", "API",
-  "Teams", "App", "Insights", "MCP", "CLI", "PAT", "JWT", "PAN", "URL", "UNC", "HTTP",
-  "HTTPS", "JSON", "XML", "HTML", "CSS", "SQL", "DB", "ID", "UUID", "GUID", "Docker",
-  // plugin / QA / gate vocabulary
-  "OK", "BAIL", "STOP", "DIAG", "STR", "BL", "ECL", "PR", "CI", "CD", "QA", "Virto",
-  "Commerce", "Gate", "Gates", "Phase", "Step", "Steps", "Tier", "Signal", "Signals",
-  "Verdict", "Severity", "Anomaly", "Score", "Threshold", "Consent", "Prompt",
-  "Session", "Skill", "Skills", "Command", "Commands", "Hook", "Hooks", "Telemetry",
-  "Transcript", "Cursor", "Delta", "Snippet", "Token", "Auth", "Config", "Path",
-  "Paths", "File", "Files", "Line", "Lines", "Cap", "Error", "Errors", "Warning",
-  "Failure", "Permission", "Denied", "Repo", "Branch", "Commit", "Issue", "Review",
-  "Fix", "Deploy", "Build", "Test", "Tests", "Coverage", "Regression", "Suite",
-  "Module", "Modules", "Platform", "Frontend", "Backend", "Admin", "Storefront",
-  "Theme", "Cart", "Order", "Orders", "Catalog", "Checkout", "Search", "Pricing",
-  "Payment", "Marketing", "Customer", "Inventory", "User", "Users", "Bug", "Bugs",
-  "Draft", "Send", "Scrub", "Downgrade", "Redact",
-  // common capitalized prose words (sentence starters / verbs)
-  "A", "An", "The", "This", "That", "These", "Those", "No", "Not", "None", "And",
-  "Or", "But", "If", "When", "While", "With", "Without", "Via", "Per", "For", "From",
-  "To", "In", "On", "Of", "At", "As", "By", "See", "Use", "Run", "Add", "Set", "Read",
-  "Write", "Open", "Close", "Skip", "Start", "Check", "Trim", "Extend", "Verify",
-  "Ensure", "Update", "Remove", "Replace", "Move", "Rename", "Guard", "Handle", "Wire",
-  "Call", "Return", "Emit", "Log", "Report", "Confirm", "Merge", "Push", "Pull", "Fork",
-  "Missing", "Failed", "Should", "Must", "May", "Only", "Also", "Then", "Now", "Note",
-  // tool names + hook subcommands + HTTP/GraphQL verbs (appear capitalized in findings)
-  "Stop", "Edit", "Bash", "Grep", "Glob", "Task", "Init", "Record", "Finalize",
-  "Get", "Post", "Put", "Patch", "Delete", "Query", "Mutation", "Yes", "Both", "Each",
-  "Any", "All", "Its", "Their", "Reproduce", "Reproduced", "Triage", "Route", "Repro",
-  // domain tool / product names that appear in findings (SonarCloud is compound-safe
-  // above; "Sonar" alone is not — add it and the rest explicitly)
-  "Swagger", "Storybook", "Vitest", "Sonar", "Cypress", "Vite", "Skyflow",
-  "CyberSource", "Datatrans", "Newman", "Postman", "Hangfire", "RabbitMQ", "Redis",
-  "ElasticSearch", "Kibana",
-]);
-
-// ─── plugin-symbol allowlist (Fix 3, LEO 2026-07-22) ─────────────────────────
-// The token shape heuristic in (3) below must NOT treat the plugin's OWN code identifiers
-// (pendingSubagents, sawPluginSpan, openOps, currentCommand, freshOpenAgents, roleStates,
-// anySkillSeen, …) as client data — doing so withheld genuine plugin evidence and downgraded
-// every finding row to "(client-specific evidence withheld)". So derive an allowlist by scanning
-// the plugin's OWN source for DECLARED identifiers (const/let/var/function/class names + object/
-// class field keys) and union it with SAFE_TERMS. The scan is bounded to the plugin dir via
-// pluginRoot() (NEVER the project/client tree — the source must be trusted), and cached per process.
-// This is SAFE regardless of breadth: the allowlist is built ONLY from plugin source, which contains
-// no client identifiers, so it can never whitelist a real client name. A read error just yields a
-// smaller allowlist (the fail-safe direction). The allowlist is the SOLE mechanism sparing plugin
-// symbols — the shape rule in (3) stays BROAD (any compound camelCase) so client CODE identifiers,
-// which are overwhelmingly lowercase-first camelCase, keep being withheld from the public upstream.
-const __deliverDir = dirname(fileURLToPath(import.meta.url));
-function pluginRoot() {
-  return resolve(__deliverDir, "..", ".."); // skills/vc-self-check → plugins/vc-fix (or .claude mirror)
-}
-const ID_DECL_RES = [
-  /\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g, // declaration names
-  /(?:^|[\s,{[(])([A-Za-z_$][\w$]*)\s*:/gm, // object-literal / class-field / destructured-rename keys
-];
-let _pluginSymbols = null;
-function pluginSymbols() {
-  if (_pluginSymbols) return _pluginSymbols;
-  const syms = new Set(SAFE_TERMS);
-  const exts = new Set([".mjs", ".js", ".ts", ".cjs", ".md"]);
-  const walk = (d, depth) => {
-    if (depth > 8) return;
-    let entries;
-    try { entries = readdirSync(d, { withFileTypes: true }); } catch { return; }
-    for (const e of entries) {
-      const p = join(d, e.name);
-      if (e.isDirectory()) { if (e.name !== "node_modules" && e.name !== ".git") walk(p, depth + 1); continue; }
-      const dot = e.name.lastIndexOf(".");
-      if (dot < 0 || !exts.has(e.name.slice(dot))) continue;
-      let src;
-      try { src = readFileSync(p, "utf8"); } catch { continue; }
-      if (src.length > 2_000_000) src = src.slice(0, 2_000_000);
-      for (const re of ID_DECL_RES) { re.lastIndex = 0; let m; while ((m = re.exec(src))) if (m[1]) syms.add(m[1]); }
-    }
-  };
-  const root = pluginRoot();
-  for (const sub of ["hooks", "skills", "commands", "ci/lib"]) walk(join(root, sub), 0);
-  _pluginSymbols = syms;
-  return _pluginSymbols;
-}
-
-/**
- * Positive detection of CLIENT-SHAPED content the blacklist scrubber can't catch, in
- * three layers: (1) a configured client identifier (any case) from the profile; (2)
- * paths / source files (Windows drive, UNC, any-slash path or source file that is NOT an
- * anchored plugin reference); (3) residual identifier tokens — ANY compound camel/PascalCase token
- * (client identifier / class / namespace) or a single Capitalized proper-noun word, unless it is a
- * plugin symbol / SAFE term / plugin-file reference (the allowlist, checked first, is what spares
- * plugin code identifiers). A plugin reference is masked out first so it never trips (2)/(3). Bias
- * is fail-safe — over-withholding a non-client compound is acceptable; leaking a client one is not.
- */
-function containsClientShape(text) {
-  const t = String(text ?? "");
-  if (!t.trim()) return false;
-  // (1) configured client identifiers — alphanumeric-only boundary (see scrubText):
-  // catches the org inside underscore/dot/slash/hyphen-joined derived identifiers.
-  for (const term of clientTerms()) if (new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "i").test(t)) return true;
-  // (2) hard path shapes
-  if (/[A-Za-z]:[\\/]/.test(t)) return true; // Windows drive path
-  if (/\\\\[\w.$-]+/.test(t)) return true; // UNC
-  const masked = t.replace(PLUGIN_FILE_RE_G, " "); // remove anchored plugin refs, judge the rest
-  // NB: no bare "word/word" slash rule — it over-redacted benign plugin vocabulary
-  // ("STR passed 2/3", "GET/POST /graphql", "chrome/firefox/edge", "pass/fail"). A real
-  // client path is still caught precisely by the drive/UNC rules above, the source/config
-  // FILE rule below (by extension), and the named-segment token rules (proper-noun /
-  // camelCase). A lowercase, extension-less relative path with no client-shaped segment
-  // (e.g. "src/handlers/cart") is not client-identifying and is allowed to survive.
-  if (/[\w-]+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql|json|xml|config|dll)\b/i.test(masked)) return true; // non-plugin source/config file
-  // (3) residual identifier tokens (client class / namespace / org / proper noun).
-  // Scan the UNMASKED text, NOT `masked`: the whitelist greedily swallows a whole
-  // `hooks|skills|commands|knowledge/…` path, so a client identifier embedded in a
-  // filename under one of those dirs (e.g. `knowledge/AcmeCorp-notes.md`) would escape
-  // the shape check if we judged `masked`. Plugin file refs are lowercase-kebab, so
-  // scanning the raw text does not over-flag them. (The extension rule above stays on
-  // `masked` — else a legit plugin `repo-router.ts` reference would trip it.)
-  for (const tok of t.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
-    // Plugin-safe: a SAFE term, a declared plugin symbol, or a plugin-file reference survives — even
-    // when compound (Fix 3). The plugin-symbol ALLOWLIST is the mechanism that keeps genuine plugin
-    // evidence (pendingSubagents, sawPluginSpan, openOps, freshOpenAgents, …) in the report; it is
-    // checked FIRST, before the shape rules below.
-    if (SAFE_TERMS.has(tok) || pluginSymbols().has(tok) || referencesPlugin(tok)) continue;
-    // ANY compound camel/PascalCase token (orderSyncService, leocorpCheckout, AcmeCorp, CartController)
-    // is a client CODE identifier / class / namespace and is withheld. This stays BROAD on purpose:
-    // client source identifiers are overwhelmingly LOWERCASE-first camelCase, and §2a requires scrubbing
-    // "identifiers" from anything sent to the PUBLIC upstream. Narrowing this to Capital-first only
-    // (an earlier draft) leaked lowercase-first client identifiers — three independent reviewers flagged
-    // it as a client-data-containment BLOCKER. Plugin symbols are ALREADY spared by the allowlist above,
-    // so keeping this broad costs nothing for plugin evidence while restoring client-identifier coverage.
-    if (/[a-z][A-Z]/.test(tok)) return true; // compound camel/PascalCase (client identifier / class / namespace)
-    if (/^[A-Z][a-z][A-Za-z0-9]*$/.test(tok)) return true; // single Capitalized proper noun (Acme, Contoso) — requires a lowercase LETTER after the capital so gate/severity codes (G0-G7, S0-S3, P0) are NOT flagged
-  }
-  return false;
-}
-
-/**
- * A findings cell is CLIENT-SPECIFIC (§2a) when EITHER the blacklist scrubber had to
- * remove something (a placeholder survives) OR the whitelist gate detects client-shaped
- * content the scrubber can't catch. When true, buildDraft downgrades the whole row so no
- * client evidence reaches an outbound report. Generic advice ("check gh auth status") and
- * plugin-file references ("hooks/enforce-real-user.mjs") return false and are kept.
- */
-export function isClientSpecific(original) {
-  const t = String(original ?? "");
-  if (REDACTED_PLACEHOLDER_RE.test(scrubText(t))) return true;
-  return containsClientShape(t);
-}
-
 // ─── DIAG parsing ────────────────────────────────────────────────────────────
 /**
  * Best-effort parse of a DIAG-*.md into { pluginVersion, findings[] }. Each
@@ -445,8 +177,15 @@ export function parseDiag(md) {
     if (cells.length && cells[0] === "") cells.shift();
     if (cells.length && cells[cells.length - 1] === "") cells.pop();
     if (cells.length < 4) continue;
-    const [skill, verdict, sev] = cells;
+    const [skillCell, verdict, sev] = cells;
     if (!/^(OK|DEGRADED|BROKEN)$/.test(verdict) || !/^S[0-3]$/.test(sev)) continue; // skip header/separator
+    // Normalize the Skill cell to the bare enum name. The DIAG table renders it as
+    // `/qa-fix (command)` / `/qa-bug (skill)`, but SKILLS holds bare names (`qa-fix`), so
+    // without this the jsonl-purged fallback path (reduce's fallbackFindings) always coerced
+    // skill → "other" — per-skill fidelity silently lost in exactly the case the fallback
+    // exists for (PR #143 review round 2, Finding 3). Unknown names still fall through to
+    // "other" via inSet in reduce/validateUpstream, so the fail-safe direction is preserved.
+    const skill = skillCell.replace(/^\//, "").replace(/\s*\((?:command|skill|agent)\)\s*$/i, "").trim();
     const signal = cells[3] ?? "";
     // 4-col table has no separate fix cell (cells[3] is the last) — don't alias the
     // signal as the fix. fix only exists at ≥5 cols; root-cause only at ≥6.
@@ -510,9 +249,13 @@ export async function findDuplicateIssue({ repo, token, fp }) {
 /**
  * Build the outbound draft PURELY from a validated `UpstreamSignal` struct
  * (upstream-reduce.mjs). Every rendered value is a closed-vocabulary enum or a number —
- * there is NO client-derived free text to scrub, so this no longer calls `scrubText`/
- * `isClientSpecific` on any cell (those remain only as local defense-in-depth). The whole
- * body is safe by construction (default-deny closed schema; see
+ * there is NO client-derived free text anywhere in the body, so no text scrubber guards
+ * this path: the closed schema (validateUpstream, enum-only) is the SOLE guard, and it
+ * makes a leak impossible by TYPE. The old free-text client-shape scrubbers
+ * (`scrubText`/`isClientSpecific`/`containsClientShape`) were removed as dead code once the
+ * upstream artifact stopped carrying any free text (PR #143 review round 2, Finding 1);
+ * `redact()` still lives in the COLLECTOR (hooks/redact.mjs) for the local persist path.
+ * The whole body is safe by construction (default-deny closed schema; see
  * knowledge/diagnostics/upstream-schema.md + adr-upstream-default-deny.md).
  */
 export function buildDraft({ struct, route }) {

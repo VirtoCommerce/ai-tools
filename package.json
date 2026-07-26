@@ -32,7 +32,7 @@
     "seed:teardown": "node scripts/seed-data/seed-test-data.js teardown",
     "seed:dry-run": "node scripts/seed-data/seed-test-data.js catalog --dry-run --verbose",
     "test": "tsx --test \"scripts/unit/**/*.test.mjs\" \"scripts/unit/**/*.test.ts\"",
-    "test:containment": "tsx --test scripts/unit/deliver-scrub.test.mjs scripts/unit/deliver-feedback.test.mjs",
+    "test:containment": "tsx --test scripts/unit/upstream-reduce.test.mjs scripts/unit/deliver-feedback.test.mjs",
     "seed:company-users": "node scripts/seed-data/b2b/seed-company-users.mjs all",
     "seed:company-users:teardown": "node scripts/seed-data/b2b/seed-company-users.mjs --teardown",
     "seed:b2b": "node scripts/seed-data/b2b/seed-company-users.mjs b2b",

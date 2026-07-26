@@ -456,3 +456,20 @@ test("parseDiag + reduce (Gap 2): a poisoned DIAG (Plugin: line + free-text rows
   assert.equal(struct.findings.length, 2);
   assert.deepEqual(struct.findings.map((f) => f.severity).sort(), ["S1", "S2"]); // derived, DIAG's S3 ignored (B2)
 });
+
+test("parseDiag (PR#143 R2 F3): the DIAG Skill cell `/qa-fix (command)` normalizes to the bare enum, not `other`", () => {
+  // The real DIAG table renders the Skill column as `/qa-fix (command)` / `/qa-bug (skill)`
+  // (see skills/vc-self-check/SKILL.md). Before the fix parseDiag kept the cell verbatim and the
+  // jsonl-purged fallback coerced every such row to "other" — per-skill fidelity silently lost.
+  const md = [
+    "## Findings",
+    "| Skill | Verdict | Sev | Signal | Root | Fix |",
+    "| /qa-fix (command) | BROKEN | S1 | perm denied | auth | check token |",
+    "| /qa-bug (skill) | DEGRADED | S2 | search_thrash | lost | tighten step 1 |",
+    "| /made-up-thing (command) | BROKEN | S1 | x | y | z |", // unknown → still "other" (fail-safe preserved)
+  ].join("\n");
+  const parsed = parseDiag(md);
+  assert.deepEqual(parsed.findings.map((f) => f.skill), ["qa-fix", "qa-bug", "made-up-thing"]);
+  const struct = validateUpstream(reduce({ spans: [], fallbackFindings: parsed.findings }));
+  assert.deepEqual(struct.findings.map((f) => f.skill), ["qa-fix", "qa-bug", "other"]);
+});

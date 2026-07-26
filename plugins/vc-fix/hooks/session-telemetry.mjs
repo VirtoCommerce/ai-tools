@@ -112,8 +112,9 @@
  *     detected" line (default ON on a terminal plugin turn) while leaving the findings
  *     trigger intact. The kill switch overrides both.
  *
- * NOTE: this collector is the canonical `plugins/vc-fix/` copy. The `.claude/`
- * mirror predates VCST-5509 and is intentionally NOT kept in lock-step here.
+ * NOTE: this collector is the canonical `plugins/vc-fix/` copy, and is kept in sync
+ * with the `.claude/` mirror for the self-diagnostics subsystem (the hardened secret
+ * redaction from `./redact.mjs` ships on BOTH surfaces so neither can leak — PR #143 R2).
  */
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, renameSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { dirname, resolve, join, basename } from "node:path";

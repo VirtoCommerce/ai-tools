@@ -73,9 +73,15 @@ impossibility by construction, not by enumerating rules.
   an ambiguous backend agent `backend` rather than `module`/`platform`. Fail-safe: we lose
   distinguishability, never containment. New codes are added by widening the closed set.
 
-**Defense-in-depth retained (not relied upon).** `redact()` +
-`containsClientShape`/`scrubText` stay in place on the LOCAL artifact, but the upstream
-path no longer DEPENDS on them — they are a belt-and-suspenders backstop, not the gate.
+**Secret redaction retained on the LOCAL persist path.** `redact()` (the shared
+`hooks/redact.mjs` secret rules) still scrubs the snippets the collector writes to the local
+`<sid>.jsonl`. The former free-text client-shape scrubbers
+(`containsClientShape`/`isClientSpecific`/`scrubText`) were **removed as dead code** (PR #143
+review round 2, Finding 1): once the upstream artifact carries only enum/number fields there is
+no free text for them to scrub — they had zero call sites in the send path, and a comment
+promising an active backstop that did not exist was worse than none. The closed schema
+(`validateUpstream`) is the sole upstream guard, in both the distributed `plugins/vc-fix/`
+surface and the in-repo `.claude/` mirror (kept in sync for this subsystem).
 
 ## Invariants preserved
 Client-code containment (quality-gates §2a) — now structural. No-auto-merge (§2) — end at an
