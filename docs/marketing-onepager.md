@@ -28,7 +28,7 @@ An **agentic QA toolkit** for VirtoCommerce customers, in three layers:
 ## What you do as a customer
 
 ```
-1. Install + configure                npm run plugin:configure     (5 min per env)
+1. Install + configure                /project-init     (5 min per env)
                                        Customer fills in: their URLs, creds, store ID,
                                        theme, modules enabled, payment processors.
 

@@ -24,7 +24,7 @@ Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sour
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **ba-system-analyzer** | sonnet | Repo structure, GitHub module search, live UI exploration (storefront + admin), user flows, pain points |
+| **ba-system-analyzer** | sonnet | Repo structure, GitHub module search, live UI exploration (storefront + admin), user flows, pain points. **Also owns BL triangulation** (`/qa-review-bl`): audits each `BL-*` invariant against docs (VirtoOZ) + live (delegating the `{OBSERVED}` axis to `qa-testing-expert`) + source (GitHub MCP), and **auto-applies confirmed changes** to `business-logic.md` (gated by a 3-source evidence bar, body-only; unconfirmed → `bl-proposals`). See §8/§8a in its definition. |
 | **ba-api-specialist** | sonnet | API surface via Postman/Swagger, GitHub module code, live Swagger UI, health assessment |
 | **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
 | **ba-doc-writer** | sonnet | Audience-targeted documentation — **Customer / Admin / Developer / Sales** (per `knowledge/ba/virto-doc-style.md`) + UX improvement specs |
@@ -73,7 +73,7 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 ### BA Team Browsers
 | Agent | Playwright MCP Server | Purpose |
 |-------|----------------------|---------|
-| **ba-system-analyzer** | `playwright-firefox` | Storefront + admin UI exploration |
+| **ba-system-analyzer** | `playwright-firefox` | Storefront + admin UI exploration; BL-audit live axis (delegates `{OBSERVED}` confirmation to `qa-testing-expert`, also firefox — schedule sequentially, never in parallel on the same server) |
 | **ba-api-specialist** | `playwright-edge` | Swagger UI browsing |
 
 **Important:** BA browsers should NOT run in parallel with QA browsers on the same server. When BA and QA agents run simultaneously, schedule them on different browser slots. Max 3 concurrent browser agents total (QA + BA combined). Never use WebKit on Windows.

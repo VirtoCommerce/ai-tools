@@ -168,11 +168,6 @@
   },
   "CFG_022_SECTIONS": {
     "_inline": true,
-    "A": "4374665b-997a-4c69-91f5-a519305ee1f7",
-    "B": "c0d2212e-152d-4708-ab77-e424e3ffd76e",
-    "C": "0fffe046-af4d-4372-ad62-b0b2d47708b3",
-    "D": "0a22799a-b0c6-4a58-a4e4-46f3258cb743",
-    "config_id": "db10a28b-6e11-4e01-b567-9a6de73a06fa",
     "fields": {
       "A": "A",
       "B": "B",
@@ -184,12 +179,6 @@
   },
   "CFG_023_SECTIONS": {
     "_inline": true,
-    "Base": "d707dc6e-0087-42fb-a1fb-6819b31e729c",
-    "Creme": "162ee815-721c-433f-af67-877a491d48f3",
-    "Message": "93c47e7f-965f-4773-9b13-8df9c86f2bca",
-    "Text": "44dc99d3-e5e9-494a-bef3-9a7fbdae5159",
-    "Image": "bae96ccc-e6a8-4c9a-8563-f457d385eb31",
-    "config_id": "d38b8383-f15c-496e-91dd-026e2399f55a",
     "fields": {
       "Base": "Base",
       "Creme": "Creme",
@@ -202,9 +191,6 @@
   },
   "CFG_023_OPTIONS": {
     "_inline": true,
-    "Base_Default": "42b0c2b3-5351-4e25-945b-b0cbc908d8ef",
-    "Creme_Default": "0cb0634f-b442-4fe9-82c2-a78cd9b8b8a9",
-    "Message_Default": "538b5b7f-ca99-495f-8e54-9871883d37df",
     "fields": {
       "Base_Default": "Base_Default",
       "Creme_Default": "Creme_Default",
@@ -214,8 +200,6 @@
   },
   "CFG_017_SECTIONS": {
     "_inline": true,
-    "Text": "a2fc5823-2be8-44d4-9cc6-304f14470843",
-    "config_id": "f03082c4-11a8-4e62-ab66-21c62570fe40",
     "fields": {
       "Text": "Text",
       "config_id": "config_id"
@@ -224,7 +208,6 @@
   },
   "PROD_FULL_FIELD_COVERAGE": {
     "_inline": true,
-    "id": "0b6297e8-d100-4419-ac54-8bf240777271",
     "code": "ALCE0128",
     "name": "Animal Crossing New Horizons Nintendo Switch Game Deals",
     "fields": {
@@ -2211,13 +2194,11 @@
     ],
     "states_distinct": 15,
     "cities_distinct": 20,
-    "default_address_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62",
     "notes": "MIGRATED 2026-07-01: TechFlow was recreated by the company-users reseed (org_id 6fb516c1→96f109a7); the same 22 addresses (same ids) were re-seeded onto the new org from the 20260423 snapshot, so the per-address TECHFLOW_ADDR_* ids and counts below still resolve live. VCST-4710 OQ-5 seed 2026-04-23. 20 new addresses (10 US, 5 CA, 5 UK) plus 2 pre-existing. Unblocks SF-004/006/007/009/010/012 (list/search/facet/sort) and GQ-003/004/005 (currentOrganizationAddresses). Full per-address IDs in test-data/addresses/_seed-results-techflow-20260423.json. Known caveat: platform CustomerAddress schema has no isFavorite field — storefront MemberAddressType returns isFavorite=false for all 20 after seed; toggle favorite via storefront UI if needed."
   },
   "TECHFLOW_ADDR_US_NEW_YORK": {
     "_inline": true,
     "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
-    "platform_id": "79a1e94d-ae00-4214-bb6c-3440b5c702e8",
     "city": "New York",
     "regionCode": "NY",
     "countryCode": "US",
@@ -2229,7 +2210,6 @@
   "TECHFLOW_ADDR_CA_TORONTO": {
     "_inline": true,
     "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
-    "platform_id": "61eedc5f-5b01-4a31-8633-79b1235ca8e4",
     "city": "Toronto",
     "regionCode": "ON",
     "countryCode": "CA",
@@ -2241,7 +2221,6 @@
   "TECHFLOW_ADDR_UK_LONDON": {
     "_inline": true,
     "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
-    "platform_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62",
     "city": "London",
     "regionCode": "ENG",
     "countryCode": "GB",
@@ -2386,16 +2365,12 @@
     "lastPageIndex": 102,
     "lastPageIndex_convention": "1-based; position N (1..totalCount). For 0-based array index use lastPageIndex - 1 = 101.",
     "pageSize": 50,
-    "location50Id": "7227b3d1-99fa-46e5-a2b2-371a72b8431d",
     "location50Name": "Metropolitan Opera House",
-    "location51Id": "a38178ee-0312-466c-80ae-0c9399e78e59",
     "location51Name": "Apollo Theater",
-    "lastLocationId": "8de12f56-15f3-46ba-8bca-06c3be3ba5b5",
     "lastLocationName": "Billund, Lego House",
     "indexedSearchEnabled": true,
     "storeId": "B2B-store",
     "testSku": "ALCOE2300",
-    "testProductId": "2645e50b-baf1-43b9-99f6-7f525f4025f8",
     "testProductName": "Dry Erase Blank Playing Card Reusable Blank Cards Board Game Cards Study Guide & Note Cards Word or Math Training Teaching Aids",
     "testProductCatalogId": "fc596540864a41bf8ab78734ee7353a3",
     "testProductAvailableQuantity_at_capture": 985,
@@ -2445,12 +2420,10 @@
   "CFG_FILE_HOODIE": {
     "_inline": true,
     "productAlias": "CFG-004",
-    "productId": "a04bbb3c-c3a0-4ab0-9b03-4e69e0ce5556",
     "productName": "Hoodie Base with Only File non required",
     "slug": "physical",
     "url": "/products-with-options/configurable-caps-shirts/physical",
     "fullUrl_template": "{{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical",
-    "fileSectionId": "8b7559d7-873b-4291-98e0-f64a45edc7e2",
     "fileSectionName": "Only File non required",
     "fileSectionType": "File",
     "fileSectionIsRequired": false,
@@ -2485,7 +2458,6 @@
   "ADMIN_DEFAULT": {
     "_inline": true,
     "userName": "admin",
-    "userId": "1eb2fa8ac6574541afdb525833dadb46",
     "memberId": null,
     "email": "admin@vc-demostore.com",
     "email_env": "ADMIN",
@@ -2534,16 +2506,13 @@
   "CFG_VARIATION_CAKE": {
     "_inline": true,
     "_status": "weak-match-20260518",
-    "productId": "e0472ee1-bceb-4680-b913-fe94bded5420",
     "code": "THT-36341598",
     "productName": "Configuration: Cake Vanilla White + Variations",
     "slug": "products-with-options/wedding-cakes/cake-vanilla-white-variations",
     "storefrontUrl": "https://vcst-qa-storefront.govirto.com/products-with-options/wedding-cakes/cake-vanilla-white-variations",
     "categoryPath": "Products with Options > Wedding Cakes",
-    "variationSectionId": "66b3a9b5-5701-4146-8817-1ecc1507ed24",
     "variationSectionName": "Variation section 1",
     "variationSectionIsRequired": false,
-    "textSectionId": "9c3889cc-30a3-4eb9-9e06-c3ae26060a89",
     "textSectionName": "Text section 2",
     "textSectionIsRequired": false,
     "productVariations": [
@@ -2560,10 +2529,8 @@
         "price": 200
       }
     ],
-    "var1Id": "c56a12c0-548f-492a-8a8e-05e1a67376b5",
     "var1Code": "UWJ-83467294",
     "var1Price": 120,
-    "var2Id": "116a85f5-8023-430f-b919-58cadede3e26",
     "var2Code": "VDY-39627589",
     "var2Price": 200,
     "basePrice": 100,
@@ -2578,11 +2545,9 @@
   },
   "CFG_REQUIRED_FILE_HOODIE": {
     "_inline": true,
-    "productId": "85b6f077-d59f-4a8f-8510-9920b9d64ee1",
     "code": "OSW-31158373",
     "productName": "Hoodie Base product with only File req",
     "slug": "products-with-options/configurable-caps-shirts/physical-1703",
-    "fileSectionId": "c356265f-2bdf-4afd-a820-105ead721465",
     "fileSectionName": "only File req",
     "fileSectionType": "File",
     "fileSectionIsRequired": true,
@@ -2601,7 +2566,6 @@
   },
   "CFG_OFFROAD_BIKE": {
     "_inline": true,
-    "productId": "958d0762-404c-4a6f-a45a-46ed4943f5f0",
     "code": "INN-69077289",
     "productName": "Off-Road Bike. Configurable product",
     "slug": "products-with-options/configurations/off-road-bike",
@@ -2640,7 +2604,6 @@
   },
   "CFG_WEDDING_CAKE_CONDITIONS": {
     "_inline": true,
-    "productId": "f4f27033-d688-4d22-ade7-5106f4748add",
     "code": "YOC-85609878",
     "productName": "Sections with conditions Wedding cake",
     "slug": "products-with-options/wedding-cakes/sections-with-conditions-wedding-cake",
@@ -2866,8 +2829,6 @@
     "group": "VIP",
     "account_type": "Customer",
     "store_id": "B2B-store",
-    "memberId": "31399071-7589-42a8-9013-75f805dfd48b",
-    "securityAccountId": "5a216728-c49f-4c4b-b611-227757f071c1",
     "fields": {
       "email": "email",
       "group": "group",
@@ -2891,16 +2852,12 @@
   },
   "MULTI_ORG_TF_BR": {
     "_inline": true,
-    "id": "86b8595a-3313-4a06-8752-38e8cd73b613",
-    "userId": "7174c560-d6e6-428a-9c4e-f8078ab754b0",
     "email": "agent-test-multiorg-20260615@yopmail.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
     "org_techflow_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "org_buildright_id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
     "techflow_role": "org-maintainer",
     "buildright_role": "org-employee",
-    "techflow_membership_id": "0e3432270f2e409a8d2d05de3c4c1768",
-    "buildright_membership_id": "3a09bf010b634e9594da9f6ad129b7f6",
     "fields": {
       "id": "id",
       "userId": "userId",
@@ -2951,20 +2908,21 @@
     "_notes": "Active B2B virtual catalog root for storefront product queries. Verified 2026-05-18 via store(storeId:\"B2B-store\") { catalogId }. The 2026-04-30 migration to 9238c387-d779-40cb-b27d-5496a670a924 was rolled back by the 2026-05-15 catalog restore. Use @td(VIRTUAL_CATALOG_B2B.id) inside GraphQL filter strings: filter: \"category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO)\". If B2B-store rebinds again, only this one value needs updating."
   },
   "BUYABLE_PRICED_PRODUCT": {
-    "_inline": true,
-    "id": "0b6297e8-d100-4419-ac54-8bf240777271",
-    "name": "Animal Crossing New Horizons (Nintendo Switch) — STD-001",
-    "sku": "ALCE0128",
-    "fields": {
-      "id": "id",
-      "name": "name",
-      "sku": "sku"
+    "file": "products/standard",
+    "filter": {
+      "product_id": "STD-001"
     },
-    "_notes": "Verified cart-buyable B2B-mixed fixture for cart/checkout/xCart tests — adds to cart cleanly (GQL-MC-001 PASS, 6/6, 2026-06-16). Same product as BUYABLE_NO_MIN_QTY (STD-001). IMPORTANT: cart buyability comes from the product being properly PLACED + INDEXED in the B2B-mixed virtual catalog (fc596540…), NOT from a pricelist-API price — `/api/pricing/evaluate` returns [] for this product yet the cart accepts it, while a product with a pricelist-API price but no B2B-mixed placement (e.g. Canon MF232W 08c33cfc) is rejected with PRODUCT_PRICE_INVALID. So pick fixtures the cart actually accepts (mirror BUYABLE_NO_MIN_QTY's catalog placement), not ones that merely resolve a price. See project_vcstqa_cart_price_invalid_blocker."
+    "fields": {
+      "id": "product_id_guid",
+      "name": "product_name",
+      "sku": "product_code",
+      "code": "product_code",
+      "slug": "product_slug"
+    },
+    "_notes": "CSV-backed (products/standard STD-001, SKU ALCE0128) — SAME product as BUYABLE_NO_MIN_QTY; the runtime platform GUID lives ONLY in aliases.<env>.json (written per env by seed:products → captureDiscoveredFixtures → syncEnvAliases('products/standard')), NEVER hardcoded here (golden rule: no runtime GUIDs in committed test-data — VCST no-hardcode policy / feedback_all_envs_own_aliases_no_csv_guids). On an unseeded env .id resolves EMPTY (a clear miss), never a wrong-env GUID. Was previously an _inline alias with a hardcoded vcst GUID (0b6297e8…) — fixed 2026-07-24. IMPORTANT: cart buyability comes from the product being properly PLACED + INDEXED in the B2B-mixed virtual catalog, NOT from a pricelist-API price — `/api/pricing/evaluate` returns [] for this product yet the cart accepts it, while a product with a pricelist-API price but no catalog placement (e.g. Canon MF232W) is rejected with PRODUCT_PRICE_INVALID. Pick fixtures the cart actually accepts (mirror BUYABLE_NO_MIN_QTY's catalog placement), not ones that merely resolve a price. See project_vcstqa_cart_price_invalid_blocker."
   },
   "BUYABLE_SIBLING_B2B": {
     "_inline": true,
-    "id": "eae298de-0997-44d2-8b35-88e5512dbbe2",
     "name": "ASUS ROG 6D/6D Ultimate Smartphone",
     "fields": {
       "id": "id",
@@ -3016,19 +2974,14 @@
   },
   "LOCKOUT_TEST_USERS": {
     "_inline": true,
-    "sf_id": "71b4ca11-abd3-4450-a514-67a1dbc99c3d",
     "sf_login": "AGENT-TEST-lockout-sf@test.virtocommerce.com",
     "sf_type": "Customer",
-    "admin_id": "6e9987d1-5ce7-43f3-a9a5-a829be1d4472",
     "admin_login": "AGENT-TEST-lockout-admin@test.virtocommerce.com",
     "admin_type": "Administrator",
-    "unlock_id": "af55646a-32fc-42be-a8ab-ac1692eedc8a",
     "unlock_login": "AGENT-TEST-lockout-unlock@test.virtocommerce.com",
     "unlock_type": "Administrator",
-    "manager_id": "44a2978b-1c71-4b61-b882-195c48731ebc",
     "manager_login": "AGENT-TEST-manager-lockout@test.virtocommerce.com",
     "manager_type": "Manager",
-    "target_id": "1d90a31b-31d7-4c0e-aa8d-fba1cbbe9f10",
     "target_login": "AGENT-TEST-lockout-target@test.virtocommerce.com",
     "target_type": "Administrator",
     "fields": {
@@ -3052,11 +3005,8 @@
   },
   "SEED_20260529_OOS": {
     "_inline": true,
-    "id": "3c2b9e0c-2a1d-4757-96db-a6905efbfb9a",
     "sku": "OOS-PRODUCT-001",
     "name": "SEED-20260529-Cisco Meraki MR46 Access Point [OUT OF STOCK]",
-    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
-    "price_list_id": "0288950e-001c-4bf5-ab29-c9cd98397daa",
     "fields": {
       "id": "id",
       "sku": "sku",
@@ -3068,11 +3018,8 @@
   },
   "SEED_20260529_TIER_PRICED": {
     "_inline": true,
-    "id": "c20335d0-4894-45e8-adcf-5728333484a8",
     "sku": "CISCO-SW24-001",
     "name": "SEED-20260529-Cisco Catalyst 24-Port Managed Switch",
-    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
-    "price_list_id": "0288950e-001c-4bf5-ab29-c9cd98397daa",
     "fields": {
       "id": "id",
       "sku": "sku",
@@ -3084,7 +3031,6 @@
   },
   "SEED_20260529_PL_USD": {
     "_inline": true,
-    "id": "0288950e-001c-4bf5-ab29-c9cd98397daa",
     "name": "SEED-20260529-B2B Standard USD",
     "currency": "USD",
     "fields": {
@@ -3096,7 +3042,6 @@
   },
   "SEED_20260529_PL_EUR": {
     "_inline": true,
-    "id": "444d5682-0c7e-4754-a85e-2667fd00bab7",
     "name": "SEED-20260529-B2B Standard EUR",
     "currency": "EUR",
     "fields": {
@@ -3108,13 +3053,9 @@
   },
   "SEED_20260529_VARIATION_PARENT": {
     "_inline": true,
-    "id": "0bbabbef-a14a-44a8-9890-7df0e814921f",
     "sku": "LOGI-MX-001",
     "name": "SEED-20260529-Logitech MX Master 3S Wireless Mouse",
-    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
-    "variation_gray_id": "78543a7a-5cbc-4819-84a4-4bf927ce73b3",
     "variation_gray_sku": "LOGI-MX-001-GY",
-    "variation_white_id": "2cf1b2ae-68e0-40c2-ae87-f95d55268caa",
     "variation_white_sku": "LOGI-MX-001-WH",
     "fields": {
       "id": "id",
@@ -3624,8 +3565,6 @@
     "email": "AGENT-TEST-wholesale@test.virtocommerce.com",
     "email_env": "LOYALTY_WHOLESALE_USER_EMAIL",
     "password_env": "LOYALTY_WHOLESALE_USER_PASSWORD",
-    "memberId": "47db2112-34a7-4fc1-9783-95523284ae10",
-    "securityAccountId": "3aaada1a-6c1b-417e-8cb3-d074258016a3",
     "group": "Wholesaler",
     "account_type": "Customer",
     "store_id": "B2B-store",
@@ -3837,6 +3776,16 @@
     "password_var": "RESTRICTED_CMS_ADMIN_PASSWORD",
     "role": "AGENT-TEST-Restricted-CMS-Viewer",
     "excluded_permission": "builder:update",
+    "user_type": "Manager"
+  },
+  "CATALOG_LINK_RESTRICTED": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account for the VCST-5318 catalog Map/Link permission gate (products-only linker): authenticates into the back office and can link PRODUCTS/items into a virtual catalog but CANNOT link categories — holds catalog:products:link, EXCLUDES catalog:categories:link (the boundary the suite asserts). Includes catalog:*:create because reaching the Map flow (virtual catalog → Add (+) → Link → 'Choose categories and items for mapping') is create-gated; base back-office entry comes from userType Manager (does NOT depend on the build-variable platform:access). isAdministrator=false so the gate applies (an admin bypasses it). email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{CATALOG_LINK_RESTRICTED_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (written by scripts/seed-data/platform/seed-backoffice-rbac.mjs — npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
+    "email": "AGENT-TEST-catalog-link-restricted@test.virtocommerce.com",
+    "login": "AGENT-TEST-catalog-link-restricted@test.virtocommerce.com",
+    "password_var": "CATALOG_LINK_RESTRICTED_PASSWORD",
+    "role": "AGENT-TEST-Catalog-Link-Restricted",
+    "excluded_permission": "catalog:categories:link",
     "user_type": "Manager"
   },
   "PB_HOMEPAGE": {

@@ -45,7 +45,7 @@ If `ENV_RISK=production`, add a prominent warning:
 
 ### 2. Environment Variables
 
-Run `npm run env:check` to verify required variables are set. Source of truth for the schema: **`manifest.json` `envSchema`** — the customer should consult that for what's required.
+Run `npm run env:check` to verify required variables are set. Source of truth for the schema: **`config.js`** (the layered env loader) — the customer should consult that for what's required.
 
 Layered loader order (later overrides earlier):
 1. `.env.defaults` — plugin-supplied constants (sandbox cards, Builder.io public URL). Same for every customer.

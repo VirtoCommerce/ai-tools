@@ -1,12 +1,12 @@
 ---
-description: "Customer onboarding flow: post-install handoff that walks a new user from 'plugin installed' to 'green smoke run + first bug filed'. Use after `npm run plugin:configure`."
+description: "Customer onboarding flow: post-install handoff that walks a new user from 'plugin installed' to 'green smoke run + first bug filed'. Use after `/project-init`."
 argument-hint: "[env name | smoke | tour | troubleshoot]"
 disable-model-invocation: true
 ---
 
 # /qa-onboarding — Customer Onboarding Flow
 
-The first command a new customer runs after `npm run plugin:configure` completes. Validates the install is functional, runs a guided smoke pass on both surfaces, and hands the user off to the rest of the plugin.
+The first command a new customer runs after `/project-init` completes. Validates the install is functional, runs a guided smoke pass on both surfaces, and hands the user off to the rest of the plugin.
 
 ## Usage
 
@@ -27,18 +27,17 @@ Run as a structured handoff. At each step, report what's happening and the next 
 ### Step 1 — Sanity check the install (always, except `tour`)
 
 ```bash
-npm run plugin:check
+npm run env:check
 ```
 
 This validates:
-- `manifest.json` present + valid
 - `.env.${TEST_ENV}` present
 - `.env.local` present (gitignored — warn if missing)
 - All required env vars resolve (delegates to `npm run env:check`)
 - Active config printed: `TEST_ENV`, `ENV_RISK`, `STOREFRONT_PROFILE`, `MODULES_ENABLED`, `JIRA_PROJECT_KEY`
 
 If this fails, surface the specific blocker and stop. Common fixes:
-- Missing `.env.${TEST_ENV}` → run `npm run plugin:configure -- --env=${envName}`
+- Missing `.env.${TEST_ENV}` → run `/project-init` (choose env `${envName}`)
 - Kebab-case `TEST_ENV` → re-run install with an underscore name
 - Missing creds → check `.env.local` has `USER_PASSWORD_${TEST_ENV.upper()}` etc.
 
@@ -142,7 +141,7 @@ Test authoring
   /qa-checklist <domain>    — domain-specific test checklist (33 storefront + 29 admin)
 
 Multi-env workflow
-  Configure a second env:    npm run plugin:configure -- --env=staging
+  Configure a second env:    /project-init (for env `staging`)
   Switch at runtime:         TEST_ENV=staging /qa-smoke
   Production-risk safety:    Set ENV_RISK=production in .env.${envName} → admin-write
                               suites refuse to run without --allow-admin-writes-on-prod
@@ -207,7 +206,7 @@ For users who already ran `/qa-env-check` and just want the smoke. Skip Steps 1�
 ### `troubleshoot` (diagnostic mode)
 
 For users whose install is broken. Run:
-1. `npm run plugin:check` (full validation, verbose output)
+1. `npm run env:check` (full validation, verbose output)
 2. `/qa-env-check vars` (per-bucket var listing — show what's set, what's missing)
 3. `/qa-env-check endpoints` (both surfaces, with curl output on failure)
 4. `/qa-env-check mcp` (list configured + missing servers)

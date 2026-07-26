@@ -52,7 +52,7 @@ import { fileURLToPath } from "node:url";
 
 const SKILL_DIR = dirname(fileURLToPath(import.meta.url));
 // skills/qa-local-env → repo root is four levels up.
-const REPO = resolve(SKILL_DIR, "..", "..", "..", "..");
+const REPO = resolve(SKILL_DIR, "..", "..", "..");
 
 const DEFAULTS = {
   deployRepo: "VirtoCommerce/vc-deploy-dev",

@@ -43,7 +43,10 @@ live module graph (`skills/qa-fix-routing/module-registry.ts`). Workspace `.fix-
 > **code host** (GitHub / Azure Repos) every phase talks to comes from `project-profile.json`
 > (written by `/project-init`). Read [`knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md)
 > for the per-tracker resolve/comment/transition recipes, live transition discovery (never hardcode a
-> workflow name), ticket-key formats, and the `contributionPlan(repo)` → clone/push/PR matrix. **With no
+> workflow name), ticket-key formats, and the `contributionPlan(repo)` → clone/push/PR matrix. **Every
+> comment this command posts** (BAIL/STOP reason, in-progress/in-review transition notes) follows the
+> `tracker-ops.md` §2 **Comment & body style** rule — Markdown (never Jira wiki), clear, brief,
+> outcome-first, evidence referenced not inlined. **With no
 > profile ⇒ Jira / GitHub / VirtoCommerce, direct PRs — the original behaviour, unchanged.** The single
 > hard invariant on a client deployment: **client code never leaves the client project** (`quality-gates.md`
 > §2a); the upstream gets platform contribution only.

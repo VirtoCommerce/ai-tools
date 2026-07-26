@@ -811,5 +811,3 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 > surfaces. Both env files are scaffolded as commented templates the operator fills;
 > the scan (step 4) derives projectType + clientOrg, the derive block (step 5) derives
 > contribution mode + fork account + operator, and verify-access (step 8) confirms.
-> The existing `bootstrap/install.ts` (`npm run plugin:configure`) wizard remains an
-> optional interactive fallback.

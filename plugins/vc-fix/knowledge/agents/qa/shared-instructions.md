@@ -258,6 +258,8 @@ For full sign-off tables: `skills/qa-evidence/sign-off-templates.md`
 
 See [`.claude/rules/reports.md`](../../../.claude/rules/reports.md) — the single source of truth for: allowed report categories (4), hard size caps per type, required sections, bloat patterns to cut, screenshot/console/network/HAR rules, and naming conventions. Do not restate the policy here; update only `reports.md`.
 
+**Tracker comments (bug filing, sign-off, defect transitions).** Anything you post into a tracker field — a Jira/Azure Boards comment or description via `/qa-bug`, `/qa-defect`, or the Sign-Off flow — follows `knowledge/execution/tracker-ops.md` §2 **Comment & body style**: Markdown for Jira (never wiki markup: no `h2.`/`*bold*`/`{code}` — VCST-5212), HTML for Azure Boards; either way **clear, brief, outcome-first, structured** (not a wall of text), with **evidence referenced not inlined** and the same size discipline as `reports.md`. Verify the comment actually renders before moving on.
+
 ## Browser Interaction — Mandatory Real-User Behavior
 
 **Hook-enforced.** A `PreToolUse` hook (`hooks/enforce-real-user.mjs`) blocks `browser_evaluate`, `browser_run_code_unsafe`, and `evaluate_script` MCP calls unless the JS payload matches the narrow auto-allow regex list (GraphiQL JWT `execCommand('insertText')`, `dataLayer`/`gtag()`, cross-origin iframe inspection). Do not try to bypass — if your case fits an exception but was blocked, extend the regex.

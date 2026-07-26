@@ -1,39 +1,25 @@
 {
-  "runId": "REG-2026-07-21-1438",
-  "status": "in_progress",
+  "runId": "REG-2026-07-23-1249",
+  "status": "completed",
   "environment": "vcst",
-  "selection": "059,060",
-  "startedAt": "2026-07-21T12:38:03.000Z",
-  "finishedAt": null,
-  "context": "VCST-5515 PageBuilderModule 3.1017.0-pr-156 setBaseline() post-publish/unpublish fix verification",
+  "selection": "059+060 (VCST-5417 focused: rename/publish/content-versioning)",
+  "startedAt": "2026-07-23T10:49:37Z",
+  "finishedAt": "2026-07-23T11:39:43Z",
+  "context": "Focused Page Builder regression after VCST-5417 verification (rename->Save->Publish content-preservation blast radius). Known non-passes expected from VCST-5524 (theme settings, not in scope) and VCST-5429 (intermittent empty designer render). Env: vcst-qa, PageBuilderModule 3.1018.0-pr-151-880b.",
   "suites": [
     {
-      "id": "059",
-      "name": "CMS Page Management",
-      "file": "regression/suites/Backend/cms/059-cms-page-management.csv",
-      "testCount": 46,
+      "id": "PB5417",
+      "name": "Page Builder — VCST-5417 focused (059+060 subset)",
+      "file": "regression/suites/Backend/page-builder/059-page-builder.csv + 060-page-builder-design-content.csv",
+      "testCount": 27,
       "agent": "qa-backend-expert",
       "lane": "browser",
       "browser": "playwright-edge",
-      "status": "running",
-      "pass": null,
-      "fail": null,
-      "blocked": null,
-      "attempts": 0
-    },
-    {
-      "id": "060",
-      "name": "CMS Design & Content",
-      "file": "regression/suites/Backend/cms/060-cms-design-content.csv",
-      "testCount": 108,
-      "agent": "qa-backend-expert",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "status": "running",
-      "pass": null,
-      "fail": null,
-      "blocked": null,
-      "attempts": 0
+      "status": "done",
+      "pass": 27,
+      "fail": 0,
+      "blocked": 0,
+      "attempts": 1
     }
   ]
 }

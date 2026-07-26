@@ -158,6 +158,58 @@ The `Stop` hook fires at the end of **every** turn, including a turn that only h
 - **Visible clean line ON by default** on a terminal plugin turn (was the opt-in `VC_FIX_DIAG_LINE=always`): a clean run now prints `vc-fix self-check: no plugin issues detected`. Silence it with **`VC_FIX_DIAG_LINE=off`**; the global `VC_FIX_DIAG_CONSENT=off` kill switch still gates everything.
 - **`stop_hook_active` guard** added to both the findings block and the clean line — a belt-and-suspenders companion to `promptedThisTurn` so the Stop from our own resume-turn can't re-fire (no resume loop). When it suppresses, the decision record logs `suppressReason:"stop-hook-active"` (was misreported as `already-surfaced`).
 - Tests: checkpoint (background_tasks + open-agent-op fallback), terminal clean/findings, `VC_FIX_DIAG_LINE=off`, `stop_hook_active`, and a full sub-agent hand-off E2E sequence.
+> The entries below (`/qa-deploy-pr`, `/qa-review-bl`, the VCST-5318 catalog-mapping-permission coverage, the accessibility/code-review hardening) land in the **project-scoped `.claude/` `vc-qa` surface**, not the distributable `vc-fix` plugin — so the plugin/marketplace versions above are unchanged.
+
+### Removed — the legacy whole-repo-as-plugin install path (`manifest.json` + `bootstrap/install.ts`)
+
+Before v0.7.0 the entire repo was the `vc-qa` plugin, onboarded via an interactive `bootstrap/install.ts` wizard (`npm run plugin:configure` / `plugin:check`) backed by a root `manifest.json`. That model is gone — `vc-fix` is the only installable plugin, and `/project-init` is the onboarding path. The leftover scaffolding is now removed.
+
+- **Deleted** `manifest.json` (root) and `bootstrap/install.ts`; **removed** the `plugin:configure`, `plugin:check`, and `plugin:install` scripts from `package.json`. Nothing at runtime read `manifest.json` (`config.js` owns env validation), so there is no behavior change.
+- **Re-pointed every reference** at the current path: `npm run plugin:configure` → `/project-init`, `npm run plugin:check` → `npm run env:check`, across `README.md`, `CLAUDE.md`, `INDEX.md`, `docs/onboarding.md`, `docs/distribution.md`, `docs/marketing-onepager.md`, `docs/pilot-runbook.md`, `docs/pilot-rehearsal-protocol.md`, `docs/release-process.md`, `docs/support-runbook.md`, `docs/test-authoring.md`, `docs/troubleshooting.md`, both `qa-env-check` command surfaces, `qa-onboarding`, `.claude/architecture/TIER.md`, and the `project-init` SKILLs. `/qa-env-check`'s env-schema source-of-truth is now `config.js` (was `manifest.json` `envSchema`).
+- The broader whole-repo-as-plugin *narrative* in `docs/distribution.md` / `TIER.md` / `marketing-onepager.md` still needs a fuller reframe — tracked separately.
+
+### Added — `/qa-deploy-pr`: deploy ALL of a change's fresh PR artifacts to the test env in one manifest update
+
+A change often produces prerelease artifacts across several repos (one or more modules + Platform + the vc-frontend theme); previously each had to be pinned into the deploy manifest by hand, so `/qa-test PR #N` and `/qa-verify-fix` were blocked until someone stitched them together. `/qa-deploy-pr <ticket-key>` gathers them all and deploys them together.
+
+- **One combined manifest update.** Resolves the tracker ticket's linked PRs across all repos (or an explicit `--module Id=Ver` / `--platform Ver` / `--theme url` / `--pr owner/repo#N` set) → each PR's latest `vc3prerelease` CI build → a minimal-diff repin of `vc-deploy-dev@<env-branch>`'s `backend/packages.json` (AzureBlob/BlobName + `PlatformVersion`) and `theme/artifact.json` — all in ONE update.
+- **Safe by default, gated writes.** Dry-run combined diff by default; `--apply` commits to your fork and opens ONE gated cross-fork deploy PR (direct same-repo push when the account has write, else a fork PR; prints the web-edit URL on a 403). Never auto-merges — a human merges to deploy. `--verify` reports per-target deploy state (branch pin + live `/api/platform/modules`).
+- **Env-aware**, writes routed through `gh`'s keyring token. Deterministic core `scripts/deploy/deploy-pr-artifact.ts`; command `.claude/commands/qa-deploy-pr.md` + skill `.claude/skills/qa-deploy-pr/`. `.claude/`-only.
+
+### Added — `/qa-review-bl`: 3-source BL triangulation with gated auto-apply
+
+Business-logic invariants (`knowledge/oracles/business-logic.md`) drifted from the product and could only be corrected by hand. `/qa-review-bl` now triangulates each `BL-*` invariant against **docs (VirtoOZ) + live (Playwright) + source (GitHub MCP)** and **auto-applies confirmed changes** — gated by a 3-source evidence bar, not human approval.
+
+- **Confirmed** CONFIRMED/DRIFT/MISSING verdicts are written body-only (env-agnostic, with an `Amended:` + `Source:` stamp) directly to `business-logic.md`; **CONTRADICTORY/UNGROUNDED/RETIRE** route to `reports/ba/bl-proposals-<date>.md` for human review. Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`.
+- **This deliberately supersedes the former "never auto-edit business-logic.md" rule.** Delegated to `ba-system-analyzer` (parallel triangulation, single-writer apply) with the live axis on `qa-testing-expert`; also runs automatically as `/qa-test-lifecycle` Phase 4c, scoped to the `BL-*` a run touches (the `--update-bl` flag was retired).
+- Deterministic core `scripts/knowledge/lint-bl.ts` (`bl:lint` / `bl:audit:collect`); command `.claude/commands/qa-review-bl.md` + skill `.claude/skills/qa-review-bl/` (`bl-audit-criteria.md`). `.claude/`-only.
+
+### Added — VCST-5318 catalog-mapping permission gate: RBAC fixture + regression coverage + BL invariants
+
+- **`CATALOG_LINK_RESTRICTED` backoffice RBAC fixture** seeded for the catalog-mapping permission gate, with `CATALOG_LINK_EXCLUDED_PERMISSIONS` derived and the alias role verified in the RBAC drift-guard.
+- **Regression cases** added for the catalog mapping permission gate (suite 053), plus a quality-verify pass on suite 053 and new **BL-CAT-009..012** invariants.
+
+### Changed — accessibility & code-review tooling hardened
+
+- **`/qa-accessibility` sharpened for WCAG 2.2 AA** — corrected the `storefront-selectors.md` path in the skill, tightened the 2.2 guidance, and bumped the axe-core source. Added a Cart Coupons widget WCAG 2.2 AA audit report (VCST-5533).
+- **A11y report dedup hardened + a full code-review command added** to the QA surface.
+- **`enforce-real-user` hook** now allowlists the read-only axe-core accessibility scan (so an a11y audit isn't blocked as a non-real-user interaction).
+- **`.claude/rules`** now enforces concise code comments + Markdown/clear/brief tracker comments; internal env name dropped from the tracker-ops comment example.
+- **`test-data-engineer`** updated to use Serena; README files refreshed.
+
+### Docs — release process: per-plugin dependency-tag convention
+
+`docs/release-process.md` documents the per-plugin dependency-tag convention, references `claude plugin tag --push` (issue #156), and clarifies Step 5a's tag commit + the annotated-vs-lightweight tag choice.
+
+### Changed — self-diagnostics evolved into a client→vendor feedback loop (VCST-5509)
+
+The self-diagnostics subsystem (originally VCST-5475–5479, below) grew a second signal path and dropped the end-of-session Yes/No consent modal as the trigger. `vc-fix` now ships **8 commands** (the new `/vc-feedback` joins `/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-env-check`, `/vc-self-check`).
+
+- **New `/vc-feedback "<what happened>" 👍/👎`** — an explicit operator verdict on the current session, the **main detector of SILENT failures** (a command/skill/agent that did the wrong thing but *looked* fine, which no deterministic heuristic catches). The `UserPromptSubmit` hook (`session-telemetry.mjs prompt`) parses the verdict + text, redacts secrets, and appends a `{type:"feedback"}` record to the currently-open span; the model just acknowledges — it runs no tool and sends nothing.
+- **The passive collector now classifies spans** (`failed` / `degraded` / `silent_suspect`) and `/vc-self-check`'s scope is **outcome-based** — it diagnoses the flagged spans plus any `/vc-feedback` verdicts, rather than everything.
+- **Delivery is `feedback.mode`-gated**, and `/vc-self-check deliver` gained **`--batch`** (consolidate ALL local DIAGs into one deduped report with occurrence counts). Same hard invariants hold: opt-in via `selfDiagnostics: true`, local-only, client-code-scrubbed, ephemeral (log → analyze → contribute → delete), never mutates the install.
+- Shipped in `plugins/vc-fix/`.
+
 ### Fixed — `/vc-shell-fix` hardened against the real page-builder shell
 
 Cross-checked the skill's own claims against `vc-module-pagebuilder`'s live `package.json` and its first-party `.claude/` docs (which were already drifting — they cite `@vc-shell/framework` `1.2.2`/`1.2.3` against the real `^2.1.0`). Applied the corrections directly rather than copying facts that will rot again:

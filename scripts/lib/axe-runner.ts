@@ -41,8 +41,14 @@ export const AXE_WCAG_TAGS = [
   "wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa",
 ] as const;
 
-/** Default axe-core UMD source if `window.axe` is not already present. */
-export const DEFAULT_AXE_SRC = "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.2/axe.min.js";
+/**
+ * Default axe-core UMD source if `window.axe` is not already present.
+ * jsDelivr mirrors npm directly, so it carries the true-latest release (cdnjs
+ * lags — it topped out at 4.10.3 as of 2026-07). Bump the pinned version when a
+ * newer axe-core ships; a version cdnjs/jsDelivr doesn't host 404s and the
+ * snippet then reports `axeAvailable:false` (never a false-clean PASS).
+ */
+export const DEFAULT_AXE_SRC = "https://cdn.jsdelivr.net/npm/axe-core@4.12.1/axe.min.js";
 
 // ---------------------------------------------------------------------------
 // Result types

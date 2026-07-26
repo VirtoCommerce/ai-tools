@@ -46,7 +46,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 const SKILL_DIR = dirname(fileURLToPath(import.meta.url));
-const REPO = resolve(SKILL_DIR, "..", "..", "..", "..");
+const REPO = resolve(SKILL_DIR, "..", "..", "..");
 
 // Layered env load (best-effort; later overrides earlier), mirroring config.js order.
 try {

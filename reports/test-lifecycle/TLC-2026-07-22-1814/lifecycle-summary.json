@@ -1,0 +1,38 @@
+{
+  "runId": "TLC-2026-07-22-1814",
+  "inputType": "direct-scope",
+  "source": "suite regression/suites/Backend/catalog/053-catalog-admin-categories.csv",
+  "date": "2026-07-22",
+  "branch": "test/vcst-5318-catalog-mapping-cases",
+  "build": { "platform": "3.1046.0", "catalog": "3.1037.0" },
+  "verdict": "APPROVED",
+  "verdictNote": "APPROVED WITH WARNINGS at run time; upgraded to APPROVED after the 3 remaining items were fixed (CAT-013, CAT-060/061, BL mapping applied) 2026-07-22",
+  "phasesRun": [1, 4, 5, 6],
+  "phasesSkipped": [2, 3],
+  "affectedSuites": ["053"],
+  "casesAnalyzed": 25,
+  "casesSynced": 0,
+  "casesGenerated": 0,
+  "casesReviewed": 25,
+  "casesVerified": 25,
+  "fixesApplied": 19,
+  "verify": { "verified": 9, "changed": 2, "broken": 0, "blockedForVerify": 1 },
+  "findings": { "blocker": 0, "critical": 1, "high": 2, "medium": 6, "low": 1 },
+  "postRunFixes": {
+    "cat013_own_throwaway_tax_type": "applied",
+    "cat060_061_decoupled_distinct_fixtures_setup_teardown": "applied",
+    "bl_invariants_added": ["BL-CAT-009", "BL-CAT-010", "BL-CAT-011", "BL-CAT-012"],
+    "bl_status": "APPLIED — added to business-logic.md (body + summary table 001-012), CSV Business_Rule re-mapped (21 rows)"
+  },
+  "vcst5318": { "present": true, "cat058": "VERIFIED", "cat059": "VERIFIED", "cat060_061": "BLOCKED_FOR_VERIFY_NEEDS_ROLE_SETUP" },
+  "gateResults": {
+    "G1_structure": "PASS", "G2_determinism": "PASS", "G3_completeness": "WARN",
+    "G3_completeness_postfix": "PASS",
+    "G4_testability": "PASS", "G5_dataValidity": "PASS", "G6_coverage": "PASS",
+    "G7_duplication": "PASS", "G8_environment": "PASS", "G9_sync": "N/A"
+  },
+  "filesModified": [
+    "regression/suites/Backend/catalog/053-catalog-admin-categories.csv",
+    "config/test-suites.json"
+  ]
+}
