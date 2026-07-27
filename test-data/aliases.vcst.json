@@ -556,40 +556,40 @@
     "storeOriginalCatalog": "fc596540864a41bf8ab78734ee7353a3"
   },
   "SR_REP_PRIMARY": {
-    "id": "51c9bf4b-a86f-4c61-98fb-c3cabaa9992b",
-    "user_id": "1c59bb6c-b742-4b0d-a2f3-d9afebf4033b"
+    "id": "d66438a9-9a61-4994-ad89-b2d5d08401f9",
+    "user_id": "40ecd2a1-b67e-46fb-bb4f-e7b53e67ed52"
   },
   "SR_REP_SECOND_STORE": {
-    "id": "6365ed9b-c198-450b-a9fc-05ab9ccc072f",
-    "user_id": "39e16ade-d80c-4beb-a925-0a86567eb149"
+    "id": "435a35c3-f870-48ea-bca5-9af08b06b60e",
+    "user_id": "61c4e435-667e-4c3b-8c42-b0187ff25391"
   },
   "SR_REP_BLOCKED": {
-    "id": "d3510ce7-0375-4003-bd30-fec5268522ff",
-    "user_id": "a793a2c3-9014-4c42-a34a-35ebe36b28a4"
+    "id": "c6ee1be8-8dd3-4db9-9820-edef044c126a",
+    "user_id": "1b365aac-5227-4e41-89f2-050c862a9220"
   },
   "SR_REP_LOCKED": {
-    "id": "485fa89f-10e2-4cd9-bde6-6fd98d457457",
-    "user_id": "86adfe03-2483-4589-af5b-be655539d55d",
-    "membership_locked_id": "61affd21-c6d1-4997-bd82-dd39f7ac21c4"
+    "id": "bcf66442-06dc-4936-99ae-b165a38f1770",
+    "user_id": "1d28655b-c3cc-45ec-8f79-63a2fde25901",
+    "membership_locked_id": "9b7fe3cc-d23c-463d-9d78-9c5df4a691a9"
   },
   "SR_REP_EXCLUSIVE_TECHFLOW": {
-    "id": "7599cab6-b625-4390-b65f-789e8f920804",
-    "user_id": "1712c6d8-95ca-4e42-a7dc-ca57baebdd1f"
+    "id": "06e85f88-67bd-4246-9d76-13c8c288ddca",
+    "user_id": "317bb598-e121-4705-ac11-87ab9e837b02"
   },
   "SR_REP_ACME2": {
-    "id": "ad8d25e5-0651-468a-a37d-65e5ee21eb0d",
-    "user_id": "17701f9b-f698-405f-a0f0-0151489e28c4"
+    "id": "e9f90b6d-e0c5-4c94-ad57-9ff70f4cefdc",
+    "user_id": "45e8dc7d-95f0-4263-bec8-620c52624bb7"
   },
   "SR_REP_NOCUSTOMERS": {
-    "id": "30d58001-51c4-460d-a458-93409abdf503",
-    "user_id": "762eba3d-4c0d-43ce-818b-150138f688ba"
+    "id": "3f3c7f70-bbdb-47cb-b819-32644e7a9553",
+    "user_id": "04b0bc8e-093f-4aa5-bf30-26cdf4ec1a6f"
   },
   "SR_REP_PAGING": {
-    "id": "34a3e544-24f4-4c1f-87fc-f48ed3b0dfee",
-    "user_id": "110bac68-1062-4198-8b98-ead891d88546"
+    "id": "dcd91b65-d014-4676-9ef6-6c0fc13e0ef8",
+    "user_id": "9878c864-549b-41d5-a447-165dd100c63b"
   },
   "SR_OWNER_ACME": {
-    "id": "5a5e7056-e917-4556-b892-4e3270717d4e"
+    "id": "299403c6-1f9f-4327-9200-24ca7e38e1db"
   },
   "COMPLETED_ORDER": {
     "id": "51cc5eb9-23d4-47fe-b46d-36e03dc53b2f",
@@ -610,6 +610,10 @@
   "ACCEPTED_QUOTE": {
     "id": "56da2e96-e32b-42f4-885e-57261ce60e12",
     "number": "AGENT-TEST-QTE-ACCEPTED"
+  },
+  "ORG_REP_ONLY": {
+    "id": "75af2e61-d0a6-44d6-877e-4b613e5276f8",
+    "platform_id": "75af2e61-d0a6-44d6-877e-4b613e5276f8"
   },
   "RESTRICTED_CMS_ADMIN": {
     "_inline": true,

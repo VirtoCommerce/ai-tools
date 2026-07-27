@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-07-25",
-    "totalSuites": 119,
+    "generated": "2026-07-17",
+    "totalSuites": 120,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1522,8 +1522,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 41,
-      "estimatedMinutes": 102,
+      "testCount": 54,
+      "estimatedMinutes": 134,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
@@ -2578,8 +2578,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 30,
-      "estimatedMinutes": 60,
+      "testCount": 42,
+      "estimatedMinutes": 84,
       "agent": "qa-frontend-expert",
       "tags": [
         "sales-rep",
@@ -2624,8 +2624,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 21,
-      "estimatedMinutes": 55,
+      "testCount": 27,
+      "estimatedMinutes": 71,
       "agent": "qa-frontend-expert",
       "tags": [
         "sales-rep",
@@ -2661,6 +2661,31 @@
       "requiresModules": [
         "sales-rep"
       ],
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "092",
+      "name": "Sales Rep — Admin / VC-Shell App (rep management)",
+      "file": "regression/suites/Backend/sales-rep/092-sales-rep-admin.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 18,
+      "estimatedMinutes": 70,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "sales-rep",
+        "admin",
+        "vc-shell",
+        "permissions",
+        "crud",
+        "vcptcore-only"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "env": "vcptcore",
       "customerApplicability": "reference"
     }
   ],
@@ -2794,7 +2819,8 @@
         "layer": "backend"
       },
       "exclude": [
-        "050m"
+        "050m",
+        "092"
       ]
     },
     "sprint": {
@@ -2906,7 +2932,10 @@
     "concern:admin": {
       "where": {
         "concern": "admin"
-      }
+      },
+      "exclude": [
+        "092"
+      ]
     },
     "loyalty": {
       "include": [
