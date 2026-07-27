@@ -45,6 +45,12 @@ permissions + the filled env + a live module/repo scan.
    else browser/CLI login. The token is NOT typed in chat — the choice only decides
    whether a token placeholder is emitted to `.env.local` (PAT) or a login is run
    (session). **No operator / projectType / contribution-mode question** — derived later.
+   **(e) Self-diagnostics consent (opt-in — ASK, never assume)** as one `AskUserQuestion`
+   block: `selfDiagnostics` (local telemetry capture to `.vc-fix/`, Yes recommended) +
+   `feedback.mode` (upstream delivery: `ask` recommended / `auto` / `off`). This MUST be asked —
+   `PROFILE_DEFAULTS.selfDiagnostics` is `false`/opt-out, so a run that skips this question leaves
+   capture OFF; it is enabled ONLY by the operator's explicit Yes here (passed to step 6 as
+   `--self-diagnostics`/`--feedback-mode`).
 3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs --tracker …
    --client-vcs …` → `.env.<env>` (ADO_ORG/ADO_PROJECT emitted for an azure tracker OR
    azure-repos host; **do NOT pass --project-type/--client-org** — client org is derived);
@@ -66,8 +72,10 @@ permissions + the filled env + a live module/repo scan.
    `operator`. Capture for step 6.
 6. Write the profile (`gen-profile.mjs --repos-json .local-env/repos.json` supplies
    projectType/clientOrg/repos; + tracker connection from the filled `.env.<env>`; +
-   derived `--operator`/`--contribution-mode`/`--upstream-account` (fork only)/`--vcs-auth`).
-   Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
+   derived `--operator`/`--contribution-mode`/`--upstream-account` (fork only)/`--vcs-auth`;
+   **+ `--self-diagnostics <yes|no>` and `--feedback-mode <ask|auto|off>` from the §2e consent
+   answer** — always pass them explicitly so the written value reflects the operator's choice,
+   not the safe opt-out default). Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
 7. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
 8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node skills/project-init/verify-access.mjs`
    (`FORCE_COLOR=1` so the Status column renders — the script auto-disables colour on a

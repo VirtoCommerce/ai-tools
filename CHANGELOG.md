@@ -12,6 +12,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.8.1`** (marketplace `0.9.3`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Fixed — PR #143 review round 3 resolutions (Needs-Attention NA-1…NA-4 + Suggestion S3)
+
+A fresh 9-agent review of the updated branch found four more issues, all verified against the code and fixed. Full suite 361/361 green.
+
+- **NA-4 (opt-in hole — highest priority).** `gen-profile.mjs` wrote `selfDiagnostics: true` into a fresh profile whenever the `--self-diagnostics` flag was absent, because it `deepMerge`d over `PROFILE_DEFAULTS` whose `selfDiagnostics` was `true`. So an onboarding that followed only the shorter `commands/project-init.md` (which never described the §0b consent step or the flags) could **silently enable local capture without asking** — undermining the opt-in invariant. Fixed by flipping `PROFILE_DEFAULTS.selfDiagnostics` to **`false`** in BOTH copies (`plugins/vc-fix/scripts/lib/project-profile.mjs` + repo-root `scripts/lib/project-profile.mjs`, the latter used by the `.claude` onboarding) so a flag-less write fails SAFE (capture stays off unless the operator explicitly consents; the interview's hard-coded "Yes (recommended)" nudge is unchanged). Both `commands/project-init.md` (plugin + `.claude`) now document the §2e consent `AskUserQuestion` + the `--self-diagnostics`/`--feedback-mode` flags on step 6. The `gen-profile` test that encoded the old behavior now asserts a flag-less run writes `false`.
+- **NA-1 (local secret-at-rest).** `redact()`'s keyword list missed `ADO_PAT` (the plugin's OWN Azure DevOps token), `*_ACCESS_KEY`, `PRIVATE_KEY`, `*_CREDENTIAL`, so those passed **unredacted** into the local `<sid>.jsonl` (upstream stays safe by the closed schema regardless — this is local hygiene). Widened the shared `hooks/redact.mjs` key/value rule with `access[_-]?key|private[_-]?key|credentials?|pat(?![a-z])`; the `(?![a-z])` spares `path`/`pattern`, and over-redacting a rare `compat=`-style key is the accepted fail-safe. Synced to the `.claude` mirror.
+- **NA-3 (redaction had no direct test).** The `AKIA…` / `github_pat_…` rules (and the rest of `redact()`) had **zero** direct coverage — they were only touched by `upstream-reduce.test.mjs`, which tests the enum-only reducer (a different function), so a regression to a `redact()` rule would have passed every test. New `scripts/unit/redact.test.mjs` unit-tests `redact()` directly across every secret shape (incl. the NA-1 additions) + negatives (paths/patterns kept).
+- **NA-2 (stale mirror doc).** `.claude/skills/vc-self-check/SKILL.md` still described the removed `finalize.anomalyScore` gate and the pre-5509 methodology — it contradicted the code synced in round 2. Synced the whole SKILL.md from the (tree-agnostic) plugin copy so the `.claude` doc matches the `.claude` code.
+- **S3 (stale scrubber doc).** `plugins/vc-fix/skills/vc-self-check/SKILL.md` still called `scrubText` an active "defense-in-depth" backstop; corrected to note it was removed as dead code (closed schema is the sole upstream guard).
+
 ### Fixed — PR #143 review round 2 resolutions (Needs-Attention F1–F3 + Suggestions S2/S3/S6)
 
 The 07-23 automated 9-agent review's remaining findings, all in the self-diagnostics subsystem. Full suite 334/334 green.

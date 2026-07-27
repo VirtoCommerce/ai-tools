@@ -35,7 +35,12 @@ export const REDACTIONS = [
   // on one side and LEAKED the value into the jsonl → the public upstream via deliver (PR #143 review).
   // The prefix is lazy + length-capped so backtracking stays linear; over-redaction of a benign
   // `*secret*`-named field is the intended fail-safe direction. Group 1 keeps the FULL key as signal.
-  [/\b([\w-]{0,40}?(?:token|api[_-]?key|secret|password|passwd|pwd|accountkey|sharedaccesssignature)[\w-]{0,40})"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
+  // PR #143 R2 (NA-1): added `access[_-]?key` / `private[_-]?key` / `credential(s)` / `pat` so the
+  // plugin's OWN `ADO_PAT` (Azure DevOps token), `BROWSERSTACK_ACCESS_KEY`, and `PRIVATE_KEY` no
+  // longer LEAK into the local `<sid>.jsonl` (upstream stays safe by the closed schema regardless —
+  // this is local secret-at-rest hygiene). `pat(?![a-z])` matches `ADO_PAT`/`_PAT=` but spares
+  // `path`/`pattern`; over-redacting a rare `compat=…` key is the accepted fail-safe direction.
+  [/\b([\w-]{0,40}?(?:token|api[_-]?key|access[_-]?key|private[_-]?key|credentials?|secret|password|passwd|pwd|accountkey|sharedaccesssignature|pat(?![a-z]))[\w-]{0,40})"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
   [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers
   [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub classic tokens (ghp_/gho_/ghu_/ghs_/ghr_)

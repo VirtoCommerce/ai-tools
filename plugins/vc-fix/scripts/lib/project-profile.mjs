@@ -180,9 +180,13 @@ export const PROFILE_DEFAULTS = {
   // Absent profile / absent field / any non-true value ⇒ the hook is a FULL no-op (no
   // `.vc-fix/`). `/project-init` asks the operator the consent question as its FIRST step
   // and, on Yes, writes this flag IMMEDIATELY (before the interview) so its own remaining
-  // run is captured. This default (`true`) is the RECOMMENDED answer the interview shows —
-  // it is NOT the capture default: with no profile on disk, capture stays off.
-  selfDiagnostics: true,
+  // run is captured. The persisted default is **false** (opt-in fails SAFE): a profile written
+  // WITHOUT an explicit consent answer must never silently enable capture (PR #143 R2, NA-4).
+  // The interview's *recommended* answer is a separate, hard-coded "Yes (recommended)" nudge
+  // (reconcile-profile.mjs) — recommending ON is not the same as consenting ON, so it does NOT
+  // live here. Every real consent path (§0b stub, the interview's step-6 rewrite) passes an
+  // explicit `--self-diagnostics <answer>`; only a flag-less write inherits this safe default.
+  selfDiagnostics: false,
 
   // feedback — consent for UPSTREAM delivery of self-diagnostics (VCST-5509). This
   // gates ONLY the outbound `deliver.mjs` step; local capture (selfDiagnostics) +

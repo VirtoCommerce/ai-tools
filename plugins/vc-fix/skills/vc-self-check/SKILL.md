@@ -220,9 +220,10 @@ records + feedback verdicts); the LLM-authored DIAG cells (`signal`/`rootcause`/
 only). Error TEXT is classified LOCALLY to a code; only the code travels. Repo/module/org
 NAMES are never sent. A runtime validator rejects any out-of-vocabulary value. So there is
 structurally **nothing to leak** — the leak class is impossible by TYPE, not chased by a
-denylist. (`redact()`/`scrubText` remain as local defense-in-depth; the upstream path no
-longer depends on them.) Because the payload is tiny enums+numbers, `ask` mode shows the
-operator the exact struct before any send.
+denylist. (`redact()` still scrubs secrets on the LOCAL persist path; the old free-text
+scrubbers were removed as dead code — with an enum-only upstream artifact there is nothing
+free-text to scrub, so the closed schema is the sole upstream guard. PR #143 R2.) Because the
+payload is tiny enums+numbers, `ask` mode shows the operator the exact struct before any send.
 
 **Fingerprint dedup:** the fingerprint is computed over the STRUCTURAL enum tuple
 (`fingerprintStruct`), never raw text — so dedup can't smuggle client bytes into the hash.

@@ -36,14 +36,15 @@ test("gen-profile: --self-diagnostics false --feedback-mode off is written verba
   }
 });
 
-test("gen-profile: without consent flags the safe defaults hold (true / ask)", () => {
+test("gen-profile: WITHOUT a consent flag, selfDiagnostics is written false (opt-in fails safe)", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-genprofile-"));
   try {
     const p = genProfile(home, ["--tracker", "jira"]);
-    // NB: `true` here is the RECOMMENDED written value (the interview's default answer), NOT the
-    // capture default — capture is opt-in and stays OFF with no profile on disk. The collector
-    // reads the raw written flag; a profile written by gen-profile always carries it.
-    assert.equal(p.selfDiagnostics, true, "the written recommended value is true");
+    // NA-4 (PR #143 R2): a flag-less gen-profile means the consent question was NOT answered, so
+    // the written value must be the SAFE opt-in default (false) — never a silent `true`. The
+    // interview still *recommends* Yes, but recommending ≠ consenting; the real consent paths
+    // (§0b stub, step-6 rewrite) pass `--self-diagnostics <answer>` explicitly (see the tests below).
+    assert.equal(p.selfDiagnostics, false, "no consent answer ⇒ capture stays opt-out (false)");
     assert.equal(p.feedback.mode, "ask", "delivery defaults to ask (dry-run + confirm)");
   } finally {
     rmSync(home, { recursive: true, force: true });
