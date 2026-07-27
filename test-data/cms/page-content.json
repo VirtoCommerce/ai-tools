@@ -1,0 +1,88 @@
+{
+  "_meta": {
+    "description": "Content-block fixtures for the canonical qa-* PageBuilder pages (test-data/cms/pagebuilder-pages.md). JSON-shaped to the PageBuilder content API body: POST /api/page-builder-pages/grouped/{groupId}/content with { settings, content:[block] }. Applied by scripts/seed-data/cms/seed-pagebuilder-pages.mjs ONLY to a page whose live content[] is EMPTY (never overwrites human-authored content); block ids are assigned deterministically at apply time.",
+    "block_types": "title {heading,title,subtitle} | text {text} | predefined-product-list {title,subtitle,skus}. skus use the marker \"@discover:N\" — the seeder resolves N real catalog SKUs live (no hardcoded SKUs/GUIDs, per .claude/rules/test-data.md).",
+    "audit_2026_07_21": "Live block counts on vcst before apply: PB_HOMEPAGE=0 (EMPTY), PB_WHOLESALE_GUIDE=5, PB_RETURN_POLICY en-US=0 (EMPTY) de-DE=5, PB_SUMMER_PREVIEW=0 (EMPTY), PB_PARTNER_SUPPORT=5. The three EMPTY shells are filled from this fixture; the three populated pages are transcribed here as the reappliable source of truth (fresh-env safe) but are NOT overwritten while non-empty.",
+    "source": "test-data/cms/pagebuilder-pages.md Block Structure tables; populated pages transcribed from live vcst content 2026-07-21."
+  },
+
+  "PB_HOMEPAGE": {
+    "settings": { "header": "Spring Sale", "hideBreadcrumbs": false },
+    "content": [
+      { "type": "title", "heading": "h1", "title": "Spring Sale — Up to 30% Off", "subtitle": null },
+      { "type": "text", "text": "Welcome to the QA Homepage Spring Sale. Discover new electronics arrivals and free shipping on orders over $99." },
+      { "type": "title", "heading": "h2", "title": "Shop by Category", "subtitle": null },
+      { "type": "title", "heading": "h2", "title": "Trending Now", "subtitle": "Most popular this week" },
+      { "type": "predefined-product-list", "title": "Trending Now", "subtitle": "Most popular this week", "skus": "@discover:4" },
+      { "type": "title", "heading": "h2", "title": "Shop the Spring Sale", "subtitle": "Save up to 30% on selected items" },
+      { "type": "text", "text": "Stay in the Loop — get the latest deals delivered to your inbox." }
+    ]
+  },
+
+  "PB_WHOLESALE_GUIDE": {
+    "settings": { "header": "Wholesale Buyer Guide 2026", "hideBreadcrumbs": false },
+    "content": [
+      { "type": "title", "heading": "h2", "title": "Wholesale Buyer Guide 2026", "subtitle": null },
+      { "type": "text", "text": "Welcome to the Virto Commerce wholesale program. This guide covers ordering processes, pricing tiers, payment terms, and fulfillment options available exclusively to our wholesale partners." },
+      { "type": "title", "heading": "h2", "title": "Our Wholesale Benefits", "subtitle": "Everything you need to grow your business" },
+      { "type": "predefined-product-list", "title": "Recommended Starter Kits", "subtitle": "Hand-picked for new wholesale partners", "skus": "@discover:3" },
+      { "type": "title", "heading": "h2", "title": "Ready to Get Started?", "subtitle": "Contact your account manager today" }
+    ]
+  },
+
+  "PB_RETURN_POLICY": {
+    "en-US": {
+      "settings": { "header": "Return & Refund Policy", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "title", "heading": "h2", "title": "Return & Refund Policy", "subtitle": null },
+        { "type": "text", "text": "At Coffee Shop, we want you to be completely satisfied with your purchase. If you are not happy with your order, you may return eligible items within 30 days of delivery for a full refund or exchange." },
+        { "type": "text", "text": "Eligibility: Items must be unused and in original packaging. Electronics must include all accessories. Perishable goods are non-returnable. Custom or personalized items are final sale." },
+        { "type": "text", "text": "How to return: 1. Log in to your account. 2. Navigate to Orders. 3. Select the order and click Return. 4. Choose items and reason. 5. Print the prepaid shipping label. 6. Ship within 7 business days." },
+        { "type": "title", "heading": "h2", "title": "Start a Return", "subtitle": "Go to your orders" }
+      ]
+    },
+    "de-DE": {
+      "settings": { "header": "Rückgabe- & Erstattungsrichtlinie", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "title", "heading": "h2", "title": "Rückgabe- & Erstattungsrichtlinie", "subtitle": null },
+        { "type": "text", "text": "Bei Coffee Shop möchten wir, dass Sie mit Ihrem Einkauf vollkommen zufrieden sind. Wenn Sie mit Ihrer Bestellung nicht zufrieden sind, können Sie berechtigte Artikel innerhalb von 30 Tagen nach Lieferung zurückgeben." },
+        { "type": "text", "text": "Voraussetzungen: Artikel müssen unbenutzt und in Originalverpackung sein. Elektronik muss mit allem Zubehör zurückgeschickt werden. Verderbliche Waren sind nicht rückgabefähig." },
+        { "type": "text", "text": "So senden Sie zurück: 1. Melden Sie sich in Ihrem Konto an. 2. Navigieren Sie zu Bestellungen. 3. Wählen Sie die Bestellung und klicken Sie auf Rückgabe. 4. Drucken Sie das Versandetikett. 5. Versenden Sie innerhalb von 7 Werktagen." },
+        { "type": "title", "heading": "h2", "title": "Rückgabe starten", "subtitle": "Gehen Sie zu Ihren Bestellungen" }
+      ]
+    },
+    "fr-FR": {
+      "settings": { "header": "Politique de retour et de remboursement", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "title", "heading": "h2", "title": "Politique de retour et de remboursement", "subtitle": null },
+        { "type": "text", "text": "Chez Coffee Shop, nous voulons que vous soyez entièrement satisfait de votre achat. Si votre commande ne vous convient pas, vous pouvez retourner les articles éligibles dans les 30 jours suivant la livraison pour un remboursement complet ou un échange." },
+        { "type": "text", "text": "Conditions d'éligibilité : les articles doivent être inutilisés et dans leur emballage d'origine. Les appareils électroniques doivent être retournés avec tous leurs accessoires. Les denrées périssables ne sont pas retournables. Les articles personnalisés sont en vente définitive." },
+        { "type": "text", "text": "Comment effectuer un retour : 1. Connectez-vous à votre compte. 2. Accédez à Commandes. 3. Sélectionnez la commande et cliquez sur Retour. 4. Choisissez les articles et le motif. 5. Imprimez l'étiquette d'expédition prépayée. 6. Expédiez sous 7 jours ouvrables." },
+        { "type": "title", "heading": "h2", "title": "Commencer un retour", "subtitle": "Accédez à vos commandes" }
+      ]
+    }
+  },
+
+  "PB_SUMMER_PREVIEW": {
+    "settings": { "header": "Summer Collection Preview", "hideBreadcrumbs": false },
+    "content": [
+      { "type": "title", "heading": "h1", "title": "Summer Collection 2026 — Coming Soon", "subtitle": null },
+      { "type": "text", "text": "Get ready for the hottest deals of the season. Our summer collection features the latest in electronics, accessories, and home essentials. Pre-order now and be the first to receive these items when they launch." },
+      { "type": "title", "heading": "h2", "title": "Preview Collection", "subtitle": null },
+      { "type": "predefined-product-list", "title": "Preview Collection", "subtitle": null, "skus": "@discover:6" },
+      { "type": "title", "heading": "h2", "title": "Be the First to Know", "subtitle": "Pre-order now" },
+      { "type": "text", "text": "Get launch notifications — be the first to know when we go live." }
+    ]
+  },
+
+  "PB_PARTNER_SUPPORT": {
+    "settings": { "header": "Partner Support Portal", "hideBreadcrumbs": false },
+    "content": [
+      { "type": "title", "heading": "h2", "title": "Partner Support Portal", "subtitle": null },
+      { "type": "text", "text": "Welcome to the TechFlow Solutions partner support hub. Here you will find resources to help resolve issues, submit support tickets, and connect with our dedicated partner team." },
+      { "type": "title", "heading": "h2", "title": "Support Options", "subtitle": "Choose how you want to get help" },
+      { "type": "text", "text": "FAQ: How do I reset my password? Navigate to Account Settings and Security. What are support hours? Monday to Friday, 8 AM to 6 PM EST. How do I escalate a ticket? Reply with ESCALATE in the subject." },
+      { "type": "title", "heading": "h2", "title": "Need More Help?", "subtitle": "Our support team is here for you" }
+    ]
+  }
+}

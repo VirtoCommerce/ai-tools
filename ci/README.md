@@ -80,8 +80,8 @@ Executes test suites against the live environment.
 
 **Triggers:**
 - Manual (`workflow_dispatch`)
-- Daily smoke: Mon-Fri 6:00 AM UTC (suite 01, $5 budget)
-- Weekly full: Sunday 2:00 AM UTC (all suites, $80 budget)
+- Daily smoke: Mon-Fri 6:00 AM UTC (suite 042, $5 budget)
+- Weekly full: Sunday 2:00 AM UTC (all 110 suites, $80 budget)
 
 ### Full Cycle (`full-cycle.yml`)
 
@@ -178,25 +178,25 @@ npm run ci:fix
 
 | Selection | Suites | Description |
 |-----------|--------|-------------|
-| `smoke` | 01 | Daily pre-deploy validation |
-| `critical` | 01, 06, 08, 14 | P0 revenue-critical suites |
-| `sprint` | 33 suites | Before sprint release |
-| `full` | All 45 suites | Before production release |
-| `frontend` | 01-13, 35-36, 41 | Frontend only (18 suites) |
-| `backend` | 14-34, 37-40, 42 | Backend only (26 suites) |
-| `01,04a,06` | Custom | Comma-separated IDs |
+| `smoke` | 042, 078 | Daily pre-deploy validation |
+| `critical` | 042, 078, 039, 044, 049 | P0 revenue-critical suites |
+| `sprint` | Plan-driven (`sprint-*-summary.json`) | Before sprint release |
+| `full` | All 110 suites | Before production release |
+| `frontend` | All `Frontend/` suites (50) | Frontend only |
+| `backend` | All `Backend/` suites (59) | Backend only |
+| `042,039,049` | Custom | Comma-separated IDs |
 
-Invalid suite IDs are caught at startup with helpful error messages.
+Selection groups are defined in `config/test-suites.json` (`selections`) and loaded at startup; invalid suite IDs are caught with helpful error messages.
 
 ## npm Scripts
 
 ```bash
 npm run ci:regression          # Run regression (set SUITE_SELECTION env var)
-npm run ci:smoke               # Smoke tests (suite 01)
-npm run ci:critical            # P0 suites (01, 06, 08, 14)
+npm run ci:smoke               # Smoke tests (042, 078)
+npm run ci:critical            # P0 suites (042, 078, 039, 044, 049)
 npm run ci:frontend            # Frontend suites
 npm run ci:backend             # Backend suites
-npm run ci:full                # All 45 suites ($80 budget)
+npm run ci:full                # All 110 suites ($80 budget)
 npm run ci:cycle               # Full cycle (set CHANGE_SOURCE env var)
 npm run ci:cycle:pr            # Full cycle for a PR (set PR_NUMBER env var)
 npm run ci:cycle:sync-only     # Sync phase only

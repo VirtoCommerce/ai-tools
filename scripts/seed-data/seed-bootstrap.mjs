@@ -49,6 +49,8 @@ const TEARDOWN_STEPS = [
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
+  { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
+  { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', args: ['--teardown'] },
   { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', args: ['--teardown'] },
   { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', args: ['--teardown'] },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', args: ['--teardown'] },
@@ -117,6 +119,12 @@ const STEPS = [
   { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', required: false, priority: 118 },
   { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', required: false, priority: 120 },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', required: false, priority: 130 },
+  // Restricted back-office (Manager) RBAC account for CMS-123/124 — read-only Page Builder, no
+  // builder:update. Independent of the catalog/user graph (own role + account); optional.
+  { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', required: false, priority: 135 },
+  // Reconcile the canonical qa-* PageBuilder pages (status + permalink) so the 059/060 published-page
+  // cases resolve. Reconcile-only (no content authoring); reports conflicts. Optional.
+  { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', required: false, priority: 136 },
   // Order/quote STATE fixtures (VCST-5482) — after products (40) + company-users (100): orders are
   // owned by USER_EMAIL, quotes submitted by ORG_USER_EMAIL, and line items point at real catalog
   // products. Optional: quotes need the Quote module deployed + Stores.EnableQuotes on the store.

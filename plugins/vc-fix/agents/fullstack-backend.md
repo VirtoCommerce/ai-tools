@@ -80,7 +80,9 @@ Invoke the development skills:
    `repo-router.ts` `checkoutForFix`.)
 3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see
    `/dotnet-unit-test`). **If an LSP-backed symbol tool is available this session (e.g. Serena),
-   activate the checkout as its project now** (`activate_project` on the absolute path), not before —
+   activate the checkout as its project now** — pin the language first (`serena project create --language csharp`;
+   use `typescript` for a module Admin-SPA/AngularJS fix — a `vc-module-*` repo is polyglot, so don't let
+   auto-detect bind the wrong LS), then `activate_project` on the absolute path — not before —
    Roslyn can't resolve cross-project/NuGet types until `restore` produces `obj/project.assets.json`,
    so activating any earlier leaves symbol/reference lookups unreliable (`shared-instructions.md` §Fast
    local navigation & editing).

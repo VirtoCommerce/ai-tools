@@ -67,6 +67,11 @@ tests/screenshots/*.png
 tests/screenshots/**/*.png
 *.png
 
+# Bug-report evidence screenshots ARE tracked deliverables (reports.md §5) —
+# re-include them past the blanket *.png ignore above.
+!reports/bugs/screenshots/*.png
+!reports/bugs/screenshots/**/*.png
+
 # Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
 # during exploratory sessions. Transient working state, not deliverables.
 # (No tracked YAML at repo root, so the bare-yml pattern is safe.)
@@ -115,3 +120,7 @@ test-data/b2b/.seed-fingerprint.json
 # vc-fix plugin self-diagnosis working report — may reference client identifiers /
 # session context; kept local, never committed to the public upstream (§2a containment).
 reports/vc-fix-plugin-diagnosis.md
+
+# Serena (semantic code navigation): the shared .serena/project.yml + .serena/.gitignore
+# ARE committed so every teammate gets the same project config. The machine-specific parts
+# (cache/, logs/, project.local.yml) are excluded by .serena/.gitignore itself.

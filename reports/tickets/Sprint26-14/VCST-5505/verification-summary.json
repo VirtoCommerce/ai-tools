@@ -1,0 +1,36 @@
+{
+  "ticket": "VCST-5505",
+  "verdict": "VERIFIED",
+  "date": "2026-07-23",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1046.0",
+    "xcart_deployed": "3.1027.0-pr-135-6df4",
+    "cart": "3.1007.0",
+    "fix_pr": "VirtoCommerce/vc-module-x-cart#135 (open, deployed-while-open via prerelease)",
+    "deploy_pr": "VirtoCommerce/vc-deploy-dev#6188 (merged — temporary QA repin)",
+    "pr_build_deployed": true
+  },
+  "agent_used": "inline (canonical graphql-runner)",
+  "test_case": "CRX-GQL-101 (050b4-graphql-xcart-cross-domain)",
+  "str_result": "3/3",
+  "checklist_total": 12,
+  "checklist_passed": 12,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CROSS-009"],
+  "jira_transition": "Ready for test -> On QA (Testing) -> Finish test (Tested). Held at Tested per policy (PR #135 unmerged); comment 103754 added.",
+  "evidence": [
+    "scripts/.graphql-evidence/CRX-GQL-101-1784811388879.json",
+    "scripts/.graphql-evidence/CRX-GQL-101-1784811401480.json",
+    "scripts/.graphql-evidence/CRX-GQL-101-1784811409778.json"
+  ],
+  "follow_ups": [
+    "Fix PR #135 still open (not merged to dev) -> Done only after merge+release",
+    "Deploy #6188 is a temporary QA repin -> revert after verification",
+    "CRX-GQL-101 Automation_Status Draft -> promotable (now live-GREEN)"
+  ],
+  "artifacts": "reports/tickets/Sprint26-14/VCST-5505/"
+}

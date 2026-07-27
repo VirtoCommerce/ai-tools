@@ -2,7 +2,7 @@
 name: ba-system-analyzer
 description: "Virto Commerce System Analyst — Analyzes repo structure, module inventory, user flows, and pain points from codebase, GitHub module repos, VC documentation, and live UI exploration."
 model: sonnet
-color: teal
+color: indigo
 applicability: universal
 applicability_rationale: "VC module + system analysis. Uses GitHub MCP to search vc-module-* repos. Universal for any VC customer with module access."
 ---
@@ -271,12 +271,22 @@ While performing tasks 1–7, watch for **testable business rules** you can surf
 - Cross-domain coupling — e.g., cart ↔ inventory, checkout ↔ payment, catalog ↔ search index.
 - Context7/VC docs passages that state "must", "always", "never", or define required behavior.
 
-**For every proposal:**
+**For every candidate:**
 - Reuse the existing domain codes (PRICE, CART, CHK, ORD, AUTH, B2B, CAT, SRCH, SHIP, BOPIS, NOTIF, IMPEX, SEO, CROSS). If a rule spans two domains, use `CROSS`.
-- Pick the next available number per domain after inspecting `existing_bl_ids` / `business-logic.md`. Mark with `PROPOSED-` prefix (final ID is assigned by the human promoter).
-- **Source citation is mandatory.** Every proposal must cite one of: Context7 quote, GitHub `file:line`, VC docs section, or UI observation with screenshot path. Unsourced proposals are invalid — omit them rather than guess.
-- **Never modify `knowledge/oracles/business-logic.md`.** Proposals are drafts. The orchestrator (`/ba-analyze`) stages them to `reports/ba/bl-proposals-{date}.md` for explicit per-proposal user approval. Only the user — after reviewing each draft — directs promotion into the canonical file.
-- **Stale-rule flagging:** If you observe behavior that contradicts an existing `BL-*` Rule, emit it as a `stale` entry (see output schema below) rather than a new proposal.
+- Pick the next available number per domain after inspecting `existing_bl_ids` / `business-logic.md`. Mark with `PROPOSED-` prefix (final ID assigned at apply time).
+- **Source citation is mandatory.** Every candidate must cite one of: Context7 quote, GitHub `file:line`, VC docs section, or UI observation with screenshot path. Unsourced candidates are invalid — omit them rather than guess.
+- **Stale-rule flagging:** If you observe behavior that contradicts an existing `BL-*` Rule, treat it as a DRIFT/CONTRADICTORY candidate for the triangulation below (not a silent edit).
+
+#### 8a. BL triangulation & gated auto-apply (`/qa-review-bl`)
+
+When invoked via **`/qa-review-bl`** (as opposed to opportunistic extraction during `/ba-analyze`), run each in-scope `BL-*` through **three-axis triangulation** and, for confirmed items, contribute the change to `business-logic.md` via the skill's single-writer apply. This deliberately supersedes the old "never modify the oracle / human per-entry approval" rule: safety now comes from a strict evidence bar, not a human gate. Full method: the `/qa-review-bl` skill + `bl-audit-criteria.md`.
+
+- **Parallel batch (default).** `/qa-review-bl` fans you out — up to 3 of you run concurrently, one per browser slot, each on a **disjoint batch** of invariants with an **isolated browser session + distinct test user**. In this mode you **do your own live observation on your assigned slot** (do not sub-delegate to `qa-testing-expert` — that would exceed the 3-browser cap), and you **return each verdict + evidence tuple + the proposed edit; you do NOT write `business-logic.md` yourself.** The orchestrator applies all edits serially (single writer) to avoid concurrent-write corruption.
+- **Three axes (all three required to confirm):** **docs** (`/vc-docs` VirtoOZ — quote + reference), **source** (GitHub MCP `search_code`/`get_file_contents` on `org:VirtoCommerce`, read-only — a `file:line` anchor), **live** (your own playwright slot — an `{OBSERVED}` result + screenshot, REAL-USER rule, no `browser_evaluate` bypass).
+- **Verdict → proposed action (applied by the orchestrator, not you):**
+  - **CONFIRMED / DRIFT / MISSING** with unanimous, agreeing evidence → propose a body-only edit: **entry body only** (never the Severity-Tags meta table), stamp `- **Amended:** <date> (auto-applied, triangulated — BL-AUDIT-<date>)` + refresh `- **Source:**` (`file:line` + docs ref); MISSING gets the next free `BL-<DOMAIN>-<NNN>` (the orchestrator assigns the final number at apply time to avoid parallel ID collisions). Keep every entry **env-agnostic** (no env names/URLs/slugs).
+  - **CONTRADICTORY / UNGROUNDED / STALE-RETIRE** → **not confirmed**: flag for staging to `reports/ba/bl-proposals-{date}.md` as a `PROPOSED-BL-*` draft (or stale/retire entry) for a human. This is the definition of "not confirmed", not a human gate on confirmed items.
+- **Opportunistic extraction during `/ba-analyze` (no triangulation run)** still produces `PROPOSED-BL-*` drafts only — it never auto-applies, because a single-axis observation is by definition not confirmed. Auto-apply happens exclusively through the `/qa-review-bl` three-axis path.
 
 ---
 

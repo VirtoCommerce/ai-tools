@@ -3,7 +3,7 @@
 `vc-fix` ships a narrow slice of the full `vc-qa` agent crew, scoped to five workflows: project
 setup (`/project-init`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), bug
 verification (`/qa-verify-fix`), online bug monitoring (`/qa-monitoring`), and plugin
-self-diagnostics (`/vc-self-check`). **8 agents, 7 commands, 16 skills** — no regression
+self-diagnostics (`/vc-self-check`) + direct feedback (`/vc-feedback`). **8 agents, 8 commands, 16 skills** — no regression
 orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live only in the full
 `vc-qa` plugin (not shipped here).
 
@@ -16,6 +16,7 @@ orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live o
 /qa-verify-fix VCST-1234     # Verify a fix, transition the ticket
 /qa-monitoring both          # Query App Insights, dedup, triage, live-repro, report
 /vc-self-check               # Diagnose whether the plugin's own skills ran correctly
+/vc-feedback "…" 👎          # Attach your own verdict to this session (silent-failure signal)
 ```
 
 ---

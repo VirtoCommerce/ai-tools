@@ -3,7 +3,7 @@
  * skills/project-init/write-env.mjs
  *
  * Non-interactive writer for the two customer-owned env buckets, so /project-init
- * can persist interview answers WITHOUT the readline wizard (bootstrap/install.ts)
+ * can persist interview answers WITHOUT an interactive readline wizard
  * and WITHOUT the model hand-editing files:
  *
  *   Bucket #2  .env.<env>   (committed, NON-secret) — per-env URLs / identifiers /

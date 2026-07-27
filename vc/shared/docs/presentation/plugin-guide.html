@@ -1,0 +1,470 @@
+<title>vc-fix Plugin — Setup & Feature Guide</title>
+<style>
+  :root {
+    --surface:#f6f8fa; --surface-2:#ffffff; --card:#ffffff; --sink:#f0f3f6;
+    --line:#dde4ec; --line-2:#e9eef3;
+    --text:#17212e; --text-soft:#48576b; --text-faint:#7b8aa0;
+    --accent:#0f9d8f; --accent-ink:#0a6e64; --accent-soft:#e3f4f1;
+    --agent:#5462dd; --agent-soft:#e9eafb;
+    --pass:#1f9d57; --warn:#b9791a; --crit:#c93f52;
+    --ink:#0d141f; --ink-2:#131c2b;
+    --shadow:0 1px 2px rgba(13,20,31,.05), 0 10px 26px -16px rgba(13,20,31,.25);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  :root[data-theme="dark"] {
+    --surface:#0a0f16; --surface-2:#0e1620; --card:#111b28; --sink:#0c141d;
+    --line:#233246; --line-2:#1a2634;
+    --text:#e8eef6; --text-soft:#a3b3c7; --text-faint:#6c7e94;
+    --accent:#3fd0bf; --accent-ink:#7fe6da; --accent-soft:#0f2a29;
+    --agent:#8b98f2; --agent-soft:#171f39;
+    --pass:#43c47e; --warn:#e0ab53; --crit:#f0788a;
+    --ink:#05090f; --ink-2:#0a1119;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 36px -18px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; font-family:var(--sans); background:var(--surface); color:var(--text);
+    -webkit-font-smoothing:antialiased; line-height:1.6; }
+  @media (prefers-reduced-motion: reduce){ html { scroll-behavior:auto; } }
+
+  .shell { display:grid; grid-template-columns:280px minmax(0,1fr); gap:0; max-width:1240px; margin:0 auto; }
+
+  /* sidebar */
+  .side { position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    padding:34px 22px 40px 28px; border-right:1px solid var(--line); background:var(--surface-2); }
+  .brand { display:flex; align-items:center; gap:11px; margin-bottom:6px; }
+  .brand .logo { width:34px; height:34px; border-radius:9px; background:linear-gradient(150deg,var(--accent),var(--agent));
+    display:grid; place-items:center; color:#fff; font-family:var(--mono); font-weight:800; font-size:15px; flex:none; }
+  .brand .n { font-weight:800; letter-spacing:-.02em; font-size:16px; line-height:1.15; }
+  .brand .n small { display:block; font-weight:500; color:var(--text-faint); font-size:12px; letter-spacing:0; }
+  .toc { margin-top:24px; }
+  .toc .grp { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; margin:20px 0 8px; }
+  .toc a { display:block; text-decoration:none; color:var(--text-soft); font-size:13.5px; padding:5px 10px;
+    border-radius:7px; border-left:2px solid transparent; }
+  .toc a:hover { color:var(--accent-ink); background:var(--sink); }
+  .toc a.active { color:var(--accent-ink); background:var(--accent-soft); border-left-color:var(--accent); font-weight:600; }
+
+  /* main */
+  main { padding:46px clamp(24px,5vw,72px) 120px; min-width:0; }
+  .hero { border-bottom:1px solid var(--line); padding-bottom:30px; margin-bottom:14px; }
+  .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--accent-ink); font-weight:600; margin:0 0 14px; }
+  h1 { font-size:clamp(30px,4.2vw,44px); letter-spacing:-.03em; line-height:1.05; font-weight:800; margin:0 0 16px; text-wrap:balance; }
+  .hero p { font-size:18px; color:var(--text-soft); max-width:66ch; margin:0; }
+
+  section { scroll-margin-top:24px; padding-top:40px; }
+  h2 { font-size:clamp(23px,3vw,30px); letter-spacing:-.02em; line-height:1.15; margin:0 0 6px; font-weight:780;
+    display:flex; align-items:baseline; gap:12px; text-wrap:balance; }
+  h2 .step { font-family:var(--mono); font-size:14px; color:var(--accent); font-weight:800; flex:none; }
+  h3 { font-size:18.5px; letter-spacing:-.01em; margin:30px 0 4px; font-weight:730; }
+  .sub { color:var(--text-soft); font-size:15.5px; max-width:70ch; margin:6px 0 0; }
+  p { max-width:72ch; }
+  main p { color:var(--text); }
+  em { color:var(--text-soft); font-style:italic; }
+  a.inline { color:var(--accent-ink); text-decoration:underline; text-underline-offset:2px; }
+
+  code, .cmd { font-family:var(--mono); font-size:.88em; }
+  .cmd { color:var(--accent-ink); background:var(--accent-soft); padding:2px 7px; border-radius:6px; white-space:nowrap;
+    border:1px solid color-mix(in srgb,var(--accent) 24%,transparent); font-weight:600; }
+  p code, li code, td code { background:var(--sink); border:1px solid var(--line-2); padding:1px 6px; border-radius:5px; color:var(--text); }
+
+  pre { background:var(--ink); color:#d6e0ee; border-radius:12px; padding:16px 18px; overflow-x:auto;
+    font-family:var(--mono); font-size:13px; line-height:1.65; box-shadow:var(--shadow); margin:14px 0; }
+  pre .c { color:#6b7d93; }        /* comment */
+  pre .g { color:#3fd0bf; }        /* prompt/accent */
+  pre .k { color:#e7edf5; font-weight:600; }
+
+  ul.clean { list-style:none; padding:0; margin:14px 0 0; display:flex; flex-direction:column; gap:11px; }
+  ul.clean li { position:relative; padding-left:26px; max-width:72ch; }
+  ul.clean li::before { content:""; position:absolute; left:4px; top:10px; width:6px; height:6px; border-radius:50%;
+    background:var(--accent); }
+  ul.clean.j li::before { background:var(--agent); }
+  ul.clean b { font-weight:700; }
+
+  ol.steps { counter-reset:s; list-style:none; padding:0; margin:16px 0 0; display:flex; flex-direction:column; gap:16px; }
+  ol.steps > li { counter-increment:s; position:relative; padding:16px 18px 16px 54px; background:var(--card);
+    border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); max-width:none; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:16px; top:15px; width:26px; height:26px;
+    border-radius:50%; background:var(--accent); color:#fff; font-family:var(--mono); font-weight:800; font-size:13px;
+    display:grid; place-items:center; }
+  ol.steps li .st { font-weight:730; font-size:16px; letter-spacing:-.01em; }
+  ol.steps li p { margin:6px 0 0; color:var(--text-soft); font-size:14.5px; }
+  ol.steps li pre { margin:10px 0 0; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; display:block; overflow-x:auto; }
+  table.full { display:table; }
+  thead th { text-align:left; font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; padding:9px 12px; border-bottom:2px solid var(--line); white-space:nowrap; }
+  tbody td { padding:10px 12px; border-bottom:1px solid var(--line-2); vertical-align:top; color:var(--text); }
+  tbody tr:hover { background:var(--sink); }
+  td .cmd { font-size:12.5px; }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px 24px;
+    box-shadow:var(--shadow); margin-top:18px; }
+  .card.feat { border-left:4px solid var(--accent); }
+  .card.feat.j { border-left-color:var(--agent); }
+  .feat .tag { display:inline-block; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; padding:4px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent-ink);
+    border:1px solid color-mix(in srgb,var(--accent) 24%,transparent); margin-bottom:12px; }
+  .feat.j .tag { background:var(--agent-soft); color:var(--agent); border-color:color-mix(in srgb,var(--agent) 30%,transparent); }
+  .feat h3 { margin-top:0; font-size:21px; }
+  .feat .what { font-size:15.5px; color:var(--text-soft); margin:6px 0 0; }
+  .kv { display:grid; grid-template-columns:max-content 1fr; gap:8px 18px; margin-top:16px; align-items:baseline; }
+  .kv dt { font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);
+    font-weight:600; padding-top:2px; }
+  .kv dd { margin:0; font-size:14.5px; color:var(--text); }
+
+  .note { border:1px dashed color-mix(in srgb,var(--accent) 42%,var(--line)); background:var(--accent-soft);
+    color:var(--accent-ink); border-radius:11px; padding:14px 18px; margin:16px 0; font-size:14.5px; max-width:74ch; }
+  .note.warn { border-color:color-mix(in srgb,var(--warn) 55%,var(--line)); background:color-mix(in srgb,var(--warn) 12%,var(--surface-2));
+    color:var(--warn); }
+  .note b { font-weight:700; }
+
+  .themebtn { position:fixed; top:14px; right:16px; z-index:20; font-family:var(--mono); font-size:12px; font-weight:600;
+    padding:7px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text-soft);
+    cursor:pointer; }
+  .themebtn:hover { color:var(--accent-ink); border-color:var(--accent); }
+  a:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+
+  .mobnav { display:none; }
+  @media (max-width:900px){
+    .shell { grid-template-columns:1fr; }
+    .side { display:none; }
+    main { padding:30px 20px 90px; }
+  }
+</style>
+
+<button class="themebtn" id="themeBtn">◐ theme</button>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <span class="logo">vc</span>
+      <span class="n">vc-fix plugin<small>Setup &amp; feature guide</small></span>
+    </div>
+    <nav class="toc" id="toc">
+      <div class="grp">Getting started</div>
+      <a href="#what">What the plugin is</a>
+      <a href="#setup">Setup — install &amp; configure</a>
+      <a href="#mcp">MCP servers &amp; Serena</a>
+      <a href="#use">Working with the plugin</a>
+      <div class="grp">New this sprint</div>
+      <a href="#selfdiag">Self-diagnostics</a>
+      <a href="#client">Client-deployment routing</a>
+      <a href="#deploypr">/qa-deploy-pr</a>
+      <a href="#hotfix">Hotfix lifecycle</a>
+      <a href="#reviewbl">/qa-review-bl</a>
+      <a href="#qafix">/qa-fix &amp; the dev team</a>
+      <a href="#shellfix">/vc-shell-fix</a>
+      <a href="#regression">Regression dashboard &amp; triage</a>
+      <a href="#quality">The quality bar</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <p class="eyebrow">Agentic QA · vc-fix</p>
+      <h1>Setting up the plugin, and what each new feature actually does.</h1>
+      <p>Two parts: how to install and drive the <b>vc-fix</b> plugin, then a detailed walk through each capability we shipped this sprint — what it is, how you invoke it, and how it works under the hood.</p>
+    </div>
+
+    <!-- WHAT -->
+    <section id="what">
+      <h2>What the plugin is</h2>
+      <p class="sub">A bug-lifecycle toolkit for Virto Commerce, distributed as a Claude Code marketplace plugin. It files, reproduces, fixes, deploys, and verifies bugs against a live deployment — and it now diagnoses its own runs.</p>
+      <p style="margin-top:14px">The plugin is <b>fully self-contained</b> — its own agents, skills, commands, knowledge, and config — so it works wherever Claude Code installs it. It currently ships <b>8 agents, 16 skills, and 8 commands</b>: <span class="cmd">/project-init</span> (onboarding), <span class="cmd">/qa-bug</span>, <span class="cmd">/qa-fix</span> (+ a write-capable developer team), <span class="cmd">/qa-verify-fix</span>, <span class="cmd">/qa-monitoring</span>, <span class="cmd">/qa-env-check</span>, and the self-diagnostics pair <span class="cmd">/vc-self-check</span> + <span class="cmd">/vc-feedback</span>.</p>
+      <div class="note"><b>The point of setup:</b> the profile you write during onboarding is what lets <span class="cmd">/qa-fix</span> route each bug to the <b>right repo</b> (your custom code vs the native VirtoCommerce platform) and file it to the <b>right tracker</b> (Jira or Azure Boards). Without it, everything defaults to the native-platform / Jira / GitHub behavior.</p>
+    </section>
+
+    <!-- SETUP -->
+    <section id="setup">
+      <h2>Setup — install &amp; configure</h2>
+      <p class="sub">Roughly 5–15 minutes per environment. Prerequisites: Claude Code ≥ 1.0, Node ≥ 18, a storefront URL, an Admin/platform URL, and one storefront + one admin test account.</p>
+
+      <ol class="steps">
+        <li>
+          <div class="st">Add the marketplace &amp; install the plugin</div>
+          <p>In Claude Code, add the marketplace and install. Claude clones the plugin into its cache and auto-discovers the agents, skills, commands, and MCP config.</p>
+<pre><span class="g">/plugin</span> marketplace add VirtoCommerce/vc-mcp-testing-module
+<span class="g">/plugin</span> install vc-fix@vc-tools</pre>
+        </li>
+        <li>
+          <div class="st">Install dependencies</div>
+          <p>From the plugin install directory (Claude Code prints the path after install), pull the Node dependencies the scripts and orchestrators need.</p>
+<pre>npm install</pre>
+        </li>
+        <li>
+          <div class="st">Run the onboarding wizard — <span class="cmd">/project-init</span></div>
+          <p>The derive-driven wizard asks only what genuinely shapes config — the environment <b>name</b>, the bug <b>tracker</b> (Jira / Azure Boards), the code <b>host</b> (GitHub / Azure Repos), and an <b>auth</b> preference per axis (a PAT is recommended; otherwise browser / CLI login — never passwords). It <b>derives</b> the rest — native-platform vs client project, your org, contribution mode, fork account — from the token plus a live module/repo scan.</p>
+          <p>It writes <code>project-profile.json</code> + <code>.env.&lt;env&gt;</code> + <code>.env.local</code> + <code>.mcp.json</code>, then prints a readiness table confirming access.</p>
+        </li>
+        <li>
+          <div class="st">Verify</div>
+          <p>Confirm the install and env load, then run a fast read-only environment check.</p>
+<pre>npm run env:check         <span class="c"># env vars present &amp; valid</span>
+<span class="g">/qa-env-check</span>             <span class="c"># both surfaces + MCP servers, &lt;30s</span></pre>
+        </li>
+      </ol>
+
+      <h3>Environments &amp; safety</h3>
+      <p>Env names are arbitrary strings (<code>dev</code>, <code>qa</code>, <code>staging</code>, <code>prod</code>, <code>client_eu</code>…). Safety is gated by <code>ENV_RISK</code>, <b>not</b> by the name — on <code>production</code> the plugin is <b>read-only by default</b> and admin-write actions refuse to run without an explicit escape hatch.</p>
+
+      <table class="full">
+        <thead><tr><th>Bucket</th><th>File</th><th>Committable</th><th>Holds</th></tr></thead>
+        <tbody>
+          <tr><td>Plugin defaults</td><td><code>.env.defaults</code></td><td>Yes</td><td>Sandbox cards, public URLs — same for everyone.</td></tr>
+          <tr><td>Per-env config</td><td><code>.env.&lt;env&gt;</code></td><td>Yes (your fork)</td><td><code>FRONT_URL</code>, <code>BACK_URL</code>, <code>ENV_RISK</code>, <code>MODULES_ENABLED</code>, tracker key.</td></tr>
+          <tr><td>Secrets</td><td><code>.env.local</code></td><td>No (gitignored)</td><td>Passwords, API tokens. Per-env via suffix (<code>USER_PASSWORD_QA</code>…).</td></tr>
+        </tbody>
+      </table>
+      <p class="sub">Re-running after an upgrade? <span class="cmd">/project-init --check</span> migrates a stale <code>project-profile.json</code> to the current schema — no full re-onboarding (see <a class="inline" href="#client">Client-deployment routing</a>).</p>
+    </section>
+
+    <!-- MCP -->
+    <section id="mcp">
+      <h2>MCP servers &amp; Serena</h2>
+      <p class="sub">Browser automation is required; the rest gate specific skills.</p>
+      <ul class="clean">
+        <li><b>Required — Playwright</b> <em>(chrome / firefox / edge)</em>: browser automation for storefront + Admin SPA + cross-browser. Configured in <code>.mcp.json</code>.</li>
+        <li><b>Optional, skill-gating:</b> <code>atlassian</code> → <span class="cmd">/qa-bug</span> filing; <code>github</code> → PR testing &amp; routing; <code>postman</code> → API skills; <code>context7</code> + VirtoOZ → <span class="cmd">/vc-docs</span>; <code>figma-remote-mcp</code> → design comparison.</li>
+      </ul>
+      <p style="margin-top:16px"><b>Serena</b> is the shared semantic code-navigation server (LSP-backed symbol search / find-references / precise edits). It's enabled in tracked config but <b>installed per machine</b> — needs <code>uv</code>/<code>uvx</code> on PATH. The developer agents use it to find and apply fixes faster than a <code>Grep → Read → Edit</code> loop.</p>
+<pre><span class="g">/plugin</span> marketplace add anthropics/claude-plugins-official
+<span class="g">/plugin</span> install serena@claude-plugins-official
+<span class="c"># then restart Claude Code — verify: claude mcp list → plugin:serena … ✔ Connected</span></pre>
+      <div class="note"><b>Login secrets for browser tests</b> go in a dedicated, minimal <code>.env.playwright.local</code> pointed at by the Playwright <code>--secrets</code> flag — never <code>.env.local</code> (which also holds API tokens). The MCP substitutes the value by NAME and redacts it from logs, so plaintext never enters the transcript.</div>
+    </section>
+
+    <!-- USE -->
+    <section id="use">
+      <h2>Working with the plugin</h2>
+      <p class="sub">Three kinds of thing, one way to invoke them.</p>
+      <table class="full">
+        <thead><tr><th>Kind</th><th>What it is</th><th>You…</th></tr></thead>
+        <tbody>
+          <tr><td><b>Command</b></td><td>A testing workflow that runs now — the plugin's verbs.</td><td>Type the slash: <span class="cmd">/qa-bug</span>, <span class="cmd">/qa-fix</span>.</td></tr>
+          <tr><td><b>Skill</b></td><td>A packaged methodology + reference files. Some run work, some just inform.</td><td>Invoke like a command; some auto-pull when relevant.</td></tr>
+          <tr><td><b>Agent</b></td><td>A specialist Claude delegates to for multi-step work.</td><td>Rarely called directly — commands dispatch them for you.</td></tr>
+        </tbody>
+      </table>
+      <h3>How to invoke</h3>
+      <ul class="clean">
+        <li><b>Type the slash explicitly</b> for anything with side effects — a test run, a bug filing, a code change. That's the majority of the toolkit, guarded by <code>disable-model-invocation</code> so Claude never kicks one off on its own.</li>
+        <li><b>Natural language</b> works only for the read-only few (<span class="cmd">/qa-status</span>, <span class="cmd">/qa-env-check</span>, <span class="cmd">/vc-docs</span>). "Show me the QA dashboard" runs <span class="cmd">/qa-status</span>; "run the smoke suite" will <em>not</em> — you type it.</li>
+      </ul>
+      <h3>Reading argument hints</h3>
+      <p>Every command advertises its arguments in the <code>/</code> menu. <code>[a|b|c]</code> = pick one; <code>VCST-XXXX</code> = a ticket id; <code>PR #NNN</code> = a pull request; <code>&lt;description&gt;</code> = free text; no argument = the default/interactive mode.</p>
+      <h3>The core chain</h3>
+      <p>The tools hand off to each other. The bug lifecycle is the one you'll run most:</p>
+<pre><span class="g">/qa-bug</span> "cart total wrong on B2B order"   <span class="c"># reproduce + file the ticket</span>
+<span class="g">/qa-fix</span> VCST-1234                        <span class="c"># triage → fix → open a PR (never merges)</span>
+<span class="c"># …a human reviews &amp; merges the PR…</span>
+<span class="g">/qa-deploy-pr</span> VCST-1234 --apply           <span class="c"># deploy the artifacts to the test env</span>
+<span class="g">/qa-verify-fix</span> VCST-1234                   <span class="c"># confirm the fix live, close the loop</span></pre>
+    </section>
+
+    <!-- ===================== FEATURES ===================== -->
+
+    <!-- SELF-DIAG -->
+    <section id="selfdiag">
+      <h2>Self-diagnostics</h2>
+      <div class="card feat">
+        <span class="tag">Flagship · client→vendor feedback loop (VCST-5509)</span>
+        <h3>The plugin observes whether its own skills ran correctly — and lets you say so</h3>
+        <p class="what">A feedback loop so a customer-installed plugin can tell whether <em>its own</em> commands, skills, and agents did the right thing, and — opt-in — report quality issues back to VirtoCommerce, without ever mutating the client install or leaking client code. Three moving parts:</p>
+        <dl class="kv">
+          <dt>Collector</dt><dd><b>Passive telemetry</b> — a hook records each skill/command span's phases, gates, tool errors, denied permissions, and an anomaly score to a local, gitignored trace, and flags spans that look <em>failed / degraded / silently-suspect</em>. It never throws, never blocks a tool, and redacts secrets.</dd>
+          <dt>Your verdict</dt><dd><b><span class="cmd">/vc-feedback</span> "&lt;what happened&gt;" 👍/👎</b> — you tell the plugin, in your own words, whether it just did the right thing. This is the <b>main detector of SILENT failures</b> — a task done wrong that <em>looked</em> fine and no heuristic can catch. The <code>UserPromptSubmit</code> hook attaches the verdict to the open span; the model just acknowledges — nothing is sent.</dd>
+          <dt>Diagnosis</dt><dd><b><span class="cmd">/vc-self-check</span></b> — reads the trace + transcript against an expectations oracle (expected phases/gates + an S0–S3 severity rubric) and writes a local <code>DIAG-*.md</code>: a per-skill verdict of <b>OK / DEGRADED / BROKEN</b> with evidence, a root-cause hypothesis, and a concrete proposed fix (which file/line). It diagnoses the flagged spans + any <span class="cmd">/vc-feedback</span> verdicts.</dd>
+          <dt>Delivery</dt><dd><b><span class="cmd">/vc-self-check deliver</span></b> — turns a confirmed finding into a scrubbed contribution (PR / fork-PR / issue, routed by your GitHub-token rights), gated by the profile's <code>feedback.mode</code>. <code>--batch</code> consolidates all local DIAGs into one deduped report; <code>--confirm</code> files it; <code>--purge</code> cleans up. Client source is stripped before anything leaves.</dd>
+        </dl>
+        <p style="margin-top:16px"><b>Opt-in, local, ephemeral.</b> Nothing is recorded unless <code>selfDiagnostics: true</code> is present in your profile — absent or false, the hook is a full no-op and no <code>.vc-fix/</code> folder is created. Nothing leaves your machine except through the explicit, <code>feedback.mode</code>-gated <span class="cmd">deliver</span> step. The lifecycle is <b>log → analyze → contribute → delete</b>: once a finding is upstream, the processed session's local artifacts are removed.</p>
+      </div>
+    </section>
+
+    <!-- CLIENT -->
+    <section id="client">
+      <h2>Client-deployment routing</h2>
+      <div class="card feat">
+        <span class="tag">Flagship · onboarding + /qa-fix</span>
+        <h3>One plugin runs on any deployment — ours or a customer's</h3>
+        <p class="what">Tracker and code-host adapters plus ownership-aware routing let the same plugin file bugs and open fixes correctly whether it's running on VirtoCommerce-internal infra or a customer's stack — behind a hard security invariant.</p>
+        <h3 style="font-size:16px">Where a fix is delivered (routing is data, not judgment)</h3>
+        <table class="full">
+          <thead><tr><th>Routed repo</th><th>Outcome</th><th>Delivery</th></tr></thead>
+          <tbody>
+            <tr><td>Client repo <em>(custom module / theme / storefront fork)</em></td><td>fixable → PR</td><td>PR on the <b>client's</b> host — GitHub or Azure Repos.</td></tr>
+            <tr><td>Platform repo, operator = VirtoCommerce</td><td>fixable → PR</td><td><b>Direct</b> PR to <code>VirtoCommerce/&lt;repo&gt;</code>.</td></tr>
+            <tr><td>Platform repo, operator = client</td><td>fixable → PR</td><td><b>Fork-PR</b> upstream to VirtoCommerce, from the client's fork.</td></tr>
+            <tr><td>Platform repo, too complex / multi-repo</td><td>not fixable → issue</td><td>A <b>GitHub Issue</b> on the upstream (client deployments only).</td></tr>
+          </tbody>
+        </table>
+        <div class="note warn"><b>Client-code containment — a hard invariant.</b> Client code MUST NEVER leave the client's own project. The upstream receives contribution only — platform-authored fixes + platform-generic reproduction, scrubbed of client source, paths, identifiers, and secrets. If a bug reproduces only with client code, it is not upstream-contributable → the fix STOPS and hands back to the client team. Enforced at routing, at code review, and in the developer team.</div>
+        <dl class="kv">
+          <dt>Trackers</dt><dd>Jira <em>or</em> Azure Boards — bugs file in the tracker's native shape (Azure work items match the lean gold-standard form: abstract summary → repro, metadata in dedicated fields, auto-assigned to the current sprint).</dd>
+          <dt>Hosts</dt><dd>GitHub <em>or</em> Azure Repos, with PAT or browser/CLI-login auth per axis.</dd>
+          <dt>Upgrades</dt><dd><span class="cmd">/project-init --check</span> reconciles a stale profile to the current schema — adds new fields with safe defaults, prunes obsolete ones, and asks you about anything that's a real decision.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- DEPLOY-PR -->
+    <section id="deploypr">
+      <h2>/qa-deploy-pr</h2>
+      <div class="card feat j">
+        <span class="tag">New command</span>
+        <h3>Deploy all of a change's fresh artifacts together, in one manifest update</h3>
+        <p class="what">A change often spreads prerelease artifacts across several repos — one or more modules, the Platform, the vc-frontend theme. Pinning them into the deploy manifest by hand blocked PR-testing and fix-verification. This gathers them all and deploys them together.</p>
+        <dl class="kv">
+          <dt>Invoke</dt><dd><span class="cmd">/qa-deploy-pr &lt;ticket-key&gt;</span> <span style="color:var(--text-faint)">[--pr owner/repo#N] [--module Id=Ver] [--platform Ver] [--theme url] [--env &lt;name&gt;] [--apply] [--verify]</span></dd>
+          <dt>Resolve</dt><dd>Reads the tracker ticket's linked PRs across all repos (or your explicit <code>--module</code>/<code>--platform</code>/<code>--theme</code>/<code>--pr</code> set) → picks each PR's latest <code>vc3prerelease</code> CI build.</dd>
+          <dt>Repin</dt><dd>A minimal-diff update of <code>backend/packages.json</code> (AzureBlob / BlobName + <code>PlatformVersion</code>) and <code>theme/artifact.json</code> — all targets in ONE <code>vc-deploy-dev</code> change, on the branch that maps to your <code>TEST_ENV</code>.</dd>
+          <dt>Apply</dt><dd>Dry-run combined diff by default. <span class="cmd">--apply</span> opens ONE gated deploy PR — a direct same-repo push if your account has write, otherwise a fork PR (it prints the web-edit URL on a 403).</dd>
+          <dt>Verify</dt><dd><span class="cmd">--verify</span> reports per-target deploy state — the env-branch pin plus the live <code>/api/platform/modules</code> version.</dd>
+        </dl>
+        <div class="note"><b>Never merges.</b> It ends at an open PR for a human to merge — merging is what actually deploys. Once merged, <span class="cmd">/qa-test PR #N</span> and <span class="cmd">/qa-verify-fix</span> can finally run against the change.</div>
+      </div>
+    </section>
+
+    <!-- HOTFIX -->
+    <section id="hotfix">
+      <h2>Hotfix lifecycle</h2>
+      <div class="card feat j">
+        <span class="tag">New commands · a 3-step chain</span>
+        <h3>Backport a released fix to a frozen stable line — end to end</h3>
+        <p class="what">Getting a merged fix onto a frozen stable bundle used to be a manual cherry-pick-and-deploy chore across bundles and environments. Three commands now chain it: <b>discover</b> what's missing → <b>release</b> it onto the support line → <b>deliver</b> it to the deployed environments and verify.</p>
+        <dl class="kv">
+          <dt>Discover</dt><dd><b><span class="cmd">/qa-bundle-check</span> vN | &lt;package.json-url&gt;</b> — points a frozen stable bundle at GitHub and flags every pinned module / Platform / Theme that has a newer <em>same-line</em> patch waiting; never a newer minor (a frozen bundle is meant to trail master). Each hotfix traces to the PR that raised the version and its linked tracker task.</dd>
+          <dt>Release</dt><dd><b><span class="cmd">/qa-hotfix</span> VCST-XXXX [bundles]</b> — resolves the task → its linked PR → the fix commit, confirms it is <b>MERGED and SHIPPED</b>, checks a fix-shape safety gate (single module, no dependency-version bump), then per bundle creates the <code>support/&lt;X.Y&gt;</code> branch if missing and cherry-picks onto it, triggering the repo's "Release hotfix" workflow. It <b>ASKs which bundles</b> — the latest-stable set changes over time.</dd>
+          <dt>Deliver + verify</dt><dd><b><span class="cmd">/qa-hotfix-check</span> VCST-XXXX</b> — bumps the module/Platform version in the deploy manifest for the deployed <code>stable</code> + <code>regression</code> envs, waits for the deploy Action to go green and <code>/api/platform/modules</code> to report the new version, verifies the fix live, comments on and transitions the tracker task to Done, and bumps the latest-stable bundles.</dd>
+        </dl>
+        <div class="note"><b>Gated writes, never auto-merges.</b> Every command is read-only by default (a dry-run / precheck); each write is gated behind an explicit apply. They STOP cleanly at any wall — no support branch, a cherry-pick conflict, or a fix that hasn't shipped yet — and hand back to a human. <span class="cmd">/qa-hotfix-check</span> is delivery-only: if the fix isn't released yet, it points you back to <span class="cmd">/qa-hotfix</span>.</div>
+      </div>
+    </section>
+
+    <!-- REVIEW-BL -->
+    <section id="reviewbl">
+      <h2>/qa-review-bl</h2>
+      <div class="card feat j">
+        <span class="tag">New command</span>
+        <h3>Our business-logic knowledge base audits and corrects itself</h3>
+        <p class="what">The business-logic oracle (<code>business-logic.md</code>) is the set of testable invariants our tests assert against — and it used to drift, fixable only by hand. This triangulates each rule against three independent sources and applies confirmed corrections automatically, gated by evidence rather than blind trust.</p>
+        <dl class="kv">
+          <dt>Invoke</dt><dd><span class="cmd">/qa-review-bl</span> <span style="color:var(--text-faint)">all | domain &lt;name&gt; | BL-&lt;ID&gt; | diff [--dry-run]</span></dd>
+          <dt>Triangulate</dt><dd>Each <code>BL-*</code> invariant is checked against <b>docs</b> (VirtoOZ), <b>live</b> behavior (Playwright), and <b>source code</b> (GitHub MCP) — three axes, per rule.</dd>
+        </dl>
+        <table class="full">
+          <thead><tr><th>Verdict</th><th>What it means</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><b style="color:var(--pass)">CONFIRMED</b></td><td>All sources agree with the current rule.</td><td>No change.</td></tr>
+            <tr><td><b style="color:var(--warn)">DRIFT</b></td><td>Sources moved; the rule is stale.</td><td><b>Auto-applied</b> to the oracle (body-only, stamped, env-agnostic).</td></tr>
+            <tr><td><b style="color:var(--agent)">MISSING</b></td><td>A real invariant not yet recorded.</td><td><b>Auto-added.</b></td></tr>
+            <tr><td><b style="color:var(--crit)">CONTRADICTORY / UNGROUNDED / RETIRE</b></td><td>Sources disagree, or evidence is thin.</td><td>Routed to a <b>human-review proposal</b> — never auto-applied.</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:16px">It runs on demand, and also automatically as a phase of the test lifecycle — scoped to just the rules a run touches — so the knowledge base can't quietly rot. Every run leaves an audit trail. <em>This deliberately supersedes the former "never auto-edit business-logic.md" rule</em> — the 3-source evidence bar is what replaces human approval for the confirmed cases.</p>
+      </div>
+    </section>
+
+    <!-- QA-FIX -->
+    <section id="qafix">
+      <h2>/qa-fix &amp; the developer team</h2>
+      <div class="card feat">
+        <span class="tag">Matured this sprint</span>
+        <h3>Autonomous fix of a filed bug — automated to the last safe step</h3>
+        <p class="what"><span class="cmd">/qa-fix VCST-XXXX</span> takes a bug already filed by <span class="cmd">/qa-bug</span> and walks it through a gate ladder, delegating to a write-capable developer team by repo kind. It <b>never auto-merges</b> — it ends at an open PR for human review.</p>
+        <table class="full">
+          <thead><tr><th>Gate</th><th>What must pass</th></tr></thead>
+          <tbody>
+            <tr><td><b>G0</b> Triage</td><td>A simple, low-risk, code-fixable defect — clear repro, localized cause, no refactor, no breaking change. <em>When in doubt, it BAILs</em> (a clean STOP is a success).</td></tr>
+            <tr><td><b>G1</b> Single repo</td><td>Resolves to exactly one allowed repo; ownership + contribution plan pick the PR target (see <a class="inline" href="#client">routing</a>).</td></tr>
+            <tr><td><b>G2</b> Reproduce (red)</td><td>A new unit test encodes the bug and fails on current code.</td></tr>
+            <tr><td><b>G3</b> Fix (green)</td><td>A minimal diff turns it green; all pre-existing tests stay green and unmodified; invariants preserved.</td></tr>
+            <tr><td><b>G4</b> Review</td><td>A kind-appropriate reviewer agent checks single-repo scope, no test edits, idiomatic &amp; minimal, no breaking contract.</td></tr>
+            <tr><td><b>G5</b> Build + CI</td><td>Local build/tests, then the PR's CI — build, unit tests, SonarCloud quality gate, and the deployed auto-tests — all green.</td></tr>
+            <tr><td><b>G6</b> E2E verify</td><td>Once the artifact deploys, a QA expert reruns the affected regression live.</td></tr>
+            <tr><td><b>G7</b> Human review</td><td><b>Hard stop — never auto-merge.</b> Ends at an open PR; a human merges.</td></tr>
+          </tbody>
+        </table>
+        <h3>Sharpened this sprint</h3>
+        <ul class="clean">
+          <li><b>Module sub-app routing</b> — a bug in a module's embedded Vue 3 shell now routes to the frontend dev team (was previously a dead end), reproduced with the sub-app's own runner and fixed in a scoped single-repo PR.</li>
+          <li><b>Serena symbol navigation</b> — the fix step uses Serena for fast, precise symbol-level navigation and editing across a polyglot module, yielding smaller, more surgical diffs.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SHELL-FIX -->
+    <section id="shellfix">
+      <h2>/vc-shell-fix</h2>
+      <div class="card feat">
+        <span class="tag">Broadened + hardened</span>
+        <h3>Fix any module's embedded @vc-shell app — not just page-builder</h3>
+        <p class="what">The skill fixes a <code>vc-module-*</code> repo's embedded Vue 3 "shell" sub-app built on <code>@vc-shell/framework</code>. <b>Page-builder was only the first one declared — it is not the limit.</b> Any sub-app registered in the routing config is in scope, and the sub-app ships inside the module repo, so it stays a single-repo fix (owned by the frontend dev team, since it's a different stack from the module's C#/AngularJS Admin UI).</p>
+        <dl class="kv">
+          <dt>Path 1 — state/logic</dt><dd>A composable / store / service bug is proven red→green with the sub-app's <b>own real <code>tsx --test</code> runner</b> and plain Vue reactivity — no stubbing, because <code>vue</code> is a real importable package.</dd>
+          <dt>Path 2 — DOM/template</dt><dd>A mounted-component / rendering / slot / CSS bug uses an <b>ephemeral</b> vitest + <code>@vue/test-utils</code> + jsdom harness that reuses the sub-app's own <code>vite.config.ts</code> — stripped from the diff before the PR.</dd>
+        </dl>
+        <p style="margin-top:16px"><b>Grounded, not assumed:</b> the fix agent reads the sub-app's own <code>package.json</code> (scripts + package manager) and any first-party <code>.claude</code> docs at fix time, so it works against the actual repo — versions and package managers are never hardcoded. The auto-generated <code>src/api_client/</code> is off-limits (an anchor there is an upstream root cause, not a shell fix).</p>
+      </div>
+    </section>
+
+    <!-- REGRESSION -->
+    <section id="regression">
+      <h2>Regression dashboard &amp; triage</h2>
+      <div class="card feat j">
+        <span class="tag">Matured this sprint</span>
+        <h3>See failures as they happen, then find out why</h3>
+        <p class="what">The regression pipeline gained live visibility and a triage step that turns a red run into an action list.</p>
+        <ul class="clean j">
+          <li><b>Live per-case dashboard</b> — a self-refreshing HTML report where each case flips PASS / FAIL / BLOCKED live as the run proceeds; you no longer wait for a whole suite to finish. Gate verdict, summary tiles, and a pass-rate donut update in place.</li>
+          <li><b>Per-failure trace</b> — every real FAIL writes an isolated trace file (network failures with body snippets, console errors with parsed stack frames), kept with the run and linked from the dashboard. Secrets are redacted before writing.</li>
+          <li><b>Cross-run overview</b> — a consolidated dashboard trends pass-rate per run (bars coloured by gate) with a filterable table of every run in the window; the in-progress run flags live.</li>
+          <li><b><span class="cmd">/qa-triage-results</span></b> — classifies each failure as a real product bug vs a test defect (bad steps / bad assertion / stale data / stale test) vs flake / env / known, verifies the real ones live, and routes test-defect fixes automatically. It never files a ticket and never auto-fixes — it stops for a human.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- QUALITY -->
+    <section id="quality">
+      <h2>The quality bar</h2>
+      <div class="card feat j">
+        <span class="tag">Raised this sprint</span>
+        <h3>Every assertion has to earn its place</h3>
+        <p class="what">Trustworthy tests come from grounded assertions and honest data — both were made structural, not conventions.</p>
+        <ul class="clean j">
+          <li><b>Assertion provenance gate</b> — every generated assertion is tagged with its source: a spec, a business rule, docs, or a live observation. Ungrounded assertions are blocked from promotion, and a genuinely new feature must be grounded live before it ships into a suite.</li>
+          <li><b>WCAG 2.2 AA accessibility</b> — <span class="cmd">/qa-accessibility</span> was sharpened for WCAG 2.2, its axe-core source bumped, and the read-only scan allow-listed so it runs cleanly as a safe interaction. A real widget audit was filed this sprint.</li>
+          <li><b>Env-agnostic test data</b> — every environment owns its own data aliases and no runtime IDs live in committed files, so a suite can never resolve another environment's data by accident. New RBAC fixtures keep coverage current against the live product.</li>
+          <li><b>Test-data engineer, end to end</b> — the agent now authors seeders <em>and</em> runs them live against a non-prod environment with drift-guard validation, rather than only writing the code.</li>
+        </ul>
+      </div>
+      <p style="margin-top:26px; color:var(--text-faint); font-size:13.5px; font-family:var(--mono)">End of guide · pair with the sprint demo deck for the walkthrough.</p>
+    </section>
+  </main>
+</div>
+
+<script>
+  document.documentElement.setAttribute('data-theme', 'light');
+  const root = document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  // scroll-spy: highlight the TOC entry for the section in view
+  const links = Array.from(document.querySelectorAll('.toc a'));
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map.get(e.target.id);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '0px 0px -75% 0px', threshold: 0 });
+  document.querySelectorAll('main section[id]').forEach(s => obs.observe(s));
+</script>

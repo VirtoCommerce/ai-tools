@@ -62,6 +62,18 @@ symbol/reference lookups unreliable: Roslyn can't resolve cross-project/NuGet ty
 produces `obj/project.assets.json`, and the Vue/TS server can't resolve the `@/` → `client-app/` alias
 until `node_modules` exists.
 
+**Pin the language to the fix's layer — a `vc-module-*` checkout is polyglot.** One module repo can hold
+C# (backend), AngularJS (its `Web/Scripts/` Admin SPA), and a Vue 3 `@vc-shell/framework` sub-app at once,
+so `activate_project` on a bare path can auto-detect and bind the *wrong* (or a needlessly heavy) language
+server. The checked-out product repos ship no `.serena/project.yml`, so make activation deterministic:
+write one first with `serena project create --language <lang> "<absolute-checkout>"` (or set its
+`languages:` directly), then `activate_project`. Match `<lang>` to the routed layer:
+- **C# backend** (`fullstack-backend`, `/dotnet-fix`) → `csharp`, after `dotnet restore`.
+- **module Admin SPA** (AngularJS in `Web/Scripts/`, `/angular-admin`) → `typescript` (its server also indexes plain JS).
+- **`vc-frontend` storefront** + **module `vc-shell` sub-app** (`fullstack-frontend`, `/vue-fix` / `/vc-shell-fix`) → `typescript` for the composables/stores/services where most logic fixes land, or `vue` when the fix is inside an SFC `<script setup>`; after `yarn install`.
+
+(The repo-root `.serena/project.yml` committed for THIS tooling repo is TypeScript and is unrelated to these per-checkout activations.)
+
 **Prefer, in order, when available:**
 1. A symbol overview of the RCA file (Serena: `get_symbols_overview`) — the class/method tree, no
    bodies — to locate the seam without reading the whole file into context.
@@ -271,6 +283,10 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 2. **Never modify or delete an existing test** — only ADD. An existing test going red after the fix =
    contract conflict → STOP, do not edit the test.
 3. **Minimal diff.** No refactors, no nuget/dep bumps, no formatting churn, no unrelated files.
+   **Comments: brief, only when necessary.** Don't narrate the change or restate what the code
+   already says; add a comment only for genuinely non-obvious *why* (a subtle guard, a workaround, a
+   BL-* / edge-case rationale). No "// added for VCST-XXXX", no step-by-step play-by-play, no
+   re-commenting untouched code. Match the density of the surrounding file.
 4. **No breaking changes.** No public REST/GraphQL/DTO/contract change, DB schema/migration, domain
    event shape, or `module.manifest` change. Any of these → STOP (Gate 0 boundary).
 5. **No secrets.** Never read, echo, or commit credentials/connection strings/`.env*`/`*.Development.json`.

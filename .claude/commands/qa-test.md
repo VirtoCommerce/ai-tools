@@ -28,7 +28,7 @@ Gather all inputs and determine scope. Combines pre-flight checks with scope ana
 1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user.
 2. **Build & version verification** — use GitHub MCP `get_file_contents` to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs):
    - Record: platform version (`PlatformVersion`), theme version (from `artifact.json` URL), and modules relevant to the ticket scope
-   - **For PR testing:** PRs are deployed to QA while still open. Confirm the PR's build artifact version appears in `packages.json` (modules) or `artifact.json` (theme). If not deployed → warn user and ask whether to wait
+   - **For PR testing:** PRs are deployed to QA while still open. Confirm the PR's build artifact version appears in `packages.json` (modules) or `artifact.json` (theme). If any of the change's artifacts are not deployed → offer to run [`/qa-deploy-pr`](qa-deploy-pr.md) `<ticket-key>` (gathers all the change's fresh artifacts and prepares one gated deploy PR; **ask first**); otherwise warn user and ask whether to wait
 3. **Duplicate check** — scan `reports/tickets/{SPRINT}/` for the same ticket tested in the last 2 hours. If found, warn user and show previous results.
 
 **Resolve current sprint** — check if `reports/tickets/Sprint-current` exists → use it. Otherwise list `reports/tickets/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths (rooted at `reports/tickets/{SPRINT}/`). Create the folder if it doesn't exist.
@@ -270,7 +270,9 @@ Ask the user before transitioning. Skip if Atlassian MCP is not configured.
 | PASS / PASS WITH NOTES | `Finish test` → TESTED |
 | FAIL | `Need fixes` → REOPEN with comment listing failures |
 
-Add a JIRA comment with:
+Add a JIRA comment with (Markdown, never Jira wiki markup; clear, brief, outcome-first, evidence
+referenced not inlined — `knowledge/execution/tracker-ops.md` §5a **Comment & body style**; the block
+below is illustrative content, not a literal wire format):
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
 AC review: [N] story ACs ([weak]/[ok]), [M] gap-ACs added; AC↔impl: [satisfied]/[drift]/[contradicts]/[not-found].

@@ -74,8 +74,10 @@ Invoke the development skills:
 2. **Checkout** — the repo is resolved + cloned via `ci/lib/repo-router.ts` `checkoutForFix` into
    `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute paths.
 3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see
-   `/dotnet-unit-test`). **Then activate the checkout for Serena** (`activate_project` on the absolute
-   path), not before — Roslyn can't resolve cross-project/NuGet types until `restore` produces
+   `/dotnet-unit-test`). **Then pin the language + activate the checkout for Serena** — first
+   `serena project create --language csharp` on the checkout (use `typescript` for a module Admin-SPA/AngularJS
+   fix; a `vc-module-*` repo is polyglot, so don't let auto-detect bind the wrong LS — see `shared-instructions.md`),
+   then `activate_project` on the absolute path — not before — Roslyn can't resolve cross-project/NuGet types until `restore` produces
    `obj/project.assets.json`, so activating any earlier leaves symbol/reference lookups unreliable
    (`shared-instructions.md` §Fast local navigation & editing).
 4. **Reproduce (red)** — add a NEW test asserting expected behavior; confirm it fails. Trivial-skip

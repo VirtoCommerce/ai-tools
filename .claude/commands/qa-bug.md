@@ -252,7 +252,7 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 Ask the user: "Create a JIRA ticket for this bug?"
 
-If yes, file to the deployment's tracker. **Follow `knowledge/execution/tracker-ops.md` §5a for field mapping + body format** (Jira vs Azure Boards — never hardcode). For the native Jira path, use Atlassian MCP (`createJiraIssue`):
+If yes, file to the deployment's tracker. **Follow `knowledge/execution/tracker-ops.md` §5a for field mapping + body format + Comment & body style** (Jira vs Azure Boards — never hardcode; clear, brief, outcome-first, evidence referenced not inlined — same rule for any follow-up comment). For the native Jira path, use Atlassian MCP (`createJiraIssue`):
 - Project: read from `env.JIRA_PROJECT_KEY` (defaults to `VCST` for backwards compatibility; customer sets their own in `.env` or `.env.${TEST_ENV}`)
 - Type: Bug
 - Summary: from bug title (plain text, no markup)

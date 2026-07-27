@@ -106,12 +106,19 @@ export function resolveRole(
         if (v && v !== organizationId) organizationId = v;
       } catch { /* leave as-is; token request will send the literal */ }
     }
+    // Platform admin roles authenticate CONTEXT-FREE: no storeId / organization_id in the
+    // password grant. Those scope the token to a storefront/org and make it invalid for
+    // platform REST APIs (e.g. /api/carts returns 401 invalid_token). Storefront/org roles
+    // keep their store + org context. Detected via the alias's isAdministrator/userType flag.
+    const isAdmin =
+      (entry as { isAdministrator?: boolean }).isAdministrator === true ||
+      (entry as { userType?: string }).userType === "Administrator";
     return {
       role,
       email,
       password,
-      storeId: entry.store_id || process.env.STORE_ID,
-      organizationId,
+      storeId: isAdmin ? (entry.store_id as string | undefined) : (entry.store_id || process.env.STORE_ID),
+      organizationId: isAdmin ? undefined : organizationId,
     };
   }
 

@@ -1,13 +1,10 @@
 {
   "name": "vc-mcp-testing-module",
-  "version": "0.7.1",
+  "version": "0.8.1",
   "description": "",
   "main": "config.js",
   "scripts": {
     "env:check": "node get_variables_env.js",
-    "plugin:configure": "npx tsx bootstrap/install.ts",
-    "plugin:check": "npx tsx bootstrap/install.ts --check",
-    "plugin:install": "echo '\"plugin:install\" was renamed to \"plugin:configure\" — Claude Code handles plugin install via /plugin install. Run npm run plugin:configure for env setup.' && exit 1",
     "ci:regression": "npx tsx ci/run-regression.ts",
     "ci:smoke": "cross-env SUITE_SELECTION=smoke npx tsx ci/run-regression.ts",
     "ci:critical": "cross-env SUITE_SELECTION=critical npx tsx ci/run-regression.ts",
@@ -116,6 +113,8 @@
     "suites:lint": "npx tsx scripts/test-cases/sync-test-suites.ts --check",
     "suites:append": "npx tsx scripts/test-cases/append-test-cases-to-suite.ts",
     "suites:review": "npx tsx scripts/test-cases/lint-test-cases.ts",
+    "bl:lint": "npx tsx scripts/knowledge/lint-bl.ts",
+    "bl:audit:collect": "npx tsx scripts/knowledge/lint-bl.ts --json",
     "metrics:compute": "npx tsx scripts/regression/compute-metrics.ts",
     "triage:collect": "npx tsx scripts/lib/regression-triage.ts collect",
     "triage:history": "npx tsx scripts/lib/regression-triage.ts history",
@@ -127,10 +126,18 @@
     "hotfix:release": "npx tsx scripts/hotfix/hotfix-release.ts",
     "hotfix:deliver": "npx tsx scripts/hotfix/hotfix-deliver.ts",
     "hotfix:deliver:dry": "npx tsx scripts/hotfix/hotfix-deliver.ts --dry-run",
+    "deploy:pr": "npx tsx scripts/deploy/deploy-pr-artifact.ts",
+    "deploy:pr:apply": "npx tsx scripts/deploy/deploy-pr-artifact.ts --apply",
     "local:manifest": "node skills/qa-local-env/gen-manifest.mjs",
     "local:health": "node skills/qa-local-env/healthcheck.mjs",
     "seed:reviews": "node scripts/seed-data/products/seed-reviews.mjs",
-    "seed:reviews:teardown": "node scripts/seed-data/products/seed-reviews.mjs --teardown"
+    "seed:reviews:teardown": "node scripts/seed-data/products/seed-reviews.mjs --teardown",
+    "seed:rbac": "node scripts/seed-data/platform/seed-backoffice-rbac.mjs",
+    "seed:rbac:teardown": "node scripts/seed-data/platform/seed-backoffice-rbac.mjs --teardown",
+    "td:validate:rbac": "node scripts/seed-data/platform/validate-backoffice-rbac-data.mjs",
+    "seed:cms-pages": "node scripts/seed-data/cms/seed-pagebuilder-pages.mjs",
+    "seed:cms-pages:teardown": "node scripts/seed-data/cms/seed-pagebuilder-pages.mjs --teardown",
+    "td:validate:cms-pages": "node scripts/seed-data/cms/validate-pagebuilder-pages-data.mjs"
   },
   "repository": {
     "type": "git",

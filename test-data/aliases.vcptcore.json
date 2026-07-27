@@ -125,5 +125,30 @@
   "SR_REP_PAGING": {
     "id": "041121a2-718d-4c54-80ae-0bfcd7cec099",
     "user_id": "9608556a-489b-4455-9687-a2622ecf810c"
+  },
+  "PB_HOMEPAGE": {
+    "_inline": true,
+    "group_id": "843d5fcc-648d-4c59-928c-22bae101c346",
+    "permalink": "/qa-homepage-spring-sale"
+  },
+  "PB_WHOLESALE_GUIDE": {
+    "_inline": true,
+    "group_id": "5bf3dfcd-cfeb-4625-85bb-23d504f8a3e2",
+    "permalink": "/qa-wholesale-buyer-guide"
+  },
+  "PB_RETURN_POLICY": {
+    "_inline": true,
+    "group_id": "e6049318-2ca1-41b8-ab2e-d8041eb2afa7",
+    "permalink": "/qa-return-policy"
+  },
+  "PB_SUMMER_PREVIEW": {
+    "_inline": true,
+    "group_id": "99916934-0b84-488c-9a63-c056c5de71ef",
+    "permalink": "/qa-summer-collection-preview"
+  },
+  "PB_PARTNER_SUPPORT": {
+    "_inline": true,
+    "group_id": "9434dd46-7eb9-44c6-893a-9c0a1fcf6947",
+    "permalink": "/qa-partner-portal-support"
   }
 }

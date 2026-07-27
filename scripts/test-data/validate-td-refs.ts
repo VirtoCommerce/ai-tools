@@ -205,5 +205,54 @@ if (idHits.length === 0) {
   );
 }
 
-const idFatal = idHits.length > 0 && !WARN_ONLY;
+// --- DV-021: no runtime GUIDs baked into the COMMITTED base aliases.json (golden rule) ---
+// A runtime platform GUID in base aliases.json resolves to a wrong-env value on every other env.
+// Runtime GUIDs belong in the per-env overlay aliases.<env>.json (written by the seeders), never
+// in base. Allowlist: deterministic sentinel ids,
+// the catalog root (env-constant, also STORE_CATALOG_ID), and PINNED org platform_ids (seedOrgs
+// forces body.id = organizations.csv platform_id → identical on every env).
+console.log("\n--- Base Alias Hardcoded-GUID Scan (DV-021) ---\n");
+const aliasGuidHits: { alias: string; field: string; value: string }[] = [];
+{
+  const orgPinned = new Set<string>();
+  try {
+    const csv = readFileSync(join(TEST_DATA_DIR, "b2b", "organizations.csv"), "utf8").split(/\r?\n/);
+    const pi = csv[0].split(",").indexOf("platform_id");
+    for (let i = 1; i < csv.length; i++) {
+      const c = csv[i].split(",");
+      if (pi >= 0 && c[pi] && /[0-9a-f-]{20,}/i.test(c[pi])) orgPinned.add(c[pi].toLowerCase());
+    }
+  } catch { /* no org csv → no extra pins */ }
+  const norm = (v: string) => v.toLowerCase().replace(/-/g, "");
+  const isGuid = (v: unknown): v is string =>
+    typeof v === "string" && (/^[0-9a-f]{32}$/i.test(v) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v));
+  const base = JSON.parse(readFileSync(join(TEST_DATA_DIR, "aliases.json"), "utf8")) as Record<string, any>;
+  for (const [alias, entry] of Object.entries(base)) {
+    if (!entry || typeof entry !== "object" || !entry._inline) continue;
+    for (const [field, val] of Object.entries(entry as Record<string, unknown>)) {
+      if (["_inline", "fields", "_notes", "notes"].includes(field)) continue;
+      if (!isGuid(val)) continue;
+      if (SENTINEL_RE.test(val)) continue;                          // deterministic sentinel id
+      if (ALLOWED_IDS.has(norm(val))) continue;                     // catalog root / env-constant
+      if (orgPinned.has(val.toLowerCase())) continue;               // pinned org platform_id
+      aliasGuidHits.push({ alias, field, value: val });
+    }
+  }
+}
+if (aliasGuidHits.length === 0) {
+  console.log("  No runtime GUIDs baked into base aliases.json. ✓");
+} else {
+  const tag = WARN_ONLY ? "WARN" : "FAIL";
+  console.log(`  ${aliasGuidHits.length} inline runtime-GUID field(s) in base aliases.json [${tag}]:`);
+  for (const h of aliasGuidHits) console.log(`    ${h.alias}.${h.field} = ${h.value}`);
+  console.log(
+    "\n  Golden rule: runtime platform GUIDs must NOT live in the committed base aliases.json —\n" +
+    "  they resolve to a wrong-env value on every other env. Move them to the per-env overlay\n" +
+    "  aliases.<env>.json — the per-env overlay where the seeders write runtime GUIDs.\n" +
+    "  Allowlist: deterministic sentinel ids, the catalog root, and pinned org platform_ids." +
+    (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
+  );
+}
+
+const idFatal = (idHits.length > 0 || aliasGuidHits.length > 0) && !WARN_ONLY;
 process.exit(totalFailed > 0 || idFatal ? 1 : 0);

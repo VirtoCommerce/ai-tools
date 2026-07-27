@@ -83,7 +83,8 @@ anything (this is the "я тебе говорю v12 и v14" step).
       This dispatches the repo's "Release hotfix" workflow (module/platform/theme variant,
       discovered by name), waits for it, and verifies the published patch contains the fix commit.
 7. **Verify + report.** Re-run the precheck (the bundle should now read `already-applied`), report
-   the new patch versions + release URLs per bundle, and comment the outcome on the JIRA task. For
+   the new patch versions + release URLs per bundle, and comment the outcome on the JIRA task
+   (Markdown not wiki, clear/brief/outcome-first — `knowledge/execution/tracker-ops.md` §5a). For
    issue type `Bug`, advance the status `Tested → Wait hotfixes → Hotfix ready` (never backwards) —
    see the skill's *After the hotfix* section for the exact field + transition. Note: a vc-frontend
    hotfix asset is named `vc-frontend-X.Y.Z.zip`, not `vc-theme-b2b-vue-*`
