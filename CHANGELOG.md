@@ -12,6 +12,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Ships as **plugin `0.8.1`** (marketplace `0.9.3`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Fixed — self-diagnostics full adversarial audit (6 independent reviewers) — hardening
+
+A from-scratch audit (secret-fuzz, consent-path trace, docs-vs-code, test-integrity, mirror-drift, runtime/perf) on top of the review rounds. **Containment + consent invariants verified SOUND on both surfaces** (no upstream client-data leak, no way to enable capture or send without explicit consent); these close local-hygiene / observability / correctness / test / doc-drift gaps. Suite 381/381.
+
+- **Redaction (LOCAL persist-path hygiene; upstream is enum-only regardless).** The `redact()` key/value rule captured only the FIRST whitespace token of a value → multi-word quoted secrets (`"password":"a b c"`, a JSON `private_key` PEM body) leaked past the first space; fixed to capture a full quoted string or a single token. Added a structural **PEM private-key-block** rule (bare id_rsa/RSA/EC/OpenSSH), and Stripe / `npm_` / Slack-webhook-URL / `Set-Cookie` / `session[_-]?id` rules + optional-username connection strings (`redis://:pw@host`). New `scripts/unit/redact.test.mjs` cases + negatives (git SHAs / paths / `session_count` are NOT over-redacted). Deliberately skipped a bare-40-char-AWS-secret rule (would destroy git SHAs / base64 IDs in diagnostics; the keyed form is covered).
+- **Observability (OBS1).** A silent transcript-scan read error now records `state.scanErrors`; `cmdFinalize` withholds the `no plugin issues detected` line and reports verdict `degraded-collector` — a broken collector no longer asserts health it never measured.
+- **Dedup (DED1).** `findDuplicateIssue` now uses the GitHub Search API (targets the fingerprint directly) with the first-100 list scan as fallback — dedup no longer breaks past 100 open issues (auto mode was re-filing duplicates).
+- **Resource (M2).** `state.flagged` is deduped by signature + hard-capped (was uncapped, re-serialized whole into every terminal `finalize` → O(F×T) `<sid>.jsonl` growth).
+- **Tests.** New end-to-end coverage of `deliver main()` — the actual upstream send gate (asserts `mode=off` never sends, ask-without-confirm is a dry run, ask+confirm / auto file, non-VirtoCommerce repo refused before any network); a reconcile test for the "leave consent ABSENT/pending, never guess" branch.
+- **Docs / mirror.** Corrected the stale pre-VCST-5509 capture/trigger prose (`CLAUDE.md`: opt-in not "always on", silent tail-trigger not an `AskUserQuestion`/`anomalyScore` modal; `gen-profile.mjs` "default true" comment; `.claude/rules/skills-commands.md`). Synced the stale `.claude/` oracle `skill-expectations.md` + `commands/vc-self-check.md` from the plugin, and ported the consent flags (`--self-diagnostics`/`--feedback-mode`) + `selfDiagnostics` validate into `.claude` project-init.
+- **Not done (deliberate / tracked follow-up):** `.claude` reconcile `feedback`-consent + dotted-`--set` (`setDeep`) modernization — omitted rather than half-shipped; it fails safe (absent `feedback` ⇒ deliver defaults to `ask`, still `--confirm`-gated) and the distributed plugin covers it. `probeGithubUpstream`/`resolveGithubToken` unit coverage (needs a `fetchImpl` seam). `SubagentStop→agentstop` wiring in the shared `.claude/settings.json` + removing the dead `.claude/hooks/hooks.json` — surfaced for operator sign-off (shared config / not authored here).
+
 ### Fixed — PR #143 review round 3 resolutions (Needs-Attention NA-1…NA-4 + Suggestion S3)
 
 A fresh 9-agent review of the updated branch found four more issues, all verified against the code and fixed. Full suite 361/361 green.

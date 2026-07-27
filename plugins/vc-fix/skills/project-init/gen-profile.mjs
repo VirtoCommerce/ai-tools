@@ -30,7 +30,7 @@
  * profile instead of defaults), --print (echo the result).
  *
  * Self-diagnostics consent (asked in the fresh interview, symmetric with reconcile):
- *   --self-diagnostics <true|false>  local telemetry CAPTURE opt-in (default true)
+ *   --self-diagnostics <true|false>  local telemetry CAPTURE opt-in (persisted default FALSE)
  *   --feedback-mode <ask|auto|off>   UPSTREAM delivery consent (default ask)
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
@@ -142,9 +142,11 @@ function main() {
   // Default stays "ask" (PROFILE_DEFAULTS) unless the operator picked one.
   set("feedback.mode", args["feedback-mode"]);
   // selfDiagnostics — opt-in for the passive session-telemetry CAPTURE hook
-  // (VCST-5475/5509). The hook is a full no-op until this is EXPLICITLY true. The written
-  // default is `true` (PROFILE_DEFAULTS) as the RECOMMENDED value, but `/project-init` asks the
-  // operator FIRST (§0b) and always passes the answer — and writes the flag immediately on Yes so
+  // (VCST-5475/5509). The hook is a full no-op until this is EXPLICITLY true. The persisted
+  // default is `false` (PROFILE_DEFAULTS) — opt-in fails SAFE (PR #143 R2 NA-4): a flag-less write
+  // must never silently enable capture. The interview RECOMMENDS Yes (a hard-coded nudge in
+  // reconcile-profile.mjs), but recommending ≠ consenting. `/project-init` asks the operator FIRST
+  // (§0b) and always passes the answer — and writes the flag immediately on Yes so
   // its own run is captured. Coerce the string flag → boolean: `--self-diagnostics false` ⇒ false,
   // `--self-diagnostics true` or a bare `--self-diagnostics` ⇒ true.
   if (args["self-diagnostics"] !== undefined) {
