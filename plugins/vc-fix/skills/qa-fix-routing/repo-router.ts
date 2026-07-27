@@ -214,8 +214,12 @@ for (const r of CLIENT_REPOS) {
   if (r.host) CLIENT_HOSTS.set(bare, r.host);
   if (r.defaultBranch) CLIENT_BRANCHES.set(bare, r.defaultBranch);
   const meta: ClientRepoMeta = {};
+  // Copy the optional string overrides via explicit record views so the const-tuple key index is
+  // not an implicit `any` under strict tsc (the keys aren't all declared on the profile-repo type).
+  const rr = r as unknown as Record<string, unknown>;
+  const mm = meta as unknown as Record<string, unknown>;
   for (const k of ["installCmd", "buildCmd", "typecheckCmd", "lintCmd", "testCmd", "upstream", "upstreamRef", "forkVersion"] as const) {
-    if (r[k]) meta[k] = r[k];
+    if (rr[k]) mm[k] = rr[k];
   }
   // Booleans must be copied explicitly — a falsy `false` would be dropped by `if (r[k])`.
   if (typeof r.upstreamRefResolved === "boolean") meta.upstreamRefResolved = r.upstreamRefResolved;

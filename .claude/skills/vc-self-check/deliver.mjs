@@ -302,6 +302,14 @@ export function buildDraft({ struct, route }) {
     `(see \`knowledge/diagnostics/upstream-schema.md\`). It carries NO free text, NO file paths,`,
     `NO identifiers, NO client source, and NO secrets — safe by construction, not by scrubbing`,
     `(quality-gates §2a; ADR \`adr-upstream-default-deny.md\`).`,
+    ``,
+    // The dedup fingerprint ALSO appears as a VISIBLE line, not only in the HTML comment above:
+    // GitHub's issue Search does not reliably index `<!-- … -->` text, so a comment-only marker made
+    // `findDuplicateIssue`'s Search branch always miss and silently degrade to the first-100-issues
+    // fallback scan — the exact DED1 failure the Search path was added to fix, re-filing a new issue
+    // every session once the repo has ≥100 open issues (code review suggestion #1). The `hit()`
+    // body-confirm still matches this line, so dedup is exact either way.
+    `<sub>${FP_MARKER} ${fp}</sub>`,
   ].join("\n");
   return { title, body, route, fingerprint: fp };
 }
@@ -534,9 +542,13 @@ async function mainBatch(args) {
     if (dup) {
       plan.skipped = `duplicate of #${dup.number}`;
       plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
-      if (!args.keep) plan.purged = purgeAll();
+      // Purge only if the +1 occurrence comment actually posted — else keep the artifacts for a retry
+      // so a transient failure doesn't silently drop the occurrence across every batched session (code review #3).
+      if (!args.keep && plan.occurrenceComment) plan.purged = purgeAll();
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-      else process.stdout.write(`Batch duplicate of #${dup.number} — added +1 occurrence.` + (plan.purged?.length ? ` Purged ${plan.purged.length} artifact(s) across ${sessions.length} session(s).` : ``) + `\n`);
+      else process.stdout.write(
+        (plan.occurrenceComment ? `Batch duplicate of #${dup.number} — added +1 occurrence.` : `Batch duplicate of #${dup.number} — could not add occurrence comment (kept local artifacts for retry).`) +
+        (plan.purged?.length ? ` Purged ${plan.purged.length} artifact(s) across ${sessions.length} session(s).` : ``) + `\n`);
       return;
     }
     try {
@@ -573,7 +585,12 @@ async function mainBatch(args) {
  *  `--repo` override must not misroute an issue/comment to an arbitrary token-writable repo
  *  (adversarial review #4, A3). Not a client repo, not a personal fork target — VirtoCommerce/* only. */
 export function isAllowedUpstreamRepo(repo) {
-  return /^VirtoCommerce\/[\w.-]+$/i.test(String(repo ?? ""));
+  const r = String(repo ?? "");
+  // Reject any `..`/leading-dot path-traversal in the repo segment: `[\w.-]+` alone admitted
+  // `VirtoCommerce/..` and `VirtoCommerce/.` (harmless 404s today, but a needless soft spot in a
+  // destination allowlist — security review). Require an alphanumeric first char and no `..`.
+  if (r.includes("..")) return false;
+  return /^VirtoCommerce\/[A-Za-z0-9][\w.-]*$/i.test(r);
 }
 
 export async function main(argv = process.argv.slice(2)) {
@@ -718,13 +735,16 @@ export async function main(argv = process.argv.slice(2)) {
       // Already upstream — don't re-file; add a "+1 occurrence" comment so the vendor
       // sees this defect hit another client (occurrence counts across clients).
       plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
-      // The finding is upstream → the session's local artifacts have served their
-      // purpose; delete them unless --keep.
-      if (!args.keep) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
+      // Purge ONLY if the +1 occurrence comment actually posted. addOccurrenceComment swallows all
+      // errors → false, so on a transient network blip the occurrence would be silently uncounted AND
+      // the local artifacts deleted — the +1 lost with no retry path (code review #3). If it failed,
+      // KEEP the artifacts so a later re-run retries (symmetric with the local/pr routes, which keep
+      // artifacts when nothing was delivered).
+      if (!args.keep && plan.occurrenceComment) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
       else process.stdout.write(
         `Duplicate of open issue #${dup.number} (${dup.url}) — not filing again; ` +
-          `${plan.occurrenceComment ? "added a +1 occurrence comment" : "could not add occurrence comment"}.\n` +
+          `${plan.occurrenceComment ? "added a +1 occurrence comment" : "could not add occurrence comment (kept local artifacts for retry)"}.\n` +
           (plan.purged?.length ? `Purged ${plan.purged.length} local artifact(s) for session ${sid || "(this DIAG)"}.\n` : ``)
       );
       return;

@@ -29,6 +29,10 @@ const MUST_REDACT = [
   ["url postgres://svc:LEAKdbpw@h/x", "LEAKdbpw", "«redacted»"],
   ["conn AccountKey=LEAKazureAcct123== end", "LEAKazureAcct123==", "«redacted»"],
   ['json {"access_token":"LEAKoauthAccess123","refresh_token":"LEAKoauthRefresh123"}', "LEAKoauthAccess123", "«redacted»"],
+  // apiKey / X-Api-Key — the rule at redact.mjs:52 targets `api[_-]?key` (JSON + header forms) but
+  // had no direct coverage; a regression to that alternation would have passed (test review #5).
+  ['json {"apiKey":"LEAKapiKeyVALUE1234567"}', "LEAKapiKeyVALUE1234567", "«redacted»"],
+  ["hdr X-Api-Key: LEAKheaderApiKeyVALUE12345 end", "LEAKheaderApiKeyVALUE12345", "«redacted»"],
   // NA-1: credential-suffixed env-var KEYS the keyword list used to miss
   ["ADO_PAT=LEAKadoPatVALUE1234567890", "LEAKadoPatVALUE1234567890", "«redacted»"],
   ["BROWSERSTACK_ACCESS_KEY=LEAKbsAccessKey1234", "LEAKbsAccessKey1234", "«redacted»"],

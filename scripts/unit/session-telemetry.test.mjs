@@ -639,6 +639,62 @@ test("/vc-feedback: the namespaced form (/vc-fix:vc-feedback) is captured too", 
   }
 });
 
+// ─── /vc-feedback 👎 tail-trigger (code review #1) ────────────────────────────────
+// A 👎 is the documented PRIMARY detector of SILENT failures (a task done wrong with NO error →
+// zero flagged spans). It must tail-trigger /vc-self-check on its OWN, not only alongside a flagged
+// span — the pre-fix gate `uniqueFresh.length > 0` left the whole 👎 → auto-diagnose loop inert.
+test("/vc-feedback 👎: a negative verdict alone (no flagged span) tail-triggers vc-self-check", () => {
+  const home = setupHome();
+  try {
+    const sid = "fb-trigger";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    // A plugin skill ran cleanly (no error), then the operator thumbs-down the RESULT — the classic
+    // silent-failure shape: nothing is flagged by Tier-1, only the 👎 signals dissatisfaction.
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-7" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", false, "https://github.com/x/y/pull/1"),
+    ]);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: '/vc-feedback "fixed the wrong thing" 👎' });
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+
+    const decision = JSON.parse(out);
+    assert.equal(decision.decision, "block", "a 👎 alone must tail-trigger the silent vc-self-check run");
+    assert.match(decision.reason, /vc-self-check/);
+    assert.match(decision.reason, /feedback|👎/i, "the block reason names the feedback trigger");
+
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "flagged", "a 👎 run is flagged, not clean");
+    assert.equal(fin.decision.negativeFeedback, true);
+    assert.equal(fin.decision.freshCount, 0, "no span was flagged — the trigger came from the 👎");
+    assert.equal(fin.decision.surfaced, true);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("/vc-feedback 👍: a positive verdict does NOT tail-trigger (stays clean, not flagged)", () => {
+  const home = setupHome();
+  try {
+    const sid = "fb-positive";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: '/vc-feedback "great" 👍' }, LINE_OFF);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, LINE_OFF);
+
+    assert.equal(out.trim(), "", "a 👍 must not resume/block the agent");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "clean");
+    assert.equal(fin.decision.negativeFeedback, false);
+    assert.equal(fin.decision.surfaced, false);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── decision moment: every finalize records a decision verdict ──────────────────
 const finalizeOf = (records) => records.find((r) => r.type === "finalize");
 const finalizesOf = (records) => records.filter((r) => r.type === "finalize");
@@ -1373,6 +1429,65 @@ test("Fix 1: an agent-kind bg task keyed by a distinct agent_id still defers (fr
   }
 });
 
+// ─── code review #4: a slow (but not orphaned) fix agent must not be finalized at STALL_MS ──
+// A real /qa-fix sub-agent (clone → reproduce → build → test) routinely runs 8–30+ min. The
+// id-mismatch deferral branch used the STALL_MS (8min) `freshOpenAgents` gate, so past 8 min a
+// still-running agent was judged an orphan and drained — printing a terminal verdict mid-task. The
+// gate is now ORPHAN_MS (45min); an op aged BETWEEN the two must still defer.
+test("code review #4: an agent op open 20min (> STALL_MS, < ORPHAN_MS) with agent-kind bg still defers", () => {
+  const home = setupHome();
+  try {
+    const sid = "slow-agent";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-99" });
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-backend", description: "fix" }),
+      // 20 min of later main-transcript activity with NO result for ta1: on the SESSION clock the op
+      // is now aged 20min — past STALL_MS(8) but well under ORPHAN_MS(45). The agent is genuinely slow.
+      assistantText("2026-01-01T00:20:00Z", "still building the module…"),
+    ]);
+    const out = run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      background_tasks: [{ agent_id: "uuid-distinct-from-ta1", agent_type: "fullstack-backend" }],
+    });
+    assert.equal(out.trim(), "", "a legitimately-slow subagent must still defer, not surface a terminal verdict");
+    const fin = finalizeOf(readSpans(home, sid));
+    assert.equal(fin.decision.verdict, "deferred", "20-min-old agent op ⇒ still within ORPHAN_MS ⇒ defer");
+    assert.equal(spansOf(readSpans(home, sid), "command", "qa-fix").length, 0, "command not closed while the fix agent runs");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// The ORPHAN_MS cap still backstops a genuinely crashed agent: past 45min with a mismatched bg id we
+// can no longer tell "slow" from "crashed", so we drain rather than defer forever.
+test("code review #4: an agent op open > ORPHAN_MS (crashed) drains, does not defer forever", () => {
+  const home = setupHome();
+  try {
+    const sid = "orphan-cap";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-100" }, LINE_OFF);
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "ta1", "Task", { subagent_type: "fullstack-backend", description: "fix" }),
+      // 50 min later, still no result — past ORPHAN_MS(45): treated as a crash/lost sidechain result.
+      assistantText("2026-01-01T00:50:00Z", "…"),
+    ]);
+    run(home, "finalize", {
+      session_id: sid, transcript_path: transcriptPath, reason: "stop",
+      background_tasks: [{ agent_id: "uuid-distinct-from-ta1", agent_type: "fullstack-backend" }],
+    }, LINE_OFF);
+    const fins = finalizesOf(readSpans(home, sid));
+    assert.notEqual(fins.pop().decision.verdict, "deferred", "an op older than ORPHAN_MS must drain, not defer forever");
+    assert.equal(spansOf(readSpans(home, sid), "agent", "fullstack-backend").length, 1, "the orphaned agent op is drained (emitted)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── Fix 2: a mid-run `complete` with a FAILED tool op synthesizes a FLAGGED command span ──
 test("Fix 2: a synthesized command span makes an orphaned failed tool op flaggable", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-telemetry-synth-"));
@@ -1400,6 +1515,78 @@ test("Fix 2: a synthesized command span makes an orphaned failed tool op flaggab
     const fin = finalizeOf(recs);
     assert.equal(fin.decision.verdict, "flagged", "a synthesized failed span is flaggable");
     assert.ok(fin.flagged.some((f) => f.kind === "command" && f.name === "project-init"), "the synthesized span appears in flagged[]");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── code review #1: a synthesized span must NOT roll up self-CORRECTED orphan errors ──
+// The synth span used to take its blocking-error signals from the CUMULATIVE totals, which count
+// every errored tool_result — even one a later retry self-corrected. A probe-heavy /project-init
+// (a flaky network probe, a Bash exiting non-zero then re-run) then self-diagnosed BROKEN and, in
+// feedback.mode=auto, filed a bogus upstream issue. The synth now ADOPTS the orphan ops so
+// allErrorsRecovered applies the SAME self-correction test a real span gets.
+test("code review #1: a retried-then-recovered orphan probe synthesizes a RECOVERED (unflagged) span", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-telemetry-synth-recover-"));
+  try {
+    const sid = "synth-recover";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/project-init" }, LINE_OFF);
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({ projectType: "client", selfDiagnostics: true }));
+    // A transient probe failure (same command → same arg_hash) that a RETRY corrects, with NO
+    // command/skill parent open — exactly the flaky-probe case that used to false-flag.
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "p1", "Bash", { command: "curl https://probe/health" }),
+      toolResult("2026-01-01T00:00:01Z", "p1", true, "curl: (6) Could not resolve host: probe"),
+      toolUse("2026-01-01T00:00:02Z", "p2", "Bash", { command: "curl https://probe/health" }),
+      toolResult("2026-01-01T00:00:03Z", "p2", false, "HTTP/1.1 200 OK"),
+    ]);
+    run(home, "record", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    complete(home, "project-init");
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, LINE_OFF);
+
+    const recs = readSpans(home, sid);
+    const cmd = spansOf(recs, "command", "project-init");
+    assert.equal(cmd.length, 1, "the run is represented by ONE synthesized command span");
+    assert.equal(cmd[0].outcome, "recovered", "a self-corrected orphan probe is RECOVERED, not a spurious failed");
+    const fin = finalizeOf(recs);
+    assert.ok(!fin.flagged.some((f) => f.kind === "command" && f.name === "project-init"), "a recovered synthesized span is NOT flagged (no bogus upstream issue)");
+    assert.notEqual(fin.decision.verdict, "flagged", "a clean/recovered run does not flag");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── code review #1 / Q&S NA-1: a pure UNTIED blocking failure still flags the synth span ──
+// A synthesized command span derives its signals from the ADOPTED orphan OPS — but an UNTIED
+// blocking failure (a top-level hook echo like a `tsc` PostToolUse error) has no paired op, so it
+// never becomes an orphan op. It must still force the synth span `failed` (the established
+// untied-failure asymmetry a real span gets), via the per-class `state.untiedSignals` fold — NOT
+// silently classify clean. `sawUntiedFailure` alone only vetoes `recovered`; it can't raise
+// blockingErr, so without the fold this case under-flags a genuine failure.
+test("code review #1 (Q&S NA-1): a pure UNTIED blocking failure in the blind spot still synthesizes a FLAGGED span", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-telemetry-synth-untied-"));
+  try {
+    const sid = "synth-untied";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/project-init" }, LINE_OFF);
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({ projectType: "client", selfDiagnostics: true }));
+    // An UNTIED hook_failure (top-level string echo, no tool_use_id → no op), with NO span open.
+    appendLines(transcriptPath, [hookEcho("2026-01-01T00:00:00Z", "error TS2307: Cannot find module 'x'")]);
+    run(home, "record", { session_id: sid, transcript_path: transcriptPath }, LINE_OFF);
+    complete(home, "project-init");
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }, LINE_OFF);
+
+    const recs = readSpans(home, sid);
+    const cmd = spansOf(recs, "command", "project-init");
+    assert.equal(cmd.length, 1, "the blind-spot run is represented by ONE synthesized command span");
+    assert.equal(cmd[0].outcome, "failed", "an untied blocking failure forces the synth span failed (accepted asymmetry) — not silently clean");
+    const fin = finalizeOf(recs);
+    assert.ok(fin.flagged.some((f) => f.kind === "command" && f.name === "project-init"), "the untied-failure synth span is flagged");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

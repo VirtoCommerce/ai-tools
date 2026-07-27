@@ -217,6 +217,12 @@ const T = {
   FALLBACK_DISTINCT: 3, // ≥3 distinct browser variants used in one span
   RECURRING_ERROR: 3, // same error signature ≥3×
   STALL_MS: 8 * 60 * 1000, // a single op wall-clock >8min
+  // Orphan backstop for the id-MISMATCH deferral branch (a harness that keys an agent bg-task by a
+  // distinct agent_id, so `ownedPendingAgents` can't match). MUCH larger than STALL_MS because a real
+  // /qa-fix sub-agent (clone → reproduce → build → test) routinely runs 8–30+ min — STALL_MS (8min)
+  // would judge a still-running fix agent an orphan and surface a terminal verdict mid-task (code
+  // review #4). Only bounds THIS fallback; the id-match path and the field-absent path are unchanged.
+  ORPHAN_MS: 45 * 60 * 1000, // an id-mismatched open agent op older than this is treated as a crash
   LOW_YIELD_OPS: 20, // ≥20 tool ops in a span with zero decisive op
   SILENT_MIN_OPS: 2, // a skill/command must have done ≥2 ops before it can be silent_suspect
 };
@@ -303,6 +309,18 @@ function pushOp(span, op) {
   if (DECISIVE_RE.test(op.tool)) span.sawDecisive = true;
   span.ops.push(op);
   if (span.ops.length > OPS_CAP) span.ops.shift();
+}
+// Session-level buffers for ops/details that had NO parent span (parentId:null) — see freshState.
+// A synthesized command span (Fix 2) adopts these so classify()/allErrorsRecovered treat the
+// blind-spot run exactly like a real span (code review #1).
+function recordOrphanOp(state, op) {
+  if (!state.orphanOps) state.orphanOps = [];
+  state.orphanOps.push(op);
+  if (state.orphanOps.length > OPS_CAP) state.orphanOps.shift();
+}
+function recordOrphanDetail(state, cls, text) {
+  if (!state.orphanDetails) state.orphanDetails = [];
+  if (state.orphanDetails.length < 25) state.orphanDetails.push({ cls, snippet: snippet(text) });
 }
 function markExpected(span, blob) {
   if (!span || span.sawExpected) return;
@@ -568,6 +586,17 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
       // An UNTIED blocking failure (no paired op) — mark the span so classify() can't call it
       // `recovered` on the strength of some OTHER op-keyed error that self-corrected.
       if (cls === "tool_error" || cls === "permission_denied" || cls === "hook_failure") p.sawUntiedFailure = true;
+    } else if (cls === "tool_error" || cls === "permission_denied" || cls === "hook_failure") {
+      // No open span to attach to — remember at session level so a synthesized command span (Fix 2)
+      // inherits the untied-failure veto (the same accepted asymmetry a real span gets), and keep
+      // the redacted snippet for errorCode fidelity. Count it per-class too: an untied failure has no
+      // orphan OP for the synth to derive a signal from, so without this the pure-untied case (e.g. a
+      // tsc PostToolUse echo in a blind-spot run) would under-flag — `sawUntiedFailure` only vetoes
+      // `recovered`, it can't raise blockingErr (Q&S NA-1).
+      state.untiedFailure = true;
+      state.untiedSignals ??= zeroCounts();
+      state.untiedSignals[cls] = (state.untiedSignals[cls] || 0) + 1;
+      recordOrphanDetail(state, cls, text);
     }
     state.totals[cls] = (state.totals[cls] ?? 0) + 1;
   };
@@ -596,7 +625,12 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
 
       if (type === "tool_use") {
         const name = String(item.name || "unknown");
-        const inputStr = redact(JSON.stringify(item.input ?? {}));
+        // Cap BEFORE redacting: a Write/Edit tool_use carries the full file body (tens–hundreds of KB),
+        // and running the ~20 redaction regexes over all of it on every op is pure waste on the Stop
+        // hot path — only slice(0,4000) is hashed and slice(0,500) feeds markExpected, and TEST_ENV=
+        // appears early. 8000 comfortably covers all three windows (perf review, PR #143).
+        const rawInput = JSON.stringify(item.input ?? {});
+        const inputStr = redact(rawInput.length > 8000 ? rawInput.slice(0, 8000) : rawInput);
         const arg_hash = hash(inputStr.slice(0, 4000));
         if (parent) markExpected(parent, `${name} ${inputStr.slice(0, 500)}`);
         // Enrich testEnv (S3): TEST_ENV is often passed INLINE per command (`TEST_ENV=… node …`)
@@ -652,9 +686,17 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           // Roll the op onto the parent ONLY if it is still the span that opened it
           // (A-F7: a late result must not be misattributed to a different skill that
           // has opened since). The tool span itself always carries its own signal.
+          const durationMs = Date.parse(ts) - Date.parse(sp.startTs) || 0;
           if (p && p.id === sp.parentId) {
-            pushOp(p, { tool: sp.name, arg_hash: sp.arg_hash, status: cls ? "error" : "ok", ts, durationMs: Date.parse(ts) - Date.parse(sp.startTs) || 0 });
+            pushOp(p, { tool: sp.name, arg_hash: sp.arg_hash, status: cls ? "error" : "ok", ts, durationMs });
             if (cls) pushDetail(p, cls, body);
+          } else if (sp.parentId == null) {
+            // Parentless op (no command/skill span open — the Fix 2 blind spot). Buffer it so a
+            // synthesized command span at Stop can adopt it and apply the SAME self-correction test
+            // (allErrorsRecovered) a real span's children get — so a probe that errored then retried
+            // to success is `recovered`, not a spurious `failed` from the cumulative totals (#1).
+            recordOrphanOp(state, { tool: sp.name, arg_hash: sp.arg_hash, status: cls ? "error" : "ok", cls: cls || null, ts, durationMs });
+            if (cls) recordOrphanDetail(state, cls, body);
           }
           if (cls) state.totals[cls]++;
         } else if (cls) {
@@ -827,10 +869,29 @@ function freshState(ev, sid) {
     openOps: new Map(), // tool_use_id → open tool/agent span
     lastScanTs: null, // newest transcript event ts seen (the session clock; orphan-agent backstop)
     totals: zeroCounts(),
+    // Ops/details that ran with NO open command/skill span (parentId:null) — the capture-enabled-
+    // mid-session blind spot (Fix 2). Buffered so a synthesized command span at Stop can ADOPT them
+    // and get the same self-correction (allErrorsRecovered) treatment a real span's children get,
+    // instead of rolling up the raw cumulative error totals (which count retried-then-recovered
+    // errors and spuriously tag the run `failed` — code review #1).
+    orphanOps: [], // { tool, arg_hash, status, cls, ts, durationMs }, bounded ring (OPS_CAP)
+    orphanDetails: [], // { cls, snippet } for orphaned blocking errors, bounded (25) — errorCode fidelity
+    untiedFailure: false, // an untied blocking failure (no paired op) occurred with no span open
+    // Per-class counts of UNTIED blocking failures seen with no span open. An untied failure never
+    // becomes an orphan OP (it has no tool_use_id), so the synth span can't derive a signal from it;
+    // these are folded into the synth's signals so it still classifies `failed`, matching how a real
+    // span treats an untied failure (`untiedFailure`/`sawUntiedFailure` only VETO `recovered`; they
+    // cannot raise blockingErr on their own — Q&S NA-1).
+    untiedSignals: zeroCounts(),
     spanCounts: {},
     flagged: [], // non-success/recovered spans this session
     seenSignatures: [], // fingerprints already surfaced to the diagnostician
     feedbackCount: 0,
+    // A /vc-feedback 👎 was recorded this session. This is the documented PRIMARY detector of SILENT
+    // failures (a task done wrong with NO error → zero flagged spans), so it must trigger the tail
+    // auto-run of /vc-self-check on its own — not only alongside a flagged span (code review #1). One-
+    // shot: cleared when the trigger surfaces so it can't re-nag on a later turn.
+    negativeFeedback: false,
     anySkillSeen: false,
     sawPluginSpan: false, // did any plugin skill/command span close this session (finalize `decision`)
     selfCheckSeen: false,
@@ -868,6 +929,11 @@ function loadState(statePath, ev, sid) {
       j.staleInactiveSessions = j.staleInactiveSessions || 0;
       j.staleInactiveFiles = j.staleInactiveFiles || 0;
       j.scanErrors = j.scanErrors || 0; // OBS1: transcript-scan read-error tally, persisted across turns
+      j.negativeFeedback = j.negativeFeedback || false; // forward-compat for pre-#143-followup state files
+      j.orphanOps = Array.isArray(j.orphanOps) ? j.orphanOps : []; // forward-compat for pre-fix state files
+      j.orphanDetails = Array.isArray(j.orphanDetails) ? j.orphanDetails : [];
+      j.untiedFailure = j.untiedFailure || false;
+      j.untiedSignals = (j.untiedSignals && typeof j.untiedSignals === "object") ? j.untiedSignals : zeroCounts();
       j.testEnv = j.testEnv ?? (process.env.TEST_ENV ?? null);
       return j;
     } catch {
@@ -962,7 +1028,10 @@ async function cmdInit(ev) {
     pluginVersion: readPluginVersion(),
     testEnv: process.env.TEST_ENV ?? null,
     projectType: readProjectType(root),
-    cwd: process.cwd(),
+    // cwd stays LOCAL (reduce() reads only pluginVersion from session_start; .vc-fix/ is gitignored)
+    // but run it through redact() anyway — defense-in-depth so a secret-shaped path segment can't
+    // sit unscrubbed at rest; a normal path passes through unchanged (security review, Low).
+    cwd: redact(process.cwd()),
     transcriptPath: ev.transcript_path ?? null,
     source: ev.source ?? null,
     ...(pruned > 0 ? { prunedOldArtifacts: pruned } : {}),
@@ -1023,6 +1092,10 @@ async function cmdPrompt(ev) {
     const text = tail.replace(/👍|👎|:[-+\w]+:/g, "").replace(/(^|\s)([-+]1|up|down|good|bad)\s*$/i, "").trim();
     appendRecord(jsonl, { type: "feedback", sessionId: sid, ts: nowIso(), verdict, text: snippet(text, 500), skill: state.currentSkill?.name ?? state.currentCommand?.name ?? null });
     state.feedbackCount = (state.feedbackCount ?? 0) + 1;
+    // A 👎 is the primary SILENT-failure signal — arm the tail-trigger so the terminal Stop auto-runs
+    // /vc-self-check even when no span was flagged (code review #1). deliver's hasNegFeedback already
+    // reads the jsonl record above; this flag only drives the collector's own trigger decision.
+    if (verdict === "down") state.negativeFeedback = true;
     saveState(statePath, state);
     return; // feedback does NOT open a command span
   }
@@ -1120,6 +1193,7 @@ async function cmdFinalize(ev) {
   // fallback's "plausibly still running" subset (the STALL_MS orphan backstop, unchanged).
   let openAgents = 0;
   let freshOpenAgents = 0;
+  let orphanFreshAgents = 0; // open agents younger than the (much larger) ORPHAN_MS crash cap
   const ownAgentIds = new Set();
   for (const [key, sp] of state.openOps) if (sp && sp.kind === "agent") {
     openAgents++;
@@ -1136,6 +1210,9 @@ async function cmdFinalize(ev) {
     // (current CC, always) that array is authoritative and this is unused.
     const started = Date.parse(sp.startTs || sp.lastTs || "") || refNowMs;
     if (refNowMs - started <= T.STALL_MS) freshOpenAgents++;
+    // The id-mismatch deferral branch (below) uses this much larger cap: a legitimately-slow /qa-fix
+    // sub-agent (8–30+ min) must keep deferring, not be judged an 8-min-STALL orphan (code review #4).
+    if (refNowMs - started <= T.ORPHAN_MS) orphanFreshAgents++;
   }
   // Classify the `background_tasks` entries. `ownedPendingAgents` = entries that match one of OUR
   // agent ops by id/tool_use_id. `sawAgentKindBg` = at least one entry is an AGENT/subagent (not a
@@ -1155,13 +1232,15 @@ async function cmdFinalize(ev) {
   // Hard guard (belt-and-suspenders): with ZERO open agent ops of ours, nothing of ours can be in a
   // sidechain — NEVER defer, whatever `background_tasks` says (this is the LEO agent_calls:0 case).
   // Otherwise, when the field is present, defer if either (a) a bg entry matches one of our agent ops
-  // by id, OR (b) a bg entry is agent-KIND and we have a FRESH open agent op — this covers a platform
-  // that keys an agent bg task by a distinct `agent_id` (≠ our tool_use_id), so a genuinely-running
-  // subagent is not finalized early; the `freshOpenAgents` gate (STALL_MS on the session clock) bounds
-  // it so an ORPHANED own-op + a persistent foreign agent-kind entry can't defer forever. When the
-  // field is absent, fall back to freshOpenAgents (unchanged).
+  // by id, OR (b) a bg entry is agent-KIND and we have an open agent op younger than ORPHAN_MS — this
+  // covers a platform that keys an agent bg task by a distinct `agent_id` (≠ our tool_use_id), so a
+  // genuinely-running subagent is not finalized early; the `orphanFreshAgents` gate (ORPHAN_MS on the
+  // session clock, 45min — comfortably longer than a real /qa-fix run) bounds it so an ORPHANED own-op
+  // + a persistent foreign agent-kind entry can't defer forever, WITHOUT judging a legitimately-slow
+  // fix agent an orphan at STALL_MS (8min, code review #4). When the field is absent, fall back to
+  // freshOpenAgents (unchanged).
   const pendingBg = openAgents === 0 ? false
-    : ("background_tasks" in ev) ? (ownedPendingAgents > 0 || (sawAgentKindBg && freshOpenAgents > 0)) : freshOpenAgents > 0;
+    : ("background_tasks" in ev) ? (ownedPendingAgents > 0 || (sawAgentKindBg && orphanFreshAgents > 0)) : freshOpenAgents > 0;
   const stopHookActive = ev.stop_hook_active === true;
   if (pendingBg) {
     // Reflect OUR pending agents, not global background noise (was `bgTasks.length`).
@@ -1192,14 +1271,33 @@ async function cmdFinalize(ev) {
   const completeForThisSession = Boolean(marker) && (!marker.sid || marker.sid === state.sid);
   if (completeForThisSession && !state.currentCommand && !state.currentSkill && !state.sawPluginSpan) {
     const synth = newSpan(state, "command", marker.skill || "unknown", state.startTs || state.lastScanTs || nowIso(), null);
-    // Roll the session's orphaned (parentless) blocking-error counts onto the synthesized span so
-    // classify() flags it `failed` when the run had real tool failures; a run that reached `complete`
-    // cleanly has zero here → success. sawExpected:true (the completion marker IS the expected-output
-    // proof) prevents a false silent_suspect from the orphaned op volume.
-    synth.signals.tool_error = state.totals.tool_error || 0;
-    synth.signals.permission_denied = state.totals.permission_denied || 0;
-    synth.signals.hook_failure = state.totals.hook_failure || 0;
-    synth.opCount = (state.totals.tool_calls || 0) + (state.totals.agent_calls || 0);
+    // ADOPT the session's orphaned (parentless) ops rather than rolling up the raw cumulative error
+    // TOTALS. `state.totals.<cls>` counts EVERY errored tool_result — including one a later retry
+    // self-corrected — so rolling it up tagged an otherwise-healthy, probe-heavy run (/project-init
+    // runs many live probes; a flaky probe or a NOT-READY exit-1 that was re-run) `failed` → a
+    // spurious BROKEN self-diagnosis that in feedback.mode=auto files a bogus upstream issue
+    // (code review #1). With the ops adopted, classify()/allErrorsRecovered apply the SAME
+    // self-correction test a real span gets: a retried-then-recovered probe is `recovered` (S3, not
+    // flagged), a genuinely-unresolved failure stays `failed`. Signals are derived from the adopted
+    // ops' own error classes (so signalClass/topSignal stay faithful), and the untied-failure veto
+    // is inherited from the session flag. sawExpected:true (the completion marker IS the expected
+    // output proof) prevents a false silent_suspect from the orphaned op volume.
+    synth.ops = (state.orphanOps || []).slice(-OPS_CAP);
+    synth.opCount = (state.orphanOps || []).length;
+    synth.details = (state.orphanDetails || []).slice(0, 25);
+    synth.sawUntiedFailure = Boolean(state.untiedFailure);
+    for (const o of synth.ops) {
+      if (o.status === "error" && o.cls) synth.signals[o.cls] = (synth.signals[o.cls] || 0) + 1;
+      if (DECISIVE_RE.test(o.tool)) synth.sawDecisive = true;
+    }
+    // Fold in UNTIED blocking failures (no paired op → not in orphanOps) so the synth still sees
+    // blockingErr and classifies `failed`, exactly as a real span does for an untied failure — the
+    // established fail-toward-escalation asymmetry (Q&S NA-1). Recovered TIED probes are unaffected:
+    // their errors are orphan OPS subject to allErrorsRecovered, never counted here.
+    const us = state.untiedSignals || {};
+    for (const c of ["tool_error", "permission_denied", "hook_failure"]) {
+      if (us[c]) synth.signals[c] = (synth.signals[c] || 0) + us[c];
+    }
     synth.sawExpected = true;
     state.currentCommand = synth;
   }
@@ -1246,7 +1344,12 @@ async function cmdFinalize(ev) {
   // `!stopHookActive` is a belt-and-suspenders guard alongside `promptedThisTurn`: the Stop that
   // fires from OUR OWN resume-turn carries stop_hook_active:true, so neither the findings block
   // nor the clean line re-fires and no resume loop can form.
-  const shouldPrompt = !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length > 0;
+  // A run is "flagged" if EITHER a span was flagged OR a /vc-feedback 👎 was recorded — the 👎 is the
+  // documented primary detector of SILENT failures (zero flagged spans), so it must trigger the tail
+  // auto-run of /vc-self-check on its own (code review #1). Both share the same one-shot guards below.
+  const negFeedback = Boolean(state.negativeFeedback);
+  const flaggedRun = uniqueFresh.length > 0 || negFeedback;
+  const shouldPrompt = !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && flaggedRun;
   // A completion marker counts for THIS session ONLY. cmdComplete is Bash-invoked (no hook stdin),
   // so it targets a session by the newest `.state.json` (mtime heuristic) or an explicit `--session`,
   // and stamps the RESOLVED sid INTO the marker. If a marker with a DIFFERENT sid is read here (a
@@ -1286,7 +1389,7 @@ async function cmdFinalize(ev) {
   // `!state.scanErrors`: a session whose transcript scan hit a read error measured NOTHING, so a
   // "no plugin issues detected" line would assert health that was never checked (PR #143 R2 OBS1).
   // Withhold the clean line in that case — the finalize record still carries scanErrors for audit.
-  const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && cleanEligible && !state.scanErrors;
+  const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && !flaggedRun && cleanEligible && !state.scanErrors;
   // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were detected
   // at init. It ALWAYS rides a DIAGNOSTIC surface — it fires ONLY when a findings block
   // (`shouldPrompt`) or the clean line (`cleanBlock`) is ALSO firing this turn, and is APPENDED
@@ -1307,9 +1410,10 @@ async function cmdFinalize(ev) {
   // `"type":"finalize"` / `decision` in the session jsonl. This is how "when did the hook
   // run and what did it decide" stays observable WITHOUT printing a line on every turn.
   const decision = {
-    verdict: uniqueFresh.length ? "flagged" : (state.scanErrors ? "degraded-collector" : "clean"),
+    verdict: flaggedRun ? "flagged" : (state.scanErrors ? "degraded-collector" : "clean"),
     pluginActivity,
     freshCount: uniqueFresh.length,
+    negativeFeedback: negFeedback, // did a /vc-feedback 👎 flag this run (may be true with freshCount:0)
     flaggedTotal: state.flagged.length,
     scanErrors: state.scanErrors || 0, // >0 ⇒ transcript scan hit a read error; clean line withheld (OBS1)
     surfaced, // did we resume + print a visible line this turn
@@ -1349,7 +1453,10 @@ async function cmdFinalize(ev) {
   if (surfaced) state.promptedThisTurn = true;
   if (cleanupBlock) state.cleanupOffered = true;
   if (cleanBlock && fallbackClean) state.cleanLineOffered = true; // legacy fallback: once per session
-  if (shouldPrompt) for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
+  if (shouldPrompt) {
+    for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
+    state.negativeFeedback = false; // one-shot: the 👎 trigger is spent once vc-self-check is armed
+  }
   // Consume the completion signal on ANY terminal Stop that evaluated it — not only when it
   // surfaced. A completion signal is for THIS terminal Stop; if the clean line can't surface now
   // (line/consent off, already surfaced this turn, or the run produced only sidechain spans so
@@ -1367,8 +1474,13 @@ async function cmdFinalize(ev) {
   // + the oracle, not in the surfaced text.
   let reason = null;
   if (shouldPrompt) {
+    // Two trigger sources: flagged spans and/or a 👎. Describe whichever applies (a 👎-only run has an
+    // empty uniqueFresh, so guard the summary) — the instruction to run vc-self-check is identical.
     const summary = uniqueFresh.map((f) => `${f.outcome} in /${f.name}${f.struggle?.length ? ` (${f.struggle.join(",")})` : ""}`).join("; ");
-    reason = `vc-fix self-diagnostics flagged this run (${summary}). Silently run the vc-self-check skill (Skill tool, argument "latest"), then print ONE line — the finding count + DIAG path — and stop. Nothing is sent anywhere.`;
+    const trigger = uniqueFresh.length
+      ? `vc-fix self-diagnostics flagged this run (${summary})`
+      : "you gave vc-fix negative feedback (👎) this session";
+    reason = `${trigger}. Silently run the vc-self-check skill (Skill tool, argument "latest"), then print ONE line — the finding count + DIAG path — and stop. Nothing is sent anywhere.`;
   } else if (cleanBlock) {
     reason = "Print this one line to the user verbatim, then stop — no other action: vc-fix self-check: no plugin issues detected";
   }

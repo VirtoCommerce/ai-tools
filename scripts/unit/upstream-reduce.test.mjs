@@ -473,3 +473,48 @@ test("parseDiag (PR#143 R2 F3): the DIAG Skill cell `/qa-fix (command)` normaliz
   const struct = validateUpstream(reduce({ spans: [], fallbackFindings: parsed.findings }));
   assert.deepEqual(struct.findings.map((f) => f.skill), ["qa-fix", "qa-bug", "other"]);
 });
+
+// ─── code review #2: silent_suspect vs failed must fingerprint the SAME ──────────────
+// The primary jsonl path emits the Tier-1 outcome verbatim (a silent span → `silent_suspect`),
+// while the DIAG-fallback derives outcome from the verdict (BROKEN → `failed`). The SAME defect
+// seen by a jsonl-present client and a DIAG-only client must converge on ONE upstream issue, not
+// fork on that outcome difference — else "+1 occurrence" dedup silently breaks on exactly the
+// silent-failure class (the highest-value signal).
+test("code review #2: a silent_suspect finding and its failed twin share a fingerprint", () => {
+  const silent = structOf({ outcome: "silent_suspect", verdict: "BROKEN", severity: "S1", signalClass: "none", errorCode: "UNKNOWN", toolFamily: "none", repoKind: "unknown", struggle: [], retries: 0 });
+  const failed = structOf({ outcome: "failed", verdict: "BROKEN", severity: "S1", signalClass: "none", errorCode: "UNKNOWN", toolFamily: "none", repoKind: "unknown", struggle: [], retries: 0 });
+  assert.equal(findingStructSig(silent.findings[0]), findingStructSig(failed.findings[0]), "sig collapses silent_suspect↔failed");
+  assert.equal(fingerprintStruct(silent), fingerprintStruct(failed), "same fingerprint → converges to one upstream issue");
+  // but the emitted struct still carries the TRUE outcome in each body
+  assert.equal(silent.findings[0].outcome, "silent_suspect");
+  assert.equal(failed.findings[0].outcome, "failed");
+});
+test("code review #2: canonicalization does NOT collapse a genuinely different verdict", () => {
+  const broken = structOf({ outcome: "failed", verdict: "BROKEN", severity: "S1" });
+  const degraded = structOf({ outcome: "degraded", verdict: "DEGRADED", severity: "S2" });
+  assert.notEqual(fingerprintStruct(broken), fingerprintStruct(degraded));
+});
+
+// ─── code review #3: re-emitted / repeated spans collapse to one finding ─────────────
+// A transcript rotation/compaction (scanTranscript's `size < scannedBytes` branch) re-scans from
+// scratch and re-emits a span with a FRESH id, which reduce()'s id-dedup can't catch. Left as-is
+// the duplicate inflates the body AND forks the fingerprint (its sig is the sorted finding list).
+test("code review #3: two spans with the SAME signature but different ids collapse to one finding", () => {
+  const mkSpan = (id) => ({
+    type: "span", id, parentId: null, kind: "skill", name: "qa-fix", status: "error",
+    outcome: "failed", struggle: [], retries: 0,
+    signals: { tool_error: 1, permission_denied: 0, hook_failure: 0, stop_bail: 0 }, details: [],
+  });
+  // same defect re-emitted under two ids (id-dedup sees them as distinct)
+  const struct = validateUpstream(reduce({ spans: [mkSpan("s-0"), mkSpan("s-9")], pluginVersion: "0.8.1" }));
+  assert.equal(struct.findings.length, 1, "same-signature spans collapse to ONE finding");
+  // and the fingerprint matches the single-span case (no fork)
+  const single = validateUpstream(reduce({ spans: [mkSpan("s-0")], pluginVersion: "0.8.1" }));
+  assert.equal(fingerprintStruct(struct), fingerprintStruct(single), "duplicate re-emission does not fork the fingerprint");
+});
+test("code review #3: two DIFFERENT-signature spans are BOTH kept", () => {
+  const a = { type: "span", id: "a", parentId: null, kind: "skill", name: "qa-fix", status: "error", outcome: "failed", struggle: [], retries: 0, signals: { tool_error: 1, permission_denied: 0, hook_failure: 0, stop_bail: 0 }, details: [] };
+  const b = { type: "span", id: "b", parentId: null, kind: "skill", name: "qa-bug", status: "error", outcome: "failed", struggle: [], retries: 0, signals: { tool_error: 1, permission_denied: 0, hook_failure: 0, stop_bail: 0 }, details: [] };
+  const struct = validateUpstream(reduce({ spans: [a, b], pluginVersion: "0.8.1" }));
+  assert.equal(struct.findings.length, 2);
+});

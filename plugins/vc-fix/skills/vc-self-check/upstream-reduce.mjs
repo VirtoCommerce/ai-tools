@@ -281,6 +281,23 @@ export function reduce(local = {}) {
     }
   }
 
+  // Collapse findings that share a structural signature into ONE. Two cases need this and the
+  // id-dedup above catches neither: (a) the same skill legitimately failed the same way twice in
+  // one session, and (b) a transcript rotation/compaction (scanTranscript's `size < scannedBytes`
+  // branch) re-scans from scratch and re-emits a span with a FRESH id — so `seenIds` can't dedup
+  // it (code review #3). Left as-is, the duplicates inflate the body AND fork the fingerprint
+  // (fingerprintStruct hashes the sorted finding-sig list), so the SAME defect fails to converge
+  // across clients. Keep the first occurrence; within a session occurrences stays 1 (cross-SESSION
+  // counting is mergeStructs' job, keyed on this same signature).
+  const dedupedFindings = [];
+  const seenSigs = new Set();
+  for (const f of findings) {
+    const k = findingStructSig(f);
+    if (seenSigs.has(k)) continue;
+    seenSigs.add(k);
+    dedupedFindings.push(f);
+  }
+
   const fb = Array.isArray(local.feedback) ? local.feedback : [];
   const feedback = {
     up: fb.filter((f) => f && f.verdict === "up").length,
@@ -290,7 +307,7 @@ export function reduce(local = {}) {
   return {
     schemaVersion: SCHEMA_VERSION,
     pluginVersion: validPluginVersion(local.pluginVersion),
-    findings,
+    findings: dedupedFindings,
     feedback,
     sessionCount: clampInt(local.sessionCount ?? 1, 1, 1_000_000),
   };
@@ -333,10 +350,20 @@ export function validateUpstream(struct) {
 }
 
 // ─── structural signature + fingerprint ──────────────────────────────────────
+// A BROKEN finding's `outcome` is either `failed` or `silent_suspect`, but the two upstream
+// entry paths DISAGREE on which they emit for the SAME defect: the primary jsonl path emits
+// the Tier-1 outcome verbatim (a silent span → `silent_suspect`), while the DIAG-fallback
+// derives outcome from the verdict alone (BROKEN → `failed`). Both already carry verdict=BROKEN
+// / severity=S1, so folding them to one signature token keeps the true outcome in the emitted
+// struct/body while making a jsonl-present client and a DIAG-only client converge on ONE
+// upstream issue instead of forking (code review #2). Fail-safe: same verdict ⇒ same identity.
+function outcomeSig(o) {
+  return o === "silent_suspect" || o === "failed" ? "broken" : o;
+}
 /** Identity of a single finding, over its ENUM fields only (no text, no occurrences). */
 export function findingStructSig(f) {
   return [
-    f.skill, f.verdict, f.severity, f.outcome, f.signalClass,
+    f.skill, f.verdict, f.severity, outcomeSig(f.outcome), f.signalClass,
     (Array.isArray(f.struggle) ? [...f.struggle].sort().join("+") : ""),
     f.errorCode, f.toolFamily, f.repoKind,
   ].join("|");
