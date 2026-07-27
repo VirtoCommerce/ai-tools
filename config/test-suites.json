@@ -669,8 +669,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 50,
-      "estimatedMinutes": 39,
+      "testCount": 52,
+      "estimatedMinutes": 41,
       "agent": "qa-frontend-expert",
       "tags": [
         "cart",

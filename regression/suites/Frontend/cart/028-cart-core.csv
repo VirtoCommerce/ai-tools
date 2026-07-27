@@ -292,25 +292,69 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] verify Order Summary totals updated","[API] changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx",input reverts to 1 after Tab; line total not recalculated; API not called on Tab; duplicate line item created,Restore qty to 1 or remove item,QS-INPUT-001,Manual
-CART-036,Quantity Stepper - Invalid Input Rejected,Cart > Quantity Stepper,High,BL-CART-001,"ECL-3.1, ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-036,Quantity Stepper - Negative Quantity Rejected (Keyboard Entry),Cart > Quantity Stepper,High,BL-CART-001,ECL-5.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Product in cart; spinbutton focused on cart page","url={{FRONT_URL}}/cart
+Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product - minQuantity=1, maxQuantity=0/unlimited, no variation gate) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used here - it is a 6-variation product gated behind Color/Fabric/Size selection with no inline quantity stepper of its own, so it cannot host this test. Split from the former combined CART-036 into CART-036/CART-065/CART-066 (one invalid-input class each, per QS-INPUT-004) so a single FAIL isolates to one defect; this case is fully independent and does not depend on any sibling having run.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
-[KEY] select all in spinbutton and type '-1'
-[KEY] press Tab
-[ASSERT] verify value rejected or reverted to last valid qty
-[KEY] select all and type 'abc'
-[KEY] press Tab
-[ASSERT] verify value rejected or reverted
-[KEY] select all and type '1.5'
-[KEY] press Tab","[STATE] negative numbers rejected — qty remains at last valid value
-[STATE] non-numeric input rejected — qty remains at last valid value
-[STATE] decimal values rejected or rounded to integer
-[DOM] no cart errors displayed for rejected inputs — element absent from DOM
-[STATE] verify value rejected or rounded to integer
-[STATE] check browser console for errors after each attempt","[CONSOLE] no JS errors after any invalid input attempt
-[NETWORK] no failed API calls triggered by invalid input",negative qty accepted and submitted; non-numeric input crashes cart; decimal qty causes API error; console errors on invalid input,none (no state change from rejections),QS-INPUT-004,Manual
+password={{USER_PASSWORD}}
+target_sku=@td(BUYABLE_NO_MIN_QTY.sku)","[NAV] navigate to a category/search listing for @td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] add @td(BUYABLE_NO_MIN_QTY.sku) to cart with qty=1
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new line - addItem async settle)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify one line item for @td(BUYABLE_NO_MIN_QTY.sku) is present with its quantity spinbutton showing 1
+[ACT] click the quantity spinbutton on that line item to focus it
+[WAIT] wait for the spinbutton to be focused and ready to receive keyboard input
+[KEY] press Control+a to select all existing text inside the focused spinbutton
+[ACT] type -1 into the focused spinbutton
+[KEY] press Tab to commit the entered value and move focus off the spinbutton
+[WAIT] wait 2s for the quantity-change mutation attempt to settle","[STATE] displayed quantity is rejected or reverted to the last valid value 1, not -1 {BL} {OBSERVED} (per BL-CART-001; 2026-07-27 trace shows the changeCartItemsQuantity response carries validationErrors[PRODUCT_MIN_QTY] yet still echoes items[0].quantity=-1, and the storefront currently binds the spinbutton directly to that echoed value — this assertion is expected to legitimately FAIL until the echo is fixed)
+[MATH] line total = unit price × 1 and subtotal = sum of all line totals at quantity 1 (2 decimal places) — no mismatch between a rejected/reverted displayed quantity and the computed money fields {OBSERVED}
+[DOM] no cart error banner is rendered for the rejected -1 attempt - element absent from DOM {OBSERVED}
+[STATE] no JavaScript console errors are thrown after the attempt {OBSERVED}","[API] the changeCartItemsQuantity mutation response top-level errors[] is empty — a negative quantity is expected to be rejected client-side before any mutation is sent; today's defect instead sends it and gets HTTP 200 with only a soft validationErrors[PRODUCT_MIN_QTY] entry, never a top-level errors[]
+[CONSOLE] no JS errors after the negative-quantity keyboard-entry attempt
+[NETWORK] the changeCartItemsQuantity call may return HTTP 200 with a soft validationErrors entry, but must not surface as an uncaught 4xx/5xx",negative qty (-1) echoed back into the spinbutton display instead of reverting to the last valid quantity; displayed quantity and computed subtotal/line total disagree after the rejected attempt; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004,Manual
+CART-065,Quantity Stepper - Non-Numeric Input Blocked (Keyboard Entry),Cart > Quantity Stepper,High,BL-CART-001,ECL-5.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product - minQuantity=1, maxQuantity=0/unlimited, no variation gate) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used here - it is a 6-variation product gated behind Color/Fabric/Size selection with no inline quantity stepper of its own, so it cannot host this test. Split from the former combined CART-036 into CART-036/CART-065/CART-066 (one invalid-input class each, per QS-INPUT-004) so a single FAIL isolates to one defect; this case is fully independent and does not depend on any sibling having run.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+target_sku=@td(BUYABLE_NO_MIN_QTY.sku)","[NAV] navigate to a category/search listing for @td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] add @td(BUYABLE_NO_MIN_QTY.sku) to cart with qty=1
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new line - addItem async settle)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify one line item for @td(BUYABLE_NO_MIN_QTY.sku) is present with its quantity spinbutton showing 1
+[ACT] click the quantity spinbutton on that line item to focus it
+[WAIT] wait for the spinbutton to be focused and ready to receive keyboard input
+[KEY] press Control+a to select all existing text inside the focused spinbutton
+[ACT] type abc into the focused spinbutton
+[KEY] press Tab to commit the entered value and move focus off the spinbutton
+[WAIT] wait 2s for the quantity-change mutation attempt to settle","[STATE] the native number-input constraint blocks the non-numeric characters from being entered at all - displayed quantity remains 1 {OBSERVED} (browser-native input type=number behavior, not app-level validation; this assertion is expected to PASS)
+[STATE] cart totals remain unchanged (quantity stayed at 1 throughout the attempt) {OBSERVED}
+[DOM] no cart error banner is rendered for the blocked abc attempt - element absent from DOM {OBSERVED}
+[STATE] no JavaScript console errors are thrown after the attempt {OBSERVED}","[API] no changeCartItemsQuantity mutation is sent at all for this non-numeric input — the client-rejected value never reaches the server, so there is no GraphQL response to check for a top-level errors[] entry
+[CONSOLE] no JS errors after the non-numeric keyboard-entry attempt
+[NETWORK] no API call is triggered at all - the native input constraint blocks the character before any request is attempted {OBSERVED}",non-numeric input bypasses the native number-input constraint and reaches the API; displayed quantity changes away from 1; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004,Manual
+CART-066,Quantity Stepper - Decimal Quantity Rejected (Keyboard Entry),Cart > Quantity Stepper,High,BL-CART-001,ECL-5.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product - minQuantity=1, maxQuantity=0/unlimited, no variation gate) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used here - it is a 6-variation product gated behind Color/Fabric/Size selection with no inline quantity stepper of its own, so it cannot host this test. Split from the former combined CART-036 into CART-036/CART-065/CART-066 (one invalid-input class each, per QS-INPUT-004) so a single FAIL isolates to one defect; this case is fully independent and does not depend on any sibling having run.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+target_sku=@td(BUYABLE_NO_MIN_QTY.sku)","[NAV] navigate to a category/search listing for @td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] add @td(BUYABLE_NO_MIN_QTY.sku) to cart with qty=1
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new line - addItem async settle)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify one line item for @td(BUYABLE_NO_MIN_QTY.sku) is present with its quantity spinbutton showing 1
+[ACT] click the quantity spinbutton on that line item to focus it
+[WAIT] wait for the spinbutton to be focused and ready to receive keyboard input
+[KEY] press Control+a to select all existing text inside the focused spinbutton
+[ACT] type 1.5 into the focused spinbutton
+[KEY] press Tab to commit the entered value and move focus off the spinbutton
+[WAIT] wait 2s for the quantity-change mutation attempt to settle","[STATE] quantity is rejected or rounded to an integer before being submitted, not sent to the API unrounded {BL} {OBSERVED} (per BL-CART-001; 2026-07-27 trace shows quantity 1.5 sent verbatim as a GraphQL Int variable, producing an HTTP 400 Unable-to-convert-to-Int error — this assertion is expected to legitimately FAIL until client-side rounding/validation is added)
+[STATE] the spinbutton does not remain stuck displaying the invalid unrounded value after a failed mutation attempt {OBSERVED} (2026-07-27 trace shows the spinbutton left showing 1.5 with a stale, unresolved cart state after the HTTP 400 — this assertion is expected to legitimately FAIL until fixed)
+[DOM] no cart error banner is rendered for the rejected 1.5 attempt - element absent from DOM {OBSERVED}
+[STATE] no JavaScript console errors are thrown after the attempt {OBSERVED} (trace showed no console errors, UI did not crash)","[API] the decimal quantity is expected to be rejected or rounded client-side before any mutation is sent, so no GraphQL errors[] should come back; today's defect instead sends 1.5 verbatim and the failure surfaces as the transport-level HTTP 400 tracked by the [NETWORK] check below, not as a GraphQL errors[] entry
+[CONSOLE] no JS errors after the decimal-quantity keyboard-entry attempt
+[NETWORK] no failed (4xx/5xx) API calls are triggered by client-side-rejected input - the client must validate/round the value before submitting to changeCartItemsQuantity {OBSERVED: currently fails - 2026-07-27 trace shows quantity 1.5 sent verbatim, producing HTTP 400 Unable-to-convert-to-Int}",decimal qty (e.g. 1.5) submitted unrounded as a GraphQL Int variable producing an HTTP 400 instead of client-side rejection or rounding; spinbutton left displaying the invalid unrounded value in a stale/unresolved state; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004,Manual
 CART-037,Quantity Stepper - Max Stock Enforcement,Cart > Quantity Stepper,High,BL-CART-001,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: Product with stock ≤ 10 must exist in catalog and virtual B2B catalog (@td(PROD_LOW_STOCK.sku)). Set LOW_STOCK_SKU env var. Run /qa-seed-data to provision. Product available; qty=0 in cart (not yet added).","url={{FRONT_URL}}@td(PROD_LOW_STOCK.url)
@@ -730,7 +774,7 @@ coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] on review step, locate the applied coupon display","[API] cart query at checkout review: cart.coupons[0].isAppliedSuccessfully=true; discount matches /cart value
 [CONSOLE] no JS errors during cart → checkout navigation
 [NETWORK] no 4xx/5xx","coupon code not visible on checkout review (appliedCouponCode missing from review.vue), discount disappears at checkout review, cart.coupons reset on checkout navigation, console TypeError on checkout page",Navigate away without placing order; remove coupon from cart if needed,"VCST-4896 AC#review-step, VCST-4590",Reviewed
-CART-070,Save for Later — Configurable Product Configuration Visible After Save and After Restore (VCST-4205),Cart > Save for Later > Configurable,Critical,BL-CART-007; BL-CART-010,ECL-7.1; ECL-14.1,"[PRE:CLEAR_SESSION]
+CART-070,Save for Later — Configurable Product Configuration Survives Save/Restore Round-Trip (VCST-4205),Cart > Save for Later > Configurable,Critical,BL-CART-007; BL-CART-010,ECL-7.1; ECL-14.1,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ORG_USER]
 [PRE:RESET_CART]
 Ring configurable product (CFG_RING) accessible at {{FRONT_URL}}@td(CFG_RING.url). B2B store accessible at {{FRONT_URL}}.","front_url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, ring_url=@td(CFG_RING.url)","[PRE:CLEAR_SESSION]
@@ -750,18 +794,16 @@ Ring configurable product (CFG_RING) accessible at {{FRONT_URL}}@td(CFG_RING.url
 [WAIT] item moves to Saved for later section
 [WAIT] cart section shows 0 items
 [ASSERT] [DOM] Saved for later section contains Ring item
-[ASSERT] [DOM] Saved for later item shows configuration detail (text or section label visible — not blank)
 [ACT] click 'Move to cart' on the Saved for later Ring item
 [WAIT] item moves back to active cart (badge = 1)","[DOM] configuration text 'AGENT-TEST-SFL-RING-001' or configuration detail visible in cart before Save for later
 [STATE] cart empty after Save for later action
-[DOM] Saved for later Ring item has non-blank configuration detail (visible)
 [STATE] cart has 1 Ring item after Move to cart
 [DOM] restored Ring item has non-blank configuration detail (visible)
-[STATE] [STATE] cart has 1 Ring line item after restore","[API] moveToSavedForLater mutation errors[] empty
+[STATE] cart has 1 Ring line item after restore","[API] moveToSavedForLater mutation errors[] empty
 [API] getSavedForLater configurationItems non-empty for saved Ring item
 [API] moveFromSavedForLater mutation errors[] empty
 [CONSOLE] no JS errors during save + restore flow
-[NETWORK] no 4xx/5xx on cart API requests",Save for later click does nothing or shows error; Saved for later item missing configuration label (VCST-4205 pre-fix: configuration blank after save); Move to cart restores item with empty/default configuration; Spinner visible >10s; errors[] non-empty on moveToSavedForLater; cart badge stays at 1 after Save,Remove Ring item from cart or Saved for later if test leaves items behind,VCST-4205,Draft
+[NETWORK] no 4xx/5xx on cart API requests",Save for later click does nothing or shows error; Move to cart restores item with empty/default configuration; Spinner visible >10s; errors[] non-empty on moveToSavedForLater; cart badge stays at 1 after Save,Remove Ring item from cart or Saved for later if test leaves items behind,"VCST-4205; Re-scoped 2026-07-27 — rendering configurationItems on the Saved-for-later card is confirmed NOT IMPLEMENTED (withdrawn as a defect finding, previously misread as a VCST-4205 repro); that display assertion is deferred and will be restored when the card ships configuration rendering. This case's active, testable scope is the round-trip config-preservation invariant: configuration visible in the active cart before Save for later, and intact again in the active cart after Move to cart.",Draft
 CART-071,Mixed Cart — Adding Loyalty PTS Product Shows 'Products in PTS' Group on Cart Page,Cart > Mixed Cart,Critical,BL-B2B-005; BL-CART-007,ECL-7.3,"[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
 [PRE:RESET_CART]
 Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.currency_code). Theme vc-theme-b2b-vue-2.51.0-pr-2310+. User is in VIP group. Requires at least 1 product with PTS price in the loyalty catalog.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); loyalty_user=@td(LOYALTY_VIP_USER.email),"[NAV] {{FRONT_URL}}/loyalty-catalog
