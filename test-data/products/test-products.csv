@@ -1,112 +1,114 @@
-product_id,sku,product_name,category,price,currency,in_stock,stock_qty,description,test_purpose,notes,seeded,sale_price
-PROD-001,WH-001,AGENT-TEST-Wireless-Headphones,Electronics > Audio & Video > Headsets & Speakers,99.99,USD,Yes,50,Bluetooth wireless headphones with noise cancellation,Standard product for checkout,Most commonly used test product. Name carries AGENT-TEST- prefix from 2026-05-19 reseed (seed-20260519-std-cat slug). Verified live on vcst-qa 2026-05-22 via SRCH-NEW-046 mini-run.,true
-PROD-002,LT-001,AGENT-TEST-Gaming Laptop,Electronics > Computers & Laptops > Laptops,1299.99,USD,Yes,10,15-inch gaming laptop with RTX graphics,High-value item testing,Tests expensive products,true
-PROD-003,SH-001,AGENT-TEST-Running Shoes,Clothing > Footwear,79.99,USD,Yes,100,Athletic running shoes size 10,Clothing category,Has size variants,true
-PROD-004,CF-001,AGENT-TEST-Coffee Maker,Home > Kitchen,49.99,USD,Yes,25,12-cup programmable coffee maker,Standard home goods,Mid-range price,true
-PROD-005,PH-001,AGENT-TEST-Smartphone Case,Electronics > AGENT-TEST-Accessories,19.99,USD,Yes,200,Protective case for iPhone 14,Low-cost accessory,Quick add to cart,true
-PROD-006,BK-001,AGENT-TEST-Fiction Novel,Books > Fiction,14.99,USD,Yes,500,Bestselling fiction novel,Digital/physical hybrid,Low price point,true
-PROD-007,CH-001,AGENT-TEST-Office Chair,Furniture > Office,299.99,USD,Yes,8,Ergonomic office chair with lumbar support,Furniture category,Large item shipping,true
-PROD-008,WB-001,AGENT-TEST-Smart Watch,Electronics > Wearables,249.99,USD,Yes,30,Fitness tracker smart watch,Popular category,Has color variants,true
-PROD-009,JK-001,AGENT-TEST-Winter Jacket,Clothing > Outerwear,129.99,USD,Yes,40,Insulated winter jacket,Seasonal item,Has size and color variants,true
-PROD-010,TB-001,AGENT-TEST-Tablet 10-inch,Electronics > Tablets,399.99,USD,Yes,15,10-inch Android tablet,Tablet category,Mid-high price,true
-PROD-011,HD-001,AGENT-TEST-USB-C Hard Drive 1TB,Electronics > Storage,89.99,USD,Yes,60,Portable 1TB external hard drive,Storage category,Tech accessory,true
-PROD-012,KY-001,AGENT-TEST-Mechanical Keyboard,Electronics > Peripherals,149.99,USD,Yes,35,RGB mechanical gaming keyboard,Gaming peripherals,Popular item,true
-PROD-013,MS-001,AGENT-TEST-Wireless Mouse,Electronics > Peripherals,29.99,USD,Yes,150,Ergonomic wireless mouse,Low-cost peripheral,Bundle candidate,true
-PROD-014,SP-001,AGENT-TEST-Bluetooth Speaker,Electronics > Audio,59.99,USD,Yes,80,Portable waterproof speaker,Audio category,Mid-range,true
-PROD-015,BG-001,AGENT-TEST-Backpack,AGENT-TEST-Accessories > Bags,69.99,USD,Yes,45,Travel backpack 40L,Bags category,Practical item,true
-PROD-016,TH-001,AGENT-TEST-USB-C Charger,Electronics > AGENT-TEST-Accessories,24.99,USD,Yes,300,Fast charging USB-C adapter,High stock item,Frequently purchased,true
-PROD-017,SN-001,AGENT-TEST-Sunglasses,AGENT-TEST-Accessories > Eyewear,89.99,USD,Yes,70,Polarized UV protection sunglasses,AGENT-TEST-Accessories,Has style variants,true
-PROD-018,DK-001,AGENT-TEST-Standing Desk,Furniture > Office,499.99,USD,Yes,5,Electric height-adjustable desk,High-value furniture,Large item,true
-PROD-019,MK-001,AGENT-TEST-Makeup Kit,Beauty > Cosmetics,79.99,USD,Yes,55,Professional makeup brush set,Beauty category,Gender-specific,true
-PROD-020,SK-001,AGENT-TEST-Skincare Set,Beauty > Skincare,59.99,USD,Yes,40,Anti-aging skincare collection,Beauty bundle,Multi-item set,true
-PROD-021,PF-001,AGENT-TEST-Perfume 50ml,Beauty > Fragrance,89.99,USD,Yes,30,Designer fragrance 50ml,Luxury item,Restricted shipping,true
-PROD-022,AF-001,AGENT-TEST-Air Fryer,Home > Kitchen,119.99,USD,Yes,20,5-quart digital air fryer,Kitchen appliance,Popular item,true
-PROD-023,RV-001,AGENT-TEST-Robot Vacuum,Home > Appliances,299.99,USD,Yes,12,Smart robot vacuum cleaner,Smart home,High-tech appliance,true
-PROD-024,EB-001,AGENT-TEST-Electric Toothbrush,Personal Care > Dental,69.99,USD,Yes,65,Sonic electric toothbrush,Personal care,Replacement heads available,true
-PROD-025,HD-002,AGENT-TEST-Hair Dryer,Personal Care > Hair,49.99,USD,Yes,50,Ionic hair dryer 1875W,Hair care,Standard item,true
-PROD-026,YM-001,AGENT-TEST-Yoga Mat,Sports > Fitness,29.99,USD,Yes,90,Non-slip yoga mat with strap,Fitness,Low price,true
-PROD-027,DB-001,AGENT-TEST-Dumbbell Set 20lb,Sports > Fitness,79.99,USD,Yes,25,Adjustable dumbbell set,Heavy item,High shipping cost,true
-PROD-028,TT-001,AGENT-TEST-Tent 4-Person,Sports > Camping,199.99,USD,Yes,15,Waterproof camping tent,Outdoor gear,Seasonal,true
-PROD-029,BB-001,AGENT-TEST-Basketball,Sports > Team Sports,24.99,USD,Yes,100,Official size basketball,Sports equipment,Simple product,true
-PROD-030,GL-001,AGENT-TEST-Gaming Console,Electronics > Gaming,499.99,USD,Yes,8,Next-gen gaming console,High-value electronics,Limited stock,true
-PROD-031,TV-001,AGENT-TEST-Smart TV 55-inch,Electronics > TVs,799.99,USD,Yes,6,4K Smart TV 55-inch,High-value large item,Freight shipping,true
-PROD-032,CM-001,AGENT-TEST-Digital Camera,Electronics > Cameras,649.99,USD,Yes,10,Mirrorless digital camera 24MP,Photography,High-value,true
-PROD-033,PR-001,AGENT-TEST-Printer All-in-One,Electronics > Office,179.99,USD,Yes,18,Wireless all-in-one printer,Office equipment,Requires ink cartridges,true
-PROD-034,RT-001,AGENT-TEST-Wi-Fi Router,Electronics > Networking,89.99,USD,Yes,40,Dual-band Wi-Fi 6 router,Networking,Tech item,true
-PROD-035,PB-001,AGENT-TEST-Power Bank 20000mAh,Electronics > AGENT-TEST-Accessories,39.99,USD,Yes,120,Portable power bank,Mobile accessory,High stock,true
-PROD-036,EC-001,AGENT-TEST-Espresso Machine,Home > Kitchen,299.99,USD,Yes,12,Semi-automatic espresso machine,Premium kitchen,Coffee enthusiasts,true
-PROD-037,BL-001,AGENT-TEST-Blender 1000W,Home > Kitchen,79.99,USD,Yes,30,High-speed blender,Kitchen small appliance,Popular,true
-PROD-038,MW-001,AGENT-TEST-Microwave Oven,Home > Kitchen,149.99,USD,Yes,15,1100W countertop microwave,Kitchen major appliance,Standard,true
-PROD-039,VC-001,AGENT-TEST-Vacuum Cleaner,Home > Appliances,179.99,USD,Yes,20,Bagless upright vacuum,Cleaning appliance,Standard home,true
-PROD-040,FN-001,AGENT-TEST-Floor Fan,Home > Appliances,49.99,USD,Yes,35,Oscillating floor fan 16-inch,Seasonal appliance,Summer item,true
-PROD-041,HT-001,AGENT-TEST-Space Heater,Home > Appliances,69.99,USD,Yes,25,Ceramic space heater,Seasonal appliance,Winter item,true
-PROD-042,LM-001,AGENT-TEST-Desk Lamp LED,Home > Lighting,34.99,USD,Yes,80,Adjustable LED desk lamp,Lighting,Office/home,true
-PROD-043,PL-001,AGENT-TEST-Pendant Light,Home > Lighting,89.99,USD,Yes,22,Modern pendant light fixture,Home improvement,Installation required,true
-PROD-044,DR-001,AGENT-TEST-Area Rug 5x7,Home > Decor,129.99,USD,Yes,18,Modern geometric area rug,Home decor,Large item,true
-PROD-045,CU-001,AGENT-TEST-Throw Pillows Set,Home > Decor,39.99,USD,Yes,60,Decorative throw pillows 4-pack,Home AGENT-TEST-Accessories,Bundle,true
-PROD-046,CN-001,AGENT-TEST-Canvas Wall Art,Home > Decor,79.99,USD,Yes,30,Abstract canvas wall art 24x36,Home decor,Fragile,true
-PROD-047,PL-002,AGENT-TEST-Indoor Plant Pot,Home > Garden,19.99,USD,Yes,100,Ceramic plant pot with saucer,Garden,Low cost,true
-PROD-048,GT-001,AGENT-TEST-Garden Tool Set,Home > Garden,59.99,USD,Yes,28,5-piece garden tool set,Gardening,Tool set,true
-PROD-049,HS-001,AGENT-TEST-Garden Hose 50ft,Home > Garden,34.99,USD,Yes,40,Flexible garden hose,Outdoor,Standard,true
-PROD-050,SD-001,AGENT-TEST-Bird Feeder,Home > Garden,24.99,USD,Yes,50,Hanging bird feeder,Outdoor decor,Seasonal,true
-PROD-051,SG-001,AGENT-TEST-Grill BBQ,Home > Outdoor,399.99,USD,Yes,8,Gas grill 4-burner,Outdoor cooking,High-value large,true
-PROD-052,PF-002,AGENT-TEST-Patio Furniture Set,Home > Outdoor,899.99,USD,Yes,4,4-piece patio furniture set,Outdoor furniture,Very high value,true
-PROD-053,UM-001,AGENT-TEST-Patio Umbrella,Home > Outdoor,129.99,USD,Yes,12,9-ft patio umbrella with base,Outdoor shade,Large item,true
-PROD-054,TL-001,AGENT-TEST-Tool Set 100-piece,Tools > Hand Tools,149.99,USD,Yes,15,100-piece mechanics tool set,DIY tools,Heavy item,true
-PROD-055,DR-002,AGENT-TEST-Cordless Drill,Tools > Power Tools,89.99,USD,Yes,20,18V cordless drill kit,Power tools,Battery included,true
-PROD-056,SW-001,AGENT-TEST-Circular Saw,Tools > Power Tools,119.99,USD,Yes,10,7.25-inch circular saw,Power tools,Professional grade,true
-PROD-057,LD-001,AGENT-TEST-Ladder 6ft,Tools > Ladders,79.99,USD,Yes,18,Folding step ladder,Safety equipment,Large/bulky,true
-PROD-058,PB-002,AGENT-TEST-Toolbox,Tools > Storage,39.99,USD,Yes,45,Plastic tool organizer box,Tool storage,Standard,true
-PROD-059,TP-001,AGENT-TEST-Tape Measure 25ft,Tools > Measuring,12.99,USD,Yes,150,Retractable tape measure,Small tool,Low cost,true
-PROD-060,LV-001,AGENT-TEST-Laser Level,Tools > Measuring,59.99,USD,Yes,25,Self-leveling laser level,Professional tool,Tech tool,true
-PROD-061,PT-001,AGENT-TEST-Paint Roller Set,Home Improvement > Painting,19.99,USD,Yes,70,Paint roller and tray set,DIY painting,Low cost,true
-PROD-062,BR-001,AGENT-TEST-Paint Brush Set,Home Improvement > Painting,24.99,USD,Yes,60,Professional paint brush set,DIY painting,Multi-piece,true
-PROD-063,ST-001,AGENT-TEST-Step Stool,Home > Storage,29.99,USD,Yes,50,2-step folding stool,Utility,Standard,true
-PROD-064,SB-001,AGENT-TEST-Storage Bins 6-pack,Home > Storage,34.99,USD,Yes,40,Plastic storage containers,Organization,Bundle,true
-PROD-065,CB-001,AGENT-TEST-Closet Organizer,Home > Storage,79.99,USD,Yes,20,5-shelf hanging organizer,Closet storage,Space-saving,true
-PROD-066,DW-001,AGENT-TEST-Dish Rack,Home > Kitchen,24.99,USD,Yes,65,Stainless steel dish drying rack,Kitchen utility,Standard,true
-PROD-067,CT-001,AGENT-TEST-Cutting Board Set,Home > Kitchen,29.99,USD,Yes,55,Bamboo cutting board set 3-piece,Kitchen tools,Eco-friendly,true
-PROD-068,KN-001,AGENT-TEST-Kitchen Knife Set,Home > Kitchen,89.99,USD,Yes,30,8-piece chef knife set with block,Kitchen essentials,Sharp/fragile,true
-PROD-069,PS-001,AGENT-TEST-Pots and Pans Set,Home > Kitchen,149.99,USD,Yes,18,Non-stick cookware set 10-piece,Cookware,Bundle,true
-PROD-070,BC-001,AGENT-TEST-Baking Sheet Set,Home > Kitchen,34.99,USD,Yes,40,Non-stick baking sheet 3-pack,Baking,Standard,true
-PROD-071,MB-001,AGENT-TEST-Mixing Bowls Set,Home > Kitchen,24.99,USD,Yes,50,Stainless steel mixing bowls 5-piece,Kitchen prep,Bundle,true
-PROD-072,SM-001,AGENT-TEST-Silicone Mats 2-pack,Home > Kitchen,19.99,USD,Yes,80,Reusable silicone baking mats,Baking accessory,Eco-friendly,true
-PROD-073,TW-001,AGENT-TEST-Kitchen Towels 6-pack,Home > Kitchen,14.99,USD,Yes,100,Cotton kitchen dish towels,Kitchen linens,Low cost,true
-PROD-074,AP-001,AGENT-TEST-Apron,Home > Kitchen,19.99,USD,Yes,60,Adjustable chef apron,Kitchen apparel,Gift item,true
-PROD-075,OG-001,AGENT-TEST-Oven Gloves,Home > Kitchen,12.99,USD,Yes,90,Heat-resistant oven mitts,Safety,Low cost,true
-PROD-076,TS-001,AGENT-TEST-Towel Set,Home > Bath,39.99,USD,Yes,35,Bath towel set 6-piece,Bath linens,Bundle,true
-PROD-077,SC-001,AGENT-TEST-Shower Curtain,Home > Bath,24.99,USD,Yes,50,Waterproof shower curtain,Bath accessory,Standard,true
-PROD-078,BM-001,AGENT-TEST-Bath Mat,Home > Bath,19.99,USD,Yes,70,Memory foam bath mat,Bath safety,Comfort item,true
-PROD-079,TB-002,AGENT-TEST-Toothbrush Holder,Home > Bath,14.99,USD,Yes,80,Stainless steel holder,Bath organization,Small item,true
-PROD-080,SD-002,AGENT-TEST-Soap Dispenser,Home > Bath,12.99,USD,Yes,90,Automatic soap dispenser,Bath accessory,Battery-powered,true
-PROD-081,BS-001,AGENT-TEST-Bedding Set Queen,Home > Bedroom,89.99,USD,Yes,25,Queen size bedding set 7-piece,Bedroom linens,Bundle,true
-PROD-082,PL-003,AGENT-TEST-Pillow 2-pack,Home > Bedroom,39.99,USD,Yes,40,Memory foam pillows,Sleep comfort,Bundle,true
-PROD-083,BL-002,AGENT-TEST-Blanket Fleece,Home > Bedroom,34.99,USD,Yes,50,Soft fleece throw blanket,Bedroom comfort,Seasonal,true
-PROD-084,CM-002,AGENT-TEST-Comforter Queen,Home > Bedroom,69.99,USD,Yes,30,Down alternative comforter,Bedroom essential,Standard,true
-PROD-085,MT-001,AGENT-TEST-Mattress Topper Queen,Home > Bedroom,119.99,USD,Yes,15,3-inch memory foam topper,Sleep upgrade,Large/bulky,true
-PROD-086,AL-001,AGENT-TEST-Alarm Clock,Home > Bedroom,19.99,USD,Yes,100,Digital alarm clock,Bedroom utility,Low cost,true
-PROD-087,NL-001,AGENT-TEST-Night Light,Home > Bedroom,12.99,USD,Yes,120,LED motion sensor night light,Safety/convenience,Battery-powered,true
-PROD-088,HS-002,AGENT-TEST-Hangers 50-pack,Home > Bedroom,19.99,USD,Yes,60,Velvet hangers,Closet organization,Bundle,true
-PROD-089,SM-002,AGENT-TEST-Full Length Mirror,Home > Bedroom,79.99,USD,Yes,18,Standing full length mirror,Bedroom furniture,Fragile,true
-PROD-090,JW-001,AGENT-TEST-Jewelry Box,AGENT-TEST-Accessories > Storage,49.99,USD,Yes,35,Wooden jewelry organizer,Personal storage,Gift item,true
-PROD-091,WT-001,AGENT-TEST-Wrist Watch Analog,AGENT-TEST-Accessories > Watches,129.99,USD,Yes,25,Stainless steel watch,Fashion accessory,Mid-high value,true
-PROD-092,WT-002,AGENT-TEST-Wrist Watch Digital,AGENT-TEST-Accessories > Watches,79.99,USD,Yes,30,Sports digital watch,Sports accessory,Water-resistant,true
-PROD-093,WL-001,AGENT-TEST-Wallet Leather,AGENT-TEST-Accessories > Wallets,49.99,USD,Yes,50,Genuine leather wallet,Personal accessory,Gift item,true
-PROD-094,BL-003,AGENT-TEST-Belt Leather,AGENT-TEST-Accessories > Belts,39.99,USD,Yes,40,Leather dress belt,Fashion accessory,Standard,true
-PROD-095,HT-002,AGENT-TEST-Winter Hat,AGENT-TEST-Accessories > Hats,19.99,USD,Yes,80,Knit beanie winter hat,Seasonal accessory,Low cost,true
-PROD-096,SC-002,AGENT-TEST-Scarf,AGENT-TEST-Accessories > Scarves,29.99,USD,Yes,60,Wool blend scarf,Seasonal accessory,Fashion,true
-PROD-097,GL-002,AGENT-TEST-Gloves Winter,AGENT-TEST-Accessories > Gloves,24.99,USD,Yes,70,Insulated winter gloves,Seasonal accessory,Warmth,true
-PROD-098,TI-001,AGENT-TEST-Tie Silk,AGENT-TEST-Accessories > Ties,34.99,USD,Yes,45,100% silk necktie,Formal accessory,Professional,true
-PROD-099,SK-002,AGENT-TEST-Socks 6-pack,Clothing > Socks,19.99,USD,Yes,100,Cotton crew socks,Basic clothing,Bundle,true
-PROD-100,UW-001,AGENT-TEST-Underwear 3-pack,Clothing > Underwear,24.99,USD,Yes,80,Cotton boxer briefs,Basic clothing,Bundle,true
-PROD-101,QA-OOS-001,AGENT-TEST-OOS-Fixture,Test Fixtures,19.99,USD,No,0,Permanently out-of-stock fixture — never restocked,OOS_SKU fixture — CART-046 CART-082,"Template only — NOT seeded. Admin > Catalog > new product ""QA OOS Fixture""; Admin > Inventory > stock=0 for ALL FCs; link to B2B virtual catalog fc596540...",true
-PROD-102,QA-LOW-001,AGENT-TEST-Low-Stock-Fixture,Test Fixtures,14.99,USD,Yes,5,Near-limit stock fixture (<=10),LOW_STOCK_SKU fixture — CART-037,Template only — NOT seeded. Admin > Catalog > new product; Admin > Inventory > stock=5 for primary FC only; link to B2B virtual catalog. Must NOT go OOS.,true
-PROD-103,QA-PACK-001,AGENT-TEST-Pack-Size-Fixture,Test Fixtures,9.99,USD,Yes,60,Pack-size / MOQ=6 fixture — requires MinQuantity property,PACK_SIZE_SKU fixture — CART-054 CART-055,Template only — NOT seeded. Admin > Catalog > new product; set MinQuantity / PackSize = 6 via product properties. Adding qty < 6 shows pack-size validation.,true
-PROD-104,QA-TIER-001,AGENT-TEST-Tier-Priced-Fixture,Test Fixtures,29.99,USD,Yes,200,"Tier-priced fixture — 1-9 std, 10-19 -10%, 20+ -20%",TIER_PRICED_SKU fixture — CART-078,Template only — NOT seeded. Admin > Pricing > Price Lists > add tier prices for SKU QA-TIER-001. See pricing/prices.csv rows PR-TIER-001..003.,true
-PROD-201,QA-LOY-INACT-001,AGENT-TEST-Loy-Inactive,Test Fixtures,50,USD,Yes,100,LOY_PP_INACTIVE — inactive-program earning gate (in-stock so addable).,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true
-PROD-202,QA-LOY-ZERO-001,AGENT-TEST-Loy-Zero,Test Fixtures,55,USD,Yes,100,LOY_PP_ZERO — factor=0 BVA earning.,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true
-PROD-203,QA-LOY-MULTI-A,AGENT-TEST-Loy-Multi-A,Test Fixtures,40,USD,Yes,100,LOY_PP_MULTI SKU #1 — multi-SKU summation (factor 50).,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true
-PROD-204,QA-LOY-MULTI-B,AGENT-TEST-Loy-Multi-B,Test Fixtures,80,USD,Yes,100,LOY_PP_MULTI SKU #2 — multi-SKU summation (factor 25).,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true
-PROD-205,QA-LOY-PRIO-001,AGENT-TEST-Loy-Priority,Test Fixtures,60,USD,Yes,100,LOY_PP_PRIORITY + LOY_PP_ALL target this SKU — priority-stacking.,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true
-PROD-206,QA-LOY-LOCALE-001,AGENT-TEST-Loy-Localized,Test Fixtures,30,USD,Yes,100,LOY_PP_LOCALIZED — localized-name program earning.,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true
-PROD-105,SALE-001,AGENT-TEST-Sale Sample Widget,Electronics > Audio & Video > Headsets & Speakers,29.99,USD,Yes,200,"On-sale product (list 29.99 / sale 19.99). Actual price < list for EVERY pricing context — the pricelist is assigned to the store catalog with no membership condition, so guest / personal / org users all see the sale.","CPN-059 sale-price fixture (BL-CART-003): coupon discount must compute from the sale price, not the list price","Seeded fresh by seed-standard-products.mjs (replaces the vanished imported STD-002/EKJ-76373636 that was deleted from vcst-qa). salePrice via the sale_price column -> pricelist sale; stock at store MAIN FFC; linked into the store virtual catalog. Resolved by SKU (@td PROD_SALE_SIMPLE) — no runtime GUID committed.",true,19.99
+product_id,sku,product_name,category,price,currency,in_stock,stock_qty,description,test_purpose,notes,seeded,sale_price,price_eur,product_slug,storefront_url
+PROD-001,WH-001,AGENT-TEST-Wireless-Headphones,Electronics > Audio & Video > Headsets & Speakers,99.99,USD,Yes,50,Bluetooth wireless headphones with noise cancellation,Standard product for checkout,Most commonly used test product. Name carries AGENT-TEST- prefix from 2026-05-19 reseed (seed-20260519-std-cat slug). Verified live on vcst-qa 2026-05-22 via SRCH-NEW-046 mini-run.,true,,,,
+PROD-002,LT-001,AGENT-TEST-Gaming Laptop,Electronics > Computers & Laptops > Laptops,1299.99,USD,Yes,10,15-inch gaming laptop with RTX graphics,High-value item testing,Tests expensive products,true,,,,
+PROD-003,SH-001,AGENT-TEST-Running Shoes,Clothing > Footwear,79.99,USD,Yes,100,Athletic running shoes size 10,Clothing category,Has size variants,true,,,,
+PROD-004,CF-001,AGENT-TEST-Coffee Maker,Home > Kitchen,49.99,USD,Yes,25,12-cup programmable coffee maker,Standard home goods,Mid-range price,true,,,,
+PROD-005,PH-001,AGENT-TEST-Smartphone Case,Electronics > AGENT-TEST-Accessories,19.99,USD,Yes,200,Protective case for iPhone 14,Low-cost accessory,Quick add to cart,true,,,,
+PROD-006,BK-001,AGENT-TEST-Fiction Novel,Books > Fiction,14.99,USD,Yes,500,Bestselling fiction novel,Digital/physical hybrid,Low price point,true,,,,
+PROD-007,CH-001,AGENT-TEST-Office Chair,Furniture > Office,299.99,USD,Yes,8,Ergonomic office chair with lumbar support,Furniture category,Large item shipping,true,,,,
+PROD-008,WB-001,AGENT-TEST-Smart Watch,Electronics > Wearables,249.99,USD,Yes,30,Fitness tracker smart watch,Popular category,Has color variants,true,,,,
+PROD-009,JK-001,AGENT-TEST-Winter Jacket,Clothing > Outerwear,129.99,USD,Yes,40,Insulated winter jacket,Seasonal item,Has size and color variants,true,,,,
+PROD-010,TB-001,AGENT-TEST-Tablet 10-inch,Electronics > Tablets,399.99,USD,Yes,15,10-inch Android tablet,Tablet category,Mid-high price,true,,,,
+PROD-011,HD-001,AGENT-TEST-USB-C Hard Drive 1TB,Electronics > Storage,89.99,USD,Yes,60,Portable 1TB external hard drive,Storage category,Tech accessory,true,,,,
+PROD-012,KY-001,AGENT-TEST-Mechanical Keyboard,Electronics > Peripherals,149.99,USD,Yes,35,RGB mechanical gaming keyboard,Gaming peripherals,Popular item,true,,,,
+PROD-013,MS-001,AGENT-TEST-Wireless Mouse,Electronics > Peripherals,29.99,USD,Yes,150,Ergonomic wireless mouse,Low-cost peripheral,Bundle candidate,true,,,,
+PROD-014,SP-001,AGENT-TEST-Bluetooth Speaker,Electronics > Audio,59.99,USD,Yes,80,Portable waterproof speaker,Audio category,Mid-range,true,,,,
+PROD-015,BG-001,AGENT-TEST-Backpack,AGENT-TEST-Accessories > Bags,69.99,USD,Yes,45,Travel backpack 40L,Bags category,Practical item,true,,,,
+PROD-016,TH-001,AGENT-TEST-USB-C Charger,Electronics > AGENT-TEST-Accessories,24.99,USD,Yes,300,Fast charging USB-C adapter,High stock item,Frequently purchased,true,,,,
+PROD-017,SN-001,AGENT-TEST-Sunglasses,AGENT-TEST-Accessories > Eyewear,89.99,USD,Yes,70,Polarized UV protection sunglasses,AGENT-TEST-Accessories,Has style variants,true,,,,
+PROD-018,DK-001,AGENT-TEST-Standing Desk,Furniture > Office,499.99,USD,Yes,5,Electric height-adjustable desk,High-value furniture,Large item,true,,,,
+PROD-019,MK-001,AGENT-TEST-Makeup Kit,Beauty > Cosmetics,79.99,USD,Yes,55,Professional makeup brush set,Beauty category,Gender-specific,true,,,,
+PROD-020,SK-001,AGENT-TEST-Skincare Set,Beauty > Skincare,59.99,USD,Yes,40,Anti-aging skincare collection,Beauty bundle,Multi-item set,true,,,,
+PROD-021,PF-001,AGENT-TEST-Perfume 50ml,Beauty > Fragrance,89.99,USD,Yes,30,Designer fragrance 50ml,Luxury item,Restricted shipping,true,,,,
+PROD-022,AF-001,AGENT-TEST-Air Fryer,Home > Kitchen,119.99,USD,Yes,20,5-quart digital air fryer,Kitchen appliance,Popular item,true,,,,
+PROD-023,RV-001,AGENT-TEST-Robot Vacuum,Home > Appliances,299.99,USD,Yes,12,Smart robot vacuum cleaner,Smart home,High-tech appliance,true,,,,
+PROD-024,EB-001,AGENT-TEST-Electric Toothbrush,Personal Care > Dental,69.99,USD,Yes,65,Sonic electric toothbrush,Personal care,Replacement heads available,true,,,,
+PROD-025,HD-002,AGENT-TEST-Hair Dryer,Personal Care > Hair,49.99,USD,Yes,50,Ionic hair dryer 1875W,Hair care,Standard item,true,,,,
+PROD-026,YM-001,AGENT-TEST-Yoga Mat,Sports > Fitness,29.99,USD,Yes,90,Non-slip yoga mat with strap,Fitness,Low price,true,,,,
+PROD-027,DB-001,AGENT-TEST-Dumbbell Set 20lb,Sports > Fitness,79.99,USD,Yes,25,Adjustable dumbbell set,Heavy item,High shipping cost,true,,,,
+PROD-028,TT-001,AGENT-TEST-Tent 4-Person,Sports > Camping,199.99,USD,Yes,15,Waterproof camping tent,Outdoor gear,Seasonal,true,,,,
+PROD-029,BB-001,AGENT-TEST-Basketball,Sports > Team Sports,24.99,USD,Yes,100,Official size basketball,Sports equipment,Simple product,true,,,,
+PROD-030,GL-001,AGENT-TEST-Gaming Console,Electronics > Gaming,499.99,USD,Yes,8,Next-gen gaming console,High-value electronics,Limited stock,true,,,,
+PROD-031,TV-001,AGENT-TEST-Smart TV 55-inch,Electronics > TVs,799.99,USD,Yes,6,4K Smart TV 55-inch,High-value large item,Freight shipping,true,,,,
+PROD-032,CM-001,AGENT-TEST-Digital Camera,Electronics > Cameras,649.99,USD,Yes,10,Mirrorless digital camera 24MP,Photography,High-value,true,,,,
+PROD-033,PR-001,AGENT-TEST-Printer All-in-One,Electronics > Office,179.99,USD,Yes,18,Wireless all-in-one printer,Office equipment,Requires ink cartridges,true,,,,
+PROD-034,RT-001,AGENT-TEST-Wi-Fi Router,Electronics > Networking,89.99,USD,Yes,40,Dual-band Wi-Fi 6 router,Networking,Tech item,true,,,,
+PROD-035,PB-001,AGENT-TEST-Power Bank 20000mAh,Electronics > AGENT-TEST-Accessories,39.99,USD,Yes,120,Portable power bank,Mobile accessory,High stock,true,,,,
+PROD-036,EC-001,AGENT-TEST-Espresso Machine,Home > Kitchen,299.99,USD,Yes,12,Semi-automatic espresso machine,Premium kitchen,Coffee enthusiasts,true,,,,
+PROD-037,BL-001,AGENT-TEST-Blender 1000W,Home > Kitchen,79.99,USD,Yes,30,High-speed blender,Kitchen small appliance,Popular,true,,,,
+PROD-038,MW-001,AGENT-TEST-Microwave Oven,Home > Kitchen,149.99,USD,Yes,15,1100W countertop microwave,Kitchen major appliance,Standard,true,,,,
+PROD-039,VC-001,AGENT-TEST-Vacuum Cleaner,Home > Appliances,179.99,USD,Yes,20,Bagless upright vacuum,Cleaning appliance,Standard home,true,,,,
+PROD-040,FN-001,AGENT-TEST-Floor Fan,Home > Appliances,49.99,USD,Yes,35,Oscillating floor fan 16-inch,Seasonal appliance,Summer item,true,,,,
+PROD-041,HT-001,AGENT-TEST-Space Heater,Home > Appliances,69.99,USD,Yes,25,Ceramic space heater,Seasonal appliance,Winter item,true,,,,
+PROD-042,LM-001,AGENT-TEST-Desk Lamp LED,Home > Lighting,34.99,USD,Yes,80,Adjustable LED desk lamp,Lighting,Office/home,true,,,,
+PROD-043,PL-001,AGENT-TEST-Pendant Light,Home > Lighting,89.99,USD,Yes,22,Modern pendant light fixture,Home improvement,Installation required,true,,,,
+PROD-044,DR-001,AGENT-TEST-Area Rug 5x7,Home > Decor,129.99,USD,Yes,18,Modern geometric area rug,Home decor,Large item,true,,,,
+PROD-045,CU-001,AGENT-TEST-Throw Pillows Set,Home > Decor,39.99,USD,Yes,60,Decorative throw pillows 4-pack,Home AGENT-TEST-Accessories,Bundle,true,,,,
+PROD-046,CN-001,AGENT-TEST-Canvas Wall Art,Home > Decor,79.99,USD,Yes,30,Abstract canvas wall art 24x36,Home decor,Fragile,true,,,,
+PROD-047,PL-002,AGENT-TEST-Indoor Plant Pot,Home > Garden,19.99,USD,Yes,100,Ceramic plant pot with saucer,Garden,Low cost,true,,,,
+PROD-048,GT-001,AGENT-TEST-Garden Tool Set,Home > Garden,59.99,USD,Yes,28,5-piece garden tool set,Gardening,Tool set,true,,,,
+PROD-049,HS-001,AGENT-TEST-Garden Hose 50ft,Home > Garden,34.99,USD,Yes,40,Flexible garden hose,Outdoor,Standard,true,,,,
+PROD-050,SD-001,AGENT-TEST-Bird Feeder,Home > Garden,24.99,USD,Yes,50,Hanging bird feeder,Outdoor decor,Seasonal,true,,,,
+PROD-051,SG-001,AGENT-TEST-Grill BBQ,Home > Outdoor,399.99,USD,Yes,8,Gas grill 4-burner,Outdoor cooking,High-value large,true,,,,
+PROD-052,PF-002,AGENT-TEST-Patio Furniture Set,Home > Outdoor,899.99,USD,Yes,4,4-piece patio furniture set,Outdoor furniture,Very high value,true,,,,
+PROD-053,UM-001,AGENT-TEST-Patio Umbrella,Home > Outdoor,129.99,USD,Yes,12,9-ft patio umbrella with base,Outdoor shade,Large item,true,,,,
+PROD-054,TL-001,AGENT-TEST-Tool Set 100-piece,Tools > Hand Tools,149.99,USD,Yes,15,100-piece mechanics tool set,DIY tools,Heavy item,true,,,,
+PROD-055,DR-002,AGENT-TEST-Cordless Drill,Tools > Power Tools,89.99,USD,Yes,20,18V cordless drill kit,Power tools,Battery included,true,,,,
+PROD-056,SW-001,AGENT-TEST-Circular Saw,Tools > Power Tools,119.99,USD,Yes,10,7.25-inch circular saw,Power tools,Professional grade,true,,,,
+PROD-057,LD-001,AGENT-TEST-Ladder 6ft,Tools > Ladders,79.99,USD,Yes,18,Folding step ladder,Safety equipment,Large/bulky,true,,,,
+PROD-058,PB-002,AGENT-TEST-Toolbox,Tools > Storage,39.99,USD,Yes,45,Plastic tool organizer box,Tool storage,Standard,true,,,,
+PROD-059,TP-001,AGENT-TEST-Tape Measure 25ft,Tools > Measuring,12.99,USD,Yes,150,Retractable tape measure,Small tool,Low cost,true,,,,
+PROD-060,LV-001,AGENT-TEST-Laser Level,Tools > Measuring,59.99,USD,Yes,25,Self-leveling laser level,Professional tool,Tech tool,true,,,,
+PROD-061,PT-001,AGENT-TEST-Paint Roller Set,Home Improvement > Painting,19.99,USD,Yes,70,Paint roller and tray set,DIY painting,Low cost,true,,,,
+PROD-062,BR-001,AGENT-TEST-Paint Brush Set,Home Improvement > Painting,24.99,USD,Yes,60,Professional paint brush set,DIY painting,Multi-piece,true,,,,
+PROD-063,ST-001,AGENT-TEST-Step Stool,Home > Storage,29.99,USD,Yes,50,2-step folding stool,Utility,Standard,true,,,,
+PROD-064,SB-001,AGENT-TEST-Storage Bins 6-pack,Home > Storage,34.99,USD,Yes,40,Plastic storage containers,Organization,Bundle,true,,,,
+PROD-065,CB-001,AGENT-TEST-Closet Organizer,Home > Storage,79.99,USD,Yes,20,5-shelf hanging organizer,Closet storage,Space-saving,true,,,,
+PROD-066,DW-001,AGENT-TEST-Dish Rack,Home > Kitchen,24.99,USD,Yes,65,Stainless steel dish drying rack,Kitchen utility,Standard,true,,,,
+PROD-067,CT-001,AGENT-TEST-Cutting Board Set,Home > Kitchen,29.99,USD,Yes,55,Bamboo cutting board set 3-piece,Kitchen tools,Eco-friendly,true,,,,
+PROD-068,KN-001,AGENT-TEST-Kitchen Knife Set,Home > Kitchen,89.99,USD,Yes,30,8-piece chef knife set with block,Kitchen essentials,Sharp/fragile,true,,,,
+PROD-069,PS-001,AGENT-TEST-Pots and Pans Set,Home > Kitchen,149.99,USD,Yes,18,Non-stick cookware set 10-piece,Cookware,Bundle,true,,,,
+PROD-070,BC-001,AGENT-TEST-Baking Sheet Set,Home > Kitchen,34.99,USD,Yes,40,Non-stick baking sheet 3-pack,Baking,Standard,true,,,,
+PROD-071,MB-001,AGENT-TEST-Mixing Bowls Set,Home > Kitchen,24.99,USD,Yes,50,Stainless steel mixing bowls 5-piece,Kitchen prep,Bundle,true,,,,
+PROD-072,SM-001,AGENT-TEST-Silicone Mats 2-pack,Home > Kitchen,19.99,USD,Yes,80,Reusable silicone baking mats,Baking accessory,Eco-friendly,true,,,,
+PROD-073,TW-001,AGENT-TEST-Kitchen Towels 6-pack,Home > Kitchen,14.99,USD,Yes,100,Cotton kitchen dish towels,Kitchen linens,Low cost,true,,,,
+PROD-074,AP-001,AGENT-TEST-Apron,Home > Kitchen,19.99,USD,Yes,60,Adjustable chef apron,Kitchen apparel,Gift item,true,,,,
+PROD-075,OG-001,AGENT-TEST-Oven Gloves,Home > Kitchen,12.99,USD,Yes,90,Heat-resistant oven mitts,Safety,Low cost,true,,,,
+PROD-076,TS-001,AGENT-TEST-Towel Set,Home > Bath,39.99,USD,Yes,35,Bath towel set 6-piece,Bath linens,Bundle,true,,,,
+PROD-077,SC-001,AGENT-TEST-Shower Curtain,Home > Bath,24.99,USD,Yes,50,Waterproof shower curtain,Bath accessory,Standard,true,,,,
+PROD-078,BM-001,AGENT-TEST-Bath Mat,Home > Bath,19.99,USD,Yes,70,Memory foam bath mat,Bath safety,Comfort item,true,,,,
+PROD-079,TB-002,AGENT-TEST-Toothbrush Holder,Home > Bath,14.99,USD,Yes,80,Stainless steel holder,Bath organization,Small item,true,,,,
+PROD-080,SD-002,AGENT-TEST-Soap Dispenser,Home > Bath,12.99,USD,Yes,90,Automatic soap dispenser,Bath accessory,Battery-powered,true,,,,
+PROD-081,BS-001,AGENT-TEST-Bedding Set Queen,Home > Bedroom,89.99,USD,Yes,25,Queen size bedding set 7-piece,Bedroom linens,Bundle,true,,,,
+PROD-082,PL-003,AGENT-TEST-Pillow 2-pack,Home > Bedroom,39.99,USD,Yes,40,Memory foam pillows,Sleep comfort,Bundle,true,,,,
+PROD-083,BL-002,AGENT-TEST-Blanket Fleece,Home > Bedroom,34.99,USD,Yes,50,Soft fleece throw blanket,Bedroom comfort,Seasonal,true,,,,
+PROD-084,CM-002,AGENT-TEST-Comforter Queen,Home > Bedroom,69.99,USD,Yes,30,Down alternative comforter,Bedroom essential,Standard,true,,,,
+PROD-085,MT-001,AGENT-TEST-Mattress Topper Queen,Home > Bedroom,119.99,USD,Yes,15,3-inch memory foam topper,Sleep upgrade,Large/bulky,true,,,,
+PROD-086,AL-001,AGENT-TEST-Alarm Clock,Home > Bedroom,19.99,USD,Yes,100,Digital alarm clock,Bedroom utility,Low cost,true,,,,
+PROD-087,NL-001,AGENT-TEST-Night Light,Home > Bedroom,12.99,USD,Yes,120,LED motion sensor night light,Safety/convenience,Battery-powered,true,,,,
+PROD-088,HS-002,AGENT-TEST-Hangers 50-pack,Home > Bedroom,19.99,USD,Yes,60,Velvet hangers,Closet organization,Bundle,true,,,,
+PROD-089,SM-002,AGENT-TEST-Full Length Mirror,Home > Bedroom,79.99,USD,Yes,18,Standing full length mirror,Bedroom furniture,Fragile,true,,,,
+PROD-090,JW-001,AGENT-TEST-Jewelry Box,AGENT-TEST-Accessories > Storage,49.99,USD,Yes,35,Wooden jewelry organizer,Personal storage,Gift item,true,,,,
+PROD-091,WT-001,AGENT-TEST-Wrist Watch Analog,AGENT-TEST-Accessories > Watches,129.99,USD,Yes,25,Stainless steel watch,Fashion accessory,Mid-high value,true,,,,
+PROD-092,WT-002,AGENT-TEST-Wrist Watch Digital,AGENT-TEST-Accessories > Watches,79.99,USD,Yes,30,Sports digital watch,Sports accessory,Water-resistant,true,,,,
+PROD-093,WL-001,AGENT-TEST-Wallet Leather,AGENT-TEST-Accessories > Wallets,49.99,USD,Yes,50,Genuine leather wallet,Personal accessory,Gift item,true,,,,
+PROD-094,BL-003,AGENT-TEST-Belt Leather,AGENT-TEST-Accessories > Belts,39.99,USD,Yes,40,Leather dress belt,Fashion accessory,Standard,true,,,,
+PROD-095,HT-002,AGENT-TEST-Winter Hat,AGENT-TEST-Accessories > Hats,19.99,USD,Yes,80,Knit beanie winter hat,Seasonal accessory,Low cost,true,,,,
+PROD-096,SC-002,AGENT-TEST-Scarf,AGENT-TEST-Accessories > Scarves,29.99,USD,Yes,60,Wool blend scarf,Seasonal accessory,Fashion,true,,,,
+PROD-097,GL-002,AGENT-TEST-Gloves Winter,AGENT-TEST-Accessories > Gloves,24.99,USD,Yes,70,Insulated winter gloves,Seasonal accessory,Warmth,true,,,,
+PROD-098,TI-001,AGENT-TEST-Tie Silk,AGENT-TEST-Accessories > Ties,34.99,USD,Yes,45,100% silk necktie,Formal accessory,Professional,true,,,,
+PROD-099,SK-002,AGENT-TEST-Socks 6-pack,Clothing > Socks,19.99,USD,Yes,100,Cotton crew socks,Basic clothing,Bundle,true,,,,
+PROD-100,UW-001,AGENT-TEST-Underwear 3-pack,Clothing > Underwear,24.99,USD,Yes,80,Cotton boxer briefs,Basic clothing,Bundle,true,,,,
+PROD-101,QA-OOS-001,AGENT-TEST-OOS-Fixture,Test Fixtures,19.99,USD,No,0,Permanently out-of-stock fixture — never restocked,OOS_SKU fixture — CART-046 CART-082,"Seeded by seed-standard-products.mjs (seeded=true). Permanent OOS: stock 0 on every FC, inventory status Enabled (NOT Disabled — a Disabled status makes xAPI addItem silently no-op instead of surfacing the OOS state). Reachable at @td(PROD_OOS.url); /product/<sku> does NOT resolve. Category page hides it while the ""Show in stock"" filter is on — navigate by url. Env var OOS_SKU must match this sku (guarded by td:validate:standard).",true,,,agent-test-oos-fixture,/seed-test-fixtures/agent-test-oos-fixture
+PROD-102,QA-LOW-001,AGENT-TEST-Low-Stock-Fixture,Test Fixtures,14.99,USD,Yes,5,Near-limit stock fixture (<=10),LOW_STOCK_SKU fixture — CART-037,Seeded by seed-standard-products.mjs (seeded=true). Near-limit stock (5) on the store MAIN fulfillment center; must NOT go OOS — top up if it drops. Reachable at @td(PROD_LOW_STOCK.url). Env var LOW_STOCK_SKU must match this sku (guarded by td:validate:standard).,true,,,agent-test-low-stock-fixture,/seed-test-fixtures/agent-test-low-stock-fixture
+PROD-103,QA-PACK-001,AGENT-TEST-Pack-Size-Fixture,Test Fixtures,9.99,USD,Yes,60,Pack-size / MOQ=6 fixture — requires MinQuantity property,PACK_SIZE_SKU fixture — CART-054 CART-055,Seeded by seed-standard-products.mjs (seeded=true). MOQ/pack-size 6 applied at create time from standard-specs.mjs SPEC_OVERLAYS (a flat CSV row cannot express it). Reachable at @td(PROD_PACK_SIZE.url). Env var PACK_SIZE_SKU must match this sku (guarded by td:validate:standard).,true,,,agent-test-pack-size-fixture,/seed-test-fixtures/agent-test-pack-size-fixture
+PROD-104,QA-TIER-001,AGENT-TEST-Tier-Priced-Fixture,Test Fixtures,29.99,USD,Yes,200,"Tier-priced fixture — 1-9 std, 10-19 -10%, 20+ -20%",TIER_PRICED_SKU fixture — CART-078,Seeded by seed-standard-products.mjs (seeded=true). Tier prices applied at create time from standard-specs.mjs SPEC_OVERLAYS (1+ list 29.99 / 10+ sale 26.99 / 20+ sale 23.99). Reachable at @td(PROD_TIER_PRICED.url). Env var TIER_PRICED_SKU must match this sku (guarded by td:validate:standard).,true,,,agent-test-tier-priced-fixture,/seed-test-fixtures/agent-test-tier-priced-fixture
+PROD-201,QA-LOY-INACT-001,AGENT-TEST-Loy-Inactive,Test Fixtures,50,USD,Yes,100,LOY_PP_INACTIVE — inactive-program earning gate (in-stock so addable).,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true,,,agent-test-loy-inactive,/seed-test-fixtures/agent-test-loy-inactive
+PROD-202,QA-LOY-ZERO-001,AGENT-TEST-Loy-Zero,Test Fixtures,55,USD,Yes,100,LOY_PP_ZERO — factor=0 BVA earning.,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true,,,agent-test-loy-zero,/seed-test-fixtures/agent-test-loy-zero
+PROD-203,QA-LOY-MULTI-A,AGENT-TEST-Loy-Multi-A,Test Fixtures,40,USD,Yes,100,LOY_PP_MULTI SKU #1 — multi-SKU summation (factor 50).,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true,,,agent-test-loy-multi-a,/seed-test-fixtures/agent-test-loy-multi-a
+PROD-204,QA-LOY-MULTI-B,AGENT-TEST-Loy-Multi-B,Test Fixtures,80,USD,Yes,100,LOY_PP_MULTI SKU #2 — multi-SKU summation (factor 25).,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true,,,agent-test-loy-multi-b,/seed-test-fixtures/agent-test-loy-multi-b
+PROD-205,QA-LOY-PRIO-001,AGENT-TEST-Loy-Priority,Test Fixtures,60,USD,Yes,100,LOY_PP_PRIORITY + LOY_PP_ALL target this SKU — priority-stacking.,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true,,,agent-test-loy-priority,/seed-test-fixtures/agent-test-loy-priority
+PROD-206,QA-LOY-LOCALE-001,AGENT-TEST-Loy-Localized,Test Fixtures,30,USD,Yes,100,LOY_PP_LOCALIZED — localized-name program earning.,VCST-5135 loyalty ProductPoints earning fixture,Folded into test-products.csv 2026-07-03 (was inline LOYALTY_SPECS). Resolved by SKU by the loyalty program-factors seeder.,true,,,agent-test-loy-localized,/seed-test-fixtures/agent-test-loy-localized
+PROD-105,SALE-001,AGENT-TEST-Sale Sample Widget,Electronics > Audio & Video > Headsets & Speakers,29.99,USD,Yes,200,"On-sale product (list 29.99 / sale 19.99). Actual price < list for EVERY pricing context — the pricelist is assigned to the store catalog with no membership condition, so guest / personal / org users all see the sale.","CPN-059 sale-price fixture (BL-CART-003): coupon discount must compute from the sale price, not the list price",Seeded fresh by seed-standard-products.mjs (replaces the vanished imported STD-002/EKJ-76373636 that was deleted from vcst-qa). salePrice via the sale_price column -> pricelist sale; stock at store MAIN FFC; linked into the store virtual catalog. Resolved by SKU (@td PROD_SALE_SIMPLE) — no runtime GUID committed.,true,19.99,,,
+PROD-106,QA-MULTICUR-001,AGENT-TEST-MultiCurrency-Fixture,Test Fixtures,24.99,USD,Yes,500,Dual-currency fixture — priced in USD and EUR so the line stays priced and addable after a storefront currency switch.,"Currency-switch-with-coupon (CART-093): every other AGENT-TEST fixture is USD-only, so switching to EUR drops its price to 0.00 with a disabled qty stepper and any coupon then invalidates for the wrong reason (zero subtotal, not the rule under test)","AUTHORED 2026-07-25, NOT YET SEEDED — run `TEST_ENV=<env> npm run seed:products` (or --only PROD-106) to provision. price_eur drives a second, EUR-currency pricelist (SEED-20260519-Standards-EUR) assigned to the store virtual catalog with no membership condition, so guest / personal / org users all see it. Keep the EUR figure NON-equal to the USD one so a test can tell the two currencies apart. No GUID committed — resolved by SKU.",true,,22.49,agent-test-multicurrency-fixture,/seed-test-fixtures/agent-test-multicurrency-fixture
+PROD-107,QA-SUBFIVE-001,AGENT-TEST-SubFive-Fixture,Test Fixtures,3.49,USD,Yes,500,Sub-$5 fixture — a single unit costs less than the fixed-amount coupon COUPON_FIXED5 ($5 off cart subtotal).,"Fixed-amount-discount-exceeds-subtotal boundary: with the cheapest existing fixture at 9.99 a $5 coupon can never exceed the subtotal, so a ""total floors at zero, never negative"" assertion passes vacuously. qty=1 of this row makes the boundary genuinely reachable (3.49 < 5.00)","AUTHORED 2026-07-25, NOT YET SEEDED — run `TEST_ENV=<env> npm run seed:products` (or --only PROD-107) to provision. Also carries a sub-EUR-5 price_eur so the same boundary is testable in the second currency. Keep the price strictly below the COUPON_FIXED5 discount amount; if that coupon is ever re-valued, re-check this row. No GUID committed — resolved by SKU.",true,,3.19,agent-test-subfive-fixture,/seed-test-fixtures/agent-test-subfive-fixture

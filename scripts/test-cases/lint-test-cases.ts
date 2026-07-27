@@ -340,7 +340,9 @@ function main(): void {
     process.exit(1);
   }
 
-  const raw = readFileSync(file, "utf-8");
+  // Strip a UTF-8 BOM — 12 suite CSVs carry one, and it would otherwise be parsed
+  // as part of the first header cell ("Invalid Opening Quote" → bogus S-007 Blocker).
+  const raw = readFileSync(file, "utf-8").replace(/^﻿/, "");
   const findings: Finding[] = [];
 
   // S-001: header check (tolerant of quoted/unquoted styles via parseSuite).

@@ -556,8 +556,8 @@
     "storeOriginalCatalog": "fc596540864a41bf8ab78734ee7353a3"
   },
   "SR_REP_PRIMARY": {
-    "id": "d88c636a-ecf1-43ba-b3f0-ee6d4be41f76",
-    "user_id": "734f5d85-01a4-4042-bf4e-5205362eb54d"
+    "id": "51c9bf4b-a86f-4c61-98fb-c3cabaa9992b",
+    "user_id": "1c59bb6c-b742-4b0d-a2f3-d9afebf4033b"
   },
   "SR_REP_SECOND_STORE": {
     "id": "6365ed9b-c198-450b-a9fc-05ab9ccc072f",
@@ -581,15 +581,15 @@
     "user_id": "17701f9b-f698-405f-a0f0-0151489e28c4"
   },
   "SR_REP_NOCUSTOMERS": {
-    "id": "a2067372-3316-4ca8-b57c-bc90aa94c5c9",
-    "user_id": "5e32ae59-ff42-4be4-bb9f-ef9ea49c5b96"
+    "id": "30d58001-51c4-460d-a458-93409abdf503",
+    "user_id": "762eba3d-4c0d-43ce-818b-150138f688ba"
   },
   "SR_REP_PAGING": {
     "id": "34a3e544-24f4-4c1f-87fc-f48ed3b0dfee",
     "user_id": "110bac68-1062-4198-8b98-ead891d88546"
   },
   "SR_OWNER_ACME": {
-    "id": "d4962ba5-cc2e-478c-b265-bad4dbc671ec"
+    "id": "5a5e7056-e917-4556-b892-4e3270717d4e"
   },
   "COMPLETED_ORDER": {
     "id": "51cc5eb9-23d4-47fe-b46d-36e03dc53b2f",
@@ -761,5 +761,35 @@
   "LOYALTY_WHOLESALE_USER": {
     "memberId": "47db2112-34a7-4fc1-9783-95523284ae10",
     "securityAccountId": "3aaada1a-6c1b-417e-8cb3-d074258016a3"
+  },
+  "CATALOG_LINK_RESTRICTED": {
+    "_inline": true,
+    "platform_id": "77dff718-ecab-479c-928d-2a1ae4c36cbe",
+    "user_id": "77dff718-ecab-479c-928d-2a1ae4c36cbe",
+    "role_id": "AGENT-TEST-Catalog-Link-Restricted"
+  },
+  "RESTRICTED_ADMIN_SALESREP_READONLY": {
+    "_inline": true,
+    "platform_id": "bebbb513-b110-4997-88f5-bb3b512d7655",
+    "user_id": "bebbb513-b110-4997-88f5-bb3b512d7655",
+    "role_id": "AGENT-TEST-SalesRep-ReadOnly"
+  },
+  "RESTRICTED_ADMIN_SALESREP_ACCOUNTOPS": {
+    "_inline": true,
+    "platform_id": "4ec13b00-2f26-4c17-8dcf-05668914988c",
+    "user_id": "4ec13b00-2f26-4c17-8dcf-05668914988c",
+    "role_id": "AGENT-TEST-SalesRep-AccountOps"
+  },
+  "RESTRICTED_ADMIN_SALESREP_MEMBERONLY": {
+    "_inline": true,
+    "platform_id": "0343ecce-c2c8-4dab-a139-74921e3695e2",
+    "user_id": "0343ecce-c2c8-4dab-a139-74921e3695e2",
+    "role_id": "AGENT-TEST-SalesRep-MemberOnly"
+  },
+  "RESTRICTED_ADMIN_SALESREP_FULL": {
+    "_inline": true,
+    "platform_id": "6ef11a8c-e62f-45d4-ad83-1af1d1b43602",
+    "user_id": "6ef11a8c-e62f-45d4-ad83-1af1d1b43602",
+    "role_id": "AGENT-TEST-SalesRep-Full"
   }
 }

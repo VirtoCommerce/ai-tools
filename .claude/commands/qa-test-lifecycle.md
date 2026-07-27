@@ -37,7 +37,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | `--report-only` | Run all phases but don't modify any CSV files — output report only |
 | `--ci` | CI mode: skip browser verification, apply all updates without confirmation, output machine-readable JSON |
 
-> **BL audit is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (stale refs + new-rule candidates); **Phase 4c always runs, scoped to exactly those candidates** — triangulating each against docs + live + source via `/qa-review-bl` and auto-applying the confirmed ones. No candidates ⇒ 4c is a no-op. For a broader sweep (a whole domain, not just what this run touched), use standalone `/qa-review-bl domain <name>`. (The former `--update-bl` opt-in flag is retired — the audit is safe by default because it's gated by the 3-source evidence bar, so there's nothing to opt into.)
+> **BL audit is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (stale refs + new-rule candidates); **Phase 4c always runs, scoped to exactly those candidates** — triangulating each against docs + live + source via `/qa-review-bl` and auto-applying the confirmed ones. No candidates ⇒ 4c is a no-op. For a broader sweep (a whole domain, not just what this run touched), use standalone `/qa-review-bl domain <name>`. (The former `--update-bl` opt-in flag is retired — the audit is safe by default because it's gated by an **applicable-axes evidence bar** — docs + live + source, with a structurally-unavailable axis such as docs-for-a-new-module *waived*, promoting only when every applicable axis agrees and at least two remain — so there's nothing to opt into.)
 
 ---
 
@@ -380,12 +380,14 @@ audit). It does NOT audit a whole domain — for that, run standalone `/qa-revie
 domain <name>`. Invoke **`/qa-review-bl`** on the surfaced candidates, delegating to
 `ba-system-analyzer` (parallel fan-out, single-writer apply):
 
-- Each candidate `BL-*` is triangulated against **docs + live + source code**.
-- **CONFIRMED / DRIFT / MISSING** (unanimous evidence) → auto-applied to `business-logic.md` (body-only, `Amended:`+`Source:` stamp, env-agnostic).
-- **CONTRADICTORY / UNGROUNDED / STALE-RETIRE** → drafted to `reports/ba/bl-proposals-<date>.md` for a human (retiring is never auto-applied).
+- Each candidate `BL-*` is triangulated against the three axes — **docs + live + source code**.
+- **Evidence bar = applicable-axes.** An axis that is *structurally unavailable* is **waived (N/A)**, not counted as a miss — most importantly, a **brand-new / undocumented / pre-GA module has no docs**, so the docs axis is waived. The bar is then the axes that CAN be verified, and **at least two must remain** (a single surviving axis is never enough to canonicalize).
+- **CONFIRMED / DRIFT / MISSING** → auto-applied to `business-logic.md` (body-only, `Amended:`/`Promoted:`+`Source:` stamp, env-agnostic) **only when every applicable (non-waived) axis is met AND the axes agree**.
+- **Held as a draft (not applied)** when an applicable axis **contradicts** another — e.g. live shows the opposite of source, commonly a **deploy-lag artifact** (the fix is merged but not on the pinned build) — or when an applicable axis is **unverifiable this run** (e.g. blocked on a missing fixture). A contradiction/gap is not a failure; it is a *not-yet*.
+- **CONTRADICTORY / UNGROUNDED / STALE-RETIRE**, plus any candidate that fails the applicable-axes bar → drafted to `reports/ba/bl-proposals-<date>.md`, each with its evidence + a **re-audit trigger** (the concrete condition that would let it promote later — docs published, module on a stable release, the contradicting fix deployed, or the blocking fixture authored). Retiring is never auto-applied.
 - The run's `reports/knowledge/BL-AUDIT-<date>.md` is the audit trail; its outcome feeds the Phase 6 **G6** gate.
 
-This is gated by a **3-source evidence bar, not human approval** — see `.claude/rules/quality-gates.md`-adjacent policy in the `/qa-review-bl` skill.
+This is gated by an **evidence bar, not human approval** — the **applicable-axes** rule above (docs + live + source when all three exist; the verifiable subset, minimum two and all agreeing, when an axis is structurally waived). See the `/qa-review-bl` skill + `.claude/rules/quality-gates.md`.
 
 ---
 
@@ -745,4 +747,4 @@ Output: per-case verification:
 - **Report always written** — even with `--report-only`, produce the full report
 - **Build verification before pipeline** — always run pre-flight build verification and include version info in report
 - **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `graphql-schema.md`
-- **BL updates run through the audit (Phase 4c → `/qa-review-bl`), automatically.** Phase 4c always runs, scoped to the `BL-*` this run surfaced (no candidates ⇒ no-op); there is no opt-in flag. Confirmed invariants (CONFIRMED/DRIFT/MISSING with agreeing docs + live + source evidence) are **auto-applied** to `business-logic.md`, body-only, gated by the 3-source evidence bar — not by human approval. Unconfirmed/contradictory items, and any retire, are drafted to `reports/ba/bl-proposals-<date>.md` for a human. Every entry — applied or drafted — must cite its sources; env-agnostic, no env names/URLs/slugs.
+- **BL updates run through the audit (Phase 4c → `/qa-review-bl`), automatically.** Phase 4c always runs, scoped to the `BL-*` this run surfaced (no candidates ⇒ no-op); there is no opt-in flag. Auto-apply is gated by an **applicable-axes evidence bar, not human approval**: triangulate **docs + live + source**; an axis that is *structurally unavailable* (e.g. **no docs for a new / undocumented / pre-GA module**) is **waived (N/A)**, and a candidate is **auto-applied (body-only, env-agnostic) only when every applicable axis is met and the axes agree** (at least two must remain; a lone axis is never enough). A candidate whose applicable axes **disagree** (e.g. live contradicts source — commonly deploy lag: a merged fix not yet on the pinned artifact) or that has an **unverifiable** axis this run (blocked on a fixture) is **held as a draft** in `reports/ba/bl-proposals-<date>.md` with a **re-audit trigger** — not applied, not a failure. Every entry — applied or drafted — cites its sources; env-agnostic, no env names/URLs/slugs.

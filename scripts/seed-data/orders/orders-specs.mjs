@@ -19,6 +19,24 @@
  *
  * NOT in scope (stay DEFERRED, documented in README): invoice / returns-RMA / substitution /
  * negotiation / OOS / discontinued / expired — those are feature-gated and need a product-owner call.
+ *
+ * DEFERRAL RE-CHECKED 2026-07-25 (TLC-2026-07-25-0415) — the "feature-gated" premise is only
+ * PARTLY true, and the store-config half of it is WRONG. A live read of all 96 settings on
+ * `GET /api/stores/{STORE_ID}` shows:
+ *   - There is NO store-level enable flag for returns, invoice, or buyer-cancel. The README's
+ *     assumed keys (`RETURNS_FEATURE_ENABLED`, an invoice store setting, `STORE_CONFIG_BUYER_CANCEL`)
+ *     DO NOT EXIST. Nor is there a storefront `$cfg.*` counterpart (knowledge/automation/
+ *     storefront-config-flags.md). So "enable the store setting first" is not the blocker.
+ *   - Returns: the module IS installed — `Return.ReturnNewNumberTemplate = "RET{0:yyMMdd}-{1:D5}"`
+ *     is the only Return.* setting. Presence of the numbering template implies the feature is on.
+ *   - Pickup/BOPIS: `XPickup.Enabled = true` (+ `XPickup.GlobalTransferEnabled = true`), so
+ *     BOPIS_PICKUP_ORDER is reachable today.
+ *   - Invoice: NO platform setting of any kind. Whether a PDF invoice exists on this deployment is
+ *     unverified — CHK-047/048 + ORD-014/041/042/043 may be testing a surface that does not exist.
+ * What genuinely remains a product-owner call is therefore NOT the config flags but: (a) the exact
+ * aggregate status string for a mixed-shipment order (PARTIALLY_SHIPPED_ORDER), (b) the store return
+ * window (ORDER_PAST_RETURN_WINDOW), and (c) whether invoice download is in scope at all.
+ * Do NOT re-add the phantom store-setting keys to the README when picking this up.
  */
 
 /** AGENT-TEST- prefix so /qa-seed-data teardown sweeps every entity this domain creates. */

@@ -30,7 +30,7 @@ const CHECK_MODE = process.argv.includes("--check");
  * Goal: shrink this to empty.
  */
 const CSV_LINT_BASELINE = new Set<string>([
-  "014", "015", "026", "030", "040b", "044", "045", "048b", "052", "080", "082",
+  "015", "026", "044", "045", "052", "080",
 ]);
 
 interface Suite {

@@ -7,20 +7,35 @@
  *   - Test ID like `LAYOUT-CLS-001` or `LAYOUT-COMP-VCTABLE-001` → resolves to the
  *     `ID` column of some row in some `regression/suites/**\/*.csv` file
  *   - `n/a` → invariant does not apply to this component/page; skipped by validator
+ *   - `GAP` → applicable but knowingly uncovered — no suite currently carries this
+ *     cell. Reported and counted, but NOT fatal by default (see --strict).
  *   - Multiple IDs joined with ` + ` (literal `+` with spaces) → each validated independently
- *   - Anything else (empty, "GAP", "none", "TODO") → uncovered, validator fails
+ *   - Anything else (empty, "none", "TODO", "-") → malformed, validator fails
+ *
+ * The hard guarantee this script enforces is: **no cell may point at a test ID
+ * that does not exist in any suite CSV.** A stale ID (renamed/moved/deleted test)
+ * is always fatal — that is the regression this file exists to catch.
+ *
+ * `GAP` is deliberately non-fatal because the coverage matrix outlived its
+ * covering suite: suite `048b-layout-stability.csv` was removed on 2026-07-25 and
+ * every one of the 197 previously-covered cells lost its only covering test. The
+ * matrix is retained as the scope definition (what SHOULD be covered); marking the
+ * cells `GAP` states the coverage debt honestly instead of deleting the scope or
+ * mislabelling live cells as `n/a`. Run with `--strict` to make GAPs fatal again
+ * once a replacement suite lands.
  *
  * Two HTML-comment markers delimit each machine-readable matrix:
  *   <!-- COVERAGE-MATRIX-START --> ... <!-- COVERAGE-MATRIX-END -->        (components)
  *   <!-- PAGE-COVERAGE-MATRIX-START --> ... <!-- PAGE-COVERAGE-MATRIX-END --> (pages)
  *
  * Usage:
- *   npx tsx scripts/validate-critical-ui-scope.ts          # validate
- *   npm run scope:validate                                  # alias of above
+ *   npx tsx scripts/maintenance/validate-critical-ui-scope.ts           # validate
+ *   npx tsx scripts/maintenance/validate-critical-ui-scope.ts --strict  # GAPs fatal too
+ *   npm run scope:validate                                              # alias of the first
  *
  * Exit codes:
- *   0  — every covered cell resolves to an existing test ID
- *   1  — at least one cell is uncovered or its ID does not exist in any suite
+ *   0  — every non-GAP cell resolves to an existing test ID (GAPs only warn)
+ *   1  — a cell points at a missing test ID, is malformed, or (--strict) is a GAP
  */
 
 import { readFileSync, readdirSync, statSync } from "fs";
@@ -201,7 +216,9 @@ function main(): void {
   }
 
   // Categorize cells
+  const strict = process.argv.includes("--strict");
   const failures: { cell: Cell; reason: string }[] = [];
+  const gaps: Cell[] = [];
   let covered = 0;
   let notApplicable = 0;
 
@@ -211,8 +228,14 @@ function main(): void {
       notApplicable++;
       continue;
     }
-    if (value === "" || value === "GAP" || value === "none" || value === "TODO" || value === "-" || value === "—") {
-      failures.push({ cell, reason: `uncovered (cell value: "${value}")` });
+    if (value === "GAP") {
+      // Applicable but knowingly uncovered. Non-fatal unless --strict.
+      gaps.push(cell);
+      if (strict) failures.push({ cell, reason: "GAP (uncovered) and --strict is set" });
+      continue;
+    }
+    if (value === "" || value === "none" || value === "TODO" || value === "-" || value === "—") {
+      failures.push({ cell, reason: `malformed cell value: "${value}" (use a test ID, "n/a", or "GAP")` });
       continue;
     }
     // Multiple IDs separated by " + "
@@ -231,17 +254,28 @@ function main(): void {
 
   const total = cells.length;
   console.log(
-    `[scope:validate] ${covered} covered · ${notApplicable} n/a · ${failures.length} failures (total ${total} cells)`,
+    `[scope:validate] ${covered} covered · ${notApplicable} n/a · ${gaps.length} GAP · ${failures.length} failures (total ${total} cells)`,
   );
 
+  if (gaps.length > 0 && !strict) {
+    const byMatrix = { components: 0, pages: 0 };
+    for (const g of gaps) byMatrix[g.matrix]++;
+    console.warn(
+      `[scope:validate] WARN — ${gaps.length} applicable cell(s) are uncovered ` +
+        `(${byMatrix.components} component, ${byMatrix.pages} page). ` +
+        `Suite 048b-layout-stability was removed; no suite currently covers the critical-UI matrix.`,
+    );
+    console.warn(`[scope:validate]        Re-tighten with \`--strict\` once a replacement suite lands.`);
+  }
+
   if (failures.length === 0) {
-    console.log(`[scope:validate] OK — every covered cell resolves to an existing test ID`);
+    console.log(`[scope:validate] OK — no cell points at a missing test ID`);
     console.log(`[scope:validate] Source: ${SCOPE_FILE}`);
     console.log(`[scope:validate] Suites scanned: ${csvFiles.length} CSV file(s) under ${SUITES_DIR}/`);
     process.exit(0);
   }
 
-  console.error(`[scope:validate] FAIL — ${failures.length} uncovered or invalid cell(s):`);
+  console.error(`[scope:validate] FAIL — ${failures.length} invalid cell(s):`);
   for (const { cell, reason } of failures) {
     console.error(`  - [${cell.matrix}] ${cell.rowLabel} × ${cell.colHeader} → ${reason}`);
   }

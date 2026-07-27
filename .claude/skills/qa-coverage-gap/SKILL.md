@@ -138,7 +138,7 @@ targetSuites = suites where
       e2e           → concern: "functional" (cross-domain)
 ```
 
-Never hardcode suite IDs in this skill — query the manifest. The manifest currently has 99 suites (v3.0) including sub-suites such as `048b`, `050a`–`050k`, `072b`–`072d`.
+Never hardcode suite IDs in this skill — query the manifest. The manifest currently has 118 suites including sub-suites such as `050a`–`050k`, `072b`–`072d`.
 
 ## Integration with Other Skills & Commands
 

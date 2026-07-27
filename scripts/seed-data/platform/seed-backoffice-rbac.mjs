@@ -29,8 +29,20 @@ import {
 import {
   RESTRICTED_ROLE, RESTRICTED_ACCOUNT, EXCLUDED_PERMISSION,
   CATALOG_LINK_ROLE, CATALOG_LINK_ACCOUNT, CATALOG_LINK_EXCLUDED_PERMISSION,
+  SALESREP_READONLY_ROLE, SALESREP_READONLY_ACCOUNT, SALESREP_READONLY_EXCLUDED_PERMISSION,
+  SALESREP_READONLY_EXCLUDED_PERMISSIONS, SALESREP_READONLY_REQUIRED_PERMISSIONS,
+  SALESREP_ACCOUNTOPS_ROLE, SALESREP_ACCOUNTOPS_ACCOUNT, SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSION,
+  SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSIONS, SALESREP_ACCOUNTOPS_REQUIRED_PERMISSIONS,
+  assertSalesRepAccountOpsRolePermissions,
+  SALESREP_MEMBERONLY_ROLE, SALESREP_MEMBERONLY_ACCOUNT, SALESREP_MEMBERONLY_EXCLUDED_PERMISSION,
+  SALESREP_MEMBERONLY_EXCLUDED_PERMISSIONS, SALESREP_MEMBERONLY_REQUIRED_PERMISSIONS,
+  assertSalesRepMemberOnlyRolePermissions,
+  SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT,
+  SALESREP_FULL_EXCLUDED_PERMISSIONS, SALESREP_FULL_REQUIRED_PERMISSIONS,
+  assertSalesRepFullRolePermissions,
   roleBody, accountBody, assertRolePermissions, assertCatalogLinkRolePermissions,
-  COPY_ENDPOINT, LISTENTRYLINKS_ENDPOINT,
+  assertSalesRepReadOnlyRolePermissions,
+  COPY_ENDPOINT, LISTENTRYLINKS_ENDPOINT, CURRENTUSER_ENDPOINT,
 } from './backoffice-rbac-specs.mjs';
 
 const VERIFY = process.argv.includes('--verify');
@@ -134,6 +146,68 @@ async function verifyCategoryLinkForbidden() {
   return false;
 }
 
+// --- live verification: SR-ADM-023 boundary (read-only Sales Rep admin) ---
+// Read-only proof (no mutating call): the restricted account authenticates, and /currentuser
+// reflects customer:read present, the six write perms absent, and isAdministrator=false — so the
+// Sales Rep app opens read-only and the gate applies. This is the access side; the "cannot mutate"
+// side is guaranteed by the excluded perms being absent (asserted at role upsert + drift-guard).
+async function verifySalesRepReadOnlyAccess() {
+  const { email } = SALESREP_READONLY_ACCOUNT;
+  const password = resolvePassword(SALESREP_READONLY_ACCOUNT);
+  log('\n  [verify] SR-ADM-023 — read-only Sales Rep admin: customer:read present, write perms absent');
+  const tok = await loginToken(email, password);
+  if (!tok) return false;
+  const res = await fetch(`${BACK_URL}${CURRENTUSER_ENDPOINT}`, { headers: { Authorization: `Bearer ${tok}` } });
+  if (!res.ok) { log(`  ⚠ /currentuser → ${res.status} (expected 200). Cannot confirm effective perms.`); return false; }
+  const me = await res.json();
+  const perms = new Set(me?.permissions || []);
+  const hasRead = SALESREP_READONLY_REQUIRED_PERMISSIONS.every((p) => perms.has(p));
+  const leaked = SALESREP_READONLY_EXCLUDED_PERMISSIONS.filter((p) => perms.has(p));
+  const isAdmin = me?.isAdministrator === true;
+  if (hasRead && leaked.length === 0 && !isAdmin) {
+    log(`  ✓ currentuser: customer:read present, no write perms, isAdministrator=false (SR-ADM-023 read-only boundary confirmed)`);
+    return true;
+  }
+  log(`  ✗ currentuser boundary mismatch — read:${hasRead} leakedWrites:[${leaked.join(', ')}] isAdministrator:${isAdmin}`);
+  return false;
+}
+
+// --- generic effective-permission proof (read-only, no mutating call) ---------------------------
+// Auth-sanity for a Sales Rep matrix fixture: password grant 200, then /currentuser reflects EXACTLY
+// the intended include-set present, none of the exclude-set, and isAdministrator=false. This proves
+// the grant landed correctly and the gate applies; the endpoint-level 403/200 behaviour is verified
+// live by qa-backend-expert against the controller matrix.
+async function verifyEffectivePermissions(account, required, excluded, label) {
+  const { email } = account;
+  const password = resolvePassword(account);
+  log(`\n  [verify] ${label} — currentuser must reflect the exact include/exclude set, isAdministrator=false`);
+  const tok = await loginToken(email, password);
+  if (!tok) return false;
+  const res = await fetch(`${BACK_URL}${CURRENTUSER_ENDPOINT}`, { headers: { Authorization: `Bearer ${tok}` } });
+  if (!res.ok) { log(`  ⚠ /currentuser → ${res.status} (expected 200). Cannot confirm effective perms.`); return false; }
+  const me = await res.json();
+  const perms = new Set(me?.permissions || []);
+  const missing = required.filter((p) => !perms.has(p));
+  const leaked = excluded.filter((p) => perms.has(p));
+  const isAdmin = me?.isAdministrator === true;
+  if (missing.length === 0 && leaked.length === 0 && !isAdmin) {
+    log(`  ✓ currentuser: include-set [${required.join(', ')}] present, exclude-set absent, isAdministrator=false (${label} boundary confirmed)`);
+    return true;
+  }
+  log(`  ✗ currentuser boundary mismatch — missing:[${missing.join(', ')}] leaked:[${leaked.join(', ')}] isAdministrator:${isAdmin}`);
+  return false;
+}
+
+const verifyAccountOps = () => verifyEffectivePermissions(
+  SALESREP_ACCOUNTOPS_ACCOUNT, SALESREP_ACCOUNTOPS_REQUIRED_PERMISSIONS, SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSIONS,
+  'SalesRep ACCOUNT-OPS (platform:security:update, no customer:update)');
+const verifyMemberOnly = () => verifyEffectivePermissions(
+  SALESREP_MEMBERONLY_ACCOUNT, SALESREP_MEMBERONLY_REQUIRED_PERMISSIONS, SALESREP_MEMBERONLY_EXCLUDED_PERMISSIONS,
+  'SalesRep MEMBER-ONLY (customer:update, no platform:security:update)');
+const verifyFull = () => verifyEffectivePermissions(
+  SALESREP_FULL_ACCOUNT, SALESREP_FULL_REQUIRED_PERMISSIONS, SALESREP_FULL_EXCLUDED_PERMISSIONS,
+  'SalesRep FULL positive control (full CRUD + account-ops, isAdministrator=false)');
+
 async function loginToken(email, password) {
   try {
     const res = await fetch(`${BACK_URL}/connect/token`, {
@@ -179,6 +253,22 @@ const FIXTURES = [
   {
     role: CATALOG_LINK_ROLE, account: CATALOG_LINK_ACCOUNT,
     assertPerms: assertCatalogLinkRolePermissions, excluded: CATALOG_LINK_EXCLUDED_PERMISSION, verify: verifyCategoryLinkForbidden,
+  },
+  {
+    role: SALESREP_READONLY_ROLE, account: SALESREP_READONLY_ACCOUNT,
+    assertPerms: assertSalesRepReadOnlyRolePermissions, excluded: SALESREP_READONLY_EXCLUDED_PERMISSION, verify: verifySalesRepReadOnlyAccess,
+  },
+  {
+    role: SALESREP_ACCOUNTOPS_ROLE, account: SALESREP_ACCOUNTOPS_ACCOUNT,
+    assertPerms: assertSalesRepAccountOpsRolePermissions, excluded: SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSION, verify: verifyAccountOps,
+  },
+  {
+    role: SALESREP_MEMBERONLY_ROLE, account: SALESREP_MEMBERONLY_ACCOUNT,
+    assertPerms: assertSalesRepMemberOnlyRolePermissions, excluded: SALESREP_MEMBERONLY_EXCLUDED_PERMISSION, verify: verifyMemberOnly,
+  },
+  {
+    role: SALESREP_FULL_ROLE, account: SALESREP_FULL_ACCOUNT,
+    assertPerms: assertSalesRepFullRolePermissions, excluded: '(none — positive control, isAdministrator=false)', verify: verifyFull,
   },
 ];
 

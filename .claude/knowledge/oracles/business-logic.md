@@ -1,6 +1,6 @@
 ---
 applicability: reference
-applicability_rationale: "145 BLs (storefront + backend/xAPI/admin) covering pricing, cart, checkout, B2B, loyalty, payment, white-labeling, etc. Universal as a STARTING POINT (most BLs are platform-level invariants). Customer adapts: some BLs encode vcst-specific assumptions (specific currency, specific tier rules, specific role names). Customer's own BL-{CUSTOMER}-* IDs namespace alongside."
+applicability_rationale: "148 BLs (storefront + backend/xAPI/admin) covering pricing, cart, checkout, B2B, loyalty, payment, white-labeling, etc. Universal as a STARTING POINT (most BLs are platform-level invariants). Customer adapts: some BLs encode vcst-specific assumptions (specific currency, specific tier rules, specific role names). Customer's own BL-{CUSTOMER}-* IDs namespace alongside."
 ---
 
 # Business Logic Invariants — Agent Reference
@@ -919,22 +919,22 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 
 ## Domain 15: UI Display & Layout Stability (BL-UI)
 
-These invariants hold for any rendered surface — Storybook stories, storefront pages, admin SPA blades — regardless of feature spec or Figma source. They turn "looks broken" into "measurably violates a rule." Violations are FAIL even when a JIRA ticket does not call them out, because the design system contract makes them implicit acceptance criteria. Canonical measurement helper: [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts). Canonical regression suite: [`regression/suites/Frontend/cross-cutting/048b-layout-stability.csv`](../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv) (suite id `048b`, selection group `layout-stability`).
+These invariants hold for any rendered surface — Storybook stories, storefront pages, admin SPA blades — regardless of feature spec or Figma source. They turn "looks broken" into "measurably violates a rule." Violations are FAIL even when a JIRA ticket does not call them out, because the design system contract makes them implicit acceptance criteria. Canonical measurement helper: [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts). **No regression suite currently covers these invariants** — suite `048b-layout-stability.csv` (selection group `layout-stability`) was removed on 2026-07-25. Until a replacement exists they are audited on demand via [`/qa-design`](../../skills/qa-design/SKILL.md) against the scope + audit protocols in [`critical-ui-scope.md`](critical-ui-scope.md).
 
 ### BL-UI-001: Layout stability on initial render `[P2-ux]`
 - **Rule:** After first paint, visible content MUST NOT shift as late assets resolve (images, web fonts, async data, skeleton → content swap). Cumulative Layout Shift (CLS) — measured via `PerformanceObserver({ type: 'layout-shift' })` summing `entry.value` where `entry.hadRecentInput === false` — must be ≤ 0.1 on initial render. Image elements without intrinsic dimensions (`width`/`height` attrs or CSS `aspect-ratio`) are the most common offender.
 - **Verify:** Install the observer before navigating (`LAYOUT_SNIPPETS.installClsObserver`). Load the component / page. Wait for `load` + idle. Read accumulated CLS (`LAYOUT_SNIPPETS.readCls`). Repeat on throttled network ("Fast 3G") — late-loading images often hide shifts on fast connections.
 - **Violation signal:** CLS ≥ 0.1 (FAIL), ≥ 0.25 (P0 if on checkout / cart / PDP). Visible jump as image loads. Skeleton snaps to different height when data arrives. Font swap (FOIT/FOUT) reflows surrounding text.
 - **Agents:** ui-ux-expert (Storybook + storefront), qa-frontend-expert (revenue-critical surfaces)
-- **Suite coverage:** `048b` LAYOUT-CLS-001..004 (home, PDP, cart, checkout)
+- **Suite coverage:** NONE — was `048b` LAYOUT-CLS-001..004 (home, PDP, cart, checkout) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-002: Spacing grid compliance `[P2-ux]`
 - **Rule:** Every computed `padding`, `margin`, and `gap` SHOULD resolve to a value from the project spacing scale: the **Tailwind default scale** (0.25 rem / 4 px base unit, **including its half-steps** `0.5`=2 px, `1.5`=6 px, `2.5`=10 px, `3.5`=14 px) **plus** the vc-frontend `extend.spacing` additions in `tailwind.config.ts` (notably `4.5`=18 px, `17`=68 px, `18`=72 px, `19`=76 px). An arbitrary value that maps to no scale step (e.g. 13 px, 27 px, 41 px) is off-grid. The spacing scale is defined in `tailwind.config.ts` and is **theme-agnostic** — only COLORS are theme-driven CSS custom properties, so this is a design-system (not a per-theme "Coffee") contract. (Correcting the earlier claim of a strict 4 px multiple / a fixed allowed set: `vc-button.vue` uses `padding[2.5]`=10 px and `padding[3.5]`=14 px, and `extend.spacing` adds 18 px.)
-- **Verify:** For each container and its key children, read `getComputedStyle(el).paddingTop|Right|Bottom|Left`, `marginTop|…`, and `gap` via `spacingAuditSnippet(selector)`. Strip `"px"`, cast to number, check membership in the Tailwind scale (base 4 px steps + the half-steps 2/6/10/14 px + the `extend.spacing` additions). Run at multiple viewports — some breakpoints introduce token overrides.
+- **Verify:** For each container and its key children, read `getComputedStyle(el).paddingTop|Right|Bottom|Left`, `marginTop|…`, and `gap` via `spacingAuditSnippet(selector)`, then `classifySpacing()`. **Never hand-list the allowed values** — the snippet embeds `SPACING_GRID`, which is derived by `npm run tokens:sync` from Tailwind's default scale (at the version vc-frontend pins) unioned with that repo's `theme.extend.spacing`; `npm run tokens:check` fails when the design system drifts. Run at the derived `AUDIT_VIEWPORTS_PX` sweep — some breakpoints introduce token overrides.
 - **Violation signal:** Computed values that map to **no** Tailwind scale step (e.g. `"13px"`, `"27px"`, `"41px"`). Note: spacing in vc-frontend is applied via Tailwind utility classes / `theme()` refs, **not** `--spacing-*` CSS variables (those do not exist in the codebase).
 - **Agents:** ui-ux-expert (component audit), qa-frontend-expert (storefront pages)
-- **Suite coverage:** `048b` LAYOUT-SPC-001..003 (catalog product cards, cart line items, checkout form)
+- **Suite coverage:** NONE — was `048b` LAYOUT-SPC-001..003 (catalog product cards, cart line items, checkout form) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-003: No state-induced layout shift `[P2-ux]`
@@ -942,7 +942,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Verify:** Record `getBoundingClientRect()` of a neighbor sibling (`rectSnapshotSnippet(selector)`). Trigger the state change. Re-record. Compare with `compareRectSnapshots(before, after)` — `topDelta` and `leftDelta` must be 0.
 - **Violation signal:** Neighbor moves on hover. Form below a field jumps when validation error inserts. Cart-icon badge change shifts navbar items. Skeleton dimensions ≠ resolved content → snap on load.
 - **Agents:** ui-ux-expert (components), qa-frontend-expert (cart/checkout/forms)
-- **Suite coverage:** `048b` LAYOUT-SHIFT-001..003 (product-card hover, cart-badge update, validation error insertion)
+- **Suite coverage:** NONE — was `048b` LAYOUT-SHIFT-001..003 (product-card hover, cart-badge update, validation error insertion) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-004: Content boundary `[P2-ux]`
@@ -950,7 +950,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Verify:** Inject stress content (80-char product title, 12-digit SKU, German-equivalent label, 4-digit quantity). At each viewport, run `LAYOUT_SNIPPETS.overflowAudit` — checks `document.documentElement.scrollWidth > window.innerWidth` (horizontal overflow) and for each suspect element `el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'hidden'` (silent clipping).
 - **Violation signal:** Page scrolls horizontally at 375 px. Product title is cut off mid-character with no `…`. Card stretches to fit the longest sibling's text, breaking grid alignment. Locale labels (German `Versandadresse`) overflow into adjacent column.
 - **Agents:** ui-ux-expert (stress states), qa-frontend-expert (i18n verification)
-- **Suite coverage:** `048b` LAYOUT-OVF-001..002 + LAYOUT-VPS-001 (mobile pages, long-title injection, 50-px viewport sweep)
+- **Suite coverage:** NONE — was `048b` LAYOUT-OVF-001..002 + LAYOUT-VPS-001 (mobile pages, long-title injection, 50-px viewport sweep) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-005: Alignment in horizontal groups `[P2-ux]`
@@ -958,15 +958,15 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Verify:** Read `getBoundingClientRect()` for each item in the row via `alignmentAuditSnippet(selector)`. For vertical-center alignment, compute `top + height/2` per item — values must match within 1 px. For row-height parity, `height` values must match exactly. The helper returns `centerDriftPx`, `heightDriftPx`, and a boolean `misaligned`.
 - **Violation signal:** Cart-quantity stepper buttons sit 2 px lower than the number field. Icon-and-label pair has icon offset upward. One product card in a row is taller than its neighbors, breaking the grid. Table row heights drift from row to row.
 - **Agents:** ui-ux-expert (component rows), qa-frontend-expert (PDP, cart, tables)
-- **Suite coverage:** `048b` LAYOUT-ALN-001..002 (product grid row, cart-row stepper/price/remove)
+- **Suite coverage:** NONE — was `048b` LAYOUT-ALN-001..002 (product grid row, cart-row stepper/price/remove) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-006: Touch target size and spacing `[P1-data]`
-- **Rule:** At mobile viewport (≤ 768 px), every interactive element — `<button>`, `<a>`, `<input type="checkbox|radio">`, `[role="button"]`, custom steppers, toggle switches — MUST measure ≥ 44 × 44 CSS px and have ≥ 8 px gap from any adjacent interactive element. Padding counts toward the target; hit area is `getBoundingClientRect()` of the element including padding, NOT the visible glyph alone.
-- **Verify:** Set viewport to 375 px. Run `LAYOUT_SNIPPETS.touchTargetAudit` — for each interactive selector, reads `getBoundingClientRect()` and checks `width >= 44 && height >= 44`; for pairwise spacing, checks closest-edge distance ≥ 8 px between any two interactives. Returns `{ undersized[], tooClose[] }`.
+- **Rule:** At mobile viewport (≤ 768 px), every interactive element — `<button>`, `<a>`, `<input type="checkbox|radio">`, `[role="button"]`, custom steppers, toggle switches — MUST measure at least **24 × 24 CSS px (WCAG 2.2 SC 2.5.8, Level AA)** and SHOULD reach **44 × 44 (SC 2.5.5, Level AAA)**, with ≥ 8 px gap from any adjacent interactive element. Padding counts toward the target; hit area is `getBoundingClientRect()` of the element including padding, NOT the visible glyph alone. **Two tiers on purpose:** the vc-frontend UI kit ships button sizes 26 / 32 / 38 / 44 / 52 px by design (`vc-button.vue` `--size`), so a flat 44 px bar marks most of the design system as broken — that produced 13 of 36 failures in run REG-2026-07-24-2121. Below AA = defect (FAIL); AA-to-AAA = design-system tradeoff (WARN), cross-check against the derived `UI_KIT_BUTTON_SIZES_PX` before filing.
+- **Verify:** Set viewport to 375 px. Run `LAYOUT_SNIPPETS.touchTargetAudit` → `classifyTouchTargets()`, which tags each undersized element with `belowAA` and returns FAIL / WARN / PASS accordingly; for pairwise spacing, checks closest-edge distance ≥ 8 px. Thresholds live in `TOUCH_TARGET_AA_MIN_PX` / `TOUCH_TARGET_AAA_MIN_PX` — don't re-hardcode 44.
 - **Violation signal:** 32 × 32 close button on a modal. Quantity stepper buttons 28 × 28 with 4 px between. Two checkboxes stacked with 6 px gap. A tap that should hit one element hits a neighbor instead.
 - **Agents:** ui-ux-expert (mobile audits), qa-frontend-expert (revenue-critical mobile flows)
-- **Suite coverage:** `048b` LAYOUT-TGT-001..003 (PDP, cart, checkout @ 375 px)
+- **Suite coverage:** NONE — was `048b` LAYOUT-TGT-001..003 (PDP, cart, checkout @ 375 px) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Severity rationale:** P1 (not P2) because mobile touch-target sizing carries legal/accessibility risk that overlaps the WCAG Target Size criteria: WCAG 2.2 SC 2.5.8 Target Size (Minimum) is **Level AA at 24×24 CSS px**, and SC 2.5.5 Target Size (Enhanced) is **Level AAA at 44×44 CSS px** (AAA in both WCAG 2.1 and 2.2). This invariant audits at the stricter 44×44 (AAA / Material & Apple HIG) bar; targets between 24 and 44 px pass WCAG 2.2 AA but still fail this invariant.
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
@@ -1208,6 +1208,41 @@ the environment verification (TLC-2026-07-02-2043).
 
 ---
 
+## Domain 20: Sales Rep (BL-SREP)
+
+### BL-SREP-001: Rep-facing Sales Rep hub pages are reachable without the rep's own org membership `[P1-data]`
+- **Rule:** A Sales Rep's hub is gated on the `sales-rep:access` permission alone. The **rep-facing** hub pages (`/company/dashboard`, `/company/my-customers`, `/company/customer-profile`) are reachable **regardless of the rep's own organization membership** — a rep's customers are the organizations they *serve*, independent of any org the rep belongs to. Only the **buyer-facing** `/company/sales-reps` contact page requires org membership. (`guardSalesRep` still enforces reps-only access.)
+- **Verify:** as a rep holding `sales-rep:access` with **zero** org memberships, the rep-facing hub links resolve to their pages (incl. the empty "No customers found" state), NOT a redirect to `/account/dashboard`; the buyer-facing sales-reps page stays org-gated.
+- **Violation signal:** a customer-less rep's hub links render but **redirect to `/account/dashboard`** (visible-but-dead links) — the pre-fix VCST-5494 behavior.
+- **Agents:** qa-frontend-expert, qa-backend-expert.
+- **Source:** vc-frontend PR #2391 `fix(VCST-5494)` (merged dev 2026-07-23) — clears the inherited `meta.requiresOrganization` on the three rep-facing routes (child meta overrides parent); buyer route kept org-gated.
+- **Promoted:** 2026-07-24 (TLC-2026-07-24-1906; BL-AUDIT-2026-07-24), on **source authority** (merged fix); **docs N/A** (module pre-GA). **⚠ LIVE-VERIFICATION PENDING DEPLOY:** the VCST-5494 fix (PR #2391) is **not yet on the vcst-qa artifact** (env pinned to theme `pr-2395`). On any build *before* that deploy the no-membership hub still redirects — that is **deploy lag, NOT a violation of this invariant**. Re-verify (redirect→reachable) once PR #2391's theme deploys to vcst-qa; until then do not classify the redirect as a FAIL.
+
+### BL-SREP-002: Sales Rep dashboard statistics are scoped to the rep's served organizations `[P1-data]`
+- **Rule:** A sales representative's hub dashboard statistics — order statistics, cart statistics, customer counts, and top-sellers — are aggregated over **only the organizations that representative serves**. A rep never sees counts, totals, or top-sellers for an organization outside their served set. (A rep's served organizations are their organization memberships; served relationship ≠ the rep's own buying org.)
+- **Verify:** Signed in as a sales rep, open the hub dashboard; the KPI tiles and tables reconcile exactly with the scoped statistics queries (`salesRepCustomerOrderStatistics`, `salesRepCustomerCartStatistics`, `salesRepCustomerCounts`, `salesRepTopSellers`) computed over the rep's served organizations only.
+- **Violation signal:** A dashboard tile or table reflects orders, carts, customers, or top-sellers from an organization the rep does not serve; or displayed values do not reconcile with the scoped statistics query for the rep's served set.
+- **Agents:** qa-backend-expert (scoped GraphQL), qa-frontend-expert (dashboard tiles)
+- **Source:** vc-module-sales-rep scoped `salesRep*` statistics resolvers (X-API endpoints, PR #2); live GraphQL schema 2026-07-24.
+- **Promoted:** 2026-07-24 (TLC-2026-07-24-1906; BL-AUDIT-2026-07-24). Evidence bar: **applicable-axes** — live + source CONFIRM; **docs N/A** (module pre-GA / undocumented). Adversarial cross-org-leak negative pending (strengthens, not blocks). Sibling BL-SREP-001 (hub access) promoted on source authority (live-verification pending the VCST-5494 deploy).
+
+### BL-SREP-003: Embedded Sales Rep Admin app gates on customer-member + platform-security permissions, not on `sales-rep:access` `[P1-data]`
+- **Rule:** The embedded Sales Rep Admin app (`api/sales-rep`) is gated by the **customer module's member permissions + platform security permissions**, NOT by `sales-rep:access` (which only defines a storefront rep) and NOT merely by the module being installed. The exact matrix (`[Authorize]` attributes; **multiple attributes = AND — all required**):
+  - **Read** (`search`, `roles`, `dictionaries`, `GET {id}`) → **`customer:read`**.
+  - **Create** → **`customer:create` AND `platform:security:create`**.
+  - **Update** → **`customer:update` AND `platform:security:update`**.
+  - **Delete** → **`customer:delete` AND `platform:security:delete`**.
+  - **Account-only ops** (`{id}/block`, `{id}/unblock`, `{id}/password`) → **`platform:security:update` only** (NOT `customer:update`) — a distinct mutate class from entity CRUD.
+  - An `isAdministrator` account bypasses all checks.
+- **Verify:** a back-office Manager (`isAdministrator=false`) **without `customer:read`** gets the menu entry hidden and `POST /api/sales-rep/search` → 302 → AccessDenied; a Manager with **`customer:read` only** opens the app and lists reps (search → 200) but Add/Delete/Save are hidden and `POST`/`PUT /api/sales-rep` → **403**; block/unblock/reset-password succeed only with `platform:security:update` (independent of `customer:update`).
+- **Violation signal:** a Manager lacking `customer:read` reaches the rep list; a `customer:read`-only Manager creates/edits/deletes a rep (UI action present or create/update API 2xx); or block/unblock/set-password succeeds without `platform:security:update`.
+- **Agents:** qa-backend-expert.
+- **Source:** `vc-module-sales-rep` `SalesRepController.cs` (`dev`, `api/sales-rep`) — per-endpoint `[Authorize]` map (`CustomerModule…Permissions.Read/Create/Update/Delete` + `Platform…Permissions.SecurityCreate/Update/Delete`); `useSalesRepPermissions/index.ts` (frontend UI gate — CRUD subset, no account-ops class); `ModuleConstants.cs` (`sales-rep:access` = rep definition only). VCST-5293.
+- **Note:** the read-only edit blade also needs store/org read for its dropdowns (a separate `store:*`/org-read dependency surfaced live) — a UI-completeness dependency, not part of the RBAC gate.
+- **Promoted:** 2026-07-24 (TLC-2026-07-24-1906; BL-AUDIT-2026-07-24). Evidence bar: **applicable-axes** — live (SR-ADM-023 **5-account API matrix** — no-access / read-only / account-ops / member-only / full-non-admin — every cell matched: `customer:read` read gate; account-ops = `platform:security:update` only (204); create/update/delete = customer:* AND platform:security:* (403 when either half is missing); FULL non-admin clears every gate — real `[Authorize]` chain, not admin bypass) + source (controller `[Authorize]` map) CONFIRM; **docs N/A** (module pre-GA / undocumented). Sibling BL-SREP-001 promoted on source authority (live-verify pending deploy).
+
+---
+
 ## Invariant Coverage Summary
 
 P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-data]` + `[P1-ux]`.
@@ -1234,4 +1269,5 @@ P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-dat
 | Loyalty & Mixed Cart | BL-LOY-001–014 (011 reserved) | 13 | 4 | 7 | 2 |
 | Payment Processors | BL-PAY-001/003/004 | 3 | 3 | 0 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 |
-| **Total** | | **145** | **48** | **76** | **21** |
+| Sales Rep | BL-SREP-001–003 | 3 | 0 | 3 | 0 |
+| **Total** | | **148** | **48** | **79** | **21** |

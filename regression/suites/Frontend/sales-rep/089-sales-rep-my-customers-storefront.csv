@@ -111,14 +111,14 @@ SR_REP_PRIMARY serves >=2 distinctly-named orgs.","front_url={{FRONT_URL}}","[NA
 [ACT] click the ""Customer"" column header again
 [WAIT] table re-sorts","[DOM] after the first click, the ""Customer"" column's org-name text values are in strict ascending or descending alphabetical order top-to-bottom {DOC}
 [DOM] after the second click, the first row's org-name text differs from the first click's first-row org-name (direction reversed) {DOC}","[API] salesRepCustomers(sort:) query fired with the opposite sort value on the second click","clicking the header twice produces the same row order both times; no sort indicator/order change observed","none (read-only)","VCST-5469","Draft"
-"SR-FE-015","Sort — Last Order Column Header Is Not Sortable","Storefront > Sales Rep > My Customers > Sort","Medium","PROPOSED-BL-SR-UI-SORT","","[PRE:CLEAR_SESSION]
+"SR-FE-015","Sort — Last Order Column Header Re-sorts the Customer Table","Storefront > Sales Rep > My Customers > Sort","Medium","PROPOSED-BL-SR-UI-SORT","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Per source, only the Customer column is declared sortable; verify whether ""My last order"" reacts at all to a click. HEADER SYNC (TLC Phase-2, 2026-07-17): column header text confirmed live as ""My last order"" (was ""Last order"").","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] table rows loaded
 [ASSERT] current row order recorded
 [ACT] click the ""My last order"" column header
-[WAIT] brief pause for any re-render","[DOM] row order is UNCHANGED after clicking ""My last order"" header (column is not sortable) {DOC}
-[DOM] verify whether ""My last order"" header shows any sort affordance (cursor/icon) at all — expected: none {HYPOTHESIS}","[API] no additional salesRepCustomers(sort:) query fired for the My last order click","clicking ""My last order"" reorders the table (column is unexpectedly sortable, contradicting the documented single-sortable-column design)","none (read-only)","VCST-5469","Draft"
+[WAIT] brief pause for any re-render","[DOM] clicking the 'My last order' column header re-sorts the table rows (the column IS sortable) {OBSERVED}
+[API] the click issues a salesRepCustomers query carrying the my-last-orders sort rule; the live schema exposes 3 sort rules (my-last-orders, ytd-purchases, name) {OBSERVED}","[API] no additional salesRepCustomers(sort:) query fired for the My last order click","clicking ""My last order"" reorders the table (column is unexpectedly sortable, contradicting the documented single-sortable-column design)","none (read-only)","VCST-5469","Draft"
 "SR-FE-016","Sort — Header Click Resets Table to Page 1","Storefront > Sales Rep > My Customers > Sort","Medium","PROPOSED-BL-SR-UI-SORT, PROPOSED-BL-SR-UI-PAGE","","SR_REP_PAGING (seeded, 12 served orgs) so page 2 is reachable before sorting.
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PAGING]","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/my-customers

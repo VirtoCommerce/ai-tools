@@ -5,7 +5,7 @@
 **Severity:** Medium (display/UX — misleads the customer about what they configured; data + totals are correct)
 **Env:** vcst-qa storefront — Theme `2.51.0-pr-2310`, Platform `3.1035.0`, XCart `3.1019.0-pr-124-89a6`
 **Owning layer:** Layer 1 — vc-frontend (line-item configuration summary rendering)
-**Reproduced:** 2026-06-11 (REG-2026-06-11-1423, suite 030 CART-071 + CART-073, 2× confirmed)
+**Reproduced:** 2026-06-11 (REG-2026-06-11-1423, suite 030 CART-114 + CART-116 — renumbered 2026-07-25 from CART-071 + CART-073, 2× confirmed)
 
 ## Summary
 
@@ -43,4 +43,4 @@ On `/cart`, a configurable product line's **summary header** shows the wrong sel
 - **Routing confidence:** HIGH (data correct at xAPI, defect is purely the storefront summary rendering)
 
 ## References
-- REG-2026-06-11-1423 suite 030 CART-071, CART-073 — evidence `screenshots/CART-071-FAIL-config-summary-label-mismatch.png`, `CART-073-FAIL-config-summary-label-mismatch.png`
+- REG-2026-06-11-1423 suite 030 CART-114, CART-116 (renumbered 2026-07-25 from CART-071, CART-073 — cases predating the rename, incl. historical `REG-*` artifacts, keep the old IDs) — evidence `screenshots/CART-071-FAIL-config-summary-label-mismatch.png`, `CART-073-FAIL-config-summary-label-mismatch.png`

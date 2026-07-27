@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.38",
+    "version": "1.5.39",
     "updated": "GENERATED",
     "changelog_1_5_38": "PAGE-3 fr-FR: added a French sibling of the return-policy page (store cultures en-GB default / de-DE / fr-FR). /qa-return-policy now serves THREE separate single-culture pages (the platform's multi-lang model): en-US 'QA Return Policy', de-DE 'QA Rückgaberichtlinie', fr-FR 'QA Politique de retour et de remboursement' — all Published, 5 blocks each, on vcst. New alias PB_RETURN_POLICY_FR (group_id in aliases.vcst.json). FR content authored in test-data/cms/page-content.json (PB_RETURN_POLICY.fr-FR). Spec gained frName/frAlias; seed-pagebuilder-pages.mjs reconcileMultiLang gained an FR branch + a culture-heal step (enforceCulture, content-safe metadata upsert — a create/publish at a SHARED permalink can flip a sibling's cultureName, proven live when the FR create flipped EN→fr-FR; healed back). Idempotent; td:validate:cms-pages + 168 unit tests + td:reconcile green. NOTE (not a fix): this only gives PAGE-3 an FR version — it does NOT fix the underlying content-leak defect where an UNPUBLISHED language serves default-language content instead of 404. CMS-028's 'unpublished-language → 404' coverage should be re-pointed to a genuinely-unpublished culture and the product defect filed separately. Browser DOM render of /en|/de|/fr/qa-return-policy remains delegated to qa-frontend-expert.",
     "changelog_1_5_37": "REG-2026-07-21-1438 PageBuilder CONTENT: audited canonical qa-* pages' block content and found 3 of 5 were EMPTY shells (rendered blank despite Published): PB_HOMEPAGE, PB_RETURN_POLICY(en-US), PB_SUMMER_PREVIEW = 0 blocks (PB_WHOLESALE_GUIDE/PB_RETURN_POLICY(de-DE)/PB_PARTNER_SUPPORT had 5 each). Added content-block fixture test-data/cms/page-content.json (JSON-shaped to POST /api/page-builder-pages/grouped/{id}/content — {settings,content:[title|text|predefined-product-list]}; SKUs use the @discover:N marker resolved live, no hardcoded SKUs/GUIDs). seed-pagebuilder-pages.mjs now fills EMPTY shells from the fixture (preserving existing content on populated pages) via ensurePageState(). Live result: HOMEPAGE 7, RP(en) 5, SUMMER 6 blocks filled; the 3 populated pages kept. Two proven platform facts drove the impl (documented in pagebuilder-pages-specs.mjs): (1) content+schedule MUST land in ONE publish — a 2nd publish drains the just-promoted empty draft and wipes content; (2) a future/Pending page hides content in every projection. Consequently PB_SUMMER_PREVIEW's baseline is IN-WINDOW/Active (start -1d, end +60d) — the only state with verifiable live content (CMS-034 200); CMS-033 (future→404) toggles start to future in its own steps. Fixture drift-guard folded into td:validate:cms-pages; unit tests in scripts/unit/seed-pagebuilder-pages.test.mjs. CAVEAT (browser, delegated): storefront DOM render of all pages + the CMS-033/034 date-toggle reveal remain to be confirmed by qa-frontend-expert in the re-run.",
@@ -43,31 +43,60 @@
     "changelog_1_5_22": "VCST-5135 ProductPoints program fixtures: programs.csv updated with seeded=true + platform_ids for LOY-010..013 (seeded 2026-06-24 via seed-loyalty.mjs). LOY_PP_* alias notes updated to reflect live IDs. Added 5 VCST-5135 combination aliases [LOY_PP_5135_01..05] covering: all-customers earn (LOY-010), VIP-only earn (LOY-011 + LOYALTY_VIP_USER), VIP-only blocked (non-VIP user — LOYALTY_NOBAL_USER has no Wholesaler group so serves as non-VIP), wholesaler earn (LOY-012), inactive program blocked (LOY-013). VCST-5135 programs are already provisioned — no /qa-seed-data step needed for programs.",
     "changelog_1_5_27": "VCST-5406: reseeded vcst-qa via the unified scripts/seed-data/seed-company-users.mjs (all kinds) on 2026-07-01 after teardown; refreshed org + contact platform_id caches in b2b/organizations.csv (19) + b2b/contacts.csv (14) from the fresh seed. Impersonation re-seed hints now point to `npm run seed:impersonation`. B2B graph reconciles clean (org-scoped roles only, VCST-5028). Note: b2b/users.csv user platform_id caches remain informational (resolved live by email); a handful of orgs (child AcmeWest + ORG-005..008) exist in DB but lag the Member search index.",
     "changelog_1_5_28": "VCST-5406 follow-up: swept the last password literals into the {{VAR}} pattern. 4 alias password fields (AGENT_TEST_IMP_CUSTOMER, MULTI_ORG_TF_BR[/_EMPLOYEE/_MAINTAINER]) → {{DEFAULT_TEST_PASSWORD}}; 15 real-credential Password1! literals in create-account bodies of suites 027/027b/050d → {{DEFAULT_TEST_PASSWORD}}. Left intentional test inputs alone (031/082 Test/Any/WrongPassword1! are registration/negative inputs, not stored secrets).",
-    "changelog_1_5_29": "VCST-5089 (Per-store Asset Public URL rewrite in XAPI) regression authoring: added STORE_ASSET_TEST_URL inline alias (stable placeholder CDN host for setting/resetting Store.assetPublicUrl in tests — value is intentionally non-resolving DNS, same pattern as the live QA verification's cdn-test-vcst5089.govirto.com; only the HOST is asserted, 404/ERR_NAME_NOT_RESOLVED on the image itself is expected and acceptable). Added EXTERNAL_HOST_IMAGE_PRODUCT inline alias pinning the one concrete external-image product captured live during QA verification (product name + external host) for the BUG-1 regression guard (external URLs must NOT be rewritten when VirtoCommerce:StoreAssets:KnownAssetHosts is configured) — captured on vcptcore-qa 2026-07-14, see tests/Sprint-current/VCST-5089/test-execution-report.md; flagged env-portable-with-caveat since catalog composition diverges per env (per feedback reference_per_env_aliases_overlay) — the consuming case is marked Automation_Status=Draft pending per-env confirmation that the pinned product name resolves."
+    "changelog_1_5_29": "VCST-5089 (Per-store Asset Public URL rewrite in XAPI) regression authoring: added STORE_ASSET_TEST_URL inline alias (stable placeholder CDN host for setting/resetting Store.assetPublicUrl in tests — value is intentionally non-resolving DNS, same pattern as the live QA verification's cdn-test-vcst5089.govirto.com; only the HOST is asserted, 404/ERR_NAME_NOT_RESOLVED on the image itself is expected and acceptable). Added EXTERNAL_HOST_IMAGE_PRODUCT inline alias pinning the one concrete external-image product captured live during QA verification (product name + external host) for the BUG-1 regression guard (external URLs must NOT be rewritten when VirtoCommerce:StoreAssets:KnownAssetHosts is configured) — captured on vcptcore-qa 2026-07-14, see tests/Sprint-current/VCST-5089/test-execution-report.md; flagged env-portable-with-caveat since catalog composition diverges per env (per feedback reference_per_env_aliases_overlay) — the consuming case is marked Automation_Status=Draft pending per-env confirmation that the pinned product name resolves.",
+    "changelog_1_5_39": "Cart-suite test-data gaps (TLC-2026-07-25): (1) NEW PROD_MULTI_CURRENCY (test-products.csv PROD-106 / SKU QA-MULTICUR-001, 24.99 USD + 22.49 EUR) — the first genuinely multi-currency AGENT-TEST fixture. Root cause it fixes: seed-standard-products.mjs created only a USD pricelist and hardcoded currency:'USD' on every price row, so switching the storefront to EUR collapsed every AGENT-TEST line to 0.00 with a disabled qty stepper and blocked the currency-switch-with-coupon case (CART-093). The seeder now creates ONE PRICELIST PER CURRENCY (SEED-<date>-Standards-<CUR>) driven by the new `price_eur` CSV column via standard-specs.mjs buildCurrencyPriceSets(), registers the currencies first (ensureCurrencies), and tears down every currency's pricelist. (2) NEW PROD_SUB_FIVE (PROD-107 / QA-SUBFIVE-001, $3.49) — makes the fixed-amount-discount-exceeds-subtotal boundary reachable; COUPON_FIXED5 is $5 off and the cheapest fixture was $9.99, so the 'total floors at zero' assertion passed vacuously. (3) PROD_OOS / PROD_LOW_STOCK / PROD_PACK_SIZE / PROD_TIER_PRICED gained `slug` + `url` fields, backed by new env-invariant `product_slug` / `storefront_url` columns, so cases navigate {{FRONT_URL}}@td(ALIAS.url) instead of hand-composing /product/<sku> — which renders a client-side 404 (HTTP 200 SPA soft-404). The only live-working path is /seed-test-fixtures/<product-slug>, which is DERIVABLE from the seeder's own slug rules (standard-specs.mjs productSlug / storefrontPathForAdHoc) and is drift-guarded, not hand-maintained. (4) Stale GUIDs + the pre-seeding 'Template only — NOT seeded' recipe removed from these four aliases' notes and from the test-products.csv notes column (they have been live-seeded since 2026-05-19; ids belong in aliases.<env>.json). (5) .env.vcst OOS_SKU / PACK_SIZE_SKU / TIER_PRICED_SKU pointed at OOS-PRODUCT-001 / BULK-PAPER-001 / CISCO-SW24-001, which do NOT EXIST on the env (verified 2026-07-25) and disagreed with these aliases — repointed to the canonical QA-* business keys; td:validate:standard now fails any .env.* whose non-empty *_SKU disagrees with the CSV row. @td(PROD_*.sku) is the single source of truth; the env vars are a legacy convenience mirror. PROD-106/107 are AUTHORED, NOT YET SEEDED — run `TEST_ENV=<env> npm run seed:products`."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
-    "fields": { "number": "number", "status": "status", "currency": "currency", "total": "total", "id": "id" },
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id"
+    },
     "notes": "VCST-5482 — customer order in Completed state (shipment Delivered), owned by {{USER_EMAIL}}. Static fields from the JSON fixture; runtime id from aliases.<env>.json (npm run seed:orders). Unblocks suite 014 CHK-025/039/040, ORD-001/003/007/008/009/010/035."
   },
   "SHIPPED_ORDER": {
     "json": "orders/shipped-order",
-    "fields": { "number": "number", "status": "status", "currency": "currency", "total": "total", "id": "id" },
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id"
+    },
     "notes": "VCST-5482 — customer order in Shipped state (shipment Sent + tracking number), owned by {{USER_EMAIL}}. Runtime id from aliases.<env>.json (npm run seed:orders). Unblocks suite 014 CHK-013, ORD-006/012/030."
   },
   "PROCESSING_ORDER": {
     "json": "orders/processing-order",
-    "fields": { "number": "number", "status": "status", "currency": "currency", "total": "total", "id": "id" },
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id"
+    },
     "notes": "VCST-5482 — customer order in Processing state, owned by {{USER_EMAIL}}. Runtime id from aliases.<env>.json (npm run seed:orders). Unblocks suite 014 CHK-024, ORD-047."
   },
   "QUOTE_WITH_ADMIN_RESPONSE": {
     "json": "quotes/quote-admin-response",
-    "fields": { "number": "number", "status": "status", "currency": "currency", "id": "id" },
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
     "notes": "VCST-5482 — RFQ submitted by {{ORG_USER_EMAIL}} with admin per-line pricing applied. Runtime id from aliases.<env>.json (npm run seed:quotes). Unblocks suite 015 QUOTE-004/005/006/008/009/018/020/021/025."
   },
   "ACCEPTED_QUOTE": {
     "json": "quotes/quote-accepted",
-    "fields": { "number": "number", "status": "status", "currency": "currency", "id": "id" },
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
     "notes": "VCST-5482 — admin-priced RFQ accepted by the buyer (ready to convert). Runtime id from aliases.<env>.json (npm run seed:quotes). Unblocks suite 015 QUOTE-007/024/027/028/030."
   },
   "CFG_LAPTOP": {
@@ -2040,9 +2069,11 @@
       "sku": "sku",
       "name": "product_name",
       "price": "price",
-      "id": "product_id"
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url"
     },
-    "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-OOS-001 (matches sku field). Product GUID: 1585405d-b4b1-4aa2-ba6d-34c22152b933. stock=0, isAvailable=false, isInStock=false (verified xAPI). Unblocks CART-046 CART-082. Env var: OOS_SKU.",
+    "notes": "Permanent out-of-stock fixture (stock 0 on every FC, inventory status Enabled — a Disabled status makes xAPI addItem silently no-op instead of surfacing the OOS state). Seeded by scripts/seed-data/products/seed-standard-products.mjs from test-products.csv PROD-101; resolved by business key (code/SKU QA-OOS-001) — NO runtime GUID committed here (ids live in aliases.<env>.json). NAVIGATE VIA @td(PROD_OOS.url), composed as {{FRONT_URL}}@td(PROD_OOS.url). Do NOT hand-build /product/<sku>: that route renders a client-side 404 (HTTP 200 SPA soft-404) — confirmed 2026-07-25. The category page also ships the 'Show in stock' filter on, which hides this fixture, so the direct url is the reliable entry point. Unblocks CART-046 CART-082 + the suite-002 PDP OOS cases. Env var OOS_SKU must equal this sku (enforced by td:validate:standard).",
     "_status": "seeded-20260519"
   },
   "PROD_LOW_STOCK": {
@@ -2054,9 +2085,11 @@
       "sku": "sku",
       "name": "product_name",
       "price": "price",
-      "id": "product_id"
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url"
     },
-    "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-LOW-001 (matches sku field). Product GUID: ca405b27-efb8-453b-9561-c8efe38c10b4. stock=5 (verified xAPI). Must not go OOS — top up if it drops. Unblocks CART-037. Env var: LOW_STOCK_SKU.",
+    "notes": "Near-limit stock fixture (stock 5 on the store MAIN fulfillment center); must NOT go OOS — top up if it drops. Seeded by scripts/seed-data/products/seed-standard-products.mjs from test-products.csv PROD-102; resolved by business key (code/SKU QA-LOW-001) — NO runtime GUID committed here (ids live in aliases.<env>.json). NAVIGATE VIA @td(PROD_LOW_STOCK.url), composed as {{FRONT_URL}}@td(PROD_LOW_STOCK.url); /product/<sku> renders a client-side 404 (HTTP 200 SPA soft-404) — confirmed 2026-07-25. Unblocks CART-037. Env var LOW_STOCK_SKU must equal this sku (enforced by td:validate:standard).",
     "_status": "seeded-20260519"
   },
   "PROD_PACK_SIZE": {
@@ -2068,9 +2101,11 @@
       "sku": "sku",
       "name": "product_name",
       "price": "price",
-      "id": "product_id"
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url"
     },
-    "notes": "Resolves by business key (code/SKU QA-PACK-001 = product_id PROD-103); no runtime GUID pinned here (env-specific — lives in the platform, not this committed file). Seeded via scripts/seed-data/seed-standard-products.mjs (idempotent look-up-by-code). minQuantity=6, packSize=6, stock=60 (verified xAPI, reconfirmed live 2026-07-14). Unblocks CART-054/CART-055. Env var: PACK_SIZE_SKU.",
+    "notes": "MOQ / pack-size fixture (minQuantity=6, packSize=6, stock=60 — applied at create time from standard-specs.mjs SPEC_OVERLAYS['PROD-103']; reconfirmed live 2026-07-25). Resolves by business key (code/SKU QA-PACK-001) — no runtime GUID pinned here (env-specific; ids live in aliases.<env>.json). NAVIGATE VIA @td(PROD_PACK_SIZE.url), composed as {{FRONT_URL}}@td(PROD_PACK_SIZE.url); /product/<sku> does not resolve. Unblocks CART-054/CART-055. Env var PACK_SIZE_SKU must equal this sku (enforced by td:validate:standard).",
     "_status": "seeded"
   },
   "PROD_TIER_PRICED": {
@@ -2082,10 +2117,48 @@
       "sku": "sku",
       "name": "product_name",
       "price": "price",
-      "id": "product_id"
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url"
     },
-    "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-TIER-001 (matches sku field). Product GUID: 9d709714-7905-429f-88e9-d5e342854425. Tier pricing: list=$29.99 minQty=1, sale=$26.99 minQty=10, sale=$23.99 minQty=20. stock=200. Unblocks CART-078. Env var: TIER_PRICED_SKU.",
+    "notes": "Tier-priced fixture (list $29.99 minQty=1, sale $26.99 minQty=10, sale $23.99 minQty=20 — applied at create time from standard-specs.mjs SPEC_OVERLAYS['PROD-104']; stock=200). Seeded by scripts/seed-data/products/seed-standard-products.mjs; resolved by business key (code/SKU QA-TIER-001) — NO runtime GUID committed here (ids live in aliases.<env>.json). NAVIGATE VIA @td(PROD_TIER_PRICED.url), composed as {{FRONT_URL}}@td(PROD_TIER_PRICED.url); /product/<sku> does not resolve. Unblocks CART-078. Env var TIER_PRICED_SKU must equal this sku (enforced by td:validate:standard).",
     "_status": "seeded-20260519"
+  },
+  "PROD_MULTI_CURRENCY": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-106"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "currency": "currency",
+      "price_eur": "price_eur",
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url"
+    },
+    "notes": "THE dual-currency fixture: priced in BOTH USD (24.99) and EUR (22.49), each in its own single-currency pricelist (SEED-20260519-Standards-USD / -EUR) assigned to the store virtual catalog with no membership condition, so guest / personal / org users all see both. It exists because every other AGENT-TEST fixture is USD-only — switching the storefront to EUR collapsed those lines to 0.00 with a disabled qty stepper, so a currency-switch-with-coupon case (CART-093) failed for the wrong reason (zero subtotal, not the rule under test). Assert `price` in USD and `price_eur` in EUR; NEVER assert the two are equal. NAVIGATE VIA @td(PROD_MULTI_CURRENCY.url), composed as {{FRONT_URL}}@td(PROD_MULTI_CURRENCY.url). Resolved by business key (SKU QA-MULTICUR-001) — no runtime GUID committed. Provision with `TEST_ENV=<env> npm run seed:products`.",
+    "_status": "seeded-20260725"
+  },
+  "PROD_SUB_FIVE": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-107"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "currency": "currency",
+      "price_eur": "price_eur",
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url"
+    },
+    "notes": "Sub-$5 fixture ($3.49 USD / EUR 3.19) — the only fixture cheap enough to make the fixed-amount-discount-exceeds-subtotal boundary genuinely reachable. @td(COUPON_FIXED5.code) is $5 off cart subtotal and the previously-cheapest fixture was $9.99, so a 'total floors at zero, never goes negative' assertion passed vacuously. Use qty=1 of this row as the whole cart. Keep the price strictly below the COUPON_FIXED5 discount amount; re-check this row if that coupon is ever re-valued. NAVIGATE VIA @td(PROD_SUB_FIVE.url), composed as {{FRONT_URL}}@td(PROD_SUB_FIVE.url). Resolved by business key (SKU QA-SUBFIVE-001) — no runtime GUID committed. Provision with `TEST_ENV=<env> npm run seed:products`.",
+    "_status": "seeded-20260725"
   },
   "PROD_SALE_SIMPLE": {
     "file": "products/test-products",
@@ -2390,8 +2463,8 @@
     "testSku": "YOC-85609878",
     "testSlug": "/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake",
     "testSlug_resolvedAt": "2026-05-14T11:00Z against FRONT_URL=https://vcst-qa-storefront.govirto.com via /search?q=YOC-85609878 → first card href",
-    "source": "user-provided 2026-05-14 for layout-stability suite (048b) Configurable PDP entry in critical-ui-scope.md Pages matrix",
-    "notes": "Configurable product fixture for layout-stability tests. Must have at least one configurable section (text input, dropdown, or option chooser visible on PDP). Used by Configurable PDP page row in critical-ui-scope.md."
+    "source": "user-provided 2026-05-14 for the Configurable PDP entry in critical-ui-scope.md Pages matrix (originally for layout-stability suite 048b, removed 2026-07-25)",
+    "notes": "Configurable product fixture for layout-stability audits. Must have at least one configurable section (text input, dropdown, or option chooser visible on PDP). Consumed by the Configurable PDP page row in critical-ui-scope.md and by /qa-design; no regression suite currently uses it."
   },
   "STRESS": {
     "_inline": true,
@@ -2401,7 +2474,7 @@
     "longTitleText": "Christmas paper straws, striped dot drink straws, decorative straws with Christmas tree, star, snowflake, gift jar pattern. Christmas party supplies, 22cm-6mm, pack of 500 pieces.",
     "longTitleSource": "live capture 2026-05-14 on vcst-qa B2B-store (storefront-selectors.md Section 8)",
     "longTitleSearchQuery": "Christmas paper straws",
-    "notes": "Stress-test fixtures for layout-stability suite (048b). longTitleSku resolves to a real in-stock product with a 179-char title — use to trigger BL-UI-004 (content boundary) overflow tests without DOM injection. Re-verify SKU exists if vcst catalog is reseeded."
+    "notes": "Stress-test fixtures for layout-stability audits (originally suite 048b, removed 2026-07-25; now consumed by critical-ui-scope.md audit protocols and /qa-design). longTitleSku resolves to a real in-stock product with a 179-char title — use to trigger BL-UI-004 (content boundary) overflow tests without DOM injection. Re-verify SKU exists if vcst catalog is reseeded."
   },
   "IMPERSONATION_ADMIN": {
     "file": "b2b/users",
@@ -3788,6 +3861,47 @@
     "excluded_permission": "catalog:categories:link",
     "user_type": "Manager"
   },
+  "RESTRICTED_ADMIN_SALESREP_READONLY": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account for the Sales Rep admin RBAC verification SR-ADM-023 / candidate BL-SREP-003: a read-only Sales Rep admin who can OPEN the embedded Sales Rep back-office app and VIEW reps but CANNOT mutate them. The Sales Rep Admin app gates on the CUSTOMER module's member perms (verified in vc-module-sales-rep dev, useSalesRepPermissions), NOT on sales-rep:access. Holds customer:read (the access/read gate) and EXCLUDES all six mutate perms — customer:create/update/delete (the rep member) + platform:security:create/update/delete (the rep's login account). isAdministrator=false so the gate applies (an admin bypasses every check). Pairs with RESTRICTED_CMS_ADMIN as the no-access negative control (it lacks customer:read entirely). email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{RESTRICTED_SALESREP_ADMIN_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (written by scripts/seed-data/platform/seed-backoffice-rbac.mjs — npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
+    "email": "AGENT-TEST-restricted-salesrep@test.virtocommerce.com",
+    "login": "AGENT-TEST-restricted-salesrep@test.virtocommerce.com",
+    "password_var": "RESTRICTED_SALESREP_ADMIN_PASSWORD",
+    "role": "AGENT-TEST-SalesRep-ReadOnly",
+    "excluded_permission": "customer:update",
+    "user_type": "Manager"
+  },
+  "RESTRICTED_ADMIN_SALESREP_ACCOUNTOPS": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account isolating the ACCOUNT-OPS class of the SalesRepController permission matrix (api/sales-rep, multiple [Authorize] = AND). Holds customer:read + platform:security:update so account-ops (block / unblock / set-password, gated on platform:security:update ONLY) SUCCEED, but EXCLUDES customer:update (+ customer:create/delete + platform:security:create/delete) so entity Update — which needs BOTH customer:update AND platform:security:update — returns 403. Representative boundary = customer:update. isAdministrator=false so the gate applies. email is an env-invariant AGENT-TEST business key; PASSWORD is {{RESTRICTED_SALESREP_ADMIN_PASSWORD}} from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
+    "email": "AGENT-TEST-salesrep-accountops@test.virtocommerce.com",
+    "login": "AGENT-TEST-salesrep-accountops@test.virtocommerce.com",
+    "password_var": "RESTRICTED_SALESREP_ADMIN_PASSWORD",
+    "role": "AGENT-TEST-SalesRep-AccountOps",
+    "excluded_permission": "customer:update",
+    "user_type": "Manager"
+  },
+  "RESTRICTED_ADMIN_SALESREP_MEMBERONLY": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account proving the SalesRepController Update AND-gate from the MEMBER side (api/sales-rep). Holds customer:read + customer:update but EXCLUDES platform:security:update (+ customer:create/delete + platform:security:create/delete), so entity Update STILL returns 403 (it needs the account side too) and account-ops (block) returns 403. Complements ACCOUNTOPS — together they prove neither the member perm nor the account perm alone is sufficient. Representative boundary = platform:security:update. isAdministrator=false so the gate applies. email is an env-invariant AGENT-TEST business key; PASSWORD is {{RESTRICTED_SALESREP_ADMIN_PASSWORD}} from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
+    "email": "AGENT-TEST-salesrep-memberonly@test.virtocommerce.com",
+    "login": "AGENT-TEST-salesrep-memberonly@test.virtocommerce.com",
+    "password_var": "RESTRICTED_SALESREP_ADMIN_PASSWORD",
+    "role": "AGENT-TEST-SalesRep-MemberOnly",
+    "excluded_permission": "platform:security:update",
+    "user_type": "Manager"
+  },
+  "RESTRICTED_ADMIN_SALESREP_FULL": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account — the permissioned NON-admin POSITIVE CONTROL for the SalesRepController permission matrix (api/sales-rep). Holds the FULL CRUD + account-ops perm set (customer:read/create/update/delete + platform:security:create/update/delete) yet is isAdministrator=false, so it exercises the REAL [Authorize] gate rather than the admin bypass: a properly-permissioned non-admin can create/update/delete a rep and run account-ops. No boundary permission (excluded_permission: null); the load-bearing negative is is_administrator=false. email is an env-invariant AGENT-TEST business key; PASSWORD is {{RESTRICTED_SALESREP_ADMIN_PASSWORD}} from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
+    "email": "AGENT-TEST-salesrep-full@test.virtocommerce.com",
+    "login": "AGENT-TEST-salesrep-full@test.virtocommerce.com",
+    "password_var": "RESTRICTED_SALESREP_ADMIN_PASSWORD",
+    "role": "AGENT-TEST-SalesRep-Full",
+    "excluded_permission": null,
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
   "PB_HOMEPAGE": {
     "_inline": true,
     "_comment": "Canonical PageBuilder page PAGE-1 (test-data/cms/pagebuilder-pages.md). Reconciled to Published @ /qa-homepage-spring-sale by scripts/seed-data/cms/seed-pagebuilder-pages.mjs (npm run seed:cms-pages). Runtime group_id in aliases.<env>.json. Suites 059/060 CMS-027/029/031/078-085.",
@@ -3835,5 +3949,13 @@
     "permalink": "/qa-partner-portal-support",
     "culture": "en-US",
     "expect_status": "Published"
+  },
+  "SAMPLE_TRACKING_NUMBER": {
+    "_inline": true,
+    "value": "AGENT-TEST-TRK-CHK024",
+    "fields": {
+      "value": "value"
+    },
+    "_notes": "Deterministic tracking-number INPUT typed into Admin > Orders > Shipments (suite 014 CHK-024). Not a lookup of existing data — a generated input value, so it is env-invariant and lives in the committed base (no GUID, DV-021 clean). AGENT-TEST- prefix so /qa-seed-data teardown sweeps anything created with it."
   }
 }

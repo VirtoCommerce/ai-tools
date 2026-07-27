@@ -128,18 +128,15 @@ Product with size and color variations exists in catalog","url={{FRONT_URL}}","[
 [STATE] URL reflects virtual catalog category structure","[NETWORK] GET product PDP returns HTTP 200
 [API] GraphQL product query returns catalogId matching virtual catalog
 [CONSOLE] no TypeError or JS errors","Inherited products missing from virtual catalog; product details missing or empty; breadcrumbs showing physical catalog path; PDP returning 4xx; console TypeError","none","E2E-CAT-007, GAP-CS-01","Draft"
-"CAT-046","PDP Description & Properties Inline Sections","Catalog > Product","Medium","BL-CAT-006",,"Product exists with description content and specification properties defined","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}} that has a description and properties
-[WAIT] Wait for PDP to fully load
-[ASSERT] Verify the PDP renders sections as INLINE, always-open stacked blocks — there is NO tab navigation (no tab/tablist/tabpanel roles) and NO accordion expand/collapse
-[ASSERT] Verify a 'Description' section (heading level 2) is present with non-empty product description text
-[COND: description is long] [ACT] Click the 'See more' link inside the Description block
-[COND: description is long] [ASSERT] Verify 'See more' expands the truncated description text in place (it is a text-truncation toggle, not a section switcher)
-[ASSERT] Verify a 'Properties' section (heading level 2) is present rendering property name/value rows","[DOM] PDP shows inline always-open blocks; NO tab/tablist/tabpanel roles and NO accordion exist
-[DOM] 'Description' h2 block visible with non-empty description content (and optional 'See more' truncation toggle)
-[DOM] 'Properties' h2 block visible with property label/value rows
-[STATE] All present sections are visible simultaneously on a single scrollable page (no tab switching)
-[STATE] A Reviews/Ratings section is NOT expected (not implemented on the storefront PDP) — do not assert it","[CONSOLE] no TypeError or JS errors
-[CONSOLE] no Vue hydration warnings on tab switch","Tabs not rendering; description content empty; specifications not loading; reviews tab crashing; multiple tab contents visible simultaneously; console TypeError","none","E2E-CAT-005, GAP-CS-06","Draft"
+"CAT-046","PDP Description & Properties Inline Sections","Catalog > Product","Medium","BL-CAT-006",,"Product exists with description content and specification properties defined","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
+[WAIT] wait for PDP to fully load
+[ACT] click 'Expand all' in the Properties block
+[WAIT] wait for the property subgroups to expand","[DOM] PDP renders a 'Properties' block (heading level 2) with property name/value rows {OBSERVED}
+[DOM] the product description renders as a row inside the Properties grid — there is NO dedicated 'Description' h2 section {OBSERVED}
+[DOM] Properties uses a collapsible pattern — an 'Expand all' control plus per-subgroup toggles {OBSERVED}
+[STATE] after 'Expand all', all property subgroups are visible simultaneously {OBSERVED}
+[STATE] a Reviews/Ratings section is NOT expected (not implemented on the storefront PDP) — do not assert it {OBSERVED}","[CONSOLE] no TypeError or JS errors
+[CONSOLE] no Vue hydration warnings on tab switch","Properties block absent; description row empty; 'Expand all' does not expand the subgroups; property rows render without labels or values; console TypeError","none","E2E-CAT-005, GAP-CS-06","Draft"
 "CAT-050","In-Stock Product PDP - Availability Badge and Add to Cart Enabled","Catalog > Product","High","BL-CAT-006, BL-CART-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 An in-stock product with inventory > 0 exists in the B2B virtual catalog; user authenticated or guest session active","url={{FRONT_URL}}","[NAV] Navigate to any product detail page for an in-stock product on {{FRONT_URL}} (resolve at runtime: xAPI products query with availabilityData.isInStock=true)

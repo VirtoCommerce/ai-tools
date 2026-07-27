@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-07-17",
+    "generated": "2026-07-25",
     "totalSuites": 119,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -371,7 +371,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 95,
+      "testCount": 98,
       "estimatedMinutes": 65,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -669,8 +669,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 44,
-      "estimatedMinutes": 34,
+      "testCount": 50,
+      "estimatedMinutes": 39,
       "agent": "qa-frontend-expert",
       "tags": [
         "cart",
@@ -690,8 +690,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 32,
-      "estimatedMinutes": 22,
+      "testCount": 34,
+      "estimatedMinutes": 23,
       "agent": "qa-frontend-expert",
       "tags": [
         "cart",
@@ -709,8 +709,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 17,
-      "estimatedMinutes": 12,
+      "testCount": 18,
+      "estimatedMinutes": 13,
       "agent": "qa-frontend-expert",
       "tags": [
         "cart",
@@ -1144,18 +1144,19 @@
       "customerApplicability": "universal"
     },
     {
-      "id": "048b",
-      "name": "Layout Stability",
-      "file": "regression/suites/Frontend/cross-cutting/048b-layout-stability.csv",
+      "id": "048c",
+      "name": "Layout Stability (runner-native)",
+      "file": "regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
       "domain": "cross-cutting",
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P1",
-      "testCount": 52,
-      "estimatedMinutes": 73,
-      "agent": "ui-ux-expert",
-      "preferredBrowser": "playwright-chrome",
-      "browserRequirementReason": "PerformanceObserver layout-shift entries + getBoundingClientRect measurements work most reliably in Chromium; uses scripts/lib/measure-layout.ts snippets via browser_evaluate. Selectors verified live against vcst-qa B2B-store (see .claude/knowledge/automation/storefront-selectors.md). Scope (8 components, 9 pages) enforced by .claude/knowledge/oracles/critical-ui-scope.md and npm run scope:validate.",
+      "testCount": 29,
+      "estimatedMinutes": 3,
+      "agent": "none",
+      "runner": "layout-runner",
+      "runnerCommand": "npm run layout:run",
+      "browserRequirementReason": "Executed deterministically by scripts/layout/layout-runner.ts (Playwright/Chromium) — NOT by a browser agent. Fresh BrowserContext per case, CLS observer installed pre-paint via addInitScript, CDP network throttling, viewport declared per case. Thresholds derive from scripts/lib/measure-layout.ts (npm run tokens:sync).",
       "tags": [
         "layout",
         "cls",
@@ -1163,14 +1164,10 @@
         "alignment",
         "overflow",
         "touch-targets",
-        "fouc",
-        "skeleton",
-        "font-swap",
-        "bopis-modal",
-        "configurable-pdp",
         "critical-ui-scope",
         "ui-ux",
-        "non-functional"
+        "non-functional",
+        "runner-native"
       ],
       "customerApplicability": "universal"
     },
@@ -2773,11 +2770,6 @@
         "tag": "configurable-products"
       }
     },
-    "layout-stability": {
-      "include": [
-        "048b"
-      ]
-    },
     "store-asset-url": {
       "include": [
         "050n",
@@ -2930,6 +2922,11 @@
         "086",
         "087",
         "088"
+      ]
+    },
+    "layout-stability": {
+      "include": [
+        "048c"
       ]
     }
   }

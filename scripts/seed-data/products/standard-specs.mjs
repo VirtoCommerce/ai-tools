@@ -15,6 +15,13 @@
  *   - DISCOVERED_FIXTURES: real IMPORTED products (standard.csv STD-*) that can't be created — the
  *                        seeder DISCOVERS them by code and captures the runtime id (+ hosting
  *                        catalogId) to aliases.<env>.json (never a committed cross-env GUID).
+ *   - the SLUG/URL rules: productSlug() / categorySegmentSlug() / storefrontPathForAdHoc() — the ONE
+ *                        definition of the storefront path a seeded product lands on, shared by the
+ *                        seeder (which writes the product SEO record) and the guard (which asserts the
+ *                        committed product_slug / storefront_url columns still match).
+ *   - the CURRENCY model: buildCurrencyPriceSets() / priceListName() — one pricelist per currency, so a
+ *                        row carrying `price_eur` is genuinely addable after a storefront currency
+ *                        switch instead of collapsing to 0.00 with a disabled stepper.
  *
  * NOT in scope: the normalized relational catalog fixture (test-data/catalogs/*.csv +
  * products/products-full.csv + pricing/*.csv + inventory/stock-levels.csv) driven by the LEGACY
@@ -24,7 +31,7 @@
  * The guard (validate-standard-data.mjs) asserts that stays true.
  */
 
-// The one CSV the standard seeder creates products from (also the @td registry — 10 PROD_* aliases).
+// The one CSV the standard seeder creates products from (also the @td registry for the PROD_* aliases).
 // `map`: product field ← CSV column. Only rows with seeded=true are created; the rest are @td-only
 // references to live / manually-provisioned products.
 export const CSV_SOURCE = {
@@ -38,11 +45,100 @@ export const CSV_SOURCE = {
     listPrice: 'price',
     salePrice: 'sale_price',    // optional per-row sale (actual < list); blank → no sale
     currency: 'currency',
+    eurPrice: 'price_eur',      // optional SECOND-currency list price; blank → single-currency row
     stock: 'stock_qty',
     description: 'description',
     seeded: 'seeded',           // 'true' → the seeder creates it; else @td-only
+    slug: 'product_slug',       // derived (productSlug); committed so @td(ALIAS.slug) resolves
+    storefrontUrl: 'storefront_url', // derived, store-RELATIVE path; @td(ALIAS.url) — never a host
   },
 };
+
+// ---------------------------------------------------------------------------
+// SLUG / URL rules — ONE definition, shared by the seeder and the guard.
+// ---------------------------------------------------------------------------
+// A seeded product's SEO record is buildStoreSeo({ semanticUrl: productSlug(name) }) and its
+// category chain is created by seed-common's ensureCategoryPath, which gives an AD-HOC segment (one
+// that has no test-data/catalogs/categories.csv row — e.g. "Test Fixtures") the semanticUrl
+// `seed-<parent-scoped slug>` (see categorySegmentSlug). So the storefront path of a seeded product
+// under an ad-hoc category path is fully DERIVABLE — which is why product_slug / storefront_url can
+// live in the committed CSV as env-invariant business keys (no runtime GUID) and be drift-guarded
+// rather than hand-maintained.
+// Confirmed live 2026-07-25 on the 10 `Test Fixtures` rows: /seed-test-fixtures/<product-slug>.
+
+/** The slug rule for any name → SEO semanticUrl segment. */
+export const slugify = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/** A seeded product's own SEO slug (== seed-standard-products' semanticUrl). */
+export const productSlug = (name) => slugify(name);
+
+/**
+ * The semanticUrl seed-common's ensureCategoryPath gives an AD-HOC category segment — one with no
+ * categories.csv row. It is `seed-<PARENT-SCOPED slug>`: the slugs of the whole path SO FAR joined by
+ * '-', not the segment alone. (ensureCategoryPath scopes ad-hoc segments by their ancestry on purpose,
+ * so a leaf name reused under different parents — Electronics>Office vs Furniture>Office, or Storage
+ * under four parents — resolves to DISTINCT categories with unique semanticUrls.) A segment that IS in
+ * categories.csv instead uses `seed-<its seo_slug>`, which this module cannot know (it stays CSV-free);
+ * the guard handles that case structurally.
+ *
+ * `pathSoFar` is the ordered list of segments up to and including this one.
+ */
+export const categorySegmentSlug = (pathSoFar) =>
+  `seed-${(Array.isArray(pathSoFar) ? pathSoFar : [pathSoFar]).map(slugify).join('-')}`;
+
+/**
+ * Store-relative storefront path for a product placed under a fully AD-HOC category path.
+ * `/seed-<a>[/seed-<a>-<b>…]/<product-slug>` — no scheme, no host: a case composes
+ * `{{FRONT_URL}}@td(ALIAS.url)` so the same fixture URL works on every env.
+ * Returns null when the category path is empty.
+ *
+ * Verified live 2026-07-25 for the single-segment `Test Fixtures` path (the 10 fixture rows resolve at
+ * /seed-test-fixtures/<product-slug>). Deeper ad-hoc paths follow the same cumulative rule read off
+ * ensureCategoryPath, but the guard only REQUIRES the column where the path is a single ad-hoc segment.
+ */
+export function storefrontPathForAdHoc(categoryPath, productName) {
+  const segs = String(categoryPath ?? '').split('>').map((s) => s.trim()).filter(Boolean);
+  if (!segs.length) return null;
+  const cats = segs.map((_, i) => categorySegmentSlug(segs.slice(0, i + 1)));
+  return `/${cats.join('/')}/${productSlug(productName)}`;
+}
+
+// ---------------------------------------------------------------------------
+// CURRENCY model — one pricelist per currency.
+// ---------------------------------------------------------------------------
+// A price row is currency-scoped platform-side, and a pricelist has exactly ONE currency. The seeder
+// therefore resolves/creates a pricelist per currency it needs and assigns each to the store's virtual
+// catalog. A row with no `price_eur` is USD-only (today's behaviour, unchanged).
+export const BASE_CURRENCY = 'USD';
+export const SECONDARY_CURRENCY = 'EUR';
+
+/** Stable, date-pinned pricelist name per currency (the USD name is unchanged → idempotent reuse). */
+export const priceListName = (dateStamp, currency) => `SEED-${dateStamp}-Standards-${currency}`;
+
+/**
+ * Per-currency price sets for a record — the single, unit-tested source of the seeder's multi-currency
+ * shape. The base set reuses buildPrices() unchanged (tiers / sale / list). A positive `price_eur`
+ * adds ONE flat EUR list row (tier/sale shape is deliberately not mirrored — the second currency
+ * exists so the line stays priced + addable after a currency switch, not to duplicate tier logic).
+ * A blank / non-positive / non-numeric price_eur is ignored (single-currency), never emitted as 0.
+ */
+export function buildCurrencyPriceSets(rec) {
+  const sets = [];
+  const base = buildPrices(rec);
+  if (base.length) sets.push({ currency: rec.currency || BASE_CURRENCY, prices: base });
+  const eur = Number(rec.eurPrice);
+  if (Number.isFinite(eur) && eur > 0) {
+    sets.push({ currency: SECONDARY_CURRENCY, prices: [{ list: eur, minQuantity: 1 }] });
+  }
+  return sets;
+}
+
+/** Every currency the CSV records actually need — drives ensureCurrencies() + pricelist creation. */
+export function currenciesFor(records) {
+  const out = new Set();
+  for (const rec of records) for (const s of buildCurrencyPriceSets(rec)) out.add(s.currency);
+  return [...out];
+}
 
 /**
  * Build the price rows for a record — SINGLE, side-effect-free source of the seeder's price shape so a

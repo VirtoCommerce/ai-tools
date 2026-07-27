@@ -251,36 +251,36 @@
 [NAV] Search for seed product @td(CFG_CONDITIONAL.slug) and open it
 [NAV] Open the Configurations tab or section
 [ACT] Click on Section B (Accessories) to open its detail blade
-[ASSERT] Observe the "Active when section has value" field or dropdown in the section detail blade
-[ACT] Click the "Active when section has value" dropdown
+[ASSERT] Observe the ""Active when section has value"" field or dropdown in the section detail blade
+[ACT] Click the ""Active when section has value"" dropdown
 [ASSERT] Observe dropdown options listed
 [ACT] Select Section A (Base Options) from the dropdown
 [ACT] Click Save or OK to persist the section
 [NAV] Re-open the Accessories section detail blade
-[ASSERT] Verify "Active when section has value" still shows Base Options","[DOM] "Active when section has value" dropdown is visible in the section detail blade
+[ASSERT] Verify ""Active when section has value"" still shows Base Options","[DOM] ""Active when section has value"" dropdown is visible in the section detail blade
 [STATE] Dropdown lists all other sections of the same product (at minimum: Base Options)
 [STATE] Base Options is selectable from the dropdown
 [STATE] Save completes without error toast
-[DOM] After re-open: "Active when section has value" field shows Base Options — dependency persisted
+[DOM] After re-open: ""Active when section has value"" field shows Base Options — dependency persisted
 [STATE] No other section data changed (name, required flag, options unchanged)","[API] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] } — verify sections[B].dependsOnSectionId = sectionA.id
-[CONSOLE] No Angular JS errors or $http errors in Admin SPA","\"Active when section has value\" dropdown not visible in section detail blade; dropdown opens but no sections listed; save fails with validation error; dependency value reverts to null on re-open; wrong section ID persisted","none (seed product restored to base state by separate teardown script)","VCST-4713","Manual"
+[CONSOLE] No Angular JS errors or $http errors in Admin SPA","""Active when section has value"" dropdown not visible in section detail blade; dropdown opens but no sections listed; save fails with validation error; dependency value reverts to null on re-open; wrong section ID persisted","none (seed product restored to base state by separate teardown script)","VCST-4713","Manual"
 "CFG-CA-020","Clear Active when section has value Dependency from Section — Verify Removal Persists","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","","Admin logged in. Seed product Section B (Accessories) has dependsOnSectionId = Section A.id (set by CFG-CA-019 or pre-seeded). Admin Bearer token available.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product in Catalog module
 [NAV] Open Configurations tab and click Section B (Accessories)
-[ASSERT] Confirm "Active when section has value" shows Base Options
-[ACT] Click the "Active when section has value" dropdown
-[ACT] Select the empty/none option to clear the dependency (field shows "Always active" when cleared)
+[ASSERT] Confirm ""Active when section has value"" shows Base Options
+[ACT] Click the ""Active when section has value"" dropdown
+[ACT] Select the empty/none option to clear the dependency (field shows ""Always active"" when cleared)
 [ACT] Click Save or OK
 [NAV] Re-open Section B detail blade
-[ASSERT] Observe "Active when section has value" field
+[ASSERT] Observe ""Active when section has value"" field
 [AUTH] POST {{BACK_URL}}/connect/token to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
-[ASSERT] Inspect sections[B].dependsOnSectionId in response","[STATE] "Active when section has value" dropdown has a clear/empty option available
+[ASSERT] Inspect sections[B].dependsOnSectionId in response","[STATE] ""Active when section has value"" dropdown has a clear/empty option available
 [STATE] Save completes without error
-[DOM] After re-open: "Active when section has value" field shows "Always active" — dependency cleared, not reverting to Base Options
+[DOM] After re-open: ""Active when section has value"" field shows ""Always active"" — dependency cleared, not reverting to Base Options
 [STATUS] GET returns 200
 [BODY] sections[B].dependsOnSectionId is null or absent — not Section A id","[API] GET confirms dependsOnSectionId = null after clear
-[CONSOLE] No JS errors during save","No empty/clear option in "Active when section has value" dropdown; field reverts to Base Options after save; field does not show "Always active" when cleared; API still returns old sectionId after UI clear; Save button disabled when clearing","none","VCST-4713","Manual"
+[CONSOLE] No JS errors during save","No empty/clear option in ""Active when section has value"" dropdown; field reverts to Base Options after save; field does not show ""Always active"" when cleared; API still returns old sectionId after UI clear; Save button disabled when clearing","none","VCST-4713","Manual"
 "CFG-CA-021","Delete Parent Section — Verify Dependent's dependsOnSectionId Cleared","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","ECL-5.1","Admin logged in. Seed product has Section A (Base Options) and Section B (dependsOnSectionId = Section A). Section C (Installation, dependsOnSectionId = Section B) also present for transitive coverage.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product in Catalog module > Configurations tab
 [ASSERT] Confirm Section A (Base Options) is listed; Section B (Accessories) shows Depends On = Base Options
@@ -298,32 +298,32 @@
 [STATUS] GET returns 200
 [BODY] sections[B].dependsOnSectionId is null — orphan FK cleared by cascade logic on delete","[API] GET confirms no section references deleted Section A id in any dependsOnSectionId
 [CONSOLE] No JS errors; no 500 on the Configurations tab after delete","Section B still shows deleted Section A in Depends On dropdown; GET returns stale FK pointing to deleted section id; Admin UI crashes when re-opening section B after parent deleted; confirmation dialog not shown","re-seed Section A and restore dependency for subsequent tests","VCST-4713","Manual"
-"CFG-CA-022",""Active when section has value" Dropdown Excludes Self — Section Cannot Depend on Itself","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","","Admin logged in. Seed product with at least two sections (A and B) accessible.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug); sectionB_name=Accessories","[NAV] Navigate to {{BACK_URL}} and log in
+"CFG-CA-022","""Active when section has value"" Dropdown Excludes Self — Section Cannot Depend on Itself","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","","Admin logged in. Seed product with at least two sections (A and B) accessible.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug); sectionB_name=Accessories","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product in Catalog module > Configurations tab
 [ACT] Click on Section B (Accessories) to open its detail blade
-[ACT] Click the "Active when section has value" dropdown
+[ACT] Click the ""Active when section has value"" dropdown
 [ASSERT] Inspect all listed options in the dropdown
-[ASSERT] Verify Section B (Accessories) itself is NOT listed as an option","[DOM] "Active when section has value" dropdown is open and lists available parent sections
-[STATE] Section B (Accessories) does NOT appear in its own "Active when section has value" dropdown options
+[ASSERT] Verify Section B (Accessories) itself is NOT listed as an option","[DOM] ""Active when section has value"" dropdown is open and lists available parent sections
+[STATE] Section B (Accessories) does NOT appear in its own ""Active when section has value"" dropdown options
 [STATE] Only other sections (e.g. Section A: Base Options) are shown as valid parents
 [STATE] If only one section exists, dropdown is either empty or shows a disabled placeholder","[CONSOLE] No JS errors when opening dropdown
-[API] Self-dependency is NOT enforced server-side — POST/PATCH with dependsOnSectionId = own section id returns 200/204 and PERSISTS; the self-exclusion is a UI-ONLY guard (the dropdown omits self). Circular (mutual) deps are ALSO not guarded when editing existing sections — they persist (200); a 500 "circular dependency was detected" appears ONLY when both sections are inserted new in one create-POST (EF insert-ordering artifact, not a validation guard) — see CFG-CA-023.","Section B appears in its own dropdown and can be selected; dropdown shows all sections including self","none","VCST-4713","Manual"
+[API] Self-dependency is NOT enforced server-side — POST/PATCH with dependsOnSectionId = own section id returns 200/204 and PERSISTS; the self-exclusion is a UI-ONLY guard (the dropdown omits self). Circular (mutual) deps are ALSO not guarded when editing existing sections — they persist (200); a 500 ""circular dependency was detected"" appears ONLY when both sections are inserted new in one create-POST (EF insert-ordering artifact, not a validation guard) — see CFG-CA-023.","Section B appears in its own dropdown and can be selected; dropdown shows all sections including self","none","VCST-4713","Manual"
 "CFG-CA-023","Circular Dependency (A↔B) — NOT Guarded When Editing Existing Sections: Cycle Persists Silently (200); Only a From-Scratch Create-POST With the Cycle Errors (500 EF Insert-Ordering)","Catalog > Configurable Products > Conditional Sections","Medium","BL-CAT-001","ECL-5.1","Admin logged in. Seed product. Section A currently has no dependency. Section B currently depends on Section A (from CFG-CA-019 or pre-seeded).","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product > Configurations tab
 [ASSERT] Confirm Section B depends on Section A
 [ACT] Open Section A detail blade
-[ACT] Click the "Active when section has value" dropdown
+[ACT] Click the ""Active when section has value"" dropdown
 [ASSERT] Inspect dropdown — observe whether Section B is listed as a valid option
 [ACT] Attempt to select Section B (if available in dropdown)
 [ACT] Click Save
 [ASSERT] Observe the save outcome — editing existing sections, the save (POST /configurations upsert of the existing section rows) returns HTTP 200 with NO validation error or warning; the cycle is silently accepted
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
-[ASSERT] Inspect both sections' dependsOnSectionId values — confirm the cycle PERSISTED (Section A → Section B AND Section B → Section A)","[STATE] The UI does NOT prevent circular selection in the "Active when section has value" dropdown — Section B is selectable as a parent for Section A (no client-side cycle guard)
+[ASSERT] Inspect both sections' dependsOnSectionId values — confirm the cycle PERSISTED (Section A → Section B AND Section B → Section A)","[STATE] The UI does NOT prevent circular selection in the ""Active when section has value"" dropdown — Section B is selectable as a parent for Section A (no client-side cycle guard)
 [STATE] KNOWN GAP — circular section dependencies are NOT validated server-side when editing existing sections: saving A→B while B→A already exists returns HTTP 200 and the cycle PERSISTS silently (no error, no warning, no guard). Verified live (POST upsert 200, PATCH 204, both persist the cycle)
 [BODY] search read-back after save: Section A dependsOnSectionId = Section B id AND Section B dependsOnSectionId = Section A id — the cycle is stored
-[STATE] The ONLY place a cycle errors is a from-scratch create-POST that inserts BOTH sections new in one call carrying the cyclic FKs — HTTP 500 "circular dependency was detected in the data to be saved" (EF cannot order the [Added] inserts); this is an insert-ordering artifact, NOT a validation guard, and does not protect the edit path
+[STATE] The ONLY place a cycle errors is a from-scratch create-POST that inserts BOTH sections new in one call carrying the cyclic FKs — HTTP 500 ""circular dependency was detected in the data to be saved"" (EF cannot order the [Added] inserts); this is an insert-ordering artifact, NOT a validation guard, and does not protect the edit path
 [STATE] No Admin SPA crash; storefront tolerates a persisted cycle without hanging — the vc-frontend section-visibility resolver is bounded by section count (useConfigurableProduct.ts maxIterations), so affected sections simply stay hidden","[CONSOLE] No unhandled client exceptions
-[API] search read-back confirms the cycle persisted (Section A → Section B AND Section B → Section A) after a 200 save — server has no cycle validation on the edit path","Admin SPA crashes on save or on re-opening Configurations tab; storefront hangs/infinite-loops on a product with a persisted cycle (frontend resolver is bounded — should not happen); the edit-path save returns a 500 or a validation warning (would indicate a NEW server-side cycle guard was added — update this case)","clear Section A dependency after test (set "Active when section has value" back to "Always active")","VCST-4713","Manual"
+[API] search read-back confirms the cycle persisted (Section A → Section B AND Section B → Section A) after a 200 save — server has no cycle validation on the edit path","Admin SPA crashes on save or on re-opening Configurations tab; storefront hangs/infinite-loops on a product with a persisted cycle (frontend resolver is bounded — should not happen); the edit-path save returns a 500 or a validation warning (would indicate a NEW server-side cycle guard was added — update this case)","clear Section A dependency after test (set ""Active when section has value"" back to ""Always active"")","VCST-4713","Manual"
 "CFG-CA-024","REST API — POST Configuration with dependsOnSectionId and GET Verifies Persistence","Catalog > Configurable Products > REST API","Medium","BL-CAT-001","","Admin Bearer token obtainable. Seed product exists. Section A id and Section B id known. dependsOnSectionId not yet set via API.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; sectionA_id=<id-of-section-A>; sectionB_id=<id-of-section-B>","[AUTH] POST {{BACK_URL}}/connect/token with grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}, scope=offline_access — store access_token
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<seed-product-id>] } with Authorization: Bearer <token> — note current section structure
 [HTTP] PATCH {{BACK_URL}}/api/catalog/products/configurations/<config-id> with a JSON Patch (Operation[]) setting section B's dependsOnSectionId = <sectionA_id> — PATCH by config id is a supported UPDATE verb (204). Verified live: PATCH → 204 and POST /configurations carrying the existing config id → 200 both update; PUT → 405. The IX_ProductConfiguration_ProductId 500 fires only on a POST creating a NEW config (no id) for a productId that already owns one — not on the id-carrying upsert.

@@ -32,10 +32,12 @@ Audit the Business Logic oracle (`.claude/knowledge/oracles/business-logic.md`) 
 | **DRIFT** | 3 axes agree with each other but the Rule/Verify text is stale | Auto-apply corrected Rule/Verify + `Amended:` stamp |
 | **MISSING** | Behavior is documented **and** coded **and** live, but no BL exists | Auto-apply a new `BL-<DOMAIN>-<NNN>` (next free ID; body only) |
 | **CONTRADICTORY** | Axes disagree (e.g. docs say X, live shows Y) | **NOT confirmed** → `reports/ba/bl-proposals-<date>.md` for human |
-| **UNGROUNDED** | ≥1 axis produced no evidence | **NOT confirmed** → proposals file |
+| **UNGROUNDED** | ≥1 *applicable* axis produced no evidence, or an applicable axis was unverifiable this run (blocked) | **NOT confirmed** → proposals file |
 | **STALE/RETIRE** | Behavior removed everywhere | Draft a retire proposal → proposals file (retiring is destructive; stays human-gated) |
 
-> **"Confirmed" = CONFIRMED / DRIFT / MISSING with unanimous, evidenced triangulation.** Everything else routes to the proposals file. That is not a human gate on confirmed items — it is the definition of "not confirmed."
+> **"Confirmed" = CONFIRMED / DRIFT / MISSING where every *applicable* axis is evidenced and the axes agree.** Everything else routes to the proposals file. That is not a human gate on confirmed items — it is the definition of "not confirmed."
+>
+> **Applicable-axes waiver (structurally-unavailable axis).** The bar is docs + live + source when all three *can* exist. An axis that is **structurally unavailable** — most importantly **no docs for a brand-new / undocumented / pre-GA module** — is **waived (N/A)**, not scored as UNGROUNDED. The bar then becomes the axes that CAN be verified, and **at least two must remain and agree** (a lone surviving axis never canonicalizes). Waiving is only for a *structurally* absent axis (the doc/feature does not exist yet), never for an axis you simply didn't check. Every waived axis is stamped `N/A (<reason>)` in the verdict, and the promoted entry carries the reason. A candidate whose applicable axes **contradict** (e.g. live shows the opposite of source — commonly **deploy lag**: a merged fix not on the pinned artifact) or that has an **unverifiable** applicable axis (blocked on a fixture) is **held as a draft with a re-audit trigger**, not applied — a *not-yet*, not a failure.
 
 ## Execution
 
@@ -61,7 +63,7 @@ For every BL, each agent captures the three axes with concrete evidence, never a
 
 ### Step 2: Assign a verdict
 
-Apply the taxonomy above using the decision table in bl-audit-criteria.md. A verdict of CONFIRMED/DRIFT/MISSING **requires** an evidence tuple from all three axes that agree; any missing or conflicting axis ⇒ UNGROUNDED / CONTRADICTORY.
+Apply the taxonomy above using the decision table in bl-audit-criteria.md. A verdict of CONFIRMED/DRIFT/MISSING **requires** an evidence tuple from every *applicable* axis, all agreeing. Apply the **applicable-axes waiver** (above): a structurally-unavailable axis (e.g. docs for a new/undocumented/pre-GA module) is **waived (N/A)** and the bar becomes the remaining axes (**minimum two, all agreeing**); an applicable axis that is **missing/blocked ⇒ UNGROUNDED**, and one that **conflicts ⇒ CONTRADICTORY** — both route to the proposals file with a re-audit trigger, not to `business-logic.md`.
 
 ### Step 3: Apply policy — SINGLE-WRITER fan-in
 

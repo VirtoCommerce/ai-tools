@@ -42,7 +42,7 @@ import { join } from 'node:path';
 import {
   ROOT, BACK_URL, api, auth, assertSafeTarget, loadAliases, log, SEED_FAMILY, STORE_ID,
 } from '../lib/seed-common.mjs';
-import { resolveAllRoles } from '../lib/user-roles.mjs';
+import { resolveAllRoles, roleByKey } from '../lib/user-roles.mjs';
 
 const WARN_ONLY = process.argv.includes('--warn-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -87,12 +87,17 @@ async function findSecurityUser(login) {
 }
 
 // One password-grant attempt — the authoritative check for admin accounts, which don't reliably
-// surface in the member/customer search. On success no lockout accrues; a single failure is safe.
-async function tryLogin(username, password) {
+// surface in the member/customer search, and for the auth-drift guard [10]. On success no lockout
+// accrues; a single failure is safe. `storeId` scopes the grant like the runner (graphql-auth.ts):
+// admin roles authenticate CONTEXT-FREE (no storeId), customer/org roles REQUIRE storeId — a
+// Customer-type account 400s invalid_grant without it. Secret-safe: no token is retained/written.
+async function tryLogin(username, password, { storeId } = {}) {
   try {
+    const form = { grant_type: 'password', username, password, scope: 'offline_access' };
+    if (storeId) form.storeId = storeId;
     const res = await fetch(`${BACK_URL}/connect/token`, {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'password', username, password, scope: 'offline_access' }),
+      body: new URLSearchParams(form),
     });
     return res.ok;
   } catch { return false; }
@@ -481,6 +486,37 @@ async function checkSeoComplete() {
   if (!catBad && !prodBad) ok(`SEO complete on all ${categories.length} categor(y/ies) + ${products.length} product(s) (slug + title + store + language)`);
 }
 
+/* ── 10. Auth drift — each seeded role authenticates with its declared password ──
+ * A seeded account whose password drifted from its user-roles.mjs `passwordVar` (e.g. the account
+ * was created BEFORE that var was set, and the module's create-only account path never resets an
+ * existing password) still authenticates only with the OLD value — so a headless runner using
+ * @td() + the registry password 400s invalid_grant mid-run. This asserts each LIVE role account
+ * still authenticates via /connect/token with its declared password, using the SAME grant context
+ * the runner uses (graphql-auth.ts acquireToken): context-free for admin roles, storeId-scoped for
+ * customer/org roles. A locked account (LOCKOUT_TEST / a blocked rep) failing auth is EXPECTED
+ * state, not a drift, so it is skipped. Secret-safe: the password is only sent to /connect/token;
+ * no token is retained or written to disk. */
+async function checkAuthDrift() {
+  console.log('\n[10] Auth drift (each seeded role authenticates with its declared password)');
+  const roles = resolveAllRoles();
+  for (const r of roles) {
+    if (!r.present) continue; // identity gaps already reported in [2]
+    const pwVar = roleByKey(r.key).passwordVar;
+    let user = null;
+    try { user = await api('GET', `/api/platform/security/users/${encodeURIComponent(r.email)}`, null, { expectStatus: [200, 404] }); }
+    catch (e) { warn(`${r.key}: account probe error for ${r.email} — ${String(e.message).slice(0, 90)}`); continue; }
+    if (!user?.id) continue; // absent account already reported in [2] (required→fail / optional→warn)
+    if (user.lockoutEnd && new Date(user.lockoutEnd).getTime() > Date.now()) {
+      warn(`${r.key} → ${r.email}: account locked — auth-drift check skipped (expected for lockout/blocked fixtures)`);
+      continue;
+    }
+    const ctx = r.kind === 'admin' ? {} : { storeId: STORE_ID };
+    const okLogin = await tryLogin(user.userName || r.email, r.password, ctx);
+    if (okLogin) ok(`${r.key} → ${r.email} authenticates with ${pwVar} (${r.kind}${ctx.storeId ? `, storeId=${ctx.storeId}` : ', context-free'})`);
+    else fail(`${r.key} → ${r.email}: /connect/token FAILED with declared ${pwVar} — credential/registry drift (reset the account, e.g. re-run its seeder, or fix ${pwVar})`);
+  }
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -495,6 +531,7 @@ async function checkSeoComplete() {
   await checkDuplicateSeedEntities();
   await checkSeedEntityPrefixes();
   await checkSeoComplete();
+  await checkAuthDrift();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);

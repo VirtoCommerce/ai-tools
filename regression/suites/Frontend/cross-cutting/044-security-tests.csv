@@ -1,83 +1,83 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions"
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "SEC-PCI-001","Card Number Iframe Isolation","PCI Compliance > Iframe","Critical","BL-SEC-002",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 - CyberSource payment form displayed
-- Browser DevTools open"
+- Browser DevTools open",,,,,,,,
 "SEC-PCI-002","CVV Iframe Isolation","PCI Compliance > Iframe","Critical","BL-SEC-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- CyberSource payment form displayed"
+- CyberSource payment form displayed",,,,,,,,
 "SEC-PCI-003","CVV Visual Masking","PCI Compliance > Display","High","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- CyberSource form ready"
+- CyberSource form ready",,,,,,,,
 "SEC-PCI-004","No Card Data in Network Requests","PCI Compliance > Network","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - DevTools Network tab open
-- CyberSource payment form filled"
+- CyberSource payment form filled",,,,,,,,
 "SEC-PCI-005","No Card Data in Browser Storage","PCI Compliance > Storage","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Payment form interaction complete"
+- Payment form interaction complete",,,,,,,,
 "SEC-PCI-006","HTTPS Enforcement","PCI Compliance > Transport","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Payment page loaded"
+- Payment page loaded",,,,,,,,
 "SEC-PCI-007","JWT Token Authentication","PCI Compliance > Auth","High","BL-SEC-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- CyberSource payment selected"
+- CyberSource payment selected",,,,,,,,
 "SEC-AUTH-001","Session Token Security","Authentication > Tokens","High","BL-SEC-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - User logged in
-- DevTools open"
+- DevTools open",,,,,,,,
 "SEC-AUTH-002","Logout Token Revocation","Authentication > Logout","High","BL-SEC-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - User logged in
 [WAIT] Wait for logout to complete and redirect to home or /sign-in
 [ASSERT] Verify a token revocation request was sent to {{BACK_URL}}/connect/revocation or equivalent
 [ACT] Attempt to use the captured old token in a direct API request to {{BACK_URL}}
-[ASSERT] Verify old token is rejected (401 Unauthorized)"""
+[ASSERT] Verify old token is rejected (401 Unauthorized)""",,,,,,,,
 "SEC-AUTH-003","Account Lockout Protection","Authentication > Brute Force","High","BL-SEC-004","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts"
+- Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts",,,,,,,,
 "SEC-INPUT-001","XSS Prevention - Search","Input Validation > XSS","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Search functionality available"
+- Search functionality available",,,,,,,,
 "SEC-INPUT-002","XSS Prevention - Forms (Server-Side Validation)","Input Validation > XSS","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Registration or profile form accessible"
+- Registration or profile form accessible",,,,,,,,
 "SEC-INPUT-003","SQL Injection Prevention","Input Validation > SQLi","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Search functionality available"
+- Search functionality available",,,,,,,,
 "SEC-INPUT-004","Path Traversal Prevention","Input Validation > Path","Medium","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Application with URL parameters or file upload accessible"
+- Application with URL parameters or file upload accessible",,,,,,,,
 "SEC-CSRF-001","CSRF Token Validation","CSRF Protection","High","BL-SEC-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - Any form submission available
-- DevTools open"
+- DevTools open",,,,,,,,
 "SEC-CORS-001","CORS Configuration","API Security > CORS","Medium","BL-SEC-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- DevTools Network tab open"
+- DevTools Network tab open",,,,,,,,
 "SEC-SENSITIVE-001","No Credentials in Logs","Data Protection > Logging","Critical","BL-SEC-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Various operations performed including login"
+- Various operations performed including login",,,,,,,,
 "SEC-SENSITIVE-002","Error Message Safety","Data Protection > Errors","Medium","BL-SEC-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Application accessible for error triggering"
+- Application accessible for error triggering",,,,,,,,
 "SEC-SESSION-001","Session expiry during checkout — re-auth preserves cart","Authentication > Session Expiry","High","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Customer logged in with items in cart
 - Checkout flow started (shipping address entered)
-- Token expiry mechanism available"
+- Token expiry mechanism available",,,,,,,,
 "SEC-SESSION-002","Session re-auth during checkout — resume from last step","Authentication > Session Expiry","High","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Customer logged in with items in cart
 - Checkout flow in progress (shipping address and method selected)
-- Token expiry mechanism available"
+- Token expiry mechanism available",,,,,,,,
 "SEC-SESSION-003","Session expiry does not create partial or orphan order","Authentication > Session Expiry","Critical","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Customer logged in with items in cart
 - Checkout flow started with all required information entered
 - xAPI access available for order verification
-- Token expiry mechanism available"
+- Token expiry mechanism available",,,,,,,,
 "SEC-XSS-001","XSS Prevention - Address Field During Checkout (Server-Side Rejection)","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- User logged in; - Checkout flow accessible; - Shipping address form visible"
+- User logged in; - Checkout flow accessible; - Shipping address form visible",,,,,,,,
 "SEC-XSS-002","XSS Prevention - Order Notes Field","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- User logged in; - Checkout flow accessible; - Order notes or comments field available"
+- User logged in; - Checkout flow accessible; - Order notes or comments field available",,,,,,,,
 "SEC-XSS-003","XSS Prevention - Reflected XSS via URL Search Parameter","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Search functionality available via URL parameter"
+- Search functionality available via URL parameter",,,,,,,,
 "SEC-XSS-004","XSS Prevention - Stored XSS via Profile Display Name (Server-Side Rejection)","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- User logged in; - Profile edit accessible"
+- User logged in; - Profile edit accessible",,,,,,,,
 "SEC-CSRF-002","CSRF Protection - Cart Mutation Cross-Origin","CSRF Protection","High","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- User logged in with items available; - DevTools Network tab open"
+- User logged in with items available; - DevTools Network tab open",,,,,,,,
 "SEC-CSRF-003","CSRF Protection - Checkout Order Placement","CSRF Protection","Critical","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- User logged in with cart ready for checkout; - DevTools open"
+- User logged in with cart ready for checkout; - DevTools open",,,,,,,,
 "SEC-VALIDATION-001","Server-Side Name Field Validation (NameValidationPattern)","Input Validation > Server-Side","Critical","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- Registration or profile edit form accessible"
+- Registration or profile edit form accessible",,,,,,,,
 "SEC-VALIDATION-002","Script Injection Validation in Free-Text Fields (EnableScriptInjectionValidation)","Input Validation > Server-Side","Critical","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-- User logged in; - Profile with description/about field accessible"
+- User logged in; - Profile with description/about field accessible",,,,,,,,
 "SEC-PAT-001","Persistent Access Token — Active Token Authorizes API Request","Security > Token Validation > State: Active","High","BL-AUTH-005, BL-AUTH-006","ECL-3.1","[PRE:CLEAR_SESSION]
 - Platform has Authorization__EnablePersistentStorageTokenValidation=true configured
 - Admin user account available
