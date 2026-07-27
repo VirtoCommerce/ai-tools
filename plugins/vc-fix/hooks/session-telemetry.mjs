@@ -557,8 +557,9 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     state.processedLines = allComplete.length;
     const lastNl = content.lastIndexOf("\n");
     state.scannedBytes = lastNl >= 0 ? Buffer.byteLength(content.slice(0, lastNl + 1), "utf8") : 0;
+    state.scanErrors = 0; // this pass READ successfully → the collector is healthy (clear any prior transient blip)
   } else if (size === state.scannedBytes) {
-    return; // nothing new appended
+    return; // nothing new appended — leave scanErrors as-is (an unrecovered error stays flagged)
   } else {
     // Fast path: read ONLY the delta [scannedBytes, size) via a positioned read.
     let text;
@@ -571,6 +572,11 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         text = buf.toString("utf8", 0, n);
       } finally { closeSync(fd); }
     } catch { state.scanErrors = (state.scanErrors || 0) + 1; return; }
+    // A transient read error does NOT advance scannedBytes, so the very next scan re-reads those bytes;
+    // reaching here means that re-read SUCCEEDED. Clear the flag so a single recovered blip no longer
+    // degrades the whole session's clean line (code review #4). A read that fails at finalize time stays
+    // flagged (the catch above); a still-consumed "nothing new" pass above deliberately leaves it as-is.
+    state.scanErrors = 0;
     const lastNl = text.lastIndexOf("\n");
     if (lastNl < 0) return; // bytes appended but no complete line yet — do not advance
     lines = text.slice(0, lastNl).split("\n"); // all NEW complete lines
@@ -663,7 +669,12 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         }
       } else if (type === "tool_result") {
         const id = item.tool_use_id;
-        const body = textOf(item.content);
+        // Cap BEFORE redact/markExpected: a Read/grep/build-log tool_result can carry a multi-KB/MB
+        // body, and running the ~20 redaction regexes + the expected-output scan over all of it on
+        // every op is pure waste on the Stop hot path — error text and expected-output markers appear
+        // early. Mirrors the 8000-char cap already applied to the tool_use side (code review #4).
+        const bodyRaw = textOf(item.content);
+        const body = bodyRaw.length > 8000 ? bodyRaw.slice(0, 8000) : bodyRaw;
         // A signal is recorded ONLY from a genuine FAILURE result (`is_error === true`).
         // A SUCCESSFUL tool whose body merely CONTAINS error-like text — grepping a
         // build log, reading source that says "npm error"/"permission denied" — is NOT a
@@ -720,7 +731,14 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     // classify()'s recovery check can therefore never mark it `recovered` (see the NOTE
     // there). A transient hook note that's clean on the very next Edit still forces
     // `failed` for this span; that's a known, accepted asymmetry vs the tool_result path.
-    if (typeof content === "string") {
+    //
+    // GUARD (code review #4): a GENUINE user message also arrives as top-level string content
+    // (`ev.type === "user"`, no `isMeta`). A user pasting a build log into a /qa-fix question
+    // ("command failed with exit code 1") is DESCRIBING a problem, not failing (A-F1) — treating
+    // it as an untied hook_failure would force the span `failed`, trip the tail-trigger, and in
+    // feedback.mode=auto auto-file an upstream issue for a non-failure. So only INJECTED/meta
+    // content (an actual hook echo) may raise hook_failure here.
+    if (typeof content === "string" && !(ev.type === "user" && ev.isMeta !== true)) {
       if (HOOK_FAILURE_RE.test(content)) attributeSignal("hook_failure", content);
     }
   }

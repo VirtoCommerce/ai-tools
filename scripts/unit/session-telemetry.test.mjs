@@ -1,7 +1,8 @@
 // Unit tests for the Tier 0/1/2 span reconstruction + outcome classification rewrite
-// (VCST-5509) in plugins/vc-fix/hooks/session-telemetry.mjs. Scope: plugins/vc-fix/ only —
-// the .claude/ mirror intentionally still ships the pre-5509 model (see that file's header
-// comment), so it has no classify()/detectStruggle() to exercise here.
+// (VCST-5509) in plugins/vc-fix/hooks/session-telemetry.mjs. This targets plugins/vc-fix/ as
+// the CANONICAL copy; the .claude/ mirror is guaranteed byte-identical (incl. classify()/
+// detectStruggle()) by scripts/unit/mirror-parity.test.mjs, so exercising it here would be
+// redundant.
 //
 // Drives the ACTUAL hook script as a child process, exactly as Claude Code's hook runner
 // does: one `node session-telemetry.mjs <subcommand>` invocation per hook firing, JSON event
@@ -2094,4 +2095,76 @@ test("OBS1: scanErrors withholds the clean line; a clean run still surfaces it",
   assert.notEqual(degraded.dec.decision, "block", "a scan-error session must NOT surface a false clean line");
   assert.equal(degraded.verdict, "degraded-collector");
   assert.equal(degraded.scanErrors, 1);
+});
+
+// ─── OBS1b (code review #4): a RECOVERED transient scan error must not be sticky ───────────
+// The reviewer flagged scanErrors as an all-time flag that permanently degraded a session after a
+// single transient blip (a briefly-locked transcript on Windows). A transient error never advances
+// scannedBytes, so the NEXT scan re-reads those bytes and succeeds — that successful delta read must
+// clear the flag, so finalize still surfaces the clean line.
+test("OBS1b: a recovered transient scan error clears on the next successful delta read (not sticky)", () => {
+  const home = setupHome();
+  try {
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: "obs1b", transcript_path: tp });
+    appendLines(tp, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "echo ok" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "ok"),
+    ]);
+    run(home, "record", { session_id: "obs1b", transcript_path: tp });
+    // Simulate a transient read blip recorded on an earlier scan (bytes NOT advanced by a failed read).
+    const sp = join(home, ".vc-fix", "diagnostics", "obs1b.state.json");
+    const st = JSON.parse(readFileSync(sp, "utf8"));
+    st.scanErrors = 1;
+    writeFileSync(sp, JSON.stringify(st));
+    // New bytes arrive → the next delta scan reads them successfully → scanErrors must clear.
+    appendLines(tp, [
+      toolUse("2026-01-01T00:00:02Z", "b2", "Bash", { command: "echo ok2" }),
+      toolResult("2026-01-01T00:00:03Z", "b2", false, "ok2"),
+    ]);
+    run(home, "record", { session_id: "obs1b", transcript_path: tp });
+    complete(home, "project-init");
+    const out = run(home, "finalize", { session_id: "obs1b", transcript_path: tp, reason: "stop" });
+    const fin = finalizeOf(readSpans(home, "obs1b"));
+    assert.equal(fin.decision.scanErrors, 0, "a successful delta read must clear a prior transient scanErrors");
+    const dec = out.trim() ? JSON.parse(out) : { decision: null };
+    assert.equal(dec.decision, "block", "a recovered collector must still surface the clean line");
+    assert.match(dec.reason, /no plugin issues detected/i);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── A-F1 (code review #4): user PROSE that quotes an error is not an untied hook_failure ──────
+// A genuine user message arrives as top-level STRING content (ev.type "user", no isMeta), identical
+// in shape to a hook echo. A user pasting a build log ("command failed with exit code 1") into a
+// /qa-fix question is describing a problem, not failing — it must NOT force the command span `failed`
+// (which would trip the tail-trigger and, in feedback.mode=auto, auto-file an upstream issue). Only a
+// real INJECTED/meta hook echo may raise hook_failure from top-level string content.
+test("A-F1: user prose quoting an error does NOT raise hook_failure; a meta/echo string still does", () => {
+  const userMsg = (ts, text) => JSON.stringify({ type: "user", timestamp: ts, message: { role: "user", content: text } });
+  const errText = "the build shows: command failed with exit code 1 — npm error ELIFECYCLE";
+  const build = (sid, asUserProse) => {
+    const home = setupHome();
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-fix VCST-1" });
+    appendLines(tp, [asUserProse ? userMsg("2026-01-01T00:00:00Z", errText) : hookEcho("2026-01-01T00:00:00Z", errText)]);
+    run(home, "record", { session_id: sid, transcript_path: tp });
+    complete(home, "qa-fix");
+    run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-fix");
+    rmSync(home, { recursive: true, force: true });
+    return cmd[0];
+  };
+  const prose = build("af1-prose", true);
+  assert.ok(prose, "the command span exists");
+  assert.equal(prose.signals.hook_failure || 0, 0, "user prose must not be recorded as a hook_failure");
+  assert.notEqual(prose.outcome, "failed", "user prose quoting an error must not force the span `failed`");
+  // Control: the SAME text as an actual hook echo (no ev.type) is still an untied hook_failure → `failed`.
+  const echo = build("af1-echo", false);
+  assert.ok(echo.signals.hook_failure >= 1, "a real hook echo still raises hook_failure");
+  assert.equal(echo.outcome, "failed", "an untied hook echo failure still forces `failed`");
 });

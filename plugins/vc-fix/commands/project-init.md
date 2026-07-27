@@ -155,3 +155,20 @@ Do **not** re-run the interview. The skill's **`--check`** section drives this:
 3. **Verify**: `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`.
 
 Restate both the reconciliation summary and the readiness table in your reply.
+
+### Signal completion (self-diagnostics — the LAST action of EVERY path)
+
+`/project-init` is exactly where self-capture is first enabled (§0b writes the `selfDiagnostics:true`
+stub so its OWN run is captured), so its terminal step MUST emit the completion signal like every
+other terminal command — otherwise a slash-only run with no Skill span leaves the collector thinking
+there was no plugin activity and never surfaces its clean/health line. As the **last action** of
+whichever path ran — the full interview (Step 9), `--add-env` (step 5), or `--check` (step 3) — run
+this once (best-effort, silent, never blocks):
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"
+```
+
+So the collector prints its one-line status **exactly once** after the run. No-op when capture is off.
+Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostics/skill-expectations.md)
+§Signal completion.

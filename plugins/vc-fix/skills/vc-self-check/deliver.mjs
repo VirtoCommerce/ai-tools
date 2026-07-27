@@ -11,7 +11,8 @@
  * This file is kept BYTE-IDENTICAL across the plugins/vc-fix/ (canonical) and .claude/
  * trees for the self-diagnostics subsystem: the closed-schema upstream path (PR #143 R2)
  * ships on BOTH surfaces so neither can leak. Both trees supply the sibling
- * `upstream-reduce.mjs` + `../project-init/probe-lib.mjs` + `../../hooks/redact.mjs`.
+ * `upstream-reduce.mjs` + `../project-init/probe-lib.mjs` (deliver no longer imports
+ * `redact.mjs` — the closed schema, not scrubbing, is the upstream guard; see below).
  *
  * CONSENT (VCST-5509): outbound delivery is gated by project-profile.json
  * `feedback.mode` — off (never send, DIAG stays local) / ask (DEFAULT: DRY draft +
@@ -21,11 +22,12 @@
  *
  * HARD INVARIANTS (quality-gates §2a client-code containment + per-action consent):
  *   - NEVER touches the client-installed plugin (read-only w.r.t. the install).
- *   - NEVER leaks client code/data upstream: every outbound title/body is scrubbed
- *     of client source, file paths, URLs, identifiers, tickets, data, and secrets —
- *     only plugin-file references + a generic repro survive. A finding whose
- *     evidence is client-specific is DOWNGRADED to a generic description, never
- *     attached. Operator /vc-feedback notes are §2a-gated the same way.
+ *   - NEVER leaks client code/data upstream: the outbound title/body/fingerprint/comment
+ *     are built SOLELY from a validated closed-vocabulary struct (`validateUpstream(reduce(...))`,
+ *     enum/number only) — there is NO client-derived free text anywhere in the artifact, so
+ *     there is nothing to scrub or downgrade. Leak-safety is by TYPE, not by a denylist: the
+ *     LLM-authored DIAG cells and operator /vc-feedback prose never reach the struct (feedback
+ *     travels as 👍/👎 counts only). See knowledge/diagnostics/upstream-schema.md + adr-upstream-default-deny.md.
  *   - DRAFT-AND-CONFIRM (mode=ask): the run is DRY (draft + show). It sends ONLY
  *     with `--confirm` (mode=auto pre-confirms), and even then auto-sends only the
  *     low-risk GitHub Issue route; a PR/fork-PR is handed off as ready commands
@@ -236,8 +238,15 @@ export async function findDuplicateIssue({ repo, token, fp }) {
   // ≥100 open issues (ordinary dev issues crowd out the window) and `auto` mode then re-filed a
   // DUPLICATE instead of a +1 comment (PR #143 R2 DED1). Search tokenizes, so its hit is a candidate
   // that we still body-confirm via `hit()`.
+  //
+  // `is:open` only (code review #4): match OPEN issues exclusively, consistent with the `state=open`
+  // fallback below. A defect a maintainer already CLOSED (fixed upstream) that then recurs on a
+  // not-yet-upgraded client is a NEW open signal — it must surface as a fresh issue, NOT get buried
+  // as a "+1 occurrence" comment on the closed one (after which `deliver` would purge the local
+  // artifacts and lose the recurrence). Search and fallback now agree on state, so the result no
+  // longer depends on whether Search happens to be indexed/rate-limited.
   try {
-    const q = encodeURIComponent(`repo:${repo} is:issue "${marker}"`);
+    const q = encodeURIComponent(`repo:${repo} is:issue is:open "${marker}"`);
     const r = await fetch(`https://api.github.com/search/issues?q=${q}&per_page=20`, { headers });
     if (r.ok) {
       const j = await r.json();
