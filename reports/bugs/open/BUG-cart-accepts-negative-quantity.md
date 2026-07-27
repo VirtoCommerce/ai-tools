@@ -1,7 +1,7 @@
 # Cart xAPI accepts a negative line quantity `[P1]` `[BL-CART-001]`
 
 **Env:** vcst-qa @ Platform 3.1043.0, Theme 2.53.0-pr-2368
-**Case:** CART-036 (suite 028)
+**Case:** CART-036 (suite 028) — split from the former combined CART-036 into CART-036/CART-065/CART-066 (one invalid-input class each); this defect is carried by the negative-quantity case, CART-036 (renumbered from CART-036a to keep lineage with this trace/report)
 
 ## Summary
 `changeCartItemQuantity` accepts `quantity: -1` and persists it: HTTP 200, **no top-level `errors[]`**, and a follow-up cart read confirms the line quantity is stored as `-1`. Only a soft `validationErrors[]` entry (`PRODUCT_MIN_QTY`) is returned, and totals still price the line as if quantity were 1. A negative quantity below the product minimum must be hard-rejected server-side.

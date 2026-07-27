@@ -4,6 +4,15 @@
  * test-data/products/test-products.csv — the seeder creates every row flagged seeded=true; the
  * column→field mapping + create-time overlays + imported-fixture discovery live in ./standard-specs.mjs.
  *
+ * Multi-currency: a row carrying `price_eur` is priced in BOTH its base currency and EUR, each into its
+ * own single-currency pricelist (SEED-<date>-Standards-<CUR>), so the line stays priced and addable
+ * after a storefront currency switch instead of collapsing to 0.00 with a disabled stepper.
+ *
+ * The committed `product_slug` / `storefront_url` columns are the store-RELATIVE storefront path this
+ * seeder puts the product on (rule: standard-specs.mjs productSlug / storefrontPathForAdHoc). A case
+ * composes `{{FRONT_URL}}@td(ALIAS.url)` instead of hand-building `/product/<sku>`, which does not
+ * resolve. Both columns are env-invariant business keys, drift-guarded by td:validate:standard.
+ *
  * Aliases resolve these by SKU/business key (PROD_* → @td(PROD_*.sku) → platform lookup by
  * code), so NO runtime GUID is written into the CSV — env-invariant + multi-env-safe by construction.
  * The imported STD-* fixtures (standard.csv) can't be created; they're discovered by code and their
@@ -34,9 +43,12 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, seedCategoryTree, buildStoreSeo, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam } from '../../lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, seedCategoryTree, buildStoreSeo, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam, ensureCurrencies } from '../../lib/seed-common.mjs';
 // Orchestration source (single source of truth) — side-effect-free, shared with the guard.
-import { CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES, buildPrices } from './standard-specs.mjs';
+import {
+  CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES,
+  productSlug, buildCurrencyPriceSets, currenciesFor, priceListName,
+} from './standard-specs.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -82,7 +94,9 @@ const CSV_PATH = join(ROOT, 'test-data', CSV_SOURCE.file);
 const truthy = (v) => /^(true|yes|1)$/i.test(String(v || '').trim());
 const num = (v) => (v === '' || v == null ? null : Number(v));
 const leafCategory = (path) => (String(path || '').split('>').pop().trim()) || 'Standard Test Products';
-const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+// The slug rule lives in standard-specs.mjs (productSlug) so the guard can assert the committed
+// product_slug / storefront_url columns against the very rule the seeder applies. Do NOT re-inline it.
+const slug = productSlug;
 
 function loadRecords() {
   const m = CSV_SOURCE.map;
@@ -96,6 +110,7 @@ function loadRecords() {
       listPrice: num(r[m.listPrice]),
       salePrice: num(r[m.salePrice]),
       currency: (r[m.currency] || 'USD').trim(),
+      eurPrice: num(r[m.eurPrice]),   // optional second-currency list price (blank → USD only)
       stock: num(r[m.stock]) ?? 0,
       description: (r[m.description] || '').trim(),
       seeded: truthy(r[m.seeded]),
@@ -191,15 +206,16 @@ async function ensureProduct(catalogId, categoryId, body) {
   return p;
 }
 
-async function setPrices(priceListId, productId, prices) {
-  // prices: [{ list, sale?, minQuantity? }]
-  // Canonical batch endpoint: PUT /api/products/prices
+// prices: [{ list, sale?, minQuantity? }] — written into `priceListId`, whose currency MUST equal
+// `currency` (a pricelist is single-currency platform-side). Canonical batch endpoint:
+// PUT /api/products/prices. Called once per currency set (see buildCurrencyPriceSets).
+async function setPrices(priceListId, productId, prices, currency) {
   const payload = prices.map(p => {
     const out = {
       pricelistId: priceListId,
       productId,
       list: Number(p.list),
-      currency: 'USD',
+      currency,
       minQuantity: Number(p.minQuantity ?? 1),
     };
     if (p.sale != null) out.sale = Number(p.sale);
@@ -224,12 +240,22 @@ async function ensureInventory(ffcId, productId, qty) {
   }
 }
 
-async function findOrCreatePriceList() {
-  const name = `SEED-${DATE}-Standards-USD`;
+// One pricelist per currency (a pricelist is single-currency platform-side). Resolved/created
+// idempotently by its stable, date-pinned name and assigned to the store's virtual catalog with no
+// membership condition, so guest / personal / org users all see the price. Memoized per run: the
+// per-record loop asks for a currency's pricelist once per product.
+const _priceListByCurrency = new Map();
+async function findOrCreatePriceList(currency) {
+  if (_priceListByCurrency.has(currency)) return _priceListByCurrency.get(currency);
+  const name = priceListName(DATE, currency);
   const search = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(name)}`, null, { expectStatus: [200, 404] });
   let pl = (search?.results || []).find(p => p?.name === name);
-  if (pl) { console.log(`  ↻ pricelist: ${name} (${pl.id})`); return pl; }
-  pl = await api('POST', '/api/pricing/pricelists', { name, currency: 'USD', description: 'Seeded for standard products' }, { expectStatus: [200, 201] });
+  if (pl) {
+    console.log(`  ↻ pricelist: ${name} (${pl.id})`);
+    _priceListByCurrency.set(currency, pl);
+    return pl;
+  }
+  pl = await api('POST', '/api/pricing/pricelists', { name, currency, description: `Seeded for standard products (${currency})` }, { expectStatus: [200, 201] });
   try {
     await api('POST', '/api/pricing/assignments', {
       name: `${name} → ${STORE_ID}`, pricelistId: pl.id, catalogId: VIRTUAL_CATALOG_ID, priority: 100,
@@ -238,6 +264,7 @@ async function findOrCreatePriceList() {
   } catch (e) {
     console.log(`  ⚠ pricelist created but assignment failed: ${e.message.slice(0, 150)}`);
   }
+  _priceListByCurrency.set(currency, pl);
   return pl;
 }
 
@@ -279,7 +306,7 @@ async function captureDiscoveredFixtures() {
 }
 
 // --- Main per-record seed ---
-async function seedRecord(rec, priceListId, ffcId) {
+async function seedRecord(rec, ffcId) {
   console.log(`\n=== ${rec.csvId}: ${rec.name} (SKU ${rec.code}) ===`);
   // UNIFIED placement: resolve-or-create the product's category path in the categories.csv tree
   // (physical catalogs) — reuse an existing category, create it only if missing. The product then
@@ -304,10 +331,15 @@ async function seedRecord(rec, priceListId, ffcId) {
 
   const product = await ensureProduct(loc.catalogId, loc.categoryId, body);
   if (!DRY_RUN && product.id && !product.id.startsWith('dry-')) {
-    // Prices: tier-priced record passes multiple rows; a flat record passes one (with `sale` when the
-    // row has a salePrice); unpriced → skip. buildPrices() is the single, unit-tested source of shape.
-    const prices = buildPrices(rec);
-    if (prices.length) await setPrices(priceListId, product.id, prices);
+    // Prices, per currency: the base set is tier-priced (multiple rows) or flat (one row, with `sale`
+    // when the row has a salePrice); a row carrying price_eur adds a second, EUR set. Each set goes
+    // into ITS currency's pricelist. buildCurrencyPriceSets() is the single, unit-tested source of
+    // shape. A single-currency product behaves exactly as before.
+    for (const set of buildCurrencyPriceSets(rec)) {
+      const pl = await findOrCreatePriceList(set.currency);
+      await setPrices(pl.id, product.id, set.prices, set.currency);
+      if (VERBOSE) console.log(`    ✓ prices [${set.currency}]: ${set.prices.map(p => p.list + (p.sale != null ? `/${p.sale}` : '') + `@${p.minQuantity ?? 1}`).join(', ')}`);
+    }
 
     await ensureInventory(ffcId, product.id, rec.stock);
     console.log(`  ✓ placed in ${loc.name} (catalog ${loc.catalogId})`);
@@ -326,6 +358,7 @@ async function seedRecord(rec, priceListId, ffcId) {
     productId: product.id,
     listPrice: rec.listPrice,
     salePrice: rec.salePrice ?? null,
+    eurPrice: rec.eurPrice ?? null,
     stock: rec.stock,
     minQuantity: rec.minQuantity ?? null,
     packSize: rec.packSize ?? null,
@@ -338,7 +371,15 @@ async function main() {
   if (!NO_ASSETS) await commonAuth(); // token for seed-common's enrichProductContent (images → assets)
   VIRTUAL_CATALOG_ID = await ensureVirtualCatalog(api);
   console.log(`  Virtual catalog: ${VIRTUAL_CATALOG_ID}`);
-  const priceList = await findOrCreatePriceList();
+  // Every currency the CSV rows need must be a registered platform Currency BEFORE a pricelist in it
+  // is created — otherwise the price exists but the storefront can't render/select that currency
+  // (which is exactly how an AGENT-TEST line collapses to 0.00 with a disabled stepper after a
+  // currency switch). Idempotent; defs come from test-data/stores/currencies.csv.
+  const currencies = currenciesFor(records);
+  console.log(`  Currencies in scope: ${currencies.join(', ')}`);
+  await ensureCurrencies(api, currencies);
+  // Resolve/create each currency's pricelist up front so the assignment exists before any price write.
+  for (const c of currencies) await findOrCreatePriceList(c);
   const ffc = await ensureFulfillmentCenter(api);
   if (!ffc?.id && !DRY_RUN) throw new Error('No fulfillment center available');
 
@@ -356,7 +397,7 @@ async function main() {
   const seeded = [];
   for (const rec of records) {
     try {
-      const r = await seedRecord(rec, priceList.id, ffc?.id);
+      const r = await seedRecord(rec, ffc?.id);
       seeded.push(r);
     } catch (e) {
       console.error(`  ❌ ${rec.csvId}: ${e.message.slice(0, 300)}`);
@@ -386,7 +427,7 @@ async function main() {
   console.log(`\n✅ Standards: ${ok}/${seeded.length} products seeded`);
   for (const s of seeded) {
     if (s.error) console.log(`  ❌ ${s.csvId}: ${s.error.slice(0, 100)}`);
-    else console.log(`  ✓ ${s.csvId} sku=${s.sku} id=${s.productId} stock=${s.stock} price=${s.listPrice}${s.salePrice != null ? ` sale=${s.salePrice}` : ''}${s.minQuantity ? ` MOQ=${s.minQuantity}` : ''}${s.tierPrices ? ` tiers=${s.tierPrices.length}` : ''}`);
+    else console.log(`  ✓ ${s.csvId} sku=${s.sku} id=${s.productId} stock=${s.stock} price=${s.listPrice}${s.salePrice != null ? ` sale=${s.salePrice}` : ''}${s.eurPrice != null ? ` EUR=${s.eurPrice}` : ''}${s.minQuantity ? ` MOQ=${s.minQuantity}` : ''}${s.tierPrices ? ` tiers=${s.tierPrices.length}` : ''}`);
   }
 }
 
@@ -416,11 +457,19 @@ async function teardown() {
     console.log(`  ✗ deleted ${ids.length} product(s)`);
   } else console.log('  – no seeded products found');
 
-  // Pricelist created by this seeder (name is DATE-stable). No catalog deletion (shared structure).
-  const plName = `SEED-${DATE}-Standards-USD`;
-  const s = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
-  const pls = (s?.results || []).filter((p) => p?.name === plName).map((p) => p.id);
-  if (pls.length) await api('DELETE', `/api/pricing/pricelists?${idsParam(pls)}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
+  // Pricelists created by this seeder — ONE PER CURRENCY the CSV needs (names are DATE-stable).
+  // Symmetric with findOrCreatePriceList: a multi-currency seed must not leave an orphan EUR pricelist
+  // (a stale EUR price would keep pricing a deleted fixture's SKU if it were re-created by hand).
+  // No catalog deletion (shared structure).
+  for (const currency of currenciesFor(records)) {
+    const plName = priceListName(DATE, currency);
+    const s = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
+    const pls = (s?.results || []).filter((p) => p?.name === plName).map((p) => p.id);
+    if (pls.length) {
+      await api('DELETE', `/api/pricing/pricelists?${idsParam(pls)}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
+      console.log(`  ✗ deleted pricelist ${plName}`);
+    }
+  }
 
   // Verify zero residue (code lookup + AGENT-TEST guard).
   const residual = await verifyRemoved(async () => {

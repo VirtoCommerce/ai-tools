@@ -201,7 +201,11 @@ Legacy B2B company data for special character testing and search. For seeded org
 
 ### 3. Products (products/)
 Product catalog data including standard products, variant templates, and configurable products.
-- `test-products.csv` — 100 standard products for general testing
+- `test-products.csv` — the standard-product fixtures + the `@td()` registry for them. The single source of truth for `scripts/seed-data/products/seed-standard-products.mjs`, which creates every `seeded=true` row. Business keys only — **no runtime GUIDs**. Notable columns:
+  - `sale_price` — optional per-row sale (actual < list; blank = no sale).
+  - `price_eur` — optional **second-currency** list price. A pricelist is single-currency platform-side, so a non-blank value makes the seeder create/assign a second `SEED-<date>-Standards-EUR` pricelist for that row. This is what keeps a fixture priced and addable after a storefront currency switch; a USD-only row collapses to `0.00` with a **disabled** qty stepper in EUR. `PROD_MULTI_CURRENCY` (PROD-106) is the reference dual-currency fixture.
+  - `product_slug` / `storefront_url` — the **store-relative** storefront path the seeder actually puts the product on. Cases navigate `{{FRONT_URL}}@td(ALIAS.url)`; **never** hand-compose `/product/<sku>`, which renders a client-side 404 (HTTP 200 SPA soft-404). Both are *derived* (`standard-specs.mjs` `productSlug` / `storefrontPathForAdHoc`) and re-checked by `npm run td:validate:standard` — do not hand-edit them. Filled for the `Test Fixtures` family, where the category path makes the URL deterministic; blank elsewhere.
+  - `seeded` — the seeder's create flag, not a provisioning status. A row's real provisioning state lives in its alias `_status` (e.g. `authored-…-NOT-YET-SEEDED` until someone runs `TEST_ENV=<env> npm run seed:products`).
 - `configurable-products.csv` — 10 QA environment configurable products with section types, slugs, and IDs (used by Suite 36)
 - `products-full.csv` — Full product definitions for seeding
 
@@ -285,15 +289,17 @@ All payment cards in `payment/test-cards.csv` are test mode cards from payment p
 
 ## Test Fixture Gaps Blocking Regression — Seed These
 
-**Status (2026-04-21):** Templates added to CSVs + aliases registered. `seeded=false` / `platform_id=""` — not yet provisioned on QA. Env vars declared in `config.js` as optional (empty default) — agents that need these fixtures will fail-fast with a clear "not provisioned" signal until QA seeding completes.
+**Status (updated 2026-07-25):** the four product fixtures below are **live** — `seed-standard-products.mjs` creates them from the `seeded=true` rows and they were re-confirmed on the QA env on 2026-07-25 (each resolves by `code` with the expected stock / MOQ / tier shape). The stale "not provisioned" claim, and the matching `"Template only — NOT seeded"` manual recipe in the CSV `notes`, have been removed; `npm run td:validate:standard` check [11] now fails any `seeded=true` row that reintroduces one. Env vars stay declared in `config.js` as optional (empty default) so an **unseeded** env still gives agents a clear "not provisioned" fail-fast signal — see the `.env.*` reconciliation rule in `.claude/rules/test-data.md`.
 
 | Fixture | Template row | Alias | Env var | Provisioned |
 |---------|-------------|-------|---------|-------------|
 | VALID_COUPON_CODE | `promotions/coupons.csv` COU-026 | `COUPON_VALID` | `VALID_COUPON_CODE` | ☐ |
-| OOS_SKU | `products/test-products.csv` PROD-101 + stock STK-063..065 | `PROD_OOS` | `OOS_SKU` | ☐ |
-| LOW_STOCK_SKU | `products/test-products.csv` PROD-102 + stock STK-066 | `PROD_LOW_STOCK` | `LOW_STOCK_SKU` | ☐ |
-| PACK_SIZE_SKU | `products/test-products.csv` PROD-103 + stock STK-067 | `PROD_PACK_SIZE` | `PACK_SIZE_SKU` | ☐ |
-| TIER_PRICED_SKU | `products/test-products.csv` PROD-104 + stock STK-068 + prices PR-TIER-001..003 | `PROD_TIER_PRICED` | `TIER_PRICED_SKU` | ☐ |
+| OOS_SKU | `products/test-products.csv` PROD-101 + stock STK-063..065 | `PROD_OOS` | `OOS_SKU` | ✓ (live; navigate via `@td(PROD_OOS.url)`) |
+| LOW_STOCK_SKU | `products/test-products.csv` PROD-102 + stock STK-066 | `PROD_LOW_STOCK` | `LOW_STOCK_SKU` | ✓ (live; navigate via `@td(PROD_LOW_STOCK.url)`) |
+| PACK_SIZE_SKU | `products/test-products.csv` PROD-103 + stock STK-067 | `PROD_PACK_SIZE` | `PACK_SIZE_SKU` | ✓ (live, MOQ/pack 6) |
+| TIER_PRICED_SKU | `products/test-products.csv` PROD-104 + stock STK-068 + prices PR-TIER-001..003 | `PROD_TIER_PRICED` | `TIER_PRICED_SKU` | ✓ (live, 3 qty breaks) |
+| **multi-currency (EUR) product** | `products/test-products.csv` **PROD-106** (`price_eur` 22.49) | `PROD_MULTI_CURRENCY` | — (use `@td()`) | ☐ **authored 2026-07-25, needs `npm run seed:products`** |
+| **sub-$5 product** | `products/test-products.csv` **PROD-107** ($3.49) | `PROD_SUB_FIVE` | — (use `@td()`) | ☐ **authored 2026-07-25, needs `npm run seed:products`** |
 | CONFIGURABLE_SKU | reuses `products/configurable-products.csv` CFG-001 | `PROD_CONFIGURABLE` | `CONFIGURABLE_SKU` | ✓ (existing fixture, needs env var binding) |
 | MULTI_ORG_USER | `b2b/users.csv` USR-014 | `USER_MULTI_ORG` | `MULTI_ORG_USER_EMAIL` / `MULTI_ORG_USER_PASSWORD` | ☐ |
 | EUR_USER | reuses `b2b/users.csv` USR-011 (Hans Mueller) | `USER_EUR` | `EUR_USER_EMAIL` / `EUR_USER_PASSWORD` | ✓ (existing user, needs env var binding) |
@@ -344,6 +350,19 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 > status-string-uncertain states below (invoice, returns/RMA, OOS, discontinued, partially-shipped,
 > BOPIS-pickup) stay **DEFERRED** pending product-owner confirmation. Status strings live in
 > `scripts/seed-data/orders/orders-specs.mjs` (confirm live on first run).
+>
+> **Deferral re-checked 2026-07-25 (TLC-2026-07-25-0415) — the store-config half of the premise is
+> WRONG.** A live read of all 96 settings on `GET /api/stores/{STORE_ID}` found **no** store-level
+> enable flag for returns, invoice, or buyer-cancel: the keys assumed below
+> (`RETURNS_FEATURE_ENABLED`, an invoice store setting, `STORE_CONFIG_BUYER_CANCEL`) **do not exist**,
+> and there is no storefront `$cfg.*` counterpart either. So "enable the store setting first" is not
+> the blocker. What IS true on the environment today: **Returns module installed**
+> (`Return.ReturnNewNumberTemplate` is the only `Return.*` setting), **pickup enabled**
+> (`XPickup.Enabled = true`) so BOPIS-pickup is reachable now, and **invoice has no platform setting
+> at all** — CHK-047/048 + ORD-014/041/042/043 may be testing a surface this deployment lacks.
+> The remaining genuine product-owner calls are: the aggregate status string for a mixed-shipment
+> order, the store return window, and whether invoice download is in scope. Treat the
+> "Store config flags to confirm" list below as **disproven, not pending**.
 
 | Env Var | Fixture Spec | Admin Status | Storefront Label | Suites Affected | Admin Path |
 |---------|-------------|--------------|-----------------|-----------------|------------|
@@ -419,8 +438,8 @@ The exact internal admin status string values (e.g. the string passed to admin A
 7. `LOW_STOCK_SKU` — unblocks 2 cases in suite 028 (CART-037), suite 029 (CART-082)
 8. `TIER_PRICED_SKU` — unblocks 1 case in suite 029 (CART-078)
 9. `PACK_SIZE_SKU` — unblocks 2 cases in suite 028 (CART-054, -055)
-10. `EUR_USER_EMAIL` — unblocks 1 case in suite 030 (CART-059)
-11. `CONFIGURABLE_SKU` — unblocks 1 case in suite 030 (CART-061)
+10. `EUR_USER_EMAIL` — unblocks 1 case in suite 030 (CART-102)
+11. `CONFIGURABLE_SKU` — unblocks 1 case in suite 030 (CART-104)
 12. `Saved tokenized credit card` — unblocks 2 cases in suite 011 (CHK-056, -057)
 13. `Net-30 payment terms` — unblocks 1 case in suite 013 (CHK-032)
 

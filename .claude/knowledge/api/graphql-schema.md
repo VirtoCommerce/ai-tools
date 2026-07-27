@@ -1,8 +1,8 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-17)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-24)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
-> **Refresh**: `node scripts/graphql/refresh-graphql-schema.mjs` — run when schema may have changed.
+> **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
 ## Critical Rules
 
@@ -26,6 +26,8 @@
 
 ```
 cartPickupLocations(after: String, first: Int, keyword: String, sort: String, cartId: String!, storeId: String!, cultureName: String!, facet: String, filter: String)
+salesRepCartFilterRules(storeId: String, cultureName: String)
+salesRepCustomerCartStatistics(organizationId: String, storeId: String, currencyCode: String, cultureName: String)
 promotionCoupons(after: String, first: Int, keyword: String, sort: String, storeId: String!, userId: String, currencyCode: String, cultureName: String)
 validateCoupon(cartId: String, storeId: String!, currencyCode: String!, userId: String!, cultureName: String, cartName: String, cartType: String, coupon: String!)
 cart(cartId: String, storeId: String!, currencyCode: String!, cartType: String, cartName: String, userId: String, cultureName: String)
@@ -72,8 +74,10 @@ pageContext(domain: String, cultureName: String, permalink: String, organization
 ### Orders
 
 ```
-salesRepOrders(after: String, first: Int, keyword: String, sort: String, organizationId: String, storeId: String, statuses: [String], cultureName: String)
-salesRepOrderStatuses(storeId: String, cultureName: String)
+salesRepOrderFilterRules(storeId: String, cultureName: String)
+salesRepOrderSortRules(storeId: String, cultureName: String)
+salesRepOrders(after: String, first: Int, keyword: String, sort: String, organizationId: String, storeId: String, filter: String, period: SalesRepStatisticsPeriodInput, cultureName: String)
+salesRepCustomerOrderStatistics(organizationId: String, storeId: String, currencyCode: String, cultureName: String)
 order(id: String, number: String, cultureName: String)
 payments(facet: String, filter: String, sort: String, cultureName: String, userId: String, after: String, first: Int)
 orderLineItemStatuses(cultureName: String)
@@ -101,8 +105,14 @@ fcmSettings()
 pushMessages(after: String, first: Int, keyword: String, sort: String, unreadOnly: Boolean, withHidden: Boolean, cultureName: String)
 tasks(after: String, first: Int, keyword: String, sort: String, responsibleId: String, storeId: String, startDueDate: DateTime, endDueDate: DateTime, isActive: Boolean, completed: Boolean)
 customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
+salesRepCustomerFilterRules(storeId: String, cultureName: String)
 salesRepCustomer(organizationId: String!)
-salesRepCustomers(after: String, first: Int, keyword: String, sort: String, storeId: String, cultureName: String)
+salesRepCustomerSortRules(storeId: String, cultureName: String)
+salesRepCustomers(after: String, first: Int, keyword: String, sort: String, storeId: String, filter: String, cultureName: String)
+salesRepTopSellerFilterRules(storeId: String, cultureName: String)
+salesRepTopSellerSortRules(storeId: String, cultureName: String)
+salesRepTopSellers(organizationId: String, storeId: String, filter: String, sort: String, period: SalesRepStatisticsPeriodInput, take: Int, currencyCode: String, cultureName: String)
+salesRepCustomerCounts(organizationId: String, storeId: String)
 skyflowCards(storeId: String)
 evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: [String], userGroups: [String])
 backInStockSubscriptions(after: String, first: Int, keyword: String, sort: String, storeId: String, productIds: [String], isActive: Boolean)
@@ -275,6 +285,7 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
+| `sendCustomerCommunication` | `InputSendCustomerCommunicationType` |
 | `activateBackInStockSubscription` | `ActivateBackInStockSubscriptionCommandType` |
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
 | `saveSearchQuery` | `InputSaveSearchQueryType` |

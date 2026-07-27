@@ -2,6 +2,7 @@
 name: qa-deploy-pr
 description: "[QA Methodology] Gather ALL fresh CI prerelease artifacts for a change (modules + platform + vc-frontend) and deploy them together to the test env (vc-deploy-dev@<TEST_ENV branch>) in ONE manifest update: resolve a tracker ticket's linked PRs across all repos (or an explicit --module/--platform/--theme/--pr set) → each PR's latest vc3prerelease build → minimal-diff repin of backend/packages.json (AzureBlob/BlobName + PlatformVersion) and theme/artifact.json → dry-run combined diff (default) or a gated deploy PR (direct same-repo when the account has write, else a fork PR) → --verify polls the env-branch pin + /api/platform/modules per target. Never merges (a human merges to deploy); writes route through gh's keyring token; prints the web-edit URL when it can't push. Unblocks /qa-test PR#N and /qa-verify-fix."
 argument-hint: "<ticket-key> [--pr owner/repo#N ...] [--module Id=Ver ...] [--platform Ver] [--theme <url>] [--env <name>] [--apply] [--verify]"
+disable-model-invocation: true
 ---
 
 # /qa-deploy-pr — deploy a change's PR artifacts to the test env

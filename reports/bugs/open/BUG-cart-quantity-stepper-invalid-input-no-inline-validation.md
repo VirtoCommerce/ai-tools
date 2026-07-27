@@ -5,7 +5,7 @@
 **Severity:** Medium (client-side validation gap / UX — no data loss; server correctly rejects)
 **Env:** vcst-qa storefront — Theme `2.51.0-pr-2310`, Platform `3.1035.0`, XCart `3.1019.0-pr-124-89a6`
 **Owning layer:** Layer 1 — vc-frontend (cart quantity input validation)
-**Reproduced:** 2026-06-11 (REG-2026-06-11-1423, suite 028 CART-036)
+**Reproduced:** 2026-06-11 (REG-2026-06-11-1423, suite 028 CART-036 — since split into CART-036/CART-065/CART-066; this decimal/negative symptom is now covered by CART-036 (negative) and CART-066 (decimal))
 
 ## Summary
 
@@ -45,5 +45,5 @@ Contrast: the **max-stock** cap (CART-037) and **pack-size** (CART-055) paths bo
 - **Routing confidence:** HIGH
 
 ## References
-- REG-2026-06-11-1423 suite 028 CART-036 — evidence `screenshots/cart-036-invalid-input.png`
+- REG-2026-06-11-1423 suite 028 CART-036 (now CART-036/CART-066) — evidence `screenshots/cart-036-invalid-input.png`
 - The generic toast here is the same non-actionable "something went wrong" pattern seen in over-stock/EUR summary states — track whether a shared client error-handler change addresses both.

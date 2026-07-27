@@ -58,6 +58,12 @@ export const USER_ROLES = [
   { key: 'IMPERSONATION_ADMIN', emailVars: ['IMPERSONATION_ADMIN_EMAIL'], passwordVar: 'IMPERSONATION_ADMIN_PASSWORD', kind: 'org', required: false, purpose: 'Impersonation operator (org-scoped org-maintainer)' },
   { key: 'LOCKOUT_TEST', emailVars: ['LOCKOUT_TEST_EMAIL'], passwordVar: 'LOCKOUT_TEST_PASSWORD', kind: 'customer', required: false, purpose: 'Account-lockout tests' },
   { key: 'SALES_REP', emailVars: ['SALES_REP_EMAIL'], passwordVar: 'TEST_USER_PASSWORD', kind: 'org', required: false, purpose: 'Sales rep — scoped sales-rep xAPI (salesRepCustomers/Customer/Orders/OrderStatuses)' },
+  // Sales rep holding the GLOBAL sales-rep role with ZERO org memberships — the myCustomersRoute
+  // permission-guard redirect case (089 SR-FE-013a). Same account shape/passwordVar as SALES_REP;
+  // seeded by seed-sales-rep.mjs (rep_key SR_REP_NOCUSTOMERS), NOT the generic user seeders (kind
+  // 'org' is never provisioned by roleUsers()/adminUsers()). Registered here so td:reconcile's
+  // auth-drift guard covers it too.
+  { key: 'SALES_REP_NOCUSTOMERS', emailVars: ['SALES_REP_NOCUSTOMERS_EMAIL'], passwordVar: 'TEST_USER_PASSWORD', kind: 'org', required: false, purpose: 'Sales rep with the global sales-rep role but no org memberships (permission-guard redirect)' },
 ];
 
 /**

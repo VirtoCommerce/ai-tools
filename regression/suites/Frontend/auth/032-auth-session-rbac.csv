@@ -183,12 +183,12 @@
 [WAIT] Wait for redirect
 [ASSERT] Redirected to login page
 [NAV] Navigate to {{FRONT_URL}}/company/members (no login)
-[WAIT] Wait for redirect","[NAV] /account redirects to login page
-[NAV] /account/orders redirects to login page
-[NAV] /checkout redirects to login page
-[NAV] /company/members redirects to login page
-[DOM] Login form visible after each redirect
-[STATE] No account data visible before authentication","[NETWORK] GET /account returns 302 redirect to login
+[WAIT] Wait for redirect","[NAV] /account redirects to login page {OBSERVED}
+[NAV] /account/orders redirects to login page {OBSERVED}
+[NAV] /checkout redirects an anonymous user to /cart — this store permits guest checkout, so /checkout is NOT behind a login gate {OBSERVED}
+[NAV] /company/members redirects to login page {OBSERVED}
+[DOM] Login form visible after each redirect to the login page {OBSERVED}
+[STATE] No account data visible before authentication {OBSERVED}","[NETWORK] GET /account returns 302 redirect to login
 [NETWORK] GET /account/orders returns 302 redirect to login
 [CONSOLE] no TypeError or JS errors","Protected page renders without redirect; account data visible to unauthenticated user; 500 error instead of redirect; console TypeError","none","","Automated"
 "AUTH-061","Protected Route Redirect - Return to Original Page After Login","Authorization > Route Protection","High","BL-AUTH-006","ECL-4.2","Valid user account; no active session","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/orders (no login)

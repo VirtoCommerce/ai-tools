@@ -1,23 +1,35 @@
 {
-  "capturedAt": "2026-07-13T12:16:21Z",
+  "capturedAt": "2026-07-24T19:21:17Z",
   "env": "vcst-qa",
   "source": "VirtoCommerce/vc-deploy-dev @ vcst-qa",
-  "platform": "3.1043.0",
-  "theme": "2.53.0-pr-2368-997c",
+  "platform": "3.1048.0",
+  "theme": "2.54.0-pr-2395-fd70",
+  "prereleaseModules": [
+    "VirtoCommerce.SalesRep 3.1000.0-pr-4-6596 (AzureBlob prerelease)"
+  ],
   "keyModules": {
-    "VirtoCommerce.XCart": "3.1026.0",
+    "VirtoCommerce.XCart": "3.1028.0",
     "VirtoCommerce.Cart": "3.1007.0",
-    "VirtoCommerce.XCatalog": "3.1011.0",
-    "VirtoCommerce.Catalog": "3.1034.0",
-    "VirtoCommerce.Xapi": "3.1013.0",
+    "VirtoCommerce.XCatalog": "3.1014.0",
+    "VirtoCommerce.Catalog": "3.1038.0",
+    "VirtoCommerce.Xapi": "3.1015.0",
     "VirtoCommerce.XOrder": "3.1007.0",
-    "VirtoCommerce.Orders": "3.1012.0",
-    "VirtoCommerce.Customer": "3.1014.0",
-    "VirtoCommerce.Skyflow": "3.1003.0",
-    "VirtoCommerce.CyberSourcePayment": "3.1002.0",
-    "VirtoCommerce.AuthorizeNetPayment": "3.1003.0",
-    "VirtoCommerce.Datatrans": "3.1002.0",
-    "VirtoCommerce.XFrontend": "3.1003.0",
-    "VirtoCommerce.ProfileExperienceApiModule": "3.1011.0"
+    "VirtoCommerce.Orders": "3.1013.0",
+    "VirtoCommerce.Customer": "3.1020.0",
+    "VirtoCommerce.Store": "3.1006.0",
+    "VirtoCommerce.Search": "3.1006.0",
+    "VirtoCommerce.ElasticSearch8": "3.1007.0",
+    "VirtoCommerce.Pricing": "3.1004.0",
+    "VirtoCommerce.Marketing": "3.1006.0",
+    "VirtoCommerce.Loyalty": "3.1004.0",
+    "VirtoCommerce.PageBuilderModule": "3.1017.0",
+    "VirtoCommerce.Quote": "3.1001.0",
+    "VirtoCommerce.Notifications": "3.1011.0",
+    "VirtoCommerce.ProfileExperienceApiModule": "3.1012.0"
+  },
+  "healthChecks": {
+    "storefront": 200,
+    "platformHealth": 200,
+    "modulesApi": "302 (auth required — deploy state read from the vc-deploy-dev manifest instead)"
   }
 }

@@ -197,6 +197,256 @@ export function assertCatalogLinkRolePermissions(permissions = CATALOG_LINK_ROLE
   }
 }
 
+// ============================================================================
+// SALES REP back-office RBAC fixture (SR-ADM-023 / candidate BL-SREP-003) — a
+// read-only Sales Rep admin who can VIEW reps but cannot mutate.
+// ============================================================================
+//
+// Source-verified permission model (vc-module-sales-rep `dev`,
+// useSalesRepPermissions/index.ts): the embedded Sales Rep Admin app gates on the
+// CUSTOMER module's member permissions, NOT on `sales-rep:access`.
+//   - `customer:read`              → ACCESS + read (open the app, list/view reps). THE access gate.
+//   - `customer:create/update/delete` → create/edit/delete a rep (the member side of a mutation).
+//   - `platform:security:create/update/delete` → the rep's login account (a create/edit/delete
+//     also touches the account, so BOTH the member perm AND the account perm are needed to mutate).
+//   - `sales-rep:access` only DEFINES a user as a STOREFRONT rep — it does NOT gate the back-office
+//     app, so it is deliberately NOT part of this fixture.
+//   - isAdministrator=true bypasses ALL permission checks, so the account MUST be a Manager with
+//     isAdministrator=false or the gate never applies.
+//
+// This fixture is the finest gate boundary: it holds ONLY `customer:read` (enough to enter the back
+// office and open the Sales Rep app read-only) and EXCLUDES every write perm that would let it
+// create/edit/delete a rep or the rep's login account. The single representative boundary permission
+// is `customer:update` (editing an existing rep — the canonical "mutate a rep" action); it is a
+// member of the full excluded set below, exactly as EXCLUDED_PERMISSION ⊂ EXCLUDED_PERMISSIONS for
+// the CMS fixture.
+//
+// Same no-hardcode contract: no runtime GUID here; role_id/email are stable business keys, and the
+// account's runtime platform user id + role id are written to aliases.<env>.json by the seeder.
+
+// The single representative permission the SR-ADM-023 read-only boundary hinges on — must be ABSENT.
+export const SALESREP_READONLY_EXCLUDED_PERMISSION = 'customer:update';
+
+// Every WRITE permission the read-only Sales Rep admin must NOT hold: the member-side mutate perms
+// AND the account-side (platform:security) mutate perms. Excluding all of them guarantees the app
+// cannot create/edit/delete a rep regardless of which perm a given mutate path enforces.
+export const SALESREP_READONLY_EXCLUDED_PERMISSIONS = [
+  'customer:create', 'customer:update', 'customer:delete',
+  'platform:security:create', 'platform:security:update', 'platform:security:delete',
+];
+
+// The permission(s) a usable read-only Sales Rep admin MUST hold. `customer:read` is the whole
+// access+read gate — nothing else is needed to open the app and view reps.
+export const SALESREP_READONLY_REQUIRED_PERMISSIONS = ['customer:read'];
+
+// Read-only Sales Rep admin role: customer:read only. It can enter the back office and open the
+// Sales Rep app read-only, but holds no perm that can create/edit/delete a rep or its login account.
+export const SALESREP_READONLY_ROLE = {
+  role_id: 'AGENT-TEST-SalesRep-ReadOnly',
+  role_name: 'AGENT-TEST-SalesRep-ReadOnly',
+  description: 'AGENT-TEST read-only Sales Rep admin role for SR-ADM-023 / candidate BL-SREP-003: holds customer:read (opens the Sales Rep back-office app + views reps) but EXCLUDES every mutate perm (customer:create/update/delete + platform:security:create/update/delete) so it cannot create/edit/delete a rep or its login account. Gates on customer member perms, NOT sales-rep:access. Safe to delete.',
+  permissions: [...SALESREP_READONLY_REQUIRED_PERMISSIONS],
+};
+
+// The read-only Sales Rep back-office (Manager) account. Email is an env-invariant AGENT-TEST
+// business key; the password is a secret resolved from .env.local at seed time. userType 'Manager'
+// = back-office user; isAdministrator MUST be false so the permission gate actually applies (an
+// administrator bypasses every check and could mutate reps freely).
+export const SALESREP_READONLY_ACCOUNT = {
+  aliasName: 'RESTRICTED_ADMIN_SALESREP_READONLY',
+  email: 'AGENT-TEST-restricted-salesrep@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'RESTRICTED_SALESREP_ADMIN_PASSWORD',
+  passwordFallback: 'Password1!', // localhost-safe default (mirrors user-provision.mjs PW_FALLBACK)
+};
+
+// The Platform endpoint the seeder's --verify step reads with the restricted token: it must reflect
+// customer:read present and the six write perms absent (isAdministrator=false), proving the gate
+// applies to this account. No mutating call is made — verification is read-only.
+export const CURRENTUSER_ENDPOINT = '/api/platform/security/currentuser';
+
+/**
+ * Assert the read-only Sales Rep admin role's permission set is correct — used by the validator AND
+ * the unit tests. Throws with a clear message on any violation.
+ */
+export function assertSalesRepReadOnlyRolePermissions(permissions = SALESREP_READONLY_ROLE.permissions) {
+  const set = new Set(permissions);
+  const leaked = SALESREP_READONLY_EXCLUDED_PERMISSIONS.filter((p) => set.has(p));
+  if (leaked.length) {
+    throw new Error(`read-only Sales Rep role must NOT carry write permission(s): ${leaked.join(', ')} — it must be able to VIEW reps but not mutate them (SR-ADM-023 boundary)`);
+  }
+  const missing = SALESREP_READONLY_REQUIRED_PERMISSIONS.filter((p) => !set.has(p));
+  if (missing.length) {
+    throw new Error(`read-only Sales Rep role is missing required permission(s): ${missing.join(', ')} (needs customer:read — the access/read gate for the Sales Rep back-office app)`);
+  }
+}
+
+// ============================================================================
+// SALES REP back-office RBAC matrix — the three DISCRIMINATING fixtures that,
+// with the read-only fixture above and the no-access CMS control, exercise the
+// COMPLETE SalesRepController permission matrix (api/sales-rep).
+// ============================================================================
+//
+// Source-verified matrix (SalesRepController.cs — multiple [Authorize] = logical AND):
+//   - Read   (search / roles / dictionaries / get) → customer:read
+//   - Create → customer:create  AND platform:security:create
+//   - Update → customer:update  AND platform:security:update
+//   - Delete → customer:delete  AND platform:security:delete
+//   - Account-ops (block / unblock / set-password) → platform:security:update ONLY
+//                 (NOT customer:update) — a distinct permission class
+//   - isAdministrator=true bypasses ALL of the above.
+//
+// The READONLY fixture (customer:read only) and the no-access CMS control cover the two
+// extremes. These three isolate the interesting interior of the matrix:
+//   ACCOUNTOPS — the account-ops class in isolation (platform:security:update WITHOUT
+//                customer:update): block/unblock/set-password succeed, entity Update 403s.
+//   MEMBERONLY — the AND from the other side (customer:update WITHOUT platform:security:update):
+//                entity Update STILL 403s, and block 403s.
+//   FULL       — the permissioned NON-admin positive control: holds the full CRUD + account-ops
+//                perm set and is NOT isAdministrator, so it exercises the REAL gate (not the bypass).
+//
+// The complete Sales Rep permission universe, split by side (member vs account). Declared once so
+// every fixture's include/exclude set is derived from the same source and they cannot drift.
+export const SALESREP_MEMBER_MUTATE_PERMISSIONS = ['customer:create', 'customer:update', 'customer:delete'];
+export const SALESREP_ACCOUNT_MUTATE_PERMISSIONS = ['platform:security:create', 'platform:security:update', 'platform:security:delete'];
+export const SALESREP_ALL_MUTATE_PERMISSIONS = [...SALESREP_MEMBER_MUTATE_PERMISSIONS, ...SALESREP_ACCOUNT_MUTATE_PERMISSIONS];
+
+/**
+ * Shared permission-set assertion (include-set present + exclude-set absent). The three named
+ * asserts below wrap this so each fixture mirrors assertSalesRepReadOnlyRolePermissions while the
+ * check logic lives in one place. Throws with a clear message on any violation.
+ */
+function assertPermissionSet(permissions, { required, excluded, label }) {
+  const set = new Set(permissions);
+  const leaked = (excluded || []).filter((p) => set.has(p));
+  if (leaked.length) {
+    throw new Error(`${label} role must NOT carry permission(s): ${leaked.join(', ')} (boundary violation)`);
+  }
+  const missing = (required || []).filter((p) => !set.has(p));
+  if (missing.length) {
+    throw new Error(`${label} role is missing required permission(s): ${missing.join(', ')}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 1. ACCOUNT-OPS: platform:security:update WITHOUT customer:update.
+//    Isolates the account-ops class — block/unblock/set-password should SUCCEED (they gate on
+//    platform:security:update only), while entity Update should 403 (it also needs customer:update,
+//    which this role lacks). Representative boundary = customer:update (the perm whose absence
+//    forbids entity Update).
+// ---------------------------------------------------------------------------
+export const SALESREP_ACCOUNTOPS_REQUIRED_PERMISSIONS = ['customer:read', 'platform:security:update'];
+export const SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSIONS = [
+  'customer:create', 'customer:update', 'customer:delete',
+  'platform:security:create', 'platform:security:delete',
+];
+export const SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSION = 'customer:update';
+
+export const SALESREP_ACCOUNTOPS_ROLE = {
+  role_id: 'AGENT-TEST-SalesRep-AccountOps',
+  role_name: 'AGENT-TEST-SalesRep-AccountOps',
+  description: 'AGENT-TEST Sales Rep admin role isolating the ACCOUNT-OPS class (SalesRepController matrix): holds customer:read + platform:security:update so block/unblock/set-password succeed, but EXCLUDES customer:update (+ the other member/account mutate perms) so entity Update 403s. Proves account-ops gate on platform:security:update ONLY, not customer:update. isAdministrator=false. Safe to delete.',
+  permissions: [...SALESREP_ACCOUNTOPS_REQUIRED_PERMISSIONS],
+};
+
+export const SALESREP_ACCOUNTOPS_ACCOUNT = {
+  aliasName: 'RESTRICTED_ADMIN_SALESREP_ACCOUNTOPS',
+  email: 'AGENT-TEST-salesrep-accountops@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'RESTRICTED_SALESREP_ADMIN_PASSWORD',
+  passwordFallback: 'Password1!',
+};
+
+export function assertSalesRepAccountOpsRolePermissions(permissions = SALESREP_ACCOUNTOPS_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: SALESREP_ACCOUNTOPS_REQUIRED_PERMISSIONS,
+    excluded: SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSIONS,
+    label: 'account-ops Sales Rep',
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 2. MEMBER-ONLY: customer:update WITHOUT platform:security:update.
+//    Proves the AND from the other side — entity Update still 403s (it needs BOTH customer:update
+//    AND platform:security:update; this role has only the member side), and block also 403s (it
+//    needs platform:security:update). Representative boundary = platform:security:update.
+// ---------------------------------------------------------------------------
+export const SALESREP_MEMBERONLY_REQUIRED_PERMISSIONS = ['customer:read', 'customer:update'];
+export const SALESREP_MEMBERONLY_EXCLUDED_PERMISSIONS = [
+  'customer:create', 'customer:delete',
+  'platform:security:create', 'platform:security:update', 'platform:security:delete',
+];
+export const SALESREP_MEMBERONLY_EXCLUDED_PERMISSION = 'platform:security:update';
+
+export const SALESREP_MEMBERONLY_ROLE = {
+  role_id: 'AGENT-TEST-SalesRep-MemberOnly',
+  role_name: 'AGENT-TEST-SalesRep-MemberOnly',
+  description: 'AGENT-TEST Sales Rep admin role proving the Update AND-gate from the member side (SalesRepController matrix): holds customer:read + customer:update but EXCLUDES platform:security:update (+ the other mutate perms), so entity Update STILL 403s (needs the account side too) and block 403s. Complements ACCOUNT-OPS. isAdministrator=false. Safe to delete.',
+  permissions: [...SALESREP_MEMBERONLY_REQUIRED_PERMISSIONS],
+};
+
+export const SALESREP_MEMBERONLY_ACCOUNT = {
+  aliasName: 'RESTRICTED_ADMIN_SALESREP_MEMBERONLY',
+  email: 'AGENT-TEST-salesrep-memberonly@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'RESTRICTED_SALESREP_ADMIN_PASSWORD',
+  passwordFallback: 'Password1!',
+};
+
+export function assertSalesRepMemberOnlyRolePermissions(permissions = SALESREP_MEMBERONLY_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: SALESREP_MEMBERONLY_REQUIRED_PERMISSIONS,
+    excluded: SALESREP_MEMBERONLY_EXCLUDED_PERMISSIONS,
+    label: 'member-only Sales Rep',
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 3. FULL: the permissioned NON-admin positive control.
+//    Holds the full CRUD + account-ops perm set (customer:read/create/update/delete +
+//    platform:security:create/update/delete) and is NOT isAdministrator — so a properly permissioned
+//    non-admin can do everything by satisfying the real [Authorize] gate, NOT by the admin bypass.
+//    There is no excluded permission (excluded set is []); the load-bearing negative assertion is
+//    isAdministrator=false.
+// ---------------------------------------------------------------------------
+export const SALESREP_FULL_REQUIRED_PERMISSIONS = [
+  'customer:read',
+  ...SALESREP_MEMBER_MUTATE_PERMISSIONS,   // customer:create/update/delete
+  ...SALESREP_ACCOUNT_MUTATE_PERMISSIONS,  // platform:security:create/update/delete
+];
+export const SALESREP_FULL_EXCLUDED_PERMISSIONS = []; // positive control — nothing excluded
+export const SALESREP_FULL_EXCLUDED_PERMISSION = null; // no boundary perm; gate is exercised, not bypassed
+
+export const SALESREP_FULL_ROLE = {
+  role_id: 'AGENT-TEST-SalesRep-Full',
+  role_name: 'AGENT-TEST-SalesRep-Full',
+  description: 'AGENT-TEST Sales Rep admin POSITIVE CONTROL (SalesRepController matrix): holds the full CRUD + account-ops perm set (customer:read/create/update/delete + platform:security:create/update/delete) yet is isAdministrator=false, so it exercises the REAL permission gate (not the admin bypass). Proves a properly-permissioned non-admin can create/update/delete a rep and run account-ops. Safe to delete.',
+  permissions: [...SALESREP_FULL_REQUIRED_PERMISSIONS],
+};
+
+export const SALESREP_FULL_ACCOUNT = {
+  aliasName: 'RESTRICTED_ADMIN_SALESREP_FULL',
+  email: 'AGENT-TEST-salesrep-full@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false, // load-bearing: the positive control must NOT be an administrator
+  passwordVar: 'RESTRICTED_SALESREP_ADMIN_PASSWORD',
+  passwordFallback: 'Password1!',
+};
+
+export function assertSalesRepFullRolePermissions(permissions = SALESREP_FULL_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: SALESREP_FULL_REQUIRED_PERMISSIONS,
+    excluded: SALESREP_FULL_EXCLUDED_PERMISSIONS,
+    label: 'full Sales Rep positive control',
+  });
+  if (SALESREP_FULL_ACCOUNT.isAdministrator !== false) {
+    throw new Error('full Sales Rep positive control MUST be isAdministrator=false — it has to exercise the real gate, not the admin bypass');
+  }
+}
+
 const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 /** Scan text for a runtime platform GUID that must never be committed to a spec/fixture. */
 export function findGuidLeaks(text) {

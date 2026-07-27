@@ -1,6 +1,6 @@
 # Design System Consistency — Coffee Theme
 
-> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: [BL-UI-002 (spacing grid)](../../knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) and [BL-UI-005 (alignment)](../../knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux). Canonical helper: [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts). Canonical suite: [`048b-layout-stability.csv`](../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
+> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: [BL-UI-002 (spacing grid)](../../knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) and [BL-UI-005 (alignment)](../../knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux). Canonical helper: [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts). Canonical suite: none — `048b-layout-stability.csv` was removed 2026-07-25; these checks now run only through this skill.
 
 ---
 
@@ -37,7 +37,9 @@ The result is your ground truth for this run. Diff component computed styles aga
 
 ## Spacing — BL-UI-002 (canonical)
 
-**Allowed computed values**, in px: `{0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 96}`
+**Allowed computed values**: do **not** hand-list them — they are derived. Import `SPACING_GRID` from [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts), which re-exports `design-tokens.generated.ts` (produced by `npm run tokens:sync` from Tailwind's default scale at the version vc-frontend pins, unioned with that repo's `theme.extend.spacing`). As of 2026-07-25 that is 39 values including the half-steps `2, 6, 10, 14` and the project additions `18, 68, 72, 76`.
+
+> ⚠️ This is **not** a strict 4 px multiple. The old `{0,4,8,…,96}` list was wrong and flagged the UI kit's own `vc-button` (10 px / 14 px padding) as a violation.
 
 Anything outside this set (13 px, 27 px, 41 px, etc.) is a violation, regardless of how the rendered output looks.
 
@@ -151,7 +153,7 @@ Example: VcButton — BL-UI-002 spacing off-grid (padding 13px)
 **Active theme preset:** [Coffee variant name — read from `<html data-theme>` or `--theme-name`]
 
 **Observed (computed):**
-- `padding-top: 13px` (off-grid — BL-UI-002 requires ∈ {0,4,8,12,16,20,24,32,…})
+- `padding-top: 13px` (off-grid — 13 px is on no Tailwind step; check against the derived `SPACING_GRID`, never a memorised list)
 - Token used: literal value, not `var(--spacing-*)`
 
 **Expected:**

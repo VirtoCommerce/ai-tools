@@ -85,7 +85,8 @@ password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/quotes
 [ASSERT] inspect DOM — calendar popup must no longer be visible","[STATE] calendar popup is CLOSED after pressing Escape (dialog or floating element removed from DOM)
 [DOM] calendar grid cells no longer visible after Escape
 [STATE] focus returns to the calendar-open trigger or date input","[CONSOLE] no JS errors during Escape key handling
-[NETWORK] no premature GetQuotes request triggered by Escape","Calendar popup still visible after Escape press (BUG-VCST-4892-1 — same VcCalendar component as orders filter, same keyboard-trap defect applies to all usages); JS error on Escape keydown","Close calendar if still open; clear date inputs","VCST-4892","Draft""QUOTE-032","VCST-4892 — Quotes Date Picker: Applied Date Range Filter Persists After Back Navigation (FAIL-DETECT — Bug Still Open)","Quotes > Date Filter > Navigation","High","PROPOSED-BL-QUOTE-004","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[NETWORK] no premature GetQuotes request triggered by Escape","Calendar popup still visible after Escape press (BUG-VCST-4892-1 — same VcCalendar component as orders filter, same keyboard-trap defect applies to all usages); JS error on Escape keydown","Close calendar if still open; clear date inputs","VCST-4892","Draft"
+"QUOTE-032","VCST-4892 — Quotes Date Picker: Applied Date Range Filter Persists After Back Navigation (FAIL-DETECT — Bug Still Open)","Quotes > Date Filter > Navigation","High","PROPOSED-BL-QUOTE-004","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 B2B org buyer logged in as {{ORG_USER_EMAIL}}; /account/quotes page loaded; account has quotes on multiple dates","url={{FRONT_URL}}
 user={{ORG_USER_EMAIL}}
 password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/quotes
