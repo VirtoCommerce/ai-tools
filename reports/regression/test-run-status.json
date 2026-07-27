@@ -1,18 +1,18 @@
 {
-  "runId": "REG-2026-07-27-0816",
+  "runId": "REG-2026-07-27-1010",
   "status": "completed",
   "environment": "vcst",
   "selection": "028",
-  "startedAt": "2026-07-27T08:16:56Z",
-  "finishedAt": "2026-07-27T09:20:09Z",
-  "context": "Single-suite run: 028 Cart Core (Frontend, revenue-critical purchase-flow). One isolated runner agent on playwright-chrome (slot 1). No seed profile. Env: vcst-qa @ Platform 3.1048.0, Theme 2.54.0-pr-2395-fd70.",
-  "totals": { "suites": 1, "testCases": 50 },
+  "startedAt": "2026-07-27T10:10:11Z",
+  "finishedAt": "2026-07-27T11:12:30Z",
+  "context": "Re-run of 028 Cart Core after the CART-036 three-way split (CART-036/065/066) and the scoped qa-review-tests --fix pass. 52 cases. Env byte-identical to REG-2026-07-27-0816 (Platform 3.1048.0, Theme 2.54.0-pr-2395-fd70), so deltas are attributable to test-case changes. All 5 pre-declared per-case predictions confirmed.",
+  "totals": { "suites": 1, "testCases": 52 },
   "suites": [
     {
       "id": "028",
       "name": "Cart Core",
       "file": "regression/suites/Frontend/cart/028-cart-core.csv",
-      "testCount": 50,
+      "testCount": 52,
       "priority": "P1",
       "agent": "qa-frontend-expert",
       "lane": "browser",
@@ -21,7 +21,7 @@
       "status": "done",
       "pass": 45,
       "fail": 3,
-      "blocked": 1,
+      "blocked": 3,
       "skipped": 1,
       "attempts": 1
     }

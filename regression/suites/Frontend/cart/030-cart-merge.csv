@@ -1,4 +1,4 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 CART-100,Cart Merge - Anonymous Then Register,Cart > Merge,High,BL-CART-008,"ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -20,7 +20,8 @@ Product available in stock; user is not yet registered; browsing store anonymous
 [STATE] verify Product_1 present in cart with qty=2
 [STATE] verify cart badge shows correct count","[API] mergeCarts or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors during registration and cart merge
-[NETWORK] no 4xx/5xx during merge",guest items lost after registration; cart empty for new account; qty mismatch after merge,Remove items from cart; delete test account if needed,C389651,Manual
+[NETWORK] no 4xx/5xx during merge
+[API] addItem mutation response errors[] is empty",guest items lost after registration; cart empty for new account; qty mismatch after merge,Remove items from cart; delete test account if needed,C389651; VCST-2976,Manual
 CART-101,Cart Merge - No Duplicate SKUs,Cart > Merge,High,"BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Same Product A exists in both anonymous cart and registered user cart; user currently signed out","url={{FRONT_URL}}
@@ -44,7 +45,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [STATE] verify qty=3 (sum of 2+1)
 [STATE] verify no duplicate line items","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors on sign-in and cart page
-[NETWORK] no 4xx/5xx during merge",duplicate line items created for same SKU; qty not summed (shows 1 or 2 instead of 3); two separate entries in cart,Remove items from cart,C398783,Manual
+[NETWORK] no 4xx/5xx during merge
+[API] addItem mutation response errors[] is empty",duplicate line items created for same SKU; qty not summed (shows 1 or 2 instead of 3); two separate entries in cart,Remove items from cart,C398783; VCST-2674,Manual
 CART-102,Cart Merge - Currency Mismatch,Cart > Merge,High,"BL-CART-008, BL-CART-004","ECL-4.1, ECL-7.3, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: A registered user account whose default currency is EUR must exist in QA. Set {{EUR_USER_EMAIL}} and {{EUR_USER_PASSWORD}} env vars. Standard {{USER_EMAIL}} uses USD default — this user is insufficient. Verify EUR price list exists for test products.","url={{FRONT_URL}}
@@ -63,7 +65,8 @@ password={{EUR_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest with U
 [STATE] verify prices display in customer default currency (EUR)
 [STATE] if product unavailable in EUR, verify warning message shown","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors during currency merge
-[NETWORK] no 4xx/5xx",mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency,Remove items from cart,C398784,Manual
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency,Remove items from cart,C398784; VCST-2961,Manual
 CART-103,Cart Merge - Persists After Logout and Re-login,Cart > Merge,High,BL-CART-008,"ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Anonymous user adds products; user logs in (merge happens); merged cart established","url={{FRONT_URL}}
@@ -87,7 +90,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [STATE] verify no items lost or duplicated after logout/login cycle","[API] getCart query returns same items after re-login
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
-[API] mergeCarts mutation response errors[] is empty",merged items lost after logout; cart empty on re-login; items duplicated after re-login; subtotal mismatch,Remove items from cart,C398785,Manual
+[API] mergeCarts mutation response errors[] is empty
+[API] addItem mutation response errors[] is empty",merged items lost after logout; cart empty on re-login; items duplicated after re-login; subtotal mismatch,Remove items from cart,C398785; VCST-2977,Manual
 CART-104,Cart Merge - Different Product Types,Cart > Merge,Medium,"BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: A configurable product with selectable variant (size or color, not just quantity) must exist in QA catalog and B2B virtual catalog. Set @td(CFG_HAT.slug) env var. Simple product {{TEST_SKU}} also required. Registered user {{USER_EMAIL}} logged in.","url={{FRONT_URL}}
@@ -111,8 +115,9 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [STATE] verify configurable product retains variant attributes (size, color)
 [STATE] verify no missing or mismatched products","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",configurable product loses variant attributes after merge; simple product missing; product types confused or swapped,Remove items from cart,C398786,Manual
-CART-105,Cart Merge - Smart Merge Failure Handling,Cart > Merge,Medium,BL-CART-006,"ECL-7.3, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",configurable product loses variant attributes after merge; simple product missing; product types confused or swapped,Remove items from cart,C398786,Manual
+CART-105,Cart Merge - Smart Merge Failure Handling,Cart > Merge,Medium,BL-CART-008,"ECL-7.3, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 TOOL-LIMITATION: Network fault injection (interrupting merge mid-request) cannot be executed via MCP browser agent (requires service worker interception or proxy-level throttling). Revert to API-layer negative test: send malformed mergeCarts mutation and verify backend error response. MCP agent: verify storefront graceful error handling on API error response.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -121,15 +126,14 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] sign in as {{USER_EMAIL}} (normal merge)
 [NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify cart page loads without JS crash (no unhandled exception banner)
-[ASSERT] verify cart shows consistent state (either merged items or empty cart with prompt)
 [API] send malformed mergeCarts mutation via Postman/curl (missing required userId)","[DOM] cart page accessible and functional after login (even if merge produced no-op result) (visible)
 [STATE] no JS unhandled exception displayed to user
 [API] malformed merge request returns errors[] with descriptive message (not 500 Internal Server Error)
 [CONSOLE] no unhandled JS exceptions during normal sign-in merge flow
 [STATE] verify API returns structured error response (not HTTP 500); errors[] array populated","[CONSOLE] no unhandled JS exceptions
-[NETWORK] no 500 on merge API response for normal sign-in flow",page crashes on sign-in; cart inaccessible after login; API returns 500 for malformed merge request with no error detail,none (verify cart state),C396997,Manual
-CART-106,Cart Merge Selection - Empty Cart + Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-006,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 500 on merge API response for normal sign-in flow
+[API] addItem mutation response errors[] is empty",page crashes on sign-in; cart inaccessible after login; API returns 500 for malformed merge request with no error detail,none (verify cart state),C396997,Manual
+CART-106,Cart Merge Selection - Empty Cart + Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Default 'Selected for checkout' = ON in store settings; Cart1 (user) is empty; Cart2 (guest) has items with all selected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -152,8 +156,9 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [STATE] verify Proceed to Checkout button active","[API] getCart returns all items with selectedForCheckout=true
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
-[API] mergeCarts mutation response errors[] is empty",items not selected after merge; Proceed to Checkout disabled; items missing from merged cart,Remove items from cart,C389850,Manual
-CART-107,Cart Merge Selection - Both Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-006,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] mergeCarts mutation response errors[] is empty
+[API] addItem mutation response errors[] is empty",items not selected after merge; Proceed to Checkout disabled; items missing from merged cart,Remove items from cart,C389850,Manual
+CART-107,Cart Merge Selection - Both Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Default 'Selected for checkout' = ON; Cart1 (user) has items all selected; Cart2 (guest) has items all selected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -176,7 +181,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",some items deselected after merge; Order Summary only includes partial items; items missing,Remove items from cart,C389851,Manual
-CART-108,Cart Merge Selection - Both Unselected All (ON),Cart > Merge > Selection,Medium,BL-CART-006,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-108,Cart Merge Selection - Both Unselected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). User has items manually unselected via checkbox; guest has items manually unselected. If store setting differs from ON, this case is N/A.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -202,8 +207,9 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",items missing after merge; selection state inconsistent; Order Summary incorrect,Remove items from cart,C389852,Manual
-CART-109,Cart Merge Selection - Selected + Unselected (ON),Cart > Merge > Selection,Medium,BL-CART-006,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-109,Cart Merge Selection - Selected + Unselected (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
+Preconditions note: state from CART-108 (same guest+user merge mechanics; CART-108 unselects items in BOTH carts, this case keeps the USER cart items selected and only unselects the GUEST cart — part of the same pairwise selection-state matrix, kept independently executable).
 Default 'Selected for checkout' = ON; Cart1 (user) has all items selected; Cart2 (guest) has all items unselected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
@@ -228,7 +234,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",all items forced to same selection state; Order Summary wrong; selection states swapped,Remove items from cart,C389853,Manual
-CART-110,Cart Merge Selection - Mixed + Mixed (ON),Cart > Merge > Selection,Medium,BL-CART-006,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-110,Cart Merge Selection - Mixed + Mixed (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). Cart1 (user) has mix of selected and unselected items; Cart2 (guest) has mix of selected and unselected items. If store setting differs, this case is N/A.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -253,7 +259,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",all items forced selected or deselected; per-item state lost; Order Summary miscalculated,Remove items from cart,C389854,Manual
-CART-111,Cart Merge Selection - Empty + Unselected All (OFF),Cart > Merge > Selection,Medium,BL-CART-006,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-111,Cart Merge Selection - Empty + Unselected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF in Admin > Stores > Cart Settings. QA default is ON — this test is BLOCKED unless config is changed for this run. SEED: document config change and restore in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -274,8 +280,9 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [STATE] verify Proceed to Checkout blocked or warns about no selected items","[API] getCart returns items with selectedForCheckout=false
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
-[API] mergeCarts mutation response errors[] is empty",items auto-selected despite OFF setting; Proceed to Checkout active with no selection,Remove items from cart; restore store setting to ON,C389916,Manual
-CART-112,Cart Merge Selection - Both Selected All (OFF),Cart > Merge > Selection,Medium,BL-CART-006,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] mergeCarts mutation response errors[] is empty
+[API] addItem mutation response errors[] is empty",items auto-selected despite OFF setting; Proceed to Checkout active with no selection,Remove items from cart; restore store setting to ON,C389916,Manual
+CART-112,Cart Merge Selection - Both Selected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -298,7 +305,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",manually selected items reset to unselected after merge; Order Summary empty despite selections,Remove items from cart; restore store setting to ON,C389917,Manual
-CART-113,Cart Merge Selection - Mixed + Mixed (OFF),Cart > Merge > Selection,Medium,BL-CART-006,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-113,Cart Merge Selection - Mixed + Mixed (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -323,36 +330,37 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",per-item selection lost; all forced to unselected; Order Summary wrong,Remove items from cart; restore store setting to ON,C389920,Manual
-CART-114,"Cart Merge - Configurable Product, Different Options Create Separate Lines",Cart > Merge,High,"BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
+CART-114,"Cart Merge - Configurable Product, Different Options Create Separate Lines",Cart > Merge,High,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:RESET_CART]
-SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available with at least 2 selectable Product-section options in 'Select your fav color' (e.g., Black, Green). Registered user {{USER_EMAIL}} exists with empty persisted cart. NOTE: do NOT hardcode option prices — env catalog data may change; assert structural invariants (distinct lines, distinct totals) instead.","url={{FRONT_URL}}
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available with at least 2 selectable Product-section options in the REQUIRED 'Color *' section (observed 2026-07-27: 'Black hat', 'Green hat' (default-selected), 'Red hat', 'Beige hat'). Resolve the PDP via @td(CFG_HAT.url) — never hand-compose /product/<sku>, which renders a client-side soft-404 behind HTTP 200. Registered user {{USER_EMAIL}} exists with empty persisted cart. NOTE: do NOT hardcode option prices — env catalog data may change; assert structural invariants (distinct lines, distinct totals) instead.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_slug=@td(CFG_HAT.slug)
 hat_url={{FRONT_URL}}@td(CFG_HAT.url)
-optionA=color: Black
-optionB=color: Green","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated session, empty cart)
+optionA=Black hat
+optionB=Green hat","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated session, empty cart)
 [NAV] open Configurable Hat PDP at {{FRONT_URL}}@td(CFG_HAT.url)
 [WAIT] 'Configure the parameters' widget visible
-[ACT] in 'Select your fav color' section choose option A (e.g., Black)
+[ACT] in 'Color' section choose option A (e.g., Black)
 [ASSERT] PDP total reflects option A surcharge (record value as totalA)
 [ACT] click Add to cart
 [WAIT] success notification
 [ASSERT] cart badge shows 1, Add to cart changes to Update cart, the link ""Create new configuration"" is visible
 [ACT] Click on ""Create new configuration"" on Hat PDP
 [WAIT] Configure widget visible
-[ACT] in 'Select your fav color' section choose option B (e.g., Green) — different from option A
+[ACT] in 'Color' section choose option B (e.g., Green) — different from option A
 [ASSERT] PDP total reflects option B surcharge (record value as totalB; totalB != totalA)
 [ACT] click Add to cart
 [WAIT] success notification
 [ASSERT] cart badge shows 2
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] cart shows exactly 2 line items, both pointing to Configurable Hat base product
-[ASSERT] one line displays option A configuration; the other displays option B configuration
+[ACT] expand the 'Components list' toggle on each cart line to reveal its configuration summary
+[ASSERT] one line's Components list displays option A; the other's displays option B
 [ASSERT] line totals equal totalA and totalB respectively (no collapse, no qty merge)
 [ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers anonymous→user cart merge)
 [NAV] navigate to {{FRONT_URL}}/cart","[STATE] 2 distinct cart line items for the same base product preserved through merge
-[DOM] line items display different configuration option labels (option A vs option B) in the configuration summary (visible)
+[DOM] with 'Components list' expanded, the two lines display different configuration option labels (option A vs option B); the collapsed per-line properties are the base product's attributes and are identical on both lines, so they must NOT be used to distinguish the configurations (visible)
 [STATE] BL-CART-007 exception honored: different product configurations of the same base SKU create separate lines
 [MATH] cart subtotal = sum of the two configured line totals
 [STATE] cart badge reflects 2 items after merge
@@ -363,18 +371,19 @@ optionB=color: Green","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated
 [STATE] cart subtotal = totalA + totalB","[API] mergeCarts mutation response errors[] is empty
 [API] getCart returns items[] of length 2 with distinct configurationItems values per line
 [CONSOLE] no JS errors during sign-in and cart merge
-[NETWORK] no 4xx/5xx on cart fetch or merge mutation",2 lines collapsed into 1 with summed qty after merge; configurationItems mismatched or swapped between lines; one configuration dropped silently; cart badge shows 1 instead of 2 after sign-in,Remove all items from cart,GAP-CART-MERGE-CFG-001,Manual
-CART-115,Cart Merge - Same Configurable Product Same Configuration Stays Separate Lines (VCST-5053),Cart > Merge,High,"BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx on cart fetch or merge mutation
+[API] add-to-cart (configured item) mutation response errors[] is empty",2 lines collapsed into 1 with summed qty after merge; configurationItems mismatched or swapped between lines; one configuration dropped silently; cart badge shows 1 instead of 2 after sign-in,Remove all items from cart,GAP-CART-MERGE-CFG-001; VCST-4071,Manual
+CART-115,Cart Merge - Same Configurable Product Same Configuration Stays Separate Lines (VCST-5053),Cart > Merge,High,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available; user {{USER_EMAIL}} starts with empty persisted cart. The user-cart configuration and the guest-cart configuration MUST be byte-identical (same option in 'Select your fav color', same/empty Text section, no File section uploads). DESIGN (VCST-5053, vc-module-x-cart >=3.1012.0): configured line items ALWAYS stay separate lines on merge — identical configs are NOT consolidated or quantity-summed (CartAggregate.InnerAddLineItemAsync short-circuits on IsConfigured; no config-content equality exists). Assert two separate lines, not a summed single line.","url={{FRONT_URL}}
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available; user {{USER_EMAIL}} starts with empty persisted cart. The user-cart configuration and the guest-cart configuration MUST be byte-identical (same option in the REQUIRED 'Color *' section, same/empty 'Your text' section, same 'Print' state). Observed 2026-07-27: sections are 'Color *' (required), 'Print', 'Your text'. DESIGN (VCST-5053, vc-module-x-cart >=3.1012.0): configured line items ALWAYS stay separate lines on merge — identical configs are NOT consolidated or quantity-summed (CartAggregate.InnerAddLineItemAsync short-circuits on IsConfigured; no config-content equality exists). Assert two separate lines, not a summed single line.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_url={{FRONT_URL}}@td(CFG_HAT.url)
-option=color: Black","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+option=Black hat","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] open Configurable Hat PDP
 [WAIT] Configure widget visible
-[ACT] select option A (e.g., color: Black) in 'Select your fav color' section
-[ACT] leave other optional sections at defaults
+[ACT] select option A (e.g., Black hat) in 'Color' section
+[ACT] leave the remaining sections ('Print', 'Your text') at their defaults
 [ACT] click Add to cart
 [WAIT] success notification
 [ASSERT] cart badge shows 1
@@ -385,7 +394,7 @@ option=color: Black","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}} as guest
 [NAV] open the same Configurable Hat PDP
 [WAIT] Configure widget visible
-[ACT] select the SAME option A (color: Black) with identical other-section state
+[ACT] select the SAME option A (Black hat) with identical other-section state
 [ACT] click Add to cart
 [WAIT] success notification
 [NAV] Go to cart. Click on cart icon on the top header. Navigate to {{FRONT_URL}}/cart page
@@ -395,26 +404,27 @@ option=color: Black","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart","[STATE] 2 separate line items after merge even though both configurations are identical (configured items are never deduplicated — VCST-5053)
 [DOM] one line qty=""1"", the other qty=2; no quantity summing across the two configured lines
 [MATH] cart subtotal = configured unit price × 3 (sum of both lines)
-[STATE] both lines retain option A (color: Black) configuration
+[STATE] both lines retain option A (Black hat) configuration
 [STATE] BL-CART-007 exception: configured line items always create separate lines; identical configs are NOT collapsed into one
 [STATE] cart shows exactly 2 line items for Configurable Hat (configured items never consolidate — VCST-5053)
 [STATE] one line has quantity=1 (from user cart), the other quantity=2 (from guest cart); quantities are NOT summed into a single line
-[STATE] both lines display the same option A (color: Black) configuration
+[STATE] both lines display the same option A (Black hat) configuration
 [STATE] cart subtotal = configured unit price × 3 (sum across both lines)","[API] mergeCarts mutation errors[] is empty
 [API] getCart returns items[] of length 2, both IsConfigured with matching configurationItems (quantity 1 and quantity 2 respectively)
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","two configured lines collapsed into one summed line (pre-VCST-5053 behavior, now incorrect); line count not equal to 2; configuration option lost or replaced on merge",Remove items from cart,GAP-CART-MERGE-CFG-002; VCST-5053,Manual
-CART-116,"Cart Merge - Configurable Product, Different Configs Across User and Guest Carts",Cart > Merge,Medium,"BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] add-to-cart (configured item) mutation response errors[] is empty","two configured lines collapsed into one summed line (pre-VCST-5053 behavior, now incorrect); line count not equal to 2; configuration option lost or replaced on merge",Remove items from cart,GAP-CART-MERGE-CFG-002; VCST-5053,Manual
+CART-116,"Cart Merge - Configurable Product, Different Configs Across User and Guest Carts",Cart > Merge,Medium,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: Configurable Hat product (alias CFG_HAT) with at least 2 distinct Product-section options. User {{USER_EMAIL}} starts with empty persisted cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_url={{FRONT_URL}}@td(CFG_HAT.url)
-optionA=color: Black
-optionB=color: Green","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+optionA=Black hat
+optionB=Green hat","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] open Configurable Hat PDP
 [WAIT] Configure widget visible
-[ACT] select option A (e.g., color: Black) in 'Select your fav color' section
+[ACT] select option A (e.g., Black hat) in 'Color' section
 [ACT] click Add to cart with qty=1
 [WAIT] success notification
 [ASSERT] user cart shows 1 line item with option A configuration
@@ -425,7 +435,7 @@ optionB=color: Green","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}} as guest
 [NAV] open the same Configurable Hat PDP
 [WAIT] Configure widget visible
-[ACT] select option B (e.g., color: Green) — different from option A
+[ACT] select option B (e.g., Green hat) — different from option A
 [ACT] click Add to cart with qty=1
 [WAIT] success notification
 [ASSERT] guest cart shows 1 line item with option B configuration
@@ -441,7 +451,8 @@ optionB=color: Green","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [STATE] cart subtotal = configured total A + configured total B","[API] mergeCarts mutation errors[] is empty
 [API] getCart returns items[] of length 2 with distinct configurationItems values per line
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",2 configurations collapsed into 1 line after merge; configuration data swapped or lost between lines; one of the two lines dropped; quantities summed instead of separate lines preserved,Remove items from cart,GAP-CART-MERGE-CFG-003,Manual
+[NETWORK] no 4xx/5xx
+[API] add-to-cart (configured item) mutation response errors[] is empty",2 configurations collapsed into 1 line after merge; configuration data swapped or lost between lines; one of the two lines dropped; quantities summed instead of separate lines preserved,Remove items from cart,GAP-CART-MERGE-CFG-003,Manual
 CART-098,"Cart Merge - Combined Quantity Exceeding Available Stock Is Retained But Explicitly Flagged, Not Silently Oversold (Boundary)",Cart > Merge,High,"BL-CART-001, BL-CART-008","ECL-2.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: low-stock fixture @td(PROD_LOW_STOCK.sku) (stock <= 10) exists in catalog and B2B virtual catalog. Registered user {{USER_EMAIL}} starts with this SKU already in their account cart at a quantity such that adding the guest-cart quantity on merge would exceed available stock. Design Technique: Boundary Value Analysis (merge-time quantity summation crossing the stock ceiling).","url={{FRONT_URL}}
@@ -466,4 +477,5 @@ low_stock_sku=@td(PROD_LOW_STOCK.sku)","[NAV] log in to {{FRONT_URL}} as {{USER_
 [DOM] the merged line shows the verbatim message ""You can order maximum 5 item(s)"", the '+' control is disabled, and ""In stock 5"" is shown {OBSERVED} (live-verified as real reactive validation, not a static banner — reducing the quantity to 5 made the message disappear immediately)","[API] mergeCarts mutation response errors[] is empty
 [API] getCart after merge: the line's quantity reflects the raw summed value (may exceed available stock) AND the line carries an explicit stock-validation flag/message when it does
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx during merge",merged quantity exceeds available stock with NO flag/message shown (silent oversell); checkout proceeds with an oversold quantity and no warning; the stock-exceeded message is a static label that does not react to a quantity change (does not disappear when qty is reduced to the stock limit); merge mutation errors[] non-empty with no user-facing explanation,Remove all items from cart; sign out,Coverage Gap Analysis,Draft
+[NETWORK] no 4xx/5xx during merge
+[API] addItem mutation response errors[] is empty",merged quantity exceeds available stock with NO flag/message shown (silent oversell); checkout proceeds with an oversold quantity and no warning; the stock-exceeded message is a static label that does not react to a quantity change (does not disappear when qty is reduced to the stock limit); merge mutation errors[] non-empty with no user-facing explanation,Remove all items from cart; sign out,Coverage Gap Analysis; VCST-3926,Draft
