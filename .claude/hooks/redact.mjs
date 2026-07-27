@@ -16,7 +16,12 @@
 export const REDACTIONS = [
   // URL userinfo — scheme://user:PASSWORD@host (postgres/mysql/redis/amqp/http proxy connection
   // strings, common in Bash tool inputs). Keep the username as signal, drop the password.
-  [/\b([a-z][\w+.-]*:\/\/)([^\s:@/]+):[^\s@/]+@/gi, "$1$2:«redacted»@"],
+  [/\b([a-z][\w+.-]*:\/\/)([^\s:@/]*):[^\s@/]+@/gi, "$1$2:«redacted»@"],
+  // PEM private-key blocks (SSH id_rsa / RSA / EC / OpenSSH) echoed by a failed ssh/git/cat — a
+  // bare multiline secret with no keyword and no `=`, so no other rule fires (PR #143 R2 NA-1/H1).
+  // Runs BEFORE the key/value rule so a PEM-in-JSON value is collapsed first; `[^-]*` matches the
+  // `OPENSSH `/`RSA `/`EC ` variant word, `[\s\S]*?` the base64 body (spaces after the \s+ collapse).
+  [/-----BEGIN[^-]*PRIVATE KEY-----[\s\S]*?-----END[^-]*PRIVATE KEY-----/gi, "«private-key»"],
   // Authorization header — redact the CREDENTIAL, not just the scheme word. An optional scheme
   // (Bearer/Basic/Digest/Negotiate/NTLM) is consumed so `Authorization: Basic <b64>` and
   // `Authorization: Bearer <tok>` alike lose the credential. A `:`/`=` is required so prose
@@ -40,7 +45,11 @@ export const REDACTIONS = [
   // longer LEAK into the local `<sid>.jsonl` (upstream stays safe by the closed schema regardless —
   // this is local secret-at-rest hygiene). `pat(?![a-z])` matches `ADO_PAT`/`_PAT=` but spares
   // `path`/`pattern`; over-redacting a rare `compat=…` key is the accepted fail-safe direction.
-  [/\b([\w-]{0,40}?(?:token|api[_-]?key|access[_-]?key|private[_-]?key|credentials?|secret|password|passwd|pwd|accountkey|sharedaccesssignature|pat(?![a-z]))[\w-]{0,40})"?\s*[:=]\s*"?\S+/gi, "$1=«redacted»"],
+  // The value is captured as EITHER a fully-quoted string (`"[^"]*"?`) OR a single unquoted token
+  // (`\S+`). The quoted branch is what fixes PR #143 R2 H2: the old trailing `"?\S+` ate only the
+  // FIRST whitespace-delimited token, so a multi-word quoted value (`"password":"correct horse
+  // battery staple"`, a JSON `private_key` PEM body) leaked everything after its first space.
+  [/\b([\w-]{0,40}?(?:token|api[_-]?key|access[_-]?key|private[_-]?key|credentials?|secret|password|passwd|pwd|accountkey|sharedaccesssignature|session[_-]?id|pat(?![a-z]))[\w-]{0,40})"?\s*[:=]\s*(?:"[^"]*"?|\S+)/gi, "$1=«redacted»"],
   [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"], // JWTs
   [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"], // card numbers
   [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"], // GitHub classic tokens (ghp_/gho_/ghu_/ghs_/ghr_)
@@ -54,6 +63,12 @@ export const REDACTIONS = [
   [/\bglpat-[A-Za-z0-9_-]{20,}/g, "«gitlab-token»"], // GitLab personal access tokens
   [/\bxox[baprs]-[A-Za-z0-9-]{10,}/g, "«slack-token»"], // Slack tokens (xoxb/xoxa/xoxp/xoxr/xoxs)
   [/\bsig=[^&\s]+/gi, "sig=«redacted»"], // Azure SAS signature query param
+  // PR #143 R2 (R3) — distinctive-prefix secrets with no false-positive risk (bare, no key=value):
+  [/\b[rs]k_(?:live|test)_[A-Za-z0-9]{10,}\b/g, "«stripe-key»"], // Stripe secret/restricted keys
+  [/\bwhsec_[A-Za-z0-9]{10,}\b/g, "«stripe-whsec»"], // Stripe webhook signing secret
+  [/\bnpm_[A-Za-z0-9]{36}\b/g, "«npm-token»"], // npm automation/publish token
+  [/https:\/\/hooks\.slack\.com\/services\/\S+/gi, "«slack-webhook»"], // Slack incoming-webhook URL (secret is the path)
+  [/\bset-cookie\b\s*:\s*\S+/gi, "set-cookie: «redacted»"], // Set-Cookie header value (session hijack)
 ];
 
 /** Apply every redaction rule to `s`. Never throws; coerces null/undefined to "". */

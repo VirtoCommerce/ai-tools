@@ -224,6 +224,7 @@ const T = {
 // state.json without limit (the struggle detectors only need a recent window;
 // span.opCount / span.sawDecisive carry the whole-span aggregates they need).
 const OPS_CAP = 120;
+const FLAGGED_CAP = 200; // hard backstop on distinct flagged signatures (M2 — see emitSpan)
 
 // ─── signal counts ───────────────────────────────────────────────────────────
 const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail"];
@@ -483,7 +484,13 @@ function emitSpan(jsonlPath, state, span, endTs) {
   if (escalationUnit && !/vc-self-check/i.test(span.name)) state.sawPluginSpan = true;
   if (escalationUnit && rec.outcome !== "success" && rec.outcome !== "recovered" && !/vc-self-check/i.test(span.name)) {
     const sig = hash(`${span.kind}|${span.name}|${rec.outcome}|${topSignal(span)}`);
-    state.flagged.push({ id: span.id, kind: span.kind, name: span.name, outcome: rec.outcome, struggle: rec.struggle, signature: sig });
+    // Dedup by signature (+ hard cap): `flagged` is re-serialized WHOLE into every terminal `finalize`
+    // record, and Stop fires each turn, so an uncapped per-occurrence push grew `<sid>.jsonl` ~O(F×T)
+    // over a long session (PR #143 R2 M2). The tail-trigger + diagnostician already dedup by signature,
+    // so only DISTINCT signatures carry information — keep the first occurrence of each.
+    if (!state.flagged.some((f) => f.signature === sig) && state.flagged.length < FLAGGED_CAP) {
+      state.flagged.push({ id: span.id, kind: span.kind, name: span.name, outcome: rec.outcome, struggle: rec.struggle, signature: sig });
+    }
   }
 }
 
@@ -508,7 +515,10 @@ function closeSkill(jsonlPath, state, endTs) {
 function scanTranscript(jsonlPath, transcriptPath, state) {
   if (!transcriptPath || !existsSync(transcriptPath)) return;
   let size;
-  try { size = statSync(transcriptPath).size; } catch { return; }
+  // A read error here is NOT "clean" — record it so cmdFinalize withholds the positive
+  // "no plugin issues detected" line (a broken collector must not assert health it never
+  // measured — PR #143 R2 OBS1). Best-effort; still never throws.
+  try { size = statSync(transcriptPath).size; } catch { state.scanErrors = (state.scanErrors || 0) + 1; return; }
 
   // Incremental read (S3, PR #143 R2): read ONLY the bytes appended since the last scan, so a
   // long session no longer re-reads + re-splits the WHOLE transcript on every skill-boundary /
@@ -521,7 +531,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     // mid-upgrade (honor its processedLines cursor), or a shorter-than-offset file (rotated /
     // truncated / replaced → re-scan from scratch). Then switch to the byte offset.
     let content;
-    try { content = readFileSync(transcriptPath, "utf8"); } catch { return; }
+    try { content = readFileSync(transcriptPath, "utf8"); } catch { state.scanErrors = (state.scanErrors || 0) + 1; return; }
     const parts = content.split("\n");
     const allComplete = parts.slice(0, Math.max(0, parts.length - 1)); // complete lines only
     if (size < state.scannedBytes) state.processedLines = 0; // rotated → old cursor is meaningless
@@ -542,7 +552,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         const n = readSync(fd, buf, 0, len, state.scannedBytes);
         text = buf.toString("utf8", 0, n);
       } finally { closeSync(fd); }
-    } catch { return; }
+    } catch { state.scanErrors = (state.scanErrors || 0) + 1; return; }
     const lastNl = text.lastIndexOf("\n");
     if (lastNl < 0) return; // bytes appended but no complete line yet — do not advance
     lines = text.slice(0, lastNl).split("\n"); // all NEW complete lines
@@ -809,6 +819,7 @@ function freshState(ev, sid) {
     spanSeq: 0,
     processedLines: 0,
     scannedBytes: 0, // byte offset into the transcript, kept at a line boundary (S3 incremental read)
+    scanErrors: 0, // count of transcript-scan read errors this session (OBS1 — gates the clean line)
     startTs: nowIso(), // session-start anchor (init time) — the synthesized-command-span start (Fix 2)
     transcriptPath: ev.transcript_path ?? null,
     currentCommand: null,
@@ -856,6 +867,7 @@ function loadState(statePath, ev, sid) {
       j.cleanLineOffered = j.cleanLineOffered || false;
       j.staleInactiveSessions = j.staleInactiveSessions || 0;
       j.staleInactiveFiles = j.staleInactiveFiles || 0;
+      j.scanErrors = j.scanErrors || 0; // OBS1: transcript-scan read-error tally, persisted across turns
       j.testEnv = j.testEnv ?? (process.env.TEST_ENV ?? null);
       return j;
     } catch {
@@ -1271,7 +1283,10 @@ async function cmdFinalize(ev) {
   const lineFallback = /^(on|1|true|yes)$/i.test(process.env.VC_FIX_DIAG_LINE_FALLBACK || "");
   const fallbackClean = lineFallback && !completePending && !state.cleanLineOffered;
   const cleanEligible = pluginActivity && (completePending || fallbackClean);
-  const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && cleanEligible;
+  // `!state.scanErrors`: a session whose transcript scan hit a read error measured NOTHING, so a
+  // "no plugin issues detected" line would assert health that was never checked (PR #143 R2 OBS1).
+  // Withhold the clean line in that case — the finalize record still carries scanErrors for audit.
+  const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && uniqueFresh.length === 0 && cleanEligible && !state.scanErrors;
   // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were detected
   // at init. It ALWAYS rides a DIAGNOSTIC surface — it fires ONLY when a findings block
   // (`shouldPrompt`) or the clean line (`cleanBlock`) is ALSO firing this turn, and is APPENDED
@@ -1292,10 +1307,11 @@ async function cmdFinalize(ev) {
   // `"type":"finalize"` / `decision` in the session jsonl. This is how "when did the hook
   // run and what did it decide" stays observable WITHOUT printing a line on every turn.
   const decision = {
-    verdict: uniqueFresh.length ? "flagged" : "clean",
+    verdict: uniqueFresh.length ? "flagged" : (state.scanErrors ? "degraded-collector" : "clean"),
     pluginActivity,
     freshCount: uniqueFresh.length,
     flaggedTotal: state.flagged.length,
+    scanErrors: state.scanErrors || 0, // >0 ⇒ transcript scan hit a read error; clean line withheld (OBS1)
     surfaced, // did we resume + print a visible line this turn
     cleanupOffered: cleanupBlock, // did we surface the stale-artifact cleanup offer this turn
     completeSignalled: completePending, // did a skill signal its terminal step this run

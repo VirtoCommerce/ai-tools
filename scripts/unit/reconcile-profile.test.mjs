@@ -147,3 +147,24 @@ test("reconcile --write: prunes the conditional azure blocks off-discriminator a
     rmSync(h2, { recursive: true, force: true });
   }
 });
+
+test("reconcile --write WITHOUT a --set decision leaves the consent fields ABSENT — never guesses (T2)", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    // Old profile predating the consent fields — selfDiagnostics + feedback ABSENT, and NO --set
+    // decision provided. The security-critical contract: a plain --write must NOT fabricate a consent
+    // value (a mutation doing `out[k] = managed.default` would set selfDiagnostics=true here). This is
+    // the "leave pending until decided" branch the sibling test never exercises (it always --sets).
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "jira", projectKey: "ACME" },
+      vcs: { clientHost: "github", clientOrg: "acmecorp" },
+    }));
+    const p = reconcile(home); // NO --set for the managed/ask consent fields
+    assert.equal(p.selfDiagnostics, undefined, "capture consent must NOT be fabricated by a plain --write");
+    assert.ok(!p.feedback || p.feedback.mode === undefined, "delivery consent must NOT be fabricated");
+    assert.equal(p.projectType, "client"); // sibling answers still preserved through reconcile
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

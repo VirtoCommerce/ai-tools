@@ -1868,3 +1868,43 @@ test("S3: a truncated/rotated transcript (shorter than the offset) re-scans and 
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ─── OBS1: a silent transcript-scan failure must NOT print a false "all-clear" ─────
+// PR #143 R2: if scanTranscript hits a read error it records state.scanErrors; cmdFinalize then
+// withholds the "no plugin issues detected" line (a broken collector measured nothing, so it must
+// not assert health). Control proves the identical run DOES surface the clean line without the error.
+test("OBS1: scanErrors withholds the clean line; a clean run still surfaces it", () => {
+  const build = (sid, injectScanError) => {
+    const home = setupHome();
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    appendLines(tp, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "echo ok" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", false, "ok"),
+    ]);
+    run(home, "record", { session_id: sid, transcript_path: tp });
+    complete(home, "project-init");
+    if (injectScanError) {
+      const sp = join(home, ".vc-fix", "diagnostics", `${sid}.state.json`);
+      const st = JSON.parse(readFileSync(sp, "utf8"));
+      st.scanErrors = 1; // simulate a transcript read error recorded earlier this session
+      writeFileSync(sp, JSON.stringify(st));
+    }
+    const out = run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    const fin = finalizeOf(readSpans(home, sid));
+    rmSync(home, { recursive: true, force: true });
+    return { dec: out.trim() ? JSON.parse(out) : { decision: null }, verdict: fin.decision.verdict, scanErrors: fin.decision.scanErrors, suppressReason: fin.decision.suppressReason };
+  };
+  // Control: no scan error → clean line surfaces.
+  const clean = build("obs1-clean", false);
+  assert.equal(clean.dec.decision, "block", `clean run must surface the line (suppressReason=${clean.suppressReason})`);
+  assert.match(clean.dec.reason, /no plugin issues detected/i);
+  assert.equal(clean.verdict, "clean");
+  assert.equal(clean.scanErrors, 0);
+  // Case: a recorded scan error → clean line WITHHELD, verdict degraded-collector.
+  const degraded = build("obs1-degraded", true);
+  assert.notEqual(degraded.dec.decision, "block", "a scan-error session must NOT surface a false clean line");
+  assert.equal(degraded.verdict, "degraded-collector");
+  assert.equal(degraded.scanErrors, 1);
+});

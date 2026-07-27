@@ -228,17 +228,30 @@ export function resolveRoute({ token, probe, scopes, override }) {
 /** List open self-check issues on the repo and return one whose body carries `fp`, else null. */
 export async function findDuplicateIssue({ repo, token, fp }) {
   if (!token) return null;
+  const marker = `${FP_MARKER} ${fp}`;
+  const headers = { Authorization: `Bearer ${token}`, "User-Agent": "vc-self-check", Accept: "application/vnd.github+json" };
+  const hit = (it) => it && !it.pull_request && (it.body || "").includes(marker); // exact-marker confirm
+  // Primary: the Search API targets the fingerprint DIRECTLY, so dedup works no matter how many
+  // open issues the repo has. The old first-100 `GET /issues` scan silently broke once the repo had
+  // ≥100 open issues (ordinary dev issues crowd out the window) and `auto` mode then re-filed a
+  // DUPLICATE instead of a +1 comment (PR #143 R2 DED1). Search tokenizes, so its hit is a candidate
+  // that we still body-confirm via `hit()`.
   try {
-    const r = await fetch(`https://api.github.com/repos/${repo}/issues?state=open&per_page=100`, {
-      headers: { Authorization: `Bearer ${token}`, "User-Agent": "vc-self-check", Accept: "application/vnd.github+json" },
-    });
-    if (!r.ok) return null;
-    const issues = await r.json();
-    for (const it of issues) {
-      if (it.pull_request) continue; // issues endpoint also returns PRs
-      const body = it.body || "";
-      if (body.includes(`${FP_MARKER} ${fp}`)) return { number: it.number, url: it.html_url };
+    const q = encodeURIComponent(`repo:${repo} is:issue "${marker}"`);
+    const r = await fetch(`https://api.github.com/search/issues?q=${q}&per_page=20`, { headers });
+    if (r.ok) {
+      const j = await r.json();
+      for (const it of Array.isArray(j.items) ? j.items : []) if (hit(it)) return { number: it.number, url: it.html_url };
     }
+  } catch {
+    /* search unavailable / rate-limited — fall through to the list scan */
+  }
+  // Fallback: first page of open issues — catches a very-recently-filed dup not yet search-indexed,
+  // and the whole dedup when Search is rate-limited. Best-effort; any failure ⇒ "no known dup".
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/issues?state=open&per_page=100`, { headers });
+    if (!r.ok) return null;
+    for (const it of await r.json()) if (hit(it)) return { number: it.number, url: it.html_url };
   } catch {
     /* network — treat as no known dup */
   }

@@ -7,15 +7,16 @@
 // Pure / injectable where possible; findDuplicateIssue stubs globalThis.fetch. Run: `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { writeFileSync, readdirSync } from "node:fs";
+import { writeFileSync, readdirSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { withTempDir } from "./_test-helpers.mjs";
+import { withTempDir, withTempHome } from "./_test-helpers.mjs";
 import {
   isAllowedUpstreamRepo,
   resolveRoute,
   findDuplicateIssue,
   purgeSession,
+  main,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
 
 // ─── isAllowedUpstreamRepo (destination allowlist) ───────────────────────────────
@@ -70,6 +71,12 @@ function withFetch(stub, fn) {
   return Promise.resolve(fn()).finally(() => { globalThis.fetch = prev; });
 }
 const okJson = (data) => ({ ok: true, json: async () => data });
+const isSearch = (url) => String(url).includes("/search/issues");
+// Route the stub by endpoint: Search API returns {items:[...]}, the list endpoint returns [...].
+const routed = ({ search = { items: [] }, list = [] } = {}) => async (url) =>
+  isSearch(url) ? okJson(search) : okJson(list);
+const marker = "vc-fix-selfcheck-fp: deadbeef";
+const match = { number: 2, html_url: "u2", body: `report\n<!-- ${marker} -->` };
 
 test("findDuplicateIssue: no token → null without any network call", async () => {
   let called = false;
@@ -79,22 +86,26 @@ test("findDuplicateIssue: no token → null without any network call", async () 
   assert.equal(called, false, "must not hit the network when there is no token");
 });
 
-test("findDuplicateIssue: returns the matching open issue by fingerprint marker", async () => {
-  const marker = "vc-fix-selfcheck-fp: deadbeef";
-  await withFetch(async () => okJson([
-    { number: 1, html_url: "u1", body: "unrelated" },
-    { number: 2, html_url: "u2", body: `report\n<!-- ${marker} -->` },
-  ]), async () => {
+test("findDuplicateIssue: the Search API finds the fingerprint even past 100 open issues (DED1)", async () => {
+  let searched = false;
+  await withFetch(async (url) => { if (isSearch(url)) searched = true; return isSearch(url) ? okJson({ items: [{ number: 1, html_url: "u1", body: "noise" }, match] }) : okJson([]); }, async () => {
+    const hit = await findDuplicateIssue({ repo: "VirtoCommerce/x", token: "t", fp: "deadbeef" });
+    assert.deepEqual(hit, { number: 2, url: "u2" });
+  });
+  assert.ok(searched, "must query the Search API (not just the first-100 list)");
+});
+
+test("findDuplicateIssue: falls back to the list scan when Search misses (recent / rate-limited)", async () => {
+  await withFetch(routed({ search: { items: [] }, list: [{ number: 9, html_url: "u9", body: "x" }, match] }), async () => {
     const hit = await findDuplicateIssue({ repo: "VirtoCommerce/x", token: "t", fp: "deadbeef" });
     assert.deepEqual(hit, { number: 2, url: "u2" });
   });
 });
 
 test("findDuplicateIssue: skips PRs, returns null on no match / non-ok / network error", async () => {
-  // a PR whose body matches is skipped (issues endpoint returns PRs too)
-  await withFetch(async () => okJson([
-    { number: 3, html_url: "u3", body: "vc-fix-selfcheck-fp: deadbeef", pull_request: {} },
-  ]), async () => {
+  // a PR whose body matches is skipped, on BOTH the search and the list endpoint
+  const pr = { number: 3, html_url: "u3", body: `<!-- ${marker} -->`, pull_request: {} };
+  await withFetch(routed({ search: { items: [pr] }, list: [pr] }), async () => {
     assert.equal(await findDuplicateIssue({ repo: "VirtoCommerce/x", token: "t", fp: "deadbeef" }), null);
   });
   await withFetch(async () => ({ ok: false }), async () => {
@@ -135,4 +146,71 @@ test("purgeSession: a too-short / empty sid never mass-matches (only the fp path
 
 test("purgeSession: never throws on a missing dir", () => {
   assert.deepEqual(purgeSession({ dir: join(tmpdir(), "does-not-exist-xyz"), sid: "session-zzzzzz", fp: "x" }), []);
+});
+
+// ─── T1: deliver main() send gate — end-to-end (PR #143 R2) ──────────────────────────────
+// The composition that decides whether telemetry is POSTed to a PUBLIC repo was untested; a
+// mutation removing the mode==="off" block or inverting the --confirm gate passed the whole
+// suite. This drives main() with a stubbed fetch and asserts on whether a createIssue POST fired.
+function writeDiag(home) {
+  const dir = join(home, ".vc-fix", "diagnostics");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "DIAG-s1-20260101T000000Z.md"), [
+    "# DIAG — s1", "- Session: s1 · Plugin: 0.8.1", "## Findings",
+    "| Skill | Verdict | Sev | Outcome | Signal | Root | Fix |",
+    "| /qa-fix (command) | BROKEN | S1 | failed | perm denied | auth | check token |",
+  ].join("\n"));
+}
+async function driveMain(home, argv, { mode = "ask" } = {}) {
+  writeFileSync(join(home, "project-profile.json"), JSON.stringify({ feedback: { mode } }));
+  writeDiag(home);
+  const calls = [];
+  const prev = { fetch: globalThis.fetch, tok: process.env.GITHUB_FIX_BUGS_TOKEN, exit: process.exitCode, write: process.stdout.write };
+  process.env.GITHUB_FIX_BUGS_TOKEN = "test-token"; // short-circuits resolveGithubToken (no gh subprocess)
+  process.stdout.write = () => true; // swallow the plan JSON
+  globalThis.fetch = async (url, opts = {}) => {
+    const method = (opts.method || "GET").toUpperCase();
+    calls.push({ url: String(url), method });
+    if (method === "POST") return okJson({ number: 42, html_url: "http://issue/42" });
+    if (String(url).includes("/search/issues")) return okJson({ items: [] });
+    if (String(url).includes("/issues")) return okJson([]);
+    return okJson({ permissions: {} }); // probe
+  };
+  let exitCode;
+  try { await main(argv); exitCode = process.exitCode; }
+  finally {
+    globalThis.fetch = prev.fetch; process.stdout.write = prev.write; process.exitCode = prev.exit;
+    if (prev.tok === undefined) delete process.env.GITHUB_FIX_BUGS_TOKEN; else process.env.GITHUB_FIX_BUGS_TOKEN = prev.tok;
+  }
+  return { posted: calls.some((c) => c.method === "POST" && c.url.includes("/issues")), calls, exitCode };
+}
+
+test("main: a non-VirtoCommerce --repo is refused before ANY network (misroute guard)", async () => {
+  await withTempHome(async (home) => {
+    const r = await driveMain(home, ["--json", "--repo", "attacker/x", "--as", "issue", "--confirm"], { mode: "auto" });
+    assert.equal(r.posted, false);
+    assert.equal(r.calls.length, 0, "a refused repo must not hit the network at all");
+    assert.equal(r.exitCode, 2);
+  });
+});
+test("main: feedback.mode=off never sends, even with --confirm (hard no-send)", async () => {
+  await withTempHome(async (home) => {
+    const r = await driveMain(home, ["--json", "--as", "issue", "--confirm"], { mode: "off" });
+    assert.equal(r.posted, false, "mode=off must not POST an issue");
+    assert.equal(r.calls.length, 0, "mode=off returns before any network");
+  });
+});
+test("main: ask mode WITHOUT --confirm is a dry run (no POST)", async () => {
+  await withTempHome(async (home) => {
+    const r = await driveMain(home, ["--json", "--as", "issue"], { mode: "ask" });
+    assert.equal(r.posted, false, "ask + no --confirm must be a dry run");
+  });
+});
+test("main: ask mode WITH --confirm files the issue; auto files without --confirm", async () => {
+  await withTempHome(async (home) => {
+    assert.equal((await driveMain(home, ["--json", "--as", "issue", "--confirm"], { mode: "ask" })).posted, true, "ask + --confirm ⇒ POST");
+  });
+  await withTempHome(async (home) => {
+    assert.equal((await driveMain(home, ["--json", "--as", "issue"], { mode: "auto" })).posted, true, "auto ⇒ POST without --confirm");
+  });
 });

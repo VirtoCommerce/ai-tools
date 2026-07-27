@@ -66,3 +66,30 @@ test("redact: null/undefined coerce to empty string, never throws", () => {
   assert.equal(redact(null), "");
   assert.equal(redact(undefined), "");
 });
+
+// PR #143 R2 audit — R1 (multi-token value capture), R2 (PEM blocks), R3 (distinctive-prefix
+// secrets). All LOCAL-persist hygiene (upstream is enum-only regardless). Guards against the
+// `\S+`-first-token leak and the bare-PEM / Stripe / Slack-webhook / npm / Set-Cookie gaps.
+const R2_MUST_REDACT = [
+  ['{"password":"correct horse battery staple"}', "horse battery staple", "«redacted»"], // R1: multi-word quoted
+  ['{"private_key":"-----BEGIN PRIVATE KEY----- MIIEvKEYMATERIALxyz -----END PRIVATE KEY-----"}', "KEYMATERIALxyz", "«"], // R1/R2 PEM-in-JSON
+  ["-----BEGIN OPENSSH PRIVATE KEY----- b3BlSECRETbody -----END OPENSSH PRIVATE KEY-----", "SECRETbody", "«private-key»"], // R2 bare PEM
+  ["redis://:MyRedisPw123@10.0.0.5:6379", "MyRedisPw123", "«redacted»"], // userless conn string
+  ["using sk_live_51HxYzABCDEF1234567890", "sk_live_51HxYzABCDEF1234567890", "«stripe-key»"],
+  ["whsec_ABCDEF1234567890abcdef", "whsec_ABCDEF1234567890abcdef", "«stripe-whsec»"],
+  ["rotate npm_abcdef0123456789ABCDEF0123456789abcd", "npm_abcdef0123456789ABCDEF0123456789abcd", "«npm-token»"],
+  ["post to https://hooks.slack.com/services/T00/B11/AbCdEf123", "AbCdEf123", "«slack-webhook»"],
+  ["Set-Cookie: session=abc123def456ghi; Path=/", "abc123def456ghi", "«redacted»"],
+  ["sessionid=9a8b7c6d5e4f0011", "9a8b7c6d5e4f0011", "«redacted»"],
+];
+for (const [input, secret, marker] of R2_MUST_REDACT) {
+  test(`redact (R2 audit): removes secret + marker — ${input.slice(0, 40)}…`, () => {
+    const out = redact(input);
+    assert.ok(!out.includes(secret), `secret must be redacted but leaked: ${out}`);
+    assert.ok(out.includes(marker), `expected marker "${marker}" in: ${out}`);
+  });
+}
+// Negatives that the widened rules must NOT destroy (diagnostics value).
+for (const input of ["commit=3a4f5e6d7c8b9a0f1e2d3c4b5a6978012345abcd", "session_count=5", "name=OrderService"]) {
+  test(`redact (R2 audit): keeps benign — ${input}`, () => assert.equal(redact(input), input));
+}
