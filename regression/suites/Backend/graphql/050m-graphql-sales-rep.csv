@@ -399,51 +399,91 @@ query { salesRepCustomers(first: 20, storeId: ""{{store}}"", cultureName: ""{{cu
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": true, ""sendEmail"": true, ""title"": ""{{title}}"", ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
-[GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC}
-[DATA label=main] data.sendCustomerCommunication = true {SPEC}","[ADMIN] a PushMessage (Status=Sent) and a SalesRepMessageEmailNotification both appear in Admin > Notifications/PushMessages for @td(ORG_ACME.id)'s members after dispatch (runner-manual, per source contract)","mutation returns false despite both channels selected and a served org with >=1 member; errors[] non-empty; HTTP 4xx/5xx","none (read-only at the API layer; dispatches a real push/email to @td(ORG_ACME.id)'s seeded members — acceptable, shared fixture org, not a real customer)","Generated: VCST-5310 gap-fill (vc-frontend PR #2392 / vc-module-sales-rep PR #3), test-management-specialist TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests.BothChannels_SameAudience","Automated"
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.succeeded = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.pushSent = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.emailSent = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.warnings[] empty {OBSERVED}","[ADMIN] a PushMessage (Status=Sent) and a SalesRepMessageEmailNotification both appear in Admin > Notifications/PushMessages for @td(ORG_ACME.id)'s members after dispatch (runner-manual, per source contract)","mutation returns false despite both channels selected and a served org with >=1 member; errors[] non-empty; HTTP 4xx/5xx","none (read-only at the API layer; dispatches a real push/email to @td(ORG_ACME.id)'s seeded members — acceptable, shared fixture org, not a real customer)","Generated: VCST-5310 gap-fill (vc-frontend PR #2392 / vc-module-sales-rep PR #3), test-management-specialist TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests.BothChannels_SameAudience","Automated"
 "SR-GQL-043","sendCustomerCommunication — Push-Only Dispatch (sendEmail=false)","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","High","PROPOSED-BL-SR-COMM-CHANNEL","","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Same schema/session caveat as SR-GQL-042 (source-derived, not live-introspection-confirmed this session). Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.id)). Mirrors backend xUnit SalesRepCommunicationComponentTests (push-only).","org=@td(ORG_ACME.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM push-only message body","[GQL-ENDPOINT /graphql/sales-rep]
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": true, ""sendEmail"": false, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
-[GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC}
-[DATA label=main] data.sendCustomerCommunication = true {SPEC}","[ADMIN] only a PushMessage entry appears for this dispatch — no new SalesRepMessageEmailNotification is created since sendEmail=false (runner-manual, proves channel isolation)","mutation returns false despite sendPush=true; an email is dispatched despite sendEmail=false (cross-channel leak)","none (read-only at the API layer; dispatches a real push to @td(ORG_ACME.id)'s seeded members)","Generated: VCST-5310 gap-fill, TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests.PushOnly","Automated"
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.succeeded = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.pushSent = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.emailSent = false {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.warnings[] empty {OBSERVED}","[ADMIN] only a PushMessage entry appears for this dispatch — no new SalesRepMessageEmailNotification is created since sendEmail=false (runner-manual, proves channel isolation)","mutation returns false despite sendPush=true; an email is dispatched despite sendEmail=false (cross-channel leak)","none (read-only at the API layer; dispatches a real push to @td(ORG_ACME.id)'s seeded members)","Generated: VCST-5310 gap-fill, TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests.PushOnly","Automated"
 "SR-GQL-044","sendCustomerCommunication — Email-Only Dispatch (sendPush=false)","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","High","PROPOSED-BL-SR-COMM-CHANNEL","","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Same schema/session caveat as SR-GQL-042. Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.id)). Mirrors backend xUnit SalesRepCommunicationComponentTests (email-only).","org=@td(ORG_ACME.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM email-only message body","[GQL-ENDPOINT /graphql/sales-rep]
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": false, ""sendEmail"": true, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
-[GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC}
-[DATA label=main] data.sendCustomerCommunication = true {SPEC}","[ADMIN] only a SalesRepMessageEmailNotification appears for this dispatch — no new PushMessage is created since sendPush=false (runner-manual, proves channel isolation)","mutation returns false despite sendEmail=true; a push message is dispatched despite sendPush=false (cross-channel leak)","none (read-only at the API layer; dispatches a real email to @td(ORG_ACME.id)'s seeded members)","Generated: VCST-5310 gap-fill, TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests.EmailOnly","Automated"
-"SR-GQL-045","sendCustomerCommunication — Neither Channel Selected Returns false (No-Op, Not an Error)","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","High","PROPOSED-BL-SR-COMM-NOOP","ECL-3.1","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Same schema/session caveat as SR-GQL-042. Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.id)). Per source contract, sendPush=false AND sendEmail=false is a clean no-op (false), NOT a validation error.","org=@td(ORG_ACME.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM neither-channel message body","[GQL-ENDPOINT /graphql/sales-rep]
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.succeeded = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.pushSent = false {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.emailSent = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.warnings[] empty {OBSERVED}","[ADMIN] only a SalesRepMessageEmailNotification appears for this dispatch — no new PushMessage is created since sendPush=false (runner-manual, proves channel isolation)","mutation returns false despite sendEmail=true; a push message is dispatched despite sendPush=false (cross-channel leak)","none (read-only at the API layer; dispatches a real email to @td(ORG_ACME.id)'s seeded members)","Generated: VCST-5310 gap-fill, TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests.EmailOnly","Automated"
+"SR-GQL-045","sendCustomerCommunication — Neither Channel Selected Returns Validation Error","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","High","PROPOSED-BL-SR-COMM-NOOP","ECL-3.1","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Same schema/session caveat as SR-GQL-042. Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.id)). Per source contract, sendPush=false AND sendEmail=false is a clean no-op (false), NOT a validation error.","org=@td(ORG_ACME.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM neither-channel message body","[GQL-ENDPOINT /graphql/sales-rep]
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": false, ""sendEmail"": false, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
-[GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC}
-[DATA label=main] data.sendCustomerCommunication = false {SPEC}","none","mutation throws an ExecutionError instead of returning a clean false when neither channel is selected; mutation returns true despite no channel chosen","none (read-only — no channel selected, nothing dispatched)","Generated: VCST-5310 gap-fill, TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests (neither-channel no-op)","Automated"
-"SR-GQL-046","sendCustomerCommunication — Rep Does Not Serve Org Returns false, Nothing Dispatched","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","Critical","PROPOSED-BL-SR-COMM-SCOPE; PROPOSED-BL-SR-SCOPE","ECL-14.3","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Same schema/session caveat as SR-GQL-042. Caller is SALES_REP (= SR_REP_PRIMARY), who does NOT serve @td(ORG_SUSPENDED.id) (established fixture fact, see SR-GQL-016/023). Proves the membership-scope gate (ServesOrganizationAsync, extracted to SalesRepQueryHandlerBase in PR #3) also protects the mutation, not just the read queries.","not_served_org=@td(ORG_SUSPENDED.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM not-served message body","[GQL-ENDPOINT /graphql/sales-rep]
+[GQL-EXEC main]","[ERRORS label=main] errors[] non-empty {OBSERVED}
+[DATA label=main] errors.0.message matches /At least one delivery channel must be selected/i {OBSERVED}","none","mutation throws an ExecutionError instead of returning a clean false when neither channel is selected; mutation returns true despite no channel chosen","none (read-only — no channel selected, nothing dispatched)","Generated: VCST-5310 gap-fill, TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests (neither-channel no-op)","Automated"
+"SR-GQL-046","sendCustomerCommunication — Rep Does Not Serve Org Returns Authorization Error (Forbidden)","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","Critical","PROPOSED-BL-SR-COMM-SCOPE; PROPOSED-BL-SR-SCOPE","ECL-14.3","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Same schema/session caveat as SR-GQL-042. Caller is SALES_REP (= SR_REP_PRIMARY), who does NOT serve @td(ORG_SUSPENDED.id) (established fixture fact, see SR-GQL-016/023). Proves the membership-scope gate (ServesOrganizationAsync, extracted to SalesRepQueryHandlerBase in PR #3) also protects the mutation, not just the read queries.","not_served_org=@td(ORG_SUSPENDED.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM not-served message body","[GQL-ENDPOINT /graphql/sales-rep]
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{not_served_org}}"", ""sendPush"": true, ""sendEmail"": true, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
-[GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC}
-[DATA label=main] data.sendCustomerCommunication = false {SPEC}","[ADMIN] confirm no new PushMessage or SalesRepMessageEmailNotification was created for @td(ORG_SUSPENDED.id) after this call (runner-manual) — proves the scope gate blocks dispatch, not just the boolean return","mutation returns true or dispatches messages for an org the caller does not serve (authorization/scope bypass — cross-ref SR-GQL-012/017/024); errors[] non-empty instead of a clean false","none (read-only — membership scope blocks dispatch, nothing sent)","Generated: VCST-5310 gap-fill, TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests (not-served → false)","Automated"
+[GQL-EXEC main]","[ERRORS label=main] errors[] non-empty {OBSERVED}
+[DATA label=main] errors.0.message matches /Access denied/i {OBSERVED}
+[DATA label=main] errors.0.extensions.code = Forbidden {OBSERVED}","[ADMIN] confirm no new PushMessage or SalesRepMessageEmailNotification was created for @td(ORG_SUSPENDED.id) after this call (runner-manual) — proves the scope gate blocks dispatch, not just the boolean return","mutation returns true or dispatches messages for an org the caller does not serve (authorization/scope bypass — cross-ref SR-GQL-012/017/024); errors[] non-empty instead of a clean false","none (read-only — membership scope blocks dispatch, nothing sent)","Generated: VCST-5310 gap-fill, TLC 2026-07-22 — mirrors backend xUnit SalesRepCommunicationComponentTests (not-served → false)","Automated"
 "SR-GQL-047","sendCustomerCommunication — Anonymous Caller Returns Authorization Error","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","Critical","PROPOSED-BL-SR-AUTH","ECL-14.1","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Same schema/session caveat as SR-GQL-042. No auth token set. Needs no seeded data — any syntactically valid org id string works since auth is checked before scope resolution.","any_org_id=@td(ORG_ACME.id); store={{STORE_ID}}","[GQL-ENDPOINT /graphql/sales-rep]
 [GQL-OP anon]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS anon] {""command"": {""organizationId"": ""{{any_org_id}}"", ""sendPush"": true, ""sendEmail"": true, ""message"": ""AGENT-TEST-SR-COMM anon message body"", ""storeId"": ""{{store}}""}}
 [GQL-EXEC anon]","[ERRORS label=anon] errors[] non-empty {DOC}
@@ -452,7 +492,12 @@ mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": true, ""sendEmail"": false, ""message"": """", ""storeId"": ""{{store}}""}}
 [GQL-EXEC main]","[ERRORS label=main] errors[] non-empty {SPEC}
@@ -461,7 +506,12 @@ mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": true, ""sendEmail"": false, ""message"": ""{{message_over}}"", ""storeId"": ""{{store}}""}}
 [GQL-EXEC main]","[ERRORS label=main] errors[] non-empty {SPEC}
@@ -470,34 +520,61 @@ mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": false, ""sendEmail"": true, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
-[GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC}
-[DATA label=main] data.sendCustomerCommunication = true {SPEC}","none","a message containing a URL is incorrectly rejected by validation (false-positive); the mutation errors out solely because the message contains a URL","none (read-only at the API layer; dispatches a real email to @td(ORG_ACME.id)'s seeded members)","Generated: VCST-5310 gap-fill, TLC 2026-07-22","Automated"
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.succeeded = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.emailSent = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.warnings[] empty {OBSERVED}","none","a message containing a URL is incorrectly rejected by validation (false-positive); the mutation errors out solely because the message contains a URL","none (read-only at the API layer; dispatches a real email to @td(ORG_ACME.id)'s seeded members)","Generated: VCST-5310 gap-fill, TLC 2026-07-22","Automated"
 "SR-GQL-051","sendCustomerCommunication — Title Omitted Still Dispatches Successfully (Optional Field)","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","Medium","PROPOSED-BL-SR-COMM-VALIDATION","","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Same schema/session caveat as SR-GQL-042. Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.id)). `title` is entirely omitted from the command object (not merely empty-string) to prove the optional field has no server-side default that breaks dispatch.","org=@td(ORG_ACME.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM no-title message body","[GQL-ENDPOINT /graphql/sales-rep]
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": true, ""sendEmail"": false, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
-[GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC}
-[DATA label=main] data.sendCustomerCommunication = true {SPEC}","none","omitting title causes a schema/validation error instead of dispatching normally (title should be optional per InputSendCustomerCommunicationType); mutation returns false despite a valid served org and a selected channel","none (read-only at the API layer; dispatches a real push to @td(ORG_ACME.id)'s seeded members)","Generated: VCST-5310 gap-fill, TLC 2026-07-22","Automated"
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.succeeded = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.pushSent = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.warnings[] empty {OBSERVED}","none","omitting title causes a schema/validation error instead of dispatching normally (title should be optional per InputSendCustomerCommunicationType); mutation returns false despite a valid served org and a selected channel","none (read-only at the API layer; dispatches a real push to @td(ORG_ACME.id)'s seeded members)","Generated: VCST-5310 gap-fill, TLC 2026-07-22","Automated"
 "SR-GQL-052","sendCustomerCommunication — Zero Effective Recipients (Rep-Only Served Org) Returns false — initiator excluded","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","Medium","PROPOSED-BL-SR-COMM-NOOP","ECL-3.1","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module + VCST-5310 initiator-exclusion fix (commit 6d918d82) deployed on the environment. Caller is SALES_REP (= SR_REP_PRIMARY). @td(ORG_REP_ONLY.platform_id) is a served org whose ONLY member is SR_REP_PRIMARY's own Contact. SendCustomerCommunicationCommandHandler now calls ExcludeInitiatorAsync(recipients, request.UserId), removing the sending rep's own Contact from the resolved recipients before dispatch; with no other member in this org, the effective recipient list becomes empty and the mutation returns false. This path is now REACHABLE (it was not, pre-fix) because previously the rep was always counted as its own recipient. VERIFIED LIVE (vcst-qa, 2026-07-23): both channels selected, mutation returned false, and admin /api/push-message/search confirms zero PushMessage records were created for this org after the call. Un-deprecated: supersedes the pre-fix 'architecturally unreachable' framing (test-data-engineer, 2026-07-22), which assumed the rep is always counted as a recipient — commit 6d918d82 changes that by excluding the initiator.","org=@td(ORG_REP_ONLY.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM zero-effective-recipients body","[GQL-ENDPOINT /graphql/sales-rep]
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": true, ""sendEmail"": true, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
 [GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
-[DATA label=main] data.sendCustomerCommunication = false {OBSERVED}","[ADMIN] no PushMessage created for @td(ORG_REP_ONLY.platform_id) after this call — admin POST /api/push-message/search totalCount stays 0 (verified live vcst-qa 2026-07-23, runner-manual)","mutation returns true despite the org's only member being the sending rep (initiator-exclusion regressed, commit 6d918d82); a PushMessage or email notification is created for this org despite 0 effective recipients; errors[] non-empty instead of a clean false","none (read-only — 0 effective recipients, nothing dispatched)","VCST-5310 fix verification (commit 6d918d82) — initiator-exclusion, qa-backend-expert verified live vcst-qa 2026-07-23. Un-deprecated: supersedes the pre-fix 'architecturally unreachable' framing (test-data-engineer, 2026-07-22).","Automated"
+[DATA label=main] data.sendCustomerCommunication.succeeded = false {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.pushSent = false {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.emailSent = false {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.warnings.0 = NoRecipients {OBSERVED}","[ADMIN] no PushMessage created for @td(ORG_REP_ONLY.platform_id) after this call — admin POST /api/push-message/search totalCount stays 0 (verified live vcst-qa 2026-07-23, runner-manual)","mutation returns true despite the org's only member being the sending rep (initiator-exclusion regressed, commit 6d918d82); a PushMessage or email notification is created for this org despite 0 effective recipients; errors[] non-empty instead of a clean false","none (read-only — 0 effective recipients, nothing dispatched)","VCST-5310 fix verification (commit 6d918d82) — initiator-exclusion, qa-backend-expert verified live vcst-qa 2026-07-23. Un-deprecated: supersedes the pre-fix 'architecturally unreachable' framing (test-data-engineer, 2026-07-22).","Automated"
 "SR-GQL-053","sendCustomerCommunication — Members Without Email, Email-Only Schedules Nothing Yet Returns true — UNREACHABLE at API layer (backend-only)","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","Medium","PROPOSED-BL-SR-COMM-CHANNEL; PROPOSED-BL-SR-COMM-NOOP","ECL-3.1","NOT EXECUTABLE at the API layer (qa-backend-expert, live vcptcore-qa 2026-07-22 — SalesRep_3.1000.0-pr-3-aeff / theme 2.54.0-pr-2392). CONTRACT SUBTLETY under test: SendCustomerCommunicationCommandHandler resolves recipients via AllMembersRecipientResolver, then — per the VCST-5310 initiator-exclusion fix (commit 6d918d82) — EXCLUDES the sending rep's own Contact from that list; SendEmailAsync then iterates the remaining recipients skipping any with no email (continue) — so an org whose remaining (non-rep) members ALL lack an email schedules 0 emails, yet TryDispatchAsync still returns true (no exception thrown) and the mutation returns true even though nothing was emailed. UPDATED REASONING (post commit 6d918d82, supersedes the pre-fix framing that assumed the rep is always the fallback emailable member — that reasoning is now VOID since the rep is excluded from the recipient list before the email loop runs): this case is reachable ONLY with a non-rep member that has no email address seeded in the org. NO SUCH FIXTURE IS SEEDED on vcst today — every b2b member fixture (test-data/b2b/) carries an email. Remains NOT-EXECUTABLE pending a no-email member fixture (routed to test-data-engineer); do not substitute ORG_REP_ONLY here — that org resolves to 0 recipients entirely (see SR-GQL-052), not '>=1 non-rep member lacking email'.","org=@td(ORG_BUILDRIGHT.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM members-without-email body","[GQL-ENDPOINT /graphql/sales-rep]
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": false, ""sendEmail"": true, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
 [GQL-EXEC main]","[ERRORS label=main] errors[] empty {HYPOTHESIS}
@@ -506,8 +583,44 @@ mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!
 [AUTH role=SALES_REP]
 [GQL-OP main]
 mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
-  sendCustomerCommunication(command: $command)
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
 }
 [GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": true, ""sendEmail"": false, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
 [GQL-EXEC main]","[ERRORS label=main] errors[] empty {OBSERVED}
-[DATA label=main] data.sendCustomerCommunication = true {OBSERVED}","[ADMIN] the created PushMessage's memberIds EXCLUDE the sending rep's own Contact (@td(SR_REP_PRIMARY.id)) and INCLUDE @td(ORG_ACME.id)'s buyer members — verified live vcst-qa 2026-07-23: 11 of 12 ACME members present, the sending rep the sole exclusion (POST /api/push-message/search + POST /api/members/search, runner-manual)","the created PushMessage's memberIds include the sending rep's own Contact id (initiator-exclusion regressed, commit 6d918d82); mutation returns false despite the org having buyer members beyond the rep; errors[] non-empty","none (read-only at the API layer; dispatches a real push to @td(ORG_ACME.id)'s seeded buyer members — acceptable, shared fixture org)","VCST-5310 fix verification (commit 6d918d82) — initiator-exclusion, qa-backend-expert verified live vcst-qa 2026-07-23. Supersedes the pre-fix self-broadcast framing (rep-only org previously dispatched to itself; that scenario is now covered as the zero-recipients false-path by SR-GQL-052).","Automated"
+[DATA label=main] data.sendCustomerCommunication.succeeded = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.pushSent = true {OBSERVED}
+[DATA label=main] data.sendCustomerCommunication.warnings[] empty {OBSERVED}","[ADMIN] the created PushMessage's memberIds EXCLUDE the sending rep's own Contact (@td(SR_REP_PRIMARY.id)) and INCLUDE @td(ORG_ACME.id)'s buyer members — verified live vcst-qa 2026-07-23: 11 of 12 ACME members present, the sending rep the sole exclusion (POST /api/push-message/search + POST /api/members/search, runner-manual)","the created PushMessage's memberIds include the sending rep's own Contact id (initiator-exclusion regressed, commit 6d918d82); mutation returns false despite the org having buyer members beyond the rep; errors[] non-empty","none (read-only at the API layer; dispatches a real push to @td(ORG_ACME.id)'s seeded buyer members — acceptable, shared fixture org)","VCST-5310 fix verification (commit 6d918d82) — initiator-exclusion, qa-backend-expert verified live vcst-qa 2026-07-23. Supersedes the pre-fix self-broadcast framing (rep-only org previously dispatched to itself; that scenario is now covered as the zero-recipients false-path by SR-GQL-052).","Automated"
+"SR-GQL-055","sendCustomerCommunication — Title Exceeding 128 Characters Returns Validation Error (BVA)","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","High","PROPOSED-BL-SR-COMM-VALIDATION","ECL-7.1","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Caller SALES_REP serves @td(ORG_ACME.id). BVA: title length = MaxTitleLength(128)+1. Server returns a readable ExecutionError (live-verified vcptcore-qa SalesRep 3.1000.0-pr-3-c51a, 2026-07-24).","org=@td(ORG_ACME.platform_id); store={{STORE_ID}}; title_over=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA; message=AGENT-TEST-SR-COMM title-bva body","[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP main]
+mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
+}
+[GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": true, ""sendEmail"": false, ""title"": ""{{title_over}}"", ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
+[GQL-EXEC main]","[ERRORS label=main] errors[] non-empty {OBSERVED}
+[DATA label=main] errors.0.message matches /Title must not exceed 128 characters/i {OBSERVED}","none","a 129-char title is accepted instead of ExecutionError ""Title must not exceed 128 characters.""; errors[] empty despite over-length title","none (rejected before dispatch)","Generated: VCST-5310 object-contract update, 2026-07-24 — Title max-length BVA (new validation on pr-3-c51a).","Draft"
+"SR-GQL-056","sendCustomerCommunication — Email-Only, No Recipient Has an Email → EmailNoRecipients warning","GraphQL > Sales Rep > Mutation > sendCustomerCommunication","High","PROPOSED-BL-SR-COMM-CHANNEL","","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Email-only to a served org whose non-rep members have NO email → warnings contains EmailNoRecipients, succeeded=false. NOT EXECUTABLE pending fixture (no such org seeded; same gap as SR-GQL-053; route to test-data-engineer). Behavior observed live via an ephemeral org during the VCST-5558 round.","org=@td(ORG_REP_ONLY.platform_id); store={{STORE_ID}}; message=AGENT-TEST-SR-COMM email-norecipients body","[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP main]
+mutation SendCustomerCommunication($command: InputSendCustomerCommunicationType!) {
+  sendCustomerCommunication(command: $command) {
+    succeeded
+    pushSent
+    emailSent
+    warnings
+  }
+}
+[GQL-VARS main] {""command"": {""organizationId"": ""{{org}}"", ""sendPush"": false, ""sendEmail"": true, ""message"": ""{{message}}"", ""storeId"": ""{{store}}""}}
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {HYPOTHESIS}
+[DATA label=main] data.sendCustomerCommunication.succeeded = false {HYPOTHESIS}
+[DATA label=main] data.sendCustomerCommunication.warnings.0 = EmailNoRecipients {HYPOTHESIS}","none","email-only to an org with no email-bearing recipient reports success instead of the EmailNoRecipients warning","none (not executed pending fixture)","Generated: VCST-5310 object-contract update, 2026-07-24 — EmailNoRecipients warning path; NOT EXECUTABLE pending fixture (see SR-GQL-053).","Draft"
