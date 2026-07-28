@@ -290,6 +290,25 @@ Report the ticket key back to the user.
 
 ---
 
+## Signal completion (self-diagnostics — the LAST action)
+
+Whether or not a ticket was filed — after the report is written and reported back, **and equally
+on any early exit** (couldn't reproduce → not a bug; nothing to file) — run this once as your last
+action (best-effort, silent, never blocks):
+
+```bash
+node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "qa-bug"
+```
+
+It tells the vc-fix self-diagnostics collector this run has finished, so its one-line clean/health
+status prints **exactly once** after the run. `$pluginRoot` = the active install path — reuse it if
+already resolved this run, else resolve via `claude plugin list --json` (see
+[`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)). More:
+[`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostics/skill-expectations.md)
+§Signal completion.
+
+---
+
 ## Rules
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling

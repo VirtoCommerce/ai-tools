@@ -28,6 +28,10 @@
  *
  * Flags: --out <path> (default project-profile.json), --merge (layer over existing
  * profile instead of defaults), --print (echo the result).
+ *
+ * Self-diagnostics consent (asked in the fresh interview, symmetric with reconcile):
+ *   --self-diagnostics <true|false>  local telemetry CAPTURE opt-in (persisted default FALSE)
+ *   --feedback-mode <ask|auto|off>   UPSTREAM delivery consent (default ask)
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
@@ -85,6 +89,13 @@ function deepMerge(base, override) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   for (const k of Object.keys(ENUMS)) validateEnum(args, k);
+  // --self-diagnostics is boolean, not an ENUM, but must still reject a malformed value: a bare
+  // flag (=== true) or "true"/"false" only. Otherwise a plausible typo (`--self-diagnostics yes`,
+  // `True`, `1`) used to silently coerce to `false` — writing the opt-OUT value when the operator
+  // meant to opt IN — asymmetric with the enum-validated --feedback-mode.
+  if (args["self-diagnostics"] !== undefined && args["self-diagnostics"] !== true && !["true", "false"].includes(args["self-diagnostics"])) {
+    fail(`Invalid --self-diagnostics "${args["self-diagnostics"]}". Allowed: true | false (or the bare flag = true)`);
+  }
 
   // Default output → the deployment project (process.cwd()), symmetric with the reader
   // loadProjectProfile() which reads project-profile.json from cwd. --out still overrides.
@@ -130,6 +141,17 @@ function main() {
   // feedback.mode — consent for upstream self-diagnostics delivery (VCST-5509).
   // Default stays "ask" (PROFILE_DEFAULTS) unless the operator picked one.
   set("feedback.mode", args["feedback-mode"]);
+  // selfDiagnostics — opt-in for the passive session-telemetry CAPTURE hook
+  // (VCST-5475/5509). The hook is a full no-op until this is EXPLICITLY true. The persisted
+  // default is `false` (PROFILE_DEFAULTS) — opt-in fails SAFE (PR #143 R2 NA-4): a flag-less write
+  // must never silently enable capture. The interview RECOMMENDS Yes (a hard-coded nudge in
+  // reconcile-profile.mjs), but recommending ≠ consenting. `/project-init` asks the operator FIRST
+  // (§0b) and always passes the answer — and writes the flag immediately on Yes so
+  // its own run is captured. Coerce the string flag → boolean: `--self-diagnostics false` ⇒ false,
+  // `--self-diagnostics true` or a bare `--self-diagnostics` ⇒ true.
+  if (args["self-diagnostics"] !== undefined) {
+    set("selfDiagnostics", args["self-diagnostics"] === true || args["self-diagnostics"] === "true");
+  }
 
   // vcs.authEnv — which env var carries the WRITE credential for the client host, so the
   // interactive command doesn't guess. (github PAT ⇒ GITHUB_FIX_BUGS_TOKEN; azure-repos ⇒

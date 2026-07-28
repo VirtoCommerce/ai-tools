@@ -92,6 +92,16 @@ and the triage agent (`monitor-triage-agent`).
 - **STOP.** Present the confirmed drafts and hand off to `/qa-bug` (file) or `/qa-fix`
   (attempt a fix) — **the profile decides the tracker** (Jira / Azure Boards) and repo route,
   not this command. Do not file or fix automatically.
+- **Signal completion (self-diagnostics — the LAST action, on every terminal exit incl. a
+  "nothing new" early STOP)** — best-effort, silent, never blocks:
+  ```bash
+  node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "qa-monitoring"
+  ```
+  So the collector's one-line clean/health status prints **exactly once** after the run.
+  `$pluginRoot` = the active install path (`claude plugin list --json`; see
+  [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)). Details:
+  [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostics/skill-expectations.md)
+  §Signal completion.
 
 ---
 

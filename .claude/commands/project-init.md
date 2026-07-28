@@ -45,6 +45,12 @@ permissions + the filled env + a live module/repo scan.
    else browser/CLI login. The token is NOT typed in chat — the choice only decides
    whether a token placeholder is emitted to `.env.local` (PAT) or a login is run
    (session). **No operator / projectType / contribution-mode question** — derived later.
+   **(e) Self-diagnostics consent (opt-in — ASK, never assume)** as one `AskUserQuestion`
+   block: `selfDiagnostics` (local telemetry capture to `.vc-fix/`, Yes recommended) +
+   `feedback.mode` (upstream delivery: `ask` recommended / `auto` / `off`). This MUST be asked —
+   `PROFILE_DEFAULTS.selfDiagnostics` is `false`/opt-out, so a run that skips this question leaves
+   capture OFF; it is enabled ONLY by the operator's explicit Yes here (passed to step 6 as
+   `--self-diagnostics`/`--feedback-mode`).
 3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs --tracker …
    --client-vcs …` → `.env.<env>` (ADO_ORG/ADO_PROJECT emitted for an azure tracker OR
    azure-repos host; **do NOT pass --project-type/--client-org** — client org is derived);
@@ -66,8 +72,10 @@ permissions + the filled env + a live module/repo scan.
    `operator`. Capture for step 6.
 6. Write the profile (`gen-profile.mjs --repos-json .local-env/repos.json` supplies
    projectType/clientOrg/repos; + tracker connection from the filled `.env.<env>`; +
-   derived `--operator`/`--contribution-mode`/`--upstream-account` (fork only)/`--vcs-auth`).
-   Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
+   derived `--operator`/`--contribution-mode`/`--upstream-account` (fork only)/`--vcs-auth`;
+   **+ `--self-diagnostics <yes|no>` and `--feedback-mode <ask|auto|off>` from the §2e consent
+   answer** — always pass them explicitly so the written value reflects the operator's choice,
+   not the safe opt-out default). Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
 7. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
 8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node skills/project-init/verify-access.mjs`
    (`FORCE_COLOR=1` so the Status column renders — the script auto-disables colour on a
@@ -100,3 +108,18 @@ Do **not** re-run the interview. The skill's **`--check`** section drives this:
 3. **Verify**: `FORCE_COLOR=1 TEST_ENV=<env> node skills/project-init/verify-access.mjs`.
 
 Restate both the reconciliation summary and the readiness table in your reply.
+
+### Signal completion (self-diagnostics — the LAST action of EVERY path)
+
+`/project-init` is exactly where self-capture is first enabled (the consent step writes the
+`selfDiagnostics:true` stub so its OWN run is captured), so its terminal step MUST emit the
+completion signal like every other terminal command — otherwise a slash-only run with no Skill span
+leaves the collector thinking there was no plugin activity and never surfaces its clean/health line.
+As the **last action** of whichever path ran — the full interview (Step 9) or `--check` (step 3) —
+run this once (best-effort, silent, never blocks):
+
+```bash
+node .claude/hooks/session-telemetry.mjs complete --skill "project-init"
+```
+
+So the collector prints its one-line status **exactly once** after the run. No-op when capture is off.

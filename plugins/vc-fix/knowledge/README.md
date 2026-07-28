@@ -15,6 +15,7 @@ per-task notes. Paths are referenced throughout `agents/`, `commands/`, `skills/
 | [`automation/`](automation/) | How to drive the live UI as a real user | `storefront-selectors.md`, `storefront-config-flags.md`, `browser-quirks.md` |
 | [`execution/`](execution/) | Test-data resolution, dedup/triage signals, module mapping, tracker ops | `live-discovery.md`, `module-suite-map.md`, `debugging-signals.md`, `performance-thresholds.md`, `tracker-ops.md` |
 | [`architecture/`](architecture/) | Repo anatomy for the developers team (auto-fix) | `vc-frontend-architecture.md`, `vc-module-architecture.md` |
+| [`diagnostics/`](diagnostics/) | Self-diagnostics oracle: per-skill expected phases/gates + S0–S3 rubric, and the **completion-signal authoring contract** (every skill/command must emit `session-telemetry.mjs complete --skill "<name>"` as its terminal step) | `skill-expectations.md` |
 
 ## Conventions
 

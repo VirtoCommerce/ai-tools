@@ -28,6 +28,20 @@ fork account) from your token plus a live repo scan, and writes `project-profile
 `.env.<env>` + `.env.local` + `.mcp.json`. That profile is what routes every `/qa-fix` to the
 right repo and tracker.
 
+### project-init modes
+
+`/project-init` has one onboarding flow and two **day-2 modes** that skip the interview:
+
+| Invocation | When | What it does |
+|------------|------|--------------|
+| `/project-init` | first onboarding of a deployment | full interview (**env name · tracker · code host · auth · self-diagnostics consent**) → derive `projectType` / client-vs-platform repo split / contribution mode from the token + a live scan → write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` → verify access |
+| `/project-init --add-env` | day-2: point an already-onboarded project at **another deployment target** (a second QA env, staging, a customer's second site) | asks the new environment name, guards against overwriting an existing `.env.<name>`, then scaffolds `.env.<new>` (its URLs) + the `_<ENV>`-suffixed per-env access creds in `.env.local` — **reusing** the project's tracker/host, leaving cross-env tokens untouched — and verifies the new env with `TEST_ENV=<new>`. Does **not** re-interview, re-scan repos, or rewrite the profile / `.mcp.json` (those are project-level, env-agnostic) |
+| `/project-init --check` | day-2: after a plugin upgrade | reconciles the on-disk `project-profile.json` to the current schema (adds new fields with safe defaults, prunes obsolete ones, re-asks operator-decision fields like the self-diagnostics consent), then re-verifies access |
+
+> An **environment** is only a URL set + its access creds, selected at runtime by `TEST_ENV`.
+> A different **tracker or code host** is a different *project* — run a fresh `/project-init`
+> in its own directory for that, not `--add-env`.
+
 ## Quick Start
 
 ```
@@ -54,7 +68,7 @@ recorded silently; only *interesting* (non-clean) work is ever surfaced or sent.
   JSON-lines file to `<project>/.vc-fix/diagnostics/<session_id>.jsonl` (gitignored). **Raw payloads
   are never stored** — tool inputs are hashed (`arg_hash`) and **secrets are redacted** (tokens,
   passwords, card numbers, JWTs). The collector never blocks a tool and never fails your session.
-  Capture runs only when `project-profile.json` has `selfDiagnostics: true`.
+  Capture is **opt-in**: it runs only when `project-profile.json` explicitly sets `selfDiagnostics: true` (and the env kill-switch `VC_FIX_DIAG_CAPTURE` is not off). No profile / no flag / any non-`true` value ⇒ a **full no-op** — no `.vc-fix/` is created. The opt-in is owned by `/project-init`, which asks the consent question as its **first** step and — on Yes — writes the flag **immediately** (before the interview), so its own remaining run is captured from that point on.
 - **Outcome, not error count, drives escalation.** Each skill/command span is classified with cheap
   heuristics (no LLM): `success` · `recovered` (a self-corrected error — **not** escalated) ·
   `degraded` (a *struggle* pattern: retry storm, search thrash, reread/fallback loop, low yield) ·
@@ -62,9 +76,15 @@ recorded silently; only *interesting* (non-clean) work is ever surfaced or sent.
   its expected output — a *silent* failure). The old numeric `>= 6` anomaly gate is gone.
 - **One silent auto-diagnosis, deduped.** When a span is `failed`/`degraded`/`silent_suspect` with a
   **new** signature, the end-of-turn hook runs `/vc-self-check` **silently** (no yes/no modal) to
-  write a **local** `DIAG-*.md` and prints one info line. The same signature never re-triggers; the
-  happy path stays silent. Kill switch: `VC_FIX_DIAG_CONSENT=off` suppresses the auto-run (capture
-  still records).
+  write a **local** `DIAG-*.md` and prints one info line. On a **clean** plugin turn it instead prints
+  a single `vc-fix self-check: no plugin issues detected` line (default ON; silence with
+  `VC_FIX_DIAG_LINE=off`). The same signature never re-triggers. Kill switch:
+  `VC_FIX_DIAG_CONSENT=off` suppresses both the auto-run and the clean line (capture still records).
+- **Timed around sub-agents.** `Stop` fires at the end of *every* turn, including one that just handed
+  work to a background sub-agent and is waiting. The hook detects that (`background_tasks`, with a
+  fallback to any still-open agent op) and treats such a Stop as a **checkpoint** — it records a
+  `deferred` decision to the jsonl and prints nothing; the real verdict + line wait for the
+  **terminal** Stop after the sub-agent returns.
 - **Tell it directly.** `/vc-feedback "<what happened>" [👍|👎]` attaches your verdict to the
   session — the highest-value signal, and the main way a *silent* failure (looked fine, was wrong)
   gets caught.
@@ -79,6 +99,11 @@ recorded silently; only *interesting* (non-clean) work is ever surfaced or sent.
   occurrence" comment**. Delivery **never touches your installed plugin** and routes by your GitHub
   token's real rights (PR / fork-PR / issue / local-only). See the
   [`/vc-self-check` skill](skills/vc-self-check/SKILL.md).
+- **Nothing accumulates.** Once a finding is delivered, `deliver` removes that session's local
+  artifacts (the PR/issue is now the source of truth). As a backstop for artifacts that are *never*
+  delivered (`feedback.mode=off`, a PR hand-off you don't `--purge`, a clean no-finding run), the
+  collector age-caps its own diagnostics at **SessionStart**: it deletes files older than
+  `VC_FIX_DIAG_MAX_AGE_H` hours (default **24**; set `0` to disable), never the current session's.
 
 ## Why self-contained
 

@@ -63,10 +63,16 @@ mentioned here, **never run from this flow**.
 - **`latest`** (default): the newest `*.jsonl` in that dir. A specific **`<session-id>`**
   arg reads `<session-id>.jsonl`.
 - If the dir or file is absent → tell the user telemetry hasn't been collected (the
-  plugin may be running without the hooks wired, or `selfDiagnostics` is not `true` in
-  `project-profile.json`) and STOP.
+  plugin may be running without the hooks wired, or capture was never opted in — it is
+  opt-in, so it stays off until `project-profile.json` sets `selfDiagnostics: true`; also
+  off if `VC_FIX_DIAG_CAPTURE=off`) and STOP.
 - Read the `session_start` record for `transcriptPath`, `pluginVersion`, `testEnv`,
-  `projectType`.
+  `projectType`. Note: `session_start.testEnv` is null when `TEST_ENV` was passed inline
+  per-command (not exported to the hook env) — the **`finalize`** record carries the value
+  recovered from tool args, so prefer `finalize.testEnv` when `session_start.testEnv` is null.
+- A session that survived a **resume/compact** has a second `session_start` with
+  `source:"resume"`/`"compact"`; the collector carries the command span + cursor across it,
+  so treat the run as one continuous session (don't read it as "the plugin didn't run").
 
 ### Step 1 — Load the oracle
 Read [`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
@@ -201,13 +207,29 @@ a single run; `--batch --purge` clears all batched sessions without sending.
 no-push → **fork-PR**; issues-only → **GitHub Issue**; no token → **local + auth
 instructions**.
 
-**Containment (§2a):** every outbound title/body is scrubbed of client source, paths,
-URLs, identifiers, tickets, and secrets — only plugin-file references + generic repro
-survive; a client-specific finding is downgraded to a generic line.
+**Containment (§2a) — default-deny closed schema, not scrubbing.** The outbound artifact is
+built ONLY from a validated `UpstreamSignal` struct
+([`upstream-reduce.mjs`](./upstream-reduce.mjs), spec in
+[`../../knowledge/diagnostics/upstream-schema.md`](../../knowledge/diagnostics/upstream-schema.md),
+rationale in [`../../knowledge/diagnostics/adr-upstream-default-deny.md`](../../knowledge/diagnostics/adr-upstream-default-deny.md)):
+every field is a closed-vocabulary enum or a number (skill, verdict, severity, outcome,
+signal-class, struggle, an error **taxonomy code**, tool-family, repo-**kind**, counts). It
+carries **NO free text** — `reduce()` reads ONLY the structured collector jsonl (span
+records + feedback verdicts); the LLM-authored DIAG cells (`signal`/`rootcause`/`fix`) and
+`/vc-feedback` prose NEVER enter the upstream path (feedback travels as 👍/👎 **counts**
+only). Error TEXT is classified LOCALLY to a code; only the code travels. Repo/module/org
+NAMES are never sent. A runtime validator rejects any out-of-vocabulary value. So there is
+structurally **nothing to leak** — the leak class is impossible by TYPE, not chased by a
+denylist. (`redact()` still scrubs secrets on the LOCAL persist path; the old free-text
+scrubbers were removed as dead code — with an enum-only upstream artifact there is nothing
+free-text to scrub, so the closed schema is the sole upstream guard. PR #143 R2.) Because the
+payload is tiny enums+numbers, `ask` mode shows the operator the exact struct before any send.
 
-**Fingerprint dedup:** an identical finding already upstream is NOT re-filed — `deliver`
-adds a "+1 occurrence" comment to the existing issue instead, so the same defect from
-many clients converges to one ticket with occurrence counts.
+**Fingerprint dedup:** the fingerprint is computed over the STRUCTURAL enum tuple
+(`fingerprintStruct`), never raw text — so dedup can't smuggle client bytes into the hash.
+An identical finding already upstream is NOT re-filed — `deliver` adds a "+1 occurrence"
+comment to the existing issue instead, so the same defect from many clients converges to one
+ticket with occurrence counts.
 
 **Lifecycle — log → analyze → contribute → delete.** Local diagnostics are EPHEMERAL:
 once a finding is contributed upstream the PR/issue is the source of truth, so the
@@ -221,6 +243,17 @@ processed session's local artifacts are removed. Scope is the **processed sessio
 - **`--purge`** is the standalone terminal cleanup (send nothing).
 
 ## Notes
+- **Decision trail (when did the collector run, what did it decide).** Every `finalize`
+  writes a `decision` object on its jsonl `finalize` record. A **terminal** Stop records
+  `{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
+  suppressReason }`; a **checkpoint** Stop (a sub-agent is still running in the background)
+  records `{ verdict:"deferred", pendingSubagents, surfaced:false,
+  suppressReason:"subagent-running" }` and does nothing else. To review a session's
+  decisions: `grep '"type":"finalize"' <outputRoot>/.vc-fix/diagnostics/<session-id>.jsonl`.
+- **The visible line.** On a **terminal** plugin turn the hook resumes the agent to print one
+  line (costing one extra model turn): a finding → run `/vc-self-check` + report; a clean turn
+  → `vc-fix self-check: no plugin issues detected` (default ON — silence it with
+  `VC_FIX_DIAG_LINE=off`). A checkpoint Stop never prints, so the line can't land mid-task.
 - Verdict/severity semantics + the (signal × expectation) table live in the oracle —
   cite them, don't restate.
 - If two spans share a root cause (e.g. the same `tsc` hook failing across skills), merge

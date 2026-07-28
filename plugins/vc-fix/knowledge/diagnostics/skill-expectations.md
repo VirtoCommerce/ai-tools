@@ -45,7 +45,18 @@ invocation) ▷ `agent` (a Task/Agent delegation) / `tool` (any other tool). Eac
 The **numeric `anomalyScore >= 6` gate is GONE** (VCST-5509). Escalation is driven by
 the per-span `outcome` (§1a), not a weighted count. `finalize` carries `spanCounts`
 (outcome histogram), `flagged[]` (the non-`success`/non-`recovered` skill/command
-spans with their dedup `signature`), `feedbackCount`, and `anySkillSeen`.
+spans with their dedup `signature`), `feedbackCount`, `anySkillSeen`, and a **`decision`**
+object — the durable, deterministic audit of the decision moment. A **terminal** Stop
+records `{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
+suppressReason }`; a **checkpoint** Stop (a background sub-agent is still running — detected
+via `background_tasks`, fallback to an open agent op) records `{ verdict:"deferred",
+pendingSubagents, surfaced:false, suppressReason:"subagent-running" }` and returns without
+closing spans or surfacing anything, so a verdict/line never lands mid-task. `surfaced` is
+whether a user-visible line was produced (a `Stop` hook cannot show a line without resuming
+the agent). On a terminal plugin turn the hook resumes to print one line: a finding →
+`/vc-self-check`; a clean turn → "no plugin issues detected" (default ON — silence with
+`VC_FIX_DIAG_LINE=off`). Grep `"type":"finalize"` to see when the collector ran and what it
+decided.
 
 **Load-bearing nuance (quality-gates §3):** a `stop_bail` is a **SUCCESS**, not an
 anomaly, when the run reached the bail *legitimately* (a G0/G1 BAIL with a reason
@@ -63,7 +74,7 @@ outcome. `error ≠ failure`: a self-corrected error is `recovered`, not `failed
 | `recovered` | An error occurred but the **same invocation** (same `tool` + `arg_hash`) later succeeded within the span (self-corrected). Keyed on the exact invocation, NOT the tool name — `Read(A)` fail then `Read(B)` ok is NOT a recovery of A. Applies to `tool_error`, `permission_denied`, and a `hook_failure` **surfaced via a `tool_result`** tied to a `tool_use_id`. A `hook_failure` detected from a bare top-level string echo (an untied PostToolUse note, e.g. a `tsc` message after an Edit — no `tool_use_id` to key an op on) has no invocation to resolve against and can **never** classify as `recovered`; it always forces `failed` for its span, even if the very next Edit is clean. Deliberate fail-toward-escalation, not an oversight. | **no** | S3 (note only) |
 | `degraded` | Completed but a **struggle** sub-signal fired (§1d) — persistence without progress. | yes | S2 |
 | `failed` | A blocking error that was **not** recovered (its exact `tool`+`arg_hash` never succeeded afterward, or — for an untied `hook_failure` echo — unconditionally, per the `recovered` row above) — a `tool_error`, `permission_denied`, or `hook_failure`. Signals come ONLY from `is_error` tool results (never from narration or the text content of a successful tool). | yes | S1 |
-| `silent_suspect` | Closed with no error and no struggle, but produced **none** of its expected-output markers (§1c) — task likely done wrong with no error signal. | yes | S1/S2 |
+| `silent_suspect` | Closed with no error and no struggle, but produced **none** of its expected-output markers (§1c) — task likely done wrong with no error signal. Requires a **minimum of real work** (`SILENT_MIN_OPS = 2` ops): a command span that opened and closed with ~0 ops (e.g. `/qa-fix` → the agent asks a clarifying question → stop) is a trivial/deferred turn, not a silent failure, and is NOT flagged. | yes | S1/S2 |
 
 Only `degraded`/`failed`/`silent_suspect` spans are `flagged`; the tail-trigger runs the
 diagnostician once per turn on **new** signatures only (dedup). `recovered`/`success`
@@ -83,12 +94,14 @@ in lock-step with `EXPECTED_OUTPUT` in `hooks/session-telemetry.mjs`.
 | `/qa-verify-fix` | a ticket transition/update · `READY FOR TEST`/`testing`/`verified`/`reproduc…` · a clean BAIL |
 | `/qa-monitoring` | a `reports/monitoring/` write · `signature`/`dedup`/"no new signatures" · a clean BAIL |
 | `/qa-env-check` | a readiness/`PASS`/`FAIL` verdict table |
-| `/project-init` | a `project-profile.json`/`.mcp.json`/`.env.*` write · a readiness/verify-access table |
+| `/project-init` | a `project-profile.json`/`.mcp.json`/`.env.*` write · a readiness/verify-access table (any mode: full onboarding, `--add-env` = an `.env.*` write + verify table, `--check` = a reconcile summary + verify table) |
 | `/vc-docs` | any activity (lookup skill — never silent_suspect) |
+| **developer skills** (`/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`, `/vue-unit-test`, `/vue-fix`, `/vc-shell-fix`) | a red→green test run (`vitest`/`tsx --test`/`dotnet test`/`vue-tsc`/…) · a code edit (`Edit`/`Write`) · a pass/fail verdict · a clean BAIL. **NOTE:** these run inside the `fullstack-*` sub-agents, whose transcripts are sidechains the collector **skips** — so this is a DEFENSIVE fallback for a standalone main-session invocation; normally their outcome rolls up to the enclosing `/qa-fix` command span. |
 
 A skill with **no** entry above is never `silent_suspect` (the collector treats an
 absent oracle entry as "output produced"). Add an entry here **and** in the collector
-const when a new user-facing skill ships.
+const when a new user-facing skill ships. A new **developer** skill shipped for `/qa-fix`
+should be added to the developer-skills row + `DEV_SKILL_OUTPUT` in the collector.
 
 ### 1d. Struggle sub-signals (Tier 1 `degraded` — machine-readable)
 
@@ -100,11 +113,15 @@ so normal thorough work does NOT trip them. Any hit ⇒ `degraded`.
 |------------|-----------|-----------------|-----|
 | `retry_storm` | same tool + `arg_hash` repeated with recurring errors | `RETRY_STORM_REPEATS=3` & `RETRY_STORM_ERRORS=2` | S2 |
 | `reread_loop` | same read/search `arg_hash` repeated | `REREAD_LOOP=5` | S2 |
-| `search_thrash` | a run of consecutive search/read ops AND the span produced **no** decisive op at all (Edit/Write/PR/create) — persistence without progress, not mere volume; a read-heavy investigation that ends in a decisive op is NOT thrash | `SEARCH_THRASH_RUN=8` | S2 |
+| `search_thrash` | a run of consecutive search/read ops AND the span produced **no progress** at all — where progress = a decisive op (Edit/Write/PR/create → `sawDecisive`) **OR** the skill's own expected output (`sawExpected`, §1c). A read-only skill like `/qa-env-check` does many reads and produces a readiness table (its expected output) with no decisive op — that is progress, NOT thrash | `SEARCH_THRASH_RUN=8` | S2 |
 | `fallback_loop` | distinct browser variants used in one span (firefox→edge→chrome bounce) | `FALLBACK_DISTINCT=3` | S2 |
 | `recurring_error` | same error signature keeps returning | `RECURRING_ERROR=3` | S2 |
 | `stall` | a single op ran abnormally long | `STALL_MS=8min` | S2/S3 |
-| `low_yield` | many tool ops, zero decisive op produced | `LOW_YIELD_OPS=20` | S2 |
+| `low_yield` | many tool ops with **no progress** — neither a decisive op nor the skill's expected output (`sawExpected`) | `LOW_YIELD_OPS=20` | S2 |
+
+> **Progress, not volume (both `search_thrash` + `low_yield`).** Neither fires while the span
+> has already produced its expected output — a read-heavy but successful read-only skill is
+> not struggling. Volume alone never flags.
 
 ---
 
@@ -235,4 +252,59 @@ the diagnostician still confirms the root cause and names the fix:
 - Gate ladder G0–G7 + no-auto-merge + client-code containment: [`../../.claude/rules/quality-gates.md`](../../.claude/rules/quality-gates.md)
 - Report categories + size caps + bloat patterns: [`../../.claude/rules/reports.md`](../../.claude/rules/reports.md)
 - Signal source + record schema: [`../../hooks/session-telemetry.mjs`](../../hooks/session-telemetry.mjs)
+- **Upstream contribution schema (default-deny, closed vocabulary):** [`upstream-schema.md`](./upstream-schema.md) + ADR [`adr-upstream-default-deny.md`](./adr-upstream-default-deny.md). The `deliver` step builds its outbound artifact ONLY from the structured jsonl reduced to this closed schema — the LLM DIAG free text (`signal`/`rootcause`/`fix`) never leaves the machine.
 - The 6 command definitions: [`../../commands/`](../../commands/)
+
+---
+
+## Signal completion at your final step (REQUIRED for every skill & command)
+
+The self-diagnostics **clean status line** (`vc-fix self-check: no plugin issues detected`) is
+gated on an **explicit completion signal**, NOT on the `Stop` hook. `Stop` fires at the end of
+**every** turn — including every pause where a multi-turn skill (e.g. `/project-init`'s interview,
+`/qa-fix`'s sub-agent hand-off) waits for the operator — and it carries no signal that a skill has
+*finished*. A per-turn guard structurally cannot express "once, at the end", so without an explicit
+marker the clean line either repeats on every pause or never fires at the right moment.
+
+So every command/skill MUST, as the **LAST action of its terminal step** (after all user-visible
+output), emit the completion marker:
+
+```bash
+node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "<this-skill-name>"
+```
+
+(`$pluginRoot` = the active install path, resolved at runtime via `claude plugin list --json` — see
+[`../execution/plugin-root.md`](../execution/plugin-root.md); `/project-init` uses `$CLAUDE_PLUGIN_ROOT`,
+consistent with the rest of that skill.)
+
+Rules:
+
+- Run it **exactly once**, at the real end of the workflow (e.g. after the final "Done"/STOP step),
+  **AFTER** all user-visible output — never at an intermediate pause, and never before a step that
+  still waits on the operator.
+- Only the **top-level command/skill the operator invoked** emits it. A **dispatched sub-agent**
+  (the `fullstack-*` devs, `qa-*-expert`s) must NOT — its spans run in a collector-skipped sidechain
+  and roll up to the enclosing command, and a sub-agent's `complete` would set the marker with a
+  misattributed name on the parent session mid-run. The parent orchestrator owns the signal.
+- If the skill **bails early** (NOT READY / BAIL / no-op / couldn't reproduce), still emit it — a
+  correct early exit is a completed run.
+- It is safe and silent: it **never throws, never blocks** a tool, and is a **no-op** when
+  self-diagnostics **capture** is not opted in (no `selfDiagnostics:true`, or `VC_FIX_DIAG_CAPTURE=off`)
+  or when there is no session state yet. It is **NOT** gated on `VC_FIX_DIAG_CONSENT` — consent gates
+  *surfacing* the clean line at finalize, not writing the marker (matching the CHANGELOG's "capture
+  is unaffected by the consent kill-switch"). Being Bash-invoked it has no hook
+  stdin, so it targets the session whose `.state.json` was most recently modified (the active
+  session) unless `--session <id>` is passed.
+
+**Why:** the marker sets `state.skillCompletePending`; the next terminal `Stop`'s `cmdFinalize`
+consumes it to surface the clean line **exactly once**, after your skill actually finished. Without
+it the clean line is withheld (audit `suppressReason: "awaiting-completion"`) — or, only when
+`VC_FIX_DIAG_LINE_FALLBACK=on`, a once-per-**session** legacy fallback fires instead. The `findings`
+escalation (a flagged span → silent `/vc-self-check`) is independent and needs no marker.
+
+**Authoring checklist (add to every new skill/command):**
+
+- [ ] The terminal step's LAST action emits `session-telemetry.mjs complete --skill "<name>"`.
+- [ ] Every early-exit path (BAIL / NOT READY / no-op) also emits it.
+- [ ] `<name>` matches the skill/command name the collector attributes spans to (the slash-command
+      name without its namespace, e.g. `qa-fix`, `project-init`).

@@ -77,11 +77,13 @@ export const PROFILE_DEFAULTS = {
 
   // selfDiagnostics — opt-in for the passive session-telemetry hook
   // (.claude/hooks/session-telemetry.mjs). When true, the collector records per-skill
-  // signals to <outputRoot>/.vc-fix/diagnostics/. /project-init writes it true by
-  // default; the hook reads project-profile.json RAW and requires the field to be
-  // strictly === true, so an absent profile (running Claude in a random folder) or
-  // an absent/false flag ⇒ the hook is a full no-op and never creates `.vc-fix/`.
-  selfDiagnostics: true,
+  // signals to <outputRoot>/.vc-fix/diagnostics/. The persisted default is **false**
+  // (opt-in fails SAFE, PR #143 R2 NA-4): a profile written WITHOUT an explicit consent
+  // answer must never silently enable capture. The interview still *recommends* Yes (a
+  // hard-coded nudge), but recommending ≠ consenting. The hook reads project-profile.json
+  // RAW and requires the field to be strictly === true, so an absent profile or an
+  // absent/false flag ⇒ the hook is a full no-op and never creates `.vc-fix/`.
+  selfDiagnostics: false,
 };
 
 /** Recursive merge: objects merge key-by-key; arrays + scalars are replaced wholesale. */

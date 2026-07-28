@@ -1,22 +1,24 @@
-// Unit tests for the VCST-5509 additions to plugins/vc-fix/skills/vc-self-check/deliver.mjs:
-// feedback.mode consent gating (feedbackMode), /vc-feedback capture readback
-// (readSessionFeedback), the feedback-folded fingerprint (the D2 fix — a feedback-only
-// report must not collapse to one constant fingerprint across clients), and buildDraft's
-// mode-dependent handling of the operator's free-form feedback note (ask keeps it, auto
-// drops it — B-F1). Pure module-level imports, no child process — VC_FIX_HOME is set/reset
-// around each test for isolation. Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
+// Unit tests for the VCST-5509 additions to plugins/vc-fix/skills/vc-self-check/deliver.mjs
+// as reworked by the default-deny closed-schema redesign: feedback.mode consent gating
+// (feedbackMode), the structured /vc-feedback capture readback (readSessionRecords), and
+// buildDraft's CLOSED-SCHEMA rendering (it takes a validated UpstreamSignal struct and renders
+// enums/counts ONLY — no free text, no operator prose). The fingerprint/findingSig tests moved to
+// upstream-reduce.test.mjs (fingerprintStruct); the free-text client-shape scrubbers
+// (scrubText/isClientSpecific) were removed as dead code (PR #143 R2 F1) — the closed schema is
+// the sole upstream guard, and the shared redact.mjs secret rules are covered by
+// session-telemetry.test.mjs. Pure module-level imports, no child process — VC_FIX_HOME is
+// set/reset around each test. Run: `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
-  fingerprint,
-  findingSig,
   buildDraft,
   feedbackMode,
-  readSessionFeedback,
+  readSessionRecords,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
+import { validateUpstream } from "../../plugins/vc-fix/skills/vc-self-check/upstream-reduce.mjs";
 
 function withHome(home, fn) {
   const prev = process.env.VC_FIX_HOME;
@@ -28,33 +30,6 @@ function withHome(home, fn) {
     else process.env.VC_FIX_HOME = prev;
   }
 }
-
-const finding = (over = {}) => ({ skill: "/qa-fix", verdict: "BROKEN", sev: "S1", signal: "x", fix: "y", rootcause: "", ...over });
-
-// ─── findingSig / fingerprint ───────────────────────────────────────────────────
-test("findingSig: identity ignores whitespace differences in `fix`", () => {
-  const a = findingSig(finding({ fix: "add a null-guard" }));
-  const b = findingSig(finding({ fix: "  add   a null-guard  " }));
-  assert.equal(a, b);
-});
-
-test("fingerprint: identical findings + no feedback are stable across calls (dedup works)", () => {
-  const f1 = fingerprint([finding()]);
-  const f2 = fingerprint([finding()]);
-  assert.equal(f1, f2);
-});
-
-test("fingerprint: a feedback-only report (no findings) does NOT collapse to one constant fingerprint (D2)", () => {
-  const fpA = fingerprint([], [{ verdict: "down", text: "the fix broke pagination" }]);
-  const fpB = fingerprint([], [{ verdict: "down", text: "totally different report about checkout" }]);
-  assert.notEqual(fpA, fpB, "distinct feedback notes must produce distinct fingerprints, not collapse to one issue");
-});
-
-test("fingerprint: identical feedback text still dedups to the same fingerprint", () => {
-  const fpA = fingerprint([], [{ verdict: "down", text: "the fix broke pagination" }]);
-  const fpB = fingerprint([], [{ verdict: "down", text: "the fix broke pagination" }]);
-  assert.equal(fpA, fpB);
-});
 
 // ─── feedbackMode ────────────────────────────────────────────────────────────────
 test("feedbackMode: defaults to 'ask' when no project-profile.json exists", () => {
@@ -86,82 +61,83 @@ test("feedbackMode: an invalid/garbage mode value falls back to 'ask', never 'au
   }
 });
 
-// ─── readSessionFeedback ─────────────────────────────────────────────────────────
-test("readSessionFeedback: reads only feedback-typed records for the given session", () => {
+// ─── readSessionRecords (the structured jsonl source for reduce) ──────────────────
+test("readSessionRecords: splits span / feedback / finalize / session_start records", () => {
   const home = mkdtempSync(join(tmpdir(), "deliver-fb-"));
   try {
     const dir = join(home, ".vc-fix", "diagnostics");
     mkdirSync(dir, { recursive: true });
     const lines = [
-      { type: "session_start", sessionId: "s1" },
-      { type: "feedback", sessionId: "s1", verdict: "down", text: "broke pagination" },
-      { type: "span", sessionId: "s1", kind: "command" },
-      { type: "feedback", sessionId: "s1", verdict: "up", text: "" },
+      { type: "session_start", sessionId: "s1", pluginVersion: "0.8.1" },
+      { type: "span", id: "1", kind: "skill", name: "qa-fix", outcome: "failed" },
+      { type: "feedback", sessionId: "s1", verdict: "down", text: "prose that must stay LOCAL" },
+      { type: "finalize", sessionId: "s1", decision: { verdict: "flagged" } },
     ];
     writeFileSync(join(dir, "s1.jsonl"), lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
     withHome(home, () => {
-      const fb = readSessionFeedback("s1");
-      assert.equal(fb.length, 2);
-      assert.deepEqual(fb.map((f) => f.verdict), ["down", "up"]);
-      assert.equal(fb[0].text, "broke pagination");
+      const rec = readSessionRecords("s1");
+      assert.equal(rec.pluginVersion, "0.8.1");
+      assert.equal(rec.spans.length, 1);
+      assert.equal(rec.spans[0].name, "qa-fix");
+      assert.equal(rec.feedback.length, 1);
+      assert.equal(rec.feedback[0].verdict, "down");
+      assert.ok(rec.finalize && rec.finalize.decision.verdict === "flagged");
     });
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
 });
 
-test("readSessionFeedback: no session id or missing file returns an empty array, never throws", () => {
+test("readSessionRecords: missing/absent session returns the empty shell, never throws", () => {
   const home = mkdtempSync(join(tmpdir(), "deliver-fb-"));
   try {
     withHome(home, () => {
-      assert.deepEqual(readSessionFeedback(null), []);
-      assert.deepEqual(readSessionFeedback("nope"), []);
+      const rec = readSessionRecords("nope");
+      assert.deepEqual(rec, { spans: [], feedback: [], finalize: null, pluginVersion: "unknown" });
+      assert.deepEqual(readSessionRecords(null).spans, []);
     });
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
 });
 
-// ─── buildDraft feedback rendering (mode-dependent, B-F1) ───────────────────────
-test("buildDraft: mode=ask includes the feedback note prose", () => {
-  const d = buildDraft({
-    route: "issue",
-    pluginVersion: "1.0",
-    findings: [],
-    fp: "t1",
-    feedback: [{ verdict: "down", text: "the fix broke pagination" }],
-    mode: "ask",
-  });
-  assert.match(d.body, /broke pagination/);
-  assert.match(d.title, /operator feedback/);
+// ─── buildDraft (CLOSED-SCHEMA rendering — enums + counts ONLY, no free text) ────────
+const structOf = (over = {}) => validateUpstream({
+  schemaVersion: 1, pluginVersion: "0.8.1",
+  findings: over.findings ?? [],
+  feedback: over.feedback ?? { up: 0, down: 0 },
+  sessionCount: over.sessionCount ?? 1,
+});
+const brokenFinding = (over = {}) => ({
+  skill: "qa-fix", verdict: "BROKEN", severity: "S1", outcome: "failed",
+  signalClass: "permission_denied", struggle: [], errorCode: "AUTH_MISSING_SCOPE",
+  toolFamily: "github", repoKind: "backend", retries: 1, occurrences: 1, ...over,
 });
 
-test("buildDraft: mode=auto drops the feedback note prose, keeps only the verdict mark", () => {
-  const d = buildDraft({
-    route: "issue",
-    pluginVersion: "1.0",
-    findings: [],
-    fp: "t2",
-    feedback: [{ verdict: "down", text: "the fix broke pagination" }],
-    mode: "auto",
-  });
-  assert.ok(!/broke pagination/.test(d.body), "auto-mode delivery must not carry unreviewed free-form prose");
-  assert.match(d.body, /👎/, "the verdict mark itself should still be present");
+test("buildDraft: renders a findings row from enum fields only", () => {
+  const d = buildDraft({ struct: structOf({ findings: [brokenFinding()] }), route: "issue" });
+  assert.match(d.body, /## Findings/);
+  assert.match(d.body, /qa-fix \| BROKEN \| S1 \| failed \| permission_denied \| AUTH_MISSING_SCOPE/);
+  assert.match(d.title, /qa-fix BROKEN/);
+  assert.ok(d.fingerprint && typeof d.fingerprint === "string");
 });
 
-// NOTE: isClientSpecific()'s clientTerms() memoizes project-profile.json PER PROCESS on
-// first call (see deliver.mjs), so a profile-derived org term (e.g. a configured `acme`)
-// set up mid-file wouldn't reliably apply here regardless of test order. Use a fixture the
-// GENERIC (profile-independent) shape heuristics catch — a PascalCase client identifier —
-// matching tests/self-check-containment.test.mjs's own "noprofile" regression-guard cases.
-test("buildDraft: a client-specific feedback note is withheld even in mode=ask", () => {
-  const d = buildDraft({
-    route: "issue",
-    pluginVersion: "1.0",
-    findings: [],
-    fp: "t3",
-    feedback: [{ verdict: "down", text: "at AcmeCorp.Web.Controllers.CartController.Checkout()" }],
-    mode: "ask",
-  });
-  assert.ok(!/AcmeCorp/.test(d.body), "a client-specific identifier must never reach the outbound draft");
+test("buildDraft: operator feedback is COUNTS ONLY — no prose ever reaches the draft", () => {
+  // Even if a caller somehow smuggled text-shaped feedback, buildDraft reads only the counts.
+  const d = buildDraft({ struct: structOf({ feedback: { up: 2, down: 3 } }), route: "issue" });
+  assert.match(d.body, /## Operator feedback/);
+  assert.match(d.body, /👍 2 · 👎 3/);
+  assert.match(d.title, /operator feedback 👎/);
+});
+
+test("buildDraft: a feedback-only draft (no findings) reflects the operator verdict, not OK", () => {
+  const d = buildDraft({ struct: structOf({ feedback: { up: 0, down: 1 } }), route: "issue" });
+  assert.ok(!/## Findings/.test(d.body));
+  assert.match(d.title, /operator feedback 👎/);
+});
+
+test("buildDraft: an occurrence count > 1 is annotated on the row", () => {
+  const d = buildDraft({ struct: structOf({ findings: [brokenFinding({ occurrences: 4 })], sessionCount: 4 }), route: "issue" });
+  assert.match(d.body, /×4 sessions/);
+  assert.match(d.body, /Sessions: 4/);
 });

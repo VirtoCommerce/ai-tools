@@ -72,6 +72,7 @@ const MANAGED_FIELDS = [
     path: "selfDiagnostics",
     policy: "ask",
     default: true,
+    validate: (v) => v === true || v === false,
     question:
       "Enable vc-fix self-diagnostics for this project? The passive session-telemetry hook records how the plugin's OWN skills ran (to <project>/.vc-fix/, gitignored) so /vc-self-check can spot plugin quality issues. It never sends anything without a separate consent step and never touches your code.",
     options: [
@@ -79,6 +80,12 @@ const MANAGED_FIELDS = [
       { label: "No", value: false, hint: "hook stays a full no-op — no .vc-fix/" },
     ],
   },
+  // NB: the `feedback` (upstream-delivery consent) MANAGED entry is intentionally NOT ported here —
+  // this `.claude` reconcile lacks the plugin's dotted-path `setDeep`, so `--set feedback.mode=…`
+  // would not fold (a dead-end). It fails SAFE regardless (an absent `feedback` ⇒ deliver defaults
+  // to "ask", which still requires an explicit --confirm; no auto-send). Fresh onboarding persists
+  // the answer via gen-profile's `--feedback-mode`. Modernizing this `.claude` reconcile (setDeep +
+  // the feedback entry) is a tracked follow-up; the distributed plugin surface already covers it.
 ];
 const managedFor = (path) => MANAGED_FIELDS.find((m) => m.path === path);
 
