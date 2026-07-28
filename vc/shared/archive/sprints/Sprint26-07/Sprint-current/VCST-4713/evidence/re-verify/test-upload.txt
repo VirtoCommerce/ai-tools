@@ -1,1 +1,0 @@
-Test file for VCST-4713 file upload verification

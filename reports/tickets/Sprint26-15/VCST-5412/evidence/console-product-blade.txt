@@ -1,0 +1,20 @@
+Total messages: 15 (Errors: 6, Warnings: 5)
+Returning 6 messages for level "error"
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcmp-dev.govirto.com/cms-content/assets/catalog/6f83e81b-ecfd-4ee6-8a71-936663c9f2e8/9105_sm.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcmp-dev.govirto.com/cms-content/assets/catalog/6f83e81b-ecfd-4ee6-8a71-936663c9f2e8/9105.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 500 () @ https://vcmp-dev.govirto.com/api/vcmp/seller/categories/search:0
+[ERROR] useSelectDataSource: error resolving d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:13241
+    at async F (https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:1:13469)
+    at async Object.z [as resolve] (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:49857)
+    at async re.immediate (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:65294) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:1
+[ERROR] Failed to load resource: the server responded with a status of 500 () @ https://vcmp-dev.govirto.com/api/vcmp/seller/categories/search:0
+[ERROR] useSelectDataSource: error loading options d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:13241
+    at async F (https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:1:13469)
+    at async g (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:48184)
+    at async Object.z [as resolve] (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:50036)
+    at async re.immediate (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:65294) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:1

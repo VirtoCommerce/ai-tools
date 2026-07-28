@@ -1,9 +1,0 @@
-{
-  "moduleId": "VirtoCommerce.WhiteLabeling",
-  "settings": [
-    {
-      "name": "WhiteLabeling.WhiteLabelingEnabled",
-      "value": true
-    }
-  ]
-}

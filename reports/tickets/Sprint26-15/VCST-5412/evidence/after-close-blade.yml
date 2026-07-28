@@ -1,0 +1,41 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e57]:
+    - complementary:
+      - generic: Development
+    - generic [ref=f2e58]:
+      - navigation [ref=f2e7002]:
+        - generic [ref=f2e61]:
+          - generic [ref=f2e70]:
+            - button [ref=f2e7004] [cursor=pointer]
+            - button [ref=f2e7005] [cursor=pointer]
+          - generic [ref=f2e79]:
+            - textbox [ref=f2e7006]:
+              - /placeholder: Search keyword
+            - region [ref=f2e7007]:
+              - generic [ref=f2e90]
+            - button [ref=f2e7008] [cursor=pointer]:
+              - generic [ref=f2e254]
+      - main [ref=f2e257]:
+        - region [ref=f2e7009]:
+          - generic [ref=f2e4459]:
+            - region [ref=f2e7010]:
+              - generic [ref=f2e5270]: Products
+              - generic [ref=f2e5279]
+              - generic [ref=f2e5321]
+            - region [ref=f2e7218]:
+              - generic [ref=f2e6223]
+              - alert [ref=f2e6799]
+              - generic [ref=f2e6258]
+              - generic [ref=f2e6317]
+  - generic:
+    - generic:
+      - generic:
+        - dialog "Confirmation Close":
+          - generic [ref=f2e7288]:
+            - heading "Confirmation Close" [level=3] [ref=f2e7289]:
+              - text: Confirmation
+              - button "Close" [active] [ref=f2e7290] [cursor=pointer]
+            - generic [ref=f2e7293]: You have unsaved changes. Close anyway?
+            - generic [ref=f2e7300]:
+              - button "Confirm" [ref=f2e7301] [cursor=pointer]
+              - button "Cancel" [ref=f2e7303] [cursor=pointer]

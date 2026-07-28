@@ -1,0 +1,43 @@
+Total messages: 27 (Errors: 15, Warnings: 7)
+Returning 15 messages for level "error"
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcmp-dev.govirto.com/cms-content/assets/catalog/6f83e81b-ecfd-4ee6-8a71-936663c9f2e8/9105_sm.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcmp-dev.govirto.com/cms-content/assets/catalog/6f83e81b-ecfd-4ee6-8a71-936663c9f2e8/9105.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 500 () @ https://vcmp-dev.govirto.com/api/vcmp/seller/categories/search:0
+[ERROR] useSelectDataSource: error resolving d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:13241
+    at async F (https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:1:13469)
+    at async Object.z [as resolve] (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:49857)
+    at async re.immediate (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:65294) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:1
+[ERROR] Failed to load resource: the server responded with a status of 500 () @ https://vcmp-dev.govirto.com/api/vcmp/seller/categories/search:0
+[ERROR] useSelectDataSource: error loading options d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:13241
+    at async F (https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:1:13469)
+    at async g (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:48184)
+    at async Object.z [as resolve] (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:50036)
+    at async re.immediate (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:65294) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:1
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcmp-dev.govirto.com/cms-content/assets/catalog/undefined/tiny-1x1_216x216.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcmp-dev.govirto.com/cms-content/assets/catalog/undefined/valid-800x800_216x216.png:0
+[ERROR] Failed to load resource: the server responded with a status of 500 () @ https://vcmp-dev.govirto.com/api/vcmp/seller/categories/search:0
+[ERROR] useSelectDataSource: error resolving d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:13241
+    at async F (https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:1:13469)
+    at async Object.z [as resolve] (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:49857)
+    at async re.immediate (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:65294) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:1
+[ERROR] Failed to load resource: the server responded with a status of 500 () @ https://vcmp-dev.govirto.com/api/vcmp/seller/categories/search:0
+[ERROR] useSelectDataSource: error loading options d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:13241
+    at async F (https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:1:13469)
+    at async g (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:48184)
+    at async Object.z [as resolve] (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:50036)
+    at async re.immediate (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:2:65294) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:1
+Uncaught SecurityError: Failed to read the 'caches' property from 'Window': Cache storage is disabled because the context is sandboxed and lacks the 'allow-same-origin' flag.
+    at <anonymous> (https://www.youtube.com/s/_/ytembeds/_/js/k=ytembeds.base.en_US.GfQFTTvCfyA.2021.O/am=AAAAgA/d=1/excm=base,root/br=1/rs=AGKMywGHlg5RMiS5OZe_111rhQIrLuLDyQ/m=root,base:984:3)
+ReferenceError: writeEmbed is not defined
+    at https://www.youtube.com/embed/aqz-KE-bpKQ?feature=oembed:11:10855
+Uncaught undefined
+    at <anonymous> (https://www.youtube.com/s/_/ytembeds/_/js/k=ytembeds.base.en_US.GfQFTTvCfyA.2021.O/am=AAAAgA/d=1/excm=base,root/br=1/rs=AGKMywGHlg5RMiS5OZe_111rhQIrLuLDyQ/m=root,base:92:433)
