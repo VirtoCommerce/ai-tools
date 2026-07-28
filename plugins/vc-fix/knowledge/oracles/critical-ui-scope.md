@@ -5,9 +5,11 @@ applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Custom
 
 # Critical UI Scope — Regression-Enforced Component Checklist
 
-**Canonical scope of UI primitives that every regression run must verify.** Layout-stability findings on these components are revenue-protecting, not cosmetic. The Coverage Matrix at the bottom of this file is **machine-readable**: `scripts/validate-critical-ui-scope.ts` (full `vc-qa` plugin only, not shipped here) parses it and fails the build if any covered cell points at a test ID that doesn't exist in any regression suite CSV.
+**Canonical scope of UI primitives that every regression run must verify.** Layout-stability findings on these components are revenue-protecting, not cosmetic. The Coverage Matrix at the bottom of this file is **machine-readable**: `scripts/validate-critical-ui-scope.ts` (full `vc-qa` plugin only, not shipped here) parses it and fails the build if any cell points at a test ID that doesn't exist in any regression suite CSV.
 
-> **Pre-reads:** [BL-UI invariants](business-logic.md#domain-15-ui-display--layout-stability-bl-ui), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../scripts/lib/measure-layout.ts), `048b suite` (`regression/suites/Frontend/cross-cutting/048b-layout-stability.csv` — full `vc-qa` plugin only, not shipped here).
+> ⚠️ **UNCOVERED as of 2026-07-25.** Suite `048b-layout-stability.csv` — the sole carrier of every covering test ID in both matrices — was **removed**. All 197 applicable cells are now marked `GAP`. This file is retained as the **scope definition** (what SHOULD be covered) and as an audit-protocol reference, but it no longer gates a regression run. The validator still hard-fails on a cell pointing at a **nonexistent** test ID, and reports the GAP count as a warning; `--strict` makes GAPs fatal again once a replacement suite lands.
+
+> **Pre-reads:** [BL-UI invariants](business-logic.md#domain-15-ui-display--layout-stability-bl-ui), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../scripts/lib/measure-layout.ts).
 >
 > **Owner agent:** `ui-ux-expert` (full `vc-qa` plugin only, not shipped here). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as `business-logic.md` promotions per the `feedback_business_logic_promotion` memory entry).
 
@@ -200,7 +202,8 @@ NAV: /account/orders
    browser_evaluate(rectSnapshotSnippet('main')) → after
    → compareRectSnapshots — main shouldn't jump > 1 px (rows rearrange but page does not)
 5. Skeleton → table swap (slow 3G):
-   covered by LAYOUT-SHIFT-004 in 048b
+   was covered by LAYOUT-SHIFT-004 in suite 048b (removed) — currently GAP;
+   run manually until a replacement suite exists
 ```
 
 ### 5. VcDialog (modal)
@@ -1148,60 +1151,63 @@ NOTE: BL-UI-001 / BL-UI-003 / BL-UI-006 marked n/a — static once rendered;
 The validator at `scripts/validate-critical-ui-scope.ts` (full `vc-qa` plugin only, not shipped here) parses the table below.
 
 **Cell value contract:**
-- A test ID like `LAYOUT-CLS-001` or `LAYOUT-COMP-VCBUTTON-001` — must exist in a regression suite CSV under the `ID` column.
+- A test ID like `LAYOUT-CLS-001` or `LAYOUT-COMP-VCBUTTON-001` — must exist in a regression suite CSV under the `ID` column. A test ID that does **not** resolve is always a hard failure.
 - `n/a` — invariant does not apply to this component (skipped by validator).
-- Anything else (including empty cells or text like `GAP` or `none`) is treated as **uncovered** and fails the validator.
+- `GAP` — applicable but knowingly uncovered. Counted and warned about, **non-fatal** by default; fatal under `--strict`.
+- Anything else (empty cells, `none`, `TODO`, `-`) is malformed and fails the validator.
 
 Multiple test IDs in one cell — separate with ` + ` (literal `+` with spaces). Each ID is validated independently.
+
+**Every cell below is currently `GAP`** — see the banner at the top of this file. To restore coverage, author a replacement suite and swap each `GAP` for its new test ID.
 
 <!-- COVERAGE-MATRIX-START -->
 
 | Component | BL-UI-001 | BL-UI-002 | BL-UI-003 | BL-UI-004 | BL-UI-005 | BL-UI-006 |
 |-----------|-----------|-----------|-----------|-----------|-----------|-----------|
-| VcButton | n/a | LAYOUT-COMP-VCBUTTON-001 | LAYOUT-SHIFT-001 | n/a | n/a | LAYOUT-TGT-001 + LAYOUT-TGT-003 |
-| VcProductCard | LAYOUT-CLS-001 + LAYOUT-CLS-002 | LAYOUT-SPC-001 | LAYOUT-SHIFT-001 | LAYOUT-OVF-LONGTITLE-001 | LAYOUT-ALN-001 | LAYOUT-TGT-001 |
-| VcLineItem | LAYOUT-CLS-003 | LAYOUT-SPC-002 | LAYOUT-COMP-VCLINEITEM-001 | LAYOUT-OVF-004 | LAYOUT-ALN-002 | LAYOUT-TGT-002 |
-| VcTable | n/a | LAYOUT-COMP-VCTABLE-001 | LAYOUT-COMP-VCTABLE-003 + LAYOUT-SHIFT-004 | LAYOUT-OVF-005 | LAYOUT-COMP-VCTABLE-002 | n/a |
-| VcDialog | n/a | LAYOUT-SPC-003 | LAYOUT-COMP-VCDIALOG-001 | LAYOUT-OVF-004 | n/a | LAYOUT-COMP-VCDIALOG-002 |
-| Popover | n/a | LAYOUT-COMP-POPOVER-002 | LAYOUT-COMP-POPOVER-001 | LAYOUT-COMP-POPOVER-002 | n/a | n/a |
-| VcSidebar | n/a | LAYOUT-COMP-VCSIDEBAR-001 | n/a | LAYOUT-OVF-005 + LAYOUT-OVF-006 + LAYOUT-OVF-007 + LAYOUT-OVF-008 | LAYOUT-COMP-VCSIDEBAR-001 | n/a |
-| BOPIS Modal | n/a | LAYOUT-COMP-BOPIS-001 | LAYOUT-COMP-BOPIS-002 | LAYOUT-COMP-BOPIS-003 | LAYOUT-COMP-BOPIS-004 | LAYOUT-COMP-BOPIS-005 |
-| VcInput | n/a | LAYOUT-COMP-VCINPUT-001 | LAYOUT-COMP-VCINPUT-002 | LAYOUT-COMP-VCINPUT-004 | n/a | LAYOUT-COMP-VCINPUT-003 |
-| VcQuantityStepper | n/a | LAYOUT-COMP-VCQTY-001 | LAYOUT-COMP-VCQTY-003 | n/a | LAYOUT-COMP-VCQTY-001 | LAYOUT-COMP-VCQTY-002 |
-| Header | n/a | LAYOUT-COMP-HEADER-001 | LAYOUT-COMP-HEADER-003 | LAYOUT-COMP-HEADER-002 | LAYOUT-COMP-HEADER-001 | LAYOUT-COMP-HEADER-002 |
-| Notifications | n/a | LAYOUT-COMP-TOAST-001 | LAYOUT-COMP-TOAST-001 + LAYOUT-COMP-TOAST-002 | n/a | n/a | n/a |
-| VcPriceDisplay | n/a | LAYOUT-COMP-VCPRICE-002 | LAYOUT-COMP-VCPRICE-001 | n/a | LAYOUT-COMP-VCPRICE-002 | n/a |
-| VcEmptyView | n/a | LAYOUT-COMP-EMPTY-001 | n/a | LAYOUT-COMP-EMPTY-002 | n/a | n/a |
-| VcCheckbox | n/a | LAYOUT-COMP-VCCHECKBOX-001 | LAYOUT-COMP-VCCHECKBOX-002 | n/a | LAYOUT-COMP-VCCHECKBOX-001 | LAYOUT-COMP-VCCHECKBOX-003 |
-| VcRadioButton | n/a | LAYOUT-COMP-VCRADIO-001 | LAYOUT-COMP-VCRADIO-002 | n/a | LAYOUT-COMP-VCRADIO-001 | LAYOUT-COMP-VCRADIO-003 |
-| VcChip | n/a | LAYOUT-COMP-VCCHIP-001 | n/a | LAYOUT-COMP-VCCHIP-002 | LAYOUT-COMP-VCCHIP-003 | n/a |
-| VcSelect | n/a | LAYOUT-COMP-VCSELECT-001 | LAYOUT-COMP-VCSELECT-002 | LAYOUT-COMP-VCSELECT-003 | n/a | LAYOUT-COMP-VCSELECT-004 |
-| VcDropdownMenu | n/a | LAYOUT-COMP-VCDROPDOWN-001 | LAYOUT-COMP-VCDROPDOWN-002 | LAYOUT-COMP-VCDROPDOWN-003 | LAYOUT-COMP-VCDROPDOWN-004 | LAYOUT-COMP-VCDROPDOWN-005 |
-| VcVariantPicker | n/a | LAYOUT-COMP-VCVARIANTPICKER-001 | LAYOUT-COMP-VCVARIANTPICKER-002 | LAYOUT-COMP-VCVARIANTPICKER-001 | LAYOUT-COMP-VCVARIANTPICKER-001 | LAYOUT-COMP-VCVARIANTPICKER-003 |
-| VcWidget | n/a | LAYOUT-COMP-VCWIDGET-001 | LAYOUT-COMP-VCWIDGET-002 | LAYOUT-COMP-VCWIDGET-003 | LAYOUT-COMP-VCWIDGET-001 | n/a |
-| VcTabSwitch | n/a | LAYOUT-COMP-VCTABSWITCH-001 | LAYOUT-COMP-VCTABSWITCH-002 | LAYOUT-COMP-VCTABSWITCH-003 | LAYOUT-COMP-VCTABSWITCH-001 | LAYOUT-COMP-VCTABSWITCH-004 |
-| VcSwitch | n/a | LAYOUT-COMP-VCSWITCH-001 | LAYOUT-COMP-VCSWITCH-002 | n/a | LAYOUT-COMP-VCSWITCH-001 | LAYOUT-COMP-VCSWITCH-003 |
-| VcScrollbar | n/a | LAYOUT-COMP-VCSCROLLBAR-001 | LAYOUT-COMP-VCSCROLLBAR-002 | n/a | n/a | n/a |
-| VcImage | LAYOUT-COMP-VCIMAGE-001 | LAYOUT-COMP-VCIMAGE-002 | LAYOUT-COMP-VCIMAGE-003 | n/a | n/a | n/a |
-| VcAlert | n/a | LAYOUT-COMP-VCALERT-001 | LAYOUT-COMP-VCALERT-002 | LAYOUT-COMP-VCALERT-003 | n/a | LAYOUT-COMP-VCALERT-004 |
-| VcBadge | n/a | LAYOUT-COMP-VCBADGE-001 | LAYOUT-COMP-VCBADGE-002 | n/a | LAYOUT-COMP-VCBADGE-003 | n/a |
-| VcCarousel | LAYOUT-COMP-VCCAROUSEL-001 | LAYOUT-COMP-VCCAROUSEL-002 | LAYOUT-COMP-VCCAROUSEL-003 | LAYOUT-COMP-VCCAROUSEL-004 | n/a | LAYOUT-COMP-VCCAROUSEL-005 |
-| VcPagination | n/a | LAYOUT-COMP-VCPAGINATION-001 | LAYOUT-COMP-VCPAGINATION-002 | LAYOUT-COMP-VCPAGINATION-003 | LAYOUT-COMP-VCPAGINATION-001 | LAYOUT-COMP-VCPAGINATION-004 |
-| VcExpansionPanels | n/a | LAYOUT-COMP-VCEXPANSION-001 | LAYOUT-COMP-VCEXPANSION-002 | LAYOUT-COMP-VCEXPANSION-003 | LAYOUT-COMP-VCEXPANSION-001 | LAYOUT-COMP-VCEXPANSION-004 |
-| VcModal | n/a | LAYOUT-COMP-VCMODAL-001 | LAYOUT-COMP-VCMODAL-002 | LAYOUT-COMP-VCMODAL-003 | n/a | LAYOUT-COMP-VCMODAL-004 |
-| VcConfirmationModal | n/a | LAYOUT-COMP-VCCONFIRMMODAL-001 | LAYOUT-COMP-VCCONFIRMMODAL-002 | LAYOUT-COMP-VCCONFIRMMODAL-003 | LAYOUT-COMP-VCCONFIRMMODAL-001 | LAYOUT-COMP-VCCONFIRMMODAL-004 |
-| VcAddToCart | n/a | LAYOUT-COMP-VCADDTOCART-001 | LAYOUT-COMP-VCADDTOCART-002 | n/a | n/a | LAYOUT-COMP-VCADDTOCART-003 |
-| VcSlider | n/a | LAYOUT-COMP-VCSLIDER-001 | LAYOUT-COMP-VCSLIDER-002 | n/a | LAYOUT-COMP-VCSLIDER-001 | LAYOUT-COMP-VCSLIDER-003 |
-| VcRating | n/a | LAYOUT-COMP-VCRATING-001 | n/a | n/a | LAYOUT-COMP-VCRATING-001 | n/a |
-| VcBreadcrumbs | n/a | LAYOUT-COMP-VCBREADCRUMBS-001 | n/a | LAYOUT-COMP-VCBREADCRUMBS-002 | LAYOUT-COMP-VCBREADCRUMBS-001 | n/a |
+| VcButton | n/a | GAP | GAP | n/a | n/a | GAP |
+| VcProductCard | GAP | GAP | GAP | GAP | GAP | GAP |
+| VcLineItem | GAP | GAP | GAP | GAP | GAP | GAP |
+| VcTable | n/a | GAP | GAP | GAP | GAP | n/a |
+| VcDialog | n/a | GAP | GAP | GAP | n/a | GAP |
+| Popover | n/a | GAP | GAP | GAP | n/a | n/a |
+| VcSidebar | n/a | GAP | n/a | GAP | GAP | n/a |
+| BOPIS Modal | n/a | GAP | GAP | GAP | GAP | GAP |
+| VcInput | n/a | GAP | GAP | GAP | n/a | GAP |
+| VcQuantityStepper | n/a | GAP | GAP | n/a | GAP | GAP |
+| Header | n/a | GAP | GAP | GAP | GAP | GAP |
+| Notifications | n/a | GAP | GAP | n/a | n/a | n/a |
+| VcPriceDisplay | n/a | GAP | GAP | n/a | GAP | n/a |
+| VcEmptyView | n/a | GAP | n/a | GAP | n/a | n/a |
+| VcCheckbox | n/a | GAP | GAP | n/a | GAP | GAP |
+| VcRadioButton | n/a | GAP | GAP | n/a | GAP | GAP |
+| VcChip | n/a | GAP | n/a | GAP | GAP | n/a |
+| VcSelect | n/a | GAP | GAP | GAP | n/a | GAP |
+| VcDropdownMenu | n/a | GAP | GAP | GAP | GAP | GAP |
+| VcVariantPicker | n/a | GAP | GAP | GAP | GAP | GAP |
+| VcWidget | n/a | GAP | GAP | GAP | GAP | n/a |
+| VcTabSwitch | n/a | GAP | GAP | GAP | GAP | GAP |
+| VcSwitch | n/a | GAP | GAP | n/a | GAP | GAP |
+| VcScrollbar | n/a | GAP | GAP | n/a | n/a | n/a |
+| VcImage | GAP | GAP | GAP | n/a | n/a | n/a |
+| VcAlert | n/a | GAP | GAP | GAP | n/a | GAP |
+| VcBadge | n/a | GAP | GAP | n/a | GAP | n/a |
+| VcCarousel | GAP | GAP | GAP | GAP | n/a | GAP |
+| VcPagination | n/a | GAP | GAP | GAP | GAP | GAP |
+| VcExpansionPanels | n/a | GAP | GAP | GAP | GAP | GAP |
+| VcModal | n/a | GAP | GAP | GAP | n/a | GAP |
+| VcConfirmationModal | n/a | GAP | GAP | GAP | GAP | GAP |
+| VcAddToCart | n/a | GAP | GAP | n/a | n/a | GAP |
+| VcSlider | n/a | GAP | GAP | n/a | GAP | GAP |
+| VcRating | n/a | GAP | n/a | n/a | GAP | n/a |
+| VcBreadcrumbs | n/a | GAP | n/a | GAP | GAP | n/a |
 
 <!-- COVERAGE-MATRIX-END -->
 
 **Summary (components):**
 - 36 components × 6 invariants = 216 cells
 - `n/a` cells: 76 (per applicability rules above)
-- Covered cells: 140 (every cell that's not `n/a`)
-- Gaps: 0
+- Covered cells: 0
+- Gaps: 140 (was 0 — all cells lost their covering test when suite 048b was removed on 2026-07-25)
 
 ---
 
@@ -1284,36 +1290,36 @@ For each page in the matrix:
 
 | Page | BL-UI-001 | BL-UI-002 | BL-UI-004 | BL-UI-006 |
 |------|-----------|-----------|-----------|-----------|
-| / | LAYOUT-CLS-001 | LAYOUT-COMP-VCBUTTON-001 | LAYOUT-OVF-001 | LAYOUT-TGT-001 |
-| /catalog | LAYOUT-CLS-002 | LAYOUT-SPC-001 | LAYOUT-OVF-002 | LAYOUT-TGT-001 |
-| PDP | LAYOUT-CLS-002 | LAYOUT-SPC-001 | LAYOUT-OVF-003 + LAYOUT-OVF-LONGTITLE-001 | LAYOUT-TGT-001 |
-| /cart | LAYOUT-CLS-003 + LAYOUT-CLS-004 | LAYOUT-SPC-002 + LAYOUT-SPC-003 | LAYOUT-OVF-004 | LAYOUT-TGT-002 + LAYOUT-TGT-003 |
-| /account/orders | LAYOUT-PAGE-CLS-ORDERS-001 | LAYOUT-COMP-VCTABLE-001 | LAYOUT-OVF-005 | n/a |
-| /account/lists | LAYOUT-PAGE-CLS-LISTS-001 | LAYOUT-SPC-001 | LAYOUT-OVF-006 | n/a |
-| /company/members | LAYOUT-PAGE-CLS-MEMBERS-001 | LAYOUT-COMP-VCTABLE-001 | LAYOUT-OVF-007 | n/a |
-| /company/info | LAYOUT-PAGE-CLS-COMPANY-001 | LAYOUT-COMP-VCBUTTON-001 | LAYOUT-OVF-008 | n/a |
-| Configurable PDP | LAYOUT-PAGE-CLS-CONFIG-001 | LAYOUT-COMP-VCBUTTON-001 | LAYOUT-OVF-009 | LAYOUT-PAGE-TGT-CONFIG-001 |
-| /checkout/payment | LAYOUT-PAGE-CLS-PAYMENT-001 | LAYOUT-PAGE-SPC-PAYMENT-001 | LAYOUT-OVF-PAYMENT-001 | LAYOUT-PAGE-TGT-PAYMENT-001 |
-| /account/dashboard | LAYOUT-PAGE-CLS-DASHBOARD-001 | LAYOUT-COMP-VCSIDEBAR-001 | LAYOUT-OVF-DASHBOARD-001 | n/a |
-| /account/addresses | LAYOUT-PAGE-CLS-ADDRESSES-001 | LAYOUT-COMP-VCSIDEBAR-001 | LAYOUT-OVF-ADDRESSES-001 | n/a |
-| /sign-in | LAYOUT-PAGE-CLS-SIGNIN-001 | LAYOUT-COMP-VCINPUT-001 | LAYOUT-OVF-SIGNIN-001 | LAYOUT-PAGE-TGT-SIGNIN-001 |
-| /search?q= | LAYOUT-PAGE-CLS-SEARCH-001 | LAYOUT-SPC-001 | LAYOUT-OVF-SEARCH-001 | LAYOUT-TGT-001 |
-| /sign-up | LAYOUT-PAGE-CLS-SIGNUP-001 | LAYOUT-COMP-VCINPUT-001 | LAYOUT-OVF-SIGNUP-001 | LAYOUT-PAGE-TGT-SIGNUP-001 |
-| /account/quotes | LAYOUT-PAGE-CLS-QUOTES-001 | LAYOUT-COMP-VCTABLE-001 | LAYOUT-OVF-QUOTES-001 | n/a |
+| / | GAP | GAP | GAP | GAP |
+| /catalog | GAP | GAP | GAP | GAP |
+| PDP | GAP | GAP | GAP | GAP |
+| /cart | GAP | GAP | GAP | GAP |
+| /account/orders | GAP | GAP | GAP | n/a |
+| /account/lists | GAP | GAP | GAP | n/a |
+| /company/members | GAP | GAP | GAP | n/a |
+| /company/info | GAP | GAP | GAP | n/a |
+| Configurable PDP | GAP | GAP | GAP | GAP |
+| /checkout/payment | GAP | GAP | GAP | GAP |
+| /account/dashboard | GAP | GAP | GAP | n/a |
+| /account/addresses | GAP | GAP | GAP | n/a |
+| /sign-in | GAP | GAP | GAP | GAP |
+| /search?q= | GAP | GAP | GAP | GAP |
+| /sign-up | GAP | GAP | GAP | GAP |
+| /account/quotes | GAP | GAP | GAP | n/a |
 
 <!-- PAGE-COVERAGE-MATRIX-END -->
 
 **Summary (pages):**
 - 16 pages × 4 applicable invariants = 64 cells
 - `n/a` cells: 7 (account/company/dashboard/quotes pages — touch targets covered transitively under components)
-- Covered cells: 57
-- Gaps: 0
+- Covered cells: 0
+- Gaps: 57 (was 0 — all cells lost their covering test when suite 048b was removed on 2026-07-25)
 
 **Configurable PDP — additional state-shift tests not in matrix:** The matrix has no BL-UI-003 column for pages (state-shift is component-anchored). Two tests cover Configurable-PDP-specific state behaviors AS SUITE TESTS, outside the matrix:
 - `LAYOUT-COMP-CONFIG-001` — accordion expand/collapse: sticky sidebar must not shift
 - `LAYOUT-COMP-CONFIG-002` — option selection: dynamic price updates without sidebar block reflow
 
-These are required for regression coverage of the configurable-product UX but are not gated by the validator (which only enforces the matrix). Suite execution always runs them.
+These are required for regression coverage of the configurable-product UX but are not gated by the validator (which only enforces the matrix). They lived in suite 048b and are **not currently executed by any suite**.
 
 **LAYOUT-OVF-001 was split into 8 per-page tests on 2026-05-14** (LAYOUT-OVF-001..008, one per critical page) after the first regression run showed the agent naturally reporting per-page granularity. The single composite test was replaced; each page now has its own overflow test for triage clarity. The previous LAYOUT-OVF-002 (long-title stress) was renamed to LAYOUT-OVF-LONGTITLE-001 to avoid ID collision with the per-page split.
 
@@ -1328,6 +1334,7 @@ The validator does NOT enforce render-location parity (that's a runtime concern,
 - **Add a new component to the inventory** — only with explicit user approval. Update inventory, render-location map, applicability rules, audit protocol, AND coverage matrix in the same edit. Add tests to fill the new row's covered cells.
 - **Add a new BL-UI invariant** — coordinated with [business-logic.md](business-logic.md#domain-15-ui-display--layout-stability-bl-ui) promotion. The matrix grows a column; fill applicable cells.
 - **A covering test ID is renamed or moved** — update the matrix immediately. Validator will fail until you do.
+- **A covering suite is deleted** — flip its cells to `GAP` (never to `n/a`, which asserts the invariant doesn't apply) and update both Summary blocks. The validator then warns instead of failing; use `--strict` once coverage is restored.
 - **A component's applicability changes** (e.g., VcSidebar starts containing interactive primary CTAs and BL-UI-006 becomes applicable) — flip the cell from `n/a` to a real test ID and add the test.
 
 ## Why this file lives in `knowledge/`, not `rules/`

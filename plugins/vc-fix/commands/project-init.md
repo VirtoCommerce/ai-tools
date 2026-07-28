@@ -1,6 +1,6 @@
 ---
 description: "Initialize / onboard this QA plugin for a deployment — install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Writes project-profile.json + .env + .mcp.json, verifies access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
-argument-hint: "(no args — interactive) | --check (reconcile an existing profile + verify)"
+argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --check (reconcile an existing profile + verify)"
 disable-model-invocation: true
 ---
 
@@ -26,6 +26,7 @@ permissions + the filled env + a live module/repo scan.
 
 ```
 /project-init            # run the full onboarding interview + pipeline
+/project-init --add-env  # add another environment (URLs + per-env access keys) to an onboarded project
 /project-init --check    # reconcile an existing profile to the current schema, then verify
 ```
 
@@ -52,6 +53,13 @@ permissions + the filled env + a live module/repo scan.
    else browser/CLI login. The token is NOT typed in chat — the choice only decides
    whether a token placeholder is emitted to `.env.local` (PAT) or a login is run
    (session). **No operator / projectType / contribution-mode question** — derived later.
+   **(e) Self-diagnostics consent (opt-in — ASK, never assume)** as one `AskUserQuestion`
+   block: `selfDiagnostics` (local telemetry capture to `.vc-fix/`, Yes recommended) +
+   `feedback.mode` (upstream delivery: `ask` recommended / `auto` / `off`). This MUST be asked —
+   the persisted default is `false`/opt-out (PROFILE_DEFAULTS), so a run that skips this question
+   leaves capture OFF; capture is enabled ONLY by the operator's explicit Yes here (passed to
+   step 6 as `--self-diagnostics`/`--feedback-mode`). The SKILL's §0b additionally writes the Yes
+   immediately (a `gen-profile --self-diagnostics true` stub) so `/project-init`'s own run is captured.
 3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs --tracker …
    --client-vcs …` → `.env.<env>` (ADO_ORG/ADO_PROJECT emitted for an azure tracker OR
    azure-repos host; **do NOT pass --project-type/--client-org** — client org is derived);
@@ -82,8 +90,10 @@ permissions + the filled env + a live module/repo scan.
    status model + flips `transitionPolicy=auto`; **`--runtime-mode plugin`** when run from an
    installed plugin — the `$CLAUDE_PLUGIN_ROOT` env auto-detect is unreliable, so pass it explicitly;
    + tracker connection from the filled `.env.<env>`; + derived `--operator`/`--contribution-mode`/
-   `--upstream-account` (fork only)/`--vcs-auth`). Do NOT pass `--project-type`/`--client-org` — the
-   scan is authoritative.
+   `--upstream-account` (fork only)/`--vcs-auth`; **+ `--self-diagnostics <yes|no>` and
+   `--feedback-mode <ask|auto|off>` from the §2e consent answer** — always pass them explicitly so
+   the written value reflects the operator's choice, not the safe opt-out default). Do NOT pass
+   `--project-type`/`--client-org` — the scan is authoritative.
 7. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
 8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`
    (`FORCE_COLOR=1` so the Status column renders — the script auto-disables colour on a
@@ -101,6 +111,35 @@ permissions + the filled env + a live module/repo scan.
    contributionMode) + manual actions (reload IDE for `.mcp.json`, pending OAuth) + first
    run `/qa-fix <TICKET>`.
 
+### `--add-env` — add another environment to an already-onboarded project
+
+For a deployment that is ALREADY onboarded (a `project-profile.json` exists) and you want to
+point the plugin at **another deployment target** — a second QA env, staging, a customer's
+second site — that shares the **same project topology** (tracker, code host, repos,
+contribution mode). An environment is just a new **URL set + its access creds**; it does
+**NOT** re-run the interview, re-scan repos, rewrite the profile, or regenerate `.mcp.json`
+(those are project-level, env-agnostic). The skill's **`--add-env`** section drives this:
+
+1. **Precondition** — `project-profile.json` must exist (if not, run the full `/project-init`
+   instead). Confirm cwd (0a). Read `tracker.kind` + `vcs.clientHost` from the profile —
+   **do not ask them again** (they're project-level).
+2. **Env name** — **ask "what should the new environment be named?" as a plain chat question**
+   (like §2a — no positional arg); normalise to `[a-z0-9_]+` and tell the operator what you
+   used. **Then the existing-env guard** (2c): check `.env.<name>` — if it already exists,
+   `AskUserQuestion` to reuse it (scaffold is add-only, never clobbers) or pick a new name
+   (re-ask + re-check). Not found → proceed.
+3. **Scaffold the new env's two files** — `scaffold-env.mjs --env <new> --tracker <kind>
+   --client-vcs <host>` → `.env.<new>` (its own URLs/identifiers); `scaffold-secrets.mjs
+   --env <new> --tracker <kind> --client-vcs <host>` → adds the `_<ENV>`-suffixed per-env app
+   passwords (`ADMIN_PASSWORD_<ENV>`/`USER_PASSWORD_<ENV>`) to `.env.local`. Cross-env tokens
+   already present (GitHub/Jira/ADO) are **untouched** (idempotent add-only). Tell the operator
+   to fill both, then **pause** with the waiting banner.
+4. **Verify** the new env: `FORCE_COLOR=1 TEST_ENV=<new> node
+   "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`; restate the readiness table.
+5. **Done** → `TEST_ENV=<new>` selects the new environment for `/qa-fix`, `/qa-bug`, etc.
+   (A different **tracker or code host** is a different *project*, not an environment — run a
+   fresh `/project-init` in its own directory for that.)
+
 ### `--check` — reconcile an existing setup (after a plugin upgrade), then verify
 
 Do **not** re-run the interview. The skill's **`--check`** section drives this:
@@ -116,3 +155,20 @@ Do **not** re-run the interview. The skill's **`--check`** section drives this:
 3. **Verify**: `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`.
 
 Restate both the reconciliation summary and the readiness table in your reply.
+
+### Signal completion (self-diagnostics — the LAST action of EVERY path)
+
+`/project-init` is exactly where self-capture is first enabled (§0b writes the `selfDiagnostics:true`
+stub so its OWN run is captured), so its terminal step MUST emit the completion signal like every
+other terminal command — otherwise a slash-only run with no Skill span leaves the collector thinking
+there was no plugin activity and never surfaces its clean/health line. As the **last action** of
+whichever path ran — the full interview (Step 9), `--add-env` (step 5), or `--check` (step 3) — run
+this once (best-effort, silent, never blocks):
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"
+```
+
+So the collector prints its one-line status **exactly once** after the run. No-op when capture is off.
+Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostics/skill-expectations.md)
+§Signal completion.

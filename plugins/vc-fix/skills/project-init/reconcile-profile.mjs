@@ -328,8 +328,16 @@ function main() {
       },
       ...migrated,
     };
-    writeFileSync(outPath, JSON.stringify(withMeta, null, 2) + "\n");
-    wrote = true;
+    try {
+      writeFileSync(outPath, JSON.stringify(withMeta, null, 2) + "\n");
+      wrote = true;
+    } catch (err) {
+      // Honor the file's contract: a genuine IO failure prints an {error} report on stdout and still
+      // exits 0 (the skill parses stdout to decide next steps) — symmetric with the parse-error path
+      // above and the same-PR hardening of the sibling verify-access.mjs. Never a stack trace on stderr.
+      console.log(JSON.stringify({ status: "error", path: outPath, error: `write: ${err.message}`, wrote: false }, null, 2));
+      return;
+    }
   }
 
   console.log(

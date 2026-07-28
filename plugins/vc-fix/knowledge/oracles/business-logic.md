@@ -818,14 +818,14 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 
 ## Domain 15: UI Display & Layout Stability (BL-UI)
 
-These invariants hold for any rendered surface — Storybook stories, storefront pages, admin SPA blades — regardless of feature spec or Figma source. They turn "looks broken" into "measurably violates a rule." Violations are FAIL even when a JIRA ticket does not call them out, because the design system contract makes them implicit acceptance criteria. Canonical measurement helper: [`scripts/lib/measure-layout.ts`](../../scripts/lib/measure-layout.ts). Canonical regression suite: `regression/suites/Frontend/cross-cutting/048b-layout-stability.csv` (suite id `048b`, selection group `layout-stability` — full `vc-qa` plugin only, not shipped here).
+These invariants hold for any rendered surface — Storybook stories, storefront pages, admin SPA blades — regardless of feature spec or Figma source. They turn "looks broken" into "measurably violates a rule." Violations are FAIL even when a JIRA ticket does not call them out, because the design system contract makes them implicit acceptance criteria. Canonical measurement helper: [`scripts/lib/measure-layout.ts`](../../scripts/lib/measure-layout.ts). **No regression suite currently covers these invariants** — suite `048b-layout-stability.csv` (selection group `layout-stability`) was removed on 2026-07-25. Until a replacement exists they are audited on demand against the scope + audit protocols in [`critical-ui-scope.md`](critical-ui-scope.md).
 
 ### BL-UI-001: Layout stability on initial render `[P2-ux]`
 - **Rule:** After first paint, visible content MUST NOT shift as late assets resolve (images, web fonts, async data, skeleton → content swap). Cumulative Layout Shift (CLS) — measured via `PerformanceObserver({ type: 'layout-shift' })` summing `entry.value` where `entry.hadRecentInput === false` — must be ≤ 0.1 on initial render. Image elements without intrinsic dimensions (`width`/`height` attrs or CSS `aspect-ratio`) are the most common offender.
 - **Verify:** Install the observer before navigating (`LAYOUT_SNIPPETS.installClsObserver`). Load the component / page. Wait for `load` + idle. Read accumulated CLS (`LAYOUT_SNIPPETS.readCls`). Repeat on throttled network ("Fast 3G") — late-loading images often hide shifts on fast connections.
 - **Violation signal:** CLS ≥ 0.1 (FAIL), ≥ 0.25 (P0 if on checkout / cart / PDP). Visible jump as image loads. Skeleton snaps to different height when data arrives. Font swap (FOIT/FOUT) reflows surrounding text.
 - **Agents:** ui-ux-expert (Storybook + storefront), qa-frontend-expert (revenue-critical surfaces)
-- **Suite coverage:** `048b` LAYOUT-CLS-001..004 (home, PDP, cart, checkout)
+- **Suite coverage:** NONE — was `048b` LAYOUT-CLS-001..004 (home, PDP, cart, checkout) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-002: Spacing grid compliance `[P2-ux]`
@@ -833,7 +833,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Verify:** For each container and its key children, read `getComputedStyle(el).paddingTop|Right|Bottom|Left`, `marginTop|…`, and `gap` via `spacingAuditSnippet(selector)`. Strip `"px"`, cast to number, check membership in the allowed set. Run at multiple viewports — some breakpoints introduce token overrides.
 - **Violation signal:** Computed values like `"13px"`, `"27px"`, `"41px"`. Hardcoded pixel values in styles instead of design-token CSS variables (`var(--spacing-md)` etc.).
 - **Agents:** ui-ux-expert (component audit), qa-frontend-expert (storefront pages)
-- **Suite coverage:** `048b` LAYOUT-SPC-001..003 (catalog product cards, cart line items, checkout form)
+- **Suite coverage:** NONE — was `048b` LAYOUT-SPC-001..003 (catalog product cards, cart line items, checkout form) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-003: No state-induced layout shift `[P2-ux]`
@@ -841,7 +841,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Verify:** Record `getBoundingClientRect()` of a neighbor sibling (`rectSnapshotSnippet(selector)`). Trigger the state change. Re-record. Compare with `compareRectSnapshots(before, after)` — `topDelta` and `leftDelta` must be 0.
 - **Violation signal:** Neighbor moves on hover. Form below a field jumps when validation error inserts. Cart-icon badge change shifts navbar items. Skeleton dimensions ≠ resolved content → snap on load.
 - **Agents:** ui-ux-expert (components), qa-frontend-expert (cart/checkout/forms)
-- **Suite coverage:** `048b` LAYOUT-SHIFT-001..003 (product-card hover, cart-badge update, validation error insertion)
+- **Suite coverage:** NONE — was `048b` LAYOUT-SHIFT-001..003 (product-card hover, cart-badge update, validation error insertion) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-004: Content boundary `[P2-ux]`
@@ -849,7 +849,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Verify:** Inject stress content (80-char product title, 12-digit SKU, German-equivalent label, 4-digit quantity). At each viewport, run `LAYOUT_SNIPPETS.overflowAudit` — checks `document.documentElement.scrollWidth > window.innerWidth` (horizontal overflow) and for each suspect element `el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'hidden'` (silent clipping).
 - **Violation signal:** Page scrolls horizontally at 375 px. Product title is cut off mid-character with no `…`. Card stretches to fit the longest sibling's text, breaking grid alignment. Locale labels (German `Versandadresse`) overflow into adjacent column.
 - **Agents:** ui-ux-expert (stress states), qa-frontend-expert (i18n verification)
-- **Suite coverage:** `048b` LAYOUT-OVF-001..002 + LAYOUT-VPS-001 (mobile pages, long-title injection, 50-px viewport sweep)
+- **Suite coverage:** NONE — was `048b` LAYOUT-OVF-001..002 + LAYOUT-VPS-001 (mobile pages, long-title injection, 50-px viewport sweep) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-005: Alignment in horizontal groups `[P2-ux]`
@@ -857,7 +857,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Verify:** Read `getBoundingClientRect()` for each item in the row via `alignmentAuditSnippet(selector)`. For vertical-center alignment, compute `top + height/2` per item — values must match within 1 px. For row-height parity, `height` values must match exactly. The helper returns `centerDriftPx`, `heightDriftPx`, and a boolean `misaligned`.
 - **Violation signal:** Cart-quantity stepper buttons sit 2 px lower than the number field. Icon-and-label pair has icon offset upward. One product card in a row is taller than its neighbors, breaking the grid. Table row heights drift from row to row.
 - **Agents:** ui-ux-expert (component rows), qa-frontend-expert (PDP, cart, tables)
-- **Suite coverage:** `048b` LAYOUT-ALN-001..002 (product grid row, cart-row stepper/price/remove)
+- **Suite coverage:** NONE — was `048b` LAYOUT-ALN-001..002 (product grid row, cart-row stepper/price/remove) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 
 ### BL-UI-006: Touch target size and spacing `[P1-data]`
@@ -865,7 +865,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Verify:** Set viewport to 375 px. Run `LAYOUT_SNIPPETS.touchTargetAudit` — for each interactive selector, reads `getBoundingClientRect()` and checks `width >= 44 && height >= 44`; for pairwise spacing, checks closest-edge distance ≥ 8 px between any two interactives. Returns `{ undersized[], tooClose[] }`.
 - **Violation signal:** 32 × 32 close button on a modal. Quantity stepper buttons 28 × 28 with 4 px between. Two checkboxes stacked with 6 px gap. A tap that should hit one element hits a neighbor instead.
 - **Agents:** ui-ux-expert (mobile audits), qa-frontend-expert (revenue-critical mobile flows)
-- **Suite coverage:** `048b` LAYOUT-TGT-001..003 (PDP, cart, checkout @ 375 px)
+- **Suite coverage:** NONE — was `048b` LAYOUT-TGT-001..003 (PDP, cart, checkout @ 375 px) (suite removed 2026-07-25; audit manually via `/qa-design`)
 - **Severity rationale:** P1 (not P2) because legal/accessibility risk overlaps WCAG 2.5.5 (Target Size — AAA in WCAG 2.1, AA in WCAG 2.2).
 - **Promoted:** 2026-05-14 (from `ui-ux-expert.md` UI-invariants draft).
 

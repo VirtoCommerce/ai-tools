@@ -49,6 +49,24 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
   so the agent derives `.fix-workspace/<repo-basename>/` and the branch base/target — never a hardcoded
   `vc-frontend`/`dev`.
 
+## Terminal step — signal self-diagnostics completion (MUST — top-level orchestrator only)
+
+The **top-level command/skill** (the one the operator invoked — e.g. `/qa-fix`, `/project-init`) MUST,
+as its **LAST action** (after all user-visible output, and on every early-exit / BAIL path too), emit the
+completion marker so the self-diagnostics clean line prints exactly once — never on intermediate pauses:
+
+```bash
+node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "<the-top-level-command-name>"
+```
+
+**A dispatched sub-agent (the `fullstack-*` devs, `qa-*-expert`s) must NOT emit it.** Their spans run in
+sidechains the collector skips and roll up to the enclosing command; a sub-agent's `complete` would set
+the marker with a misattributed name on the *parent* session mid-run. The parent orchestrator owns the
+signal, at its own terminal step. Best-effort, silent, never blocks; a no-op when capture is disabled.
+Full contract + authoring checklist:
+[`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
+§Signal completion.
+
 ## Browser Assignment & Fallback Chain
 
 Each agent MUST be assigned an explicit browser server. If the primary browser fails (launch error, user data dir conflict, timeout), retry with the next browser in the fallback chain. Max 1 retry.

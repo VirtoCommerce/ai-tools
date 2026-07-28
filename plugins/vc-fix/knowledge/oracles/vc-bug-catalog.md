@@ -219,7 +219,7 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 - **Cross-ref:** `feedback_state_dependent_layout_bugs` in MEMORY
 
 ### VC-UI-005 — Layout-stability invariants (BL-UI-001..006)
-- **Pattern:** Six canonical UI layout-stability invariants codified in `business-logic.md` Domain 15. Defect helpers at `scripts/lib/measure-layout.ts`. Coverage by suite `048b-layout-stability.csv`.
+- **Pattern:** Six canonical UI layout-stability invariants codified in `business-logic.md` Domain 15. Defect helpers at `scripts/lib/measure-layout.ts`. **Currently uncovered by any suite** — `048b-layout-stability.csv` was removed 2026-07-25.
 - **Detection probe:** When exploring for layout bugs, use the measure-layout helper. Reference the BL-UI-* IDs in any filed bug.
 - **Cross-ref:** `reference_layout_stability_artifacts` in MEMORY
 

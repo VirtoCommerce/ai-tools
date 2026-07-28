@@ -1,0 +1,293 @@
+{
+  "runId": "TLC-2026-07-25-0415",
+  "inputType": "direct-scope",
+  "source": "suite 014",
+  "date": "2026-07-25",
+  "verdict": "NEEDS_FIXES (0 Blocker, 0 Critical — G3 Completeness only)",
+  "build": {
+    "platform": "3.1048.0",
+    "theme": "2.54.0-pr-2395-fd70",
+    "env": "vcst-qa",
+    "deployStateCapturedAt": "2026-07-24T19:21:17Z",
+    "modules": {
+      "VirtoCommerce.Orders": "3.1013.0",
+      "VirtoCommerce.XOrder": "3.1007.0",
+      "VirtoCommerce.Cart": "3.1007.0",
+      "VirtoCommerce.XCart": "3.1028.0",
+      "VirtoCommerce.Customer": "3.1020.0"
+    }
+  },
+  "affectedSuites": [
+    "014"
+  ],
+  "casesAnalyzed": 99,
+  "casesRecovered": 3,
+  "casesSynced": 0,
+  "casesGenerated": 0,
+  "casesVerified": 0,
+  "structuralRepair": {
+    "classA_unescapedInnerQuotes": 24,
+    "classB_lostRecordBreaks": 3,
+    "recoveredCaseIds": [
+      "ORD-081",
+      "ORD-082",
+      "ORD-083"
+    ],
+    "recordsBefore": 96,
+    "recordsAfter": 99,
+    "manifestTestCountBefore": 95,
+    "manifestTestCountAfter": 99,
+    "validated": "15 header cols; 99 records x 15 cols; 0 duplicate IDs; visible text preserved"
+  },
+  "toolingFixes": [
+    "lint-test-cases.ts: strip UTF-8 BOM before parse (was a bogus S-007 Blocker on 12 of 118 suite CSVs)",
+    "sync-test-suites.ts: CSV_LINT_BASELINE 11 -> 8 (de-baselined 014, 040b, 082)",
+    "config/test-suites.json: suite 014 testCount 95 -> 99"
+  ],
+  "findings": {
+    "total": 342,
+    "bySeverity": {
+      "Blocker": 0,
+      "Critical": 10,
+      "High": 301,
+      "Medium": 30,
+      "Informational": 1
+    },
+    "byRule": {
+      "D-005": 92,
+      "C-003": 79,
+      "REQ-001": 59,
+      "T-002": 29,
+      "DV-001": 24,
+      "D-006": 20,
+      "TC-001": 10,
+      "T-001": 8,
+      "D-004": 5,
+      "C-005": 5,
+      "S-006": 4,
+      "D-003": 3,
+      "C-006": 2,
+      "T-003": 1,
+      "GRD-001": 1
+    }
+  },
+  "autoFixApplied": true,
+  "dataGap": {
+    "aliasedTokens": [
+      "COMPLETED_ORDER",
+      "SHIPPED_ORDER",
+      "PROCESSING_ORDER"
+    ],
+    "missingFixtures": [
+      "BOPIS_PICKUP_ORDER",
+      "PARTIALLY_SHIPPED_ORDER",
+      "ORDER_WITH_DISCONTINUED_ITEM",
+      "ORDER_WITH_OOS_ITEM",
+      "INVOICE_AVAILABLE_ORDER",
+      "ORDER_WITH_RETURN",
+      "ORDER_PAST_RETURN_WINDOW"
+    ],
+    "note": "7 order-state fixtures remain; blocker is a product decision (3 questions), NOT a config flag"
+  },
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "FAIL",
+    "G4_testability": "PASS",
+    "G5_dataValidity": "PASS",
+    "G6_coverage": "PASS",
+    "G7_duplication": "WARN",
+    "G8_environment": "SKIP",
+    "G9_sync": "N/A"
+  },
+  "blProposals": {
+    "new": [],
+    "stale": []
+  },
+  "filesModified": [
+    "regression/suites/Frontend/orders/014-orders-frontend.csv",
+    "scripts/test-cases/lint-test-cases.ts",
+    "scripts/test-cases/sync-test-suites.ts",
+    "config/test-suites.json",
+    "test-data/aliases.json",
+    "scripts/seed-data/orders/orders-specs.mjs",
+    "test-data/README.md"
+  ],
+  "phasesSkipped": {
+    "phase2_sync": "direct scope — no change source",
+    "phase4c_blAudit": "no BL candidates surfaced",
+    "phase5_verify": "deferred — static gates fail first"
+  },
+  "phase4bAutoFix": {
+    "totalEdits": 49,
+    "gatedOn": "linter findings JSON (not a re-derived regex)",
+    "byRule": {
+      "D-004": 5,
+      "C-005": 5,
+      "D-006": 20,
+      "DV-001": 15,
+      "S-006": 4
+    },
+    "statusMap": {
+      "Validated": "Reviewed",
+      "N/A: Feature not on storefront — covered by admin suite 017": "Deprecated",
+      "Generated — verified PASS (x2)": "Manual"
+    },
+    "d006Conservative": "only trailing [ASSERT] removed; 8 mid-flow left (may gate a following action)"
+  },
+  "findingsAfter": {
+    "total": 303,
+    "bySeverity": {
+      "Blocker": 0,
+      "Critical": 0,
+      "High": 284,
+      "Medium": 18,
+      "Informational": 1
+    },
+    "byRule": {
+      "D-005": 92,
+      "C-003": 79,
+      "REQ-001": 59,
+      "T-002": 29,
+      "DV-001": 11,
+      "TC-001": 10,
+      "T-001": 8,
+      "D-006": 8,
+      "D-003": 3,
+      "C-006": 2,
+      "T-003": 1,
+      "GRD-001": 1
+    }
+  },
+  "postFixValidation": {
+    "suitesReview": "0 Blocker, 0 Critical",
+    "tdValidate": "014: 49/49 resolved, no bare GUIDs, DV-021 clean",
+    "suitesLint": "OK (119 suites)",
+    "strictParse": "99 records x 15 cols"
+  },
+  "phase4bSecondPass": {
+    "trigger": "--auto-fix apply",
+    "insight": "78 of 79 C-003 were NOT missing assertions — 4 assertions sat on one semicolon-separated line; lines() splits on newline only. Same for D-005 Steps. Formatting, not fabrication.",
+    "splitRule": "split at \";\" ONLY where a [TAG] follows; never on and/then (semantic); strip dangling trailing \";\"",
+    "cellsSplit": {
+      "steps": 78,
+      "assertions": 98
+    },
+    "linesAdded": {
+      "steps": 806,
+      "assertions": 298
+    },
+    "d004Repass": 26,
+    "d006Repass": {
+      "casesTouched": 67,
+      "droppedAsDuplicate": 98,
+      "movedIntoAssertions": 74
+    },
+    "finalLineCounts": {
+      "stepLines": 872,
+      "assertionLines": 524
+    },
+    "cleared": {
+      "C-003": "79 -> 1",
+      "D-005": "92 -> 41",
+      "D-006": "86 -> 65"
+    },
+    "exposed": {
+      "T-002": "29 -> 120",
+      "D-002": "0 -> 6 (Critical)",
+      "D-003": "3 -> 7",
+      "T-001": "8 -> 11",
+      "T-003": "1 -> 4",
+      "DUP-001/DUP-004": "0 -> 4"
+    },
+    "note": "raw total 303 -> 342 because per-line rules now evaluate each split step/assertion individually; these findings were always true, previously masked by a single long line. Suite is strictly better-formed."
+  },
+  "findingsFinal": {
+    "total": 334,
+    "bySeverity": {
+      "Blocker": 0,
+      "Critical": 0,
+      "High": 254,
+      "Medium": 79,
+      "Informational": 1
+    },
+    "byRule": {
+      "T-002": 120,
+      "D-006": 65,
+      "REQ-001": 59,
+      "D-005": 41,
+      "T-001": 11,
+      "TC-001": 10,
+      "DV-001": 9,
+      "D-003": 7,
+      "T-003": 4,
+      "DUP-004": 3,
+      "C-006": 2,
+      "C-003": 1,
+      "DUP-001": 1,
+      "GRD-001": 1
+    }
+  },
+  "notAutoFixable": {
+    "D-002 (6, Critical)": "needs the real UI label in quotes — quoting a guessed label would satisfy the linter while making the test wrong",
+    "T-002 (120)": "needs real element/text specifics",
+    "REQ-001 (59)": "needs real ticket refs; a placeholder is worse than none",
+    "D-005 (41)": "and/then prose — semantic split",
+    "D-006 (65)": "mid-flow [ASSERT] may gate the next action",
+    "DV-001 (11)": "blocked on 8 missing order fixtures"
+  },
+  "pass3BlockerResolution": {
+    "d002": {
+      "fixed": 6,
+      "method": "labels resolved from vc-frontend source, not guessed",
+      "source": "client-app/shared/account/components/orders.vue + locales/en.json (branch dev)",
+      "labels": {
+        "search_placeholder": "Search by number, name or other data",
+        "search_button": "Search orders",
+        "maxlength": 64
+      },
+      "stepLinesRewritten": 10,
+      "cases": [
+        "ORD-015",
+        "ORD-022",
+        "ORD-056",
+        "ORD-059"
+      ]
+    },
+    "sampleTrackingNumber": {
+      "alias": "SAMPLE_TRACKING_NUMBER",
+      "value": "AGENT-TEST-TRK-CHK024",
+      "shape": "_inline in committed base (generated INPUT, env-invariant, DV-021 clean)",
+      "tokensRewired": 5
+    },
+    "deferredFixturePremiseCorrected": {
+      "finding": "store-config half of the VCST-5482 deferral is FALSE — no store-level enable flag exists for returns, invoice or buyer-cancel across all 96 settings on GET /api/stores/{STORE_ID}; no storefront $cfg counterpart either",
+      "phantomKeys": [
+        "RETURNS_FEATURE_ENABLED",
+        "invoice store setting",
+        "STORE_CONFIG_BUYER_CANCEL"
+      ],
+      "trueState": {
+        "returnsModule": "installed (Return.ReturnNewNumberTemplate only Return.* setting)",
+        "pickup": "XPickup.Enabled = true → BOPIS_PICKUP_ORDER reachable now",
+        "invoice": "NO platform setting at all — CHK-047/048 + ORD-014/041/042/043 may test a nonexistent surface"
+      },
+      "genuineProductQuestions": [
+        "aggregate status string for a mixed-shipment order",
+        "store return window",
+        "whether invoice download is in scope"
+      ],
+      "recordedIn": [
+        "scripts/seed-data/orders/orders-specs.mjs",
+        "test-data/README.md"
+      ]
+    }
+  },
+  "securityFinding": {
+    "file": ".mcp.json (gitignored, per-machine)",
+    "issue": "all three Playwright servers point --secrets at .env.local, which .claude/rules/mcp-browsers.md forbids — it holds GITHUB_TOKEN / GITHUB_FIX_BUGS_TOKEN / JIRA_API_TOKEN / ANTHROPIC_API_KEY / FIGMA_API_KEY / POSTMAN_API_KEY",
+    "risk": "substitution triggers on the NAME, so a malicious page or prompt-injection could have an agent type a PAT into a web form",
+    "fix": "point --secrets at the already-existing .env.playwright.local + restart MCP",
+    "status": "NOT fixed — per-machine file, needs operator action"
+  }
+}

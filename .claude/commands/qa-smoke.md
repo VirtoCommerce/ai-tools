@@ -33,8 +33,9 @@ You are the smoke test orchestrator running in the main context. Spawn sub-agent
 2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
    - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record platform version and theme version — include in the smoke report header (Step 4)
-3. **Duplicate check** — scan `reports/regression/` for a `SMOKE-*` run from today. If found, warn user and show previous verdict.
-4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query `"storefront cart checkout smoke"` with `tokens: 8000`. Check for recent module behavior changes that could affect smoke tests.
+3. **Gate integrity** — run `npm run suites:gates`. The checklists are the verdict gate, so a case with no checklist item cannot fail the run: on 2026-07-27, suite 042 had grown to SMK-034 while `SMOKE-CHECKLIST.md` still declared `SMK-001 – SMK-033`, leaving the Critical saved-card revenue-path guard (SMK-034) unable to produce a NO-GO. **Non-zero exit ⇒ reconcile the checklist against the CSV before trusting the verdict** (or run and report the verdict as provisional, naming the unmapped cases).
+4. **Duplicate check** — scan `reports/regression/` for a `SMOKE-*` run from today. If found, warn user and show previous verdict.
+5. **Context7 query** — resolve `/virtocommerce/vc-docs`, query `"storefront cart checkout smoke"` with `tokens: 8000`. Check for recent module behavior changes that could affect smoke tests.
 
 ### Step 1 — Read Suite & Prepare Run
 
@@ -64,7 +65,7 @@ Frontend URL: {FRONT_URL}
 Output: reports/regression/{RUN_ID}/suite-042-trackA-results.json
 
 Follow the test-runner-agent protocol in agents/test-runner-agent.md.
-Execute all 30 smoke test cases (SMK-001 through SMK-030) as a customer journey, including the Cross_Layer_Checks column on each case.
+Execute every case in the CSV as a customer journey (currently 34 — SMK-001 through SMK-034; read the file, don't assume a count), including the Cross_Layer_Checks column on each case.
 For every case, record PASS/FAIL/SKIP against the matching item in SMOKE-CHECKLIST.md, and the matching UI-vs-backend parity item in SMOKE-CROSS-LAYER-CHECKLIST.md.
 Continuous observation (test-runner-agent §Always-On reflex): beyond the smoke cases, watch every layer during the journey — record any incidental defect (console exception, 5xx, GraphQL errors[] inside 200, visual break) as a preliminary bug (confirmed:false, "incidental":true) even when the case PASSes; do not change the case verdict.
 Capture evidence on failures. Write structured JSON results (per SMK-ID, plus a checklist section/item rollup) to the output file.
@@ -85,7 +86,7 @@ Frontend URL: {FRONT_URL}
 Output: reports/regression/{RUN_ID}/suite-078-trackB-results.json
 
 Follow the test-runner-agent protocol in agents/test-runner-agent.md.
-Execute the Admin SPA cases covered by ADMIN-SMOKE-CHECKLIST.md (83 cases across 18 areas: auth/dashboard, per-module blades, edit/delete workflows, cross-blade navigation, search/filter, grid ops).
+Execute the Admin SPA cases covered by ADMIN-SMOKE-CHECKLIST.md (read the checklist for the current scope — as of 2026-07-27, 86 cases across 19 areas: auth/dashboard, per-module blades, edit/delete workflows, cross-blade navigation, search/filter, grid ops, news).
 The pure REST/GraphQL API cases in 078 (the excluded list at the top of the checklist) are covered by Suite 049/050 — skip them here unless verifying Track A cross-layer parity.
 Prioritize the Critical-priority cases (checklist §1–12) first — a failure there is a NO-GO; High/Medium failures are GO-WITH-RISK per the checklist's own GO/NO-GO table.
 For every executed case, record PASS/FAIL/SKIP against the matching item in ADMIN-SMOKE-CHECKLIST.md. If Track A data is available, verify created contacts/orders appear in Admin.
@@ -137,7 +138,7 @@ Write `reports/regression/{RUN_ID}/smoke-report.md`:
 
 ## Track A — Storefront Results
 
-Checklist gates: SMOKE-CHECKLIST.md (__/30) · SMOKE-CROSS-LAYER-CHECKLIST.md (__/28)
+Checklist gates: SMOKE-CHECKLIST.md (__/__) · SMOKE-CROSS-LAYER-CHECKLIST.md (__/__) — denominators come from the checklists themselves (verified by `npm run suites:gates`), never hardcoded here
 
 | # | Test Case | Status | Notes |
 |---|-----------|--------|-------|
@@ -145,7 +146,7 @@ Checklist gates: SMOKE-CHECKLIST.md (__/30) · SMOKE-CROSS-LAYER-CHECKLIST.md (_
 
 ## Track B — Admin Results
 
-Checklist gate: ADMIN-SMOKE-CHECKLIST.md (__/83 — Critical __/__)
+Checklist gate: ADMIN-SMOKE-CHECKLIST.md (__/__ — Critical __/__) — denominator from the checklist itself, never hardcoded here
 
 | BSM-ID | Test Case | Status | Notes |
 |--------|-----------|--------|-------|

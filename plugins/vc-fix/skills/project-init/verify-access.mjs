@@ -16,8 +16,20 @@
  *   - Storefront user login — soft probe (WARN, not FAIL: storefront users may auth via xAPI)
  *   - Jira API token — GET /rest/api/3/myself  (jira tracker; WARN not FAIL — the runtime
  *     path is the Atlassian MCP OAuth, the token is only an optional probe)  OR  Azure DevOps auth present
+ *   - Azure Boards WRITE (transition) — non-mutating write-scope probe (PATCH a known item
+ *     with an invalid body: 401/403 = no Work-Items-write scope; 400 = scope present). A missing
+ *     write scope is a **WARN** (with a grant-this explanation), NOT an onboarding-blocking FAIL —
+ *     see probe-lib.writeProbeSeverity. /qa-fix transitions/comments the ticket, so the WARN says
+ *     to grant Work Items (Read & Write) before running it.
  *   - GitHub fix token (GITHUB_FIX_BUGS_TOKEN) — validate token + push perm on the upstream repo
+ *     (the upstream repo is a PROXY probe; no push ⇒ WARN, the real target is the routed repo at
+ *     /qa-fix Gate 1. fork mode: read is enough since you PR from your own fork. A token that
+ *     doesn't authenticate at all ⇒ FAIL)
  *   - gh CLI session — gh auth status
+ *   - Client repos — reachable + write-probed on their own host (GitHub permissions.push; Azure
+ *     Repos non-mutating /pushes probe). A missing write scope is a **WARN** (grant-before-/qa-fix),
+ *     not a FAIL — the LEO gap (read-only PAT reaches get-repo 200 but push 401) is surfaced, not
+ *     hard-blocked. A totally unreachable repo / absent credential is still FAIL.
  *
  * Usage: node skills/project-init/verify-access.mjs
  */
@@ -28,7 +40,11 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { pluginRoot } from "./lib/paths.mjs";
-import { probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE } from "./probe-lib.mjs";
+import {
+  probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
+  githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
+  writeProbeSeverity,
+} from "./probe-lib.mjs";
 
 let TEST_ENV;
 try {
@@ -100,11 +116,31 @@ function splitRepo(full) {
   return i >= 0 ? { owner: full.slice(0, i), name: full.slice(i + 1) } : { owner: "", name: full || "" };
 }
 
+// Fire the self-diagnostics terminal-step marker via the collector's own `complete` subcommand
+// (reuses its exact logic + captureEnabled gate). Synchronous + fully swallowed: telemetry must
+// NEVER break onboarding, so any failure (missing hook, spawn error, timeout) is ignored.
+function signalSelfDiagnosticsComplete() {
+  try {
+    const hook = resolve(pluginRoot(), "hooks", "session-telemetry.mjs");
+    if (!existsSync(hook)) return;
+    execSync(`node "${hook}" complete --skill "project-init"`, { stdio: "ignore", timeout: 5000 });
+  } catch {
+    /* never throw */
+  }
+}
+
 async function main() {
-  // 1. Profile
+  // 1. Profile — loadProjectProfile() returns PROFILE_DEFAULTS even when the file is ABSENT, so
+  //    `profile ? PASS : FAIL` was ALWAYS PASS: a silently-failed profile write read as green with
+  //    default platform/jira values. Detect the file EXPLICITLY (mirror loadProjectProfile's path
+  //    logic) and FAIL when it's missing; the loaded defaults still drive the detail string.
+  const profilePath = process.env.PROJECT_PROFILE_PATH || resolve(process.cwd(), "project-profile.json");
+  const profileExists = existsSync(profilePath);
   const profile = loadProjectProfile();
-  add("Deployment profile", profile ? "PASS" : "FAIL",
-    `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`);
+  add("Deployment profile", profileExists ? "PASS" : "FAIL",
+    profileExists
+      ? `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`
+      : `no project-profile.json at ${profilePath} — run /project-init to create it (falling back to platform/jira/github defaults meanwhile)`);
 
   // 1b. The ACTIVE plugin install resolves at runtime + the routing helper is present.
   //     /qa-fix / /qa-bug launch `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` where
@@ -222,6 +258,28 @@ async function main() {
           detail = `az session not accepted for '${org}' (→ ${r.status}) — run \`az login --tenant ${tenant || "<org-tenant>"}\` or set ADO_PAT`;
         } else detail = `ADO_PAT not accepted for '${org}' (→ ${r.status}) — check scopes (Work Items R/W, Code R/W)`;
         add("Azure DevOps auth", okJson ? "PASS" : "FAIL", detail);
+
+        // Boards WRITE scope — /qa-fix transitions + comments the ticket via ado.mjs, so a
+        // read-only PAT (reads above PASS, but 401 on the first transition) is surfaced here as a
+        // WARN (grant-this-scope heads-up), not an onboarding-blocking FAIL (writeProbeSeverity).
+        // Non-mutating: PATCH a KNOWN item with an invalid body → 401/403 = no write scope, 400 =
+        // scope present (rejected at validation, nothing changed). classifyWriteProbe. Reads-PASS only.
+        if (okJson) {
+          const apiBase = az.apiBase || `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
+          const wid = await discoverAdoWorkItemId({ apiBase, authHeader });
+          if (!wid) {
+            add("Azure Boards write (transition)", "WARN",
+              `write scope unverified — no work item found to probe (WIQL empty/denied) via ${via}; confirm the PAT has Work Items (Read & Write)`);
+          } else {
+            const wp = await probeAdoWorkItemsWrite({ apiBase, authHeader, workItemId: wid });
+            const wDetail =
+              wp.scope === "present" ? `Work Items write confirmed (probe → ${wp.status}) via ${via}`
+              : wp.scope === "absent" ? `PAT/session lacks Work Items write (probe → ${wp.status}) via ${via} — /qa-fix cannot transition/comment the ticket until you grant Azure DevOps scope: Work Items (Read & Write)`
+              : wp.scope === "restricted" ? `probe → 403 on the sampled work item (via ${via}) — this item is ACL-restricted, NOT proof the PAT lacks Work Items write; confirm the target area is writable`
+              : `write scope unverified (probe → ${wp.status}) via ${via} — confirm Work Items (Read & Write)`;
+            add("Azure Boards write (transition)", writeProbeSeverity(wp.scope), wDetail);
+          }
+        }
       } catch (e) { add("Azure DevOps auth", "FAIL", e.message); }
     }
   }
@@ -238,11 +296,18 @@ async function main() {
     const label = `GitHub auth (${forkMode ? "fork-PR" : "direct PR"})`;
     const p = await probeGithubUpstream({ upstreamOrg: profile.upstream.org || "VirtoCommerce", token: ghtok });
     if (p.ok && p.login) {
-      // fork mode: read is enough (fork + PR from own account); direct: needs push+.
-      const enough = p.perm !== "unknown" && (forkMode || ["push", "maintain", "admin"].includes(p.perm));
+      // fork mode: read is enough (you PR from your OWN fork, which you can always write).
+      // direct mode: /qa-fix pushes to the upstream. `${p.repo}` (vc-platform) is only a PROXY
+      // probe — the ACTUAL push target is per-bug (the routed module repo) and unknown at
+      // onboarding. So no-push on the proxy is a WARN, NOT a NOT-READY FAIL: a virto-engineer whose
+      // token can push the routed module but not vc-platform specifically must not be blocked here
+      // (the real gate is push access to the routed repo at /qa-fix Gate 1). It surfaces at G1/G5.
+      // perm "unknown" = the repo read itself failed (rate limit / offline) → WARN, can't judge.
       const scopesNote = ghScopes ? ` [scopes: ${ghScopes}]` : "";
-      add(label, enough ? "PASS" : "WARN",
-        `${ghVia}, login '${p.login}'; ${p.repo}: ${p.perm}${scopesNote}` + (enough ? "" : forkMode ? "" : " — direct PR needs push; use fork mode or a token with write"));
+      const base = `${ghVia}, login '${p.login}'; ${p.repo}: ${p.perm}${scopesNote}`;
+      if (p.perm === "unknown") add(label, "WARN", `${base} — could not read the upstream repo permission; re-run to confirm`);
+      else if (forkMode || githubCanWrite(p.perm)) add(label, "PASS", base);
+      else add(label, "WARN", `${base} — no push on the ${p.repo} PROXY probe; the real push target is the per-bug routed repo (checked at /qa-fix Gate 1). Grant GitHub repo/PR write on the modules you fix, or switch to fork mode`);
     } else add(label, "FAIL", `${ghVia}: GET /user → ${p.status || "error"}`);
   } else add("GitHub auth", "FAIL", "no GITHUB_FIX_BUGS_TOKEN and no gh CLI session — set the PAT or run `gh auth login`");
 
@@ -269,10 +334,21 @@ async function main() {
         if (!ado.header) { add(label, "FAIL", "no ADO_PAT / az session to reach Azure Repos"); continue; }
         if (!org || !project) { add(label, "FAIL", "missing vcs.azure.organization / project"); continue; }
         try {
-          const url = `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories/${encodeURIComponent(name)}?api-version=7.1`;
+          const apiBase = `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
+          const url = `${apiBase}/_apis/git/repositories/${encodeURIComponent(name)}?api-version=7.1`;
           const res = await fetch(url, { headers: { Authorization: ado.header, Accept: "application/json" } });
           const okJson = res.ok && (res.headers.get("content-type") || "").includes("application/json");
-          add(label, okJson ? "PASS" : "FAIL", okJson ? `reachable via ${ado.via}` : `→ ${res.status} (${ado.via} not accepted — check PAT Code R/W or az tenant)`);
+          if (!okJson) { add(label, "FAIL", `→ ${res.status} (${ado.via} not accepted — check PAT Code R/W or az tenant)`); continue; }
+          // Reachable — now confirm PUSH scope (the /qa-fix operation), not just read. This is
+          // the LEO gap: get-repo 200 but push 401. Non-mutating: empty push body → 400 when
+          // authorized, 401/403 when Code-write scope is absent.
+          const wp = await probeAdoCodeWrite({ apiBase, authHeader: ado.header, repo: name });
+          const adoDetail =
+            wp.scope === "present" ? `reachable + Code write via ${ado.via} (probe → ${wp.status})`
+            : wp.scope === "absent" ? `reachable but NO Code write (push probe → ${wp.status}) — /qa-fix pushes here; grant ADO PAT scopes: Code (Read & Write) + Pull Request (contribute)`
+            : wp.scope === "restricted" ? `reachable via ${ado.via}; push probe → 403 — this repo/branch is ACL-restricted, NOT proof the PAT lacks Code write; confirm branch policies / repo permissions allow the fix branch`
+            : `reachable via ${ado.via}; Code write unverified (push probe → ${wp.status}) — confirm PAT Code (Read & Write)`;
+          add(label, writeProbeSeverity(wp.scope), adoDetail);
         } catch (e) { add(label, "FAIL", e.message); }
       } else {
         // github client repo
@@ -285,7 +361,12 @@ async function main() {
           if (res.ok) {
             const repo = await res.json();
             const push = Boolean(repo.permissions?.push);
-            add(label, push ? "PASS" : "WARN", push ? `push access via ${ghVia}` : `reachable (${ghVia}) but no push perm — PR needs write`);
+            // Route through writeProbeSeverity (push→present/absent) so the severity mapping is the
+            // SAME tested pure function as the Azure path. Missing push is a WARN (not an onboarding
+            // block) — /qa-fix's Gate 1 re-checks the actual routed repo.
+            add(label, writeProbeSeverity(push ? "present" : "absent"), push
+              ? `push access via ${ghVia}`
+              : `reachable (${ghVia}) but NO push perm — /qa-fix pushes here; grant GitHub repo/PR write on ${owner}/${name} before running it`);
           } else add(label, "FAIL", `GET repos/${owner}/${name} → ${res.status}`);
         } catch (e) { add(label, "FAIL", e.message); }
       }
@@ -322,6 +403,15 @@ async function main() {
 
   renderTable(results);
   renderMcp();
+  // Best-effort self-diagnostics COMPLETION signal. verify-access is the LAST script every
+  // /project-init path runs (fresh §9, --check §C, --add-env §D), so emitting the terminal-step
+  // marker HERE makes the clean self-check line ("no plugin issues detected") fire reliably —
+  // WITHOUT depending on the model remembering the trailing `complete` command (it can skip that
+  // silent afterthought in auto mode; observed on the LEO deployment 2026-07-22 → the healthy run
+  // surfaced nothing). The hook gates itself on captureEnabled (selfDiagnostics:true), so this is a
+  // no-op when capture is off. NEVER throws / never affects the readiness exit code. Emitted even on
+  // NOT READY — a correct NOT-READY verdict is itself a completed run (see skill-expectations §complete).
+  signalSelfDiagnosticsComplete();
   process.exit(results.some((r) => r.status === "FAIL") ? 1 : 0);
 }
 
@@ -430,4 +520,11 @@ function renderTable(rows) {
   console.log("");
 }
 
-main();
+// Guard the top-level promise: an unexpected throw before the normal exit (line ~408) must not
+// become an unhandled rejection. We do NOT fire the completion marker on a crash — a crash is not a
+// clean terminal step (the clean line stays withheld, the safe direction). A total-config-load
+// failure is already handled by the early `process.exit(1)` above.
+main().catch((err) => {
+  console.error(`[verify-access] ${err?.stack || err?.message || err}`);
+  process.exit(1);
+});

@@ -1,0 +1,146 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"LAYOUT-CLS-001","CLS on home page (observer installed pre-paint)","CLS > Initial render","P2","BL-UI-001","ECL-1.2","Storefront reachable. The runner installs the CLS observer via addInitScript, so unlike the MCP-driven predecessor this DOES capture pre-paint shifts.","{{FRONT_URL}}","[VIEWPORT] 1280x900
+[THROTTLE] fast3g
+[NAV] {{FRONT_URL}}/
+[WAIT] networkidle
+[REFLOW]
+[PROBE:CLS]","[CLS] <= 0.1","console errors and 4xx/5xx are captured automatically into the FAIL trace","Hero .slider-block images without width/height or aspect-ratio; webfont swap reflowing .vc-typography; product grid resolving late","none (context is destroyed after the case)","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-001","Automated"
+"LAYOUT-CLS-002","CLS on catalog listing","CLS > Initial render","P2","BL-UI-001","ECL-1.2","Catalog has at least one indexed product.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
+[THROTTLE] fast3g
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 4
+[WAIT] networkidle
+[REFLOW]
+[PROBE:CLS]","[CLS] <= 0.1","auto-captured","Product-card images resolving after grid layout; facet rail widening on load","none","business-logic.md#bl-ui-001; replaces 048b LAYOUT-CLS-002","Automated"
+"LAYOUT-IMG-001","Home images reserve space before load (CLS root cause)","CLS > Reserved space","P1","BL-UI-001","ECL-1.2","Root-causes the CLS number: every image must carry width+height attrs, a CSS aspect-ratio, or an explicitly sized box.","{{FRONT_URL}}","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/
+[WAIT] networkidle
+[PROBE:IMGDIMS] img","[IMGDIMS] missingDims == 0","auto-captured","Hero slides and content-block images with aspect-ratio:auto and no width/height attributes","none","business-logic.md#bl-ui-001; root cause behind 048b LAYOUT-CLS-001/002/003 + VCCAROUSEL-001","Automated"
+"LAYOUT-IMG-002","Catalog product-card images reserve space","CLS > Reserved space","P1","BL-UI-001","ECL-1.2","Catalog renders product cards.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 4
+[PROBE:IMGDIMS] .vc-product-card img","[IMGDIMS] missingDims == 0","auto-captured","Card images collapse to zero height until bytes arrive, shifting the grid","none","business-logic.md#bl-ui-001","Automated"
+"LAYOUT-SPC-001","Spacing grid — catalog product cards","Spacing > Grid compliance","P2","BL-UI-002","ECL-1.5","Grid is the DERIVED design-system scale (npm run tokens:sync), not a 4px multiple. 10px/6px/14px are valid Tailwind steps and must PASS.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 4
+[PROBE:SPACING] .vc-product-card, .vc-product-card .vc-product-title, .vc-product-card .vc-product-price","[SPACING] offGrid == 0","auto-captured","Values on no scale step at all (13px, 27px, 41px) — NOT 10px/6px/18px, which are legitimate","none","business-logic.md#bl-ui-002; replaces 048b LAYOUT-SPC-001","Automated"
+"LAYOUT-COMP-VCBUTTON-001","Spacing grid — VcButton across header and main","Components > VcButton","P2","BL-UI-002","ECL-1.5","Regression guard for the false-positive that removed 048b: vc-button uses padding[2.5]=10px and padding[3.5]=14px BY DESIGN. This case must PASS on an unchanged build.","{{FRONT_URL}}","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/
+[WAIT] header
+[PROBE:SPACING] header button, main button","[SPACING] offGrid == 0","auto-captured","A genuinely off-scale value; if this fails with 10px/6px the token sync has drifted — run npm run tokens:check","none","business-logic.md#bl-ui-002; critical-ui-scope.md VcButton; replaces 048b LAYOUT-COMP-VCBUTTON-001","Automated"
+"LAYOUT-OVF-001","No horizontal scroll on home at 375px","Overflow > Mobile","P1","BL-UI-004","ECL-1.6","Viewport is a declared step, so this can never be measured at the wrong width.","{{FRONT_URL}}","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/
+[WAIT] networkidle
+[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","Header chrome or a content block wider than the viewport at 375px","none","business-logic.md#bl-ui-004; replaces 048b LAYOUT-OVF-001","Automated"
+"LAYOUT-VPS-001","No horizontal scroll in the lg-to-xl fluid band (1024-1280)","Overflow > Viewport sweep","P1","BL-UI-004","ECL-1.6","048b reported documentScrolls=true at 1023/1024/1050/1100 on a Builder.io content block, recovering by 1150. Sampled at 1050 — inside the reported band, which the old fixed 375/768/1024/1280/1920 viewport set never touched.","{{FRONT_URL}}","[VIEWPORT] 1050x900
+[NAV] {{FRONT_URL}}/
+[WAIT] networkidle
+[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","A fixed-width block (Builder.io content) exceeding the fluid container between lg and xl","none","business-logic.md#bl-ui-004; replaces 048b LAYOUT-VPS-001","Automated"
+"LAYOUT-ALN-001","Product-card row height parity","Alignment > Grid row","P2","BL-UI-005","ECL-1.7","Cards in one row must share height within 1px.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 4
+[PROBE:ALIGN] .vc-product-card:nth-child(-n+4)","[ALIGN] heightDrift <= 1","auto-captured","One card taller than its row neighbours, breaking the grid","none","business-logic.md#bl-ui-005; replaces 048b LAYOUT-ALN-001","Automated"
+"LAYOUT-TGT-001","Touch targets on catalog meet the WCAG AA floor at 375px","Touch targets > Mobile","P1","BL-UI-006","ECL-1.8","Two tiers: below 24x24 (AA, SC 2.5.8) FAILs. Between 24 and 44 (AAA, SC 2.5.5) WARNs, because the UI kit ships 26/32/38px controls by design.","{{FRONT_URL}}/catalog","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 2
+[PROBE:TOUCH] main","[TOUCH] belowAA == 0
+[TOUCH] belowAAA == 0
+[TOUCH] tooClose == 0","auto-captured","A control under 24x24 is a real defect; 26-38px controls are the design-system tier and only WARN","none","business-logic.md#bl-ui-006; replaces 048b LAYOUT-TGT-001","Automated"
+"LAYOUT-TGT-002","Sign-in form touch targets at 375px","Touch targets > Forms","P1","BL-UI-006","ECL-1.8","Anonymous context. A fresh context per case means /sign-in never redirects to /catalog the way it did for an already-authenticated agent session.","{{FRONT_URL}}/sign-in","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] form
+[PROBE:TOUCH] form","[TOUCH] belowAA == 0
+[TOUCH] belowAAA == 0
+[TOUCH] tooClose == 0","auto-captured","Password-visibility toggle or submit button under the AA floor","none","business-logic.md#bl-ui-006; replaces 048b LAYOUT-PAGE-TGT-SIGNIN-001","Automated"
+"LAYOUT-SHIFT-001","Product-card hover does not displace its neighbour","State shift > Hover","P2","BL-UI-003","ECL-1.4","Hover must use outline or a reserved transparent border, never a layout-affecting border.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 2
+[SNAP] before = .vc-product-card:nth-child(2)
+[HOVER] .vc-product-card:nth-child(1)
+[SNAP] after = .vc-product-card:nth-child(2)","[SHIFT] before vs after topDelta == 0
+[SHIFT] before vs after leftDelta == 0","auto-captured","Neighbour card moves when the sibling is hovered","none","business-logic.md#bl-ui-003; replaces 048b LAYOUT-SHIFT-001","Automated"
+"LAYOUT-OVF-002","No horizontal scroll on catalog at 375px","Overflow > Mobile","P1","BL-UI-004","ECL-1.6","Anonymous. Fresh context per case, so /sign-in and /sign-up do not redirect the way they do in a warm authenticated session.","{{FRONT_URL}}/catalog","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 2
+[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","An element wider than the viewport forces the document to scroll sideways","none","business-logic.md#bl-ui-004; critical-ui-scope.md Pages matrix /catalog x BL-UI-004","Automated"
+"LAYOUT-OVF-004","No horizontal scroll on sign-in at 375px","Overflow > Mobile","P1","BL-UI-004","ECL-1.6","Anonymous. Fresh context per case, so /sign-in and /sign-up do not redirect the way they do in a warm authenticated session.","{{FRONT_URL}}/sign-in","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] form
+[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","An element wider than the viewport forces the document to scroll sideways","none","business-logic.md#bl-ui-004; critical-ui-scope.md Pages matrix /sign-in x BL-UI-004","Automated"
+"LAYOUT-OVF-005","No horizontal scroll on sign-up at 375px","Overflow > Mobile","P1","BL-UI-004","ECL-1.6","Anonymous. Fresh context per case, so /sign-in and /sign-up do not redirect the way they do in a warm authenticated session.","{{FRONT_URL}}/sign-up","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/sign-up
+[WAIT] form
+[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","An element wider than the viewport forces the document to scroll sideways","none","business-logic.md#bl-ui-004; critical-ui-scope.md Pages matrix /sign-up x BL-UI-004","Automated"
+"LAYOUT-OVF-006","No horizontal scroll on search results at 375px","Overflow > Mobile","P1","BL-UI-004","ECL-1.6","Anonymous. Fresh context per case, so /sign-in and /sign-up do not redirect the way they do in a warm authenticated session.","{{FRONT_URL}}/search?q=a","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/search?q=a
+[WAIT] networkidle
+[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","An element wider than the viewport forces the document to scroll sideways","none","business-logic.md#bl-ui-004; critical-ui-scope.md Pages matrix /search?q= x BL-UI-004","Automated"
+"LAYOUT-OVF-003","No horizontal scroll on PDP at 375px (longest-title product)","Overflow > Mobile","P1","BL-UI-004","ECL-1.6","Product resolved live via [DISCOVER] longestTitleSlug — the long title is the overflow stressor, and discovering it removes the fixture-drift blocker that stopped 048b.","resolved at runtime","[VIEWPORT] 375x812
+[DISCOVER] SLUG = longestTitleSlug
+[NAV] {{FRONT_URL}}{{SLUG}}
+[WAIT] networkidle
+[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","Long product title or gallery pushes the document wider than 375px","none","business-logic.md#bl-ui-004; critical-ui-scope.md Pages matrix PDP x BL-UI-004","Automated"
+"LAYOUT-COMP-HEADER-001","Header chrome spacing grid","Components > Header","P2","BL-UI-002","ECL-1.5","048b failed this on 'paddingLeft/Right=44px off-grid'. 44px is padding.11 — a valid step. This must PASS.","{{FRONT_URL}}","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/
+[WAIT] header
+[PROBE:SPACING] header, header nav, header button","[SPACING] offGrid == 0","auto-captured","A value on no scale step; 44px is NOT a violation","none","business-logic.md#bl-ui-002; critical-ui-scope.md Header x BL-UI-002","Automated"
+"LAYOUT-COMP-HEADER-003","Header controls touch targets at 375px","Components > Header","P1","BL-UI-006","ECL-1.8","AA floor fails; the 26-38px UI-kit tier warns.","{{FRONT_URL}}","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/
+[WAIT] header
+[PROBE:TOUCH] header","[TOUCH] belowAA == 0
+[TOUCH] belowAAA == 0
+[TOUCH] tooClose == 0","auto-captured","Hamburger, cart or account control below 24x24","none","business-logic.md#bl-ui-006; critical-ui-scope.md Header x BL-UI-006","Automated"
+"LAYOUT-COMP-VCINPUT-001","Sign-in form spacing grid","Components > VcInput","P2","BL-UI-002","ECL-1.5","Anonymous context.","{{FRONT_URL}}/sign-in","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] form
+[PROBE:SPACING] form .vc-input, form .vc-input__container, form .vc-input__input","[SPACING] offGrid == 0","auto-captured","Off-scale field padding","none","business-logic.md#bl-ui-002; critical-ui-scope.md VcInput x BL-UI-002","Automated"
+"LAYOUT-COMP-VCINPUT-002","Validation error insertion must not move the submit button","Components > VcInput","P1","BL-UI-003","ECL-1.4","The error message must occupy reserved space. 048b measured a 16px push here and called it 'a small, controlled shift' — BL-UI-003 says the delta must be 0, so this case states the invariant and lets the result speak.","{{FRONT_URL}}/sign-in","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] form
+[SNAP] before = [data-test-id=""login-button""]
+[FILL] [data-test-id=""email-input""] = not-an-email
+[CLICK] [data-test-id=""login-button""]
+[WAIT] 800ms
+[SNAP] after = [data-test-id=""login-button""]","[SHIFT] before vs after topDelta == 0","auto-captured","Submit button pushed down when the inline error renders","none","business-logic.md#bl-ui-003; critical-ui-scope.md VcInput x BL-UI-003; replaces 048b LAYOUT-SHIFT-003","Automated"
+"LAYOUT-COMP-VCEXPANSION-001","Catalog facet panels spacing grid","Components > VcExpansionPanels","P2","BL-UI-002","ECL-1.5","Catalog renders facet groups.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 2
+[PROBE:SPACING] .vc-expansion-panels, .vc-expansion-panel","[SPACING] offGrid == 0","auto-captured","Off-scale panel padding","none","business-logic.md#bl-ui-002; critical-ui-scope.md VcExpansionPanels x BL-UI-002","Automated"
+"LAYOUT-COMP-VCEXPANSION-004","Facet panel headers touch targets at 375px","Components > VcExpansionPanels","P1","BL-UI-006","ECL-1.8","048b failed all 15 facet headers against the flat 44px bar; only a sub-24px header is a real defect.","{{FRONT_URL}}/catalog","[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] .vc-product-card >= 2
+[PROBE:TOUCH] .vc-expansion-panels","[TOUCH] belowAA == 0
+[TOUCH] belowAAA == 0
+[TOUCH] tooClose == 0","auto-captured","A facet header below the 24x24 AA floor","none","business-logic.md#bl-ui-006; critical-ui-scope.md VcExpansionPanels x BL-UI-006","Automated"
+"LAYOUT-COMP-VCTABSWITCH-001","Catalog view-switcher tab alignment","Components > VcTabSwitch","P2","BL-UI-005","ECL-1.7","Grid/list tabs sit in one row and must share a baseline.","{{FRONT_URL}}/catalog","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] [data-test-id=""view-switcher""]
+[PROBE:ALIGN] [data-test-id=""view-switcher""] > *","[ALIGN] centerDrift <= 1
+[ALIGN] heightDrift <= 1","auto-captured","Grid and list tabs vertically offset from each other","none","business-logic.md#bl-ui-005; critical-ui-scope.md VcTabSwitch x BL-UI-005","Automated"
+"LAYOUT-COMP-VCBREADCRUMBS-002","PDP breadcrumbs do not overflow at 375px","Components > VcBreadcrumbs","P2","BL-UI-004","ECL-1.6","Deep category paths are the chronic mobile overflow source. PDP resolved live.","resolved at runtime","[VIEWPORT] 375x812
+[DISCOVER] SLUG = longestTitleSlug
+[NAV] {{FRONT_URL}}{{SLUG}}
+[WAIT] networkidle
+[PROBE:OVERFLOW]","[OVERFLOW] documentScrolls == false","auto-captured","Breadcrumb row pushes a horizontal scrollbar instead of wrapping or truncating","none","business-logic.md#bl-ui-004; critical-ui-scope.md VcBreadcrumbs x BL-UI-004","Automated"
+"LAYOUT-COMP-VCTABLE-001","Order-table spacing and row-height parity","Components > VcTable","P2","BL-UI-002","ECL-1.5","USER signs in through the real form once; the storageState is reused per case, so each case still gets a clean context. Requires order history — no rows means BLOCKED (no signal), never PASS.","{{FRONT_URL}}/account/orders","[AUTH] USER
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] .vc-table tbody tr >= 1
+[PROBE:SPACING] .vc-table, .vc-table th, .vc-table td","[SPACING] offGrid == 0","auto-captured","Off-scale cell padding","none (context destroyed)","business-logic.md#bl-ui-002; critical-ui-scope.md VcTable x BL-UI-002","Automated"
+"LAYOUT-COMP-VCTABLE-002","Order-table row heights match","Components > VcTable","P2","BL-UI-005","ECL-1.7","Row-height drift is the canonical 'looks broken' signal. Needs >= 3 orders.","{{FRONT_URL}}/account/orders","[AUTH] USER
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] .vc-table tbody tr >= 3
+[PROBE:ALIGN] .vc-table tbody tr:nth-child(-n+3)","[ALIGN] heightDrift <= 1","auto-captured","Row heights drift as content length varies","none","business-logic.md#bl-ui-005; critical-ui-scope.md VcTable x BL-UI-005","Automated"
+"LAYOUT-COMP-VCSIDEBAR-001","Account sidebar nav item alignment","Components > VcSidebar","P2","BL-UI-005","ECL-1.7","The VcLayout sidebar slot is the /account/* layout backbone. 048b failed this on a 10px/6px phantom — must PASS now.","{{FRONT_URL}}/account/dashboard","[AUTH] USER
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] aside
+[PROBE:ALIGN] aside nav a","[ALIGN] heightDrift <= 1","auto-captured","Sidebar item heights drift, signalling a broken token chain","none","business-logic.md#bl-ui-005; critical-ui-scope.md VcSidebar x BL-UI-005","Automated"
+"LAYOUT-PAGE-CLS-DASHBOARD-001","CLS on account dashboard","CLS > Initial render","P2","BL-UI-001","ECL-1.2","Dashboard carries latest-orders and a monthly-spend chart — charts are CLS-prone.","{{FRONT_URL}}/account/dashboard","[AUTH] USER
+[VIEWPORT] 1280x900
+[THROTTLE] fast3g
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] networkidle
+[REFLOW]
+[PROBE:CLS]","[CLS] <= 0.1","auto-captured","Chart or order list resolving late and pushing content","none","business-logic.md#bl-ui-001; critical-ui-scope.md Pages matrix /account/dashboard x BL-UI-001","Automated"

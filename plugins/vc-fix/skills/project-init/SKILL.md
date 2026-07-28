@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Everything else — whether it is a native-platform or a CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local + .mcp.json and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client custom code vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer.
+description: Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Everything else — whether it is a native-platform or a CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local + .mcp.json and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client custom code vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env access keys) to an already-onboarded project; `--check` reconciles an existing profile to the current schema then verifies.
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -23,6 +23,11 @@ platform) and to the correct bug tracker.
 > no profile, the plugin keeps its original behaviour (native-platform, Jira,
 > GitHub). Nothing existing is rewritten.
 
+> **Two day-2 modes** (skip the interview): **`--add-env`** — add another environment
+> (URLs + per-env access creds) to an already-onboarded project (§`--add-env` below);
+> **`--check`** — reconcile an existing profile to the current schema after a plugin
+> upgrade, then verify (§`--check`).
+
 ## What it produces
 
 | Artifact | Purpose |
@@ -34,7 +39,7 @@ platform) and to the correct bug tracker.
 ## Pipeline
 
 ```
-0 preconditions → 1 install → 2 interview (env name · tracker · code host · auth pref)
+0 preconditions (confirm dir · self-diagnostics consent FIRST + write flag · install) → 2 interview (env name · tracker · code host · auth pref · upstream-feedback consent)
 → 3 scaffold BOTH env templates + operator fills + pause
 → 4 discover repos (ALWAYS) → projectType · clientOrg · repo split · storefront
 → 4b discover tracker (Azure) → per-type states · role→state map · apiBase · projectId
@@ -93,7 +98,42 @@ installed plugin (e.g. under `~/.claude/plugins/`, or the absolute directory thi
 loaded from). Use it as the `$CLAUDE_PLUGIN_ROOT/skills/project-init/…` prefix for every
 generator call in the steps below.
 
-### 0b. Detect AND install the required tooling
+### 0b. Self-diagnostics capture consent — ask FIRST, write the flag NOW
+
+**This is the FIRST interactive decision of the whole run** — before installing tooling
+and before the interview. Reason: the passive session-telemetry hook captures **opt-in**
+— it is a full no-op until `project-profile.json` explicitly sets `selfDiagnostics: true`.
+`/project-init` writes its profile only at the *end* of onboarding, so if we waited, its
+OWN run (the most failure-prone skill a client runs) would never be captured. Asking now +
+writing the flag immediately makes the rest of this run observable from this point on.
+
+Ask with **`AskUserQuestion`** — a single question, wording taken **verbatim** from
+`reconcile-profile.mjs` `MANAGED_FIELDS.selfDiagnostics.question` so the fresh interview and
+`/project-init --check` never diverge (make the first option the `default`):
+
+> *"Enable vc-fix self-diagnostics for this project? The passive session-telemetry hook
+> records how the plugin's OWN skills ran (to `<project>/.vc-fix/`, gitignored) so
+> `/vc-self-check` can spot plugin quality issues. It never sends anything without a separate
+> consent step and never touches your code."*
+
+- **Yes (recommended)** → **immediately** write a stub profile carrying just the flag, so
+  capture turns on right away (`gen-profile` layers over `PROFILE_DEFAULTS`, so this writes a
+  complete-but-default profile with `selfDiagnostics: true` — step 6 rewrites it fully from the
+  interview + scan, so the stub is disposable):
+
+  ```bash
+  node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" --self-diagnostics true --print
+  ```
+
+- **No** → write nothing now; capture stays off for this run (opt-in). Remember the answer.
+
+**Carry the answer to step 6** as `--self-diagnostics <true|false>` (step 6's authoritative
+write re-passes it, so the final profile always reflects this decision). This is the ONLY place
+`/project-init` asks the capture opt-in — no other command asks it; they just read the flag.
+(Note: the `session_start` record still misses this run — `SessionStart` fired before the flag
+existed — but every span + the finalize verdict are captured from the write onward. Accepted.)
+
+### 0c. Detect AND install the required tooling
 
 Run a detection pass, then **install whatever is missing** — do not just report a
 gap and move on (that leaves `/qa-fix` unable to open PRs).
@@ -195,6 +235,29 @@ Applicable axes:
 
 Map the answers to the scaffold flags: `--github-auth pat|gh-cli`, `--ado-auth
 pat|az-login`, `--jira-auth token|oauth`.
+
+### 2e. Upstream-feedback consent — one `AskUserQuestion`
+
+> The **local-capture** opt-in (`selfDiagnostics`) was already asked and written as the FIRST
+> step (§0b) — do **not** ask it again here. This step is only the *upstream delivery* consent.
+
+**Skip this step entirely when §0b was answered No** — with capture off there is nothing to
+deliver, so leave `feedback.mode` at its default and move on. Otherwise ask the delivery
+consent — a **single** `AskUserQuestion`, wording/options verbatim from `reconcile-profile.mjs`
+`MANAGED_FIELDS.feedback` so the fresh interview and `/project-init --check` never diverge
+(make the first option the `default`):
+
+- **feedback.mode** (upstream delivery consent — gates ONLY outbound `deliver`, never local
+  capture/diagnosis; nothing is ever sent without scrubbing all client identifiers first):
+  - Question: *"When vc-fix self-diagnostics finds a plugin quality issue, how should it be
+    contributed back to VirtoCommerce to improve the plugin?"*
+  - Options: **Ask each time (recommended)** → `ask` (dry-run + a single
+    Show-diff/Send/Don't-send decision) · **Automatic** → `auto` (file the scrubbed GitHub
+    Issue automatically; PR/fork-PR handed off as commands) · **Off** → `off` (nothing
+    leaves the machine — the DIAG stays local).
+
+Carry the answer to step 6 as `--feedback-mode <ask|auto|off>` (and re-pass the §0b
+`--self-diagnostics <true|false>` decision there too).
 
 ## 3. Scaffold the two env templates, then hand off for filling
 
@@ -373,6 +436,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --client-vcs github \
   --operator <derived> --contribution-mode <derived> \
   --upstream-account <forkAccount, only if fork> \
+  --self-diagnostics <true|false, from step 0b> --feedback-mode <ask|auto|off, from step 2e> \
   --vcs-auth <derived: client host's auth — github⇒gh-cli|pat, azure-repos⇒az-login|pat> --print
 # Azure Boards + Azure Repos:
 #   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --vcs-auth pat ...
@@ -430,14 +494,36 @@ password grant) · storefront user login (soft WARN) · tracker token (Jira `GET
 or a **real ADO org probe**) · **GitHub fix token / gh session** (validates the token and
 its permission on the upstream — shared with the derive block via `probe-lib.mjs`, so
 what verify reports and what the profile stored can't drift) · **client repos** (for a
-client deployment, each `repos.client` entry is probed for reach + push on its own host —
+client deployment, each `repos.client` entry is probed for reach on its own host —
 GitHub `permissions.push` or an Azure Repos `_apis/git/repositories/<repo>` JSON hit — so a
 dead client-repo token surfaces here, not at Gate 2; native platform ⇒ SKIP) · **Storefront
 upstream ref** (a client frontend fork's `upstreamRef` resolves in `vc-frontend` — PASS; missing /
 `upstreamRefResolved:false` / doesn't resolve — WARN, since Gate 1b reconstructs/asks; no fork ⇒
-SKIP). Resolve every **FAIL**
-(exit code is non-zero while any FAIL remains); **WARN** is non-blocking; **SKIP** means
-a feature isn't configured.
+SKIP).
+
+**WRITE-capability probes (the axes `/qa-fix` must write to).** A PAT/session with only
+READ scope passes every read probe above but 401s the moment `/qa-fix` transitions a
+ticket or pushes a branch — the gap found live in a client deployment (ADO PAT: `whoami` /
+`get-workitem` / `list-refs` 200, but transition / comment / push 401). So the table also
+probes write, **without mutating anything** — it sends a deliberately-invalid write request
+and reads the status split (`401/403` = no write scope; `400/409/422` = scope present, the
+bad request was rejected at validation; anything else ⇒ "write scope unverified"):
+
+| Row | Axis | Probe (non-mutating) | Verdict |
+|-----|------|----------------------|---------|
+| **Azure Boards write (transition)** | tracker (Azure Boards only) | `PATCH _apis/wit/workitems/<known id>` with an invalid JSON-Patch body | present ⇒ PASS · no scope / ACL-403 / inconclusive ⇒ **WARN** |
+| **GitHub auth (direct/fork PR)** | platform upstream (GitHub) | existing `permissions.push` on the upstream repo | fork (own fork) ⇒ PASS · no push on the proxy repo / unreadable perm ⇒ **WARN** |
+| **Client repo `<name>`** | client code host | GitHub `permissions.push`; Azure Repos `POST _apis/git/repositories/<repo>/pushes` with an empty body | reachable + write ⇒ PASS · reachable but no write / inconclusive ⇒ **WARN** |
+
+A missing write scope is a **WARN, never a NOT-READY FAIL** (`probe-lib.writeProbeSeverity`):
+refusing to finish onboarding over a token that reaches the resource but lacks one write scope is
+too heavy — the WARN explains exactly what to grant, the operator grants it before running
+`/qa-fix`, and `/qa-fix` Gate 1 re-checks the ACTUAL routed repo anyway. The `To resolve:` block
+names the exact scopes — **Azure: Work Items (Read & Write) + Code (Read & Write) + Pull Request
+(contribute); GitHub: repo/PR write** — and never prints the token. Only **fundamentals** FAIL →
+NOT READY (missing core env, unreachable `FRONT_URL`/`BACK_URL`, bad admin login, or a totally
+absent/rejected credential that can't even reach the resource); **WARN** is non-blocking; **SKIP**
+means a feature isn't configured.
 
 **Session auth is really probed, not assumed.** For an `az-login` / `gh-cli` axis the
 check mints a real token and hits the org / upstream — an active session that is not a
@@ -477,6 +563,110 @@ and point the operator at the first run:
 ```
 /qa-fix VCST-1234        # (or your tracker's key) — now routes to the right repo
 ```
+
+**Signal completion (self-diagnostics).** This is now emitted **automatically** — `verify-access.mjs`
+(Step 8, the last script every path runs) fires the terminal-step marker itself, best-effort, so the
+clean self-check line prints reliably without depending on you remembering a trailing command. You only
+need to run it **manually as a fallback** if the run ended BEFORE reaching Step 8 verify-access (e.g. a
+hard precondition bail at Step 0), so the collector still knows the run finished:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"
+```
+
+It tells the vc-fix self-diagnostics collector this run has finished, so its one-line
+clean/health status prints **exactly once** (right after this step) instead of on every
+interview / file-fill / verify pause. Emit it even when the run ended early (a NOT READY
+precondition bail, or "nothing to do") — a correct early exit is still a completed run. (See
+[`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
+§Signal completion.)
+
+---
+
+## `--add-env` — add another environment to an already-onboarded project
+
+`/project-init --add-env` is for a deployment that is ALREADY onboarded (a
+`project-profile.json` exists) and you want to point the plugin at **another deployment
+target** — a second QA env, staging, a customer's second storefront — that shares the
+**same project topology**.
+
+**Why this is short (and touches almost nothing).** The deployment profile is
+**env-agnostic**: `tracker.kind`, `vcs.clientHost`, `repos.*`, `contributionMode`, the
+tracker role model — all describe the PROJECT (where bugs are filed, where code lives, which
+repos exist), not a single deployment. An *environment* is only a **URL set + its access
+creds** (`.env.<name>` + the `_<ENV>`-suffixed passwords in `.env.local`), selected at
+runtime by `TEST_ENV`. So `--add-env`:
+
+- **does NOT** re-run the interview, re-scan repos (`discover-repos`), re-derive
+  (`derive-context`), rewrite `project-profile.json`, or regenerate `.mcp.json` — all
+  env-agnostic and already done;
+- **only** scaffolds the new env's two files (reusing the profile's tracker/host), then
+  verifies the new env.
+
+> A different **tracker or code host** is a different *project*, not an environment — those
+> live in `project-profile.json`. For that, run a fresh full `/project-init` in its own
+> project directory; don't try to bend `--add-env` to it.
+
+### Step A — precondition + read the project topology (no questions)
+
+1. `project-profile.json` must exist in the cwd. If it doesn't → this project was never
+   onboarded: run the **full interview** (`/project-init`, no args) instead. Confirm the cwd
+   (§0a) — everything still lands here.
+2. Read `tracker.kind` and `vcs.clientHost` from `project-profile.json` (e.g.
+   `node -e "const p=require('./project-profile.json');console.log(p.tracker.kind,p.vcs.clientHost)"`,
+   or just read the file). **Do NOT ask them again** — they are project-level and already
+   decided. These become the `--tracker` / `--client-vcs` flags below.
+
+### Step B — ask the env name, then the existing-env guard
+
+- **Ask the env name** as a **plain chat** question (like §2a — *"what should the new
+  environment be named?"*; not `AskUserQuestion`/widget, and no positional arg). The operator
+  replies; normalise to `[a-z0-9_]+` (e.g. `Staging 2` → `staging_2`) and tell them what you used.
+- **Existing-env guard** (§2c): check `.env.<name>` first. Found → `AskUserQuestion` to
+  **reuse** it (scaffolding is add-only, never clobbers filled values) or **pick a new name**
+  (re-ask the plain-chat name question + re-check). Not found → proceed.
+
+### Step C — scaffold the new env's two files, then pause
+
+Same scaffolders as the full flow (§3), reusing the tracker/host read from the profile:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs"     --env <new> --tracker <kind> --client-vcs <host> --print
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> --tracker <kind> --client-vcs <host> --print
+```
+
+- `scaffold-env` writes `.env.<new>` — the new deployment's URLs/identifiers (`FRONT_URL`,
+  `BACK_URL`, store/culture, `ADO_ORG`/`ADO_PROJECT` if Azure). All empty for the operator to fill.
+  It also re-emits the **project-level** connection placeholders (`JIRA_BASE_URL`/`JIRA_PROJECT_KEY`,
+  or `ADO_ORG`/`ADO_PROJECT`, or `CLIENT_REPO_ORG`). **Those are safe to leave empty in `.env.<new>`
+  — they are already in `project-profile.json`, and every runtime consumer falls back to the profile
+  (`process.env.X || profile.…`).** Only the per-env **URLs** genuinely need filling; don't ask the
+  operator to re-enter tracker/org values they already gave at onboarding.
+- `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
+  (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Cross-env
+  tokens** (`GITHUB_FIX_BUGS_TOKEN` / `JIRA_API_TOKEN` / `ADO_PAT`) are single-instance and
+  already present from the first env — idempotent add-only leaves them untouched. (A new env
+  reachable only with a *different* tracker/GitHub token is the "different project" case above.)
+
+Tell the operator both were touched and what genuinely needs filling — **the new env's URLs + its
+admin/user passwords** (the empty project-level tracker/org placeholders are covered by the profile) —
+then **pause** with the unmistakable waiting banner (§3c) — no tool calls after it.
+
+### Step D — verify the new environment
+
+```bash
+FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+```
+
+Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new env's URLs +
+**real admin login** + the (cross-env) tracker/GitHub tokens all work for this target.
+`project-profile.json` and `.mcp.json` are **unchanged** (env-agnostic). **Restate the
+readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (per run, or via
+your shell) selects the new environment for `/qa-fix`, `/qa-bug`, `/qa-verify-fix`.
+
+Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
+marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
+`node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"`.
 
 ---
 
@@ -535,7 +725,8 @@ machine. It surfaces as its own `pending` entry with a three-way `question`/`opt
 
 `--write` applies the structural adds/removes plus any `--set` decisions. Unresolved
 `pending`/`rescan` fields are left **absent** — safe, because a missing field reads as its
-safe default (no `selfDiagnostics` ⇒ the telemetry hook is a full no-op; no `feedback`
+safe default (no `selfDiagnostics` ⇒ capture stays **OFF** — the opt-in gate; set
+`selfDiagnostics:true` to opt in; no `feedback`
 ⇒ delivery falls back to `ask` — a dry-run + confirm, never an unattended send) — and stay
 in the report so a later `--check` can finish
 them. Reconciling is **idempotent**: once done,
@@ -556,6 +747,10 @@ FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verif
 
 **Restate BOTH** the reconciliation summary (added / removed / decided) **and** the
 readiness table in your reply.
+
+Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
+marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
+`node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"`.
 
 ---
 
@@ -610,6 +805,9 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference
-> per axis. Both env files are scaffolded as commented templates the operator fills;
+> per axis. The **self-diagnostics capture opt-in** (`selfDiagnostics`) is asked FIRST, as
+> step 0b, and the flag is written immediately on Yes; the **`feedback.mode`
+> upstream-delivery consent** is step 2e — the same two decisions the `--check` reconcile
+> surfaces. Both env files are scaffolded as commented templates the operator fills;
 > the scan (step 4) derives projectType + clientOrg, the derive block (step 5) derives
 > contribution mode + fork account + operator, and verify-access (step 8) confirms.

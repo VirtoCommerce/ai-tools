@@ -39,7 +39,7 @@ Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser t
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
 - **Suite definitions**: 110 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: 36 groups — `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `layout-stability`, `loyalty`, …)
+- **Selection groups**: 38 groups — `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, …)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
@@ -63,7 +63,7 @@ Central configuration for regression orchestration. Defines:
 | `Frontend/whitelabeling/` | 070-071 | 68 | Storefront, branding |
 | `Frontend/marketing/` | 077, 077b | 112 | Coupons & promotions storefront |
 | `Frontend/loyalty/` | 083, 083b | 33 | Loyalty storefront (earn/redeem, balance) |
-| `Frontend/cross-cutting/` | 043-048, 048b | 214 | GA4, security, a11y, i18n, performance, browser compat, layout stability |
+| `Frontend/cross-cutting/` | 043-048 | 162 | GA4, security, a11y, i18n, performance, browser compat |
 | `Frontend/smoke/` | 042 | 34 | Storefront smoke (P0) |
 
 ### Backend Suites (59 suites, ~1,752 tests — admin UI, modules & APIs)
@@ -90,7 +90,7 @@ Central configuration for regression orchestration. Defines:
 
 - **Release suite**: `_release/080-full-regression-release.csv` (100 P0/P1 tests for major releases)
 - **P0 suites**: 042 (Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)
-- **Critical UI scope**: `knowledge/oracles/critical-ui-scope.md` defines the regression-enforced checklist of 7 components (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`) with applicable BL-UI invariants per cell. The validator `npm run scope:validate` exits non-zero if any covered matrix cell points at a missing test ID. Covered exclusively by suite `048b-layout-stability.csv` (selection `layout-stability`).
+- **Critical UI scope**: `knowledge/oracles/critical-ui-scope.md` defines the checklist of 36 components and 16 pages with applicable BL-UI invariants per cell. **Currently UNCOVERED** — its sole covering suite `048b-layout-stability.csv` (selection `layout-stability`) was removed on 2026-07-25, so all 197 applicable cells are marked `GAP`. The file is retained as the scope definition + audit-protocol reference for `/qa-design`. `npm run scope:validate` still hard-fails if a cell points at a *missing* test ID and warns on the GAP count; `--strict` makes GAPs fatal again once a replacement suite lands.
 
 ### Selection Groups
 

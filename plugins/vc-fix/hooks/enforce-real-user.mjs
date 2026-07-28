@@ -20,11 +20,12 @@ const ALLOWED_PATTERNS = [
   /\bgtag\s*\(/,
   // Cross-origin iframe inspection (Skyflow / CyberSource payment frames).
   /document\.querySelector(All)?\(\s*['"][^'"]*iframe/,
-  // Read-only layout / a11y measurement — suite 048b (Layout Stability) and
-  // /qa-design. These snippets only READ geometry & computed style (no clicks,
-  // no typing, no forced controls, no page-state mutation), so they don't
-  // violate the real-user rule — they were simply never allowlisted, which
-  // blocked all 160 cases in 048b. Canonical source: scripts/lib/measure-layout.ts
+  // Read-only layout / a11y measurement — /qa-design (and formerly suite 048b
+  // Layout Stability, removed 2026-07-25). These snippets only READ geometry &
+  // computed style (no clicks, no typing, no forced controls, no page-state
+  // mutation), so they don't violate the real-user rule — they were simply never
+  // allowlisted, which used to block the whole layout-stability suite.
+  // Canonical source: scripts/lib/measure-layout.ts
   // (LAYOUT_SNIPPETS + spacing/alignment/overflow/touch-target/rect/FOUC audits).
   /window\.__layoutAudit\b/, // CLS observer install/read
   /['"]layout-shift['"]/, // PerformanceObserver CLS
@@ -78,7 +79,7 @@ const BLOCK_MESSAGE = [
   "  - querySelector('iframe...') — cross-origin payment frame inspection",
   "  - getBoundingClientRect / getComputedStyle / __layoutAudit /",
   "    PerformanceObserver('layout-shift') / document.fonts / naturalWidth",
-  "                                 — read-only layout & a11y measurement (suite 048b, /qa-design)",
+  "                                 — read-only layout & a11y measurement (/qa-design)",
   "  - axe.run / window.axe / 'axe-core'",
   "                                 — read-only axe-core WCAG scan (/qa-accessibility)",
   "  - /* @allow-eval: <reason> */  — explicit opt-in for a UI-FIX / DEBUG DOM",

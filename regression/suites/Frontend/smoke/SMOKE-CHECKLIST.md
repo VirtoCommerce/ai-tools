@@ -2,7 +2,7 @@
 
 > **Purpose:** Minimal critical-path gate for storefront deployments. One happy-path check per area — edge/negative paths belong to full regression. Detail lives in the suite; this is the scannable gate.
 >
-> **Source:** `042-smoke-tests.csv` (SMK-001 – SMK-033) · **Cross-layer parity:** see `SMOKE-CROSS-LAYER-CHECKLIST.md`
+> **Source:** `042-smoke-tests.csv` (SMK-001 – SMK-034) · **Cross-layer parity:** see `SMOKE-CROSS-LAYER-CHECKLIST.md` · parity enforced by `npm run suites:gates`
 > **Data:** `{{FRONT_URL}}`, `{{USER_EMAIL}}`, `{{ORG_USER_EMAIL}}`, `{{MULTI_ORG_USER_EMAIL}}`, `@td(BUYABLE_NO_MIN_QTY.*)`, `@td(ADDR_NY.*)`, `@td(SEARCH_KITCHEN.query)`, `@td(CFG_LAPTOP.url)`, `@td(CFG_RING.url)`. Never hardcode SKUs, prices, or credentials.
 
 ## Summary
@@ -14,9 +14,9 @@
 | 3 | Authentication | 2 | SMK-004, SMK-005 |
 | 4 | Search | 2 | SMK-006, SMK-023 |
 | 5 | Catalog & PDP | 2 | SMK-007 |
-| 6 | Cart & Quantity Stepper | 3 | SMK-008, SMK-010, SMK-011 |
+| 6 | Cart & Quantity Stepper | 4 | SMK-008, SMK-009, SMK-010, SMK-011 |
 | 7 | Checkout — Delivery | 2 | SMK-012, SMK-013 |
-| 8 | Payment | 1 | SMK-014 |
+| 8 | Payment | 2 | SMK-014, SMK-034 |
 | 9 | Orders | 2 | SMK-016, SMK-033 |
 | 10 | Addresses | 1 | SMK-017 |
 | 11 | BOPIS (Pickup) | 2 | SMK-024, SMK-030 |
@@ -55,6 +55,7 @@
 ## 6. Cart & Quantity Stepper
 > B2B store: the (+) stepper is the add-to-cart entry point — no separate "Add to Cart" button.
 - [ ] (+) once on `@td(BUYABLE_NO_MIN_QTY.slug)` → qty 1, badge 1; (−) disabled at 0 (BL-CART-001) — SMK-008
+- [ ] Stepper sequence `0→1→2→1` tracks the cart badge exactly; no duplicate line row for the same SKU; line total = qty × unit price (BL-CART-007, BL-PRICE-003) — SMK-009
 - [ ] Cart line shows name, image, unit price, qty; line total = price × qty (BL-PRICE-003/008) — SMK-010
 - [ ] Remove line → cart empty, subtotal $0.00 (BL-PRICE-008) — SMK-011
 
@@ -64,6 +65,7 @@
 
 ## 8. Payment
 - [ ] Payment form at correct step (CyberSource on `/cart`; others `/checkout/payment`); test card submits <30s; order authorized/paid — SMK-014
+- [ ] **Revenue-path guard** — saved Skyflow card on `/cart`: masked card + CVV only (no full card fields, no redirect), order confirmation shows a `CO…` number, Place order disables after first click (BL-PAY-003, BL-CHK-002) — SMK-034
 
 ## 9. Orders
 - [ ] `/account/orders` lists latest order; row → detail with items + totals matching confirmation (BL-ORD-005) — SMK-016
@@ -111,6 +113,6 @@
 
 | Status | Criteria |
 |--------|----------|
-| **GO** | All 33 items checked |
+| **GO** | All 37 items checked |
 | **GO WITH RISK** | ≤2 unchecked in §17–19 (regression-specific); all revenue-flow items (§1–16) pass; risk noted in run report |
 | **NO-GO** | Any item in §1–16 fails, or any security regression (§17) fails |

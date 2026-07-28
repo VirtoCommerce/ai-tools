@@ -765,5 +765,35 @@
   "LOYALTY_WHOLESALE_USER": {
     "memberId": "47db2112-34a7-4fc1-9783-95523284ae10",
     "securityAccountId": "3aaada1a-6c1b-417e-8cb3-d074258016a3"
+  },
+  "CATALOG_LINK_RESTRICTED": {
+    "_inline": true,
+    "platform_id": "77dff718-ecab-479c-928d-2a1ae4c36cbe",
+    "user_id": "77dff718-ecab-479c-928d-2a1ae4c36cbe",
+    "role_id": "AGENT-TEST-Catalog-Link-Restricted"
+  },
+  "RESTRICTED_ADMIN_SALESREP_READONLY": {
+    "_inline": true,
+    "platform_id": "bebbb513-b110-4997-88f5-bb3b512d7655",
+    "user_id": "bebbb513-b110-4997-88f5-bb3b512d7655",
+    "role_id": "AGENT-TEST-SalesRep-ReadOnly"
+  },
+  "RESTRICTED_ADMIN_SALESREP_ACCOUNTOPS": {
+    "_inline": true,
+    "platform_id": "4ec13b00-2f26-4c17-8dcf-05668914988c",
+    "user_id": "4ec13b00-2f26-4c17-8dcf-05668914988c",
+    "role_id": "AGENT-TEST-SalesRep-AccountOps"
+  },
+  "RESTRICTED_ADMIN_SALESREP_MEMBERONLY": {
+    "_inline": true,
+    "platform_id": "0343ecce-c2c8-4dab-a139-74921e3695e2",
+    "user_id": "0343ecce-c2c8-4dab-a139-74921e3695e2",
+    "role_id": "AGENT-TEST-SalesRep-MemberOnly"
+  },
+  "RESTRICTED_ADMIN_SALESREP_FULL": {
+    "_inline": true,
+    "platform_id": "6ef11a8c-e62f-45d4-ad83-1af1d1b43602",
+    "user_id": "6ef11a8c-e62f-45d4-ad83-1af1d1b43602",
+    "role_id": "AGENT-TEST-SalesRep-Full"
   }
 }

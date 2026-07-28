@@ -24,7 +24,7 @@ The master release suite `080` is defined in the manifest (`_release/080-full-re
 | `catalog/` | 001 Navigation (P1) · 002 Product Detail (P1) · 003 Filters (P1) |
 | `checkout/` | 011 Flow (P1) · 012 Guest (P1) · 013 B2B (P1) · 081 Select Shipping Address Popup (P1) |
 | `configurable-products/` | 072 UI (P1) · 072b E2E (P1) · 072c Cross-Cutting (P1) · 072d File & Text Sections (P1) |
-| `cross-cutting/` | 043 Google Analytics (P2) · 044 Security (P0) · 045 Accessibility (P2) · 046 Localization (P2) · 047 Performance (P2) · 048 Browser Compatibility (P1) · 048b Layout Stability (P1) |
+| `cross-cutting/` | 043 Google Analytics (P2) · 044 Security (P0) · 045 Accessibility (P2) · 046 Localization (P2) · 047 Performance (P2) · 048 Browser Compatibility (P1) |
 | `loyalty/` | 083 Loyalty Catalog Browsing (P1) |
 | `marketing/` | 077 Coupons & Promotions Storefront (P1) · 077b Coupons & Promotions — Cart Sidebar (P1) |
 | `orders/` | 014 Orders Frontend (P1) · 015 Quotes (P1) |
@@ -81,7 +81,6 @@ Authoritative definitions live in the manifest's `selections` block. Regenerate 
 | `smoke` | 042, 078 | `npm run ci:smoke` |
 | `critical` | 042, 078, 039, 044, 049 | `npm run ci:critical` |
 | `release` | 080 | — |
-| `layout-stability` | 048b | — |
 | `sprint` | Plan-driven via `vc/shared/docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1) | — |
 | `full` | All 104 | `npm run ci:full` |
 

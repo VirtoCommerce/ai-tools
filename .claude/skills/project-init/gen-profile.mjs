@@ -126,6 +126,15 @@ function main() {
   set("upstream.org", args["upstream-org"]);
   set("upstream.contributionMode", args["contribution-mode"]);
   set("upstream.clientGithubAccount", args["upstream-account"]);
+  // Self-diagnostics consent (PR #143 R2 — parity with the plugin gen-profile so /project-init on
+  // this surface can PERSIST the operator's §2e answer). Fail-safe: `feedback.mode` gates upstream
+  // DELIVERY only and defaults to "ask" (read raw by deliver); `selfDiagnostics` is written ONLY when
+  // the flag is passed, else it inherits PROFILE_DEFAULTS.selfDiagnostics=false — a flag-less write
+  // never silently enables capture (NA-4). Coerce the string flag → boolean.
+  set("feedback.mode", args["feedback-mode"]);
+  if (args["self-diagnostics"] !== undefined) {
+    set("selfDiagnostics", args["self-diagnostics"] === true || args["self-diagnostics"] === "true");
+  }
 
   // Optional repo map from discover-repos.mjs
   // ({ projectType, clientOrg, client: [...], platform: [...] }). The scan is the source

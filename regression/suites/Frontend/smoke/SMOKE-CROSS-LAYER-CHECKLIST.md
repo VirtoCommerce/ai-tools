@@ -20,7 +20,7 @@
 | 9 | BOPIS — fulfillment center | 2 | SMK-024, SMK-030 |
 | 10 | Addresses — xAPI contact | 2 | SMK-017, SMK-025 |
 | 11 | GA4 — dataLayer vs network | 2 | SMK-015 |
-| 12 | Orders — filter vs xAPI query | 1 | SMK-033 |
+| 12 | Orders — filter vs xAPI query | 2 | SMK-033 |
 | 13 | Health — network layer | 1 | SMK-026 |
 
 ---

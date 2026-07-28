@@ -1,0 +1,28 @@
+{
+  "sprint": "Sprint26-14",
+  "startDate": "2026-07-13",
+  "endDate": "2026-07-24",
+  "doneCounts": {"stories": 17, "bugs": 17, "tasks": 34, "techDebt": 7, "spikes": 0, "total": 75},
+  "sprintIssueTotal": 164,
+  "testRelevantCount": 40,
+  "mergedFrontendPRs": 20,
+  "mergedModulePRs": 31,
+  "domains": [
+    {"name": "Platform Perf — XCart/Order & Request-Scoped Caching", "score": 25, "level": "Critical"},
+    {"name": "Sales Rep — New Module & Storefront Hub", "score": 16, "level": "Critical"},
+    {"name": "Search — Indexing Reliability & i18n", "score": 16, "level": "Critical"},
+    {"name": "Cart — Configurable Products & E2E", "score": 16, "level": "Critical"},
+    {"name": "UI Kit — Design Tokens & BEM", "score": 12, "level": "High"},
+    {"name": "Catalog — Assets/PDP & Mapping", "score": 12, "level": "High"},
+    {"name": "Platform Settings & Security", "score": 12, "level": "High"},
+    {"name": "Page Builder / CMS", "score": 9, "level": "Medium"},
+    {"name": "Loyalty Mixed Cart", "score": 9, "level": "Medium"},
+    {"name": "Auth — Change Password", "score": 6, "level": "Medium"},
+    {"name": "Admin Modules — Export / Contacts UI", "score": 6, "level": "Medium"}
+  ],
+  "suitesActivated": ["042", "028", "029", "030", "072", "072b", "083b", "089", "090", "091", "001", "002", "003", "048b", "045", "010", "014", "032", "033", "044", "078", "049", "061", "050b1", "050b3", "050c", "050i", "050a", "050m", "050n", "092", "026", "027", "027b", "051", "052", "034", "064", "020", "063", "059", "060"],
+  "newCasesEstimate": "115-140",
+  "criticalTickets": ["VCST-5303", "VCST-5505", "VCST-5416", "VCST-5497", "VCST-5391", "VCST-5494", "VCST-5079", "VCST-4907"],
+  "outOfScopeCount": 124,
+  "artifacts": "vc/shared/docs/Sprint plans/"
+}

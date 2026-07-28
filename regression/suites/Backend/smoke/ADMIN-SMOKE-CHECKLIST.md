@@ -2,7 +2,7 @@
 
 > **Purpose:** Minimal critical-path gate for Admin SPA (admin-frontend) deployments. One happy-path check per area — edge/negative paths belong to full regression. Detail lives in the suite; this is the scannable gate.
 >
-> **Source:** `078-backend-smoke-tests.csv` (BSM-001 – BSM-111) · **API/GraphQL rows excluded** (BSM-002–004, 016–021, 025, 029, 037, 039, 049–051, 056, 058, 063–067, 069–070, 073–075) — covered by 078's API rows and Suite 049/050.
+> **Source:** `078-backend-smoke-tests.csv` (BSM-001 – BSM-115) · **API/GraphQL rows excluded** (BSM-002–004, 016–021, 025, 029, 037, 039, 049–051, 056, 058, 063–067, 069–070, 073–075, 115) — covered by 078's API rows and Suite 049/050.
 > **Data:** `{{BACK_URL}}`, `{{ADMIN}}`, `{{ADMIN_PASSWORD}}`, `{{STORE_ID}}`, `{{TEST_SKU}}`, `{{TEST_USER_EMAIL}}`, `@td(ADDR_NY.*)`. No hardcoded IDs, SKUs, prices, or credentials.
 
 ## Summary
@@ -27,6 +27,7 @@
 | 16 | Cross-Blade Navigation | 6 | BSM-089–094 |
 | 17 | Search & Filter | 13 | BSM-095–107 |
 | 18 | Grid Inline Operations | 4 | BSM-108–111 |
+| 19 | News Admin | 3 | BSM-112–114 |
 
 ---
 
@@ -169,12 +170,18 @@
 - [ ] Orders grid: click Created Date header → ascending (earliest first) → click again → descending (latest first); sort indicator toggles; API `sort=createdDate:asc` first result = earliest date (BL-ORD-005) — BSM-110
 - [ ] Products grid with > 20 products: pagination controls visible; navigate to page 2 → different products; navigate back to page 1 → original products; `totalCount` consistent across API page calls (BL-CAT-005) — BSM-111
 
+## 19. News Admin
+
+- [ ] `{{BACK_URL}}/ui#/news` → 'Articles: All' blade opens; sidebar filters Drafts/Scheduled/Published/Archived/All present; toolbar Refresh/Add/Delete present; grid columns Name, Store, Is published, Publish date, Is archived, Archive date (BL-CROSS-003) — BSM-112
+- [ ] Add article → edit fields → Save: unsaved-changes indicator clears; Title matches after 'copy from title'; article appears in the list (BL-CROSS-001) — BSM-113
+- [ ] Archive an article → listed under the 'Archived' filter with `Is archived` = true and `Archive date` set — BSM-114
+
 ---
 
 ## GO / NO-GO
 
 | Status | Criteria |
 |--------|----------|
-| **GO** | All 83 cases checked (85 boxes — §14 repeats BSM-079/081 as cross-references) |
-| **GO WITH RISK** | ≤3 unchecked in §13 (optional modules — BSM-052, BSM-062 are SKIP-eligible if module not installed), §17–18 (search/grid); all revenue-flow sections §1–12, §14–16 pass; risk noted in run report |
-| **NO-GO** | Any item in §1–12 (core blades, CRUD, workflows, navigation) fails; any Critical-priority case fails; any delete workflow lacks confirmation dialog (BL-CROSS-007) |
+| **GO** | All 86 cases checked (88 boxes — §14 repeats BSM-079/081 as cross-references) |
+| **GO WITH RISK** | ≤3 unchecked in §13 (optional modules — BSM-052, BSM-062 are SKIP-eligible if module not installed), §17–19 (search/grid/news); all revenue-flow sections §1–12, §14–16 pass; risk noted in run report |
+| **NO-GO** | Any item in §1–12 (core blades, CRUD, workflows, navigation) fails; any Critical-priority case fails (incl. BSM-112, News blade); any delete workflow lacks confirmation dialog (BL-CROSS-007) |

@@ -23,6 +23,10 @@ import { fileURLToPath } from 'node:url';
 import {
   RESTRICTED_ROLE, RESTRICTED_ACCOUNT, EXCLUDED_PERMISSION, assertRolePermissions,
   CATALOG_LINK_ROLE, CATALOG_LINK_ACCOUNT, CATALOG_LINK_EXCLUDED_PERMISSION, assertCatalogLinkRolePermissions,
+  SALESREP_READONLY_ROLE, SALESREP_READONLY_ACCOUNT, SALESREP_READONLY_EXCLUDED_PERMISSION, assertSalesRepReadOnlyRolePermissions,
+  SALESREP_ACCOUNTOPS_ROLE, SALESREP_ACCOUNTOPS_ACCOUNT, SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSION, assertSalesRepAccountOpsRolePermissions,
+  SALESREP_MEMBERONLY_ROLE, SALESREP_MEMBERONLY_ACCOUNT, SALESREP_MEMBERONLY_EXCLUDED_PERMISSION, assertSalesRepMemberOnlyRolePermissions,
+  SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT, SALESREP_FULL_REQUIRED_PERMISSIONS, assertSalesRepFullRolePermissions,
   findGuidLeaks,
 } from './backoffice-rbac-specs.mjs';
 
@@ -48,8 +52,17 @@ function checkAlias(role, account, excludedPermission) {
     fail(`alias ${account.aliasName}.role is "${alias.role}" but the spec role is "${role.role_name}"`);
   } else ok(`alias ${account.aliasName}.role matches spec ("${role.role_name}")`);
 
-  // excluded_permission must equal the spec's boundary AND be genuinely absent from the role.
-  if (alias.excluded_permission !== excludedPermission) {
+  if (excludedPermission === null) {
+    // Positive control (FULL): no boundary permission. The load-bearing negative assertion is
+    // isAdministrator=false — assert the alias declares it and the spec account honours it.
+    if (alias.excluded_permission != null) {
+      fail(`alias ${account.aliasName} is a positive control (no boundary perm) — excluded_permission must be null, got "${alias.excluded_permission}"`);
+    } else ok(`alias ${account.aliasName} is a positive control (excluded_permission: null)`);
+    if (alias.is_administrator !== false || account.isAdministrator !== false) {
+      fail(`alias ${account.aliasName} positive control must be isAdministrator=false (exercise the gate, not the bypass) — alias:${alias.is_administrator} spec:${account.isAdministrator}`);
+    } else ok(`alias ${account.aliasName} positive control is isAdministrator=false (exercises the real gate)`);
+  } else if (alias.excluded_permission !== excludedPermission) {
+    // excluded_permission must equal the spec's boundary AND be genuinely absent from the role.
     fail(`alias ${account.aliasName}.excluded_permission is "${alias.excluded_permission}" but the spec boundary is "${excludedPermission}"`);
   } else if (role.permissions.includes(excludedPermission)) {
     fail(`alias ${account.aliasName}.excluded_permission "${excludedPermission}" is INCOHERENT — the role actually grants it`);
@@ -69,6 +82,18 @@ catch (e) { fail(e.message); }
 try { assertCatalogLinkRolePermissions(); ok(`role "${CATALOG_LINK_ROLE.role_name}" is a products-only Map/Link role — holds catalog:products:link, excludes ${CATALOG_LINK_EXCLUDED_PERMISSION}`); }
 catch (e) { fail(e.message); }
 
+try { assertSalesRepReadOnlyRolePermissions(); ok(`role "${SALESREP_READONLY_ROLE.role_name}" is a read-only Sales Rep admin — holds customer:read, excludes ${SALESREP_READONLY_EXCLUDED_PERMISSION} (+ the other 5 mutate perms)`); }
+catch (e) { fail(e.message); }
+
+try { assertSalesRepAccountOpsRolePermissions(); ok(`role "${SALESREP_ACCOUNTOPS_ROLE.role_name}" is the account-ops Sales Rep admin — holds customer:read + platform:security:update, excludes ${SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSION} (entity Update 403s)`); }
+catch (e) { fail(e.message); }
+
+try { assertSalesRepMemberOnlyRolePermissions(); ok(`role "${SALESREP_MEMBERONLY_ROLE.role_name}" is the member-only Sales Rep admin — holds customer:read + customer:update, excludes ${SALESREP_MEMBERONLY_EXCLUDED_PERMISSION} (Update AND-gate still 403s)`); }
+catch (e) { fail(e.message); }
+
+try { assertSalesRepFullRolePermissions(); ok(`role "${SALESREP_FULL_ROLE.role_name}" is the Sales Rep positive control — holds the full CRUD + account-ops set (${SALESREP_FULL_REQUIRED_PERMISSIONS.length} perms), isAdministrator=false`); }
+catch (e) { fail(e.message); }
+
 // 2. no GUID in the spec module (single scan covers both fixtures)
 const specSrc = readFileSync(join(ROOT, 'scripts/seed-data/platform/backoffice-rbac-specs.mjs'), 'utf8');
 const specLeaks = findGuidLeaks(specSrc);
@@ -78,6 +103,10 @@ else ok('spec module carries no runtime GUID (ids belong in aliases.<env>.json)'
 // 3. aliases registered + GUID-free + coherent excluded_permission
 checkAlias(RESTRICTED_ROLE, RESTRICTED_ACCOUNT, EXCLUDED_PERMISSION);
 checkAlias(CATALOG_LINK_ROLE, CATALOG_LINK_ACCOUNT, CATALOG_LINK_EXCLUDED_PERMISSION);
+checkAlias(SALESREP_READONLY_ROLE, SALESREP_READONLY_ACCOUNT, SALESREP_READONLY_EXCLUDED_PERMISSION);
+checkAlias(SALESREP_ACCOUNTOPS_ROLE, SALESREP_ACCOUNTOPS_ACCOUNT, SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSION);
+checkAlias(SALESREP_MEMBERONLY_ROLE, SALESREP_MEMBERONLY_ACCOUNT, SALESREP_MEMBERONLY_EXCLUDED_PERMISSION);
+checkAlias(SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT, null); // positive control — no boundary perm
 
 console.log(`\n${problems.length ? `FAILED — ${problems.length} problem(s)` : 'OK'}`);
 process.exit(problems.length ? 1 : 0);

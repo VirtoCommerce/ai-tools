@@ -1,15 +1,13 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CAT-001","Category Navigation - Main Menu","Catalog > Navigation","High","BL-CAT-001",,"User logged in; catalog populated","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
-[ACT] Hover over main menu navigation
-[WAIT] Wait for category dropdown to appear
-[ASSERT] Verify dropdown is visible
-[ACT] Click on a top-level category
-[WAIT] Wait for category page to load
-[ASSERT] Verify category page content","[DOM] Main menu displays top-level categories
-[DOM] Subcategory items visible on hover
-[NAV] Category page loads with correct URL slug
-[DOM] Category heading matches selected category","[NETWORK] GET category page returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Spinner >5s; dropdown not appearing; category page returns 4xx; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[ACT] click the main-menu 'All products' entry
+[WAIT] wait for the mega-menu panel to render
+[ACT] click a top-level category in the mega-menu panel
+[WAIT] wait for the category page to load","[DOM] main menu exposes the catalog entry point ('All products') as a flat mega-menu — there is NO per-item hover flyout in this theme {OBSERVED}
+[DOM] every top-level category in the opened 'All products' panel is present as a link with non-empty label text and an href {OBSERVED}
+[NAV] category page loads with a URL slug matching the clicked category {OBSERVED}
+[DOM] the category page 'h1' heading text equals the label of the clicked category entry {OBSERVED}","[NETWORK] GET category page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Spinner >5s; mega-menu panel not rendering on click; category page returns 4xx; category heading does not match the clicked entry; console TypeError","none","regression-qa-theme-26.csv","Automated"
 "CAT-002","Category Page - Product Grid View","Catalog > Display","High","BL-CAT-001",,"Category with products exists","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Click 'Grid view' icon
 [WAIT] Wait for layout to update

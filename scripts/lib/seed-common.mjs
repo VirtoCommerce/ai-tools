@@ -259,6 +259,34 @@ export async function discoverCatalogProducts(api, count = 3, { catalogId = null
   return (buyable.length >= count ? buyable : norm).slice(0, count);
 }
 
+/**
+ * Force-set an EXISTING security account's password via the admin reset endpoint
+ * (POST /api/platform/security/users/{userName}/resetpassword — ResetPasswordRequest
+ * { newPassword, forcePasswordChangeOnNextSignIn }, admin token needs SecurityUpdate).
+ *
+ * Unlike ensureSecurityAccount (create-only — it never touches the password of a reused
+ * account), this OVERWRITES the password of an account that already exists, so a seeded
+ * account whose password drifted from the env/registry value (e.g. it was created BEFORE
+ * that password var was set) self-heals on a plain re-seed. Idempotent — safe to call every
+ * reseed; the endpoint generates the reset token server-side, so no old password is needed.
+ *
+ * DI on `api` (mirrors discoverCatalogProducts / ensureCurrencies) so it is unit-testable
+ * with a mock. The endpoint returns 200 + SecurityResult { succeeded, errors } even on
+ * FAILURE, so success is read from the body, not the HTTP status. Secret-safe: `newPassword`
+ * travels in the request body only and is NEVER logged. No-op in --dry-run (api() skips the
+ * write). Returns true on success.
+ */
+export async function resetSecurityPassword(api, userName, newPassword, { silent = false } = {}) {
+  if (!userName || !newPassword) return false;
+  if (DRY_RUN) { verbose(`[DRY] resetpassword ${userName}`); return true; }
+  const res = await api('POST', `/api/platform/security/users/${encodeURIComponent(userName)}/resetpassword`,
+    { newPassword, forcePasswordChangeOnNextSignIn: false }, { expectStatus: [200] });
+  const okRes = !res || res.succeeded !== false;
+  if (!okRes && !silent) log(`  WARN: resetpassword failed for ${userName}: ${JSON.stringify(res?.errors || res).slice(0, 200)}`);
+  else if (okRes) verbose(`password reset for ${userName}`);
+  return okRes;
+}
+
 // Primary env: its canonical IDs live committed, curated, inline in aliases.json,
 // so seeders NEVER auto-write an aliases.vcst.json override for it. Every OTHER env
 // (localhost, vcptcore, virtostart, customer envs) gets aliases.<env>.json written on

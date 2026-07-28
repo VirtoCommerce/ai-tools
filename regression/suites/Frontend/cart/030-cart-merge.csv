@@ -1,367 +1,481 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CART-057","Cart Merge - Anonymous Then Register","Cart > Merge","High","BL-CART-008","ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CART-100,Cart Merge - Anonymous Then Register,Cart > Merge,High,BL-CART-008,"ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Product available in stock; user is not yet registered; browsing store anonymously. NOTE: Registration requires email verification — auto-login does NOT occur immediately; user must verify email first, then sign in manually.","url={{FRONT_URL}}","[NAV] navigate to {{FRONT_URL}} without signing in (guest session)
+Product available in stock; user is not yet registered; browsing store anonymously. NOTE: Registration requires email verification — auto-login does NOT occur immediately; user must verify email first, then sign in manually.",url={{FRONT_URL}},"[NAV] navigate to {{FRONT_URL}} without signing in (guest session)
 [ACT] add Product_1 to cart with qty=2
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ASSERT] verify cart badge shows 2
 [ACT] navigate to registration page
 [ACT] register a new account with valid credentials
 [WAIT] wait for 'verify your email' confirmation screen (NOT auto-login)
 [ASSERT] verify storefront shows email verification prompt (cart not yet merged)
-[ACT] simulate email verification (check test email inbox or use admin to confirm account)
+[ACT] simulate email verification (open the test email inbox or use admin to confirm the account)
+[WAIT] wait for the confirmed action to complete
 [ACT] sign in with the newly registered account credentials
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify Product_1 present in cart with qty=2
-[ASSERT] verify cart badge shows correct count","[STATE] guest cart items preserved after registration + email verification + manual sign-in
-[DOM] Product_1 listed with qty=2 in cart
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] guest cart items preserved after registration + email verification + manual sign-in
+[DOM] Product_1 listed with qty=""2"" in cart
 [STATE] cart badge reflects merged item count
-[MATH] cart subtotal matches expected value for qty=2","[API] mergeCarts or equivalent mutation response errors[] is empty
+[MATH] cart subtotal matches expected value for qty=2
+[STATE] verify Product_1 present in cart with qty=2
+[STATE] verify cart badge shows correct count","[API] mergeCarts or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors during registration and cart merge
-[NETWORK] no 4xx/5xx during merge","guest items lost after registration; cart empty for new account; qty mismatch after merge","Remove items from cart; delete test account if needed","C389651","Manual"
-"CART-058","Cart Merge - No Duplicate SKUs","Cart > Merge","High","BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx during merge
+[API] addItem mutation response errors[] is empty",guest items lost after registration; cart empty for new account; qty mismatch after merge,Remove items from cart; delete test account if needed,C389651; VCST-2976,Manual
+CART-101,Cart Merge - No Duplicate SKUs,Cart > Merge,High,"BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Same Product A exists in both anonymous cart and registered user cart; user currently signed out","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [ACT] add Product A to cart with qty=2
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add same Product A to cart with qty=1 as guest
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] sign in with {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify exactly one line item for Product A
-[ASSERT] verify qty=3 (sum of 2+1)
-[ASSERT] verify no duplicate line items","[STATE] single line item for Product A (no duplicates)
-[DOM] quantity shows 3 (merged sum)
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] single line item for Product A (no duplicates)
+[DOM] quantity shows ""3"" (merged sum)
 [MATH] line total = unit price x 3
-[MATH] cart subtotal correct for merged quantity","[API] mergeCarts mutation response errors[] is empty
+[MATH] cart subtotal correct for merged quantity = sum of (unit price × quantity) for all included line items (2 decimal places)
+[STATE] verify exactly one line item for Product A
+[STATE] verify qty=3 (sum of 2+1)
+[STATE] verify no duplicate line items","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors on sign-in and cart page
-[NETWORK] no 4xx/5xx during merge","duplicate line items created for same SKU; qty not summed (shows 1 or 2 instead of 3); two separate entries in cart","Remove items from cart","C398783","Manual"
-"CART-059","Cart Merge - Currency Mismatch","Cart > Merge","High","BL-CART-008, BL-CART-004","ECL-4.1, ECL-7.3, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx during merge
+[API] addItem mutation response errors[] is empty",duplicate line items created for same SKU; qty not summed (shows 1 or 2 instead of 3); two separate entries in cart,Remove items from cart,C398783; VCST-2674,Manual
+CART-102,Cart Merge - Currency Mismatch,Cart > Merge,High,"BL-CART-008, BL-CART-004","ECL-4.1, ECL-7.3, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: A registered user account whose default currency is EUR must exist in QA. Set {{EUR_USER_EMAIL}} and {{EUR_USER_PASSWORD}} env vars. Standard {{USER_EMAIL}} uses USD default — this user is insufficient. Verify EUR price list exists for test products.","url={{FRONT_URL}}
 user={{EUR_USER_EMAIL}}
 password={{EUR_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest with USD currency
 [ACT] add products to cart in USD as anonymous user
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ASSERT] verify guest cart shows USD prices
 [ACT] sign in as {{USER_EMAIL}} whose default currency is EUR
 [WAIT] wait for cart merge and currency switch
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify all products merged into single currency cart
-[ASSERT] verify prices display in customer default currency (EUR)
-[ASSERT] if product unavailable in EUR, verify warning message shown","[STATE] all products from both carts present after merge
-[DOM] prices displayed in customer default currency (EUR)
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] all products from both carts present after merge
+[DOM] prices displayed in customer default currency (EUR) (visible)
 [STATE] products without EUR price show warning 'This product is no longer available for purchase' or similar
-[MATH] cart totals calculated in single currency","[API] mergeCarts mutation response errors[] is empty
+[MATH] cart totals calculated in single currency = subtotal + shipping + tax − discount (2 decimal places, per BL-CHK-006)
+[STATE] verify all products merged into single currency cart
+[STATE] verify prices display in customer default currency (EUR)
+[STATE] if product unavailable in EUR, verify warning message shown","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors during currency merge
-[NETWORK] no 4xx/5xx","mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency","Remove items from cart","C398784","Manual"
-"CART-060","Cart Merge - Persists After Logout and Re-login","Cart > Merge","High","BL-CART-008","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency,Remove items from cart,C398784; VCST-2961,Manual
+CART-103,Cart Merge - Persists After Logout and Re-login,Cart > Merge,High,BL-CART-008,"ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Anonymous user adds products; user logs in (merge happens); merged cart established","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add Product B to cart as guest
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] sign in as {{USER_EMAIL}} (triggers merge)
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] note merged cart contents (items, quantities, subtotal)
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [ACT] sign in again with {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify merged cart persists with same items and quantities
-[ASSERT] verify no items lost or duplicated after logout/login cycle","[STATE] merged cart contents identical after logout/re-login
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] merged cart contents identical after logout/re-login
 [DOM] all items present with correct quantities
-[MATH] cart subtotal matches pre-logout value
-[STATE] no duplicate or missing items","[API] getCart query returns same items after re-login
+[MATH] cart subtotal matches pre-logout value = sum of (unit price × quantity) for all included line items (2 decimal places)
+[STATE] no duplicate or missing items
+[STATE] verify merged cart persists with same items and quantities
+[STATE] verify no items lost or duplicated after logout/login cycle","[API] getCart query returns same items after re-login
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","merged items lost after logout; cart empty on re-login; items duplicated after re-login; subtotal mismatch","Remove items from cart","C398785","Manual"
-"CART-061","Cart Merge - Different Product Types","Cart > Merge","Medium","BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] mergeCarts mutation response errors[] is empty
+[API] addItem mutation response errors[] is empty",merged items lost after logout; cart empty on re-login; items duplicated after re-login; subtotal mismatch,Remove items from cart,C398785; VCST-2977,Manual
+CART-104,Cart Merge - Different Product Types,Cart > Merge,Medium,"BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: A configurable product with selectable variant (size or color, not just quantity) must exist in QA catalog and B2B virtual catalog. Set @td(CFG_HAT.slug) env var. Simple product {{TEST_SKU}} also required. Registered user {{USER_EMAIL}} logged in.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [ACT] add a configurable product (with size/color variant selected) to cart
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add a simple product to cart as guest
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify both simple and configurable products present
-[ASSERT] verify configurable product retains variant attributes (size, color)
-[ASSERT] verify no missing or mismatched products","[STATE] simple product from guest cart present in merged cart
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] simple product from guest cart present in merged cart
 [STATE] configurable product from user cart present with correct variant attributes
-[DOM] variant attributes (size, color) displayed correctly on configurable product
-[STATE] no missing or mismatched products after merge","[API] mergeCarts mutation response errors[] is empty
+[DOM] variant attributes (size, color) on the merged configurable line item match the options selected before merge (visible)
+[STATE] no missing or mismatched products after merge
+[STATE] verify both simple and configurable products present
+[STATE] verify configurable product retains variant attributes (size, color)
+[STATE] verify no missing or mismatched products","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","configurable product loses variant attributes after merge; simple product missing; product types confused or swapped","Remove items from cart","C398786","Manual"
-"CART-062","Cart Merge - Smart Merge Failure Handling","Cart > Merge","Medium","BL-CART-006","ECL-7.3, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",configurable product loses variant attributes after merge; simple product missing; product types confused or swapped,Remove items from cart,C398786,Manual
+CART-105,Cart Merge - Smart Merge Failure Handling,Cart > Merge,Medium,BL-CART-008,"ECL-7.3, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 TOOL-LIMITATION: Network fault injection (interrupting merge mid-request) cannot be executed via MCP browser agent (requires service worker interception or proxy-level throttling). Revert to API-layer negative test: send malformed mergeCarts mutation and verify backend error response. MCP agent: verify storefront graceful error handling on API error response.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add products to cart as anonymous user
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] sign in as {{USER_EMAIL}} (normal merge)
 [NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify cart page loads without JS crash (no unhandled exception banner)
-[ASSERT] verify cart shows consistent state (either merged items or empty cart with prompt)
-[API] send malformed mergeCarts mutation via Postman/curl (missing required userId)
-[ASSERT] verify API returns structured error response (not HTTP 500); errors[] array populated","[DOM] cart page accessible and functional after login (even if merge produced no-op result)
+[API] send malformed mergeCarts mutation via Postman/curl (missing required userId)","[DOM] cart page accessible and functional after login (even if merge produced no-op result) (visible)
 [STATE] no JS unhandled exception displayed to user
 [API] malformed merge request returns errors[] with descriptive message (not 500 Internal Server Error)
-[CONSOLE] no unhandled JS exceptions during normal sign-in merge flow","[CONSOLE] no unhandled JS exceptions
-[NETWORK] no 500 on merge API response for normal sign-in flow","page crashes on sign-in; cart inaccessible after login; API returns 500 for malformed merge request with no error detail","none (verify cart state)","C396997","Manual"
-"CART-063","Cart Merge Selection - Empty Cart + Selected All (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] no unhandled JS exceptions during normal sign-in merge flow
+[STATE] verify API returns structured error response (not HTTP 500); errors[] array populated","[CONSOLE] no unhandled JS exceptions
+[NETWORK] no 500 on merge API response for normal sign-in flow
+[API] addItem mutation response errors[] is empty",page crashes on sign-in; cart inaccessible after login; API returns 500 for malformed merge request with no error detail,none (verify cart state),C396997,Manual
+CART-106,Cart Merge Selection - Empty Cart + Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Default 'Selected for checkout' = ON in store settings; Cart1 (user) is empty; Cart2 (guest) has items with all selected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is empty
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ASSERT] ensure cart is empty
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add 2-3 products to cart as guest (all auto-selected for checkout)
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify all guest items present in merged cart
-[ASSERT] verify all items have 'selected for checkout' state = ON
-[ASSERT] verify Proceed to Checkout button active","[STATE] all guest items merged into user cart
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] all guest items merged into user cart
 [DOM] all item checkboxes checked (selected for checkout)
 [STATE] Proceed to Checkout enabled
-[MATH] Order Summary totals include all items","[API] getCart returns all items with selectedForCheckout=true
+[MATH] Order Summary totals include all items = unit price × quantity, consistent with the displayed line/subtotal (2 decimal places)
+[STATE] verify all guest items present in merged cart
+[STATE] verify all items have 'selected for checkout' state = ON
+[STATE] verify Proceed to Checkout button active","[API] getCart returns all items with selectedForCheckout=true
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","items not selected after merge; Proceed to Checkout disabled; items missing from merged cart","Remove items from cart","C389850","Manual"
-"CART-064","Cart Merge Selection - Both Selected All (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] mergeCarts mutation response errors[] is empty
+[API] addItem mutation response errors[] is empty",items not selected after merge; Proceed to Checkout disabled; items missing from merged cart,Remove items from cart,C389850,Manual
+CART-107,Cart Merge Selection - Both Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Default 'Selected for checkout' = ON; Cart1 (user) has items all selected; Cart2 (guest) has items all selected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart (all selected)
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ACT] add items to cart (all selected)
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] add different items to cart as guest (all selected)
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify items from both carts present
-[ASSERT] verify all items remain selected for checkout
-[ASSERT] verify Order Summary reflects all items","[STATE] items from both carts merged
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] items from both carts merged
 [DOM] all items checked/selected for checkout
 [MATH] Order Summary subtotal = sum of all merged items
-[STATE] no items deselected after merge","[API] getCart returns all items with selectedForCheckout=true
+[STATE] no items deselected after merge
+[STATE] verify items from both carts present
+[STATE] verify all items remain selected for checkout
+[STATE] verify Order Summary reflects all items","[API] getCart returns all items with selectedForCheckout=true
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","some items deselected after merge; Order Summary only includes partial items; items missing","Remove items from cart","C389851","Manual"
-"CART-065","Cart Merge Selection - Both Unselected All (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",some items deselected after merge; Order Summary only includes partial items; items missing,Remove items from cart,C389851,Manual
+CART-108,Cart Merge Selection - Both Unselected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). User has items manually unselected via checkbox; guest has items manually unselected. If store setting differs from ON, this case is N/A.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ACT] add items to cart
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] unselect all items in cart (uncheck checkboxes)
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
-[NAV] add items to cart as guest and unselect all
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
+[ACT] add items to cart as guest
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] unselect all
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify items from both carts present
-[ASSERT] verify selection state after merge (check if unselected state preserved or reset to default ON)
-[ASSERT] verify Proceed to Checkout behavior with selection state","[STATE] items from both carts merged
-[DOM] selection state consistent with merge logic (either all unselected preserved or reset to default ON)
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] items from both carts merged
+[DOM] selection state consistent with merge logic (either all unselected preserved or reset to default ON) (visible)
 [STATE] Order Summary totals reflect only selected items
-[STATE] Proceed to Checkout button state matches selection","[API] getCart returns items with correct selectedForCheckout values
+[STATE] Proceed to Checkout button state matches selection
+[STATE] verify items from both carts present
+[STATE] verify selection state after merge (check if unselected state preserved or reset to default ON)
+[STATE] verify Proceed to Checkout behavior with selection state","[API] getCart returns items with correct selectedForCheckout values
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","items missing after merge; selection state inconsistent; Order Summary incorrect","Remove items from cart","C389852","Manual"
-"CART-066","Cart Merge Selection - Selected + Unselected (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",items missing after merge; selection state inconsistent; Order Summary incorrect,Remove items from cart,C389852,Manual
+CART-109,Cart Merge Selection - Selected + Unselected (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
+Preconditions note: state from CART-108 (same guest+user merge mechanics; CART-108 unselects items in BOTH carts, this case keeps the USER cart items selected and only unselects the GUEST cart — part of the same pairwise selection-state matrix, kept independently executable).
 Default 'Selected for checkout' = ON; Cart1 (user) has all items selected; Cart2 (guest) has all items unselected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart (keep selected)
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
-[NAV] add items to cart as guest then unselect all
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ACT] add items to cart (keep selected)
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
+[ACT] add items to cart as guest
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] unselect all
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify items from both carts present
-[ASSERT] verify user cart items retain selected state
-[ASSERT] verify guest cart items selection state after merge
-[ASSERT] verify Order Summary reflects only selected items","[STATE] user cart items selected; guest items selection per merge rules
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] user cart items selected; guest items selection per merge rules
 [MATH] Order Summary subtotal = sum of selected items only
-[DOM] checkboxes reflect correct per-item selection state
-[STATE] mixed selection state handled correctly","[API] getCart returns correct per-item selectedForCheckout values
+[DOM] checkboxes reflect correct per-item selection state (visible)
+[STATE] mixed selection state preserved per item (not forced to a single all-selected or all-unselected value)
+[STATE] verify items from both carts present
+[STATE] verify user cart items retain selected state
+[STATE] verify guest cart items selection state after merge
+[STATE] verify Order Summary reflects only selected items","[API] getCart returns correct per-item selectedForCheckout values
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","all items forced to same selection state; Order Summary wrong; selection states swapped","Remove items from cart","C389853","Manual"
-"CART-067","Cart Merge Selection - Mixed + Mixed (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",all items forced to same selection state; Order Summary wrong; selection states swapped,Remove items from cart,C389853,Manual
+CART-110,Cart Merge Selection - Mixed + Mixed (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). Cart1 (user) has mix of selected and unselected items; Cart2 (guest) has mix of selected and unselected items. If store setting differs, this case is N/A.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items to cart
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ACT] add 3+ items to cart
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] unselect some items (create mixed state)
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] add 3+ items to cart as guest
 [ACT] unselect some guest items (create mixed state)
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify all items from both carts present
-[ASSERT] verify per-item selection state after merge
-[ASSERT] verify Order Summary reflects only selected items","[STATE] items from both carts merged with correct per-item selection
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] items from both carts merged with correct per-item selection
 [MATH] Order Summary = sum of only selected items
-[DOM] each item checkbox reflects its individual selection state
-[STATE] no blanket select/deselect override on merge","[API] getCart returns correct per-item selectedForCheckout values
+[DOM] each item checkbox reflects its individual selection state (visible)
+[STATE] no blanket select/deselect override on merge
+[STATE] verify all items from both carts present
+[STATE] verify per-item selection state after merge
+[STATE] verify Order Summary reflects only selected items","[API] getCart returns correct per-item selectedForCheckout values
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","all items forced selected or deselected; per-item state lost; Order Summary miscalculated","Remove items from cart","C389854","Manual"
-"CART-068","Cart Merge Selection - Empty + Unselected All (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",all items forced selected or deselected; per-item state lost; Order Summary miscalculated,Remove items from cart,C389854,Manual
+CART-111,Cart Merge Selection - Empty + Unselected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF in Admin > Stores > Cart Settings. QA default is ON — this test is BLOCKED unless config is changed for this run. SEED: document config change and restore in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is empty
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ASSERT] ensure cart is empty
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] add items to cart as guest (default unselected per OFF setting)
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify guest items present in merged cart
-[ASSERT] verify items are unselected (per OFF default)
-[ASSERT] verify Proceed to Checkout blocked or warns about no selected items","[STATE] guest items merged into user cart
-[DOM] all items unchecked (unselected for checkout per OFF default)
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] guest items merged into user cart
+[DOM] all items unchecked (unselected for checkout per OFF default) (visible)
 [STATE] Proceed to Checkout disabled or shows warning
-[MATH] Order Summary shows $0 or no items selected message","[API] getCart returns items with selectedForCheckout=false
+[MATH] Order Summary shows $0 or no items selected message = unit price × quantity, consistent with the displayed line/subtotal (2 decimal places)
+[STATE] verify guest items present in merged cart
+[STATE] verify items are unselected (per OFF default)
+[STATE] verify Proceed to Checkout blocked or warns about no selected items","[API] getCart returns items with selectedForCheckout=false
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","items auto-selected despite OFF setting; Proceed to Checkout active with no selection","Remove items from cart; restore store setting to ON","C389916","Manual"
-"CART-069","Cart Merge Selection - Both Selected All (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] mergeCarts mutation response errors[] is empty
+[API] addItem mutation response errors[] is empty",items auto-selected despite OFF setting; Proceed to Checkout active with no selection,Remove items from cart; restore store setting to ON,C389916,Manual
+CART-112,Cart Merge Selection - Both Selected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items, manually select all
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ACT] add items, manually select all
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] add items as guest, manually select all
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify items from both carts present
-[ASSERT] verify manually selected state preserved after merge
-[ASSERT] verify Order Summary includes all items","[STATE] items from both carts merged
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] items from both carts merged
 [DOM] all items checked (manually selected state preserved)
 [MATH] Order Summary subtotal = sum of all items
-[STATE] manual selection override of OFF default preserved","[API] getCart returns items with selectedForCheckout=true
+[STATE] manual selection override of OFF default preserved
+[STATE] verify items from both carts present
+[STATE] verify manually selected state preserved after merge
+[STATE] verify Order Summary includes all items","[API] getCart returns items with selectedForCheckout=true
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","manually selected items reset to unselected after merge; Order Summary empty despite selections","Remove items from cart; restore store setting to ON","C389917","Manual"
-"CART-070","Cart Merge Selection - Mixed + Mixed (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",manually selected items reset to unselected after merge; Order Summary empty despite selections,Remove items from cart; restore store setting to ON,C389917,Manual
+CART-113,Cart Merge Selection - Mixed + Mixed (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ACT] add 3+ items
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] manually select some, leave others unselected
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] add 3+ items as guest
 [ACT] manually select some, leave others unselected
 [ACT] sign in as {{USER_EMAIL}}
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify all items from both carts present
-[ASSERT] verify per-item selection state after merge
-[ASSERT] verify Order Summary reflects only selected items","[STATE] all items merged with correct per-item selection
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] all items merged with correct per-item selection
 [MATH] Order Summary = sum of only selected items
-[DOM] each item checkbox reflects individual state
-[STATE] OFF default does not override manually selected items","[API] getCart returns correct per-item selectedForCheckout values
+[DOM] each item checkbox reflects individual state (visible)
+[STATE] OFF default does not override manually selected items
+[STATE] verify all items from both carts present
+[STATE] verify per-item selection state after merge
+[STATE] verify Order Summary reflects only selected items","[API] getCart returns correct per-item selectedForCheckout values
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","per-item selection lost; all forced to unselected; Order Summary wrong","Remove items from cart; restore store setting to ON","C389920","Manual"
-"CART-071","Cart Merge - Configurable Product, Different Options Create Separate Lines","Cart > Merge","High","BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
+[NETWORK] no 4xx/5xx
+[API] addItem mutation response errors[] is empty",per-item selection lost; all forced to unselected; Order Summary wrong,Remove items from cart; restore store setting to ON,C389920,Manual
+CART-114,"Cart Merge - Configurable Product, Different Options Create Separate Lines",Cart > Merge,High,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:RESET_CART]
-SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available with at least 2 selectable Product-section options in 'Select your fav color' (e.g., Black, Green). Registered user {{USER_EMAIL}} exists with empty persisted cart. NOTE: do NOT hardcode option prices — env catalog data may change; assert structural invariants (distinct lines, distinct totals) instead.","url={{FRONT_URL}}
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available with at least 2 selectable Product-section options in the REQUIRED 'Color *' section (observed 2026-07-27: 'Black hat', 'Green hat' (default-selected), 'Red hat', 'Beige hat'). Resolve the PDP via @td(CFG_HAT.url) — never hand-compose /product/<sku>, which renders a client-side soft-404 behind HTTP 200. Registered user {{USER_EMAIL}} exists with empty persisted cart. NOTE: do NOT hardcode option prices — env catalog data may change; assert structural invariants (distinct lines, distinct totals) instead.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_slug=@td(CFG_HAT.slug)
 hat_url={{FRONT_URL}}@td(CFG_HAT.url)
-optionA=color: Black
-optionB=color: Green","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated session, empty cart)
+optionA=Black hat
+optionB=Green hat","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated session, empty cart)
 [NAV] open Configurable Hat PDP at {{FRONT_URL}}@td(CFG_HAT.url)
 [WAIT] 'Configure the parameters' widget visible
-[ACT] in 'Select your fav color' section choose option A (e.g., Black)
+[ACT] in 'Color' section choose option A (e.g., Black)
 [ASSERT] PDP total reflects option A surcharge (record value as totalA)
 [ACT] click Add to cart
 [WAIT] success notification
-[ASSERT] cart badge shows 1, Add to cart changes to Update cart, the link "Create new configuration" is visible
-[ACT] Click on "Create new configuration" on Hat PDP
+[ASSERT] cart badge shows 1, Add to cart changes to Update cart, the link ""Create new configuration"" is visible
+[ACT] Click on ""Create new configuration"" on Hat PDP
 [WAIT] Configure widget visible
-[ACT] in 'Select your fav color' section choose option B (e.g., Green) — different from option A
+[ACT] in 'Color' section choose option B (e.g., Green) — different from option A
 [ASSERT] PDP total reflects option B surcharge (record value as totalB; totalB != totalA)
 [ACT] click Add to cart
 [WAIT] success notification
 [ASSERT] cart badge shows 2
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] cart shows exactly 2 line items, both pointing to Configurable Hat base product
-[ASSERT] one line displays option A configuration; the other displays option B configuration
+[ACT] expand the 'Components list' toggle on each cart line to reveal its configuration summary
+[ASSERT] one line's Components list displays option A; the other's displays option B
 [ASSERT] line totals equal totalA and totalB respectively (no collapse, no qty merge)
 [ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers anonymous→user cart merge)
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] cart still shows exactly 2 line items for Configurable Hat
-[ASSERT] each line retains its distinct configuration (option A on one line; option B on the other)
-[ASSERT] per-line totals unchanged from pre-merge values
-[ASSERT] cart subtotal = totalA + totalB","[STATE] 2 distinct cart line items for the same base product preserved through merge
-[DOM] line items display different configuration option labels (option A vs option B) in the configuration summary
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] 2 distinct cart line items for the same base product preserved through merge
+[DOM] with 'Components list' expanded, the two lines display different configuration option labels (option A vs option B); the collapsed per-line properties are the base product's attributes and are identical on both lines, so they must NOT be used to distinguish the configurations (visible)
 [STATE] BL-CART-007 exception honored: different product configurations of the same base SKU create separate lines
 [MATH] cart subtotal = sum of the two configured line totals
 [STATE] cart badge reflects 2 items after merge
-[STATE] no duplicate-line collapse; no quantity summing across distinct configurations","[API] mergeCarts mutation response errors[] is empty
+[STATE] no duplicate-line collapse; no quantity summing across distinct configurations
+[STATE] cart still shows exactly 2 line items for Configurable Hat
+[STATE] each line retains its distinct configuration (option A on one line; option B on the other)
+[STATE] per-line totals unchanged from pre-merge values
+[STATE] cart subtotal = totalA + totalB","[API] mergeCarts mutation response errors[] is empty
 [API] getCart returns items[] of length 2 with distinct configurationItems values per line
 [CONSOLE] no JS errors during sign-in and cart merge
-[NETWORK] no 4xx/5xx on cart fetch or merge mutation","2 lines collapsed into 1 with summed qty after merge; configurationItems mismatched or swapped between lines; one configuration dropped silently; cart badge shows 1 instead of 2 after sign-in","Remove all items from cart","GAP-CART-MERGE-CFG-001","Manual"
-"CART-072","Cart Merge - Same Configurable Product Same Configuration Stays Separate Lines (VCST-5053)","Cart > Merge","High","BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx on cart fetch or merge mutation
+[API] add-to-cart (configured item) mutation response errors[] is empty",2 lines collapsed into 1 with summed qty after merge; configurationItems mismatched or swapped between lines; one configuration dropped silently; cart badge shows 1 instead of 2 after sign-in,Remove all items from cart,GAP-CART-MERGE-CFG-001; VCST-4071,Manual
+CART-115,Cart Merge - Same Configurable Product Same Configuration Stays Separate Lines (VCST-5053),Cart > Merge,High,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available; user {{USER_EMAIL}} starts with empty persisted cart. The user-cart configuration and the guest-cart configuration MUST be byte-identical (same option in 'Select your fav color', same/empty Text section, no File section uploads). DESIGN (VCST-5053, vc-module-x-cart >=3.1012.0): configured line items ALWAYS stay separate lines on merge — identical configs are NOT consolidated or quantity-summed (CartAggregate.InnerAddLineItemAsync short-circuits on IsConfigured; no config-content equality exists). Assert two separate lines, not a summed single line.","url={{FRONT_URL}}
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available; user {{USER_EMAIL}} starts with empty persisted cart. The user-cart configuration and the guest-cart configuration MUST be byte-identical (same option in the REQUIRED 'Color *' section, same/empty 'Your text' section, same 'Print' state). Observed 2026-07-27: sections are 'Color *' (required), 'Print', 'Your text'. DESIGN (VCST-5053, vc-module-x-cart >=3.1012.0): configured line items ALWAYS stay separate lines on merge — identical configs are NOT consolidated or quantity-summed (CartAggregate.InnerAddLineItemAsync short-circuits on IsConfigured; no config-content equality exists). Assert two separate lines, not a summed single line.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_url={{FRONT_URL}}@td(CFG_HAT.url)
-option=color: Black","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+option=Black hat","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] open Configurable Hat PDP
 [WAIT] Configure widget visible
-[ACT] select option A (e.g., color: Black) in 'Select your fav color' section; leave other optional sections at defaults
+[ACT] select option A (e.g., Black hat) in 'Color' section
+[ACT] leave the remaining sections ('Print', 'Your text') at their defaults
 [ACT] click Add to cart
 [WAIT] success notification
 [ASSERT] cart badge shows 1
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] navigate to {{FRONT_URL}} as guest
 [NAV] open the same Configurable Hat PDP
 [WAIT] Configure widget visible
-[ACT] select the SAME option A (color: Black) with identical other-section state
+[ACT] select the SAME option A (Black hat) with identical other-section state
 [ACT] click Add to cart
 [WAIT] success notification
 [NAV] Go to cart. Click on cart icon on the top header. Navigate to {{FRONT_URL}}/cart page
-[ACT] set quantity=2;
+[ACT] set quantity=2
 [ASSERT] guest cart badge shows 2
 [ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers merge)
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] cart shows exactly 2 line items for Configurable Hat (configured items never consolidate — VCST-5053)
-[ASSERT] one line has quantity=1 (from user cart), the other quantity=2 (from guest cart); quantities are NOT summed into a single line
-[ASSERT] both lines display the same option A (color: Black) configuration
-[ASSERT] cart subtotal = configured unit price × 3 (sum across both lines)","[STATE] 2 separate line items after merge even though both configurations are identical (configured items are never deduplicated — VCST-5053)
-[DOM] one line qty=1, the other qty=2; no quantity summing across the two configured lines
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] 2 separate line items after merge even though both configurations are identical (configured items are never deduplicated — VCST-5053)
+[DOM] one line qty=""1"", the other qty=2; no quantity summing across the two configured lines
 [MATH] cart subtotal = configured unit price × 3 (sum of both lines)
-[STATE] both lines retain option A (color: Black) configuration
-[STATE] BL-CART-007 exception: configured line items always create separate lines; identical configs are NOT collapsed into one","[API] mergeCarts mutation errors[] is empty
+[STATE] both lines retain option A (Black hat) configuration
+[STATE] BL-CART-007 exception: configured line items always create separate lines; identical configs are NOT collapsed into one
+[STATE] cart shows exactly 2 line items for Configurable Hat (configured items never consolidate — VCST-5053)
+[STATE] one line has quantity=1 (from user cart), the other quantity=2 (from guest cart); quantities are NOT summed into a single line
+[STATE] both lines display the same option A (Black hat) configuration
+[STATE] cart subtotal = configured unit price × 3 (sum across both lines)","[API] mergeCarts mutation errors[] is empty
 [API] getCart returns items[] of length 2, both IsConfigured with matching configurationItems (quantity 1 and quantity 2 respectively)
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","two configured lines collapsed into one summed line (pre-VCST-5053 behavior, now incorrect); line count not equal to 2; configuration option lost or replaced on merge","Remove items from cart","GAP-CART-MERGE-CFG-002; VCST-5053","Manual"
-"CART-073","Cart Merge - Configurable Product, Different Configs Across User and Guest Carts","Cart > Merge","Medium","BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx
+[API] add-to-cart (configured item) mutation response errors[] is empty","two configured lines collapsed into one summed line (pre-VCST-5053 behavior, now incorrect); line count not equal to 2; configuration option lost or replaced on merge",Remove items from cart,GAP-CART-MERGE-CFG-002; VCST-5053,Manual
+CART-116,"Cart Merge - Configurable Product, Different Configs Across User and Guest Carts",Cart > Merge,Medium,"BL-CART-008, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: Configurable Hat product (alias CFG_HAT) with at least 2 distinct Product-section options. User {{USER_EMAIL}} starts with empty persisted cart.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 hat_url={{FRONT_URL}}@td(CFG_HAT.url)
-optionA=color: Black
-optionB=color: Green","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+optionA=Black hat
+optionB=Green hat","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [NAV] open Configurable Hat PDP
 [WAIT] Configure widget visible
-[ACT] select option A (e.g., color: Black) in 'Select your fav color' section
+[ACT] select option A (e.g., Black hat) in 'Color' section
 [ACT] click Add to cart with qty=1
 [WAIT] success notification
 [ASSERT] user cart shows 1 line item with option A configuration
-[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
 [NAV] navigate to {{FRONT_URL}} as guest
 [NAV] open the same Configurable Hat PDP
 [WAIT] Configure widget visible
-[ACT] select option B (e.g., color: Green) — different from option A
+[ACT] select option B (e.g., Green hat) — different from option A
 [ACT] click Add to cart with qty=1
 [WAIT] success notification
 [ASSERT] guest cart shows 1 line item with option B configuration
 [ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers merge)
-[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] cart shows exactly 2 line items, both for Configurable Hat base product
-[ASSERT] one line displays option A configuration (from user cart); the other displays option B (from guest cart)
-[ASSERT] both line totals match the pre-merge per-configuration totals
-[ASSERT] cart subtotal = configured total A + configured total B","[STATE] 2 distinct line items in merged cart, one per configuration
-[DOM] line items display different option labels (option A vs option B) per BL-CART-007 exception
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] 2 distinct line items in merged cart, one per configuration
+[DOM] line items display different option labels (option A vs option B) per BL-CART-""007"" exception
 [STATE] BL-CART-007 honored: different configurations of the same base product remain separate lines after cross-cart merge
 [MATH] cart subtotal = configured total A + configured total B
-[STATE] no quantity summing across distinct configurations","[API] mergeCarts mutation errors[] is empty
+[STATE] no quantity summing across distinct configurations
+[STATE] cart shows exactly 2 line items, both for Configurable Hat base product
+[STATE] one line displays option A configuration (from user cart); the other displays option B (from guest cart)
+[STATE] both line totals match the pre-merge per-configuration totals
+[STATE] cart subtotal = configured total A + configured total B","[API] mergeCarts mutation errors[] is empty
 [API] getCart returns items[] of length 2 with distinct configurationItems values per line
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","2 configurations collapsed into 1 line after merge; configuration data swapped or lost between lines; one of the two lines dropped; quantities summed instead of separate lines preserved","Remove items from cart","GAP-CART-MERGE-CFG-003","Manual"
+[NETWORK] no 4xx/5xx
+[API] add-to-cart (configured item) mutation response errors[] is empty",2 configurations collapsed into 1 line after merge; configuration data swapped or lost between lines; one of the two lines dropped; quantities summed instead of separate lines preserved,Remove items from cart,GAP-CART-MERGE-CFG-003,Manual
+CART-098,"Cart Merge - Combined Quantity Exceeding Available Stock Is Retained But Explicitly Flagged, Not Silently Oversold (Boundary)",Cart > Merge,High,"BL-CART-001, BL-CART-008","ECL-2.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+SEED REQUIRED: low-stock fixture @td(PROD_LOW_STOCK.sku) (stock <= 10) exists in catalog and B2B virtual catalog. Registered user {{USER_EMAIL}} starts with this SKU already in their account cart at a quantity such that adding the guest-cart quantity on merge would exceed available stock. Design Technique: Boundary Value Analysis (merge-time quantity summation crossing the stock ceiling).","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+low_stock_sku=@td(PROD_LOW_STOCK.sku)","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/seed-test-fixtures/agent-test-low-stock-fixture
+[ACT] set quantity to just over half of available stock
+[ACT] add to cart
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] click the account button in the top header (BL-AUTH-007, data-test-id=""account-button"")
+[WAIT] wait for the account menu popup to open
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] wait for signed-out state confirmed
+[NAV] navigate to {{FRONT_URL}} as guest
+[NAV] navigate to {{FRONT_URL}}/seed-test-fixtures/agent-test-low-stock-fixture
+[ACT] set quantity to just over half of available stock
+[ACT] add to cart as guest (so user-qty + guest-qty > available stock)
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers merge)
+[NAV] navigate to {{FRONT_URL}}/cart","[STATE] the merge retains the raw summed quantity (user qty + guest qty) even though it exceeds available stock — the excess is NOT silently accepted without any signal; the line is explicitly flagged with a stock-exceeded validation message {OBSERVED} (live-verified: merge produced qty=6 against stock=5 for @td(PROD_LOW_STOCK.sku)/QA-LOW-001 — it is NOT capped to 5)
+[DOM] the merged line shows the verbatim message ""You can order maximum 5 item(s)"", the '+' control is disabled, and ""In stock 5"" is shown {OBSERVED} (live-verified as real reactive validation, not a static banner — reducing the quantity to 5 made the message disappear immediately)","[API] mergeCarts mutation response errors[] is empty
+[API] getCart after merge: the line's quantity reflects the raw summed value (may exceed available stock) AND the line carries an explicit stock-validation flag/message when it does
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx during merge
+[API] addItem mutation response errors[] is empty",merged quantity exceeds available stock with NO flag/message shown (silent oversell); checkout proceeds with an oversold quantity and no warning; the stock-exceeded message is a static label that does not react to a quantity change (does not disappear when qty is reduced to the stock limit); merge mutation errors[] non-empty with no user-facing explanation,Remove all items from cart; sign out,Coverage Gap Analysis; VCST-3926,Draft

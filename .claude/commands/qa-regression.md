@@ -236,7 +236,7 @@ Agents MUST resolve credentials via `@td()` at runtime — never hardcode in pro
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Never execute tests yourself — delegate via Task tool
 - Never share browser slots between concurrent agents
-- Priority order: P0 before P1 before P2
+- Priority order: P0 before P1 or Critical > High > Medium
 - Always write test-run-status.json (external tools + the live HTML dashboard monitor it — update it at each state change so the dashboard reflects real progress)
 - **Always auto-launch the live dashboard watcher (Step 3) — every run, every mode, without asking.** Spawn `npm run report:regression:watch -- --run-id {RUN_ID}` in the background immediately after writing `test-run-status.json` and before dispatching any suite agent. Never wait for the user to request it, and never ask whether to launch it — it applies to browser-pool runs and single runner-native suites (e.g. 050m) equally.
 - **Split the suite-by-suite results by layer.** The Step 6 report's results table is written as two subsections — `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`) — classified by the layer directory each suite's CSV lives under in `config/test-suites.json`, each with its own pass/fail sub-total. Loyalty splits across layers (083/083b → Frontend; 075/075b/075c → Backend); admin/GraphQL suites (050*, 0XX admin) → Backend.

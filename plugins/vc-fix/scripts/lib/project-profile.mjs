@@ -40,7 +40,7 @@
  * @property {{mode:"plugin"|"agent-project", helpersRunnable:boolean}} runtime
  * @property {{projectRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
  * @property {{source:""|"vc-deploy-dev"|"modules-endpoint"|"ticket"}} buildVerify
- * @property {boolean} selfDiagnostics  opt-in for the passive session-telemetry CAPTURE hook — when true the collector records to <outputRoot>/.vc-fix/; absent/false ⇒ the hook is a full no-op (no `.vc-fix/`)
+ * @property {boolean} selfDiagnostics  the passive session-telemetry CAPTURE hook is OPT-IN — it records to <outputRoot>/.vc-fix/ ONLY when this is explicitly true (and env VC_FIX_DIAG_CAPTURE is not off); absent / any non-true value ⇒ the hook is a full no-op (no `.vc-fix/`). `/project-init` asks the consent question first and writes it on Yes
  * @property {{mode:"auto"|"ask"|"off"}} feedback  consent for UPSTREAM delivery of self-diagnostics (VCST-5509). off = nothing leaves the machine; ask (default) = dry-run + a single Show-diff/Send/Don't-send decision; auto = Issue route files automatically, PR/fork-PR handed off as commands. Gates ONLY deliver.mjs — local capture (selfDiagnostics) + diagnosis need no consent
  *
  * @typedef {Object} ClientRepo
@@ -174,13 +174,19 @@ export const PROFILE_DEFAULTS = {
   //   hit the admin modules endpoint, which needs a token).
   buildVerify: { source: "" },
 
-  // selfDiagnostics — opt-in for the passive session-telemetry hook
-  // (hooks/session-telemetry.mjs). When true, the collector records per-skill
-  // signals to <outputRoot>/.vc-fix/diagnostics/. /project-init writes it true by
-  // default; the hook reads project-profile.json RAW and requires the field to be
-  // strictly === true, so an absent profile (running Claude in a random folder) or
-  // an absent/false flag ⇒ the hook is a full no-op and never creates `.vc-fix/`.
-  selfDiagnostics: true,
+  // selfDiagnostics — the passive session-telemetry hook (hooks/session-telemetry.mjs)
+  // is OPT-IN: it records per-skill signals to <outputRoot>/.vc-fix/diagnostics/ ONLY when
+  // this field is EXPLICITLY true (and the env kill-switch VC_FIX_DIAG_CAPTURE is not off).
+  // Absent profile / absent field / any non-true value ⇒ the hook is a FULL no-op (no
+  // `.vc-fix/`). `/project-init` asks the operator the consent question as its FIRST step
+  // and, on Yes, writes this flag IMMEDIATELY (before the interview) so its own remaining
+  // run is captured. The persisted default is **false** (opt-in fails SAFE): a profile written
+  // WITHOUT an explicit consent answer must never silently enable capture (PR #143 R2, NA-4).
+  // The interview's *recommended* answer is a separate, hard-coded "Yes (recommended)" nudge
+  // (reconcile-profile.mjs) — recommending ON is not the same as consenting ON, so it does NOT
+  // live here. Every real consent path (§0b stub, the interview's step-6 rewrite) passes an
+  // explicit `--self-diagnostics <answer>`; only a flag-less write inherits this safe default.
+  selfDiagnostics: false,
 
   // feedback — consent for UPSTREAM delivery of self-diagnostics (VCST-5509). This
   // gates ONLY the outbound `deliver.mjs` step; local capture (selfDiagnostics) +

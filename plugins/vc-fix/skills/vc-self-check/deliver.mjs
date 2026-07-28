@@ -8,9 +8,11 @@
  *
  * Mirrors `contributionPlan`, pointed at the plugin repo. Reuses
  * `../project-init/probe-lib.mjs` (`resolveGithubToken` + `probeGithubUpstream`).
- * (This was byte-identical across the plugins/vc-fix/ and .claude/ trees before
- * VCST-5509; that story updated only the canonical plugins/vc-fix/ copy, so the
- * .claude/ mirror now lags — see the tech-debt note in the plan.)
+ * This file is kept BYTE-IDENTICAL across the plugins/vc-fix/ (canonical) and .claude/
+ * trees for the self-diagnostics subsystem: the closed-schema upstream path (PR #143 R2)
+ * ships on BOTH surfaces so neither can leak. Both trees supply the sibling
+ * `upstream-reduce.mjs` + `../project-init/probe-lib.mjs` (deliver no longer imports
+ * `redact.mjs` — the closed schema, not scrubbing, is the upstream guard; see below).
  *
  * CONSENT (VCST-5509): outbound delivery is gated by project-profile.json
  * `feedback.mode` — off (never send, DIAG stays local) / ask (DEFAULT: DRY draft +
@@ -20,11 +22,12 @@
  *
  * HARD INVARIANTS (quality-gates §2a client-code containment + per-action consent):
  *   - NEVER touches the client-installed plugin (read-only w.r.t. the install).
- *   - NEVER leaks client code/data upstream: every outbound title/body is scrubbed
- *     of client source, file paths, URLs, identifiers, tickets, data, and secrets —
- *     only plugin-file references + a generic repro survive. A finding whose
- *     evidence is client-specific is DOWNGRADED to a generic description, never
- *     attached. Operator /vc-feedback notes are §2a-gated the same way.
+ *   - NEVER leaks client code/data upstream: the outbound title/body/fingerprint/comment
+ *     are built SOLELY from a validated closed-vocabulary struct (`validateUpstream(reduce(...))`,
+ *     enum/number only) — there is NO client-derived free text anywhere in the artifact, so
+ *     there is nothing to scrub or downgrade. Leak-safety is by TYPE, not by a denylist: the
+ *     LLM-authored DIAG cells and operator /vc-feedback prose never reach the struct (feedback
+ *     travels as 👍/👎 counts only). See knowledge/diagnostics/upstream-schema.md + adr-upstream-default-deny.md.
  *   - DRAFT-AND-CONFIRM (mode=ask): the run is DRY (draft + show). It sends ONLY
  *     with `--confirm` (mode=auto pre-confirms), and even then auto-sends only the
  *     low-risk GitHub Issue route; a PR/fork-PR is handed off as ready commands
@@ -44,6 +47,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSy
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveGithubToken, probeGithubUpstream } from "../project-init/probe-lib.mjs";
+import { reduce, validateUpstream, fingerprintStruct, findingStructSig } from "./upstream-reduce.mjs";
 
 const PLUGIN_REPO = "VirtoCommerce/vc-mcp-testing-module";
 const ISSUE_TITLE_PREFIX = "[vc-fix self-check]";
@@ -83,214 +87,76 @@ export function feedbackMode() {
   return m === "off" || m === "auto" || m === "ask" ? m : "ask"; // default = ask
 }
 
-// Read this session's explicit /vc-feedback verdicts from the collector jsonl so the
-// outbound report carries the highest-value signal. Text is already redacted by the
-// collector; buildDraft additionally §2a-gates it before it goes upstream.
-export function readSessionFeedback(sid) {
-  if (!sid) return [];
+// Read the session's STRUCTURED collector records — the ONLY source for the upstream struct
+// (VCST default-deny redesign). Returns the raw span records, feedback verdicts, the finalize
+// roll-up, and the pluginVersion from session_start. reduce() consumes only these enum/number
+// records; the LLM-authored DIAG free text never enters the upstream path. Never throws — a
+// missing/unreadable jsonl yields an empty set (deliver then falls back to parseDiag's
+// enum-only fields).
+export function readSessionRecords(sid) {
+  const out = { spans: [], feedback: [], finalize: null, pluginVersion: "unknown" };
+  if (!sid) return out;
   try {
     const p = join(diagDir(), `${sid}.jsonl`);
-    if (!existsSync(p)) return [];
-    return readFileSync(p, "utf8")
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
-      .filter((r) => r && r.type === "feedback")
-      .map((r) => ({ verdict: r.verdict, text: r.text || "" }));
-  } catch {
-    return [];
-  }
-}
-
-// ─── containment (§2a) — whitelist gate + defense-in-depth scrubber ──────────
-//
-// TRUST MODEL: every findings-table cell is untrusted. A cell may reach an
-// outbound report ONLY if it is plugin-safe (a recognized plugin-file reference
-// or generic advice with no client-shaped tokens). `isClientSpecific` is the GATE
-// (buildDraft downgrades any client-specific row); `scrubText` is defense-in-depth
-// for the cells that pass. A blacklist scrubber alone is unsafe — it leaks anything
-// it fails to anticipate — so the gate is positive-detection, not blacklist.
-const REDACTIONS = [
-  [/\b(authorization|bearer)\b\s*[:=]?\s*\S+/gi, "$1 «redacted»"],
-  [/\b(token|api[_-]?key|secret|password|passwd|pwd)\b\s*[:=]\s*\S+/gi, "$1=«redacted»"],
-  [/\beyJ[A-Za-z0-9._-]{16,}/g, "«jwt»"],
-  [/\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, "«gh-token»"],
-  // PAN: 13–19 digits, space/dash separated. Anchored on a digit at BOTH ends so a
-  // trailing separator before the next word is NOT eaten ("4111 1111 1111 1111 used"
-  // → "«pan» used", not "«pan»used").
-  [/\b\d(?:[ -]?\d){12,18}\b/g, "«pan»"],
-];
-
-/**
- * Recognizes a reference to a vc-fix PLUGIN file/component — the WHITELIST. The
- * plugin-dir / filename anchors use a negative lookbehind so a CLIENT path that merely
- * contains a plugin-dir NAME as a mid-path segment (e.g. `acme/skills/Secret.cs`) is
- * NOT mistaken for a plugin reference — only a token-boundary `hooks|skills|commands|
- * knowledge/…` (or a known plugin filename) counts.
- */
-const PLUGIN_FILE_RE =
-  /(?<![\w-])(?:session-telemetry|enforce-real-user|sweep-stray-screenshots|deliver|probe-lib|paths)\.mjs|(?<![\w/-])(?:hooks|skills|commands|knowledge)\/[\w./-]+|(?<![\w/-])\.claude\/rules\/[\w.-]+|(?<![\w-])\/(?:qa-[a-z-]+|vc-self-check|project-init|vc-docs)\b|(?<![\w-])(?:repo-router\.ts|fix-repos\.json|quality-gates\.md|reports\.md)/;
-const PLUGIN_FILE_RE_G = new RegExp(PLUGIN_FILE_RE.source, "g");
-
-/** Escape a string for use inside a RegExp. */
-function escapeRe(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-// Layer 1 — configured client identifiers (org / client-repo / github account) read
-// from project-profile.json. This is the ONLY reliable way to catch an arbitrary or
-// lowercase client name (e.g. `acme`, `acme-cart-service`). On a native-platform
-// deployment there is no profile ⇒ no client ⇒ nothing to catch here (correct).
-let _clientTerms = null;
-function clientTerms() {
-  if (_clientTerms) return _clientTerms;
-  _clientTerms = [];
-  try {
-    const p = join(outputRoot(), "project-profile.json");
-    if (existsSync(p)) {
-      const prof = JSON.parse(readFileSync(p, "utf8"));
-      const s = new Set();
-      const add = (v) => { if (typeof v === "string" && v.trim().length >= 3) s.add(v.trim()); };
-      add(prof.clientOrg); add(prof?.client?.org); add(prof?.vcs?.clientOrg);
-      add(prof?.upstream?.clientGithubAccount);
-      for (const r of prof?.repos?.client || []) (r && typeof r === "object") ? (add(r.name), add(r.repo)) : add(r);
-      _clientTerms = [...s];
+    if (!existsSync(p)) return out;
+    for (const line of readFileSync(p, "utf8").trim().split("\n")) {
+      if (!line) continue;
+      let r;
+      try { r = JSON.parse(line); } catch { continue; }
+      if (!r || typeof r !== "object") continue;
+      if (r.type === "span") out.spans.push(r);
+      else if (r.type === "feedback") out.feedback.push({ verdict: r.verdict, text: r.text || "" });
+      else if (r.type === "finalize") out.finalize = r;
+      else if (r.type === "session_start" && typeof r.pluginVersion === "string") out.pluginVersion = r.pluginVersion;
     }
-  } catch { _clientTerms = []; }
-  return _clientTerms;
-}
-
-/**
- * DEFENSE IN DEPTH (not the primary gate). Removes configured client identifiers,
- * secrets, absolute AND relative filesystem paths (Windows back/forward-slash, UNC,
- * source paths), URLs, emails, and tracker ticket keys. Plugin-file references and
- * slash-command names survive — they don't match these shapes.
- */
-export function scrubText(input) {
-  let s = String(input ?? "");
-  // Alphanumeric-only boundary (NOT \b): `_` is a \w char, so `\bacme\b` would miss
-  // "acme" inside a derived identifier like `acme_cart_service` / `ACME_API_KEY`.
-  // Treat `_ . / -` (and everything non-alphanumeric) as a separator so the configured
-  // org is caught inside underscore/dot/slash/hyphen-joined tokens.
-  for (const term of clientTerms()) s = s.replace(new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "gi"), "«client»");
-  for (const [re, rep] of REDACTIONS) s = s.replace(re, rep);
-  s = s.replace(/[A-Za-z]:[\\/][^\s"'`]+/g, "«path»"); // Windows abs (back OR forward slash)
-  s = s.replace(/\\\\[^\s"'`]+/g, "«path»"); // UNC \\server\share\...
-  s = s.replace(/(?<![\w])\/(?:home|Users|root|tmp|var|opt|mnt|srv|c|d)\/[^\s"'`]+/gi, "«path»"); // POSIX/msys abs
-  s = s.replace(/\b[\w.-]+(?:[\\/][\w.-]+)+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql)\b/gi, "«path»"); // relative source path
-  s = s.replace(/\bhttps?:\/\/[^\s"'`)]+/gi, "«url»"); // client URLs / portal links
-  s = s.replace(/\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g, "«email»"); // emails
-  s = s.replace(/\b[A-Z][A-Z0-9]{1,9}-\d+\b/g, "«ticket»"); // tracker ticket keys
-  return s;
-}
-
-/** Placeholders the scrubber leaves where it removed client-specific content. */
-const REDACTED_PLACEHOLDER_RE = /«(client|path|url|email|ticket|redacted|jwt|gh-token|pan)»/;
-
-/** Does this text reference a vc-fix PLUGIN file/component? (whitelist positive) */
-export function referencesPlugin(text) {
-  return PLUGIN_FILE_RE.test(String(text ?? ""));
-}
-
-// Known-safe vocabulary: plugin + platform + tooling + common QA/dev prose words that
-// are legitimately capitalized but NOT client identity. Any capitalized/compound token
-// NOT in this set is treated as a client class / namespace / org / proper noun. Missing
-// a safe word only over-downgrades a finding (the fail-safe direction); a client name
-// leaking through is the failure we refuse.
-const SAFE_TERMS = new Set([
-  // compound tech/platform terms (would otherwise trip the compound-PascalCase rule)
-  "GitHub", "GitLab", "SonarCloud", "DevOps", "GraphQL", "VirtoCommerce", "TypeScript",
-  "JavaScript", "AppInsights", "DevTools", "WebKit", "PostgreSQL", "MySQL", "SqlServer",
-  "SessionStart", "PostToolUse", "PreToolUse", "SubagentStop",
-  // single-word tech/tools/acronyms
-  "GitLab", "Azure", "Jira", "Node", "Vue", "Angular", "Playwright", "Chromium",
-  "Firefox", "Edge", "Chrome", "Windows", "Linux", "Mac", "POSIX", "REST", "API",
-  "Teams", "App", "Insights", "MCP", "CLI", "PAT", "JWT", "PAN", "URL", "UNC", "HTTP",
-  "HTTPS", "JSON", "XML", "HTML", "CSS", "SQL", "DB", "ID", "UUID", "GUID", "Docker",
-  // plugin / QA / gate vocabulary
-  "OK", "BAIL", "STOP", "DIAG", "STR", "BL", "ECL", "PR", "CI", "CD", "QA", "Virto",
-  "Commerce", "Gate", "Gates", "Phase", "Step", "Steps", "Tier", "Signal", "Signals",
-  "Verdict", "Severity", "Anomaly", "Score", "Threshold", "Consent", "Prompt",
-  "Session", "Skill", "Skills", "Command", "Commands", "Hook", "Hooks", "Telemetry",
-  "Transcript", "Cursor", "Delta", "Snippet", "Token", "Auth", "Config", "Path",
-  "Paths", "File", "Files", "Line", "Lines", "Cap", "Error", "Errors", "Warning",
-  "Failure", "Permission", "Denied", "Repo", "Branch", "Commit", "Issue", "Review",
-  "Fix", "Deploy", "Build", "Test", "Tests", "Coverage", "Regression", "Suite",
-  "Module", "Modules", "Platform", "Frontend", "Backend", "Admin", "Storefront",
-  "Theme", "Cart", "Order", "Orders", "Catalog", "Checkout", "Search", "Pricing",
-  "Payment", "Marketing", "Customer", "Inventory", "User", "Users", "Bug", "Bugs",
-  "Draft", "Send", "Scrub", "Downgrade", "Redact",
-  // common capitalized prose words (sentence starters / verbs)
-  "A", "An", "The", "This", "That", "These", "Those", "No", "Not", "None", "And",
-  "Or", "But", "If", "When", "While", "With", "Without", "Via", "Per", "For", "From",
-  "To", "In", "On", "Of", "At", "As", "By", "See", "Use", "Run", "Add", "Set", "Read",
-  "Write", "Open", "Close", "Skip", "Start", "Check", "Trim", "Extend", "Verify",
-  "Ensure", "Update", "Remove", "Replace", "Move", "Rename", "Guard", "Handle", "Wire",
-  "Call", "Return", "Emit", "Log", "Report", "Confirm", "Merge", "Push", "Pull", "Fork",
-  "Missing", "Failed", "Should", "Must", "May", "Only", "Also", "Then", "Now", "Note",
-  // tool names + hook subcommands + HTTP/GraphQL verbs (appear capitalized in findings)
-  "Stop", "Edit", "Bash", "Grep", "Glob", "Task", "Init", "Record", "Finalize",
-  "Get", "Post", "Put", "Patch", "Delete", "Query", "Mutation", "Yes", "Both", "Each",
-  "Any", "All", "Its", "Their", "Reproduce", "Reproduced", "Triage", "Route", "Repro",
-  // domain tool / product names that appear in findings (SonarCloud is compound-safe
-  // above; "Sonar" alone is not — add it and the rest explicitly)
-  "Swagger", "Storybook", "Vitest", "Sonar", "Cypress", "Vite", "Skyflow",
-  "CyberSource", "Datatrans", "Newman", "Postman", "Hangfire", "RabbitMQ", "Redis",
-  "ElasticSearch", "Kibana",
-]);
-
-/**
- * Positive detection of CLIENT-SHAPED content the blacklist scrubber can't catch, in
- * three layers: (1) a configured client identifier (any case) from the profile; (2)
- * paths / source files (Windows drive, UNC, any-slash path or source file that is NOT an
- * anchored plugin reference); (3) residual identifier tokens — a compound camel/Pascal
- * token or a single Capitalized proper-noun word not in the safe vocabulary. A plugin
- * reference is masked out first so it never trips (2)/(3). Bias is fail-safe.
- */
-function containsClientShape(text) {
-  const t = String(text ?? "");
-  if (!t.trim()) return false;
-  // (1) configured client identifiers — alphanumeric-only boundary (see scrubText):
-  // catches the org inside underscore/dot/slash/hyphen-joined derived identifiers.
-  for (const term of clientTerms()) if (new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "i").test(t)) return true;
-  // (2) hard path shapes
-  if (/[A-Za-z]:[\\/]/.test(t)) return true; // Windows drive path
-  if (/\\\\[\w.$-]+/.test(t)) return true; // UNC
-  const masked = t.replace(PLUGIN_FILE_RE_G, " "); // remove anchored plugin refs, judge the rest
-  // NB: no bare "word/word" slash rule — it over-redacted benign plugin vocabulary
-  // ("STR passed 2/3", "GET/POST /graphql", "chrome/firefox/edge", "pass/fail"). A real
-  // client path is still caught precisely by the drive/UNC rules above, the source/config
-  // FILE rule below (by extension), and the named-segment token rules (proper-noun /
-  // camelCase). A lowercase, extension-less relative path with no client-shaped segment
-  // (e.g. "src/handlers/cart") is not client-identifying and is allowed to survive.
-  if (/[\w-]+\.(?:cs|cshtml|razor|vue|ts|tsx|js|jsx|py|java|go|rb|php|sql|json|xml|config|dll)\b/i.test(masked)) return true; // non-plugin source/config file
-  // (3) residual identifier tokens (client class / namespace / org / proper noun).
-  // Scan the UNMASKED text, NOT `masked`: the whitelist greedily swallows a whole
-  // `hooks|skills|commands|knowledge/…` path, so a client identifier embedded in a
-  // filename under one of those dirs (e.g. `knowledge/AcmeCorp-notes.md`) would escape
-  // the shape check if we judged `masked`. Plugin file refs are lowercase-kebab, so
-  // scanning the raw text does not over-flag them. (The extension rule above stays on
-  // `masked` — else a legit plugin `repo-router.ts` reference would trip it.)
-  for (const tok of t.match(/[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*/g) || []) {
-    if (SAFE_TERMS.has(tok)) continue;
-    if (/[a-z][A-Z]/.test(tok)) return true; // compound camel/PascalCase (AcmeCorp, CartController)
-    if (/^[A-Z][a-z][A-Za-z0-9]*$/.test(tok)) return true; // single Capitalized proper noun (Acme, Contoso) — requires a lowercase LETTER after the capital so gate/severity codes (G0-G7, S0-S3, P0) are NOT flagged
+  } catch {
+    /* ignore — degraded fallback handled by the caller */
   }
-  return false;
+  return out;
 }
 
-/**
- * A findings cell is CLIENT-SPECIFIC (§2a) when EITHER the blacklist scrubber had to
- * remove something (a placeholder survives) OR the whitelist gate detects client-shaped
- * content the scrubber can't catch. When true, buildDraft downgrades the whole row so no
- * client evidence reaches an outbound report. Generic advice ("check gh auth status") and
- * plugin-file references ("hooks/enforce-real-user.mjs") return false and are kept.
- */
-export function isClientSpecific(original) {
-  const t = String(original ?? "");
-  if (REDACTED_PLACEHOLDER_RE.test(scrubText(t))) return true;
-  return containsClientShape(t);
+/** Assemble the reducer input for a session from its DIAG (fallback enums + version) + jsonl. */
+function sessionLocal(md, sid) {
+  const parsed = parseDiag(md);
+  const records = readSessionRecords(sid);
+  return {
+    local: {
+      spans: records.spans,
+      feedback: records.feedback,
+      pluginVersion: records.pluginVersion !== "unknown" ? records.pluginVersion : parsed.pluginVersion,
+      // Drop parseDiag's synthetic "(session)" placeholder row (emitted when a DIAG has no
+      // parseable findings table) — it would otherwise become a low-fidelity spurious upstream
+      // finding on the jsonl-purged path (adversarial review #2). Real rows are kept.
+      fallbackFindings: parsed.findings.filter((f) => f.skill !== "(session)"),
+      sessionCount: 1,
+    },
+    parsed,
+  };
+}
+
+/** Merge per-session structs: dedup findings by structural signature (occurrence-count them),
+ *  sum feedback counts, keep the newest known pluginVersion. Used by --batch. Exported for tests. */
+export function mergeStructs(structs, pluginVersion) {
+  const byKey = new Map();
+  let up = 0;
+  let down = 0;
+  for (const s of structs) {
+    up += s.feedback.up;
+    down += s.feedback.down;
+    for (const f of s.findings) {
+      const k = findingStructSig(f);
+      const e = byKey.get(k);
+      if (e) e.occurrences += f.occurrences;
+      else byKey.set(k, { ...f });
+    }
+  }
+  return validateUpstream({
+    schemaVersion: 1,
+    pluginVersion: pluginVersion || "unknown",
+    findings: [...byKey.values()],
+    feedback: { up, down },
+    sessionCount: structs.length,
+  });
 }
 
 // ─── DIAG parsing ────────────────────────────────────────────────────────────
@@ -313,8 +179,15 @@ export function parseDiag(md) {
     if (cells.length && cells[0] === "") cells.shift();
     if (cells.length && cells[cells.length - 1] === "") cells.pop();
     if (cells.length < 4) continue;
-    const [skill, verdict, sev] = cells;
+    const [skillCell, verdict, sev] = cells;
     if (!/^(OK|DEGRADED|BROKEN)$/.test(verdict) || !/^S[0-3]$/.test(sev)) continue; // skip header/separator
+    // Normalize the Skill cell to the bare enum name. The DIAG table renders it as
+    // `/qa-fix (command)` / `/qa-bug (skill)`, but SKILLS holds bare names (`qa-fix`), so
+    // without this the jsonl-purged fallback path (reduce's fallbackFindings) always coerced
+    // skill → "other" — per-skill fidelity silently lost in exactly the case the fallback
+    // exists for (PR #143 review round 2, Finding 3). Unknown names still fall through to
+    // "other" via inSet in reduce/validateUpstream, so the fail-safe direction is preserved.
+    const skill = skillCell.replace(/^\//, "").replace(/\s*\((?:command|skill|agent)\)\s*$/i, "").trim();
     const signal = cells[3] ?? "";
     // 4-col table has no separate fix cell (cells[3] is the last) — don't alias the
     // signal as the fix. fix only exists at ≥5 cols; root-cause only at ≥6.
@@ -348,45 +221,46 @@ export function resolveRoute({ token, probe, scopes, override }) {
 }
 
 // ─── fingerprint / dedup ─────────────────────────────────────────────────────
-/**
- * Stable, Date-free short hash (djb2 → base36) over the finding signatures AND the
- * operator feedback. Folding feedback in is load-bearing: a feedback-ONLY session
- * (no BROKEN/DEGRADED finding) would otherwise hash the empty findings list to a
- * CONSTANT fingerprint, collapsing every negative-feedback report from every client
- * into one upstream issue and losing the note (D2). Distinct notes → distinct
- * fingerprints → distinct issues; identical notes dedup (the note lives in the first
- * issue). Feedback text is scrubbed before hashing so the fingerprint carries no
- * client identifier.
- */
-/** Per-finding signature (identity of a single finding, ignoring session). Used
- *  both by fingerprint() and by batch aggregation to dedup the SAME finding across
- *  many sessions into one entry with an occurrence count. */
-export function findingSig(f) {
-  return `${f.skill}|${f.verdict}|${f.sev}|${(f.fix || "").replace(/\s+/g, " ").trim()}`;
-}
-export function fingerprint(findings, feedback = []) {
-  const parts = (findings || []).map(findingSig);
-  for (const f of feedback || []) parts.push(`fb|${f.verdict}|${scrubText(f.text || "").replace(/\s+/g, " ").trim().slice(0, 120)}`);
-  const sig = parts.sort().join("\n");
-  let h = 5381;
-  for (let i = 0; i < sig.length; i++) h = ((h * 33) ^ sig.charCodeAt(i)) >>> 0;
-  return h.toString(36);
-}
+// The fingerprint is computed over the STRUCTURED upstream tuple via `fingerprintStruct`
+// (upstream-reduce.mjs) — enum fields + feedback COUNTS only, never raw/LLM text — so dedup
+// can no longer smuggle client bytes into the hash, and a feedback-only struct still yields a
+// distinct fingerprint (up/down counts differ). The old text-derived `fingerprint`/`findingSig`
+// were removed together with the free-text upstream path.
 
 /** List open self-check issues on the repo and return one whose body carries `fp`, else null. */
 export async function findDuplicateIssue({ repo, token, fp }) {
   if (!token) return null;
+  const marker = `${FP_MARKER} ${fp}`;
+  const headers = { Authorization: `Bearer ${token}`, "User-Agent": "vc-self-check", Accept: "application/vnd.github+json" };
+  const hit = (it) => it && !it.pull_request && (it.body || "").includes(marker); // exact-marker confirm
+  // Primary: the Search API targets the fingerprint DIRECTLY, so dedup works no matter how many
+  // open issues the repo has. The old first-100 `GET /issues` scan silently broke once the repo had
+  // ≥100 open issues (ordinary dev issues crowd out the window) and `auto` mode then re-filed a
+  // DUPLICATE instead of a +1 comment (PR #143 R2 DED1). Search tokenizes, so its hit is a candidate
+  // that we still body-confirm via `hit()`.
+  //
+  // `is:open` only (code review #4): match OPEN issues exclusively, consistent with the `state=open`
+  // fallback below. A defect a maintainer already CLOSED (fixed upstream) that then recurs on a
+  // not-yet-upgraded client is a NEW open signal — it must surface as a fresh issue, NOT get buried
+  // as a "+1 occurrence" comment on the closed one (after which `deliver` would purge the local
+  // artifacts and lose the recurrence). Search and fallback now agree on state, so the result no
+  // longer depends on whether Search happens to be indexed/rate-limited.
   try {
-    const r = await fetch(`https://api.github.com/repos/${repo}/issues?state=open&per_page=100`, {
-      headers: { Authorization: `Bearer ${token}`, "User-Agent": "vc-self-check", Accept: "application/vnd.github+json" },
-    });
-    if (!r.ok) return null;
-    const issues = await r.json();
-    for (const it of issues) {
-      if (it.pull_request) continue; // issues endpoint also returns PRs
-      const body = it.body || "";
-      if (body.includes(`${FP_MARKER} ${fp}`)) return { number: it.number, url: it.html_url };
+    const q = encodeURIComponent(`repo:${repo} is:issue is:open "${marker}"`);
+    const r = await fetch(`https://api.github.com/search/issues?q=${q}&per_page=20`, { headers });
+    if (r.ok) {
+      const j = await r.json();
+      for (const it of Array.isArray(j.items) ? j.items : []) if (hit(it)) return { number: it.number, url: it.html_url };
     }
+  } catch {
+    /* search unavailable / rate-limited — fall through to the list scan */
+  }
+  // Fallback: first page of open issues — catches a very-recently-filed dup not yet search-indexed,
+  // and the whole dedup when Search is rate-limited. Best-effort; any failure ⇒ "no known dup".
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/issues?state=open&per_page=100`, { headers });
+    if (!r.ok) return null;
+    for (const it of await r.json()) if (hit(it)) return { number: it.number, url: it.html_url };
   } catch {
     /* network — treat as no known dup */
   }
@@ -394,72 +268,59 @@ export async function findDuplicateIssue({ repo, token, fp }) {
 }
 
 // ─── draft assembly ──────────────────────────────────────────────────────────
-export function buildDraft({ route, pluginVersion, findings, fp, feedback = [], mode = "ask" }) {
-  // The SKILL cell is untrusted too — a client-shaped skill label (e.g.
-  // "AcmeCheckoutSkill") would otherwise leak into the row AND the title, and
-  // `scrubText` alone misses it (word-boundary/shape gap). Gate it with the same
-  // `isClientSpecific` and use the GATED label everywhere it is shown.
-  const skillLabel = (f) => (isClientSpecific(f.skill) ? "(plugin skill)" : scrubText(f.skill));
-
-  // Whitelist gate + downgrade each finding.
-  const rows = findings.map((f) => {
-    // §2a downgrade: if ANY cell of the finding (skill / signal / root-cause / fix) is
-    // client-specific, withhold the shown cells — a client-specific row's fix would
-    // name client code, and its signal a client stack frame/path. Emit only a generic
-    // pointer; no client identifier can reach the outbound report. The scrubText on the
-    // kept branch is defense-in-depth (the gate already cleared it).
-    const clientSpecific =
-      isClientSpecific(f.skill) ||
-      isClientSpecific(f.signal) ||
-      isClientSpecific(f.rootcause) ||
-      isClientSpecific(f.fix);
-    const skill = skillLabel(f);
-    let signal, fix, note = "";
-    if (clientSpecific) {
-      signal = "(client-specific evidence withheld)";
-      fix = "(client-specific — generic: review the owning plugin skill)";
-      note = " _[generic — client evidence withheld]_";
-    } else {
-      signal = scrubText(f.signal);
-      fix = scrubText(f.fix);
-    }
-    // In a batch, a finding seen across several sessions carries an occurrence count.
-    if (f.occurrences > 1) note += ` _(×${f.occurrences} sessions)_`;
-    return `| ${skill} | ${f.verdict} | ${f.sev} | ${signal} | ${fix}${note} |`;
+/**
+ * Build the outbound draft PURELY from a validated `UpstreamSignal` struct
+ * (upstream-reduce.mjs). Every rendered value is a closed-vocabulary enum or a number —
+ * there is NO client-derived free text anywhere in the body, so no text scrubber guards
+ * this path: the closed schema (validateUpstream, enum-only) is the SOLE guard, and it
+ * makes a leak impossible by TYPE. The old free-text client-shape scrubbers
+ * (`scrubText`/`isClientSpecific`/`containsClientShape`) were removed as dead code once the
+ * upstream artifact stopped carrying any free text (PR #143 review round 2, Finding 1);
+ * `redact()` still lives in the COLLECTOR (hooks/redact.mjs) for the local persist path.
+ * The whole body is safe by construction (default-deny closed schema; see
+ * knowledge/diagnostics/upstream-schema.md + adr-upstream-default-deny.md).
+ */
+export function buildDraft({ struct, route }) {
+  const s = validateUpstream(struct); // idempotent re-check at the boundary (belt-and-suspenders)
+  const fp = fingerprintStruct(s);
+  const rows = s.findings.map((f) => {
+    const occ = f.occurrences > 1 ? ` _(×${f.occurrences} sessions)_` : "";
+    const struggle = f.struggle.length ? f.struggle.join(",") : "—";
+    return `| ${f.skill} | ${f.verdict} | ${f.severity} | ${f.outcome} | ${f.signalClass} | ${f.errorCode} | ${struggle} | ${f.toolFamily} | ${f.repoKind}${occ} |`;
   });
-  const worst = findings.some((f) => f.verdict === "BROKEN") ? "BROKEN" : findings.some((f) => f.verdict === "DEGRADED") ? "DEGRADED" : "OK";
-  const skills = [...new Set(findings.map((f) => `${skillLabel(f)} ${f.verdict}`))].slice(0, 3).join(", ");
-  const fbWorst = (feedback || []).some((f) => f.verdict === "down") ? "👎" : (feedback || []).some((f) => f.verdict === "up") ? "👍" : "";
-  // Title never says a bare "OK": a feedback-only report (no findings) reflects the
-  // operator verdict, not "OK" (D2).
-  const title = `${ISSUE_TITLE_PREFIX} ${skills || (feedback.length ? `operator feedback ${fbWorst}`.trim() : worst)}`;
-
-  // Operator /vc-feedback verdicts — the highest-value signal (and the main detector
-  // of silent failures). The note is FREE-FORM prose, and the §2a gate (isClientSpecific)
-  // is weaker on lowercase business identifiers than on structured cells. So the prose
-  // is included ONLY in `ask` mode (where the operator previews the full draft before
-  // Send). In `auto` mode — filed UNATTENDED — the note prose is DROPPED and only the
-  // 👍/👎 verdict is sent (B-F1). A client-specific note is withheld in every mode.
-  const fbLines = (feedback || []).map((f) => {
-    const mark = f.verdict === "down" ? "👎" : f.verdict === "up" ? "👍" : "•";
-    const drop = mode === "auto" || !f.text || isClientSpecific(f.text);
-    return drop ? `- ${mark}` : `- ${mark} ${scrubText(f.text)}`;
-  });
+  const skills = [...new Set(s.findings.map((f) => `${f.skill} ${f.verdict}`))].slice(0, 3).join(", ");
+  const fbMark = s.feedback.down > 0 ? "👎" : s.feedback.up > 0 ? "👍" : "";
+  const hasFb = s.feedback.up + s.feedback.down > 0;
+  // Title never says a bare "OK": a feedback-only report reflects the operator verdict (D2).
+  const title = `${ISSUE_TITLE_PREFIX} ${skills || (hasFb ? `operator feedback ${fbMark}`.trim() : "no findings")}`;
 
   const body = [
     `<!-- ${FP_MARKER} ${fp} -->`,
     `Automated quality report from the vc-fix self-diagnostics subsystem (\`/vc-self-check\`).`,
-    `Plugin version: ${scrubText(pluginVersion)}. Generated from local session telemetry.`,
-    ...(rows.length ? [``, `## Findings`, `| Skill | Verdict | Sev | Signal | Proposed fix (plugin file) |`, `|-------|---------|-----|--------|----------------------------|`, ...rows] : []),
-    ...(fbLines.length ? [``, `## Operator feedback`, ...fbLines] : []),
+    `Plugin version: ${s.pluginVersion}. Sessions: ${s.sessionCount}. Generated from local session telemetry.`,
+    ...(rows.length
+      ? [``, `## Findings`, `| Skill | Verdict | Sev | Outcome | Signal | Error | Struggle | Tool | Repo |`, `|-------|---------|-----|---------|--------|-------|----------|------|------|`, ...rows]
+      : []),
+    // Operator /vc-feedback: COUNTS ONLY. The free-form note never leaves the machine — it
+    // is not read into the struct (upstream-reduce reads only the `verdict`), so there is
+    // no prose to include here (default-deny closed schema).
+    ...(hasFb ? [``, `## Operator feedback`, `👍 ${s.feedback.up} · 👎 ${s.feedback.down}`] : []),
     ``,
     `## Containment`,
-    `Every findings cell was checked against a plugin-reference whitelist: any cell carrying`,
-    `client-shaped content (file paths, source files, namespaces/classes, org identifiers,`,
-    `URLs, emails, tickets, or secrets) was withheld and its row downgraded to a generic`,
-    `pointer. Only plugin-file references and generic advice remain (quality-gates §2a).`,
+    `This report is built ONLY from a closed, plugin-authored vocabulary of enum/number fields`,
+    `(see \`knowledge/diagnostics/upstream-schema.md\`). It carries NO free text, NO file paths,`,
+    `NO identifiers, NO client source, and NO secrets — safe by construction, not by scrubbing`,
+    `(quality-gates §2a; ADR \`adr-upstream-default-deny.md\`).`,
+    ``,
+    // The dedup fingerprint ALSO appears as a VISIBLE line, not only in the HTML comment above:
+    // GitHub's issue Search does not reliably index `<!-- … -->` text, so a comment-only marker made
+    // `findDuplicateIssue`'s Search branch always miss and silently degrade to the first-100-issues
+    // fallback scan — the exact DED1 failure the Search path was added to fix, re-filing a new issue
+    // every session once the repo has ≥100 open issues (code review suggestion #1). The `hit()`
+    // body-confirm still matches this line, so dedup is exact either way.
+    `<sub>${FP_MARKER} ${fp}</sub>`,
   ].join("\n");
-  return { title, body, route };
+  return { title, body, route, fingerprint: fp };
 }
 
 // ─── send (issue only, gated) ────────────────────────────────────────────────
@@ -558,7 +419,7 @@ function sessionIdFromDiag(md, diagPath) {
  * "delete the processed session after it's been delivered"). Best-effort per file;
  * never throws. Returns the basenames removed.
  */
-function purgeSession({ dir, sid, fp, extra = [] }) {
+export function purgeSession({ dir, sid, fp, extra = [] }) {
   const removed = [];
   const rm = (p) => { try { if (existsSync(p)) { unlinkSync(p); removed.push(String(p).split(/[\\/]/).pop()); } } catch { /* ignore */ } };
   const sidSafe = sid && sid.length >= 6 ? sid : null;
@@ -595,39 +456,36 @@ async function mainBatch(args) {
     return;
   }
 
-  // Collect every DIAG + its session feedback; aggregate findings by signature.
-  const sessions = []; // { sid, diagPath }
-  const byKey = new Map(); // findingSig → { finding, occurrences, sessions:Set }
-  const allFeedback = [];
-  const fbSeen = new Set();
+  // Collect every DIAG's session records, reduce each to a closed-schema struct, then merge
+  // (findings deduped ACROSS sessions by their STRUCTURAL signature + occurrence-counted;
+  // feedback counts summed). The upstream contribution is built ONLY from the merged struct.
+  // `diags` is newest-first (listDiags sorts by mtime desc). Keep EVERY DIAG file in `sessions`
+  // for purge, but reduce a struct only ONCE per session id: two DIAG-<sid>-*.md for the same
+  // session both read the same <sid>.jsonl, so counting both double-inflates occurrences /
+  // feedback / sessionCount (adversarial review #2, break 5a). Dedup the struct by sid; the
+  // first (newest) DIAG of a sid wins, which also yields the NEWEST pluginVersion.
+  const sessions = []; // { sid, diagPath } — every file, for purge
+  const structs = [];
+  const seenSids = new Set();
   let pluginVersion = "unknown";
   for (const diagPath of diags) {
     let md;
     try { md = readFileSync(diagPath, "utf8"); } catch { continue; }
-    const parsed = parseDiag(md);
-    if (parsed.pluginVersion && parsed.pluginVersion !== "unknown") pluginVersion = parsed.pluginVersion;
     const sid = sessionIdFromDiag(md, diagPath);
-    const feedback = readSessionFeedback(sid);
     sessions.push({ sid, diagPath });
-    for (const f of parsed.findings) {
-      if (f.verdict !== "BROKEN" && f.verdict !== "DEGRADED") continue; // only actionable
-      const key = findingSig(f);
-      const e = byKey.get(key) || { finding: f, occurrences: 0, sessions: new Set() };
-      e.occurrences++;
-      e.sessions.add(sid);
-      byKey.set(key, e);
-    }
-    for (const fb of feedback) {
-      const k = `${fb.verdict}|${scrubText(fb.text || "")}`;
-      if (fbSeen.has(k)) continue;
-      fbSeen.add(k);
-      allFeedback.push(fb);
-    }
+    // A session with no resolvable sid ("") can't be deduped by id — treat each such DIAG as its
+    // own struct (rare; sessionIdFromDiag failed both header + filename).
+    if (sid && seenSids.has(sid)) continue;
+    if (sid) seenSids.add(sid);
+    const { local, parsed } = sessionLocal(md, sid);
+    if (pluginVersion === "unknown" && parsed.pluginVersion && parsed.pluginVersion !== "unknown") pluginVersion = parsed.pluginVersion;
+    structs.push(validateUpstream(reduce(local)));
   }
   const dir = diagDir();
-  const findings = [...byKey.values()].map((e) => ({ ...e.finding, occurrences: e.occurrences }));
-  const hasNeg = allFeedback.some((f) => f.verdict === "down");
-  const fp = fingerprint(findings, allFeedback);
+  const struct = mergeStructs(structs, pluginVersion);
+  const findings = struct.findings; // for count reporting
+  const hasNeg = struct.feedback.down > 0;
+  const fp = fingerprintStruct(struct);
 
   // --batch --purge: standalone cleanup of ALL local sessions, send nothing.
   if (args.purge) {
@@ -655,7 +513,7 @@ async function mainBatch(args) {
   const { token, via, scopes } = resolveGithubToken();
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
-  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback: allFeedback, mode });
+  const draft = buildDraft({ struct, route });
   const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
 
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -679,7 +537,7 @@ async function mainBatch(args) {
         `Batched ${sessions.length} session(s) → ${findings.length} unique finding(s).`,
         `Route: ${route} — ${reason}   (feedback.mode=${mode})`,
         dup ? `Dedup: matches open issue #${dup.number} — would add "+1 occurrence"` : `Dedup: none`,
-        `Draft written (scrubbed): ${deliveryPath}`,
+        `Draft written (closed-schema, enums only): ${deliveryPath}`,
         `--- draft ---\n# ${draft.title}\n\n${draft.body}\n-------------`,
         route === "issue" ? `Re-run with --batch --confirm to file (then all ${sessions.length} sessions are purged; --keep to retain).`
           : route === "local" ? `No token/rights → local only. Authenticate to deliver.`
@@ -693,9 +551,13 @@ async function mainBatch(args) {
     if (dup) {
       plan.skipped = `duplicate of #${dup.number}`;
       plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
-      if (!args.keep) plan.purged = purgeAll();
+      // Purge only if the +1 occurrence comment actually posted — else keep the artifacts for a retry
+      // so a transient failure doesn't silently drop the occurrence across every batched session (code review #3).
+      if (!args.keep && plan.occurrenceComment) plan.purged = purgeAll();
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-      else process.stdout.write(`Batch duplicate of #${dup.number} — added +1 occurrence.` + (plan.purged?.length ? ` Purged ${plan.purged.length} artifact(s) across ${sessions.length} session(s).` : ``) + `\n`);
+      else process.stdout.write(
+        (plan.occurrenceComment ? `Batch duplicate of #${dup.number} — added +1 occurrence.` : `Batch duplicate of #${dup.number} — could not add occurrence comment (kept local artifacts for retry).`) +
+        (plan.purged?.length ? ` Purged ${plan.purged.length} artifact(s) across ${sessions.length} session(s).` : ``) + `\n`);
       return;
     }
     try {
@@ -727,8 +589,28 @@ async function mainBatch(args) {
   else process.stdout.write(`No token/rights → local batch report only: ${deliveryPath}\n`);
 }
 
+/** The self-check contribution may ONLY ever target the VirtoCommerce platform org. This is a
+ *  destination allowlist (defense-in-depth): the closed-schema body carries no client bytes, but a
+ *  `--repo` override must not misroute an issue/comment to an arbitrary token-writable repo
+ *  (adversarial review #4, A3). Not a client repo, not a personal fork target — VirtoCommerce/* only. */
+export function isAllowedUpstreamRepo(repo) {
+  const r = String(repo ?? "");
+  // Reject any `..`/leading-dot path-traversal in the repo segment: `[\w.-]+` alone admitted
+  // `VirtoCommerce/..` and `VirtoCommerce/.` (harmless 404s today, but a needless soft spot in a
+  // destination allowlist — security review). Require an alphanumeric first char and no `..`.
+  if (r.includes("..")) return false;
+  return /^VirtoCommerce\/[A-Za-z0-9][\w.-]*$/i.test(r);
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
+  if (!isAllowedUpstreamRepo(args.repo)) {
+    const msg = `Refusing to target "${args.repo}": self-check contributions may only go to VirtoCommerce/*.`;
+    if (args.json) process.stdout.write(JSON.stringify({ error: msg, repo: args.repo }) + "\n");
+    else process.stderr.write(msg + "\n");
+    process.exitCode = 2;
+    return;
+  }
   if (args.batch) return mainBatch(args);
   const diagPath = args.diag ? resolve(args.diag) : newestDiag();
   if (!diagPath || !existsSync(diagPath)) {
@@ -740,11 +622,11 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const md = readFileSync(diagPath, "utf8");
-  const { pluginVersion, findings } = parseDiag(md);
   const sid = sessionIdFromDiag(md, diagPath);
-  const feedback = readSessionFeedback(sid);
+  const { local } = sessionLocal(md, sid);
+  const struct = validateUpstream(reduce(local)); // closed-schema, enums only — the ONLY upstream source
   const mode = feedbackMode(); // off | ask | auto (delivery consent — VCST-5509)
-  const fp = fingerprint(findings, feedback); // fold feedback so feedback-only reports don't collapse (D2)
+  const fp = fingerprintStruct(struct); // over the structural tuple (never raw text); feedback-only structs still differ (D2)
   const purgeHint = `node "$pluginRoot/skills/vc-self-check/deliver.mjs" --purge${args.diag ? ` --diag ${diagPath}` : ""}`;
 
   // --purge (standalone): the terminal "delete all" step of the log→analyze→contribute→
@@ -763,16 +645,16 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  // Nothing worthwhile to contribute → file nothing; offer the cleanup step. A negative
-  // /vc-feedback verdict IS worthwhile even with no BROKEN/DEGRADED finding (it's often
-  // the only signal on a silent failure).
-  const actionable = findings.filter((f) => f.verdict === "BROKEN" || f.verdict === "DEGRADED");
-  const hasNegFeedback = feedback.some((f) => f.verdict === "down");
-  if (!actionable.length && !hasNegFeedback) {
-    const out = { action: "none", session: sid || null, findings: findings.length, actionable: 0 };
+  // Nothing worthwhile to contribute → file nothing; offer the cleanup step. `reduce` only
+  // keeps flagged spans (degraded/failed/silent_suspect → BROKEN/DEGRADED), so every finding
+  // in the struct is actionable. A negative /vc-feedback verdict IS worthwhile even with no
+  // finding (it's often the only signal on a silent failure).
+  const hasNegFeedback = struct.feedback.down > 0;
+  if (!struct.findings.length && !hasNegFeedback) {
+    const out = { action: "none", session: sid || null, findings: struct.findings.length, actionable: 0 };
     if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
     else process.stdout.write(
-      `No worthwhile finding to contribute (no BROKEN/DEGRADED among ${findings.length}, no 👎 feedback). Nothing sent.\n` +
+      `No worthwhile finding to contribute (no BROKEN/DEGRADED finding, no 👎 feedback). Nothing sent.\n` +
         `To clear this session's local diagnostics:\n  ${purgeHint}\n`
     );
     return;
@@ -799,7 +681,7 @@ export async function main(argv = process.argv.slice(2)) {
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
 
-  const draft = buildDraft({ route, pluginVersion, findings, fp, feedback, mode });
+  const draft = buildDraft({ struct, route });
   const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
 
   // Always write the draft locally (never under the plugin dir).
@@ -820,7 +702,7 @@ export async function main(argv = process.argv.slice(2)) {
     duplicate: dup,
     title: draft.title,
     deliveryDraft: deliveryPath,
-    findings: findings.length,
+    findings: struct.findings.length,
     sent: false,
   };
 
@@ -862,13 +744,16 @@ export async function main(argv = process.argv.slice(2)) {
       // Already upstream — don't re-file; add a "+1 occurrence" comment so the vendor
       // sees this defect hit another client (occurrence counts across clients).
       plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
-      // The finding is upstream → the session's local artifacts have served their
-      // purpose; delete them unless --keep.
-      if (!args.keep) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
+      // Purge ONLY if the +1 occurrence comment actually posted. addOccurrenceComment swallows all
+      // errors → false, so on a transient network blip the occurrence would be silently uncounted AND
+      // the local artifacts deleted — the +1 lost with no retry path (code review #3). If it failed,
+      // KEEP the artifacts so a later re-run retries (symmetric with the local/pr routes, which keep
+      // artifacts when nothing was delivered).
+      if (!args.keep && plan.occurrenceComment) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
       else process.stdout.write(
         `Duplicate of open issue #${dup.number} (${dup.url}) — not filing again; ` +
-          `${plan.occurrenceComment ? "added a +1 occurrence comment" : "could not add occurrence comment"}.\n` +
+          `${plan.occurrenceComment ? "added a +1 occurrence comment" : "could not add occurrence comment (kept local artifacts for retry)"}.\n` +
           (plan.purged?.length ? `Purged ${plan.purged.length} local artifact(s) for session ${sid || "(this DIAG)"}.\n` : ``)
       );
       return;

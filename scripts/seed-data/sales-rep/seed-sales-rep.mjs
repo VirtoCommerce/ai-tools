@@ -24,7 +24,7 @@
 import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, loadAliases,
   writeEnvAliasOverride, syncEnvAliases, csvBool, DRY_RUN, TEARDOWN, ONLY, STORE_ID, verifyRemoved,
-  discoverCatalogProducts,
+  discoverCatalogProducts, resetSecurityPassword,
 } from '../../lib/seed-common.mjs';
 
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
@@ -173,6 +173,13 @@ async function ensureRep(row, orgs, roleId) {
   if (existing) {
     rep = await api('GET', `/api/sales-rep/${existing.id}`);
     log(`Rep exists: ${row.rep_key} (${rep.id})`);
+    // Self-heal credential drift: a rep account created BEFORE its password var
+    // (SR_REP_PASSWORD / TEST_USER_PASSWORD) was set still authenticates only with the
+    // old value, and the module's create-only account path never resets it — so a headless
+    // runner using @td() + the registry password 400s invalid_grant. Force-set the password
+    // to the current REP_PASSWORD on every reseed (idempotent; scoped to these AGENT-TEST-SR
+    // accounts). A newly-created rep already gets REP_PASSWORD at create, so only reuse needs it.
+    await resetSecurityPassword(api, row.email, REP_PASSWORD);
   } else {
     let served;
     if ((row.served_orgs || '').startsWith('PAGING:')) {

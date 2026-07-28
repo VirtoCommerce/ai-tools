@@ -28,21 +28,51 @@
  *
  * Invariants enforced (see `.claude/agents/ui-ux-expert.md` Layer 1):
  *   BL-UI-001  Layout stability (CLS ≤ 0.1)
- *   BL-UI-002  Spacing grid {4,8,12,16,20,24,32,40,48,56,64,80,96} px
+ *   BL-UI-002  Spacing grid — Tailwind's default scale (incl. half-steps 2/6/10/14 px)
+ *              plus vc-frontend's `theme.extend.spacing`. NEVER a hand-picked subset;
+ *              regenerate with `npm run tokens:sync`, drift-guard with `npm run tokens:check`.
  *   BL-UI-003  No state-induced shift (rect Δ = 0 on hover/focus)
  *   BL-UI-004  Content boundary (no silent overflow, no horizontal scroll)
  *   BL-UI-005  Alignment (vertical centers within 1 px, row heights match)
- *   BL-UI-006  Touch targets (≥ 44×44 px, ≥ 8 px gap at ≤ 768 px viewport)
+ *   BL-UI-006  Touch targets at ≤ 768 px — FAIL below WCAG 2.2 AA 24×24 (SC 2.5.8),
+ *              WARN between that and the AAA 44×44 target (SC 2.5.5); ≥ 8 px gap
  */
+
+import { SPACING_GRID_PX } from "./design-tokens.generated.js";
+
+export {
+  TAILWIND_DEFAULT_SPACING_PX,
+  EXTEND_SPACING_PX,
+  SPACING_GRID_PX,
+  BREAKPOINTS_PX,
+  UI_KIT_BUTTON_SIZES_PX,
+  AUDIT_VIEWPORTS_PX,
+} from "./design-tokens.generated.js";
 
 // ---------------------------------------------------------------------------
 // Grid & threshold constants
 // ---------------------------------------------------------------------------
 
-/** Allowed computed spacing values in px. Anything else is off-grid (BL-UI-002). */
-export const SPACING_GRID = [
-  0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 96,
-] as const;
+/**
+ * Allowed computed spacing values in px. Anything else is off-grid (BL-UI-002).
+ *
+ * NEVER HARDCODED. Re-exported from `design-tokens.generated.ts`, which
+ * `npm run tokens:sync` derives from the real sources — Tailwind's default scale read
+ * from the exact `tailwindcss` version vc-frontend pins, unioned with that repo's
+ * `theme.extend.spacing`. `npm run tokens:check` fails CI when the design system moves.
+ *
+ * WHY (VCST — 2026-07-25): this used to be a handpicked 14-value list `{0,4,8,…,96}`
+ * assuming a strict 4 px multiple. The real scale has 39 values. The UI kit's own
+ * `vc-button.vue` sets `--px: theme("padding[2.5]")` = 10 px (xxs), `theme("padding[3.5]")`
+ * = 14 px (sm) and `px-0.5` = 2 px (square) — so the canonical button "violated" our grid.
+ * In run REG-2026-07-24-2121 that produced ~7 bogus BL-UI-002 FAILs (10 px padding, 6 px
+ * gap, 44 px header padding — all valid steps) and led the runner to wrongly conclude
+ * there was a "site-wide design-token issue". `business-logic.md` BL-UI-002 had already
+ * been corrected to describe the real rule; this constant never followed. Deriving it
+ * removes the whole class of failure: a redesign now shows up as a `tokens:check` failure,
+ * not as a wave of phantom layout bugs.
+ */
+export const SPACING_GRID = SPACING_GRID_PX;
 
 /** Cumulative Layout Shift classification thresholds (BL-UI-001). */
 export const CLS_THRESHOLDS = { pass: 0.1, fail: 0.25 } as const;
@@ -50,8 +80,24 @@ export const CLS_THRESHOLDS = { pass: 0.1, fail: 0.25 } as const;
 /** Pixel tolerance for alignment checks (BL-UI-005). 1 px absorbs sub-pixel rendering noise. */
 export const ALIGNMENT_TOLERANCE_PX = 1;
 
-/** Touch target minimum at ≤ 768 px viewport (BL-UI-006, WCAG 2.5.5). */
+/**
+ * Touch target minimum at ≤ 768 px viewport (BL-UI-006).
+ *
+ * TWO thresholds, deliberately (VCST — 2026-07-25). WCAG 2.2 SC 2.5.8 Target Size (Minimum)
+ * is **Level AA at 24×24**; SC 2.5.5 Target Size (Enhanced) is **Level AAA at 44×44**.
+ * The vc-frontend UI kit ships button sizes 26 / 32 / 38 / 44 / 52 px by design
+ * (`vc-button.vue` `--size`: xxs 1.625rem, xs 2rem, sm 2.375rem, md 2.75rem, lg 3.25rem),
+ * so a flat 44 px FAIL bar marks most of the design system as broken — 13 of 36 failures in
+ * run REG-2026-07-24-2121 were this, incl. "both grid/list tab buttons 38x38" (exactly `sm`).
+ * Below AA is a real defect (FAIL); between AA and AAA is a design-system tradeoff (WARN).
+ */
 export const TOUCH_TARGET_MIN_PX = 44;
+
+/** WCAG 2.2 SC 2.5.8 Level AA floor. Below this is a genuine accessibility defect → FAIL. */
+export const TOUCH_TARGET_AA_MIN_PX = 24;
+
+/** WCAG 2.2 SC 2.5.5 Level AAA target. Between AA and this → WARN, not FAIL. */
+export const TOUCH_TARGET_AAA_MIN_PX = 44;
 
 /** Minimum gap between adjacent interactive elements at mobile viewport (BL-UI-006). */
 export const TOUCH_TARGET_GAP_PX = 8;
@@ -100,6 +146,19 @@ export interface ClsResult {
   cls: number;
   shiftCount: number;
   installed: boolean;
+  /**
+   * Which elements actually moved, biggest CLS contributor first (from
+   * `LayoutShiftAttribution`). A CLS score says the page is broken; this says what
+   * to fix. Absent when the observer predates this field or attribution is empty.
+   */
+  sources?: Array<{
+    /** Best-effort selector: tag + #id + up to 3 classes + [data-test-id]. */
+    selector: string;
+    /** Summed `entry.value` this element contributed. */
+    impact: number;
+    shifts: number;
+    maxMovePx: number;
+  }>;
 }
 
 export interface SpacingAuditResult {
@@ -144,6 +203,8 @@ export interface TouchTargetAuditResult {
     width: number;
     height: number;
     text: string;
+    /** True when the element is below the WCAG 2.2 AA (SC 2.5.8) 24×24 floor — a real defect. */
+    belowAA?: boolean;
   }>;
   tooClose: Array<{
     aTag: string;
@@ -269,6 +330,66 @@ export interface ImageAspectAuditResult {
   }>;
 }
 
+export interface ImageIntrinsicDimsResult {
+  selector: string;
+  evaluated: number;
+  /**
+   * Images that reserve no space before they load — the #1 CLS offender per BL-UI-001.
+   * An image is compliant if it has BOTH `width` and `height` attributes, OR a CSS
+   * `aspect-ratio` other than `auto`, OR an explicitly sized box (both width and height
+   * resolved from CSS). Anything else collapses to zero height until the bytes arrive,
+   * then shoves the page down.
+   */
+  offenders: Array<{
+    src: string;
+    hasWidthAttr: boolean;
+    hasHeightAttr: boolean;
+    cssAspectRatio: string;
+    cssWidth: string;
+    cssHeight: string;
+    loading: string | null;
+  }>;
+}
+
+/**
+ * Audit images for reserved space (BL-UI-001 root cause).
+ *
+ * This is the check that actually explains a bad CLS number. Run REG-2026-07-24-2121
+ * measured cls=0.5515 on home / 0.2006 PDP / 0.1346 cart and every one traced back to
+ * the same thing: `.slider-block` hero slides and `.vc-line-item img` carrying neither
+ * width/height attributes nor a CSS aspect-ratio. `classifyCls` tells you the page is
+ * shifting; this tells you which elements to fix.
+ */
+export function imageIntrinsicDimsSnippet(selector: string = "img"): string {
+  return `
+(() => {
+  const els = Array.from(document.querySelectorAll(${JSON.stringify(selector)}));
+  const offenders = [];
+  for (const el of els) {
+    const cs = getComputedStyle(el);
+    const hasW = el.hasAttribute('width');
+    const hasH = el.hasAttribute('height');
+    const ar = cs.aspectRatio || 'auto';
+    const sizedByCss = cs.width !== 'auto' && cs.height !== 'auto';
+    const reserves = (hasW && hasH) || (ar && ar !== 'auto') || sizedByCss;
+    if (!reserves) {
+      offenders.push({
+        src: (el.currentSrc || el.getAttribute('src') || '').slice(0, 160),
+        hasWidthAttr: hasW,
+        hasHeightAttr: hasH,
+        cssAspectRatio: ar,
+        cssWidth: cs.width,
+        cssHeight: cs.height,
+        loading: el.getAttribute('loading'),
+      });
+      if (offenders.length >= 50) break;
+    }
+  }
+  return { selector: ${JSON.stringify(selector)}, evaluated: els.length, offenders };
+})()
+`.trim();
+}
+
 // ---------------------------------------------------------------------------
 // Static snippets — pass these strings verbatim to `browser_evaluate`
 // ---------------------------------------------------------------------------
@@ -305,13 +426,36 @@ export const LAYOUT_SNIPPETS = {
   if (window.__layoutAudit && window.__layoutAudit.installed) {
     return { cls: window.__layoutAudit.cls, shiftCount: window.__layoutAudit.shiftCount, installed: true, note: 'already-installed' };
   }
-  window.__layoutAudit = { cls: 0, shiftCount: 0, installed: false, installedAt: Date.now(), documentReadyState: document.readyState };
+  window.__layoutAudit = { cls: 0, shiftCount: 0, installed: false, installedAt: Date.now(), documentReadyState: document.readyState, sources: [] };
+  // Describe the node that moved, so a CLS number becomes an actionable fix list.
+  const describe = (node) => {
+    if (!node || node.nodeType !== 1) return null;
+    const id = node.id ? '#' + node.id : '';
+    const cls = (node.getAttribute && node.getAttribute('class') || '').trim().split(/\\s+/).filter(Boolean).slice(0, 3).map(c => '.' + c).join('');
+    const tid = node.getAttribute && node.getAttribute('data-test-id');
+    return node.tagName.toLowerCase() + id + cls + (tid ? '[data-test-id="' + tid + '"]' : '');
+  };
   try {
     const po = new PerformanceObserver(list => {
       for (const e of list.getEntries()) {
         if (!e.hadRecentInput) {
           window.__layoutAudit.cls += e.value;
           window.__layoutAudit.shiftCount += 1;
+          // LayoutShiftAttribution[] — which elements moved, and by how much.
+          for (const s of (e.sources || [])) {
+            const sel = describe(s.node);
+            if (!sel) continue;
+            const prev = s.previousRect || {}, cur = s.currentRect || {};
+            const existing = window.__layoutAudit.sources.find(x => x.selector === sel);
+            const moved = Math.round(Math.abs((cur.top || 0) - (prev.top || 0)));
+            if (existing) {
+              existing.impact += e.value;
+              existing.shifts += 1;
+              existing.maxMovePx = Math.max(existing.maxMovePx, moved);
+            } else if (window.__layoutAudit.sources.length < 20) {
+              window.__layoutAudit.sources.push({ selector: sel, impact: e.value, shifts: 1, maxMovePx: moved });
+            }
+          }
         }
       }
     });
@@ -351,8 +495,11 @@ export const LAYOUT_SNIPPETS = {
   readCls: `
 (() => {
   const a = window.__layoutAudit;
-  if (!a) return { cls: 0, shiftCount: 0, installed: false };
-  return { cls: a.cls, shiftCount: a.shiftCount, installed: a.installed };
+  if (!a) return { cls: 0, shiftCount: 0, installed: false, sources: [] };
+  // Biggest contributors first — this is the fix list, not just the score.
+  const sources = (a.sources || []).slice().sort((x, y) => y.impact - x.impact).slice(0, 10)
+    .map(s => ({ selector: s.selector, impact: Math.round(s.impact * 10000) / 10000, shifts: s.shifts, maxMovePx: s.maxMovePx }));
+  return { cls: a.cls, shiftCount: a.shiftCount, installed: a.installed, sources };
 })()
 `.trim(),
 
@@ -407,16 +554,19 @@ export const LAYOUT_SNIPPETS = {
     if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
     return true;
   });
+  const AA = ${TOUCH_TARGET_AA_MIN_PX}, AAA = ${TOUCH_TARGET_AAA_MIN_PX};
   const undersized = [];
   for (const el of els) {
     const r = el.getBoundingClientRect();
-    if (r.width < 44 || r.height < 44) {
+    if (r.width < AAA || r.height < AAA) {
       undersized.push({
         tag: el.tagName.toLowerCase(),
         role: el.getAttribute('role'),
         width: Math.round(r.width * 10) / 10,
         height: Math.round(r.height * 10) / 10,
         text: (el.textContent || '').trim().slice(0, 40),
+        // WCAG 2.2 AA (2.5.8) floor breached — a real defect, not a design-system tradeoff
+        belowAA: r.width < AA || r.height < AA,
       });
     }
   }
@@ -540,16 +690,18 @@ export function touchTargetAuditSnippet(scope: string): string {
     if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
     return true;
   });
+  const AA = ${TOUCH_TARGET_AA_MIN_PX}, AAA = ${TOUCH_TARGET_AAA_MIN_PX};
   const undersized = [];
   for (const el of els) {
     const r = el.getBoundingClientRect();
-    if (r.width < 44 || r.height < 44) {
+    if (r.width < AAA || r.height < AAA) {
       undersized.push({
         tag: el.tagName.toLowerCase(),
         role: el.getAttribute('role'),
         width: Math.round(r.width * 10) / 10,
         height: Math.round(r.height * 10) / 10,
         text: (el.textContent || '').trim().slice(0, 40),
+        belowAA: r.width < AA || r.height < AA,
       });
     }
   }
@@ -1384,25 +1536,54 @@ export function classifyTouchTargets(
       evidence: result,
     };
   }
-  const issues: string[] = [];
-  if (result.undersized.length > 0) {
-    issues.push(`${result.undersized.length} interactive(s) below ${TOUCH_TARGET_MIN_PX}×${TOUCH_TARGET_MIN_PX}`);
+  // Two-tier verdict: below WCAG 2.2 AA (24×24) is a real defect; between AA and the
+  // AAA 44×44 target is a design-system tradeoff the UI kit makes deliberately
+  // (vc-button ships 26/32/38 px sizes), so it warns rather than fails.
+  const belowAA = result.undersized.filter((u) => u.belowAA);
+  const belowAAAOnly = result.undersized.filter((u) => !u.belowAA);
+
+  const failIssues: string[] = [];
+  const warnIssues: string[] = [];
+
+  if (belowAA.length > 0) {
+    failIssues.push(
+      `${belowAA.length} interactive(s) below the WCAG 2.2 AA floor ` +
+        `${TOUCH_TARGET_AA_MIN_PX}×${TOUCH_TARGET_AA_MIN_PX} (SC 2.5.8)`,
+    );
   }
   if (result.tooClose.length > 0) {
-    issues.push(`${result.tooClose.length} interactive pair(s) closer than ${TOUCH_TARGET_GAP_PX} px`);
+    failIssues.push(`${result.tooClose.length} interactive pair(s) closer than ${TOUCH_TARGET_GAP_PX} px`);
   }
-  if (issues.length === 0) {
+  if (belowAAAOnly.length > 0) {
+    warnIssues.push(
+      `${belowAAAOnly.length} interactive(s) between ${TOUCH_TARGET_AA_MIN_PX}×${TOUCH_TARGET_AA_MIN_PX} ` +
+        `and the AAA target ${TOUCH_TARGET_AAA_MIN_PX}×${TOUCH_TARGET_AAA_MIN_PX} (SC 2.5.5) — ` +
+        `AA-conformant; check against the UI-kit size scale before filing`,
+    );
+  }
+
+  if (failIssues.length > 0) {
     return {
       invariant: "BL-UI-006",
-      severity: "PASS",
-      message: `All ${result.evaluated} interactives meet 44×44 + 8 px spacing`,
+      severity: "FAIL",
+      message: [...failIssues, ...warnIssues].join("; "),
+      evidence: result,
+    };
+  }
+  if (warnIssues.length > 0) {
+    return {
+      invariant: "BL-UI-006",
+      severity: "WARN",
+      message: warnIssues.join("; "),
       evidence: result,
     };
   }
   return {
     invariant: "BL-UI-006",
-    severity: "FAIL",
-    message: issues.join("; "),
+    severity: "PASS",
+    message:
+      `All ${result.evaluated} interactives meet ` +
+      `${TOUCH_TARGET_AAA_MIN_PX}×${TOUCH_TARGET_AAA_MIN_PX} + ${TOUCH_TARGET_GAP_PX} px spacing`,
     evidence: result,
   };
 }

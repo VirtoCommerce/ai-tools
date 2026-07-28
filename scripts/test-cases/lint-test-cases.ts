@@ -30,7 +30,8 @@
  *
  * Exit code: 0 if no finding at/above the fail-on severity (default High); 1 otherwise.
  */
-import { readFileSync } from "fs";
+import { existsSync, readdirSync, readFileSync } from "fs";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { COLUMNS, parseSuite, type Row } from "./append-test-cases-to-suite.js";
 import { parseSteps, validateStepBlocks } from "../lib/graphql-case-parser.js";
@@ -45,12 +46,63 @@ interface Finding {
   message: string;
 }
 
-const KNOWN_VARS = new Set([
-  "FRONT_URL", "BACK_URL", "USER_EMAIL", "USER_PASSWORD", "ORG_USER_EMAIL",
-  "ORG_USER_PASSWORD", "TEST_CARD_NUMBER", "TEST_CARD_EXP", "TEST_CARD_CVV",
-  "TEST_SKU", "STORE_ID", "CULTURE_NAME", "CURRENCY_CODE", "ADMIN_URL",
-  "ADMIN_EMAIL", "ADMIN_PASSWORD",
-]);
+/**
+ * The set of legal `{{VAR}}` tokens, DERIVED from the repo's own env sources —
+ * never transcribed (`.claude/rules/test-data.md` §GOLDEN RULE). A hand-listed
+ * copy went stale at 16 names while the real surface was 66, so every valid
+ * token outside the list (e.g. `{{MULTI_ORG_USER_EMAIL}}`, defined in all three
+ * committed env layers) was reported as a phantom DV-001 / C-002.
+ *
+ * Sources, in the same layering the runtime loader uses (`config.js`):
+ *   - every committed `.env.*` layer (identity/URL vars; secrets are never here)
+ *   - `templates/.env*.template` — secret NAMES only; values are read from the
+ *     gitignored `.env.local` at runtime and are deliberately not touched here.
+ *
+ * Per-env suffix promotion (`config.js`: `KEY_<TESTENV>` → `KEY`) is handled by
+ * inferring the suffix set instead of listing it: a stem shared by two or more
+ * suffixed template names (`USER_EMAIL_QA` / `_STAGING` / `_PROD` → `USER_EMAIL`)
+ * is itself a legal base token.
+ */
+function deriveKnownVars(): Set<string> {
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+  const names = new Set<string>();
+  const declared = (file: string): string[] => {
+    if (!existsSync(file)) return [];
+    return readFileSync(file, "utf8")
+      .split(/\r?\n/)
+      .map((l) => l.match(/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=/)?.[1])
+      .filter((n): n is string => Boolean(n));
+  };
+
+  // Committed per-env layers: .env.defaults + .env.<env>. The gitignored local
+  // overrides (.env.local, .env.backup, .env.*.local) are machine-specific — a
+  // suite must never depend on a token that exists only on one developer's box.
+  const envLayers = readdirSync(repoRoot).filter(
+    (f) => f.startsWith(".env") && !/\.(local|backup|example|template)$/.test(f) && !f.endsWith(".local"),
+  );
+  for (const f of envLayers) for (const n of declared(join(repoRoot, f))) names.add(n);
+
+  // Secret NAMES from the templates (never their values).
+  const templateDir = join(repoRoot, "templates");
+  const templates = existsSync(templateDir)
+    ? readdirSync(templateDir).filter((f) => f.startsWith(".env"))
+    : [];
+  const templateNames: string[] = [];
+  for (const f of templates) templateNames.push(...declared(join(templateDir, f)));
+  for (const n of templateNames) names.add(n);
+
+  // Infer promoted stems rather than hardcoding the suffix list.
+  const stemCounts = new Map<string, number>();
+  for (const n of templateNames) {
+    const stem = n.replace(/_[A-Z][A-Z0-9]*$/, "");
+    if (stem !== n) stemCounts.set(stem, (stemCounts.get(stem) ?? 0) + 1);
+  }
+  for (const [stem, count] of stemCounts) if (count >= 2) names.add(stem);
+
+  return names;
+}
+
+const KNOWN_VARS = deriveKnownVars();
 const CANONICAL_PRIORITIES = new Set(["Critical", "High", "Medium", "Low"]);
 const ALIAS_PRIORITIES = new Set(["P0", "P1", "P2", "P3"]);
 const HIGH_PRIORITIES = new Set(["Critical", "High", "P0", "P1"]);
@@ -89,6 +141,16 @@ const find = (rule: string, severity: Severity, caseId: string, message: string)
 
 function lines(cell: string): string[] {
   return (cell ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+}
+
+/**
+ * Blank out single/double-quoted spans so a rule can judge a step's STRUCTURE
+ * without reading the UI label it targets. Quotes are how the conventions ask
+ * authors to name a real control, so their contents are product text, not the
+ * author's phrasing — see D-003/D-005.
+ */
+function withoutQuoted(line: string): string {
+  return line.replace(/'[^']*'|"[^"]*"/g, "''");
 }
 
 /** Tokens like {{FOO}} captured downstream (`... → FOO`) are not env vars. */
@@ -153,8 +215,15 @@ function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[]
     }
   }
   for (const ln of stepLines) {
-    if (AMBIGUOUS_VERB_RE.test(ln)) push("D-003", "High", `ambiguous verb in step (belongs in Assertions): "${truncate(ln)}"`);
-    if (COMPOUND_RE.test(ln)) push("D-005", "High", `compound step (split it): "${truncate(ln)}"`);
+    // D-003/D-005 describe the SHAPE of the step, so they must not read the
+    // quoted UI label the step targets. A real control named "I agree to the
+    // Terms and Conditions" is one action, but its label contains `and`, and a
+    // "Verify email" button contains an assertion verb — judging either on the
+    // literal text reported a false compound/ambiguous step and pushed authors
+    // toward inventing label text that does not exist in the product.
+    const shape = withoutQuoted(ln);
+    if (AMBIGUOUS_VERB_RE.test(shape)) push("D-003", "High", `ambiguous verb in step (belongs in Assertions): "${truncate(ln)}"`);
+    if (COMPOUND_RE.test(shape)) push("D-005", "High", `compound step (split it): "${truncate(ln)}"`);
     if (/^\[ACT\][^\n]*\b(the\s+\w+\s+(button|link|field|icon|menu|dropdown))\b/i.test(ln) &&
         !/['"]/.test(ln))
       push("D-002", "Critical", `generic element reference (use the label in quotes): "${truncate(ln)}"`);
@@ -340,7 +409,9 @@ function main(): void {
     process.exit(1);
   }
 
-  const raw = readFileSync(file, "utf-8");
+  // Strip a UTF-8 BOM — 12 suite CSVs carry one, and it would otherwise be parsed
+  // as part of the first header cell ("Invalid Opening Quote" → bogus S-007 Blocker).
+  const raw = readFileSync(file, "utf-8").replace(/^﻿/, "");
   const findings: Finding[] = [];
 
   // S-001: header check (tolerant of quoted/unquoted styles via parseSuite).

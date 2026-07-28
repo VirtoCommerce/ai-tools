@@ -1,7 +1,7 @@
 {
   "name": "vc-tools",
   "description": "Virto Commerce internal QA tooling, published as a Claude Code marketplace for VC customers running the VC platform.",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "owner": {
     "name": "Virto Commerce",
     "email": "support@virtocommerce.com"
