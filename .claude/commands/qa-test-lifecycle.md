@@ -449,10 +449,12 @@ The orchestrator (you) evaluates all phases:
 
 ## Final Report
 
-Generate run ID: `TLC-YYYY-MM-DD-HHMM`
-Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
+Generate run ID: `TLC-YYYY-MM-DD-HHMM` — used only to label the summary below and any gitignored Phase 5
+screenshots (`reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`, screenshots only). Per `.claude/rules/reports.md`
+§1, this run summary is **terminal-only** — present it directly in your final chat response, do not write a
+`lifecycle-report.md` or `lifecycle-summary.json` file to disk.
 
-### `lifecycle-report.md`
+### Terminal summary (present in chat — do not write to disk)
 
 ```markdown
 # Test Case Lifecycle Report — {RUN_ID}
@@ -559,30 +561,9 @@ Review, edit as needed, assign final `BL-*` IDs, and commit manually.
 - **Suggested action:** update Rule / deprecate / split into two invariants
 ```
 
-### `lifecycle-summary.json`
-
-```json
-{
-  "runId": "TLC-YYYY-MM-DD-HHMM",
-  "inputType": "change-source | direct-scope",
-  "source": "PR #123",
-  "date": "YYYY-MM-DD",
-  "verdict": "APPROVED",
-  "changedModules": ["Orders", "Cart"],
-  "affectedSuites": ["04a", "04c", "20"],
-  "casesAnalyzed": 145,
-  "casesSynced": 12,
-  "casesGenerated": 5,
-  "casesReviewed": 150,
-  "casesVerified": 20,
-  "filesModified": ["regression/suites/..."],
-  "gateResults": {"G1": "PASS", "G2": "PASS", ...},
-  "blProposals": {
-    "new": [{"proposedId": "PROPOSED-BL-CART-009", "severity": "P1-data", "rule": "...", "source": "..."}],
-    "stale": [{"id": "BL-ORD-002", "observedBehavior": "...", "source": "..."}]
-  }
-}
-```
+No `lifecycle-summary.json` is written either — nothing downstream parses it today (CI's `run-full-cycle.ts`
+already consumes this agent's returned chat text directly, not a file), so the structured fields above
+(`gateResults`, `casesAnalyzed`, etc.) go in the terminal summary's tables, not a separate JSON artifact.
 
 ---
 

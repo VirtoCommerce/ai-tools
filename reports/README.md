@@ -15,21 +15,19 @@ reports/
 │   │   └── REGRESSION-REPORT.md
 │   └── test-run-status.json   # Current run tracking
 ├── tickets/                   # Per-ticket test evidence
-│   ├── SprintXX-XX/           # Sprint-scoped runs (/qa-test, /qa-verify-fix, /qa-design)
+│   ├── SprintXX-XX/           # Sprint-scoped runs (/qa-verify-fix, /qa-design, /qa-plan, /qa-test-cases-generator)
 │   │   └── VCST-XXXX/
-│   │       ├── test-plan.md
-│   │       ├── test-cases.csv
-│   │       ├── test-execution-report.md
+│   │       ├── summary.json          # /qa-test's own run — terminal-only otherwise, see reports.md §1
+│   │       ├── test-plan.md          # only if a standalone /qa-plan run targeted this ticket
+│   │       ├── test-cases.csv        # only if new cases were authored
+│   │       ├── {check-type}-report.md # only if another ticket-scoped skill ran here
 │   │       └── screenshots/
 │   └── VCST-XXXX/             # Ad-hoc evidence with no sprint context (hotfix, one-off)
 │       ├── test-report.md
 │       ├── screenshots/
 │       └── *.md
-├── test-lifecycle/            # Test case quality pipeline reports
-│   └── TLC-YYYY-MM-DD-HHMM/
-│       ├── lifecycle-report.md
-│       ├── issues-summary.json
-│       └── metrics.json
+├── test-lifecycle/            # Screenshots ONLY (gitignored) — the run summary is terminal-only, not a file
+│   └── TLC-YYYY-MM-DD-HHMM/    # (see .claude/rules/reports.md §1)
 ├── coverage/                  # Coverage gap analysis reports
 │   └── COV-YYYY-MM-DD-HHMM/
 │       ├── coverage-generation-report.md
@@ -38,6 +36,7 @@ reports/
 ├── exploratory/               # Exploratory session reports (SBTM)
 ├── checklists/                # Domain test checklists, verification checklists
 ├── ba/                        # BA analysis reports
+├── knowledge/                 # BL audit reports (BL-AUDIT-YYYY-MM-DD.md, from /qa-review-bl)
 └── README.md                  # This file
 ```
 
@@ -49,14 +48,15 @@ reports/
 | Bug with JIRA ref | `bugs/open/BUG-{Description}-VCST-XXXX.md` | `BUG-Search-Clear-Button-Not-Restoring-Results-VCST-4499.md` |
 | Regression report | `regression/{area}-regression-report-YYYY-MM-DD.md` | `frontend-regression-report-2026-02-09.md` |
 | Full regression run | `regression/REG-YYYY-MM-DD-HHMM/` | `REG-2026-04-20-1000/` with per-suite reports |
-| Ticket evidence (sprint) | `tickets/SprintXX-XX/VCST-XXXX/` | Test plan/cases/execution report + screenshots |
+| Ticket evidence (sprint) | `tickets/SprintXX-XX/VCST-XXXX/` | `/qa-test` writes only `summary.json` + screenshots (terminal-only otherwise); other skills may add their own report |
 | Ticket evidence (ad-hoc) | `tickets/VCST-XXXX/` | Directory with test-report.md + screenshots (no sprint context) |
 | Performance report | `performance/{topic}-YYYY-MM-DD.md` | `lists-page-performance-report-2026-02-11.md` |
 | Exploratory session | `exploratory/SBTM-{charter}-YYYY-MM-DD.md` | `SBTM-checkout-edge-cases-2026-03-01.md` |
-| Test lifecycle run | `test-lifecycle/TLC-YYYY-MM-DD-HHMM/` | `TLC-2026-03-23-1500/` with lifecycle-report.md |
+| Test lifecycle run | Terminal-only chat summary, no file | Labeled `TLC-2026-03-23-1500` in the response, nothing written to disk |
 | Coverage generation run | `coverage/COV-YYYY-MM-DD-HHMM/` | `COV-2026-03-23-1600/` with coverage-generation-report.md |
 | Checklist | `checklists/{domain}-checklist-YYYY-MM-DD.md` | `checkout-checklist-2026-03-06.md` |
 | BA report | `ba/{topic}-YYYY-MM-DD.md` | `ba-report-2026-03-04.md` |
+| BL audit report | `knowledge/BL-AUDIT-YYYY-MM-DD.md` | `BL-AUDIT-2026-07-22.md` |
 
 ## Rules
 
