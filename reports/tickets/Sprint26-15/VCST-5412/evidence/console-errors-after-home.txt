@@ -1,0 +1,73 @@
+Total messages: 26 (Errors: 19, Warnings: 3)
+Returning 19 messages for level "error"
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcmp-dev.govirto.com/cms-content/assets/catalog/6f83e81b-ecfd-4ee6-8a71-936663c9f2e8/9105_sm.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcmp-dev.govirto.com/cms-content/assets/catalog/6f83e81b-ecfd-4ee6-8a71-936663c9f2e8/9105.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vcmp-dev.govirto.com/api/vcmp/seller/offers/search:0
+[ERROR] [@vc-shell/framework#use-async] Async action failed: d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:21082
+    at async https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:7:924
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+[ERROR] [@vc-shell/framework#global-error-handler] Unhandled rejection: d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:21082
+    at async https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:7:924
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+[ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vcmp-dev.govirto.com/api/vcmp/rating:0
+[ERROR] [@vc-shell/framework#use-async] Async action failed: ae: An unexpected server error occurred.
+    at O (https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceReviews)/plugins/vendor-portal/assets/index-BPpYDdx_.js:1:4820)
+    at https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceReviews)/plugins/vendor-portal/assets/index-BPpYDdx_.js:1:2127
+    at async https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceReviews)/plugins/vendor-portal/assets/index-BPpYDdx_.js:1:5027
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955)
+    at async https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceReviews)/plugins/vendor-portal/assets/index-BPpYDdx_.js:1:6728 @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+[ERROR] [@vc-shell/framework#use-async] Async action failed: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceQuote)/plugins/vendor-portal/assets/index-D8y_XAOj.js:1:2051
+    at async https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceQuote)/plugins/vendor-portal/assets/index-D8y_XAOj.js:1:18611
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+[ERROR] [@vc-shell/framework#global-error-handler] Unhandled rejection: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceQuote)/plugins/vendor-portal/assets/index-D8y_XAOj.js:1:2051
+    at async https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceQuote)/plugins/vendor-portal/assets/index-D8y_XAOj.js:1:18611
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+[ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vcmp-dev.govirto.com/api/vcmp/reviews/search:0
+[ERROR] [@vc-shell/framework#use-async] Async action failed: ae: An unexpected server error occurred.
+    at O (https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceReviews)/plugins/vendor-portal/assets/index-BPpYDdx_.js:1:4820)
+    at https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceReviews)/plugins/vendor-portal/assets/index-BPpYDdx_.js:1:3795
+    at async https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceReviews)/plugins/vendor-portal/assets/index-BPpYDdx_.js:1:5455
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955)
+    at async https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceReviews)/plugins/vendor-portal/assets/index-BPpYDdx_.js:1:7475 @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+[ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vcmp-dev.govirto.com/api/vcmp/seller/products/search:0
+[ERROR] [@vc-shell/framework#use-async] Async action failed: d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:3928
+    at async https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:2:3316
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+[ERROR] [@vc-shell/framework#global-error-handler] Unhandled rejection: d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:3928
+    at async https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:2:3316
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955) @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+[ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vcmp-dev.govirto.com/api/vcmp/orders/search:0
+[ERROR] [@vc-shell/framework#use-async] Async action failed: d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:38583
+    at async https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:3:27536
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955)
+    at async https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:3:40300 @ https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-vendors49842.js:0
+d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:21082
+    at async https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:7:924
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955)
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceQuote)/plugins/vendor-portal/assets/index-D8y_XAOj.js:1:2051
+    at async https://vcmp-dev.govirto.com/modules/$(VirtoCommerce.MarketplaceQuote)/plugins/vendor-portal/assets/index-D8y_XAOj.js:1:18611
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955)
+d: An unexpected server error occurred.
+    at a (https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:55396)
+    at https://vcmp-dev.govirto.com/apps/vendor-portal/api-virtocommerce-marketplacevendor49842.js:1:3928
+    at async https://vcmp-dev.govirto.com/apps/vendor-portal/index49842.js:2:3316
+    at async r (https://vcmp-dev.govirto.com/apps/vendor-portal/vc-shell-framework49842.js:2:14955)
