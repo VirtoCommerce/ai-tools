@@ -351,6 +351,68 @@ test("classify: a clean close with real work but none of the skill's expected-ou
   }
 });
 
+// ─── round 6: expected-output marker in the TAIL of a long sub-agent return is still seen ──
+// The round-4/5 regression: for sub-agent delivery the Task RETURN body is the ONLY expected-output
+// signal, and its "opened PR pull/42" confirmation can sit at the END of a long report. markExpected
+// scans a head+tail window (first 8000 + last 2000 of bodyRaw), NOT the 8000-capped `body` — so a
+// marker in the last 2000 chars of a >10000-char body is found → the qa-fix span is NOT `silent_suspect`
+// → no false auto-file of a SUCCESS as an upstream issue. This pins that fix (which had no direct test).
+test("markExpected: a delivery marker in the TAIL of a >10KB sub-agent return is seen (no false silent_suspect)", () => {
+  const home = setupHome();
+  try {
+    const sid = "tailwin-pos";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-9" });
+    const longReturn = "x".repeat(10500) + "\n...done. Opened a PR: https://github.com/o/r/pull/42";
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "e1", "Edit", { file_path: "a.cs" }),
+      toolResult("2026-01-01T00:00:01Z", "e1", false, "edited"),
+      toolUse("2026-01-01T00:00:02Z", "e2", "Edit", { file_path: "b.cs" }),
+      toolResult("2026-01-01T00:00:03Z", "e2", false, "edited"),
+      toolUse("2026-01-01T00:00:04Z", "ta1", "Task", { subagent_type: "fullstack-backend" }),
+      toolResult("2026-01-01T00:00:05Z", "ta1", false, longReturn), // marker "pull/42" in the last 2000 chars
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-fix");
+    assert.equal(cmd.length, 1);
+    assert.notEqual(cmd[0].outcome, "silent_suspect", "a tail-of-body delivery marker must be seen → not silent_suspect");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// Characterization of the window's documented LIMIT: a marker buried strictly in the MID-body gap
+// (past the 8000 head, before the 2000 tail, of a >10000-char body) is NOT seen. This is the accepted
+// windowing trade-off — a delivery confirmation lands at the END in practice, never mid-dump. Kept so
+// a future change to the window boundaries is a conscious, test-visible decision.
+test("markExpected (limit): a marker in the mid-body gap of a long return is NOT seen (documented window limit)", () => {
+  const home = setupHome();
+  try {
+    const sid = "tailwin-gap";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-9" });
+    const gapReturn = "x".repeat(8500) + " opened a PR pull/42 " + "y".repeat(3000); // marker at ~8500, in the gap
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "e1", "Edit", { file_path: "a.cs" }),
+      toolResult("2026-01-01T00:00:01Z", "e1", false, "edited"),
+      toolUse("2026-01-01T00:00:02Z", "e2", "Edit", { file_path: "b.cs" }),
+      toolResult("2026-01-01T00:00:03Z", "e2", false, "edited"),
+      toolUse("2026-01-01T00:00:04Z", "ta1", "Task", { subagent_type: "fullstack-backend" }),
+      toolResult("2026-01-01T00:00:05Z", "ta1", false, gapReturn),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-fix");
+    assert.equal(cmd.length, 1);
+    assert.equal(cmd[0].outcome, "silent_suspect", "a mid-gap marker is outside the head+tail window (documented limit)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── Fix B: a near-empty command turn is NOT silent_suspect (min-activity floor) ──
 test("classify: a command that closes with < SILENT_MIN_OPS ops is NOT silent_suspect (deferred/trivial turn)", () => {
   const home = setupHome();

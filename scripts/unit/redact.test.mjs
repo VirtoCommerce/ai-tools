@@ -79,6 +79,9 @@ const R2_MUST_REDACT = [
   ['{"private_key":"-----BEGIN PRIVATE KEY----- MIIEvKEYMATERIALxyz -----END PRIVATE KEY-----"}', "KEYMATERIALxyz", "«"], // R1/R2 PEM-in-JSON
   ["-----BEGIN OPENSSH PRIVATE KEY----- b3BlSECRETbody -----END OPENSSH PRIVATE KEY-----", "SECRETbody", "«private-key»"], // R2 bare PEM
   ["-----BEGIN RSA PRIVATE KEY----- MIIEvTRUNCATEDbody0123456789abcdef", "TRUNCATEDbody", "«private-key»"], // round 5: END cut off (>8000-char tool_result cap) → truncated-PEM fallback
+  // round 6: a LEGACY ENCRYPTED PEM whose END was cut — the Proc-Type/DEK-Info header lines must not
+  // stop the fallback before it reaches the ciphertext body (the plain base64-run class did, at the `-`).
+  ["-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: DES-EDE3-CBC,A1B2C3D4\n\nMIIEncCIPHERTEXTbody0123456789abcd", "CIPHERTEXTbody", "«private-key»"],
   ["redis://:MyRedisPw123@10.0.0.5:6379", "MyRedisPw123", "«redacted»"], // userless conn string
   ["using sk_live_51HxYzABCDEF1234567890", "sk_live_51HxYzABCDEF1234567890", "«stripe-key»"],
   ["whsec_ABCDEF1234567890abcdef", "whsec_ABCDEF1234567890abcdef", "«stripe-whsec»"],
@@ -98,3 +101,12 @@ for (const [input, secret, marker] of R2_MUST_REDACT) {
 for (const input of ["commit=3a4f5e6d7c8b9a0f1e2d3c4b5a6978012345abcd", "session_count=5", "name=OrderService"]) {
   test(`redact (R2 audit): keeps benign — ${input}`, () => assert.equal(redact(input), input));
 }
+
+// round 6: the truncated-PEM fallback must redact the key BUT stop at the first non-key line, so a
+// following log/prose line survives for triage (the greedy base64+whitespace class used to eat it).
+test("redact (round 6): truncated PEM redacts the key but does NOT devour the following log line", () => {
+  const out = redact("-----BEGIN RSA PRIVATE KEY-----\nMIIEvSECRETkeymaterial0123456789abcdef\nERROR: connection refused to db-host:5432");
+  assert.ok(!out.includes("SECRETkeymaterial"), `key material must be redacted: ${out}`);
+  assert.ok(out.includes("«private-key»"), `marker present: ${out}`);
+  assert.ok(out.includes("ERROR: connection refused to db-host"), `following prose must survive: ${out}`);
+});

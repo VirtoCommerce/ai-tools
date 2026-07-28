@@ -24,10 +24,15 @@ export const REDACTIONS = [
   [/-----BEGIN[^-]*PRIVATE KEY-----[\s\S]*?-----END[^-]*PRIVATE KEY-----/gi, "«private-key»"],
   // TRUNCATED PEM fallback: a lone `-----BEGIN…PRIVATE KEY-----` header whose matching `-----END-----`
   // was cut off — e.g. a key > the 8000-char tool_result body cap in session-telemetry.mjs, so the
-  // block rule above can't match (code review round 5). Collapse the header + the base64 run that
-  // follows (bounded char class → linear, no ReDoS) so the BEGIN header + key head never persist to
-  // the local `<sid>.jsonl` snippet. Runs AFTER the full-block rule, so a complete key is handled there.
-  [/-----BEGIN[^-]*PRIVATE KEY-----[A-Za-z0-9+/=\s]*/gi, "«private-key»"],
+  // block rule above can't match (code review round 5). Runs AFTER the full-block rule, so a complete
+  // key is handled there; this only fires on a header with no END. It consumes, line by line: the
+  // optional legacy-encrypted headers (`Proc-Type:`/`DEK-Info:`, which the earlier plain base64-run
+  // class stopped at because of their `-` — round 6 security note), a blank line, and base64 body
+  // lines (a contiguous run ≥16 chars — so it does NOT devour a following log/prose line, whose words
+  // are <16 chars or carry punctuation — round 6 quality note). Every branch consumes ≥1 char and the
+  // classes are near-disjoint by leading char, so it stays linear (no ReDoS). Local `<sid>.jsonl`
+  // hygiene only — the upstream artifact is enum-only regardless.
+  [/-----BEGIN[^-]*PRIVATE KEY-----[ \t]*\r?\n?(?:(?:proc-type|dek-info):[^\r\n]*\r?\n?|[A-Za-z0-9+/=]{16,}[ \t]*\r?\n?|[ \t]*\r?\n)*/gi, "«private-key»"],
   // Authorization header — redact the CREDENTIAL, not just the scheme word. An optional scheme
   // (Bearer/Basic/Digest/Negotiate/NTLM) is consumed so `Authorization: Basic <b64>` and
   // `Authorization: Bearer <tok>` alike lose the credential. A `:`/`=` is required so prose
