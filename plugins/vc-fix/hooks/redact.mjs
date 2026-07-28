@@ -22,6 +22,12 @@ export const REDACTIONS = [
   // Runs BEFORE the key/value rule so a PEM-in-JSON value is collapsed first; `[^-]*` matches the
   // `OPENSSH `/`RSA `/`EC ` variant word, `[\s\S]*?` the base64 body (spaces after the \s+ collapse).
   [/-----BEGIN[^-]*PRIVATE KEY-----[\s\S]*?-----END[^-]*PRIVATE KEY-----/gi, "«private-key»"],
+  // TRUNCATED PEM fallback: a lone `-----BEGIN…PRIVATE KEY-----` header whose matching `-----END-----`
+  // was cut off — e.g. a key > the 8000-char tool_result body cap in session-telemetry.mjs, so the
+  // block rule above can't match (code review round 5). Collapse the header + the base64 run that
+  // follows (bounded char class → linear, no ReDoS) so the BEGIN header + key head never persist to
+  // the local `<sid>.jsonl` snippet. Runs AFTER the full-block rule, so a complete key is handled there.
+  [/-----BEGIN[^-]*PRIVATE KEY-----[A-Za-z0-9+/=\s]*/gi, "«private-key»"],
   // Authorization header — redact the CREDENTIAL, not just the scheme word. An optional scheme
   // (Bearer/Basic/Digest/Negotiate/NTLM) is consumed so `Authorization: Basic <b64>` and
   // `Authorization: Bearer <tok>` alike lose the credential. A `:`/`=` is required so prose

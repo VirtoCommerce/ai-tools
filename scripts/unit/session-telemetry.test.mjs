@@ -2124,6 +2124,8 @@ test("OBS1b: a recovered transient scan error clears on the next successful delt
       toolResult("2026-01-01T00:00:03Z", "b2", false, "ok2"),
     ]);
     run(home, "record", { session_id: "obs1b", transcript_path: tp });
+    // Pinpoint that the DELTA READ (this `record`), not finalize, did the clearing.
+    assert.equal(JSON.parse(readFileSync(sp, "utf8")).scanErrors, 0, "the successful delta read clears scanErrors immediately");
     complete(home, "project-init");
     const out = run(home, "finalize", { session_id: "obs1b", transcript_path: tp, reason: "stop" });
     const fin = finalizeOf(readSpans(home, "obs1b"));
@@ -2142,16 +2144,19 @@ test("OBS1b: a recovered transient scan error clears on the next successful delt
 // /qa-fix question is describing a problem, not failing — it must NOT force the command span `failed`
 // (which would trip the tail-trigger and, in feedback.mode=auto, auto-file an upstream issue). Only a
 // real INJECTED/meta hook echo may raise hook_failure from top-level string content.
-test("A-F1: user prose quoting an error does NOT raise hook_failure; a meta/echo string still does", () => {
-  const userMsg = (ts, text) => JSON.stringify({ type: "user", timestamp: ts, message: { role: "user", content: text } });
+test("A-F1: user prose quoting an error does NOT raise hook_failure; injected/meta echoes still do", () => {
   const errText = "the build shows: command failed with exit code 1 — npm error ELIFECYCLE";
-  const build = (sid, asUserProse) => {
+  // Genuine user prose: ev.type "user", NO isMeta.
+  const userProse = (ts, text) => JSON.stringify({ type: "user", timestamp: ts, message: { role: "user", content: text } });
+  // The REAL injected hook-output shape Claude Code emits: ev.type "user" + isMeta:true.
+  const metaEcho = (ts, text) => JSON.stringify({ type: "user", isMeta: true, timestamp: ts, message: { role: "user", content: text } });
+  const build = (sid, makeLine) => {
     const home = setupHome();
     const tp = join(home, "transcript.jsonl");
     writeFileSync(tp, "");
     run(home, "init", { session_id: sid, transcript_path: tp });
     run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-fix VCST-1" });
-    appendLines(tp, [asUserProse ? userMsg("2026-01-01T00:00:00Z", errText) : hookEcho("2026-01-01T00:00:00Z", errText)]);
+    appendLines(tp, [makeLine("2026-01-01T00:00:00Z", errText)]);
     run(home, "record", { session_id: sid, transcript_path: tp });
     complete(home, "qa-fix");
     run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
@@ -2159,12 +2164,18 @@ test("A-F1: user prose quoting an error does NOT raise hook_failure; a meta/echo
     rmSync(home, { recursive: true, force: true });
     return cmd[0];
   };
-  const prose = build("af1-prose", true);
+  const prose = build("af1-prose", userProse);
   assert.ok(prose, "the command span exists");
   assert.equal(prose.signals.hook_failure || 0, 0, "user prose must not be recorded as a hook_failure");
   assert.notEqual(prose.outcome, "failed", "user prose quoting an error must not force the span `failed`");
-  // Control: the SAME text as an actual hook echo (no ev.type) is still an untied hook_failure → `failed`.
-  const echo = build("af1-echo", false);
-  assert.ok(echo.signals.hook_failure >= 1, "a real hook echo still raises hook_failure");
-  assert.equal(echo.outcome, "failed", "an untied hook echo failure still forces `failed`");
+  // Control 1: a bare echo with NO `type` field still flags (the same errText, proving suppression is
+  // due to the ev.type/isMeta guard, not a regex miss).
+  const echoNoType = build("af1-echo-notype", hookEcho);
+  assert.ok(echoNoType.signals.hook_failure >= 1, "a bare (no-type) hook echo still raises hook_failure");
+  assert.equal(echoNoType.outcome, "failed", "an untied bare hook echo still forces `failed`");
+  // Control 2: the REAL injected shape (type:"user" + isMeta:true) still flags — the guard suppresses
+  // ONLY genuine prose, never a meta echo, so real hook output isn't over-suppressed (code review round 5).
+  const echoMeta = build("af1-echo-meta", metaEcho);
+  assert.ok(echoMeta.signals.hook_failure >= 1, "a meta (isMeta:true) hook echo still raises hook_failure");
+  assert.equal(echoMeta.outcome, "failed", "an untied meta hook echo still forces `failed`");
 });

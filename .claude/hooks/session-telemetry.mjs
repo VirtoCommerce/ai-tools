@@ -669,12 +669,18 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         }
       } else if (type === "tool_result") {
         const id = item.tool_use_id;
-        // Cap BEFORE redact/markExpected: a Read/grep/build-log tool_result can carry a multi-KB/MB
-        // body, and running the ~20 redaction regexes + the expected-output scan over all of it on
-        // every op is pure waste on the Stop hot path — error text and expected-output markers appear
-        // early. Mirrors the 8000-char cap already applied to the tool_use side (code review #4).
+        // Cap BEFORE redact: a Read/grep/build-log tool_result can carry a multi-KB/MB body, and
+        // running the ~20 redaction regexes over all of it on every op is pure waste on the Stop hot
+        // path (error text is classified from the 120-char snippet anyway). Mirrors the 8000-char cap
+        // on the tool_use side (code review #4). `body` feeds the EXPENSIVE redact/snippet/classify path.
         const bodyRaw = textOf(item.content);
         const body = bodyRaw.length > 8000 ? bodyRaw.slice(0, 8000) : bodyRaw;
+        // BUT the expected-output scan (markExpected) must NOT use the perf cap: for delivery via a
+        // sub-agent, the Task RETURN body is the ONLY expected-output signal, and its "opened PR
+        // pull/42" confirmation can sit at the END of a long report — capping to the head would miss
+        // it → false `silent_suspect` → auto-file a SUCCESS in feedback.mode=auto (code review round 5).
+        // markExpected is cheap (a few regex .test()s), so scan a head+tail window instead.
+        const expectedScan = bodyRaw.length > 10000 ? bodyRaw.slice(0, 8000) + "\n" + bodyRaw.slice(-2000) : bodyRaw;
         // A signal is recorded ONLY from a genuine FAILURE result (`is_error === true`).
         // A SUCCESSFUL tool whose body merely CONTAINS error-like text — grepping a
         // build log, reading source that says "npm error"/"permission denied" — is NOT a
@@ -689,7 +695,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         // create_pull_request response or a sub-agent Task return "opened PR pull/42".
         // This is what keeps a command/skill that delivers via a sub-agent (whose
         // internal ops are in a skipped sidechain) from being false `silent_suspect`.
-        if (p) markExpected(p, body);
+        if (p) markExpected(p, expectedScan);
         if (sp) {
           state.openOps.delete(id);
           if (cls) pushDetail(sp, cls, body, { toolUseId: id });
@@ -737,8 +743,9 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     // ("command failed with exit code 1") is DESCRIBING a problem, not failing (A-F1) — treating
     // it as an untied hook_failure would force the span `failed`, trip the tail-trigger, and in
     // feedback.mode=auto auto-file an upstream issue for a non-failure. So only INJECTED/meta
-    // content (an actual hook echo) may raise hook_failure here.
-    if (typeof content === "string" && !(ev.type === "user" && ev.isMeta !== true)) {
+    // content (an actual hook echo — no `type`, or `type:"user"`+`isMeta:true`) may raise it here.
+    const isGenuineUserProse = ev.type === "user" && ev.isMeta !== true;
+    if (typeof content === "string" && !isGenuineUserProse) {
       if (HOOK_FAILURE_RE.test(content)) attributeSignal("hook_failure", content);
     }
   }
@@ -1284,7 +1291,7 @@ async function cmdFinalize(ev) {
   // classify() can flag it. Guarded to the exact blind spot — a THIS-session complete marker with NO
   // command/skill span of any kind. The sid-scoped marker guard blocks a stray cross-session marker,
   // and a plain-dev turn emits no `complete` at all, so this never over-fires. The marker is consumed
-  // (state.skillCompletePending = null) later, at line ~1243, on this same terminal Stop.
+  // (`state.skillCompletePending = null`) later on this same terminal Stop, where it is surfaced.
   const marker = state.skillCompletePending;
   const completeForThisSession = Boolean(marker) && (!marker.sid || marker.sid === state.sid);
   if (completeForThisSession && !state.currentCommand && !state.currentSkill && !state.sawPluginSpan) {

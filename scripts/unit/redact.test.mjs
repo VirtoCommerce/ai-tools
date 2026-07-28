@@ -78,6 +78,7 @@ const R2_MUST_REDACT = [
   ['{"password":"correct horse battery staple"}', "horse battery staple", "«redacted»"], // R1: multi-word quoted
   ['{"private_key":"-----BEGIN PRIVATE KEY----- MIIEvKEYMATERIALxyz -----END PRIVATE KEY-----"}', "KEYMATERIALxyz", "«"], // R1/R2 PEM-in-JSON
   ["-----BEGIN OPENSSH PRIVATE KEY----- b3BlSECRETbody -----END OPENSSH PRIVATE KEY-----", "SECRETbody", "«private-key»"], // R2 bare PEM
+  ["-----BEGIN RSA PRIVATE KEY----- MIIEvTRUNCATEDbody0123456789abcdef", "TRUNCATEDbody", "«private-key»"], // round 5: END cut off (>8000-char tool_result cap) → truncated-PEM fallback
   ["redis://:MyRedisPw123@10.0.0.5:6379", "MyRedisPw123", "«redacted»"], // userless conn string
   ["using sk_live_51HxYzABCDEF1234567890", "sk_live_51HxYzABCDEF1234567890", "«stripe-key»"],
   ["whsec_ABCDEF1234567890abcdef", "whsec_ABCDEF1234567890abcdef", "«stripe-whsec»"],
