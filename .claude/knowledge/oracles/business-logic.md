@@ -1208,6 +1208,116 @@ the environment verification (TLC-2026-07-02-2043).
 
 ---
 
+## Domain 20: Sales Rep (BL-SR)
+
+Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sales-rep`) — the customers a rep serves, their orders, and dashboard/customer-profile **statistics** (order purchases, carts/projects, customer counters, top-selling products) with a server-owned filter+sort rule vocabulary. Grounded in `vc-module-sales-rep` (PR #4, epic VCST-5142; tickets VCST-5309/5362/5368/5485) README + live verification on vcst-qa (module `SalesRep_3.1000.0-pr-4`, TLC-2026-07-23-1943). Every query is authenticated and **creator + membership scoped**.
+
+### BL-SR-001: Statistics periods are inclusive UTC instants, no server truncation; omitted bounds → all-time `[P1-data]`
+- **Rule:** `salesRepCustomerOrderStatistics` / `salesRepCustomerCartStatistics` accept any number of aliased `period(from, to)` and `comparison(current, previous)` blocks. Both bounds are **inclusive UTC instants** — the caller sends the time component and any local→UTC conversion; the server does **no** date truncation. A `period` with no bounds → all-time (`firstOrderDate` = "customer since"). A per-request loader coalesces identical ranges so a range used by both a period and a comparison is aggregated once.
+- **Verify:** Same range requested as an aliased `period` and inside a `comparison` → identical aggregate, one DB pass; a bounded `period` vs a no-bound `period` on the same customer → all-time count ≥ bounded count.
+- **Violation signal:** Server re-truncates the caller's bounds to date boundaries; identical ranges aggregated more than once; omitted bounds error instead of all-time.
+- **Agents:** qa-backend-expert
+- **Source:** module README §Order statistics ("both `period` bounds are inclusive and compared as UTC instants… there is no server-side date truncation"); live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-002: Statistics are creator + membership scoped — no cross-rep / unserved-org leak `[P0-security]`
+- **Rule:** Every sales-rep figure (orders, carts, counts, top sellers, customer list) counts **only the carts/orders the calling rep created**, within the **organizations that rep serves** (membership scope). A rep never sees another rep's data, and an organization the rep does not serve yields no data (null / zero / empty), never a leak. Anonymous callers get an authorization error.
+- **Verify:** Rep A's statistics exclude rep B's orders in a shared org; `salesRepCustomer`/`salesRepCustomerOrderStatistics` for an unserved org resolves null/empty (mirrors 050m SR-GQL-016/023); anonymous → auth error.
+- **Violation signal:** Any figure includes orders/carts the rep did not create, or data from an org the rep does not serve; anonymous access returns data.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** module README ("all figures count only the orders the calling rep created, within the organizations they serve (data-isolation)"); live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-003: Comparison returns the delta; `*ChangePercent` is NULL when the previous baseline is 0 `[P1-data]`
+- **Rule:** `comparison(current, previous)` always returns the absolute change (`totalChange`, `countChange`, `averageChange` as Money/scalar) plus a `*ChangePercent`. When the **previous** period baseline is 0, the percent is **null** (no divide-by-zero, no Infinity) while the absolute change is still the full current value.
+- **Verify:** Customer with orders only in the current period, none in the previous → `totalChange.amount` = current total, `totalChangePercent` = null, `countChangePercent` = null. (Live-confirmed 2026-07-23: `totalChange.amount=816`, `totalChangePercent=null`.)
+- **Violation signal:** Percent renders as `Infinity`/`NaN`/`0` or errors when previous = 0; absolute change dropped when percent is null.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** module README §Order statistics comparison; live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-004: Money resolves to one currency (`currencyCode` → store default → platform primary) and echoes it `[P1-data]`
+- **Rule:** All monetary statistics are converted to a single currency chosen by `currencyCode`, falling back to the store default then the platform primary; the resolved `currencyCode` is echoed back and `formattedAmount` is localized by `cultureName`. Mixed-currency underlying orders are aggregated into that one currency.
+- **Verify:** Pass `currencyCode:"EUR"` → response `currencyCode:"EUR"`, `formattedAmount` uses the € symbol; omit → store default. (Live-confirmed 2026-07-23: EUR echoed, `€816.00`.) Assert the echoed code + symbol, **not** a specific converted amount (FX rate is env-dependent — vcst-qa EUR ≈ 1.0).
+- **Violation signal:** `currencyCode` not echoed; `formattedAmount` unlocalized; per-currency figures returned unconverted / double-counted.
+- **Agents:** qa-backend-expert
+- **Source:** module README (Money "converted to `currencyCode` → store default → platform primary"); live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-005: Cancelled / prototype orders are excluded from the statistics baseline `[P1-data]`
+- **Rule:** The baseline statistics set (no filter) excludes soft-deleted / prototype and cancelled orders — the same "everything the rep may see minus soft-deleted/prototype" baseline the lists use. A named filter can re-include a status explicitly (e.g. `Cancelled`).
+- **Verify:** A customer with a cancelled order → baseline `count` excludes it; `filter:"Cancelled"` includes it.
+- **Violation signal:** Cancelled/prototype orders inflate the baseline totals/counts.
+- **Agents:** qa-backend-expert
+- **Source:** module README §Filter rules ("Omit `filter` for the baseline set… minus soft-deleted/prototype"); live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-006: Cart statistics default to non-empty, non-wishlist carts; `count` is the primary metric `[P1-data]`
+- **Rule:** `salesRepCustomerCartStatistics` uses a cart-*kind* filter whose built-in default `"active-carts"` = non-empty carts that are **not** wishlists. `count` is the primary metric (also `total` Money and `lastCartDate`). Same `period`/`comparison` shape as order statistics; same creator+membership scope (BL-SR-002).
+- **Verify:** Rep with 2 active carts across served orgs → `active-carts` period `count=2`, `lastCartDate` set. (Live-confirmed 2026-07-23 after seeding: count 0→2.)
+- **Violation signal:** Wishlists or empty carts counted as active; `count` omitted/secondary; another rep's carts included.
+- **Agents:** qa-backend-expert
+- **Source:** module README §Cart / project statistics; live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-007: Customer counts — `assignedCustomers` is a period-independent scalar; period counts never exceed it `[P1-data]`
+- **Rule:** `salesRepCustomerCounts` exposes `assignedCustomers` (a scalar total of served orgs, period-independent) plus `period{orderingCustomers, newCustomers}` and `comparison{orderingCustomersChange, orderingCustomersChangePercent, newCustomersChange}`. `orderingCustomers` and `newCustomers` for any period are ≤ `assignedCustomers`.
+- **Verify:** Rep serving 5 orgs → `assignedCustomers=5`; a month's `orderingCustomers`/`newCustomers` ≤ 5. (Live-confirmed 2026-07-23: 5 / 4 / 5.)
+- **Violation signal:** A period count exceeds `assignedCustomers`; `assignedCustomers` varies with the period arg.
+- **Agents:** qa-backend-expert
+- **Source:** module README §My customers; live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-008: Top sellers ranked by named sort over a period; `take` clamps at 10 (never errors); rows are a line-item snapshot `[P1-data]`
+- **Rule:** `salesRepTopSellers` ranks products by `sort` (`by-units` default, `by-revenue`) over an optional `period`, returning the top `take` (default 5, **max 10**). `take` above 10 is **clamped** (never a validation error). Each row's `name`/`sku`/`imageUrl`/category come from the **order line-item snapshot** — no live catalog read; `revenue` is Money. Optional category `filter` restricts to that category's subtree. Creator+membership scoped (BL-SR-002); omit `organizationId` for the cross-customer dashboard.
+- **Verify:** `take:5` → ≤5 rows; `take:15` → ≤10 rows, no error (live-confirmed 2026-07-23: clamped); `by-units` vs `by-revenue` re-rank; category filter narrows the set; row identity from snapshot even if the catalog product changed.
+- **Violation signal:** `take>10` errors or returns >10; ranking reads live catalog; category filter ignored; another rep's line items ranked.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** module README §Top sellers; live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-009: One named filter rule per axis; omit → baseline; unknown name fails CLOSED (no data, no error) `[P1-data]`
+- **Rule:** Lists and statistics blocks are filtered by a single **named filter rule** (not raw statuses), discovered per axis via `salesRepOrderFilterRules` / `salesRepCartFilterRules` / `salesRepCustomerFilterRules` / `salesRepTopSellerFilterRules` (`{name, localizedName}`). Omit `filter` → baseline; an **unrecognized name fails CLOSED** (returns zero data, never "return everything"), no error. Rule sets are overridable per project; a rule may be composite. `salesRepCustomerFilterRules` ships a single `All` baseline; `salesRepTopSellerFilterRules` names are category ids.
+- **Verify:** `filter:"BOGUS"` on `salesRepOrders` → `totalCount:0` while baseline (no filter) > 0 (live-confirmed 2026-07-23: 0 vs 8); discovery returns localized names.
+- **Violation signal:** Unknown filter returns the full/baseline set (fails open); a raw status/type accepted instead of a rule name; discovery returns raw enum keys.
+- **Agents:** qa-backend-expert
+- **Source:** module README §Filter rules; live probe 2026-07-23.
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-010: One named sort rule per axis; unknown name → default ordering; unsupported direction → ERROR; `customerSalesReps` exempt `[P1-data]`
+- **Rule:** Lists are ordered by a single **named sort rule** discovered via `salesRepOrderSortRules` (`recent` default, `total`) / `salesRepCustomerSortRules` (`my-last-orders` default, `ytd-purchases`, `name`) / `salesRepTopSellerSortRules` (`by-units` default, `by-revenue`). A sort **never fails closed on the name** — an unknown/omitted rule name falls back to the domain default (no error). An optional `:asc`/`:desc` direction suffix reverses a rule **where meaningful** (`total:asc`, `name:desc`, `ytd-purchases:asc`); an **unsupported direction is rejected with an error** (`recent:asc`, `by-units:asc` → `extensions.code=ARGUMENT`). `customerSalesReps` accepts a plain member `sort` (e.g. `name:asc`) but is **exempt from the named rep sort-rule vocabulary** (no discovery query). The customers-list direction applies uniformly to member-column and order-derived (`my-last-orders`/`ytd-purchases`) rankings.
+- **Verify:** Unknown sort name → default order, no error (live 2026-07-23: `totalCount` unchanged); `recent:asc`/`by-units:asc` → error `code=ARGUMENT`; `total:asc`/`name:desc`/`ytd-purchases:asc` → 200, reversed order; `customerSalesReps(sort:"name:asc")` → 200 (accepts plain sort).
+- **Violation signal:** Unknown sort name errors or fails closed; an unsupported direction silently ignored; `customerSalesReps` rejects a plain `sort` arg, or honors a named rep sort-rule token.
+- **Agents:** qa-backend-expert
+- **Source:** module README §Sort rules; live probe 2026-07-23 (incl. `customerSalesReps` acceptance correction).
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-011: Sales-rep storefront UI requires permission + org membership + module enabled — all three `[P0-security]`
+- **Rule:** The storefront Sales Rep area (hub `/company/dashboard`, my-customers `/company/my-customers`, customer profile `/company/my-customers/{orgId}`) renders only when the caller holds `sales-rep:access`, serves ≥1 org, AND the store's `SalesRep.Enabled` setting is on. A non-rep buyer is gated/redirected and no sales-rep widget or query fires; with the module disabled the "Sales Rep hub" rail section and routes are absent even for a permissioned rep.
+- **Verify:** Rep → hub renders; buyer → redirected, no `salesRep*` query issued; `SalesRep.Enabled=false` → hub/list/profile unreachable and rail section absent (mirrors 089 SR-FE-003).
+- **Violation signal:** Any sales-rep widget/query for a non-rep; hub reachable while the module is disabled (client-side-only gate).
+- **Agents:** qa-frontend-expert
+- **Source:** module README ("Toggle the storefront Sales Rep UI per store"); live verification 2026-07-23 (hub route `/company/dashboard`).
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-012: Filter-aware empty states distinguish "no data" from "nothing matched the filter/search" `[P2-ux]`
+- **Rule:** The orders, top-sellers and my-customers views render **distinct** empty states for "the rep has no data at all" vs "the current filter/search matched nothing" — the latter must offer a way back (clear filter/search), not read as "you have no customers/orders".
+- **Verify:** A narrowing filter/search with zero matches → "nothing matches" state (with reset affordance), distinct from the no-data-at-all state.
+- **Violation signal:** A zero-match filter shows the generic "no data" state; no way to clear the filter; a spinner/blank instead of an empty state.
+- **Agents:** qa-frontend-expert
+- **Source:** vc-frontend PR #2395 ("Filter-aware empty states… distinguish 'nothing matches this filter/search' from 'no data'").
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+### BL-SR-013: Rep-facing status / money / rule vocabulary localizes by `cultureName`; raw enum/key never surfaces `[P2-ux]`
+- **Rule:** Filter/sort rule labels (`localizedName`), order statuses (`statusDisplayValue`), and `formattedAmount` localize by `cultureName`. The storefront renders the localized label, never a raw enum value or an i18n key.
+- **Verify:** Discovery queries return `localizedName` distinct from `name`; a rule chip / status / money value renders a human label, not `New`-style raw keys or `sales-rep.*` i18n paths.
+- **Violation signal:** A raw enum/status key or unresolved i18n key shown in the UI; `formattedAmount` not localized.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** module README (`localizedName` on all rule discovery; `statusDisplayValue`); vc-frontend PR #2395 (13 locales).
+- **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
+
+---
+
 ## Invariant Coverage Summary
 
 P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-data]` + `[P1-ux]`.
@@ -1234,4 +1344,5 @@ P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-dat
 | Loyalty & Mixed Cart | BL-LOY-001–014 (011 reserved) | 13 | 4 | 7 | 2 |
 | Payment Processors | BL-PAY-001/003/004 | 3 | 3 | 0 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 |
-| **Total** | | **145** | **48** | **76** | **21** |
+| Sales Rep | BL-SR-001–013 | 13 | 2 | 9 | 2 |
+| **Total** | | **158** | **50** | **85** | **23** |
