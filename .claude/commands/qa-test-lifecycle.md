@@ -32,7 +32,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | `--skip-generate` | Skip Phases 2-3 (Sync + Analyze/Generate) — start at Phase 4 Review |
 | `--skip-data` | Skip the Phase 3 data-prep step (`/qa-generate-data`) — author cases against existing fixtures only, don't design/author new combinations |
 | `--skip-verify` | Skip Phase 5 (Environment Verification) — no browser needed |
-| `--auto-fix` | Apply auto-fixable updates without asking for each one (still shows diff summary) |
+| `--no-auto-fix` | **Opt OUT** of the default auto-fix — confirm each auto-fixable update individually before it's written. Auto-fix is **on by default**: Phase 4b applies auto-fixable updates without asking (still shows a diff summary). |
 | `--layer <name>` | Scope to a specific layer: `api`, `graphql`, `admin`, `storefront`, `e2e` |
 | `--report-only` | Run all phases but don't modify any CSV files — output report only |
 | `--ci` | CI mode: skip browser verification, apply all updates without confirmation, output machine-readable JSON |
@@ -353,7 +353,7 @@ The core seven:
 
 #### 4b. Auto-Fix
 
-**Auto-fixable (applied with confirmation or `--auto-fix`):**
+**Auto-fixable (applied automatically by default; pass `--no-auto-fix` to confirm each individually):**
 - Missing step type tags → infer from verbs
 - Missing `errors[]` check → add to Cross_Layer_Checks
 - Hardcoded URLs → replace with `{{VAR}}`
@@ -634,7 +634,7 @@ Input:
   - scope: [suite IDs from Phase 1]
   - changeInventory: [from Phase 1, if change-driven]
   - phases: [2,3,4] (or subset based on flags)
-  - flags: [--auto-fix | --report-only | --layer <name>]
+  - flags: [--no-auto-fix | --report-only | --layer <name>]   // auto-fix is the default; pass --no-auto-fix to require per-fix confirmation
   - build:
     - platform: {PlatformVersion from packages.json}
     - theme: {theme version from artifact.json}
@@ -719,7 +719,7 @@ Output: per-case verification:
 - **Deduplication** — before generating cases, check target suite and related suites for semantic duplicates
 - **One browser at a time** — Phase 5 uses `playwright-firefox` via `qa-testing-expert`; no parallel browser sessions
 - **Read URLs from .env** via `config.js`, never hardcode
-- **Show diffs** — when updating cases, always show old vs new before writing (unless `--ci` or `--auto-fix`)
+- **Show diffs** — auto-fix is the default, so updates are written without a per-case prompt but always with a diff summary; pass `--no-auto-fix` to show old vs new and confirm before each write. `--ci` applies all updates non-interactively.
 - **Sync metadata** — updated cases must record the sync source and date in the References column
 - **Module dependencies matter** — when module X changes, check downstream modules too
 - **Don't over-sync** — if a case is VALID (false positive from diff), leave it untouched

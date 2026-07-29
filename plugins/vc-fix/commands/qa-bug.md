@@ -270,6 +270,17 @@ Ask the user: "Create a bug-tracker ticket for this bug?"
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
 - **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`, default `VCST` for backwards compatibility; customer sets their own). Body = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
+  - **Screenshots — attach AND embed inline.** A filename in the body is not evidence anyone opens. Unlike the Azure path below (whose HTML description takes an `<img src>` directly), Jira needs a 4-step dance, and **step 2 is the trap**:
+    1. **Upload** — the Atlassian MCP has **no attachment tool**; use REST, multipart, with the mandatory `X-Atlassian-Token: no-check` header (multiple files per request OK): `POST {JIRA_BASE_URL}/rest/api/3/issue/{key}/attachments` → `200` + `[{id, filename}]`.
+    2. **Resolve the Media Services ID.** ADF `media.attrs.id` is a **Media Services UUID**, **NOT the numeric Jira attachment id** — passing the attachment id fails the whole request with `400 ATTACHMENT_VALIDATION_ERROR`. The UUID is absent from the attachment metadata; take it from the content endpoint's redirect: `GET /rest/api/3/attachment/content/{attachmentId}` with `redirect: 'manual'` → **`303`**, `Location: https://api.media.atlassian.com/file/<UUID>/binary?token=…`.
+    3. **PUT the description as ADF.** `width`/`height` are **required** or the image won't display — read them from the PNG IHDR (`buf.readUInt32BE(16)` / `(20)`), never guess. `collection` is the empty string (verified against a Jira-authored node). Safest pattern: `GET …/issue/{key}?fields=description` (already ADF), push the nodes onto `description.content`, `PUT …/issue/{key}` with `{fields:{description}}` → `204` — that preserves the MD-converted body instead of hand-authoring the whole doc.
+       ```js
+       { type: 'mediaSingle', attrs: { width, widthType: 'pixel', layout: 'align-start' },
+         content: [{ type: 'media', attrs: { type: 'file', id: '<UUID>', alt: '<filename>',
+                                             collection: '', width, height } }] }
+       ```
+    4. **Verify it renders** — persisted ≠ rendered. Read back `?fields=description&expand=renderedFields` and assert the HTML contains `<img src="…/rest/api/3/attachment/content/{attachmentId}" …>`. No `<img>` ⇒ the node is wrong; don't claim success.
+    **Do not bother trying** (each fails): markdown `![alt](file.png)` → silently dropped (MD→ADF can't resolve a filename to an attachment); wiki `!file.png!` → renders literally (VCST-5212 class); `attrs.id` = attachment id → `400`. Embed the 1–3 images that show the defect (`.claude/rules/reports.md` §5); attach-only is fine for supporting shots.
 - **Azure Boards** (`tracker.kind = azure`) → **author the body as HTML** per [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) (that file is the single source of truth for the shape — read it). Azure's `System.Description` / `Microsoft.VSTS.TCM.SystemInfo` are **HTML fields**, so raw Markdown renders as a literal `#`/`**`/`| … |` wall (do NOT feed the markdown report file straight in). The work item is the **lean, replayable** version of the bug — not a copy of the full markdown report:
   - **`System.Description` = abstract Summary → Preconditions → Steps → Actual → Expected**, and nothing else competes with them. The Summary is 1–3 sentences with **no user-specific data** (no emails, IDs, order numbers, GUIDs, names) — reproducible by anyone who meets the Preconditions. The VC extras (4-Layer Validation, Module Versions, Root Cause Analysis, Fix Routing) go into **one collapsed `🔧 Technical Details` block below**, trimmed to the essentials — never as top-level sections. Leave `--repro-file` **unset** (LEO's `ReproSteps` field is hidden; everything lives in `System.Description`).
   - **Environment & metadata → dedicated fields, never a description section:** `--field "Custom.Environment=<QA|UAT|PROD|Dev|Local>"`, `--field "Custom.Reportedby=QA team"`, `--field "Custom.Typeofbug=<Functional|Regression|Performance|Data|Integration>"`, and the build/theme/browser/repro-rate go to the **System Info** block via `--system-info-file <sysinfo.html>` (the Module-Versions table from Step 0 lives here, not in the body).
@@ -286,7 +297,7 @@ Fields either way:
 
 **Use the returned key verbatim** in the tracker's own format (Jira `ABC-123`, Azure Boards bare `12345`) for the report filename and any cross-links. Follow `/qa-defect workflow` (role-based, §0) for status transitions.
 
-Report the ticket key back to the user.
+Report the ticket key back to the user, and say explicitly whether the evidence rendered **inline** in the ticket body or is attachment-only.
 
 ---
 

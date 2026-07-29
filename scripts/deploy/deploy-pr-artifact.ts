@@ -55,7 +55,8 @@
  *   --dry-run                   Explicit no-op form of the default (wins over --apply if both given).
  *   --verify                    Report per-target deploy state (env-branch pin + live module version). Read-only.
  *   --fork-owner=<login>        Fork account to push --apply to (default: the token owner from `gh api user`).
- *   --message=<text>            Commit / PR title (default "VCST-XXXX: deploy N artifacts to <env>").
+ *   --message=<text>            Commit / PR title (default "VCST-XXXX: <ticket title>", else
+ *                               "VCST-XXXX: deploy N artifacts to <env>" when no summary resolved).
  *   --password=<pw>             Admin password for the /api/platform/modules verify (else env / Password1).
  *   --json                      Machine-readable output.
  *
@@ -659,10 +660,18 @@ async function main() {
   }
 
   // ── DRY-RUN (default) ──
-  const title = flag('message') || `${key ? key + ': ' : ''}deploy ${bundle.length} artifact${bundle.length > 1 ? 's' : ''} to ${env}`;
+  // Title convention: "<TICKET>: <ticket title>" — matches vc-ci / /qa-hotfix-check manifest commits,
+  // so the deploy PR reads as the change it delivers rather than as plumbing. Falls back to the
+  // artifact count when the tracker gave us no summary (explicit --pr/--module run, or ticket unreadable).
+  const titleText = (summary ?? '').replace(/\s+/g, ' ').trim();
+  const title = flag('message')
+    || (key && titleText
+      ? `${key}: ${titleText.length > 120 ? titleText.slice(0, 119).trimEnd() + '…' : titleText}`
+      : `${key ? key + ': ' : ''}deploy ${bundle.length} artifact${bundle.length > 1 ? 's' : ''} to ${env}`);
   if (!apply) {
-    if (asJson) { console.log(JSON.stringify({ env, branch: c.branch, key, summary, bundle, rows, webEditPkg: pkgTouched ? webEditPkg : null, webEditTheme: newThemeText ? webEditTheme : null, apply: false }, null, 2)); throw new Exit(0); }
+    if (asJson) { console.log(JSON.stringify({ env, branch: c.branch, key, summary, title, bundle, rows, webEditPkg: pkgTouched ? webEditPkg : null, webEditTheme: newThemeText ? webEditTheme : null, apply: false }, null, 2)); throw new Exit(0); }
     console.log('\nDry-run — nothing was written.');
+    console.log(`  PR title would be: ${title}`);
     if (pkgTouched) console.log(`  packages.json web-edit: ${webEditPkg}`);
     if (newThemeText) console.log(`  artifact.json web-edit: ${webEditTheme}`);
     console.log(`\nTo open the deploy PR (gated; direct same-repo PR if you have write, else a fork PR — never merges):`);

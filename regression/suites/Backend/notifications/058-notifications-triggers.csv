@@ -52,12 +52,37 @@
 "NOTIF-031","SMS notification - two-factor authentication","SMS Notifications","High",,,"SMS 2FA configured",,"1. Configure SMS as 2FA method
 2. Login with 2FA-enabled account
 3. Check SMS",,,,,"C251791",
-"NOTIF-046","Predefined notification - edit and restore","Predefined Notifications","High",,,"Predefined notification template exists",,"1. Open predefined notification
-2. Edit template content
-3. Save
-4. Click Restore",,,,,"C255756 C255757",
-"NOTIF-047","Send edited predefined template","Predefined Notifications","Medium",,,"Predefined template has been edited",,"1. Edit predefined template
-2. Send to test email",,,,,"C255758",
+"NOTIF-046","Predefined notification - edit and restore","Predefined Notifications","High","","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; notification type 'InvoiceEmailNotification' ships a predefined template, so its Templates grid carries a predefined-badged row for that language; if that row is already badged 'Edited', restore it first so the case starts from the un-edited baseline; module version is the PR #202 build or later. The predefined and edited flags are synthesized in the templates-list and blade controllers for display only, so assert them in the UI and never against the API","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] Notifications list blade loaded
+[GRID] search the list for 'InvoiceEmailNotification'
+[ACT] click the row matching 'InvoiceEmailNotification'
+[WAIT] the '...: Details' blade opens with the Templates grid
+[GRID] note the badges on the predefined template row
+[ACT] click the predefined template row
+[WAIT] the '...: Template' blade opens
+[ACT] append a distinct marker to 'Subject'
+[SAVE] click 'Save' in the blade toolbar
+[WAIT] the save settles and the Templates grid refreshes
+[ACT] click the same template row again
+[WAIT] the '...: Template' blade reopens
+[ACT] click 'Restore' in the blade toolbar
+[WAIT] the restore settles","[DOM] a note is visible while the predefined-sourced template is edited, warning that saving replaces the predefined version and that the original can be restored {DOC}
+[GRID] after the save the template row is badged both 'Predefined' and 'Edited' {DOC}
+[DOM] 'Restore' is present in the blade toolbar exactly while the row is both predefined and edited {DOC}
+[FORM] after 'Restore' the subject and body match the shipped default and the appended marker is absent {DOC}
+[GRID] after the restore the 'Edited' badge is absent from the template row {DOC}
+[DOM] verify whether 'Restore' persists immediately or needs a further Save before the shipped default is stored {HYPOTHESIS}","[NETWORK] the save issues PUT /api/notifications/{type} and returns 2xx (VCST-5607: the drill-down path issues no PUT today)
+[API] GET /api/notifications/InvoiceEmailNotification returns the override content after the save and the shipped default content after the restore
+[CONSOLE] no JS errors during the edit, the save or the restore","No warning note while the predefined-sourced template is edited; Restore missing from the toolbar after an override was saved; appended marker still present after Restore; Edited badge retained after Restore; no PUT issued on Save","Restore the template to its shipped default and confirm through the API that no override marker remains","C255756 C255757 VCST-5557 VCST-5606 - editability of a predefined template is documented override behaviour (PlatformUserGuide, Notification Templates), not a defect; Synced: VCST-5557 / PR #202 (2026-07-29)",""
+"NOTIF-047","Send edited predefined template","Predefined Notifications","Medium","BL-NOTIF-002","ECL-14.7","state from NOTIF-046 (an override of the shipped default exists for that language, so the Templates grid row is badged both 'Predefined' and 'Edited', and the '...: Template' blade is open on it); outbound mail transport configured for the environment","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] click 'Send test email' in the blade toolbar
+[WAIT] the recipient prompt is shown
+[ACT] fill 'Email': {{ADMIN_EMAIL}}
+[ACT] click 'Send'
+[WAIT] a notification about the send result appears","[DOM] 'Preview' and 'Send test email' are enabled on a predefined-sourced template {SPEC}
+[TOAST] a notification reports the send was accepted and no error dialog is present {SPEC}
+[EMAIL] the delivered message carries the edited override content and the shipped default content is absent {DOC}","[NETWORK] the send request returns 2xx with no 4xx/5xx
+[EMAIL] exactly one message arrives at {{ADMIN_EMAIL}} within 60s
+[CONSOLE] no JS errors during the send","'Send test email' disabled on a predefined-sourced template; shipped default content delivered instead of the override; 4xx/5xx on send; no message within 60s","Close the Template and Details blades without saving, leaving the override exactly as NOTIF-046 left it","C255758 VCST-5557 VCST-5606 Synced: VCST-5557 / PR #202 (2026-07-29)",""
 "NOTIF-053","Notification Attachment — No Attachment","Notification Attachments","High",,,"Admin logged in to Backend
 Notification template exists without attachments",,"1. Navigate to ${BACK_URL}/notifications
 2. Select a notification type that has no attachments configured
