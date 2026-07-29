@@ -83,9 +83,12 @@ test("scaffold-secrets: the .env.local comment names ONE classic `repo` token, i
     assert.match(entry, /CLASSIC, scope: repo/, `${rel}: the recipe is unambiguous`);
     assert.match(entry, /Tokens \(classic\)/, `${rel}: where to click`);
     // The dropdown trap: on the "Tokens (classic)" page the Generate button still offers
-    // fine-grained FIRST. Naming the second item is what makes the instruction followable.
+    // fine-grained FIRST. Naming the classic item verbatim is what makes the path followable.
     assert.match(entry, /Generate new token \(classic\)/, `${rel}: the exact dropdown item is named`);
-    assert.match(entry, /gh auth login/, `${rel}: the no-token alternative`);
+    // `where:` is a navigation path and nothing else — the scope + the not-fine-grained warning
+    // belong to `what:`, and `gh auth login` would contradict the operator's own PAT choice.
+    const where = entry.split("\n").find((l) => /^\s+where:/.test(l));
+    assert.doesNotMatch(where, /gh auth login|Tick scope|SECOND item/, `${rel}: where: carries no advice, only the path`);
     // The defect being fixed: fine-grained + a classic-only scope in the same instruction.
     assert.doesNotMatch(entry, /Fine-grained\. Perms: Contents \+ Pull requests = Read\/Write \(public_repo/, `${rel}: the old impossible instruction is gone`);
   }

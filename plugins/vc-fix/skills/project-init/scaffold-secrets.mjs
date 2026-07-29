@@ -111,11 +111,12 @@ const CATALOG = {
     // Documented in .claude/rules/quality-gates.md §1a — not in the operator's env file.
     what: "GitHub Personal Access Token — CLASSIC, scope: repo (not fine-grained).",
     why: "Lets /qa-fix open PRs on your own repos and contribute fixes/issues to the VirtoCommerce upstream.",
-    // NOTE the dropdown: even on the "Tokens (classic)" page the "Generate new token" button
-    // opens a menu whose FIRST item is "Generate new token" (Fine-grained, repo-scoped). Picking
-    // it lands you on the fine-grained form — the exact trap this whole entry exists to avoid —
-    // so the second item is named explicitly.
-    where: "github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → \"Generate new token\" ▾ → pick the SECOND item, \"Generate new token (classic)\" (the first one is fine-grained). Tick scope: repo. (Or run `gh auth login` and leave this blank.)",
+    // `where:` is a pure navigation path — nothing else. The scope and the not-fine-grained
+    // warning already live in `what:`, and the `gh auth login` alternative would contradict the
+    // operator's own answer (this entry is emitted ONLY when they chose PAT).
+    // The last hop matters: even on the "Tokens (classic)" page the "Generate new token" button
+    // opens a menu whose FIRST item is fine-grained, so the classic item is named verbatim.
+    where: "github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → \"Generate new token\" ▾ → \"Generate new token (classic)\".",
   },
   ADO_PAT: {
     perEnv: false, include: (o) => (o.tracker === "azure" || o.clientVcs === "azure-repos") && o.adoAuth !== "az-login",
