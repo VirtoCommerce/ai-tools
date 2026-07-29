@@ -469,3 +469,36 @@ PasswordLogin__DetailedErrors=true and Lockout 5 attempts / 0:15:0 configured; V
 [WAIT] Error banner updates after the 5th attempt","[DOM] After the 5th attempt the banner reads the TEMPORARY message: ""Your account has been temporarily locked. Please try again later."" — and NOT the permanent ""You have been blocked. You can not reach any information or create the order… contact the site administrator""
 [NETWORK] POST {{BACK_URL}}/connect/token attempt 5 → HTTP 400, code=user_is_temporary_locked_out (NOT user_is_locked_out) — VCST-5374 fix
 [STATE] User remains unauthenticated on /sign-in","[CONSOLE] No TypeError or JS errors","Banner shows the permanent ""You have been blocked… contact the site administrator"" message, or attempt-5 code is user_is_locked_out for an org user (VCST-5374 regression); lockout banner appears before the 5th attempt; user becomes authenticated; console TypeError","[TEARDOWN] Unlock org_user via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token","VCST-5374","Draft"
+"AUTH-073","Email-Verification Registration Leaves Contact.Status=Locked Forever — Login Succeeds, Org-Scoped Access Blocked (Root Cause, VCST-5281)","Registration > Email Verification > Status Lifecycle > [Regression]","Critical","BL-AUTH-001","ECL-3.1","[PRE:CLEAR_SESSION]
+Store has requireEmailVerification enabled for new registrations (VirtoCommerce.Customer RegisterRequestCommandHandler.ToContact sets Contact.Status='Locked' at registration time when email verification is required). ConfirmEmailCommandHandler only calls SetLockoutEndDateAsync(user, null) on confirmation — it does NOT reset Contact.Status back to 'Approved'. Root cause identified in the VCST-5281 /qa-test run (2026-07-29, reports/tickets/Sprint26-15/VCST-5281/summary.json): this leaves EVERY self-registered user on an email-verification store carrying a global Contact.Status of 'Locked' forever, even after confirming their email and being able to sign in. Since EffectiveStatus = membership.Status ?? contact.Status ?? 'Approved' and 132/132 memberships have no per-row override, this permanently blocks the org from every org-scoped query (BL-B2B-005). If requireEmailVerification is NOT enabled on this store, mark this case BLOCKED with that note rather than FAIL — the defect is conditional on that store setting.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}","[SETUP] Generate timestamp suffix: auth073-{epoch_ms} — capture as $TS_SUFFIX
+[NAV] {{FRONT_URL}}/sign-up
+[WAIT] sign-up form loads
+[ACT] select 'Company account' (or 'Personal account', whichever is available) radio button
+[ACT] fill 'First Name': 'AgentTest'
+[ACT] fill 'Last Name': 'RootCause073'
+[ACT] fill 'Email': 'AGENT-TEST-auth073-$TS_SUFFIX@yopmail.com'
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] fill 'Confirm Password': {{USER_PASSWORD}}
+[WAIT] form validation settles (no inline field errors)
+[ACT] click the terms/conditions checkbox if present
+[WAIT] checkbox reflects checked state
+[ACT] click 'Sign up'
+[WAIT] response settles
+[ASSERT] registration completes: either an email-verification prompt is shown (confirms requireEmailVerification=true — proceed) or an immediate redirect to storefront home (requireEmailVerification=false on this store — mark this case BLOCKED, note the store setting, do not FAIL)
+[SETUP] via REST GET {{BACK_URL}}/api/members?memberId=<contact id resolved from POST /api/members/search {email: 'AGENT-TEST-auth073-$TS_SUFFIX@yopmail.com'}> — capture $CONTACT_ID and its 'status' field as $STATUS_AFTER_REGISTER
+[ASSERT] $STATUS_AFTER_REGISTER = 'Locked' (matches RegisterRequestCommandHandler.ToContact behavior under requireEmailVerification)
+[SETUP] confirm the email via the verification link (retrieve via Admin SPA > Notifications > activity feed > Preview, or REST POST /api/notifications/journal — per testing-checklist.md Prerequisites §3) and navigate to it
+[WAIT] confirmation completes
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill 'Email': 'AGENT-TEST-auth073-$TS_SUFFIX@yopmail.com'
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] response settles
+[ASSERT] login SUCCEEDS after email confirmation (password/lockout gate uses ApplicationUser.LockoutEnd, which ConfirmEmailCommandHandler does reset — this succeeding is expected, not the bug)
+[SETUP] via REST GET {{BACK_URL}}/api/members?memberId=$CONTACT_ID — capture 'status' field as $STATUS_AFTER_CONFIRM
+[ASSERT] $STATUS_AFTER_CONFIRM is STILL 'Locked' — ConfirmEmailCommandHandler never reset Contact.Status (this is the root-cause defect: login succeeds, but the global contact status that gates org access was never cleared)","[STATE] Registration under requireEmailVerification sets Contact.Status='Locked' {DOC}
+[STATE] Storefront login succeeds after email confirmation (the account-lockout gate is separate from Contact.Status) {OBSERVED}
+[STATE] Contact.Status remains 'Locked' after email confirmation — never reset to 'Approved' {SPEC}
+[STATE] A user in this state, once given any org membership with no per-row status override, is blocked from every org-scoped query (BL-B2B-005) — this is the downstream symptom exercised end-to-end in COMP-E2E-024/025 (011b) and B2C-ORG-040 (006) {BL}","[API] GET /api/members/{contactId} 'status' field = 'Locked' both immediately after registration and after email confirmation (no transition observed)
+[CONSOLE] no uncaught JS errors during registration, confirmation, or login
+[NETWORK] no 4xx/5xx on sign-up, confirm-email, or sign-in requests","Contact.Status resolves to 'Approved' after confirmation (would indicate the defect is already fixed — reconfirm as a PASS, not a failure, if observed); login itself fails after confirmation (a different regression than the one under test); requireEmailVerification is not enabled on this store (mark BLOCKED with that note, not FAIL)","[SAVE] Delete the AGENT-TEST fixture user via Admin SPA (Platform > Security > Users) or REST DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-auth073-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$CONTACT_ID","VCST-5281; reports/tickets/Sprint26-15/VCST-5281/summary.json root_cause + testing-checklist.md conditions #40/#41","Draft"

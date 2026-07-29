@@ -88,6 +88,7 @@
     "td:validate:warn": "npx tsx scripts/test-data/validate-td-refs.ts --warn-only",
     "td:reconcile": "node scripts/seed-data/reconcile-test-data.mjs",
     "td:validate:b2b": "node scripts/seed-data/b2b/validate-b2b-data.mjs",
+    "td:validate:credentials": "node scripts/seed-data/validate-credentials.mjs",
     "td:validate:cfg": "node scripts/seed-data/products/validate-configurable-data.mjs",
     "td:validate:standard": "node scripts/seed-data/products/validate-standard-data.mjs",
     "td:validate:loyalty": "node scripts/seed-data/loyalty/validate-loyalty-data.mjs",

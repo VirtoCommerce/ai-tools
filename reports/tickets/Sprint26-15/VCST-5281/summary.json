@@ -1,0 +1,98 @@
+{
+  "ticket": "VCST-5281",
+  "verdict": "FAIL",
+  "date": "2026-07-29",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1051.0",
+    "theme": "vc-theme-b2b-vue-2.55.0-pr-2399-845a",
+    "relevant_modules": {
+      "VirtoCommerce.Customer": "3.1021.0-pr-312-2257",
+      "VirtoCommerce.ProfileExperienceApiModule": "3.1015.0-pr-141-d7d8"
+    }
+  },
+  "agents_dispatched": ["ba-story-writer", "test-management-specialist", "qa-backend-expert", "qa-frontend-expert"],
+  "ac_analysis": {
+    "story_acs": 2,
+    "weak_acs": 2,
+    "gap_acs_added": 8,
+    "impl_coverage": { "satisfied": 30, "drift": 7, "contradicts": 5, "not_found": 5 },
+    "conditions_total": 47,
+    "conditions_with_evidence": 43
+  },
+  "total_cases": 47,
+  "passed": 32,
+  "failed": 6,
+  "blocked": 1,
+  "partial": 6,
+  "untested": 1,
+  "not_verifiable": 1,
+  "root_cause": {
+    "statement": "contact.organizationId - the persisted default org that login pins the active context to - is NEVER validated against BlockingStatuses, while contact.organizations correctly filters blocked orgs out of the eligible list. So login pins the user to an org the same backend just excluded, and every org-scoped query then returns Forbidden inside an HTTP 200.",
+    "retracted_hypothesis": "An earlier synthesis blamed the storefront for omitting organization_id from the token grant. That is wrong as a root cause: the org-SWITCH grant does carry organization_id (verified on the wire: grant_type=refresh_token&organization_id=organization-acme-store). The login password grant does omit it, but the defect is the unvalidated server-side default, not the client.",
+    "fix_location": "server-side - validate contact.organizationId against BlockingStatuses when resolving the login active-org context (vc-module-customer OrganizationIdClaimProvider / OrganizationIdRequestValidator area)",
+    "frontend_contribution": "renders the active org as a [selected] switcher option even when it is absent from the eligible list - which is incidentally what gives multi-org users their escape hatch"
+  },
+  "p0_blast_radius": {
+    "single_org_user": "P0 - inescapable. Forced into the blocking org context, 403 on every /account/* and /company/* route incl. /account/dashboard which hosts pending-invites-widget.vue, and the invite email's only CTA points there. The invite can never be accepted.",
+    "multi_org_user": "P1/P2 - misrouted, not stuck. Same forced-context trigger and same 403 landing, but the header account menu and org switcher stay functional on /403, so selecting an Approved org recovers full access without signing out.",
+    "verified_on": "MULTI_ORG_USER with one Rejected membership override on 1 of 11 orgs"
+  },
+  "bugs_filed": [],
+  "bugs_pending_confirmation": [
+    "P0 - Invited membership bricks the account; pending invite can never be accepted (widget behind 403, invite email links there)",
+    "High - Storefront sign-in is not org-scoped: no organization_id on /connect/token, so blocking status yields generic 403 instead of user_is_locked_in_organization (BL-AUTH-013 violation)",
+    "High - Delete member / Revoke invite leave the contact visible as Inactive, still counted, unfilterable",
+    "P1 - Breaking change: pre-existing global contact status Invited/Rejected/Deleted now blocks org sign-in (105 accounts on this env)",
+    "Medium - Status vocabulary conflated; admin shows raw Approved/Rejected, storefront shows Active/Inactive; Rejected has no storefront producer",
+    "P2 - Silent org-scope fallback: deleted/foreign/bogus organization_id issues a 200 token scoped to a different org",
+    "P2 - POST /api/customer/organization-memberships with null userId returns 500 leaking DB name/table/column",
+    "P2 - Deleting an organization does not cascade to OrganizationMembership (orphan rows, stale organizationName)",
+    "P2 - GraphQL authorization/resolver failures surface as HTTP 500 (GetOrganizationAddresses, acceptOrganizationInvite)",
+    "P3 - Organization.myStatusInOrganization returns the caller's status, not the queried contact's",
+    "P3 - statuses:[String] invalid input silently returns empty and is case-sensitive",
+    "P1 - Permission propagation lag: a new maintainer membership cannot invite for several seconds",
+    "a11y - language flag alt text identical for all languages; invite dialog inputs have no accessible name; status conveyed by icon/colour only"
+  ],
+  "business_rules_verified": [
+    "BL-B2B-008", "BL-B2B-009", "BL-AUTH-012", "BL-AUTH-013", "BL-B2B-005", "BL-B2B-001", "BL-B2B-007"
+  ],
+  "business_rules_violated": ["BL-AUTH-013"],
+  "regression_checks": {
+    "VCST-5374": "FIXED by this PR - 5th failed login now returns user_is_temporary_locked_out with lockoutEnd 15min future, not the permanent user_is_locked_out"
+  },
+  "exploratory": {
+    "charter": "skipped as a formal Step 5 - ticket is Medium priority and both execution agents ran always-on bug detection, which surfaced ~20 incidental defects; the C-12 blocker also makes the accept/reject flow unexplorable until fixed",
+    "heuristic": null,
+    "findings": { "bugs": 0, "questions": 0, "observations": 0, "risks": 0 }
+  },
+  "appinsights": {
+    "checked": true,
+    "layers": ["frontend", "backend"],
+    "window_minutes": 90,
+    "signals": { "real_bug": 2, "needs_review": 0, "dismissed": 4 },
+    "correlated_failures": [
+      "POST graphql/ 500 x4 incl. unhandled InvalidOperationException: Error trying to resolve field 'acceptOrganizationInvite'",
+      "POST graphql/GetOrganizationAddresses 500 x1 co-timed with AuthorizationError - authorization denial surfacing as HTTP 500"
+    ],
+    "dismissed_signals": [
+      "POST Notifications/RenderingTemplate 500 x6 - pre-existing, fails identically for old notification types, not a VCST-5281 regression",
+      "AuthorizationError Access denied. x3 / missing xapi:my_organization:edit x1 - expected, produced by our own C-43/C-45 authorization probes",
+      "ResizeObserver loop x18 (storefront) - benign browser noise",
+      "ApolloError Failed to fetch x1 - transient"
+    ]
+  },
+  "test_data_issues": [
+    "RETRACTED - the reported MULTI_ORG_USER credential drift was NOT real. MULTI_ORG_USER_PASSWORD (Password1!) authenticates ricreyacrouyi-3425@yopmail.com correctly; the failure was a missing storeId=B2B-store parameter on the /connect/token password grant, which fails regardless of password. C-18/C-27 were re-tested.",
+    ".env.playwright.local contains dictionary-word secret values; ADMIN_VCMP-DEV matches ordinary page text and the MCP redacted real evidence content"
+  ],
+  "harness_notes": [
+    "/connect/token requires storeId (camelCase) alongside organization_id (snake_case); without storeId every customer login returns user_cannot_login_in_store even with a correct password, masking real status errors"
+  ],
+  "c40_refinement": {
+    "finding": "For a user with legacy org associations but NO OrganizationMembership row, effective status resolves entirely from contact.Status, so a blocking global status denies EVERY org - and the C-41 membership-override remedy is unavailable because no row exists to override with. Verified live on MULTI_ORG_USER (11 orgs, 0 rows): Invited -> user_invitation_pending_in_organization, Rejected -> user_is_rejected_in_organization, restored to Approved -> 200.",
+    "population": "104 of the 105 at-risk accounts on this env have no membership row",
+    "healthy_baseline": "With contact.Status=Approved and no membership row, myStatusInOrganization resolves to Approved and an org-scoped token is issued with full permissions - the fallback works correctly"
+  },
+  "screenshots": "reports/tickets/Sprint26-15/VCST-5281/screenshots/"
+}

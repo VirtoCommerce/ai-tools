@@ -396,3 +396,124 @@ rather than supersedes.
 the activity feed in passing) but is not contradicted by it — it should gain a cross-reference, not an
 amendment, if that draft promotes. No existing invariant covers order-paid/order-shipped triggers,
 CC/BCC routing, abandoned-cart scheduling, or template-deletion protection, so nothing was superseded.
+
+---
+---
+
+# Second scope this date — VCST-5281 (Organization Invite & Multi-Org Status)
+
+Phase 4c of `/qa-test-lifecycle VCST-5281`. Four candidates surfaced (two specialists, after
+de-duplication and ID-collision repair). **All four are held; none applied.** Two distinct reasons
+below — neither is a failure, both are *not-yet*.
+
+**Blocking reason for all four — the oracle is not safely writable right now.**
+`business-logic.md` contains **two complete copies of all 20 domains**; `npm run bl:lint` reports
+289 findings / **155 Blocker (BLL-001 duplicate BL ID)** and exits 1. A body-only auto-apply into a
+two-bodied file lands in one copy and not the other — which is exactly how copy A (read first by any
+grep) became stale on `BL-CART` quantity and on `BL-UI`'s reference to a suite deleted 2026-07-25.
+Promoting into that file would compound the defect. **Re-audit trigger for all four: the oracle is
+de-duplicated and `bl:lint` reaches 0 Blockers.**
+
+**Second reason, per candidate (marked below):** three of the four assert behaviour the shipped code
+does **not** implement — they are the oracle a defect is filed *against*, not a description of the
+build. Source therefore contradicts the proposed rule, so they cannot be CONFIRMED until the fix
+lands, independent of the oracle-integrity blocker.
+
+## New BL-* proposed
+
+### PROPOSED-BL-AUTH-014: A login-pinned organization context must be revalidated against blocking statuses `[P0-revenue]`
+
+- **Rule:** The organization a sign-in pins the active session context to (`contact.organizationId`)
+  MUST be validated against `BlockingStatuses` before a token is issued — the same filter
+  `contact.organizations` already applies when building the eligible-org list. The two must not disagree.
+- **Verify:** Give a single-org user's only membership a blocking effective status, then request a token
+  for that org (with `storeId`); expect refusal, not a 200 that pins the session into the excluded org.
+- **Violation signal:** `Forbidden` inside an HTTP 200 on every org-scoped route straight after login;
+  a single-org user cannot reach any `/account/*` or `/company/*` route and cannot escape.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Docs:** CONTRADICTORY — the Platform User Guide presents contact status as an admin-configurable,
+  informational attribute (Settings, Customer, Statuses; worked example "add the **Pending** status")
+  and never as an authentication gate. The ticket's own upgrade note confirms it was "informational only"
+  before this change. Docs are pre-change, not merely silent.
+- **Live:** OBSERVED — reproduced on the pinned build; multi-org users are misrouted but recover via the
+  switcher, single-org users are inescapably 403.
+- **Source:** CONTRADICTS the proposed rule — `OrganizationIdClaimProvider` / `OrganizationIdRequestValidator`
+  (vc-module-customer#312) do not perform this validation. This is the invariant the P0 defect violates.
+- **Held because:** oracle-integrity blocker **and** source-does-not-implement. Re-audit when the
+  validation lands *and* the oracle is de-duplicated.
+- **Triggered by:** PRF-GQL-079, CUST-091, AUTH-073, B2C-ORG-040, COMP-E2E-024, COMP-E2E-025, AUTH-043
+- **Note:** supersedes a duplicate candidate mis-numbered `BL-B2B-011` by the frontend pass — that ID is
+  already taken by the org-role-whitelist invariant.
+
+### PROPOSED-BL-B2B-012: Membership status vocabulary is closed, and the override precedence is fixed `[P1-data]`
+
+- **Rule:** `OrganizationMembership.Status` is one of exactly `Invited`, `Approved`, `Rejected`, `Deleted`.
+  Blocking statuses are `Invited`, `Rejected`, `Deleted` — `Invited` is itself blocking.
+  Reinvitable statuses are `Rejected` and `Deleted` only — an already-`Invited` membership is NOT
+  re-invitable (resend is the only path). Effective status resolves as membership status, else the
+  contact's global status, else `Approved` — so a per-membership override always beats a blocking
+  global contact status.
+- **Verify:** Per-state token grant plus the accept / reject / resend / revoke transitions; and the
+  override case — global `Rejected` with membership `Approved` means sign-in succeeds.
+- **Violation signal:** a transition landing outside the four legal values; `Invited` accepted as
+  re-invitable; a membership override failing to beat a blocking global status.
+- **Agents:** qa-backend-expert
+- **Docs:** CONTRADICTORY — docs describe contact statuses as *admin-extensible per entity*, which
+  conflicts with a closed four-value set. This is not cosmetic: a custom status added via the documented
+  workflow is neither blocking (so sign-in proceeds) nor equal to `Approved` (so the org is dropped from
+  the switcher) — the same failure mode as the switcher candidate below, reachable through a supported
+  admin action.
+- **Live:** OBSERVED — all four values and the coalescing order confirmed on the pinned build, including
+  the no-membership-row path where effective status resolves entirely from the contact's global status.
+- **Source:** AGREES — `ModuleConstants.MembershipStatuses` and `OrganizationMembership.ResolveEffectiveStatus`.
+- **Held because:** the oracle-integrity blocker ONLY. Source and live agree and the ticket's upgrade note
+  documents the intent, so this is the one candidate ready to promote the moment the oracle is de-duplicated
+  — with the docs conflict recorded as a documentation defect to raise separately, not as a blocker.
+- **Triggered by:** PRF-GQL-071..075, CUST-091, CUST-092, CUST-095
+
+### PROPOSED-BL-B2B-013: Organization membership enumeration must authorize the caller `[P0-security]`
+
+- **Rule:** `ContactType.organizations` and `OrganizationType.contacts` MUST authorize against the
+  caller's own effective status in the queried organization. A rejected, revoked or deleted caller must
+  not enumerate other members' personal data.
+- **Verify:** Reject or revoke the caller's own membership, then re-run the nested
+  `me`, `contact`, `organizations`, `contacts` selection with the same token; expect an authorization
+  error or empty items, never other members' emails.
+- **Violation signal:** member first name, last name or email returned to a caller whose effective
+  status in that organization is blocking.
+- **Agents:** qa-backend-expert
+- **Docs:** N/A (waived) — an authorization invariant on a GraphQL resolver is an implementation detail the
+  user guides do not narrate.
+- **Live:** OBSERVED — currently violated on the pinned build.
+- **Source:** CONTRADICTS the proposed rule — `HasActiveAccessToOrganizationAsync` gates only the
+  `organization(id:)` query via `AddMemberQuery`'s `checkAuthAsync`; neither schema type performs any
+  authorization, and neither reject nor revoke removes the org from `contact.Organizations`
+  (unlike `RemoveMemberFromOrganization`). Raised in review on vc-module-profile-experience-api#141.
+- **Held because:** oracle-integrity blocker **and** source-does-not-implement.
+- **Triggered by:** PRF-GQL-076, PRF-GQL-077
+
+### PROPOSED-BL-B2B-014: A switcher's visibility gate and its content query must share one status filter `[P1-data]`
+
+- **Rule:** The organization switcher's render gate and the query that fills it MUST apply the same status
+  filter. A gate computed from an unfiltered total, paired with a filtered content query, renders a control
+  that is permanently stuck in its empty state for a legitimately multi-org user.
+- **Verify:** Give a two-org user a non-empty, non-`Approved` global contact status with no membership
+  override; the switcher renders (gate passes on the unfiltered total) while its list resolves empty.
+- **Violation signal:** switcher control visible while its items are empty and the unfiltered total
+  exceeds one.
+- **Agents:** qa-frontend-expert
+- **Docs:** N/A (waived) — a client-side gate/query consistency rule is not narrated in the user guides.
+- **Live:** OBSERVED (prior run) — the reachable population is real, not hypothetical: registration sets
+  the contact's global status to `Locked` when email verification is required and nothing ever resets it,
+  so every self-registered user on such a store carries a blocking global status permanently.
+- **Source:** CONTRADICTS the proposed rule — the gate reads an unfiltered total while the content query
+  filters on `Approved` (vc-frontend#2399). Raised in review.
+- **Held because:** oracle-integrity blocker **and** source-does-not-implement.
+- **Triggered by:** B2C-ORG-040, AUTH-073, B2C-MBR-035
+
+## Stale BL-* flagged (VCST-5281 scope)
+
+None superseded. `BL-AUTH-012`, `BL-AUTH-013` and `BL-B2B-001/005/007/008/009/011` were each re-read
+against the three PRs and remain accurate — the new candidates extend the model rather than contradict it.
+Separately, `BL-AUTH-013` was recorded as **violated** by the current build in the prior execution run;
+that is a defect against an accurate invariant, not oracle drift, so no amendment is proposed.

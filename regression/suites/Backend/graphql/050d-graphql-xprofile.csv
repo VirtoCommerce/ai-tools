@@ -725,3 +725,416 @@ PRF-GQL-070,"[VCST-5028] lockOrganizationContact — Non-Maintainer Unauthorized
     }
   }
 [GQL-EXEC lock_unauthorized]","[ERRORS label=lock_unauthorized] errors[] non-empty — unauthorized caller gets GraphQL error (not 200 success)","[REST] GET {{BACK_URL}}/api/members/@td(TECHFLOW_ADMIN.platform_id) — verify platform-level isLockedOut unchanged (unauthorized lock attempt must NOT persist any state change)","lock_unauthorized errors[] empty (non-maintainer successfully locks another member — AC4 RBAC regression); isLockedOut toggled by unauthorized caller (state corruption)","none — no state change expected (error response)","VCST-5028; xAPI; BL-B2B-005; BL-AUTH-003; AC4; Synced: VCST-5028 (2026-06-15)",Draft
+PRF-GQL-071,"[VCST-5281] xProfile — acceptOrganizationInvite Happy Path (Self-Service Accept)","GraphQL > xProfile > OrganizationMembership > Invite","Critical","BL-B2B-009","ECL-2.1; ECL-10.2","Runner-native. ORG_USER (a real, already-authenticatable role alias — resolveRole() only supports predefined role aliases, not ad-hoc REST-created accounts) is given a SECOND, throwaway-org membership via REST with status=Invited, then accepts it via their own [AUTH role=ORG_USER] token. ORG_USER's ORIGINAL org membership is never touched. Schema: acceptOrganizationInvite(command: InputAcceptRejectOrganizationInviteType!): ContactType; input has a single field organizationId — the operation always targets the CALLER's own membership (self-service), never an arbitrary member.","org_id=@td(ORG_TECHFLOW.id); password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-PrfGql071""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP get_org_user]
+GET {{BACK_URL}}/api/platform/security/users/{{ORG_USER_EMAIL}}
+[REST-EXEC get_org_user]
+[REST-CAPTURE get_org_user.body.id → ORG_USER_ID]
+[REST-CAPTURE get_org_user.body.memberId → ORG_USER_MEMBER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{ORG_USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-PrfGql071"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[AUTH role=ORG_USER]
+[GQL-OP accept_invite]
+mutation {
+  acceptOrganizationInvite(command: { organizationId: ""{{ORG_ID}}"" }) {
+    id
+    status
+    statusInOrganization
+  }
+}
+[GQL-EXEC accept_invite]","[ERRORS label=create_org] errors[] empty {OBSERVED}
+[ERRORS label=accept_invite] errors[] empty {SPEC} (vc-module-profile-experience-api#141 acceptOrganizationInvite(command: InputAcceptRejectOrganizationInviteType!): ContactType)
+[DATA label=accept_invite] data.acceptOrganizationInvite.id is non-null {SPEC}
+[DATA label=accept_invite] data.acceptOrganizationInvite.statusInOrganization = ""Approved"" {BL} (BL-B2B-009: acceptance transitions the membership out of the Invited BlockingStatus)","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""{{ORG_USER_ID}}""} confirms the throwaway org's membership row now reads status=Approved, and that ORG_USER's ORIGINAL org membership is unaffected (still present, unchanged)","errors[] non-empty (mutation rejected — regression on a new xAPI-only mutation); statusInOrganization remains ""Invited"" after a succeeded-looking response (accept had no effect); acceptOrganizationInvite succeeds for an organizationId the caller was never invited to (should error instead); ORG_USER's ORIGINAL org membership is altered by this case (setup/cleanup isolation failure)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009","Draft"
+PRF-GQL-072,"[VCST-5281] xProfile — rejectOrganizationInvite Happy Path (Self-Service Reject)","GraphQL > xProfile > OrganizationMembership > Invite","Critical","BL-B2B-009","ECL-2.1; ECL-10.2","Runner-native. Same ORG_USER + throwaway-org pattern as PRF-GQL-071 (self-service mutations can only be exercised via a predefined [AUTH role=] alias). Status oracle: Rejected is a BlockingStatus and is in ReinvitableStatuses (a fresh inviteUser can re-invite this user later — see PRF-GQL-073 for the distinct Invited-is-NOT-reinvitable case).","org_id=@td(ORG_TECHFLOW.id); password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-PrfGql072""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP get_org_user]
+GET {{BACK_URL}}/api/platform/security/users/{{ORG_USER_EMAIL}}
+[REST-EXEC get_org_user]
+[REST-CAPTURE get_org_user.body.id → ORG_USER_ID]
+[REST-CAPTURE get_org_user.body.memberId → ORG_USER_MEMBER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{ORG_USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-PrfGql072"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[AUTH role=ORG_USER]
+[GQL-OP reject_invite]
+mutation {
+  rejectOrganizationInvite(command: { organizationId: ""{{ORG_ID}}"" }) {
+    id
+    statusInOrganization
+  }
+}
+[GQL-EXEC reject_invite]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP verify_rejected]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"": ""{{ORG_USER_ID}}""}
+[REST-EXEC verify_rejected]","[ERRORS label=create_org] errors[] empty {OBSERVED}
+[ERRORS label=reject_invite] errors[] empty {SPEC} (vc-module-profile-experience-api#141 rejectOrganizationInvite(command: InputAcceptRejectOrganizationInviteType!): ContactType)
+[DATA label=reject_invite] data.rejectOrganizationInvite.statusInOrganization = ""Rejected"" {BL} (BL-B2B-009)
+[DATA label=verify_rejected] body.results[?organizationId={{ORG_ID}}].status = ""Rejected"" {SPEC} (REST cross-layer confirmation of the xAPI mutation's effect)","[REST] verify_rejected above IS the cross-layer check — REST search confirms the GraphQL mutation's write is visible outside the GraphQL layer, and that ORG_USER's ORIGINAL org membership is unaffected","errors[] non-empty (mutation rejected); statusInOrganization stays ""Invited"" (reject had no effect — masks as success but doesn't block org access); verify_rejected shows a status other than Rejected (xAPI/REST inconsistency); ORG_USER's ORIGINAL org membership is altered by this case","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009; checklist item 13/15","Draft"
+PRF-GQL-073,"[VCST-5281] xProfile — An Invited Membership Is NOT Reinvitable; resendOrganizationInvite Is the Only Path (State-Transition Boundary)","GraphQL > xProfile > OrganizationMembership > Invite","High","BL-B2B-009","ECL-2.1","Runner-native. Same ORG_USER + throwaway-org pattern. Status oracle: ReinvitableStatuses = {Rejected, Deleted} — an already-Invited membership is deliberately excluded. Establishes a fresh Invited membership, attempts a SECOND inviteUser for the same email+org (should be refused/no-op since Invited is not reinvitable), then confirms resendOrganizationInvite (the correct action for an Invited membership) succeeds instead. NOTE: InputInviteUserType has NO cultureName field (schema: storeId!, organizationId, urlSuffix, emails!, message, roleIds, customerOrderId) — omitted here after a schema-validation catch during authoring.","org_id=@td(ORG_TECHFLOW.id)","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-PrfGql073""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP get_org_user]
+GET {{BACK_URL}}/api/platform/security/users/{{ORG_USER_EMAIL}}
+[REST-EXEC get_org_user]
+[REST-CAPTURE get_org_user.body.id → ORG_USER_ID]
+[REST-CAPTURE get_org_user.body.memberId → ORG_USER_MEMBER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{ORG_USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-PrfGql073"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[GQL-OP reinvite_attempt]
+mutation {
+  inviteUser(command: { storeId: ""{{STORE_ID}}"", organizationId: ""{{ORG_ID}}"", emails: [""{{ORG_USER_EMAIL}}""] }) {
+    succeeded
+    errors { code description }
+  }
+}
+[GQL-EXEC reinvite_attempt]
+[GQL-OP resend_attempt]
+mutation {
+  resendOrganizationInvite(command: { memberId: ""{{ORG_USER_MEMBER_ID}}"" }) {
+    succeeded
+    errors { code description }
+  }
+}
+[GQL-EXEC resend_attempt]
+[REST-OP verify_still_invited]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"": ""{{ORG_USER_ID}}""}
+[REST-EXEC verify_still_invited]","[ERRORS label=create_org] errors[] empty {OBSERVED}
+[EVIDENCE] reinvite_attempt: either errors[] non-empty OR data.inviteUser.succeeded = false — a fresh inviteUser for an already-Invited membership must not silently duplicate/reset it {SPEC} (ModuleConstants.ReinvitableStatuses = {Rejected, Deleted}, deliberately excludes Invited)
+[ERRORS label=resend_attempt] errors[] empty {SPEC} (resendOrganizationInvite(command: InputResendOrganizationInviteType!) is the documented action for an already-Invited membership)
+[DATA label=resend_attempt] data.resendOrganizationInvite.succeeded = true {SPEC}
+[DATA label=verify_still_invited] body.results[?organizationId={{ORG_ID}}].status = ""Invited"" -- unchanged by either attempt {BL} (BL-B2B-009: resend does not transition status, only re-dispatches the notification)","[REST] verify_still_invited above cross-checks that neither the blocked reinvite nor the successful resend altered the membership's Status value","reinvite_attempt succeeds cleanly (data.inviteUser.succeeded = true, errors[] empty) for an already-Invited membership (ReinvitableStatuses boundary not enforced); resend_attempt errors[] non-empty (the one documented correct action for Invited fails); verify_still_invited shows a status other than Invited (either mutation had an unexpected side effect on state)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5281; testing-checklist.md item 20; BL-B2B-009","Draft"
+PRF-GQL-074,"[VCST-5281] xProfile — revokeOrganizationInvite Transitions to a Blocking Status (Exact Target Value Is an Open Question, C-32)","GraphQL > xProfile > OrganizationMembership > Invite","High","BL-B2B-009","ECL-2.1","Runner-native. OPEN QUESTION (testing-checklist.md C-32): nothing in source states which of the 4 legal statuses revokeOrganizationInvite transitions TO. This case deliberately asserts only the documented invariant (result must be a BlockingStatus, since a revoked invite must not leave the invitee with access) rather than guessing the literal string, and records the OBSERVED value for a human to promote into the oracle once confirmed. Input: InputRevokeOrganizationInviteType has a single field memberId (admin-side, targets another member — distinct from accept/reject's self-service organizationId-only shape).","org_id=@td(ORG_TECHFLOW.id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""PrfGql074"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-prfgql074@yopmail.com"", ""email"": ""AGENT-TEST-prfgql074@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-prfgql074@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""@td(ORG_TECHFLOW.id)"", ""organizationName"": ""TechFlow"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[GQL-OP revoke_invite]
+mutation {
+  revokeOrganizationInvite(command: { memberId: ""{{MEMBER_ID}}"" }) {
+    id
+    statusInOrganization
+  }
+}
+[GQL-EXEC revoke_invite]
+[REST-OP verify_revoked]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}""}
+[REST-EXEC verify_revoked]","[ERRORS label=revoke_invite] errors[] empty {SPEC} (vc-module-profile-experience-api#141 revokeOrganizationInvite(command: InputRevokeOrganizationInviteType!): ContactType)
+[EVIDENCE] data.revokeOrganizationInvite.statusInOrganization is one of the 4 legal ModuleConstants.MembershipStatuses values AND is a member of BlockingStatuses {Invited, Rejected, Deleted} -- a revoked invite must not leave the invitee with org access {BL} (BL-B2B-009 + ModuleConstants.BlockingStatuses)
+[EVIDENCE] verify_revoked.body.results[?organizationId=@td(ORG_TECHFLOW.id)].status matches the value observed in revoke_invite -- record the CONCRETE value here as {OBSERVED} once this case is executed live, and promote it into business-logic.md / this case's own oracle text as the confirmed target status","[REST] verify_revoked above IS the cross-layer confirmation that the xAPI mutation's write is durable outside the GraphQL layer","revoke_invite.statusInOrganization = ""Approved"" (a revoked invite would grant, not deny, access — critical inversion); errors[] non-empty (mutation rejected); verify_revoked shows a status that disagrees with revoke_invite's own returned value (xAPI/REST inconsistency)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql074@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]","VCST-5281; testing-checklist.md C-32 (open question); BL-B2B-009","Draft"
+PRF-GQL-075,"[VCST-5281] xProfile — resendOrganizationInvite Happy Path (Re-Dispatches Notification, No Status Change)","GraphQL > xProfile > OrganizationMembership > Invite","High","BL-B2B-009","","Runner-native. Input: InputResendOrganizationInviteType has memberId, urlSuffix, message. Return: CustomIdentityResultType {succeeded, errors{code description}}.","org_id=@td(ORG_TECHFLOW.id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""PrfGql075"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-prfgql075@yopmail.com"", ""email"": ""AGENT-TEST-prfgql075@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-prfgql075@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""@td(ORG_TECHFLOW.id)"", ""organizationName"": ""TechFlow"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[GQL-OP resend_invite]
+mutation {
+  resendOrganizationInvite(command: { memberId: ""{{MEMBER_ID}}"", urlSuffix: ""/confirm-invitation"", message: ""Reminder to join TechFlow"" }) {
+    succeeded
+    errors { code description }
+  }
+}
+[GQL-EXEC resend_invite]
+[REST-OP verify_unchanged]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}""}
+[REST-EXEC verify_unchanged]","[ERRORS label=resend_invite] errors[] empty {SPEC} (vc-module-profile-experience-api#141 resendOrganizationInvite)
+[DATA label=resend_invite] data.resendOrganizationInvite.succeeded = true {SPEC}
+[DATA label=verify_unchanged] body.results[?organizationId=@td(ORG_TECHFLOW.id)].status = ""Invited"" -- resend re-dispatches the notification, it does not itself change the membership's status {BL} (BL-B2B-009)","[REST] verify_unchanged above is the cross-layer confirmation; the notification re-dispatch itself is checked in CUST-090-family cases via the Admin Notifications activity feed (027 suite), not duplicated here","errors[] non-empty for a valid Invited membership; succeeded = true but the membership's status is silently changed by resend (side effect outside the documented contract)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql075@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]","VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009; testing-checklist.md item 11","Draft"
+PRF-GQL-076,"[VCST-5281] xProfile — ContactType.organizations / Organization.contacts Perform NO Authorization; a Rejected Member Still Enumerates Other Members' PII","GraphQL > xProfile > OrganizationMembership > Authorization","Critical","BL-B2B-001","ECL-10.2; ECL-3.1","Runner-native. PR review finding (not yet fixed): ContactType.organizations and Organization.contacts have no authorization check tied to the caller's own membership status in the queried org, and neither reject nor revoke removes the org from the rejected/revoked contact's own Organizations list. ORG_USER is given a SECOND, throwaway TechFlow-scoped org membership, immediately rejects it via their own [AUTH role=ORG_USER] token, then that SAME token is used to enumerate TechFlow's member list — which should be blocked but currently is not.","org_id=@td(ORG_TECHFLOW.id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_org_user]
+GET {{BACK_URL}}/api/platform/security/users/{{ORG_USER_EMAIL}}
+[REST-EXEC get_org_user]
+[REST-CAPTURE get_org_user.body.id → ORG_USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{ORG_USER_ID}}"", ""organizationId"": ""@td(ORG_TECHFLOW.id)"", ""organizationName"": ""TechFlow"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[AUTH role=ORG_USER]
+[GQL-OP reject_own_invite]
+mutation {
+  rejectOrganizationInvite(command: { organizationId: ""@td(ORG_TECHFLOW.id)"" }) {
+    id
+    statusInOrganization
+  }
+}
+[GQL-EXEC reject_own_invite]
+[GQL-OP enumerate_members_as_rejected]
+query {
+  organization(id: ""@td(ORG_TECHFLOW.id)"") {
+    contacts(first: 20) {
+      totalCount
+      items { id firstName lastName emails }
+    }
+  }
+}
+[GQL-EXEC enumerate_members_as_rejected]","[DATA label=reject_own_invite] data.rejectOrganizationInvite.statusInOrganization = ""Rejected"" {SPEC} (vc-module-profile-experience-api#141 rejectOrganizationInvite)
+[EVIDENCE] enumerate_members_as_rejected: CURRENTLY CONFIRMED — errors[] empty and data.organization.contacts returns other TechFlow members' firstName/lastName/emails even though the SAME token's own membership in that org is Rejected {SPEC} (PR review finding: ContactType.organizations / Organization.contacts perform no authorization check against the caller's own membership status)
+[EVIDENCE] this is a P0 data-exposure defect: a rejected/revoked user should get an authorization error or an empty items[], never other members' PII {BL} (BL-B2B-001 scope isolation)","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""{{ORG_USER_ID}}""} confirms the throwaway TechFlow membership status IS Rejected at the time enumerate_members_as_rejected ran, ruling out a race/staleness confound","enumerate_members_as_rejected now correctly returns errors[] non-empty or an empty items[] for a Rejected caller (fix landed — update this case's Assertions to the corrected authorization behavior and re-title it as a regression guard); the fix over-blocks and an APPROVED member also gets denied (see PRF-GQL-077 positive counterpart, which would then also need updating)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]","VCST-5281; PR review finding B (P0 data exposure); BL-B2B-001; vc-module-profile-experience-api#141","Draft"
+PRF-GQL-077,"[VCST-5281] xProfile — Organization.contacts Baseline: an APPROVED Org Member Can Enumerate Their Own Org's Members (Positive Counterpart to PRF-GQL-076)","GraphQL > xProfile > OrganizationMembership > Authorization","High","BL-B2B-001","","Runner-native. TECHFLOW_ADMIN is an Approved org-maintainer member of TechFlow. Establishes the normal/allowed baseline so a future authorization fix for PRF-GQL-076 can be judged against a known-good case (no over-blocking).","org_id=@td(ORG_TECHFLOW.id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP enumerate_members_as_approved]
+query {
+  organization(id: ""@td(ORG_TECHFLOW.id)"") {
+    contacts(first: 20) {
+      totalCount
+      items { id firstName lastName }
+    }
+  }
+}
+[GQL-EXEC enumerate_members_as_approved]","[ERRORS label=enumerate_members_as_approved] errors[] empty — an Approved org member CAN see their own org's member list {BL} (BL-B2B-001)
+[COUNT label=enumerate_members_as_approved] data.organization.contacts.totalCount >= 1 {SPEC}
+[DATA label=enumerate_members_as_approved] data.organization.contacts.items is non-null {SPEC}","none — pure read, establishes the allowed baseline for the org-membership authorization feature group","errors[] non-empty for a genuinely Approved org-maintainer caller (over-blocking regression if PRF-GQL-076's fix lands too aggressively); items null despite totalCount > 0 (connection shape regression)","none — read-only","VCST-5281; BL-B2B-001; positive counterpart to PRF-GQL-076","Automated"
+PRF-GQL-078,"[VCST-5281] xProfile — ContactType.organizations(statuses:) Filters Correctly on a Valid Value; an Invalid/Wrong-Case Value Silently Returns Empty","GraphQL > xProfile > OrganizationMembership > Status Fields","High","BL-B2B-009","ECL-5.1","Runner-native. Schema (live-verified 2026-07-29): ContactType.organizations(after, first, searchPhrase, sort, statuses: [String]): OrganizationConnection. MULTI_ORG_TF_BR is Approved in both its orgs (no Invited org to filter positively on today), so the positive case filters on ""Approved"" (which it does have) and the negative case exercises invalid/case-sensitive input — the confirmed defect (checklist item 9) is that an invalid statuses value silently returns empty rather than erroring, and the match is case-sensitive.","—","[AUTH role=MULTI_ORG_TF_BR]
+[GQL-OP filter_valid]
+query {
+  me {
+    contact {
+      organizations(statuses: [""Approved""]) {
+        totalCount
+        items { id name }
+      }
+    }
+  }
+}
+[GQL-EXEC filter_valid]
+[GQL-OP filter_wrong_case]
+query {
+  me {
+    contact {
+      organizations(statuses: [""approved""]) {
+        totalCount
+        items { id }
+      }
+    }
+  }
+}
+[GQL-EXEC filter_wrong_case]
+[GQL-OP filter_invalid_value]
+query {
+  me {
+    contact {
+      organizations(statuses: [""NotARealStatus""]) {
+        totalCount
+        items { id }
+      }
+    }
+  }
+}
+[GQL-EXEC filter_invalid_value]","[ERRORS label=filter_valid] errors[] empty {SPEC} (vc-module-profile-experience-api#141 ContactType.organizations(statuses: [String]))
+[COUNT label=filter_valid] data.me.contact.organizations.totalCount = 2 -- both TechFlow and BuildRight are Approved {OBSERVED} (MULTI_ORG_TF_BR fixture, both memberships Approved)
+[ERRORS label=filter_wrong_case] errors[] empty {SPEC}
+[COUNT label=filter_wrong_case] data.me.contact.organizations.totalCount = 0 -- CONFIRMED case-sensitive: ""approved"" does not match the stored ""Approved"" {SPEC} (testing-checklist.md item 9, confirmed defect list item 9)
+[ERRORS label=filter_invalid_value] errors[] empty -- a non-enum, never-legal value does not error, it silently narrows to zero results {SPEC} (testing-checklist.md item 9)
+[COUNT label=filter_invalid_value] data.me.contact.organizations.totalCount = 0 {SPEC}","none — pure read against the MULTI_ORG_TF_BR fixture, no state mutated","filter_valid.totalCount != 2 (filter itself broken, unrelated to the case-sensitivity defect); filter_wrong_case now correctly matches case-insensitively (fix landed — update this case's Assertions and title); filter_invalid_value now returns an error instead of silently empty (fix landed — likewise update)","none — read-only","VCST-5281; testing-checklist.md item 9 (confirmed defect); vc-module-profile-experience-api#141","Draft"
+PRF-GQL-079,"[VCST-5281][P0 ROOT CAUSE] xProfile — contact.organizationId (Default-Org Login Context) Is NEVER Validated Against BlockingStatuses, Unlike contact.organizations","GraphQL > xProfile > OrganizationMembership > Status Fields","Critical","new","ECL-2.1; ECL-10.2","Runner-native. THE ticket's headline root cause (summary.json root_cause): contact.organizations correctly filters blocked orgs out of the eligible list, but contact.organizationId (the persisted default-org id login pins the active context to) is never validated against BlockingStatuses. A single-org user whose only org is now blocking is pinned into that org by login and then Forbidden on every org-scoped call — an inescapable P0. ORG_USER (a real single-org fixture) has its OWN membership status temporarily flipped to Rejected via REST for this case ONLY, and is restored to Approved in Cleanup — no throwaway org is used here because the defect is specifically about the DEFAULT/ORIGINAL org context, which only exists on a real pre-existing membership.","org_id=@td(ORG_TECHFLOW.id); store_id={{STORE_ID}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_org_user]
+GET {{BACK_URL}}/api/platform/security/users/{{ORG_USER_EMAIL}}
+[REST-EXEC get_org_user]
+[REST-CAPTURE get_org_user.body.id → ORG_USER_ID]
+[REST-OP find_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"": ""{{ORG_USER_ID}}""}
+[REST-EXEC find_membership]
+[REST-CAPTURE find_membership.body.results.0.id → MEMBERSHIP_ID]
+[REST-CAPTURE find_membership.body.results.0.organizationId → ORG_USER_ORG_ID]
+[REST-OP flip_to_rejected]
+PUT {{BACK_URL}}/api/customer/organization-memberships/{{MEMBERSHIP_ID}}
+Content-Type: application/json
+Body: {""id"": ""{{MEMBERSHIP_ID}}"", ""userId"": ""{{ORG_USER_ID}}"", ""organizationId"": ""{{ORG_USER_ORG_ID}}"", ""status"": ""Rejected"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC flip_to_rejected]
+[REST-OP token_grant]
+POST {{BACK_URL}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+Body: grant_type=password&username={{ORG_USER_EMAIL}}&password={{ORG_USER_PASSWORD}}&storeId={{STORE_ID}}
+[REST-EXEC token_grant]
+[AUTH role=ORG_USER]
+[GQL-OP check_organizations_list]
+query {
+  me {
+    contact {
+      organizationId
+      organizations(statuses: [""Approved""]) { totalCount items { id } }
+    }
+  }
+}
+[GQL-EXEC check_organizations_list]","[STATUS label=token_grant] CURRENTLY CONFIRMED 200 -- login succeeds and pins the user's active context to organizationId, with no check against the membership's Rejected (Blocking) status {SPEC} (summary.json root_cause: ""contact.organizationId ... is NEVER validated against BlockingStatuses"")
+[COUNT label=check_organizations_list] data.me.contact.organizations.totalCount = 0 -- organizations() excludes the Rejected org from the eligible list {SPEC} (paraphrasing summary.json root_cause re: contact.organizations excluding blocked orgs from the eligible list)
+[DATA label=check_organizations_list] data.me.contact.organizationId still equals {{ORG_USER_ORG_ID}} -- the login pinned the user to the SAME org that organizations() just excluded, the exact contradiction that produces an inescapable 403 for a single-org user {SPEC} (summary.json root_cause, P0 blast radius: single_org_user)","[REST] GET {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""{{ORG_USER_ID}}""} confirms the membership's persisted status is Rejected throughout, ruling out a timing confound","token_grant now correctly returns 400/user_is_rejected_in_organization for a single-org user whose only membership is Rejected (fix landed — update this case's Assertions to the corrected rejection and re-title as a regression guard); check_organizations_list.totalCount != 0 (organizations() filter itself regressed, a different defect)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_approved]
+PUT {{BACK_URL}}/api/customer/organization-memberships/{{MEMBERSHIP_ID}}
+Content-Type: application/json
+Body: {""id"": ""{{MEMBERSHIP_ID}}"", ""userId"": ""{{ORG_USER_ID}}"", ""organizationId"": ""{{ORG_USER_ORG_ID}}"", ""status"": ""Approved"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC restore_approved]
+MANDATORY — ORG_USER is a shared fixture used across this whole suite; this case MUST NOT be considered complete unless restore_approved is verified to have run.","VCST-5281; summary.json root_cause (P0); testing-checklist.md p0_blast_radius.single_org_user","Draft"
+PRF-GQL-080,"[VCST-5281] xProfile — Locked Org Sign-In Returns user_is_locked_in_organization at the Code Level (Never a Global Code); Missing storeId Masks the Real Error","GraphQL > xProfile > OrganizationMembership > Status Fields","Critical","BL-AUTH-013","ECL-2.1","Runner-native. Closes checklist item 26 (VCST-5374 regression-adjacent): the P0-relevant claim is a specific error CODE, not just a DOM message (AUTH-065 in the frontend suite only asserts copy). Also pins the harness_notes gotcha from today's live run: /connect/token requires storeId (camelCase) alongside organization_id (snake_case) — omitting storeId returns user_cannot_login_in_store regardless of password and masks the real per-org status error.","org_id=@td(ORG_TECHFLOW.id); store_id={{STORE_ID}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""PrfGql080"", ""memberType"": ""Contact"", ""organizations"": [""@td(ORG_TECHFLOW.id)""]}
+[REST-EXEC setup_member]
+[REST-CAPTURE setup_member.body.id → MEMBER_ID]
+[REST-OP setup_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-prfgql080@yopmail.com"", ""email"": ""AGENT-TEST-prfgql080@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC setup_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-prfgql080@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP setup_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""@td(ORG_TECHFLOW.id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC setup_membership]
+[REST-CAPTURE setup_membership.body.id → MEMBERSHIP_ID]
+[REST-OP lock_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships/{{MEMBERSHIP_ID}}/lock
+[REST-EXEC lock_membership]
+[REST-OP grant_with_storeid]
+POST {{BACK_URL}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+Body: grant_type=password&username=AGENT-TEST-prfgql080@yopmail.com&password={{DEFAULT_TEST_PASSWORD}}&organization_id=@td(ORG_TECHFLOW.id)&storeId={{STORE_ID}}
+[REST-EXEC grant_with_storeid]
+[REST-OP grant_without_storeid]
+POST {{BACK_URL}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+Body: grant_type=password&username=AGENT-TEST-prfgql080@yopmail.com&password={{DEFAULT_TEST_PASSWORD}}&organization_id=@td(ORG_TECHFLOW.id)
+[REST-EXEC grant_without_storeid]
+[AUTH role=ADMIN_DEFAULT]
+[GQL-OP confirm_org_schema]
+query {
+  organization(id: ""@td(ORG_TECHFLOW.id)"") {
+    id
+    status
+  }
+}
+[GQL-EXEC confirm_org_schema]","[STATUS label=grant_with_storeid] 400 {BL} (BL-AUTH-013)
+[DATA label=grant_with_storeid] error = ""invalid_grant"" {BL} (BL-AUTH-013)
+[DATA label=grant_with_storeid] code = ""user_is_locked_in_organization"" -- never a global lockout code (user_is_locked_out / user_is_temporary_locked_out) {BL} (BL-AUTH-013; checklist item 26; VCST-5374 regression guard)
+[STATUS label=grant_without_storeid] 400 {OBSERVED} (summary.json harness_notes)
+[DATA label=grant_without_storeid] code = ""user_cannot_login_in_store"" -- this masks the real user_is_locked_in_organization error whenever storeId is omitted, which is why every case in this suite that grants a token MUST always include storeId {OBSERVED} (summary.json harness_notes, confirmed live 2026-07-29)
+[ERRORS label=confirm_org_schema] errors[] empty {DOC}
+[DATA label=confirm_org_schema] data.organization.id = @td(ORG_TECHFLOW.id) {DOC}","[API] GET {{BACK_URL}}/api/platform/security/users/{{USER_ID}}/locked returns {locked:false} -- confirms the org-scoped lock never touches the global account (BL-AUTH-012), so grant_with_storeid's rejection is specifically the org-scoped code, not a global one","grant_with_storeid.code is a global lockout code instead of user_is_locked_in_organization (BL-AUTH-013 violation); grant_with_storeid returns 200 despite the locked membership (P0); grant_without_storeid succeeds (200) despite missing required context (would contradict the documented storeId requirement)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP unlock_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships/{{MEMBERSHIP_ID}}/unlock
+[REST-EXEC unlock_membership]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql080@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]","VCST-5281; testing-checklist.md item 26; BL-AUTH-013; summary.json harness_notes","Draft"
+PRF-GQL-081,"[VCST-5281] xProfile — Authorization Failures on acceptOrganizationInvite and GetOrganizationAddresses Surface as HTTP 500, Not a Clean GraphQL errors[]","GraphQL > xProfile > OrganizationMembership > Error Handling","High","BL-GQL-004","ECL-10.2","Runner-native. AppInsights-correlated confirmed defect from today's live run (summary.json appinsights.correlated_failures): an unhandled InvalidOperationException resolving field 'acceptOrganizationInvite', and a GetOrganizationAddresses authorization denial surfacing as HTTP 500. This case reproduces the acceptOrganizationInvite branch: calling it for an organizationId the caller has no membership in at all (never invited) should be a clean authorization/not-found error, not a server crash.","—","[AUTH role=ORG_USER]
+[GQL-OP accept_never_invited]
+mutation {
+  acceptOrganizationInvite(command: { organizationId: ""@td(ORG_TECHFLOW.id)"" }) {
+    id
+    statusInOrganization
+  }
+}
+[GQL-EXEC accept_never_invited]","[EVIDENCE] CURRENTLY CONFIRMED: the server returns HTTP 500 with an unhandled InvalidOperationException instead of a clean GraphQL errors[] entry (e.g. NotFound / Forbidden) — this is a P2 error-handling defect distinct from the P0 authorization gap in PRF-GQL-076 {OBSERVED} (summary.json appinsights.correlated_failures, 2026-07-29)
+[EVIDENCE] once fixed, the expected shape is errors[] non-empty with a structured code (NotFound/Forbidden), HTTP 200 at the transport level (GraphQL convention), and data.acceptOrganizationInvite = null {SPEC} (GraphQL error-handling convention, BL-GQL-004)","none — no membership exists for ORG_USER in TechFlow, nothing to verify cross-layer","a clean errors[] with an appropriate code is now returned instead of a 500 (fix landed — update this case's Assertions to assert the corrected, structured error instead of documenting the crash); the endpoint now returns 200 with data non-null (would mean a never-invited caller can accept an invite that doesn't exist for them — a different, worse defect)","none — no state mutated (the call never succeeds)","VCST-5281; summary.json appinsights.correlated_failures; confirmed defect list item 7; BL-GQL-004","Draft"
+PRF-GQL-082,"[VCST-5281] xProfile — Organization.myStatusInOrganization Always Reflects the CALLING User's Own Status, Never an Inspected Contact's","GraphQL > xProfile > OrganizationMembership > Status Fields","Low","BL-CROSS-013","","Runner-native. Schema (live-verified 2026-07-29): Organization.myStatusInOrganization: String takes NO arguments — it is resolved purely from the caller's own JWT/membership context, matching the org-context-is-JWT-only pattern already confirmed for rolesInOrganization/isLockedInOrganization (ORGROLE-016). Two different callers querying the SAME organization must each see only their OWN status, confirming there is no hidden way to inspect another member's status through this field.","org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP my_status_as_admin]
+query {
+  organization(id: ""@td(MULTI_ORG_TF_BR.org_techflow_id)"") {
+    myStatusInOrganization
+  }
+}
+[GQL-EXEC my_status_as_admin]
+[AUTH role=MULTI_ORG_TF_BR]
+[GQL-OP my_status_as_member]
+query {
+  organization(id: ""@td(MULTI_ORG_TF_BR.org_techflow_id)"") {
+    myStatusInOrganization
+  }
+}
+[GQL-EXEC my_status_as_member]","[ERRORS label=my_status_as_admin] errors[] empty {SPEC} (vc-module-profile-experience-api#141 Organization.myStatusInOrganization: String, no arguments)
+[DATA label=my_status_as_admin] data.organization.myStatusInOrganization = ""Approved"" -- TECHFLOW_ADMIN's own status {OBSERVED} (confirmed defect list item 8, P3: the field name suggests it might target an inspected contact, but it always resolves to the CALLER)
+[ERRORS label=my_status_as_member] errors[] empty {SPEC}
+[DATA label=my_status_as_member] data.organization.myStatusInOrganization = ""Approved"" -- MULTI_ORG_TF_BR's own status in TechFlow, independent of TECHFLOW_ADMIN's value above {SPEC} (confirms the field is caller-scoped, not a hidden way to read another member's status)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {organizationId:""@td(MULTI_ORG_TF_BR.org_techflow_id)""} shows both TECHFLOW_ADMIN and MULTI_ORG_TF_BR as Approved members, corroborating both xAPI reads above","either query's myStatusInOrganization value differs from what that SAME caller's own membership record shows (field resolving from the wrong identity); the field accepts an argument that lets one caller read another member's status (would reopen the cross-org spoofing concern BL-CROSS-013 already guards against for rolesInOrganization/isLockedInOrganization)","none — read-only","VCST-5281; confirmed defect list item 8 (P3); BL-CROSS-013; ORGROLE-016 (same JWT-only pattern)","Automated"

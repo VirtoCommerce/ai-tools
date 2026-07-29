@@ -36,8 +36,9 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
-import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases, idsParam } from './seed-common.mjs';
-import { resolveAllRoles } from './user-roles.mjs';
+import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases, idsParam, resetSecurityPassword } from './seed-common.mjs';
+import { resolveAllRoles, roleByKey } from './user-roles.mjs';
+import { CSV_CREDENTIAL_SOURCES, collectDeclarations, findPasswordConflicts } from '../seed-data/credential-specs.mjs';
 
 // --- Env (defaults → .env.{ENV} → .env.local) + per-env suffix promotion ---
 export const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -186,6 +187,75 @@ export function resolvePassword(raw, fallback = PW_FALLBACK) {
   const m = s.match(/^\{\{\s*([A-Z0-9_]+)\s*\}\}$/);
   if (m) return process.env[m[1]] || fallback;
   return s || fallback;
+}
+
+/**
+ * Where a resolved password actually CAME from — pure, no side effects.
+ *   { kind: 'env',      varName }  → `{{VAR}}` and VAR is set: the CSV declares a real credential
+ *   { kind: 'literal',  varName: null } → a bare literal cell (back-compat)
+ *   { kind: 'fallback', varName }  → `{{VAR}}` but VAR is UNSET (or the cell is empty): the value
+ *                                    is only PW_FALLBACK, i.e. nothing was actually declared.
+ *
+ * This distinction is what makes password RECONCILIATION safe: an env that hasn't filled
+ * .env.local resolves every cell to PW_FALLBACK, and force-writing that onto existing accounts
+ * would silently rewrite every seeded credential to 'Password1!'. Only a DECLARED password
+ * (env/literal) may be reconciled onto an existing account.
+ */
+export function passwordSource(raw) {
+  const s = String(raw || '').trim();
+  const m = s.match(/^\{\{\s*([A-Z0-9_]+)\s*\}\}$/);
+  if (m) return { kind: process.env[m[1]] ? 'env' : 'fallback', varName: m[1] };
+  return { kind: s ? 'literal' : 'fallback', varName: null };
+}
+/** True when the CSV cell declares a real credential (so it may be reconciled onto a live account). */
+export function isPasswordDeclared(raw) {
+  return passwordSource(raw).kind !== 'fallback';
+}
+
+/**
+ * Emails whose password is declared MORE THAN ONCE, with DIFFERENT vars, for the env being seeded
+ * (e.g. b2b/users.csv `{{B2B_USER_PASSWORD}}` vs a user-roles.mjs role's `ORG_USER_PASSWORD`).
+ * Such an account has no single correct password, so two seeders would overwrite each other on
+ * alternating runs — strictly worse than leaving it alone. Reconciliation therefore SKIPS these and
+ * warns; `npm run td:validate:credentials` is the gate that reports them for a human to resolve.
+ * Computed once per process, from the same side-effect-free spec the validator uses.
+ */
+let _contested = null;
+export function contestedPasswordEmails() {
+  if (_contested) return _contested;
+  _contested = new Set();
+  try {
+    const csvFiles = CSV_CREDENTIAL_SOURCES.map((s) => ({ file: s.file, rows: readCsv(s.file) }));
+    const roleEntries = resolveAllRoles()
+      .filter((r) => r.present)
+      .map((r) => ({ key: r.key, email: r.email, passwordVar: roleByKey(r.key)?.passwordVar }));
+    for (const c of findPasswordConflicts(collectDeclarations({ csvFiles, roleEntries }))) _contested.add(c.email);
+  } catch (e) {
+    // Never let the guard break a seed — degrade to "nothing contested" and say so.
+    console.warn(`    ⚠ contested-credential check unavailable (${String(e?.message || e).slice(0, 100)}) — password reconciliation proceeds unguarded`);
+  }
+  return _contested;
+}
+
+/**
+ * Force the live account's password to the declared value, non-fatally. A seeder run touches
+ * dozens of accounts; one account the platform refuses to reset (policy, deleted mid-run) must
+ * WARN, not abort the whole seed — resetSecurityPassword itself throws on a non-200.
+ * Skips accounts with contested declarations (see contestedPasswordEmails).
+ */
+async function reconcilePasswordSafe(email, password) {
+  if (contestedPasswordEmails().has(String(email).toLowerCase())) {
+    console.warn(`    ⚠ password NOT reconciled for ${email}: its password is declared more than once with different vars — run \`npm run td:validate:credentials\` and resolve the conflict`);
+    return false;
+  }
+  try {
+    const ok = await resetSecurityPassword(api, email, password);
+    if (ok && VERBOSE) console.log(`    ↻ password reconciled for ${email}`);
+    return ok;
+  } catch (e) {
+    console.warn(`    ⚠ password reconcile failed for ${email}: ${String(e?.message || e).slice(0, 160)}`);
+    return false;
+  }
 }
 
 // --- Account status flags (data-driven from the CSV `status` column) ---
@@ -408,10 +478,33 @@ export async function relinkUsersToContacts(contactMap) {
   console.log(`  Linked: ${linked}, skipped: ${skipped}`);
 }
 
+/**
+ * True when an account carries a STALE lockout — i.e. the CSV oracle says it should be usable
+ * (status is not `Locked`) but the live account is still locked out or carrying failed-attempt
+ * counters. Pure, so it is unit-testable. This is the state an ABUSE suite leaves behind: a
+ * lockout/brute-force test deliberately fails logins on an account, and nothing ever clears it,
+ * so every later suite that needs that login reports BLOCKED until the window expires.
+ */
+export function hasStaleLockout(user, status, now = Date.now()) {
+  if (isLockedStatus(status)) return false; // Locked is the INTENDED state for this fixture
+  const end = user?.lockoutEnd ? new Date(user.lockoutEnd).getTime() : 0;
+  return end > now || (user?.accessFailedCount || 0) > 0;
+}
+
 // --- Security accounts (status-aware) ---
 // Ensure a storefront login exists for the contact; returns the security-account user id.
 // `status` drives Approved | Locked | EmailUnconfirmed via statusFlags (folds in the imp targets).
-export async function ensureSecurityAccount(email, password, contactId, status = 'Approved') {
+//
+// `opts.reconcilePassword` — when true, an EXISTING account's password is force-set to `password`
+// so a drifted credential self-heals on the next seed. Callers pass
+// `isPasswordDeclared(row.password)` so an env with no .env.local can never rewrite live
+// credentials to PW_FALLBACK. Without this, the reuse path was create-only for the credential:
+// an account first created when its `{{VAR}}` was unset kept the fallback password forever, and
+// no amount of re-seeding could repair it — every suite authenticating via @td(ALIAS.password)
+// then 400s `invalid_grant`/`login_failed` and reports BLOCKED (found by the 050m sales-rep audit
+// 2026-07-29: ACME_BUYER + SR_REP_LOCKED were unauthenticable for exactly this reason).
+export async function ensureSecurityAccount(email, password, contactId, status = 'Approved', opts = {}) {
+  const { reconcilePassword = false } = opts;
   const existing = await findUserByEmail(email);
   if (existing?.id) {
     if (!DRY_RUN) {
@@ -425,7 +518,24 @@ export async function ensureSecurityAccount(email, password, contactId, status =
       } else if (isUnconfirmedStatus(status)) {
         if (full.emailConfirmed !== false) { full.emailConfirmed = false; dirty = true; }
       }
+      // Clear a stale lockout left by an abuse suite (see hasStaleLockout) so the fixture is
+      // usable again — symmetrical with the Locked branch above, which SETS the lockout on purpose.
+      if (hasStaleLockout(full, status)) {
+        full.lockoutEnd = null; full.lockoutEnabled = false; full.accessFailedCount = 0;
+        dirty = true;
+        console.log(`    ↻ cleared stale lockout on ${email}`);
+      }
       if (dirty) await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] });
+      // Password LAST: the PUT above round-trips the account, and resetpassword is a separate
+      // endpoint (the user PUT does not carry a password), so ordering is independent — but doing
+      // it after the state reconcile means a cleared lockout is already in effect.
+      if (reconcilePassword && password) await reconcilePasswordSafe(email, password);
+    } else if (reconcilePassword && VERBOSE) {
+      // Consult the contested set here too, so a dry run reports the SAME decision a real run makes.
+      const skip = contestedPasswordEmails().has(String(email).toLowerCase());
+      console.log(skip
+        ? `    [DRY RUN] would SKIP password reconcile on ${email} (contested declaration — see td:validate:credentials)`
+        : `    [DRY RUN] would reconcile password + clear any stale lockout on ${email}`);
     }
     if (VERBOSE) console.log(`    ↻ reuse  user ${existing.id} (${email})`);
     return existing.id;
@@ -610,7 +720,8 @@ export async function provisionContactLogins(contactMap, orgMap) {
     const email = (u.email || c.email || '').trim();
     if (!email.includes('@') || String(c.platform_id).startsWith('dry-')) continue;
 
-    const userId = await ensureSecurityAccount(email, resolvePassword(u.password), c.platform_id, u.status || 'Approved');
+    const userId = await ensureSecurityAccount(email, resolvePassword(u.password), c.platform_id, u.status || 'Approved',
+      { reconcilePassword: isPasswordDeclared(u.password) });
     idByEmail[email] = userId;
     await stripSeededGlobalRoles(email);
     nAcct++;
@@ -685,7 +796,8 @@ export async function seedInlineOrgUsers(rows, orgMap) {
     } else if (VERBOSE) console.log(`    ↻ reuse  contact ${contact.id} (${email})`);
     if (!contact?.id) continue;
 
-    const userId = await ensureSecurityAccount(email, resolvePassword(row.password), contact.id, row.status || 'Approved');
+    const userId = await ensureSecurityAccount(email, resolvePassword(row.password), contact.id, row.status || 'Approved',
+      { reconcilePassword: isPasswordDeclared(row.password) });
     idByEmail[email] = userId;
     await stripSeededGlobalRoles(email);
     nAcct++;
@@ -783,7 +895,8 @@ export async function seedMemberships() {
     if (!orgs.length) continue;
     const first = memberRows[0];
     const contactId = await ensureMembershipContact(email, first.first_name, first.last_name, orgs.map(o => o.orgId));
-    const userId = await ensureSecurityAccount(email, resolvePassword(first.password), contactId);
+    const userId = await ensureSecurityAccount(email, resolvePassword(first.password), contactId, 'Approved',
+      { reconcilePassword: isPasswordDeclared(first.password) });
     await stripSeededGlobalRoles(email);
     const existing = await searchMemberships(userId);
     for (const { row, orgId } of orgs) {
@@ -828,19 +941,22 @@ export async function ensureAdminAccount(u) {
 }
 export function personalUsers() {
   const out = []; const seen = new Set();
-  const add = (email, password, first, last, source, status = 'Active', group = null, currency = null) => {
+  // `pwDeclared` mirrors isPasswordDeclared() for the non-CSV (env-role) sources: a role's password
+  // is declared iff its passwordVar is actually set. Only a declared password is reconciled onto an
+  // existing account (see ensureSecurityAccount / ensurePersonalAccount) — never PW_FALLBACK.
+  const add = (email, password, first, last, source, status = 'Active', group = null, currency = null, pwDeclared = false) => {
     const e = (email || '').trim(); if (!e.includes('@')) return;
     const k = e.toLowerCase(); if (seen.has(k)) return; seen.add(k);
-    out.push({ email: e, password: password || 'Password1!', first: first || 'QA', last: last || 'User', source, status: status || 'Active', group, currency });
+    out.push({ email: e, password: password || 'Password1!', first: first || 'QA', last: last || 'User', source, status: status || 'Active', group, currency, pwDeclared: !!pwDeclared });
   };
-  for (const u of roleUsers()) add(u.email, u.password, u.first, u.last, u.source, 'Active', u.group, u.currency);
+  for (const u of roleUsers()) add(u.email, u.password, u.first, u.last, u.source, 'Active', u.group, u.currency, !!u.password);
   for (const r of readCsv('test-data/users/agent-user-pool.csv')) {
     if ((r.seeded || '').toLowerCase() === 'false') continue;
-    if (r.personal_email && r.personal_email !== 'n/a') add(r.personal_email, resolvePassword(r.personal_password), r.personal_first_name, r.personal_last_name, 'agent-pool');
+    if (r.personal_email && r.personal_email !== 'n/a') add(r.personal_email, resolvePassword(r.personal_password), r.personal_first_name, r.personal_last_name, 'agent-pool', 'Active', null, null, isPasswordDeclared(r.personal_password));
   }
   for (const r of readCsv('test-data/users/test-users.csv')) {
     if ((r.seeded || '').toLowerCase() === 'false') continue;
-    add(r.email, resolvePassword(r.password), r.first_name, r.last_name, 'test-users', r.status);
+    add(r.email, resolvePassword(r.password), r.first_name, r.last_name, 'test-users', r.status, null, null, isPasswordDeclared(r.password));
   }
   return out;
 }
@@ -856,8 +972,19 @@ export async function ensurePersonalAccount(u) {
         contact.currencyCode = u.currency;
         await api('POST', '/api/members', contact, { expectStatus: [200, 201, 204] });
         console.log(`    ↻ reuse ${u.email} — currencyCode → ${u.currency}`);
-        return 'reused';
       }
+    }
+    // Same credential self-heal as ensureSecurityAccount: a personal account created before its
+    // password var was set keeps the fallback password forever otherwise. Also clears a stale
+    // lockout left behind by an abuse suite (brute-force / lockout tests) so the fixture is usable.
+    if (u.pwDeclared && !DRY_RUN) {
+      const full = await getUserById(existing.id) || existing;
+      if (hasStaleLockout(full, u.status)) {
+        full.lockoutEnd = null; full.lockoutEnabled = false; full.accessFailedCount = 0;
+        await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] });
+        console.log(`    ↻ cleared stale lockout on ${u.email}`);
+      }
+      await reconcilePasswordSafe(u.email, u.password);
     }
     if (VERBOSE) console.log(`    ↻ reuse ${u.email}`);
     return 'reused';

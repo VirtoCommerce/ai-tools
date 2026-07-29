@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-24)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-29)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -320,6 +320,10 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `lockOrganizationContact` | `InputLockUnlockOrganizationContactType` |
 | `unlockOrganizationContact` | `InputLockUnlockOrganizationContactType` |
 | `inviteUser` | `InputInviteUserType` |
+| `acceptOrganizationInvite` | `InputAcceptRejectOrganizationInviteType` |
+| `rejectOrganizationInvite` | `InputAcceptRejectOrganizationInviteType` |
+| `revokeOrganizationInvite` | `InputRevokeOrganizationInviteType` |
+| `resendOrganizationInvite` | `InputResendOrganizationInviteType` |
 | `createUser` | `InputCreateUserType` |
 | `updateUser` | `InputUpdateUserType` |
 | `changeOrganizationContactRole` | `InputChangeOrganizationContactRoleType` |

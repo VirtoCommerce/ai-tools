@@ -53,11 +53,11 @@ Note: the invite form has NO first name or last name fields — email and role o
 6. [ACT] Select role: Organization employee (the default; or change to Purchasing agent)
 7. [ACT] Click 'SEND' or 'Send' button
 8. [ASSERT] Success toast or confirmation message displayed
-9. [ASSERT] Invited member appears in members list with 'Invited' or 'Pending' status","[DOM] Success toast or confirmation message after sending invitation
-[DOM] New member appears in list with pending/invited status
-[STATE] Invitation sent to specified email (email field only — no first/last name collected on invite form)
-[STATE] Role selection persisted in invitation","[API] invite member mutation succeeds
-[CONSOLE] no uncaught JS errors","Invitation fails with error; no success message; invited member not appearing in list; wrong status shown","none","Coverage Gap Analysis","Draft"
+9. [ASSERT] Invited member appears in members list with an 'Invited' status badge (exact label; no 'Pending' wording exists in the storefront i18n — locales/en.json pages.company.members.content.status.invited = 'Invited')","[DOM] Success toast or confirmation message (containing 'sent' or 'invited') appears after sending invitation {SPEC}
+[DOM] New member appears in list with an 'Invited' status badge {DOC}
+[STATE] Invitation sent to specified email (email field only — no first/last name collected on invite form) {SPEC}
+[STATE] Role selection persisted in invitation {SPEC}","[API] invite member mutation succeeds
+[CONSOLE] no uncaught JS errors","Invitation fails with error; no success message; invited member not appearing in list; status badge reads anything other than 'Invited' (e.g. stale 'Pending' wording)","none","Coverage Gap Analysis; Synced: VCST-5281 PR#2399 (2026-07-29) — removed non-existent 'Pending' wording, exact label 'Invited' grounded in locales/en.json","Draft"
 "B2C-MBR-006","Invite Member - Email Notification Sent","B2C Features > Members","Medium","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user; invitation just submitted","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
 2. [ACT] Send invitation to a test email
@@ -73,10 +73,11 @@ Invitation sent; invitation link/email available","url={{FRONT_URL}},invite_emai
 5. [ACT] Submit the form
 6. [ASSERT] Verify new member can sign in
 7. [NAV] Navigate to /company/members as the admin
-8. [ASSERT] Verify member status changed from Pending to Active","[DOM] Invitation link leads to password setup or registration page
-[STATE] New member can sign in after setting password
-[DOM] Member status updated in members list to Active","[API] member status updated after acceptance
-[CONSOLE] no uncaught JS errors","Invitation link expired or invalid; password setup fails; member status not updating to Active","delete test member","Coverage Gap Analysis","Draft"
+8. [ASSERT] Verify member status badge changed from 'Invited' to 'Active' (legal statuses are Invited|Approved|Rejected|Deleted — EffectiveStatus resolves to 'Approved' after acceptance, displayed as 'Active'; no 'Pending' state exists)
+Note: this case exercises the NEW-USER (not-yet-registered) invite path, where confirm-invitation.vue reads userId/email/token from the invite link and completes registration — distinct from the existing-user-invited-to-a-2nd-org path, whose broken link is covered separately in COMP-E2E-026","[DOM] a password setup or registration form is visible after opening the invitation link (not a 404 or generic error page) {SPEC}
+[STATE] New member can sign in after setting password {SPEC}
+[DOM] Member status badge updates in members list from 'Invited' to 'Active' {DOC}","[API] member status updated after acceptance (effective status Approved)
+[CONSOLE] no uncaught JS errors","Invitation link expired or invalid; password setup fails; member status badge not updating to 'Active' (e.g. stuck on 'Invited' or showing stale 'Pending' wording)","delete test member","Coverage Gap Analysis; Synced: VCST-5281 PR#2399 (2026-07-29) — corrected 'Pending→Active' to real vocabulary 'Invited'→'Active'","Draft"
 "B2C-MBR-008","Edit Member Role — Org-Scoped (VCST-5028)","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 TechFlow org admin logged in; member exists with Organization employee role; member is also a member of BuildRight org","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
@@ -111,9 +112,15 @@ Both admin and purchaser are members of TechFlow org specifically; two accounts:
 5. [NAV] Log in as org purchaser
 6. [NAV] Navigate to /company/members
 7. [ASSERT] Verify purchaser does NOT see Invite Member button
-8. [ASSERT] Verify purchaser cannot edit member roles","[DOM] Admin: Invite Member button visible; role editing available
+8. [ASSERT] Verify purchaser cannot edit member roles
+9. [SETUP] Generate timestamp suffix: mbr009-{epoch_ms} — capture as $TS_SUFFIX
+10. [GQL-OP purchaser_invite_refused]
+  mutation { inviteUser(command: {storeId: ""{{STORE_ID}}"", organizationId: ""@td(TECHFLOW_ADMIN.org_id)"", emails: [""AGENT-TEST-mbr009-$TS_SUFFIX@yopmail.com""]}) { succeeded errors { code description } } }
+11. [GQL-EXEC purchaser_invite_refused]
+Authorization: Bearer <purchaser session token — same JWT the storefront session is using>","[DOM] Admin: Invite Member button visible; role editing available
 [DOM] Purchaser: Invite Member button hidden; role editing disabled or hidden
-[STATE] Access differences enforce role-based permissions","[CONSOLE] no uncaught JS errors","Purchaser can invite members (privilege escalation); purchaser can edit roles; no access difference between admin and purchaser","none","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
+[STATE] Access differences enforce role-based permissions
+[ERRORS label=purchaser_invite_refused] errors[] is non-empty — the purchaser JWT is refused server-side, not merely hidden client-side (BL-B2B-005; button-hiding alone is not proof of enforcement)","[CONSOLE] no uncaught JS errors","Purchaser can invite members (privilege escalation); purchaser can edit roles; no access difference between admin and purchaser; inviteUser SUCCEEDS (errors[] empty) with a purchaser JWT despite the button being hidden — a client-only gate is not authorization","none","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15); Synced: VCST-5281 PR#2399 (2026-07-29) — added GraphQL-layer mutation-refusal assertion per testing-checklist.md condition #43 (was button-only)","Draft"
 "B2C-MBR-010","Block Member - Org-Scoped Block (VCST-5028)","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 TechFlow org admin logged in; active member to be blocked who is ALSO a member of BuildRight org; test member email known","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},multi_org_user_email={{MULTI_ORG_USER_EMAIL}},multi_org_user_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
@@ -565,3 +572,214 @@ BuildRight org admin logged in. Closes a GAP flagged during test review: every o
 [ASSERT] Locate the AGENT-TEST-ZeroRoles032 member row","[DOM] IF $ORIGINAL_ROLES was empty: Role column for this row shows a deliberate empty-state marker (e.g. an em-dash '—' or explicit 'No roles' text) -- NOT a raw empty cell with no marker
 [DOM] IF $ORIGINAL_ROLES was non-empty: Role column shows exactly those org-level role names (still not blank/error) -- the case still confirms graceful rendering even though the pure zero-roles scenario didn't hold this run
 [STATE] Role column never renders the literal string 'undefined', 'null', or an empty/broken cell with zero characters and no marker","[API] POST /api/customer/organization-memberships/search for $USER_ID confirms roles=[] on the membership record, and the account's own roles[] is empty -- both zero, isolating whatever the column shows to the org-level tier only","Role column is completely empty (zero characters, no dash/marker) for this member; Role column renders 'undefined' or 'null' as literal text; console error/warning tied to rendering this row's Role cell; row itself fails to render (member missing from the list entirely)","[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-mbr032-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5239; testing-checklist.md (zero-roles negative flagged during review, not a numbered AC); ECL-2.3","Draft"
+"B2C-MBR-033","[VCST-5281] Pending Invite Lifecycle — Widget Visible, Reject, Refused Re-Access, Re-Invite, Accept, Org-2 Access Works","B2C Features > Members > Org Invite Lifecycle > [JOURNEY]","Critical","BL-B2B-009; BL-AUTH-012; BL-AUTH-013; BL-B2B-005","ECL-3.1; ECL-10.2","[PRE:CLEAR_SESSION]
+A fresh AGENT-TEST- member already has an ACTIVE membership in TechFlow (Org-1) — created in Steps via REST. This same member has NO prior membership in BuildRight (Org-2). BUILDRIGHT_ADMIN is org-maintainer in BuildRight and can invite. testing-checklist.md conditions #12,13,14,16,17,18,19,21,22,23 (VCST-5281 /qa-test run, 2026-07-29). Fixture email carries a per-run $TS_SUFFIX so a prior failed cleanup can never cause a collision.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email=@td(BUILDRIGHT_ADMIN.email), admin_password=@td(BUILDRIGHT_ADMIN.password), org2_id=@td(ORG_BUILDRIGHT.platform_id), org1_id=@td(MULTI_ORG_TF_BR.org_techflow_id), invitee_password={{DEFAULT_TEST_PASSWORD}}","--- SCREEN: Fixture Setup (REST) ---
+[SETUP] Generate timestamp suffix: mbr033-{epoch_ms} — capture as $TS_SUFFIX
+[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""InviteLifecycle033"", ""memberType"": ""Contact""} — capture response id as $MEMBER_ID
+[ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/platform/security/users/create: {""userName"": ""AGENT-TEST-mbr033-$TS_SUFFIX@yopmail.com"", ""email"": ""AGENT-TEST-mbr033-$TS_SUFFIX@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""$MEMBER_ID"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""} — capture response id as $USER_ID
+[ASSERT] [STATUS] 200/201; $USER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $ORG1_MEMBERSHIP_ID
+[ASSERT] [STATUS] 200/201 on Org-1 (TechFlow) membership creation
+--- SCREEN: BuildRight Admin Sends Org-2 Invite ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with @td(BUILDRIGHT_ADMIN.email)
+[ACT] fill [data-test-id=""password-input""] with @td(BUILDRIGHT_ADMIN.password)
+[ACT] click [data-test-id=""login-button""]
+[WAIT] header shows BuildRight org name
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ACT] click 'Invite members' button
+[WAIT] 'Invite member' dialog opens
+[ACT] fill invite email textbox with AGENT-TEST-mbr033-$TS_SUFFIX@yopmail.com
+[ACT] select role: Organization employee
+[ACT] click 'Send'
+[WAIT] success toast; dialog closes
+[ASSERT] AGENT-TEST-InviteLifecycle033 row visible in BuildRight roster with an 'Invited' status badge (condition #9/#22 — admin-side visibility)
+--- SCREEN: Invitee Dashboard — Pending Invites Widget ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with AGENT-TEST-mbr033-$TS_SUFFIX@yopmail.com
+[ACT] fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[ACT] click [data-test-id=""login-button""]
+[WAIT] storefront session established (TechFlow context — the invitee's existing Org-1 membership)
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] dashboard loads
+[ASSERT] 'Organization invitations' widget visible, listing BuildRight (condition #12 — me.contact.organizations(statuses:['Invited']))
+--- SCREEN: Decline the Invite ---
+[ACT] click the 'Decline' button for the BuildRight invite row
+[WAIT] widget updates
+[ASSERT] success toast 'Invitation declined' shown; BuildRight row removed from the widget (condition #13/#14)
+--- SCREEN: Refused Re-Access After Rejection ---
+[ACT] attempt to open the org switcher / navigate toward a BuildRight-scoped URL (e.g. re-attempt sign-in selecting BuildRight, or switch org if a switcher entry still exists)
+[WAIT] response settles
+[ASSERT] BuildRight access is refused (Rejected is a Blocking status) and the flow redirects back to sign-in / an accessible Approved context, never landing inside BuildRight (condition #16/#17)
+[ACT] sign in again with the same credentials
+[ASSERT] re-authentication lands in the Approved TechFlow (Org-1) context, never BuildRight (condition #18)
+--- SCREEN: Re-Invite After Rejected (Reinvitable) ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with @td(BUILDRIGHT_ADMIN.email)
+[ACT] fill [data-test-id=""password-input""] with @td(BUILDRIGHT_ADMIN.password)
+[ACT] click [data-test-id=""login-button""]
+[WAIT] header shows BuildRight org name
+[NAV] {{FRONT_URL}}/company/members
+[ACT] locate the AGENT-TEST-InviteLifecycle033 row (status 'Rejected' or equivalent)
+[ACT] open that row's Actions menu
+[ACT] click 'Resend invite' (per testing-checklist.md condition #19/#20 — Rejected is Reinvitable)
+[WAIT] success toast 'Invite resent'
+[ASSERT] roster row shows 'Invited' status again (condition #22)
+--- SCREEN: Invitee Accepts the Re-Sent Invite ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with AGENT-TEST-mbr033-$TS_SUFFIX@yopmail.com
+[ACT] fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[ACT] click [data-test-id=""login-button""]
+[WAIT] storefront session established
+[NAV] {{FRONT_URL}}/account/dashboard
+[ASSERT] 'Organization invitations' widget lists BuildRight again (condition #21 — widget re-appears after re-invite)
+[ACT] click the 'Accept' button for the BuildRight invite row
+[WAIT] widget updates
+[ASSERT] success toast 'Invitation accepted' shown; BuildRight row removed from the widget
+[ACT] open the org switcher / navigate to BuildRight context
+[ASSERT] BuildRight sign-in/access now succeeds (condition #23 — acceptOrganizationInvite made Org-2 Approved)","[DOM] BuildRight admin roster shows 'Invited' badge immediately after invite {OBSERVED}
+[DOM] Invitee dashboard 'Organization invitations' widget lists the BuildRight invite by org name {DOC}
+[DOM] Decline shows toast reading 'Invitation declined' (locales/en.json shared.account.pending_invites_widget.invite_rejected) {DOC}
+[STATE] After Decline: BuildRight access is refused (Rejected ∈ BlockingStatuses) {BL}
+[STATE] Refusal flow redirects to a re-authenticatable state, never landing signed-in inside BuildRight {SPEC}
+[STATE] Re-auth after rejection lands in the Approved TechFlow context, not BuildRight {SPEC}
+[DOM] After BUILDRIGHT_ADMIN resends the invite, roster shows 'Invited' again {OBSERVED}
+[DOM] Widget shows a 'BuildRight' invite row again after resend {SPEC}
+[DOM] Accept shows toast reading 'Invitation accepted' (locales/en.json shared.account.pending_invites_widget.invite_accepted) {DOC}
+[STATE] After Accept: BuildRight access succeeds (myStatusInOrganization = Approved) {BL}","[API] rejectOrganizationInvite mutation errors[] empty
+[API] resendOrganizationInvite mutation succeeded=true, errors[] empty
+[API] acceptOrganizationInvite mutation errors[] empty
+[API] GetPendingOrganizationInvites (me.contact.organizations(statuses:['Invited'])) reflects each transition — present after invite/re-invite, absent after reject/accept
+[CONSOLE] no uncaught JS errors during any step
+[NETWORK] no 4xx/5xx on any invite/reject/resend/accept request","Widget never lists the BuildRight invite (condition #12 regression); Decline/Accept buttons missing or disabled; toast absent after Decline/Accept; refused BuildRight access instead lands the user signed-in inside BuildRight (Rejected status not enforced — BL-AUTH-013 violation); re-invite after Rejected is itself refused (Reinvitable rule broken); widget does not re-list after resend; Accept does not restore BuildRight access","[SAVE] Ensure BuildRight membership for AGENT-TEST-mbr033-$TS_SUFFIX@yopmail.com ends in a clean state (Approved or removed) via REST POST {{BACK_URL}}/api/customer/organization-memberships/search {userId:$USER_ID} → resolve membership id → DELETE if still present
+[SAVE] DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$ORG1_MEMBERSHIP_ID
+[SAVE] DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-mbr033-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; testing-checklist.md conditions #12,13,14,16,17,18,19,21,22,23; Technique: State Transition (invite>invited>rejected>refused>reinvited>accepted)","Draft"
+"B2C-MBR-034","Deleted Member Is Absent From Every Organization's Member List (Condition #38)","B2C Features > Members > Deletion","High","BL-B2B-008","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+A fresh AGENT-TEST- member holds ACTIVE memberships in BOTH TechFlow and BuildRight, created in Steps via REST. testing-checklist.md condition #37/#38 (VCST-5281): deleting the underlying platform user/member MUST remove ALL org memberships, not just one, and the deleted user must be absent from every org's storefront roster.","front_url={{FRONT_URL}}, org_admin={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, buildright_admin_email=@td(BUILDRIGHT_ADMIN.email), buildright_admin_password=@td(BUILDRIGHT_ADMIN.password)","[SETUP] Generate timestamp suffix: mbr034-{epoch_ms} — capture as $TS_SUFFIX
+[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""DeleteAllOrgs034"", ""memberType"": ""Contact""} — capture response id as $MEMBER_ID
+[ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/platform/security/users/create: {""userName"": ""AGENT-TEST-mbr034-$TS_SUFFIX@yopmail.com"", ""email"": ""AGENT-TEST-mbr034-$TS_SUFFIX@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""$MEMBER_ID"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""} — capture response id as $USER_ID
+[ASSERT] [STATUS] 200/201; $USER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $TF_MEMBERSHIP_ID
+[ASSERT] [STATUS] 200/201 on TechFlow membership
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(ORG_BUILDRIGHT.platform_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $BR_MEMBERSHIP_ID
+[ASSERT] [STATUS] 200/201 on BuildRight membership
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
+[ACT] fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
+[ACT] click [data-test-id=""login-button""]
+[WAIT] header shows TechFlow org name
+[NAV] {{FRONT_URL}}/company/members
+[ASSERT] AGENT-TEST-DeleteAllOrgs034 row visible in TechFlow roster before deletion
+[SETUP] via REST DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID (delete the underlying contact/user)
+[ASSERT] [STATUS] 200/204 on delete
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] roster reloads
+[ASSERT] AGENT-TEST-DeleteAllOrgs034 row is ABSENT from the TechFlow roster
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with @td(BUILDRIGHT_ADMIN.email)
+[ACT] fill [data-test-id=""password-input""] with @td(BUILDRIGHT_ADMIN.password)
+[ACT] click [data-test-id=""login-button""]
+[WAIT] header shows BuildRight org name
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] roster loads
+[ASSERT] AGENT-TEST-DeleteAllOrgs034 row is ABSENT from the BuildRight roster too","[STATE] Before deletion: member row visible in TechFlow roster {OBSERVED}
+[DOM] After deletion: member row absent from the TechFlow roster {BL}
+[DOM] After deletion: member row absent from the BuildRight roster as well {BL}
+[STATE] Deleting the member removes ALL its org memberships, not just the one belonging to the org the operator happened to view it from {SPEC}","[API] POST /api/customer/organization-memberships/search {userId:$USER_ID} after deletion returns zero results across every org (no orphaned membership rows)
+[CONSOLE] no uncaught JS errors on either roster reload
+[NETWORK] no 4xx/5xx on either /company/members load after deletion","Deleted member still visible in TechFlow roster after delete; deleted member still visible in BuildRight roster (only one org's membership was cleaned up — condition #37/#38 regression); orphaned membership row returned by organization-memberships/search after member delete","[SAVE] If deletion did not complete, remove the AGENT-TEST fixture memberships and account via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-mbr034-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; testing-checklist.md condition #38","Draft"
+"B2C-MBR-035","Status Badge and Status Facet Disagree for a Contact With Blocking Global Status and No Membership Override","B2C Features > Members > Status Display > [Regression]","Critical","BL-B2B-005","ECL-2.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+Reviewer finding B on vc-frontend#2399 (members.vue:getDisplayStatus / the roleIds/statuses facet wiring): a member whose GLOBAL contact.Status is a blocking value (e.g. 'Locked') and who has NO per-membership status override resolves EffectiveStatus = contact.Status, so members.vue renders the red 'Blocked' badge via getDisplayStatus(contact) = contact.isLockedInOrganization ? Locked : (contact.statusInOrganization ?? contact.status). But the server-side status FACET (roleIds/statuses filter on getOrganizationContactsQuery) matches 'Blocked' against IsCurrentlyLocked membership rows only, and 'Active' requires effective status = Approved — this contact satisfies NEITHER filter server-side, so it is unreachable by any status facet despite the badge visibly reading 'Blocked'. A fresh AGENT-TEST- TechFlow member is created in Steps with global contact status forced to a blocking value and no membership-level lock/status override.","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, org_id=@td(MULTI_ORG_TF_BR.org_techflow_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","[SETUP] Generate timestamp suffix: mbr035-{epoch_ms} — capture as $TS_SUFFIX
+[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""BadgeFacetGap035"", ""memberType"": ""Contact"", ""status"": ""Locked""} — capture response id as $MEMBER_ID (global contact status forced to a BlockingStatuses value with NO membership-level lock)
+[ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID; verify response reflects status=Locked (if the create payload silently drops it, PATCH the same field via PUT {{BACK_URL}}/api/members and re-assert)
+[SETUP] via REST POST {{BACK_URL}}/api/platform/security/users/create: {""userName"": ""AGENT-TEST-mbr035-$TS_SUFFIX@yopmail.com"", ""email"": ""AGENT-TEST-mbr035-$TS_SUFFIX@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""$MEMBER_ID"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""} — capture response id as $USER_ID
+[ASSERT] [STATUS] 200/201; $USER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $MEMBERSHIP_ID (deliberately NO status/lock override on the membership itself — status ""blocking"" must come only from the global contact)
+[ASSERT] [STATUS] 200/201 on membership creation; membership isLockedInOrganization=false
+--- SCREEN: Badge Renders Blocked ---
+[NAV] {{FRONT_URL}}/company/members (already signed in as TechFlow admin)
+[ACT] locate the AGENT-TEST-BadgeFacetGap035 row
+[ASSERT] status badge for this row reads 'Blocked' (getDisplayStatus resolves via contact.status fallback since isLockedInOrganization=false and statusInOrganization is unset)
+--- SCREEN: Blocked Facet Does NOT Find It ---
+[ACT] click 'Filters'
+[WAIT] 'Members filters' panel opens
+[ACT] tick the 'Blocked' status option
+[ACT] click 'Apply'
+[WAIT] roster updates
+[ASSERT] AGENT-TEST-BadgeFacetGap035 is ABSENT from the Blocked-filtered roster (server-side Blocked facet checks IsCurrentlyLocked membership rows only — this contact has none)
+--- SCREEN: Active Facet Does NOT Find It Either ---
+[ACT] clear the Blocked filter
+[ACT] tick the 'Active' status option
+[ACT] click 'Apply'
+[WAIT] roster updates
+[ASSERT] AGENT-TEST-BadgeFacetGap035 is ALSO absent from the Active-filtered roster (effective status ≠ Approved)
+[ACT] clear all status filters","[DOM] Row badge reads 'Blocked' for a contact with global Locked status and no membership override {OBSERVED}
+[STATE] The SAME row is unreachable via the 'Blocked' status facet {SPEC}
+[STATE] The SAME row is unreachable via the 'Active' status facet either {SPEC}
+[STATE] Badge and facet disagree — a visibly-Blocked member cannot be found by any status filter (members.vue getDisplayStatus vs the server-side statuses facet source different data) {SPEC}","[API] getOrganizationContactsQuery(statuses:['Blocked']) response errors[] is empty and items does NOT include this member's id, confirming the facet/badge mismatch is a data-shape issue, not a query failure
+[API] getOrganizationContactsQuery(statuses:['Active']) response errors[] is empty and items also excludes this member's id
+[CONSOLE] no uncaught JS errors during badge render or facet filtering","Badge does not read 'Blocked' for this fixture (setup did not reproduce the global-Locked-no-override condition — reconfirm $MEMBER_ID status live before failing); member IS found by the Blocked facet (facet source was fixed to match effective status, not IsCurrentlyLocked — treat as a PASS-worthy fix, not a defect); member IS found by the Active facet (same)","[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-mbr035-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; PR review finding B on vc-frontend#2399 (members.vue getDisplayStatus)","Draft"
+"B2C-MBR-036","Revoke Invite — Modal Stays Open and Error Toast Shown When the Mutation Fails","B2C Features > Members > Invite Management > [Regression]","High","BL-B2B-009","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+Reviewer finding C on vc-frontend#2399 members.vue openRevokeInviteModal: on a revokeInvite() failure the onConfirm handler catches the error, shows an error toast, and returns WITHOUT calling closeRevokeInviteModal() — so a correct implementation keeps the confirmation modal open on failure. This case forces the underlying revokeOrganizationInvite mutation to fail server-side (the invite is already gone by the time the UI confirms) and asserts the modal does not silently close. A fresh AGENT-TEST- TechFlow invite is created in Steps.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[SETUP] Generate timestamp suffix: mbr036-{epoch_ms} — capture as $TS_SUFFIX
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
+[ACT] fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
+[ACT] click [data-test-id=""login-button""]
+[WAIT] header shows TechFlow org name
+[NAV] {{FRONT_URL}}/company/members
+[ACT] click 'Invite members' button
+[WAIT] 'Invite member' dialog opens
+[ACT] fill invite email textbox with AGENT-TEST-mbr036-$TS_SUFFIX@yopmail.com
+[ACT] select role: Organization employee
+[ACT] click 'Send'
+[WAIT] success toast; AGENT-TEST-mbr036-$TS_SUFFIX row appears with 'Invited' status
+[ACT] open that row's Actions menu
+[ACT] click 'Revoke invite'
+[WAIT] 'Revoke invite' confirmation modal opens (title 'Revoke invite'; text 'Are you sure you want to revoke the invite sent to <email>?')
+[SETUP] BEFORE clicking Confirm in the UI, invalidate the invite server-side out-of-band via REST so the pending UI mutation fails: resolve the invited member's id via POST {{BACK_URL}}/api/customer/organization-memberships/search {organizationId omitted — filter client-side by organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)} and DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=<resolved id> (removes the invite the UI is about to revoke, forcing the confirmed mutation to fail — memberId no longer resolvable)
+[ACT] click 'Confirm' / the danger-variant confirm button in the still-open modal
+[WAIT] mutation response settles","[DOM] Error toast reads 'Failed to revoke the invitation.' (locales/en.json common.messages.invite_revoke_failed) {DOC}
+[STATE] The confirmation modal remains open after the failed mutation — it is NOT auto-dismissed (members.vue openRevokeInviteModal returns before calling closeRevokeInviteModal() on catch) {DOC}
+[DOM] The invite row for AGENT-TEST-mbr036-$TS_SUFFIX@yopmail.com is still visible in the roster with an 'Invited' badge, unchanged, not silently removed {SPEC}","[API] revokeOrganizationInvite mutation for the already-deleted membership returns errors[] non-empty (or throws) — the negative path is genuinely exercised
+[CONSOLE] no unhandled JS errors from the failed mutation","Modal closes immediately after clicking Confirm despite the mutation failing (VcConfirmationModal auto-closes on any settled onConfirm promise, regardless of internal catch — the regression this case exists to catch); no error toast shown; roster row silently disappears despite the revoke having failed server-side","[SAVE] Confirm no AGENT-TEST-mbr036-$TS_SUFFIX@yopmail.com fixtures remain: DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-mbr036-$TS_SUFFIX@yopmail.com if a user account was created by the invite flow","VCST-5281; PR review finding C on vc-frontend#2399 (members.vue openRevokeInviteModal)","Draft"
+"B2C-MBR-037","Revoke and Resend Invite Both Show Consistent Success and Failure Toasts","B2C Features > Members > Invite Management","Medium","BL-B2B-009","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+Reviewer finding D on vc-frontend#2399 useOrganizationContacts.ts/members.vue: prior to this PR, revokeInvite showed its own success toast while leaving errors to the caller, and resendInvite showed neither — inconsistent notification ownership across the two invite-management actions. This PR moves all toast responsibility to the members.vue call sites (openRevokeInviteModal, handleResendInvite) for BOTH success and failure. This case confirms the fix: both paths show a toast on success AND on failure. A fresh AGENT-TEST- TechFlow invite is created in Steps.","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[SETUP] Generate timestamp suffix: mbr037-{epoch_ms} — capture as $TS_SUFFIX
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
+[ACT] fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
+[ACT] click [data-test-id=""login-button""]
+[WAIT] header shows TechFlow org name
+[NAV] {{FRONT_URL}}/company/members
+[ACT] click 'Invite members' button
+[WAIT] 'Invite member' dialog opens
+[ACT] fill invite email textbox with AGENT-TEST-mbr037-$TS_SUFFIX@yopmail.com
+[ACT] select role: Organization employee
+[ACT] click 'Send'
+[WAIT] AGENT-TEST-mbr037-$TS_SUFFIX row appears with 'Invited' status
+--- SCREEN: Resend — Success Toast ---
+[ACT] open the row's Actions menu
+[ACT] click 'Resend invite'
+[WAIT] response settles
+[ASSERT] success toast reads 'Invite resent' (locales/en.json pages.company.members.notifications.invite_resent)
+--- SCREEN: Revoke — Success Toast ---
+[ACT] open the row's Actions menu
+[ACT] click 'Revoke invite'
+[WAIT] 'Revoke invite' confirmation modal opens
+[ACT] click the danger-variant confirm button
+[WAIT] response settles
+[ASSERT] success toast reads 'Invite revoked' (locales/en.json pages.company.members.notifications.invite_revoked); row removed from roster","[DOM] Resend shows a success toast reading 'Invite resent' {DOC}
+[DOM] Revoke shows a success toast reading 'Invite revoked' {DOC}
+[STATE] Both invite-management actions surface user-visible feedback on success — no silent success for either path (fixes reviewer finding D) {SPEC}","[API] resendOrganizationInvite mutation succeeded=true, errors[] empty
+[API] revokeOrganizationInvite mutation errors[] empty
+[CONSOLE] no uncaught JS errors during resend or revoke","Resend completes with NO toast shown (silent success — finding D regression); revoke completes with no toast; toast text does not match the exact i18n string; row not removed from roster after a successful revoke","[SAVE] Confirm no AGENT-TEST-mbr037-$TS_SUFFIX@yopmail.com fixtures remain: DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-mbr037-$TS_SUFFIX@yopmail.com if a user account was created by the invite flow","VCST-5281; PR review finding D on vc-frontend#2399 (useOrganizationContacts.ts / members.vue)","Draft"
