@@ -80,15 +80,16 @@ test("scaffold-secrets: the .env.local comment names ONE classic `repo` token, i
     // Same shape as JIRA_API_TOKEN / ADO_PAT: one line each, no multi-line block.
     assert.equal(fields.length, 3, `${rel}: exactly what/why/where`);
     assert.doesNotMatch(entry, /where: \[/, `${rel}: no multi-line where[] block in the operator's env file`);
-    assert.match(entry, /CLASSIC, scope: repo/, `${rel}: the recipe is unambiguous`);
-    assert.match(entry, /Tokens \(classic\)/, `${rel}: where to click`);
+    assert.match(entry, /classic, NOT fine-grained/, `${rel}: the token TYPE is unambiguous`);
+    const where = entry.split("\n").find((l) => /^\s+where:/.test(l));
+    assert.match(where, /Tokens \(classic\)/, `${rel}: where to click`);
     // The dropdown trap: on the "Tokens (classic)" page the Generate button still offers
     // fine-grained FIRST. Naming the classic item verbatim is what makes the path followable.
-    assert.match(entry, /Generate new token \(classic\)/, `${rel}: the exact dropdown item is named`);
-    // `where:` is a navigation path and nothing else — the scope + the not-fine-grained warning
-    // belong to `what:`, and `gh auth login` would contradict the operator's own PAT choice.
-    const where = entry.split("\n").find((l) => /^\s+where:/.test(l));
-    assert.doesNotMatch(where, /gh auth login|Tick scope|SECOND item/, `${rel}: where: carries no advice, only the path`);
+    assert.match(where, /Generate new token \(classic\)/, `${rel}: the exact dropdown item is named`);
+    // …and the path ends in the scope to tick, exactly like ADO_PAT's `where:`.
+    assert.match(where, /Scope: repo\./, `${rel}: the scope is part of the click path`);
+    // Nothing beyond the path: `gh auth login` would contradict the operator's own PAT choice.
+    assert.doesNotMatch(where, /gh auth login|SECOND item/, `${rel}: where: carries no advice`);
     // The defect being fixed: fine-grained + a classic-only scope in the same instruction.
     assert.doesNotMatch(entry, /Fine-grained\. Perms: Contents \+ Pull requests = Read\/Write \(public_repo/, `${rel}: the old impossible instruction is gone`);
   }

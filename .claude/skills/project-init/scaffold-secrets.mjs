@@ -108,14 +108,15 @@ const CATALOG = {
     // Exception path (org policy forbids classic PATs, or least-privilege is required):
     // `gh auth login` for the upstream + a fine-grained token for the client's own org.
     // Documented in .claude/rules/quality-gates.md §1a — not in the operator's env file.
-    what: "GitHub Personal Access Token — CLASSIC, scope: repo (not fine-grained).",
+    what: "GitHub Personal Access Token — classic, NOT fine-grained.",
     why: "Lets /qa-fix open PRs on your own repos and contribute fixes/issues to the VirtoCommerce upstream.",
-    // `where:` is a pure navigation path — nothing else. The scope and the not-fine-grained
-    // warning already live in `what:`, and the `gh auth login` alternative would contradict the
-    // operator's own answer (this entry is emitted ONLY when they chose PAT).
+    // `where:` = the click path, ending in the scope to tick — the same shape as ADO_PAT's
+    // ("dev.azure.com → … Scopes: Work Items R/W, Code R/W."). Nothing beyond that: the
+    // `gh auth login` alternative would contradict the operator's own answer (this entry is
+    // emitted ONLY when they chose PAT).
     // The last hop matters: even on the "Tokens (classic)" page the "Generate new token" button
     // opens a menu whose FIRST item is fine-grained, so the classic item is named verbatim.
-    where: "github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → \"Generate new token\" ▾ → \"Generate new token (classic)\".",
+    where: "github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → \"Generate new token\" ▾ → \"Generate new token (classic)\". Scope: repo.",
   },
   ADO_PAT: {
     perEnv: false, include: (o) => (o.tracker === "azure" || o.clientVcs === "azure-repos") && o.adoAuth !== "az-login",
