@@ -139,6 +139,33 @@ Read environment URLs from `config.js` (`FRONT_URL`, `BACK_URL`).
 
 **Record the test window start** — note the current timestamp before dispatching. The interval from here until execution agents return defines the App Insights correlation window used in Step 6a.
 
+**Move the ticket to the in-testing status (JIRA only, no confirmation needed).** Before dispatching,
+transition the ticket from its ready-to-test state into the **in-testing** status, so the board shows it is
+actively under test rather than still queued. Status-only — no comment, no assignee change, no side effect
+outside the tracker.
+
+**Applies only when `tracker.kind = jira`** (`project-profile.json`; absent profile ⇒ Jira, the
+VC-internal default). Jira gates status changes behind a **transition graph**, which is what makes this
+step load-bearing:
+
+- **Discover the transition live** — never hardcode a name or id (`knowledge/execution/tracker-ops.md`
+  §live transition discovery). On the VC-internal VCST workflow the transition out of *Ready for test* is
+  named **`On QA`** and lands on status **`Testing`** — the transition name does NOT match the target
+  status, so match on the transition's `to.name` (in-testing), never on its own `name`. A client's Jira
+  will use different labels.
+- **This is a precondition for Step 6e, not a nicety:** on VCST, *Ready for test* offers only `On QA`,
+  `go to inprogress`, `On hold`, `Cancelled` — **`Finish test` / `Need fixes` are not reachable until the
+  ticket is in the in-testing status.** Skip this and the closing transition fails at the end of the run.
+- Skip (with a one-line note) when: the tracker MCP isn't configured, the ticket is already in the
+  in-testing status, or no in-testing transition is available from the current status. Never force a path
+  through an unrelated status to reach it, and never transition to `Cancelled`/`On hold`.
+- Testing a bare feature name or a PR with no ticket → nothing to transition; skip silently.
+
+**`tracker.kind = azure` (Azure Boards): skip this step.** There is no transition graph — state is set
+directly (`PATCH …/wit/workitems/<n>`, `/fields/System.State` via `tracker.azure.stateMap`), so the Step 6e
+update has **no reachability precondition** and needs no in-testing hop. Set an in-testing state at Step 4
+only if the deployment's `stateMap` actually declares one.
+
 Launch all applicable agents **simultaneously** in a single message using the Agent tool. Each agent prompt must include:
 - The ticket ID(s) or feature being tested
 - **Testing checklist or test cases** — include the output from Step 3
@@ -275,6 +302,13 @@ Ask the user before transitioning. Skip if Atlassian MCP is not configured.
 | PASS / PASS WITH NOTES | `Finish test` → TESTED |
 | FAIL | `Need fixes` → REOPEN with comment listing failures |
 
+**On Jira**, both closing transitions require the ticket to already be in the **in-testing** status — that's
+the Step 4 move. If it was skipped there (or the run started from a ticket still at *Ready for test*),
+discover the transitions live and do the in-testing move first, then the closing one. **On Azure Boards**
+there is no transition graph: set the mapped `System.State` directly (`tracker.azure.stateMap`) — no
+in-testing hop required. Either way **TESTED is the terminal state this command may reach — never
+transition to Done or Cancelled.**
+
 Add a JIRA comment with (Markdown, never Jira wiki markup; clear, brief, outcome-first, evidence
 referenced not inlined — `knowledge/execution/tracker-ops.md` §5a **Comment & body style**; the block
 below is illustrative content, not a literal wire format):
@@ -346,6 +380,7 @@ results, exploratory findings, business rules verified, bugs found, and the scre
 
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, error handling, and JIRA transitions
+- Ticket status tracks the run: Step 4 moves it into the in-testing status (status-only, no confirmation), Step 6e closes it to TESTED / REOPEN (with confirmation). **Step 4's hop is JIRA-only** (`tracker.kind = jira`) — Jira's transition graph makes the closing transitions unreachable until it happens; Azure Boards sets `System.State` directly via `stateMap`, so it has no such precondition and Step 4 is skipped. Discover Jira transitions live; the transition name need not match the target status (VC-internal VCST: `On QA` → `Testing`)
 - Never use WebKit — not supported on Windows
 - Never assign two agents to the same browser server simultaneously
 - Read all URLs from config.js / .env — never hardcode
