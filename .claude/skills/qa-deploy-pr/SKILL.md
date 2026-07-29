@@ -105,10 +105,17 @@ shape is unexpected.
 - **Irregular manifest indent:** `vc-deploy-dev`'s manifest uses an indent `JSON.stringify`
   can't reproduce, so the edit is done as raw-text surgery for a clean diff. Only if the shape
   is unexpected does it fall back to a full reserialize — then the PR body says to review with
-  "Hide whitespace changes".
+  "Hide whitespace changes". The two shapes that used to trip this are now handled minimally:
+  an **empty `"Modules": []`** AzureBlob source (a branch's first-ever prerelease pin — it has no
+  sibling entry to copy indentation from, so the indent comes from the file's dominant step) and a
+  **re-pin of an already-pinned module** (whose blob entry carries an `Id` the GithubReleases scan
+  used to match by mistake). A whole-file reserialize now means a genuinely unrecognised manifest.
 - **Prerelease pins are BlobName-only:** AzureBlob prerelease entries are `{ "BlobName":
   "<Id>_<version>.zip" }` with NO `Id` field — `--verify` recognises this shape, so a deployed
-  prerelease reads as PINNED/LIVE (not a false MISSING).
+  prerelease reads as PINNED/LIVE (not a false MISSING). Entries written by the reserialize path
+  instead carry `Id`+`Version`+`BlobName`; both work, and since `pinnedModule()` prefers an explicit
+  `Version` over the filename-derived one, a re-pin rewrites that field too rather than leaving it
+  stale (a stale `Version` would make the table and `--verify` report the wrong version).
 - **Prerelease version not bumped:** a PR artifact's `module.manifest` often keeps the base
   version (the `-pr-…` suffix lives only in the filename), so a live-version mismatch in
   `--verify` is an **ADVISORY**, not a failure — confirm by behaviour.

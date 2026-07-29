@@ -159,6 +159,56 @@ test("removeGhReleaseEntry: id present but not in the canonical 4-line {Id,Versi
   assert.equal(mod.removeGhReleaseEntry(oddShape, "VirtoCommerce.Cart"), null);
 });
 
+// A module already pinned as a prerelease carries an "Id" inside its AzureBlob {Id,Version,BlobName}
+// entry (the shape a reserialize writes). The GithubReleases scan must not match THAT one — doing so
+// failed the 4-line shape check and forced a needless reserialize on every re-pin of a pinned module.
+const ALREADY_PINNED_TEXT = [
+  '{',
+  '  "Sources": [',
+  '    {',
+  '      "Name": "AzureBlob",',
+  '      "Modules": [',
+  '        {',
+  '          "Id": "VirtoCommerce.Notifications",',
+  '          "Version": "3.1013.0-pr-202-0b9c",',
+  '          "BlobName": "VirtoCommerce.Notifications_3.1013.0-pr-202-0b9c.zip"',
+  '        }',
+  '      ]',
+  '    },',
+  '    {',
+  '      "Name": "GithubReleases",',
+  '      "Modules": [',
+  '        {',
+  '          "Id": "VirtoCommerce.Cart",',
+  '          "Version": "3.100.0"',
+  '        }',
+  '      ]',
+  '    }',
+  '  ]',
+  '}',
+  '',
+].join('\n');
+
+test("removeGhReleaseEntry: ignores an Id inside an AzureBlob {Id,Version,BlobName} entry", () => {
+  const out = mod.removeGhReleaseEntry(ALREADY_PINNED_TEXT, "VirtoCommerce.Notifications");
+  assert.equal(out, ALREADY_PINNED_TEXT, "not in GithubReleases → text must be returned unchanged, not null");
+});
+
+test("removeGhReleaseEntry: still removes the GithubReleases pin when a blob entry also carries an Id", () => {
+  // Same module in BOTH sources: the GithubReleases one is the one that must go.
+  const both = ALREADY_PINNED_TEXT.replace(
+    '        {\n          "Id": "VirtoCommerce.Cart",\n          "Version": "3.100.0"\n        }',
+    '        {\n          "Id": "VirtoCommerce.Notifications",\n          "Version": "3.1012.0"\n        }',
+  );
+  const out = mod.removeGhReleaseEntry(both, "VirtoCommerce.Notifications");
+  assert.ok(out, "expected the GithubReleases entry to be removed, not a null fallback");
+  const parsed = JSON.parse(out!);
+  const gh = parsed.Sources.find((s: any) => s.Name === "GithubReleases");
+  const blob = parsed.Sources.find((s: any) => s.Name === "AzureBlob");
+  assert.deepEqual(gh.Modules, [], "the 3.1012.0 GithubReleases pin should be gone");
+  assert.equal(blob.Modules[0].BlobName, "VirtoCommerce.Notifications_3.1013.0-pr-202-0b9c.zip");
+});
+
 // ---- upsertBlobEntry ------------------------------------------------------------
 
 const BLOB_TEXT = [
@@ -185,6 +235,37 @@ test("upsertBlobEntry: replaces an existing BlobName for the same module Id", ()
   assert.doesNotThrow(() => JSON.parse(out!));
 });
 
+test("upsertBlobEntry: re-pin refreshes a sibling Version so pinnedModule can't report a stale one", () => {
+  const out = mod.upsertBlobEntry(ALREADY_PINNED_TEXT, "VirtoCommerce.Notifications", "VirtoCommerce.Notifications_3.1014.0-pr-203-abcd.zip");
+  assert.ok(out);
+  assert.equal(out!.includes("3.1013.0-pr-202-0b9c"), false, "no trace of the old version may survive");
+  // pinnedModule prefers an explicit Version field over the BlobName-derived one.
+  assert.deepEqual(mod.pinnedModule(JSON.parse(out!), "VirtoCommerce.Notifications"), {
+    version: "3.1014.0-pr-203-abcd",
+    source: "AzureBlob",
+    blobName: "VirtoCommerce.Notifications_3.1014.0-pr-203-abcd.zip",
+  });
+});
+
+test("upsertBlobEntry: re-pin leaves a BlobName-only entry alone (no Version invented)", () => {
+  const out = mod.upsertBlobEntry(BLOB_TEXT, "VirtoCommerce.Cart", "VirtoCommerce.Cart_3.101.0-pr-2.zip");
+  assert.ok(out);
+  assert.equal(out!.includes('"Version"'), false);
+  assert.deepEqual(JSON.parse(out!).Sources[0].Modules, [{ BlobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip" }]);
+});
+
+test("upsertBlobEntry: re-pin does not touch a neighbouring entry's Version", () => {
+  const twoEntries = ALREADY_PINNED_TEXT.replace(
+    '        {\n          "Id": "VirtoCommerce.Notifications",\n          "Version": "3.1013.0-pr-202-0b9c",\n          "BlobName": "VirtoCommerce.Notifications_3.1013.0-pr-202-0b9c.zip"\n        }',
+    '        {\n          "Id": "VirtoCommerce.Other",\n          "Version": "9.9.9-pr-1-zzzz",\n          "BlobName": "VirtoCommerce.Other_9.9.9-pr-1-zzzz.zip"\n        },\n        {\n          "Id": "VirtoCommerce.Notifications",\n          "Version": "3.1013.0-pr-202-0b9c",\n          "BlobName": "VirtoCommerce.Notifications_3.1013.0-pr-202-0b9c.zip"\n        }',
+  );
+  const out = mod.upsertBlobEntry(twoEntries, "VirtoCommerce.Notifications", "VirtoCommerce.Notifications_3.1014.0-pr-203-abcd.zip");
+  assert.ok(out);
+  const blob = JSON.parse(out!).Sources.find((s: any) => s.Name === "AzureBlob");
+  assert.equal(blob.Modules.find((m: any) => m.Id === "VirtoCommerce.Other").Version, "9.9.9-pr-1-zzzz");
+  assert.equal(blob.Modules.find((m: any) => m.Id === "VirtoCommerce.Notifications").Version, "3.1014.0-pr-203-abcd");
+});
+
 test("upsertBlobEntry: appends a new entry for a module not yet present", () => {
   const out = mod.upsertBlobEntry(BLOB_TEXT, "VirtoCommerce.Order", "VirtoCommerce.Order_3.50.0-pr-3.zip");
   assert.ok(out);
@@ -197,6 +278,114 @@ test("upsertBlobEntry: appends a new entry for a module not yet present", () => 
 test("upsertBlobEntry: no BlobName sample anywhere → null (fall back to reserialize)", () => {
   const noBlob = '{\n  "Sources": []\n}\n';
   assert.equal(mod.upsertBlobEntry(noBlob, "VirtoCommerce.Cart", "x.zip"), null);
+});
+
+// An AzureBlob source that EXISTS but is empty is the state of any branch that has never carried a
+// prerelease pin (vcst-qa as of 2026-07-29). There is no sibling "BlobName" line to mirror, but the
+// insertion point is unambiguous — so this must stay minimal instead of falling back to a whole-file
+// reserialize (which produced a 24-line diff on vc-deploy-dev#6249, 14 lines of it pure whitespace).
+const EMPTY_BLOB_TEXT = [
+  '{',
+  '  "Sources": [',
+  '    {',
+  '      "Name": "AzureBlob",',
+  '      "Container": "packages",',
+  '      "ServiceUri": "https://vc3prerelease.blob.core.windows.net",',
+  '      "Modules": []',
+  '    },',
+  '    {',
+  '      "Name": "GithubReleases",',
+  '      "Modules": [',
+  '        {',
+  '          "Id": "VirtoCommerce.Cart",',
+  '          "Version": "3.100.0"',
+  '        }',
+  '      ]',
+  '    }',
+  '  ]',
+  '}',
+  '',
+].join('\n');
+
+test("upsertBlobEntry: seeds the first entry into an empty AzureBlob \"Modules\": []", () => {
+  const out = mod.upsertBlobEntry(EMPTY_BLOB_TEXT, "VirtoCommerce.Cart", "VirtoCommerce.Cart_3.101.0-pr-2.zip");
+  assert.ok(out, "expected minimal surgery, not a null fallback");
+  const parsed = JSON.parse(out!);
+  const blob = parsed.Sources.find((s: any) => s.Name === "AzureBlob");
+  assert.deepEqual(blob.Modules, [{ BlobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip" }]);
+  // Minimal: only the "Modules": [] line is replaced (1 removed, 5 added) — nothing else reindented.
+  assert.equal(mod.countChangedLines(EMPTY_BLOB_TEXT, out!), 6);
+  // The untouched GithubReleases block keeps its exact original text.
+  assert.ok(out!.includes('        {\n          "Id": "VirtoCommerce.Cart",\n          "Version": "3.100.0"\n        }'));
+});
+
+test("upsertBlobEntry: empty AzureBlob — indentation follows the file's dominant unit", () => {
+  const out = mod.upsertBlobEntry(EMPTY_BLOB_TEXT, "VirtoCommerce.Cart", "VirtoCommerce.Cart_3.101.0-pr-2.zip");
+  assert.ok(out);
+  assert.ok(out!.includes([
+    '      "Modules": [',
+    '        {',
+    '          "BlobName": "VirtoCommerce.Cart_3.101.0-pr-2.zip"',
+    '        }',
+    '      ]',
+  ].join('\n')));
+});
+
+test("upsertBlobEntry: empty AzureBlob written multi-line is also seeded minimally", () => {
+  const multi = EMPTY_BLOB_TEXT.replace('      "Modules": []', '      "Modules": [\n      ]');
+  const out = mod.upsertBlobEntry(multi, "VirtoCommerce.Cart", "VirtoCommerce.Cart_3.101.0-pr-2.zip");
+  assert.ok(out);
+  const blob = JSON.parse(out!).Sources.find((s: any) => s.Name === "AzureBlob");
+  assert.deepEqual(blob.Modules, [{ BlobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip" }]);
+});
+
+test("upsertBlobEntry: empty AzureBlob identified by ServiceUri alone (no \"Name\" key)", () => {
+  const noName = EMPTY_BLOB_TEXT.replace('      "Name": "AzureBlob",\n', '');
+  const out = mod.upsertBlobEntry(noName, "VirtoCommerce.Cart", "VirtoCommerce.Cart_3.101.0-pr-2.zip");
+  assert.ok(out);
+  const src = JSON.parse(out!).Sources.find((s: any) => (s.ServiceUri || '').includes('vc3prerelease'));
+  assert.deepEqual(src.Modules, [{ BlobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip" }]);
+});
+
+test("upsertBlobEntry: never seeds into the GithubReleases Modules array", () => {
+  // AzureBlob listed AFTER GithubReleases — the empty-array scan must still target AzureBlob's own key.
+  const ghFirst = [
+    '{',
+    '  "Sources": [',
+    '    {',
+    '      "Name": "GithubReleases",',
+    '      "ModuleSources": [',
+    '        "https://example.test/modules_v3.json"',
+    '      ],',
+    '      "Modules": [',
+    '        {',
+    '          "Id": "VirtoCommerce.Cart",',
+    '          "Version": "3.100.0"',
+    '        }',
+    '      ]',
+    '    },',
+    '    {',
+    '      "Name": "AzureBlob",',
+    '      "Modules": []',
+    '    }',
+    '  ]',
+    '}',
+    '',
+  ].join('\n');
+  const out = mod.upsertBlobEntry(ghFirst, "VirtoCommerce.Cart", "VirtoCommerce.Cart_3.101.0-pr-2.zip");
+  assert.ok(out);
+  const parsed = JSON.parse(out!);
+  const gh = parsed.Sources.find((s: any) => s.Name === "GithubReleases");
+  const blob = parsed.Sources.find((s: any) => s.Name === "AzureBlob");
+  assert.deepEqual(blob.Modules, [{ BlobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip" }]);
+  assert.deepEqual(gh.Modules, [{ Id: "VirtoCommerce.Cart", Version: "3.100.0" }]);
+  assert.equal(gh.ModuleSources.length, 1);
+});
+
+test("upsertBlobEntry: AzureBlob Modules non-empty but unparseable shape → null (fall back)", () => {
+  // No "BlobName" line anywhere AND the array is not empty → genuinely unexpected; must not guess.
+  const odd = EMPTY_BLOB_TEXT.replace('      "Modules": []', '      "Modules": [\n        { "Weird": 1 }\n      ]');
+  assert.equal(mod.upsertBlobEntry(odd, "VirtoCommerce.Cart", "x.zip"), null);
 });
 
 // ---- bumpPlatformText -----------------------------------------------------------
@@ -253,6 +442,46 @@ test("editPackagesText: minimal surgery succeeds for the canonical shape and is 
   assert.equal(gh.Modules.some((m: any) => m.Id === "VirtoCommerce.Cart"), false);
   assert.equal(blob.Modules.some((m: any) => m.BlobName === "VirtoCommerce.Cart_3.101.0-pr-2.zip"), true);
   assert.equal(blob.Modules.some((m: any) => m.BlobName === "VirtoCommerce.Order_3.50.0-pr-1.zip"), true);
+});
+
+test("editPackagesText: stays minimal for a first-ever pin on a branch with an empty AzureBlob", () => {
+  // The real vc-deploy-dev@vcst-qa shape as of 2026-07-29: AzureBlob present but "Modules": [],
+  // Notifications still pinned in GithubReleases. Regression guard for vc-deploy-dev#6249.
+  const origJson = JSON.parse(EMPTY_BLOB_TEXT);
+  const modules = [{ kind: "module" as const, id: "VirtoCommerce.Cart", version: "3.101.0-pr-2", blobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip", source: "--module" }];
+  const { text, minimal } = mod.editPackagesText(EMPTY_BLOB_TEXT, origJson, modules);
+  assert.equal(minimal, true);
+  const parsed = JSON.parse(text);
+  const gh = parsed.Sources.find((s: any) => s.Name === "GithubReleases");
+  const blob = parsed.Sources.find((s: any) => s.Name === "AzureBlob");
+  assert.equal(gh.Modules.some((m: any) => m.Id === "VirtoCommerce.Cart"), false);
+  assert.deepEqual(blob.Modules, [{ BlobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip" }]);
+});
+
+test("editPackagesText: two modules onto an empty AzureBlob — second reuses the seeded entry's indent", () => {
+  const origJson = JSON.parse(EMPTY_BLOB_TEXT);
+  const modules = [
+    { kind: "module" as const, id: "VirtoCommerce.Cart", version: "3.101.0-pr-2", blobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip", source: "--module" },
+    { kind: "module" as const, id: "VirtoCommerce.Order", version: "3.50.0-pr-3", blobName: "VirtoCommerce.Order_3.50.0-pr-3.zip", source: "--module" },
+  ];
+  const { text, minimal } = mod.editPackagesText(EMPTY_BLOB_TEXT, origJson, modules);
+  assert.equal(minimal, true);
+  const blob = JSON.parse(text).Sources.find((s: any) => s.Name === "AzureBlob");
+  assert.deepEqual(blob.Modules, [
+    { BlobName: "VirtoCommerce.Cart_3.101.0-pr-2.zip" },
+    { BlobName: "VirtoCommerce.Order_3.50.0-pr-3.zip" },
+  ]);
+});
+
+test("editPackagesText: re-running against an already-pinned manifest is a minimal no-op", () => {
+  // Idempotence: /qa-deploy-pr re-run after the deploy PR merged must report 0 changed lines and
+  // stay minimal — not a whole-file reserialize offering a no-op diff.
+  const origJson = JSON.parse(ALREADY_PINNED_TEXT);
+  const modules = [{ kind: "module" as const, id: "VirtoCommerce.Notifications", version: "3.1013.0-pr-202-0b9c", blobName: "VirtoCommerce.Notifications_3.1013.0-pr-202-0b9c.zip", source: "--pr" }];
+  const { text, minimal } = mod.editPackagesText(ALREADY_PINNED_TEXT, origJson, modules);
+  assert.equal(minimal, true);
+  assert.equal(text, ALREADY_PINNED_TEXT);
+  assert.equal(mod.countChangedLines(ALREADY_PINNED_TEXT, text), 0);
 });
 
 test("editPackagesText: falls back to reserialize when no AzureBlob source exists yet to mirror indentation from", () => {

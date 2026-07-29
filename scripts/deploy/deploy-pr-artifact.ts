@@ -271,11 +271,31 @@ const enc = (p: string) => p.split('/').map(encodeURIComponent).join('/');
 // PR shows a clean 2-hunk diff (like a vc-ci "<TICKET>-vcst-qa-deployment" PR). Each returns null
 // only on a genuinely unexpected shape → editPackagesText falls back to the safe reserialize.
 const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Line range [openBrace, closeBrace] of the Sources[] object whose body matches `marker`. */
+function sourceBlockRange(lines: string[], marker: RegExp): [number, number] | null {
+  const at = lines.findIndex((l) => marker.test(l));
+  if (at < 0) return null;
+  let open = -1;                                                 // that object's own opening brace
+  for (let i = at; i >= 0; i--) if (/^\s*\{\s*$/.test(lines[i])) { open = i; break; }
+  if (open < 0) return null;
+  let depth = 0;
+  for (let i = open; i < lines.length; i++) {
+    for (const ch of lines[i]) { if (ch === '{' || ch === '[') depth++; else if (ch === '}' || ch === ']') depth--; }
+    if (i > open && depth <= 0) return [open, i];
+  }
+  return null;
+}
 /** Remove a GithubReleases {Id,Version} object (+ its adjacent comma). Unchanged text if the id
  *  isn't in GithubReleases; null if it's there but not in the canonical 4-line shape. */
 export function removeGhReleaseEntry(text: string, id: string): string | null {
   const lines = text.split('\n');
-  const idLine = lines.findIndex((l) => new RegExp(`"Id"\\s*:\\s*"${escRe(id)}"`).test(l));
+  const idRe = new RegExp(`"Id"\\s*:\\s*"${escRe(id)}"`);
+  // Scope the search to the GithubReleases source when it's locatable: an AzureBlob prerelease entry
+  // may ALSO carry an "Id" (the {Id,Version,BlobName} shape a reserialize writes), and matching THAT
+  // one would fail the 4-line shape check and force a needless whole-file reserialize.
+  const gh = sourceBlockRange(lines, /"Name"\s*:\s*"GithubReleases"/);
+  let idLine = -1;
+  for (let i = gh ? gh[0] : 0, end = gh ? gh[1] : lines.length - 1; i <= end; i++) if (idRe.test(lines[i])) { idLine = i; break; }
   if (idLine < 0) return text;                                   // not in GithubReleases — nothing to remove
   const open = idLine - 1, close = idLine + 2;                   // { · Id · Version · }
   if (open < 0 || close >= lines.length) return null;
@@ -287,13 +307,76 @@ export function removeGhReleaseEntry(text: string, id: string): string | null {
   }
   return lines.join('\n');
 }
+/** The file's dominant indent step — the mode of positive indent increases (2 if indeterminate).
+ *  Needed when seeding the FIRST blob entry: there is no sibling entry to copy indentation from,
+ *  and the enclosing source block's own indent can be irregular (vcst-qa indents the AzureBlob
+ *  block's children at the SAME column as its opening brace, so a parent-delta would yield 0). */
+function detectIndentUnit(lines: string[]): number {
+  const tally = new Map<number, number>();
+  let prev = 0;
+  for (const l of lines) {
+    if (!/\S/.test(l)) continue;
+    const indent = (l.match(/^ */) || [''])[0].length;
+    const delta = indent - prev;
+    if (delta > 0) tally.set(delta, (tally.get(delta) || 0) + 1);
+    prev = indent;
+  }
+  let unit = 0, best = 0;
+  for (const [delta, n] of tally) if (n > best || (n === best && delta < unit)) { unit = delta; best = n; }
+  return unit > 0 ? unit : 2;
+}
+/** Seed the first entry into an EMPTY AzureBlob `"Modules": []` — the state of a branch that has
+ *  never carried a prerelease pin (e.g. vcst-qa), where there is no `"BlobName"` line to anchor on.
+ *  Returns null if the AzureBlob source, or its empty Modules array, can't be located. */
+function insertFirstBlobEntry(lines: string[], blobName: string): string | null {
+  const range = sourceBlockRange(lines, /"Name"\s*:\s*"AzureBlob"|"ServiceUri"\s*:\s*"[^"]*vc3prerelease/);
+  if (!range) return null;                                         // no AzureBlob source at all
+  const [open, close] = range;
+  let modAt = -1;                                                  // that source's own "Modules" key
+  for (let i = open + 1; i < close; i++) if (/"Modules"\s*:/.test(lines[i])) { modAt = i; break; }
+  if (modAt < 0) return null;
+  const modIndent = (lines[modAt].match(/^ */) || [''])[0].length;
+  const unit = detectIndentUnit(lines);
+  const entry = [
+    `${' '.repeat(modIndent + unit)}{`,
+    `${' '.repeat(modIndent + unit * 2)}"BlobName": "${blobName}"`,
+    `${' '.repeat(modIndent + unit)}}`,
+  ];
+  const inline = /^(\s*"Modules"\s*:\s*)\[\s*\]\s*(,?)\s*$/.exec(lines[modAt]);
+  if (inline) {                                                    // "Modules": []  (one line)
+    lines.splice(modAt, 1, `${inline[1]}[`, ...entry, `${' '.repeat(modIndent)}]${inline[2]}`);
+    return lines.join('\n');
+  }
+  if (/"Modules"\s*:\s*\[\s*$/.test(lines[modAt])) {               // "Modules": [ … ] (multi-line)
+    for (let i = modAt + 1; i < lines.length; i++) {
+      if (!/\S/.test(lines[i])) continue;
+      if (!/^\s*\]\s*,?\s*$/.test(lines[i])) return null;          // array is NOT empty → unexpected shape
+      lines.splice(i, 0, ...entry);
+      return lines.join('\n');
+    }
+  }
+  return null;
+}
 /** Add (or replace) a BlobName-only entry in the AzureBlob source, matching existing indentation. */
 export function upsertBlobEntry(text: string, id: string, blobName: string): string | null {
   const lines = text.split('\n');
   const existing = lines.findIndex((l) => new RegExp(`"BlobName"\\s*:\\s*"${escRe(id)}_`).test(l));
-  if (existing >= 0) { lines[existing] = lines[existing].replace(/"BlobName"\s*:\s*"[^"]*"/, `"BlobName": "${blobName}"`); return lines.join('\n'); }
+  if (existing >= 0) {
+    lines[existing] = lines[existing].replace(/"BlobName"\s*:\s*"[^"]*"/, `"BlobName": "${blobName}"`);
+    // Refresh a sibling "Version" in the same entry: pinnedModule() prefers an explicit Version over
+    // the BlobName-derived one, so leaving it stale would make the table / --verify report a version
+    // the pin no longer points at. (Entries written by a reserialize carry Id+Version+BlobName.)
+    const ver = blobName.match(/^.+_(\d.*)\.zip$/i)?.[1];
+    if (ver) for (const step of [-1, 1]) {
+      for (let i = existing + step; i >= 0 && i < lines.length; i += step) {
+        if (/^\s*[{}]/.test(lines[i])) break;                       // left this entry's braces
+        if (/"Version"\s*:/.test(lines[i])) { lines[i] = lines[i].replace(/("Version"\s*:\s*")[^"]*(")/, `$1${ver}$2`); break; }
+      }
+    }
+    return lines.join('\n');
+  }
   const sample = lines.findIndex((l) => /"BlobName"\s*:/.test(l));
-  if (sample < 1) return null;
+  if (sample < 1) return insertFirstBlobEntry(lines, blobName);    // empty AzureBlob — no sibling to mirror
   const blobIndent = (lines[sample].match(/^\s*/) || [''])[0];
   const braceIndent = (lines[sample - 1].match(/^\s*/) || [''])[0];
   let lastClose = -1;
