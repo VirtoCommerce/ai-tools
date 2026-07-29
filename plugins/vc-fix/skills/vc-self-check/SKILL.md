@@ -243,10 +243,10 @@ no client will do. The DIAG footer even printed that as a hint; a dead one.
      remaining two options.
    - **"Send"** → re-run with `--confirm`.
    - **"Don't send"** → stop; the DIAG stays local.
-4. **Show the HONEST route** from the plan's `route` + `reason` — never "fork-PR" on a token
-   that cannot fork. `resolveRoute` no longer assumes an unreadable capability is fork-capable
-   (VCST-5582 A), so `route: "issue"`/`"local"` with a remedy in `reason` is a real answer, not
-   a fallback to hide. Quote it as-is.
+4. **Show the HONEST route** from the plan's `route` + `reason` — the only two are `issue` and
+   `local`, and `resolveRoute` never assumes an unreadable capability is upstream-capable
+   (VCST-5582 A), so `route: "local"` with a remedy in `reason` is a real answer, not a fallback
+   to hide. Quote it as-is, and relay the plan's `nextSteps[]` verbatim.
 
 **Nothing is ever sent without an explicit "Send".** `--confirm` is the only trigger, and
 `feedback.mode: auto` (an onboarding-time consent) is the only way to skip the question.
@@ -340,14 +340,31 @@ a single run; `--batch --purge` clears all batched sessions without sending.
   DIAG stays local.
 - **`ask`** (default) — the default DRY run: writes a scrubbed `DELIVERY-*.md` draft and
   presents a single [Show diff] / [Send] / [Don't send] decision; sends only on Send.
-- **`auto`** — the Issue route auto-files (scrubbed) and prints the filed URL; a PR/fork-PR is
-  prepared as ready `gh` commands (a human always opens the PR — an irreversible external
-  action). Local capture + diagnosis never need consent — only this outbound step does.
+- **`auto`** — the Issue auto-files (scrubbed) and prints the filed URL. Local capture +
+  diagnosis never need consent — only this outbound step does.
 
-**Routes by the GitHub token's real rights** on `VirtoCommerce/vc-mcp-testing-module`
-(via `../project-init/probe-lib.mjs`): push/maintain/admin → **PR**; authenticated
-no-push → **fork-PR**; issues-only → **GitHub Issue**; no token → **local + auth
-instructions**.
+**Two routes only** (`issue` / `local`), by the GitHub token's real rights on
+`VirtoCommerce/vc-mcp-testing-module` (via `../project-init/probe-lib.mjs`): **any**
+authenticated token with issue rights — including push/maintain/admin — files a **GitHub
+Issue**; no token, a failed probe, or a token whose read scopes carry neither `repo` nor
+`public_repo` → **local + what to grant**.
+
+> **There is no PR route.** `push`/`maintain`/`admin` used to resolve to `pr` and a
+> fork-capable token to `fork-pr`, and BOTH were hand-offs that printed `git`/`gh` commands and
+> sent nothing — so the more rights a token had, the less got delivered: a `maintain` token
+> produced `sent: false, handoff: true` while an issues-only token auto-filed. A self-check
+> contribution is a **telemetry report, not a code change**: there is no patch to review and no
+> working tree to build one in, and the hand-off asked the operator to author the fix by hand —
+> exactly the work the report exists to hand to the vendor. `--as pr` is now rejected.
+
+**A transient probe failure is retried once.** `probeWithRetry` re-probes after a short backoff
+before declaring a token unusable, and the `reason` says a retry was spent — a dry run once
+reported `route: local` / "authentication failed" while a confirm run minutes later on the SAME
+token reported `perm: maintain`.
+
+**Everything operator-actionable is a JSON field.** The plan carries `nextSteps[]` (and
+`probeRetried`), so an automated consumer sees what to do next; it used to exist only on the
+human-readable path.
 
 **Containment (§2a) — default-deny closed schema, not scrubbing.** The outbound artifact is
 built ONLY from a validated `UpstreamSignal` struct
@@ -380,8 +397,8 @@ processed session's local artifacts are removed. Scope is the **processed sessio
 — other sessions are never touched.
 - **Issue route + `--confirm`** (filed, or a dedup already upstream) → auto-deleted.
   `--keep` retains.
-- **PR / fork-PR** (handed off) and **local** (nothing sent) → nothing deleted; the run
-  prints the ready `--purge` cleanup command to run *after* the PR is opened.
+- **local** (nothing sent) → nothing deleted; the artifacts are kept until a run actually
+  delivers, and the `--purge` command is printed for a manual clear.
 - **`--purge`** is the standalone terminal cleanup (send nothing).
 
 ## Notes

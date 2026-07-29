@@ -16,6 +16,8 @@ import {
   resolveRoute,
   findDuplicateIssue,
   purgeSession,
+  probeWithRetry,
+  ROUTES,
   main,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
 import { classifyGithubTokenKind, GITHUB_UPSTREAM_REMEDY } from "../../plugins/vc-fix/skills/project-init/probe-lib.mjs";
@@ -141,22 +143,45 @@ test("resolveRoute: no token → local; auth failure → local", () => {
   assert.equal(resolveRoute({ token: "t", probe: { ok: false } }).route, "local");
 });
 
-test("resolveRoute: push/maintain/admin permission → pr", () => {
+// ── item 4 — the pr/fork-pr routes were REMOVED ────────────────────────────────────────
+// These cases previously expected `route: "pr"` / `"fork-pr"`. Both branches were HAND-OFFS that
+// sent nothing, so the more rights a token had the LESS got delivered: on the reproduction a
+// `maintain` token produced `sent: false, handoff: true` while an issues-only token auto-filed. A
+// self-check contribution is a telemetry report, not a code change, so every authenticated token
+// with issue rights now files an Issue. The SCENARIOS are preserved — only the expected route
+// moved — and `item 4: no probe shape can produce a pr/fork-pr route` below pins the removal.
+test("resolveRoute: push/maintain/admin permission → issue (was: pr)", () => {
   for (const perm of ["push", "maintain", "admin"]) {
-    assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm } }).route, "pr", perm);
+    const r = resolveRoute({ token: "t", probe: { ok: true, perm } });
+    assert.equal(r.route, "issue", perm);
+    assert.match(r.reason, /Issue, not a code PR/, "the reason explains why push rights still file an Issue");
   }
 });
 
-// ── VCST-5582 A — no optimistic fork default ───────────────────────────────────────────
+// ── VCST-5582 A — no optimistic capability default (still enforced) ────────────────────
 // The old rule was `canFork = !scopesKnown || /(repo|public_repo)/.test(scopes)`, while
 // resolveGithubToken() leaves `scopes` EMPTY for every PAT — so every PAT routed `fork-pr`,
 // including a fine-grained one GitHub structurally forbids from forking someone else's repo.
-test("resolveRoute: a PROVEN fork-capable token without push → fork-pr", () => {
-  // The probed capability is what earns the fork path.
-  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read", login: "u", tokenKind: "classic", forkCapable: "yes" } }).route, "fork-pr");
-  // Legacy probe shape (no forkCapable field) + a scope string that clearly grants it.
-  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read" }, scopes: "repo,gist" }).route, "fork-pr");
-  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read" }, scopes: "public_repo" }).route, "fork-pr");
+// The fork route is gone, but the no-optimistic-default rule still governs `issue` vs `local`.
+test("resolveRoute: a PROVEN upstream-capable token without push → issue (was: fork-pr)", () => {
+  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read", login: "u", tokenKind: "classic", forkCapable: "yes" } }).route, "issue");
+  // Legacy probe shape (no forkCapable field) + a scope string that clearly grants upstream rights.
+  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read" }, scopes: "repo,gist" }).route, "issue");
+  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read" }, scopes: "public_repo" }).route, "issue");
+});
+
+test("item 4: no probe shape can produce a pr/fork-pr route any more", () => {
+  const probes = [
+    { ok: true, perm: "admin" }, { ok: true, perm: "maintain" }, { ok: true, perm: "push" },
+    { ok: true, perm: "read", forkCapable: "yes", tokenKind: "classic", login: "u" },
+    { ok: true, perm: "read", forkCapable: "unknown", tokenKind: "classic" },
+    { ok: true, perm: "read", forkCapable: "no", tokenKind: "fine-grained" },
+    { ok: true, perm: "read", forkCapable: "no", tokenKind: "classic" },
+  ];
+  for (const probe of probes) {
+    const { route } = resolveRoute({ token: "t", probe, scopes: "repo" });
+    assert.ok(ROUTES.includes(route), `${JSON.stringify(probe)} → ${route}`);
+  }
 });
 
 test("resolveRoute: a PAT with EMPTY scopes must NOT silently route fork-pr (AC 1)", () => {
@@ -167,10 +192,10 @@ test("resolveRoute: a PAT with EMPTY scopes must NOT silently route fork-pr (AC 
   assert.match(r.reason, /could not be confirmed|classic/i, "and the reason carries the remedy");
 });
 
-test("resolveRoute: a fine-grained token routes to issue, never fork-pr, with the remedy", () => {
+test("resolveRoute: a fine-grained token routes to issue, with the remedy", () => {
   const r = resolveRoute({ token: "github_pat_xyz", probe: { ok: true, perm: "pull(read-only)", login: "u", tokenKind: "fine-grained", forkCapable: "no" } });
   assert.equal(r.route, "issue");
-  assert.match(r.reason, /fine-grained token cannot fork/);
+  assert.match(r.reason, /fine-grained token/);
   assert.match(r.reason, /classic/i, "the reason names the classic-token remedy");
 });
 
@@ -182,12 +207,71 @@ test("resolveRoute: a classic token with NO upstream scope stays local (nothing 
   assert.match(r.reason, /no repo\/public_repo scope/);
 });
 
-test("resolveRoute: a gh-cli session with the repo scope is fork-capable", () => {
-  assert.equal(resolveRoute({ token: "gho_xyz", probe: { ok: true, perm: "pull(read-only)", login: "u", tokenKind: "gh-cli", forkCapable: "yes" } }).route, "fork-pr");
+test("resolveRoute: a gh-cli session with the repo scope → issue (was: fork-pr)", () => {
+  assert.equal(resolveRoute({ token: "gho_xyz", probe: { ok: true, perm: "pull(read-only)", login: "u", tokenKind: "gh-cli", forkCapable: "yes" } }).route, "issue");
 });
 
 test("resolveRoute: an explicit override wins over everything", () => {
   assert.equal(resolveRoute({ token: null, override: "issue" }).route, "issue");
+});
+
+// ─── item 6 — a transient probe failure must not read as missing rights ───────────
+// Observed: a dry run reported `route: local` / "token present but GitHub authentication failed",
+// and a confirm run MINUTES later on the SAME token reported `perm: maintain`. The message sends
+// the operator off to re-issue a PAT for what was a `gh`/network blip.
+test("item 6: probeWithRetry retries once and succeeds on the second attempt", async () => {
+  let calls = 0;
+  const probe = async () => (++calls === 1 ? { ok: false } : { ok: true, perm: "maintain" });
+  const r = await probeWithRetry({ token: "t", repo: "VirtoCommerce/x" }, { probe, delayMs: 0 });
+  assert.equal(calls, 2, "the first failure is retried");
+  assert.equal(r.ok, true);
+  assert.equal(r.perm, "maintain");
+  assert.equal(r.retried, true, "and the retry is recorded");
+  assert.equal(resolveRoute({ token: "t", probe: r }).route, "issue", "the recovered probe routes normally");
+});
+
+test("item 6: a first-attempt success is NOT retried and is not marked retried", async () => {
+  let calls = 0;
+  const probe = async () => (calls++, { ok: true, perm: "push" });
+  const r = await probeWithRetry({ token: "t", repo: "VirtoCommerce/x" }, { probe, delayMs: 0 });
+  assert.equal(calls, 1);
+  assert.equal(r.retried, undefined);
+});
+
+test("item 6: a genuine failure says a retry was attempted", async () => {
+  const probe = async () => ({ ok: false });
+  const r = await probeWithRetry({ token: "t", repo: "VirtoCommerce/x" }, { probe, delayMs: 0 });
+  assert.equal(r.retried, true);
+  const { route, reason } = resolveRoute({ token: "t", probe: r });
+  assert.equal(route, "local");
+  assert.match(reason, /retried once/, "the reason distinguishes a real failure from one unlucky call");
+});
+
+test("item 6: a THROWING prober is caught, retried, and never crashes the run", async () => {
+  let calls = 0;
+  const probe = async () => { calls++; throw new Error("ECONNRESET"); };
+  const r = await probeWithRetry({ token: "t", repo: "VirtoCommerce/x" }, { probe, delayMs: 0 });
+  assert.equal(calls, 2);
+  assert.equal(r.ok, false);
+  assert.equal(resolveRoute({ token: "t", probe: r }).route, "local");
+});
+
+// ─── item 4/5 — an unknown --as route is rejected, not silently dropped ───────────
+test("item 4: --as pr is rejected with the valid route list", async () => {
+  const chunks = [];
+  const write = process.stdout.write.bind(process.stdout);
+  const prevExit = process.exitCode;
+  process.stdout.write = (s) => (chunks.push(String(s)), true);
+  try {
+    await main(["--as", "pr", "--json"]);
+  } finally {
+    process.stdout.write = write;
+  }
+  const out = JSON.parse(chunks.join(""));
+  assert.match(out.error, /not a code PR/);
+  assert.deepEqual(out.validRoutes, ROUTES);
+  assert.equal(process.exitCode, 2);
+  process.exitCode = prevExit;
 });
 
 // ─── findDuplicateIssue (dedup match, fetch stubbed) ─────────────────────────────

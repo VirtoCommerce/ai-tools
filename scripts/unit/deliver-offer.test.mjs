@@ -78,9 +78,13 @@ test("G: the route shown in the offer is the HONEST one for the token in hand", 
   await withTempHome(async (home) => {
     seed(home);
     const { plan } = await dry(home);
-    // A classic token with `repo`, no push on the plugin repo ⇒ fork-pr is genuinely available.
-    assert.equal(plan.route, "fork-pr");
-    assert.match(plan.reason, /fork-capable/);
+    // A classic token with `repo`, no push on the plugin repo ⇒ it can open an upstream Issue,
+    // which is the only route a telemetry report ever takes (item 4 removed pr/fork-pr).
+    assert.equal(plan.route, "issue");
+    assert.match(plan.reason, /upstream rights/);
+    // item 5 — whatever the operator is expected to do next is a FIELD, not only prose.
+    assert.ok(Array.isArray(plan.nextSteps) && plan.nextSteps.length > 0);
+    assert.match(plan.nextSteps.join("\n"), /--confirm/);
   });
 });
 

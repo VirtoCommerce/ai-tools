@@ -29,17 +29,17 @@
  *     LLM-authored DIAG cells and operator /vc-feedback prose never reach the struct (feedback
  *     travels as 👍/👎 counts only). See knowledge/diagnostics/upstream-schema.md + adr-upstream-default-deny.md.
  *   - DRAFT-AND-CONFIRM (mode=ask): the run is DRY (draft + show). It sends ONLY
- *     with `--confirm` (mode=auto pre-confirms), and even then auto-sends only the
- *     low-risk GitHub Issue route; a PR/fork-PR is handed off as ready commands
- *     (opening a code PR needs a working tree + a human-reviewed patch, which a
- *     telemetry script must not fabricate).
+ *     with `--confirm` (mode=auto pre-confirms), and the only thing it ever sends is
+ *     the low-risk GitHub Issue. There is no PR route: a self-check contribution is a
+ *     TELEMETRY REPORT, not a code change — the former pr/fork-pr hand-off meant a
+ *     `maintain` token delivered NOTHING while an issues-only token auto-filed (item 4).
  *   - Issue dedup with OCCURRENCE COUNTING: a stable fingerprint marker converges
  *     the same defect from many clients to ONE upstream issue — a dedup hit adds a
  *     "+1 occurrence" comment instead of a new ticket.
  *
  * Usage:
- *   node deliver.mjs [--diag <path>] [--repo <owner/name>] [--as pr|fork-pr|issue|local]
- *                    [--confirm] [--keep] [--purge] [--json]
+ *   node deliver.mjs [--diag <path>] [--repo <owner/name>] [--as issue|local]
+ *                    [--confirm] [--dry] [--assert-nonempty] [--keep] [--purge] [--json]
  *   (default --repo VirtoCommerce/vc-mcp-testing-module; default is a DRY draft
  *    unless feedback.mode=auto.)
  */
@@ -270,52 +270,90 @@ export function parseDiag(md) {
 // ─── route resolution ────────────────────────────────────────────────────────
 /**
  * Decide the delivery route from the probed permission on the plugin repo.
- *   pr       — push/maintain/admin → branch + PR (handed off; not auto-sent)
- *   fork-pr  — authenticated, no push, PROVEN fork-capable → fork-PR (handed off)
- *   issue    — authenticated, cannot fork (or capability unreadable) → GitHub Issue (auto-sendable)
- *   local    — no token / auth failed / nothing upstream is possible → local report + remedy
+ *   issue — any authenticated token with issue rights → GitHub Issue (the ONLY sending route)
+ *   local — no token / auth failed / nothing upstream is possible → local report + remedy
  *
- * NO OPTIMISTIC DEFAULT (VCST-5582 A). This used to read
- *   `canFork = !scopesKnown || /(repo|public_repo)/.test(scopes)`
- * while `resolveGithubToken()` leaves `scopes` EMPTY for every PAT — so `scopesKnown` was always
- * false for a PAT, `canFork` always true, and the route was ALWAYS `fork-pr`, including for a
- * fine-grained token that GitHub structurally forbids from forking a repo it does not own ("Only
- * personal access tokens (classic) have write access for public repositories that are not owned by
- * you…"). The capability is now a PROBED tri-state (`probe.forkCapable`, from
- * probe-lib.classifyGithubTokenKind) and only an explicit "yes" earns the fork path; "unknown" and
- * "no" fall to the least-privileged route, carrying the remedy text so the operator sees WHY.
+ * ONLY TWO ROUTES (item 4). This used to map `push`/`maintain`/`admin` → `route: "pr"` and a
+ * fork-capable token → `route: "fork-pr"`, and BOTH of those branches were hand-offs: they printed
+ * `git`/`gh` commands for a human to run and sent nothing. The result inverted the intent of the
+ * whole permission probe — an issues-only token auto-filed, while a `maintain` token, the MORE
+ * privileged one, delivered NOTHING. Observed on the reproduction: `deliver --confirm` resolved
+ * `route: pr` ("push access (maintain)") and produced `sent: false, handoff: true`.
+ *
+ * A self-check contribution is a TELEMETRY REPORT, not a code change. It never needed a PR: there
+ * is no patch to review, no working tree to build it in, and the hand-off asked the operator to
+ * author the fix by hand — which is precisely the work the report exists to hand to the vendor. So
+ * push rights now route to an Issue like everything else, and the PR machinery is gone.
+ *
+ * NO OPTIMISTIC DEFAULT is preserved (VCST-5582 A): the one remaining `local` case beyond "no
+ * token / auth failed" is a token whose scopes we DID read and which carries neither `repo` nor
+ * `public_repo` — that token cannot open an issue on a public repo either, so nothing upstream is
+ * possible and the reason carries the remedy. An UNREADABLE capability is never assumed capable;
+ * it just no longer picks a fork route, because there is no fork route to pick.
  */
 export function resolveRoute({ token, probe, scopes, override }) {
   if (override) return { route: override, reason: "operator override (--as)" };
   if (!token) return { route: "local", reason: "no GitHub token or gh session" };
-  if (!probe || !probe.ok) return { route: "local", reason: "token present but GitHub authentication failed" };
+  if (!probe || !probe.ok) {
+    // Item 6: say whether a retry was already spent, so "authentication failed" is not confused
+    // with "we asked once and gave up" — the observed failure mode was a transient `gh` blip.
+    const retried = probe && probe.retried ? " (retried once)" : "";
+    return { route: "local", reason: `token present but GitHub authentication failed${retried}` };
+  }
   const perm = probe.perm;
-  if (["push", "maintain", "admin"].includes(perm)) return { route: "pr", reason: `push access (${perm})` };
+  const remedy = probe.remedy || GITHUB_UPSTREAM_REMEDY;
+  // Push rights obviously include issue rights. Named explicitly so the reason stays honest about
+  // WHY a highly-privileged token still files an Issue rather than a PR.
+  if (["push", "maintain", "admin"].includes(perm)) {
+    return { route: "issue", reason: `push access (${perm}) — a self-check report is filed as an Issue, not a code PR` };
+  }
 
   // Prefer the PROBED capability. Fall back to the raw scope string only for a probe from an older
   // shape (no `forkCapable` field) — and there too, UNREADABLE scopes are "unknown", never "yes".
   const kind = probe.tokenKind || "";
   const scopeList = String(scopes ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const forkCapable = probe.forkCapable
+  const upstreamCapable = probe.forkCapable
     || (scopeList.length ? (scopeList.some((s) => /^(repo|public_repo)$/i.test(s)) ? "yes" : "no") : "unknown");
-  const remedy = probe.remedy || GITHUB_UPSTREAM_REMEDY;
 
-  if (forkCapable === "yes") {
-    return { route: "fork-pr", reason: `authenticated as ${probe.login || "user"} without push, fork-capable — fork-PR` };
-  }
   // A CLASSIC/session token whose scopes we DID read and which carries neither `repo` nor
-  // `public_repo` cannot fork AND cannot create an issue on a public repo either — nothing
-  // upstream is possible, so stay local and tell the operator exactly what to grant.
-  if (forkCapable === "no" && kind !== "fine-grained") {
+  // `public_repo` cannot create an issue on a public repo — nothing upstream is possible, so stay
+  // local and tell the operator exactly what to grant.
+  if (upstreamCapable === "no" && kind !== "fine-grained") {
     return { route: "local", reason: `authenticated but the token has no upstream rights (no repo/public_repo scope) — ${remedy}` };
   }
-  // Fine-grained (or a capability we could not read): the fork path is out. An Issue is the
-  // least-privileged upstream action, so try that instead of a route we know will 403. A
-  // fine-grained token may still be refused here — if it is, the reason carries the fix.
-  const why = kind === "fine-grained"
-    ? "fine-grained token cannot fork or open a fork-PR upstream"
-    : "fork capability could not be confirmed for this token";
-  return { route: "issue", reason: `${why} — filing an Issue instead (least-privileged upstream route). If GitHub refuses it: ${remedy}` };
+  // Authenticated with issue rights (proven, fine-grained, or a capability we could not read): an
+  // Issue is the least-privileged upstream action and the only one this script performs. A
+  // fine-grained token may still be refused — if it is, the reason carries the fix.
+  const why = upstreamCapable === "yes"
+    ? `authenticated as ${probe.login || "user"} with upstream rights`
+    : kind === "fine-grained"
+    ? "fine-grained token — Issue is the only upstream route it can take"
+    : "upstream capability could not be confirmed for this token";
+  return { route: "issue", reason: `${why} — filing an Issue (least-privileged upstream route). If GitHub refuses it: ${remedy}` };
+}
+
+// ─── probe with one retry (item 6) ───────────────────────────────────────────
+/**
+ * Probe the plugin repo, retrying ONCE on failure before declaring the token unusable.
+ *
+ * `resolveRoute` maps any probe failure to `route: "local"` with reason "token present but GitHub
+ * authentication failed" — a message that reads as "your token lacks rights" and sends the operator
+ * off to re-issue a PAT. On the reproduction it was neither: a dry run reported `route: local` /
+ * auth failed, and a confirm run MINUTES LATER on the SAME token reported `perm: maintain`. A
+ * transient `gh`/network blip was being reported as a permissions problem.
+ *
+ * One short retry, and `retried` is threaded into the reason so a genuine failure is
+ * distinguishable from a single unlucky call. The prober and delay are injectable so the retry is
+ * testable without network or wall-clock.
+ */
+export async function probeWithRetry({ token, repo, via, scopes }, { probe = probeGithubUpstream, delayMs = 750 } = {}) {
+  const first = await probe({ token, repo, via, scopes }).catch(() => null);
+  if (first && first.ok) return first;
+  await new Promise((r) => setTimeout(r, delayMs));
+  const second = await probe({ token, repo, via, scopes }).catch(() => null);
+  if (second && second.ok) return { ...second, retried: true };
+  // Both failed — report the richer of the two, marked as retried.
+  return { ...(second || first || { ok: false }), retried: true };
 }
 
 // ─── fingerprint / dedup ─────────────────────────────────────────────────────
@@ -449,18 +487,36 @@ async function addOccurrenceComment({ repo, token, number, fp }) {
   }
 }
 
-function prHandoffCommands({ repo, route, fp }) {
-  const branch = `vc-fix/self-check-${fp}`;
-  const head = route === "fork-pr" ? "<your-fork-owner>:" + branch : branch;
-  return [
-    `# ${route === "fork-pr" ? "Fork-PR" : "PR"} hand-off — run from a fresh checkout of ${repo}`,
-    `#   (a code PR needs a working tree + a human-reviewed patch — not fabricated here)`,
-    `git switch -c ${branch}`,
-    `#   … apply the proposed plugin-file change(s) from the draft above …`,
-    `git commit -am "fix(vc-fix): <self-check finding>"`,
-    route === "fork-pr" ? `git push <your-fork-remote> ${branch}` : `git push origin ${branch}`,
-    `gh pr create --repo ${repo} --head ${head} --title "<title from draft>" --body-file <scrubbed-body>`,
-  ].join("\n");
+// `prHandoffCommands` was REMOVED with the pr/fork-pr routes (item 4). It emitted a `git switch` /
+// `git commit` / `gh pr create` sequence with `… apply the proposed change(s) …` in the middle — it
+// asked the operator to author the fix by hand, which is the exact work the report exists to hand
+// to the VENDOR. Worse, it was the ONLY actionable output of the pr/fork-pr routes and it existed
+// solely on the human-readable path, so `--json` consumers got a plan that sent nothing and told
+// them nothing (item 5). Routes are now `issue` (sends) and `local` (cannot send).
+
+/**
+ * The operator-actionable lines for a plan — the SINGLE source for both the human-readable output
+ * and the JSON `nextSteps` field (item 5).
+ *
+ * The `--json` branch used to print just the plan while the actionable text lived only on the
+ * human path, so an automated consumer could not learn what to do next. Any string an operator is
+ * expected to act on now travels in the plan itself.
+ */
+function nextStepsFor({ route, confirmed, dup, batch = false }) {
+  const flags = batch ? "--batch --confirm" : "--confirm";
+  if (route === "local") {
+    return [
+      "No token or no upstream rights — nothing can be sent from this machine.",
+      "Authenticate, then re-run to deliver (the local artifacts are kept until then):",
+      "  export GITHUB_FIX_BUGS_TOKEN=<PAT>   # or:  gh auth login",
+    ];
+  }
+  if (confirmed) return []; // already acted on — the outcome line says what happened
+  return dup
+    ? [`This finding is already upstream as issue #${dup.number} (${dup.url}).`,
+       `Re-run with ${flags} to add a "+1 occurrence" comment (no new issue is filed).`]
+    : [`Nothing sent yet. Re-run with ${flags} to file this GitHub Issue`,
+       "  (on success this session's local artifacts are auto-cleaned; --keep retains them)."];
 }
 
 // ─── the information-free-payload guard (--assert-nonempty) ──────────────────
@@ -667,10 +723,10 @@ async function mainBatch(args) {
   const confirm = (args.confirm || mode === "auto") && !args.dry;
 
   const { token, via, scopes } = resolveGithubToken();
-  const probe = token ? await probeGithubUpstream({ token, repo: args.repo, via, scopes }) : null;
+  const probe = token ? await probeWithRetry({ token, repo: args.repo, via, scopes }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
   const draft = buildDraft({ struct, route });
-  const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
+  const dup = await findDuplicateIssue({ repo: args.repo, token, fp });
 
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -683,10 +739,11 @@ async function mainBatch(args) {
     try { if (existsSync(deliveryPath)) { unlinkSync(deliveryPath); removed.push(deliveryPath.split(/[\\/]/).pop()); } } catch { /* ignore */ }
     return [...new Set(removed)];
   };
-  const plan = { action: "batch", sessions: sessions.length, findings: findings.length, repo: args.repo, tokenVia: via || null, perm: probe?.perm ?? null, route, reason, fingerprint: fp, duplicate: dup, deliveryDraft: deliveryPath, mode, sent: false };
+  const plan = { action: "batch", sessions: sessions.length, findings: findings.length, repo: args.repo, tokenVia: via || null, perm: probe?.perm ?? null, route, reason, probeRetried: Boolean(probe?.retried), fingerprint: fp, duplicate: dup, deliveryDraft: deliveryPath, mode, sent: false };
 
   if (!confirm) {
     plan.dryRun = true;
+    plan.nextSteps = nextStepsFor({ route, confirmed: false, dup, batch: true }); // item 5
     if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
     else process.stdout.write(
       [
@@ -695,9 +752,7 @@ async function mainBatch(args) {
         dup ? `Dedup: matches open issue #${dup.number} — would add "+1 occurrence"` : `Dedup: none`,
         `Draft written (closed-schema, enums only): ${deliveryPath}`,
         `--- draft ---\n# ${draft.title}\n\n${draft.body}\n-------------`,
-        route === "issue" ? `Re-run with --batch --confirm to file (then all ${sessions.length} sessions are purged; --keep to retain).`
-          : route === "local" ? `No token/rights → local only. Authenticate to deliver.`
-          : `A ${route} is handed off — re-run with --batch --confirm for the ready commands.`,
+        ...plan.nextSteps,
       ].join("\n") + "\n"
     );
     return;
@@ -731,18 +786,9 @@ async function mainBatch(args) {
     return;
   }
 
-  if (route === "pr" || route === "fork-pr") {
-    plan.handoff = true;
-    if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-    else process.stdout.write(
-      `${route} is NOT auto-created. Scrubbed batch draft: ${deliveryPath}\n\n${prHandoffCommands({ repo: args.repo, route, fp })}\n\n` +
-        `Once the PR is open, clear all batched sessions:\n  node "$pluginRoot/skills/vc-self-check/deliver.mjs" --batch --purge\n`
-    );
-    return;
-  }
-
+  plan.nextSteps = nextStepsFor({ route, confirmed: false, dup, batch: true });
   if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-  else process.stdout.write(`No token/rights → local batch report only: ${deliveryPath}\n`);
+  else process.stdout.write([`No token/rights → local batch report only: ${deliveryPath}`, ...plan.nextSteps].join("\n") + "\n");
 }
 
 /** The self-check contribution may ONLY ever target the VirtoCommerce platform org. This is a
@@ -758,8 +804,20 @@ export function isAllowedUpstreamRepo(repo) {
   return /^VirtoCommerce\/[A-Za-z0-9][\w.-]*$/i.test(r);
 }
 
+/** The only routes this script knows how to act on (item 4 removed `pr`/`fork-pr`). An `--as`
+ *  naming a removed route is REJECTED rather than silently accepted into a branch that no longer
+ *  exists — a dead route would otherwise reappear as "nothing was sent and nothing said why". */
+export const ROUTES = ["issue", "local"];
+
 export async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
+  if (args.override && !ROUTES.includes(args.override)) {
+    const msg = `Unknown route "${args.override}". A self-check contribution is filed as an Issue, not a code PR — valid: ${ROUTES.join(" | ")}.`;
+    if (args.json) process.stdout.write(JSON.stringify({ error: msg, route: args.override, validRoutes: ROUTES }) + "\n");
+    else process.stderr.write(msg + "\n");
+    process.exitCode = 2;
+    return;
+  }
   if (!isAllowedUpstreamRepo(args.repo)) {
     const msg = `Refusing to target "${args.repo}": self-check contributions may only go to VirtoCommerce/*.`;
     if (args.json) process.stdout.write(JSON.stringify({ error: msg, repo: args.repo }) + "\n");
@@ -846,11 +904,11 @@ export async function main(argv = process.argv.slice(2)) {
   const confirm = (args.confirm || mode === "auto") && !args.dry;
 
   const { token, via, scopes } = resolveGithubToken();
-  const probe = token ? await probeGithubUpstream({ token, repo: args.repo, via, scopes }) : null;
+  const probe = token ? await probeWithRetry({ token, repo: args.repo, via, scopes }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
 
   const draft = buildDraft({ struct, route });
-  const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
+  const dup = await findDuplicateIssue({ repo: args.repo, token, fp });
 
   // Always write the draft locally (never under the plugin dir).
   const dir = diagDir();
@@ -866,6 +924,7 @@ export async function main(argv = process.argv.slice(2)) {
     perm: probe?.perm ?? null,
     route,
     reason,
+    probeRetried: Boolean(probe?.retried), // item 6 — a transient blip is distinguishable from no rights
     fingerprint: fp,
     duplicate: dup,
     title: draft.title,
@@ -877,6 +936,7 @@ export async function main(argv = process.argv.slice(2)) {
   if (!confirm) {
     plan.dryRun = true;
     plan.mode = mode;
+    plan.nextSteps = nextStepsFor({ route, confirmed: false, dup }); // item 5
     // The one-shot offer guard (VCST-5582 G). A DRY run IS the offer, so read the guard, report
     // it, then mark — the skill stays SILENT when `alreadyOffered` is true instead of re-asking.
     const guard = readOfferGuard(sid, fp);
@@ -897,12 +957,7 @@ export async function main(argv = process.argv.slice(2)) {
           ``,
           draft.body,
           `-------------`,
-          route === "issue"
-            ? `Nothing sent. Re-run with --confirm to file this GitHub Issue (then this session's local artifacts are auto-cleaned; --keep to retain).`
-            : route === "local"
-            ? `No token/rights → local report only. Authenticate to deliver:\n  export GITHUB_FIX_BUGS_TOKEN=<PAT>   # or:  gh auth login`
-            : `Nothing sent. A ${route} is handed off (not auto-created) — with --confirm you get the ready command sequence:`,
-          route === "pr" || route === "fork-pr" ? "\n" + prHandoffCommands({ repo: args.repo, route, fp }) : "",
+          ...plan.nextSteps,
         ]
           .filter(Boolean)
           .join("\n") + "\n"
@@ -911,13 +966,15 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  // Act. Only the Issue route auto-sends; pr/fork-pr hand off; local writes.
+  // Act. The Issue route sends; `local` writes the draft and explains what to grant.
   if (route === "issue") {
     if (dup) {
       plan.skipped = `duplicate of #${dup.number}`;
       // Already upstream — don't re-file; add a "+1 occurrence" comment so the vendor
       // sees this defect hit another client (occurrence counts across clients).
       plan.occurrenceComment = await addOccurrenceComment({ repo: args.repo, token, number: dup.number, fp });
+      // A failed +1 leaves the operator with something to do — say so in the plan, not only in prose.
+      plan.nextSteps = plan.occurrenceComment ? [] : [`Could not comment on issue #${dup.number}; the local artifacts were kept. Re-run with --confirm to retry.`];
       // Purge ONLY if the +1 occurrence comment actually posted. addOccurrenceComment swallows all
       // errors → false, so on a transient network blip the occurrence would be silently uncounted AND
       // the local artifacts deleted — the +1 lost with no retry path (code review #3). If it failed,
@@ -936,6 +993,7 @@ export async function main(argv = process.argv.slice(2)) {
       const created = await createIssue({ repo: args.repo, token, title: draft.title, body: draft.body });
       plan.sent = true;
       plan.issue = created;
+      plan.nextSteps = []; // delivered — nothing left for the operator to do
       // Delivered → delete the processed session's local artifacts (unless --keep).
       if (!args.keep) plan.purged = purgeSession({ dir, sid, fp, extra: [diagPath, deliveryPath] });
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
@@ -947,30 +1005,19 @@ export async function main(argv = process.argv.slice(2)) {
       );
     } catch (e) {
       plan.error = String(e?.message ?? e);
+      plan.nextSteps = [`Filing the Issue failed: ${plan.error}`, "The local artifacts were kept — fix the cause and re-run with --confirm."];
       if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-      else process.stderr.write(plan.error + "\n");
+      else process.stderr.write([plan.error, ...plan.nextSteps.slice(1)].join("\n") + "\n");
       process.exitCode = 1;
     }
     return;
   }
 
-  if (route === "pr" || route === "fork-pr") {
-    plan.handoff = true;
-    // Not delivered yet (the human opens the PR) → do NOT purge now.
-    if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
-    else
-      process.stdout.write(
-        `${route} is NOT auto-created (a code PR needs a working tree + human-reviewed patch).\n` +
-          `Scrubbed draft: ${deliveryPath}\n\n${prHandoffCommands({ repo: args.repo, route, fp })}\n\n` +
-          `Once the PR is open, clear this session's local diagnostics:\n  ${purgeHint}\n`
-      );
-    return;
-  }
-
   // local — no token/rights, nothing delivered → keep the artifacts (don't purge).
+  plan.nextSteps = nextStepsFor({ route, confirmed: false, dup });
   if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
   else process.stdout.write(
-    `No token/rights → local report only: ${deliveryPath}\nAuthenticate then re-run to deliver (artifacts kept until then).\n`
+    [`No token/rights → local report only: ${deliveryPath}`, ...plan.nextSteps, `To clear this session's local diagnostics:\n  ${purgeHint}`].join("\n") + "\n"
   );
 }
 
