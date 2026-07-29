@@ -1706,8 +1706,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 47,
-      "estimatedMinutes": 33,
+      "testCount": 49,
+      "estimatedMinutes": 35,
       "agent": "qa-backend-expert",
       "tags": [
         "notifications",
@@ -1729,8 +1729,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 26,
-      "estimatedMinutes": 18,
+      "testCount": 27,
+      "estimatedMinutes": 19,
       "agent": "qa-backend-expert",
       "tags": [
         "notifications",

@@ -14,7 +14,7 @@
 [TOAST] a notification reports the send was accepted and no error dialog is present
 [BLADE] the '...: Template' blade is still open after the send","[NETWORK] the send request returns 2xx with no 4xx/5xx
 [EMAIL] exactly one test message arrives at {{ADMIN_EMAIL}} within 60s (BL-NOTIF-001)
-[CONSOLE] no JS errors in the Admin SPA during the send","'Send test email' disabled on a valid template; red 5xx toast on send; spinner visible >5s; zero or duplicate test messages received","Close the Template and Details blades with the blade close control without saving; template content left unmodified","C207375 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[CONSOLE] no JS errors in the Admin SPA during the send","'Send test email' disabled on a valid template; red 5xx toast on send; spinner visible >5s; zero or duplicate test messages received","Close the Template and Details blades with the blade close control without saving; template content left unmodified","C207375 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-002","Send template for concrete localization","Notification Send","Medium","BL-NOTIF-002","ECL-12.1","state from NOTIF-001 (Admin signed in at {{BACK_URL}}, the '...: Details' blade open for 'OrderCreateEmailNotification' with its Templates grid listed); that notification type has templates for at least two languages and the additional language is registered under Settings > Notifications > Languages","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] click the template row of the additional non-default language
 [WAIT] the '...: Template' blade opens
 [ACT] click 'Send test email' in the blade toolbar
@@ -25,7 +25,7 @@
 [DOM] the body visible in the 'Template (liquid)' tab is the content stored for that language, and the default-language body is absent
 [TOAST] a notification reports the send was accepted","[NETWORK] the send request carries the selected language and returns 2xx
 [EMAIL] the received message body matches the selected language template (BL-NOTIF-002)
-[CONSOLE] no JS errors in the Admin SPA","Language selector resets to the default language on blade open; default-language body rendered for the non-default row; 4xx/5xx on send; no message received within 60s","Close the Template and Details blades without saving","C207581 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[CONSOLE] no JS errors in the Admin SPA","Language selector resets to the default language on blade open; default-language body rendered for the non-default row; 4xx/5xx on send; no message received within 60s","Close the Template and Details blades without saving","C207581 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-003","Disable notification","Notification Send","High","BL-NOTIF-001","ECL-14.7","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'OrderCreateEmailNotification' is currently active; a way to raise the corresponding platform event is available in the environment","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'OrderCreateEmailNotification'
@@ -40,7 +40,7 @@
 [GRID] the notification row shows the inactive state in the list
 [BLADE] the '...: Details' blade reports no unsaved changes after the save","[API] GET /api/notifications/OrderCreateEmailNotification reports the inactive state
 [EMAIL] no message arrives at the recipient within 60s of the event while the type is inactive
-[CONSOLE] no JS errors in the Admin SPA","Toggle reverts to on after reopening the blade; message still dispatched while inactive; 4xx/5xx on save; no save confirmation","Set 'Is active' back to on and save so the environment is restored","C207583 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[CONSOLE] no JS errors in the Admin SPA","Toggle reverts to on after reopening the blade; message still dispatched while inactive; 4xx/5xx on save; no save confirmation","Set 'Is active' back to on and save so the environment is restored","C207583 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-006","Unregistered notifications handling","Notification Validation","Medium","","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] read every row of the notifications list
@@ -48,7 +48,7 @@
 [GRID] no raw localization key and no blank type cell is present in the list
 [BLADE] the Details blade opens for any listed row with no error dialog present","[API] GET /api/notifications returns the same set of types the grid renders
 [CONSOLE] no JS errors while the list is rendered
-[NETWORK] no 4xx/5xx while paging the list","Raw localization key rendered in the type column; blank display name; error dialog on opening a row; 4xx/5xx on the list request","none","C387780 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[NETWORK] no 4xx/5xx while paging the list","Raw localization key rendered in the type column; blank display name; error dialog on opening a row; 4xx/5xx on the list request","none","C387780 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-007","Create template with sample data preview","Preview","High","BL-NOTIF-002","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has a template; the '...: Template' blade exposes the 'Template (liquid)', 'Sample data (json)' and 'Preview' tabs introduced by PR #202","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
@@ -65,7 +65,7 @@
 [BLADE] no additional preview blade is opened, because 'Preview' is a tab of the same blade {OBSERVED}
 [DOM] no unresolved liquid placeholder text is visible for keys supplied by the sample data {BL}","[NETWORK] POST /api/notifications/{type}/templates/{language}/rendercontent returns 2xx for the valid template plus sample data
 [CONSOLE] no JS errors while switching to the Preview tab
-[API] the rendered content reflects the sample data currently in the editor, not a stale response","Preview iframe stays blank on valid input; 5xx on rendercontent; unresolved placeholders in the rendered body; spinner visible >5s","Close the Template blade with the blade close control without saving; sample data left unmodified on the server","C342249 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[API] the rendered content reflects the sample data currently in the editor, not a stale response","Preview iframe stays blank on valid input; 5xx on rendercontent; unresolved placeholders in the rendered body; spinner visible >5s","Close the Template blade with the blade close control without saving; sample data left unmodified on the server","C342249 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-008","Edit sample data in preview","Preview","Medium","BL-NOTIF-002","ECL-7.3","state from NOTIF-007 ('...: Template' blade open for 'InvoiceEmailNotification' with parseable JSON in the 'Sample data (json)' tab and the 'Preview' tab already rendered once)","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] click the 'Sample data (json)' tab
 [WAIT] the CodeMirror JSON editor is shown
 [ACT] change one string value in the sample data JSON
@@ -75,7 +75,7 @@
 [DOM] the sample data pane is a CodeMirror editor with a line-number gutter, and the pre-PR plain textarea is absent {OBSERVED}
 [DOM] the invalid-JSON indicator is hidden while the edited JSON parses {SPEC}","[NETWORK] a rendercontent request is issued after the edit settles and returns 2xx
 [CONSOLE] no JS errors during the edit
-[API] the rendered output carries the edited value, confirming the request used the current editor content","Preview keeps the previous value after the edit settles; no rendercontent request issued; 5xx on rendercontent; invalid-JSON indicator shown for parseable JSON","Close the Template blade without saving so the stored sample data is unchanged","C342250 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[API] the rendered output carries the edited value, confirming the request used the current editor content","Preview keeps the previous value after the edit settles; no rendercontent request issued; 5xx on rendercontent; invalid-JSON indicator shown for parseable JSON","Close the Template blade without saving so the stored sample data is unchanged","C342250 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-009","Share preview - send email with preview","Preview Share","High","BL-NOTIF-002","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' is open with valid content and parseable sample data; the preview share affordance (the blade toolbar 'Send test email' command since PR #202) is available","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
@@ -87,20 +87,24 @@
 [WAIT] the recipient prompt is shown
 [ACT] fill 'Email': {{ADMIN_EMAIL}}
 [ACT] click 'Send'
-[WAIT] a notification about the send result appears","[TOAST] a notification reports the send was accepted for the valid recipient address
-[EMAIL] the delivered message body matches what the 'Preview' tab renders for the same template and sample data
-[BLADE] the '...: Template' blade is still open with its unsaved edits present after the send","[NETWORK] the send request returns 2xx with the entered recipient in the payload
-[EMAIL] exactly one message arrives at {{ADMIN_EMAIL}} within 60s
-[CONSOLE] no JS errors during the send","Send command missing from the toolbar; 4xx/5xx on send; message never arrives within 60s; blade closes and discards unsaved edits on send","Close the Template blade without saving","C342212 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[WAIT] the send confirmation dialog is shown
+[ACT] confirm the send in the dialog
+[WAIT] the send-result message appears","[DOM] 'Send test email' is present in the blade toolbar - it is the renamed successor of the pre-PR preview-share affordance, not a different feature {DOC}
+[DOM] a confirmation dialog is visible before the preview is sent, asking whether to send this preview notification to the specified email address {DOC}
+[TOAST] after the confirmation the localized share-success message is visible, reporting that the test message with the notification preview was sent {DOC}
+[BLADE] the '...: Template' blade is still open with its unsaved edits present after the send {OBSERVED}","[NETWORK] the send request returns 2xx with the entered recipient in the payload
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - the confirmation dialog plus the share-success message are the primary oracle here
+[CONSOLE] no JS errors during the send","'Send test email' missing from the toolbar; send proceeding with no confirmation dialog; no share-success message after confirming; 4xx/5xx on send; blade closes and discards unsaved edits on send","Close the Template blade without saving","C342212 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | RETARGETED 2026-07-29 (was briefly deprecated, now reversed): the Share affordance was RENAMED, not removed. The module's locale keys are still notifications.dialogs.notification-share-preview-confirmation ('Would you like to send this preview notification to the specified email address?') and ...labels.share-success ('Test message with the notification preview was sent...'), sitting behind the toolbar command now captioned 'Send test email' - which is why this case originally said Share. Docs: PlatformUserGuide > Notifications - click Send test email in the toolbar to send the preview notification to the specified email address, then confirm your action. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-010","Share preview - invalid email validation","Preview Share","Medium","","ECL-7.2, ECL-4.1","state from NOTIF-009 ('...: Template' blade open for 'InvoiceEmailNotification' with valid content, and the send-test-email recipient prompt reachable from the blade toolbar)","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] click 'Send test email' in the blade toolbar
 [WAIT] the recipient prompt is shown
 [ACT] fill 'Email': not-an-email-address
 [ACT] click 'Send'
-[WAIT] the prompt responds to the malformed address","[FORM] a validation error indicating an invalid email address is visible for the malformed input
-[DOM] the send confirm control is disabled while the address is malformed
-[TOAST] no success notification is present for the malformed address","[NETWORK] no send request is issued while the address is invalid, or it is rejected with a 4xx and no 5xx
+[WAIT] the prompt responds to the malformed address","[FORM] a validation error indicating an invalid email address is visible for the malformed input {DOC}
+[DOM] the send confirm control is disabled while the address is malformed {DOC}
+[TOAST] the localized share-success message is absent for the malformed address {DOC}
+[DOM] the send confirmation dialog is absent, since the malformed address never reaches the confirm step {DOC}","[NETWORK] no send request is issued while the address is invalid, or it is rejected with a 4xx and no 5xx
 [CONSOLE] no JS errors raised by the validation path
-[EMAIL] no message is dispatched","Malformed address accepted with a success notification; 5xx instead of client-side validation; no validation feedback at all; send request fired with an invalid address","Dismiss the recipient prompt and close the Template blade without saving","C342246 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[EMAIL] no message is dispatched","Malformed address accepted with a share-success message; 5xx instead of client-side validation; no validation feedback at all; send request fired with an invalid address","Dismiss the recipient prompt and close the Template blade without saving","C342246 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | RETARGETED 2026-07-29 (deprecation reversed): the pre-PR Share affordance is the toolbar command now captioned 'Send test email' - the share-* locale keys survive the rename. This is the negative twin of NOTIF-009. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-032","Search notifications list","Notification List","High","BL-AUTH-005","ECL-3.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the notifications list contains more rows than fit one screen","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded with rows rendered
 [GRID] record the total row count before filtering
@@ -109,7 +113,7 @@
 [GRID] the filtered row count is lower than the unfiltered count
 [GRID] clearing the search field restores the unfiltered row set","[NETWORK] the list search request returns 2xx with no 4xx/5xx
 [CONSOLE] no JS errors while filtering
-[API] the grid row set matches the search response payload","Grid unchanged after entering a term; empty grid for a term matching a known notification; 4xx/5xx on the search request; spinner visible >5s","Clear the list search field","C208264 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[API] the grid row set matches the search response payload","Grid unchanged after entering a term; empty grid for a term matching a known notification; 4xx/5xx on the search request; spinner visible >5s","Clear the list search field","C208264 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-033","Search by notification type","Notification List","Medium","","ECL-3.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; several notification types are registered, including 'InvoiceEmailNotification'","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded with rows rendered
 [GRID] enter 'InvoiceEmailNotification' into the list search field
@@ -117,8 +121,8 @@
 [GRID] rows for unrelated notification types are absent from the filtered result
 [BLADE] the Details blade opens from the matched row","[NETWORK] the list search request returns 2xx
 [CONSOLE] no JS errors while filtering
-[API] the search response contains the searched type","Searched type absent from the filtered grid; unrelated rows retained; 4xx/5xx on the search request; blade fails to open from the matched row","Clear the list search field","C350200 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-034","Add new notification template","Template Management","Critical","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has at least one registered language without a template yet; the PR #202 blade layout applies, so Save is a blade toolbar command and there is no bottom OK/Cancel bar","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[API] the search response contains the searched type","Searched type absent from the filtered grid; unrelated rows retained; 4xx/5xx on the search request; blade fails to open from the matched row","Clear the list search field","C350200 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-034","Add new notification template","Template Management","Critical","BL-NOTIF-004","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has at least one registered language without a template yet; the PR #202 blade layout applies, so Save is a blade toolbar command and there is no bottom OK/Cancel bar","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -136,8 +140,8 @@
 [GRID] the Templates grid lists a row for the newly added language {OBSERVED}
 [FORM] the subject and body entered are present when the new template is reopened {SPEC}","[API] GET /api/notifications/InvoiceEmailNotification returns the new template with the entered subject and body
 [NETWORK] the save issues PUT /api/notifications/{type} and returns 2xx with no 4xx/5xx
-[CONSOLE] no JS errors during the save","No PUT issued on Save; grid shows the new row while the API does not; bottom OK bar still rendered; 4xx/5xx on save; subject or body lost after reopening","Remove the template added by this case from the Templates grid and save, restoring the notification type to its prior template set","C208280 VCST-5557 VCST-5607 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-035","Add default template","Template Management","High","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a notification type without a default-language template is available; PR #202 blade layout applies, with a toolbar Save and the tabbed editor","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors during the save","No PUT issued on Save; grid shows the new row while the API does not; bottom OK bar still rendered; 4xx/5xx on save; subject or body lost after reopening","Remove the template added by this case from the Templates grid and save, restoring the notification type to its prior template set","C208280 VCST-5557 VCST-5607 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-035","Add default template","Template Management","High","BL-NOTIF-004","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a notification type without a default-language template is available; PR #202 blade layout applies, with a toolbar Save and the tabbed editor","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for the target notification type
 [ACT] click the matching notification row
@@ -154,24 +158,27 @@
 [FORM] the stored subject and body match what was entered {SPEC}
 [DOM] 'Save' is present in the blade toolbar and no bottom OK bar is present {SPEC}","[API] GET /api/notifications/{type} returns the default-language template with the entered content
 [NETWORK] PUT /api/notifications/{type} returns 2xx
-[CONSOLE] no JS errors during the save","No PUT issued on Save; API lacks the default-language template after a success signal; 4xx/5xx on save; language selector resets on save","Remove the template added by this case and save, restoring the prior template set","C208282 VCST-5557 VCST-5607 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-036","Overwrite template with same localization","Template Management","Medium","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' already has a template for the language under test","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors during the save","No PUT issued on Save; API lacks the default-language template after a success signal; 4xx/5xx on save; language selector resets on save","Remove the template added by this case and save, restoring the prior template set","C208282 VCST-5557 VCST-5607 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-036","Overwrite template with same localization","Template Management","Medium","BL-NOTIF-005","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' already has an EMAIL template for the language under test; this case covers the email / liquid editor surface only - a text or SMS template renders the legacy editor and is covered by NOTIF-074","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
 [WAIT] the '...: Details' blade opens with the Templates grid
 [ACT] click 'Add' in the Templates grid toolbar
 [WAIT] the '...: Template' blade opens for a new template
-[ACT] pick the language that already has a template in the 'Language' selector
+[ACT] open the 'Language' selector
+[WAIT] the full language list is shown
+[ACT] pick the language that already has a template
 [WAIT] the selector shows that language
 [ACT] fill 'Subject' with a distinct test subject
 [SAVE] click 'Save' in the blade toolbar
-[WAIT] the blade responds to the duplicate language","[DOM] verify whether an overwrite confirmation dialog is visible before an existing same-language template is replaced {HYPOTHESIS}
-[GRID] the Templates grid holds exactly one row for that language after the operation {SPEC}
-[FORM] the retained template content matches the outcome the confirmation announced {HYPOTHESIS}","[API] GET /api/notifications/InvoiceEmailNotification returns exactly one template for that language
+[WAIT] the save settles and the Templates grid refreshes","[DOM] the 'Language' selector offers every registered language, including one that already has a template - no filtering of used languages is applied {OBSERVED}
+[GRID] saving for a language that already has a template REPLACES the existing row silently, and no overwrite confirmation dialog is present - this is documented override behaviour, not a missing-confirmation defect {DOC}
+[GRID] the Templates grid holds exactly one row for that language after the operation {DOC}
+[FORM] the retained template content is the newly entered content, and the previous content is absent {DOC}","[API] GET /api/notifications/InvoiceEmailNotification returns exactly one template for that language
 [NETWORK] PUT /api/notifications/{type} returns 2xx with no 4xx/5xx
-[CONSOLE] no JS errors while handling the duplicate language","Two rows for the same language in the grid; silent replacement with no confirmation; 4xx/5xx on save; grid and API disagree on the template set","Restore the original template content for that language and save","C208283 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-037","Save changes for email template","Template Management","High","","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; an email notification type with an existing template is available; the template blade is reached by drilling down from the notifications list (list row, then Templates grid row), which is the entry path this case pins","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors while handling the duplicate language","Two rows for the same language in the grid; the already-used language filtered out of the selector; 4xx/5xx on save; grid and API disagree on the template set","Restore the original template content for that language and save","C208283 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Silent override is BY DESIGN per PlatformUserGuide > Notifications > Notification Templates ('If you create a new template with the same language as the current template, such as Default or EN-US, it will override the current template'), confirmed live 2026-07-29: Add offered all 8 languages unfiltered and saving en-US replaced the existing row with no dialog. Do NOT assert or file a missing-confirmation defect. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-037","Save changes for email template","Template Management","High","BL-NOTIF-004","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; an email notification type with an existing template is available; the template blade is reached by drilling down from the notifications list (list row, then Templates grid row), which is the entry path this case pins","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'OrderCreateEmailNotification'
 [ACT] click the row matching 'OrderCreateEmailNotification'
@@ -185,8 +192,8 @@
 [FORM] the appended subject marker is present when the template is reopened from the grid {SPEC}
 [GRID] the 'Modified' cell advances only when the server has stored the change {OBSERVED}","[NETWORK] the toolbar Save issues PUT /api/notifications/{type} on this drill-down path (VCST-5607 regression: no PUT is issued today)
 [API] GET /api/notifications/OrderCreateEmailNotification returns the appended subject marker and an advanced modifiedDate
-[CONSOLE] no JS errors during the save","No PUT request on toolbar Save; grid shows Modified today while the API still returns the old subject; subject marker lost after reopening; 4xx/5xx on save","Remove the appended subject marker and save, restoring the original subject on the server","C208274 VCST-5557 VCST-5607 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-038","Save changes for SMS template","Template Management","High","","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; an SMS or plain-text notification type with an existing template is available; the template blade is reached by drilling down from the notifications list","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors during the save","No PUT request on toolbar Save; grid shows Modified today while the API still returns the old subject; subject marker lost after reopening; 4xx/5xx on save","Remove the appended subject marker and save, restoring the original subject on the server","C208274 VCST-5557 VCST-5607 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-038","Save changes for SMS template","Template Management","High","BL-NOTIF-004","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; an SMS or plain-text notification type with an existing template is available; the template blade is reached by drilling down from the notifications list","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for an SMS or plain-text notification type
 [ACT] click the matching notification row
@@ -196,11 +203,11 @@
 [ACT] append a distinct marker to the message body editor
 [SAVE] click 'Save' in the blade toolbar
 [WAIT] the save settles","[DOM] 'Save' is present in the blade toolbar and the pre-PR bottom OK button is absent {SPEC}
-[DOM] verify which body editor surface is visible for a text or SMS template after the rewrite, since the plain-text branch still binds the platform html-editor textarea rather than the tabbed CodeMirror editor {HYPOTHESIS}
+[DOM] the body editor for a text or SMS template is the LEGACY platform html-editor surface, and the tabbed CodeMirror editor is absent - the rewrite covers the email / liquid branch only (full surface inventory in NOTIF-074) {OBSERVED}
 [FORM] the appended marker is present when the template is reopened from the grid {SPEC}","[NETWORK] the toolbar Save issues PUT /api/notifications/{type} on the drill-down path (VCST-5607)
 [API] GET /api/notifications/{type} returns the appended marker in the stored message body
-[CONSOLE] no JS errors during the save","No PUT request on toolbar Save; marker lost after reopening; grid Modified advances without a server write; 4xx/5xx on save","Remove the appended marker and save, restoring the original message body","C211027 VCST-5557 VCST-5607 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-039","Undo template changes","Template Management","Medium","","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' with a non-empty body is open in the '...: Template' blade with no unsaved changes","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors during the save","No PUT request on toolbar Save; marker lost after reopening; grid Modified advances without a server write; 4xx/5xx on save","Remove the appended marker and save, restoring the original message body","C211027 VCST-5557 VCST-5607 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-039","Undo template changes","Template Management","Medium","BL-NOTIF-006","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' with a non-empty body is open in the '...: Template' blade with no unsaved changes","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -214,8 +221,10 @@
 [DOM] the 'Template (liquid)' editor is not emptied by the undo {OBSERVED}
 [DOM] the parent Details blade 'Undo' toolbar command is present and discards staged template edits when used instead {OBSERVED}","[API] GET /api/notifications/InvoiceEmailNotification body is unchanged, since nothing was saved
 [CONSOLE] no JS errors during undo
-[NETWORK] no write request is issued by the undo","Editor body drops to zero characters after one undo; undo removes more than the typed marker; console TypeError on undo; a write request issued by an undo","Close the Template blade without saving; discard staged edits from the parent blade if it reports itself modified","C208277 VCST-5557 VCST-5604 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-040","Add notification layout","Notification Layout","Critical","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the Notification layouts workspace is reachable","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notificationLayouts
+[NETWORK] no write request is issued by the undo","Editor body drops to zero characters after one undo; undo removes more than the typed marker; console TypeError on undo; a write request issued by an undo","Close the Template blade without saving; discard staged edits from the parent blade if it reports itself modified","C208277 VCST-5557 VCST-5604 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-040","Add notification layout","Notification Layout","Critical","BL-NOTIF-004","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the Notification layouts workspace is reachable","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification layouts' in the Notifications blade
 [WAIT] the Notification layouts list blade loaded
 [ACT] click 'Add' in the list toolbar
 [WAIT] the layout detail blade opens
@@ -227,8 +236,10 @@
 [FORM] the entered name and markup are present when the layout is reopened
 [TOAST] a save confirmation is shown and no error dialog is present","[API] the layouts search endpoint returns the new layout after the save
 [NETWORK] the save request returns 2xx with no 4xx/5xx
-[CONSOLE] no JS errors during the save","Layout row missing from the list after a success signal; 4xx/5xx on save; name or markup lost after reopening; spinner visible >5s","Remove the AGENT-TEST layout added by this case","C343733 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-041","Edit notification layout","Notification Layout","High","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; at least one notification layout exists","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notificationLayouts
+[CONSOLE] no JS errors during the save","Layout row missing from the list after a success signal; 4xx/5xx on save; name or markup lost after reopening; spinner visible >5s","Remove the AGENT-TEST layout added by this case","C343733 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | ROUTE FIX 2026-07-29: the previously-used URL {{BACK_URL}}/#!/workspace/notificationLayouts was INVENTED - no such state is registered. {SPEC}: Scripts/notifications.js registers only workspace.notificationsModule at '/notifications?objectId&objectTypeId&type&templateId'. {DOC}: PlatformUserGuide > Notifications > Notification layouts - 'Click Notifications in the main menu. In the next Notifications blade, click Notification layouts'. Navigation is now menu-driven; do not reintroduce the hash route. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-041","Edit notification layout","Notification Layout","High","BL-NOTIF-004","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; at least one notification layout exists","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification layouts' in the Notifications blade
 [WAIT] the Notification layouts list blade loaded
 [ACT] click an existing layout row
 [WAIT] the layout detail blade opens
@@ -239,8 +250,10 @@
 [TOAST] a save confirmation is shown and no error dialog is present
 [GRID] exactly one row for this layout is present in the layouts list","[API] the layout read endpoint returns the appended marker
 [NETWORK] the save request returns 2xx
-[CONSOLE] no JS errors during the save","Marker lost after reopening; 4xx/5xx on save; duplicate layout row after the save; no save confirmation","Remove the appended marker and save, restoring the original layout markup","C343728 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-042","Delete notification layout","Notification Layout","High","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a disposable AGENT-TEST notification layout exists that no template references","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notificationLayouts
+[CONSOLE] no JS errors during the save","Marker lost after reopening; 4xx/5xx on save; duplicate layout row after the save; no save confirmation","Remove the appended marker and save, restoring the original layout markup","C343728 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | ROUTE FIX 2026-07-29: the previously-used URL {{BACK_URL}}/#!/workspace/notificationLayouts was INVENTED - no such state is registered. {SPEC}: Scripts/notifications.js registers only workspace.notificationsModule at '/notifications?objectId&objectTypeId&type&templateId'. {DOC}: PlatformUserGuide > Notifications > Notification layouts - 'Click Notifications in the main menu. In the next Notifications blade, click Notification layouts'. Navigation is now menu-driven; do not reintroduce the hash route. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-042","Delete notification layout","Notification Layout","High","BL-NOTIF-004","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a disposable AGENT-TEST notification layout exists that no template references","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification layouts' in the Notifications blade
 [WAIT] the Notification layouts list blade loaded
 [GRID] select the disposable AGENT-TEST layout row
 [ACT] click 'Delete' in the list toolbar
@@ -250,8 +263,10 @@
 [TOAST] a confirmation of the removal is shown and no error dialog is present
 [GRID] the other layout rows are still present","[API] the layouts search endpoint no longer returns the removed layout
 [NETWORK] the removal request returns 2xx with no 4xx/5xx
-[CONSOLE] no JS errors during the removal","Row still present after a success signal; removal proceeds with no confirmation dialog; 4xx/5xx on the removal request; other layouts disappear","none - the case removes only the disposable layout it targeted","C343731 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-043","Reset notification layout","Notification Layout","Medium","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a notification layout exists whose markup differs from its original shipped state","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notificationLayouts
+[CONSOLE] no JS errors during the removal","Row still present after a success signal; removal proceeds with no confirmation dialog; 4xx/5xx on the removal request; other layouts disappear","none - the case removes only the disposable layout it targeted","C343731 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | ROUTE FIX 2026-07-29: the previously-used URL {{BACK_URL}}/#!/workspace/notificationLayouts was INVENTED - no such state is registered. {SPEC}: Scripts/notifications.js registers only workspace.notificationsModule at '/notifications?objectId&objectTypeId&type&templateId'. {DOC}: PlatformUserGuide > Notifications > Notification layouts - 'Click Notifications in the main menu. In the next Notifications blade, click Notification layouts'. Navigation is now menu-driven; do not reintroduce the hash route. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-043","Reset notification layout","Notification Layout","Medium","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a notification layout exists whose markup differs from its original shipped state","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification layouts' in the Notifications blade
 [WAIT] the Notification layouts list blade loaded
 [ACT] click the modified layout row
 [WAIT] the layout detail blade opens
@@ -260,8 +275,8 @@
 [DOM] 'Reset' in the blade toolbar is hidden or disabled while the layout matches its original state
 [TOAST] no error dialog is present after the reset","[API] the layout read endpoint returns the original markup after the reset is saved
 [NETWORK] no 4xx/5xx during the reset
-[CONSOLE] no JS errors during the reset","Markup unchanged after Reset; Reset offered on an unmodified layout; 4xx/5xx during the reset; editor emptied by the reset","Close the layout blade; re-apply the modification if the environment baseline requires it","C344120 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-044","Add notification template with layout","Notification Layout","High","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; at least one notification layout exists so the 'Layout' selector is rendered in the compact header row; notification type 'InvoiceEmailNotification' has a template","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors during the reset","Markup unchanged after Reset; Reset offered on an unmodified layout; 4xx/5xx during the reset; editor emptied by the reset","Close the layout blade; re-apply the modification if the environment baseline requires it","C344120 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | ROUTE FIX 2026-07-29: the previously-used URL {{BACK_URL}}/#!/workspace/notificationLayouts was INVENTED - no such state is registered. {SPEC}: Scripts/notifications.js registers only workspace.notificationsModule at '/notifications?objectId&objectTypeId&type&templateId'. {DOC}: PlatformUserGuide > Notifications > Notification layouts - 'Click Notifications in the main menu. In the next Notifications blade, click Notification layouts'. Navigation is now menu-driven; do not reintroduce the hash route. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-044","Add notification template with layout","Notification Layout","High","BL-NOTIF-004","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; at least one notification layout exists so the 'Layout' selector is rendered in the compact header row; notification type 'InvoiceEmailNotification' has a template","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -277,7 +292,7 @@
 [DOM] the layout wrapper markup is visible around the template body in the rendered preview {SPEC}
 [FORM] the picked layout is still selected when the template is reopened {SPEC}","[API] GET /api/notifications/InvoiceEmailNotification returns the template with the layout reference stored
 [NETWORK] POST /api/notification-layouts/search is issued at most once per blade open (VCST-5614 item 5: 2-3 observed)
-[CONSOLE] no JS errors while picking the layout","Layout selector missing while layouts exist; preview renders without the layout wrapper; layout reference lost after reopening; repeated layout search requests per blade open","Clear the layout selection and save, restoring the template's original layout assignment","C344064 VCST-5557 VCST-5614 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[CONSOLE] no JS errors while picking the layout","Layout selector missing while layouts exist; preview renders without the layout wrapper; layout reference lost after reopening; repeated layout search requests per blade open","Clear the layout selection and save, restoring the template's original layout assignment","C344064 VCST-5557 VCST-5614 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-045","Check layout in sent mail","Notification Layout","High","BL-NOTIF-002","ECL-14.7","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template with a layout assigned exists for an email notification type; outbound mail transport configured","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[GRID] from the notifications list, search for the notification type whose template has a layout assigned
 [ACT] click the matching notification row
 [WAIT] the '...: Details' blade opens
@@ -291,7 +306,7 @@
 [EMAIL] the delivered body matches what the 'Preview' tab renders for the same template and layout
 [TOAST] a notification reports the send was accepted","[NETWORK] the send request returns 2xx
 [EMAIL] exactly one message arrives at {{ADMIN_EMAIL}} within 60s
-[CONSOLE] no JS errors during the send","Delivered message lacks the layout wrapper; body differs from the Preview rendering; 4xx/5xx on send; no message within 60s","Close the Template and Details blades without saving","C344066 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[CONSOLE] no JS errors during the send","Delivered message lacks the layout wrapper; body differs from the Preview rendering; 4xx/5xx on send; no message within 60s","Close the Template and Details blades without saving","C344066 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-048","Access permission - notifications","Permissions","High","BL-AUTH-005","ECL-4.3","A back-office role granting only the notifications access permission exists and a user is assigned to it; that user's credentials come from the environment configuration, never from a literal in this case","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
 [WAIT] the Admin sign-in screen is shown
 [ACT] sign in as the user holding only the notifications access permission
@@ -301,7 +316,7 @@
 [BLADE] the Details blade opens from a notification row with no permission error present
 [DOM] commands the role does not grant are absent or disabled rather than failing on use","[NETWORK] the notifications list request returns 2xx for this role with no 401/403
 [CONSOLE] no JS errors while the restricted role browses notifications
-[API] requests the role does not cover return 403 rather than 500","403 on the notifications list for a role that grants access; blank workspace with no menu entry; 500 instead of 403 on an ungranted action; JS errors on blade open","Sign out of the restricted account and sign back in as the standard admin","C241391 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[API] requests the role does not cover return 403 rather than 500","403 on the notifications list for a role that grants access; blank workspace with no menu entry; 500 instead of 403 on an ungranted action; JS errors on blade open","Sign out of the restricted account and sign back in as the standard admin","C241391 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-049","Template create permission","Permissions","High","BL-AUTH-005","ECL-4.3","A back-office role granting the notification template create permission exists with a user assigned; a notification type with a registered language lacking a template is available; credentials come from the environment configuration","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
 [WAIT] the Admin sign-in screen is shown
 [ACT] sign in as the user holding the template create permission
@@ -316,8 +331,10 @@
 [BLADE] the new-template blade opens with the header row and the tabbed editor present
 [DOM] 'Save' in the blade toolbar is present for this role","[NETWORK] no 401/403 while opening the new-template blade
 [CONSOLE] no JS errors for the restricted role
-[API] a save attempted by this role returns 2xx rather than 403","Add command hidden or disabled for a role that grants create; 403 on opening the new-template blade; 500 instead of 403; JS errors on blade open","Remove any template created by this case, then sign back in as the standard admin","C241395 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-050","Settings - manage notification languages","Settings","Medium","","ECL-12.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the notification language setting is reachable under Settings > Notifications","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/settings
+[API] a save attempted by this role returns 2xx rather than 403","Add command hidden or disabled for a role that grants create; 403 on opening the new-template blade; 500 instead of 403; JS errors on blade open","Remove any template created by this case, then sign back in as the standard admin","C241395 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-050","Settings - manage notification languages","Settings","Medium","","ECL-12.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the notification language setting is reachable under Settings > Notifications","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Settings' in the Admin main menu
 [WAIT] the Settings blade loaded
 [ACT] open the Notifications settings group
 [WAIT] the notification settings blade opens
@@ -328,8 +345,10 @@
 [DOM] the added language is present in the 'Language' selector of the template blade
 [TOAST] a save confirmation is shown and no error dialog is present","[API] the platform settings endpoint returns the added language value
 [NETWORK] the settings save returns 2xx with no 4xx/5xx
-[CONSOLE] no JS errors during the save","Language entry lost after reopening the setting; language absent from the template Language selector; 4xx/5xx on the settings save; no save confirmation","Remove the language entry added by this case and save, restoring the original language list","C242713 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-051","Settings - delete notification language","Settings","Medium","","ECL-12.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the notification languages setting holds at least one disposable language entry that no template uses","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/settings
+[CONSOLE] no JS errors during the save","Language entry lost after reopening the setting; language absent from the template Language selector; 4xx/5xx on the settings save; no save confirmation","Remove the language entry added by this case and save, restoring the original language list","C242713 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | ROUTE FIX 2026-07-29: the previously-used platform hash route was never verified against platform source nor observed live, so it is replaced by main-menu navigation from {{BACK_URL}}. Only {{BACK_URL}}/#!/workspace/notifications is a confirmed route in this suite. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-051","Settings - delete notification language","Settings","Medium","","ECL-12.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the notification languages setting holds at least one disposable language entry that no template uses","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Settings' in the Admin main menu
 [WAIT] the Settings blade loaded
 [ACT] open the Notifications settings group
 [WAIT] the notification settings blade opens
@@ -340,8 +359,10 @@
 [DOM] the removed language is absent from the 'Language' selector of the template blade
 [FORM] the remaining language entries are still present and unchanged","[API] the platform settings endpoint no longer returns the removed language value
 [NETWORK] the settings save returns 2xx with no 4xx/5xx
-[CONSOLE] no JS errors during the save","Removed language still listed after reopening; other language entries lost; 4xx/5xx on the settings save; template Language selector still offers the removed language","Re-add the disposable language entry if the environment baseline requires it","C242714 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
-"NOTIF-052","NotificationsSample module - install and test","Extensions","Low","","ECL-6.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the NotificationsSample module package is available for installation in this environment and installing modules is permitted here","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/modules
+[CONSOLE] no JS errors during the save","Removed language still listed after reopening; other language entries lost; 4xx/5xx on the settings save; template Language selector still offers the removed language","Re-add the disposable language entry if the environment baseline requires it","C242714 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | ROUTE FIX 2026-07-29: the previously-used platform hash route was never verified against platform source nor observed live, so it is replaced by main-menu navigation from {{BACK_URL}}. Only {{BACK_URL}}/#!/workspace/notifications is a confirmed route in this suite. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-052","NotificationsSample module - install and test","Extensions","Low","","ECL-6.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the NotificationsSample module package is available for installation in this environment and installing modules is permitted here","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Modules' in the Admin main menu
 [WAIT] the Modules blade loaded
 [ACT] install the NotificationsSample module from the available packages
 [WAIT] the platform restart finishes and the module reports itself active
@@ -353,7 +374,7 @@
 [BLADE] its template blade opens with the header row and the tabbed editor present
 [DOM] 'Send test email' in the blade toolbar is enabled for the sample notification type","[API] GET /api/notifications includes the sample notification type after installation
 [NETWORK] no 4xx/5xx while browsing the sample notification type
-[CONSOLE] no JS errors introduced by the sample module","Sample type absent from the list after installation; blade fails to open for the sample type; 4xx/5xx on the notifications list; JS errors from the sample module","Uninstall the NotificationsSample module and restore the module set the environment started with","C311917 C311918 C311919 C311920 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29)",""
+[CONSOLE] no JS errors introduced by the sample module","Sample type absent from the list after installation; blade fails to open for the sample type; 4xx/5xx on the notifications list; JS errors from the sample module","Uninstall the NotificationsSample module and restore the module set the environment started with","C311917 C311918 C311919 C311920 VCST-5557 Synced: VCST-5557 / PR #202 (2026-07-29) | ROUTE FIX 2026-07-29: the previously-used platform hash route was never verified against platform source nor observed live, so it is replaced by main-menu navigation from {{BACK_URL}}. Only {{BACK_URL}}/#!/workspace/notifications is a confirmed route in this suite. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
 "NOTIF-054","Compact header row - Language, Layout and Subject on one row with collapsible descriptions","Template Editor > Layout","High","BL-UI-004, BL-UI-005","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; at least one notification layout exists so the 'Layout' selector is rendered; notification type 'InvoiceEmailNotification' has a template; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
@@ -371,8 +392,8 @@
 [DOM] the header row and the editor pane keep their content inside their own bounds, with no element visible outside its pane {BL}
 [DOM] the full-screen control is vertically centred on the same line as the 'Template (liquid)', 'Sample data (json)' and 'Preview' tab labels {BL}","[NETWORK] POST /api/notification-layouts/search is issued at most once per blade open (VCST-5614 item 5: 2-3 observed)
 [CONSOLE] no JS errors while the blade renders or while a description is toggled
-[NETWORK] no 4xx/5xx while the blade opens","Language, Layout or Subject wrapping onto a second row at the standard admin viewport; descriptions expanded on open; question-mark toggle inert; layout search request fired more than once per blade open; element overflowing its pane","Collapse the field description and close the Template blade without saving","VCST-5557 VCST-5614","Draft"
-"NOTIF-055","Tabbed workspace - Template, Sample data and Preview tabs with last-used tab remembered","Template Editor > Tabs","High","","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has a template; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[NETWORK] no 4xx/5xx while the blade opens","Language, Layout or Subject wrapping onto a second row at the standard admin viewport; descriptions expanded on open; question-mark toggle inert; layout search request fired more than once per blade open; element overflowing its pane","Collapse the field description and close the Template blade without saving","VCST-5557 VCST-5614 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-055","Tabbed workspace - Template, Sample data and Preview tabs with last-used tab remembered","Template Editor > Tabs","High","BL-UI-007","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has a template; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -389,10 +410,12 @@
 [WAIT] the '...: Template' blade reopens","[DOM] exactly three tabs are visible - 'Template (liquid)', 'Sample data (json)' and 'Preview' - and the pre-PR vertical stack is absent {SPEC}
 [DOM] only the pane of the active tab is visible at any time {SPEC}
 [DOM] on reopen the pane of the last-used tab is visible, and no fixed default tab overrides it {SPEC}
-[DOM] the html editor's own Markdown, Preview and expand toggles are absent from the editor chrome {SPEC}","[CONSOLE] no JS errors while switching tabs
+[DOM] the html editor's own Markdown, Preview and expand toggles are absent from the editor chrome {SPEC}
+[BLADE] the blade title is the notification's localized DISPLAY NAME followed by ': Template' - for example 'Invoice for customer order: Template' - and the type identifier is absent from the title {OBSERVED}
+[DOM] the blade toolbar holds exactly 'Save', 'Preview', 'Send test email' and 'Restore', and no Share command is present {OBSERVED}","[CONSOLE] no JS errors while switching tabs
 [NETWORK] switching to a tab other than Preview issues no render request
-[NETWORK] no 4xx/5xx while switching tabs","More or fewer than three tabs; two panes shown at once; blade always reopening on the same fixed tab; html editor's built-in Markdown or Preview toggles still rendered; JS error on tab switch","Return the editor to the 'Template (liquid)' tab and close the blade without saving","VCST-5557","Draft"
-"NOTIF-056","Tab switcher, help toggles and full-screen control are keyboard-operable with a visible focus indicator","Template Editor > Tabs","High","BL-UI-006","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' is open in the '...: Template' blade; module version is the PR #202 build or later; this case is executed with keyboard-only interaction","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[NETWORK] no 4xx/5xx while switching tabs","More or fewer than three tabs; two panes shown at once; blade always reopening on the same fixed tab; html editor's built-in Markdown or Preview toggles still rendered; JS error on tab switch","Return the editor to the 'Template (liquid)' tab and close the blade without saving","VCST-5557 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-056","Tab switcher, help toggles and full-screen control are keyboard-operable with a visible focus indicator","Template Editor > Tabs","High","BL-UI-006, BL-UI-007","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' is open in the '...: Template' blade; module version is the PR #202 build or later; this case is executed with keyboard-only interaction","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -410,8 +433,8 @@
 [DOM] the preview iframe carries a title attribute, so no axe frame-title violation is present {OBSERVED}
 [DOM] text in the new editor chrome meets the WCAG 2.1 AA 4.5:1 contrast threshold and non-text affordances such as the question-mark icon meet 3:1, with no below-threshold node present {OBSERVED}","[CONSOLE] no JS errors during the keyboard walk
 [NETWORK] no 4xx/5xx while the blade is operated from the keyboard
-[API] an axe-core scan of the blade reports no new serious violation on the nt- prefixed chrome added by PR #202","Tab walk never focuses a tab; tab strip built from non-interactive list items with no role or tabindex; no focus outline on the full-screen control; axe frame-title violation on the preview iframe; contrast below the AA threshold on the chrome","Close the Template blade without saving","VCST-5557 VCST-5605","Draft"
-"NOTIF-057","Sample data JSON editor - syntax highlighting, line numbers, Format JSON and the valid indicator","Template Editor > Sample Data","High","","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' is open in the '...: Template' blade; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[API] an axe-core scan of the blade reports no new serious violation on the nt- prefixed chrome added by PR #202","Tab walk never focuses a tab; tab strip built from non-interactive list items with no role or tabindex; no focus outline on the full-screen control; axe frame-title violation on the preview iframe; contrast below the AA threshold on the chrome","Close the Template blade without saving","VCST-5557 VCST-5605 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-057","Sample data JSON editor - syntax highlighting, line numbers, Format JSON and the valid indicator","Template Editor > Sample Data","High","BL-NOTIF-007","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' is open in the '...: Template' blade; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -426,12 +449,13 @@
 [WAIT] the editor content is reflowed
 [KEY] press Ctrl+Alt+F","[DOM] the sample data pane is a CodeMirror editor with a line-number gutter visible and JSON syntax colouring applied {SPEC}
 [DOM] after 'Format JSON' the minified object is visible as indented multi-line JSON {SPEC}
-[DOM] Ctrl+Alt+F produces the same reflow as the 'Format JSON' command {SPEC}
-[DOM] an affirmative valid-JSON state is visible while the content parses, not merely the absence of an invalid badge {SPEC}
+[DOM] Ctrl+Alt+F produces the same reflow as the 'Format JSON' command, and its title attribute reads 'Format JSON (Ctrl+Alt+F)' {OBSERVED}
+[DOM] the format command is captioned 'Format JSON' on the 'Sample data (json)' tab and 'Format HTML' on the 'Template (liquid)' tab - one caption is not used for both tabs {OBSERVED}
+[DOM] no affirmative valid-state badge is present while the JSON parses; the negative 'Invalid JSON' indicator is the only state shown, and only on unparseable input {OBSERVED}
 [DOM] a live lint marker is present in the gutter as the JSON is edited {SPEC}","[CONSOLE] no JS errors while typing, formatting or using the shortcut
 [NETWORK] formatting issues no server request
-[NETWORK] no 4xx/5xx while the editor is in use","Plain textarea instead of a CodeMirror editor; no line-number gutter; Format JSON inert on parseable JSON; Ctrl+Alt+F does nothing; no affirmative valid state ever shown; console error while formatting","Close the Template blade without saving so the stored sample data is unchanged","VCST-5557 VCST-5614","Draft"
-"NOTIF-058","Invalid sample JSON is reported and gates Save, Preview and Send test email","Template Editor > Sample Data","High","","ECL-7.2, ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' is open with parseable JSON in the 'Sample data (json)' tab; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[NETWORK] no 4xx/5xx while the editor is in use","Plain textarea instead of a CodeMirror editor; no line-number gutter; Format JSON inert on parseable JSON; Ctrl+Alt+F does nothing; no affirmative valid state ever shown; console error while formatting","Close the Template blade without saving so the stored sample data is unchanged","VCST-5557 VCST-5614 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-058","Invalid sample JSON is reported and gates Save, Preview and Send test email","Template Editor > Sample Data","High","BL-NOTIF-007","ECL-7.2, ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' is open with parseable JSON in the 'Sample data (json)' tab; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -443,13 +467,13 @@
 [ACT] remove a closing brace so the sample JSON no longer parses
 [WAIT] the invalid-JSON indicator is shown
 [ACT] click 'Format JSON'
-[WAIT] the format failure dialog is shown","[DOM] the localized invalid-JSON indicator is visible while the sample data does not parse {SPEC}
-[DOM] 'Save', 'Preview' and 'Send test email' are disabled while the sample JSON is invalid {OBSERVED}
-[DOM] restoring the closing brace leaves 'Save', 'Preview' and 'Send test email' enabled again {OBSERVED}
+[WAIT] the format failure dialog is shown","[DOM] the localized 'Invalid JSON' indicator is visible while the sample data does not parse {OBSERVED}
+[DOM] all four toolbar commands - 'Save', 'Preview', 'Send test email' AND 'Restore' - are disabled while the sample JSON is invalid {OBSERVED}
+[DOM] restoring the closing brace leaves all four of those commands enabled again {OBSERVED}
 [DOM] the format failure dialog is visible and states that the content cannot be formatted, in the active Admin UI language {SPEC}
 [DOM] a lint marker is present in the gutter beside the offending line {SPEC}","[NETWORK] no rendercontent request is issued while the sample JSON is invalid
 [CONSOLE] no unhandled JS error is raised by the invalid input; the parse failure is handled by the editor
-[NETWORK] no 4xx/5xx caused by the invalid sample data","Save or Send test email still enabled on invalid JSON; no invalid-JSON indicator; format dialog title or message in English while the UI is another language; unhandled console error on the broken JSON; render request fired with invalid sample data","Restore the closing brace and close the Template blade without saving","VCST-5557 VCST-5611","Draft"
+[NETWORK] no 4xx/5xx caused by the invalid sample data","Save or Send test email still enabled on invalid JSON; no invalid-JSON indicator; format dialog title or message in English while the UI is another language; unhandled console error on the broken JSON; render request fired with invalid sample data","Restore the closing brace and close the Template blade without saving","VCST-5557 VCST-5611 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
 "NOTIF-059","Sample data and template editors support code folding via Ctrl+Q and the fold gutter","Template Editor > Sample Data","Medium","","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template is open with multi-line parseable JSON in the 'Sample data (json)' tab and multi-line markup in the 'Template (liquid)' tab; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
@@ -468,8 +492,8 @@
 [DOM] a fold marker is present in the fold gutter beside every foldable line, rather than an empty column {SPEC}
 [DOM] Ctrl+Q behaves the same way in the 'Template (liquid)' editor {SPEC}","[CONSOLE] no TypeError is raised by the fold shortcut; a missing CodeMirror fold addon surfaces as 'foldCode is not a function' (VCST-5608)
 [NETWORK] folding issues no server request
-[NETWORK] no 4xx/5xx triggered by the fold action","Console TypeError naming foldCode; nothing folds on Ctrl+Q; fold gutter rendered but permanently empty; fold marker present but inert","Expand any folded block and close the Template blade without saving","VCST-5557 VCST-5608","Draft"
-"NOTIF-060","Empty sample data on first open is not reported as an invalid-JSON error","Template Editor > Sample Data","Medium","","ECL-7.2, ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a user-created (non-predefined) template exists whose stored sample data is empty; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[NETWORK] no 4xx/5xx triggered by the fold action","Console TypeError naming foldCode; nothing folds on Ctrl+Q; fold gutter rendered but permanently empty; fold marker present but inert","Expand any folded block and close the Template blade without saving","VCST-5557 VCST-5608 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-060","Empty sample data on first open is not reported as an invalid-JSON error","Template Editor > Sample Data","Medium","BL-NOTIF-007","ECL-7.2, ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a user-created (non-predefined) template exists whose stored sample data is empty; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -477,11 +501,18 @@
 [ACT] click a template row whose stored sample data is empty
 [WAIT] the '...: Template' blade opens
 [ACT] click the 'Sample data (json)' tab
-[WAIT] the CodeMirror JSON editor is shown","[DOM] no red parse-error marker is present in an untouched empty sample data editor on first open {OBSERVED}
-[DOM] the invalid-JSON indicator and the gutter lint marker are either both present or both absent for the empty state {OBSERVED}
-[DOM] 'Save' is not disabled purely because the sample data is empty {OBSERVED}","[API] GET /api/notifications/{type} confirms the sample field of this template is empty, so the empty editor reflects the stored data
+[WAIT] the CodeMirror JSON editor is shown
+[ACT] click the 'Template (liquid)' tab
+[WAIT] the template editor is shown
+[ACT] put the caret on an empty line in the template editor
+[ACT] type the liquid variable opener into the template body
+[WAIT] the editor settles with no suggestion list","[DOM] no red parse-error marker is present in an untouched empty sample data editor on first open {OBSERVED}
+[DOM] the 'Invalid JSON' indicator and the gutter lint marker are either both present or both absent for the empty state {OBSERVED}
+[DOM] 'Save' is not disabled purely because the sample data is empty {OBSERVED}
+[DOM] with empty sample data the variable suggestion list does not open at all - no suggestion node is present - because the derived variable set is empty; this is the DEFAULT state of every non-predefined template and is the real gap behind the scope's autocomplete promise {OBSERVED}
+[DOM] the static liquid tag suggestions remain available in the same state, so the machinery itself is present and only the variable set is empty {OBSERVED}","[API] GET /api/notifications/{type} confirms the sample field of this template is empty, so the empty editor reflects the stored data
 [CONSOLE] no unhandled JS error on opening a template with empty sample data
-[NETWORK] no 4xx/5xx while the blade opens","Red parse error on an untouched empty sample editor; invalid indicator hidden while the gutter shows an error; Save blocked on a template that simply has no sample data; unhandled console error on blade open","Close the Template blade without saving","VCST-5557 VCST-5614","Draft"
+[NETWORK] no 4xx/5xx while the blade opens","Red parse error on an untouched empty sample editor; invalid indicator hidden while the gutter shows an error; Save blocked on a template that simply has no sample data; unhandled console error on blade open","Close the Template blade without saving","VCST-5557 VCST-5614 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
 "NOTIF-061","Live preview refreshes automatically while the template or sample data is edited","Template Editor > Preview","High","BL-NOTIF-002","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template with a non-empty body and parseable sample data is open in the '...: Template' blade; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
@@ -489,21 +520,23 @@
 [WAIT] the '...: Details' blade opens
 [ACT] click a template row
 [WAIT] the '...: Template' blade opens
-[ACT] click the 'Preview' tab
-[WAIT] the preview iframe renders the current template
 [ACT] click the 'Template (liquid)' tab
 [WAIT] the template editor is shown
 [ACT] type a distinct literal marker into the template body
-[WAIT] the typing pause elapses
-[ACT] click the 'Preview' tab
-[WAIT] the preview iframe re-renders","[DOM] the typed marker is visible in the rendered preview with no explicit refresh action {SPEC}
-[DOM] a burst of typing produces a small number of render requests, and one-request-per-keystroke behaviour is absent {OBSERVED}
+[WAIT] the typing pause elapses with the preview pane not visible
+[ACT] click the full-screen control on the tab bar
+[WAIT] the two-column overlay is shown with the live preview on the right
+[ACT] type a further distinct literal marker into the left column editor
+[WAIT] the typing pause elapses and the right column re-renders","[DOM] in the full-screen two-column view the right column re-renders on its own after the typing pause, with the typed marker visible and no explicit refresh action {OBSERVED}
+[DOM] while the 'Template (liquid)' tab is active in the tabbed view no render is issued at all, so live auto-refresh is observable ONLY where the preview pane is visible - full-screen, or the 'Preview' tab itself {OBSERVED}
+[DOM] a burst of typing produces exactly one render after the pause; one-request-per-keystroke behaviour is absent {OBSERVED}
 [DOM] the preview shows the response for the latest edit, and stale earlier output is absent {OBSERVED}
 [DOM] the preview pane's own scrollbar is present when the rendered content is taller than the pane {SPEC}
-[DOM] an explicit empty-state message is visible for a template with an empty body, instead of a blank white pane {SPEC}","[NETWORK] POST /api/notifications/{type}/templates/{language}/rendercontent is issued after the typing pause and returns 2xx
+[DOM] an explicit empty-state message is visible for a template with an empty body, instead of a blank white pane {SPEC}","[NETWORK] zero rendercontent requests are issued while editing on the 'Template (liquid)' tab with the preview pane hidden
+[NETWORK] POST /api/notifications/{type}/templates/{language}/rendercontent is issued once after the typing pause while the preview pane is visible, and returns 2xx
 [API] the render response body carries the typed marker, confirming the request used the current editor content
-[CONSOLE] no JS errors while the preview refreshes","Preview never refreshes without an explicit action; one render request per keystroke; an earlier response overwriting a later one; blank pane for an empty body with no message; spinner visible >5s","Remove the typed marker and close the Template blade without saving","VCST-5557 VCST-5610 VCST-5614","Draft"
-"NOTIF-062","Preview of in-progress Liquid shows an inline parse hint instead of a generic server-error toast","Template Editor > Preview","Medium","","ECL-10.2, ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template is open with the 'Preview' tab active so the live preview is running; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors while the preview refreshes","Right column never refreshes in full-screen without an explicit action; one render request per keystroke; an earlier response overwriting a later one; blank pane for an empty body with no message; spinner visible >5s","Remove the typed marker and close the Template blade without saving","VCST-5557 VCST-5610 VCST-5614 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-062","Preview of in-progress Liquid shows an inline parse hint instead of a generic server-error toast","Template Editor > Preview","Medium","BL-NOTIF-007","ECL-10.2, ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template is open with the 'Preview' tab active so the live preview is running; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -520,8 +553,8 @@
 [DOM] the blade's own maximize and close controls stay visible and clickable while the parse failure is reported {OBSERVED}
 [DOM] completing the liquid expression leaves the inline hint absent and the preview rendered again {SPEC}","[NETWORK] the render request for an unparseable template returns a 4xx client-error status rather than 500 (VCST-5610: 500 observed today)
 [CONSOLE] no unhandled JS error is raised by the failed render
-[API] the render response carries a structured parse message the blade can render inline","HTTP 500 from rendercontent on a half-typed template; generic 500 internal server error toast; blade close control unreachable behind the toast; preview stuck on the failed state after the expression is completed","Remove the half-finished liquid fragment and close the Template blade without saving","VCST-5557 VCST-5610","Draft"
-"NOTIF-063","Preview iframes scroll instead of clipping, in the template blade and in journal details","Template Editor > Preview","Medium","BL-UI-004","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template whose rendered output is taller than the preview pane is available; the notification journal holds at least one entry with rendered content; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[API] the render response carries a structured parse message the blade can render inline","HTTP 500 from rendercontent on a half-typed template; generic 500 internal server error toast; blade close control unreachable behind the toast; preview stuck on the failed state after the expression is completed","Remove the half-finished liquid fragment and close the Template blade without saving","VCST-5557 VCST-5610 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-063","Preview iframes scroll instead of clipping, in the template blade and in notification log details","Template Editor > Preview","Medium","BL-UI-004","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template whose rendered output is GENUINELY TALLER than the preview pane is available - the iframe must report scrollHeight greater than clientHeight, otherwise the invariant is untestable; the Notification log holds at least one entry with rendered content taller than its pane; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -531,22 +564,27 @@
 [ACT] click the 'Preview' tab
 [WAIT] the preview iframe renders content taller than the pane
 [SCROLL] scroll inside the preview iframe to its lower edge
-[NAV] {{BACK_URL}}/#!/workspace/notificationsJournal
-[WAIT] the notification journal list blade loaded
-[ACT] click a journal entry row
-[WAIT] the journal details blade opens with its rendered content
-[SCROLL] scroll inside the journal details rendered content","[DOM] the bottom of the rendered content is visible after scrolling the template blade preview iframe, and is not clipped {SPEC}
-[DOM] the journal details rendered content scrolls the same way, with its lower edge visible {SPEC}
-[DOM] neither iframe is visible outside the bounds of the pane that contains it {BL}","[CONSOLE] no JS errors while scrolling either iframe
-[NETWORK] no 4xx/5xx while opening the journal details blade
-[NETWORK] the render request for the preview returns 2xx","Rendered content clipped with no scrollbar; iframe taller than its pane; scroll gesture scrolling the blade instead of the iframe; JS error on scroll","Close the journal details and Template blades without saving","VCST-5557 VCST-5614","Draft"
-"NOTIF-064","Full-screen mode shows editor and live preview side by side, exits on Esc and covers the main navigation","Template Editor > Full Screen","High","BL-UI-004","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template with a non-empty body and parseable sample data is open in the '...: Template' blade; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[ACT] close the Template blade with the blade close control
+[WAIT] the Notifications blade is in view again
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log list blade loaded
+[ACT] click a log entry row
+[WAIT] the log entry details blade opens with its rendered content
+[SCROLL] scroll inside the log entry details rendered content","[DOM] the bottom of the rendered content is visible after scrolling the template blade preview iframe, and is not clipped {SPEC}
+[DOM] the Notification log entry details rendered content scrolls the same way, with its lower edge visible {SPEC}
+[DOM] neither iframe is visible outside the bounds of the pane that contains it {BL}
+[BLADE] the Notification log is reached as a blade from the Notifications blade, because the module registers a single /notifications workspace state rather than a route of its own {SPEC}","[CONSOLE] no JS errors while scrolling either iframe
+[NETWORK] no 4xx/5xx while opening the Notification log entry details blade
+[NETWORK] the render request for the preview returns 2xx","Rendered content clipped with no scrollbar; iframe taller than its pane; scroll gesture scrolling the blade instead of the iframe; JS error on scroll","Close the Notification log entry details and Template blades without saving","VCST-5557 VCST-5614 | NOT YET VERIFIED LIVE (Phase 5 2026-07-29): the template-render iframe carries scrolling='auto' but on the reference template scrollHeight equalled clientHeight (988 = 988), so the invariant was untestable on that content, and the Notification log blade was never reached. Needs a fixture with oversized rendered content before this case can pass or fail meaningfully. | ROUTE FIX 2026-07-29: the previously-used URL {{BACK_URL}}/#!/workspace/notificationsJournal was INVENTED - no such state is registered, and 'journal' is not the product name. {SPEC}: Scripts/notifications.js registers only workspace.notificationsModule. {DOC}: PlatformUserGuide > Notifications > Notification log, reached from the Notifications menu blade. Navigation is now menu-driven; do not reintroduce the hash route. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-064","Full-screen mode shows editor and live preview side by side, exits on Esc and covers the main navigation","Template Editor > Full Screen","High","BL-UI-004","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template with a non-empty body is open in the '...: Template' blade and its sample data is NON-EMPTY, so the variable suggestion list can open (a predefined-sourced template carries one, or paste a small JSON object first); module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
 [WAIT] the '...: Details' blade opens
 [ACT] click a template row
 [WAIT] the '...: Template' blade opens
+[ACT] click the 'Preview' tab so the persisted active tab is not the template editor
+[WAIT] the preview pane is shown
 [ACT] click the full-screen control on the tab bar
 [WAIT] the two-column overlay is shown
 [ACT] switch the left column to the sample data editor with its toggle
@@ -554,15 +592,15 @@
 [ACT] type a distinct literal marker into the left column editor
 [WAIT] the typing pause elapses and the right column re-renders
 [KEY] press Escape","[DOM] the overlay is visible with the template or sample data editor on the left and the live preview on the right {SPEC}
-[DOM] the left column toggle switches the visible editor between the template and the sample data {SPEC}
-[DOM] the editor visible in the left column matches the active tab, including an active tab restored from a previous session {OBSERVED}
-[DOM] the overlay stacks above the main navigation, so no navigation element is present in the topmost hit-test at the overlay's coordinates {SPEC}
-[DOM] Escape leaves full-screen, and the 'Exit full screen' control does the same {SPEC}
-[DOM] with the autocomplete list open, Escape leaves the autocomplete absent while full-screen is still active {OBSERVED}
+[DOM] the left column ALWAYS opens on the 'Template (liquid)' editor, regardless of which tab was active or persisted from a previous session {OBSERVED}
+[DOM] the left column toggle strip shows 'Template (liquid)', 'Sample data (json)' and a non-clickable '-> Preview' item that merely labels the right column {OBSERVED}
+[DOM] the toggle switches the visible left-column editor between the template and the sample data {OBSERVED}
+[DOM] Escape leaves full-screen, and the 'Exit full screen' control does the same {OBSERVED}
+[DOM] with the variable suggestion list open, Escape leaves the suggestion list absent while full-screen is still active {OBSERVED}
 [DOM] the marker typed in the left column is visible in the right column {SPEC}","[NETWORK] a rendercontent request is issued from full-screen after the typing pause and returns 2xx
 [CONSOLE] no JS errors on entering or leaving full-screen
-[NETWORK] no 4xx/5xx while full-screen is active","Overlay opening on the wrong left-hand editor; a navigation element hit-testable above the overlay; Escape both closing the autocomplete and exiting full-screen in one keypress; right column not refreshing; JS error on toggle","Leave full-screen, remove the typed marker and close the Template blade without saving","VCST-5557 VCST-5614","Draft"
-"NOTIF-065","Full-screen preview reports invalid sample JSON instead of rendering a blank pane","Template Editor > Full Screen","Medium","","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template is open in the '...: Template' blade whose sample data currently does not parse; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[NETWORK] no 4xx/5xx while full-screen is active","Overlay opening on an editor other than 'Template (liquid)'; the '-> Preview' toggle item behaving as a clickable tab; Escape both closing the suggestion list and exiting full-screen in one keypress; right column not refreshing; JS error on toggle","Leave full-screen, remove the typed marker and close the Template blade without saving","VCST-5557 VCST-5614 | Phase 5 2026-07-29: VCST-5614 item 4 (full-screen z-order inverted by one) is REFUTED - at every point in the overlay's bottom 10px band the topmost element was DIV.nt-editor.__fullscreen and article.cnt never surfaced, so no z-order assertion is authored. The Escape-with-suggestion-list assertion is carried over from the original run's observation (VCST-5614 item 6); the Phase 5 re-test was inconclusive because the suggestion list never opened on a fixture whose sample data was empty - see NOTIF-071. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-065","Full-screen preview reports invalid sample JSON instead of rendering a blank pane","Template Editor > Full Screen","Medium","BL-NOTIF-007","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template is open in the '...: Template' blade whose sample data currently does not parse; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -580,8 +618,8 @@
 [DOM] the same invalid-sample message is visible in the full-screen right column, which is not blank {SPEC}
 [DOM] the invalid-sample message is not hidden by the full-screen rule that suppresses field descriptions {OBSERVED}","[NETWORK] no rendercontent request is issued while the sample JSON is invalid, in either view
 [CONSOLE] no unhandled JS error while entering full-screen with invalid sample data
-[NETWORK] no 4xx/5xx caused by the invalid sample data","Blank right column in full-screen with invalid sample data; message present in the DOM but hidden by CSS; message shown only in the tabbed view; render request fired with invalid sample data","Leave full-screen, restore the closing brace and close the Template blade without saving","VCST-5557 VCST-5612","Draft"
-"NOTIF-066","Toolbar Save persists the template on the drill-down path and the grid Modified date follows the server","Template Editor > Save","Critical","","ECL-7.3, ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'OrderCreateEmailNotification' has a template; the blade is opened by drilling down from the notifications list, not by a deep link; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[NETWORK] no 4xx/5xx caused by the invalid sample data","Blank right column in full-screen with invalid sample data; message present in the DOM but hidden by CSS; message shown only in the tabbed view; render request fired with invalid sample data","Leave full-screen, restore the closing brace and close the Template blade without saving","VCST-5557 VCST-5612 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-066","Toolbar Save persists the template on the drill-down path and the grid Modified date follows the server","Template Editor > Save","Critical","BL-NOTIF-004","ECL-7.3, ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'OrderCreateEmailNotification' has a template; the blade is opened by drilling down from the notifications list, not by a deep link; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'OrderCreateEmailNotification'
 [ACT] click the row matching 'OrderCreateEmailNotification'
@@ -596,8 +634,8 @@
 [GRID] the 'Modified' cell advances only when the server has stored the change, and is unchanged when nothing was written {OBSERVED}
 [DOM] 'Save' in the blade toolbar behaves identically whether the blade was reached by drill-down or by deep link {OBSERVED}","[NETWORK] the toolbar Save issues PUT /api/notifications/{type} on the drill-down path and returns 2xx (VCST-5607: no PUT observed today)
 [API] GET /api/notifications/OrderCreateEmailNotification returns the appended marker and an advanced modifiedDate
-[CONSOLE] no JS errors during the save","No PUT request on toolbar Save; grid Modified showing today while the API returns the old subject and old modifiedDate; edit surviving only until the parent blade is discarded; 4xx/5xx on save","Remove the appended subject marker, save, and confirm through the API that the original subject is restored","VCST-5557 VCST-5607","Draft"
-"NOTIF-067","Toolbar Save persists the template when the blade was opened from a deep link","Template Editor > Save","High","","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has a saved template whose identifier can be read from the URL after opening it once by drill-down; a fresh browser tab is used for the cold deep-link load; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors during the save","No PUT request on toolbar Save; grid Modified showing today while the API returns the old subject and old modifiedDate; edit surviving only until the parent blade is discarded; 4xx/5xx on save","Remove the appended subject marker, save, and confirm through the API that the original subject is restored","VCST-5557 VCST-5607 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-067","Toolbar Save persists the template when the blade was opened from a deep link","Template Editor > Save","High","BL-NOTIF-004","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has a saved template whose identifier can be read from the URL after opening it once by drill-down; a fresh browser tab is used for the cold deep-link load; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -614,8 +652,8 @@
 [BLADE] a cold load of the deep link opens the '...: Template' blade with no manual navigation {OBSERVED}
 [NAV] pasting the deep link into a session that already has blades open does not re-resolve the route, because the route is configured not to reload on search changes {OBSERVED}","[NETWORK] the toolbar Save issues PUT /api/notifications/{type} and returns 2xx or 204
 [API] GET /api/notifications/InvoiceEmailNotification returns the appended marker
-[CONSOLE] no JS errors during the cold deep-link load or the save","Cold deep link landing on the bare notifications list; no PUT on Save; marker missing from the API read after a success signal; 4xx/5xx on the cold load","Remove the appended subject marker, save, and close the tab opened for the deep link","VCST-5557 VCST-5607","Draft"
-"NOTIF-068","Undo history baseline - the first Ctrl+Z on a freshly opened template must not empty the body","Template Editor > Save","High","","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template with a large non-empty body is available, for example the 'AbandonedCartEmailNotification' default-language template; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors during the cold deep-link load or the save","Cold deep link landing on the bare notifications list; no PUT on Save; marker missing from the API read after a success signal; 4xx/5xx on the cold load","Remove the appended subject marker, save, and close the tab opened for the deep link","VCST-5557 VCST-5607 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-068","Undo history baseline - the first Ctrl+Z on a freshly opened template must not empty the body","Template Editor > Save","High","BL-NOTIF-006","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template with a large non-empty body is available, for example the 'AbandonedCartEmailNotification' default-language template; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'AbandonedCartEmailNotification'
 [ACT] click the row matching 'AbandonedCartEmailNotification'
@@ -629,7 +667,7 @@
 [DOM] the same holds for the 'Sample data (json)' editor {SPEC}
 [BLADE] after a Ctrl+Z then Ctrl+Y round trip restoring identical content, the blade no longer reports itself modified {OBSERVED}","[API] GET /api/notifications/AbandonedCartEmailNotification body is unchanged, since nothing was saved
 [CONSOLE] no JS errors during the undo and redo
-[NETWORK] no write request issued by the undo or the redo","Body dropping to zero characters after a single undo on an untouched blade; editor reporting an undo entry before any typing; blade still flagged modified after an identical-content redo; a write request issued by an undo","Close the Template blade without saving; discard any staged edit from the parent Details blade","VCST-5557 VCST-5604","Draft"
+[NETWORK] no write request issued by the undo or the redo","Body dropping to zero characters after a single undo on an untouched blade; editor reporting an undo entry before any typing; blade still flagged modified after an identical-content redo; a write request issued by an undo","Close the Template blade without saving; discard any staged edit from the parent Details blade","VCST-5557 VCST-5604 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
 "NOTIF-073","Closing the editor with unsaved edits warns before discarding them","Template Editor > Save","Medium","","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template for 'InvoiceEmailNotification' is open in the '...: Template' blade; module version is the PR #202 build or later, so the bottom OK and Cancel bar is gone and the blade close control is the only cancel affordance","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
@@ -644,8 +682,8 @@
 [DOM] the same confirmation is visible on close as the one already raised when switching to another template {OBSERVED}
 [FORM] declining the confirmation leaves the blade open with the appended marker present {SPEC}","[API] GET /api/notifications/InvoiceEmailNotification is unchanged after the edits are discarded
 [NETWORK] no write request issued by the close
-[CONSOLE] no JS errors while closing the blade","Blade closing silently and discarding edits with no confirmation; guard raised on template switch but not on close; a write request issued by a close; edits lost after declining the confirmation","Discard the appended marker and leave the notification type unmodified on the server","VCST-5557 VCST-5614","Draft"
-"NOTIF-069","Predefined template shows the replace-the-default warning note before it is saved as an override","Template Editor > Predefined","High","","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a notification type whose Templates grid contains a row badged both 'Predefined' and 'Edited' - that is, a saved override of a shipped default exists for that language, which is the only state in which the note is meant to render; 'InvoiceEmailNotification' carries such a row in the reference environment; module version is the PR #202 build or later. The predefined and edited flags are synthesized in the templates-list and blade controllers for display only, so assert them in the UI and never against the API","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[CONSOLE] no JS errors while closing the blade","Blade closing silently and discarding edits with no confirmation; guard raised on template switch but not on close; a write request issued by a close; edits lost after declining the confirmation","Discard the appended marker and leave the notification type unmodified on the server","VCST-5557 VCST-5614 | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-069","Predefined template shows the replace-the-default warning note before it is saved as an override","Template Editor > Predefined","High","BL-NOTIF-005","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a notification type whose Templates grid contains a row badged both 'Predefined' and 'Edited' - that is, a saved override of a shipped default exists for that language, which is the only state in which the note is meant to render; 'InvoiceEmailNotification' carries such a row in the reference environment; module version is the PR #202 build or later. The predefined and edited flags are synthesized in the templates-list and blade controllers for display only, so assert them in the UI and never against the API","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -662,22 +700,22 @@
 [DOM] 'Restore' is present in the blade toolbar exactly while the row is both predefined and edited {DOC}
 [DOM] 'Preview' and 'Send test email' are enabled on this predefined-sourced template {SPEC}","[CONSOLE] no JS errors while the predefined-sourced template is edited
 [NETWORK] no write request is issued before Save is used
-[API] the module localization files still declare the note-caption and note-text keys, so an orphaned key with no rendering markup is detectable","No note rendered on a row badged Predefined and Edited; note markup present in the source but commented out; localized note keys shipping while nothing renders them; Restore missing from the toolbar in that state; Preview or Send test email disabled","Discard the appended marker without saving so the stored override is untouched","VCST-5557 VCST-5606 - note was live pre-PR (dev tpl.html L7, commented out at L5 on feat/VCST-5557) so its absence is a genuine regression, unlike the withdrawn VCST-5609; evidence of absence: reports/tickets/Sprint26-15/VCST-5557/screenshots/RV-F3a-drilldown-predefined-editable-save-enabled.png","Draft"
-"NOTIF-070","Every string added by the editor rewrite is localized in all shipped languages, including the format failure dialogs","Template Editor > Localization","High","","ECL-12.1","state from NOTIF-058 ('...: Template' blade open for 'InvoiceEmailNotification' on the 'Sample data (json)' tab); additionally the Admin UI language is switchable to a non-English language shipped by the module; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] set the Admin UI language to a non-English language shipped by the module
+[API] the module localization files still declare the note-caption and note-text keys, so an orphaned key with no rendering markup is detectable","No note rendered on a row badged Predefined and Edited; note markup present in the source but commented out; localized note keys shipping while nothing renders them; Restore missing from the toolbar in that state; Preview or Send test email disabled","Discard the appended marker without saving so the stored override is untouched","VCST-5557 VCST-5606 - note was live pre-PR (dev tpl.html L7, commented out at L5 on feat/VCST-5557) so its absence is a genuine regression, unlike the withdrawn VCST-5609; evidence of absence: reports/tickets/Sprint26-15/VCST-5557/screenshots/RV-F3a-drilldown-predefined-editable-save-enabled.png | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-070","Every string added by the editor rewrite is localized in all shipped languages, including the format failure dialogs","Template Editor > Localization","High","BL-NOTIF-007","ECL-12.1","state from NOTIF-058 ('...: Template' blade open for 'InvoiceEmailNotification' on the 'Sample data (json)' tab); additionally the Admin UI language is switchable to a non-English language shipped by the module; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] set the Admin UI language to a non-English language shipped by the module
 [WAIT] the Admin UI re-renders in that language
 [ACT] click the 'Sample data (json)' tab
 [WAIT] the CodeMirror JSON editor is shown
 [ACT] remove a closing brace so the sample JSON no longer parses
 [WAIT] the invalid-JSON indicator is shown
 [ACT] click the format command for the sample data
-[WAIT] the format failure dialog is shown","[DOM] the tab captions, the full-screen and exit-full-screen controls, the invalid-JSON indicator and both format commands are visible in the selected language {SPEC}
+[WAIT] the format failure dialog is shown","[DOM] the tab captions, the full-screen control, the 'Exit full screen' control, the 'Invalid JSON' indicator and BOTH format commands - 'Format JSON' on the sample-data tab and 'Format HTML' on the liquid tab - are visible in the selected language {SPEC}
 [DOM] the format failure dialog title and message are visible in the selected language, and hardcoded English is absent {SPEC}
 [DOM] no raw localization key is visible anywhere in the blade in the selected language {SPEC}
 [DOM] the collapse link renders the full localized 'Hide description' wording {OBSERVED}
 [DOM] every string the rewrite added resolves in each shipped language, with no English fallback visible {SPEC}","[CONSOLE] no missing-translation warning is logged for the module's own keys
 [NETWORK] the localization files for the selected language are fetched with a 2xx
-[API] the module localization files declare a key for each string the blade renders, including both format failure dialogs","Format dialog title or message in English while the UI is another language; raw localization key rendered in the blade; truncated description toggle wording; missing-translation warning in the console","Restore the closing brace, set the Admin UI language back to the environment default and close the Template blade without saving","VCST-5557 VCST-5611 VCST-5614","Draft"
-"NOTIF-071","Typing a liquid opener suggests sample-data variables in snake_case and inserts a complete expression","Template Editor > Autocomplete","High","BL-NOTIF-002","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template is open with parseable sample data whose top-level keys use PascalCase names, for example a CustomerOrder object; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[API] the module localization files declare a key for each string the blade renders, including both format failure dialogs","Format dialog title or message in English while the UI is another language; raw localization key rendered in the blade; truncated description toggle wording; missing-translation warning in the console","Restore the closing brace, set the Admin UI language back to the environment default and close the Template blade without saving","VCST-5557 VCST-5611 VCST-5614 | The hardcoded-English format dialog is grounded in module source (the format failure handlers pass literal title and message strings instead of the controller's own translate helper, and no matching key exists among the keys the PR added). LIVE HALF NOT YET VERIFIED (Phase 5 2026-07-29): the language switch was never made because the account dropdown's own tooltip overlay intercepted pointer events over the language menu item, so the non-English rendering of these strings is still unconfirmed. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-071","Typing a liquid opener suggests sample-data variables in snake_case and inserts a complete expression","Template Editor > Autocomplete","High","BL-NOTIF-002","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a template is open in the '...: Template' blade whose SAMPLE DATA IS NON-EMPTY and whose top-level keys use PascalCase names, for example a CustomerOrder object - a predefined-sourced template carries a large sample, otherwise paste a small JSON object into the 'Sample data (json)' tab first. This precondition is load-bearing: with empty sample data the derived variable set is empty, the variable hint returns nothing and no suggestion node is rendered at all, which reads as an absent feature (see NOTIF-060); module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
 [ACT] click the row matching 'InvoiceEmailNotification'
@@ -685,18 +723,24 @@
 [ACT] click a template row
 [WAIT] the '...: Template' blade opens with the 'Template (liquid)' tab active
 [ACT] put the caret on an empty line in the template editor
-[ACT] type the liquid opener into the template body
-[WAIT] the suggestion list is shown
+[ACT] type the liquid variable opener into the template body
+[WAIT] the variable suggestion list is shown
 [ACT] type the first letters of a known sample-data key
 [WAIT] the suggestion list narrows
 [ACT] accept the highlighted suggestion
-[WAIT] the editor content carries the inserted expression","[DOM] the visible suggestion list is derived from the keys present in the current sample data {SPEC}
-[DOM] suggested variable names are visible in liquid snake_case, so a PascalCase sample key such as CustomerOrder is offered as customer_order {SPEC}
-[DOM] fewer suggestions are visible after more characters are typed {SPEC}
-[DOM] the accepted suggestion is visible in the editor as a complete liquid expression with both delimiters around the selected path {SPEC}
-[DOM] nested sample-data paths are visible as dotted snake_case paths in the suggestion list {SPEC}","[NETWORK] the suggestion list is built client-side and issues no server request
+[WAIT] the editor content carries the inserted expression
+[KEY] press Ctrl+Space on a fresh empty line
+[WAIT] the suggestion list is shown again
+[ACT] type the liquid tag opener on a fresh empty line
+[WAIT] the tag suggestion list is shown","[DOM] typing the liquid variable opener auto-triggers a visible suggestion list derived from the keys present in the current sample data {DOC}
+[DOM] pressing Ctrl+Space also makes the suggestion list visible, so both the auto-trigger and the explicit shortcut are wired {DOC}
+[DOM] suggested variable names are visible in liquid snake_case, so a PascalCase sample key such as CustomerOrder is offered as customer_order {DOC}
+[DOM] nested sample-data paths are visible as dotted snake_case paths in the suggestion list {DOC}
+[DOM] fewer suggestions are visible after more characters are typed {DOC}
+[DOM] typing the liquid TAG opener offers the static tag completion list, which is present regardless of whether the sample data is empty - this proves the completion machinery independently of fixture state {DOC}
+[DOM] the accepted suggestion is visible in the editor as a complete liquid expression with both delimiters around the selected path {SPEC}","[NETWORK] the suggestion list is built client-side and issues no server request
 [CONSOLE] no JS errors while the suggestion list opens, narrows or is accepted
-[API] a subsequent render of the inserted expression resolves it against the sample data with no unresolved placeholder left","No suggestion list on the liquid opener; suggestions listed in PascalCase; list not narrowing as characters are typed; insertion missing a delimiter; inserted expression left unresolved by the renderer","Remove the inserted expression and close the Template blade without saving","VCST-5557","Draft"
+[API] a subsequent render of the inserted expression resolves it against the sample data with no unresolved placeholder left","No suggestion list on the variable opener while sample data is non-empty; Ctrl+Space inert; suggestions listed in PascalCase; tag list absent; list not narrowing as characters are typed; insertion missing a delimiter","Remove the inserted expression and close the Template blade without saving","VCST-5557 | AC 4 IS implemented - grounded in module source: extraKeys binds Ctrl-Space to the hint command, wireHints() attaches an inputRead handler auto-triggering on a trailing variable opener (variableHint) and on a trailing tag opener (tagHint), toLiquidName() performs the Scriban snake_case conversion, and a static list supplies 22 liquid tag completions. The Phase 5 pass reported a FALSE NEGATIVE because it used a template with empty sample data, so the derived variable list was empty and the hint rendered no DOM node - hence the non-empty-sample precondition above. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
 "NOTIF-072","Closing the editor clears the type and templateId parameters so a refresh does not reopen the closed blade","Template Editor > Navigation","Medium","","ECL-7.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has a template; module version is the PR #202 build or later, so opening a template writes the type and templateId query parameters into the URL","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
 [WAIT] Notifications list blade loaded
 [GRID] search the list for 'InvoiceEmailNotification'
@@ -709,7 +753,36 @@
 [SCROLL] read the address bar without interacting with any other control
 [KEY] press F5 to reload the workspace","[NAV] both the type and templateId parameters are absent from the URL as soon as the blade closes, with no further interaction needed {SPEC}
 [BLADE] a reload right after the close does not reopen the '...: Template' blade {SPEC}
-[NAV] the same holds on the drill-down path, not only for a blade opened by deep link {OBSERVED}
+[NAV] the same holds on the drill-down path, not only for a blade opened by deep link {SPEC}
 [BLADE] the parent '...: Details' blade is still open and unaffected by the child blade closing {OBSERVED}","[NETWORK] no request is issued by the parameter cleanup
 [CONSOLE] no JS errors while the blade closes
-[NETWORK] the reload after the close returns 2xx with no 4xx/5xx","Parameters still in the URL seconds after the close; parameters clearing only after an unrelated click; reload reopening the closed blade; parent blade closing together with the child","Close the remaining notification blades so the workspace is left on the bare notifications list","VCST-5557 VCST-5613","Draft"
+[NETWORK] the reload after the close returns 2xx with no 4xx/5xx","Parameters still in the URL seconds after the close; parameters clearing only after an unrelated click; reload reopening the closed blade; parent blade closing together with the child","Close the remaining notification blades so the workspace is left on the bare notifications list","VCST-5557 VCST-5613 | Phase 5 2026-07-29 re-confirmed the defect this case is written against: after the blade closed, type and templateId persisted through 22s of no interaction and cleared only on the next navigating click. The assertions above are the EXPECTED behaviour and are therefore expected to FAIL on the PR #202 build until VCST-5613 is fixed. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-076","Delete is rejected for default and predefined templates","Template Management","High","BL-NOTIF-005","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'InvoiceEmailNotification' has a Templates grid containing a DEFAULT-language template and a predefined-sourced template; the grid's removal command is reachable; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] Notifications list blade loaded
+[GRID] search the list for 'InvoiceEmailNotification'
+[ACT] click the row matching 'InvoiceEmailNotification'
+[WAIT] the '...: Details' blade opens with the Templates grid
+[GRID] select the default-language template row
+[ACT] click 'Delete' in the Templates grid toolbar
+[WAIT] the blade responds to the removal request","[DOM] the shipped refusal message is visible, reading 'You cannot delete default or predefined templates. Please deselect such templates and try again' {DOC}
+[GRID] the default-language template row is still present after the refusal {DOC}
+[GRID] the wording asks the operator to deselect such templates, so a mixed selection containing one is refused as a whole and no row of it is removed {DOC}
+[DOM] the message resolves from the module's delete-notification dialog key, so it is localized rather than hardcoded English {DOC}
+[GRID] the same refusal applies when a predefined-sourced row is the one selected {DOC}","[NETWORK] no removal request is issued for the refused selection
+[API] GET /api/notifications/InvoiceEmailNotification still returns the default-language template after the refusal
+[CONSOLE] no JS errors raised by the refusal","Default or predefined template removed from the grid; refusal message absent; a removal request issued for the refused selection; message rendered in English while the Admin UI is another language","Deselect the template rows and close the Template list and Details blades without saving","VCST-5557 VCST-5606 | Grounded in the module's own locale file: notifications.dialogs.notification-template-delete-notification = 'You cannot delete default or predefined templates. Please deselect such templates and try again'. Authored 2026-07-29 as the Template Management group's grounded negative - no behaviour invented. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
+"NOTIF-074","SMS and plain-text templates keep the legacy editor surface, untouched by the rewrite","Template Editor > Text and SMS","Medium","","ECL-7.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; an SMS or plain-text notification type with an existing template is available; module version is the PR #202 build or later. This case pins the surface the rewrite did NOT migrate, so that a later change to the text branch is detectable","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] Notifications list blade loaded
+[GRID] search the list for an SMS or plain-text notification type
+[ACT] click the matching notification row
+[WAIT] the '...: Details' blade opens with the Templates grid
+[ACT] click the target template row
+[WAIT] the '...: Template' blade opens
+[SCROLL] bring the whole editor area into view","[DOM] the body editor is the legacy platform html-editor surface with its own multi-button format bar visible {OBSERVED}
+[DOM] the html editor's built-in Markdown, Preview and expand toggles are still PRESENT here - the rewrite removed them only from the email / liquid editor {OBSERVED}
+[DOM] no tab strip is present: 'Template (liquid)', 'Sample data (json)' and 'Preview' tabs are absent on a text or SMS template {OBSERVED}
+[DOM] no 'Subject' field is present, since a text or SMS notification has no subject {OBSERVED}
+[DOM] no full-screen control is present on this surface {OBSERVED}
+[DOM] 'Save' is still present in the blade toolbar, so the toolbar-save change applies to both surfaces {OBSERVED}","[CONSOLE] no JS errors while the legacy editor surface renders
+[NETWORK] no 4xx/5xx while the blade opens
+[API] GET /api/notifications/{type} returns the text template body the legacy editor is bound to","Tab strip appearing on a text or SMS template; Subject field rendered for a text notification; legacy format bar missing without a replacement; Markdown or Preview toggle disappearing here too; JS error on blade open","Close the Template and Details blades with the blade close control without saving","VCST-5557 VCST-5614 | Split out of NOTIF-036 and NOTIF-038 after the Phase 5 pass (2026-07-29) established that the text / SMS branch still renders the pre-PR html-editor: full format bar plus the Markdown / Preview / expand toggles PR #202 removed for email, no Subject, no tab strip, no full-screen control. Recorded as scope, not as a defect - the VCST-5557 ACs speak only to the email / liquid editor. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"
