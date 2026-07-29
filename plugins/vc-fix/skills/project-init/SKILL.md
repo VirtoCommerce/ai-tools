@@ -74,6 +74,52 @@ rules, applied at every step:
 Never print the same fact twice in two shapes (a "provenance" table repeating a Notes column, a
 role grid restating "all roles mapped"). If it is already on screen, reference it.
 
+### Output FORMAT — two shapes, used consistently
+
+Colour is not available: this output is Markdown, and the client (terminal or desktop) decides
+how to paint it — an ANSI escape never reaches it. What renders identically on BOTH surfaces is
+CAPS, `---`, heading level, **bold**, `code` and emoji. The format below uses only those.
+
+**1. Step header — a CAPS heading, no numbering.**
+
+```markdown
+## ENVIRONMENT NAME
+```
+
+`2a` / `4b` / `0c` are THIS file's internal numbering; they mean nothing to the operator and
+add noise to every header. Use the step's NAME, in caps. (Keep the numbers here in the doc — the
+model and the reviewer navigate by them.)
+
+**2. A question asked in PLAIN CHAT — a rule, a label, then the question on its own line.**
+
+```markdown
+---
+
+⏸️ **WAITING FOR YOU**
+
+**What should this environment be named?**
+
+It becomes `TEST_ENV` and the suffix of `.env.<name>`. Typical: `qa`, `dev`, `acme_qa`.
+I normalise it to `[a-z0-9_]+` and tell you what I used.
+```
+
+Why this shape, in order of importance:
+
+- **The `---` is the load-bearing part.** It breaks the visual flow of a long report so the eye
+  stops. Without it the ask has the same weight as the paragraph above it.
+- **The question is its own bold line, right under the label.** The old banner said only
+  "waiting" while the actual question sat buried mid-paragraph above — so the operator saw a
+  cue with no ask attached, and scrolled past both.
+- **Context goes AFTER the question**, ≤2 lines: what the value becomes, a couple of typical
+  answers, what you will do to it.
+- **Nothing follows the block.** No further prose, no tool call — the turn ends there so the
+  ask is the last thing on screen.
+- No progress counter, no step number: they are noise on a 3-question interview.
+
+**When the question is an `AskUserQuestion`, use NEITHER.** That tool already renders its own
+picker — a `---` + WAITING banner in front of it is duplicate chrome. Just the CAPS step header,
+one line of context if the options need it, and the tool call.
+
 ### Where things go — read this once (two roots, kept separate)
 
 - **Plugin install directory** (`$CLAUDE_PLUGIN_ROOT` — the versioned marketplace cache
@@ -230,12 +276,26 @@ scripts unable to find `dotenv`. The subshell `( … )` keeps your project cwd u
 
 ### 2a. ENV_NAME — one plain chat question
 
-Ask, in plain chat, what the environment should be named (it becomes `TEST_ENV`).
-The operator replies with the value. Do **not** use `AskUserQuestion` (always ≥2
-option buttons — no option-less input) or a `show_widget` input (unreliable) for
-this — a plain chat question is the stable way to collect one free-text value.
-Normalise mixed case / spaces / hyphens to `[a-z0-9_]+` (e.g. `My QA` → `my_qa`)
-and tell the operator what you used.
+Do **not** use `AskUserQuestion` (always ≥2 option buttons — no option-less input) or a
+`show_widget` input (unreliable) for this — a plain chat question is the stable way to collect
+one free-text value. Use the plain-chat question format (§Output FORMAT) **verbatim**:
+
+```markdown
+## ENVIRONMENT NAME
+
+---
+
+⏸️ **WAITING FOR YOU**
+
+**What should this environment be named?**
+
+It becomes `TEST_ENV` and the suffix of the env file (`.env.<name>`). Typical: `qa`, `dev`,
+`staging`, or a customer short name like `acme_qa`. I normalise it to `[a-z0-9_]+` and tell
+you what I used.
+```
+
+End the turn there — nothing after the block. On the reply, normalise mixed case / spaces /
+hyphens to `[a-z0-9_]+` (e.g. `My QA` → `my_qa`) and tell the operator what you used.
 
 ### 2b. Tracker + code host — one `AskUserQuestion` block
 
@@ -326,25 +386,30 @@ disabled; not needed for `/qa-fix`) — each with a "which tool it powers" comme
 
 ### 3c. Tell the operator: two files created — fill them, then pause
 
-Print a message that:
-- says **two files were created**: `.env.<env>` (non-secret URLs/identifiers) and
-  `.env.local` (secrets, gitignored),
-- lists the placeholder keys each emitted,
-- tells the operator to open both files and fill every value (the inline comments
-  say what each is and where to get it), and
-- says that once filled, the scan + verify (steps 4 + 8) proceed.
+Under a `## FILL IN THE TWO ENV FILES` header, print:
+- **two files were created**: `.env.<env>` (non-secret URLs/identifiers) and `.env.local`
+  (secrets, gitignored) — with the placeholder keys each emitted;
+- that the inline comments say what each value is and where to get it;
+- for any **browser-login** choice (github `gh auth login`, ado `az login`, Jira Atlassian MCP
+  OAuth) there is no token line — remind the operator to run that login instead (step 8's
+  `ensure-session.mjs` drives it).
 
-For any **browser-login** choice (github `gh auth login`, ado `az login`, Jira
-Atlassian MCP OAuth) there is no token line — remind the operator to run that login
-instead (see step 8's `ensure-session.mjs` for the driven flow).
+Then the plain-chat question block (§Output FORMAT), which is what makes the pause impossible
+to scroll past:
 
-**Then pause — wait for the operator to confirm both files are filled.** Make the
-wait VISUALLY OBVIOUS: end the message with an unmistakable, set-apart call-to-action
-on its own line — a blockquote banner such as
-`> ⏸️ **WAITING FOR YOU** — fill in both files, then reply "done".`
-Do not append any further tool calls after it — the turn ends there so the prompt
-is the last thing on screen. (Reuse this banner wherever the pipeline blocks on the
-operator.)
+```markdown
+---
+
+⏸️ **WAITING FOR YOU**
+
+**Filled both files? Reply "done" and I'll continue.**
+
+I normalise and validate them first (trailing slashes, quotes, unfilled placeholders), then
+scan your repos and verify every credential.
+```
+
+Nothing after the block — no further tool calls; the turn ends there so the ask is the last
+thing on screen. This is the same format every blocking question uses.
 
 Note the env name (e.g. `myqa`) — that's your `TEST_ENV` for every later run.
 
@@ -364,7 +429,8 @@ quotes and padding stripped, **every trailing slash removed** from `FRONT_URL` /
 `ADO_PROJECT` that is still path-shaped, and WARNs when `FRONT_URL`/`BACK_URL` carries a path
 component. Comments, ordering, and any variable the operator added themselves are untouched.
 
-**On exit 1: STOP.** Show the errors verbatim, re-print the ⏸️ WAITING banner, and wait — do not
+**On exit 1: STOP.** Show the errors verbatim, then re-ask with the plain-chat question block
+(§Output FORMAT — *"Fixed them? Reply 'done'."*), and wait — do not
 scan, do not probe. Every downstream check would otherwise fail for a reason the operator cannot
 see: a stray `/` used to be stripped only *in memory* by `verify-access.mjs` while the file stayed
 wrong, and every runtime `${BACK_URL}/api/...` template produced `//api/...` (VCST-5582 B). The
