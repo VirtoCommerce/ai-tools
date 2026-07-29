@@ -199,10 +199,18 @@ template below, within the size cap.
 
 ### Step 6 — Report, OFFER to contribute, STOP
 
-**6a — report the verdict (always first).**
-- **Tail-trigger auto-run:** print ONE non-blocking info line — the finding roll-up +
-  the DIAG path (e.g. `vc-fix self-check: 1 BROKEN, 1 DEGRADED → .vc-fix/diagnostics/DIAG-….md`).
-- **Direct run:** print the DIAG path + the one-line roll-up.
+> **ONE question per turn (item 8).** The reproduction turn asked the operator three things at
+> once — the verdict, the delivery offer, and a three-option "clean up vc-fix diagnostic files?"
+> prompt — so every question after the first competed with the one that mattered, and the delivery
+> offer had to be re-asked on a later turn. The turn now emits **one info line** (6a) and **at most
+> one question** (6b). Cleanup asks **nothing**: the 24 h age-cap already reclaims leftovers
+> unprompted, so the count rides on 6a's line as information, never as a decision.
+
+**6a — report the verdict (always first).** ONE non-blocking info line, on BOTH paths — the
+finding roll-up + the DIAG path (e.g.
+`vc-fix self-check: 1 BROKEN, 1 DEGRADED → .vc-fix/diagnostics/DIAG-….md`). If the hook's block
+reason carried a stale-artifact count, it belongs on this same line — do not spend a second line
+or any question on it.
 
 > **6a does not end the turn, on EITHER path.** 6a and 6b are **sequential steps of one turn**,
 > never alternatives: report the roll-up line, then immediately evaluate 6b. **6b applies to the
@@ -238,11 +246,17 @@ no client will do. The DIAG footer even printed that as a hint; a dead one.
 2. If the plan reports **`alreadyOffered: true`** → **stay silent**. The one-shot guard
    (`deliveryOffered` in the session state, deduped by finding fingerprint — the same pattern
    as the collector's `cleanupOffered`) already offered this finding.
-3. Otherwise present **exactly ONE** `AskUserQuestion`:
+3. Otherwise present **exactly ONE** `AskUserQuestion` — and it must be the ONLY question this
+   turn (item 8):
    - **"Show what would be sent"** → print the `DELIVERY-*.md` draft, then re-ask the
      remaining two options.
    - **"Send"** → re-run with `--confirm`.
    - **"Don't send"** → stop; the DIAG stays local.
+
+   With **`feedback.mode: auto`** there is NO question: the operator consented at onboarding, so
+   the Issue files directly (`deliver` pre-confirms) and 6a's line reports the filed URL. Since
+   `issue` is the only sending route (item 4), `auto` now always means "it was filed" — it can no
+   longer resolve to a hand-off that sent nothing.
 4. **Show the HONEST route** from the plan's `route` + `reason` — the only two are `issue` and
    `local`, and `resolveRoute` never assumes an unreadable capability is upstream-capable
    (VCST-5582 A), so `route: "local"` with a remedy in `reason` is a real answer, not a fallback
@@ -251,9 +265,10 @@ no client will do. The DIAG footer even printed that as a hint; a dead one.
 **Nothing is ever sent without an explicit "Send".** `--confirm` is the only trigger, and
 `feedback.mode: auto` (an onboarding-time consent) is the only way to skip the question.
 
-**6c — ordering on a terminal Stop.** Diagnostic verdict **FIRST** → delivery offer →
-cleanup offer **LAST**. Same rule the cleanup offer already follows: an offer rides a verdict,
-it never opens the conversation.
+**6c — ordering on a terminal Stop.** Diagnostic verdict line **FIRST** → delivery offer (at most
+one question) → nothing else. An offer rides a verdict, it never opens the conversation. There is
+no third step: the cleanup **question is gone** (item 8), so a turn is now exactly one line and at
+most one question.
 
 ---
 

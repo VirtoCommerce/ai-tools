@@ -158,9 +158,13 @@ So every anomaly signal — however minor, however likely-benign — is now reco
 
 ```
 { type:"obs", sessionId, ts, lastTs, spanId, skill, class, subject, code,
-  count, source:"collector|script|profile-assert", signature,
+  pluginOwned, count, source:"collector|script|profile-assert", signature,
   evidence:{ snippet, exitCode, httpStatus, path } }
 ```
+
+`pluginOwned` says whether the observed script belongs to the PLUGIN (routing input only — see the
+routing set below). It is **not** a severity or a verdict: the collector still has no way to express
+importance.
 
 There is deliberately **no `severity` and no `verdict` field** — the collector has no way to
 express importance. `class` is a closed vocabulary (lock-step with `OBS_CLASSES` in
@@ -189,13 +193,34 @@ run < 20 ≈ 6 KB (one real session's *span* records alone are 230 KB, so observ
 rounding error). The jsonl is append-only, so a second collector process can duplicate a line
 but can never lose one.
 
-**The routing set — TIMING, not severity.** The Stop hook spends a model turn only for these
-classes (`OBS_ROUTING_CLASSES`): **`self_reported_warn`, `self_reported_fail`,
-`degraded_artifact`, `http_non2xx`, `script_exit_nonzero`, `collector_contention`**. Everything
-outside it is still recorded, still forbids the word "clean", still counted in the visible line,
-and still analysed here. Deliberately **absent**: raw `tool_error`/`permission_denied`/
-`hook_failure` (a *blocking* one already routes via the §1a outcome; a *recovered* one must not,
-or every adaptive run nags again — the regression §1a clause (b) fixed) and every noise class.
+**The routing set — TIMING, not severity.** The Stop hook spends a model turn only for a **hard**
+set (`OBS_ROUTING_CLASSES` + `obsRoutes()`):
+
+| Class | Routes when |
+|---|---|
+| `self_reported_fail` | always — one of OUR surfaces said a required step FAILED |
+| `degraded_artifact` | always — we generated something empty/partial (the reference incident below still routes on this) |
+| `script_exit_nonzero` | **only for a PLUGIN-OWNED script** (`obs.pluginOwned`, from the same `PLUGIN_SCRIPT_RE` match that derives `subject`). A client's own failing `npm run build` is recorded like everything else, but must not arm the plugin's diagnostician about code that is none of its business |
+
+Plus, outside the observation stream: a **flagged span**, a **👎**, and a **grown occurrence
+count** — `obsSurfacedCount` records the count a signature routed AT (mirroring the flagged path's
+`surfacedAt`), so a defect that keeps RECURRING re-qualifies instead of being silenced for the rest
+of the session (§1f rule 5: *a recurrence is not a duplicate*). Growth re-routes only within the
+hard set, so a growing noise tally can never re-nag.
+
+**Demoted out of routing** (item 7): `self_reported_warn`, `http_non2xx` and
+`collector_contention`. The old set made routing fire on essentially any new signal — a run whose
+command span ended `recovered`, whose deliverable landed, and whose findings were all S2/S3
+friction still cost the operator a whole extra turn. These are still recorded, still forbid the
+word "clean" (a WARN/`_fail` forces `attention` via invariant 2 below — that is a VERDICT rule, not
+a routing one), still counted in the visible line, and still diagnosed by the next
+`/vc-self-check`; `collector_contention` additionally surfaces as the `degraded-collector` verdict.
+They just do not interrupt.
+
+Still **absent** for the original reason: raw `tool_error`/`permission_denied`/`hook_failure` (a
+*blocking* one already routes via the §1a outcome; a *recovered* one must not, or every adaptive run
+nags again — the regression §1a clause (b) fixed), and every noise class. **Never** routed:
+`recovered_error`, `harness_noise`.
 
 **The two hard invariants** (deterministic, in `computeVerdict`):
 

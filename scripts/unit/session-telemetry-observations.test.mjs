@@ -111,12 +111,15 @@ test("reference defect: a self-reported WARN makes the run `attention`, never `c
     const out = run(home, "finalize", { session_id: "ref", transcript_path: tp(home), background_tasks: [] });
 
     const fin = lastFinalize(home, "ref");
+    // The invariant this test exists for is untouched: a WARN can never be called clean.
     assert.equal(fin.decision.verdict, "attention", "a run containing a WARN can NEVER record itself clean");
-    assert.equal(fin.decision.surfaceDecision, "tail-trigger");
     assert.equal(fin.decision.observations.selfReported, 1);
-    assert.equal(fin.decision.observations.routing, 1);
-    // …and it must actually surface, by running the diagnostician.
-    assert.match(blockOf(out).reason || "", /vc-self-check/, "the tail-trigger runs the diagnostician");
+    // item 7 DEMOTED `self_reported_warn` out of the routing set: a WARN still forces the
+    // `attention` verdict (a VERDICT rule) and is still diagnosed by the next /vc-self-check, but
+    // it no longer spends a model turn the moment it is recorded. Routing is TIMING, not severity.
+    assert.equal(fin.decision.observations.routing, 0, "a WARN is recorded and judged, but does not interrupt");
+    assert.notEqual(fin.decision.surfaceDecision, "clean-line", "and it may never be reported as clean");
+    assert.doesNotMatch(blockOf(out).reason || "", /no plugin issues detected/, "the clean wording is impossible here");
     const o = obsOf(recordsOf(home, "ref"));
     assert.equal(o.length, 1);
     assert.equal(o[0].subject, "tracker_bug_field_contract", "the subject is slugified, never free text");

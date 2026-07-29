@@ -1949,15 +1949,19 @@ test("cleanup offer: NOT standalone on a plain dev turn — it rides a diagnosti
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
     const dec = JSON.parse(out);
-    assert.equal(dec.decision, "block", "the clean line + cleanup offer surface via decision:block");
+    assert.equal(dec.decision, "block", "the clean line surfaces via decision:block");
     assert.match(dec.reason, /no plugin issues detected/i, "the clean verdict comes FIRST");
-    assert.match(dec.reason, /Clean up vc-fix diagnostic files/, "the 3-option AskUserQuestion is set up, AFTER the verdict");
-    assert.match(dec.reason, /Delete all sessions \(incl\. this one\)/);
-    assert.match(dec.reason, /Delete all except this session/);
-    assert.match(dec.reason, /Keep them \(auto-deleted after 24h\)/);
-    assert.match(dec.reason, /purge-inactive --all --dir/, "option 1 (all incl. this) ignores the 1h floor");
-    assert.match(dec.reason, /purge-inactive --keep "cur-cleanup" --dir/, "option 2 (all except this) keeps the 1h floor → spares a live parallel session");
-    assert.doesNotMatch(dec.reason, /purge-inactive --all --keep/, "option 2 must NOT use --all (that would delete a live parallel session)");
+    // item 8 — the cleanup 3-option AskUserQuestion was REMOVED. The reproduction turn asked the
+    // operator three things at once (verdict + delivery offer + cleanup), so the delivery offer had
+    // to be re-asked later. Cleanup never needed a question: the 24h age-cap already reclaims
+    // leftovers unprompted at every session start, and deleting without asking would trade a nag
+    // for an unsanctioned destructive action. The count now rides the ONE line as information.
+    assert.doesNotMatch(dec.reason, /Clean up vc-fix diagnostic files/, "no cleanup question any more");
+    assert.doesNotMatch(dec.reason, /AskUserQuestion/, "the turn asks nothing about cleanup");
+    assert.doesNotMatch(dec.reason, /purge-inactive/, "and it proposes no deletion command");
+    assert.match(dec.reason, /local diagnostic file\(s\) from 2 session\(s\)/, "the count rides the verdict line as a note");
+    assert.match(dec.reason, /auto-cleaned after 24h/, "…stating that it resolves itself");
+    assert.equal(dec.reason.split("\n").length, 1, "ONE line, one turn (item 8)");
     assert.equal(finalizesOf(readSpans(home, sid)).pop().decision.cleanupOffered, true);
 
     // A repeat finalize (same turn / resume) must NOT re-offer — once per session.
@@ -2000,7 +2004,9 @@ test("cleanup offer: NOT surfaced mid-skill (awaiting-completion) — rides the 
     const dec = JSON.parse(term);
     assert.equal(dec.decision, "block");
     assert.match(dec.reason, /no plugin issues detected/i, "the clean line surfaces at the terminal step");
-    assert.match(dec.reason, /Clean up vc-fix diagnostic files/, "the cleanup offer rides the same terminal resume");
+    // item 8 — a NOTE on the same line, not a question (see the previous test).
+    assert.match(dec.reason, /local diagnostic file\(s\)/, "the cleanup note rides the same terminal resume");
+    assert.doesNotMatch(dec.reason, /Clean up vc-fix diagnostic files/);
     assert.equal(finalizesOf(readSpans(home, sid)).pop().decision.cleanupOffered, true);
   } finally {
     rmSync(home, { recursive: true, force: true });

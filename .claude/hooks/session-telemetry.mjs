@@ -315,14 +315,38 @@ const OBS_NOISE_CLASSES = new Set(["harness_noise", "policy_block", "self_report
 // (kept in lock-step with skill-expectations.md §1e), NOT a severity judgement: membership
 // decides TIMING, never retention. Everything outside it is still recorded, still FORBIDS the
 // word "clean", still counted in the visible line, and still analysed by any /vc-self-check.
-// NOTE what is deliberately absent: raw `tool_error`/`permission_denied`/`hook_failure`. A
-// BLOCKING one of those already routes via the span classifier (`failed` → flagged), and a
-// RECOVERED one must not route or every adaptive run would nag again — the exact regression
-// VCST-5582 F1 fixed. So they are recorded (as observations) without re-opening that door.
+//
+// NARROWED TO A HARD SET (item 7). The previous set also carried `self_reported_warn`,
+// `http_non2xx` and `collector_contention`, which made routing fire on essentially ANY new
+// signal — a run whose command span ended `recovered`, whose deliverable landed, and whose
+// findings were all S2/S3 friction still cost the operator a whole extra turn. The bar is now
+// "the run could not be trusted to have done its job":
+//   • self_reported_fail  — one of OUR surfaces said a required step FAILED
+//   • degraded_artifact   — we generated something empty/partial (the VCST-5582 H reference
+//                           incident still routes on this, which is the point)
+//   • script_exit_nonzero — a PLUGIN-OWNED script exited non-zero (see pluginOwned below)
+// Demoted, deliberately: `self_reported_warn` and `http_non2xx` (a WARN or a failed probe still
+// forbids the word "clean" via computeVerdict's invariant 2 and is still diagnosed on the next
+// /vc-self-check — it just does not interrupt), and `collector_contention` (it already surfaces
+// as the `degraded-collector` verdict). Still absent for the original reason: raw
+// `tool_error`/`permission_denied`/`hook_failure` — a BLOCKING one routes via the span classifier
+// (`failed` → flagged) and a RECOVERED one must not route, or every adaptive run nags again
+// (the regression VCST-5582 F1 fixed). Never routed: `recovered_error`, `harness_noise`.
 const OBS_ROUTING_CLASSES = new Set([
-  "self_reported_warn", "self_reported_fail", "degraded_artifact", "http_non2xx",
-  "script_exit_nonzero", "collector_contention",
+  "self_reported_fail", "degraded_artifact", "script_exit_nonzero",
 ]);
+
+// `script_exit_nonzero` routes ONLY for a script the PLUGIN owns. The class fires off an
+// `Exit code N` line in any tool result, so a client's own failing `npm run build` — a fact worth
+// RECORDING, and recorded either way — would otherwise arm the plugin's diagnostician about code
+// that is none of its business. `opSubject` already prefers the plugin script name over the tool
+// name when PLUGIN_SCRIPT_RE matches the command; that same match is now persisted on the
+// observation as `pluginOwned` so this decision needs no re-derivation at finalize time.
+function obsRoutes(o) {
+  if (!OBS_ROUTING_CLASSES.has(o?.class)) return false;
+  if (o.class === "script_exit_nonzero") return o.pluginOwned === true;
+  return true;
+}
 
 const OBS_SIGNATURE_CAP = 200; // distinct signatures per session
 const OBS_PER_CLASS_CAP = 25; // distinct signatures per class
@@ -363,8 +387,18 @@ function opSubject(toolName, inputStr) {
   const m = PLUGIN_SCRIPT_RE.exec(String(inputStr || ""));
   return obsSubject(m ? m[1] : toolName);
 }
+/** Did this op run a script the PLUGIN owns? The same PLUGIN_SCRIPT_RE match `opSubject` uses,
+ *  kept as its own fact because ROUTING needs it (item 7): a client's own failing build is
+ *  recorded like everything else, but it must not arm the plugin's diagnostician. Derived once,
+ *  while the input is still in hand. */
+function opIsPluginScript(inputStr) {
+  return PLUGIN_SCRIPT_RE.test(String(inputStr || ""));
+}
 function opSubjectOf(sp) {
   return sp ? (sp.subject || obsSubject(sp.name)) : "unknown";
+}
+function opPluginOwnedOf(sp) {
+  return Boolean(sp && sp.pluginScript);
 }
 
 /**
@@ -417,6 +451,9 @@ function recordObs(jsonlPath, state, o) {
       class: cls,
       subject,
       code,
+      // Whether the observed script belongs to the PLUGIN. Routing-only (item 7); still NOT a
+      // severity or a verdict — the collector remains unable to express importance.
+      pluginOwned: o?.pluginOwned === true,
       count: 1,
       source: /^(collector|script|profile-assert)$/.test(String(o?.source || "")) ? o.source : "collector",
       signature: sig,
@@ -426,7 +463,7 @@ function recordObs(jsonlPath, state, o) {
     // appended jsonl line and nothing reads it back from state, while `.state.json` is rewritten on
     // EVERY hook firing — carrying 200 snippets there would add a ~60 KB write per tool boundary
     // for no benefit. State keeps only what the rollup / routing / dedup actually need.
-    state.observations[sig] = { class: cls, subject, code, skill, count: 1, ts, lastTs: ts, source: rec.source, spanId: rec.spanId };
+    state.observations[sig] = { class: cls, subject, code, skill, pluginOwned: rec.pluginOwned, count: 1, ts, lastTs: ts, source: rec.source, spanId: rec.spanId };
     state.obsClassCounts[cls] = (state.obsClassCounts[cls] ?? 0) + 1;
     appendRecord(jsonlPath, rec);
     return sig;
@@ -520,7 +557,7 @@ function obsRollup(state) {
     byClass[o.class] = (byClass[o.class] ?? 0) + n;
     total += n;
     if (!OBS_NOISE_CLASSES.has(o.class)) visible += n;
-    if (OBS_ROUTING_CLASSES.has(o.class)) routing += n;
+    if (obsRoutes(o)) routing += n;
     if (o.class === "self_reported_warn" || o.class === "self_reported_fail") selfReported += n;
   }
   return { distinct: Object.keys(obs).length, total, visible, routing, selfReported, dropped: state.obsDropped ?? 0, byClass };
@@ -1171,6 +1208,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           // Observation subject, derived ONCE here while the input is still in hand (the closed
           // span keeps only its name/arg_hash) — see opSubject.
           sp.subject = opSubject(sp.name, inputStr);
+          sp.pluginScript = opIsPluginScript(inputStr);
           state.openOps.set(item.id, sp);
         } else {
           if (parent) parent.signals.tool_calls++;
@@ -1181,6 +1219,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           // Observation subject, derived ONCE here while the input is still in hand (the closed
           // span keeps only its name/arg_hash) — see opSubject.
           sp.subject = opSubject(sp.name, inputStr);
+          sp.pluginScript = opIsPluginScript(inputStr);
           state.openOps.set(item.id, sp);
         }
       } else if (type === "tool_result") {
@@ -1242,6 +1281,8 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         if (exitCode) {
           recordObs(jsonlPath, state, {
             ...attrib, class: "script_exit_nonzero", subject: opSubjectOf(sp),
+            // ROUTING needs to know whose script this was (item 7) — recorded either way.
+            pluginOwned: opPluginOwnedOf(sp),
             code: _classifyError(body), evidence: { exitCode, snippet: body },
           });
         }
@@ -1415,7 +1456,7 @@ function isUnjudgedFinding(dir, sid) {
       if (!line) continue;
       let r;
       try { r = JSON.parse(line); } catch { continue; }
-      if (r?.type === "obs") { if (OBS_ROUTING_CLASSES.has(r.class)) return true; continue; }
+      if (r?.type === "obs") { if (obsRoutes(r)) return true; continue; }
       if (r?.type !== "finalize") continue;
       if (Array.isArray(r.flagged) && r.flagged.length) return true;
       // "flagged" is the pre-VCST-5582-H spelling of what is now "attention" — an old artifact
@@ -1592,6 +1633,7 @@ function freshState(ev, sid) {
     obsDropped: 0, // signatures the caps refused — surfaced as `capture_truncated`, never silent
     obsCursor: 0, // byte offset into OUR OWN jsonl, for folding cross-process `obs` lines
     obsSurfaced: [], // routing-class observation signatures already routed (one-shot, like seenSignatures)
+    obsSurfacedCount: {}, // signature -> the count it was routed AT, so a RECURRENCE re-qualifies (item 7)
     sidechainOps: 0, // sub-agent transcript lines seen (aggregate only — never spans/ops)
     flagged: [], // non-success/recovered spans this session
     seenSignatures: [], // fingerprints already surfaced to the diagnostician
@@ -1651,6 +1693,7 @@ function loadState(statePath, ev, sid) {
       j.obsDropped = j.obsDropped || 0;
       j.obsCursor = typeof j.obsCursor === "number" ? j.obsCursor : 0;
       j.obsSurfaced = Array.isArray(j.obsSurfaced) ? j.obsSurfaced : [];
+      j.obsSurfacedCount = (j.obsSurfacedCount && typeof j.obsSurfacedCount === "object") ? j.obsSurfacedCount : {};
       j.sidechainOps = j.sidechainOps || 0;
       j.scanErrorsTotal = j.scanErrorsTotal || 0; // monotone twin of the resettable scanErrors
       j.testEnv = j.testEnv ?? (process.env.TEST_ENV ?? null);
@@ -2179,12 +2222,20 @@ async function cmdFinalize(ev) {
   // LOOP GUARD: an observation attributed to /vc-self-check's own run is RECORDED (capture is
   // total) but never routes — the same rule emitSpan applies to its spans. Without this, one
   // errored Read inside the diagnostician would mint a fresh routing signature and re-trigger it.
+  // OCCURRENCE GROWTH re-qualifies a signature (item 7 / §1f rule 5). The one-shot `obsSurfaced`
+  // list silenced a signature for the rest of the session, so a defect that kept RECURRING after
+  // being reported once was indistinguishable from one that happened once — "a recurrence is not a
+  // duplicate". `obsSurfacedCount` records the count we surfaced AT, exactly as the flagged-span
+  // path records `surfacedAt`, and growth beyond it routes again. Scoped to the hard set, so a
+  // growing `harness_noise` tally can never re-nag.
   const freshObs = [];
   for (const [sig, o] of Object.entries(state.observations || {})) {
-    if (!OBS_ROUTING_CLASSES.has(o.class)) continue;
+    if (!obsRoutes(o)) continue;
     if (o.skill && /vc-self-check/i.test(o.skill)) continue;
-    if ((state.obsSurfaced || []).includes(sig)) continue;
-    freshObs.push({ signature: sig, class: o.class, subject: o.subject });
+    const surfacedAt = (state.obsSurfacedCount || {})[sig];
+    const seen = (state.obsSurfaced || []).includes(sig);
+    if (seen && !(surfacedAt != null && (o.count ?? 1) > surfacedAt)) continue;
+    freshObs.push({ signature: sig, class: o.class, subject: o.subject, count: o.count ?? 1, grew: seen });
   }
   const flaggedRun = uniqueFresh.length > 0 || negFeedback || freshObs.length > 0;
   // `state.selfCheckSeen` is NO LONGER a gate here (P0-5). It used to latch for the WHOLE session,
@@ -2248,11 +2299,11 @@ async function cmdFinalize(ev) {
   const statusEligible = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && !flaggedRun && cleanEligible && !state.scanErrors;
   const cleanBlock = statusEligible && verdict === "clean";
   const observedBlock = statusEligible && verdict === "observed";
-  // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were detected
-  // at init. It ALWAYS rides a DIAGNOSTIC surface — it fires ONLY when a findings block
-  // (`shouldPrompt`) or the clean line (`cleanBlock`) is ALSO firing this turn, and is APPENDED
-  // after it. So the ordering the operator sees is: diagnostic verdict FIRST (clean → "no issues";
-  // findings → run /vc-self-check + report), THEN the cleanup offer. It NEVER surfaces standalone:
+  // Cleanup NOTE (once per session; item 8 demoted it from a three-option question to a clause on
+  // the single info line): leftover artifacts from OTHER inactive sessions were detected at init.
+  // It ALWAYS rides a DIAGNOSTIC surface — it fires ONLY when a findings block (`shouldPrompt`) or
+  // the status line (`cleanBlock`/`observedBlock`) is ALSO firing this turn, and is APPENDED to it.
+  // It NEVER surfaces standalone:
   //   • not on a plain dev turn with no plugin activity (would pop a cleanup dialog out of nowhere,
   //     with no verdict to justify it — the age-cap silently reclaims >24h leftovers, and the next
   //     real plugin session offers cleanup after its verdict). [was `|| !pluginActivity` — removed
@@ -2283,7 +2334,7 @@ async function cmdFinalize(ev) {
     scanErrors: state.scanErrors || 0, // >0 ⇒ transcript scan hit a read error; status line withheld (OBS1)
     scanErrorsTotal: state.scanErrorsTotal || 0, // monotone — a blip that scanErrors already forgot
     surfaced, // did we resume + print a visible line this turn
-    cleanupOffered: cleanupBlock, // did we surface the stale-artifact cleanup offer this turn
+    cleanupOffered: cleanupBlock, // did the stale-artifact NOTE ride along this turn (item 8: a note, no longer a question)
     completeSignalled: completePending, // did a skill signal its terminal step this run
     completedSkill: completePending ? (state.skillCompletePending?.skill ?? null) : null,
     // Why nothing surfaced this turn (audit only — never affects behavior). See computeSuppressReason.
@@ -2331,7 +2382,13 @@ async function cmdFinalize(ev) {
     // Same one-shot dedup for routing-class OBSERVATIONS — a recorded WARN arms the diagnostician
     // once, not on every subsequent Stop.
     if (!Array.isArray(state.obsSurfaced)) state.obsSurfaced = [];
-    for (const o of freshObs) state.obsSurfaced.push(o.signature);
+    if (!state.obsSurfacedCount || typeof state.obsSurfacedCount !== "object") state.obsSurfacedCount = {};
+    for (const o of freshObs) {
+      if (!state.obsSurfaced.includes(o.signature)) state.obsSurfaced.push(o.signature);
+      // Record WHAT count we surfaced at, so a later recurrence re-qualifies instead of the
+      // signature being silenced for the rest of the session (mirrors flagged `surfacedAt`).
+      state.obsSurfacedCount[o.signature] = o.count ?? 1;
+    }
     state.negativeFeedback = false; // one-shot: the 👎 trigger is spent once vc-self-check is armed
   }
   // Consume the completion signal on ANY terminal Stop that evaluated it — not only when it
@@ -2377,24 +2434,23 @@ async function cmdFinalize(ev) {
     // them routes). It names the count so the operator knows something accumulated and how to look.
     reason = `Print this one line to the user verbatim, then stop — no other action: vc-fix self-check: no blocking issues — ${obs.visible} observation(s) recorded (run /vc-self-check for detail)`;
   }
+  // ─── ONE question per turn, and cleanup is not one of them (item 8) ──────────────────
+  // The reproduction turn asked the operator THREE things at once: the diagnostic verdict, the
+  // delivery offer, and "clean up vc-fix diagnostic files?" (an AskUserQuestion with three
+  // options). Every question after the first competed with the one that mattered — the operator
+  // answered the cleanup prompt and the delivery offer had to be re-asked on a later turn.
+  //
+  // Cleanup is now SILENT: it never asks, because it never needed to. The 24h age-cap in
+  // `pruneOldDiagnostics` already reclaims leftovers unprompted at every session start (and
+  // already refuses to delete a session holding an un-diagnosed finding), so the question only
+  // ever offered to do sooner what happens anyway. Deleting without asking is not on the table
+  // either — that would trade a nag for an unsanctioned destructive action. So the operator just
+  // gets ONE line, and the artifact count rides along with it as information rather than a
+  // decision. `--purge` / `purge-inactive` remain for an operator who wants to clear now.
   if (cleanupBlock) {
-    const script = join(pluginRoot(), "hooks", "session-telemetry.mjs");
-    // Option 1 (all incl. this) uses `--all` (ignores the 1h floor, omits --keep) → truly everything.
-    // Option 2 (all except this) OMITS `--all` so the 1h inactivity floor still applies — it deletes
-    // only INACTIVE others and spares this session AND any still-live PARALLEL session (<1h fresh).
-    const purgeAll = `node "${script}" purge-inactive --all --dir "${dir}"`;
-    const purgeOthers = `node "${script}" purge-inactive --keep "${sid}" --dir "${dir}"`;
     const { sessions: totalSessions, files: totalFiles } = countArtifacts(dir);
-    const cleanup =
-      `vc-fix's local .vc-fix/diagnostics/ folder holds ${totalFiles} diagnostic file(s) from ${totalSessions} session(s). ` +
-      `Ask the user via AskUserQuestion — "Clean up vc-fix diagnostic files?" — with THREE options, then run the matching Bash command and report the count:\n` +
-      `• "Delete all sessions (incl. this one)" → ${purgeAll}\n` +
-      `• "Delete all except this session (spares a live parallel session)" → ${purgeOthers}\n` +
-      `• "Keep them (auto-deleted after 24h)" → do nothing.\n` +
-      `This only removes vc-fix's OWN diagnostic artifacts — never your code. A session holding a ` +
-      `finding nobody has diagnosed yet is KEPT either way and reported by the command; that is ` +
-      `deliberate (un-analysed evidence has no other copy) and only \`--force\` overrides it.`;
-    reason = reason ? `${reason}\n\nAlso — ${cleanup}` : cleanup;
+    const note = `(${totalFiles} local diagnostic file(s) from ${totalSessions} session(s); auto-cleaned after 24h)`;
+    reason = reason ? `${reason} ${note}` : null;
   }
   if (reason) process.stdout.write(JSON.stringify({ decision: "block", reason }));
 }

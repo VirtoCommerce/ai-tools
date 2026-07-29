@@ -187,8 +187,12 @@ test("G: SKILL.md Step 6b defines the offer, its silence rules, and the ordering
   assert.match(md, /feedback\.mode !== "off"/);
   assert.match(md, /alreadyOffered/, "the one-shot guard is wired into the instruction");
   assert.match(md, /no operator question is pending/, "shares item D's deferral");
-  assert.match(md, /verdict \*\*FIRST\*\* → delivery offer →\s*\ncleanup offer \*\*LAST\*\*/, "the terminal-Stop ordering");
-  assert.match(md, /HONEST route/, "never fork-PR on a token that cannot fork");
+  // item 8 — the ordering is now verdict → offer, and there is no third step: the cleanup
+  // QUESTION was removed, so a turn is one line plus at most one question.
+  assert.match(md, /verdict line \*\*FIRST\*\* → delivery offer \(at most\s*\none question\) → nothing else/, "the terminal-Stop ordering");
+  assert.match(md, /cleanup \*\*question is gone\*\*/, "cleanup no longer asks anything");
+  assert.match(md, /ONE question per turn/, "the one-question-per-turn rule is stated");
+  assert.match(md, /HONEST route/, "the route shown is the real one for the token in hand");
 });
 
 test("G: the DIAG footer states the ACTUAL state — the dead `deliver` hint is gone (BOTH surfaces)", () => {
