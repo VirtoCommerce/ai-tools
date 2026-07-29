@@ -68,17 +68,26 @@ test("the remedy prescribes ONE classic `repo` token — not a two-token decisio
   assert.doesNotMatch(GITHUB_UPSTREAM_REMEDY, /public_repo/, "the primary recipe is `repo`, not a scope the operator must reason about");
 });
 
-test("scaffold-secrets: the .env.local comment leads with the single classic token (BOTH trees)", async () => {
+test("scaffold-secrets: the .env.local comment names ONE classic `repo` token, in 3 lines like every other secret", async () => {
   const { readFileSync } = await import("node:fs");
   const { join, resolve, dirname } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
   for (const rel of ["plugins/vc-fix/skills/project-init/scaffold-secrets.mjs", ".claude/skills/project-init/scaffold-secrets.mjs"]) {
     const src = readFileSync(join(root, rel), "utf8");
-    assert.match(src, /"ONE CLASSIC token with the `repo` scope\. That is all you need\."/, `${rel}: the first line is the simple answer`);
-    assert.match(src, /EXCEPTION — only if a classic token is not an option/, `${rel}: the split is the exception, not the lead`);
+    const entry = src.slice(src.indexOf("  GITHUB_FIX_BUGS_TOKEN: {"), src.indexOf("  ADO_PAT: {"));
+    const fields = entry.split("\n").filter((l) => /^\s+(what|why|where):/.test(l));
+    // Same shape as JIRA_API_TOKEN / ADO_PAT: one line each, no multi-line block.
+    assert.equal(fields.length, 3, `${rel}: exactly what/why/where`);
+    assert.doesNotMatch(entry, /where: \[/, `${rel}: no multi-line where[] block in the operator's env file`);
+    assert.match(entry, /CLASSIC, scope: repo/, `${rel}: the recipe is unambiguous`);
+    assert.match(entry, /Tokens \(classic\)/, `${rel}: where to click`);
+    // The dropdown trap: on the "Tokens (classic)" page the Generate button still offers
+    // fine-grained FIRST. Naming the second item is what makes the instruction followable.
+    assert.match(entry, /Generate new token \(classic\)/, `${rel}: the exact dropdown item is named`);
+    assert.match(entry, /gh auth login/, `${rel}: the no-token alternative`);
     // The defect being fixed: fine-grained + a classic-only scope in the same instruction.
-    assert.doesNotMatch(src, /Fine-grained\. Perms: Contents \+ Pull requests = Read\/Write \(public_repo/, `${rel}: the old impossible instruction is gone`);
+    assert.doesNotMatch(entry, /Fine-grained\. Perms: Contents \+ Pull requests = Read\/Write \(public_repo/, `${rel}: the old impossible instruction is gone`);
   }
 });
 

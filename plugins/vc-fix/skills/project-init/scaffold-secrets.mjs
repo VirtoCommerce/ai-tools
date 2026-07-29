@@ -98,32 +98,24 @@ const CATALOG = {
     // organization that you are not a member of" — so it can never fork VirtoCommerce/*, open a
     // fork-PR, or file an upstream Issue (the platform delivery path of /qa-fix §1a and of
     // /vc-self-check deliver); and `public_repo` is a CLASSIC scope, named inside fine-grained
-    // instructions. The split-by-axis wording stays only as the EXCEPTION for an org that forbids
-    // classic PATs, so the common case is one line, not a decision tree.
-    what: "GitHub Personal Access Token for /qa-fix + /vc-self-check delivery.",
-    why: "Opens PRs and files issues on GitHub — your own org's repos AND the VirtoCommerce platform upstream (fork-PR / Issue).",
-    where: [
-      "ONE CLASSIC token with the `repo` scope. That is all you need.",
-      "#          github.com -> Settings -> Developer settings -> Personal access tokens ->",
-      "#          Tokens (classic) -> Generate new token. Tick: repo. Set an expiry.",
-      "#          It covers BOTH jobs with one value: your own organization's repos (clone / push /",
-      "#          PR, private included) AND the VirtoCommerce upstream (fork / fork-PR / Issue on",
-      "#          public repos you do not own).",
-      "#          Prefer no token at all? Run `gh auth login` (browser) and leave this blank.",
-      "#",
-      "#          WHY CLASSIC, not fine-grained: a fine-grained token is bound to ONE resource owner",
-      "#          and is READ-ONLY on public repos it does not own. GitHub's own docs: \"Only personal",
-      "#          access tokens (classic) have write access for public repositories that are not owned",
-      "#          by you or an organization that you are not a member of.\" So a fine-grained token can",
-      "#          never fork VirtoCommerce/* — fork / fork-PR / issue-create all return 403.",
-      "#",
-      "#          EXCEPTION — only if a classic token is not an option (your org's policy blocks",
-      "#          classic PATs, or you want least-privilege). Then split the two jobs:",
-      "#            - VirtoCommerce upstream -> use `gh auth login` instead of a token;",
-      "#            - your own org's repos   -> a FINE-GRAINED token, resource owner = that org,",
-      "#              Contents + Pull requests + Issues = Read and write (the org may need to approve it).",
-      "#          Either way verify-access reports which kind you supplied and warns if it cannot do the job.",
-    ].join("\n"),
+    // instructions.
+    //
+    // The `where:` line stays as short as every other secret's (what / why / where). This
+    // rationale is for whoever maintains the table; the OPERATOR gets it only when it MATTERS —
+    // verify-access's "GitHub token kind / upstream capability" row WARNs with the full remedy
+    // (probe-lib GITHUB_UPSTREAM_REMEDY) if the token they supplied cannot do the job. A wall of
+    // text in .env.local is not where that belongs.
+    //
+    // Exception path (org policy forbids classic PATs, or least-privilege is required):
+    // `gh auth login` for the upstream + a fine-grained token for the client's own org.
+    // Documented in .claude/rules/quality-gates.md §1a — not in the operator's env file.
+    what: "GitHub Personal Access Token — CLASSIC, scope: repo (not fine-grained).",
+    why: "Lets /qa-fix open PRs on your own repos and contribute fixes/issues to the VirtoCommerce upstream.",
+    // NOTE the dropdown: even on the "Tokens (classic)" page the "Generate new token" button
+    // opens a menu whose FIRST item is "Generate new token" (Fine-grained, repo-scoped). Picking
+    // it lands you on the fine-grained form — the exact trap this whole entry exists to avoid —
+    // so the second item is named explicitly.
+    where: "github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → \"Generate new token\" ▾ → pick the SECOND item, \"Generate new token (classic)\" (the first one is fine-grained). Tick scope: repo. (Or run `gh auth login` and leave this blank.)",
   },
   ADO_PAT: {
     perEnv: false, include: (o) => (o.tracker === "azure" || o.clientVcs === "azure-repos") && o.adoAuth !== "az-login",
