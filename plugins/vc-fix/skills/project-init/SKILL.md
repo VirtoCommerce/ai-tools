@@ -226,31 +226,26 @@ write re-passes it, so the final profile always reflects this decision). This is
 (Note: the `session_start` record still misses this run — `SessionStart` fired before the flag
 existed — but every span + the finalize verdict are captured from the write onward. Accepted.)
 
-### 0c. Upstream-delivery consent — the SECOND half of the same decision
+### 0c. Upstream-delivery consent is NOT asked here (PR #172 item 4)
 
-> Asked here, immediately after §0b, because it is the same subject: §0b decides whether the
-> plugin RECORDS how its own skills ran; this decides whether a finding may ever be SENT to
-> VirtoCommerce. Splitting them across the interview made the operator meet the same topic
-> twice, minutes apart, with no context the second time. Do **not** re-ask the capture opt-in.
+> There used to be a second consent step here for `feedback.mode` (ask / auto / off). It was
+> **removed**. Asking at onboarding meant the operator had to decide how a finding should be
+> contributed **before any finding existed** — a context-free question, minutes after the capture
+> opt-in, about a decision only meaningful when there is actually something to send.
 
-**Skip this step entirely when §0b was answered No** — with capture off there is nothing to
-deliver, so leave `feedback.mode` at its default and move on. Otherwise ask the delivery
-consent — a **single** `AskUserQuestion`, wording/options verbatim from `reconcile-profile.mjs`
-`MANAGED_FIELDS.feedback` so the fresh interview and `/project-init --check` never diverge
-(make the first option the `default`):
+The delivery flow now asks **once, per finding, at the moment a BROKEN/DEGRADED finding exists**:
+`/vc-self-check` spawns the diagnostician, and if it returns a routable finding the orchestrator
+asks a single binary *file the issue in Virto — yes/no?* — with the exact payload on screen. So
+`feedback.mode` needs no onboarding question:
 
-- **feedback.mode** (upstream delivery consent — gates ONLY outbound `deliver`, never local
-  capture/diagnosis; nothing is ever sent without scrubbing all client identifiers first):
-  - Question: *"When vc-fix self-diagnostics finds a plugin quality issue, how should it be
-    contributed back to VirtoCommerce to improve the plugin?"*
-  - Options: **Ask each time (recommended)** → `ask` (dry-run + a single
-    Show-diff/Send/Don't-send decision) · **Automatic** → `auto` (file the scrubbed GitHub
-    Issue automatically; PR/fork-PR handed off as commands) · **Off** → `off` (nothing
-    leaves the machine — the DIAG stays local).
+- It stays at its **`ask`** default (`PROFILE_DEFAULTS`) — meaning "ask each time, per finding".
+- Hand-edit `project-profile.json` (or `gen-profile --feedback-mode <v>`) to set **`auto`** (CI /
+  standing consent — file directly) or **`off`** (kill switch — nothing ever leaves the machine).
+- `reconcile-profile.mjs` no longer lists `feedback` as a MANAGED "ask" field, so
+  `/project-init --check` fills it as a safe default and never surfaces it as a pending decision.
 
-Carry the answer to step 6 as `--feedback-mode <ask|auto|off>` (step 6 re-passes §0b's
-`--self-diagnostics` alongside it). **With §0b and §0c done, self-diagnostics is fully settled —
-nothing later in the interview asks about it again.**
+**Do not pass `--feedback-mode` from the interview.** §0b's `--self-diagnostics` is the ONLY
+self-diagnostics answer carried to step 6.
 
 ### 0d. Detect AND install the required tooling
 
@@ -650,7 +645,8 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --operator <derived> --contribution-mode <derived> \
   --upstream-account <forkAccount, only if fork> \
   --github-token-kind <derived: github.tokenKind> --github-fork-capable <derived: github.forkCapable> \
-  --self-diagnostics <true|false, from step 0b> --feedback-mode <ask|auto|off, from step 0c> \
+  --self-diagnostics <true|false, from step 0b> \
+  # NB: NO --feedback-mode (item 4) — it stays at the `ask` default; the interview never sets it. \
   --vcs-auth <derived: client host's auth — github⇒gh-cli|pat, azure-repos⇒az-login|pat> --print
 # Azure Boards + Azure Repos:
 #   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --vcs-auth pat ...
@@ -929,24 +925,22 @@ report — no writes, no scans, no questions of its own:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write \
-  --set selfDiagnostics=<true|false> \
-  --set feedback.mode=<auto|ask|off>
+  --set selfDiagnostics=<true|false>
 ```
 
-`feedback.mode` (VCST-5509) is the DELIVERY-consent opt-in — it gates only the outbound
-`/vc-self-check deliver` step, never local capture/diagnosis. Default `ask` = a dry-run +
-a single Show-diff/Send/Don't-send decision; `auto` = the Issue route files automatically
-(scrubbed) and a PR/fork-PR is handed off as commands; `off` = nothing ever leaves the
-machine. It surfaces as its own `pending` entry with a three-way `question`/`options`.
+`selfDiagnostics` is the CAPTURE opt-in and the ONLY self-diagnostics decision `--check` asks.
+`feedback.mode` (VCST-5509) — the DELIVERY consent — is **no longer a managed "ask" field**
+(item 4): it fills as a safe default (`ask`) and is never surfaced as a pending decision. To
+change it, hand-edit `project-profile.json` or re-run `gen-profile --feedback-mode <auto|ask|off>`.
+`ask` = the per-finding binary offer at delivery time; `auto` = file the Issue directly; `off` =
+nothing ever leaves the machine.
 
 `--write` applies the structural adds/removes plus any `--set` decisions. Unresolved
 `pending`/`rescan` fields are left **absent** — safe, because a missing field reads as its
 safe default (no `selfDiagnostics` ⇒ capture stays **OFF** — the opt-in gate; set
-`selfDiagnostics:true` to opt in; no `feedback`
-⇒ delivery falls back to `ask` — a dry-run + confirm, never an unattended send) — and stay
-in the report so a later `--check` can finish
-them. Reconciling is **idempotent**: once done,
-the report is `current`.
+`selfDiagnostics:true` to opt in; no `feedback` ⇒ delivery falls back to `ask` — a per-finding
+offer + confirm, never an unattended send) — and stay in the report so a later `--check` can finish
+them. Reconciling is **idempotent**: once done, the report is `current`.
 
 If a `--write` would remove **≥5 fields** it returns `status:"needs-force"` and writes
 nothing — that many removals usually means a schema mismatch (reconciling against a leaner
@@ -1035,8 +1029,9 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 
 > The interview asks only **env name · tracker · code host** + an auth preference
 > per axis. The **self-diagnostics capture opt-in** (`selfDiagnostics`) is asked FIRST, as
-> step 0b, and the flag is written immediately on Yes; the **`feedback.mode`
-> upstream-delivery consent** is step 0c — the same two decisions the `--check` reconcile
-> surfaces. Both env files are scaffolded as commented templates the operator fills;
+> step 0b, and the flag is written immediately on Yes — the ONE self-diagnostics decision
+> `--check` also surfaces. The **`feedback.mode` upstream-delivery consent is NOT asked** (item 4):
+> it stays at its `ask` default and the delivery flow asks once, per finding, at send time.
+> Both env files are scaffolded as commented templates the operator fills;
 > the scan (step 4) derives projectType + clientOrg, the derive block (step 5) derives
 > contribution mode + fork account + operator, and verify-access (step 8) confirms.

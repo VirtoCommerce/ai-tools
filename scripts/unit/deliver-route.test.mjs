@@ -14,12 +14,18 @@ import { withTempDir, withTempHome } from "./_test-helpers.mjs";
 import {
   isAllowedUpstreamRepo,
   resolveRoute,
-  findDuplicateIssue,
+  findFindingIssue,
   purgeSession,
   probeWithRetry,
   ROUTES,
   main,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
+
+// A readable-stream shim so main() can be driven with a struct on "stdin" in-process.
+function stdinOf(obj) {
+  const text = obj == null ? "" : (typeof obj === "string" ? obj : JSON.stringify(obj));
+  return { isTTY: false, async *[Symbol.asyncIterator]() { if (text) yield text; } };
+}
 import { classifyGithubTokenKind, GITHUB_UPSTREAM_REMEDY } from "../../plugins/vc-fix/skills/project-init/probe-lib.mjs";
 
 // ─── classifyGithubTokenKind (VCST-5582 A — the token-kind probe) ────────────────
@@ -274,125 +280,124 @@ test("item 4: --as pr is rejected with the valid route list", async () => {
   process.exitCode = prevExit;
 });
 
-// ─── findDuplicateIssue (dedup match, fetch stubbed) ─────────────────────────────
-function withFetch(stub, fn) {
-  const prev = globalThis.fetch;
-  globalThis.fetch = stub;
-  return Promise.resolve(fn()).finally(() => { globalThis.fetch = prev; });
-}
+// ─── findFindingIssue (per-finding dedup, open AND closed, fetch stubbed) ─────────
 const okJson = (data) => ({ ok: true, json: async () => data });
 const isSearch = (url) => String(url).includes("/search/issues");
-// Route the stub by endpoint: Search API returns {items:[...]}, the list endpoint returns [...].
-const routed = ({ search = { items: [] }, list = [] } = {}) => async (url) =>
-  isSearch(url) ? okJson(search) : okJson(list);
-const marker = "vc-fix-selfcheck-fp: deadbeef";
-const match = { number: 2, html_url: "u2", body: `report\n<!-- ${marker} -->` };
+const KEY = "project-init/tracker_field_contract";
+const MARKER = `<!-- vc-fix-finding: ${KEY} -->`;
+// A fetch stub routing the Search API vs the list endpoint. Search returns {items}, list returns [].
+const stub = ({ search = [], list = [] } = {}) => async (url) => (isSearch(url) ? okJson({ items: search }) : okJson(list));
 
-test("findDuplicateIssue: no token → null without any network call", async () => {
+test("findFindingIssue: no token → null without a network call", async () => {
   let called = false;
-  await withFetch(async () => { called = true; return okJson([]); }, async () => {
-    assert.equal(await findDuplicateIssue({ repo: "VirtoCommerce/x", token: null, fp: "abc" }), null);
-  });
-  assert.equal(called, false, "must not hit the network when there is no token");
+  const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: null, key: KEY, fetchImpl: async () => { called = true; return okJson([]); } });
+  assert.equal(r, null);
+  assert.equal(called, false);
 });
 
-test("findDuplicateIssue: the Search API finds the fingerprint even past 100 open issues (DED1)", async () => {
-  let searched = false;
-  await withFetch(async (url) => { if (isSearch(url)) searched = true; return isSearch(url) ? okJson({ items: [{ number: 1, html_url: "u1", body: "noise" }, match] }) : okJson([]); }, async () => {
-    const hit = await findDuplicateIssue({ repo: "VirtoCommerce/x", token: "t", fp: "deadbeef" });
-    assert.deepEqual(hit, { number: 2, url: "u2" });
-  });
-  assert.ok(searched, "must query the Search API (not just the first-100 list)");
+test("findFindingIssue: an OPEN exact-marker match is returned as open", async () => {
+  const issue = { number: 173, html_url: "u173", state: "open", title: "[vc-fix self-check] x", body: `text\n${MARKER}` };
+  const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: "t", key: KEY, fetchImpl: stub({ search: [issue] }) });
+  assert.equal(r.number, 173);
+  assert.equal(r.state, "open");
+  assert.equal(r.legacy, false);
 });
 
-test("findDuplicateIssue: falls back to the list scan when Search misses (recent / rate-limited)", async () => {
-  await withFetch(routed({ search: { items: [] }, list: [{ number: 9, html_url: "u9", body: "x" }, match] }), async () => {
-    const hit = await findDuplicateIssue({ repo: "VirtoCommerce/x", token: "t", fp: "deadbeef" });
-    assert.deepEqual(hit, { number: 2, url: "u2" });
-  });
+test("findFindingIssue (item 3): a CLOSED match is recognised as closed, not refiled", async () => {
+  const closed = { number: 119, html_url: "u119", state: "closed", closed_at: "2026-01-01", title: "[vc-fix self-check] x", body: MARKER, milestone: { title: "0.9.0" } };
+  const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: "t", key: KEY, fetchImpl: stub({ search: [closed] }) });
+  assert.equal(r.number, 119);
+  assert.equal(r.state, "closed");
+  assert.equal(r.milestone, "0.9.0");
 });
 
-test("findDuplicateIssue: skips PRs, returns null on no match / non-ok / network error", async () => {
-  // a PR whose body matches is skipped, on BOTH the search and the list endpoint
-  const pr = { number: 3, html_url: "u3", body: `<!-- ${marker} -->`, pull_request: {} };
-  await withFetch(routed({ search: { items: [pr] }, list: [pr] }), async () => {
-    assert.equal(await findDuplicateIssue({ repo: "VirtoCommerce/x", token: "t", fp: "deadbeef" }), null);
-  });
-  await withFetch(async () => ({ ok: false }), async () => {
-    assert.equal(await findDuplicateIssue({ repo: "VirtoCommerce/x", token: "t", fp: "deadbeef" }), null);
-  });
-  await withFetch(async () => { throw new Error("network down"); }, async () => {
-    assert.equal(await findDuplicateIssue({ repo: "VirtoCommerce/x", token: "t", fp: "deadbeef" }), null);
-  });
+test("findFindingIssue: prefers an OPEN issue over a CLOSED one for the same key", async () => {
+  const open = { number: 200, html_url: "u200", state: "open", title: "[vc-fix self-check] x", body: MARKER };
+  const closed = { number: 119, html_url: "u119", state: "closed", title: "[vc-fix self-check] x", body: MARKER };
+  const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: "t", key: KEY, fetchImpl: stub({ search: [closed, open] }) });
+  assert.equal(r.number, 200, "the occurrence belongs on the open ticket");
 });
 
-// ─── purgeSession (delete ONLY this session, never others) ───────────────────────
-test("purgeSession: removes only the target session's artifacts, leaves other sessions untouched", () => withTempDir((dir) => {
+test("findFindingIssue (item 3 legacy bridge): a bundled issue with NO per-finding marker matches by key text", async () => {
+  // #173/#174 are bundled, report-level-fingerprint issues. The key appears as TEXT in the table,
+  // with the self-check title prefix, but there is no `<!-- vc-fix-finding: … -->` marker.
+  const bundled = { number: 173, html_url: "u173", state: "open", title: "[vc-fix self-check] onboarding defects", body: `| project-init | ${KEY} | S2 |` };
+  const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: "t", key: KEY, fetchImpl: stub({ search: [bundled] }) });
+  assert.equal(r.number, 173);
+  assert.equal(r.legacy, true, "recognised via the text bridge, flagged legacy");
+});
+
+test("findFindingIssue: an unrelated issue merely quoting the key (no self-check prefix) does NOT match", async () => {
+  const unrelated = { number: 9, html_url: "u9", state: "open", title: "some human issue", body: `discussing ${KEY} in passing` };
+  const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: "t", key: KEY, fetchImpl: stub({ search: [unrelated] }) });
+  assert.equal(r, null);
+});
+
+test("findFindingIssue: skips PRs and falls back to the list scan when Search misses", async () => {
+  const pr = { number: 3, html_url: "u3", state: "open", title: "[vc-fix self-check] x", body: MARKER, pull_request: {} };
+  const listed = { number: 42, html_url: "u42", state: "open", title: "[vc-fix self-check] x", body: MARKER };
+  const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: "t", key: KEY, fetchImpl: stub({ search: [pr], list: [pr, listed] }) });
+  assert.equal(r.number, 42);
+});
+
+// ─── purgeSession (delete ONLY this session; no report artifacts any more) ────────
+test("purgeSession: removes only the target session's jsonl + state, leaves other sessions", () => withTempDir((dir) => {
   const sid = "session-aaaaaa";
   const other = "session-bbbbbb";
-  const files = [
-    `${sid}.jsonl`, `${sid}.state.json`, `DIAG-${sid}-20260726T000000Z.md`,
-    `${other}.jsonl`, `${other}.state.json`, `DIAG-${other}-20260726T000000Z.md`,
-    `DELIVERY-fp123-20260726T000000Z.md`, `DELIVERY-other-20260726T000000Z.md`,
-  ];
-  for (const f of files) writeFileSync(join(dir, f), "x");
-  const removed = purgeSession({ dir, sid, fp: "fp123" });
-  const left = readdirSync(dir).sort();
-  // the other session's three files survive; the target's three + its DELIVERY-fp123 are gone
-  assert.deepEqual(left, [
-    `DELIVERY-other-20260726T000000Z.md`,
-    `${other}.jsonl`, `DIAG-${other}-20260726T000000Z.md`, `${other}.state.json`,
-  ].sort());
-  assert.ok(removed.includes(`${sid}.jsonl`) && removed.includes(`DELIVERY-fp123-20260726T000000Z.md`));
-  assert.ok(!removed.some((f) => f.includes(other)), "never reports another session's file as removed");
+  for (const f of [`${sid}.jsonl`, `${sid}.state.json`, `${other}.jsonl`, `${other}.state.json`]) writeFileSync(join(dir, f), "x");
+  const removed = purgeSession({ dir, sid });
+  assert.deepEqual(readdirSync(dir).sort(), [`${other}.jsonl`, `${other}.state.json`].sort());
+  assert.deepEqual(removed.sort(), [`${sid}.jsonl`, `${sid}.state.json`].sort());
 }));
 
-test("purgeSession: a too-short / empty sid never mass-matches (only the fp path fires)", () => withTempDir((dir) => {
-  for (const f of ["a.jsonl", "b.state.json", "DIAG-xyz-1.md", "DELIVERY-fp9-1.md"]) writeFileSync(join(dir, f), "x");
-  const removed = purgeSession({ dir, sid: "abc", fp: "fp9" }); // sid length 3 < 6 → sid path disabled
-  assert.deepEqual(removed, ["DELIVERY-fp9-1.md"]);
-  assert.deepEqual(readdirSync(dir).sort(), ["DIAG-xyz-1.md", "a.jsonl", "b.state.json"]);
+test("purgeSession: a too-short / empty sid never mass-matches", () => withTempDir((dir) => {
+  for (const f of ["a.jsonl", "b.state.json"]) writeFileSync(join(dir, f), "x");
+  assert.deepEqual(purgeSession({ dir, sid: "abc" }), []); // sid length 3 < 6 → disabled
+  assert.deepEqual(readdirSync(dir).sort(), ["a.jsonl", "b.state.json"]);
 }));
 
 test("purgeSession: never throws on a missing dir", () => {
-  assert.deepEqual(purgeSession({ dir: join(tmpdir(), "does-not-exist-xyz"), sid: "session-zzzzzz", fp: "x" }), []);
+  assert.deepEqual(purgeSession({ dir: join(tmpdir(), "does-not-exist-xyz"), sid: "session-zzzzzz" }), []);
 });
 
-// ─── T1: deliver main() send gate — end-to-end (PR #143 R2) ──────────────────────────────
-// The composition that decides whether telemetry is POSTed to a PUBLIC repo was untested; a
-// mutation removing the mode==="off" block or inverting the --confirm gate passed the whole
-// suite. This drives main() with a stubbed fetch and asserts on whether a createIssue POST fired.
-function writeDiag(home) {
-  const dir = join(home, ".vc-fix", "diagnostics");
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "DIAG-s1-20260101T000000Z.md"), [
-    "# DIAG — s1", "- Session: s1 · Plugin: 0.8.1", "## Findings",
-    "| Skill | Verdict | Sev | Outcome | Signal | Root | Fix |",
-    "| /qa-fix (command) | BROKEN | S1 | failed | perm denied | auth | check token |",
-  ].join("\n"));
-}
-async function driveMain(home, argv, { mode = "ask" } = {}) {
-  writeFileSync(join(home, "project-profile.json"), JSON.stringify({ feedback: { mode } }));
-  writeDiag(home);
+// ─── deliver main() send gate — end-to-end via a struct on stdin (PR #172) ────────
+// The composition that decides whether telemetry is POSTed to a PUBLIC repo. Drives main() with a
+// finding struct on "stdin" and a stubbed fetch, and asserts whether a createIssue POST fired.
+const STRUCT = {
+  schemaVersion: 3, sessionId: "s1", pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
+  feedback: { up: 0, down: 0 }, sessionCount: 1,
+  findings: [{
+    skill: "qa-bug", subject: "ado_create_workitem", blockedDeliverable: true, verdict: "BROKEN",
+    severity: "S1", outcome: "failed", signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX",
+    toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+  }],
+};
+async function driveMain(home, argv, { mode = "ask", struct = STRUCT, search = [], list = [] } = {}) {
+  writeFileSync(join(home, "project-profile.json"), JSON.stringify({ feedback: { mode }, pluginVersion: "0.8.2" }));
   const calls = [];
-  const prev = { fetch: globalThis.fetch, tok: process.env.GITHUB_FIX_BUGS_TOKEN, exit: process.exitCode, write: process.stdout.write };
+  const prev = { tok: process.env.GITHUB_FIX_BUGS_TOKEN, exit: process.exitCode, write: process.stdout.write, fetch: globalThis.fetch };
   process.env.GITHUB_FIX_BUGS_TOKEN = "test-token"; // short-circuits resolveGithubToken (no gh subprocess)
-  process.stdout.write = () => true; // swallow the plan JSON
-  globalThis.fetch = async (url, opts = {}) => {
+  let captured = "";
+  process.stdout.write = (s) => (captured += String(s), true);
+  const fetchImpl = async (url, opts = {}) => {
     const method = (opts.method || "GET").toUpperCase();
     calls.push({ url: String(url), method });
     if (method === "POST") return okJson({ number: 42, html_url: "http://issue/42" });
-    if (String(url).includes("/search/issues")) return okJson({ items: [] });
-    if (String(url).includes("/issues")) return okJson([]);
-    return okJson({ permissions: {} }); // probe
+    if (method === "PATCH") return okJson({ number: 42 });
+    if (isSearch(url)) return okJson({ items: search });
+    if (String(url).includes("/issues")) return okJson(list);
+    return okJson({ permissions: {} }); // probe (probeGithubUpstream uses the GLOBAL fetch)
   };
+  globalThis.fetch = fetchImpl; // so probeWithRetry/probeGithubUpstream is also stubbed (deterministic, offline)
   let exitCode;
-  try { await main(argv); exitCode = process.exitCode; }
+  try { await main(argv, { stdin: stdinOf(struct), fetchImpl }); exitCode = process.exitCode; }
   finally {
-    globalThis.fetch = prev.fetch; process.stdout.write = prev.write; process.exitCode = prev.exit;
+    process.stdout.write = prev.write; process.exitCode = prev.exit; globalThis.fetch = prev.fetch;
     if (prev.tok === undefined) delete process.env.GITHUB_FIX_BUGS_TOKEN; else process.env.GITHUB_FIX_BUGS_TOKEN = prev.tok;
   }
-  return { posted: calls.some((c) => c.method === "POST" && c.url.includes("/issues")), calls, exitCode };
+  // A NEW issue POSTs to `…/issues` (ends with /issues); a +1 comment POSTs to `…/issues/N/comments`.
+  // Count only the former as "posted a new issue".
+  return { posted: calls.some((c) => c.method === "POST" && /\/issues$/.test(c.url)), calls, exitCode, out: captured };
 }
 
 test("main: a non-VirtoCommerce --repo is refused before ANY network (misroute guard)", async () => {
@@ -416,11 +421,48 @@ test("main: ask mode WITHOUT --confirm is a dry run (no POST)", async () => {
     assert.equal(r.posted, false, "ask + no --confirm must be a dry run");
   });
 });
-test("main: ask mode WITH --confirm files the issue; auto files without --confirm", async () => {
+test("main: ask mode WITH --confirm files the NEW issue; auto files without --confirm", async () => {
   await withTempHome(async (home) => {
     assert.equal((await driveMain(home, ["--json", "--as", "issue", "--confirm"], { mode: "ask" })).posted, true, "ask + --confirm ⇒ POST");
   });
   await withTempHome(async (home) => {
     assert.equal((await driveMain(home, ["--json", "--as", "issue"], { mode: "auto" })).posted, true, "auto ⇒ POST without --confirm");
+  });
+});
+test("main (item 3): an OPEN dup is NOT refiled — a +1 comment is posted instead", async () => {
+  await withTempHome(async (home) => {
+    const open = { number: 173, html_url: "u173", state: "open", title: "[vc-fix self-check] qa-bug/ado_create_workitem BROKEN", body: `<!-- vc-fix-finding: qa-bug/ado_create_workitem -->\n<!-- vc-fix-severity: S1 -->` };
+    const r = await driveMain(home, ["--json", "--as", "issue", "--confirm"], { mode: "auto", search: [open] });
+    assert.equal(r.posted, false, "an open dup must not be refiled");
+    assert.ok(r.calls.some((c) => c.method === "POST" && /\/issues\/173\/comments/.test(c.url)), "a +1 occurrence comment is posted");
+  });
+});
+test("main (item 3): a CLOSED dup is neither refiled nor commented — reported as already fixed", async () => {
+  await withTempHome(async (home) => {
+    const closed = { number: 119, html_url: "u119", state: "closed", title: "[vc-fix self-check] qa-bug/ado_create_workitem BROKEN", body: `<!-- vc-fix-finding: qa-bug/ado_create_workitem -->` };
+    const r = await driveMain(home, ["--json", "--as", "issue", "--confirm"], { mode: "auto", search: [closed] });
+    assert.equal(r.posted, false, "a closed/fixed defect must not be refiled");
+    assert.ok(!r.calls.some((c) => c.method === "POST"), "and no comment is posted on a closed issue");
+    const plan = JSON.parse(r.out.trim().split("\n").pop());
+    assert.ok(plan.findings.some((f) => f.plan === "already-fixed"), "reported as already-fixed");
+  });
+});
+test("main (item 6/repro): the SAME defect graded S2 then S1 resolves to ONE issue, escalated", async () => {
+  // Reproduces #173/#174: two sessions, same (skill,subject), different severity. The second run
+  // sees the first's OPEN issue and escalates it — one ticket, not two.
+  await withTempHome(async (home) => {
+    const s2 = { ...STRUCT, findings: [{ ...STRUCT.findings[0], severity: "S2", verdict: "DEGRADED", outcome: "degraded", blockedDeliverable: false }] };
+    const open = { number: 173, html_url: "u173", state: "open", title: "[vc-fix self-check] qa-bug/ado_create_workitem DEGRADED", body: `<!-- vc-fix-finding: qa-bug/ado_create_workitem -->\n<!-- vc-fix-severity: S2 -->` };
+    // second session grades it S1 → sees the S2 open issue → escalates, does NOT refile
+    const r = await driveMain(home, ["--json", "--as", "issue", "--confirm"], { mode: "auto", struct: STRUCT, search: [open] });
+    assert.equal(r.posted, false, "no second issue for the same (skill,subject)");
+    const plan = JSON.parse(r.out.trim().split("\n").pop());
+    const f = plan.findings[0];
+    assert.equal(f.plan, "comment");
+    assert.equal(f.escalatedFrom, "S2", "the escalation from S2→S1 is recorded");
+    // a PATCH updates the title verdict, and a +1 comment is posted
+    assert.ok(r.calls.some((c) => c.method === "PATCH" && /\/issues\/173$/.test(c.url)), "title upgraded");
+    // s2 unused beyond documenting the first-session shape
+    void s2;
   });
 });

@@ -66,22 +66,22 @@ test("reconcile --write: preserves user answers, fills a missing plain default, 
   }
 });
 
-test("reconcile --write: a MISSING managed (ask) field is NOT silently defaulted — it stays pending until decided", () => {
+test("reconcile --write: the MISSING managed (ask) selfDiagnostics stays pending; feedback fills as a safe default (item 4)", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
   try {
-    // An old profile predating the selfDiagnostics/feedback consent fields — both ABSENT.
+    // An old profile predating the consent fields — both ABSENT.
     writeFileSync(join(home, "project-profile.json"), JSON.stringify({
       projectType: "client",
       tracker: { kind: "jira", projectKey: "ACME" },
       vcs: { clientHost: "github", clientOrg: "acmecorp" },
     }));
 
-    // --set resolves the ask decision explicitly, mirroring how the /project-init skill folds the
-    // operator's AskUserQuestion answer in. Without a decision the field is reported pending, not
-    // guessed — so a plain --write must not fabricate a consent value.
-    const p = reconcile(home, ["--set", "selfDiagnostics=false", "--set", "feedback.mode=off"]);
-    assert.equal(p.selfDiagnostics, false, "the explicitly-decided ask value is applied");
-    assert.equal(p.feedback.mode, "off");
+    // selfDiagnostics is STILL a managed (ask) capture opt-in — --set folds the operator's answer in.
+    // feedback.mode is NO LONGER managed (PR #172 item 4): it fills silently from PROFILE_DEFAULTS
+    // ("ask") and is never a pending decision. --check no longer asks it.
+    const p = reconcile(home, ["--set", "selfDiagnostics=false"]);
+    assert.equal(p.selfDiagnostics, false, "the explicitly-decided capture opt-in is applied");
+    assert.equal(p.feedback.mode, "ask", "delivery consent fills as a safe default, not a pending ask");
     // sibling user answers still preserved through the reconcile
     assert.equal(p.projectType, "client");
     assert.equal(p.vcs.clientOrg, "acmecorp");
@@ -148,21 +148,22 @@ test("reconcile --write: prunes the conditional azure blocks off-discriminator a
   }
 });
 
-test("reconcile --write WITHOUT a --set decision leaves the consent fields ABSENT — never guesses (T2)", () => {
+test("reconcile --write WITHOUT a --set decision leaves the CAPTURE opt-in ABSENT; delivery consent safe-defaults (item 4)", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
   try {
-    // Old profile predating the consent fields — selfDiagnostics + feedback ABSENT, and NO --set
-    // decision provided. The security-critical contract: a plain --write must NOT fabricate a consent
-    // value (a mutation doing `out[k] = managed.default` would set selfDiagnostics=true here). This is
-    // the "leave pending until decided" branch the sibling test never exercises (it always --sets).
+    // Old profile predating the consent fields — selfDiagnostics + feedback ABSENT, and NO --set.
+    // selfDiagnostics is the CAPTURE opt-in and stays managed/ask: a plain --write must NOT fabricate
+    // it (a mutation doing `out[k] = managed.default` would set selfDiagnostics=true — fail-open).
+    // feedback.mode is the DELIVERY consent and is now a plain safe default (PR #172 item 4): it fills
+    // to "ask" — which is fail-SAFE (a per-finding offer + explicit yes, never an unattended send).
     writeFileSync(join(home, "project-profile.json"), JSON.stringify({
       projectType: "client",
       tracker: { kind: "jira", projectKey: "ACME" },
       vcs: { clientHost: "github", clientOrg: "acmecorp" },
     }));
-    const p = reconcile(home); // NO --set for the managed/ask consent fields
+    const p = reconcile(home); // NO --set
     assert.equal(p.selfDiagnostics, undefined, "capture consent must NOT be fabricated by a plain --write");
-    assert.ok(!p.feedback || p.feedback.mode === undefined, "delivery consent must NOT be fabricated");
+    assert.equal(p.feedback.mode, "ask", "delivery consent fills to the fail-safe 'ask', not a fabricated 'auto'");
     assert.equal(p.projectType, "client"); // sibling answers still preserved through reconcile
   } finally {
     rmSync(home, { recursive: true, force: true });

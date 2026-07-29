@@ -466,8 +466,12 @@ test("evidence protection: purge KEEPS a session whose finding was never diagnos
     assert.match(out, /Kept 1 session\(s\) holding an un-diagnosed finding/);
     assert.match(out, /--force/, "the retention is explained, with the override");
 
-    // Once a DIAG exists the session is "judged" and may be reclaimed.
-    writeFileSync(join(dir, "DIAG-keep-2026-07-29T10-00-00-000Z.md"), "# DIAG\n");
+    // "Judged" is now marked in the session's OWN state.json (PR #172 item 2 — DIAG-*.md files are
+    // gone): the diagnostician ran (`selfCheckSeen`) or `deliver` recorded a per-finding decision.
+    const statePath = join(dir, "keep.state.json");
+    const st = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
+    st.selfCheckSeen = true;
+    writeFileSync(statePath, JSON.stringify(st));
     purge(home, ["--all", "--dir", dir]);
     assert.ok(!existsSync(join(dir, "keep.jsonl")), "a diagnosed session is purgeable");
   } finally {

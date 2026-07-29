@@ -651,6 +651,14 @@ function looksLikeBail(text, assistantProse) {
 // deliberately ABSENT — cmdPrompt records a feedback record and returns before
 // COMMAND_RE, so it never opens a command span.
 const PLUGIN_COMMANDS = ["project-init", "qa-bug", "qa-fix", "qa-verify-fix", "qa-monitoring", "qa-env-check", "vc-self-check", "vc-docs"];
+// The self-diagnostics LOOP GUARD name-match. The diagnostician now runs in a SUBAGENT
+// (`self-check-diagnostician`, PR #172 item 1), so its agent span + any observation attributed to
+// it must be dropped from analysis exactly like the `vc-self-check` skill span — otherwise the next
+// run diagnoses its own prior invocation. Every loop-guard test uses THIS regex, not a bare literal.
+const SELF_CHECK_NAME_RE = /vc-self-check|self-check-diagnostician/i;
+function isSelfCheckName(s) {
+  return SELF_CHECK_NAME_RE.test(String(s ?? ""));
+}
 // Accept an optional `<plugin>:` namespace prefix — a slash command invoked from an
 // installed plugin arrives as `/vc-fix:qa-env-check`, not the bare `/qa-env-check`. Without
 // the `(?:[\w.-]+:)?` group the namespaced form never matched, so a whole plugin-command
@@ -955,8 +963,8 @@ function emitSpan(jsonlPath, state, span, endTs) {
   // A skill/command span closing (other than vc-self-check's own) means this session had
   // real plugin activity — the finalize `decision` record uses this to distinguish
   // "the hook judged a plugin run" from "a plain dev turn with no plugin skill".
-  if (escalationUnit && !/vc-self-check/i.test(span.name)) state.sawPluginSpan = true;
-  const ownSpan = /vc-self-check/i.test(span.name);
+  if (escalationUnit && !isSelfCheckName(span.name)) state.sawPluginSpan = true;
+  const ownSpan = isSelfCheckName(span.name);
   // ─── observations: what the outcome test above THROWS AWAY (VCST-5582 H) ────────────
   // `flagged[]` only ever sees non-success/non-recovered escalation units, so two real signals
   // used to vanish here:
@@ -1197,9 +1205,12 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           const skillName = normalizeName(item.input?.skill ?? item.input?.command ?? item.input?.name);
           state.currentSkill = newSpan(state, "skill", skillName, ts, state.currentCommand?.id ?? null);
           state.anySkillSeen = true;
-          if (/vc-self-check/i.test(skillName)) state.selfCheckSeen = true;
+          if (isSelfCheckName(skillName)) state.selfCheckSeen = true;
         } else if (name === "Task" || name === "Agent") {
           const agentType = String(item.input?.subagent_type ?? item.input?.agentType ?? "unknown");
+          // Spawning the self-check diagnostician IS running self-check (item 1: diagnosis moved into
+          // a subagent). Mark the session seen so the tail-trigger never re-fires on it.
+          if (isSelfCheckName(agentType)) state.selfCheckSeen = true;
           if (parent) parent.signals.agent_calls++; // the op is pushed once, when the agent span CLOSES
           state.totals.agent_calls++;
           const sp = newSpan(state, "agent", agentType, ts, innerParent()?.id ?? null);
@@ -1446,9 +1457,19 @@ function isUnjudgedFinding(dir, sid) {
   try {
     if (!sid) return false;
     const jsonl = join(dir, `${sid}.jsonl`);
-    if (!existsSync(jsonl)) return false; // no telemetry (a bare state/DIAG leftover) — nothing to protect
-    // Already diagnosed? A DIAG for this session means the analyze step happened.
-    for (const f of readdirSync(dir)) if (f.startsWith(`DIAG-${sid}-`) && f.endsWith(".md")) return false;
+    if (!existsSync(jsonl)) return false; // no telemetry (a bare state leftover) — nothing to protect
+    // Already diagnosed? DIAG-*.md files are gone (PR #172 item 2), so the "analyze happened" signal
+    // is now in the session's own state.json: the diagnostician ran (`selfCheckSeen`) or `deliver`
+    // recorded per-finding decisions (`selfCheckFindings`). Either means a human/agent looked.
+    const statePath = join(dir, `${sid}.state.json`);
+    if (existsSync(statePath)) {
+      try {
+        const st = JSON.parse(readFileSync(statePath, "utf8"));
+        if (st && (st.selfCheckSeen === true || (Array.isArray(st.selfCheckFindings) && st.selfCheckFindings.length))) return false;
+      } catch {
+        /* unreadable state ⇒ fall through to the jsonl scan (fail toward protecting) */
+      }
+    }
     const text = readFileSync(jsonl, "utf8");
     // Cheap prefilter before any JSON parsing — the overwhelmingly common case is a clean session.
     if (!text.includes('"verdict":"attention"') && !text.includes('"verdict":"flagged"') && !text.includes('"flagged":[{') && !text.includes('"type":"obs"')) return false;
@@ -1867,7 +1888,7 @@ async function cmdPrompt(ev) {
     // A new command turn — the previous command's trailing skill (if any) stays
     // open until the scanner meets the next Skill or finalize closes it.
     state.currentCommand = newSpan(state, "command", m[1].toLowerCase(), nowIso(), null);
-    if (/vc-self-check/i.test(m[1])) state.selfCheckSeen = true;
+    if (isSelfCheckName(m[1])) state.selfCheckSeen = true;
   }
   saveState(statePath, state);
 }
@@ -2231,7 +2252,7 @@ async function cmdFinalize(ev) {
   const freshObs = [];
   for (const [sig, o] of Object.entries(state.observations || {})) {
     if (!obsRoutes(o)) continue;
-    if (o.skill && /vc-self-check/i.test(o.skill)) continue;
+    if (o.skill && isSelfCheckName(o.skill)) continue;
     const surfacedAt = (state.obsSurfacedCount || {})[sig];
     const seen = (state.obsSurfaced || []).includes(sig);
     if (seen && !(surfacedAt != null && (o.count ?? 1) > surfacedAt)) continue;
@@ -2409,12 +2430,12 @@ async function cmdFinalize(ev) {
   //
   // The findings branch is an INSTRUCTION (run the skill, then follow it); the clean/observed
   // branches are print-verbatim-and-stop. Do NOT put "and stop" in the findings branch: the
-  // skill's Step 6b (the delivery offer — the whole point of the default `feedback.mode: "ask"`)
-  // runs AFTER the roll-up line, and an "and stop" here terminated the turn before it, which is
-  // exactly how the dead `/vc-self-check deliver` hint regressed into the hook layer (VCST-5582 G).
-  // Same reason the reassurance must stay CONDITIONAL ("nothing leaves without your Send") and not
-  // absolute ("nothing is sent anywhere") — the absolute form reads to the agent as a prohibition
-  // on even the DRY draft Step 6b needs to build the offer.
+  // skill's delivery step (the per-finding offer — the whole point of the default
+  // `feedback.mode: "ask"`) runs AFTER the roll-up line, and an "and stop" here terminated the turn
+  // before it, which is exactly how the dead `/vc-self-check deliver` hint regressed into the hook
+  // layer (VCST-5582 G). Same reason the reassurance must stay CONDITIONAL ("nothing leaves without
+  // your yes") and not absolute ("nothing is sent anywhere") — the absolute form reads to the agent
+  // as a prohibition on even the dry plan the offer needs.
   let reason = null;
   if (shouldPrompt) {
     // THREE trigger sources: flagged spans, routing-class observations, and/or a 👎. Describe
@@ -2426,7 +2447,7 @@ async function cmdFinalize(ev) {
     if (summary) parts.push(`flagged this run (${summary})`);
     if (obsSummary) parts.push(`recorded ${freshObs.length} observation(s) worth a look (${obsSummary})`);
     if (!parts.length && negFeedback) parts.push("received your negative feedback (👎) this session");
-    reason = `vc-fix self-diagnostics ${parts.join(" and ")}. Run the vc-self-check skill (Skill tool, argument "latest"), report the finding count + DIAG path in ONE line, then follow that skill's Step 6b — if a finding is worth contributing, ask the operator before anything is sent. Nothing leaves this machine without an explicit Send.`;
+    reason = `vc-fix self-diagnostics ${parts.join(" and ")}. Run the vc-self-check skill (Skill tool, argument "latest"): it spawns the self-check-diagnostician subagent, reports the finding roll-up in ONE line, and — if a finding is worth contributing — asks you once before anything is sent. Nothing leaves this machine without an explicit yes.`;
   } else if (cleanBlock) {
     reason = "Print this one line to the user verbatim, then stop — no other action: vc-fix self-check: no plugin issues detected";
   } else if (observedBlock) {

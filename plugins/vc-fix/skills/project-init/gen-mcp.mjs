@@ -23,6 +23,7 @@ import { join, dirname, resolve, isAbsolute } from "path";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { outputRoot, pluginRoot, resolveOutPath } from "./lib/paths.mjs";
+import { emitObservations } from "./lib/diag-obs.mjs";
 
 // Read the shipped template from the plugin's own dir (works from any cwd); write
 // .mcp.json / settings into the deployment project. The two roots are intentionally
@@ -59,7 +60,16 @@ function normalizeForOs(server, os) {
   return server;
 }
 
-/** Inject a token into any `<PLACEHOLDER>` string value within the server def. */
+/** Inject a token into any `<PLACEHOLDER>` string value within the server def.
+ *
+ * The substitution used to fire ONLY when the entire string equalled a placeholder — `replace(v)`
+ * returned `tok[v]` keyed on the whole value — so an EMBEDDED placeholder like the Postman MCP's
+ * `"Authorization": "Bearer <POSTMAN_API_KEY>"` was never touched: `tok["Bearer <POSTMAN_API_KEY>"]`
+ * is `undefined`. The `.mcp.json` then shipped with a literal `Bearer <POSTMAN_API_KEY>` even when
+ * `POSTMAN_API_KEY` WAS set, the server 401'd, and the WARN below fired on a key that existed
+ * (reported upstream as #174 / `project-init/mcp_config`). Fix: replace every KNOWN placeholder
+ * wherever it appears in the string. A placeholder whose value is empty is left in place, so the
+ * genuine "unresolved" WARN + observation still fire for a truly missing token. */
 function injectTokens(server) {
   const tok = {
     "<GITHUB_PERSONAL_ACCESS_TOKEN>":
@@ -72,8 +82,14 @@ function injectTokens(server) {
     "<FIGMA_API_KEY>": process.env.FIGMA_API_KEY || "",
     "<CONTEXT7_API_KEY>": process.env.CONTEXT7_API_KEY || "",
   };
-  const replace = (v) =>
-    typeof v === "string" && tok[v] !== undefined && tok[v] ? tok[v] : v;
+  const replace = (v) => {
+    if (typeof v !== "string") return v;
+    let out = v;
+    for (const [ph, val] of Object.entries(tok)) {
+      if (val && out.includes(ph)) out = out.split(ph).join(val);
+    }
+    return out;
+  };
   const walk = (o) => {
     if (Array.isArray(o)) return o.map(walk);
     if (o && typeof o === "object") {
@@ -217,12 +233,25 @@ function main() {
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   console.log(`[gen-mcp] enabled servers: ${enabledList.join(", ")}`);
 
-  // Warn about any enabled server whose token is still a placeholder.
+  // Warn about any enabled server whose token is still a placeholder — AND report it as an
+  // observation (8a). `.mcp.json` is a REQUIRED output of /project-init, so shipping it with an
+  // unresolved credential DEGRADES that output: the class is `degraded_artifact` on `mcp_config`,
+  // not a bare warn. A visible warning that emitted no telemetry was the same blindness VCST-5582 H
+  // fixed for the readiness table — self-diagnostics could not see the Postman 401 the shipped
+  // `.mcp.json` guaranteed. Evidence carries the server name + placeholder NAME only (both
+  // plugin-authored); the key VALUE is never in scope here (the placeholder is literally unresolved).
+  const obs = [];
   for (const name of enabledList) {
     const blob = JSON.stringify(mcpServers[name]);
     const ph = blob.match(/<[A-Z0-9_]+>/g);
-    if (ph) console.warn(`[gen-mcp] ⚠ ${name}: unresolved ${[...new Set(ph)].join(", ")} — set the token in .env.local or via login, then re-run.`);
+    if (!ph) continue;
+    const names = [...new Set(ph)];
+    console.warn(`[gen-mcp] ⚠ ${name}: unresolved ${names.join(", ")} — set the token in .env.local or via login, then re-run.`);
+    for (const placeholder of names) {
+      obs.push({ class: "degraded_artifact", subject: "mcp_config", evidence: { snippet: `${name}: unresolved ${placeholder}` } });
+    }
   }
+  if (obs.length) emitObservations(obs, { skill: "project-init" });
 
   console.log("[gen-mcp] ⚠ Restart the MCP servers (reload the IDE / Claude Code) for changes to take effect.");
   if (args.print) console.log(JSON.stringify({ mcpServers }, null, 2));

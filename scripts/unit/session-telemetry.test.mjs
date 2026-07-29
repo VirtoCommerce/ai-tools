@@ -328,7 +328,7 @@ test("classify: an unrecovered permission_denied is `failed` and triggers the si
 // "print ONE line … and stop. Nothing is sent anywhere.": "and stop" terminated the turn BEFORE 6b,
 // and the absolute reassurance read as a prohibition on even the DRY draft 6b needs. That is the
 // dead-hint failure VCST-5582 G fixed at the skill layer, regressed into the hook layer.
-test("tail-trigger: the findings block reason routes to Step 6b — no turn-ending 'and stop', no absolute send prohibition", () => {
+test("tail-trigger: the findings block reason routes to the delivery offer — no turn-ending 'and stop', no absolute send prohibition", () => {
   const home = setupHome();
   try {
     const sid = "offer-reachable-1";
@@ -344,10 +344,13 @@ test("tail-trigger: the findings block reason routes to Step 6b — no turn-endi
 
     const { reason } = JSON.parse(run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }));
 
-    assert.match(reason, /Step 6b/, "the reason must hand off to the skill's delivery-offer step");
-    assert.doesNotMatch(reason, /\band stop\b/i, "'and stop' terminates the turn before Step 6b can offer");
-    assert.doesNotMatch(reason, /Nothing is sent anywhere/i, "an absolute prohibition blocks even the DRY draft Step 6b needs");
-    assert.match(reason, /without an explicit Send/i, "the reassurance must stay CONDITIONAL, not absolute");
+    // PR #172: diagnosis + the offer moved into the vc-self-check skill (which spawns the
+    // subagent). The reason must instruct running that skill and must NOT end the turn early.
+    assert.match(reason, /vc-self-check skill/, "the reason must hand off to the skill that orchestrates the offer");
+    assert.match(reason, /self-check-diagnostician|asks you once/i, "…which spawns the subagent and asks once");
+    assert.doesNotMatch(reason, /\band stop\b/i, "'and stop' terminates the turn before the offer can happen");
+    assert.doesNotMatch(reason, /Nothing is sent anywhere/i, "an absolute prohibition blocks even the dry plan the offer needs");
+    assert.match(reason, /without an explicit (?:Send|yes)/i, "the reassurance must stay CONDITIONAL, not absolute");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

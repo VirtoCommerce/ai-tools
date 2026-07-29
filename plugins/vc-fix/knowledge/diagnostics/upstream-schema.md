@@ -1,29 +1,34 @@
 # Upstream Signal Schema — vc-fix self-diagnostics
 
-The **closed, default-deny schema** for anything the self-diagnostics subsystem contributes
-to the PUBLIC `VirtoCommerce/vc-mcp-testing-module` repo (`/vc-self-check deliver`). This
-file is the single source of truth for the vocabulary; keep it in **lock-step** with
+The **default-deny schema** for anything the self-diagnostics subsystem contributes to the PUBLIC
+`VirtoCommerce/vc-mcp-testing-module` repo (`/vc-self-check deliver`). This file is the single source
+of truth for the vocabulary; keep it in **lock-step** with
 [`../../skills/vc-self-check/upstream-reduce.mjs`](../../skills/vc-self-check/upstream-reduce.mjs)
-(the `SKILLS` / `VERDICTS` / … / `ERROR_CODES` consts) and with the collector's own consts in
-[`../../hooks/session-telemetry.mjs`](../../hooks/session-telemetry.mjs).
+(the `SKILLS` / `VERDICTS` / … / `ERROR_CODES` consts + the v3 provenance validators) and with the
+collector's own consts in [`../../hooks/session-telemetry.mjs`](../../hooks/session-telemetry.mjs).
 
-> **Why a schema, not a scrubber.** See the ADR:
-> [`adr-upstream-default-deny.md`](./adr-upstream-default-deny.md). In one line: the upstream
-> artifact is built ONLY from this fixed vocabulary of enum/number/bool primitives, so there
-> is structurally no channel for arbitrary client bytes — the leak class is impossible by
-> **type**, not chased by denylist rules.
+> **Why default-deny.** See the ADR:
+> [`adr-upstream-default-deny.md`](./adr-upstream-default-deny.md). Through **v2** the guarantee was
+> "no strings at all" — every field an enum/number/bool, so the leak class was impossible by TYPE.
+> **v3** trades that for a sharper, more useful guarantee: a string MAY travel, but only if it
+> originates from the **vendor's own shipped plugin source** (or is the vendor API's own stable error
+> enum), and only after a boundary validator has failed to find any client value in it. Returning the
+> vendor their own code cannot leak the client. The guarantee moved from *type-level impossibility*
+> to *vendor-provenance + boundary validation*.
 
 ---
 
 ## The struct
 
-`reduce(local)` returns — and `validateUpstream(struct)` re-checks — exactly this shape.
-**No field carries free text.** Repo/module/org **names never exist** — only `repoKind`.
+`reduce(local)` returns — and `validateUpstream(struct, ctx)` re-checks — exactly this shape.
+Enum/number/bool fields carry no free text. The v3 STRING fields are provenance-gated (below).
 
 ```
 UpstreamSignal = {
-  schemaVersion: 2,                        // number (literal)
+  schemaVersion: 3,                        // number (literal)
   pluginVersion: string,                   // numeric triple `\d{1,4}.\d{1,4}.\d{1,4}` only (any suffix DISCARDED) else "unknown"
+  nodeVersion: string,                     // v3 — `vMAJOR.MINOR.PATCH` numeric core only, else "unknown" (the RUNTIME, not the client)
+  os: win32 | darwin | linux | other,      // v3 — the runtime OS
   findings: UpstreamFinding[],             // 0..N
   feedback: { up: number, down: number },  // COUNTS ONLY — /vc-feedback text is dropped
   sessionCount: number,                    // 1..N (batch occurrence rollup)
@@ -45,8 +50,63 @@ UpstreamFinding = {
   repoKind:    module | platform | frontend | backend | unknown,
   retries:     number,          // clamped 0..99
   occurrences: number,          // 1..N (how many sessions hit this finding, batch)
+
+  // ── v3 provenance-gated STRING fields (each null unless it PROVES itself; see below) ──
+  pluginFile:       string|null,  // path relative to plugin root; PLUGIN_REL_PATH, no `..`, must EXIST
+  pluginLine:       number|null,  // 1..1_000_000
+  codeExcerpt:      string|null,  // ≤400ch; must be a VERBATIM substring of pluginFile's content
+  offendingLiteral: string|null,  // ≤120ch; must be a VERBATIM substring of pluginFile's content
+  apiShape:         string|null,  // ≤200ch; vendor API shape, client values → placeholders; boundary-validated
+  proposedFix:      string|null,  // ≤300ch; one sentence, plugin paths/symbols only; boundary-validated
+  vendorErrorTypeKey:  string|null,  // §6a — the vendor's OWN error enum (ADO typeKey / …)
+  vendorErrorName:     string|null,  // §6a
+  vendorErrorCode:     string|null,  // §6a
+  vendorHttpStatus:    number|null,  // §6a — 100..599
+  vendorDocUrl:        string|null,  // §6a — https on learn.microsoft.com / docs.github.com ONLY
+  vendorErrorMessage:  string|null,  // §6b — normalized to placeholders, denied on any client value, operator-disclosed
 }
 ```
+
+### v3 provenance rule — how a string is allowed to travel
+
+`validateUpstream(struct, ctx)` takes a `ctx = { files: Map<pluginRelPath, content>, denyValues:
+string[], states: string[] }` assembled by `deliver.mjs` (`buildProvenanceCtx`): the content of each
+cited plugin file (read from the INSTALLED plugin, read-only), plus every value it can name from the
+client's `.env.*` and `project-profile.json`. **Without a `ctx` every v3 string is dropped** —
+unproven is the default, so a code path that forgets the context fails closed.
+
+Two gates, both required, and a DENIED field is set to `null` (never coerced) while the finding
+SURVIVES:
+
+1. **Provenance** — `codeExcerpt` / `offendingLiteral` must be a literal substring of the cited
+   `pluginFile`'s actual content (CRLF-normalized). No file, or no match ⇒ the field is dropped.
+2. **Boundary** (`boundaryDenial`) — a string is denied if it contains a URL host, an absolute
+   filesystem path, an email, a token-shaped run, a GUID (the ADO `projectId` IS a GUID), an IP, a
+   value present in `denyValues`, a work-item state name in `states`, or a work-item field reference
+   name outside `System.*` / `Microsoft.VSTS.*`. `pluginFile` is exempt from the absolute-path check
+   (it is a relative path) and `vendorDocUrl` from the URL-host check (host-allowlisted instead).
+
+**Still forbidden outright** (no field carries them): work-item STATE names, custom work-item TYPE
+names, repo/org/project names, any path outside the plugin. Send counts instead ("14 states, custom
+process").
+
+### §6b — the vendor error MESSAGE (the one bounded exception)
+
+The message CAN interpolate client identifiers, so it is the single field whose safety is not "impossible
+by construction". All three controls are required: (1) cap 300 chars, single line; (2) `normalizeVendorMessage`
+replaces GUIDs / emails / URLs / absolute paths / IPs / token-shaped runs with placeholders FIRST;
+(3) then `boundaryDenial` DROPS the field (keeping the finding) if any named client value survives. The
+orchestrator renders the exact final string **verbatim** in its chat summary before the yes/no — that
+mandatory disclosure is the reason the field is acceptable. **If the summary cannot show it, it is not sent.**
+
+### `findingStructSig` — v3 strings excluded on purpose
+
+The dedup signature (`findingStructSig`) folds ONLY the enum fields (`skill`, `subject`,
+`blockedDeliverable`, `verdict`, `severity`, `outcome`, `signalClass`, `struggle`, `errorCode`,
+`toolFamily`, `repoKind`). No v3 string is in it — a refactor that shifts a line number, or a slightly
+different code excerpt, must NOT fork an already-filed issue. Per-finding DEDUP keys on `(skill,
+subject)` alone (`findingKey`), which is coarser still, and is the identity `deliver` matches against
+open/closed issues.
 
 ### `SKILLS`
 `project-init`, `qa-bug`, `qa-fix`, `qa-verify-fix`, `qa-monitoring`, `qa-env-check`,
@@ -116,26 +176,22 @@ still zero free text.
   (ambiguous) — the fail-safe direction; those values are reserved for a future validated
   non-client signal.
 
-### Source precedence — the sidecar, not the prose
+### Source — the diagnostician's struct on stdin (PR #172 items 1, 2)
 
-`deliver` builds the struct from, in order:
+`deliver` reads the finding struct from **stdin**. There is no source precedence any more and no
+report parsing: the `self-check-diagnostician` subagent produces the struct (assigning severity and
+subject, which the collector cannot express, and adding the v3 provenance fields from the plugin's own
+source), and the orchestrator pipes it in. `deliver` re-validates it through `validateUpstream(struct,
+ctx)` — so an out-of-vocabulary enum is coerced and an unproven/client-tainted string is dropped — but
+it derives nothing from prose.
 
-1. **`DIAG-<sid>-<ts>.json`** — the machine-readable sidecar `/vc-self-check` writes beside its
-   `.md`, carrying the already-validated enum struct. **Preferred**, because this is the only layer
-   that actually knows the judged severity and subject (the collector cannot express importance).
-2. **`reduce()`** over the structured collector jsonl (spans ∪ observations ∪ feedback).
-3. **The DIAG markdown table** — a **last resort**.
-
-Markdown was the primary carrier until item 9, and that is the shared root cause of three separate
-defects: the header renders values as inline code so both header captures took the backticks (the
-sid then matched no jsonl and the version was discarded), and the findings table's first column read
-``/qa-bug · `ado` create-workitem required-field gate`` — not a `SKILLS` member, so the row collapsed
-to `other`. No amount of regex hardening makes prose a reliable carrier of a closed vocabulary.
-
-The sidecar is **local and plugin-authored but not trusted**: it passes through `validateUpstream`
-like every other source, so an out-of-vocabulary value is coerced to `other`/`none`/`UNKNOWN` rather
-than forwarded. A missing, malformed or findings-free sidecar silently falls through to (2). It is
-purged with the session like every other `DIAG-<sid>-*` artifact.
+This replaces the earlier DIAG-markdown / DIAG-sidecar chain. Parsing a human-written report was the
+shared root cause of a family of defects (header backticks swallowed the session id + version; the
+first table column read ``/qa-bug · `ado` create-workitem …`` and collapsed to `other`). No amount of
+regex hardening makes prose a reliable carrier of a closed vocabulary — so the report is no longer a
+carrier at all. The enum fields still originate from the collector's structured jsonl (via `reduce()`,
+used by `--batch` and available to the diagnostician); the LLM authors only the provenance strings,
+which are proven at the boundary.
 
 ### The analysis set — spans **and** observations
 
@@ -174,24 +230,24 @@ source produced a finding — a real observation always outranks a markdown gues
 
 ## Guarantees (enforced by `upstream-reduce.mjs` + its tests)
 
-1. **Closed vocabulary.** Every string field is a member of a fixed set; `validateUpstream`
-   coerces anything else to the safe default — so even a buggy `reduce`/`classifyError`
-   cannot emit a novel string.
-2. **No free text.** `reduce` reads ONLY the structured jsonl (span records + observation records +
-   feedback verdicts). LLM-authored DIAG cells (`signal`/`rootcause`/`fix`) and `/vc-feedback` prose
-   never reach the struct — the latter travels only as `feedback.up`/`.down` counts. The sidecar
-   carries enums only and is re-validated, so it is not an exception to this.
-3. **Structural fingerprint.** `fingerprintStruct` hashes the enum tuple only — never raw
-   text — so dedup can't smuggle client bytes into the hash. Feedback counts fold in ONLY for
-   a feedback-only report (no findings), so the same finding converges to one upstream issue
-   across clients regardless of their feedback, while feedback-only 👍/👎 stay distinct.
+1. **Closed vocabulary (enum fields).** Every enum field is a member of a fixed set;
+   `validateUpstream` coerces anything else to the safe default — so even a buggy
+   `reduce`/`classifyError` cannot emit a novel enum.
+2. **Vendor-provenance (v3 string fields).** A `codeExcerpt`/`offendingLiteral` travels ONLY when it
+   is a verbatim substring of the cited plugin file; every string is boundary-validated and DENIED
+   (never coerced) on any client value. `reduce` still reads ONLY the structured jsonl for the enum
+   fields; the v3 strings are supplied by the diagnostician (which read the plugin's own source) and
+   proven at the boundary. `/vc-feedback` prose never reaches the struct (counts only).
+3. **Structural fingerprint.** `fingerprintStruct` / `findingStructSig` hash the ENUM tuple only —
+   never any v3 string, never raw text — so dedup can't smuggle client bytes into the hash and a
+   line-number shift can't fork an issue. Feedback counts fold in ONLY for a feedback-only report.
 4. **Fail-safe = loss of detail, never a leak.** New error shapes → `UNKNOWN`; new tools →
-   `mcp_other`/`none`; new skills → `other`.
+   `mcp_other`/`none`; new skills → `other`; an unproven or client-tainted v3 string → `null`.
 
 The property/fuzz proof lives in
 [`../../../../scripts/unit/upstream-reduce.test.mjs`](../../../../scripts/unit/upstream-reduce.test.mjs):
-adversarial client-shaped strings injected into every local slot never appear in the
-serialized struct, and every field is asserted ∈ its vocabulary.
+adversarial client-shaped strings injected into every local slot (incl. every v3 field) never appear
+in the serialized struct, and every enum field is asserted ∈ its vocabulary.
 
 ## Extending
 
@@ -204,4 +260,6 @@ specific operation **before** the surface it runs on (first match wins).
 
 Bump `SCHEMA_VERSION` only when the change alters `findingStructSig` — that is what re-forks dedup
 against already-filed issues. Adding a vocabulary MEMBER does not; adding a FIELD to the signature
-does.
+does. **v3 did NOT change `findingStructSig`** (the new strings are excluded), so a v2 and a v3 issue
+for the same defect still dedup against each other — the bump reflects the new fields + the guarantee
+change, not a signature change.

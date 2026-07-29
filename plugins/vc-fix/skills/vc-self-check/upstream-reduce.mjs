@@ -35,11 +35,17 @@
 // WHICH operation misbehaved and whether it stopped the run. v1 read `other | BROKEN | S1 | …` —
 // enough to prove something broke, never enough to know what. Both new fields are closed
 // vocabularies (an enum and a boolean), so distinguishability grew without widening the leak
-// surface by one byte. Bumped because `findingStructSig` now folds `subject` in, which changes
-// every fingerprint: two clients hitting the same defect still converge, but a v1 issue and a v2
-// issue for that defect will not dedup against each other. That is the correct trade — a v1
-// fingerprint could not tell the two culprits apart in the first place.
-export const SCHEMA_VERSION = 2;
+// surface by one byte.
+//
+// v3 opens a NARROW string channel under a PROVENANCE rule (see §"vendor-provenance" below):
+// `pluginFile`/`pluginLine`/`codeExcerpt`/`offendingLiteral`/`apiShape`/`proposedFix` plus the
+// vendor's own error identity. The guarantee is no longer "no strings at all" but "a string may
+// travel only if it originates from the vendor's own shipped plugin source (or the vendor's own
+// error enums), and only after a boundary validator has failed to find any client value in it".
+// Returning the vendor their own code cannot leak the client. Dedup is unaffected —
+// `findingStructSig` deliberately does NOT fold any v3 string, so a refactor that shifts a line
+// number cannot fork an already-filed issue.
+export const SCHEMA_VERSION = 3;
 
 // ─── closed vocabularies ─────────────────────────────────────────────────────
 // Plugin skills/commands the collector attributes spans to (lock-step with the collector's
@@ -338,9 +344,19 @@ const validPluginVersion = (v) => {
   const m = /^(\d{1,4})\.(\d{1,4})\.(\d{1,4})/.exec(String(v ?? ""));
   return m ? `${m[1]}.${m[2]}.${m[3]}` : "unknown";
 };
+// Same never-echo discipline for the Node version (v3): extract the numeric core, discard any
+// suffix, emit a structurally constrained value or "unknown".
+const validNodeVersion = (v) => {
+  const m = /^v?(\d{1,3})(?:\.(\d{1,3}))?(?:\.(\d{1,4}))?/.exec(String(v ?? ""));
+  return m ? `v${m[1]}.${m[2] ?? 0}.${m[3] ?? 0}` : "unknown";
+};
 
 const isSpan = (r) => r && r.type === "span";
 const isObs = (r) => r && r.type === "obs";
+// Loop guard (item 1/9): the diagnostician now runs in a SUBAGENT (`self-check-diagnostician`), so
+// its span/observation must be dropped from the upstream reduction exactly like the `vc-self-check`
+// skill's own — else a client's self-check would contribute a finding ABOUT self-check.
+const SELF_CHECK_NAME_RE = /vc-self-check|self-check-diagnostician/i;
 const isEscalationUnit = (s) => s.kind === "skill" || s.kind === "command";
 const FLAGGED_OUTCOMES = new Set(["degraded", "failed", "silent_suspect"]);
 
@@ -374,7 +390,7 @@ function foldObservations(obsRecords) {
   const groups = new Map();
   for (const o of obsRecords) {
     const skill = typeof o.skill === "string" && o.skill ? o.skill : "";
-    if (/vc-self-check/i.test(skill)) continue; // loop guard — same rule the span path applies
+    if (SELF_CHECK_NAME_RE.test(skill)) continue; // loop guard — same rule the span path applies
     const subject = typeof o.subject === "string" && o.subject ? o.subject : "unknown";
     const cls = typeof o.class === "string" && o.class ? o.class : "unclassified";
     const count = clampInt(o.count ?? 1, 1, 1_000_000);
@@ -467,7 +483,7 @@ export function reduce(local = {}) {
   for (const span of spans) {
     if (!isEscalationUnit(span)) continue;
     if (!FLAGGED_OUTCOMES.has(span.outcome)) continue;
-    if (/vc-self-check/i.test(String(span.name ?? ""))) continue; // loop guard
+    if (SELF_CHECK_NAME_RE.test(String(span.name ?? ""))) continue; // loop guard
     if (span.id != null) { if (seenIds.has(span.id)) continue; seenIds.add(span.id); }
 
     const children = (span.id != null && byParent.get(span.id)) || [];
@@ -511,37 +527,12 @@ export function reduce(local = {}) {
   // The observation stream — the other half of the §1e analysis set. Additive to the span
   // findings (never a substitute): a run can legitimately have a flagged span AND a degradation
   // its spans classified `success`/`recovered`, and dropping either loses signal.
+  //
+  // NOTE (PR #172 item 2): the former `local.fallbackFindings` DIAG-table last-resort path is GONE.
+  // With no DIAG-*.md written or read, there is nothing to fall back FROM — `deliver` receives the
+  // diagnostician's struct on stdin, and `reduce()` is used only for the enum fields from the
+  // structured jsonl (spans ∪ observations ∪ feedback). No prose ever enters this function.
   findings.push(...foldObservations(Array.isArray(local.obs) ? local.obs.filter(isObs) : []));
-
-  // Enum-only fallback (jsonl purged but a DIAG remained): map its already-validated
-  // verdict/sev, drop every free-text cell. Reached only when NEITHER structured source
-  // produced anything — a real obs/span finding always outranks a DIAG-table guess.
-  if (!findings.length && Array.isArray(local.fallbackFindings)) {
-    for (const f of local.fallbackFindings) {
-      const verdict = inSet(VERDICTS_SET, f?.verdict, null);
-      if (!verdict || verdict === "OK") continue; // mirror the primary path: only flagged (BROKEN/DEGRADED)
-      findings.push({
-        skill: inSet(SKILLS_SET, f?.skill, "other"),
-        // A DIAG table cell may name the subject (`/qa-bug · `ado` create-workitem …`); anything
-        // unrecognized maps to "other", never the raw cell text.
-        subject: subjectEnum(f?.subject ?? ""),
-        blockedDeliverable: verdict === "BROKEN",
-        verdict,
-        // DERIVE severity from verdict (do NOT trust the DIAG's parsed `sev`): the primary path
-        // derives S1/S2 from the outcome, so a fallback finding must match or the SAME defect
-        // fingerprints differently across the jsonl vs DIAG-fallback paths (adversarial review #4 B2).
-        severity: verdict === "BROKEN" ? "S1" : "S2", // OK is filtered out above
-        outcome: verdict === "BROKEN" ? "failed" : "degraded",
-        signalClass: "none",
-        struggle: [],
-        errorCode: "UNKNOWN",
-        toolFamily: "none",
-        repoKind: "unknown",
-        retries: 0,
-        occurrences: 1,
-      });
-    }
-  }
 
   // Collapse findings that share a structural signature into ONE. Two cases need this and the
   // id-dedup above catches neither: (a) the same skill legitimately failed the same way twice in
@@ -569,10 +560,254 @@ export function reduce(local = {}) {
   return {
     schemaVersion: SCHEMA_VERSION,
     pluginVersion: validPluginVersion(local.pluginVersion),
+    nodeVersion: validNodeVersion(local.nodeVersion),
+    os: inSet(OS_SET, local.os, "other"),
     findings: dedupedFindings,
     feedback,
     sessionCount: clampInt(local.sessionCount ?? 1, 1, 1_000_000),
   };
+}
+
+/**
+ * The DEFECT IDENTITY, and the ONLY thing per-finding dedup may key on: `(skill, subject)`.
+ *
+ * Severity, verdict, outcome, errorCode and occurrence counts are per-SESSION judgements about the
+ * same underlying bug, so folding any of them into the key splits one defect into many issues. That
+ * is not hypothetical: two sessions 26 minutes apart filed #173 and #174 for the same
+ * `project-init/tracker_field_contract` defect, graded `S2 / UNKNOWN` in one and `S1 / HTTP_4XX` in
+ * the other. A key over the whole report missed it; a key folding severity would have missed it too.
+ */
+/** Severity as a comparable rank (higher = worse). S0 = "no finding" → 0. */
+export function severityRank(sev) {
+  return { S0: 0, S3: 1, S2: 2, S1: 3 }[String(sev ?? "")] ?? 0;
+}
+/** Verdict as a comparable rank, so an issue's title can be upgraded DEGRADED → BROKEN. */
+export function verdictRank(v) {
+  return { OK: 0, DEGRADED: 1, BROKEN: 2 }[String(v ?? "")] ?? 0;
+}
+
+export function findingKey(f) {
+  const o = f && typeof f === "object" ? f : {};
+  const skill = inSet(SKILLS_SET, o.skill, "other");
+  const subject = inSet(SUBJECTS_SET, o.subject, "other");
+  return `${skill}/${subject}`;
+}
+
+// ─── v3: the vendor-provenance string channel ────────────────────────────────
+/**
+ * v1/v2 guaranteed "no strings at all". That was sound containment and useless reporting: the
+ * reference payload rendered `Signal: none · Struggle: — · Repo: unknown · Outcome: success`, so a
+ * maintainer learned only that *something* 4xx'd — while the diagnosing session knew the FILE, the
+ * LINE, the offending literal and the one-line fix, and none of it travelled.
+ *
+ * v3 replaces the guarantee with a sharper one: **a string may travel only if it originates from
+ * the vendor's OWN shipped plugin source** (or is the vendor API's own stable error enum).
+ * Returning the vendor their own code cannot leak the client. Everything else is denied — and
+ * DENIED, never coerced: a coerced string is a string that travelled.
+ *
+ * Two independent gates, both required:
+ *   1. **Provenance** — `codeExcerpt` / `offendingLiteral` must be a literal substring of the cited
+ *      plugin file's ACTUAL content, read at diagnose time. No proof ⇒ no field.
+ *   2. **Boundary** — no URL host, no absolute filesystem path, no email, no token-shaped run, no
+ *      value read from `.env.*` / `project-profile.json`, and no work-item field reference name
+ *      outside the `System.*` / `Microsoft.VSTS.*` namespaces.
+ *
+ * Still forbidden outright, with no field to carry them: work-item STATE names, custom work-item
+ * TYPE names, repo/org/project names, any path outside the plugin. Counts travel instead.
+ *
+ * PURITY IS PRESERVED. This module still does no I/O: the caller (`deliver.mjs`) loads the plugin
+ * files and the deny-values and passes them in as a `ctx`. **Without a `ctx` every v3 string is
+ * dropped** — "unproven" is the default, so a code path that forgets to thread the context fails
+ * closed instead of leaking.
+ *
+ * ctx = { files: Map<pluginRelPath, fileContent>, denyValues: string[], states: string[] }
+ */
+export const OS_VALUES = ["win32", "darwin", "linux", "other"];
+const OS_SET = new Set(OS_VALUES);
+
+/** Vendor documentation hosts — the ONLY hosts a `vendorDocUrl` may point at. */
+export const VENDOR_DOC_HOSTS = ["learn.microsoft.com", "docs.github.com"];
+
+/** Work-item field reference namespaces that are the VENDOR's, not the client's process. */
+const WIT_ALLOWED_NAMESPACES = [/^System\./, /^Microsoft\.VSTS\./];
+// Dotted `Capitalized.something` tokens that are ordinary JS/plugin code, not WIT field names.
+const CODE_NAMESPACES = new Set([
+  "JSON", "Object", "Array", "Math", "Number", "String", "Boolean", "Promise", "Date", "RegExp",
+  "Map", "Set", "WeakMap", "Error", "TypeError", "URL", "URLSearchParams", "Buffer", "Intl",
+  "Reflect", "Proxy", "Symbol", "BigInt", "Function", "AbortController", "TextEncoder",
+]);
+
+const FIELD_CAPS = {
+  pluginFile: 200,
+  codeExcerpt: 400,
+  offendingLiteral: 120,
+  apiShape: 200,
+  proposedFix: 300,
+  vendorErrorTypeKey: 80,
+  vendorErrorName: 120,
+  vendorErrorCode: 40,
+  vendorDocUrl: 300,
+  vendorErrorMessage: 300, // §6b — the one field whose safety rests on normalize + deny + disclose
+};
+
+// A plugin-relative path: forward slashes, no drive letter, no `..`, no leading `/`.
+const PLUGIN_REL_PATH = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/;
+
+const HOSTISH = /\bhttps?:\/\//i;
+const BARE_HOST = /\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:com|net|org|io|dev|ru|co|ai|app|cloud|sh|me|info|biz|local|internal|onmicrosoft|visualstudio)\b/i;
+const ABS_PATH = /(?:^|[\s"'`(=,[])(?:[A-Za-z]:[\\/]|\\\\[A-Za-z0-9._-]+\\|\/(?:home|Users|users|var|etc|opt|usr|mnt|srv|tmp|root|proc)\/)/;
+const EMAILISH = /[\w.+-]+@[\w-]+\.[\w.-]{2,}/;
+const TOKENISH = new RegExp(
+  [
+    String.raw`gh[pousr]_[A-Za-z0-9]{16,}`,
+    String.raw`github_pat_[A-Za-z0-9_]{20,}`,
+    String.raw`glpat-[A-Za-z0-9_-]{16,}`,       // GitLab PAT
+    String.raw`xox[baprs]-[A-Za-z0-9-]{10,}`,
+    String.raw`sk_(?:live|test)_[A-Za-z0-9]{10,}`, // Stripe
+    String.raw`AIza[A-Za-z0-9_-]{16,}`,          // Google API key
+    String.raw`AKIA[0-9A-Z]{12,}`,
+    String.raw`eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}`,
+    String.raw`[A-Za-z0-9+/]{40,}={0,2}`,
+    String.raw`[0-9a-f]{40,}`,
+  ].join("|"),
+);
+// An Azure DevOps `projectId` IS a GUID and IS a client identifier — a GUID never travels.
+const GUIDISH = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+const IPISH = /\b(?:\d{1,3}\.){3}\d{1,3}\b/;
+
+/**
+ * Does this string contain a WIT field reference name outside the vendor namespaces? A custom
+ * namespace (`Leo.Bug.Severity`, `Custom.ReviewState`) is the CLIENT's process definition, which is
+ * exactly the class of value we must never echo back to the vendor.
+ */
+export function violatesFieldNamespace(text) {
+  const t = String(text ?? "");
+  const re = /\b([A-Z][A-Za-z0-9]*)((?:\.[A-Za-z0-9]+)+)\b/g;
+  for (let m = re.exec(t); m; m = re.exec(t)) {
+    const token = m[0];
+    if (CODE_NAMESPACES.has(m[1])) continue; // ordinary code, e.g. `JSON.stringify`
+    if (WIT_ALLOWED_NAMESPACES.some((re2) => re2.test(token))) continue;
+    return true;
+  }
+  return false;
+}
+
+/**
+ * The boundary gate. Returns a REASON string when the value must be denied, else null.
+ * `kind` relaxes exactly two checks for the two fields whose whole purpose is the shape being
+ * checked: `path` (a plugin-relative path is not an absolute path) and `url` (a vendor doc URL is
+ * a URL, and gets a host allowlist instead).
+ */
+export function boundaryDenial(value, { kind = "text", denyValues = [], states = [] } = {}) {
+  const v = String(value ?? "");
+  if (!v) return "empty";
+  if (/[\r\n]/.test(v) && kind !== "code") return "multiline";
+  if (kind !== "url" && (HOSTISH.test(v) || BARE_HOST.test(v))) return "contains a URL host";
+  if (kind !== "path" && ABS_PATH.test(v)) return "contains an absolute filesystem path";
+  if (EMAILISH.test(v)) return "contains an email address";
+  if (TOKENISH.test(v)) return "contains a token-shaped run";
+  if (GUIDISH.test(v)) return "contains a GUID";
+  if (kind !== "url" && IPISH.test(v)) return "contains an IP address";
+  if (violatesFieldNamespace(v)) return "names a work-item field outside System.* / Microsoft.VSTS.*";
+  const low = v.toLowerCase();
+  for (const d of denyValues) {
+    if (d && low.includes(String(d).toLowerCase())) return "contains a value read from .env.* / project-profile.json";
+  }
+  for (const s of states) {
+    if (s && low.includes(String(s).toLowerCase())) return "contains a work-item state name";
+  }
+  return null;
+}
+
+/**
+ * §6b — normalize a vendor error MESSAGE before it is even considered. The message is the one place
+ * where a vendor can interpolate client identifiers (project name, org, GUIDs), so it is normalized
+ * FIRST, then denied (never coerced) if a client value survives, and then DISCLOSED verbatim in the
+ * orchestrator's chat summary before the operator's yes/no. If the summary cannot show it, it must
+ * not be sent.
+ */
+export function normalizeVendorMessage(text) {
+  return String(text ?? "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(GUIDISH, "<guid>")
+    .replace(EMAILISH, "<email>")
+    .replace(/https?:\/\/\S+/gi, "<url>")
+    .replace(/(?:[A-Za-z]:[\\/]|\/(?:home|Users|users|var|etc|opt|usr|mnt|srv|tmp)\/)[^\s"'`,;)]*/g, "<path>")
+    .replace(IPISH, "<ip>")
+    .replace(TOKENISH, "<token>")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .slice(0, FIELD_CAPS.vendorErrorMessage);
+}
+
+const capped = (v, n) => (typeof v === "string" && v.length <= n ? v : null);
+
+/** Normalize line endings so a substring proof is not defeated by CRLF vs LF. */
+const lf = (s) => String(s ?? "").replace(/\r\n/g, "\n");
+
+/**
+ * Build the v3 field set for ONE finding. Returns only the fields that PROVED themselves; a denied
+ * field is simply absent (`null`), and the finding always survives — dropping a finding because one
+ * of its optional strings failed would trade an information gap for an information loss.
+ */
+export function provenanceFields(o, ctx) {
+  const out = {
+    pluginFile: null, pluginLine: null, codeExcerpt: null, offendingLiteral: null,
+    apiShape: null, proposedFix: null,
+    vendorErrorTypeKey: null, vendorErrorName: null, vendorErrorCode: null,
+    vendorHttpStatus: null, vendorDocUrl: null, vendorErrorMessage: null,
+  };
+  if (!ctx || typeof ctx !== "object") return out; // no proof available ⇒ nothing travels
+  const files = ctx.files instanceof Map ? ctx.files : new Map();
+  const opts = { denyValues: Array.isArray(ctx.denyValues) ? ctx.denyValues : [], states: Array.isArray(ctx.states) ? ctx.states : [] };
+
+  // ── the cited plugin location ──
+  const file = capped(o.pluginFile, FIELD_CAPS.pluginFile);
+  const fileOk = file && PLUGIN_REL_PATH.test(file) && !file.includes("..") && files.has(file)
+    && !boundaryDenial(file, { ...opts, kind: "path" });
+  if (fileOk) {
+    out.pluginFile = file;
+    const line = Math.trunc(Number(o.pluginLine));
+    if (Number.isFinite(line) && line >= 1 && line <= 1_000_000) out.pluginLine = line;
+    const content = lf(files.get(file));
+    // Provenance: the excerpt/literal must literally BE in the vendor's own shipped file.
+    const ex = capped(o.codeExcerpt, FIELD_CAPS.codeExcerpt);
+    if (ex && ex.trim() && content.includes(lf(ex).trim()) && !boundaryDenial(ex, { ...opts, kind: "code" })) out.codeExcerpt = lf(ex).trim();
+    const lit = capped(o.offendingLiteral, FIELD_CAPS.offendingLiteral);
+    if (lit && lit.trim() && content.includes(lit.trim()) && !boundaryDenial(lit, opts)) out.offendingLiteral = lit.trim();
+  }
+
+  // ── model-authored, boundary-validated ──
+  const shape = capped(o.apiShape, FIELD_CAPS.apiShape);
+  if (shape && shape.trim() && !boundaryDenial(shape, opts)) out.apiShape = shape.trim();
+  const fix = capped(o.proposedFix, FIELD_CAPS.proposedFix);
+  if (fix && fix.trim() && !boundaryDenial(fix, opts)) out.proposedFix = fix.trim();
+
+  // ── §6a vendor error IDENTITY: the vendor's own stable enums, no client interpolation ──
+  const tk = capped(o.vendorErrorTypeKey, FIELD_CAPS.vendorErrorTypeKey);
+  if (tk && /^[A-Za-z][A-Za-z0-9._-]*$/.test(tk) && !boundaryDenial(tk, opts)) out.vendorErrorTypeKey = tk;
+  const tn = capped(o.vendorErrorName, FIELD_CAPS.vendorErrorName);
+  if (tn && /^[A-Za-z][A-Za-z0-9._,\- ]*$/.test(tn) && !boundaryDenial(tn, opts)) out.vendorErrorName = tn;
+  const code = capped(o.vendorErrorCode, FIELD_CAPS.vendorErrorCode);
+  if (code && /^[A-Za-z0-9._-]+$/.test(code) && !boundaryDenial(code, opts)) out.vendorErrorCode = code;
+  const st = Math.trunc(Number(o.vendorHttpStatus));
+  if (Number.isFinite(st) && st >= 100 && st <= 599) out.vendorHttpStatus = st;
+  const doc = capped(o.vendorDocUrl, FIELD_CAPS.vendorDocUrl);
+  if (doc) {
+    let host = "";
+    try { host = new URL(doc).host.toLowerCase(); } catch { host = ""; }
+    const httpsOk = /^https:\/\//i.test(doc);
+    if (httpsOk && VENDOR_DOC_HOSTS.includes(host) && !boundaryDenial(doc, { ...opts, kind: "url" })) out.vendorDocUrl = doc;
+  }
+
+  // ── §6b vendor error MESSAGE: normalize, then deny on any surviving client value ──
+  if (typeof o.vendorErrorMessage === "string" && o.vendorErrorMessage.trim()) {
+    const norm = normalizeVendorMessage(o.vendorErrorMessage);
+    // The normalizer already replaced URLs/paths/GUIDs/IPs/tokens with placeholders, so what remains
+    // must be denied only for a value we can actually name — a client org/project/repo/state.
+    if (norm && !boundaryDenial(norm, opts)) out.vendorErrorMessage = norm;
+  }
+  return out;
 }
 
 // ─── validateUpstream — the runtime boundary barrier ─────────────────────────
@@ -581,13 +816,17 @@ export function reduce(local = {}) {
  * a safe default and clamp numbers. This is what makes a leak impossible even if `reduce`
  * (or a future edit) has a bug: a rogue string in an enum slot is dropped, not forwarded.
  * Pure; returns a fresh struct.
+ *
+ * `ctx` (v3) supplies the PROOF for the provenance-gated string fields. Omit it and every such
+ * field is dropped — unproven is the default (fail closed).
  */
-export function validateUpstream(struct) {
+export function validateUpstream(struct, ctx = null) {
   const s = struct && typeof struct === "object" ? struct : {};
   const findingsIn = Array.isArray(s.findings) ? s.findings : [];
   const findings = findingsIn.map((f) => {
     const o = f && typeof f === "object" ? f : {};
     return {
+      ...provenanceFields(o, ctx),
       skill: inSet(SKILLS_SET, o.skill, "other"),
       subject: inSet(SUBJECTS_SET, o.subject, "other"),
       blockedDeliverable: o.blockedDeliverable === true,
@@ -607,6 +846,10 @@ export function validateUpstream(struct) {
   return {
     schemaVersion: SCHEMA_VERSION,
     pluginVersion: validPluginVersion(s.pluginVersion),
+    // v3 environment — the RUNTIME, never the client. A maintainer reproducing a defect needs to
+    // know which Node and which OS produced it; neither can identify a deployment.
+    nodeVersion: validNodeVersion(s.nodeVersion),
+    os: inSet(OS_SET, s.os, "other"),
     findings,
     feedback: { up: clampInt(fb.up ?? 0, 0, 1_000_000), down: clampInt(fb.down ?? 0, 0, 1_000_000) },
     sessionCount: clampInt(s.sessionCount ?? 1, 1, 1_000_000),

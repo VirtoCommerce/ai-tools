@@ -284,3 +284,53 @@ test("item 8: a findings turn is ONE instruction — no second question rides it
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ─── item 9 — the diagnostician SUBAGENT does not trigger itself ──────────────
+// A self-check run (its command span + the diagnostician subagent) must never arm a FRESH
+// self-check on that same session — otherwise a client's diagnosis diagnoses its own diagnosis.
+// The non-trigger can present as either `self-check-session` (the seen latch) or
+// `no-plugin-activity` (a pure self-check turn carries no diagnosable plugin work) — both are
+// correct; what matters is that no new diagnostician is armed.
+const NON_TRIGGER = new Set(["self-check-session", "no-plugin-activity"]);
+
+test("item 9: spawning the self-check-diagnostician subagent never arms a fresh self-check", () => {
+  const home = setupHome();
+  try {
+    const sid = "diag-subagent";
+    run(home, "init", { session_id: sid, transcript_path: tp(home) });
+    run(home, "prompt", { session_id: sid, transcript_path: tp(home), prompt: "/vc-self-check latest" });
+    appendLines(tp(home), [
+      toolUse("2026-01-01T00:00:00Z", "t1", "Task", { subagent_type: "self-check-diagnostician", prompt: "diagnose latest" }),
+      toolResult("2026-01-01T00:00:04Z", "t1", false, "returned a finding struct"),
+      // even a genuine bash error afterwards must not arm a FRESH self-check on this session
+      toolUse("2026-01-01T00:00:05Z", "t2", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:06Z", "t2", true, "permission denied: token missing scope"),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: tp(home) });
+    const fin = lastFinalize(home, sid);
+    assert.ok(NON_TRIGGER.has(fin.decision.suppressReason), `expected a non-trigger, got ${fin.decision.suppressReason}`);
+    assert.doesNotMatch(blockOf(out).reason || "", /Run the vc-self-check skill/, "no fresh diagnostician is armed");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("item 9: a self-check-diagnostician agent span is not itself flagged (loop guard)", () => {
+  const home = setupHome();
+  try {
+    const sid = "diag-span";
+    run(home, "init", { session_id: sid, transcript_path: tp(home) });
+    run(home, "prompt", { session_id: sid, transcript_path: tp(home), prompt: "/vc-self-check latest" });
+    appendLines(tp(home), [
+      toolUse("2026-01-01T00:00:00Z", "t1", "Task", { subagent_type: "self-check-diagnostician" }),
+      toolResult("2026-01-01T00:00:05Z", "t1", true, "the subagent errored internally"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: tp(home) });
+    const fin = lastFinalize(home, sid);
+    // The diagnostician's own failure must not surface as a plugin finding to contribute.
+    assert.equal((fin.flagged || []).some((f) => /self-check|diagnostician/i.test(f.name || "")), false);
+    assert.ok(NON_TRIGGER.has(fin.decision.suppressReason), `expected a non-trigger, got ${fin.decision.suppressReason}`);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

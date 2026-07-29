@@ -76,21 +76,15 @@ const MANAGED_FIELDS = [
       { label: "No", value: false, hint: "hook stays a full no-op — no .vc-fix/" },
     ],
   },
-  {
-    // Consent for UPSTREAM delivery of self-diagnostics (VCST-5509). An object field —
-    // resolved with `--set feedback.mode=<auto|ask|off>` (sub-key resolution below).
-    path: "feedback",
-    policy: "ask",
-    default: { mode: "ask" },
-    validate: (v) => v != null && typeof v === "object" && ["auto", "ask", "off"].includes(v.mode),
-    question:
-      "When vc-fix self-diagnostics finds a plugin quality issue, how should it be contributed back to VirtoCommerce to improve the plugin? This gates ONLY outbound delivery — local capture/diagnosis are unaffected, and nothing is ever sent without scrubbing all client identifiers first.",
-    options: [
-      { label: "Ask each time (recommended)", value: { mode: "ask" }, hint: "dry-run + a single Show-diff/Send/Don't-send decision" },
-      { label: "Automatic", value: { mode: "auto" }, hint: "file the scrubbed GitHub Issue automatically; PR/fork-PR handed off as commands" },
-      { label: "Off", value: { mode: "off" }, hint: "nothing leaves the machine — the DIAG stays local" },
-    ],
-  },
+  // NOTE: `feedback` (the UPSTREAM-delivery consent, VCST-5509) is DELIBERATELY NOT a managed
+  // "ask" field any more (PR #172 item 4). It used to prompt the operator here and on every
+  // `/project-init --check`, but the delivery flow already asks once, per finding, at the moment a
+  // BROKEN/DEGRADED finding actually exists — the onboarding question was a second, context-free
+  // ask for a decision the operator can only meaningfully make when there is something to send. It
+  // now fills silently from PROFILE_DEFAULTS (`feedback.mode: "ask"`), hand-editable for CI (`auto`)
+  // or as a kill switch (`off`) via `gen-profile --feedback-mode <v>` or a direct edit. With no
+  // MANAGED_FIELDS entry, reconcile adds it as an ordinary safe-default field (`via: "default"`),
+  // so `--check` no longer surfaces it as a pending decision.
 ];
 const managedFor = (path) => MANAGED_FIELDS.find((m) => m.path === path);
 

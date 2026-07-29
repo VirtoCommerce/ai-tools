@@ -1,22 +1,22 @@
-// Unit tests for the VCST-5509 additions to plugins/vc-fix/skills/vc-self-check/deliver.mjs
-// as reworked by the default-deny closed-schema redesign: feedback.mode consent gating
-// (feedbackMode), the structured /vc-feedback capture readback (readSessionRecords), and
-// buildDraft's CLOSED-SCHEMA rendering (it takes a validated UpstreamSignal struct and renders
-// enums/counts ONLY — no free text, no operator prose). The fingerprint/findingSig tests moved to
-// upstream-reduce.test.mjs (fingerprintStruct); the free-text client-shape scrubbers
-// (scrubText/isClientSpecific) were removed as dead code (PR #143 R2 F1) — the closed schema is
-// the sole upstream guard, and the shared redact.mjs secret rules are covered by
-// session-telemetry.test.mjs. Pure module-level imports, no child process — VC_FIX_HOME is
-// set/reset around each test. Run: `npm test`.
+// Unit tests for the consent + issue-rendering pieces of
+// plugins/vc-fix/skills/vc-self-check/deliver.mjs after the PR #172 rework:
+//   - feedbackMode           — the feedback.mode consent gate (project-profile.json)
+//   - buildFindingIssue      — ONE issue per finding, enum + vendor-provenance fields only (§7)
+//   - recordFindingDecision  — the compact per-finding record in state.json (the ONLY persistence)
+// The former DIAG/DELIVERY report artifacts are gone (item 2), so `readSessionRecords`/`buildDraft`
+// were removed; the jsonl→struct reduction now lives in the diagnostician subagent + reduce(). Pure
+// module-level imports, no child process. Run: `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
-  buildDraft,
+  buildFindingIssue,
   feedbackMode,
-  readSessionRecords,
+  recordFindingDecision,
+  readFindingRecords,
+  findingAlreadyDecided,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
 import { validateUpstream } from "../../plugins/vc-fix/skills/vc-self-check/upstream-reduce.mjs";
 
@@ -30,119 +30,152 @@ function withHome(home, fn) {
     else process.env.VC_FIX_HOME = prev;
   }
 }
+function tempHome(fn) {
+  const home = mkdtempSync(join(tmpdir(), "deliver-fb-"));
+  try { return withHome(home, () => fn(home)); }
+  finally { rmSync(home, { recursive: true, force: true }); }
+}
 
 // ─── feedbackMode ────────────────────────────────────────────────────────────────
 test("feedbackMode: defaults to 'ask' when no project-profile.json exists", () => {
-  const home = mkdtempSync(join(tmpdir(), "deliver-fb-"));
-  try {
-    withHome(home, () => assert.equal(feedbackMode(), "ask"));
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
+  tempHome(() => assert.equal(feedbackMode(), "ask"));
 });
 
 test("feedbackMode: reads a valid mode from project-profile.json", () => {
-  const home = mkdtempSync(join(tmpdir(), "deliver-fb-"));
-  try {
+  tempHome((home) => {
     writeFileSync(join(home, "project-profile.json"), JSON.stringify({ feedback: { mode: "auto" } }));
-    withHome(home, () => assert.equal(feedbackMode(), "auto"));
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
+    assert.equal(feedbackMode(), "auto");
+  });
 });
 
 test("feedbackMode: an invalid/garbage mode value falls back to 'ask', never 'auto'", () => {
-  const home = mkdtempSync(join(tmpdir(), "deliver-fb-"));
-  try {
+  tempHome((home) => {
     writeFileSync(join(home, "project-profile.json"), JSON.stringify({ feedback: { mode: "yolo" } }));
-    withHome(home, () => assert.equal(feedbackMode(), "ask"));
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
+    assert.equal(feedbackMode(), "ask");
+  });
 });
 
-// ─── readSessionRecords (the structured jsonl source for reduce) ──────────────────
-test("readSessionRecords: splits span / feedback / finalize / session_start records", () => {
-  const home = mkdtempSync(join(tmpdir(), "deliver-fb-"));
-  try {
-    const dir = join(home, ".vc-fix", "diagnostics");
-    mkdirSync(dir, { recursive: true });
-    const lines = [
-      { type: "session_start", sessionId: "s1", pluginVersion: "0.8.1" },
-      { type: "span", id: "1", kind: "skill", name: "qa-fix", outcome: "failed" },
-      { type: "feedback", sessionId: "s1", verdict: "down", text: "prose that must stay LOCAL" },
-      { type: "finalize", sessionId: "s1", decision: { verdict: "flagged" } },
-    ];
-    writeFileSync(join(dir, "s1.jsonl"), lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
-    withHome(home, () => {
-      const rec = readSessionRecords("s1");
-      assert.equal(rec.pluginVersion, "0.8.1");
-      assert.equal(rec.spans.length, 1);
-      assert.equal(rec.spans[0].name, "qa-fix");
-      assert.equal(rec.feedback.length, 1);
-      assert.equal(rec.feedback[0].verdict, "down");
-      assert.ok(rec.finalize && rec.finalize.decision.verdict === "flagged");
-    });
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
+// ─── recordFindingDecision / readFindingRecords (the ONLY local persistence, item 2) ──
+const stateFile = (home, sid) => join(home, ".vc-fix", "diagnostics", `${sid}.state.json`);
+function seedState(home, sid, obj = {}) {
+  const dir = join(home, ".vc-fix", "diagnostics");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `${sid}.state.json`), JSON.stringify(obj));
+}
+const FIND = { skill: "qa-bug", subject: "ado_create_workitem", severity: "S1", verdict: "BROKEN" };
+
+test("recordFindingDecision: writes a compact record; readFindingRecords reads it back", () => {
+  tempHome((home) => {
+    seedState(home, "s1", { selfCheckSeen: true });
+    recordFindingDecision("s1", FIND, { decision: "declined" });
+    const recs = readFindingRecords("s1");
+    assert.equal(recs.length, 1);
+    assert.equal(recs[0].key, "qa-bug/ado_create_workitem");
+    assert.equal(recs[0].decision, "declined");
+    assert.equal(recs[0].severity, "S1");
+    // the existing state fields are preserved (not clobbered)
+    assert.equal(JSON.parse(readFileSync(stateFile(home, "s1"), "utf8")).selfCheckSeen, true);
+  });
 });
 
-test("readSessionRecords: missing/absent session returns the empty shell, never throws", () => {
-  const home = mkdtempSync(join(tmpdir(), "deliver-fb-"));
-  try {
-    withHome(home, () => {
-      const rec = readSessionRecords("nope");
-      // `obs` joined the shell when the reducer started consuming the observation stream
-      // (the other half of the VCST-5582 H analysis set). The shape is pinned EXACTLY on
-      // purpose — the absent path must hand back every key a caller may index, so a consumer
-      // can iterate `.obs` without a presence check.
-      assert.deepEqual(rec, { spans: [], obs: [], feedback: [], finalize: null, pluginVersion: "unknown" });
-      assert.deepEqual(readSessionRecords(null).spans, []);
-    });
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
+test("recordFindingDecision: decision 'sent' CLEARS the entry (the issue is the source of truth)", () => {
+  tempHome((home) => {
+    seedState(home, "s1");
+    recordFindingDecision("s1", FIND, { decision: "pending" });
+    assert.equal(readFindingRecords("s1").length, 1);
+    recordFindingDecision("s1", FIND, { decision: "sent", issueNumber: 42 });
+    assert.equal(readFindingRecords("s1").length, 0, "a sent finding leaves no stale 'already sent' record");
+  });
 });
 
-// ─── buildDraft (CLOSED-SCHEMA rendering — enums + counts ONLY, no free text) ────────
+test("findingAlreadyDecided: true after declined/sent, false while pending or unseen", () => {
+  tempHome((home) => {
+    seedState(home, "s1");
+    assert.equal(findingAlreadyDecided("s1", FIND), false);
+    recordFindingDecision("s1", FIND, { decision: "pending" });
+    assert.equal(findingAlreadyDecided("s1", FIND), false, "pending is not decided — it may still be offered");
+    recordFindingDecision("s1", FIND, { decision: "declined" });
+    assert.equal(findingAlreadyDecided("s1", FIND), true);
+  });
+});
+
+test("recordFindingDecision: no state file ⇒ no-op, never throws (capture off)", () => {
+  tempHome(() => {
+    assert.doesNotThrow(() => recordFindingDecision("nope", FIND, { decision: "pending" }));
+    assert.deepEqual(readFindingRecords("nope"), []);
+    assert.ok(!existsSync(stateFile(process.env.VC_FIX_HOME, "nope")));
+  });
+});
+
+// ─── buildFindingIssue (ONE issue per finding — §7 body) ─────────────────────────────
 const structOf = (over = {}) => validateUpstream({
-  schemaVersion: 1, pluginVersion: "0.8.1",
+  schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
   findings: over.findings ?? [],
   feedback: over.feedback ?? { up: 0, down: 0 },
   sessionCount: over.sessionCount ?? 1,
 });
 const brokenFinding = (over = {}) => ({
-  skill: "qa-fix", verdict: "BROKEN", severity: "S1", outcome: "failed",
-  signalClass: "permission_denied", struggle: [], errorCode: "AUTH_MISSING_SCOPE",
-  toolFamily: "github", repoKind: "backend", retries: 1, occurrences: 1, ...over,
+  skill: "qa-bug", subject: "ado_create_workitem", blockedDeliverable: true, verdict: "BROKEN",
+  severity: "S1", outcome: "failed", signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX",
+  toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1, ...over,
 });
 
-test("buildDraft: renders a findings row from enum fields only", () => {
-  const d = buildDraft({ struct: structOf({ findings: [brokenFinding()] }), route: "issue" });
-  assert.match(d.body, /## Findings/);
-  // Schema v2 (item 10) leads with severity and names the culprit: `S1 · qa-fix · <subject> · blocked`.
-  assert.match(d.body, /S1 \| qa-fix \| \w+ \| (?:blocked|—) \| BROKEN \| failed \| permission_denied \| AUTH_MISSING_SCOPE/);
-  assert.match(d.title, /qa-fix\/\w+ BROKEN/);
-  assert.ok(d.fingerprint && typeof d.fingerprint === "string");
+test("buildFindingIssue: title + per-finding marker key on (skill, subject)", () => {
+  const struct = structOf({ findings: [brokenFinding()] });
+  const b = buildFindingIssue({ finding: struct.findings[0], struct, route: "issue" });
+  assert.equal(b.key, "qa-bug/ado_create_workitem");
+  assert.match(b.title, /\[vc-fix self-check\] qa-bug\/ado_create_workitem BROKEN/);
+  assert.match(b.body, /<!-- vc-fix-finding: qa-bug\/ado_create_workitem -->/);
+  assert.match(b.body, /<!-- vc-fix-severity: S1 -->/);
 });
 
-test("buildDraft: operator feedback is COUNTS ONLY — no prose ever reaches the draft", () => {
-  // Even if a caller somehow smuggled text-shaped feedback, buildDraft reads only the counts.
-  const d = buildDraft({ struct: structOf({ feedback: { up: 2, down: 3 } }), route: "issue" });
-  assert.match(d.body, /## Operator feedback/);
-  assert.match(d.body, /👍 2 · 👎 3/);
-  assert.match(d.title, /operator feedback 👎/);
+test("buildFindingIssue (§7): the one-finding table has NO Outcome column, and states the impact", () => {
+  const struct = structOf({ findings: [brokenFinding()] });
+  const b = buildFindingIssue({ finding: struct.findings[0], struct, route: "issue" });
+  assert.match(b.body, /\| Sev \| Skill \| Subject \| Verdict \| Impact \| Signal \| Error \|/);
+  assert.doesNotMatch(b.body, /\bOutcome\b/, "the Outcome column that read 'success' next to BROKEN is gone");
+  assert.match(b.body, /\| S1 \| qa-bug \| ado_create_workitem \| BROKEN \| blocked the deliverable \| tool_error \| HTTP_4XX \|/);
 });
 
-test("buildDraft: a feedback-only draft (no findings) reflects the operator verdict, not OK", () => {
-  const d = buildDraft({ struct: structOf({ feedback: { up: 0, down: 1 } }), route: "issue" });
-  assert.ok(!/## Findings/.test(d.body));
-  assert.match(d.title, /operator feedback 👎/);
+test("buildFindingIssue (§7): Struggle/Repo render ONLY when populated", () => {
+  const bare = buildFindingIssue({ finding: structOf({ findings: [brokenFinding()] }).findings[0], struct: structOf(), route: "issue" });
+  assert.doesNotMatch(bare.body, /Struggle:/);
+  assert.doesNotMatch(bare.body, /Repo kind:/);
+  const rich = structOf({ findings: [brokenFinding({ struggle: ["retry_storm"], repoKind: "backend", retries: 2 })] });
+  const b = buildFindingIssue({ finding: rich.findings[0], struct: rich, route: "issue" });
+  assert.match(b.body, /Struggle: `retry_storm`/);
+  assert.match(b.body, /Repo kind: `backend`/);
+  assert.match(b.body, /Retries: 2/);
 });
 
-test("buildDraft: an occurrence count > 1 is annotated on the row", () => {
-  const d = buildDraft({ struct: structOf({ findings: [brokenFinding({ occurrences: 4 })], sessionCount: 4 }), route: "issue" });
-  assert.match(d.body, /×4 sessions/);
-  assert.match(d.body, /Sessions: 4/);
+test("buildFindingIssue (§5 provenance): a Where block renders the vendor-provenance fields", () => {
+  const f = brokenFinding({
+    pluginFile: "skills/project-init/discover-tracker.mjs", pluginLine: 232,
+    codeExcerpt: "?$expand=Properties`;", offendingLiteral: "$expand=Properties",
+    apiShape: "GET {base}/{project}/_apis/wit/…", proposedFix: "drop $expand=Properties",
+    vendorErrorTypeKey: "RuleValidationException", vendorHttpStatus: 400,
+  });
+  // buildFindingIssue renders whatever the finding carries (validateUpstream already gated it)
+  const struct = { pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32", sessionCount: 1, feedback: { up: 0, down: 0 } };
+  const b = buildFindingIssue({ finding: f, struct, route: "issue" });
+  assert.match(b.body, /## Where/);
+  assert.match(b.body, /skills\/project-init\/discover-tracker\.mjs:232/);
+  assert.match(b.body, /\$expand=Properties/);
+  assert.match(b.body, /Vendor error identity: typeKey `RuleValidationException`.*HTTP 400/);
+  assert.match(b.body, /Proposed fix: drop \$expand=Properties/);
+});
+
+test("buildFindingIssue: the containment note is ACCURATE to the v3 rule (not 'NO file paths')", () => {
+  const struct = structOf({ findings: [brokenFinding()] });
+  const b = buildFindingIssue({ finding: struct.findings[0], struct, route: "issue" });
+  assert.match(b.body, /## Containment/);
+  assert.match(b.body, /vendor-provenance/i);
+  assert.doesNotMatch(b.body, /NO file paths/, "the old overclaiming note is gone");
+});
+
+test("buildFindingIssue: operator feedback renders as COUNTS only", () => {
+  const struct = structOf({ findings: [brokenFinding()], feedback: { up: 2, down: 3 } });
+  const b = buildFindingIssue({ finding: struct.findings[0], struct, route: "issue" });
+  assert.match(b.body, /## Operator feedback/);
+  assert.match(b.body, /👍 2 · 👎 3/);
 });
