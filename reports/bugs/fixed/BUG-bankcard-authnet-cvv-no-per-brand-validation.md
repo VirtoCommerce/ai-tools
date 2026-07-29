@@ -1,7 +1,12 @@
 # BUG: Shared bank-card form (Authorize.Net) has no per-brand CVV validation — 3-digit CVV on Amex enables Place order `[Low / P3-ux]`
 
-## Status: READY_TO_SUBMIT
-**JIRA:** VCST-5344 (filed 2026-06-23)
+## Status: FIXED
+**JIRA:** VCST-5344 (filed 2026-06-23 → **Done** 2026-07-27)
+
+## Resolution
+- **Fixed in:** vc-frontend PR [#2352](https://github.com/VirtoCommerce/vc-frontend/pull/2352) (commit `8cab3f88`) — new `client-app/shared/payment/utils/cvv-validation.ts` core (IIN brand detection: Amex 34/37 → 4-digit CVV, else 3) + brand-conditional yup rule / mask / maxlength / placeholder in `bank-card-form.vue`. Skyflow shares the same core, unchanged.
+- **Verified:** 2026-07-27 via `/qa-verify-fix` on theme `2.54.0-pr-2352`, local vc-frontend proxied to vcst-qa, authenticated B2B session. Amex+3-digit → rejected + Place order disabled (3/3); Amex+4 & Visa+3 valid+enabled; Visa clamps CVV to 3 digits. No ghost order. Evidence: `reports/tickets/Sprint26-14/VCST-5344/`.
+- **Note:** PR not yet merged at verification time — QA-signed-off, awaiting human merge. Follow-up: add per-brand CVV case `PAY-AN-0xx` to suite `040b-payment-authorizenet.csv`.
 
 **Env:** vcst-qa @ Theme 2.52.0-pr-2335-f5b1-f5b11db6 (Authorize.Net AllowCartPayment / VCST-5162 cart-embedded flow). Browser: Edge.
 

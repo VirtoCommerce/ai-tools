@@ -2,7 +2,7 @@
 
 **This file is the only place the report policy lives.** All other files (`shared-instructions.md`, `evidence-capture-policy.md`, skill SKILLs, agent definitions) point here. Reports are read by humans on a deadline — long reports get skimmed and bugs get missed. Long-form reasoning, investigation logs, and progress updates belong in SendMessage to the orchestrator, never on disk.
 
-## 1. Only Five Report Categories Allowed
+## 1. Only Ten Report Categories Allowed
 
 | # | Category | Path | When |
 |---|----------|------|------|
@@ -11,12 +11,25 @@
 | 3 | BA report | `reports/ba/` | `/ba-analyze` deliverables |
 | 4 | Regression summary | `reports/regression/REG-*/` | One consolidated report per run |
 | 5 | Monitoring summary | `reports/monitoring/MONITOR-*/` | One consolidated report per `/qa-monitoring` (App Insights) run |
+| 6 | Per-ticket QA report | `reports/tickets/<Sprint>/<TICKET>/` (or `reports/tickets/<TICKET>/`) | A ticket-scoped audit that has its own standalone value beyond the run that produced it — `/qa-verify-fix`, or a ticket-scoped `/qa-design`/`/qa-accessibility`/`/qa-storybook` run. **Not** `/qa-test` — see the terminal-only carve-out below |
+| 7 | BL audit report | `reports/knowledge/BL-AUDIT-<date>.md` | One audit-trail report per `/qa-review-bl` triangulation run |
+| 8 | Exploratory session report | `reports/exploratory/SBTM-*.md` | One report per `/qa-sbtm` / `/qa-exploratory` charter — read back by later sessions for the 24h duplicate-charter check |
+| 9 | Coverage generation report | `reports/coverage/COV-*/` | One consolidated `coverage-generation-report.md` per `/qa-coverage-generation` / `/qa-coverage-gap` run (the run's own intermediate `gap-inventory.json`/`batch-*-results.json` are pipeline working data, not narrative report bloat — §2's cap applies to the markdown digest, not those) |
+| 10 | Performance investigation report | `reports/performance/{topic}-investigation-<date>.md` | A standalone performance investigation with findings worth keeping past the session that produced them |
+
+**Per-ticket folders may hold more than one file** (e.g. a storybook/a11y/bundle-size audit alongside `/qa-verify-fix`'s own report) because each covers a distinct check run against the same ticket — that is not the same failure as splitting one report across files. Each individual file still obeys its own cap below; don't open a new file for a check that fits inside an existing one in the same folder.
 
 **Do NOT create files for:** per-suite intermediate JSON, coverage working files, standalone screenshot dumps, progress/status markdown, debug logs, investigation notes, per-step screenshots, side-by-side comparisons against prior runs, or anything labeled "draft"/"WIP"/"context". Return those via SendMessage. Evidence screenshots go **inline** in the bug report (not as separate `.md`).
 
-**Not a report category — self-diagnostics artifacts.** The `vc-fix` self-diagnostics subsystem writes to `<outputRoot>/.vc-fix/diagnostics/` — the passive collector's `<session_id>.jsonl` (+ `.state.json`), the `/vc-self-check` `DIAG-*.md`, and the `deliver` `DELIVERY-*.md`. These are **gitignored diagnostic artifacts**, NOT one of the five report categories above; the `DIAG-*.md`/`DELIVERY-*.md` still obey the monitoring-summary size discipline (§2, target 15–40, cap ~100). They are **ephemeral, not archived**: the lifecycle is log → analyze (`/vc-self-check`) → contribute (`deliver` PR/issue) → **delete**. Once a finding is contributed upstream the PR/issue is the source of truth, so `deliver` removes the processed session's own artifacts (only that session — never others); nothing is deleted when nothing was delivered. So they don't accumulate and need no manual cleanup.
+**Not a report category — self-diagnostics artifacts.** The `vc-fix` self-diagnostics subsystem writes to `<outputRoot>/.vc-fix/diagnostics/` — the passive collector's `<session_id>.jsonl` (+ `.state.json`), the `/vc-self-check` `DIAG-*.md`, and the `deliver` `DELIVERY-*.md`. These are **gitignored diagnostic artifacts**, NOT one of the ten report categories above; the `DIAG-*.md`/`DELIVERY-*.md` still obey the monitoring-summary size discipline (§2, target 15–40, cap ~100). They are **ephemeral, not archived**: the lifecycle is log → analyze (`/vc-self-check`) → contribute (`deliver` PR/issue) → **delete**. Once a finding is contributed upstream the PR/issue is the source of truth, so `deliver` removes the processed session's own artifacts (only that session — never others); nothing is deleted when nothing was delivered. So they don't accumulate and need no manual cleanup.
 
-**Not a report category — knowledge-maintenance artifacts.** `/qa-review-bl` writes `reports/knowledge/BL-AUDIT-<date>.md` — the audit trail of a BL triangulation run (per-BL verdict, 3-axis evidence refs, what was auto-applied to `business-logic.md`, what was routed to `reports/ba/bl-proposals-<date>.md`). This is NOT one of the five categories above; it obeys the **monitoring-summary size discipline** (§2, target 15–40, cap ~100 — verdict table + Applied + Not-applied + coverage reconciliation, reference the `git diff` for the full oracle change rather than inlining it). The confirmed edits themselves live in the git-tracked `business-logic.md`; the unconfirmed drafts live in the shared `bl-proposals-<date>.md`. BL-AUDIT is the receipt, not the source of truth.
+**BL audit report — the receipt, not the source of truth.** `/qa-review-bl` writes `reports/knowledge/BL-AUDIT-<date>.md` — the audit trail of a BL triangulation run (per-BL verdict, 3-axis evidence refs, what was auto-applied to `business-logic.md`, what was routed to `reports/ba/bl-proposals-<date>.md`). The confirmed edits themselves land in the git-tracked `business-logic.md`; the unconfirmed drafts live in the shared `bl-proposals-<date>.md` (a BA-report artifact, category 3) — BL-AUDIT itself is just the log of that run (verdict table + Applied + Not-applied + coverage reconciliation; reference the `git diff` for the oracle change rather than inlining it).
+
+**Terminal-only — `/qa-test-lifecycle` run summary.** The phase summary, changes inventory, coverage delta, quality-gate verdicts, and next steps are presented **directly in the chat response** — never written to `reports/test-lifecycle/` as a `lifecycle-report.md`/`lifecycle-summary.json` file. Nothing downstream reads those files today (CI's `run-full-cycle.ts` already consumes the agent's returned text, not a file on disk), so persisting them only adds tokens with no reader. Any Phase-5 environment-verification screenshots may still land under the gitignored `reports/test-lifecycle/TLC-*/` path, referenced inline from the chat summary by filename — but no narrative `.md`/`.json` is committed. This is the one pipeline output that is display-only; every other category above still writes to disk because a human or a later run needs to re-open it.
+
+**Terminal-only — `/qa-test`'s own step artifacts.** `/qa-test` runs six steps (Analyze → Analyze Story → Plan → Write → Execute → Explore) that used to each write their own file into `reports/tickets/{SPRINT}/VCST-XXXX/` — `ac-analysis.md`, `testing-checklist.md`, `test-execution-report.md`, `exploratory-session.md`. None of those has a reader beyond the same run that wrote it (the AC table is reconciled in the orchestrator's own context at Step 6b; the checklist is consumed by the Step 4 agent prompts in the same turn). They are now carried in-context and folded into **one** final Step 6 chat report instead. Only two things still persist to `reports/tickets/{SPRINT}/VCST-XXXX/`: **`summary.json`** (small/structured — this is what the Step 1 "same ticket tested in the last 2 hours" duplicate-check scans, so it has to survive the run) and **evidence screenshots**. `test-cases.csv` still writes when Step 3 generates genuinely new cases — that's category 2 (Test cases), not a `/qa-test` narrative artifact. A ticket-scoped run of a *different* skill against the same ticket (`/qa-design`, `/qa-storybook`, `/qa-verify-fix`) still writes its own category-6 report into the same folder — that report has standalone value outside `/qa-test`'s pipeline, which is the distinction that keeps it off this terminal-only list.
+
+**`/qa-checklist` is already terminal-only** — it has never written to `reports/checklists/`; it outputs the unified checklist directly in chat. `reports/checklists/` is a reserved path (documented for a future durable checklist artifact) but has no active writer today.
 
 ## 2. Hard Size Caps (lines)
 
@@ -29,6 +42,12 @@
 | Cross-layer bug | 80–120 | 150 |
 | BA report | 80–150 | 250 (exec summary ≤5 sentences; diagram OR prose, not both) |
 | Monitoring summary | **15–40** | 100 (confirmed / needs-review / dismissed tables; reference telemetry by portal link; a truncated top-frames stack — ≤6 lines — is OK for confirmed/needs-review items, but never full multi-frame dumps) |
+| Per-ticket QA report (each file in the folder) | 30–60 | 120 (one file per check type; a bug found during the check still files separately to `reports/bugs/`, referenced by link, not inlined) |
+| BL audit report | **15–40** | 100 (verdict table + Applied + Not-applied + coverage reconciliation; link the oracle diff, don't inline it) |
+| Exploratory session report | **20–40** | 80 (net-new scenarios + bugs found by link + risk areas; skip a scenario list that just restates the suite CSV) |
+| Coverage generation report (markdown digest only) | 40–80 | 150 (top gaps + totals by priority/domain/category; link `gap-inventory.json`/batch results, don't inline them) |
+| Performance investigation report | 40–80 | 120 |
+| *`/qa-test-lifecycle` / `/qa-test` step artifacts* | — | *terminal output only, no file — see §1* |
 
 Over the hard cap is a review failure — trim before merge. If content genuinely doesn't fit, split it: keep the bug at <150 lines and link a separate investigation file.
 
@@ -41,6 +60,18 @@ Over the hard cap is a review failure — trim before merge. If content genuinel
 **Monitoring summary:** Run ID/date/env/window/layers · Signature counts (seen/new/spiking/triaged/deferred) · Confirmed bugs table (severity, layer, signature, repo, draft link, telemetry link) · Needs-review table · Dismissed table (class, signature, oracle) · "no JIRA filed, no fix attempted" footer.
 
 **BA report:** Title + scope + env · Executive summary (≤5 sentences) · One of: architecture diagram OR prose · Findings table (issue, severity, recommendation) · Open questions/follow-ups.
+
+**Per-ticket QA report:** Ticket ID + title + check type (execution / AC-analysis / a11y / storybook / bundle-size / …) · Env (1 line) · Summary (≤3 sentences) · Findings/checks table · Verdict (PASS/FAIL/PARTIAL) · Bugs filed (links only, not inlined).
+
+**BL audit report:** Run ID/date/scope (all / domain / BL-ID / diff) · Per-BL verdict table (CONFIRMED / DRIFT / MISSING / CONTRADICTORY / RETIRE, with the 3-axis evidence ref) · Applied section (what changed in `business-logic.md`, link the diff) · Not-applied section (link `bl-proposals-<date>.md`) · Test-case coverage reconciliation.
+
+**Exploratory session report:** Charter + duration · Discovery technique/heuristic used (SFDPOT/CRISP) · Net-new scenarios discovered (mandatory) · Bugs found (links only) · Risk areas identified.
+
+**Coverage generation report:** Run ID/date/scope · Gaps found (count by priority/domain/category) · Cases generated (count + suite links, not case bodies) · Validation pass results (if run) · Quality-gate verdict.
+
+**Performance investigation report:** Title + scope + env (1 line) · Metric summary (threshold vs actual, or before/after) · Root cause · Recommendation.
+
+**`/qa-test-lifecycle` / `/qa-test` terminal summary (chat response, not a file):** Run/ticket label · date/scope · Phase or step summary (one line each; skipped steps marked skipped, not omitted) · Findings folded in from every step (AC coverage, checklist gaps, execution results, exploratory findings) · Verdict · Next steps. Same content shape as the other summaries — it's just delivered in chat instead of committed to disk.
 
 ## 4. Cut These Bloat Patterns
 
@@ -104,9 +135,16 @@ Failure traces (real FAIL only):
 
 Reports:
   Bug:           BUG-{Short-Description}.md
-  Execution:     test-execution-report.md  (inside ticket folder)
+  Ticket check:  {check-type}-report.md  (inside reports/tickets/<Sprint>/<TICKET>/ — /qa-verify-fix, /qa-design, /qa-storybook, etc.; NOT /qa-test, see below)
+  BL audit:      BL-AUDIT-YYYY-MM-DD.md  (inside reports/knowledge/)
+  Exploratory:   SBTM-{charter}-YYYY-MM-DD.md  (inside reports/exploratory/)
+  Coverage:      coverage-generation-report.md  (inside reports/coverage/COV-YYYY-MM-DD-HHMM/)
   Regression:    {suite-name}-report.md  or  regression-YYYY-MM-DD.md
-  Investigation: {topic}-investigation-YYYY-MM-DD.md  (separate from bug)
+  Investigation: {topic}-investigation-YYYY-MM-DD.md  (reports/performance/ for perf topics, else standalone — separate from bug)
+
+Terminal-only, no file: `/qa-test-lifecycle` (labeled TLC-YYYY-MM-DD-HHMM in chat) and `/qa-test`'s own
+step artifacts (ac-analysis / testing-checklist / test-execution-report / exploratory-session all fold
+into one chat report; only summary.json + screenshots persist to reports/tickets/<Sprint>/<TICKET>/).
 ```
 
 ## 8. Reference, Don't Inline
@@ -119,3 +157,25 @@ Reports:
 | Test data | `test-data/aliases.json` | `@td(ALIAS.field)` — don't paste rows |
 | BL/ECL invariants | `knowledge/oracles/business-logic.md` | Cite the ID (`BL-AUTH-005`), not the body |
 | Prior runs | `reports/regression/REG-*` | Link by run ID, don't recap |
+| Coverage gap inventory / batch results | `reports/coverage/COV-*/gap-inventory.json`, `batch-*-results.json` | Reference by `GAP-*` ID or batch letter, don't inline the JSON |
+
+## 9. Retention
+
+Report categories don't accumulate forever — each has a lifecycle:
+
+- **Ephemeral run folders** (`reports/regression/{REG-*,SMOKE-*}`, `reports/test-lifecycle/TLC-*`,
+  `reports/coverage/COV-*`, `reports/monitoring/MONITOR-*`) are **already gitignored** (`.gitignore:111`
+  + the evidence-extension rules) — they only ever exist as local disk usage on whoever ran them, never
+  in git history. They age out locally via `npm run reports:prune -- --apply` (default 30 days; the run
+  date is parsed from the `RUN-YYYY-MM-DD-HHMM` folder name).
+- **Git-tracked report folders** (`reports/tickets/<Sprint>/<TICKET>/`) age out the same way via
+  `npm run reports:prune -- --target=tracked --apply` — `git rm` + one commit, gated by the last commit
+  date on that path (not filesystem mtime). The current sprint is always skipped regardless of age.
+- **`vc/shared/archive/sprints/`** (VC-internal, not one of the ten categories above, but the single
+  largest tracked report-like tree in the repo) is pruned by the same `--target=tracked` run.
+- **Durable categories never prune**: `reports/bugs/`, `reports/ba/`, `reports/knowledge/`,
+  `regression/suites/` (Test cases), and `reports/exploratory/` (kept for its own 24h duplicate-charter
+  check — revisit only if it grows unbounded).
+
+Tool: `scripts/maintenance/prune-old-artifacts.mjs` (dry-run by default; `--apply` to act; `--target=local`
+is the default, `--target=tracked` must be named explicitly before anything git-tracked is touched).

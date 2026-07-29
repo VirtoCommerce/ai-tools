@@ -72,6 +72,17 @@ Ambiguous examples: label text changed (intentional?), new console warning (harm
 
 **Discovery pass — ticket / feature / PR testing only (NOT bulk regression).** When testing a ticket, feature, or PR (i.e. not executing a pre-built regression suite), spend a short focused block — ~5–10 min — on active discovery beyond the scripted cases: surprise-seeking plus one adversarial tour or persona lens. Aim to surface at least one scenario the existing cases don't cover. Bulk-regression runs (`test-runner-agent` / `autonomous-test-runner` executing a CSV suite) skip this timed pass and rely on the continuous-observation reflex above. Full methodology: `/qa-exploratory` (discovery-first command) and `/qa-sbtm` (charters, CRISP/SFDPOT, Whittaker tours, personas). Read the VC bug catalog (`knowledge/oracles/vc-bug-catalog.md`) to avoid re-discovering known patterns.
 
+## Self-Check & Verify Work (MANDATORY, every agent, every run)
+
+Before you report a task complete, **verify your own output** — a tool call succeeding is not proof the result is correct or complete. Self-checking is a hard rule for every agent (this applies to the orchestrator and every delegated specialist alike), not an optional final polish.
+
+- **Re-read what you changed.** After editing a file, test case, or report, re-open (or `Grep`) the touched surface to confirm the change landed, is internally consistent, and left no stale references (old selector, renamed field, dangling link, wrong CSV column count).
+- **Run the relevant gate — don't assume green.** If a deterministic check exists for what you touched (`npm run td:validate`, structural CSV validation, `npm run schema:refresh` / fixture validate, an `/qa-env-check` probe), run it and read the result rather than declaring success.
+- **Reconcile against the source of truth.** Confirm assertions, data, and selectors against live/source per the Live-Verification Policy below — never against memory or a stale reference.
+- **Report honestly.** State what you verified and how. If a step failed or was skipped, say so with the evidence; never hedge a claim you did not actually confirm.
+
+Codified in memory `feedback_agents_self_check_and_verify`.
+
 ## Evidence Collection Standards
 
 - **Screenshots**: FAIL state + critical-flow final state only. Skip passing-step captures. Budget per scope defined in evidence-capture-policy.md §1.

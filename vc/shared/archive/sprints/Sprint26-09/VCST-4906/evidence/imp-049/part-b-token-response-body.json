@@ -1,6 +1,0 @@
-{
-  "access_token": "[REDACTED — Bearer JWT scrubbed 2026-07-07 per security audit; token revoked]",
-  "token_type": "Bearer",
-  "expires_in": 1799,
-  "refresh_token": "[REDACTED — offline_access refresh token scrubbed 2026-07-07 per security audit; token revoked]"
-}

@@ -1,69 +1,443 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"NOTIF-004","Add default recipient for notification","Notification Recipients","High",,,"Admin logged in",,"1. Navigate to Notifications
-2. Select a notification type
-3. Add default recipient email
-4. Save",,,,,"C207584",
-"NOTIF-005","Notification added to feed","Notification Feed","High",,,"Notification feed enabled",,"1. Trigger a notification event (e.g. new order)
-2. Navigate to Notification feed",,,,,"C207585",
-"NOTIF-011","Registration notification template","Account Notifications","Critical",,,"Platform configured with registration notification",,"1. Register a new user on storefront
-2. Check email inbox",,,,,"C207386",
-"NOTIF-012","Registration invitation notification","Account Notifications","High",,,"Invitation feature enabled",,"1. Send registration invitation from Admin
-2. Check recipient email inbox",,,,,"C207600",
-"NOTIF-013","Password reset notification","Account Notifications","High",,,"User account exists",,"1. Request password reset on storefront
-2. Check email inbox",,,,,"C207610",
-"NOTIF-014","Password reset limit enforcement","Account Notifications","High",,,"User account exists",,"1. Request password reset multiple times exceeding limit
-2. Attempt another reset",,,,,"C307517",
-"NOTIF-015","Email confirmation notification","Account Notifications","High",,,"Email verification enabled",,"1. Register new user or change email
-2. Check inbox for confirmation email",,,,,"C340946",
-"NOTIF-016","Two-factor authentication email","Account Notifications","High",,,"2FA via email configured",,"1. Login with 2FA-enabled account
-2. Check email for verification code",,,,,"C254245",
-"NOTIF-017","Organization registration notification","Account Notifications","High",,,"Organization registration enabled",,"1. Register a new organization on storefront
-2. Check admin/email notifications",,,,,"C340947",
-"NOTIF-018","Enable abandoned cart notifications (global)","Abandoned Cart","High",,,"Admin logged in; notifications module",,"1. Navigate to Settings > Notifications
-2. Enable abandoned cart notifications globally
-3. Save",,,,,"C394634",
-"NOTIF-019","Trigger abandoned cart email after default time","Abandoned Cart","High",,,"Abandoned cart notifications enabled; cart exists",,"1. Create a cart with items
-2. Wait for default reminder time (5 days or configured)
-3. Check email",,,,,"C394637",
-"NOTIF-020","Custom reminder time for abandoned cart","Abandoned Cart","Medium",,,"Admin logged in",,"1. Navigate to abandoned cart settings
-2. Set custom reminder time
-3. Save and trigger",,,,,"C394638",
-"NOTIF-021","Create order notification","Order Notifications","Critical",,,"Order notification template configured",,"1. Create a new order
-2. Check email for order confirmation",,,,,"C208255",
-"NOTIF-022","Cancel order notification","Order Notifications","High",,,"Order exists; cancellation template configured",,"1. Cancel an existing order
-2. Check email for cancellation notification",,,,,"C208256",
-"NOTIF-023","Order paid notification","Order Notifications","High",,,"Payment notification template configured",,"1. Mark order payment as Paid
-2. Check email",,,,,"C208259",
-"NOTIF-024","Order sent notification","Order Notifications","High",,,"Shipment notification template configured",,"1. Change shipment status to Sent
-2. Check email",,,,,"C208260",
-"NOTIF-025","Invoice notification for customer","Order Notifications","High",,,"Invoice template configured",,"1. Generate invoice for an order
-2. Check customer email",,,,,"C208262",
-"NOTIF-026","Shipment status change notification - PickPack","Order Status Notifications","Medium",,,"Shipment status notification template set",,"1. Change shipment document status to PickPack
-2. Check notification",,,,,"C357104",
-"NOTIF-027","Shipment status change notification - Sent","Order Status Notifications","Medium",,,"Shipment status notification template set",,"1. Change shipment document status to Sent
-2. Check notification",,,,,"C357107",
-"NOTIF-028","Payment status change notification - Paid","Order Status Notifications","Medium",,,"Payment status notification template set",,"1. Change payment document status to Paid
-2. Check notification",,,,,"C357116",
-"NOTIF-029","Payment status change notification - Refunded","Order Status Notifications","Medium",,,"Payment status notification template set",,"1. Change payment document status to Refunded
-2. Check notification",,,,,"C357109",
-"NOTIF-030","SMS notification - phone number change","SMS Notifications","High",,,"SMS gateway configured",,"1. Configure SMS notification gateway
-2. Trigger phone number change event
-3. Check SMS delivery",,,,,"C207563",
-"NOTIF-031","SMS notification - two-factor authentication","SMS Notifications","High",,,"SMS 2FA configured",,"1. Configure SMS as 2FA method
-2. Login with 2FA-enabled account
-3. Check SMS",,,,,"C251791",
-"NOTIF-046","Predefined notification - edit and restore","Predefined Notifications","High",,,"Predefined notification template exists",,"1. Open predefined notification
-2. Edit template content
-3. Save
-4. Click Restore",,,,,"C255756 C255757",
-"NOTIF-047","Send edited predefined template","Predefined Notifications","Medium",,,"Predefined template has been edited",,"1. Edit predefined template
-2. Send to test email",,,,,"C255758",
-"NOTIF-053","Notification Attachment — No Attachment","Notification Attachments","High",,,"Admin logged in to Backend
-Notification template exists without attachments",,"1. Navigate to ${BACK_URL}/notifications
-2. Select a notification type that has no attachments configured
-3. Open the notification template details blade
-4. Verify the Attachments widget or section is visible
-5. Verify the attachment list is empty
-6. Verify the UI indicates the no-attachment state clearly (e.g., empty state message)
-7. Send a test notification from this template
-8. Verify the received email has no file attachments",,,,,"C342062",
+"NOTIF-004","Add default recipient for notification","Notification Recipients","High","BL-NOTIF-001","ECL-4.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'OrderCreateEmailNotification' is active and has a template for the default language","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] Notifications list blade loaded
+[GRID] search the list for 'OrderCreateEmailNotification'
+[ACT] click the row matching 'OrderCreateEmailNotification'
+[WAIT] the '...: Details' blade opens
+[ACT] fill the CC or BCC recipient field with {{ADMIN_EMAIL}}
+[SAVE] click 'Save' in the blade toolbar
+[WAIT] the save settles
+[ACT] click the same notification row again
+[WAIT] the '...: Details' blade reopens","[FORM] the recipient address entered is present in the CC or BCC field after the blade is reopened {DOC}
+[DOM] the CC and BCC fields are present as a TESTING aid only; this case makes no claim that they are a production routing mechanism, because in production the message goes to the customer address automatically {DOC}
+[FORM] the primary recipient value is unchanged by the CC or BCC entry {DOC}","[API] GET /api/notifications/OrderCreateEmailNotification returns the stored CC or BCC value
+[NETWORK] the save returns 2xx with no 4xx/5xx
+[CONSOLE] no JS errors in the Admin SPA during the save","Recipient value lost after reopening the blade; CC or BCC replacing the customer address as the primary recipient; 4xx/5xx on save; no save confirmation","Clear the CC or BCC field and save, restoring the notification's original recipient configuration","C207584 smoke-baseline | Docs: PlatformUserGuide > Notifications > Notification list - CC/BCC are for testing purposes only; in production emails go to the customer address automatically | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-005","Notification added to feed","Notification Feed","High","BL-NOTIF-001","ECL-14.7","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; notification type 'OrderCreateEmailNotification' is active with a template; an order can be placed in this environment, or a recently placed order exists whose feed has not yet been inspected","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] place an order in the environment so the order-placed event is raised
+[WAIT] the order appears in the Admin Orders list
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Orders' in the Admin main menu
+[WAIT] the Orders list blade loaded
+[GRID] search the orders list for the order under test
+[ACT] click the matching order row
+[WAIT] the order details blade opens
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed
+[ACT] click the newest notification feed entry
+[WAIT] the notification details are shown","[DOM] a feed entry for the order-placed notification type is present in the order's 'Notification feed' widget {DOC}
+[DOM] the entry's recipient address and send status are both present on the entry {DOC}
+[DOM] opening the entry shows the rendered notification body, and no unresolved token placeholder text is present in it {BL}
+[DOM] exactly one entry for the order-placed notification type is present for this order {BL}","[ADMIN] the same delivery is also recorded in the module-level Notification log, not only in the per-order feed
+[NETWORK] no 4xx/5xx while the order details blade or the feed widget loads
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","Feed widget empty for an order that raised the event; two entries for one order-placed event; entry without a recipient or status; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Close the order and feed blades; cancel the order placed by this case if the environment requires a clean order list","C207585 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-011","Registration notification template","Account Notifications","Critical","BL-NOTIF-002","ECL-4.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the registration notification type is active with a template for the default language; storefront {{FRONT_URL}} reachable; a fresh unused email address is available for the registration","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{FRONT_URL}}
+[WAIT] the storefront home screen loads
+[ACT] open the registration form from the storefront
+[WAIT] the registration form is shown
+[ACT] fill the registration form with a fresh unused email address
+[ACT] submit the registration form
+[WAIT] the storefront confirms the account was registered
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] a Notification log entry for the registration notification type is present, addressed to the email used for the registration {DOC}
+[DOM] the entry's send status is present and is not an error state {DOC}
+[DOM] the rendered body resolves the personalization tokens - no raw token placeholder text is present {BL}
+[DOM] exactly one registration notification entry is present for that address {BL}","[NETWORK] no 4xx/5xx on the storefront registration request
+[CONSOLE] no JS errors during registration
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No log entry for the registration; entry addressed to the wrong recipient; raw token text in the rendered body; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Remove the account registered by this case, or leave it flagged as AGENT-TEST data for the environment's routine cleanup","C207386 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-012","Registration invitation notification","Account Notifications","High","BL-NOTIF-002","ECL-4.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the registration invitation notification type is active with a template; the Admin customer or organization blade offers the invitation action in this environment; a fresh unused email address is available","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Customers' in the Admin main menu
+[WAIT] the Customers list blade loaded
+[ACT] open the invitation action for a contact or organization
+[WAIT] the invitation form is shown
+[ACT] fill the invitation recipient with a fresh unused email address
+[ACT] click 'Send'
+[WAIT] the invitation is accepted by the Admin UI
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] a Notification log entry for the registration invitation type is present, addressed to the invited address {DOC}
+[DOM] the entry's send status is present and is not an error state {DOC}
+[DOM] the rendered body contains a resolved invitation link, and no raw token placeholder text is present {BL}","[NETWORK] the invitation request returns 2xx with no 4xx/5xx
+[CONSOLE] no JS errors while the invitation is sent
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No log entry for the invitation; unresolved invitation link token in the body; invitation accepted by the UI with no log record; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Remove the pending invitation created by this case if the environment tracks them","C207600 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-013","Password reset notification","Account Notifications","High","BL-NOTIF-002","ECL-4.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the password reset notification type is active with a template; a storefront account exists for {{USER_EMAIL}}; storefront {{FRONT_URL}} reachable","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form is shown
+[ACT] open the forgotten-password form from the sign-in page
+[WAIT] the forgotten-password form is shown
+[ACT] fill 'Email' with {{USER_EMAIL}}
+[ACT] submit the reset request
+[WAIT] the storefront acknowledges the reset request
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] a Notification log entry for the password reset type is present, addressed to {{USER_EMAIL}} {DOC}
+[DOM] the entry's send status is present and is not an error state {DOC}
+[DOM] the rendered body contains a resolved reset link, and no raw token placeholder text is present {BL}
+[DOM] the storefront acknowledgement is visible and does not disclose whether the address is registered {BL}","[NETWORK] no 4xx/5xx on the reset request
+[CONSOLE] no JS errors during the reset request
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No log entry for the reset; unresolved reset-link token in the body; storefront revealing account existence; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Do not consume the reset link, so the account password is unchanged","C207610 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-014","Password reset limit enforcement","Account Notifications","High","BL-NOTIF-007","ECL-4.2, ECL-5.1","state from NOTIF-013 (storefront forgotten-password form open for {{USER_EMAIL}}, one reset already requested and its Notification log entry present); the environment enforces a reset-request limit per account or per period","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[ACT] submit the reset request repeatedly until the configured limit is passed
+[WAIT] the storefront responds to the request beyond the limit
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] the request beyond the limit is refused with a client-facing message, and no server-fault error is present {BL}
+[GRID] the number of Notification log entries for the password reset type stops increasing once the limit is passed {DOC}
+[DOM] the refusal message is visible and does not disclose whether the address is registered {BL}","[NETWORK] the request beyond the limit returns a 4xx client status, never a 5xx (BL-NOTIF-007)
+[CONSOLE] no unhandled JS error raised by the refusal
+[ADMIN] the Notification log shows no additional entry for the refused requests","5xx returned for a rate-limited request; log entries continuing to accumulate past the limit; no refusal at all; refusal message revealing account existence","Wait out the limit window, or reset the counter through the environment's configured mechanism, so later cases are not blocked","C307517 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-015","Email confirmation notification","Account Notifications","High","BL-AUTH-002, BL-NOTIF-002","ECL-4.1","state from NOTIF-011 (a fresh storefront account has just been registered with an unused email address), with email verification ENABLED for the store so the confirmation gate applies; the email confirmation notification type is active with a template","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed
+[ACT] click the newest email-confirmation log entry
+[WAIT] the notification details are shown
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form is shown
+[ACT] fill the sign-in form for the freshly registered unconfirmed account
+[ACT] submit the sign-in form
+[WAIT] the storefront responds to the unconfirmed account","[DOM] a Notification log entry for the email confirmation type is present, addressed to the registered address {DOC}
+[DOM] the rendered body contains a resolved confirmation link, and no raw token placeholder text is present {BL}
+[STATE] the account is gated until the address is confirmed - no fully authenticated session is granted first {BL}","[NETWORK] no 4xx/5xx on the storefront registration request
+[CONSOLE] no JS errors during registration
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No confirmation log entry; unresolved confirmation-link token; account usable before confirmation; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Leave the address unconfirmed and remove the account registered by this case","C340946 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-016","Two-factor authentication email","Account Notifications","High","BL-NOTIF-002","ECL-4.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; two-factor authentication by email is configured for an account in this environment; the 2FA notification type is active with a template","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form is shown
+[ACT] fill the sign-in form for the two-factor enabled account
+[ACT] submit the sign-in form
+[WAIT] the storefront asks for the verification code
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] a Notification log entry for the two-factor notification type is present, addressed to the account's address {DOC}
+[DOM] the rendered body contains a resolved verification code, and no raw token placeholder text is present {BL}
+[DOM] the session is not authenticated until the code is supplied - the storefront keeps the code prompt visible {BL}","[NETWORK] no 4xx/5xx on the sign-in request
+[CONSOLE] no JS errors while the code prompt is shown
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No 2FA log entry; unresolved code token in the body; session authenticated without the code; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Abandon the sign-in without supplying the code, then close the storefront session","C254245 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-017","Organization registration notification","Account Notifications","High","BL-NOTIF-002","ECL-14.3","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; organization self-registration is enabled for the store; the organization registration notification type is active with a template; a fresh unused organization name and email address are available","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{FRONT_URL}}
+[WAIT] the storefront home screen loads
+[ACT] open the organization registration form from the storefront
+[WAIT] the organization registration form is shown
+[ACT] fill the form with a fresh AGENT-TEST organization name plus an unused email address
+[ACT] submit the organization registration form
+[WAIT] the storefront confirms the organization was registered
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] a Notification log entry for the organization registration type is present {DOC}
+[DOM] the rendered body carries the submitted organization name, and no raw token placeholder text is present {BL}
+[DOM] the entry's recipient is the address the form was submitted with, or the configured administrative address {DOC}","[NETWORK] no 4xx/5xx on the organization registration request
+[ADMIN] the organization is present in the Admin Customers list after the registration
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No log entry for the organization registration; organization name missing from the rendered body; organization present in Admin with no notification record; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Remove the AGENT-TEST organization and its account registered by this case","C340947 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-018","Enable abandoned cart notifications (global)","Abandoned Cart","High","BL-NOTIF-004","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the global Cart settings group is reachable through Settings, and the abandoned-cart schedule there is expressed as a cron expression","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Settings' in the Admin main menu
+[WAIT] the Settings blade loaded
+[GRID] search the settings for 'Cart'
+[ACT] open the Cart settings 'General' group
+[WAIT] the Cart general settings blade opens
+[ACT] switch the abandoned-cart notification setting on
+[WAIT] the setting reflects the on state
+[ACT] fill the abandoned-cart schedule field with a valid cron expression
+[SAVE] click 'Save' in the blade toolbar
+[WAIT] the save settles","[FORM] the abandoned-cart notification setting is still on after the blade is reopened {DOC}
+[FORM] the cron expression entered is present after the blade is reopened - the schedule is a cron expression, not a plain day count {DOC}
+[DOM] the same setting is also present per store under Stores, so a store-level value can override the global one {DOC}","[API] the platform settings endpoint returns the stored abandoned-cart flag and cron expression (BL-NOTIF-004)
+[NETWORK] the settings save returns 2xx with no 4xx/5xx
+[CONSOLE] no JS errors during the save","Setting reverting to off after reopening; cron expression lost or silently rewritten; 4xx/5xx on the settings save; no save confirmation","Restore the abandoned-cart flag and schedule to the values the environment started with and save","C394634 smoke-baseline | ROUTE FIX 2026-07-29: the previously-used platform hash route {{BACK_URL}}/#!/settings was never verified against platform source nor observed live, so navigation is now main-menu driven from {{BACK_URL}}. Only {{BACK_URL}}/#!/workspace/notifications is a confirmed route in this suite, per Scripts/notifications.js registering exactly one state | Docs: PlatformUserGuide > Cart > Settings (global cron expression) and Stores > store > Settings > Cart (per-store override) | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-019","Trigger abandoned cart email after default time","Abandoned Cart","High","BL-NOTIF-001","ECL-14.7","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; abandoned-cart notifications are on and the cron schedule is set to a short interval for the duration of this case; a storefront cart with at least one item exists for {{USER_EMAIL}} and is left untouched; the abandoned-cart notification type is active with a template","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[WAIT] the storefront home screen loads
+[ACT] sign in as {{USER_EMAIL}} on the storefront
+[WAIT] the storefront shows the signed-in state
+[ACT] put at least one item in the cart
+[WAIT] the cart badge reflects the item
+[ACT] leave the cart untouched for the configured cron interval
+[WAIT] the scheduled job window has elapsed
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] a Notification log entry for the abandoned-cart notification type is present, addressed to {{USER_EMAIL}} {DOC}
+[GRID] the entry becomes present only after the configured cron interval has elapsed, not at the moment the cart was filled {DOC}
+[DOM] the rendered body lists the abandoned cart's items, and no raw token placeholder text is present {BL}
+[DOM] exactly one abandoned-cart entry is present for that cart in the interval {BL}","[ADMIN] the scheduled job that raises this notification reports a completed run in the platform job surface
+[NETWORK] no 4xx/5xx while the Notification log blade loads
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","Reminder firing immediately instead of on the cron schedule; two reminders for one cart in one interval; empty item list in the rendered body; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Empty the storefront cart, sign out, and restore the cron schedule to the environment's original value","C394637 smoke-baseline | Docs: PlatformUserGuide > Cart > Settings (global cron expression) and Stores > store > Settings > Cart (per-store override) | https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-020","Custom reminder time for abandoned cart","Abandoned Cart","Medium","BL-NOTIF-004","ECL-7.2","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a store exists whose Cart settings can be edited; the global abandoned-cart cron expression is known so the store-level value can be compared against it","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Stores' in the Admin main menu
+[WAIT] the Stores list blade loaded
+[ACT] click the store under test
+[WAIT] the store details blade opens
+[ACT] open the store's Cart settings
+[WAIT] the store Cart settings blade opens
+[ACT] fill the store's abandoned-cart schedule with a cron expression that differs from the global one
+[SAVE] click 'Save' in the blade toolbar
+[WAIT] the save settles","[FORM] the store-level cron expression is present after the blade is reopened {DOC}
+[FORM] the global setting is unchanged by the store-level edit {DOC}
+[DOM] the store-level value takes precedence for that store's carts, so the two scopes are distinct rather than one overwriting the other {DOC}","[API] the store settings endpoint returns the store-level cron expression while the global endpoint still returns the original (BL-NOTIF-004)
+[NETWORK] the store save returns 2xx with no 4xx/5xx
+[CONSOLE] no JS errors during the save","Store-level value lost after reopening; store edit rewriting the global setting; 4xx/5xx on the store save; the two scopes reporting the same value after only one was changed","Restore the store's abandoned-cart schedule to its original value and save","C394638 smoke-baseline | Docs: PlatformUserGuide > Cart > Settings (global cron expression) and Stores > store > Settings > Cart (per-store override) | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-021","Create order notification","Order Notifications","Critical","BL-NOTIF-001, BL-NOTIF-003","ECL-14.7","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the order-placed notification type is active with a template for the default language; an order can be placed in this environment","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] place an order in the environment
+[WAIT] the order confirmation is shown to the buyer
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Orders' in the Admin main menu
+[WAIT] the Orders list blade loaded
+[GRID] search the orders list for the order under test
+[ACT] click the matching order row
+[WAIT] the order details blade opens
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed
+[ACT] click the order-placed notification feed entry
+[WAIT] the notification details are shown","[DOM] a feed entry for the order-placed notification type is present for this order {DOC}
+[DOM] exactly one order-placed entry is present for the order - neither zero nor a duplicate {BL}
+[DOM] the rendered body carries this order's number, item names, quantities and total, with no raw token placeholder text present {BL}
+[DOM] the order itself is present in the Admin Orders list regardless of the notification's send status, so notification handling never blocks order placement {BL}","[ADMIN] the same delivery is recorded in the module-level Notification log with a send status
+[NETWORK] no 4xx/5xx on the order-placement request
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","Zero or two order-placed entries for one order; order missing while a notification exists; token text unresolved in the rendered body; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Cancel the order placed by this case if the environment requires a clean order list","C208255 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-022","Cancel order notification","Order Notifications","High","BL-NOTIF-002","ECL-13.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the order-cancelled notification type is active with a template; an order exists that can be cancelled in this environment","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Orders' in the Admin main menu
+[WAIT] the Orders list blade loaded
+[GRID] search the orders list for the order under test
+[ACT] click the matching order row
+[WAIT] the order details blade opens
+[ACT] cancel the order from the order details blade
+[WAIT] the order status reflects the cancellation
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed","[DOM] a feed entry for the order-cancelled notification type is present for this order {DOC}
+[DOM] the rendered body carries this order's number and its cancelled status, with no raw token placeholder text present {BL}
+[DOM] the earlier order-placed entry is still present in the feed - the cancellation adds a record rather than replacing history {DOC}","[ADMIN] the cancellation notification is also recorded in the module-level Notification log
+[NETWORK] no 4xx/5xx on the cancellation request
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No cancellation entry after the status change; feed history replaced instead of appended; wrong order number in the rendered body; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Leave the order cancelled, or restore its prior status if the environment baseline requires it","C208256 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-023","Order paid notification","Order Notifications","High","BL-NOTIF-001","ECL-13.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the order-payment notification type is active with a template; an order exists with MORE THAN ONE payment document so the partial-payment condition can be exercised, and none of them is completed yet","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Orders' in the Admin main menu
+[WAIT] the Orders list blade loaded
+[GRID] search the orders list for the multi-payment order under test
+[ACT] click the matching order row
+[WAIT] the order details blade opens
+[ACT] set the FIRST payment document status to a completed state
+[WAIT] the payment status reflects the change
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed
+[ACT] set every remaining payment document status to a completed state
+[WAIT] the payment statuses reflect the change
+[ACT] open the 'Notification feed' widget again
+[WAIT] the notification feed entries are listed","[DOM] after only the first of several payments is completed, no order-payment notification entry is present - the notification fires only when ALL payments related to the order have been completed {DOC}
+[DOM] once every payment is completed, exactly one order-payment entry is present {DOC}
+[DOM] the rendered body carries this order's number and paid amount, with no raw token placeholder text present {BL}
+[GRID] completing the remaining payments does not add a second order-payment entry {BL}","[ADMIN] the module-level Notification log agrees with the per-order feed on the count of order-payment entries
+[NETWORK] no 4xx/5xx on the payment status change requests
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","Notification firing on a partial payment; no notification once all payments are complete; two entries for one fully paid order; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Restore the order's payment document statuses to the values the environment started with","C208259 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications - the order payment notification fires when ALL payments related to the order have been completed | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-024","Order sent notification","Order Notifications","High","BL-NOTIF-001","ECL-13.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the order-shipped notification type is active with a template; an order exists with MORE THAN ONE shipment or line item so a partial shipment can be exercised, and nothing is shipped yet","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Orders' in the Admin main menu
+[WAIT] the Orders list blade loaded
+[GRID] search the orders list for the multi-shipment order under test
+[ACT] click the matching order row
+[WAIT] the order details blade opens
+[ACT] set the FIRST shipment document status to a shipped state
+[WAIT] the shipment status reflects the change
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed
+[ACT] set every remaining shipment document status to a shipped state
+[WAIT] the shipment statuses reflect the change
+[ACT] open the 'Notification feed' widget again
+[WAIT] the notification feed entries are listed","[DOM] after only part of the order is shipped, no order-shipped notification entry is present - the notification fires only when ALL ordered items have been shipped {DOC}
+[DOM] once every item is shipped, exactly one order-shipped entry is present {DOC}
+[DOM] the rendered body carries this order's number and the shipped items, with no raw token placeholder text present {BL}
+[GRID] shipping the remaining items does not add a second order-shipped entry {BL}","[ADMIN] the module-level Notification log agrees with the per-order feed on the count of order-shipped entries
+[NETWORK] no 4xx/5xx on the shipment status change requests
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","Notification firing on a partial shipment; no notification once everything is shipped; two entries for one fully shipped order; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Restore the order's shipment document statuses to the values the environment started with","C208260 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications - the order shipped notification fires when ALL ordered items have been shipped | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-025","Invoice notification for customer","Order Notifications","High","BL-NOTIF-002","ECL-13.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the invoice notification type is active with a template; an order exists for which an invoice can be issued in this environment","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Orders' in the Admin main menu
+[WAIT] the Orders list blade loaded
+[GRID] search the orders list for the order under test
+[ACT] click the matching order row
+[WAIT] the order details blade opens
+[ACT] issue the invoice for the order
+[WAIT] the invoice is reflected on the order
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed","[DOM] a feed entry for the invoice notification type is present for this order {DOC}
+[DOM] the rendered body carries this order's number, line items and totals, with no raw token placeholder text present {BL}
+[DOM] the entry's recipient is the order's customer address {BL}","[ADMIN] the invoice notification is also recorded in the module-level Notification log
+[NETWORK] no 4xx/5xx while the invoice is issued
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No invoice entry after the invoice is issued; totals in the rendered body disagreeing with the order; entry addressed to a non-customer address; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Leave the invoice in place, or void it if the environment baseline requires it","C208262 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-026","Shipment status change notification - PickPack","Order Status Notifications","Medium","BL-NOTIF-002","ECL-13.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; the shipment status notification type is active with a template; an order exists whose shipment document can be moved to the PickPack state","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Orders' in the Admin main menu
+[WAIT] the Orders list blade loaded
+[GRID] search the orders list for the order under test
+[ACT] click the matching order row
+[WAIT] the order details blade opens
+[ACT] set the shipment document status to PickPack
+[WAIT] the status reflects the change
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed","[DOM] a feed entry for the shipment status notification type is present after the move to PickPack {DOC}
+[DOM] the rendered body names the PickPack status and this order's number, with no raw token placeholder text present {BL}
+[DOM] earlier feed entries for this order are still present - a status change appends a record rather than replacing history {DOC}","[ADMIN] the same delivery is recorded in the module-level Notification log
+[NETWORK] no 4xx/5xx on the status change request
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No entry after the move to PickPack; wrong status named in the rendered body; feed history replaced instead of appended; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Restore the order's shipment document status to the value the environment started with","C357104 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-027","Shipment status change notification - Sent","Order Status Notifications","Medium","BL-NOTIF-002","ECL-13.1","state from NOTIF-026 (the Admin order details blade is open for the order under test with its 'Notification feed' widget reachable); the shipment status notification type is active with a template and the order's shipment document can be moved to the Sent state","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] set the shipment document status to Sent
+[WAIT] the status reflects the change
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed","[DOM] a feed entry for the shipment status notification type is present after the move to Sent {DOC}
+[DOM] the rendered body names the Sent status and this order's number, with no raw token placeholder text present {BL}
+[DOM] earlier feed entries for this order are still present - a status change appends a record rather than replacing history {DOC}","[ADMIN] the same delivery is recorded in the module-level Notification log
+[NETWORK] no 4xx/5xx on the status change request
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No entry after the move to Sent; wrong status named in the rendered body; feed history replaced instead of appended; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Restore the order's shipment document status to the value the environment started with","C357107 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-028","Payment status change notification - Paid","Order Status Notifications","Medium","BL-NOTIF-002","ECL-13.1","state from NOTIF-026 (the Admin order details blade is open for the order under test with its 'Notification feed' widget reachable); the payment status notification type is active with a template and the order's payment document can be moved to the Paid state","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] set the payment document status to Paid
+[WAIT] the status reflects the change
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed","[DOM] a feed entry for the payment status notification type is present after the move to Paid {DOC}
+[DOM] the rendered body names the Paid status and this order's number, with no raw token placeholder text present {BL}
+[DOM] earlier feed entries for this order are still present - a status change appends a record rather than replacing history {DOC}","[ADMIN] the same delivery is recorded in the module-level Notification log
+[NETWORK] no 4xx/5xx on the status change request
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No entry after the move to Paid; wrong status named in the rendered body; feed history replaced instead of appended; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Restore the order's payment document status to the value the environment started with","C357116 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-029","Payment status change notification - Refunded","Order Status Notifications","Medium","BL-NOTIF-002","ECL-13.1","state from NOTIF-028 (the Admin order details blade is open for the order under test with its 'Notification feed' widget reachable); the payment status notification type is active with a template and the order's payment document can be moved to the Refunded state","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] set the payment document status to Refunded
+[WAIT] the status reflects the change
+[ACT] open the 'Notification feed' widget
+[WAIT] the notification feed entries are listed","[DOM] a feed entry for the payment status notification type is present after the move to Refunded {DOC}
+[DOM] the rendered body names the Refunded status and this order's number, with no raw token placeholder text present {BL}
+[DOM] earlier feed entries for this order are still present - a status change appends a record rather than replacing history {DOC}","[ADMIN] the same delivery is recorded in the module-level Notification log
+[NETWORK] no 4xx/5xx on the status change request
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","No entry after the move to Refunded; wrong status named in the rendered body; feed history replaced instead of appended; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Restore the order's payment document status to the value the environment started with","C357109 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/order-management/notifications#view-order-notifications | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-030","SMS notification - phone number change","SMS Notifications","High","BL-NOTIF-002","ECL-4.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; an SMS gateway is configured in this environment; the phone-change text notification type is active with a template; text notifications carry no Subject, so no subject assertion applies; an account with a changeable phone number is available","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[WAIT] the storefront home screen loads
+[ACT] sign in as {{USER_EMAIL}} on the storefront
+[WAIT] the storefront shows the signed-in state
+[ACT] open the account profile page
+[WAIT] the profile form is shown
+[ACT] fill the phone number field with a different valid number
+[ACT] submit the profile form
+[WAIT] the storefront confirms the profile change
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] a Notification log entry for the phone-change text notification type is present {DOC}
+[DOM] the entry is a text notification, so no Subject value is present on it {DOC}
+[DOM] the rendered message body resolves its tokens - no raw token placeholder text is present {BL}
+[DOM] the entry's recipient is the phone number involved in the change {BL}","[NETWORK] no 4xx/5xx on the profile change request
+[CONSOLE] no JS errors while the profile is saved
+[EMAIL] SMS gateway delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real gateway and handset or sink are reachable; the Notification log entry asserted above is the primary oracle","No text notification log entry after the phone change; a Subject rendered on a text notification; unresolved token text in the message body; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Restore the account's original phone number and sign out","C207563 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | PlatformUserGuide > Notifications > Notification list - notification types split into Email and Text (SMS), and text notifications have no Subject | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-031","SMS notification - two-factor authentication","SMS Notifications","High","BL-NOTIF-002","ECL-4.2","state from NOTIF-016 (a two-factor sign-in has just been initiated on the storefront and the verification-code prompt is showing), EXCEPT that the account's two-factor method is SMS rather than email and an SMS gateway is configured in this environment; the two-factor text notification type is active with a template","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed
+[ACT] click the newest two-factor text log entry
+[WAIT] the notification details are shown","[DOM] a Notification log entry for the two-factor text notification type is present {DOC}
+[DOM] the entry is a text notification, so no Subject value is present on it {DOC}
+[DOM] the rendered message body contains a resolved verification code, and no raw token placeholder text is present {BL}
+[DOM] the session is not authenticated until the code is supplied - the storefront keeps the code prompt visible {BL}","[NETWORK] no 4xx/5xx on the sign-in request
+[CONSOLE] no JS errors while the code prompt is shown
+[EMAIL] SMS gateway delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real gateway and handset or sink are reachable; the Notification log entry asserted above is the primary oracle","No text 2FA log entry; a Subject rendered on a text notification; unresolved code token in the message body; session authenticated without the code","Abandon the sign-in without supplying the code, then close the storefront session","C251791 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | PlatformUserGuide > Notifications > Notification list | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-046","Predefined notification - edit and restore","Predefined Notifications","High","BL-NOTIF-005","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; a notification type whose Templates grid ALREADY carries a row badged both 'Predefined' and 'Edited' - i.e. a saved override of a shipped default exists for that language. The case must start from an existing override, never create one, so that its cleanup can restore prior content by re-saving instead of taking the destructive reset path (that path is NOTIF-075, on a disposable override). 'InvoiceEmailNotification' carries such a row in the reference environment; module version is the PR #202 build or later. The predefined and edited flags are synthesized in the templates-list and blade controllers for display only, so assert them in the UI and never against the API","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] Notifications list blade loaded
+[GRID] search the list for 'InvoiceEmailNotification'
+[ACT] click the row matching 'InvoiceEmailNotification'
+[WAIT] the '...: Details' blade opens with the Templates grid
+[GRID] note the badges and the stored content of the override row
+[ACT] click the template row whose badge pair is 'Predefined' plus 'Edited'
+[WAIT] the '...: Template' blade opens
+[SCROLL] bring the blade header area into view
+[ACT] append a distinct marker to 'Subject'
+[SAVE] click 'Save' in the blade toolbar
+[WAIT] the save settles and the Templates grid refreshes
+[ACT] click the same template row again
+[WAIT] the '...: Template' blade reopens
+[ACT] click 'Restore' in the blade toolbar
+[WAIT] the confirmation modal is shown
+[ACT] click 'Cancel' in the modal
+[WAIT] the modal is gone and the blade is back in view","[DOM] a note is visible on blade open, warning that saving replaces the predefined version and that the original can be restored with the corresponding toolbar command {DOC}
+[DOM] that note is still visible after further edits, up to the moment 'Save' is used {DOC}
+[DOM] the note text resolves from the localized note-caption and note-text keys, and hardcoded English is absent {DOC}
+[DOM] the template accepts edits and 'Save' becomes enabled, which is the documented override behaviour and not a defect {DOC}
+[DOM] 'Restore' is present in the blade toolbar exactly while the row is both predefined and edited {DOC}
+[DOM] clicking 'Restore' raises a modal captioned 'Confirm reset template' warning that the change is permanent and cannot be undone, listing the languages whose templates will be deleted, with a 'Type yes to delete:' field and 'Confirm' / 'Cancel' controls - 'Restore' is a guarded destructive action, not a plain persist {OBSERVED}
+[DOM] no request is issued by clicking 'Restore' itself; nothing is mutated until the modal is confirmed {OBSERVED}
+[FORM] after 'Cancel' the override content is byte-identical to what it was before 'Restore' was clicked {OBSERVED}","[NETWORK] the save issues PUT /api/notifications/{type} and returns 2xx (VCST-5607: the drill-down path issues no PUT today)
+[NETWORK] clicking 'Restore' and then 'Cancel' issues no mutating request at all
+[API] GET /api/notifications/InvoiceEmailNotification returns the override content after the save, and the same content again after the cancelled reset
+[CONSOLE] no JS errors during the edit, the save or the cancelled reset","No warning note on a row badged Predefined and Edited; Restore missing from the toolbar in that state; Restore acting immediately with no confirmation modal; a request fired by clicking Restore; Cancel altering the override; no PUT issued on Save","Remove the appended subject marker, save, and confirm through the API that the override matches its pre-test content. Do NOT use the Restore confirm path for cleanup - it deletes the override outright","C255756 C255757 VCST-5557 VCST-5606 - editability of a predefined template is documented override behaviour (PlatformUserGuide > Notifications > Notification Templates), not a defect; Synced: VCST-5557 / PR #202 (2026-07-29) | Phase 5 2026-07-29 corrected this case: Restore is NOT a plain persist but a guarded destructive reset (confirm modal with a type-yes gate); no request fires on click and Cancel is fully non-destructive. The Confirm path is covered separately by NOTIF-075 on a disposable override. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-047","Send edited predefined template","Predefined Notifications","Medium","BL-NOTIF-002","ECL-14.7","state from NOTIF-046 (an override of the shipped default exists for that language, so the Templates grid row is badged both 'Predefined' and 'Edited', and the '...: Template' blade is open on it with no pending reset); outbound mail transport configured for the environment","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] click 'Send test email' in the blade toolbar
+[WAIT] the recipient prompt is shown
+[ACT] fill 'Email': {{ADMIN_EMAIL}}
+[ACT] click 'Send'
+[WAIT] a notification about the send result appears","[DOM] 'Preview' and 'Send test email' are enabled on a predefined-sourced template {SPEC}
+[TOAST] a notification reports the send was accepted and no error dialog is present {SPEC}
+[EMAIL] the delivered message carries the edited override content and the shipped default content is absent {DOC}","[NETWORK] the send request returns 2xx with no 4xx/5xx
+[EMAIL] exactly one message arrives at {{ADMIN_EMAIL}} within 60s
+[CONSOLE] no JS errors during the send","'Send test email' disabled on a predefined-sourced template; shipped default content delivered instead of the override; 4xx/5xx on send; no message within 60s","Close the Template and Details blades without saving, leaving the override exactly as NOTIF-046 left it","C255758 VCST-5557 VCST-5606 Synced: VCST-5557 / PR #202 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)",""
+"NOTIF-053","Notification Attachment — No Attachment","Notification Attachments","High","BL-NOTIF-002","ECL-8.1","Admin signed in at {{BACK_URL}} with notification management permissions; VirtoCommerce.Notifications module installed and active; a notification type exists with a template and NO attachments configured","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] Notifications list blade loaded
+[GRID] search the list for the notification type that has no attachments configured
+[ACT] click the matching notification row
+[WAIT] the '...: Details' blade opens
+[ACT] open the attachments section of the notification
+[WAIT] the attachments section is shown
+[ACT] click 'Send test email' in the blade toolbar
+[WAIT] the recipient prompt is shown
+[ACT] fill 'Email': {{ADMIN_EMAIL}}
+[ACT] click 'Send'
+[WAIT] a notification about the send result appears
+[NAV] {{BACK_URL}}
+[WAIT] the Admin workspace loads
+[ACT] open 'Notifications' in the Admin main menu
+[WAIT] the Notifications blade is shown
+[ACT] click 'Notification log' in the Notifications blade
+[WAIT] the Notification log blade loaded with its entries listed","[DOM] the attachments section is visible and its list of attachments is empty, with an explicit empty state rather than a blank area {DOC}
+[DOM] a Notification log entry for the send is present {DOC}
+[DOM] the log entry lists no attachment for this notification - its attachment list is empty or absent {DOC}
+[DOM] the rendered body resolves its tokens - no raw token placeholder text is present {BL}","[API] GET /api/notifications/{type} returns an empty attachment collection for this notification
+[NETWORK] the send request returns 2xx with no 4xx/5xx
+[EMAIL] mailbox delivery is an ENVIRONMENT-DEPENDENT check - perform it only where a real inbox is reachable in this environment; the Notification log entry asserted above is the primary oracle","Attachments section missing entirely; blank area with no empty state; log entry recording an attachment where none is configured; no new Notification log entry within 60s of the trigger; log entry present with an error status and no retry; unresolved token text in the rendered body; 4xx/5xx while the log or feed blade loads","Close the Details blade without saving; no attachment configuration changed","C342062 smoke-baseline | Docs: https://docs.virtocommerce.org/platform/user-guide/notifications/notification-log | PlatformUserGuide > Notifications > Notification list | Reviewed: /qa-test-lifecycle review 057,058 (2026-07-29) | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29) | Fixed a data-validity defect in this case: its steps used the non-standard token form dollar-brace BACK_URL, which the {{VAR}} resolver does not substitute; now {{BACK_URL}}.",""
+"NOTIF-075","Restore confirm dialog - an invalid confirmation phrase blocks the delete, 'yes' removes the override (disposable override only)","Predefined Notifications","Medium","BL-NOTIF-005","ECL-10.2","Admin signed in at {{BACK_URL}} with notification management permissions; a notification type that ships a predefined template and currently has NO override for the target language - its Templates grid shows no row badged 'Edited' for it (for example 'AbandonedCartEmailNotification' in the reference environment). The case CREATES its own disposable override and then removes it, so the end state equals the start state. NEVER run this against a real override - that is what NOTIF-046 covers with the non-destructive Cancel path; module version is the PR #202 build or later","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/#!/workspace/notifications?type=AbandonedCartEmailNotification
+[WAIT] the '...: Template' blade opens on the predefined template from the cold load
+[ACT] append a distinct disposable marker to 'Subject'
+[SAVE] click 'Save' in the blade toolbar
+[WAIT] the save settles, creating a disposable override
+[NAV] {{BACK_URL}}/#!/workspace/notifications
+[WAIT] Notifications list blade loaded
+[GRID] search the list for 'AbandonedCartEmailNotification'
+[ACT] click the matching notification row
+[WAIT] the '...: Details' blade opens with the Templates grid
+[ACT] click the template row whose badge pair is now 'Predefined' plus 'Edited'
+[WAIT] the '...: Template' blade opens
+[ACT] click 'Restore' in the blade toolbar
+[WAIT] the confirmation modal is shown
+[ACT] type an incorrect phrase into the 'Type yes to delete:' field
+[ACT] type the exact phrase 'yes' into the 'Type yes to delete:' field
+[ACT] click 'Confirm' in the modal
+[WAIT] the reset settles and the Templates grid refreshes","[DOM] clicking 'Restore' raises a modal captioned 'Confirm reset template' warning that the change is permanent and cannot be undone, listing the languages whose templates will be deleted, with a 'Type yes to delete:' field and 'Confirm' / 'Cancel' controls {OBSERVED}
+[DOM] verify whether 'Confirm' stays disabled until the exact phrase 'yes' is present, so an incorrect or empty phrase cannot trigger the delete {HYPOTHESIS}
+[GRID] after 'Confirm' no row badged 'Edited' is present for that language - the disposable override is gone {DOC}
+[FORM] the shipped predefined subject and body are present after the reset, and the disposable marker is absent {DOC}
+[DOM] 'Restore' is absent from the blade toolbar once no override remains {DOC}","[NETWORK] no mutating request is issued by clicking 'Restore' or by an incorrect confirmation phrase; only 'Confirm' issues one, and it returns 2xx
+[API] GET /api/notifications/AbandonedCartEmailNotification returns the shipped predefined content after the reset, with the disposable marker absent
+[CONSOLE] no JS errors during the reset","Delete proceeding without the exact confirmation phrase; override still present after Confirm; Restore still offered once no override remains; 4xx/5xx on Confirm; the reset removing templates for languages the modal did not list","Nothing to undo - the case ends on the shipped predefined default, the state it started from. Confirm through the API that no override remains for the target language, and that no other language lost its template","VCST-5557 VCST-5606 | Authored 2026-07-29 from the Phase 5 finding that 'Restore' is a guarded destructive reset. Deliberately scoped to a DISPOSABLE override the case creates itself, so the Confirm (delete) path is exercised without destroying real data - NOTIF-046 keeps the non-destructive Cancel path. The type-yes gate is the one assertion still ungrounded: the field and its label were observed, but whether Confirm is disabled until the phrase matches was not. | Lane: playwright-edge or playwright-chrome (NOT firefox - Phase 5 2026-07-29)","Draft"

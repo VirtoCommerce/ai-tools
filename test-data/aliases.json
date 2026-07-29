@@ -3801,6 +3801,22 @@
       "store": "store"
     }
   },
+  "SR_REP_ACME3": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_ACME3"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    },
+    "_notes": "THIRD active ACME rep on B2B-store, added 2026-07-29 by the 050m data-sufficiency audit. customerSalesReps paging (050m SR-GQL-004) needs >=3 active unlocked same-store reps serving ORG_ACME so that first:2 yields hasNextPage=true; only SR_REP_PRIMARY and SR_REP_ACME2 qualified (SECOND_STORE is Electronics-scoped, BLOCKED is account-blocked, LOCKED is per-org locked — all three correctly excluded), so the case could not pass on data grounds. Runtime GUIDs live in aliases.<env>.json (npm run seed:sales-rep)."
+  },
   "SR_REP_NOCUSTOMERS": {
     "file": "sales-rep/sales-reps",
     "filter": {

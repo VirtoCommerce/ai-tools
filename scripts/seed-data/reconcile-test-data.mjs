@@ -43,6 +43,7 @@ import {
   ROOT, BACK_URL, api, auth, assertSafeTarget, loadAliases, log, SEED_FAMILY, STORE_ID,
 } from '../lib/seed-common.mjs';
 import { resolveAllRoles, roleByKey } from '../lib/user-roles.mjs';
+import { selectProbeTargets } from './overlay-specs.mjs';
 
 const WARN_ONLY = process.argv.includes('--warn-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -517,6 +518,55 @@ async function checkAuthDrift() {
   }
 }
 
+/* ── 11. Overlay GUID liveness — every runtime id in aliases.<env>.json resolves ──
+ * The overlay is the ONLY place a runtime platform GUID may live (.claude/rules/test-data.md
+ * "Seed writeback"), and it is COMMITTED, so it is shared by the whole team + CI. When a fixture is
+ * torn down and re-seeded, the entity comes back with a NEW GUID and the overlay must be re-written
+ * and re-committed — but nothing enforced that, so a stale overlay silently pointed @td(ALIAS.id) at
+ * a DELETED entity. That fails open, not loud: an assertion like `items[?id=<stale guid>] is
+ * non-null` simply never matches, and a case reads as a product bug.
+ *
+ * Found live on vcst 2026-07-29: all 8 SR_REP_* ids + user_ids AND SR_OWNER_ACME in
+ * aliases.vcst.json were stale (the reps had been re-created), so every 050m case keyed on a rep id
+ * was asserting against GUIDs that no longer existed. Fix = re-run the owning seeder and commit the
+ * refreshed overlay.
+ *
+ * Probe: MEMBERS ONLY, via the authoritative index-independent GET /api/members/{id}. Scope is an
+ * explicit allowlist (./overlay-specs.mjs) because the overlay also holds products, pricelists,
+ * catalogs, configuration sections, addresses and BOPIS locations — probing those with the member
+ * endpoint would report ~90% false "stale". Security-ACCOUNT ids are deliberately out of scope:
+ * this platform has no reliable by-GUID account lookup (GET /users/{guid} → 200 + null; the users
+ * search IGNORES an `ids` filter — both verified live 2026-07-29). Account health is covered by
+ * check [10] Auth drift, which authenticates instead of resolving an id. */
+
+async function memberResolves(id) {
+  const m = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] });
+  return !!(m && m.id === id); // VC returns 200 + empty body for a missing member
+}
+
+async function checkOverlayGuidLiveness() {
+  console.log(`\n[11] Overlay GUID liveness (test-data/aliases.${TEST_ENV}.json → live member)`);
+  const overlayPath = join(ROOT, `test-data/aliases.${TEST_ENV}.json`);
+  if (!existsSync(overlayPath)) { warn(`no aliases.${TEST_ENV}.json — nothing to verify (seed this env to create it)`); return; }
+  let overlay;
+  try { overlay = JSON.parse(readFileSync(overlayPath, 'utf8')); }
+  catch (e) { fail(`aliases.${TEST_ENV}.json is not valid JSON: ${String(e.message).slice(0, 120)}`); return; }
+
+  const { probe, skipped } = selectProbeTargets(overlay);
+  if (!probe.length) { warn(`aliases.${TEST_ENV}.json carries no member GUIDs to verify`); return; }
+  const stale = [];
+  for (const t of probe) {
+    try { if (!(await memberResolves(t.id))) stale.push(t); }
+    catch (e) { warn(`${t.alias}.${t.field}: probe error — ${String(e.message).slice(0, 90)}`); }
+  }
+  for (const t of stale) {
+    fail(`aliases.${TEST_ENV}.json: ${t.alias}.${t.field}=${t.id} is not a live member — STALE overlay (the fixture was re-created with a new GUID); re-run the owning seeder and commit the refreshed overlay`);
+  }
+  if (!stale.length) ok(`all ${probe.length} member GUID(s) in the overlay resolve live`);
+  else ok(`probed ${probe.length} member GUID(s): ${probe.length - stale.length} live, ${stale.length} STALE`);
+  if (skipped.length) console.log(`     (${skipped.length} non-member GUID(s) not verified — see scripts/seed-data/overlay-specs.mjs for why)`);
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -532,6 +582,7 @@ async function checkAuthDrift() {
   await checkSeedEntityPrefixes();
   await checkSeoComplete();
   await checkAuthDrift();
+  await checkOverlayGuidLiveness();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);

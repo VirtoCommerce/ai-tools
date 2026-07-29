@@ -171,7 +171,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 39,
+      "testCount": 40,
       "estimatedMinutes": 28,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -213,7 +213,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 31,
+      "testCount": 36,
       "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -301,7 +301,7 @@
       "layer": "frontend",
       "concern": "e2e",
       "priority": "P1",
-      "testCount": 23,
+      "testCount": 26,
       "estimatedMinutes": 130,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -617,7 +617,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 35,
+      "testCount": 48,
       "estimatedMinutes": 23,
       "agent": "qa-backend-expert",
       "tags": [
@@ -728,7 +728,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 34,
+      "testCount": 37,
       "estimatedMinutes": 23,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -767,7 +767,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 14,
+      "testCount": 15,
       "estimatedMinutes": 10,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1341,7 +1341,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 29,
+      "testCount": 49,
       "estimatedMinutes": 14,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1522,8 +1522,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 54,
-      "estimatedMinutes": 134,
+      "testCount": 98,
+      "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
@@ -1706,8 +1706,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 27,
-      "estimatedMinutes": 19,
+      "testCount": 54,
+      "estimatedMinutes": 35,
       "agent": "qa-backend-expert",
       "tags": [
         "notifications",
@@ -1729,8 +1729,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 26,
-      "estimatedMinutes": 18,
+      "testCount": 27,
+      "estimatedMinutes": 19,
       "agent": "qa-backend-expert",
       "tags": [
         "notifications",

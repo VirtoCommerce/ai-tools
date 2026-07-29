@@ -435,3 +435,38 @@ Org user logged in, /company/info page accessible, user has permission to add ad
 [API] updateMemberAddresses mutation returns errors[] for HTML payloads (EnableNoHtmlTagsValidation active)
 [DOM] Company Info page renders all address fields as text nodes, not HTML
 [NET] No successful mutation call when HTML tags present in fields","XSS payload accepted and saved to address table; <script> or <img> tag rendered on /company/info page; alert dialog fires; HTML stored verbatim in address fields; generic error NOT shown (mutation succeeds with XSS data)","delete test address from org via Actions menu","VCST-4803 verified — company info address XSS server-side rejected","Reviewed"
+"B2C-ORG-040","Org Switcher Drops ALL Organizations for a Multi-Org User With Blocking Global Contact Status (No Membership Override)","B2C Features > Organization > Switcher Visibility > [Regression]","Critical","BL-B2B-005","ECL-2.3","[PRE:CLEAR_SESSION]
+Reviewer finding A on vc-frontend#2399 (useUserOrganizations.ts:50 — getOrganizations now passes statuses:[ContactStatus.Approved]). Server-side, ContactType.ResolveMyOrganizationIdsByStatusAsync filters in-memory on EffectiveStatus = membership.Status ?? contact.Status ?? 'Approved'. With NO per-membership override (the norm — 132/132 OrganizationMembership rows have status=null per testing-checklist.md), EffectiveStatus falls through entirely to the GLOBAL contact.Status. A user whose global contact.Status is a non-empty, non-Approved value (e.g. 'Locked') therefore has EVERY organization filtered out of the switcher's own list — even though useUser.ts's isMultiOrganization gate reads the UNFILTERED me.contact.organizations.totalCount (no statuses arg), so the switcher control still RENDERS (isMultiOrganization=true) but its list is empty. A fresh AGENT-TEST- member with 2 active org memberships (no per-membership status override) is created in Steps, then its global contact status is forced to a blocking value.","front_url={{FRONT_URL}}, org_id_1=@td(MULTI_ORG_TF_BR.org_techflow_id), org_id_2=@td(ORG_BUILDRIGHT.platform_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","[SETUP] Generate timestamp suffix: org040-{epoch_ms} — capture as $TS_SUFFIX
+[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""SwitcherDropsAll040"", ""memberType"": ""Contact""} — capture response id as $MEMBER_ID
+[ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/platform/security/users/create: {""userName"": ""AGENT-TEST-org040-$TS_SUFFIX@yopmail.com"", ""email"": ""AGENT-TEST-org040-$TS_SUFFIX@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""$MEMBER_ID"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""} — capture response id as $USER_ID
+[ASSERT] [STATUS] 200/201; $USER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $TF_MEMBERSHIP_ID (deliberately NO status override on this membership)
+[ASSERT] [STATUS] 200/201
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(ORG_BUILDRIGHT.platform_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $BR_MEMBERSHIP_ID (deliberately NO status override)
+[ASSERT] [STATUS] 200/201
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with AGENT-TEST-org040-$TS_SUFFIX@yopmail.com
+[ACT] fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[ACT] click [data-test-id=""login-button""]
+[WAIT] storefront session established
+[ASSERT] org switcher control is visible in the header (isMultiOrganization=true from the UNFILTERED totalCount=2) — capture this as the BASELINE (healthy) state
+[ACT] open the org switcher
+[ASSERT] the switcher list shows both TechFlow and BuildRight (baseline, before the global status is blocked)
+[SETUP] via REST PUT {{BACK_URL}}/api/members: {""id"": ""$MEMBER_ID"", ""memberType"": ""Contact"", ""status"": ""Locked""} (force the GLOBAL contact.Status to a blocking value — NOT a per-membership lock; confirm the field name/shape live against the module source before trusting this payload, per testing-checklist.md conditions #40/#41)
+[ASSERT] [STATUS] 200 on the status update
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with AGENT-TEST-org040-$TS_SUFFIX@yopmail.com
+[ACT] fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[ACT] click [data-test-id=""login-button""]
+[WAIT] response settles (login itself is NOT org-scoped, so it is expected to still succeed per the root-cause analysis — the pinned default org is what breaks, not the password grant)
+[ASSERT] the org switcher control is STILL rendered in the header (isMultiOrganization is still computed from the unfiltered totalCount)
+[ACT] open the org switcher
+[ASSERT] the switcher's own organization list is now EMPTY or shows a no-results/empty state — a rendered-but-empty switcher, not an absent one","[DOM] Baseline: the switcher lists BOTH 'TechFlow' and 'BuildRight' as visible entries {OBSERVED}
+[DOM] After forcing global contact.Status to a blocking value: the switcher control is still visible in the header (rendered gate uses unfiltered totalCount) {SPEC}
+[STATE] After forcing global contact.Status to a blocking value: the switcher's own list is empty — every organization was filtered out by the new statuses:[Approved] argument on getOrganizations, even though NEITHER organization's own membership row was ever modified {SPEC}
+[STATE] This reproduces the 'switcher stuck in its no-results empty state' symptom for a user who is not literally single-org — the account still legitimately belongs to 2 orgs {SPEC}","[API] GetOrganizations (getOrganizations.graphql, statuses:['Approved']) response items is EMPTY for this user after the global status change, while me.contact.organizations.totalCount (unfiltered) still reports 2
+[CONSOLE] no uncaught JS errors when the switcher renders its empty list
+[NETWORK] no 4xx/5xx on the GetOrganizations query itself (this is a silent filtering behavior, not an error)","Switcher list still shows both orgs after the global status change (fix already applied — reconfirm live before treating as a failure of this case); switcher control disappears entirely instead of rendering empty (a different, also-broken variant); login itself is rejected (would indicate a different regression than the one under test — see suite 031 AUTH-073 for the registration-time root cause of this same global-status defect)","[SAVE] Restore $MEMBER_ID's global contact.Status via REST PUT {{BACK_URL}}/api/members: {""id"": ""$MEMBER_ID"", ""memberType"": ""Contact"", ""status"": ""Approved""} (or delete the fixture entirely in the next step)
+[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-org040-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; PR review finding A on vc-frontend#2399 (useUserOrganizations.ts statuses filter); testing-checklist.md conditions #40/#41","Draft"

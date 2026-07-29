@@ -264,7 +264,57 @@ If yes, file to the deployment's tracker. **Follow `knowledge/execution/tracker-
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low)
 - Follow `/qa-defect workflow` for correct JIRA Bug Workflow status transitions
 
-Report the ticket key back to the user.
+### Step 5a — Attach the evidence AND embed it inline (required when the bug has screenshots)
+
+A filename in the body is not evidence a reviewer will look at. Upload the screenshots **and** render
+them inline in the ticket body, so the defect is visible without opening the Attachments panel.
+
+**This is a 4-call sequence, and step 2 is the one everyone gets wrong.**
+
+1. **Upload** — the Atlassian MCP has **no attachment tool**; use the REST API (multipart, and the
+   `X-Atlassian-Token: no-check` header is mandatory). Multiple files per request are allowed.
+   `POST {JIRA_BASE_URL}/rest/api/3/issue/{key}/attachments` → `200` + an array of `{id, filename}`.
+2. **Resolve each attachment's Media Services ID.** ADF `media.attrs.id` is a **Media Services UUID**,
+   **NOT the numeric Jira attachment id** — passing the attachment id fails the whole request with
+   `400 ATTACHMENT_VALIDATION_ERROR`. The UUID is not in the attachment metadata; get it from the
+   content endpoint's redirect:
+   `GET /rest/api/3/attachment/content/{attachmentId}` with `redirect: 'manual'` → **`303`** whose
+   `Location` is `https://api.media.atlassian.com/file/<UUID>/binary?token=…` → take `<UUID>`.
+3. **PUT the description as ADF** with a `mediaSingle` wrapper per image. `width`/`height` are
+   **required** or the image will not display; read them from the PNG's IHDR chunk rather than guessing
+   (`buf.readUInt32BE(16)` / `buf.readUInt32BE(20)`). `collection` is the empty string — verified against
+   a Jira-authored node.
+   ```js
+   { type: 'mediaSingle', attrs: { width, widthType: 'pixel', layout: 'align-start' },
+     content: [{ type: 'media', attrs: { type: 'file', id: '<UUID>', alt: '<filename>',
+                                         collection: '', width, height } }] }
+   ```
+   Simplest safe pattern: `GET …/issue/{key}?fields=description` (already ADF), push the new nodes onto
+   `description.content`, then `PUT …/issue/{key}` with `{fields:{description}}` → `204`. That preserves
+   the markdown-converted body instead of hand-authoring the whole doc as ADF.
+4. **Verify it renders** — persisted is not the same as rendered. Read back with
+   `?fields=description&expand=renderedFields` and assert the HTML contains
+   `<img src="…/rest/api/3/attachment/content/{attachmentId}" …>`. If there is no `<img>`, the media node
+   is wrong; do not report success.
+
+**What does NOT work** (all three were tried and failed — don't repeat them):
+
+| Attempt | Result |
+|---|---|
+| Markdown `![alt](file.png)` in the description/comment | Silently dropped — the MD→ADF converter has no way to resolve a filename to an attachment |
+| Jira wiki `!file.png!` or `!file.png\|thumbnail!` | Renders literally as text (same class as VCST-5212) |
+| ADF `media.attrs.id` = the numeric attachment id | `400 ATTACHMENT_VALIDATION_ERROR` on the whole request |
+
+**Budget:** embed the 1–3 images that actually show the defect (per `.claude/rules/reports.md` §5), not
+the whole evidence folder. Attach-only (no inline) is acceptable for supporting shots.
+
+**Azure Boards** (`tracker.kind = azure`): different mechanism, same goal — `POST {base}/_apis/wit/attachments?fileName=…`
+returns a URL, link it via a `relations` `AttachedFile` patch, and because the ADO description field is
+**HTML** (not Markdown, not ADF — `tracker-ops.md`), an inline `<img src="<attachment url>">` in the
+description works directly. No media-id indirection.
+
+Report the ticket key back to the user, and say explicitly whether the images rendered inline or are
+attachment-only.
 
 ---
 

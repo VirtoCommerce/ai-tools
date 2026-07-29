@@ -307,6 +307,19 @@ explicitly in your report — on a client deployment the orchestrator turns that
 the VirtoCommerce upstream** (the client can't fix platform internals, so it's handed upstream for a
 human). You do **not** file the issue yourself; just report the class so the orchestrator can.
 
+## Self-check & verify before reporting done (MANDATORY)
+A tool call succeeding is not proof the fix is correct — **verify your own work before you emit the
+`FIX_STATUS` / `REVIEW` marker.** This is a hard rule for both roles.
+- **Developer:** confirm the repro test genuinely fails on unfixed code and passes after the fix (a real
+  observed red→green, not assumed); re-run typecheck / lint / the scoped spec and READ the output;
+  `git diff --name-only` to confirm ONE repo, added-only tests, and no stray/scratch files leaked; re-read
+  the final diff for minimality before you push. After the PR, poll CI and read the logs — never assume
+  green (see §After the PR).
+- **Reviewer:** actually read the diff against every G4 criterion — do not APPROVE on the developer's
+  summary alone.
+- Report honestly: quote the evidence for a PASS, quote the failing log for a STOP; never claim a gate you
+  did not confirm. Codified in memory `feedback_agents_self_check_and_verify`.
+
 ## Reporting discipline
 - Long transcripts / investigation logs go via SendMessage to the orchestrator (or the `reports/fixes/FIX-*/`
   per-ticket transcript), **never** as standalone files in the repo (per `.claude/rules/reports.md`).

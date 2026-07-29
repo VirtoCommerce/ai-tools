@@ -183,3 +183,33 @@
 [STATE] Search matches on name and/or email
 [DOM] No-results state shown if no members match
 [STATE] Clearing search restores complete member list","[CONSOLE] no TypeError or JS errors","Search input missing; search has no filtering effect; clearing search does not restore list; console TypeError","none","Coverage Gap Analysis","Automated"
+"AUTH-043","Account Menu / Org Switcher Remains Functional When Landing on Forbidden (403) — Multi-Org Recovery Escape Hatch","Authentication > Account Menu > Recovery","High","BL-B2B-005; BL-B2B-001","ECL-3.1","[PRE:CLEAR_SESSION]
+VCST-5281 root cause: contact.organizationId (the persisted default org that login pins the active session context to) is never validated against BlockingStatuses, while contact.organizations correctly excludes blocked orgs from the eligible list. So login pins a multi-org user to an org the backend just excluded, and the FIRST org-scoped query returns Forbidden inside an HTTP 200 landing page. For a multi-org user, this is a P1 misroute, not a P0 lockout, BECAUSE the header account menu and org switcher stay rendered and functional even while the main content area shows Forbidden — the storefront renders the active org as a [selected] switcher option even when it is absent from the eligible list, which is what gives the escape hatch its recovery path. A fresh AGENT-TEST- member with 2 org memberships is created in Steps; its persisted default org is forced to a blocking membership so the FIRST post-login navigation lands on a Forbidden page.","front_url={{FRONT_URL}}, org_id_1=@td(MULTI_ORG_TF_BR.org_techflow_id), org_id_2=@td(ORG_BUILDRIGHT.platform_id), new_member_password={{DEFAULT_TEST_PASSWORD}}","[SETUP] Generate timestamp suffix: auth043-{epoch_ms} — capture as $TS_SUFFIX
+[SETUP] via REST POST {{BACK_URL}}/api/members: {""firstName"": ""AGENT-TEST"", ""lastName"": ""EscapeHatch043"", ""memberType"": ""Contact""} — capture response id as $MEMBER_ID
+[ASSERT] [STATUS] 200/201; $MEMBER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/platform/security/users/create: {""userName"": ""AGENT-TEST-auth043-$TS_SUFFIX@yopmail.com"", ""email"": ""AGENT-TEST-auth043-$TS_SUFFIX@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""$MEMBER_ID"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""} — capture response id as $USER_ID
+[ASSERT] [STATUS] 200/201; $USER_ID is a non-empty GUID
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $TF_MEMBERSHIP_ID (this membership will be forced blocked and left as the persisted default org)
+[ASSERT] [STATUS] 200/201
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships: {""userId"": ""$USER_ID"", ""organizationId"": ""@td(ORG_BUILDRIGHT.platform_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} — capture response id as $BR_MEMBERSHIP_ID (this membership stays Approved — the recovery target)
+[ASSERT] [STATUS] 200/201
+[SETUP] via REST POST {{BACK_URL}}/api/customer/organization-memberships/$TF_MEMBERSHIP_ID/lock — force the TechFlow (default) membership into a blocked/locked state, matching testing-checklist.md's BlockingStatuses set
+[ASSERT] [STATUS] 200
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill [data-test-id=""email-input""] with AGENT-TEST-auth043-$TS_SUFFIX@yopmail.com
+[ACT] fill [data-test-id=""password-input""] with {{DEFAULT_TEST_PASSWORD}}
+[ACT] click [data-test-id=""login-button""]
+[WAIT] response settles — login itself succeeds (password grant is not org-scoped); the storefront then pins the session to the persisted default org (TechFlow) which is now blocked
+[ASSERT] the landing page shows a Forbidden/403 state (or an equivalent blocked-content indicator) in the main content area — the pinned default org is blocked
+[ASSERT] the header account menu / org switcher control is STILL visible and clickable despite the main content area being Forbidden
+[ACT] open the org switcher
+[ASSERT] BuildRight (the still-Approved org) is present and selectable in the switcher list
+[ACT] select BuildRight from the switcher
+[WAIT] context switch completes; header shows BuildRight
+[ASSERT] the main content area now loads successfully under BuildRight — full recovery without a sign-out/sign-in cycle","[DOM] the header account menu / org switcher control is visible and clickable while the main content area shows Forbidden {SPEC}
+[STATE] The active (blocked) org is still shown as a [selected] switcher option even though it is absent from the eligible-orgs list — this is the mechanism that makes the escape hatch possible {SPEC}
+[STATE] Selecting the still-Approved BuildRight org from the switcher restores full page access without requiring sign-out {SPEC}
+[DOM] no sign-out/sign-in form is visible during the recovery — the fix for the misroute is same-session {SPEC}","[API] the first org-scoped query after login (e.g. GetPageContext/me) returns a Forbidden/authorization error while HTTP transport status is 200 — confirms 'Forbidden inside HTTP 200', not a transport-level failure
+[CONSOLE] no unhandled JS errors while the account menu operates against a Forbidden main content area
+[NETWORK] the org-switch request to BuildRight returns 200 and the subsequent page load has no 4xx/5xx","Account menu / org switcher itself also fails to render or throws when the main content area is Forbidden (would make this a P0 total lockout, not a P1 misroute — escalate); BuildRight is absent from the switcher list despite being Approved; selecting BuildRight does not recover access (still Forbidden); recovery requires a sign-out/sign-in cycle instead of same-session switch","[SAVE] Unlock the TechFlow membership: POST {{BACK_URL}}/api/customer/organization-memberships/$TF_MEMBERSHIP_ID/unlock
+[SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-auth043-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; reports/tickets/Sprint26-15/VCST-5281/summary.json root_cause + p0_blast_radius.multi_org_user","Draft"

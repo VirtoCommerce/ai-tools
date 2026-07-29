@@ -29,7 +29,7 @@ Gather all inputs and determine scope. Combines pre-flight checks with scope ana
 2. **Build & version verification** — use GitHub MCP `get_file_contents` to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs):
    - Record: platform version (`PlatformVersion`), theme version (from `artifact.json` URL), and modules relevant to the ticket scope
    - **For PR testing:** PRs are deployed to QA while still open. Confirm the PR's build artifact version appears in `packages.json` (modules) or `artifact.json` (theme). If any of the change's artifacts are not deployed → offer to run [`/qa-deploy-pr`](qa-deploy-pr.md) `<ticket-key>` (gathers all the change's fresh artifacts and prepares one gated deploy PR; **ask first**); otherwise warn user and ask whether to wait
-3. **Duplicate check** — scan `reports/tickets/{SPRINT}/` for the same ticket tested in the last 2 hours. If found, warn user and show previous results.
+3. **Duplicate check** — glob `reports/tickets/{SPRINT}/*/summary.json` for the same ticket with a `date` in the last 2 hours (per `.claude/rules/reports.md` §1, `summary.json` is the only narrative-adjacent artifact `/qa-test` still persists — this is what the duplicate scan reads). If found, warn user and show the previous verdict.
 
 **Resolve current sprint** — check if `reports/tickets/Sprint-current` exists → use it. Otherwise list `reports/tickets/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths (rooted at `reports/tickets/{SPRINT}/`). Create the folder if it doesn't exist.
 
@@ -78,7 +78,7 @@ The BA returns (see `ba-story-writer` Mode B):
 
 **Surface to the user inline:** the weak ACs, the DRIFT/CONTRADICTS/scope-creep findings, and the gap-ACs. Then **proceed** — fold the **gap-ACs into the test scope** alongside the story's own ACs, and carry every DRIFT/NOT-FOUND/CONTRADICTS into execution as a thing to verify **live** (a static-diff finding is a suspicion, not a defect).
 
-**Output:** write the AC traceability table to `reports/tickets/{SPRINT}/VCST-XXXX/ac-analysis.md`. It is the spine for Step 3 (test cases) and Step 6 (verdict + live reconciliation).
+**Output:** keep the AC traceability table in your working context (per `.claude/rules/reports.md` §1, this is a terminal-only artifact — no `ac-analysis.md` file). It is the spine for Step 3 (test cases) and Step 6 (verdict + live reconciliation), and gets folded into the single Step 6 chat report.
 
 ---
 
@@ -128,8 +128,8 @@ The specialist follows the **`/qa-plan` methodology scoped to this ticket** — 
    - Flag gaps where no existing test case covers a condition
 3. **If no test cases exist** → generate **new test cases** using `/qa-test-cases-generator` methodology:
    - Derive cases from the Step 1b AC conditions (story + gap-ACs), `E2E-*` scenarios, `BL-*` invariants, `ECL-*` patterns, and domain checklists
-   - Write cases to `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv`
-4. **Output:** `reports/tickets/{SPRINT}/VCST-XXXX/testing-checklist.md` — used by execution agents in Step 4 as their test plan.
+   - Write cases to `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv` — this is category 2 (Test cases), the one file this step still writes to disk
+4. **Output:** keep the testing checklist in your working context and pass it directly into the Step 4 agent prompts — per `.claude/rules/reports.md` §1 it is terminal-only (no `testing-checklist.md` file); it has no reader beyond this same run.
 
 ---
 
@@ -139,6 +139,33 @@ Read environment URLs from `config.js` (`FRONT_URL`, `BACK_URL`).
 
 **Record the test window start** — note the current timestamp before dispatching. The interval from here until execution agents return defines the App Insights correlation window used in Step 6a.
 
+**Move the ticket to the in-testing status (JIRA only, no confirmation needed).** Before dispatching,
+transition the ticket from its ready-to-test state into the **in-testing** status, so the board shows it is
+actively under test rather than still queued. Status-only — no comment, no assignee change, no side effect
+outside the tracker.
+
+**Applies only when `tracker.kind = jira`** (`project-profile.json`; absent profile ⇒ Jira, the
+VC-internal default). Jira gates status changes behind a **transition graph**, which is what makes this
+step load-bearing:
+
+- **Discover the transition live** — never hardcode a name or id (`knowledge/execution/tracker-ops.md`
+  §live transition discovery). On the VC-internal VCST workflow the transition out of *Ready for test* is
+  named **`On QA`** and lands on status **`Testing`** — the transition name does NOT match the target
+  status, so match on the transition's `to.name` (in-testing), never on its own `name`. A client's Jira
+  will use different labels.
+- **This is a precondition for Step 6e, not a nicety:** on VCST, *Ready for test* offers only `On QA`,
+  `go to inprogress`, `On hold`, `Cancelled` — **`Finish test` / `Need fixes` are not reachable until the
+  ticket is in the in-testing status.** Skip this and the closing transition fails at the end of the run.
+- Skip (with a one-line note) when: the tracker MCP isn't configured, the ticket is already in the
+  in-testing status, or no in-testing transition is available from the current status. Never force a path
+  through an unrelated status to reach it, and never transition to `Cancelled`/`On hold`.
+- Testing a bare feature name or a PR with no ticket → nothing to transition; skip silently.
+
+**`tracker.kind = azure` (Azure Boards): skip this step.** There is no transition graph — state is set
+directly (`PATCH …/wit/workitems/<n>`, `/fields/System.State` via `tracker.azure.stateMap`), so the Step 6e
+update has **no reachability precondition** and needs no in-testing hop. Set an in-testing state at Step 4
+only if the deployment's `stateMap` actually declares one.
+
 Launch all applicable agents **simultaneously** in a single message using the Agent tool. Each agent prompt must include:
 - The ticket ID(s) or feature being tested
 - **Testing checklist or test cases** — include the output from Step 3
@@ -146,7 +173,7 @@ Launch all applicable agents **simultaneously** in a single message using the Ag
 - **Edge cases to cover** — `ECL-*` patterns from Step 2
 - The browser server to use (from routing table in Step 2)
 - Environment URLs
-- Output path: `reports/tickets/{SPRINT}/VCST-XXXX/` or `reports/tickets/{SPRINT}/feature-name/`
+- Screenshot output path: `reports/tickets/{SPRINT}/VCST-XXXX/screenshots/` (evidence only — no report file, see below)
 - Evidence capture policy: `skills/qa-evidence/evidence-capture-policy.md`
 
 Example prompt structure:
@@ -156,7 +183,7 @@ Test VCST-XXXX on the [backend/frontend].
 Context: [brief description of what changed]
 Environment: {FRONT_URL} / {BACK_URL}
 Browser: {BROWSER_SERVER}
-Output: reports/tickets/{SPRINT}/VCST-XXXX/
+Screenshot output: reports/tickets/{SPRINT}/VCST-XXXX/screenshots/
 
 Testing checklist: [from Step 3 output]
 
@@ -175,7 +202,9 @@ Evidence policy: follow skills/qa-evidence/evidence-capture-policy.md
 
 Always-on bug detection (shared-instructions §Always-On Bug Detection): the checklist is the floor, not the ceiling. While executing, hunt across EVERY layer (UI/visual, functional, console, network, GraphQL errors[] inside 200, a11y, perf) and file any incidental defect you see — even one unrelated to this ticket (out-of-scope-bug rule). Pursue every "huh." Verify before filing (disabled control / API-only / by-design are not bugs).
 
-Write a test execution report to reports/tickets/{SPRINT}/VCST-XXXX/test-execution-report.md.
+Return your results (pass/fail per case, evidence refs, bugs found) directly in your final response —
+per .claude/rules/reports.md §1 do NOT write a test-execution-report.md file; the orchestrator folds
+your results into the single Step 6 report.
 ```
 
 ---
@@ -204,10 +233,13 @@ After all execution agents return, run a **targeted exploratory session** using 
 
    Environment: {FRONT_URL} / {BACK_URL}
    Browser: playwright-firefox
-   Output: reports/tickets/{SPRINT}/VCST-XXXX/exploratory-session.md
+   Screenshot output (evidence only): reports/tickets/{SPRINT}/VCST-XXXX/screenshots/
 
    Log findings in real-time. Classify each as: Bug | Question | Observation | Risk.
    Follow evidence capture policy for any bugs found.
+   Return your findings directly in your final response — per .claude/rules/reports.md §1 do NOT write
+   an exploratory-session.md file (this is /qa-test's own ticket-scoped charter, not a standalone
+   /qa-exploratory or /qa-sbtm domain session — those still write to reports/exploratory/).
    ```
 
 3. **If `qa-testing-expert` was already dispatched** in Step 4 for cross-browser verification, include the exploratory charter as an additional task in the same agent prompt instead of dispatching twice.
@@ -236,7 +268,7 @@ Step 1b compared each AC against the PR *diff* — a hypothesis. Now close it ag
 - **NOT-FOUND** — agents observed no such behavior → the AC is unbuilt or the path went untested; mark untested and flag.
 - **Static suspicion cleared** — a Step 1b DRIFT/NOT-FOUND that agents observed working correctly → resolved; note it (the diff was stale, not the behavior).
 
-Write the reconciled `Impl verdict` back into `ac-analysis.md`. A diff-only finding never becomes a verdict input until confirmed (or cleared) here.
+Carry the reconciled `Impl verdict` forward in your working context (no `ac-analysis.md` file — terminal-only per §1) for the Step 6d verdict decision and the final chat report. A diff-only finding never becomes a verdict input until confirmed (or cleared) here.
 
 **6c. Validate evidence quality:**
 
@@ -270,6 +302,13 @@ Ask the user before transitioning. Skip if Atlassian MCP is not configured.
 | PASS / PASS WITH NOTES | `Finish test` → TESTED |
 | FAIL | `Need fixes` → REOPEN with comment listing failures |
 
+**On Jira**, both closing transitions require the ticket to already be in the **in-testing** status — that's
+the Step 4 move. If it was skipped there (or the run started from a ticket still at *Ready for test*),
+discover the transitions live and do the in-testing move first, then the closing one. **On Azure Boards**
+there is no transition graph: set the mapped `System.State` directly (`tracker.azure.stateMap`) — no
+in-testing hop required. Either way **TESTED is the terminal state this command may reach — never
+transition to Done or Cancelled.**
+
 Add a JIRA comment with (Markdown, never Jira wiki markup; clear, brief, outcome-first, evidence
 referenced not inlined — `knowledge/execution/tracker-ops.md` §5a **Comment & body style**; the block
 below is illustrative content, not a literal wire format):
@@ -280,10 +319,14 @@ Exploratory: [N] findings ([bugs/observations/risks]).
 App Insights (test window): [N] correlated signals — [confirmed/needs-review/none].
 Business rules verified: [BL-* list].
 Bugs: [list or None]. Decision: [verdict].
-Artifacts: reports/tickets/{SPRINT}/VCST-XXXX/
+Evidence: reports/tickets/{SPRINT}/VCST-XXXX/screenshots/
 ```
 
 **6f. Deliver summary:**
+
+Per `.claude/rules/reports.md` §1, `summary.json` and evidence screenshots are the only artifacts this
+command persists to disk — everything else (AC table, checklist, execution/exploratory findings) was
+carried in-context and goes out in this same Step 6 chat report, not a separate file.
 
 Write `reports/tickets/{SPRINT}/VCST-XXXX/summary.json`:
 ```json
@@ -304,8 +347,7 @@ Write `reports/tickets/{SPRINT}/VCST-XXXX/summary.json`:
     "gap_acs_added": 0,
     "impl_coverage": { "satisfied": 0, "drift": 0, "contradicts": 0, "not_found": 0 },
     "conditions_total": 0,
-    "conditions_with_evidence": 0,
-    "artifact": "reports/tickets/{SPRINT}/VCST-XXXX/ac-analysis.md"
+    "conditions_with_evidence": 0
   },
   "total_cases": 0,
   "passed": 0,
@@ -325,11 +367,12 @@ Write `reports/tickets/{SPRINT}/VCST-XXXX/summary.json`:
     "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
     "correlated_failures": []
   },
-  "artifacts": "reports/tickets/{SPRINT}/VCST-XXXX/"
+  "screenshots": "reports/tickets/{SPRINT}/VCST-XXXX/screenshots/"
 }
 ```
 
-Output to the user: verdict, coverage summary, business rules verified, exploratory findings, bugs found, and artifact paths.
+Output to the user (chat, in full — this IS the report): verdict, the reconciled AC table, testing-checklist
+results, exploratory findings, business rules verified, bugs found, and the screenshot folder path.
 
 ---
 
@@ -337,6 +380,7 @@ Output to the user: verdict, coverage summary, business rules verified, explorat
 
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, error handling, and JIRA transitions
+- Ticket status tracks the run: Step 4 moves it into the in-testing status (status-only, no confirmation), Step 6e closes it to TESTED / REOPEN (with confirmation). **Step 4's hop is JIRA-only** (`tracker.kind = jira`) — Jira's transition graph makes the closing transitions unreachable until it happens; Azure Boards sets `System.State` directly via `stateMap`, so it has no such precondition and Step 4 is skipped. Discover Jira transitions live; the transition name need not match the target status (VC-internal VCST: `On QA` → `Testing`)
 - Never use WebKit — not supported on Windows
 - Never assign two agents to the same browser server simultaneously
 - Read all URLs from config.js / .env — never hardcode
@@ -349,9 +393,10 @@ Output to the user: verdict, coverage summary, business rules verified, explorat
 - `test-management-specialist` (Step 3) must complete before dispatching execution agents (Step 4)
 - Step 1b BA story review (`ba-story-writer` Mode B) runs for any JIRA ticket with ACs — it is **advisory, never blocking**: surface weak ACs / gaps / implementation drift, fold gap-ACs into scope, and keep testing. Skip with a note for a bare feature name or PR with no governing story
 - A Step 1b AC↔implementation finding from the PR diff is a **suspicion to verify live** (Step 6b), never a confirmed defect on its own — only a live-confirmed CONTRADICTS/DRIFT fails the verdict (mirrors the no-diff-only-bug rule)
-- The Step 1b AC traceability table (`ac-analysis.md`) is the verdict spine: a PASS requires PASS evidence for **every** atomic condition (story ACs + folded gap-ACs), all reconciled SATISFIED-live in Step 6b
+- The Step 1b AC traceability table (kept in-context, not a file) is the verdict spine: a PASS requires PASS evidence for **every** atomic condition (story ACs + folded gap-ACs), all reconciled SATISFIED-live in Step 6b
 - `ba-story-writer` in review mode must not write to JIRA/GitHub or author a replacement story — it returns the review only
-- Steps 2–3 reuse the `/qa-plan` scenario catalog (`skills/qa-plan/e2e-scenario-catalog.md`) for `E2E-*` scenario coverage + regression-suite traceability, but produce the scoped `testing-checklist.md` — **not** a full `/qa-plan` test plan / RTM / TestRail CSV. Full case authoring + peer-review promotion belongs to a standalone `/qa-plan` run, not `/qa-test`
+- Steps 2–3 reuse the `/qa-plan` scenario catalog (`skills/qa-plan/e2e-scenario-catalog.md`) for `E2E-*` scenario coverage + regression-suite traceability, but produce a scoped in-context testing checklist — **not** a full `/qa-plan` test plan / RTM / TestRail CSV. Full case authoring + peer-review promotion belongs to a standalone `/qa-plan` run, not `/qa-test`
+- **Terminal-only by design** (`.claude/rules/reports.md` §1): Steps 1b/3/4/5 never write `ac-analysis.md` / `testing-checklist.md` / `test-execution-report.md` / `exploratory-session.md`. Only `reports/tickets/{SPRINT}/VCST-XXXX/summary.json`, evidence screenshots, and (if Step 3 generates new cases) `test-cases.csv` persist to disk; every other finding is carried in-context and delivered once, in the Step 6 chat report
 - Exploratory session (Step 5) is mandatory for P0/P1 tickets and critical revenue flows — skip only for P2/P3 if user explicitly opts out
 - If `qa-testing-expert` is already dispatched in Step 4, combine exploratory charter into that agent's prompt rather than spawning a second instance
 - App Insights correlation (Step 6a) reuses `/qa-monitoring`'s query + dedup + triage machinery (`ci/monitoring/queries/*.kql`, `reports/monitoring/.seen-fingerprints.json` read-only, `ci/agents/monitor-triage-agent.md`) scoped to the test window — **no separate live-repro phase** (the execution agents already exercised the feature). Resolve resources from `APPINSIGHTS_*`, never hardcode; skip gracefully (don't block the verdict) when App Insights is unconfigured

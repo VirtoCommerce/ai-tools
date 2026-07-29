@@ -59,7 +59,22 @@ Fix: [brief description of what the dev fixed]
 
 ## Step 2 — Transition to TESTING
 
-Transition the JIRA ticket to TESTING status via Atlassian MCP (`transitionJiraIssue`, transition name: `On QA`).
+Move the ticket into the **in-testing** status. Route by tracker (`project-profile.json`
+`tracker.kind`; absent profile ⇒ Jira, the VC-internal default) — see
+`knowledge/execution/tracker-ops.md` §Live transition discovery:
+
+- **Jira** (`tracker.kind = jira`, or no profile) → `getTransitionsForJiraIssue`, then
+  `transitionJiraIssue` on the transition whose **target status** matches the in-testing role. Match on
+  `to.name`, not on the transition's own `name` — they differ: the VC-internal reference name for this
+  role is **`On QA`**, which lands on status **`Testing`**. Never hardcode an id; a client's Jira uses
+  different labels.
+- **Azure Boards** (`tracker.kind = azure`) → there is no transition graph; set the mapped
+  `System.State` directly (`PATCH …/wit/workitems/<n>`, `/fields/System.State` via
+  `tracker.azure.stateMap`). If the map declares no in-testing state, do **not** invent one — skip this
+  step with a one-line note and carry on.
+
+Skip (noting it) when the tracker MCP isn't configured or the ticket is already in the in-testing status.
+Never route through an unrelated status to get there, and never transition to `Cancelled`/`On hold`.
 
 Add a JIRA comment (**and every JIRA comment in this command** — the verdict/reopen/blocked notes
 below): follow `knowledge/execution/tracker-ops.md` §5a **Comment & body style** — Markdown (never Jira
@@ -217,7 +232,16 @@ Write results to reports/tickets/{SPRINT}/VCST-XXXX/verification-report.md
 
 After the agent returns, evaluate results against the decision matrix:
 
-JIRA transition names below come from `defect-lifecycle-workflow.md` § 2 (Bug Workflow). Each row may be one or two transitions:
+The transition names below are the **VC-internal Jira** workflow labels from
+`defect-lifecycle-workflow.md` § 2 (Bug Workflow) — treat them as role references, not literals. Each row
+may be one or two transitions.
+
+**On Jira** (`tracker.kind = jira`, or no profile) these closing transitions are only reachable once the
+ticket is in the in-testing status — that is Step 2's move. If Step 2 was skipped, discover the
+transitions live and do the in-testing hop first, then the closing one. **On Azure Boards**
+(`tracker.kind = azure`) there is no transition graph: set the mapped `System.State` directly via
+`tracker.azure.stateMap`, so no in-testing hop is required and the `TESTING →` prefix in the table below
+reads as "to the mapped state" only.
 
 | STR Result | Regression | Side Effects | Decision | JIRA Transition(s) |
 |-----------|-----------|-------------|----------|----------------|
@@ -228,7 +252,8 @@ JIRA transition names below come from `defect-lifecycle-workflow.md` § 2 (Bug W
 | Pass 2/3 | — | — | **INTERMITTENT** | TESTING → REOPEN (`Need fixes`, note intermittent) |
 | Blocked | — | — | **BLOCKED** | No transition, comment with blocker |
 
-**Ask the user before transitioning JIRA.** Skip if Atlassian MCP is not configured.
+**Ask the user before transitioning the ticket.** Skip if the tracker is not configured (Atlassian MCP for
+Jira, the ADO helper for Azure Boards).
 
 **JIRA comment for VERIFIED (TESTING > TESTED):**
 ```
