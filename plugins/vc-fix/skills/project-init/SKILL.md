@@ -53,6 +53,27 @@ All scripts live in the plugin's own `skills/project-init/` directory and are
 **non-interactive** — you (the model) collect the interview answers, run the scan +
 derive scripts, then call the writers with the results as flags.
 
+### Output discipline — the operator is onboarding, not reading a report
+
+Onboarding is the operator's FIRST contact with the plugin. Every extra table teaches them that
+this tool is heavy, and it buries the two or three things they actually have to decide. Three
+rules, applied at every step:
+
+1. **A question goes immediately after the thing it asks about.** Never table → table → table →
+   question: the operator has to scroll back, so they approve unread. One table, one question,
+   nothing in between.
+2. **Show what the operator can DECIDE. Summarise what they cannot.** A scan result they can
+   correct earns a table. A derived fact (a token's permission, an API base, a state map that
+   resolved cleanly) earns ONE line — or nothing. Internals that only feed `/qa-fix`
+   (`apiBase`, `projectId`, `forkAccount`, `upstreamRef`, local-verify commands) go into the
+   profile, not onto the screen.
+3. **Exceptions get the space, happy paths get a line.** Anything that resolved cleanly is one
+   line; anything WARN/missing/unverified gets its own line or small table and says what to do.
+   That contrast is what makes a real problem visible.
+
+Never print the same fact twice in two shapes (a "provenance" table repeating a Notes column, a
+role grid restating "all roles mapped"). If it is already on screen, reference it.
+
 ### Where things go — read this once (two roots, kept separate)
 
 - **Plugin install directory** (`$CLAUDE_PLUGIN_ROOT` — the versioned marketplace cache
@@ -387,12 +408,40 @@ It writes `{ projectType, clientOrg, client:[…], platform:[…] }`:
   an unmodified-platform bug** — if it couldn't be derived/verified, ASK the operator for the
   vc-frontend line base tag and set `repos.client[].upstreamRef` (e.g. `2.49` → `2.49.0`).
 
-**Show the proposed map to the operator to confirm/correct** — a starting point, not
-gospel. **Genuine-ambiguity asks (only these):**
+### 4a. Show the map and ask RIGHT THERE — one table, one question, nothing between them
+
+The operator confirms the repo map **immediately after seeing it**. Do **not** run step 4b or 5
+first: a table separated from its question by two more sections forces the operator to scroll
+back, and they will approve it unread. Sequence is exactly: repo table → `AskUserQuestion` →
+(only then) 4b.
+
+**ONE table. Columns: `Repo · Kind · Branch · Notes`** — and nothing else.
+
+- **Branch** = `default → PR target` in one cell (`main → dev`). Two columns for two branch
+  names is padding.
+- **Notes** = only what is repo-SPECIFIC: the toolchain, and for a storefront fork its
+  provenance in one phrase — `fork of vc-frontend 2.49.7, base 2.49.0`. Do **NOT** render a
+  separate "fork provenance" table: `upstream` / `upstreamRef` / `forkVersion` are the same
+  three facts, and the operator cannot verify them anyway — they are `/qa-fix` Gate-1b inputs,
+  not decisions. If `upstreamRefResolved: false`, that IS a decision → say so in Notes and ask.
+- **Drop `Host` and `Auth`** when every client repo shares them (the usual case) — the operator
+  chose both in the interview two minutes ago. State once above the table:
+  `2 client repos on azure-repos (ADO_PAT) · 53 platform repos`. Keep a `Host` column only for a
+  genuinely mixed set.
+- **Never list the 53 platform repos.** A count is the whole signal; they are not the operator's
+  decision and the list buries the two rows that are.
+- Local-verify facts (`yarn dev`, port, cert) are `/qa-fix` plumbing — omit from the table.
+
+Then ask with `AskUserQuestion`, and **put the actual discrepancy in the question text**, not
+just in an option label — e.g. *"`frontend` defaults to `main` but the scan set PR target `dev`.
+Correct?"* Options: accept as scanned · fix the one thing named · something else.
+
+**Genuine-ambiguity asks (only these — everything else is confirm-or-correct):**
 - host = `github`, **no** client modules found, org not resolvable → ask the operator:
   native platform (no client repos), or name the client GitHub org.
 - **no** storefront/theme repo matched → ask the operator to name it; add it to
   `repos.client` as `kind:"frontend"`.
+- `upstreamRefResolved: false` → ask for the vc-frontend line base tag (see above).
 
 ## 4b. Discover the tracker status model — Azure Boards only
 
@@ -415,10 +464,26 @@ projectId, workItemTypes:{<Type>:{states:[…]}}, roleStates:{in-progress,in-rev
 ready-for-test,done} }`. Auth = `ADO_PAT` (Basic) or an `az login` session — the same creds
 the operator filled in step 3; if neither is present yet, this step FAILS loudly (fix the ADO
 auth, don't skip it — an empty `roleStates` makes `/qa-fix` fall back to asking on every
-transition). Step 6 ingests it via `--tracker-json`. **Show the derived `roleStates` to the
-operator to confirm** (e.g. a custom board maps `in-progress → Active`, `in-review → On Review`,
-`ready-for-test → Ready for QA`) — the heuristic is a starting point; correct a mismapped role
-by hand-editing `.local-env/tracker.json` (or the profile) before continuing.
+transition). Step 6 ingests it via `--tracker-json`.
+
+**Reporting — scale it to whether the operator has anything to decide:**
+
+- **`roleStatesComplete: true`** (every role mapped) → **ONE line, no table**:
+  `Board states mapped: Active → On Review → Ready for QA → … → Closed (custom process, 14 Bug
+  states). Transitions will be silent.` The full role→state grid is `/qa-fix` plumbing — correct
+  by construction, nothing to approve. State counts per work-item type, `apiBase`, `projectId`,
+  `ticketKeyFormat` and the cross-link token are internals: **do not print them.**
+- **A role is MISSING or looks wrong** → *then* show a table, of the affected roles only, and ask.
+  This is the case worth the operator's attention, and it stands out precisely because the happy
+  path was one line.
+
+Correct a mismapped role by hand-editing `.local-env/tracker.json` (or the profile) before
+continuing.
+
+Also captured here: the **bug FIELD CONTRACT** per work-item type (VCST-5582 E-a) —
+`tracker.fields.<Type>[]`. Report it the same way: one line on the happy path
+(`Bug field contract: 13 fields, 5 required — all mapped`), a table + a question only when a
+required field has no semantic slot.
 
 `--out` is optional (accepts `--out <path>`; the default flag set here writes it so step 6 can
 read it). If you omit `--out`, capture the printed JSON and pass its path to step 6 another way.
@@ -459,6 +524,22 @@ It prints ONE JSON object on stdout (notes on stderr):
   the **GitHub token kind / upstream capability** row with the exact remedy.
 
 Capture these values for step 6.
+
+**Reporting — this step has NO question in it, so it gets no table.** Everything here is
+derived, not chosen: the operator cannot approve or correct a token's permission on
+`vc-platform`. Print **ONE line**:
+
+`Derived: classic PAT (Dan-BV) with push on vc-platform → direct PRs upstream, no fork · ADO: PAT`
+
+Then **only the exceptions**, one line each — these are the whole point of showing anything:
+
+- `forkCapable` is not `yes` while the plan needs the upstream → the WARN + remedy (VCST-5582 A);
+- an auth axis came back `none` → say which, and that it must be fixed before `/qa-fix`;
+- `contributionMode` fell back to `fork` because nothing could be probed (offline / no token) →
+  say it is a default, not a measurement.
+
+`forkAccount`, `upstreamOrg`, the raw `auth` triple and the JSON itself are internals — they go
+into the profile, not onto the screen.
 
 ## 6. Write the deployment profile
 
