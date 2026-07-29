@@ -54,7 +54,7 @@ test("pinnedModule: tolerates a missing Sources array", () => {
 // ---- applyModule / applyPlatform (object mutation) -----------------------------
 
 test("applyModule: moves a module from GithubReleases to AzureBlob, no duplicate Id", () => {
-  const json = { Sources: [{ Name: "GithubReleases", Modules: [{ Id: "VirtoCommerce.Cart", Version: "3.100.0" }] }] };
+  const json: any = { Sources: [{ Name: "GithubReleases", Modules: [{ Id: "VirtoCommerce.Cart", Version: "3.100.0" }] }] };
   mod.applyModule(json, "VirtoCommerce.Cart", "3.101.0-pr-42", "VirtoCommerce.Cart_3.101.0-pr-42.zip");
   const gh = json.Sources.find((s: any) => s.Name === "GithubReleases");
   const blob = json.Sources.find((s: any) => s.Name === "AzureBlob");
@@ -63,7 +63,7 @@ test("applyModule: moves a module from GithubReleases to AzureBlob, no duplicate
 });
 
 test("applyModule: re-pinning an already-AzureBlob module updates in place (no duplicate)", () => {
-  const json = { Sources: [{ Name: "AzureBlob", Modules: [{ Id: "VirtoCommerce.Cart", Version: "3.101.0-pr-1", BlobName: "old.zip" }] }] };
+  const json: any = { Sources: [{ Name: "AzureBlob", Modules: [{ Id: "VirtoCommerce.Cart", Version: "3.101.0-pr-1", BlobName: "old.zip" }] }] };
   mod.applyModule(json, "VirtoCommerce.Cart", "3.101.0-pr-2", "new.zip");
   const blob = json.Sources.find((s: any) => s.Name === "AzureBlob");
   assert.equal(blob.Modules.length, 1);
@@ -71,7 +71,7 @@ test("applyModule: re-pinning an already-AzureBlob module updates in place (no d
 });
 
 test("applyModule: creates the AzureBlob source when absent", () => {
-  const json = { Sources: [] };
+  const json: any = { Sources: [] };
   mod.applyModule(json, "VirtoCommerce.Cart", "3.101.0-pr-1", "VirtoCommerce.Cart_3.101.0-pr-1.zip");
   const blob = json.Sources.find((s: any) => s.Name === "AzureBlob");
   assert.ok(blob);

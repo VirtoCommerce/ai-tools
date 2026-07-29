@@ -92,7 +92,12 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 **Agent Teams:**
 - Mode: `teammateMode: "in-process"` in settings.json
 - `post_edit` hook: `npx tsc --noEmit -p ci/tsconfig.json` (wired in `.claude/settings.json`; `typescript`
-  is a devDependency). Max 3 concurrent browser agents.
+  is a devDependency). Its `include` covers `ci/*.ts` + `ci/lib/` + **all of `../scripts/**/*.ts`** — so
+  every TS file under `scripts/` is gated. It was previously scoped to `../scripts/lib/*.ts` only, which
+  silently left `scripts/deploy/`, `scripts/unit/`, `scripts/hotfix/` etc. unchecked: a green run said
+  nothing about them. The config is typecheck-only (`noEmit`, no `outDir`) and sets
+  `allowImportingTsExtensions` for the `tsx`-style `.ts` import specifiers the unit tests use.
+  Max 3 concurrent browser agents.
 - Browser assignments: see `.claude/rules/agents.md`
 
 ## Critical Revenue Flows (must pass before deployment)
