@@ -41,6 +41,7 @@ platform) and to the correct bug tracker.
 ```
 0 preconditions (confirm dir · self-diagnostics consent FIRST + write flag · install) → 2 interview (env name · tracker · code host · auth pref · upstream-feedback consent)
 → 3 scaffold BOTH env templates + operator fills + pause
+→ 3d normalize + validate the filled .env.<env> (normalize-env) — STOP on exit 1
 → 4 discover repos (ALWAYS) → projectType · clientOrg · repo split · storefront
 → 4b discover tracker (Azure) → per-type states · role→state map · apiBase · projectId
 → 5 derive block (derive-context) → auth-fact · contributionMode · forkAccount · operator
@@ -323,9 +324,35 @@ operator.)
 
 Note the env name (e.g. `myqa`) — that's your `TEST_ENV` for every later run.
 
+### 3d. On "done" — NORMALIZE + VALIDATE the filled `.env.<env>` (MANDATORY, before the scan)
+
+The very first thing you do on the operator's "done" — **before** the repo scan in step 4 and
+before any access probe:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
+```
+
+It rewrites the file **in place** and prints, line by line, exactly what it corrected: surrounding
+quotes and padding stripped, **every trailing slash removed** from `FRONT_URL` / `BACK_URL` /
+`JIRA_BASE_URL`, a pasted `https://dev.azure.com/<org>` reduced to the bare `ADO_ORG` slug. It
+**exits 1** on an unfilled placeholder, a URL with no `http(s)://` scheme, or an `ADO_ORG`/
+`ADO_PROJECT` that is still path-shaped, and WARNs when `FRONT_URL`/`BACK_URL` carries a path
+component. Comments, ordering, and any variable the operator added themselves are untouched.
+
+**On exit 1: STOP.** Show the errors verbatim, re-print the ⏸️ WAITING banner, and wait — do not
+scan, do not probe. Every downstream check would otherwise fail for a reason the operator cannot
+see: a stray `/` used to be stripped only *in memory* by `verify-access.mjs` while the file stayed
+wrong, and every runtime `${BACK_URL}/api/...` template produced `//api/...` (VCST-5582 B). The
+rules are not restated in this skill — `scaffold-env.mjs` `CATALOG` declares each key's type and
+requiredness, and `normalize-env.mjs` reads them from there.
+
+Relay the printed fixes to the operator in one line ("normalized N value(s): …") so they know the
+file changed under them, then continue to step 4.
+
 ## 4. Discover the repo split — ALWAYS run; it is the source of projectType
 
-**After the files are filled**, run the scan **unconditionally** (it needs no
+**After the files are filled and normalized (§3d)**, run the scan **unconditionally** (it needs no
 `--client-org` — clients are recognised by module owner / id-namespace). It classifies
 installed modules client-vs-platform, scans the client's code host for the
 storefront/theme repo, and **derives `projectType` + `clientOrg`**:
@@ -409,7 +436,8 @@ It prints ONE JSON object on stdout (notes on stderr):
 ```json
 { "auth": { "github": "pat|gh-cli|none", "ado": "pat|az-login|none|n/a", "jira": "token|none|n/a" },
   "github": { "login": "...", "upstreamPerm": "push|pull...", "contributionMode": "direct|fork",
-              "forkAccount": "...", "via": "PAT|gh CLI" },
+              "forkAccount": "...", "via": "PAT|gh CLI",
+              "tokenKind": "classic|fine-grained|gh-cli|none", "forkCapable": "yes|no|unknown" },
   "operator": "virto-engineer|client", "upstreamOrg": "VirtoCommerce" }
 ```
 - **contributionMode / operator** — from the token's permission on
@@ -418,6 +446,17 @@ It prints ONE JSON object on stdout (notes on stderr):
   safe default `fork` (verify-access confirms).
 - **forkAccount** — the GitHub token owner's login (PR head = `<forkAccount>:<branch>`;
   only used when `contributionMode=fork`).
+- **tokenKind / forkCapable** — the token's PROBED type (VCST-5582 A). The recommended
+  credential is **ONE classic PAT with `repo`** (or `gh auth login`): it covers both the
+  client's own repos and the upstream, so onboarding asks for a single value.
+  `contributionMode: "fork"` says WHERE a platform PR goes; `forkCapable` says whether this
+  credential can actually get it there. A **fine-grained** PAT is bound to one resource owner
+  and is read-only on public repos it does not own, so it reads `vc-platform` fine, is
+  classified `fork`, and then 403s on fork / fork-PR / issue-create. Only `forkCapable: "yes"` is
+  trusted — `"unknown"` is never assumed capable. Both land in the profile
+  (`vcs.githubTokenKind` / `vcs.githubForkCapable`) so `/qa-fix` Gate 1 and
+  `/vc-self-check deliver` refuse an impossible route up front, and `verify-access` shows
+  the **GitHub token kind / upstream capability** row with the exact remedy.
 
 Capture these values for step 6.
 
@@ -436,6 +475,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --client-vcs github \
   --operator <derived> --contribution-mode <derived> \
   --upstream-account <forkAccount, only if fork> \
+  --github-token-kind <derived: github.tokenKind> --github-fork-capable <derived: github.forkCapable> \
   --self-diagnostics <true|false, from step 0b> --feedback-mode <ask|auto|off, from step 2e> \
   --vcs-auth <derived: client host's auth — github⇒gh-cli|pat, azure-repos⇒az-login|pat> --print
 # Azure Boards + Azure Repos:
@@ -737,16 +777,26 @@ nothing — that many removals usually means a schema mismatch (reconciling agai
 schema than the one that wrote the profile), not stale fields. **Review the `removed` list**;
 only if the removals are genuinely intended, re-run with `--force`.
 
-### Step C — verify access
+### Step C — normalize the env file, then verify access
 
-Run the readiness table (§8) so a stale token / URL / login surfaces too:
+First re-run the §3d normalizer — an env file edited by hand since onboarding can have
+re-acquired a trailing slash or a quoted value, and every probe below would then fail for an
+invisible reason:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
+```
+
+Then the readiness table (§8), so a stale token / URL / login surfaces too:
 
 ```bash
 FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
 ```
 
-**Restate BOTH** the reconciliation summary (added / removed / decided) **and** the
-readiness table in your reply.
+**Restate all three** — the reconciliation summary (added / removed / decided), any value the
+normalizer corrected, and the readiness table — in your reply. A normalizer exit 1 (unfilled
+placeholder / missing scheme) is a **STOP**: report it and skip the readiness table, which would
+only produce misleading failures.
 
 Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
 marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
@@ -792,6 +842,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 |--------|------|
 | `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent |
 | `scaffold-secrets.mjs` | write a commented `.env.local` **template** (secret placeholders + what/why/where per secret); topology-driven, idempotent |
+| `normalize-env.mjs` | **run on the operator's "done" (§3d) and in `--check` Step C** — normalize the hand-filled `.env.<env>` IN PLACE (quotes / padding / **all** trailing slashes; a pasted `dev.azure.com/<org>` → the bare slug) and validate it: exit 1 on an unfilled placeholder, a URL with no `http(s)://`, or a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path component in `FRONT_URL`/`BACK_URL`. Prints every fix. Rules come from `scaffold-env.mjs` `CATALOG` (`type` + no-`def`), never a private copy |
 | `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` from a JSON answer object on STDIN when values ARE known programmatically; idempotent |
 | `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; bakes per-repo `contribution`/`integrationBranch`/`toolchain`/`localVerify`; emits `{ projectType, clientOrg, client, platform }` |
 | `discover-tracker.mjs` | **Azure-only** scan of work-item types → per-type `states` + a `role→state` map (`roleStates`), plus `apiBase`/`projectId`/`ticketKeyFormat`/`crossLinkToken`; emits `.local-env/tracker.json` for `gen-profile --tracker-json`. Jira: format facts only (transitions discovered live). Enables `/qa-fix`'s silent role-based transitions |

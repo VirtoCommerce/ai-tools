@@ -38,7 +38,8 @@ invocation) ▷ `agent` (a Task/Agent delegation) / `tool` (any other tool). Eac
 | `tool_error` | A tool returned `is_error: true` | transcript `tool_result.is_error === true` |
 | `permission_denied` | A tool call was denied / declined | permission-denied phrase in a `tool_result` / text |
 | `hook_failure` | A PostToolUse/other hook failed (e.g. `tsc` on every Edit, `npm error`) | `error TS####`, `tsc … error`, `command failed…` in output |
-| `stop_bail` | A STOP / BAIL / hand-off / `FIX_STATUS: FAILED` marker | marker regex in assistant text |
+| `stop_bail` | A STOP / BAIL / hand-off / `FIX_STATUS: FAILED` marker the AGENT declared | marker regex in **assistant** text, excluding an echoed command/skill DEFINITION body, and requiring a bail context around the weak `hand off` marker (VCST-5582 F2 — `commands/qa-bug.md` contains the literal "hand off", which used to make the plugin trip its own detector) |
+| `policy_block` | **Non-blocking.** A by-design guardrail refused a call and the agent obeyed + adapted (`hooks/enforce-real-user.mjs` blocking `browser_evaluate`) | `BLOCKED by real-user interaction rule` in a `tool_result`. Recorded and reported, but **excluded from `blockingErr`** — a rule working as intended can never make a run `failed` (VCST-5582 F4) |
 | `tool_calls` | Count of tool invocations in the span | `tool_use` items |
 | `agent_calls` | Count of agents delegated (Task/Agent tool) | `tool_use` name ∈ {Task, Agent}. A COUNT — a FAILED delegation surfaces as `tool_error`/`permission_denied` on the parent span |
 
@@ -71,7 +72,7 @@ outcome. `error ≠ failure`: a self-corrected error is `recovered`, not `failed
 | Outcome | Meaning | Escalate? | Maps to |
 |---------|---------|-----------|---------|
 | `success` | Ran clean, produced its expected output (§1c). A clean BAIL is `success`. | no | S0 |
-| `recovered` | An error occurred but the **same invocation** (same `tool` + `arg_hash`) later succeeded within the span (self-corrected). Keyed on the exact invocation, NOT the tool name — `Read(A)` fail then `Read(B)` ok is NOT a recovery of A. Applies to `tool_error`, `permission_denied`, and a `hook_failure` **surfaced via a `tool_result`** tied to a `tool_use_id`. A `hook_failure` detected from a bare top-level string echo (an untied PostToolUse note, e.g. a `tsc` message after an Edit — no `tool_use_id` to key an op on) has no invocation to resolve against and can **never** classify as `recovered`; it always forces `failed` for its span, even if the very next Edit is clean. Deliberate fail-toward-escalation, not an oversight. | **no** | S3 (note only) |
+| `recovered` | An error occurred but was resolved **either** way: (a) **literal retry** — the same invocation (same `tool` + `arg_hash`) later succeeded within the span; **or** (b) **adaptation** (VCST-5582 F1) — the failed invocation was never repeated AND the span **provably produced** its expected artifact (`sawProduced`: a §1c marker backed by an operation that SUCCEEDED — never by a failed attempt, so "tried `gh pr create`, denied" is still `failed`). Clause (b) exists because the correct agent response to an error is to ADAPT (fix the quoting, pick another selector, switch tool), which mints a NEW `arg_hash` — keying recovery on (a) alone classified **every adaptive run** as `failed`. Applies to `tool_error`, `permission_denied`, and a `hook_failure` **surfaced via a `tool_result`** tied to a `tool_use_id`. A `hook_failure` detected from a bare top-level string echo (an untied PostToolUse note, e.g. a `tsc` message after an Edit — no `tool_use_id` to key an op on) has no invocation to resolve against and can **never** classify as `recovered`; it always forces `failed` for its span, even if the very next Edit is clean. Deliberate fail-toward-escalation, not an oversight. | **no** | S3 (note only) |
 | `degraded` | Completed but a **struggle** sub-signal fired (§1d) — persistence without progress. | yes | S2 |
 | `failed` | A blocking error that was **not** recovered (its exact `tool`+`arg_hash` never succeeded afterward, or — for an untied `hook_failure` echo — unconditionally, per the `recovered` row above) — a `tool_error`, `permission_denied`, or `hook_failure`. Signals come ONLY from `is_error` tool results (never from narration or the text content of a successful tool). | yes | S1 |
 | `silent_suspect` | Closed with no error and no struggle, but produced **none** of its expected-output markers (§1c) — task likely done wrong with no error signal. Requires a **minimum of real work** (`SILENT_MIN_OPS = 2` ops): a command span that opened and closed with ~0 ops (e.g. `/qa-fix` → the agent asks a clarifying question → stop) is a trivial/deferred turn, not a silent failure, and is NOT flagged. | yes | S1/S2 |
@@ -282,6 +283,19 @@ Rules:
 - Run it **exactly once**, at the real end of the workflow (e.g. after the final "Done"/STOP step),
   **AFTER** all user-visible output — never at an intermediate pause, and never before a step that
   still waits on the operator.
+- **NEVER while an operator DECISION is pending** (VCST-5582 D — this is the rule the OPUS run
+  broke). A skill that asks the operator anything — `/qa-bug`'s Step-5 "create a ticket?", its
+  parent-link question, a field-mapping question — emits `complete` only **after** that question is
+  answered or the step is explicitly declined. Two things go wrong otherwise: (1) everything the
+  skill does after `complete` lands **outside** the span as `parentId: null` orphans, so neither the
+  oracle nor `/vc-self-check` ever evaluates it (on the OPUS run that was the entire
+  ticket-creation phase); (2) with the span closed, the `Stop` hook may resume the agent to print a
+  verdict, pushing the unanswered question out of view.
+- **Ask with `AskUserQuestion`, not prose.** A prose question ends the turn, which is what lets an
+  end-of-turn hook interleave with it. `AskUserQuestion` blocks inside the turn. Belt-and-braces:
+  `cmdFinalize` DEFERS any `Stop` whose transcript tail holds an `AskUserQuestion` `tool_use` with no
+  matching `tool_result` — recorded as `{ verdict: "deferred", surfaced: false, suppressReason:
+  "question-pending" }`, and it emits no block. That is a safety net, not a licence to signal early.
 - Only the **top-level command/skill the operator invoked** emits it. A **dispatched sub-agent**
   (the `fullstack-*` devs, `qa-*-expert`s) must NOT — its spans run in a collector-skipped sidechain
   and roll up to the enclosing command, and a sub-agent's `complete` would set the marker with a
@@ -306,5 +320,7 @@ escalation (a flagged span → silent `/vc-self-check`) is independent and needs
 
 - [ ] The terminal step's LAST action emits `session-telemetry.mjs complete --skill "<name>"`.
 - [ ] Every early-exit path (BAIL / NOT READY / no-op) also emits it.
+- [ ] Every operator question uses `AskUserQuestion` (never prose), and no `complete` is emitted
+      while one is still unanswered.
 - [ ] `<name>` matches the skill/command name the collector attributes spans to (the slash-command
       name without its namespace, e.g. `qa-fix`, `project-init`).

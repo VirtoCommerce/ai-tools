@@ -68,7 +68,7 @@ async function main() {
       : "none";
 
   // --- contribution mode + fork owner from the upstream permission probe ---
-  const probe = await probeGithubUpstream({ upstreamOrg, token: gh.token });
+  const probe = await probeGithubUpstream({ upstreamOrg, token: gh.token, via: gh.via, scopes: gh.scopes });
   const contributionMode = probe.ok ? probe.contributionMode : "fork"; // safe default: fork
   const operator = contributionMode === "direct" ? "virto-engineer" : "client";
   const forkAccount = probe.login;
@@ -81,6 +81,13 @@ async function main() {
       contributionMode,
       forkAccount,
       via: gh.via,
+      // The token KIND travels with the mode (VCST-5582 A). `contributionMode: "fork"` says
+      // where a PR should go; `tokenKind`/`forkCapable` say whether this credential can
+      // actually get it there — a fine-grained PAT is read-only on public repos it doesn't
+      // own, so it is classified `fork` yet can never fork. Persisting it lets /qa-fix Gate 1
+      // and /vc-self-check deliver refuse an impossible route up front instead of at push time.
+      tokenKind: probe.tokenKind,
+      forkCapable: probe.forkCapable,
     },
     operator,
     upstreamOrg,
@@ -92,9 +99,12 @@ async function main() {
   );
   console.error(
     probe.ok
-      ? `[derive-context] upstream ${probe.repo}: perm=${probe.perm} → contributionMode=${contributionMode}, operator=${operator}, forkAccount='${forkAccount || "?"}' (${gh.via})`
+      ? `[derive-context] upstream ${probe.repo}: perm=${probe.perm} → contributionMode=${contributionMode}, operator=${operator}, forkAccount='${forkAccount || "?"}' (${gh.via}; token=${probe.tokenKind}, forkCapable=${probe.forkCapable})`
       : `[derive-context] upstream perm not probed (no GitHub token / offline) — defaulting contributionMode=fork; verify-access will confirm.`,
   );
+  if (probe.ok && contributionMode === "fork" && probe.forkCapable !== "yes") {
+    console.error(`[derive-context] WARN: token kind '${probe.tokenKind}' cannot perform the fork path — ${probe.remedy}`);
+  }
 
   console.log(JSON.stringify(out, null, 2));
 }

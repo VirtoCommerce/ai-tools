@@ -34,6 +34,8 @@
  * the fix pipeline auto-creates the fork under it (`gh repo fork`). No manual entry.
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
+import { resolve } from "path";
+import { fileURLToPath } from "url";
 import { resolveOutPath } from "./lib/paths.mjs";
 
 function parseArgs(argv) {
@@ -49,14 +51,22 @@ function parseArgs(argv) {
 }
 function fail(msg) { console.error(`[scaffold-env] ${msg}`); process.exit(1); }
 
-// key → { default?, what, where }.  include() gates topology-specific keys.
-const CATALOG = [
+// key → { def?, type?, warnOnPath?, what, where }.  include() gates topology-specific keys.
+//
+// `type` + the ABSENCE of `def` make this table the SINGLE SOURCE OF TRUTH for what
+// normalize-env.mjs must check after the operator fills the file (VCST-5582 B):
+//   type "url"       — needs an http(s) scheme; all trailing slashes are stripped (a stray `/`
+//                      turns every runtime `${BACK_URL}/api/...` template into `//api/...`).
+//   type "ado-slug"  — a bare Azure DevOps org/project name, never a URL.
+//   no `def`         — the operator MUST fill it; still empty ⇒ a hard failure.
+//   warnOnPath       — a path component on this URL is almost certainly a paste mistake.
+export const CATALOG = [
   ["ENV_RISK",         { def: "test", include: () => true,
     what: "Risk class: dev | test | staging | production.",
     where: "production blocks admin-write suites by default; QA envs use test." }],
-  ["FRONT_URL",        { include: () => true,
+  ["FRONT_URL",        { include: () => true, type: "url", warnOnPath: true,
     what: "Storefront URL.", where: "e.g. https://storefront.example.com" }],
-  ["BACK_URL",         { include: () => true,
+  ["BACK_URL",         { include: () => true, type: "url", warnOnPath: true,
     what: "Admin SPA / platform URL.", where: "e.g. https://platform.example.com" }],
   ["STORE_ID",         { include: () => true,
     what: "Primary store identifier.", where: "e.g. B2B-store (Platform → Stores)." }],
@@ -64,7 +74,8 @@ const CATALOG = [
     what: "Admin login (identifier, NOT the password).", where: "usually 'admin'." }],
   ["USER_EMAIL",       { include: () => true,
     what: "Storefront test-user email.", where: "an existing storefront TEST account." }],
-  ["JIRA_BASE_URL",    { include: (o) => o.tracker === "jira",
+  ["JIRA_BASE_URL",    { include: (o) => o.tracker === "jira", type: "url",
+    // No warnOnPath: a self-hosted Jira Server can legitimately live at https://host/jira.
     what: "Jira base URL.", where: "e.g. https://acme.atlassian.net" }],
   ["JIRA_PROJECT_KEY", { include: (o) => o.tracker === "jira",
     what: "Jira project key for bug filing.", where: "e.g. VCST." }],
@@ -74,9 +85,9 @@ const CATALOG = [
   // Emitted for Azure Boards (tracker) OR an Azure Repos code host — a Jira + azure-repos
   // client still needs ADO_ORG/ADO_PROJECT (discover-repos scan + the client checkout read
   // them, and it is the client org for routing). Mirrors ADO_PAT's gate in scaffold-secrets.
-  ["ADO_ORG",          { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos",
-    what: "Azure DevOps organization.", where: "dev.azure.com/<org>." }],
-  ["ADO_PROJECT",      { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos",
+  ["ADO_ORG",          { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos", type: "ado-slug",
+    what: "Azure DevOps organization.", where: "dev.azure.com/<org> → just the <org> part." }],
+  ["ADO_PROJECT",      { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos", type: "ado-slug",
     what: "Azure DevOps project (Boards / Repos).", where: "the project holding your work items / repos." }],
   // Only for a GitHub-hosted client: the client org is a distinct GitHub namespace.
   // For azure-repos it is redundant with ADO_ORG/ADO_PROJECT, so it is NOT emitted.
@@ -137,4 +148,7 @@ function main() {
   if (args.print && emitted.length) console.log(`[scaffold-env] placeholders emitted: ${emitted.length}`);
 }
 
-main();
+// Run ONLY as a CLI. `normalize-env.mjs` imports CATALOG from here (it is the single source
+// of truth for each key's type + requiredness), so importing this module must have no side
+// effects — the repo's standard main-guard, same as discover-repos.mjs / ado.mjs.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

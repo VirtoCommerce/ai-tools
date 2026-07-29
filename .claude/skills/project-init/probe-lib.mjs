@@ -40,6 +40,77 @@ export function resolveGithubToken() {
   return { token, via, scopes };
 }
 
+// ── GitHub token KIND (VCST-5582 A) ──────────────────────────────────────────────────
+//
+// The upstream path (fork VirtoCommerce/* → fork-PR, or file an Issue there) is reachable
+// ONLY by a CLASSIC token, per GitHub's docs: "Only personal access tokens (classic) have
+// write access for public repositories that are not owned by you or an organization that
+// you are not a member of." A fine-grained PAT is bound to one resource owner and is
+// READ-ONLY on public repos it does not own — it authenticates, reads vc-platform as
+// pull(read-only), gets classified contributionMode "fork", and then 403s at fork/push
+// time. `X-OAuth-Scopes` is the discriminator: GitHub returns it for classic tokens (even
+// with an empty scope list) and omits it entirely for fine-grained ones.
+//
+// Kept in step with plugins/vc-fix/skills/project-init/probe-lib.mjs (the canonical copy) —
+// skills/vc-self-check/deliver.mjs is BYTE-IDENTICAL across both trees and imports
+// GITHUB_UPSTREAM_REMEDY from here, so both surfaces must export it.
+
+/** Scopes that grant the upstream fork / fork-PR / issue-create path on a classic token. */
+const FORK_CAPABLE_SCOPE_RE = /^(repo|public_repo)$/i;
+
+/**
+ * The exact remedy text, defined ONCE so verify-access, deliver, and the profile agree. It names
+ * the SINGLE recommended credential — one classic `repo` token covers the client's own repos AND
+ * the VirtoCommerce upstream, so the operator has one thing to create, not a decision tree.
+ */
+export const GITHUB_UPSTREAM_REMEDY =
+  "create ONE CLASSIC token with the `repo` scope — github.com → Settings → Developer settings → " +
+  "Personal access tokens → Tokens (classic). It covers both your own org's repos and the " +
+  "VirtoCommerce upstream (fork / fork-PR / Issue). Or run `gh auth login` and use the browser " +
+  "session instead. A fine-grained PAT cannot do the upstream half: it is read-only on public " +
+  "repos it does not own, so fork / fork-PR / issue-create return 403.";
+
+function readScopeHeader(headers) {
+  if (!headers) return null;
+  if (typeof headers.get === "function") return headers.get("x-oauth-scopes");
+  for (const k of Object.keys(headers)) if (k.toLowerCase() === "x-oauth-scopes") return headers[k];
+  return null;
+}
+function splitScopes(raw) {
+  return String(raw ?? "").split(",").map((s) => s.trim().replace(/^['"]|['"]$/g, "")).filter(Boolean);
+}
+
+/**
+ * Classify a GitHub credential and decide whether it can take the UPSTREAM path.
+ * Pure. → { kind, scopes, scopesKnown, forkCapable, remedy }
+ *   kind        classic | fine-grained | gh-cli | none
+ *   forkCapable "yes" | "no" | "unknown" — TRI-STATE on purpose: only "yes" may be treated
+ *               as fork-capable. "unknown" must NOT be optimistically assumed capable.
+ */
+export function classifyGithubTokenKind(token, headers, { via = "", scopes: viaScopes = "" } = {}) {
+  const t = String(token || "");
+  if (!t) return { kind: "none", scopes: [], scopesKnown: false, forkCapable: "no", remedy: GITHUB_UPSTREAM_REMEDY };
+
+  const hdr = readScopeHeader(headers);
+  const headerScopesKnown = typeof hdr === "string";
+  const cliScopes = splitScopes(viaScopes);
+  const scopes = headerScopesKnown ? splitScopes(hdr) : cliScopes;
+  const scopesKnown = headerScopesKnown || cliScopes.length > 0;
+
+  let kind;
+  if (via === "gh CLI" || /^gh[ou]_/.test(t)) kind = "gh-cli";
+  else if (/^github_pat_/.test(t)) kind = "fine-grained";
+  else if (/^ghp_/.test(t)) kind = "classic";
+  else kind = headerScopesKnown ? "classic" : "fine-grained";
+
+  let forkCapable;
+  if (kind === "fine-grained") forkCapable = "no";
+  else if (!scopesKnown) forkCapable = "unknown";
+  else forkCapable = scopes.some((s) => FORK_CAPABLE_SCOPE_RE.test(s)) ? "yes" : "no";
+
+  return { kind, scopes, scopesKnown, forkCapable, remedy: forkCapable === "yes" ? "" : GITHUB_UPSTREAM_REMEDY };
+}
+
 /**
  * Probe the caller's permission on an upstream GitHub repo. Given a token, hits
  * GET /user (→ login) and GET /repos/<repo> (→ permission), then derives the
@@ -49,12 +120,17 @@ export function resolveGithubToken() {
  * `repo: "<org>/vc-mcp-testing-module"` to probe the plugin's OWN repo. Pure network
  * probe; never throws.
  *
- * → { ok, login, perm, contributionMode, repo, status }
+ * → { ok, login, perm, contributionMode, repo, status, tokenKind, tokenScopes, forkCapable, remedy }
  *   ok=false when there is no token or /user failed; perm ∈
- *   admin|maintain|push|pull(read-only)|none|unknown.
+ *   admin|maintain|push|pull(read-only)|none|unknown. The token-KIND fields come from
+ *   classifyGithubTokenKind() — `contributionMode: "fork"` says WHERE a PR goes, `forkCapable`
+ *   says whether this credential can actually get it there (VCST-5582 A).
  */
-export async function probeGithubUpstream({ upstreamOrg = "VirtoCommerce", repo = `${upstreamOrg}/vc-platform`, token } = {}) {
-  const out = { ok: false, login: "", perm: "unknown", contributionMode: "fork", repo, status: 0 };
+export async function probeGithubUpstream({ upstreamOrg = "VirtoCommerce", repo = `${upstreamOrg}/vc-platform`, token, via = "", scopes = "" } = {}) {
+  const out = {
+    ok: false, login: "", perm: "unknown", contributionMode: "fork", repo, status: 0,
+    tokenKind: "none", tokenScopes: [], forkCapable: "no", remedy: GITHUB_UPSTREAM_REMEDY,
+  };
   if (!token) return out;
   const gh = (path) =>
     fetch(`https://api.github.com${path}`, {
@@ -63,6 +139,11 @@ export async function probeGithubUpstream({ upstreamOrg = "VirtoCommerce", repo 
   try {
     const u = await gh("/user");
     out.status = u.status;
+    const kind = classifyGithubTokenKind(token, u.headers, { via, scopes });
+    out.tokenKind = kind.kind;
+    out.tokenScopes = kind.scopes;
+    out.forkCapable = kind.forkCapable;
+    out.remedy = kind.remedy;
     if (!u.ok) return out;
     out.login = (await u.json()).login || "";
     const rp = await gh(`/repos/${repo}`);

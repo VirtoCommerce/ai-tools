@@ -24,6 +24,12 @@ export interface BugFieldInput {
   orgUrl?: string;
   /** Skip Markdown→HTML normalization (send bodies verbatim). */
   raw?: boolean;
+  /**
+   * Contract-derived HTML resolver (VCST-5582 E-a): ref → true (html) / false (plain text) /
+   * null (unknown → fall back to the hardcoded HTML_FIELD_REFS). Supplied by ado.mjs from the
+   * organization's own discovered field types, so the HTML decision is derived, not asserted.
+   */
+  isHtmlRef?: ((ref: string) => boolean | null) | null;
 }
 
 export function buildBugFields(input: BugFieldInput): Array<{ op: string; path: string; value: unknown }>;

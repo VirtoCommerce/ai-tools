@@ -18,6 +18,18 @@ export interface ProfileRepo {
   forkVersion?: string;
 }
 
+/** One discovered field of a work-item type's process contract (VCST-5582 E-a). */
+export interface BugContractField {
+  ref: string;
+  name: string;
+  /** `alwaysRequired` — PROCESS-level only; conditional form rules are not covered. */
+  required: boolean;
+  /** html | plainText | string | picklistString | identity | treePath | integer | … */
+  type: string;
+  allowedValues?: string[];
+  defaultValue?: string;
+}
+
 export interface ProjectProfile {
   projectType: "platform" | "client";
   operator: "virto-engineer" | "client" | "ask";
@@ -25,6 +37,15 @@ export interface ProjectProfile {
     kind: "jira" | "azure";
     baseUrl: string;
     projectKey: string;
+    /**
+     * Per-work-item-type BUG FIELD CONTRACT, discovered by /project-init (VCST-5582 E).
+     * Empty ⇒ metadata unreachable ⇒ the create path uses "unverified defaults".
+     */
+    fields?: Record<string, BugContractField[]>;
+    /** Operator-owned semantic-slot → field-ref override (and the persisted answers). */
+    fieldMap?: Record<string, string>;
+    /** Per-deployment constants the operator confirmed once, e.g. { "Custom.Environment": "QA" }. */
+    fieldDefaults?: Record<string, string>;
     azure: {
       organization: string;
       project: string;
@@ -37,6 +58,16 @@ export interface ProjectProfile {
     clientOrg: string;
     azure: { organization: string; project: string };
     auth: "gh-cli" | "pat" | "az-login";
+    /** Env var holding the client host's write credential ("" ⇒ ambient session). */
+    authEnv?: string;
+    /**
+     * PROBED kind of the GitHub credential (VCST-5582 A). "" = never probed.
+     * A `fine-grained` PAT can NEVER take the upstream fork/fork-PR/issue path — it is
+     * read-only on public repos it does not own — so consumers must gate on
+     * `githubForkCapable === "yes"`, treating "" / "unknown" as NOT capable.
+     */
+    githubTokenKind?: "" | "classic" | "fine-grained" | "gh-cli" | "none";
+    githubForkCapable?: "" | "yes" | "no" | "unknown";
   };
   upstream: {
     host: "github";

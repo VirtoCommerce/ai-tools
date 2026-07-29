@@ -86,9 +86,43 @@ const CATALOG = {
   },
   GITHUB_FIX_BUGS_TOKEN: {
     perEnv: false, include: (o) => o.githubAuth === "pat",
-    what: "GitHub fine-grained Personal Access Token.",
-    why: "Lets /qa-fix open PRs and file issues on GitHub (client GitHub repos and/or the platform upstream fork-PR).",
-    where: "github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Perms: Contents + Pull requests = Read/Write (public_repo is enough to fork + file issues).",
+    // ONE classic `repo` token is the prescribed answer (VCST-5582 A). The token has two jobs —
+    // the client's own repos and the VirtoCommerce upstream — and a classic `repo` scope covers
+    // both, so the operator has exactly one thing to create.
+    //
+    // The old instruction asked for a FINE-GRAINED token and added "(public_repo is enough)". That
+    // is impossible to follow twice over: a fine-grained PAT is scoped to a single resource owner
+    // and is READ-ONLY on public repos it does not own — GitHub's own docs: "Only personal access
+    // tokens (classic) have write access for public repositories that are not owned by you or an
+    // organization that you are not a member of" — so it can never fork VirtoCommerce/*, open a
+    // fork-PR, or file an upstream Issue (the platform delivery path of /qa-fix §1a and of
+    // /vc-self-check deliver); and `public_repo` is a CLASSIC scope, named inside fine-grained
+    // instructions. The split-by-axis wording stays only as the EXCEPTION for an org that forbids
+    // classic PATs, so the common case is one line, not a decision tree.
+    what: "GitHub Personal Access Token for /qa-fix + /vc-self-check delivery.",
+    why: "Opens PRs and files issues on GitHub — your own org's repos AND the VirtoCommerce platform upstream (fork-PR / Issue).",
+    where: [
+      "ONE CLASSIC token with the `repo` scope. That is all you need.",
+      "#          github.com -> Settings -> Developer settings -> Personal access tokens ->",
+      "#          Tokens (classic) -> Generate new token. Tick: repo. Set an expiry.",
+      "#          It covers BOTH jobs with one value: your own organization's repos (clone / push /",
+      "#          PR, private included) AND the VirtoCommerce upstream (fork / fork-PR / Issue on",
+      "#          public repos you do not own).",
+      "#          Prefer no token at all? Run `gh auth login` (browser) and leave this blank.",
+      "#",
+      "#          WHY CLASSIC, not fine-grained: a fine-grained token is bound to ONE resource owner",
+      "#          and is READ-ONLY on public repos it does not own. GitHub's own docs: \"Only personal",
+      "#          access tokens (classic) have write access for public repositories that are not owned",
+      "#          by you or an organization that you are not a member of.\" So a fine-grained token can",
+      "#          never fork VirtoCommerce/* — fork / fork-PR / issue-create all return 403.",
+      "#",
+      "#          EXCEPTION — only if a classic token is not an option (your org's policy blocks",
+      "#          classic PATs, or you want least-privilege). Then split the two jobs:",
+      "#            - VirtoCommerce upstream -> use `gh auth login` instead of a token;",
+      "#            - your own org's repos   -> a FINE-GRAINED token, resource owner = that org,",
+      "#              Contents + Pull requests + Issues = Read and write (the org may need to approve it).",
+      "#          Either way verify-access reports which kind you supplied and warns if it cannot do the job.",
+    ].join("\n"),
   },
   ADO_PAT: {
     perEnv: false, include: (o) => (o.tracker === "azure" || o.clientVcs === "azure-repos") && o.adoAuth !== "az-login",

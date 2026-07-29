@@ -168,3 +168,41 @@ test("reconcile --write WITHOUT a --set decision leaves the consent fields ABSEN
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ─── `--set` into an OPEN MAP (VCST-5582 E-b) ──────────────────────────────────────
+// The persistence mechanism for "which field is this process's Environment?", asked ONCE at the
+// first bug creation. The open maps' KEYS are data — and an Azure field ref contains dots, so a
+// naive split-on-every-dot would write {Custom:{Environment:"QA"}} instead of the flat key.
+test("reconcile --set: a dotted FIELD REF lands as ONE key in an open map, not nested objects", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-openmap-"));
+  try {
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "azure", azure: { organization: "acme", project: "Web" } },
+    }));
+    const p = reconcile(home, [
+      "--set", "tracker.fieldDefaults.Custom.Environment=QA",
+      "--set", "tracker.fieldMap.environment=Custom.Environment",
+    ]);
+    assert.deepEqual(p.tracker.fieldDefaults, { "Custom.Environment": "QA" }, "the ref is ONE flat key");
+    assert.equal(p.tracker.fieldDefaults.Custom, undefined, "never split into nested objects");
+    assert.deepEqual(p.tracker.fieldMap, { environment: "Custom.Environment" });
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("reconcile: a discovered tracker.fields contract survives reconcile untouched (open map)", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-contract-"));
+  try {
+    const contract = [{ ref: "Custom.Environment", name: "Environment", required: true, type: "string", allowedValues: ["QA", "PROD"] }];
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "azure", fields: { Bug: contract }, azure: { organization: "acme", project: "Web" } },
+    }));
+    const p = reconcile(home, ["--set", "selfDiagnostics=true"]);
+    assert.deepEqual(p.tracker.fields.Bug, contract, "the scanned contract is DATA — never pruned as schema");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

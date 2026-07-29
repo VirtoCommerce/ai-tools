@@ -223,19 +223,33 @@ export function buildBugFields(input = {}) {
   }
   const raw = !!input.raw;
   const html = (v) => (raw ? String(v) : ensureAzureHtml(v));
+  // Which refs are HTML. PREFER the caller's contract-derived resolver (VCST-5582 E-a:
+  // the field's real data type from the organization's own metadata — `html` ⇒ HTML,
+  // `plainText` ⇒ text). It returns null for a field the contract doesn't know, and is
+  // absent entirely when no contract was scanned; both fall back to HTML_FIELD_REFS, the
+  // hardcoded set of the three canonical Azure HTML fields. That hardcoding was the
+  // assumption E-a replaces — it survives only as the "unverified defaults" fallback.
+  const htmlRef = (ref) => {
+    if (typeof input.isHtmlRef === "function") {
+      const v = input.isHtmlRef(ref);
+      if (v === true || v === false) return v;
+    }
+    return isHtmlField(ref);
+  };
+  const body = (ref, v) => (htmlRef(ref) ? html(v) : String(v));
   const fields = [{ op: "add", path: "/fields/System.Title", value: input.title }];
-  if (input.description) fields.push({ op: "add", path: "/fields/System.Description", value: html(input.description) });
-  if (input.reproSteps) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: html(input.reproSteps) });
+  if (input.description) fields.push({ op: "add", path: "/fields/System.Description", value: body("System.Description", input.description) });
+  if (input.reproSteps) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: body("Microsoft.VSTS.TCM.ReproSteps", input.reproSteps) });
   if (input.severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: input.severity });
   if (input.priority !== undefined && input.priority !== null && input.priority !== true)
     fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: Number(input.priority) });
   const tags = normalizeTags(input.tags);
   if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
-  if (input.systemInfo) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.SystemInfo", value: html(input.systemInfo) });
+  if (input.systemInfo) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.SystemInfo", value: body("Microsoft.VSTS.TCM.SystemInfo", input.systemInfo) });
   // Arbitrary custom fields (the deployment's Bug picklists). HTML-normalize ONLY the three
   // real HTML fields (isHtmlField, exact match) — a plaintext custom field is sent verbatim.
   for (const [path, value] of Object.entries(input.fields || {})) {
-    fields.push({ op: "add", path: `/fields/${path}`, value: isHtmlField(path) ? html(value) : value });
+    fields.push({ op: "add", path: `/fields/${path}`, value: htmlRef(path) ? html(value) : value });
   }
   // Attachment relations (Attachments tab). Inline <img> in the HTML is independent.
   for (const url of normalizeList(input.attachments)) {

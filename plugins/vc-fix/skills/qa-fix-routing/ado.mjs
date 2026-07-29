@@ -26,13 +26,17 @@
  *                               [--repro-file steps.md] [--severity "2 - High"] [--priority 2] \
  *                               [--tags "qa-autofix,frontend"] \
  *                               [--system-info-file sysinfo.html] \
- *                               [--field "Custom.Environment=QA"] [--field "Custom.Reportedby=QA team"] \
- *                               [--field "Custom.Typeofbug=Functional"] \
+ *                               [--field "<ref-from-the-contract>=<value>" …] \
  *                               [--assign-self] [--iteration current] [--parent 940]   # returns { id, url }
  *     --system-info(-file) → Microsoft.VSTS.TCM.SystemInfo (the "System Info" block: environment,
  *       build, browser, repro-rate — NOT a section inside the Description). HTML, like Description.
- *     --field "Ref.Path=value" (repeatable) → sets any work-item field, incl. the deployment's
- *       custom Bug picklists (Custom.Environment / Custom.Reportedby / Custom.Typeofbug, …).
+ *     --field "Ref.Path=value" (repeatable) → sets any work-item field, incl. this deployment's
+ *       own custom Bug picklists. The refs are DISCOVERED, never hardcoded: they come from
+ *       project-profile.json `tracker.fields.<Type>[]` (see bug-contract.mjs). A field this
+ *       organization does not have is dropped, and a picklist value outside the discovered
+ *       `allowedValues` is refused BEFORE the POST.
+ *     --no-preflight → skip only the non-mutating write-scope probe (file/contract checks stay).
+ *     --no-verify    → skip the post-create read-back (not recommended; a 200 is not proof).
  *     --assign-self → assign to the token/session owner (whoami); --assign-to <email> for explicit.
  *     --iteration current → stamp the team's active sprint (System.IterationPath); or pass a path.
  *     --parent <id> → link the bug under a parent work item (Hierarchy-Reverse relation).
@@ -47,10 +51,20 @@
  *
  * Exit non-zero on any HTTP >=400 or an auth redirect. `--json` prints the raw body.
  */
-import { readFileSync } from "fs";
+import { readFileSync, existsSync, statSync } from "fs";
 import { fileURLToPath } from "url";
-import { basename, dirname, join, resolve } from "path";
+import { basename, dirname, isAbsolute, join, resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
+// The per-ORGANIZATION bug field contract (VCST-5582 E) — discovery lives in
+// /project-init's discover-tracker.mjs; the pure contract logic is shared here so the scan
+// and the payload builder can never disagree. See bug-contract.mjs's header.
+import {
+  resolveSlots, buildContractFields, verifyAgainstContract, renderVerifyTable,
+  classifyFieldRejection, isHtmlByContract,
+} from "./bug-contract.mjs";
+// Non-mutating ADO write-scope probe, reused from /project-init's readiness table so
+// "your PAT is read-only" is told ONCE, up front, in the same words on both surfaces.
+import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../project-init/probe-lib.mjs";
 // Azure HTML conversion + the Bug JSON-Patch builder live in a shared module so the CLI here
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
@@ -236,6 +250,53 @@ async function call(method, url, { body, contentType } = {}) {
 const V = "api-version=7.1";
 const enc = encodeURIComponent;
 
+/**
+ * Like `call`, but RETURNS the failure instead of exiting — the single-retry self-heal
+ * (VCST-5582 E-f) has to read the server's rejection to decide what to fix.
+ */
+async function callSoft(method, url, { body, contentType } = {}) {
+  const headers = { Authorization: await authHeader(), Accept: "application/json" };
+  if (body !== undefined) headers["Content-Type"] = contentType || "application/json";
+  try {
+    const res = await fetch(url, {
+      method, headers,
+      body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
+      redirect: "manual",
+    });
+    const text = await res.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { _raw: text }; }
+    if (res.status >= 300 && res.status < 400) return { ok: false, status: res.status, message: "sign-in redirect — ADO auth not accepted", data };
+    if (!res.ok) return { ok: false, status: res.status, message: data?.message || data?.value?.Message || String(text).slice(0, 300), data };
+    return { ok: true, status: res.status, message: "", data };
+  } catch (e) {
+    return { ok: false, status: 0, message: e?.message || String(e), data: {} };
+  }
+}
+
+// ─── the bug field contract (VCST-5582 E) ─────────────────────────────────────────────
+/**
+ * Where a `--*-file` path resolves from. `VC_FIX_HOME || cwd`, symmetric with the rest of the
+ * plugin (skills/project-init/lib/paths.mjs `outputRoot()`), NOT bare cwd. The OPUS run died on
+ * a raw `ENOENT … readFileUtf8` Node stack because `resolve(path)` used the process cwd, which
+ * is not necessarily the project the report was written into.
+ */
+function inputRoot() {
+  return process.env.VC_FIX_HOME ? resolve(process.env.VC_FIX_HOME) : process.cwd();
+}
+function resolveInput(p) {
+  const s = String(p || "");
+  return isAbsolute(s) ? s : resolve(inputRoot(), s);
+}
+
+/** The discovered contract for a work-item type, or [] when none was scanned. */
+function contractFor(type) {
+  const all = (PROFILE.tracker && PROFILE.tracker.fields) || {};
+  const want = String(type || "").toLowerCase();
+  for (const [k, v] of Object.entries(all)) if (k.toLowerCase() === want && Array.isArray(v)) return v;
+  return [];
+}
+
 
 // ---- commands -----------------------------------------------------------------------
 const COMMANDS = {
@@ -336,17 +397,33 @@ const COMMANDS = {
     const str = (v) => (typeof v === "string" ? v : "");
     for (const k of ["type", "title"])
       if (!str(args[k])) fail(`--${k} required (with a value)`);
-    // Body is a JSON-Patch array (op "add" per field). Description/repro can be a file
-    // (never inline prose with em-dashes — same grabli as create-pr) or a raw string.
-    const description = args["description-file"]
-      ? readFileSync(resolve(args["description-file"]), "utf-8")
-      : str(args.description);
-    const repro = args["repro-file"]
-      ? readFileSync(resolve(args["repro-file"]), "utf-8")
-      : str(args.repro);
-    const systemInfo = args["system-info-file"]
-      ? readFileSync(resolve(args["system-info-file"]), "utf-8")
-      : str(args["system-info"]);
+    // ─── PRE-FLIGHT — ONE message, every problem at once (VCST-5582 E-d) ──────────────
+    // The old code checked failure causes SEQUENTIALLY — three `readFileSync(resolve(…))`
+    // calls (cwd-relative, no existence check → a raw Node ENOENT stack, not a fail()),
+    // then `whoami` for --assign-self, then `current-iteration` for --iteration. Each one
+    // crashed separately and cost a full agent turn. Now everything that can be known before
+    // the POST is resolved first, and a failure reports EVERY problem together with each
+    // missing path shown ABSOLUTE and the exact PAT scope to grant.
+    const problems = [];
+    const readInput = (flag, inlineFlag) => {
+      const p = str(args[flag]);
+      if (!p) return str(args[inlineFlag]);
+      const abs = resolveInput(p);
+      if (!existsSync(abs)) {
+        problems.push(`--${flag} "${p}" not found — resolved to ${abs} (relative paths resolve against VC_FIX_HOME || cwd = ${inputRoot()})`);
+        return "";
+      }
+      try {
+        if (statSync(abs).isDirectory()) { problems.push(`--${flag} "${p}" is a directory, not a file (${abs})`); return ""; }
+        return readFileSync(abs, "utf-8");
+      } catch (e) {
+        problems.push(`--${flag} "${p}" could not be read (${abs}): ${e.message}`);
+        return "";
+      }
+    };
+    const description = readInput("description-file", "description");
+    const repro = readInput("repro-file", "repro");
+    const systemInfo = readInput("system-info-file", "system-info");
     // Parse repeatable `--field "Ref.Path=value"` into an object (CLI-specific validation), e.g.
     //   --field "Custom.Environment=QA" --field "Custom.Reportedby=QA team".
     const customFields = {};
@@ -357,26 +434,129 @@ const COMMANDS = {
       if (!path) fail(`--field has an empty field ref (got "${spec}")`);
       customFields[path] = String(spec).slice(eq + 1);
     }
-    // Resolve the CLI-only conveniences to concrete values, then hand everything to the shared
-    // buildBugFields (the single source of the Bug JSON-Patch, also used by azure-tracker.ts).
+    // Attachment inputs are URLs (already uploaded), not files — but a caller that passes a
+    // local path by mistake must hear about it HERE, not as an opaque relation error.
+    for (const a of str(args.attachments) ? str(args.attachments).split(",").map((s) => s.trim()).filter(Boolean) : []) {
+      if (!/^https?:\/\//i.test(a)) problems.push(`--attachments entry "${a}" is not a URL — upload it first (\`ado.mjs upload-attachment --file <png>\`) and pass the returned url`);
+    }
+
+    // Identity + iteration, resolved together so BOTH failures surface in the same message.
     let assignedTo = str(args["assign-to"]);
     if (!assignedTo && args["assign-self"]) {
-      const me = await COMMANDS.whoami(args);
-      assignedTo = me?.mail || me?.uniqueName || "";
-      if (!assignedTo) fail("--assign-self: could not resolve the token owner identity (connectionData returned none)");
+      const me = await callSoft("GET", `${orgUrl(args)}/_apis/connectionData?api-version=7.1-preview`);
+      if (!me.ok) problems.push(`--assign-self: identity lookup failed (HTTP ${me.status || "network"}) — ${me.message || "connectionData unreachable"}`);
+      else {
+        const u = me.data.authenticatedUser || {};
+        assignedTo = u.properties?.Account?.$value || u.subjectDescriptor || "";
+        if (!assignedTo) problems.push("--assign-self: could not resolve the token owner identity (connectionData returned none) — pass --assign-to <email>");
+      }
     }
     let iterationPath = str(args.iteration);
     if (iterationPath && /^current$/i.test(iterationPath)) {
-      const it = await COMMANDS["current-iteration"](args);
-      if (!it?.path) fail("--iteration current: no current sprint for the team (pass --team or set tracker.azure.team)");
-      iterationPath = it.path;
+      const team = (typeof args.team === "string" ? args.team : "") || TRACKER_AZ.team || "";
+      const teamSeg = team ? `/${enc(team)}` : "";
+      const r = await callSoft("GET", `${base(args, "tracker")}${teamSeg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
+      const it = r.ok ? (r.data.value || [])[0] : null;
+      if (!it?.path) problems.push(`--iteration current: no current sprint resolved for team "${team || "(project default)"}" — pass --team, set tracker.azure.team, or give an explicit --iteration <path>`);
+      else iterationPath = it.path;
     }
+
+    // Write-scope probe — non-mutating (a deliberately invalid PATCH: ADO answers 401 when the
+    // scope is MISSING, 400/409/422 when it is present and only the body was rejected). This is
+    // the difference between "your PAT is read-only" told up front and a 401 after the report is
+    // already written. Skippable with --no-preflight for a scripted retry.
+    if (!args["no-preflight"]) {
+      const apiBase = base(args, "tracker");
+      const hdr = await authHeader();
+      const probeId = await discoverAdoWorkItemId({ apiBase, authHeader: hdr });
+      if (probeId) {
+        const { scope } = await probeAdoWorkItemsWrite({ apiBase, authHeader: hdr, workItemId: probeId });
+        if (scope === "absent") {
+          problems.push('the ADO credential has NO Work Items WRITE scope — grant "Work Items: Read, write, & manage" on the PAT (dev.azure.com → User settings → Personal access tokens), or `az login` as an identity that has it');
+        }
+        // "restricted" (an ACL-403 on the probed item) and "unverified" are inconclusive — a
+        // correctly-scoped PAT must not be blocked by a probe that hit a locked Area Path.
+      }
+    }
+
+    if (problems.length) {
+      fail(
+        `create-workitem pre-flight failed — NOTHING was created. Fix all ${problems.length} problem(s) and re-run:\n` +
+          problems.map((p, i) => `      ${i + 1}. ${p}`).join("\n") +
+          "\n      (Do NOT retry with fewer fields — that is how a work item ends up created with its fields unset.)",
+        2,
+      );
+    }
+
+    // ─── CONTRACT-DRIVEN payload (VCST-5582 E-c) ──────────────────────────────────────
+    // Send only fields THIS organization actually has; validate every picklist value against
+    // the discovered allowedValues BEFORE the POST; let a contract-required field with no value
+    // block the request rather than create a half-filled item. With no contract (metadata
+    // unreachable / a Jira deployment / an un-scanned profile) this is a NO-OP and the legacy
+    // field set is sent unchanged, labelled "unverified defaults" (the E-f ladder's last rung).
+    const contract = contractFor(args.type);
+    const fieldMap = (PROFILE.tracker && PROFILE.tracker.fieldMap) || {};
+    const fieldDefaults = (PROFILE.tracker && PROFILE.tracker.fieldDefaults) || {};
+    let contractNote = "unverified defaults (no field contract in the profile — run /project-init to scan it)";
+    let mapping = {};
+    let dropped = [];
+    if (contract.length) {
+      const slots = resolveSlots(contract, fieldMap);
+      mapping = slots.mapping;
+      // The slots buildBugFields emits through its OWN dedicated ops — declared here so the
+      // required sweep counts them as filled instead of blocking the POST on a field we are
+      // very much sending (and so we don't emit a duplicate JSON-Patch op for it).
+      const selfEmitted = {
+        title: str(args.title), body: description, repro, systemInfo,
+        tags: str(args.tags), assignee: assignedTo, sprint: iterationPath,
+      };
+      const satisfiedRefs = Object.entries(selfEmitted)
+        .filter(([slot, v]) => v && mapping[slot])
+        .map(([slot]) => mapping[slot]);
+      const built = buildContractFields(
+        contract,
+        mapping,
+        {
+          severity: str(args.severity),
+          priority: args.priority !== undefined && args.priority !== true ? String(args.priority) : undefined,
+        },
+        { ...fieldDefaults, ...customFields },
+        satisfiedRefs,
+      );
+      if (built.errors.length) {
+        fail(
+          `create-workitem: ${built.errors.length} value(s) rejected by the ${args.type} field contract — NOTHING was created:\n` +
+            built.errors.map((e, i) => `      ${i + 1}. ${e}`).join("\n"),
+          2,
+        );
+      }
+      if (built.missingRequired.length) {
+        fail(
+          `create-workitem: ${built.missingRequired.length} REQUIRED ${args.type} field(s) have no value and no default — NOTHING was created:\n` +
+            built.missingRequired
+              .map((f, i) => `      ${i + 1}. ${f.name} (${f.ref})${f.allowedValues?.length ? ` — allowed: ${f.allowedValues.join(", ")}` : ""}`)
+              .join("\n") +
+            "\n      Ask the operator once, then persist the answer to tracker.fieldMap / tracker.fieldDefaults so it is never asked again.\n" +
+            "      (A required field is NEVER dropped to make the request go through.)",
+          2,
+        );
+      }
+      dropped = built.dropped;
+      // Replace the caller's raw --field set with the validated, contract-checked one.
+      for (const k of Object.keys(customFields)) delete customFields[k];
+      Object.assign(customFields, built.fields);
+      // Severity/priority now travel as contract fields; don't ALSO send them via the legacy
+      // canonical refs, which would duplicate the op (and could target a ref this org lacks).
+      contractNote = `contract-driven (${contract.length} field(s), ${contract.filter((f) => f.required).length} required)`;
+    }
+    const useContract = contract.length > 0;
+
     const fields = buildBugFields({
       title: str(args.title),
       description,
       reproSteps: repro,
-      severity: str(args.severity),
-      priority: args.priority !== undefined && args.priority !== true ? args.priority : undefined,
+      severity: useContract ? "" : str(args.severity),
+      priority: useContract ? undefined : (args.priority !== undefined && args.priority !== true ? args.priority : undefined),
       tags: str(args.tags),
       systemInfo,
       fields: customFields,
@@ -386,6 +566,9 @@ const COMMANDS = {
       parentId: str(args.parent),
       orgUrl: orgUrl(args),
       raw: !!args.raw,
+      // The field TYPE makes the HTML decision DERIVED rather than asserted (E-a): `html` ⇒
+      // HTML body, `plainText` ⇒ text. Absent contract ⇒ null ⇒ the legacy known-refs set.
+      isHtmlRef: useContract ? (ref) => isHtmlByContract(contract, ref) : null,
     });
     // The leading `$` before the type is literal + required by the ADO create endpoint.
     // Reuse the SAME resolved base for both the create call and the returned URL — building
@@ -394,17 +577,79 @@ const COMMANDS = {
     // tracker.azure.organization/project ever drift (they're written independently by
     // gen-profile.mjs).
     const apiUrl = base(args, "tracker");
-    const d = await call(
-      "POST",
-      `${apiUrl}/_apis/wit/workitems/$${enc(args.type)}?${V}`,
-      { body: fields, contentType: "application/json-patch+json" },
-    );
+    const createUrl = `${apiUrl}/_apis/wit/workitems/$${enc(args.type)}?${V}`;
+    let res = await callSoft("POST", createUrl, { body: fields, contentType: "application/json-patch+json" });
+
+    // ─── SELF-HEAL, exactly ONCE (VCST-5582 E-f) ──────────────────────────────────────
+    // The server is the final authority: `alwaysRequired` covers process-level requiredness
+    // but NOT conditional form rules ("required when State = X"), so a contract-clean payload
+    // can still be rejected. Parse WHICH field the rejection is about and drop/keep precisely
+    // that one — a REQUIRED field is never dropped (STOP + ask instead), and we never retry by
+    // shrinking the payload blindly, which is how the OPUS bug ended up with empty fields.
+    let healed = null;
+    if (!res.ok && res.status >= 400 && res.status < 500) {
+      const r = classifyFieldRejection(res.message, contract);
+      if (r.droppable && r.ref) {
+        const before = fields.length;
+        const retryFields = fields.filter((op) => op.path !== `/fields/${r.ref}`);
+        if (retryFields.length < before) {
+          healed = { ref: r.ref, name: r.name, reason: r.reason };
+          res = await callSoft("POST", createUrl, { body: retryFields, contentType: "application/json-patch+json" });
+        }
+      }
+      if (!res.ok) {
+        fail(
+          `create-workitem: Azure rejected the payload (HTTP ${res.status}) — ${res.message}\n` +
+            (r.ref ? `      Field: ${r.name} (${r.ref}) · reason: ${r.reason} · required: ${r.required ? "YES — cannot be dropped, ask the operator for a value" : "no"}\n` : "") +
+            "      Fix the INPUT and re-run. Do NOT retry with fields removed.",
+          2,
+        );
+      }
+    } else if (!res.ok) {
+      fail(`create-workitem: HTTP ${res.status} for POST ${createUrl}: ${res.message}`, 1);
+    }
+    const d = res.data;
+
+    // ─── READ BACK AND VERIFY (VCST-5582 E-e) ─────────────────────────────────────────
+    // A 200 means "an item was created", NOT "the fields are populated". Re-read the item and
+    // check every contract-required field and every mapped slot; PATCH the gaps ONCE, re-verify,
+    // and report honestly if anything is still missing. The caller renders `verifyTable`.
+    const sentByRef = {};
+    for (const op of fields) {
+      const m = /^\/fields\/(.+)$/.exec(op.path || "");
+      if (m) sentByRef[m[1]] = op.value;
+    }
+    let verify = null;
+    let patched = [];
+    if (!args["no-verify"]) {
+      const read = await callSoft("GET", `${apiUrl}/_apis/wit/workitems/${d.id}?$expand=all&${V}`);
+      if (read.ok) {
+        verify = verifyAgainstContract(contract, mapping, read.data.fields || {}, sentByRef);
+        // ONE repair pass: re-send only the values we HAD for the fields that came back empty.
+        const repairable = verify.missing.filter((r) => sentByRef[r.ref] !== undefined && sentByRef[r.ref] !== "");
+        if (repairable.length) {
+          const patch = repairable.map((r) => ({ op: "add", path: `/fields/${r.ref}`, value: sentByRef[r.ref] }));
+          const p = await callSoft("PATCH", `${apiUrl}/_apis/wit/workitems/${d.id}?${V}`, { body: patch, contentType: "application/json-patch+json" });
+          patched = repairable.map((r) => r.ref);
+          const re = p.ok ? p : await callSoft("GET", `${apiUrl}/_apis/wit/workitems/${d.id}?$expand=all&${V}`);
+          if (re.ok) verify = verifyAgainstContract(contract, mapping, re.data.fields || {}, sentByRef);
+        }
+      }
+    }
+
     return {
       id: d.id,
       type: d.fields?.["System.WorkItemType"],
       title: d.fields?.["System.Title"],
       state: d.fields?.["System.State"],
       url: `${apiUrl}/_workitems/edit/${d.id}`,
+      // Everything below is the E-c/E-e/E-f evidence the caller MUST show the operator —
+      // the ticket key alone was never proof the bug is filled in.
+      contract: contractNote,
+      ...(dropped.length ? { droppedFields: dropped } : {}),
+      ...(healed ? { selfHealed: healed } : {}),
+      ...(verify ? { fieldsOk: verify.ok, verifyTable: renderVerifyTable(verify.rows), stillMissing: verify.missing.map((r) => r.ref) } : {}),
+      ...(patched.length ? { patchedAfterCreate: patched } : {}),
     };
   },
 

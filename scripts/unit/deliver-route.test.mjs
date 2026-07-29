@@ -18,6 +18,89 @@ import {
   purgeSession,
   main,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
+import { classifyGithubTokenKind, GITHUB_UPSTREAM_REMEDY } from "../../plugins/vc-fix/skills/project-init/probe-lib.mjs";
+
+// ─── classifyGithubTokenKind (VCST-5582 A — the token-kind probe) ────────────────
+// GitHub returns X-OAuth-Scopes for CLASSIC tokens (even when the scope list is empty) and
+// omits it entirely for fine-grained ones — that header is the discriminator. Only a classic
+// token (or a gh browser session) can fork / fork-PR / issue-create on a repo it does not own.
+const hdr = (scopes) => new Map([["x-oauth-scopes", scopes]]) && { get: (k) => (k.toLowerCase() === "x-oauth-scopes" ? scopes : null) };
+const noHdr = { get: () => null };
+
+test("classifyGithubTokenKind: the github_pat_ prefix is definitively fine-grained (never fork-capable)", () => {
+  const r = classifyGithubTokenKind("github_pat_11ABCDE", hdr("repo,gist")); // even WITH a scope header
+  assert.equal(r.kind, "fine-grained");
+  assert.equal(r.forkCapable, "no", "a fine-grained token is structurally incapable, whatever the scopes claim");
+  assert.equal(r.remedy, GITHUB_UPSTREAM_REMEDY);
+});
+
+test("classifyGithubTokenKind: no X-OAuth-Scopes header ⇒ fine-grained", () => {
+  const r = classifyGithubTokenKind("some-opaque-token", noHdr);
+  assert.equal(r.kind, "fine-grained");
+  assert.equal(r.forkCapable, "no");
+});
+
+test("classifyGithubTokenKind: an X-OAuth-Scopes header ⇒ classic, and the scope list is returned", () => {
+  const r = classifyGithubTokenKind("ghp_abc", hdr("repo, gist, read:org"));
+  assert.equal(r.kind, "classic");
+  assert.deepEqual(r.scopes, ["repo", "gist", "read:org"]);
+  assert.equal(r.forkCapable, "yes");
+  assert.equal(r.remedy, "", "nothing to remedy when the token can do the job");
+});
+
+test("classifyGithubTokenKind: a classic token with an EMPTY scope header is classic but not fork-capable", () => {
+  const r = classifyGithubTokenKind("ghp_abc", hdr(""));
+  assert.equal(r.kind, "classic");
+  assert.equal(r.forkCapable, "no", "the header was present (scopes known) and carries neither repo nor public_repo");
+});
+
+test("classifyGithubTokenKind: public_repo alone is enough for the upstream path", () => {
+  assert.equal(classifyGithubTokenKind("ghp_abc", hdr("public_repo")).forkCapable, "yes");
+});
+
+test("the remedy prescribes ONE classic `repo` token — not a two-token decision tree", () => {
+  // A single classic `repo` PAT covers BOTH jobs (the client's own repos, private included, AND
+  // the VirtoCommerce upstream), so onboarding asks for exactly one value. The split-by-axis
+  // setup remains only as the exception for an org that forbids classic PATs.
+  assert.match(GITHUB_UPSTREAM_REMEDY, /ONE CLASSIC token with the `repo` scope/);
+  assert.match(GITHUB_UPSTREAM_REMEDY, /covers both/i);
+  assert.match(GITHUB_UPSTREAM_REMEDY, /gh auth login/, "the no-token alternative is offered");
+  assert.doesNotMatch(GITHUB_UPSTREAM_REMEDY, /public_repo/, "the primary recipe is `repo`, not a scope the operator must reason about");
+});
+
+test("scaffold-secrets: the .env.local comment leads with the single classic token (BOTH trees)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, resolve, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+  for (const rel of ["plugins/vc-fix/skills/project-init/scaffold-secrets.mjs", ".claude/skills/project-init/scaffold-secrets.mjs"]) {
+    const src = readFileSync(join(root, rel), "utf8");
+    assert.match(src, /"ONE CLASSIC token with the `repo` scope\. That is all you need\."/, `${rel}: the first line is the simple answer`);
+    assert.match(src, /EXCEPTION — only if a classic token is not an option/, `${rel}: the split is the exception, not the lead`);
+    // The defect being fixed: fine-grained + a classic-only scope in the same instruction.
+    assert.doesNotMatch(src, /Fine-grained\. Perms: Contents \+ Pull requests = Read\/Write \(public_repo/, `${rel}: the old impossible instruction is gone`);
+  }
+});
+
+test("classifyGithubTokenKind: the gh-CLI session takes its scopes from `gh auth status`", () => {
+  const r = classifyGithubTokenKind("gho_sessiontoken", noHdr, { via: "gh CLI", scopes: "gist,read:org,repo" });
+  assert.equal(r.kind, "gh-cli");
+  assert.equal(r.forkCapable, "yes");
+});
+
+test("classifyGithubTokenKind: an UNREADABLE capability is 'unknown', never optimistically 'yes'", () => {
+  // A gh session whose scopes could not be parsed — not fine-grained, but not proven either.
+  const r = classifyGithubTokenKind("gho_sessiontoken", noHdr, { via: "gh CLI" });
+  assert.equal(r.kind, "gh-cli");
+  assert.equal(r.forkCapable, "unknown");
+  assert.equal(r.remedy, GITHUB_UPSTREAM_REMEDY, "an unconfirmed capability still carries the remedy");
+});
+
+test("classifyGithubTokenKind: no token at all", () => {
+  const r = classifyGithubTokenKind("", noHdr);
+  assert.equal(r.kind, "none");
+  assert.equal(r.forkCapable, "no");
+});
 
 // ─── isAllowedUpstreamRepo (destination allowlist) ───────────────────────────────
 test("isAllowedUpstreamRepo: allows VirtoCommerce/* only", () => {
@@ -51,13 +134,43 @@ test("resolveRoute: push/maintain/admin permission → pr", () => {
   }
 });
 
-test("resolveRoute: authenticated without push → fork-pr, unless scopes clearly lack repo → issue", () => {
-  // no scope info known → assume fork is possible
-  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read", login: "u" } }).route, "fork-pr");
-  // scopes present and include repo → fork-pr
+// ── VCST-5582 A — no optimistic fork default ───────────────────────────────────────────
+// The old rule was `canFork = !scopesKnown || /(repo|public_repo)/.test(scopes)`, while
+// resolveGithubToken() leaves `scopes` EMPTY for every PAT — so every PAT routed `fork-pr`,
+// including a fine-grained one GitHub structurally forbids from forking someone else's repo.
+test("resolveRoute: a PROVEN fork-capable token without push → fork-pr", () => {
+  // The probed capability is what earns the fork path.
+  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read", login: "u", tokenKind: "classic", forkCapable: "yes" } }).route, "fork-pr");
+  // Legacy probe shape (no forkCapable field) + a scope string that clearly grants it.
   assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read" }, scopes: "repo,gist" }).route, "fork-pr");
-  // scopes present but NO repo/public_repo → issue-only
-  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read" }, scopes: "gist,read:org" }).route, "issue");
+  assert.equal(resolveRoute({ token: "t", probe: { ok: true, perm: "read" }, scopes: "public_repo" }).route, "fork-pr");
+});
+
+test("resolveRoute: a PAT with EMPTY scopes must NOT silently route fork-pr (AC 1)", () => {
+  // This is the exact defect: unknown capability used to mean "assume fork works".
+  const r = resolveRoute({ token: "github_pat_xyz", probe: { ok: true, perm: "pull(read-only)", login: "u" }, scopes: "" });
+  assert.notEqual(r.route, "fork-pr", "unknown fork capability must never be optimistically assumed");
+  assert.equal(r.route, "issue", "it falls to the least-privileged upstream route instead");
+  assert.match(r.reason, /could not be confirmed|classic/i, "and the reason carries the remedy");
+});
+
+test("resolveRoute: a fine-grained token routes to issue, never fork-pr, with the remedy", () => {
+  const r = resolveRoute({ token: "github_pat_xyz", probe: { ok: true, perm: "pull(read-only)", login: "u", tokenKind: "fine-grained", forkCapable: "no" } });
+  assert.equal(r.route, "issue");
+  assert.match(r.reason, /fine-grained token cannot fork/);
+  assert.match(r.reason, /classic/i, "the reason names the classic-token remedy");
+});
+
+test("resolveRoute: a classic token with NO upstream scope stays local (nothing upstream is possible)", () => {
+  // Scopes were READ and carry neither repo nor public_repo → it can neither fork nor open an
+  // issue on a public repo, so sending nothing + printing the remedy is the honest outcome.
+  const r = resolveRoute({ token: "ghp_xyz", probe: { ok: true, perm: "pull(read-only)", login: "u", tokenKind: "classic", forkCapable: "no" }, scopes: "gist,read:org" });
+  assert.equal(r.route, "local");
+  assert.match(r.reason, /no repo\/public_repo scope/);
+});
+
+test("resolveRoute: a gh-cli session with the repo scope is fork-capable", () => {
+  assert.equal(resolveRoute({ token: "gho_xyz", probe: { ok: true, perm: "pull(read-only)", login: "u", tokenKind: "gh-cli", forkCapable: "yes" } }).route, "fork-pr");
 });
 
 test("resolveRoute: an explicit override wins over everything", () => {

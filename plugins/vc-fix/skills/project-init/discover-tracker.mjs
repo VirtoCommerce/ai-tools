@@ -26,6 +26,9 @@ import { writeFileSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { resolveAdoAuth } from "./probe-lib.mjs";
 import { outputRoot } from "./lib/paths.mjs";
+// The contract PARSER lives with its consumers (the create path) so the scan and the payload
+// builder can never disagree about the shape. Pure — see that file's header.
+import { parseFieldContract, resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
 
 /** Write the result to --out (relative to the deployment project) and/or print it. */
 function emit(out, args) {
@@ -175,7 +178,22 @@ async function main() {
   const scan = requested.map((r) => lc.get(r.toLowerCase())).filter(Boolean);
   if (!scan.length) scan.push(...allTypes.slice(0, 1));
 
+  // ─── field data types, ONE org-level call (VCST-5582 E-a) ─────────────────────────
+  // `_apis/wit/fields` lists every field in the org with its data type (html / plainText /
+  // string / picklistString / identity / treePath / integer / …). One call beats one per
+  // field, and the TYPE is what makes the HTML decision DERIVED instead of asserted.
+  // Best-effort: a failure here degrades the contract's `type` to "string", it never aborts
+  // the scan (read-only Work Items scope is enough; a restricted PAT just yields fewer facts).
+  let fieldTypes = [];
+  try {
+    fieldTypes = ((await adoGet(`https://dev.azure.com/${org}/_apis/wit/fields?api-version=7.1`, authHeader)).value || [])
+      .map((f) => ({ referenceName: f.referenceName, type: f.type }));
+  } catch (e) {
+    console.error(`[discover-tracker] org field-type list failed (types degrade to "string"): ${e.message}`);
+  }
+
   const workItemTypes = {};
+  const fields = {};
   for (const t of scan) {
     try {
       const states = ((await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/states?api-version=7.1`, authHeader)).value || [])
@@ -184,6 +202,17 @@ async function main() {
       workItemTypes[t]._categories = Object.fromEntries(states.map((s) => [s.name, s.category]));
     } catch (e) {
       console.error(`[discover-tracker] states for '${t}' failed: ${e.message}`);
+    }
+    // The FIELD CONTRACT for this type — what this organization's process actually requires
+    // and allows. `$expand=Properties` is what returns allowedValues / defaultValue alongside
+    // alwaysRequired. Also best-effort: no contract ⇒ the create path falls back to the legacy
+    // field set, clearly labelled "unverified defaults" (the E-f ladder).
+    try {
+      const typeFields = (await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/fields?$expand=Properties&api-version=7.1`, authHeader)).value || [];
+      const contract = parseFieldContract(typeFields, fieldTypes);
+      if (contract.length) fields[t] = contract;
+    } catch (e) {
+      console.error(`[discover-tracker] field contract for '${t}' failed (create falls back to unverified defaults): ${e.message}`);
     }
   }
 
@@ -210,6 +239,22 @@ async function main() {
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
 
+  // Slot resolution for the PRIMARY type (the one /qa-bug files) — reported now so the
+  // readiness table can say whether every semantic slot is bound and which required fields
+  // will be asked about at the first bug creation (E-g). The mapping itself is NOT baked:
+  // resolveSlots is deterministic over the contract, so recomputing it at create time keeps
+  // one source of truth and lets an operator `tracker.fieldMap` override take effect without
+  // a re-scan.
+  const primaryContract = fields[primary] || [];
+  const slots = resolveSlots(primaryContract, {});
+  const contractSummary = {
+    type: primary,
+    fieldCount: primaryContract.length,
+    requiredCount: primaryContract.filter((f) => f.required).length,
+    unmappedRequired: slots.unmappedRequired.map((f) => ({ ref: f.ref, name: f.name, allowedValues: f.allowedValues || [] })),
+    unmappedSlots: slots.unmapped,
+  };
+
   const out = {
     kind: "azure",
     ticketKeyFormat: "numeric",
@@ -217,6 +262,11 @@ async function main() {
     apiBase,
     projectId,
     workItemTypes,
+    // Per-type BUG FIELD CONTRACT (VCST-5582 E-a): [{ ref, name, required, type,
+    // allowedValues?, defaultValue? }]. Empty/absent ⇒ metadata was unreachable and the create
+    // path uses the legacy field set labelled "unverified defaults" (E-f).
+    fields,
+    contractSummary,
     roleStates,
     // Surfaced so gen-profile.mjs can require a COMPLETE map before enabling silent
     // "auto" transitions (a partial map — e.g. no distinct review state — should keep
@@ -232,6 +282,14 @@ async function main() {
       (missingRoles.length
         ? ` — MISSING role(s): ${missingRoles.join(", ")} (no matching state found; confirm/hand-edit before relying on auto transitions)`
         : ""),
+  );
+  console.error(
+    primaryContract.length
+      ? `[discover-tracker] ${primary} field contract: ${contractSummary.fieldCount} field(s), ${contractSummary.requiredCount} required` +
+        (contractSummary.unmappedRequired.length
+          ? ` — ${contractSummary.unmappedRequired.length} required field(s) no semantic slot maps: ${contractSummary.unmappedRequired.map((f) => f.name).join(", ")} (asked ONCE at the first bug creation, then persisted)`
+          : " — every required field is mapped")
+      : `[discover-tracker] no ${primary} field contract discovered — /qa-bug will fall back to the legacy field set, labelled "unverified defaults".`,
   );
   if (missingQaRoles.length) {
     console.error(

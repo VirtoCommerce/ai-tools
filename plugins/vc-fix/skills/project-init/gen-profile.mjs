@@ -135,6 +135,12 @@ function main() {
   set("vcs.azure.organization", args["azure-org"]);
   set("vcs.azure.project", args["azure-project"]);
   set("vcs.auth", args["vcs-auth"]);
+  // The PROBED GitHub token kind (VCST-5582 A) — derive-context.mjs `github.tokenKind` /
+  // `github.forkCapable`. Stored so /qa-fix Gate 1 and /vc-self-check deliver can refuse an
+  // impossible upstream route instead of discovering it at push time. Unset ⇒ left "" (unprobed),
+  // which every consumer must read as "unknown", never as capable.
+  set("vcs.githubTokenKind", args["github-token-kind"]);
+  set("vcs.githubForkCapable", args["github-fork-capable"]);
   set("upstream.org", args["upstream-org"]);
   set("upstream.contributionMode", args["contribution-mode"]);
   set("upstream.clientGithubAccount", args["upstream-account"]);
@@ -218,6 +224,11 @@ function main() {
       // completeness that unlocks "auto". Bake it so /qa-verify-fix can gate its OWN
       // auto-transition behavior on QA-role confidence, independent of the fix-side policy.
       if (t.qaRoleStatesComplete !== undefined) set("tracker.azure.qaRoleStatesComplete", t.qaRoleStatesComplete);
+      // Per-type BUG FIELD CONTRACT (VCST-5582 E-a): what THIS organization's process actually
+      // has, requires, and allows — so /qa-bug builds the payload from data instead of the
+      // hardcoded Custom.* set of one org. `tracker.fieldMap` stays an OPERATOR-owned override
+      // (never written from the scan) and is applied on top at create time.
+      if (t.fields && Object.keys(t.fields).length) set("tracker.fields", t.fields);
     } catch (err) {
       fail(`--tracker-json: cannot read ${args["tracker-json"]}: ${err.message}`);
     }
@@ -260,7 +271,8 @@ function main() {
   console.log(
     `[gen-profile] projectType=${profile.projectType} tracker=${profile.tracker.kind} ` +
       `clientVcs=${profile.vcs.clientHost} upstream=${profile.upstream.org} ` +
-      `contributionMode=${profile.upstream.contributionMode}`,
+      `contributionMode=${profile.upstream.contributionMode}` +
+      (profile.vcs.githubTokenKind ? ` githubToken=${profile.vcs.githubTokenKind}/${profile.vcs.githubForkCapable || "unknown"}` : ""),
   );
   if (args.print) console.log(JSON.stringify(withMeta, null, 2));
 }

@@ -45,7 +45,9 @@ export const SKILLS = [
 export const VERDICTS = ["OK", "DEGRADED", "BROKEN"];
 export const SEVERITIES = ["S0", "S1", "S2", "S3"];
 export const OUTCOMES = ["success", "recovered", "degraded", "failed", "silent_suspect"];
-export const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail", "none"];
+// `policy_block` (a by-design guardrail the agent obeyed — VCST-5582 F4) is LAST before "none" so
+// the derivation below still prefers a genuine blocking class when both are present.
+export const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail", "policy_block", "none"];
 export const STRUGGLES = ["retry_storm", "reread_loop", "search_thrash", "fallback_loop", "recurring_error", "stall", "low_yield"];
 export const TOOL_FAMILIES = ["read", "edit", "bash", "browser", "git", "github", "tracker", "mcp_other", "none"];
 export const REPO_KINDS = ["module", "platform", "frontend", "backend", "unknown"];

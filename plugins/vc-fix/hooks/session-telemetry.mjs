@@ -34,10 +34,16 @@
  *    only redacted snippets.
  *
  *  • CLASSIFY (Tier 1) — cheap heuristics, NO LLM. On close, each skill/command/
- *    agent span is tagged: success | recovered (self-corrected → NOT escalated) |
- *    degraded (a struggle sub-signal fired) | failed (a blocking, unrecovered
- *    error) | silent_suspect (closed clean but the oracle's expected output is
- *    absent). error ≠ failure; the numeric `>= 6` gate is GONE.
+ *    agent span is tagged: success | recovered (self-corrected OR adapted around →
+ *    NOT escalated) | degraded (a struggle sub-signal fired) | failed (a blocking,
+ *    unrecovered error) | silent_suspect (closed clean but the oracle's expected
+ *    output is absent). error ≠ failure; the numeric `>= 6` gate is GONE.
+ *    VCST-5582 hardened the classifier against FALSE `failed` verdicts on healthy
+ *    runs: recovery now also counts ADAPTATION (a one-off failure the span worked
+ *    around while still producing its expected artifact — allErrorsRecovered), bail
+ *    detection ignores the plugin's own definition echo (looksLikeBail), the current
+ *    auto-mode denial wording is recognised (PERMISSION_DENIED_RE), and an obeyed
+ *    guardrail is the non-blocking `policy_block` class rather than a `tool_error`.
  *
  *  • ESCALATE (Tier 2) — tail-based. At Stop, if any span's outcome is
  *    failed/degraded/silent_suspect AND its signature is NEW (deduped across the
@@ -61,11 +67,17 @@
  *    draining/closing spans or surfacing anything. The real verdict is deferred to
  *    the TERMINAL Stop, once the sub-agent has returned (its Task result now in the
  *    MAIN transcript). `SubagentStop`→`agentstop` keeps the scan current in between.
+ *    An unanswered OPERATOR QUESTION (an `AskUserQuestion` tool_use with no paired
+ *    tool_result) defers the same way — `suppressReason:"question-pending"` — so a
+ *    `{decision:"block"}` can never resume the agent over the operator's question and
+ *    push it out of view (VCST-5582 D).
  *
  *  • DECISION MOMENT — every finalize records a `decision` object on its `finalize`
  *    jsonl record: TERMINAL → { verdict:"clean|flagged", pluginActivity, freshCount,
  *    flaggedTotal, surfaced, suppressReason }; CHECKPOINT → { verdict:"deferred",
- *    pendingSubagents, surfaced:false, suppressReason:"subagent-running" }. This is
+ *    pendingSubagents, surfaced:false, suppressReason:"subagent-running" } or
+ *    { verdict:"deferred", pendingQuestions, surfaced:false,
+ *    suppressReason:"question-pending" }. This is
  *    the DURABLE, deterministic audit of "when did the collector decide, and what did
  *    it decide" — greppable (`"type":"finalize"` / `"decision"`) without printing.
  *    A VISIBLE line costs one extra model turn: a Stop hook on this platform cannot
@@ -225,6 +237,12 @@ const T = {
   ORPHAN_MS: 45 * 60 * 1000, // an id-mismatched open agent op older than this is treated as a crash
   LOW_YIELD_OPS: 20, // ≥20 tool ops in a span with zero decisive op
   SILENT_MIN_OPS: 2, // a skill/command must have done ≥2 ops before it can be silent_suspect
+  // Backstop for the unanswered-question deferral (VCST-5582 D). An AskUserQuestion op still open
+  // after this much SESSION-clock time is treated as a lost/missed tool_result rather than a human
+  // still deciding, so a scanner miss can never make a session go dark forever. Note the session
+  // clock only advances on transcript events, so a genuinely idle "waiting for the operator" pause
+  // never ages out — which is exactly the desired behaviour.
+  QUESTION_PENDING_MS: 45 * 60 * 1000,
 };
 // Bound the per-span op history so a long-lived command span can't grow its
 // state.json without limit (the struggle detectors only need a recent window;
@@ -233,12 +251,57 @@ const OPS_CAP = 120;
 const FLAGGED_CAP = 200; // hard backstop on distinct flagged signatures (M2 — see emitSpan)
 
 // ─── signal counts ───────────────────────────────────────────────────────────
-const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail"];
-const zeroCounts = () => ({ tool_error: 0, permission_denied: 0, hook_failure: 0, stop_bail: 0, tool_calls: 0, agent_calls: 0 });
+// `policy_block` is the one NON-BLOCKING class: a by-design guardrail that fired and the agent
+// obeyed (VCST-5582 F4). It is recorded + reported (topSignal) but deliberately excluded from
+// `blockingErr` in classify(), so an enforced rule working as intended can never make a healthy
+// run look `failed`. Keep it LAST so topSignal still prefers a genuine blocking class.
+const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail", "policy_block"];
+const zeroCounts = () => ({ tool_error: 0, permission_denied: 0, hook_failure: 0, stop_bail: 0, policy_block: 0, tool_calls: 0, agent_calls: 0 });
 
-const PERMISSION_DENIED_RE = /\b(permission denied|denied permission|requested permissions|user (?:denied|declined|rejected)|operation not permitted|not allowed to)\b/i;
+// Claude Code's CURRENT auto-mode wording is the second half of this alternation — the original
+// adjacency patterns ("permission denied", "user denied") miss "Permission for this action was
+// denied by the Claude Code auto mode classifier. Reason: Blocked by classifier", so a genuine
+// denial was mis-classed `tool_error` and `permission_denied` stayed 0 (VCST-5582 F3).
+const PERMISSION_DENIED_RE = /\b(permission denied|denied permission|requested permissions|user (?:denied|declined|rejected)|operation not permitted|not allowed to)\b|permission for this action was denied|blocked by (?:the )?classifier|denied by the [^.\n]{0,60}classifier/i;
 const HOOK_FAILURE_RE = /(error TS\d{3,}|\btsc\b[^\n]*error|PostToolUse hook[^\n]*fail|hook[^\n]*error|npm error|command failed with exit code)/i;
-const BAIL_RE = /(FIX_STATUS:\s*FAILED|\bBAIL(?:_CLASS)?\b|out-of-auto-fix-scope|hand(?:ed)?[ -]off|STOP\s*[—-]\s*hand)/;
+// The tool that puts a blocking question to the operator. An open one (tool_use with no paired
+// tool_result) means a decision is being asked RIGHT NOW — see the question-pending deferral in
+// cmdFinalize (VCST-5582 D). Namespace-tolerant, like the rest of the tool matching here.
+const QUESTION_TOOL_RE = /(^|__)AskUserQuestion\b/i;
+// A by-design guardrail refusal — hooks/enforce-real-user.mjs blocking a browser evaluate/run-code
+// tool so the agent uses real-user MCP tools instead. The agent obeying and adapting is CORRECT
+// behaviour, not a plugin defect, so this is classed non-blocking (see SIGNAL_CLASSES above).
+const POLICY_BLOCK_RE = /BLOCKED by real-user interaction rule|real-user interaction rule/i;
+
+// ─── bail detection (VCST-5582 F2) ───────────────────────────────────────────
+// A bail is something the AGENT DECLARED ("STOP — handing off", "FIX_STATUS: FAILED"). The old
+// single regex was matched against EVERY text block, including the slash-command / skill DEFINITION
+// echoed into the transcript on load — and `commands/qa-bug.md` contains the literal "hand off", so
+// the plugin tripped its own bail detector and scored `stop_bail: 1` on a fully successful run.
+// Three guards now apply, in order: (1) assistant provenance, (2) not a definition echo,
+// (3) the weak "hand off" marker needs an explicit bail context.
+const BAIL_STRONG_RE = /(FIX_STATUS:\s*FAILED|\bBAIL(?:_CLASS)?\b|out-of-auto-fix-scope|STOP\s*[—-]\s*hand)/;
+const BAIL_WEAK_RE = /hand(?:ed)?[ -]off/i;
+const BAIL_CONTEXT_RE = /\b(STOP|BAIL|cannot|can't|unable|out[- ]of[- ]scope|escalat\w*|abort\w*|human review|not auto-fixable)\b/i;
+// Wrappers the harness puts around injected (non-agent) content, and the head of a command/skill
+// definition body: a slash-command title heading (`# /qa-bug — …`) or YAML frontmatter carrying
+// command/skill frontmatter keys.
+const DEFINITION_WRAPPER_RE = /<\/?(?:command-(?:name|message|args)|system-reminder)>/i;
+const DEFINITION_HEAD_RE = /^\s*(?:#{1,4}\s*\/[\w:.-]+|---\s*\r?\n(?:[^\n]*\r?\n){0,12}?\s*(?:description|argument-hint|allowed-tools|disable-model-invocation)\s*:)/i;
+function isDefinitionEcho(text) {
+  const t = String(text ?? "");
+  return DEFINITION_WRAPPER_RE.test(t) || DEFINITION_HEAD_RE.test(t);
+}
+// `assistantProse` = the text came from the agent (or a harness/test shape that carries no
+// provenance at all — kept scannable so a bail is never missed on an unknown transcript shape).
+function looksLikeBail(text, assistantProse) {
+  if (!assistantProse) return false;
+  const t = String(text ?? "");
+  if (!t) return false;
+  if (isDefinitionEcho(t)) return false;
+  if (BAIL_STRONG_RE.test(t)) return true;
+  return BAIL_WEAK_RE.test(t) && BAIL_CONTEXT_RE.test(t);
+}
 
 // Plugin slash-commands we open a COMMAND span for (acceptance criterion: a
 // command session is fully traced, not just skill-attributed). `/vc-feedback` is
@@ -286,6 +349,10 @@ function newSpan(state, kind, name, startTs, parentId) {
     opCount: 0, // whole-span op total (survives the ops-ring cap; used by low_yield)
     sawDecisive: false, // did any decisive op run in this span (whole-span; low_yield)
     sawExpected: false,
+    // The STRICT twin of sawExpected: the expected-output marker is backed by an operation that
+    // SUCCEEDED (see markExpected). Only this may unlock the adaptation clause in
+    // allErrorsRecovered() — an attempt that failed must never read as "the artifact was produced".
+    sawProduced: false,
     // A blocking failure recorded with NO paired op (an untied hook_failure — the top-level
     // PostToolUse `tsc` echo — or an untied tool error). It can't be resolved by allErrorsRecovered
     // (which only sees op-keyed errors), so it must force `failed` even when a DIFFERENT, op-keyed
@@ -322,14 +389,28 @@ function recordOrphanDetail(state, cls, text) {
   if (!state.orphanDetails) state.orphanDetails = [];
   if (state.orphanDetails.length < 25) state.orphanDetails.push({ cls, snippet: snippet(text) });
 }
-function markExpected(span, blob) {
-  if (!span || span.sawExpected) return;
-  const markers = EXPECTED_OUTPUT[span.name];
-  if (!markers) {
-    span.sawExpected = true; // no oracle entry ⇒ never silent_suspect
-    return;
-  }
-  if (markers.some((re) => re.test(blob))) span.sawExpected = true;
+function expectedMarkerHit(spanName, blob) {
+  const markers = EXPECTED_OUTPUT[spanName];
+  if (!markers) return true; // no oracle entry ⇒ any activity counts (never silent_suspect)
+  return markers.some((re) => re.test(blob));
+}
+// TWO strengths of the same oracle, deliberately (VCST-5582 F1):
+//   • `sawExpected` — LENIENT. A marker appeared ANYWHERE in the span's activity, including in the
+//     INPUT of an op that then failed (`Bash{gh pr create}` matches /qa-fix's PR marker even when
+//     the command is denied). This is the silent_suspect / search_thrash / low_yield gate and its
+//     behaviour is unchanged: over-crediting there only avoids a false flag.
+//   • `sawProduced` — STRICT. The marker is backed by an operation that actually SUCCEEDED. This is
+//     the ONLY flag the adaptation clause of allErrorsRecovered() may trust: crediting an attempt
+//     would turn "tried to open a PR and was denied" into `recovered`, i.e. hide a real failure.
+// `produced` is true only for a marker seen in a SUCCESSFUL tool_result; a marker carried by an op's
+// INPUT is promoted separately, once that op's result comes back non-error (see the tool_result
+// branch — a `Write reports/bugs/…` whose own result body is just "File written").
+function markExpected(span, blob, produced = false) {
+  if (!span) return;
+  if (span.sawExpected && (span.sawProduced || !produced)) return; // nothing further to learn
+  if (!expectedMarkerHit(span.name, blob)) return;
+  span.sawExpected = true;
+  if (produced) span.sawProduced = true;
 }
 
 // ─── Tier 1: struggle detection + outcome classification ─────────────────────
@@ -403,23 +484,47 @@ function detectStruggle(span) {
 
 // Self-correction test — keyed on the SPECIFIC invocation (tool + arg_hash), not
 // the tool NAME: `Read(A)` failing then `Read(B)` succeeding is NOT a recovery of
-// A (different target). An errored key is "recovered" only if the LAST op of that
-// exact key is a success (the same thing was retried and eventually worked).
+// A (different target). An errored key resolves EITHER of two ways:
+//
+//   (a) LITERAL RETRY — the LAST op of that exact key is a success (the same thing
+//       was retried and eventually worked).
+//   (b) ADAPTATION (VCST-5582 F1) — the failed invocation was NEVER repeated AND the
+//       span PROVABLY produced its own expected artifact (`sawProduced` — the strict
+//       flag: a marker backed by a SUCCEEDED operation, never by a failed attempt). Keying
+//       recovery on (a) ALONE was the defect: correct agent behaviour after an error
+//       is to ADAPT (fix the quoting, pick another selector, use another tool), which
+//       mints a NEW arg_hash — so the old key's last status stays `error` forever and
+//       EVERY adaptive run was classified `failed`. Requiring `sawExpected` keeps this
+//       honest: the skill must have produced its real artifact, not merely moved on.
+//       Requiring `attempts === 1` keeps it conservative: a key hammered repeatedly and
+//       then abandoned is still unresolved (and trips retry_storm/recurring_error).
+//
+// `policy_block` ops are skipped entirely — a by-design guardrail refusal the agent
+// obeyed is not an error awaiting recovery (F4).
 function allErrorsRecovered(span) {
   const lastStatus = new Map();
+  const attempts = new Map();
   const everErrored = new Set();
   for (const o of span.ops || []) {
+    if (o.cls === "policy_block") continue;
     const k = `${o.tool}|${o.arg_hash}`;
     lastStatus.set(k, o.status);
+    attempts.set(k, (attempts.get(k) ?? 0) + 1);
     if (o.status === "error") everErrored.add(k);
   }
   if (!everErrored.size) return false;
-  for (const k of everErrored) if (lastStatus.get(k) !== "ok") return false;
+  for (const k of everErrored) {
+    if (lastStatus.get(k) === "ok") continue; // (a) retried to success
+    if (span.sawProduced && attempts.get(k) === 1) continue; // (b) adapted around, artifact PROVEN produced
+    return false;
+  }
   return true;
 }
 
 function classify(span) {
   const s = span.signals;
+  // `policy_block` is deliberately NOT here (VCST-5582 F4): a guardrail that fired and was obeyed
+  // is correct behaviour, so it is recorded but never blocks. Only genuine failures block.
   const blockingErr = s.tool_error > 0 || s.permission_denied > 0 || s.hook_failure > 0;
   const struggle = detectStruggle(span);
   const recovered = blockingErr && allErrorsRecovered(span) && !span.sawUntiedFailure;
@@ -519,6 +624,7 @@ function closeSkill(jsonlPath, state, endTs) {
   const sk = state.currentSkill;
   if (!sk) return;
   if (sk.sawExpected && state.currentCommand) state.currentCommand.sawExpected = true;
+  if (sk.sawProduced && state.currentCommand) state.currentCommand.sawProduced = true;
   emitSpan(jsonlPath, state, sk, endTs);
   state.currentSkill = null;
 }
@@ -624,6 +730,12 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     const items = Array.isArray(content) ? content : content != null ? [content] : [];
     const parent = innerParent();
     if (parent) parent.lastTs = ts;
+    // Provenance of any narrative `text` block in this event — only the AGENT can declare a bail
+    // (VCST-5582 F2). A user paste, a `<command-name>` expansion, or an injected definition echo is
+    // NOT the agent bailing. A shape carrying NEITHER `type` nor `role` has unknown provenance and
+    // stays scannable, so a bail is never missed on an unfamiliar transcript shape.
+    const provenance = String(ev.type ?? msg?.role ?? "").toLowerCase();
+    const assistantProse = provenance === "" || provenance === "assistant";
 
     for (const item of items) {
       if (!item || typeof item !== "object") continue;
@@ -638,7 +750,12 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         const rawInput = JSON.stringify(item.input ?? {});
         const inputStr = redact(rawInput.length > 8000 ? rawInput.slice(0, 8000) : rawInput);
         const arg_hash = hash(inputStr.slice(0, 4000));
-        if (parent) markExpected(parent, `${name} ${inputStr.slice(0, 500)}`);
+        // An op's INPUT can carry the expected-output marker (`Write reports/bugs/…`) — that is a
+        // lenient sawExpected hit now, and is promoted to the strict sawProduced only once this op's
+        // result comes back non-error (see the tool_result branch). `markerInput` carries that link.
+        const inputBlob = `${name} ${inputStr.slice(0, 500)}`;
+        const markerInput = parent ? expectedMarkerHit(parent.name, inputBlob) : false;
+        if (parent) markExpected(parent, inputBlob);
         // Enrich testEnv (S3): TEST_ENV is often passed INLINE per command (`TEST_ENV=… node …`)
         // and never exported to the hook's own env, so session_start.testEnv is null. Recover it
         // from the FIRST tool arg that carries it. Cheap, best-effort — first match wins.
@@ -659,12 +776,14 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           state.totals.agent_calls++;
           const sp = newSpan(state, "agent", agentType, ts, innerParent()?.id ?? null);
           sp.arg_hash = arg_hash;
+          sp.markerInput = markerInput;
           state.openOps.set(item.id, sp);
         } else {
           if (parent) parent.signals.tool_calls++;
           state.totals.tool_calls++;
           const sp = newSpan(state, "tool", name, ts, innerParent()?.id ?? null);
           sp.arg_hash = arg_hash;
+          sp.markerInput = markerInput;
           state.openOps.set(item.id, sp);
         }
       } else if (type === "tool_result") {
@@ -685,9 +804,11 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         // A SUCCESSFUL tool whose body merely CONTAINS error-like text — grepping a
         // build log, reading source that says "npm error"/"permission denied" — is NOT a
         // failure (A-F1/D1: no false `failed` from tool output or narration). An actual
-        // error is sub-typed permission_denied / hook_failure / tool_error.
+        // error is sub-typed policy_block / permission_denied / hook_failure / tool_error.
+        // policy_block is tested FIRST (most specific) and is the only NON-BLOCKING class — a
+        // by-design guardrail the agent obeyed and adapted around (VCST-5582 F4).
         const cls = item.is_error === true
-          ? (PERMISSION_DENIED_RE.test(body) ? "permission_denied" : HOOK_FAILURE_RE.test(body) ? "hook_failure" : "tool_error")
+          ? (POLICY_BLOCK_RE.test(body) ? "policy_block" : PERMISSION_DENIED_RE.test(body) ? "permission_denied" : HOOK_FAILURE_RE.test(body) ? "hook_failure" : "tool_error")
           : null;
         const sp = id ? state.openOps.get(id) : null;
         const p = innerParent();
@@ -695,9 +816,14 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         // create_pull_request response or a sub-agent Task return "opened PR pull/42".
         // This is what keeps a command/skill that delivers via a sub-agent (whose
         // internal ops are in a skipped sidechain) from being false `silent_suspect`.
-        if (p) markExpected(p, expectedScan);
+        // `produced` = this result SUCCEEDED, so a marker inside it is proof of a real artifact
+        // (a sub-agent Task return "opened PR pull/42"), not of a mere attempt.
+        if (p) markExpected(p, expectedScan, cls === null);
         if (sp) {
           state.openOps.delete(id);
+          // Promote an INPUT-carried marker now that its op completed successfully — the Write
+          // case, whose own result body ("File written") carries no marker of its own.
+          if (sp.markerInput && !cls && p && p.id === sp.parentId) { p.sawExpected = true; p.sawProduced = true; }
           if (cls) pushDetail(sp, cls, body, { toolUseId: id });
           emitSpan(jsonlPath, state, sp, ts);
           // Roll the op onto the parent ONLY if it is still the span that opened it
@@ -705,7 +831,9 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           // has opened since). The tool span itself always carries its own signal.
           const durationMs = Date.parse(ts) - Date.parse(sp.startTs) || 0;
           if (p && p.id === sp.parentId) {
-            pushOp(p, { tool: sp.name, arg_hash: sp.arg_hash, status: cls ? "error" : "ok", ts, durationMs });
+            // `cls` rides along so allErrorsRecovered() can tell a NON-BLOCKING policy_block apart
+            // from a real error (VCST-5582 F4) — mirrors the orphan-op record below.
+            pushOp(p, { tool: sp.name, arg_hash: sp.arg_hash, status: cls ? "error" : "ok", cls: cls || null, ts, durationMs });
             if (cls) pushDetail(p, cls, body);
           } else if (sp.parentId == null) {
             // Parentless op (no command/skill span open — the Fix 2 blind spot). Buffer it so a
@@ -715,7 +843,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
             recordOrphanOp(state, { tool: sp.name, arg_hash: sp.arg_hash, status: cls ? "error" : "ok", cls: cls || null, ts, durationMs });
             if (cls) recordOrphanDetail(state, cls, body);
           }
-          if (cls) state.totals[cls]++;
+          if (cls) state.totals[cls] = (state.totals[cls] ?? 0) + 1; // ?? — a pre-policy_block state file has no such key
         } else if (cls) {
           attributeSignal(cls, body, { toolUseId: id });
         }
@@ -726,7 +854,9 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         // (A-F1). Real failures come through tool_result above.
         const b = item.text ?? "";
         if (parent) markExpected(parent, b);
-        if (BAIL_RE.test(b)) { if (parent) pushDetail(parent, "stop_bail", b); state.totals.stop_bail++; }
+        // looksLikeBail applies all three F2 guards (assistant provenance, not a definition echo,
+        // weak marker needs a bail context) — see its definition.
+        if (looksLikeBail(b, assistantProse)) { if (parent) pushDetail(parent, "stop_bail", b); state.totals.stop_bail = (state.totals.stop_bail ?? 0) + 1; }
       }
     }
 
@@ -1276,6 +1406,34 @@ async function cmdFinalize(ev) {
       ts: nowIso(),
       reason: ev.reason ?? null,
       decision: { verdict: "deferred", pendingSubagents, surfaced: false, suppressReason: "subagent-running" },
+    });
+    saveState(statePath, state);
+    return;
+  }
+
+  // ─── an unanswered OPERATOR QUESTION also defers (VCST-5582 D) ───────────────
+  // An `AskUserQuestion` tool_use with no matching tool_result means the operator is being asked
+  // something right now. A `{decision:"block"}` here would RESUME the agent and push that question
+  // out of view — the OPUS failure: `/qa-bug`'s Step-5 "create a bug-tracker ticket?" was buried by
+  // the self-diagnostics tail-trigger, so the ticket phase ran unattended and undiagnosed. So this
+  // Stop is a CHECKPOINT, exactly like a pending sub-agent: record a durable `deferred` decision and
+  // return WITHOUT draining/closing spans or surfacing anything. The real verdict lands on the
+  // terminal Stop once the answer is in the transcript (which also keeps the post-answer work INSIDE
+  // the span). Bounded by QUESTION_PENDING_MS on the session clock so a missed tool_result can't
+  // defer forever; a truly idle wait never ages (the clock only moves on transcript events).
+  let pendingQuestions = 0;
+  for (const [, sp] of state.openOps) {
+    if (!sp || !QUESTION_TOOL_RE.test(String(sp.name || ""))) continue;
+    const asked = Date.parse(sp.startTs || sp.lastTs || "") || refNowMs;
+    if (refNowMs - asked <= T.QUESTION_PENDING_MS) pendingQuestions++;
+  }
+  if (pendingQuestions > 0) {
+    appendRecord(jsonl, {
+      type: "finalize",
+      sessionId: sid,
+      ts: nowIso(),
+      reason: ev.reason ?? null,
+      decision: { verdict: "deferred", pendingQuestions, surfaced: false, suppressReason: "question-pending" },
     });
     saveState(statePath, state);
     return;

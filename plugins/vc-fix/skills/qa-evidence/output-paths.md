@@ -2,6 +2,38 @@
 
 **Every artifact MUST be saved to the correct folder. Never mix artifact types across directories.**
 
+## HARD RULE — nothing is ever written to the project root
+
+No screenshot, HAR, video, zip, report, or scratch file may be created at the **project root**. It
+is the one place with no owner and no retention policy, so anything landing there is invisible to
+the report, un-gitignored, and has to be cleaned up by hand. Reports go under `reports/…`, browser
+captures under `reports/bugs/screenshots/…`, scratch files in the session temp dir.
+
+### How a browser screenshot reaches its permanent path (the mechanism)
+
+This used to be the gap: `--output-dir` and this file's destination policy both existed, but
+**nothing connected them**, so the path was guessed and captures showed up at the project root
+(VCST-5582 C). The chain is now explicit, and every link is deterministic:
+
+| # | Stage | Who | Where |
+|---|-------|-----|-------|
+| 1 | **Capture** — `browser_take_screenshot` with a **bare relative filename**, never a path | the QA agent | playwright-mcp resolves it against `--output-dir` |
+| 2 | **Landing zone** — `--output-dir` is pinned to an **ABSOLUTE** project path by `/project-init` (`gen-mcp.mjs`) | the MCP server | `reports/bugs/screenshots/_incoming/<browser>/` |
+| 3 | **ONE deterministic move** of the 1–5 captures the report keeps | `/qa-bug` Step 4a | `reports/bugs/screenshots/<bug-slug>/` |
+| 4 | **Reference** — the report cites the FINAL path only | the report | `reports/bugs/screenshots/<bug-slug>/<file>.png` |
+| 5 | **Sweep + REPORT** — anything still at the root is **named** in the run's output, then moved or deleted | `/qa-bug` final sweep | — |
+
+Why absolute at stage 2: playwright-mcp resolves a *relative* `--output-dir` against the MCP
+server's own cwd, which the plugin does not control — that is exactly how the project root became
+the effective target. Why relative at stage 1: playwright-mcp documents *"Prefer relative file
+names to stay within the output directory"*; absolute filenames are undocumented and must not be
+relied on. Why stage 5 **reports** rather than silently tidying: the OPUS session telemetry could
+not identify WHICH writer produced the root-level files, so naming them is the only way to find
+the culprit if the pattern survives.
+
+`_incoming/` and `test-results/` are **gitignored landing zones**, added to the project's
+`.gitignore` by `gen-mcp.mjs`. Nothing in them is evidence of record — only what stage 3 moved out.
+
 > **In `vc-fix`:** most rows below describe the full `vc-qa` plugin's output paths (regression,
 > smoke, exploratory, checklists, BA, test-lifecycle, coverage — none of that is shipped here).
 > This plugin actively uses: **Bug reports** (`reports/bugs/`), **Bug evidence**
@@ -16,7 +48,8 @@
 | **Bug reports — open** (active bugs) | `reports/bugs/open/` | `BUG-Checkout-Payment-Overlap-iOS.md` |
 | **Bug reports — fixed** (verified fixes, kept for regression reference) | `reports/bugs/fixed/` | `BUG-Cart-Total-Reset-VCST-4700.md` |
 | **Bug reports — closed** (won't fix, false positive, cannot reproduce) | `reports/bugs/closed/` | `BUG-GA4-add-payment-info.md` |
-| **Bug evidence** (screenshots & API traces for bugs) | `reports/bugs/screenshots/` and `reports/bugs/api-traces/` | `payment-form-broken-ios.png`, `graphql-error-response.json` |
+| **Bug evidence** (screenshots & API traces for bugs) | `reports/bugs/screenshots/<bug-slug>/` and `reports/bugs/api-traces/` | `payment-form-broken-ios.png`, `graphql-error-response.json` |
+| **Browser capture landing zone** (raw `browser_take_screenshot` output — gitignored, disposable) | `reports/bugs/screenshots/_incoming/{browser}/` | pinned as the Playwright MCP `--output-dir`; Step 4a moves the keepers out |
 | **Ticket test evidence** (ad-hoc evidence with no sprint context) | `reports/tickets/VCST-XXXX/` | `test-report.md`, `screenshots/*.png` — use only for hotfix or ad-hoc verification outside a sprint |
 | **Regression reports** (suite-level & consolidated reports) | `reports/regression/` | `frontend-regression-report-2026-02-09.md` |
 | **Full regression runs** (multi-suite reports) | `reports/regression/REG-YYYY-MM-DD-HHMM/` | suite reports, `REGRESSION-REPORT.md` |
@@ -61,7 +94,10 @@ reports/tickets/SprintXX-XX/VCST-XXXX-feature-name/
 
 ## Important Rules
 
-- `test-results/` is gitignored -- use it only for raw browser output (HAR, videos, console logs)
+- **No artifact is ever written to the project root** (see the HARD RULE at the top) — `/qa-bug`'s
+  final sweep NAMES anything that still lands there rather than quietly moving it
+- `test-results/` and `reports/bugs/screenshots/_incoming/` are gitignored landing zones for raw
+  browser output (HAR, videos, console logs, un-kept captures) — never the path a report cites
 - `reports/` is tracked in git -- use it for all documentation artifacts (the top-level `tests/` dir now holds only repo unit tests, not QA evidence)
 - Never save test documentation into `test-results/` and never save raw browser dumps into `reports/`
 - **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/SprintXX-XX/VCST-XXXX/` (sprint context) or `reports/tickets/VCST-XXXX/` (ad-hoc, no sprint subfolder)

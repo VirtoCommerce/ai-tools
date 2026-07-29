@@ -263,6 +263,37 @@ function reconcile(schema, existing, decisions) {
   }
 
   const migrated = walk(schema, existing, "");
+
+  // ─── `--set` into an OPEN MAP (VCST-5582 E-b) ──────────────────────────────────────
+  // The walk above only consults `decisions` for MANAGED_FIELDS. But the open maps
+  // (tracker.fieldMap / tracker.fieldDefaults / tracker.azure.roleStates / stateMap) are exactly
+  // where a per-deployment ANSWER has to be persisted — "which field is this process's
+  // Environment?", asked once at the first bug creation. Their KEYS are data, and an Azure field
+  // ref contains dots (`Custom.Environment`), so a naive split-on-every-dot would write
+  // `{Custom:{Environment:"QA"}}` instead of `{"Custom.Environment":"QA"}`. So: walk the dotted
+  // path against the SCHEMA and, the moment the schema node is an empty-object open map, treat
+  // the ENTIRE remainder as one literal key.
+  for (const [dotted, value] of Object.entries(decisions || {})) {
+    const parts = dotted.split(".");
+    let schemaCur = schema;
+    let objCur = migrated;
+    let i = 0;
+    let openMap = false;
+    for (; i < parts.length - 1; i++) {
+      const next = isPlainObject(schemaCur) ? schemaCur[parts[i]] : undefined;
+      if (next === undefined) break; // not a schema path — a MANAGED_FIELDS decision or a typo
+      if (!isPlainObject(objCur[parts[i]])) objCur[parts[i]] = {};
+      objCur = objCur[parts[i]];
+      schemaCur = next;
+      if (isPlainObject(schemaCur) && Object.keys(schemaCur).length === 0) { openMap = true; i++; break; }
+    }
+    if (!openMap) continue; // only open-map writes are handled here; everything else is unchanged
+    const key = parts.slice(i).join("."); // the ref, dots and all
+    if (!key) continue;
+    objCur[key] = value;
+    report.added.push({ path: dotted, value, via: "set-open-map" });
+  }
+
   return { migrated, ...report };
 }
 

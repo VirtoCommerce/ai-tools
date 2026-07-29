@@ -34,7 +34,8 @@ UpstreamFinding = {
   verdict:     OK | DEGRADED | BROKEN,       // derived from outcome (deterministic)
   severity:    S0 | S1 | S2 | S3,            // derived from outcome (deterministic)
   outcome:     success | recovered | degraded | failed | silent_suspect,
-  signalClass: tool_error | permission_denied | hook_failure | stop_bail | none,
+  signalClass: tool_error | permission_denied | hook_failure | stop_bail |
+               policy_block | none,
   struggle:    (retry_storm | reread_loop | search_thrash | fallback_loop |
                 recurring_error | stall | low_yield)[],   // sorted, deduped
   errorCode:   ERROR_CODES,     // closed enum (below); default UNKNOWN
@@ -64,7 +65,8 @@ UpstreamFinding = {
   `degraded` → `DEGRADED`/`S2`; `recovered` → `OK`/`S3`; `success` → `OK`/`S0`. (Not the
   LLM's DIAG judgment — the jsonl carries only the Tier-1 `outcome`.)
 - **signalClass** ← the first of `tool_error` / `permission_denied` / `hook_failure` /
-  `stop_bail` with a non-zero span count, else `none`.
+  `stop_bail` / `policy_block` with a non-zero span count, else `none`. (`policy_block` is
+  ordered last: it is non-blocking, so a genuine blocking class always wins.)
 - **errorCode** ← `classifyError(snippet)` over the flagged span's (already-redacted)
   `details[].snippet` and its error children's — a LOCAL classifier that returns ONLY a
   fixed code, never the input. No marker → `UNKNOWN`.

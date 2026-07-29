@@ -19,8 +19,9 @@
  *     [--out .mcp.json] [--settings .claude/settings.local.json] [--print]
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { join, dirname, resolve } from "path";
+import { join, dirname, resolve, isAbsolute } from "path";
 import { execSync } from "child_process";
+import { fileURLToPath } from "url";
 import { outputRoot, pluginRoot, resolveOutPath } from "./lib/paths.mjs";
 
 // Read the shipped template from the plugin's own dir (works from any cwd); write
@@ -85,6 +86,61 @@ function injectTokens(server) {
   return walk(server);
 }
 
+// ─── evidence destination (VCST-5582 C) ──────────────────────────────────────────────
+//
+// Screenshots taken during a /qa-bug run were landing at the PROJECT ROOT and being moved
+// afterwards. Two facts existed but were never connected: the template's `--output-dir` was
+// RELATIVE (`test-results/<browser>`, resolved against whatever cwd the MCP server happens to
+// start in — the project root, if we're lucky), while `skills/qa-evidence/output-paths.md`
+// declared the destination policy `reports/bugs/screenshots/`. Nothing said HOW a screenshot
+// gets from one to the other, so the path was guessed.
+//
+// The fix is to make the DESTINATION DETERMINISTIC rather than hope about cwd: we rewrite
+// `--output-dir` to an ABSOLUTE path inside the project's own evidence tree. Whatever cwd the
+// MCP server inherits, its default target can no longer be the project root — the strongest
+// available guarantee, since playwright-mcp resolves a relative --output-dir against its cwd.
+// `_incoming/` is the landing zone; /qa-bug performs ONE deterministic move from there into
+// `reports/bugs/screenshots/<bug-slug>/` at its evidence step.
+const EVIDENCE_INCOMING = ["reports", "bugs", "screenshots", "_incoming"];
+/** Rewrite a Playwright server's relative --output-dir to an absolute path under the project. */
+export function absolutizeOutputDir(server, root) {
+  const args = server?.args;
+  if (!Array.isArray(args)) return server;
+  const i = args.indexOf("--output-dir");
+  if (i < 0 || i + 1 >= args.length) return server;
+  const current = String(args[i + 1] || "");
+  if (isAbsolute(current)) return server; // already pinned (a hand-edited template)
+  // Keep only the LAST path segment (the browser lane) and re-root it in the evidence tree,
+  // so an older template value like `test-results/chrome` is migrated too.
+  const lane = current.split(/[/\\]/).filter(Boolean).pop() || "chrome";
+  const next = [...args];
+  next[i + 1] = join(root, ...EVIDENCE_INCOMING, lane);
+  return { ...server, args: next };
+}
+
+/**
+ * Append the ignore entries the destination above implies, if missing. Idempotent, and it
+ * only ever APPENDS a marked block — an existing .gitignore is never rewritten or reordered.
+ * These live here rather than in a separate generator because they exist BECAUSE of the
+ * --output-dir this script just wrote; keeping them together stops the two from drifting.
+ */
+export function ensureGitignoreEntries(root, entries) {
+  const path = join(root, ".gitignore");
+  const existing = existsSync(path) ? readFileSync(path, "utf-8") : "";
+  const lines = new Set(existing.split(/\r?\n/).map((l) => l.trim()));
+  const missing = entries.filter((e) => !lines.has(e));
+  if (!missing.length) return [];
+  const block = [
+    existing && !existing.endsWith("\n") ? "\n" : "",
+    "\n# === vc-fix (/project-init) — browser evidence landing zone ===\n",
+    "# The Playwright MCP servers write raw captures here; /qa-bug moves the ones it keeps\n",
+    "# into reports/bugs/screenshots/<bug-slug>/. Nothing here is evidence of record.\n",
+    missing.map((e) => `${e}\n`).join(""),
+  ].join("");
+  writeFileSync(path, existing + block);
+  return missing;
+}
+
 let _ghToken;
 function ghAuthToken() {
   if (_ghToken !== undefined) return _ghToken;
@@ -110,10 +166,12 @@ function main() {
   const template = JSON.parse(readFileSync(templatePath, "utf-8"));
   const srcServers = template.mcpServers || {};
 
-  // Build the tailored mcpServers (OS-normalized + tokens injected), keeping all defs.
+  // Build the tailored mcpServers (OS-normalized + tokens injected + evidence dir pinned to
+  // an absolute project path), keeping all defs.
+  const projectRoot = outputRoot();
   const mcpServers = {};
   for (const [name, def] of Object.entries(srcServers)) {
-    mcpServers[name] = injectTokens(normalizeForOs(def, os));
+    mcpServers[name] = absolutizeOutputDir(injectTokens(normalizeForOs(def, os)), projectRoot);
   }
 
   // Which servers to ENABLE (the rest stay defined but dormant). Only playwright-chrome
@@ -138,6 +196,12 @@ function main() {
   const outPath = resolveOutPath(args.out, ".mcp.json");
   writeFileSync(outPath, JSON.stringify({ mcpServers }, null, 2) + "\n");
   console.log(`[gen-mcp] wrote ${outPath} (os=${os})`);
+  console.log(`[gen-mcp] browser evidence lands in ${join(projectRoot, ...EVIDENCE_INCOMING)}\\<browser> (absolute — never the project root, whatever cwd the MCP server starts in)`);
+
+  // The ignore entries this destination implies. `_incoming/` is a landing zone, not evidence
+  // of record; `test-results/` is kept for the legacy/hand-copied lane and any HAR output.
+  const ignored = ensureGitignoreEntries(projectRoot, ["test-results/", "reports/bugs/screenshots/_incoming/"]);
+  if (ignored.length) console.log(`[gen-mcp] .gitignore += ${ignored.join(", ")}`);
 
   // Sync settings.local.json enabledMcpjsonServers (gitignored) into the project's
   // .claude/ (created if the fresh project has none yet).
@@ -164,4 +228,5 @@ function main() {
   if (args.print) console.log(JSON.stringify({ mcpServers }, null, 2));
 }
 
-main();
+// CLI only — `ensureGitignoreEntries` / `absolutizeOutputDir` are imported by the unit tests.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

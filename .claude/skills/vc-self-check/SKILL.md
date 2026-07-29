@@ -142,13 +142,54 @@ skills).
 Write `<outputRoot>/.vc-fix/diagnostics/DIAG-<session-id>-<UTC-timestamp>.md` using the
 template below, within the size cap.
 
-### Step 6 — Report + STOP
+### Step 6 — Report, OFFER to contribute, STOP
+
+**6a — report the verdict (always first).**
 - **Tail-trigger auto-run:** print ONE non-blocking info line — the finding roll-up +
   the DIAG path (e.g. `vc-fix self-check: 1 BROKEN, 1 DEGRADED → .vc-fix/diagnostics/DIAG-….md`).
-  Then continue whatever the user asked; do not nag.
-- **Direct run:** print the DIAG path + the one-line roll-up. If the user wants this sent
-  to VirtoCommerce to improve the plugin, tell them that is `deliver` (driven by
-  `feedback.mode`) — a separate, scrubbed action — and **do not run it here**.
+- **Direct run:** print the DIAG path + the one-line roll-up.
+
+**6b — offer to contribute it upstream (VCST-5582 G).** This step exists because the loop
+used to die here: BOTH paths above said "that is `deliver`, do not run it here", so the
+profile's default `feedback.mode: "ask"` — which literally means *ask each time* — was
+unreachable, and the only route left was the operator typing `/vc-self-check deliver`, which
+no client will do. The DIAG footer even printed that as a hint; a dead one.
+
+**Offer when ALL of these hold:**
+
+| Condition | Why |
+|---|---|
+| the DIAG has **≥1 row with verdict BROKEN or DEGRADED** | this — NOT the flagged span's outcome — is "there is something worth sending". In the OPUS DIAG the flagged span's verdict was **OK** (a false positive) while the **collector itself** was BROKEN: the most valuable finding in the whole report would have been skipped by keying on the span |
+| `feedback.mode !== "off"` | `off` means nothing ever leaves the machine — stay silent, no offer, no draft |
+| the run produced a verdict this turn | never a standalone offer on a no-verdict turn (same rule as the cleanup offer) |
+| no operator question is pending | shares item D's deferral — an offer must never compete with a question |
+| this session has not been offered this finding | one-shot, see below |
+
+**How:**
+
+1. Run `deliver.mjs` in its **DRY** mode — local only, writes `DELIVERY-*.md`, sends nothing:
+   ```bash
+   node "$pluginRoot/skills/vc-self-check/deliver.mjs" --json
+   ```
+2. If the plan reports **`alreadyOffered: true`** → **stay silent**. The one-shot guard
+   (`deliveryOffered` in the session state, deduped by finding fingerprint — the same pattern
+   as the collector's `cleanupOffered`) already offered this finding.
+3. Otherwise present **exactly ONE** `AskUserQuestion`:
+   - **"Show what would be sent"** → print the `DELIVERY-*.md` draft, then re-ask the
+     remaining two options.
+   - **"Send"** → re-run with `--confirm`.
+   - **"Don't send"** → stop; the DIAG stays local.
+4. **Show the HONEST route** from the plan's `route` + `reason` — never "fork-PR" on a token
+   that cannot fork. `resolveRoute` no longer assumes an unreadable capability is fork-capable
+   (VCST-5582 A), so `route: "issue"`/`"local"` with a remedy in `reason` is a real answer, not
+   a fallback to hide. Quote it as-is.
+
+**Nothing is ever sent without an explicit "Send".** `--confirm` is the only trigger, and
+`feedback.mode: auto` (an onboarding-time consent) is the only way to skip the question.
+
+**6c — ordering on a terminal Stop.** Diagnostic verdict **FIRST** → delivery offer →
+cleanup offer **LAST**. Same rule the cleanup offer already follows: an offer rides a verdict,
+it never opens the conversation.
 
 ---
 
@@ -172,8 +213,22 @@ template below, within the size cap.
 Skip S0/S3 beyond the table row. Reference telemetry by path; never inline the jsonl.
 Include any /vc-feedback verdict text verbatim (already redacted).>
 
-_Local report only — no ticket filed, nothing sent. To contribute this upstream: `/vc-self-check deliver`._
+_Local report only — no ticket filed, nothing sent. <FOOTER>_
 ```
+
+**`<FOOTER>` states the ACTUAL delivery state** — it is written after Step 6b, so it reports what
+happened, not what the operator could theoretically type. It used to read
+_"To contribute this upstream: `/vc-self-check deliver`"_ — a dead hint nobody ever acted on
+(VCST-5582 G). Pick the one that is true:
+
+| Situation | `<FOOTER>` |
+|---|---|
+| a draft was prepared and the offer is on screen | `draft prepared: `DELIVERY-<fp>-<ts>.md` (route: <route>) — awaiting your decision` |
+| the operator chose **Send** | `contributed upstream: <issue url \| the handed-off PR commands>` |
+| the operator chose **Don't send** | `not sent — declined; the DIAG stays local` |
+| `feedback.mode: off` | `upstream delivery is off (feedback.mode=off) — nothing left this machine` |
+| every row is OK (nothing worth sending) | `nothing to contribute — no BROKEN/DEGRADED finding` |
+| already offered this session | `draft already prepared this session: `DELIVERY-<fp>-<ts>.md`` |
 
 ---
 

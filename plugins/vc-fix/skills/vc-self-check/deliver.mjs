@@ -46,7 +46,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync, unlinkSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { resolveGithubToken, probeGithubUpstream } from "../project-init/probe-lib.mjs";
+import { resolveGithubToken, probeGithubUpstream, GITHUB_UPSTREAM_REMEDY } from "../project-init/probe-lib.mjs";
 import { reduce, validateUpstream, fingerprintStruct, findingStructSig } from "./upstream-reduce.mjs";
 
 const PLUGIN_REPO = "VirtoCommerce/vc-mcp-testing-module";
@@ -85,6 +85,48 @@ function readProfileObj() {
 export function feedbackMode() {
   const m = readProfileObj()?.feedback?.mode;
   return m === "off" || m === "auto" || m === "ask" ? m : "ask"; // default = ask
+}
+
+// ─── the ONE-SHOT delivery-offer guard (VCST-5582 G) ──────────────────────────
+// Step 6 of the skill now OFFERS to contribute a real finding (the loop used to die in a
+// local file: both paths said "do not run deliver here", so `feedback.mode: "ask"` — the
+// DEFAULT — was unreachable in practice). An offer that repeats is worse than no offer, so
+// it is guarded exactly like the collector's `cleanupOffered`: at most ONE per session, and
+// deduped by the finding FINGERPRINT so the same defect never re-asks after a redraft.
+//
+// The guard lives in the collector's own `<sid>.state.json` (the same file `cleanupOffered`
+// uses) — no new artifact, and it disappears with the session. Capture off / no state file ⇒
+// no guard is available and `alreadyOffered` is false: the skill's own once-per-turn logic
+// is then the only limit, which is the correct degraded behaviour (never a silent double-ask
+// loop, because the DRY run below is what the skill gates on).
+function statePathFor(sid) {
+  return sid ? join(diagDir(), `${sid}.state.json`) : "";
+}
+export function readOfferGuard(sid, fp) {
+  const p = statePathFor(sid);
+  if (!p || !existsSync(p)) return { available: false, alreadyOffered: false };
+  try {
+    const st = JSON.parse(readFileSync(p, "utf8"));
+    const list = Array.isArray(st.deliveryOffered) ? st.deliveryOffered : [];
+    return { available: true, alreadyOffered: list.includes(fp) };
+  } catch {
+    return { available: false, alreadyOffered: false };
+  }
+}
+export function markOffered(sid, fp) {
+  const p = statePathFor(sid);
+  if (!p || !existsSync(p) || !fp) return false;
+  try {
+    const st = JSON.parse(readFileSync(p, "utf8"));
+    const list = Array.isArray(st.deliveryOffered) ? st.deliveryOffered : [];
+    if (list.includes(fp)) return false;
+    list.push(fp);
+    st.deliveryOffered = list;
+    writeFileSync(p, JSON.stringify(st), "utf8");
+    return true;
+  } catch {
+    return false; // never throw — a guard failure must not break the delivery path
+  }
 }
 
 // Read the session's STRUCTURED collector records — the ONLY source for the upstream struct
@@ -203,9 +245,19 @@ export function parseDiag(md) {
 /**
  * Decide the delivery route from the probed permission on the plugin repo.
  *   pr       — push/maintain/admin → branch + PR (handed off; not auto-sent)
- *   fork-pr  — authenticated, no push, can fork → fork-PR (handed off)
- *   issue    — authenticated, issues only (no repo/fork scope) → GitHub Issue (auto-sendable)
- *   local    — no token / auth failed → local report + auth instructions
+ *   fork-pr  — authenticated, no push, PROVEN fork-capable → fork-PR (handed off)
+ *   issue    — authenticated, cannot fork (or capability unreadable) → GitHub Issue (auto-sendable)
+ *   local    — no token / auth failed / nothing upstream is possible → local report + remedy
+ *
+ * NO OPTIMISTIC DEFAULT (VCST-5582 A). This used to read
+ *   `canFork = !scopesKnown || /(repo|public_repo)/.test(scopes)`
+ * while `resolveGithubToken()` leaves `scopes` EMPTY for every PAT — so `scopesKnown` was always
+ * false for a PAT, `canFork` always true, and the route was ALWAYS `fork-pr`, including for a
+ * fine-grained token that GitHub structurally forbids from forking a repo it does not own ("Only
+ * personal access tokens (classic) have write access for public repositories that are not owned by
+ * you…"). The capability is now a PROBED tri-state (`probe.forkCapable`, from
+ * probe-lib.classifyGithubTokenKind) and only an explicit "yes" earns the fork path; "unknown" and
+ * "no" fall to the least-privileged route, carrying the remedy text so the operator sees WHY.
  */
 export function resolveRoute({ token, probe, scopes, override }) {
   if (override) return { route: override, reason: "operator override (--as)" };
@@ -213,11 +265,31 @@ export function resolveRoute({ token, probe, scopes, override }) {
   if (!probe || !probe.ok) return { route: "local", reason: "token present but GitHub authentication failed" };
   const perm = probe.perm;
   if (["push", "maintain", "admin"].includes(perm)) return { route: "pr", reason: `push access (${perm})` };
-  // authenticated but no push: prefer fork-PR unless the (gh) scopes clearly lack repo access
-  const scopesKnown = typeof scopes === "string" && scopes.length > 0;
-  const canFork = !scopesKnown || /(?:^|,)(repo|public_repo)(?:,|$)/.test(scopes);
-  if (!canFork) return { route: "issue", reason: "authenticated, issues-only (no repo/fork scope)" };
-  return { route: "fork-pr", reason: `authenticated as ${probe.login || "user"} without push — fork-PR` };
+
+  // Prefer the PROBED capability. Fall back to the raw scope string only for a probe from an older
+  // shape (no `forkCapable` field) — and there too, UNREADABLE scopes are "unknown", never "yes".
+  const kind = probe.tokenKind || "";
+  const scopeList = String(scopes ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const forkCapable = probe.forkCapable
+    || (scopeList.length ? (scopeList.some((s) => /^(repo|public_repo)$/i.test(s)) ? "yes" : "no") : "unknown");
+  const remedy = probe.remedy || GITHUB_UPSTREAM_REMEDY;
+
+  if (forkCapable === "yes") {
+    return { route: "fork-pr", reason: `authenticated as ${probe.login || "user"} without push, fork-capable — fork-PR` };
+  }
+  // A CLASSIC/session token whose scopes we DID read and which carries neither `repo` nor
+  // `public_repo` cannot fork AND cannot create an issue on a public repo either — nothing
+  // upstream is possible, so stay local and tell the operator exactly what to grant.
+  if (forkCapable === "no" && kind !== "fine-grained") {
+    return { route: "local", reason: `authenticated but the token has no upstream rights (no repo/public_repo scope) — ${remedy}` };
+  }
+  // Fine-grained (or a capability we could not read): the fork path is out. An Issue is the
+  // least-privileged upstream action, so try that instead of a route we know will 403. A
+  // fine-grained token may still be refused here — if it is, the reason carries the fix.
+  const why = kind === "fine-grained"
+    ? "fine-grained token cannot fork or open a fork-PR upstream"
+    : "fork capability could not be confirmed for this token";
+  return { route: "issue", reason: `${why} — filing an Issue instead (least-privileged upstream route). If GitHub refuses it: ${remedy}` };
 }
 
 // ─── fingerprint / dedup ─────────────────────────────────────────────────────
@@ -511,7 +583,7 @@ async function mainBatch(args) {
   const confirm = args.confirm || mode === "auto";
 
   const { token, via, scopes } = resolveGithubToken();
-  const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
+  const probe = token ? await probeGithubUpstream({ token, repo: args.repo, via, scopes }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
   const draft = buildDraft({ struct, route });
   const dup = route === "issue" || route === "local" ? await findDuplicateIssue({ repo: args.repo, token, fp }) : null;
@@ -678,7 +750,7 @@ export async function main(argv = process.argv.slice(2)) {
   const confirm = args.confirm || mode === "auto";
 
   const { token, via, scopes } = resolveGithubToken();
-  const probe = token ? await probeGithubUpstream({ token, repo: args.repo }) : null;
+  const probe = token ? await probeGithubUpstream({ token, repo: args.repo, via, scopes }) : null;
   const { route, reason } = resolveRoute({ token, probe, scopes, override: args.override });
 
   const draft = buildDraft({ struct, route });
@@ -709,6 +781,12 @@ export async function main(argv = process.argv.slice(2)) {
   if (!confirm) {
     plan.dryRun = true;
     plan.mode = mode;
+    // The one-shot offer guard (VCST-5582 G). A DRY run IS the offer, so read the guard, report
+    // it, then mark — the skill stays SILENT when `alreadyOffered` is true instead of re-asking.
+    const guard = readOfferGuard(sid, fp);
+    plan.alreadyOffered = guard.alreadyOffered;
+    plan.offerGuard = guard.available ? "session-state" : "unavailable";
+    if (!guard.alreadyOffered) markOffered(sid, fp);
     if (args.json) process.stdout.write(JSON.stringify(plan) + "\n");
     else {
       process.stdout.write(
