@@ -52,6 +52,40 @@ export const STRUGGLES = ["retry_storm", "reread_loop", "search_thrash", "fallba
 export const TOOL_FAMILIES = ["read", "edit", "bash", "browser", "git", "github", "tracker", "mcp_other", "none"];
 export const REPO_KINDS = ["module", "platform", "frontend", "backend", "unknown"];
 
+// ─── observation classes (lock-step with the collector's OBS_CLASSES) ─────────
+// These never reach the upstream struct as-is: an observation's `class` is used only to
+// DERIVE a candidate severity (skill-expectations.md §1f) and, when it happens to be one of
+// the SIGNAL_CLASSES, the finding's `signalClass`. Unknown classes still get a candidate, so
+// a class this build does not know is downgraded — never dropped.
+const OBS_NOISE_CLASSES = new Set(["policy_block", "self_reported_skip", "harness_noise"]);
+// Candidate severity per class — the §1f table, verbatim. A class absent from this map falls
+// through to the table's last row ("a class this table does not cover ⇒ S3 + LOW confidence"),
+// which is also where the raw signal classes (tool_error / permission_denied / hook_failure /
+// stop_bail) land: they are deliberately NOT escalated on their own, because a BLOCKING one
+// already arrives via the span path and a RECOVERED one must not be treated as a defect.
+const OBS_SEVERITY = {
+  self_reported_fail: "S1",
+  forbidden_tool: "S1",
+  write_outside_output_root: "S1",
+  self_reported_warn: "S2",
+  degraded_artifact: "S2",
+  http_non2xx: "S2",
+  script_exit_nonzero: "S2",
+  self_reported_fallback: "S2",
+  report_oversize: "S2",
+  struggle: "S2",
+  question_unanswered: "S2",
+  collector_contention: "S2",
+  script_stderr: "S3",
+  recovered_error: "S3",
+  tool_interrupted: "S3",
+  capture_truncated: "S3",
+  collector_scan_error: "S3",
+};
+const SEV_ORDER = ["S3", "S2", "S1"]; // ascending severity; S0 is "no finding", never derived here
+const maxSev = (a, b) => (SEV_ORDER.indexOf(b) > SEV_ORDER.indexOf(a) ? b : a);
+const promoteSev = (s) => SEV_ORDER[Math.min(SEV_ORDER.indexOf(s) + 1, SEV_ORDER.length - 1)] ?? s;
+
 // Error taxonomy — a closed set + the UNKNOWN fail-safe. classifyError runs LOCALLY over
 // an ALREADY-redacted snippet and returns ONLY a member of this set — never the input.
 export const ERROR_CODES = [
@@ -144,6 +178,28 @@ export function toolFamily(name) {
   return "none";
 }
 
+/**
+ * Reduce an OBSERVATION's `subject` to a closed tool-family enum. An observation's subject is
+ * the collector's SLUGIFIED form (`obsSubject`: lowercase, non-alphanumerics → `_`, capped at 40
+ * chars), so `mcp__playwright-edge__browser_snapshot` arrives as
+ * `mcp_playwright_edge_browser_snapshot` and `toolFamily()`'s exact-name patterns never match it.
+ * Matching on the slug shape keeps the family usable on the observation path. Output is always a
+ * TOOL_FAMILIES member; anything unrecognized is `none`, never the input.
+ */
+export function toolFamilyOfSubject(subject) {
+  const s = String(subject ?? "").toLowerCase();
+  if (!s || s === "unknown") return "none";
+  if (/^mcp_github_|^gh$|^github/.test(s)) return "github";
+  if (/^mcp_atlassian_|jira|^ado$|^ado_|azure_boards|^tracker/.test(s)) return "tracker";
+  if (/^mcp_playwright|^mcp_chrome_devtools|^mcp_claude_in_chrome|^browser_|^computer$|^navigate$|^read_page$/.test(s)) return "browser";
+  if (/^(edit|multiedit|write|notebookedit)$/.test(s)) return "edit";
+  if (/^(read|grep|glob|ls|notebookread|webfetch|websearch)$/.test(s)) return "read";
+  if (/^bash$/.test(s)) return "bash";
+  if (/(^|_)git(_|$)/.test(s)) return "git";
+  if (/^mcp_/.test(s)) return "mcp_other";
+  return "none";
+}
+
 /** Reduce a delegated agent name to a coarse repo-kind. Never emits module/platform from an
  *  agent alone (fullstack-backend is ambiguous → `backend`); the fail-safe direction. */
 export function repoKindOfAgent(name) {
@@ -190,8 +246,96 @@ const validPluginVersion = (v) => {
 };
 
 const isSpan = (r) => r && r.type === "span";
+const isObs = (r) => r && r.type === "obs";
 const isEscalationUnit = (s) => s.kind === "skill" || s.kind === "command";
 const FLAGGED_OUTCOMES = new Set(["degraded", "failed", "silent_suspect"]);
+
+// ─── observations → findings (VCST-5582 H, the half that was never wired) ─────
+// VCST-5582 H redefined the analysis set as **observations ∪ flagged spans ∪ feedback**, but
+// that only ever landed in the ORACLE and in `/vc-self-check` — the reducer kept iterating
+// `local.spans` alone and requiring `outcome ∈ FLAGGED_OUTCOMES`, so `type:"obs"` records were
+// read by nobody on the upstream path. Consequence: a session whose command span ends
+// `recovered` (deliverable achieved, errors recovered along the way) reduced to ZERO findings —
+// precisely the class the redesign existed for. Reproduced on a real client run: 10 obs records
+// on disk, `reduce()` → 0 findings, and the contribution fell back to the DIAG table's
+// enum-only shell (`skill: other`, `signalClass: none`, `errorCode: UNKNOWN`).
+//
+// Judgement stays where the oracle puts it — severity is assigned HERE (Tier 2), never at
+// capture time — and this function implements the §1f rubric deterministically:
+//   • candidate severity per class (OBS_SEVERITY; unknown class ⇒ S3, the table's last row)
+//   • same-subject merge (rule 1): observations sharing an owning skill + subject collapse into
+//     ONE finding at max(severity)
+//   • triangulation (rule 2): ≥3 DIFFERENT non-noise classes on one subject ⇒ +1 severity step
+//   • occurrence weighting (rule 5): a class with count ≥ 3 promotes its own S3 candidate to S2
+//   • NOISE classes (policy_block / self_reported_skip / harness_noise) never drive a finding on
+//     their own — they are kept as supporting evidence only, so they cannot inflate a group
+// Only ACTIONABLE groups (S1/S2 ⇒ BROKEN/DEGRADED) become upstream findings, matching the span
+// path's "every finding in the struct is actionable" contract; an S3-only group is recorded
+// locally and analysed by /vc-self-check, but is not worth a public ticket.
+//
+// Grouping is by (skill, subject), a refinement of §1f rule 1: `subject` alone would fuse the
+// same tool failing under two different skills into one finding and lose the `skill` dimension
+// that makes the report actionable (rule 4 handles genuine cross-skill clustering separately).
+function foldObservations(obsRecords) {
+  const groups = new Map();
+  for (const o of obsRecords) {
+    const skill = typeof o.skill === "string" && o.skill ? o.skill : "";
+    if (/vc-self-check/i.test(skill)) continue; // loop guard — same rule the span path applies
+    const subject = typeof o.subject === "string" && o.subject ? o.subject : "unknown";
+    const cls = typeof o.class === "string" && o.class ? o.class : "unclassified";
+    const count = clampInt(o.count ?? 1, 1, 1_000_000);
+    const key = `${skill}|${subject}`;
+    let g = groups.get(key);
+    if (!g) {
+      g = { skill, subject, classes: new Set(), noiseOnly: true, severity: null, code: "UNKNOWN", signalClass: "none" };
+      groups.set(key, g);
+    }
+    // A NOISE observation joins the group as evidence but contributes no severity and does not
+    // count toward triangulation — "never on its own" (§1f).
+    if (OBS_NOISE_CLASSES.has(cls)) continue;
+    g.noiseOnly = false;
+    g.classes.add(cls);
+    let cand = OBS_SEVERITY[cls] ?? "S3";
+    if (cand === "S3" && count >= 3) cand = "S2"; // §1f rule 5 — occurrence weighting
+    g.severity = g.severity ? maxSev(g.severity, cand) : cand;
+    // signalClass: only meaningful when the observation class IS one of the span signal classes.
+    // Ordered by SIGNAL_CLASSES so a genuine blocking class beats the non-blocking policy_block.
+    if (SIGNAL_CLASSES_SET.has(cls) && cls !== "none") {
+      const better = SIGNAL_CLASSES.indexOf(cls) < SIGNAL_CLASSES.indexOf(g.signalClass);
+      if (g.signalClass === "none" || better) g.signalClass = cls;
+    }
+    // The collector already classified the error TEXT to a taxonomy code locally; only the code
+    // travels. "NONE" (a class with no error text, e.g. harness noise) is not a taxonomy member.
+    if (g.code === "UNKNOWN" && ERROR_CODES_SET.has(o.code)) g.code = o.code;
+  }
+
+  const findings = [];
+  for (const g of groups.values()) {
+    if (g.noiseOnly || !g.severity) continue;
+    let severity = g.severity;
+    if (g.classes.size >= 3) severity = promoteSev(severity); // §1f rule 2 — triangulation
+    if (severity === "S3") continue; // not actionable upstream (still local + still analysed)
+    const verdict = severity === "S1" ? "BROKEN" : "DEGRADED";
+    findings.push({
+      skill: inSet(SKILLS_SET, g.skill, "other"),
+      verdict,
+      severity,
+      // Mirror the span path's outcome↔verdict pairing so the SAME defect fingerprints
+      // identically whichever source observed it.
+      outcome: verdict === "BROKEN" ? "failed" : "degraded",
+      signalClass: g.signalClass,
+      struggle: [],
+      errorCode: g.code,
+      toolFamily: toolFamilyOfSubject(g.subject),
+      repoKind: "unknown", // an observation carries no delegated-agent dimension
+      retries: 0,
+      // Within a session this is always 1 — `obs.count` is folded into SEVERITY above, and
+      // `occurrences` means "how many SESSIONS hit this finding" (mergeStructs' job).
+      occurrences: 1,
+    });
+  }
+  return findings;
+}
 
 /** Snippets from a span's own details ring (redacted at capture time). */
 function snippetsOf(span) {
@@ -202,11 +346,12 @@ function snippetsOf(span) {
 // ─── reduce ──────────────────────────────────────────────────────────────────
 /**
  * reduce(local) -> UpstreamSignal. `local`:
- *   { spans: <span records>, feedback: <feedback records>, pluginVersion,
+ *   { spans: <span records>, obs: <obs records>, feedback: <feedback records>, pluginVersion,
  *     fallbackFindings?: [{skill,verdict,sev}] }  // enum-only fallback when jsonl absent
- * The flagged findings are the skill/command spans whose outcome ∈ {degraded,failed,
- * silent_suspect}. vc-self-check's own spans are dropped (loop guard). Every emitted
- * string is a closed-vocabulary member; validateUpstream re-checks at the boundary.
+ * Findings come from the FULL VCST-5582 H analysis set — the skill/command spans whose outcome
+ * ∈ {degraded,failed,silent_suspect} PLUS the observation stream folded per §1f
+ * (`foldObservations`). vc-self-check's own records are dropped from both (loop guard). Every
+ * emitted string is a closed-vocabulary member; validateUpstream re-checks at the boundary.
  */
 export function reduce(local = {}) {
   const spans = Array.isArray(local.spans) ? local.spans.filter(isSpan) : [];
@@ -258,8 +403,14 @@ export function reduce(local = {}) {
     });
   }
 
+  // The observation stream — the other half of the §1e analysis set. Additive to the span
+  // findings (never a substitute): a run can legitimately have a flagged span AND a degradation
+  // its spans classified `success`/`recovered`, and dropping either loses signal.
+  findings.push(...foldObservations(Array.isArray(local.obs) ? local.obs.filter(isObs) : []));
+
   // Enum-only fallback (jsonl purged but a DIAG remained): map its already-validated
-  // verdict/sev, drop every free-text cell.
+  // verdict/sev, drop every free-text cell. Reached only when NEITHER structured source
+  // produced anything — a real obs/span finding always outranks a DIAG-table guess.
   if (!findings.length && Array.isArray(local.fallbackFindings)) {
     for (const f of local.fallbackFindings) {
       const verdict = inSet(VERDICTS_SET, f?.verdict, null);

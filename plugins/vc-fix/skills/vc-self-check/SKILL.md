@@ -316,8 +316,18 @@ Turning a confirmed DIAG into a scrubbed quality report to VirtoCommerce is
 > skill refused to run it at all, which made the default `ask` mode dead — see Step 6b.
 
 ```
-node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--batch] [--confirm] [--as pr|fork-pr|issue|local] [--keep] [--purge]
+node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--batch] [--confirm] [--dry] [--as issue|local] [--keep] [--purge] [--assert-nonempty]
 ```
+
+**`--dry`** forces the draft-only path whatever the consent mode says (previously "draft only"
+was reachable merely by omitting `--confirm`, which `feedback.mode: auto` silently overrode).
+
+**`--assert-nonempty`** (implies `--dry`, needs no network) is the **information-free-payload
+gate**: it reduces the DIAG and exits **3** when a report with ≥1 BROKEN/DEGRADED row would
+contribute nothing — no findings at all, or findings that are *all* `skill: other` +
+`signalClass: none` + `errorCode: UNKNOWN`. It exists because a report can be perfectly
+contained and still say nothing: the containment tests assert what must NOT be present, so an
+empty payload passed every gate and only a human reading the rendered table noticed.
 
 **`--batch`** consolidates ALL local `DIAG-*.md` into ONE contribution: findings are
 deduped across sessions (each annotated with an occurrence count), operator feedback is

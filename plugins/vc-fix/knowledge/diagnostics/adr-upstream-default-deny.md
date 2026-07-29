@@ -35,7 +35,7 @@ plugin-symbol allowlist — a second denylist fighting the first.
   - **UPSTREAM signal** — a strongly-typed struct of **enum / number / bool fields only**,
     with **zero free-text fields** (see [`upstream-schema.md`](./upstream-schema.md)).
 - A pure, deterministic `reduce(local) -> UpstreamSignal` builds it from **only the
-  collector's structured jsonl** (span records + feedback verdicts). LLM-authored DIAG
+  collector's structured jsonl** (span records + **observation records** + feedback verdicts). LLM-authored DIAG
   free-text cells never enter the upstream path; `/vc-feedback` prose is dropped (only
   `up`/`down` counts travel).
 - Error **text** is never sent: a LOCAL `classifyError()` maps an already-redacted snippet

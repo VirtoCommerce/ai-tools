@@ -77,6 +77,39 @@ UpstreamFinding = {
   (ambiguous) — the fail-safe direction; those values are reserved for a future validated
   non-client signal.
 
+### The analysis set — spans **and** observations
+
+`reduce()` reads the FULL §1e analysis set: **observations ∪ flagged spans ∪ feedback**. It
+originally iterated `spans` alone and required `outcome ∈ {degraded,failed,silent_suspect}`, so the
+`type:"obs"` stream was read by nobody on the upstream path and a session whose command span ended
+`recovered` (deliverable achieved, errors recovered) reduced to **zero findings** — exactly the
+class VCST-5582 H introduced observations for.
+
+`foldObservations` applies the
+[`skill-expectations.md`](./skill-expectations.md) §1f rubric deterministically, in this order:
+
+| Step | Rule |
+|---|---|
+| candidate severity | per `class` (§1f table); a class the table does not cover ⇒ **S3** — this is where the raw `tool_error`/`permission_denied`/`hook_failure`/`stop_bail` land, deliberately un-escalated |
+| occurrence weighting | §1f rule 5 — a class with `count ≥ 3` promotes its own **S3 → S2** |
+| same-subject merge | §1f rule 1 — observations sharing (owning `skill`, `subject`) collapse into **one** finding at `max(severity)` |
+| triangulation | §1f rule 2 — **≥3 different non-noise classes** on one subject ⇒ **+1 severity step** |
+| noise | `policy_block` / `self_reported_skip` / `harness_noise` never drive a finding on their own — supporting evidence only, and excluded from the triangulation count |
+| actionability | only **S1/S2** (⇒ `BROKEN`/`DEGRADED`) are contributed; an **S3-only** group stays local and is still analysed by `/vc-self-check` |
+
+Grouping is by (`skill`, `subject`) rather than `subject` alone — `subject` alone would fuse the
+same tool failing under two different skills and lose the `skill` dimension that makes the report
+actionable (§1f rule 4 handles genuine cross-skill clustering separately). Observation-derived
+findings carry `struggle: []`, `retries: 0`, `repoKind: "unknown"` (an observation has no
+delegated-agent dimension) and `occurrences: 1` (`obs.count` folds into **severity**, not into the
+cross-session occurrence count). `toolFamily` comes from `toolFamilyOfSubject`, which matches the
+collector's **slugified** subject shape (`mcp__playwright-edge__browser_snapshot` arrives as
+`mcp_playwright_edge_browser_snapshot`). `/vc-self-check`'s own observations are dropped, the same
+loop guard the span path applies.
+
+The DIAG-table fallback (enum-only, from `parseDiag`) is reached **only** when neither structured
+source produced a finding — a real observation always outranks a markdown guess.
+
 ---
 
 ## Guarantees (enforced by `upstream-reduce.mjs` + its tests)

@@ -93,7 +93,11 @@ test("readSessionRecords: missing/absent session returns the empty shell, never 
   try {
     withHome(home, () => {
       const rec = readSessionRecords("nope");
-      assert.deepEqual(rec, { spans: [], feedback: [], finalize: null, pluginVersion: "unknown" });
+      // `obs` joined the shell when the reducer started consuming the observation stream
+      // (the other half of the VCST-5582 H analysis set). The shape is pinned EXACTLY on
+      // purpose — the absent path must hand back every key a caller may index, so a consumer
+      // can iterate `.obs` without a presence check.
+      assert.deepEqual(rec, { spans: [], obs: [], feedback: [], finalize: null, pluginVersion: "unknown" });
       assert.deepEqual(readSessionRecords(null).spans, []);
     });
   } finally {

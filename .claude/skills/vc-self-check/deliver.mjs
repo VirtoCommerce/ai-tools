@@ -136,7 +136,7 @@ export function markOffered(sid, fp) {
 // missing/unreadable jsonl yields an empty set (deliver then falls back to parseDiag's
 // enum-only fields).
 export function readSessionRecords(sid) {
-  const out = { spans: [], feedback: [], finalize: null, pluginVersion: "unknown" };
+  const out = { spans: [], obs: [], feedback: [], finalize: null, pluginVersion: "unknown" };
   if (!sid) return out;
   try {
     const p = join(diagDir(), `${sid}.jsonl`);
@@ -147,6 +147,10 @@ export function readSessionRecords(sid) {
       try { r = JSON.parse(line); } catch { continue; }
       if (!r || typeof r !== "object") continue;
       if (r.type === "span") out.spans.push(r);
+      // `obs` records are the other half of the VCST-5582 H analysis set. They were appended by
+      // the collector from the start but surfaced to NOBODY on the upstream path — see
+      // upstream-reduce's `foldObservations`.
+      else if (r.type === "obs") out.obs.push(r);
       else if (r.type === "feedback") out.feedback.push({ verdict: r.verdict, text: r.text || "" });
       else if (r.type === "finalize") out.finalize = r;
       else if (r.type === "session_start" && typeof r.pluginVersion === "string") out.pluginVersion = r.pluginVersion;
@@ -164,6 +168,7 @@ function sessionLocal(md, sid) {
   return {
     local: {
       spans: records.spans,
+      obs: records.obs,
       feedback: records.feedback,
       pluginVersion: records.pluginVersion !== "unknown" ? records.pluginVersion : parsed.pluginVersion,
       // Drop parseDiag's synthetic "(session)" placeholder row (emitted when a DIAG has no
@@ -203,6 +208,27 @@ export function mergeStructs(structs, pluginVersion) {
 
 // ─── DIAG parsing ────────────────────────────────────────────────────────────
 /**
+ * Strip inline-markdown emphasis from a value captured out of the DIAG header.
+ *
+ * The DIAG template renders header values as inline CODE — `- Session: \`<sid>\` · Plugin:
+ * \`0.8.2\` · …` — but both header regexes captured with `[^\s·|]+`, which happily swallows the
+ * BACKTICKS. That one omission is what made the delivered report information-free on a real
+ * client run: the session id came back as `` `1cedb591-…` ``, so `readSessionRecords` looked for
+ * a `` `<sid>`.jsonl `` that does not exist, found no spans and no observations, and the reducer
+ * had nothing structured left to work from; the plugin version came back as `` `0.8.2` ``, which
+ * `validPluginVersion` correctly refused and turned into `unknown` — while the exact value sat in
+ * the session's own `session_start` record.
+ *
+ * Stripping (rather than excluding the characters in the character class) is deliberate: an
+ * excluded backtick makes the whole match FAIL, because `\s*` cannot consume it — which would
+ * trade a corrupted capture for no capture at all. Neither a UUID nor a numeric version can
+ * legitimately contain any of these three characters, so removing them is lossless here.
+ */
+export function stripInlineMd(s) {
+  return String(s ?? "").replace(/[`*_]/g, "").trim();
+}
+
+/**
  * Best-effort parse of a DIAG-*.md into { pluginVersion, findings[] }. Each
  * finding: { skill, verdict, sev, signal, rootcause, fix }. Split-based so it
  * handles the canonical 6-column findings table (Skill | Verdict | Sev | Signal |
@@ -212,7 +238,7 @@ export function mergeStructs(structs, pluginVersion) {
 export function parseDiag(md) {
   const text = String(md ?? "");
   const verMatch = /Plugin:\s*([^\s·|]+)/i.exec(text) || /pluginVersion["\s:]+([\d.]+)/i.exec(text);
-  const pluginVersion = verMatch ? verMatch[1] : "unknown";
+  const pluginVersion = verMatch ? stripInlineMd(verMatch[1]) || "unknown" : "unknown";
   const findings = [];
   for (const line of text.split("\n")) {
     if (!/^\s*\|/.test(line)) continue;
@@ -437,13 +463,60 @@ function prHandoffCommands({ repo, route, fp }) {
   ].join("\n");
 }
 
+// ─── the information-free-payload guard (--assert-nonempty) ──────────────────
+/**
+ * Would this contribution carry any information at all?
+ *
+ * The incident this guard exists for produced a syntactically perfect, fully contained,
+ * completely useless report: every column reduced to `other` / `none` / `UNKNOWN` / `unknown`,
+ * so an S1 blocker and an S2 gap were indistinguishable from each other and from noise. Nothing
+ * detected it — the containment tests all passed (they assert what must NOT be present), the
+ * schema validated, and the draft looked well-formed. A report can be perfectly safe and still
+ * say nothing, and only a human reading the rendered table happened to notice.
+ *
+ * The premise: a DIAG whose findings table carries ≥1 BROKEN/DEGRADED row is a report with
+ * something to say, so the reduced struct MUST retain at least one identifying dimension. Both
+ * degenerate shapes fail:
+ *   - findings present but every one is `skill:other` + `signalClass:none` + `errorCode:UNKNOWN`
+ *   - no findings at all (vacuously "all degenerate", and strictly worse)
+ * Pure + offline + deterministic, so it is usable as a CI gate and as a test oracle.
+ */
+export function assertNonEmpty({ struct, parsed }) {
+  const rows = (parsed?.findings ?? []).filter((f) => f.verdict === "BROKEN" || f.verdict === "DEGRADED");
+  const degenerate = (f) => f.skill === "other" && f.signalClass === "none" && f.errorCode === "UNKNOWN";
+  const findings = struct?.findings ?? [];
+  if (!rows.length) {
+    return { ok: true, reason: "no BROKEN/DEGRADED row in the DIAG — nothing is expected upstream", diagRows: rows.length, findings: findings.length };
+  }
+  if (!findings.length) {
+    return { ok: false, reason: `the DIAG has ${rows.length} BROKEN/DEGRADED row(s) but the reduced struct has NO findings — the contribution would carry no signal`, diagRows: rows.length, findings: 0 };
+  }
+  const informative = findings.filter((f) => !degenerate(f));
+  if (!informative.length) {
+    return {
+      ok: false,
+      reason: `all ${findings.length} reduced finding(s) are skill:other + signalClass:none + errorCode:UNKNOWN — the contribution would name neither the skill nor the failure`,
+      diagRows: rows.length,
+      findings: findings.length,
+    };
+  }
+  return { ok: true, reason: `${informative.length}/${findings.length} finding(s) carry an identifying dimension`, diagRows: rows.length, findings: findings.length };
+}
+
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 function parseArgs(argv) {
-  const a = { repo: PLUGIN_REPO, confirm: false, json: false, purge: false, keep: false };
+  const a = { repo: PLUGIN_REPO, confirm: false, json: false, purge: false, keep: false, dry: false, assertNonEmpty: false };
   for (let i = 0; i < argv.length; i++) {
     const t = argv[i];
     if (t === "--confirm" || t === "--send") a.confirm = true;
     else if (t === "--json") a.json = true;
+    // --dry: NEVER send, whatever the consent mode says. Makes the draft path explicitly
+    // requestable (previously only reachable by NOT passing --confirm, which `feedback.mode:auto`
+    // silently overrode).
+    else if (t === "--dry") a.dry = true;
+    // --assert-nonempty: the regression gate. Implies --dry and needs no network — it reduces
+    // the DIAG and exits non-zero if the payload would carry no signal.
+    else if (t === "--assert-nonempty") { a.assertNonEmpty = true; a.dry = true; }
     else if (t === "--diag") a.diag = argv[++i];
     else if (t === "--repo") a.repo = argv[++i];
     else if (t === "--as") a.override = argv[++i];
@@ -474,12 +547,23 @@ function newestDiag() {
 
 /** The diagnosed session id — from the DIAG header (`- Session: <sid> · …`), else the
  *  `DIAG-<sid>-<UTC-timestamp>.md` filename with the trailing timestamp stripped. "" if
- *  neither yields one (then only the explicit diag/delivery files are purged, by-name). */
-function sessionIdFromDiag(md, diagPath) {
+ *  neither yields one (then only the explicit diag/delivery files are purged, by-name).
+ *
+ *  Two stamp spellings are accepted because the skill actually writes BOTH: the compact
+ *  `20260727T065857Z` this regex was written for, and the hyphenated ISO form the template's
+ *  own `<UTC-timestamp>` produces — `2026-07-29T11-55-12Z`, and with milliseconds
+ *  `2026-07-27T07-32-47-649Z`. Only the compact form was matched, so on every hyphenated DIAG
+ *  the filename fallback silently returned "" — systemic, not a one-off: both DIAGs on the
+ *  reproduction machine are hyphenated. */
+const DIAG_STAMP = String.raw`(?:\d{8}T\d{6}Z|\d{4}-\d{2}-\d{2}T[\d-]+Z)`;
+export function sessionIdFromDiag(md, diagPath) {
   const m = /(?:^|\n)\s*[-*]?\s*Session:\s*([^\s·|]+)/i.exec(md || "");
-  if (m && m[1]) return m[1].trim();
+  if (m && m[1]) {
+    const sid = stripInlineMd(m[1]);
+    if (sid) return sid;
+  }
   const base = String(diagPath || "").split(/[\\/]/).pop() || "";
-  const fm = /^DIAG-(.+)-\d{8}T\d{6}Z\.md$/.exec(base);
+  const fm = new RegExp(String.raw`^DIAG-(.+?)-${DIAG_STAMP}\.md$`).exec(base);
   return fm ? fm[1] : "";
 }
 
@@ -580,7 +664,7 @@ async function mainBatch(args) {
     else process.stdout.write(`Upstream delivery is disabled (feedback.mode=off). ${sessions.length} session(s) stay local — nothing sent.\n`);
     return;
   }
-  const confirm = args.confirm || mode === "auto";
+  const confirm = (args.confirm || mode === "auto") && !args.dry;
 
   const { token, via, scopes } = resolveGithubToken();
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo, via, scopes }) : null;
@@ -695,8 +779,21 @@ export async function main(argv = process.argv.slice(2)) {
 
   const md = readFileSync(diagPath, "utf8");
   const sid = sessionIdFromDiag(md, diagPath);
-  const { local } = sessionLocal(md, sid);
+  const { local, parsed } = sessionLocal(md, sid);
   const struct = validateUpstream(reduce(local)); // closed-schema, enums only — the ONLY upstream source
+
+  // --assert-nonempty: offline regression gate — reduce, judge, exit. Deliberately BEFORE the
+  // consent/token/route machinery so it needs no network and no profile, and so it reports on the
+  // payload itself rather than on whether this machine happens to be able to send it.
+  if (args.assertNonEmpty) {
+    const verdict = assertNonEmpty({ struct, parsed });
+    const out = { action: "assert-nonempty", diag: diagPath, session: sid || null, ok: verdict.ok, reason: verdict.reason, diagRows: verdict.diagRows, findings: verdict.findings, pluginVersion: struct.pluginVersion };
+    if (args.json) process.stdout.write(JSON.stringify(out) + "\n");
+    else process.stdout.write(`${verdict.ok ? "OK" : "FAIL"}: ${verdict.reason}\n`);
+    if (!verdict.ok) process.exitCode = 3;
+    return;
+  }
+
   const mode = feedbackMode(); // off | ask | auto (delivery consent — VCST-5509)
   const fp = fingerprintStruct(struct); // over the structural tuple (never raw text); feedback-only structs still differ (D2)
   const purgeHint = `node "$pluginRoot/skills/vc-self-check/deliver.mjs" --purge${args.diag ? ` --diag ${diagPath}` : ""}`;
@@ -745,9 +842,8 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
   // auto — the outbound step proceeds without a per-run --confirm (the operator consented
-  // once at onboarding). The Issue route files; a PR/fork-PR is still handed off (a human
-  // opens the PR — an irreversible external action).
-  const confirm = args.confirm || mode === "auto";
+  // once at onboarding). `--dry` overrides both: an explicit "draft only, send nothing".
+  const confirm = (args.confirm || mode === "auto") && !args.dry;
 
   const { token, via, scopes } = resolveGithubToken();
   const probe = token ? await probeGithubUpstream({ token, repo: args.repo, via, scopes }) : null;
