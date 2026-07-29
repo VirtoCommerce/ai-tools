@@ -76,49 +76,74 @@ role grid restating "all roles mapped"). If it is already on screen, reference i
 
 ### Output FORMAT — two shapes, used consistently
 
-Colour is not available: this output is Markdown, and the client (terminal or desktop) decides
-how to paint it — an ANSI escape never reaches it. What renders identically on BOTH surfaces is
-CAPS, `---`, heading level, **bold**, `code` and emoji. The format below uses only those.
+Two client-side constraints decide this format; both were confirmed on a live run, not assumed:
 
-**1. Step header — a CAPS heading, no numbering.**
+- **Colour is unavailable.** This output is Markdown and the client paints it — an ANSI escape
+  never reaches the screen.
+- **`---` does NOT render as a rule** in the Claude Code terminal — it prints as three literal
+  dashes. Do not use it as a separator. **Box-drawing characters always render**, because they
+  are ordinary text, not markup.
+- **Markdown collapses adjacent lines into one paragraph**, so a multi-line frame only survives
+  inside a fenced code block — which is also what gives it a real border on both surfaces.
 
-```markdown
-## ENVIRONMENT NAME
+Reliable everywhere: box-drawing (`┌─┐│└┘`), CAPS, **bold**, `code`, emoji, fenced blocks.
+
+**1. Step header — a framed, iconed, CAPS name in a fenced block.**
+
+````markdown
 ```
+┌──────────────────────────────┐
+│  ⚙   ENVIRONMENT NAME        │
+└──────────────────────────────┘
+```
+````
 
-`2a` / `4b` / `0c` are THIS file's internal numbering; they mean nothing to the operator and
-add noise to every header. Use the step's NAME, in caps. (Keep the numbers here in the doc — the
-model and the reviewer navigate by them.)
+- Size the frame to the text (a couple of spaces of padding); do not pad to a fixed width — a
+  long step name in a narrow box wraps and the frame breaks.
+- **The frame replaces the separator.** It already stops the eye, so no rule is needed above it.
+- **Icon per step kind** — one consistent glyph, so a returning operator recognises the phase
+  before reading it:
 
-**2. A question asked in PLAIN CHAT — a rule, a label, then the question on its own line.**
+  | Icon | Step kind | Examples |
+  |---|---|---|
+  | 📁 | preconditions / where things land | confirm directory |
+  | 🔒 | consent + credentials | self-diagnostics consents, auth preference |
+  | ⚙ | interview / configuration | environment name, tracker + code host |
+  | 📝 | generating files | env templates, profile, `.mcp.json` |
+  | 🔍 | scanning / deriving | repo split, tracker states, derive block |
+  | ✅ | verification | readiness table |
+  | 🎉 | finished | the wrap-up |
+
+- **No step numbers.** `2a` / `4b` / `0c` are THIS file's internal numbering; they mean nothing
+  to the operator. (They stay here in the doc — the model and the reviewer navigate by them.)
+
+**2. A question asked in PLAIN CHAT — question first, WAITING last.**
 
 ```markdown
----
-
-⏸️ **WAITING FOR YOU**
-
 **What should this environment be named?**
 
-It becomes `TEST_ENV` and the suffix of `.env.<name>`. Typical: `qa`, `dev`, `acme_qa`.
-I normalise it to `[a-z0-9_]+` and tell you what I used.
+It becomes `TEST_ENV` and the suffix of the env file (`.env.<name>`). Typical: `qa`, `dev`,
+`staging`, or a customer short name like `acme_qa`. I normalise it to `[a-z0-9_]+`.
+
+⏸️ **WAITING FOR YOU** — reply with the name.
 ```
 
-Why this shape, in order of importance:
+Why this order:
 
-- **The `---` is the load-bearing part.** It breaks the visual flow of a long report so the eye
-  stops. Without it the ask has the same weight as the paragraph above it.
-- **The question is its own bold line, right under the label.** The old banner said only
-  "waiting" while the actual question sat buried mid-paragraph above — so the operator saw a
-  cue with no ask attached, and scrolled past both.
-- **Context goes AFTER the question**, ≤2 lines: what the value becomes, a couple of typical
-  answers, what you will do to it.
-- **Nothing follows the block.** No further prose, no tool call — the turn ends there so the
-  ask is the last thing on screen.
-- No progress counter, no step number: they are noise on a 3-question interview.
+- **The question comes FIRST, as its own bold line.** The original banner said only "waiting"
+  while the actual ask sat buried mid-paragraph above it — a cue with no question attached, so
+  the operator scrolled past both.
+- **Context in the middle**, ≤2 lines: what the value becomes, typical answers, what you do to it.
+- **`⏸️ WAITING FOR YOU` is the LAST line**, and names the action (`reply with the name`,
+  `reply "done"`). It is the hand-off, so it belongs at the hand-off point — the operator's eye
+  lands there last and knows exactly what to type.
+- **Nothing follows it.** No further prose, no tool call — the turn ends so the ask stays on
+  screen.
+- No progress counter (operator's call — noise on a 3-question interview).
 
-**When the question is an `AskUserQuestion`, use NEITHER.** That tool already renders its own
-picker — a `---` + WAITING banner in front of it is duplicate chrome. Just the CAPS step header,
-one line of context if the options need it, and the tool call.
+**When the question is an `AskUserQuestion`, drop the WAITING line.** That tool renders its own
+picker, so the banner is duplicate chrome. Framed step header, one line of context if the
+options need it, then the tool call.
 
 ### Where things go — read this once (two roots, kept separate)
 
@@ -278,24 +303,25 @@ scripts unable to find `dotenv`. The subshell `( … )` keeps your project cwd u
 
 Do **not** use `AskUserQuestion` (always ≥2 option buttons — no option-less input) or a
 `show_widget` input (unreliable) for this — a plain chat question is the stable way to collect
-one free-text value. Use the plain-chat question format (§Output FORMAT) **verbatim**:
+one free-text value. Emit exactly this (§Output FORMAT):
 
-```markdown
-## ENVIRONMENT NAME
-
----
-
-⏸️ **WAITING FOR YOU**
+````markdown
+```
+┌──────────────────────────────┐
+│  ⚙   ENVIRONMENT NAME        │
+└──────────────────────────────┘
+```
 
 **What should this environment be named?**
 
 It becomes `TEST_ENV` and the suffix of the env file (`.env.<name>`). Typical: `qa`, `dev`,
-`staging`, or a customer short name like `acme_qa`. I normalise it to `[a-z0-9_]+` and tell
-you what I used.
-```
+`staging`, or a customer short name like `acme_qa`. I normalise it to `[a-z0-9_]+`.
 
-End the turn there — nothing after the block. On the reply, normalise mixed case / spaces /
-hyphens to `[a-z0-9_]+` (e.g. `My QA` → `my_qa`) and tell the operator what you used.
+⏸️ **WAITING FOR YOU** — reply with the environment name.
+````
+
+End the turn there — nothing after. On the reply, normalise mixed case / spaces / hyphens to
+`[a-z0-9_]+` (e.g. `My QA` → `my_qa`) and tell the operator what you used.
 
 ### 2b. Tracker + code host — one `AskUserQuestion` block
 
@@ -386,7 +412,7 @@ disabled; not needed for `/qa-fix`) — each with a "which tool it powers" comme
 
 ### 3c. Tell the operator: two files created — fill them, then pause
 
-Under a `## FILL IN THE TWO ENV FILES` header, print:
+Under a framed `📝  FILL IN THE TWO ENV FILES` step header (§Output FORMAT), print:
 - **two files were created**: `.env.<env>` (non-secret URLs/identifiers) and `.env.local`
   (secrets, gitignored) — with the placeholder keys each emitted;
 - that the inline comments say what each value is and where to get it;
@@ -398,14 +424,12 @@ Then the plain-chat question block (§Output FORMAT), which is what makes the pa
 to scroll past:
 
 ```markdown
----
-
-⏸️ **WAITING FOR YOU**
-
-**Filled both files? Reply "done" and I'll continue.**
+**Filled in both files?**
 
 I normalise and validate them first (trailing slashes, quotes, unfilled placeholders), then
 scan your repos and verify every credential.
+
+⏸️ **WAITING FOR YOU** — reply "done" when both files are filled.
 ```
 
 Nothing after the block — no further tool calls; the turn ends there so the ask is the last
