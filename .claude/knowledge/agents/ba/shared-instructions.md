@@ -80,6 +80,21 @@ default; pushing it to an external system is a separate, explicitly-authorized a
 bypass this via Bash→powershell indirection. Codified in memory `feedback_subagent_external_writes`,
 `feedback_subagent_interpreter_bypass`.
 
+## Self-check & verify work (MANDATORY)
+
+Before returning any analysis, story, or doc, **verify your own output** — a tool call succeeding is not
+proof the content is correct or complete. This is a hard rule for every BA agent.
+
+- Re-read the deliverable for internal consistency, and confirm every factual claim about platform
+  behavior is grounded in a cited VirtoOZ/source/live result (per "Documentation source — VirtoOZ
+  first"), never paraphrased from memory.
+- Confirm no hardcoded env-specific values slipped in (no-hardcode discipline) and that every
+  `PROPOSED-BL-*` cites a real source.
+- Report honestly what you verified versus what remains an open question — don't present an unverified
+  assumption as a finding.
+
+Codified in memory `feedback_agents_self_check_and_verify`.
+
 ## Output policy
 
 All BA deliverables go to **`reports/ba/`** as one of the four allowed report categories
