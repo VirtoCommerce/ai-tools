@@ -266,42 +266,148 @@ export function countChangedLines(before: string, after: string): number {
 const enc = (p: string) => p.split('/').map(encodeURIComponent).join('/');
 
 // ── minimal text-surgery (preserve the manifest's formatting; fall back to reserialize) ─────────
-// vc-deploy-dev's packages.json uses an irregular indent no JSON.stringify reproduces, so mutating
-// the parsed object + reserializing rewrites the whole file. These edit the RAW text so the deploy
-// PR shows a clean 2-hunk diff (like a vc-ci "<TICKET>-vcst-qa-deployment" PR). Each returns null
-// only on a genuinely unexpected shape → editPackagesText falls back to the safe reserialize.
+// vc-deploy-dev's packages.json MAY use an irregular indent JSON.stringify can't reproduce, in which
+// case mutating the parsed object + reserializing rewrites the whole file. These edit the RAW text so
+// the deploy PR shows a clean 2-hunk diff (like a vc-ci "<TICKET>-vcst-qa-deployment" PR). Note most
+// env branches now round-trip through JSON.stringify(…, 2) exactly, where the reserialize path is
+// equally minimal and this surgery only wins 0-2 lines — it is belt-and-braces plus "never reformat
+// DevOps's file", NOT a large win. Don't grow this layer further on diff-size grounds alone.
+// Each returns null on an unexpected OR ambiguous shape → editPackagesText falls back to reserialize;
+// guessing is never correct here, because a wrong-but-valid manifest deploys the wrong build.
 const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Literal (no `$` expansion) replacement of the first `re` match — `String.replace` treats `$&`,
+ *  `` $` ``, `$'`, `$n` in a replacement STRING as references, and these values come from a
+ *  PR-body URL via decodeURIComponent, so a `$` in a filename would splice manifest text in. */
+const subLiteral = (s: string, re: RegExp, to: string) => s.replace(re, () => to);
+/** A line's leading whitespace, tabs included — a spaces-only pattern measures a tab file as 0. */
+const indentOf = (l: string) => (l.match(/^[ \t]*/) as RegExpMatchArray)[0];
+/** Line range [openBrace, closeBrace] of the Sources[] object whose body matches `marker`. */
+function sourceBlockRange(lines: string[], marker: RegExp): [number, number] | null {
+  const at = lines.findIndex((l) => marker.test(l));
+  if (at < 0) return null;
+  let open = -1;                                                 // that object's own opening brace
+  for (let i = at; i >= 0; i--) if (/^\s*\{\s*$/.test(lines[i])) { open = i; break; }
+  if (open < 0) return null;
+  let depth = 0;
+  for (let i = open; i < lines.length; i++) {
+    // Depth counts structural braces only — blank the string literals first so a `{`/`[` inside a
+    // value (URL, BlobName) can't skew the range.
+    for (const ch of lines[i].replace(/"(?:\\.|[^"\\])*"/g, '""')) {
+      if (ch === '{' || ch === '[') depth++; else if (ch === '}' || ch === ']') depth--;
+    }
+    if (i > open && depth <= 0) return at <= i ? [open, i] : null; // range must contain the marker
+  }
+  return null;
+}
+/** Split into `\r`-free lines + the EOL to rejoin with. Constructed lines must carry the file's own
+ *  EOL, else a CRLF manifest gets LF-only inserts (mixed endings + phantom diff on touched lines). */
+const splitLines = (text: string) => ({ lines: text.split(/\r?\n/), eol: text.includes('\r\n') ? '\r\n' : '\n' });
 /** Remove a GithubReleases {Id,Version} object (+ its adjacent comma). Unchanged text if the id
  *  isn't in GithubReleases; null if it's there but not in the canonical 4-line shape. */
 export function removeGhReleaseEntry(text: string, id: string): string | null {
-  const lines = text.split('\n');
-  const idLine = lines.findIndex((l) => new RegExp(`"Id"\\s*:\\s*"${escRe(id)}"`).test(l));
+  const { lines, eol } = splitLines(text);
+  const idRe = new RegExp(`"Id"\\s*:\\s*"${escRe(id)}"`);
+  // Scope the search to the GithubReleases source when it's locatable: an AzureBlob prerelease entry
+  // may ALSO carry an "Id" (the {Id,Version,BlobName} shape a reserialize writes), and matching THAT
+  // one would fail the 4-line shape check and force a needless whole-file reserialize.
+  const gh = sourceBlockRange(lines, /"Name"\s*:\s*"[^"]*github[^"]*"/i)
+          ?? sourceBlockRange(lines, /"ModuleSources"\s*:/);      // same shapes applyModule() accepts
+  let idLine = -1;
+  for (let i = gh ? gh[0] : 0, end = gh ? gh[1] : lines.length - 1; i <= end; i++) if (idRe.test(lines[i])) { idLine = i; break; }
   if (idLine < 0) return text;                                   // not in GithubReleases — nothing to remove
   const open = idLine - 1, close = idLine + 2;                   // { · Id · Version · }
   if (open < 0 || close >= lines.length) return null;
   if (!/^\s*\{\s*$/.test(lines[open]) || !/^\s*\},?\s*$/.test(lines[close])) return null;
-  const closeHasComma = /\},\s*$/.test(lines[close]);
+  const closeHasComma = /\},[ \t]*$/.test(lines[close]);
   lines.splice(open, close - open + 1);
   if (!closeHasComma) {                                          // was the last entry → drop the previous entry's trailing comma
-    for (let i = open - 1; i >= 0; i--) { if (/\S/.test(lines[i])) { if (/\},?\s*$/.test(lines[i])) lines[i] = lines[i].replace(/,(\s*)$/, '$1'); break; } }
+    for (let i = open - 1; i >= 0; i--) { if (/\S/.test(lines[i])) { if (/\},?[ \t]*$/.test(lines[i])) lines[i] = lines[i].replace(/,([ \t]*)$/, '$1'); break; } }
   }
-  return lines.join('\n');
+  return lines.join(eol);
 }
-/** Add (or replace) a BlobName-only entry in the AzureBlob source, matching existing indentation. */
+/** The file's indent step, as the literal whitespace string (so a tab-indented manifest gets tabs).
+ *  Read off the first indented line rather than the enclosing block's own indent, which can be
+ *  irregular — vcst-qa indented the AzureBlob block's children at the SAME column as its opening
+ *  brace, so a parent-delta would yield an empty step. Two spaces if the file has no indent at all. */
+const detectIndentUnit = (lines: string[]) =>
+  lines.find((l) => /^[ \t]+\S/.test(l))?.match(/^[ \t]+/)![0] ?? '  ';
+/** Seed the first entry into an EMPTY AzureBlob `"Modules": []` — the state of a branch that has
+ *  never carried a prerelease pin (vcptcore-stable and -regression are both here today), where there
+ *  is no `"BlobName"` line to anchor on. Returns null if the AzureBlob source, or its empty Modules
+ *  array, can't be located. Mutates `lines`. */
+function insertFirstBlobEntry(lines: string[], blobName: string, eol: string): string | null {
+  const range = sourceBlockRange(lines, /"Name"\s*:\s*"AzureBlob"|"ServiceUri"\s*:\s*"[^"]*vc3prerelease/);
+  if (!range) return null;                                         // no AzureBlob source at all
+  const [open, close] = range;
+  let modAt = -1;                                                  // that source's own "Modules" key
+  for (let i = open + 1; i < close; i++) if (/"Modules"\s*:/.test(lines[i])) { modAt = i; break; }
+  if (modAt < 0) return null;
+  const mod = indentOf(lines[modAt]), unit = detectIndentUnit(lines);
+  const entry = [`${mod}${unit}{`, `${mod}${unit}${unit}"BlobName": "${blobName}"`, `${mod}${unit}}`];
+  const inline = /^([ \t]*"Modules"\s*:\s*)\[[ \t]*\][ \t]*(,?)[ \t]*\r?$/.exec(lines[modAt]);
+  if (inline) {                                                    // "Modules": []  (one line)
+    lines.splice(modAt, 1, `${inline[1]}[`, ...entry, `${mod}]${inline[2]}`);
+    return lines.join(eol);
+  }
+  if (/"Modules"\s*:\s*\[[ \t]*\r?$/.test(lines[modAt])) {         // "Modules": [ … ] (multi-line)
+    for (let i = modAt + 1; i < close; i++) {
+      if (!/\S/.test(lines[i])) continue;
+      if (!/^[ \t]*\][ \t]*,?[ \t]*\r?$/.test(lines[i])) return null; // array is NOT empty → unexpected
+      lines.splice(i, 0, ...entry);
+      return lines.join(eol);
+    }
+  }
+  return null;
+}
+/** Add (or replace) a BlobName-only entry in the AzureBlob source, matching existing indentation.
+ *  `id` must own AT MOST one entry and one entry per line — anything ambiguous returns null so the
+ *  caller reserializes (whose applyModule matches by `Id`) instead of editing the wrong pin. */
 export function upsertBlobEntry(text: string, id: string, blobName: string): string | null {
-  const lines = text.split('\n');
-  const existing = lines.findIndex((l) => new RegExp(`"BlobName"\\s*:\\s*"${escRe(id)}_`).test(l));
-  if (existing >= 0) { lines[existing] = lines[existing].replace(/"BlobName"\s*:\s*"[^"]*"/, `"BlobName": "${blobName}"`); return lines.join('\n'); }
+  const { lines, eol } = splitLines(text);
+  const blobRe = new RegExp(`"BlobName"\\s*:\\s*"${escRe(id)}_`, 'i');
+  const owns = lines.filter((l) => blobRe.test(l)).length;
+  if (owns > 1) return null;                                      // same module pinned twice — don't guess
+  const existing = lines.findIndex((l) => blobRe.test(l));
+  if (existing >= 0) {
+    // One entry per line, else the id-anchored match above and the positional replace below can
+    // disagree and rewrite a NEIGHBOUR's BlobName (silently dropping that module's pin).
+    if ((lines[existing].match(/"BlobName"\s*:/g) || []).length > 1) return null;
+    lines[existing] = subLiteral(lines[existing], /"BlobName"\s*:\s*"[^"]*"/, `"BlobName": "${blobName}"`);
+    // Refresh this entry's "Version" if it has one: pinnedModule() prefers an explicit Version over
+    // the BlobName-derived one, so leaving it stale would make the table / --verify report a version
+    // the pin no longer points at. (Entries written by a reserialize carry Id+Version+BlobName.)
+    const ver = blobName.match(/^.+_(\d.*)\.zip$/i)?.[1];
+    const setVer = (l: string) => l.replace(/("Version"\s*:\s*")[^"]*(")/, (_m, a, b) => a + ver + b);
+    if (/"Version"\s*:/.test(lines[existing])) {                  // single-line entry: Version sits here
+      if (!ver) return null;
+      lines[existing] = setVer(lines[existing]);
+    } else {
+      // Multi-line entry: bound the search to THIS entry's own field lines — contiguous, at the same
+      // indent as the BlobName line, stopping at any brace/bracket. So an outer key (e.g. a
+      // source-level "Version") can never be rewritten, and order within the entry doesn't matter.
+      const sibling = (i: number) => !/^[ \t]*[{}[\]]/.test(lines[i]) && indentOf(lines[i]) === indentOf(lines[existing]);
+      let lo = existing, hi = existing;
+      while (lo - 1 >= 0 && sibling(lo - 1)) lo--;
+      while (hi + 1 < lines.length && sibling(hi + 1)) hi++;
+      for (let i = lo; i <= hi; i++) {
+        if (!/"Version"\s*:/.test(lines[i])) continue;
+        if (!ver) return null;                                    // can't derive a version → reserialize
+        lines[i] = setVer(lines[i]);
+        break;
+      }
+    }
+    return lines.join(eol);
+  }
   const sample = lines.findIndex((l) => /"BlobName"\s*:/.test(l));
-  if (sample < 1) return null;
-  const blobIndent = (lines[sample].match(/^\s*/) || [''])[0];
-  const braceIndent = (lines[sample - 1].match(/^\s*/) || [''])[0];
+  if (sample < 1) return insertFirstBlobEntry(lines, blobName, eol); // empty AzureBlob — no sibling to mirror
+  const blobIndent = indentOf(lines[sample]);
+  const braceIndent = indentOf(lines[sample - 1]);
   let lastClose = -1;
   for (let i = 0; i < lines.length - 1; i++) if (/"BlobName"\s*:/.test(lines[i]) && /^\s*\}/.test(lines[i + 1])) lastClose = i + 1;
   if (lastClose < 0) return null;
-  lines[lastClose] = lines[lastClose].replace(/^(\s*\})\s*,?\s*$/, '$1,');
+  lines[lastClose] = lines[lastClose].replace(/^([ \t]*\})[ \t]*,?[ \t]*$/, '$1,');
   lines.splice(lastClose + 1, 0, `${braceIndent}{`, `${blobIndent}"BlobName": "${blobName}"`, `${braceIndent}}`);
-  return lines.join('\n');
+  return lines.join(eol);
 }
 export function bumpPlatformText(text: string, version: string): string | null {
   let hit = 0;
@@ -324,8 +430,20 @@ export function editPackagesText(origText: string, origJson: any, modules: Targe
       const gh = j.Sources?.find((s: any) => /github/i.test(s?.Name || ''));
       const blob = j.Sources?.find((s: any) => s?.Name === 'AzureBlob' || (s?.ServiceUri || '').includes('vc3prerelease'));
       let good = true;
-      for (const t of modules) { if (gh?.Modules?.some((m: any) => m.Id === t.id)) good = false; if (!blob?.Modules?.some((m: any) => (m.BlobName || '') === t.blobName)) good = false; }
-      if (platformT && String(j.PlatformVersion) !== platformT.version) good = false;
+      // Assert the intended END STATE, not mere presence. Surgery matches by BlobName prefix while the
+      // reserialize fallback matches by `Id`; when the two can disagree (duplicate pin, stale sibling
+      // Version, an entry the prefix scan missed) the only safe outcome is the reserialize. pinnedModule
+      // is the right oracle because it is exactly what the dry-run table and --verify read.
+      for (const t of modules) {
+        if (gh?.Modules?.some((m: any) => m.Id === t.id)) good = false;
+        const owning = (blob?.Modules ?? []).filter((m: any) =>
+          m?.Id === t.id || String(m?.BlobName ?? '').toLowerCase().startsWith(`${String(t.id).toLowerCase()}_`));
+        if (owning.length !== 1) good = false;                     // missing, or duplicated (stale one could win)
+        const pin = pinnedModule(j, t.id!);
+        if (pin?.version !== t.version || pin?.blobName !== t.blobName) good = false;
+      }
+      if (platformT && (String(j.PlatformVersion) !== platformT.version
+        || (j.PlatformImageTag !== undefined && String(j.PlatformImageTag) !== platformT.version))) good = false;
       if (good) return { text, minimal: true };
     } catch { /* fall through */ }
   }
