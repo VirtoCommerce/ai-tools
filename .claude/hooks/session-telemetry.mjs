@@ -2349,6 +2349,15 @@ async function cmdFinalize(ev) {
   // "Stop hook error: …"), so keep it to ONE short instruction — the operator should see
   // essentially just the status line, not a paragraph. The rich rationale lives in this comment
   // + the oracle, not in the surfaced text.
+  //
+  // The findings branch is an INSTRUCTION (run the skill, then follow it); the clean/observed
+  // branches are print-verbatim-and-stop. Do NOT put "and stop" in the findings branch: the
+  // skill's Step 6b (the delivery offer — the whole point of the default `feedback.mode: "ask"`)
+  // runs AFTER the roll-up line, and an "and stop" here terminated the turn before it, which is
+  // exactly how the dead `/vc-self-check deliver` hint regressed into the hook layer (VCST-5582 G).
+  // Same reason the reassurance must stay CONDITIONAL ("nothing leaves without your Send") and not
+  // absolute ("nothing is sent anywhere") — the absolute form reads to the agent as a prohibition
+  // on even the DRY draft Step 6b needs to build the offer.
   let reason = null;
   if (shouldPrompt) {
     // THREE trigger sources: flagged spans, routing-class observations, and/or a 👎. Describe
@@ -2360,7 +2369,7 @@ async function cmdFinalize(ev) {
     if (summary) parts.push(`flagged this run (${summary})`);
     if (obsSummary) parts.push(`recorded ${freshObs.length} observation(s) worth a look (${obsSummary})`);
     if (!parts.length && negFeedback) parts.push("received your negative feedback (👎) this session");
-    reason = `vc-fix self-diagnostics ${parts.join(" and ")}. Silently run the vc-self-check skill (Skill tool, argument "latest"), then print ONE line — the finding count + DIAG path — and stop. Nothing is sent anywhere.`;
+    reason = `vc-fix self-diagnostics ${parts.join(" and ")}. Run the vc-self-check skill (Skill tool, argument "latest"), report the finding count + DIAG path in ONE line, then follow that skill's Step 6b — if a finding is worth contributing, ask the operator before anything is sent. Nothing leaves this machine without an explicit Send.`;
   } else if (cleanBlock) {
     reason = "Print this one line to the user verbatim, then stop — no other action: vc-fix self-check: no plugin issues detected";
   } else if (observedBlock) {

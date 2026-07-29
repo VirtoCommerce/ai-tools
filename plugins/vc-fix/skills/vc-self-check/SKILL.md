@@ -204,6 +204,15 @@ template below, within the size cap.
   the DIAG path (e.g. `vc-fix self-check: 1 BROKEN, 1 DEGRADED → .vc-fix/diagnostics/DIAG-….md`).
 - **Direct run:** print the DIAG path + the one-line roll-up.
 
+> **6a does not end the turn, on EITHER path.** 6a and 6b are **sequential steps of one turn**,
+> never alternatives: report the roll-up line, then immediately evaluate 6b. **6b applies to the
+> silent tail-trigger auto-run exactly as it does to a direct `/vc-self-check`** — the auto-run is
+> where the client actually is, so skipping the offer there is the same dead loop VCST-5582 G fixed
+> (the Stop hook's block reason used to say "and stop", which killed 6b; if you ever see wording
+> like that, 6b still applies — nothing is *sent* without an explicit Send, which is what 6b asks).
+> Print-one-line-and-stop is the whole behaviour ONLY when 6b's conditions do not hold (typically:
+> every row is OK, so there is nothing worth sending).
+
 **6b — offer to contribute it upstream (VCST-5582 G).** This step exists because the loop
 used to die here: BOTH paths above said "that is `deliver`, do not run it here", so the
 profile's default `feedback.mode: "ask"` — which literally means *ask each time* — was

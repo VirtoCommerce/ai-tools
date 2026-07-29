@@ -321,6 +321,38 @@ test("classify: an unrecovered permission_denied is `failed` and triggers the si
   }
 });
 
+// ─── the findings-branch reason must not kill the skill's delivery offer (Step 6b) ──
+// Regression: session 5cab0e1f-12ce-4453-9eee-b98cc053e4b5 (plugin 0.8.2, env leo_qa) produced a
+// DIAG with an S1 BROKEN + an S2 DEGRADED row and `feedback.mode: "ask"` — every Step 6b condition
+// satisfied — yet the operator was never offered the contribution, because the block reason said
+// "print ONE line … and stop. Nothing is sent anywhere.": "and stop" terminated the turn BEFORE 6b,
+// and the absolute reassurance read as a prohibition on even the DRY draft 6b needs. That is the
+// dead-hint failure VCST-5582 G fixed at the skill layer, regressed into the hook layer.
+test("tail-trigger: the findings block reason routes to Step 6b — no turn-ending 'and stop', no absolute send prohibition", () => {
+  const home = setupHome();
+  try {
+    const sid = "offer-reachable-1";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-1" });
+
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", true, "permission denied: token missing pull-request scope"),
+    ]);
+
+    const { reason } = JSON.parse(run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }));
+
+    assert.match(reason, /Step 6b/, "the reason must hand off to the skill's delivery-offer step");
+    assert.doesNotMatch(reason, /\band stop\b/i, "'and stop' terminates the turn before Step 6b can offer");
+    assert.doesNotMatch(reason, /Nothing is sent anywhere/i, "an absolute prohibition blocks even the DRY draft Step 6b needs");
+    assert.match(reason, /without an explicit Send/i, "the reassurance must stay CONDITIONAL, not absolute");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── silent_suspect: clean close, real work, no expected-output marker ───────────
 test("classify: a clean close with real work but none of the skill's expected-output markers is `silent_suspect`", () => {
   const home = setupHome();
