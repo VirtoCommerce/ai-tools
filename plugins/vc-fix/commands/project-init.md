@@ -95,7 +95,7 @@ permissions + the filled env + a live module/repo scan.
    the written value reflects the operator's choice, not the safe opt-out default). Do NOT pass
    `--project-type`/`--client-org` — the scan is authoritative.
 7. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
-8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`
+8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"` then `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"` (asserts the written profile’s SHAPE — empty `tracker.fields`, incomplete `roleStates`, empty `repos.client` — and records each as self-diagnostics telemetry; always exits 0)
    (`FORCE_COLOR=1` so the Status column renders — the script auto-disables colour on a
    non-TTY, and the harness runs it through a pipe) prints a full readiness table +
    READY/NOT-READY verdict (profile · core env · URLs · real admin login · storefront-user

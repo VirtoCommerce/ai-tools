@@ -697,6 +697,7 @@ operator only ever sees a plain table.
 
 ```bash
 FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
 Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.
@@ -870,6 +871,7 @@ then **pause** with the unmistakable waiting banner (§3c) — no tool calls aft
 
 ```bash
 FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
 Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new env's URLs +
@@ -965,6 +967,7 @@ Then the readiness table (§8), so a stale token / URL / login surfaces too:
 
 ```bash
 FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
 **Restate all three** — the reconciliation summary (added / removed / decided), any value the
@@ -1026,7 +1029,8 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `reconcile-profile.mjs` | **`--check` migration**: diff an existing profile against the current `PROFILE_DEFAULTS` schema → JSON report of `added` (safe-default) / `removed` (obsolete, open-maps+arrays preserved) / `pending` (operator-decision fields with `question`+`options`, e.g. `selfDiagnostics`) / `rescan` (re-derive live). Deterministic, dry-run by default; `--write` applies structural changes + `--set path=value` decisions. Idempotent. Mirrors `gen-profile`'s `tracker.azure`/`vcs.azure` discriminated pruning |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see `knowledge/execution/plugin-root.md`.) |
-| `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
+| `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
+| `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference

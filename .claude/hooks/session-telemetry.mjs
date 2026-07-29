@@ -258,6 +258,285 @@ const FLAGGED_CAP = 200; // hard backstop on distinct flagged signatures (M2 —
 const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure", "stop_bail", "policy_block"];
 const zeroCounts = () => ({ tool_error: 0, permission_denied: 0, hook_failure: 0, stop_bail: 0, policy_block: 0, tool_calls: 0, agent_calls: 0 });
 
+// ─── OBSERVATION LAYER — capture is FORBIDDEN from judging ────────────────────
+// THE ARCHITECTURAL RULE (VCST-5582 H). The capture layer records THAT something happened
+// and may NOT decide whether it matters. Before this existed, `emitSpan`'s non-success test
+// was simultaneously the RETENTION decision, the ANALYSIS-SCOPE decision and the SURFACING
+// decision — `state.flagged[]` is the only thing /vc-self-check reads (its SKILL.md Step 2
+// stops on an empty one) — so a signal the deterministic classifier did not recognise at
+// span-close time was not downgraded, it CEASED TO EXIST. Demonstrated: a real /project-init
+// run printed a WARN in its OWN readiness table (the Azure Bug field contract was never
+// scanned — HTTP 400) and self-diagnosed `no plugin issues detected` with
+// spanCounts:{success:31}, flagged:[]. Worse, the readiness table that CARRIED the warning is
+// what satisfied EXPECTED_OUTPUT["project-init"] and certified the run healthy.
+//
+// So every anomaly signal — however minor, however likely-benign — becomes a durable
+// `type:"obs"` record here, and SEVERITY is assigned LATER by /vc-self-check against
+// knowledge/diagnostics/skill-expectations.md §1f. An `obs` deliberately carries NO
+// `severity` and NO `verdict` field: there is structurally no way for the collector to
+// express importance.
+//
+// jsonl COMPATIBILITY: every existing reader filters on its own `type` (upstream-reduce's
+// `isSpan`, deliver's span/feedback/finalize, /vc-self-check's finalize.flagged), so this is
+// purely additive and invisible until a reader opts in.
+const OBS_CLASSES = [
+  // signals that already existed as span `signals` — now ALSO durable observations, so a
+  // signal on a span that ends up `success`/`recovered` is no longer thrown away.
+  "tool_error", "permission_denied", "hook_failure", "policy_block", "stop_bail",
+  // process-level facts the collector used to be structurally blind to.
+  "script_stderr", "script_exit_nonzero", "http_non2xx", "tool_interrupted",
+  // a surface of OURS said so, in its own words (readiness rows, self-labelled fallbacks,
+  // a generated artifact that came out degraded/empty).
+  "self_reported_warn", "self_reported_fail", "self_reported_skip", "self_reported_fallback",
+  "degraded_artifact",
+  // outcomes the classifier deliberately does NOT escalate — recorded anyway so the vendor
+  // still learns that the happy path fails routinely.
+  "recovered_error", "struggle",
+  // the collector's own health — a broken measurement must never read as a clean run.
+  "capture_truncated", "collector_scan_error", "collector_contention", "oracle_marker_miss",
+  // deferrals, operator-side signals, and expected background noise.
+  "question_unanswered", "harness_noise",
+  // fail-safe bucket: an emitter (e.g. the `obs` subcommand) passed a class this build does
+  // not know. RECORDED under this name rather than dropped — losing it would be the very
+  // bug this layer exists to fix.
+  "unclassified",
+];
+const OBS_CLASSES_SET = new Set(OBS_CLASSES);
+
+// NOISE classes are still RECORDED in full — they are only excluded from the COUNT in the
+// visible status line, because they are expected background: the harness's own stderr, a
+// guardrail that fired and was obeyed (policy_block, VCST-5582 F4), an expected SKIP row.
+// Deciding they are benign is the JUDGE's job — skill-expectations §1f suppresses them AS A
+// VERDICT, which is written into the DIAG ("Suppressed as noise: N"). This set only keeps the
+// status line honest without making it shout.
+const OBS_NOISE_CLASSES = new Set(["harness_noise", "policy_block", "self_reported_skip"]);
+
+// ROUTING set — the ONLY thing that justifies spending a model turn RIGHT NOW. This is DATA
+// (kept in lock-step with skill-expectations.md §1e), NOT a severity judgement: membership
+// decides TIMING, never retention. Everything outside it is still recorded, still FORBIDS the
+// word "clean", still counted in the visible line, and still analysed by any /vc-self-check.
+// NOTE what is deliberately absent: raw `tool_error`/`permission_denied`/`hook_failure`. A
+// BLOCKING one of those already routes via the span classifier (`failed` → flagged), and a
+// RECOVERED one must not route or every adaptive run would nag again — the exact regression
+// VCST-5582 F1 fixed. So they are recorded (as observations) without re-opening that door.
+const OBS_ROUTING_CLASSES = new Set([
+  "self_reported_warn", "self_reported_fail", "degraded_artifact", "http_non2xx",
+  "script_exit_nonzero", "collector_contention",
+]);
+
+const OBS_SIGNATURE_CAP = 200; // distinct signatures per session
+const OBS_PER_CLASS_CAP = 25; // distinct signatures per class
+const OBS_SNIPPET = 160; // evidence snippet chars (redacted)
+
+// Error-taxonomy classifier, LAZILY imported from the PURE, side-effect-free upstream reducer
+// so the taxonomy has exactly ONE definition (upstream-reduce.mjs ERROR_CODES/classifyError)
+// instead of a second copy here. Dynamic + swallowed: a partial install must degrade to
+// "UNKNOWN", never crash the hook. Resolved once in the entry point, before dispatch.
+let _classifyError = () => "UNKNOWN";
+async function loadErrorClassifier() {
+  try {
+    const mod = await import(new URL("../skills/vc-self-check/upstream-reduce.mjs", import.meta.url).href);
+    if (typeof mod.classifyError === "function") _classifyError = mod.classifyError;
+  } catch {
+    /* keep the UNKNOWN fallback — a missing reducer must not break capture */
+  }
+}
+
+// A `subject` is what the observation is ABOUT (`tracker_field_contract`, `github_auth`,
+// `storefront_url`). Slugified to [a-z0-9_] and length-capped so a raw path, URL, or free-text
+// error can never ride in on this field. Local-only today; when the upstream reducer starts
+// consuming observations it must validate against a CLOSED list on its side (§2a).
+function obsSubject(s) {
+  const t = String(s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
+  return t || "unknown";
+}
+function clampNum(n) {
+  const v = Number(n);
+  return Number.isFinite(v) ? Math.trunc(v) : null;
+}
+// Derive a stable `subject` for an op. A Bash op's tool NAME ("Bash") says nothing, so prefer
+// the PLUGIN SCRIPT it is running — `…/skills/project-init/discover-tracker.mjs` →
+// `discover_tracker`. That is what makes an observation attributable to the failing STEP rather
+// than to "some Bash call", which is the difference between a usable finding and a shrug.
+const PLUGIN_SCRIPT_RE = /[/\\](?:hooks|skills|scripts)[/\\][\w./\\-]*?([\w-]+)\.mjs\b/;
+function opSubject(toolName, inputStr) {
+  const m = PLUGIN_SCRIPT_RE.exec(String(inputStr || ""));
+  return obsSubject(m ? m[1] : toolName);
+}
+function opSubjectOf(sp) {
+  return sp ? (sp.subject || obsSubject(sp.name)) : "unknown";
+}
+
+/**
+ * Record ONE observation. Aggregated by signature: the FIRST sighting APPENDS a line
+ * (durability — a crash mid-session keeps it), later sightings only bump the in-memory count,
+ * and cmdFinalize re-reads the appended lines and emits an `obs_rollup` with final counts.
+ *
+ * The jsonl is the SOURCE OF TRUTH and every write is an APPEND, so two collector processes
+ * sharing one outputRoot can duplicate a line but can never LOSE an observation (a
+ * read-modify-write on .state.json could). Never throws.
+ *
+ * @returns {string|null} the signature, or null when the cap dropped it.
+ */
+function recordObs(jsonlPath, state, o) {
+  try {
+    if (!state.observations || typeof state.observations !== "object") state.observations = {};
+    if (!state.obsClassCounts || typeof state.obsClassCounts !== "object") state.obsClassCounts = {};
+    const cls = OBS_CLASSES_SET.has(o?.class) ? o.class : "unclassified";
+    const subject = obsSubject(o?.subject);
+    const code = typeof o?.code === "string" && o.code ? o.code.slice(0, 32) : "NONE";
+    const skill = typeof o?.skill === "string" && o.skill ? normalizeName(o.skill) : null;
+    const ts = typeof o?.ts === "string" && o.ts ? o.ts : nowIso();
+    const sig = hash(`${cls}|${subject}|${code}|${skill ?? ""}`);
+    const seen = state.observations[sig];
+    if (seen) {
+      seen.count = (seen.count ?? 1) + 1;
+      seen.lastTs = ts;
+      return sig;
+    }
+    // Caps. A cap HIT is itself recorded (once, at finalize) as `capture_truncated`, so a
+    // truncated capture can never read as a quiet run — silent truncation is the failure mode
+    // this whole layer exists to remove.
+    if ((state.obsClassCounts[cls] ?? 0) >= OBS_PER_CLASS_CAP || Object.keys(state.observations).length >= OBS_SIGNATURE_CAP) {
+      state.obsDropped = (state.obsDropped ?? 0) + 1;
+      return null;
+    }
+    const evidence = {
+      snippet: o?.evidence?.snippet != null ? snippet(o.evidence.snippet, OBS_SNIPPET) : null,
+      exitCode: clampNum(o?.evidence?.exitCode),
+      httpStatus: clampNum(o?.evidence?.httpStatus),
+      path: o?.evidence?.path != null ? snippet(o.evidence.path, OBS_SNIPPET) : null,
+    };
+    const rec = {
+      type: "obs",
+      sessionId: state.sid,
+      ts,
+      lastTs: ts,
+      spanId: o?.spanId ?? null,
+      skill,
+      class: cls,
+      subject,
+      code,
+      count: 1,
+      source: /^(collector|script|profile-assert)$/.test(String(o?.source || "")) ? o.source : "collector",
+      signature: sig,
+      evidence,
+    };
+    // The in-state copy deliberately OMITS `evidence`: the snippet is already durable in the
+    // appended jsonl line and nothing reads it back from state, while `.state.json` is rewritten on
+    // EVERY hook firing — carrying 200 snippets there would add a ~60 KB write per tool boundary
+    // for no benefit. State keeps only what the rollup / routing / dedup actually need.
+    state.observations[sig] = { class: cls, subject, code, skill, count: 1, ts, lastTs: ts, source: rec.source, spanId: rec.spanId };
+    state.obsClassCounts[cls] = (state.obsClassCounts[cls] ?? 0) + 1;
+    appendRecord(jsonlPath, rec);
+    return sig;
+  } catch {
+    return null; // capture must NEVER break a hook
+  }
+}
+
+// Convenience wrapper for the scan loop: attribute an observation to the innermost open span
+// (skill/command) so the judge can group by skill without re-deriving the nesting.
+function obsFromSpan(jsonlPath, state, span, o) {
+  return recordObs(jsonlPath, state, {
+    ...o,
+    spanId: span?.id ?? null,
+    skill: span && (span.kind === "skill" || span.kind === "command") ? span.name : o.skill ?? null,
+  });
+}
+
+/**
+ * Fold `obs` lines appended to OUR OWN jsonl into state.observations. This is what makes a
+ * CROSS-PROCESS observation (the `obs` subcommand, invoked by verify-access.mjs /
+ * discover-tracker.mjs via Bash, which has its own short-lived state) visible to finalize.
+ * Byte-cursored (`state.obsCursor`) exactly like scanTranscript's `scannedBytes`, so a long
+ * session does not re-read its whole jsonl on every Stop (that would be O(n²)).
+ *
+ * Merge rule: an UNKNOWN signature is adopted with the record's own count; a KNOWN one takes
+ * max(known, record) so a duplicate append from a racing process cannot inflate the tally.
+ * Never throws.
+ */
+function foldObsFromJsonl(jsonlPath, state) {
+  try {
+    if (!existsSync(jsonlPath)) return;
+    if (!state.observations || typeof state.observations !== "object") state.observations = {};
+    if (!state.obsClassCounts || typeof state.obsClassCounts !== "object") state.obsClassCounts = {};
+    const size = statSync(jsonlPath).size;
+    let cursor = typeof state.obsCursor === "number" && state.obsCursor >= 0 ? state.obsCursor : 0;
+    if (size < cursor) cursor = 0; // rotated/replaced → re-read
+    if (size === cursor) return;
+    let text;
+    const fd = openSync(jsonlPath, "r");
+    try {
+      const len = size - cursor;
+      const buf = Buffer.allocUnsafe(len);
+      const n = readSync(fd, buf, 0, len, cursor);
+      text = buf.toString("utf8", 0, n);
+    } finally {
+      closeSync(fd);
+    }
+    const lastNl = text.lastIndexOf("\n");
+    if (lastNl < 0) return; // no complete line yet — do not advance
+    for (const line of text.slice(0, lastNl).split("\n")) {
+      if (!line || !line.includes('"obs"')) continue; // cheap prefilter
+      let r;
+      try { r = JSON.parse(line); } catch { continue; }
+      if (!r || r.type !== "obs" || typeof r.signature !== "string") continue;
+      const cur = state.observations[r.signature];
+      if (cur) {
+        cur.count = Math.max(cur.count ?? 1, clampNum(r.count) ?? 1);
+        if (r.lastTs) cur.lastTs = r.lastTs;
+        continue;
+      }
+      const cls = OBS_CLASSES_SET.has(r.class) ? r.class : "unclassified";
+      state.observations[r.signature] = {
+        class: cls, subject: r.subject, code: r.code, skill: r.skill ?? null,
+        count: clampNum(r.count) ?? 1, ts: r.ts, lastTs: r.lastTs ?? r.ts,
+        source: r.source ?? "script", spanId: r.spanId ?? null,
+      };
+      state.obsClassCounts[cls] = (state.obsClassCounts[cls] ?? 0) + 1;
+    }
+    state.obsCursor = cursor + Buffer.byteLength(text.slice(0, lastNl + 1), "utf8");
+  } catch {
+    /* never throw */
+  }
+}
+
+/**
+ * Roll the session's observations up into the shape `finalize` reports and the surfacing
+ * policy consumes. `visible` excludes the NOISE classes (still fully recorded); `routing` is
+ * the count that justifies spending a turn; `selfReported` drives the hard invariant that a
+ * run containing a WARN/FAIL from one of our own surfaces can never be recorded `clean`.
+ */
+function obsRollup(state) {
+  const byClass = {};
+  let total = 0;
+  let visible = 0;
+  let routing = 0;
+  let selfReported = 0;
+  const obs = state.observations && typeof state.observations === "object" ? state.observations : {};
+  for (const o of Object.values(obs)) {
+    const n = o.count ?? 1;
+    byClass[o.class] = (byClass[o.class] ?? 0) + n;
+    total += n;
+    if (!OBS_NOISE_CLASSES.has(o.class)) visible += n;
+    if (OBS_ROUTING_CLASSES.has(o.class)) routing += n;
+    if (o.class === "self_reported_warn" || o.class === "self_reported_fail") selfReported += n;
+  }
+  return { distinct: Object.keys(obs).length, total, visible, routing, selfReported, dropped: state.obsDropped ?? 0, byClass };
+}
+
+// A transcript-scan read failure. `state.scanErrors` stays as it was — a resettable flag that
+// gates the positive clean line for THIS turn (a broken collector must not assert health it
+// never measured) — but it is cleared again on the next successful read, which used to mean the
+// blip was forgotten entirely. So also bump the MONOTONE counter and record an observation, so
+// "measurement was interrupted at some point" survives to the judge.
+function noteScanError(jsonlPath, state, stage) {
+  state.scanErrors = (state.scanErrors || 0) + 1;
+  state.scanErrorsTotal = (state.scanErrorsTotal || 0) + 1;
+  recordObs(jsonlPath, state, { class: "collector_scan_error", subject: stage, code: "NONE" });
+}
+
 // Claude Code's CURRENT auto-mode wording is the second half of this alternation — the original
 // adjacency patterns ("permission denied", "user denied") miss "Permission for this action was
 // denied by the Claude Code auto mode classifier. Reason: Blocked by classifier", so a genuine
@@ -272,6 +551,33 @@ const QUESTION_TOOL_RE = /(^|__)AskUserQuestion\b/i;
 // tool so the agent uses real-user MCP tools instead. The agent obeying and adapting is CORRECT
 // behaviour, not a plugin defect, so this is classed non-blocking (see SIGNAL_CLASSES above).
 const POLICY_BLOCK_RE = /BLOCKED by real-user interaction rule|real-user interaction rule/i;
+
+// ─── self-reported degradation (VCST-5582 H / P1-7) ──────────────────────────
+// The plugin's own scripts announce their own degradation IN PROSE and then exit 0:
+// `discover-tracker.mjs` prints "…will fall back to the legacy field set, labelled 'unverified
+// defaults'", `verify-access.mjs` prints a WARN row saying the same. That text reaches the
+// collector inside the tool_result body — where, before this, the ONLY thing that looked at it
+// was markExpected(), which matched `/readiness|verify-access/` and read the very table
+// carrying the warning as PROOF OF SUCCESS. So scan explicitly for degradation language.
+const FALLBACK_MARKER_RE = /unverified defaults?|falling back to|falls back to|fall back to the legacy|best[- ]effort|could not be derived|not scanned|unverified\b|degrade[sd]? to/i;
+// Benign stderr the HARNESS writes (not the plugin): a shell-wrapper note, a cwd reset, npm
+// chatter. Classified into its OWN class (`harness_noise`) rather than filtered away — deciding
+// something is noise is the JUDGE's job (skill-expectations §1f suppresses it as a VERDICT,
+// which is still written into the DIAG). Only stderr whose EVERY non-empty line is noise is
+// classed benign; one unrecognised line makes the whole thing a `script_stderr`.
+const HARNESS_NOISE_LINE_RE = /^(?:shell cwd was reset|npm warn|npm notice|debugger attached|waiting for the debugger|\(node:\d+\))/i;
+function classifyStderr(text) {
+  const lines = String(text ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return null;
+  return lines.every((l) => HARNESS_NOISE_LINE_RE.test(l)) ? "harness_noise" : "script_stderr";
+}
+// A Bash result the harness marked `is_error` opens with `Exit code N` (confirmed in real
+// transcripts). That number is the ONLY place a non-zero exit is visible, so parse it out
+// instead of leaving it inside a 120-char snippet. NOTE the residual gap this cannot close: a
+// piped invocation (`node script.mjs | head -20`) reports the PIPE's exit 0, so the script's own
+// non-zero exit never reaches the transcript at all — that is why plugin scripts must not be
+// piped (skill-expectations §1e note), and why the `obs` subcommand exists.
+const EXIT_CODE_RE = /^\s*Exit code (\d{1,3})\b/;
 
 // ─── bail detection (VCST-5582 F2) ───────────────────────────────────────────
 // A bail is something the AGENT DECLARED ("STOP — handing off", "FIX_STATUS: FAILED"). The old
@@ -366,6 +672,11 @@ function newSpan(state, kind, name, startTs, parentId) {
 function pushDetail(span, cls, text, extra) {
   span.signals[cls] = (span.signals[cls] ?? 0) + 1;
   if (span.details.length < 25) span.details.push({ cls, snippet: snippet(text), ...extra });
+  // TRUNCATION IS NEVER SILENT (VCST-5582 H). Past the 25th detail the snippet is dropped while
+  // `signals[cls]` keeps counting — and `recurring_error` reads `span.details`, so an error that
+  // keeps returning past this cap is countable but UNDETECTABLE. Count the drops here (no state in
+  // scope) and let emitSpan turn them into a `capture_truncated` observation.
+  else span.detailsDropped = (span.detailsDropped ?? 0) + 1;
 }
 // Record a child op on its parent span for struggle detection. Keeps a bounded
 // RING (last OPS_CAP) plus whole-span aggregates (opCount, sawDecisive) so a
@@ -375,7 +686,10 @@ function pushOp(span, op) {
   span.opCount = (span.opCount ?? 0) + 1;
   if (DECISIVE_RE.test(op.tool)) span.sawDecisive = true;
   span.ops.push(op);
-  if (span.ops.length > OPS_CAP) span.ops.shift();
+  // The ring drops the EARLIEST ops, so on a long span (a /project-init run easily exceeds
+  // OPS_CAP) every detector that walks `ops[]` — retry_storm, reread_loop, recurring_error —
+  // sees only the tail. Count the evictions so emitSpan can say so out loud.
+  if (span.ops.length > OPS_CAP) { span.ops.shift(); span.opsDropped = (span.opsDropped ?? 0) + 1; }
 }
 // Session-level buffers for ops/details that had NO parent span (parentId:null) — see freshState.
 // A synthesized command span (Fix 2) adopts these so classify()/allErrorsRecovered treat the
@@ -605,14 +919,54 @@ function emitSpan(jsonlPath, state, span, endTs) {
   // real plugin activity — the finalize `decision` record uses this to distinguish
   // "the hook judged a plugin run" from "a plain dev turn with no plugin skill".
   if (escalationUnit && !/vc-self-check/i.test(span.name)) state.sawPluginSpan = true;
-  if (escalationUnit && rec.outcome !== "success" && rec.outcome !== "recovered" && !/vc-self-check/i.test(span.name)) {
+  const ownSpan = /vc-self-check/i.test(span.name);
+  // ─── observations: what the outcome test above THROWS AWAY (VCST-5582 H) ────────────
+  // `flagged[]` only ever sees non-success/non-recovered escalation units, so two real signals
+  // used to vanish here:
+  //   • a STRUGGLE on a span that classify() resolved to `recovered` — the recovery branch is
+  //     tested FIRST, so e.g. a retry_storm that eventually succeeded left no trace anywhere.
+  //   • the fact that the happy path failed at all on a `recovered` span (the oracle calls this
+  //     S3 "note only", which the old pipeline implemented as "delete").
+  // Both are now durable observations. They are deliberately OUTSIDE OBS_ROUTING_CLASSES, so
+  // recording them costs no extra surfacing — the judge decides if they matter.
+  if (escalationUnit && !ownSpan) {
+    // Ring/cap evictions on this span (see pushOp / pushDetail). A truncated capture must not read
+    // as a quiet one — the detectors that walk `ops[]`/`details[]` were partially blind here.
+    if (span.opsDropped > 0 || span.detailsDropped > 0) {
+      obsFromSpan(jsonlPath, state, span, {
+        class: "capture_truncated", subject: "span_ring", code: "NONE",
+        evidence: { snippet: `${span.opsDropped ?? 0} op(s) evicted past OPS_CAP=${OPS_CAP}, ${span.detailsDropped ?? 0} detail(s) past the 25-detail cap — struggle detection saw only the tail` },
+      });
+    }
+    for (const s of rec.struggle || []) {
+      obsFromSpan(jsonlPath, state, span, { class: "struggle", subject: s, code: "NONE", evidence: { snippet: `${rec.outcome} span, retries=${rec.retries || 0}` } });
+    }
+    if (rec.outcome === "recovered") {
+      const errSnippet = (span.details || []).find((d) => d.cls === "tool_error" || d.cls === "permission_denied" || d.cls === "hook_failure")?.snippet || "";
+      obsFromSpan(jsonlPath, state, span, { class: "recovered_error", subject: topSignal(span), code: _classifyError(errSnippet), evidence: { snippet: errSnippet } });
+    }
+  }
+  if (escalationUnit && rec.outcome !== "success" && rec.outcome !== "recovered" && !ownSpan) {
     const sig = hash(`${span.kind}|${span.name}|${rec.outcome}|${topSignal(span)}`);
     // Dedup by signature (+ hard cap): `flagged` is re-serialized WHOLE into every terminal `finalize`
     // record, and Stop fires each turn, so an uncapped per-occurrence push grew `<sid>.jsonl` ~O(F×T)
     // over a long session (PR #143 R2 M2). The tail-trigger + diagnostician already dedup by signature,
     // so only DISTINCT signatures carry information — keep the first occurrence of each.
-    if (!state.flagged.some((f) => f.signature === sig) && state.flagged.length < FLAGGED_CAP) {
-      state.flagged.push({ id: span.id, kind: span.kind, name: span.name, outcome: rec.outcome, struggle: rec.struggle, signature: sig });
+    //
+    // But a RECURRENCE is not a duplicate (VCST-5582 H, P1-9): keeping only the first occurrence made
+    // 20 identical failures indistinguishable from 1, and `seenSignatures` then silenced the signature
+    // for the rest of the session however often (or however much worse) it came back. So the entry now
+    // carries an `occurrences` COUNT — a number, not a severity — which the surfacing policy uses to
+    // re-surface a growing signature and the judge uses for §1f occurrence weighting.
+    const prior = state.flagged.find((f) => f.signature === sig);
+    if (prior) {
+      prior.occurrences = (prior.occurrences ?? 1) + 1;
+      prior.lastId = span.id;
+    } else if (state.flagged.length < FLAGGED_CAP) {
+      state.flagged.push({ id: span.id, kind: span.kind, name: span.name, outcome: rec.outcome, struggle: rec.struggle, signature: sig, occurrences: 1 });
+    } else {
+      // The cap refused a DISTINCT finding — record that fact rather than dropping it silently.
+      recordObs(jsonlPath, state, { class: "capture_truncated", subject: "flagged_cap", code: "NONE", evidence: { snippet: `FLAGGED_CAP=${FLAGGED_CAP} reached` } });
     }
   }
 }
@@ -642,7 +996,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
   // A read error here is NOT "clean" — record it so cmdFinalize withholds the positive
   // "no plugin issues detected" line (a broken collector must not assert health it never
   // measured — PR #143 R2 OBS1). Best-effort; still never throws.
-  try { size = statSync(transcriptPath).size; } catch { state.scanErrors = (state.scanErrors || 0) + 1; return; }
+  try { size = statSync(transcriptPath).size; } catch { noteScanError(jsonlPath, state, "stat"); return; }
 
   // Incremental read (S3, PR #143 R2): read ONLY the bytes appended since the last scan, so a
   // long session no longer re-reads + re-splits the WHOLE transcript on every skill-boundary /
@@ -655,7 +1009,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     // mid-upgrade (honor its processedLines cursor), or a shorter-than-offset file (rotated /
     // truncated / replaced → re-scan from scratch). Then switch to the byte offset.
     let content;
-    try { content = readFileSync(transcriptPath, "utf8"); } catch { state.scanErrors = (state.scanErrors || 0) + 1; return; }
+    try { content = readFileSync(transcriptPath, "utf8"); } catch { noteScanError(jsonlPath, state, "full-read"); return; }
     const parts = content.split("\n");
     const allComplete = parts.slice(0, Math.max(0, parts.length - 1)); // complete lines only
     if (size < state.scannedBytes) state.processedLines = 0; // rotated → old cursor is meaningless
@@ -677,7 +1031,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         const n = readSync(fd, buf, 0, len, state.scannedBytes);
         text = buf.toString("utf8", 0, n);
       } finally { closeSync(fd); }
-    } catch { state.scanErrors = (state.scanErrors || 0) + 1; return; }
+    } catch { noteScanError(jsonlPath, state, "delta-read"); return; }
     // A transient read error does NOT advance scannedBytes, so the very next scan re-reads those bytes;
     // reaching here means that re-read SUCCEEDED. Clear the flag so a single recovered blip no longer
     // degrades the whole session's clean line (code review #4). A read that fails at finalize time stays
@@ -693,6 +1047,17 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
   const innerParent = () => state.currentSkill || state.currentCommand || null;
   const attributeSignal = (cls, text, extra) => {
     const p = innerParent();
+    // EVERY signal becomes an observation, whatever happens to it below. This is the fix for the
+    // no-span case in particular: with no command/skill open, an untied blocking failure used to
+    // land only in `untiedSignals`/`orphanDetails` and was dropped outright unless the Fix-2
+    // synthesis adopted it (which needs a `complete` marker). A real session on disk shows
+    // `totals:{hook_failure:4}` with `flagged:[]` and verdict `clean` — captured, then discarded.
+    recordObs(jsonlPath, state, {
+      class: cls, subject: cls === "hook_failure" ? "posttooluse_hook" : "untied_signal",
+      code: _classifyError(String(text ?? "")), spanId: p?.id ?? null,
+      skill: p && (p.kind === "skill" || p.kind === "command") ? p.name : null,
+      evidence: { snippet: text },
+    });
     if (p) {
       pushDetail(p, cls, text, extra);
       // An UNTIED blocking failure (no paired op) — mark the span so classify() can't call it
@@ -722,7 +1087,33 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
     } catch {
       continue;
     }
-    if (ev.isSidechain === true) continue; // sub-agent's own transcript — not our ops
+    // ─── sub-agent (sidechain) work: AGGREGATE-only capture (VCST-5582 H / P1-11) ─────────
+    // A sidechain line is a sub-agent's own transcript. It must NOT become spans/ops here: those
+    // belong to a different unit of work, and rolling them into the parent skill would corrupt
+    // every struggle threshold and every recovery test. But dropping them outright meant that ALL
+    // /qa-fix developer-skill behaviour was invisible — only the Task RETURN rolled up — which the
+    // oracle already admits (`DEV_SKILL_OUTPUT` is documented as a defensive fallback because these
+    // "run inside sub-agents whose transcripts are SIDECHAINS the scanner skips").
+    //
+    // So: record ERROR results only, as OBSERVATIONS, aggregated by (class, code) under the
+    // `sidechain` subject. Bounded by construction — a handful of signatures however long the
+    // sub-agent ran — and outside the routing set, so a sub-agent's transient error costs no
+    // surfacing. The judge finally gets to see that a delegated fix run was fighting something.
+    if (ev.isSidechain === true) {
+      state.sidechainOps = (state.sidechainOps ?? 0) + 1;
+      // Local extraction — the shared `items` below is deliberately out of scope here, so a
+      // sidechain line can never fall through into the span/op machinery by accident.
+      const sideContent = (ev.message ?? ev)?.content ?? ev?.content;
+      const sideItems = Array.isArray(sideContent) ? sideContent : sideContent != null ? [sideContent] : [];
+      for (const item of sideItems) {
+        if (!item || typeof item !== "object" || item.type !== "tool_result" || item.is_error !== true) continue;
+        const raw = textOf(item.content);
+        const b = raw.length > 4000 ? raw.slice(0, 4000) : raw;
+        const c = POLICY_BLOCK_RE.test(b) ? "policy_block" : PERMISSION_DENIED_RE.test(b) ? "permission_denied" : HOOK_FAILURE_RE.test(b) ? "hook_failure" : "tool_error";
+        recordObs(jsonlPath, state, { class: c, subject: "sidechain", code: _classifyError(b), evidence: { snippet: b } });
+      }
+      continue;
+    }
     const ts = typeof ev.timestamp === "string" ? ev.timestamp : nowIso();
     state.lastScanTs = ts; // newest event ts seen — the session's own clock (chronological scan)
     const msg = ev.message ?? ev;
@@ -777,6 +1168,9 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           const sp = newSpan(state, "agent", agentType, ts, innerParent()?.id ?? null);
           sp.arg_hash = arg_hash;
           sp.markerInput = markerInput;
+          // Observation subject, derived ONCE here while the input is still in hand (the closed
+          // span keeps only its name/arg_hash) — see opSubject.
+          sp.subject = opSubject(sp.name, inputStr);
           state.openOps.set(item.id, sp);
         } else {
           if (parent) parent.signals.tool_calls++;
@@ -784,6 +1178,9 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           const sp = newSpan(state, "tool", name, ts, innerParent()?.id ?? null);
           sp.arg_hash = arg_hash;
           sp.markerInput = markerInput;
+          // Observation subject, derived ONCE here while the input is still in hand (the closed
+          // span keeps only its name/arg_hash) — see opSubject.
+          sp.subject = opSubject(sp.name, inputStr);
           state.openOps.set(item.id, sp);
         }
       } else if (type === "tool_result") {
@@ -812,6 +1209,67 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           : null;
         const sp = id ? state.openOps.get(id) : null;
         const p = innerParent();
+        // ─── the structured result sidecar the collector used to ignore (P1-6) ─────────────
+        // A transcript `user` event carries `toolUseResult` alongside message.content:
+        // `{ stdout, stderr, interrupted, isImage, noOutputExpected }` for Bash. The scan only
+        // ever read message.content[] and the top-level string content, so THE ENTIRE stderr
+        // channel was invisible — which is exactly how `discover-tracker.mjs`'s HTTP-400 warning
+        // (stderr + exit 0) produced a "clean" self-diagnosis. Also the only place an INTERRUPT
+        // is visible. Cap before redact, like every other body here.
+        const tur = ev.toolUseResult;
+        const attrib = { spanId: (p || sp)?.id ?? null, skill: p && (p.kind === "skill" || p.kind === "command") ? p.name : null };
+        // Hoisted: the degradation-marker scan below must cover stderr TOO. `discover-tracker.mjs`
+        // prints "…will fall back to the legacy field set, labelled 'unverified defaults'" to
+        // STDERR, so scanning only the stdout body would miss the single most important instance.
+        const seRaw = tur && typeof tur === "object" && typeof tur.stderr === "string" ? tur.stderr : "";
+        if (tur && typeof tur === "object") {
+          const seCls = classifyStderr(seRaw);
+          if (seCls) {
+            recordObs(jsonlPath, state, {
+              ...attrib, class: seCls, subject: opSubjectOf(sp),
+              code: seCls === "harness_noise" ? "NONE" : _classifyError(seRaw.slice(0, 2000)),
+              evidence: { snippet: seRaw.slice(0, 2000) },
+            });
+          }
+          if (tur.interrupted === true) {
+            recordObs(jsonlPath, state, { ...attrib, class: "tool_interrupted", subject: opSubjectOf(sp), code: "NONE" });
+          }
+        }
+        // Exit code, when the harness surfaced one. Recorded as its OWN class so a script that
+        // exits non-zero is a first-class fact and not merely "some tool errored".
+        const exitMatch = EXIT_CODE_RE.exec(body);
+        const exitCode = exitMatch ? Number(exitMatch[1]) : null;
+        if (exitCode) {
+          recordObs(jsonlPath, state, {
+            ...attrib, class: "script_exit_nonzero", subject: opSubjectOf(sp),
+            code: _classifyError(body), evidence: { exitCode, snippet: body },
+          });
+        }
+        // Self-labelled degradation anywhere in the output (P1-7) — a WARN table, an
+        // "unverified defaults" note. Independent of is_error: the whole point is that these
+        // scripts SUCCEED while telling us they degraded.
+        // SCOPE: skip a search/read op. Its result body is FILE CONTENT the agent looked at, not
+        // output OUR code emitted — and this repo's own sources contain the literal marker text
+        // ("unverified defaults" lives in discover-tracker.mjs, verify-access.mjs and the oracle),
+        // so scanning a Read result would manufacture a `self_reported_fallback` every time someone
+        // opens those files. Capture stays total for signals we can attribute; it does not invent
+        // signals out of data the agent merely read.
+        const degradedText = SEARCH_RE.test(sp?.name || "") ? "" : seRaw ? `${body}\n${seRaw.slice(0, 4000)}` : body;
+        if (degradedText && FALLBACK_MARKER_RE.test(degradedText)) {
+          const at = degradedText.search(FALLBACK_MARKER_RE);
+          recordObs(jsonlPath, state, {
+            ...attrib, class: "self_reported_fallback", subject: opSubjectOf(sp),
+            code: "NONE", evidence: { snippet: degradedText.slice(at > 40 ? at - 40 : 0) },
+          });
+        }
+        // Every genuine error signal becomes an observation too — INCLUDING one on a span that
+        // later classifies `success`/`recovered`, which `flagged[]` structurally cannot carry.
+        if (cls) {
+          recordObs(jsonlPath, state, {
+            ...attrib, class: cls, subject: opSubjectOf(sp),
+            code: _classifyError(body), evidence: { snippet: body, exitCode },
+          });
+        }
         // Any result (success OR failure) can carry an expected-output marker — a
         // create_pull_request response or a sub-agent Task return "opened PR pull/42".
         // This is what keeps a command/skill that delivers via a sub-agent (whose
@@ -923,6 +1381,54 @@ function diagMaxAgeHours() {
   if (!Number.isFinite(n) || n < 0) return 24; // garbage ⇒ safe default
   return n; // 0 ⇒ disabled
 }
+// ─── evidence protection: never delete an UNJUDGED finding (VCST-5582 H / P1-10) ─────────────
+// The ephemeral lifecycle is log → analyze → contribute → delete, and both deletion paths used to
+// skip the "analyze" precondition entirely: the 24h age-cap reclaims silently (observed firing:
+// `prunedOldArtifacts:3` in a real session_start), and the cleanup offer's option 1
+// (`purge-inactive --all`) removes even the CURRENT session's jsonl. So a session that recorded a
+// real finding and was never diagnosed could be destroyed before anyone looked at it — losing the
+// only copy, since nothing was contributed upstream either.
+//
+// The missing precondition: a session is "judged" once a `DIAG-<sid>-*.md` exists for it (or it had
+// nothing worth judging). This reads the session's OWN jsonl and answers: does it hold a REAL,
+// un-diagnosed finding? Retained until diagnosed; `--force` overrides.
+//
+// SCOPE MATTERS. "Holds ≥1 observation" would be the wrong bar: with capture-everything, an
+// ordinary session routinely records `harness_noise` or a `recovered_error`, so protecting on any
+// observation would pin every artifact forever and quietly disable the 24h age-cap — trading one
+// failure mode for another. So the bar is the same one that justifies spending a turn: a flagged
+// span, an `attention` verdict, or an observation in OBS_ROUTING_CLASSES. A noise-only `observed`
+// session is NOT protected. Cheap (our own file) and only consulted on a deletion path. Never
+// throws; on ANY doubt it answers "protected" — keeping a stale file is trivially recoverable,
+// deleting the only copy of a finding is not.
+function isUnjudgedFinding(dir, sid) {
+  try {
+    if (!sid) return false;
+    const jsonl = join(dir, `${sid}.jsonl`);
+    if (!existsSync(jsonl)) return false; // no telemetry (a bare state/DIAG leftover) — nothing to protect
+    // Already diagnosed? A DIAG for this session means the analyze step happened.
+    for (const f of readdirSync(dir)) if (f.startsWith(`DIAG-${sid}-`) && f.endsWith(".md")) return false;
+    const text = readFileSync(jsonl, "utf8");
+    // Cheap prefilter before any JSON parsing — the overwhelmingly common case is a clean session.
+    if (!text.includes('"verdict":"attention"') && !text.includes('"verdict":"flagged"') && !text.includes('"flagged":[{') && !text.includes('"type":"obs"')) return false;
+    for (const line of text.split("\n")) {
+      if (!line) continue;
+      let r;
+      try { r = JSON.parse(line); } catch { continue; }
+      if (r?.type === "obs") { if (OBS_ROUTING_CLASSES.has(r.class)) return true; continue; }
+      if (r?.type !== "finalize") continue;
+      if (Array.isArray(r.flagged) && r.flagged.length) return true;
+      // "flagged" is the pre-VCST-5582-H spelling of what is now "attention" — an old artifact
+      // mid-upgrade must still be protected.
+      const v = r.decision?.verdict;
+      if (v === "attention" || v === "flagged") return true;
+    }
+    return false;
+  } catch {
+    return true; // unreadable ⇒ treat as protected (fail toward keeping evidence)
+  }
+}
+
 function pruneOldDiagnostics(dir, sid, nowMs) {
   const maxAgeH = diagMaxAgeHours();
   if (!(maxAgeH > 0)) return 0; // disabled
@@ -934,6 +1440,14 @@ function pruneOldDiagnostics(dir, sid, nowMs) {
     return 0;
   }
   let removed = 0;
+  // Memoized per sweep: isUnjudgedFinding re-reads a session's jsonl, and a session contributes
+  // several filenames (jsonl + state + any DIAG), so without this it would read each one twice+.
+  const verdictCache = new Map();
+  const isProtected = (owner) => {
+    if (!owner) return false;
+    if (!verdictCache.has(owner)) verdictCache.set(owner, isUnjudgedFinding(dir, owner));
+    return verdictCache.get(owner);
+  };
   for (const f of entries) {
     // Never the CURRENT session's own artifacts (it's just starting). Includes DELIVERY-<sid>-*
     // for symmetry with collectInactiveArtifacts — else a resume >24h after start could reap this
@@ -942,6 +1456,9 @@ function pruneOldDiagnostics(dir, sid, nowMs) {
     // Only OUR OWN artifact shapes — a stray file a user dropped here is left alone.
     const isOurs = f.endsWith(".jsonl") || f.endsWith(".state.json") || (f.startsWith("DIAG-") && f.endsWith(".md")) || (f.startsWith("DELIVERY-") && f.endsWith(".md"));
     if (!isOurs) continue;
+    // EVIDENCE PROTECTION (P1-10): retain a session that recorded a finding nobody has diagnosed
+    // yet. Silent 24h reclamation of an un-analysed finding destroys the only copy of it.
+    if (isProtected(ownerSidOf(f))) continue;
     const p = join(dir, f);
     try {
       if (statSync(p).mtimeMs < cutoff) {
@@ -955,6 +1472,16 @@ function pruneOldDiagnostics(dir, sid, nowMs) {
   return removed;
 }
 
+// Which session an artifact filename belongs to: `<sid>.jsonl`, `<sid>.state.json`,
+// `DIAG-<sid>-<ts>.md`, `DELIVERY-<fp>-<ts>.md` (a DELIVERY is keyed by finding fingerprint, not a
+// session, so it has no owner). Pure; "" when unknown.
+function ownerSidOf(f) {
+  if (f.endsWith(".state.json")) return f.slice(0, -".state.json".length);
+  if (f.endsWith(".jsonl")) return f.slice(0, -".jsonl".length);
+  const m = /^DIAG-(.+)-\d{4}-?\d{2}-?\d{2}T/.exec(f);
+  return m ? m[1] : "";
+}
+
 // Inactivity floor for the cleanup OFFER: an artifact belongs to an "old inactive
 // session" only if it is NOT the current session's AND its mtime is older than this —
 // so a still-LIVE parallel session (which writes its jsonl/state frequently) is never
@@ -963,11 +1490,22 @@ function pruneOldDiagnostics(dir, sid, nowMs) {
 const INACTIVE_MS = 60 * 60 * 1000; // 1h
 
 // Collect our-own artifacts that belong to OTHER, now-inactive sessions. Returns
-// { files:[abs path], sessions:Set<sid> }. `nowMs` drives the mtime cutoff
-// (nowMs - INACTIVE_MS); pass a far-future nowMs to ignore the floor (purge --all).
-// Never throws.
-function collectInactiveArtifacts(dir, sid, nowMs) {
-  const out = { files: [], sessions: new Set() };
+// { files:[abs path], sessions:Set<sid>, protectedSessions:Set<sid> }. `nowMs` drives the mtime
+// cutoff (nowMs - INACTIVE_MS); pass a far-future nowMs to ignore the floor (purge --all).
+//
+// EVIDENCE PROTECTION (P1-10): a session holding a finding nobody has diagnosed yet is EXCLUDED
+// and reported separately in `protectedSessions`, so neither the cleanup offer nor
+// `purge-inactive` can destroy un-analysed evidence — including via the offer's "delete all
+// (incl. this one)" option, which reaches the CURRENT session's jsonl. `force` overrides, for an
+// operator who really does want the directory empty. Never throws.
+function collectInactiveArtifacts(dir, sid, nowMs, { force = false } = {}) {
+  const out = { files: [], sessions: new Set(), protectedSessions: new Set() };
+  const verdictCache = new Map();
+  const isProtected = (owner) => {
+    if (force || !owner) return false;
+    if (!verdictCache.has(owner)) verdictCache.set(owner, isUnjudgedFinding(dir, owner));
+    return verdictCache.get(owner);
+  };
   let entries;
   try {
     entries = readdirSync(dir);
@@ -981,6 +1519,8 @@ function collectInactiveArtifacts(dir, sid, nowMs) {
     // Only OUR OWN artifact shapes — a stray file a user dropped here is left alone.
     const isOurs = f.endsWith(".jsonl") || f.endsWith(".state.json") || (f.startsWith("DIAG-") && f.endsWith(".md")) || (f.startsWith("DELIVERY-") && f.endsWith(".md"));
     if (!isOurs) continue;
+    const owner = ownerSidOf(f);
+    if (isProtected(owner)) { out.protectedSessions.add(owner); continue; }
     const p = join(dir, f);
     try {
       if (statSync(p).mtimeMs >= cutoff) continue; // still-fresh → maybe a live parallel session
@@ -1017,6 +1557,11 @@ function freshState(ev, sid) {
     processedLines: 0,
     scannedBytes: 0, // byte offset into the transcript, kept at a line boundary (S3 incremental read)
     scanErrors: 0, // count of transcript-scan read errors this session (OBS1 — gates the clean line)
+    // Monotone twin of scanErrors. `scanErrors` is deliberately RESET on the next successful
+    // read (a recovered blip must not degrade the whole session's clean line), which also means
+    // a transient collector failure was FORGOTTEN entirely. This counter never resets, so the
+    // judge can still see that measurement was interrupted at some point.
+    scanErrorsTotal: 0,
     startTs: nowIso(), // session-start anchor (init time) — the synthesized-command-span start (Fix 2)
     transcriptPath: ev.transcript_path ?? null,
     currentCommand: null,
@@ -1039,6 +1584,15 @@ function freshState(ev, sid) {
     // cannot raise blockingErr on their own — Q&S NA-1).
     untiedSignals: zeroCounts(),
     spanCounts: {},
+    // ─── the observation record (capture ≠ judgement) ──────────────────────────────
+    // Signature-keyed aggregate of EVERY anomaly signal, however minor. A plain object (not a
+    // Map) so it round-trips through .state.json with no serialization dance. See recordObs.
+    observations: {}, // signature → { class, subject, code, skill, count, ts, lastTs, source, spanId, evidence }
+    obsClassCounts: {}, // class → distinct-signature count (O(1) cap check)
+    obsDropped: 0, // signatures the caps refused — surfaced as `capture_truncated`, never silent
+    obsCursor: 0, // byte offset into OUR OWN jsonl, for folding cross-process `obs` lines
+    obsSurfaced: [], // routing-class observation signatures already routed (one-shot, like seenSignatures)
+    sidechainOps: 0, // sub-agent transcript lines seen (aggregate only — never spans/ops)
     flagged: [], // non-success/recovered spans this session
     seenSignatures: [], // fingerprints already surfaced to the diagnostician
     feedbackCount: 0,
@@ -1089,6 +1643,16 @@ function loadState(statePath, ev, sid) {
       j.orphanDetails = Array.isArray(j.orphanDetails) ? j.orphanDetails : [];
       j.untiedFailure = j.untiedFailure || false;
       j.untiedSignals = (j.untiedSignals && typeof j.untiedSignals === "object") ? j.untiedSignals : zeroCounts();
+      // Observation layer — forward-compat for a pre-VCST-5582-H state file (mid-upgrade
+      // resume): an absent field must start EMPTY, never undefined, so recordObs/obsRollup
+      // can assume the shape without re-checking on every call.
+      j.observations = (j.observations && typeof j.observations === "object") ? j.observations : {};
+      j.obsClassCounts = (j.obsClassCounts && typeof j.obsClassCounts === "object") ? j.obsClassCounts : {};
+      j.obsDropped = j.obsDropped || 0;
+      j.obsCursor = typeof j.obsCursor === "number" ? j.obsCursor : 0;
+      j.obsSurfaced = Array.isArray(j.obsSurfaced) ? j.obsSurfaced : [];
+      j.sidechainOps = j.sidechainOps || 0;
+      j.scanErrorsTotal = j.scanErrorsTotal || 0; // monotone twin of the resettable scanErrors
       j.testEnv = j.testEnv ?? (process.env.TEST_ENV ?? null);
       return j;
     } catch {
@@ -1286,6 +1850,9 @@ async function cmdScan(ev) {
 //     the marker) is logged accurately, not mislabelled as a genuine mid-flight pause.
 //   • FLAGGED (freshCount > 0): a finding existed but its block was withheld by a guard.
 // `surfaced` ⇒ null (we DID surface). Pure; unit-covered via the finalize decision assertions.
+// Recorded on the `decision` object as `surfaceReason` (it explains a ROUTING choice, never the
+// run's health — the two were conflated in one `verdict` field, which is how a `failed` span ended
+// up inside a record that called itself `clean`).
 function computeSuppressReason({ surfaced, freshCount, pluginActivity, stopHookActive, promptedThisTurn, selfCheckSeen, consentOff, lineOff }) {
   if (surfaced) return null;
   if (freshCount === 0) {
@@ -1303,11 +1870,49 @@ function computeSuppressReason({ surfaced, freshCount, pluginActivity, stopHookA
   return "already-surfaced";
 }
 
+/**
+ * THE RUN'S VERDICT — derived from COUNTS ONLY, never from the routing set (VCST-5582 H).
+ *
+ * The old derivation was `flaggedRun ? "flagged" : "clean"` where `flaggedRun` came from
+ * `uniqueFresh` — the set of NEW, not-yet-surfaced signatures. That is a ROUTING set, so the
+ * durable audit record lied whenever routing said "nothing new to show": two sessions on disk in
+ * this repo carry a `failed` span in `flagged[]` next to `"verdict":"clean"` (suppressReason
+ * `stop-hook-active` / `self-check-session`). A verdict must describe the RUN, not the UI.
+ *
+ * Ladder (most severe wins):
+ *   • `degraded-collector` — measurement itself broke; health was never established.
+ *   • `attention`  — something worth a look: a flagged span, a 👎, a routing-class observation,
+ *                    or ANY self-reported WARN/FAIL from one of our own surfaces.
+ *   • `observed`   — observations exist but none of them route. NOT clean: the word "clean" is
+ *                    reserved for a genuinely empty record.
+ *   • `clean`      — zero observations, zero flagged spans, zero scan errors.
+ *
+ * INVARIANT 1: `clean` requires observations.total === 0 && flaggedTotal === 0 && !scanErrors.
+ * INVARIANT 2: any self_reported_warn / self_reported_fail forces at least `attention`.
+ * Together these make the reference failure UNREPRESENTABLE — a run containing a WARN cannot
+ * record itself clean, whatever the classifier thought of it. Pure; unit-covered.
+ */
+function computeVerdict({ obs, flaggedTotal, negFeedback, scanErrors }) {
+  if (scanErrors) return "degraded-collector";
+  if (flaggedTotal > 0 || negFeedback || obs.routing > 0 || obs.selfReported > 0) return "attention";
+  if (obs.total > 0) return "observed";
+  return "clean";
+}
+
 async function cmdFinalize(ev) {
   const { root, dir, sid, jsonl, state: statePath } = await paths(ev);
   if (!captureEnabled(root)) return;
   ensureDir(dir);
   const state = loadState(statePath, ev, sid);
+  // Snapshot the state file's mtime so we can tell, just before saving, whether ANOTHER collector
+  // process wrote it while we were scanning (detection only — no lock). That happens when the
+  // collector is registered twice for the same outputRoot (a project registering the `.claude/`
+  // mirror while the plugin is enabled, or two parallel sessions in one project dir): both load,
+  // both scan, both save, and the loser's cursor/counter updates are silently lost. Observed on
+  // this repo before the mirror registration was removed: two finalize records 12 ms apart
+  // reporting 292 vs 290 spans. It invalidates measurement, so it is a routing-class observation.
+  let stateMtime = null;
+  try { stateMtime = statSync(statePath).mtimeMs; } catch { /* first finalize of the session */ }
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
   scanTranscript(jsonl, transcriptPath, state);
   state.transcriptPath = transcriptPath;
@@ -1428,6 +2033,11 @@ async function cmdFinalize(ev) {
     if (refNowMs - asked <= T.QUESTION_PENDING_MS) pendingQuestions++;
   }
   if (pendingQuestions > 0) {
+    // Record the deferral as an observation too. The `deferred` finalize record already says it
+    // happened, but only for THIS turn; an observation makes "the operator was left with an
+    // unanswered question" a durable, countable fact — and if the answer never lands (a lost
+    // tool_result), the judge sees the deferral chain instead of a silent gap.
+    recordObs(jsonl, state, { class: "question_unanswered", subject: "askuserquestion", code: "NONE", evidence: { snippet: `${pendingQuestions} open question(s) at Stop` } });
     appendRecord(jsonl, {
       type: "finalize",
       sessionId: sid,
@@ -1502,12 +2112,40 @@ async function cmdFinalize(ev) {
   if (state.currentSkill) closeSkill(jsonl, state, state.currentSkill.lastTs);
   if (state.currentCommand) { emitSpan(jsonl, state, state.currentCommand, state.currentCommand.lastTs); state.currentCommand = null; }
 
+  // Fold in `obs` lines appended by ANOTHER process (the `obs` subcommand, invoked by
+  // verify-access.mjs / discover-tracker.mjs over Bash) before anything is judged or reported.
+  // Did another collector process write our state file while we were scanning? (See the mtime
+  // snapshot at the top of cmdFinalize.) Recorded BEFORE the rollup so it counts this turn.
+  if (stateMtime !== null) {
+    try {
+      if (statSync(statePath).mtimeMs !== stateMtime) {
+        recordObs(jsonl, state, { class: "collector_contention", subject: "state_file", code: "NONE", evidence: { snippet: "another collector process wrote <sid>.state.json during this scan — counters/cursor may have been lost; is the collector registered twice for this outputRoot?" } });
+      }
+    } catch { /* vanished — nothing to compare */ }
+  }
+  foldObsFromJsonl(jsonl, state);
+  // A cap that refused observations is itself recorded — a truncated capture must never read as
+  // a quiet one. Emitted once per finalize while the drop counter is non-zero, then cleared.
+  if (state.obsDropped > 0) {
+    const dropped = state.obsDropped;
+    state.obsDropped = 0;
+    recordObs(jsonl, state, { class: "capture_truncated", subject: "obs_cap", code: "NONE", evidence: { snippet: `${dropped} observation signature(s) dropped by OBS_SIGNATURE_CAP/OBS_PER_CLASS_CAP` } });
+  }
+  const obs = obsRollup(state);
+
   // Tail-based escalation: keep only NEW non-success signatures we haven't already
   // surfaced. (vc-self-check's own spans were never flagged — emitSpan drops them.)
+  // A RECURRENCE re-qualifies: a signature already surfaced comes back when its occurrence count
+  // has GROWN since we surfaced it (`surfacedAt`), because 20 occurrences of a failure are not the
+  // same event as 1 — before this, one surfacing silenced a signature for the whole session however
+  // often it recurred. This is a COUNT test, not a severity test: routing stays severity-free.
   const uniqueFresh = [];
   const seen = new Set();
   for (const f of state.flagged) {
-    if (state.seenSignatures.includes(f.signature) || seen.has(f.signature)) continue;
+    if (seen.has(f.signature)) continue;
+    const already = state.seenSignatures.includes(f.signature);
+    const grew = already && (f.occurrences ?? 1) >= (f.surfacedAt ?? 0) * 2 && (f.occurrences ?? 1) > (f.surfacedAt ?? 0);
+    if (already && !grew) continue;
     seen.add(f.signature);
     uniqueFresh.push(f);
   }
@@ -1531,8 +2169,31 @@ async function cmdFinalize(ev) {
   // documented primary detector of SILENT failures (zero flagged spans), so it must trigger the tail
   // auto-run of /vc-self-check on its own (code review #1). Both share the same one-shot guards below.
   const negFeedback = Boolean(state.negativeFeedback);
-  const flaggedRun = uniqueFresh.length > 0 || negFeedback;
-  const shouldPrompt = !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && flaggedRun;
+  // ─── ROUTING, not severity (VCST-5582 H) ─────────────────────────────────────────────
+  // Routing-class observations not yet routed. Membership in OBS_ROUTING_CLASSES is DATA (kept in
+  // lock-step with skill-expectations §1e) and decides only WHETHER TO SPEND A TURN NOW —
+  // everything outside it is still recorded, still forbids the word "clean", still counted in the
+  // visible line, and still analysed by any /vc-self-check. Deduped by signature exactly like the
+  // flagged signatures, so a recorded WARN triggers the diagnostician ONCE, not on every Stop.
+  //
+  // LOOP GUARD: an observation attributed to /vc-self-check's own run is RECORDED (capture is
+  // total) but never routes — the same rule emitSpan applies to its spans. Without this, one
+  // errored Read inside the diagnostician would mint a fresh routing signature and re-trigger it.
+  const freshObs = [];
+  for (const [sig, o] of Object.entries(state.observations || {})) {
+    if (!OBS_ROUTING_CLASSES.has(o.class)) continue;
+    if (o.skill && /vc-self-check/i.test(o.skill)) continue;
+    if ((state.obsSurfaced || []).includes(sig)) continue;
+    freshObs.push({ signature: sig, class: o.class, subject: o.subject });
+  }
+  const flaggedRun = uniqueFresh.length > 0 || negFeedback || freshObs.length > 0;
+  // `state.selfCheckSeen` is NO LONGER a gate here (P0-5). It used to latch for the WHOLE session,
+  // so one early /vc-self-check silenced every later finding — a genuinely lost finding, not just a
+  // missing line. Recursion is already prevented by four independent guards: `stopHookActive` (our
+  // own resume-turn's Stop), `promptedThisTurn` (reset only by a new UserPromptSubmit), the
+  // per-signature dedup above, and emitSpan dropping vc-self-check's own spans. The field is kept
+  // for the audit trail (`suppressReason: "self-check-session"` can still describe a clean turn).
+  const shouldPrompt = !consentOff && !stopHookActive && !state.promptedThisTurn && flaggedRun;
   // A completion marker counts for THIS session ONLY. cmdComplete is Bash-invoked (no hook stdin),
   // so it targets a session by the newest `.state.json` (mtime heuristic) or an explicit `--session`,
   // and stamps the RESOLVED sid INTO the marker. If a marker with a DIFFERENT sid is read here (a
@@ -1572,7 +2233,21 @@ async function cmdFinalize(ev) {
   // `!state.scanErrors`: a session whose transcript scan hit a read error measured NOTHING, so a
   // "no plugin issues detected" line would assert health that was never checked (PR #143 R2 OBS1).
   // Withhold the clean line in that case — the finalize record still carries scanErrors for audit.
-  const cleanBlock = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && !flaggedRun && cleanEligible && !state.scanErrors;
+  // ─── the run's verdict, and the THREE-STATE status line (VCST-5582 H) ────────────────
+  // The verdict describes the RUN (counts only — see computeVerdict). The status line's WORDING is
+  // then chosen from it, under exactly the same gates the old single clean line had:
+  //   • clean     → "no plugin issues detected"        (zero observations — the only honest use of the word)
+  //   • observed  → "no blocking issues — N observations recorded (run /vc-self-check for detail)"
+  //   • attention → no line here; the findings block (shouldPrompt) owns that path
+  // `visible` excludes the NOISE classes from the COUNT only — they stay in the jsonl, and the
+  // judge, not the hook, decides they were benign.
+  const verdict = computeVerdict({ obs, flaggedTotal: state.flagged.length, negFeedback, scanErrors: state.scanErrors || 0 });
+  // `!state.scanErrors`: a session whose transcript scan hit a read error measured NOTHING, so a
+  // positive status line would assert health that was never checked (PR #143 R2 OBS1). Withhold it —
+  // the finalize record still carries scanErrors/scanErrorsTotal for audit.
+  const statusEligible = !lineOff && !consentOff && !stopHookActive && !state.promptedThisTurn && !state.selfCheckSeen && !flaggedRun && cleanEligible && !state.scanErrors;
+  const cleanBlock = statusEligible && verdict === "clean";
+  const observedBlock = statusEligible && verdict === "observed";
   // Cleanup offer (once per session): leftover artifacts from OTHER inactive sessions were detected
   // at init. It ALWAYS rides a DIAGNOSTIC surface — it fires ONLY when a findings block
   // (`shouldPrompt`) or the clean line (`cleanBlock`) is ALSO firing this turn, and is APPENDED
@@ -1587,18 +2262,26 @@ async function cmdFinalize(ev) {
   //     surfaces, so cleanup doesn't either — no MID-onboarding interruption).
   // Suppressed by the kill switch; once per session via `cleanupOffered` (persisted) + `promptedThisTurn`.
   const cleanupPending = Boolean(state.cleanupPending) && !state.cleanupOffered;
-  const cleanupBlock = cleanupPending && !consentOff && !stopHookActive && !state.promptedThisTurn && (shouldPrompt || cleanBlock);
-  const surfaced = shouldPrompt || cleanBlock || cleanupBlock;
+  const cleanupBlock = cleanupPending && !consentOff && !stopHookActive && !state.promptedThisTurn && (shouldPrompt || cleanBlock || observedBlock);
+  const surfaced = shouldPrompt || cleanBlock || observedBlock || cleanupBlock;
   // A durable, deterministic audit of every decision moment — greppable with
   // `"type":"finalize"` / `decision` in the session jsonl. This is how "when did the hook
   // run and what did it decide" stays observable WITHOUT printing a line on every turn.
+  //
+  // TWO SEPARATE STATEMENTS, deliberately (VCST-5582 H): `verdict` describes the RUN and is derived
+  // from counts alone; `surfaceDecision`/`suppressReason` describe the UI choice. Conflating them in
+  // one field is precisely how a `failed` span ended up inside a record that called itself `clean`.
   const decision = {
-    verdict: flaggedRun ? "flagged" : (state.scanErrors ? "degraded-collector" : "clean"),
+    verdict,
+    surfaceDecision: shouldPrompt ? "tail-trigger" : cleanBlock ? "clean-line" : observedBlock ? "observed-line" : cleanupBlock ? "cleanup-offer" : "none",
     pluginActivity,
     freshCount: uniqueFresh.length,
+    freshObsCount: freshObs.length, // routing-class observations not previously routed
+    observations: obs, // { distinct, total, visible, routing, selfReported, dropped, byClass }
     negativeFeedback: negFeedback, // did a /vc-feedback 👎 flag this run (may be true with freshCount:0)
     flaggedTotal: state.flagged.length,
-    scanErrors: state.scanErrors || 0, // >0 ⇒ transcript scan hit a read error; clean line withheld (OBS1)
+    scanErrors: state.scanErrors || 0, // >0 ⇒ transcript scan hit a read error; status line withheld (OBS1)
+    scanErrorsTotal: state.scanErrorsTotal || 0, // monotone — a blip that scanErrors already forgot
     surfaced, // did we resume + print a visible line this turn
     cleanupOffered: cleanupBlock, // did we surface the stale-artifact cleanup offer this turn
     completeSignalled: completePending, // did a skill signal its terminal step this run
@@ -1623,8 +2306,9 @@ async function cmdFinalize(ev) {
     reason: ev.reason ?? null,
     totals: state.totals,
     spanCounts: state.spanCounts,
-    flagged: state.flagged.map((f) => ({ name: f.name, kind: f.kind, outcome: f.outcome, struggle: f.struggle, signature: f.signature })),
+    flagged: state.flagged.map((f) => ({ name: f.name, kind: f.kind, outcome: f.outcome, struggle: f.struggle, signature: f.signature, occurrences: f.occurrences ?? 1 })),
     anySkillSeen: Boolean(state.anySkillSeen),
+    sidechainOps: state.sidechainOps ?? 0, // sub-agent transcript volume (aggregate-only capture)
     feedbackCount: state.feedbackCount ?? 0,
     testEnv: state.testEnv ?? process.env.TEST_ENV ?? null, // enriched from tool args when not exported to the hook env
     decision,
@@ -1635,9 +2319,19 @@ async function cmdFinalize(ev) {
   // re-blocks. `cleanupOffered` is persisted (NOT reset per turn) → the offer is once per session.
   if (surfaced) state.promptedThisTurn = true;
   if (cleanupBlock) state.cleanupOffered = true;
-  if (cleanBlock && fallbackClean) state.cleanLineOffered = true; // legacy fallback: once per session
+  if ((cleanBlock || observedBlock) && fallbackClean) state.cleanLineOffered = true; // legacy fallback: once per session
   if (shouldPrompt) {
-    for (const f of uniqueFresh) state.seenSignatures.push(f.signature);
+    // Record WHAT occurrence count we surfaced at, so a later recurrence can re-qualify (see the
+    // `grew` test above) instead of the signature being silenced for the rest of the session.
+    for (const f of uniqueFresh) {
+      state.seenSignatures.push(f.signature);
+      const live = state.flagged.find((x) => x.signature === f.signature);
+      if (live) live.surfacedAt = live.occurrences ?? 1;
+    }
+    // Same one-shot dedup for routing-class OBSERVATIONS — a recorded WARN arms the diagnostician
+    // once, not on every subsequent Stop.
+    if (!Array.isArray(state.obsSurfaced)) state.obsSurfaced = [];
+    for (const o of freshObs) state.obsSurfaced.push(o.signature);
     state.negativeFeedback = false; // one-shot: the 👎 trigger is spent once vc-self-check is armed
   }
   // Consume the completion signal on ANY terminal Stop that evaluated it — not only when it
@@ -1657,15 +2351,22 @@ async function cmdFinalize(ev) {
   // + the oracle, not in the surfaced text.
   let reason = null;
   if (shouldPrompt) {
-    // Two trigger sources: flagged spans and/or a 👎. Describe whichever applies (a 👎-only run has an
-    // empty uniqueFresh, so guard the summary) — the instruction to run vc-self-check is identical.
-    const summary = uniqueFresh.map((f) => `${f.outcome} in /${f.name}${f.struggle?.length ? ` (${f.struggle.join(",")})` : ""}`).join("; ");
-    const trigger = uniqueFresh.length
-      ? `vc-fix self-diagnostics flagged this run (${summary})`
-      : "you gave vc-fix negative feedback (👎) this session";
-    reason = `${trigger}. Silently run the vc-self-check skill (Skill tool, argument "latest"), then print ONE line — the finding count + DIAG path — and stop. Nothing is sent anywhere.`;
+    // THREE trigger sources: flagged spans, routing-class observations, and/or a 👎. Describe
+    // whichever applies (each can be empty on its own) — the instruction to run vc-self-check is
+    // identical, and the diagnostician reads the full record anyway.
+    const summary = uniqueFresh.map((f) => `${f.outcome} in /${f.name}${f.struggle?.length ? ` (${f.struggle.join(",")})` : ""}${(f.occurrences ?? 1) > 1 ? ` ×${f.occurrences}` : ""}`).join("; ");
+    const obsSummary = freshObs.map((o) => `${o.class}:${o.subject}`).join("; ");
+    const parts = [];
+    if (summary) parts.push(`flagged this run (${summary})`);
+    if (obsSummary) parts.push(`recorded ${freshObs.length} observation(s) worth a look (${obsSummary})`);
+    if (!parts.length && negFeedback) parts.push("received your negative feedback (👎) this session");
+    reason = `vc-fix self-diagnostics ${parts.join(" and ")}. Silently run the vc-self-check skill (Skill tool, argument "latest"), then print ONE line — the finding count + DIAG path — and stop. Nothing is sent anywhere.`;
   } else if (cleanBlock) {
     reason = "Print this one line to the user verbatim, then stop — no other action: vc-fix self-check: no plugin issues detected";
+  } else if (observedBlock) {
+    // The middle state. It must NOT say "clean" (observations exist) and must NOT alarm (none of
+    // them routes). It names the count so the operator knows something accumulated and how to look.
+    reason = `Print this one line to the user verbatim, then stop — no other action: vc-fix self-check: no blocking issues — ${obs.visible} observation(s) recorded (run /vc-self-check for detail)`;
   }
   if (cleanupBlock) {
     const script = join(pluginRoot(), "hooks", "session-telemetry.mjs");
@@ -1681,7 +2382,9 @@ async function cmdFinalize(ev) {
       `• "Delete all sessions (incl. this one)" → ${purgeAll}\n` +
       `• "Delete all except this session (spares a live parallel session)" → ${purgeOthers}\n` +
       `• "Keep them (auto-deleted after 24h)" → do nothing.\n` +
-      `This only removes vc-fix's OWN diagnostic artifacts — never your code.`;
+      `This only removes vc-fix's OWN diagnostic artifacts — never your code. A session holding a ` +
+      `finding nobody has diagnosed yet is KEPT either way and reported by the command; that is ` +
+      `deliberate (un-analysed evidence has no other copy) and only \`--force\` overrides it.`;
     reason = reason ? `${reason}\n\nAlso — ${cleanup}` : cleanup;
   }
   if (reason) process.stdout.write(JSON.stringify({ decision: "block", reason }));
@@ -1757,6 +2460,68 @@ async function cmdComplete() {
   }
 }
 
+// obs — the plugin's OWN scripts report their OWN structured verdicts (VCST-5582 H).
+//
+// WHY THIS EXISTS. `verify-access.mjs` computes a full PASS/FAIL/WARN/SKIP table (`results[]`),
+// renders it, and then THROWS IT AWAY — exiting 0 unless there is a hard FAIL. `discover-tracker.mjs`
+// catches an HTTP 400 on the Bug field-contract scan, warns to stderr, writes `fields: {}` and exits
+// 0. So the plugin literally computed "the Bug field contract was never scanned, /qa-bug will send
+// unverified defaults" and no part of the self-diagnostics subsystem could ever learn it. The
+// transcript-side capture (P1-6: toolUseResult.stderr) catches the same class from the outside; this
+// is the inside channel, and it carries STRUCTURE (class/subject/code) instead of prose.
+//
+// Invoked exactly like `complete` — Bash, no hook stdin, so the session is resolved by the newest
+// `.state.json` (or `--session <id>`) — but the payload is a JSON ARRAY on stdin, so one spawn covers
+// a whole readiness table and no argv quoting is involved (Windows-safe):
+//
+//   echo '[{"class":"self_reported_warn","subject":"tracker_field_contract","code":"HTTP_4XX"}]' \
+//     | node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" obs --skill project-init
+//
+// Gated on captureEnabled ONLY (like `complete`): consent gates SURFACING, never capture. Never
+// throws, never blocks, no-op when capture is off or no session state exists yet. Each record goes
+// through recordObs, so the closed class vocabulary, the slugified subject, secret redaction and the
+// caps all apply to a script-supplied record exactly as to an in-process one.
+function parseObsArgs(argv) {
+  const a = {};
+  for (let i = 0; i < argv.length; i++) {
+    const t = argv[i];
+    if (t === "--session") a.session = argv[++i];
+    else if (t === "--skill") a.skill = argv[++i];
+    else if (t === "--source") a.source = argv[++i];
+  }
+  return a;
+}
+async function cmdObs(raw) {
+  try {
+    const a = parseObsArgs(process.argv.slice(3));
+    const root = await resolveOutputRoot();
+    if (!captureEnabled(root)) return;
+    const dir = join(root, ".vc-fix", "diagnostics");
+    const sid = a.session || newestSessionId(dir);
+    if (!sid) return; // no session state yet — nothing to attach to
+    const statePath = join(dir, `${sid}.state.json`);
+    if (!existsSync(statePath)) return;
+    let payload;
+    try { payload = JSON.parse(raw); } catch { return; }
+    const list = Array.isArray(payload) ? payload : [payload];
+    if (!list.length) return;
+    const state = loadState(statePath, {}, sid);
+    const jsonl = join(dir, `${sid}.jsonl`);
+    let n = 0;
+    for (const o of list) {
+      if (!o || typeof o !== "object") continue;
+      if (recordObs(jsonl, state, { ...o, skill: o.skill ?? a.skill ?? null, source: o.source ?? a.source ?? "script" })) n++;
+    }
+    // Persist the dedup/cap bookkeeping. A racing hook process may clobber this file, which is why
+    // the jsonl APPEND above is the source of truth: cmdFinalize re-reads the appended lines via
+    // foldObsFromJsonl, so a lost state write costs nothing.
+    saveState(statePath, state);
+    if (n) process.stdout.write(`recorded ${n} observation(s)\n`);
+  } catch {
+    /* never throw / never block a tool */
+  }
+}
+
 // purge-inactive — MANUAL cleanup, run by the model (via Bash) after the user confirms
 // the cleanup offer. NOT gated by captureEnabled: it's an explicit, consented action.
 // Flags: --keep <sid> (never delete this session's files), --dir <abs> (diagnostics dir;
@@ -1769,6 +2534,9 @@ function parsePurgeArgs(argv) {
     if (t === "--keep") a.keep = argv[++i];
     else if (t === "--dir") a.dir = argv[++i];
     else if (t === "--all") a.all = true;
+    // --force: also delete a session whose recorded finding was never diagnosed. Without it, such
+    // a session is RETAINED (P1-10) — deleting un-analysed evidence destroys the only copy.
+    else if (t === "--force") a.force = true;
   }
   return a;
 }
@@ -1780,7 +2548,7 @@ async function cmdPurgeInactive() {
     dir = join(root, ".vc-fix", "diagnostics");
   }
   // --all ⇒ pass a far-future nowMs so the mtime floor never keeps anything.
-  const set = collectInactiveArtifacts(dir, a.keep || "", a.all ? Number.MAX_SAFE_INTEGER : Date.now());
+  const set = collectInactiveArtifacts(dir, a.keep || "", a.all ? Number.MAX_SAFE_INTEGER : Date.now(), { force: Boolean(a.force) });
   let removed = 0;
   for (const p of set.files) {
     try {
@@ -1791,6 +2559,14 @@ async function cmdPurgeInactive() {
     }
   }
   process.stdout.write(`Removed ${removed} inactive vc-fix diagnostic file(s) from ${dir}\n`);
+  // Say what was KEPT and why. A silent retention would read as a failed purge; naming it tells the
+  // operator there is un-analysed evidence and how to look at it (or force it away).
+  if (set.protectedSessions.size) {
+    process.stdout.write(
+      `Kept ${set.protectedSessions.size} session(s) holding an un-diagnosed finding: ${[...set.protectedSessions].join(", ")}\n` +
+        `  Diagnose with /vc-self-check <session-id>, or re-run with --force to delete anyway.\n`,
+    );
+  }
 }
 
 // ─── entry point ─────────────────────────────────────────────────────────────
@@ -1806,11 +2582,15 @@ async function cmdPurgeInactive() {
         ev = {};
       }
     }
+    // Resolve the shared error taxonomy before dispatch (pure module, swallowed on failure — a
+    // partial install degrades every observation's `code` to UNKNOWN, never breaks the hook).
+    await loadErrorClassifier();
     if (sub === "init") await cmdInit(ev);
     else if (sub === "prompt") await cmdPrompt(ev);
     else if (sub === "record" || sub === "agentstop") await cmdScan(ev);
     else if (sub === "finalize") await cmdFinalize(ev);
     else if (sub === "complete") await cmdComplete();
+    else if (sub === "obs") await cmdObs(raw);
     else if (sub === "purge-inactive") await cmdPurgeInactive();
     // Unknown subcommand: no-op.
   } catch (err) {

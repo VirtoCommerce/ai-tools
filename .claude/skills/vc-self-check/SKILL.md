@@ -1,6 +1,6 @@
 ---
 name: vc-self-check
-description: On-demand self-diagnostician for the vc-fix plugin (Tier 2 of the client→vendor feedback loop). Reads the passive session-telemetry span jsonl + the session transcript + the skill-expectations oracle, and emits a per-span verdict (OK / DEGRADED / BROKEN) with severity, evidence, a root-cause hypothesis, and a concrete proposed fix (which plugin file/line). Scope is OUTCOME-based — it diagnoses only the spans the Tier-1 classifier flagged (failed / degraded / silent_suspect) plus any /vc-feedback verdicts. Writes a LOCAL DIAG-*.md report only — it never modifies the installed plugin and never sends anything externally (that is the consent-gated, feedback.mode-driven `deliver` step). Plugin-wide (covers every vc-fix skill/command/agent/tool), so it is NOT qa-prefixed. Runs either from the end-of-turn tail-trigger (the collector auto-runs it SILENTLY when a span was flagged — no Yes/No modal) or when the user runs /vc-self-check directly. Recursion/re-nag is prevented by the collector dropping vc-self-check's own spans + per-signature dedup + the selfCheckSeen guard, not by disabling model invocation.
+description: On-demand self-diagnostician for the vc-fix plugin (Tier 2 of the client→vendor feedback loop). Reads the passive session-telemetry jsonl (observation records + span records) + the session transcript + the skill-expectations oracle, and emits a per-finding verdict (OK / DEGRADED / BROKEN) with severity, evidence, a root-cause hypothesis, and a concrete proposed fix (which plugin file/line). THIS is the layer that decides what matters: the collector captures every anomaly signal however minor and assigns no severity, so the analysis set is observations ∪ flagged spans ∪ /vc-feedback verdicts — a run whose every span was `success` can still hold real findings. Writes a LOCAL DIAG-*.md report only — it never modifies the installed plugin and never sends anything externally (that is the consent-gated, feedback.mode-driven `deliver` step). Plugin-wide (covers every vc-fix skill/command/agent/tool), so it is NOT qa-prefixed. Runs either from the end-of-turn tail-trigger (the collector auto-runs it SILENTLY when a span was flagged — no Yes/No modal) or when the user runs /vc-self-check directly. Recursion/re-nag is prevented by the collector dropping vc-self-check's own spans + per-signature dedup + the selfCheckSeen guard, not by disabling model invocation.
 argument-hint: "[latest | <session-id>]"
 ---
 
@@ -14,17 +14,25 @@ produces a verdict per span, judged against the oracle
 ([`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md),
 VCST-5476).
 
-**Capture is decoupled from escalation (VCST-5509).** Capture is total + silent;
-this skill only ever looks at the *interesting* spans — the ones the deterministic
-Tier-1 classifier already flagged (`failed` / `degraded` / `silent_suspect`) plus any
-explicit `/vc-feedback` verdicts. The happy path (`success` / `recovered`) is dropped
-before this skill runs. There is no numeric `anomalyScore` gate anymore.
+**Capture is decoupled from JUDGEMENT (VCST-5509, made real by VCST-5582 H).** Capture is
+total + silent **and forbidden from deciding what matters**: every anomaly signal, however minor
+or likely-benign, becomes a durable `type:"obs"` record with no severity field
+(oracle §1e). **Severity is assigned HERE** (§1f). So the analysis set is
+**observations ∪ Tier-1-flagged spans ∪ `/vc-feedback` verdicts** — not flagged spans alone.
+That earlier scope was the defect: it made the whole subsystem blind to any signal the
+deterministic classifier did not recognise at span close, and a run with a visible WARN in its
+own readiness table self-diagnosed "no plugin issues detected". A run whose every span is
+`success` can still hold real findings. There is no numeric `anomalyScore` gate anymore.
 
 **When it runs.**
-1. **Tail-trigger (auto, silent).** At `Stop`, when the collector flagged ≥1 span with
-   a NEW signature, its `finalize` returns a `{decision:"block"}` instructing the agent
-   to run this skill **immediately and silently** (no Yes/No question) and print ONE
-   info line. This replaces the old interactive consent modal.
+1. **Tail-trigger (auto, silent).** At `Stop`, when the collector has a NEW signature worth a
+   look — a flagged span, a **routing-class observation** (oracle §1e: a self-reported
+   WARN/FAIL, a degraded artifact, an HTTP non-2xx, a non-zero script exit, collector
+   contention), a 👎, or a signature whose occurrence count has **grown** — its `finalize`
+   returns a `{decision:"block"}` instructing the agent to run this skill **immediately and
+   silently** (no Yes/No question) and print ONE info line. This replaces the old interactive
+   consent modal. Membership of the routing set is DATA, not a severity call: it decides only
+   *when to spend a turn*, and everything outside it is still recorded and still analysed here.
 2. **Direct.** The user runs `/vc-self-check [latest | <session-id>]`.
 
 It is **not** otherwise auto-triggered. No recursion / re-nag: the collector never
@@ -35,8 +43,10 @@ so allowing model invocation (needed for the silent auto-run) does not open a lo
 **Scope at this step: LOCAL report only.** The output is a `DIAG-*.md` under the
 project's `.vc-fix/diagnostics/`. Turning a confirmed DIAG into a scrubbed,
 consent-gated contribution back to VirtoCommerce is the separate `deliver` step
-([`deliver.mjs`](./deliver.mjs), VCST-5478/5509, driven by `feedback.mode`) —
-mentioned here, **never run from this flow**.
+([`deliver.mjs`](./deliver.mjs), VCST-5478/5509, driven by `feedback.mode`). Since
+VCST-5582 G this flow **offers** that contribution (Step 6b) when the DIAG has a
+BROKEN/DEGRADED row — by running `deliver` **DRY** (a local draft, nothing sent) and
+asking once. **Sending still needs an explicit "Send".**
 
 ---
 
@@ -44,8 +54,11 @@ mentioned here, **never run from this flow**.
 
 - **Read-only w.r.t. the plugin install.** NEVER modify installed plugin files. The
   "proposed fix" is a written recommendation (file/line), not an applied edit.
-- **Nothing leaves the machine here.** No PR, no issue, no tracker write, no network
-  send. External delivery is the separate, `feedback.mode`-gated `deliver` step.
+- **Nothing leaves the machine without an explicit "Send".** The diagnose flow itself makes
+  no PR, no issue, no tracker write. Step 6b may run `deliver` **DRY** (a local
+  `DELIVERY-*.md` draft) to present the offer, but the outbound call happens only on
+  `--confirm` (the operator's Send) or the onboarding-time `feedback.mode: auto`.
+  `feedback.mode: off` ⇒ no draft, no offer, no send.
 - **Never diagnose its own invocation.** The collector never flags `vc-self-check`
   spans; also drop any such span here before analysing (belt and braces).
 - **Report discipline.** Obey [`.claude/rules/reports.md`](../../.claude/rules/reports.md):
@@ -80,19 +93,61 @@ Read [`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics
 sub-signals (§1d), the S0–S3 rubric (§2), the per-skill expectations (§3), and the
 cross-cutting anti-patterns (§4).
 
-### Step 2 — Build the analysis set (OUTCOME-flagged spans + feedback)
+### Step 2 — Build the analysis set (observations ∪ flagged spans ∪ feedback)
+
+**The capture layer no longer decides what is worth looking at — you do.** Until VCST-5582 H
+this step read `flagged[]` and nothing else, and stopped outright when it was empty. That made
+the whole subsystem blind to any signal the deterministic classifier did not recognise at span
+close: a real `/project-init` run printed a **WARN** in its own readiness table (the Azure Bug
+field contract was never scanned) and this skill would have written "no issues" — `flagged` was
+empty and every span was `success`. Observations (§1e) exist precisely to carry that class.
+
 From the jsonl:
-1. Read the `finalize` record's `flagged[]` — these are the **skill/command spans the
-   Tier-1 classifier tagged `failed` / `degraded` / `silent_suspect`**. That IS the
-   analysis set. Also collect every `type:"feedback"` record.
-2. For each flagged span, pull its full `span` record (by `id`) plus its **child
-   `agent`/`tool` span records** (`parentId === span.id`) for evidence.
-3. **Drop any span whose `name` matches `vc-self-check`** (dedup guard — should already
-   be absent from `flagged`).
-4. **Clean-session test:** if `flagged` is empty **and** there are no `feedback`
-   records → a clean session: write a one-line "no issues" DIAG (or, on the tail-trigger
-   auto-run, just print the one info line) and stop. `success`/`recovered` spans and the
-   session-prefix development noise are **never** analysed.
+1. Read **every `type:"obs"` record** (and the latest `finalize`'s `decision.observations`
+   rollup). These are the anomaly signals — however minor — that capture recorded without
+   judging. They carry no severity: assigning it is your job (§1f).
+2. Read the `finalize` record's `flagged[]` — the skill/command spans Tier 1 tagged `failed` /
+   `degraded` / `silent_suspect`, each with an `occurrences` count. Treat this as **one input,
+   not the truth**: a `success`/`recovered` span can still carry real signals.
+3. Collect every `type:"feedback"` record.
+4. For each flagged span, pull its full `span` record (by `id`) plus its **child `agent`/`tool`
+   span records** (`parentId === span.id`) for evidence. For an observation, its `spanId` points
+   at the span it happened inside (may be `null` — a session-level signal).
+5. **Drop any span whose `name` matches `vc-self-check`**, and treat observations whose `skill`
+   is `vc-self-check` as this skill's own noise (loop guard — the collector already keeps them
+   out of routing).
+6. **Clean-session test — now a three-way check.** Stop early **only** when `observations.total
+   === 0` **and** `flagged` is empty **and** there are no `feedback` records: that is a
+   genuinely empty record, so write the one-line "no issues" DIAG (or, on the tail-trigger
+   auto-run, print the one info line) and stop. **If observations exist, you may not stop here**
+   even when every span was `success` — classify them (§1f), and if they all land on NOISE say
+   so explicitly with the count. The session-prefix development noise before the first
+   skill/command span is still never analysed.
+
+**Cross-check the collector against itself (§1f rule 3).** If the run's
+`decision.verdict` is `clean` while a `self_reported_warn`/`_fail` observation exists, or while
+`flaggedTotal > 0`, that contradiction is itself an **S1 finding against the collector**
+(`subject: collector_verdict_integrity`) — report it even though it is not a skill defect. In the
+originating incident the most valuable finding in the whole report was of exactly this shape.
+
+### Step 2b — Diagnose the observations (§1f)
+
+Observations are the *new* half of the analysis set, and they need correlating before they are
+findings. Apply §1f in order:
+
+1. **Merge by `subject`.** All observations sharing a subject become ONE finding at
+   `max(severity)`, citing each as separate evidence. The reference incident is
+   `http_non2xx` + `self_reported_fallback` + `degraded_artifact` + `self_reported_warn`, all on
+   `tracker_field_contract` → one S2/S1 finding: *"the Bug field contract was never scanned;
+   `/qa-bug` will send unverified defaults"*.
+2. **Triangulation escalates** — ≥3 different classes on one subject ⇒ +1 severity step.
+3. **Ask what the subject MEANS for the skill** (§3). A `degraded_artifact` on a *required*
+   output is S1, not S2 — that is where the oracle's per-skill knowledge earns its keep.
+4. **Occurrence weighting** — `count ≥ 3` promotes S3 → S2.
+5. **Unknown class/subject** ⇒ S3, LOW confidence, reported as an **oracle gap** with a proposed
+   §1e/§1f extension. Never drop it.
+
+For a NOISE-class observation, do not open a finding — count it for the Step-5 suppression line.
 
 ### Step 3 — Diagnose each flagged span against the oracle
 For each span in the analysis set:
@@ -199,7 +254,7 @@ it never opens the conversation.
 # DIAG — <session-id>
 
 - Session: <session-id> · Plugin: <pluginVersion> · Env: <testEnv> · Project: <projectType|native>
-- Telemetry: `.vc-fix/diagnostics/<session-id>.jsonl` · Flagged: <n> (<x failed, y degraded, z silent_suspect>) · Feedback: <👍m 👎k>
+- Telemetry: `.vc-fix/diagnostics/<session-id>.jsonl` · Verdict: <clean|observed|attention|degraded-collector> · Flagged: <n> (<x failed, y degraded, z silent_suspect>) · Observations: <distinct> distinct / <total> total · Feedback: <👍m 👎k>
 
 ## Findings
 
@@ -207,11 +262,19 @@ it never opens the conversation.
 |-------------|---------|-----|---------|-------------------|-----------------------|---------------------|
 | /qa-fix (command) | BROKEN | S1 | failed | 1× perm_denied on `gh pr create` | PR auth missing | check `GITHUB_FIX_BUGS_TOKEN` / `gh auth status` |
 | /qa-bug (skill) | DEGRADED | S2 | degraded | search_thrash, low_yield | lost in exploration, no repro-first | tighten Step-1 in `skills/qa-bug` |
+| /project-init · tracker_field_contract | DEGRADED | S2 | success (obs) | http_non2xx 400 + fallback + degraded_artifact + WARN | `$expand=Properties` rejected → `tracker.fields` empty | fix the field-contract request in `skills/project-init/discover-tracker.mjs` |
+
+_Suppressed as noise: <N> observation(s) (<harness_noise ×4, policy_block ×1, …>) — recorded in the jsonl, judged benign._
 
 ## Details
 <one short paragraph per S1/S2 finding: evidence (transcript ref) + the concrete change.
 Skip S0/S3 beyond the table row. Reference telemetry by path; never inline the jsonl.
 Include any /vc-feedback verdict text verbatim (already redacted).>
+<An OBSERVATION-derived row cites its subject + the classes that corroborate it, and says what the
+degradation MEANS downstream — that is the difference between "a probe 400'd" and "/qa-bug will
+file bugs with a field set this organization never confirmed".>
+<The `Suppressed as noise` line is REQUIRED whenever a NOISE-class observation exists: "benign"
+must be a conclusion the reader can check, never missing data. Omit the line only at zero.>
 
 _Local report only — no ticket filed, nothing sent. <FOOTER>_
 ```
@@ -232,11 +295,16 @@ _"To contribute this upstream: `/vc-self-check deliver`"_ — a dead hint nobody
 
 ---
 
-## Step 4 (separate, consent-gated) — deliver upstream
+## The deliver step (consent-gated) — contribute upstream
 
 Turning a confirmed DIAG into a scrubbed quality report to VirtoCommerce is
-[`deliver.mjs`](./deliver.mjs) (VCST-5478/5509) — invoked as `/vc-self-check deliver`.
-It is **not** part of the diagnose flow above and is never run implicitly.
+[`deliver.mjs`](./deliver.mjs) (VCST-5478/5509) — invoked as `/vc-self-check deliver`, or
+**offered automatically by Step 6b** after a DIAG with a BROKEN/DEGRADED row.
+
+> **It is never run implicitly IN ITS SENDING MODE.** Step 6b runs it **DRY** (local draft,
+> nothing leaves the machine) purely to produce the offer; sending still requires an explicit
+> **Send** (`--confirm`) or the onboarding-time `feedback.mode: auto`. Before VCST-5582 G the
+> skill refused to run it at all, which made the default `ask` mode dead — see Step 6b.
 
 ```
 node "$pluginRoot/skills/vc-self-check/deliver.mjs" [--diag <path>] [--batch] [--confirm] [--as pr|fork-pr|issue|local] [--keep] [--purge]
@@ -305,10 +373,14 @@ processed session's local artifacts are removed. Scope is the **processed sessio
   records `{ verdict:"deferred", pendingSubagents, surfaced:false,
   suppressReason:"subagent-running" }` and does nothing else. To review a session's
   decisions: `grep '"type":"finalize"' <outputRoot>/.vc-fix/diagnostics/<session-id>.jsonl`.
-- **The visible line.** On a **terminal** plugin turn the hook resumes the agent to print one
-  line (costing one extra model turn): a finding → run `/vc-self-check` + report; a clean turn
-  → `vc-fix self-check: no plugin issues detected` (default ON — silence it with
-  `VC_FIX_DIAG_LINE=off`). A checkpoint Stop never prints, so the line can't land mid-task.
+- **The visible line — THREE states.** On a **terminal** plugin turn the hook resumes the agent to
+  print one line (costing one extra model turn): a finding/routing observation → run
+  `/vc-self-check` + report; observations recorded but none routing →
+  `vc-fix self-check: no blocking issues — N observation(s) recorded (run /vc-self-check for detail)`;
+  a genuinely empty record → `vc-fix self-check: no plugin issues detected` (default ON — silence
+  with `VC_FIX_DIAG_LINE=off`). The middle state exists so the hook can stay quiet **without ever
+  saying "clean" while observations exist** — `verdict:"clean"` requires a literally empty record.
+  N counts non-noise classes only. A checkpoint Stop never prints, so no line can land mid-task.
 - Verdict/severity semantics + the (signal × expectation) table live in the oracle —
   cite them, don't restate.
 - If two spans share a root cause (e.g. the same `tsc` hook failing across skills), merge

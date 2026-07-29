@@ -40,6 +40,11 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { pluginRoot } from "./lib/paths.mjs";
+// Self-diagnostics CAPTURE channel. This table is the plugin's own structured verdict on the
+// deployment; before VCST-5582 H it was rendered and then discarded (exit 0 unless a hard FAIL),
+// so a WARN the operator could plainly see — e.g. "no field contract scanned for Bug" — was
+// invisible to /vc-self-check and the run self-diagnosed "no plugin issues detected".
+import { emitObservations, httpStatusFrom, classForStatus } from "./lib/diag-obs.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
@@ -460,6 +465,24 @@ async function main() {
 
   renderTable(results);
   renderMcp();
+  // ─── report the table AS TELEMETRY, not only to the screen (VCST-5582 H) ─────────────
+  // One observation per NON-PASS row. Capture only: we record that the row said WARN/FAIL/SKIP
+  // and what it was about; whether that matters is decided later by /vc-self-check against the
+  // oracle (§1f), which knows e.g. that a WARN on the tracker field contract means /qa-bug will
+  // send unverified defaults. Emitted BEFORE the completion marker so the finalize that consumes
+  // that marker already sees them. Never affects the readiness verdict or the exit code.
+  emitObservations(
+    results
+      .map((r) => ({ cls: classForStatus(r.status), r }))
+      .filter((x) => x.cls)
+      .map(({ cls, r }) => ({
+        class: cls,
+        subject: r.name,
+        code: "NONE",
+        evidence: { snippet: `${r.status}: ${r.detail}`, httpStatus: httpStatusFrom(r.detail) },
+      })),
+    { skill: "project-init" },
+  );
   // Best-effort self-diagnostics COMPLETION signal. verify-access is the LAST script every
   // /project-init path runs (fresh §9, --check §C, --add-env §D), so emitting the terminal-step
   // marker HERE makes the clean self-check line ("no plugin issues detected") fire reliably —

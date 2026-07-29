@@ -26,6 +26,12 @@ import { writeFileSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { resolveAdoAuth } from "./probe-lib.mjs";
 import { outputRoot } from "./lib/paths.mjs";
+// Self-diagnostics CAPTURE channel (VCST-5582 H). Every scan step below degrades GRACEFULLY —
+// warn to stderr, write a partial result, exit 0 — which is correct onboarding behaviour and was
+// also a total blind spot: the field-contract scan 400s, `fields` comes out `{}`, /qa-bug silently
+// falls back to "unverified defaults", and self-diagnostics reported the run clean. Each catch
+// site now ALSO records a structured observation. Capture only — severity is decided later.
+import { emitObservations, httpStatusFrom, scrubUrls } from "./lib/diag-obs.mjs";
 // The contract PARSER lives with its consumers (the create path) so the scan and the payload
 // builder can never disagree about the shape. Pure — see that file's header.
 import { parseFieldContract, resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
@@ -134,6 +140,15 @@ export function deriveRoleStates(states) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const kind = args.tracker || "azure";
+  // Observations collected across the scan and emitted in ONE batch at the end (one child
+  // process, not one per finding). A failure here can never affect the scan: `obs` pushes are
+  // plain array writes and emitObservations is fully swallowed.
+  const obs = [];
+  const obsHttp = (subject, e) => obs.push({
+    class: "http_non2xx", subject,
+    code: "NONE",
+    evidence: { snippet: scrubUrls(e?.message ?? e), httpStatus: httpStatusFrom(e?.message ?? "") },
+  });
 
   if (kind === "jira") {
     // Jira: format facts only; transitions are discovered live at runtime.
@@ -160,6 +175,7 @@ async function main() {
     projectId = (await adoGet(`https://dev.azure.com/${org}/_apis/projects/${encodeURIComponent(project)}?api-version=7.1`, authHeader)).id || "";
   } catch (e) {
     console.error(`[discover-tracker] projectId lookup failed: ${e.message}`);
+    obsHttp("ado_project_id", e);
   }
 
   // which types to scan
@@ -190,6 +206,10 @@ async function main() {
       .map((f) => ({ referenceName: f.referenceName, type: f.type }));
   } catch (e) {
     console.error(`[discover-tracker] org field-type list failed (types degrade to "string"): ${e.message}`);
+    obsHttp("ado_field_types", e);
+    // The degradation itself, not just the HTTP failure: every field's `type` silently becomes
+    // "string", which is what makes the HTML decision an assertion again instead of derived.
+    obs.push({ class: "self_reported_fallback", subject: "ado_field_types", code: "NONE", evidence: { snippet: 'field types degrade to "string"' } });
   }
 
   const workItemTypes = {};
@@ -202,6 +222,7 @@ async function main() {
       workItemTypes[t]._categories = Object.fromEntries(states.map((s) => [s.name, s.category]));
     } catch (e) {
       console.error(`[discover-tracker] states for '${t}' failed: ${e.message}`);
+      obsHttp("workitem_states", e);
     }
     // The FIELD CONTRACT for this type — what this organization's process actually requires
     // and allows. `$expand=Properties` is what returns allowedValues / defaultValue alongside
@@ -213,6 +234,12 @@ async function main() {
       if (contract.length) fields[t] = contract;
     } catch (e) {
       console.error(`[discover-tracker] field contract for '${t}' failed (create falls back to unverified defaults): ${e.message}`);
+      // THE reference defect (VCST-5582 H): this exact catch — an HTTP 400 on
+      // `…/fields?$expand=Properties` — degraded a real onboarding to "unverified defaults" while
+      // self-diagnostics reported the run clean. Two observations: the transport failure, and the
+      // functional consequence (/qa-bug will send a field set this organization never confirmed).
+      obsHttp("tracker_field_contract", e);
+      obs.push({ class: "self_reported_fallback", subject: "tracker_field_contract", code: "NONE", evidence: { snippet: `${t}: create falls back to the legacy field set labelled "unverified defaults"` } });
     }
   }
 
@@ -297,6 +324,23 @@ async function main() {
         ` — confirm/hand-edit if you run /qa-verify-fix on this deployment.`,
     );
   }
+  // ─── the ARTIFACT'S OWN SHAPE is a signal (VCST-5582 H) ──────────────────────────────
+  // A scan can fail without any HTTP error reaching a catch above (an empty `value`, a filtered
+  // response, a partial permission). What matters downstream is the SHAPE of what we are about to
+  // write, so assert on the result itself rather than on the calls that produced it. Each of these
+  // is a real, named degradation of /qa-fix or /qa-bug — recorded, never judged here.
+  if (!primaryContract.length) {
+    obs.push({ class: "degraded_artifact", subject: "tracker_field_contract", code: "NONE", evidence: { snippet: `tracker.fields['${primary}'] is empty — /qa-bug will send the legacy "unverified defaults" field set` } });
+  } else if (slots.unmappedRequired.length) {
+    obs.push({ class: "degraded_artifact", subject: "tracker_required_fields_unmapped", code: "NONE", evidence: { snippet: `${slots.unmappedRequired.length} required field(s) map to no semantic slot` } });
+  }
+  if (missingRoles.length) {
+    obs.push({ class: "degraded_artifact", subject: "tracker_role_states", code: "NONE", evidence: { snippet: `roleStatesComplete:false — missing ${missingRoles.join(", ")}; /qa-fix cannot transition by role` } });
+  }
+  if (missingQaRoles.length) {
+    obs.push({ class: "degraded_artifact", subject: "tracker_qa_role_states", code: "NONE", evidence: { snippet: `qaRoleStatesComplete:false — missing ${missingQaRoles.join(", ")}; affects /qa-verify-fix only` } });
+  }
+  emitObservations(obs, { skill: "project-init" });
   emit(out, args);
 }
 

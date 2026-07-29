@@ -729,7 +729,7 @@ test("/vc-feedback 👎: a negative verdict alone (no flagged span) tail-trigger
     assert.match(decision.reason, /feedback|👎/i, "the block reason names the feedback trigger");
 
     const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.verdict, "flagged", "a 👎 run is flagged, not clean");
+    assert.equal(fin.decision.verdict, "attention", "a 👎 run needs attention, not clean");
     assert.equal(fin.decision.negativeFeedback, true);
     assert.equal(fin.decision.freshCount, 0, "no span was flagged — the trigger came from the 👎");
     assert.equal(fin.decision.surfaced, true);
@@ -811,7 +811,7 @@ test("decision record: a finding is recorded flagged + surfaced (visible line vi
     assert.equal(JSON.parse(out).decision, "block", "a fresh finding surfaces via decision:block");
 
     const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.verdict, "flagged");
+    assert.equal(fin.decision.verdict, "attention");
     assert.equal(fin.decision.freshCount, 1);
     assert.equal(fin.decision.surfaced, true);
     assert.equal(fin.decision.suppressReason, null);
@@ -1165,7 +1165,7 @@ test("stop_hook_active:true suppresses the findings block", () => {
     assert.equal(out.trim(), "", "stop_hook_active must suppress even the findings block");
     // still recorded flagged, just not surfaced — and the suppression reason is accurate
     const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.verdict, "flagged");
+    assert.equal(fin.decision.verdict, "attention");
     assert.equal(fin.decision.surfaced, false);
     assert.equal(fin.decision.suppressReason, "stop-hook-active", "suppression by our own resume-turn is logged as stop-hook-active, not already-surfaced");
   } finally {
@@ -1299,7 +1299,7 @@ test("checkpoint suppresses a findings escalation until the terminal Stop", () =
     assert.equal(dec.decision, "block", "the finding surfaces at the terminal Stop");
     assert.match(dec.reason, /vc-self-check/);
     const fins = finalizesOf(readSpans(home, sid));
-    assert.equal(fins[fins.length - 1].decision.verdict, "flagged");
+    assert.equal(fins[fins.length - 1].decision.verdict, "attention");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -1576,7 +1576,7 @@ test("Fix 2: a synthesized command span makes an orphaned failed tool op flaggab
     assert.equal(cmd.length, 1, "the run is represented by ONE synthesized command span");
     assert.equal(cmd[0].outcome, "failed", "the orphaned blocking failure rolls up → the command span is failed");
     const fin = finalizeOf(recs);
-    assert.equal(fin.decision.verdict, "flagged", "a synthesized failed span is flaggable");
+    assert.equal(fin.decision.verdict, "attention", "a synthesized failed span is flaggable");
     assert.ok(fin.flagged.some((f) => f.kind === "command" && f.name === "project-init"), "the synthesized span appears in flagged[]");
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -1616,7 +1616,7 @@ test("code review #1: a retried-then-recovered orphan probe synthesizes a RECOVE
     assert.equal(cmd[0].outcome, "recovered", "a self-corrected orphan probe is RECOVERED, not a spurious failed");
     const fin = finalizeOf(recs);
     assert.ok(!fin.flagged.some((f) => f.kind === "command" && f.name === "project-init"), "a recovered synthesized span is NOT flagged (no bogus upstream issue)");
-    assert.notEqual(fin.decision.verdict, "flagged", "a clean/recovered run does not flag");
+    assert.notEqual(fin.decision.verdict, "attention", "a clean/recovered run does not flag");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
