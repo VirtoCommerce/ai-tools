@@ -39,7 +39,7 @@ platform) and to the correct bug tracker.
 ## Pipeline
 
 ```
-0 preconditions (confirm dir · self-diagnostics consent FIRST + write flag · install) → 2 interview (env name · tracker · code host · auth pref · upstream-feedback consent)
+0 preconditions (confirm dir · BOTH self-diagnostics consents FIRST + write flag · install) → 2 interview (env name · tracker · code host · auth pref)
 → 3 scaffold BOTH env templates + operator fills + pause
 → 3d normalize + validate the filled .env.<env> (normalize-env) — STOP on exit 1
 → 4 discover repos (ALWAYS) → projectType · clientOrg · repo split · storefront
@@ -155,7 +155,33 @@ write re-passes it, so the final profile always reflects this decision). This is
 (Note: the `session_start` record still misses this run — `SessionStart` fired before the flag
 existed — but every span + the finalize verdict are captured from the write onward. Accepted.)
 
-### 0c. Detect AND install the required tooling
+### 0c. Upstream-delivery consent — the SECOND half of the same decision
+
+> Asked here, immediately after §0b, because it is the same subject: §0b decides whether the
+> plugin RECORDS how its own skills ran; this decides whether a finding may ever be SENT to
+> VirtoCommerce. Splitting them across the interview made the operator meet the same topic
+> twice, minutes apart, with no context the second time. Do **not** re-ask the capture opt-in.
+
+**Skip this step entirely when §0b was answered No** — with capture off there is nothing to
+deliver, so leave `feedback.mode` at its default and move on. Otherwise ask the delivery
+consent — a **single** `AskUserQuestion`, wording/options verbatim from `reconcile-profile.mjs`
+`MANAGED_FIELDS.feedback` so the fresh interview and `/project-init --check` never diverge
+(make the first option the `default`):
+
+- **feedback.mode** (upstream delivery consent — gates ONLY outbound `deliver`, never local
+  capture/diagnosis; nothing is ever sent without scrubbing all client identifiers first):
+  - Question: *"When vc-fix self-diagnostics finds a plugin quality issue, how should it be
+    contributed back to VirtoCommerce to improve the plugin?"*
+  - Options: **Ask each time (recommended)** → `ask` (dry-run + a single
+    Show-diff/Send/Don't-send decision) · **Automatic** → `auto` (file the scrubbed GitHub
+    Issue automatically; PR/fork-PR handed off as commands) · **Off** → `off` (nothing
+    leaves the machine — the DIAG stays local).
+
+Carry the answer to step 6 as `--feedback-mode <ask|auto|off>` (step 6 re-passes §0b's
+`--self-diagnostics` alongside it). **With §0b and §0c done, self-diagnostics is fully settled —
+nothing later in the interview asks about it again.**
+
+### 0d. Detect AND install the required tooling
 
 Run a detection pass, then **install whatever is missing** — do not just report a
 gap and move on (that leaves `/qa-fix` unable to open PRs).
@@ -257,29 +283,6 @@ Applicable axes:
 
 Map the answers to the scaffold flags: `--github-auth pat|gh-cli`, `--ado-auth
 pat|az-login`, `--jira-auth token|oauth`.
-
-### 2e. Upstream-feedback consent — one `AskUserQuestion`
-
-> The **local-capture** opt-in (`selfDiagnostics`) was already asked and written as the FIRST
-> step (§0b) — do **not** ask it again here. This step is only the *upstream delivery* consent.
-
-**Skip this step entirely when §0b was answered No** — with capture off there is nothing to
-deliver, so leave `feedback.mode` at its default and move on. Otherwise ask the delivery
-consent — a **single** `AskUserQuestion`, wording/options verbatim from `reconcile-profile.mjs`
-`MANAGED_FIELDS.feedback` so the fresh interview and `/project-init --check` never diverge
-(make the first option the `default`):
-
-- **feedback.mode** (upstream delivery consent — gates ONLY outbound `deliver`, never local
-  capture/diagnosis; nothing is ever sent without scrubbing all client identifiers first):
-  - Question: *"When vc-fix self-diagnostics finds a plugin quality issue, how should it be
-    contributed back to VirtoCommerce to improve the plugin?"*
-  - Options: **Ask each time (recommended)** → `ask` (dry-run + a single
-    Show-diff/Send/Don't-send decision) · **Automatic** → `auto` (file the scrubbed GitHub
-    Issue automatically; PR/fork-PR handed off as commands) · **Off** → `off` (nothing
-    leaves the machine — the DIAG stays local).
-
-Carry the answer to step 6 as `--feedback-mode <ask|auto|off>` (and re-pass the §0b
-`--self-diagnostics <true|false>` decision there too).
 
 ## 3. Scaffold the two env templates, then hand off for filling
 
@@ -557,7 +560,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --operator <derived> --contribution-mode <derived> \
   --upstream-account <forkAccount, only if fork> \
   --github-token-kind <derived: github.tokenKind> --github-fork-capable <derived: github.forkCapable> \
-  --self-diagnostics <true|false, from step 0b> --feedback-mode <ask|auto|off, from step 2e> \
+  --self-diagnostics <true|false, from step 0b> --feedback-mode <ask|auto|off, from step 0c> \
   --vcs-auth <derived: client host's auth — github⇒gh-cli|pat, azure-repos⇒az-login|pat> --print
 # Azure Boards + Azure Repos:
 #   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --vcs-auth pat ...
@@ -939,7 +942,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 > The interview asks only **env name · tracker · code host** + an auth preference
 > per axis. The **self-diagnostics capture opt-in** (`selfDiagnostics`) is asked FIRST, as
 > step 0b, and the flag is written immediately on Yes; the **`feedback.mode`
-> upstream-delivery consent** is step 2e — the same two decisions the `--check` reconcile
+> upstream-delivery consent** is step 0c — the same two decisions the `--check` reconcile
 > surfaces. Both env files are scaffolded as commented templates the operator fills;
 > the scan (step 4) derives projectType + clientOrg, the derive block (step 5) derives
 > contribution mode + fork account + operator, and verify-access (step 8) confirms.
