@@ -31,7 +31,15 @@
  * struggle names / outcome names / EXPECTED_OUTPUT skill keys).
  */
 
-export const SCHEMA_VERSION = 1;
+// v2 (item 10) added `subject` + `blockedDeliverable` to UpstreamFinding, so a finding can name
+// WHICH operation misbehaved and whether it stopped the run. v1 read `other | BROKEN | S1 | …` —
+// enough to prove something broke, never enough to know what. Both new fields are closed
+// vocabularies (an enum and a boolean), so distinguishability grew without widening the leak
+// surface by one byte. Bumped because `findingStructSig` now folds `subject` in, which changes
+// every fingerprint: two clients hitting the same defect still converge, but a v1 issue and a v2
+// issue for that defect will not dedup against each other. That is the correct trade — a v1
+// fingerprint could not tell the two culprits apart in the first place.
+export const SCHEMA_VERSION = 2;
 
 // ─── closed vocabularies ─────────────────────────────────────────────────────
 // Plugin skills/commands the collector attributes spans to (lock-step with the collector's
@@ -51,6 +59,92 @@ export const SIGNAL_CLASSES = ["tool_error", "permission_denied", "hook_failure"
 export const STRUGGLES = ["retry_storm", "reread_loop", "search_thrash", "fallback_loop", "recurring_error", "stall", "low_yield"];
 export const TOOL_FAMILIES = ["read", "edit", "bash", "browser", "git", "github", "tracker", "mcp_other", "none"];
 export const REPO_KINDS = ["module", "platform", "frontend", "backend", "unknown"];
+
+// ─── SUBJECTS — WHICH operation misbehaved (item 10, schema v2) ───────────────
+// A v1 finding read `other | BROKEN | S1 | failed | none | UNKNOWN | none | unknown`: enough to
+// prove something broke, never enough to act. The reproduction's S1 was an Azure Boards
+// `create-workitem` required-field gate and its S2 was an admin-credential handoff gap — and the
+// payload could not tell them apart, or from noise.
+//
+// This is a CLOSED vocabulary, exactly like every other field: a plugin-authored list of the
+// operations the plugin itself performs. It is NOT the collector's `subject` string echoed
+// through — that is a slugified client-influenced value (a tool name, a script name) and echoing
+// it would reopen by the back door precisely the free-text channel the closed schema exists to
+// shut. `subjectEnum()` MAPS onto this list and anything unrecognized becomes `other`.
+export const SUBJECTS = [
+  "none",
+  // tracker — filing / updating / discovering the bug tracker's contract
+  "ado_create_workitem", "ado_cli", "ado_transition", "jira_create_issue", "jira_transition",
+  "tracker_field_contract", "tracker_discovery",
+  // VCS / upstream
+  "github_search_issues", "github_issue_create", "github_pr_create", "git_push", "vcs_auth",
+  // browser / credentials
+  "browser_login", "browser_navigate", "browser_snapshot", "browser_evaluate", "admin_credential_handoff",
+  // onboarding / generated project state
+  "env_scaffold", "profile_shape", "repo_discovery", "access_verification", "mcp_config", "dependency_install",
+  // fix pipeline
+  "repo_checkout", "unit_test_harness", "build", "typecheck", "lint",
+  // the plugin's own diagnostics
+  "collector_verdict_integrity", "collector_scan", "collector_capture", "self_check_delivery",
+  "other",
+];
+
+const SUBJECTS_SET = new Set(SUBJECTS);
+
+// Slug → SUBJECTS. Ordered: the specific operation before the surface it ran on, so an `ado`
+// subject carrying a `create-workitem` code is not flattened to the generic CLI entry. First match
+// wins; no match ⇒ "other". The input is NEVER echoed.
+//
+// EVERY pattern is `_`-boundary-delimited on the slug, never a bare substring. An unanchored
+// `/checkout|clone/` matched a *client repo name* containing the word — a fixture called
+// `leocorpCheckout` mapped to `repo_checkout`, which is not a leak (only the enum travels) but IS
+// wrong information, and wrong information in a vendor-facing report is worse than none. Boundaries
+// keep a client-controlled string from steering the bucket while still matching the plugin's own
+// operation names, which are `_`-separated by construction.
+const B = (...alts) => new RegExp(`(?:^|_)(?:${alts.join("|")})(?:_|$)`);
+const SUBJECT_MARKERS = [
+  ["ado_create_workitem", B("ado_create_workitem", "create_workitem", "createworkitem")],
+  ["ado_transition", B("ado_transition", "ado_state")],
+  ["ado_cli", B("ado")],
+  ["jira_create_issue", B("createjiraissue", "jira_create_issue", "jira_create")],
+  ["jira_transition", B("transitionjiraissue", "jira_transition")],
+  ["tracker_field_contract", B("field_contract", "bug_contract", "fielddefaults")],
+  ["tracker_discovery", B("discover_tracker")],
+  ["github_search_issues", B("github_search_issues", "search_issues")],
+  ["github_issue_create", B("github_create_issue", "create_issue")],
+  ["github_pr_create", B("create_pull_request", "pr_create")],
+  ["git_push", B("git_push", "push")],
+  ["vcs_auth", B("gh_auth", "token_probe", "probe_github")],
+  ["admin_credential_handoff", B("credential", "credentials", "password", "admin_login")],
+  ["browser_login", B("login", "signin", "sign_in")],
+  ["browser_evaluate", B("run_code_unsafe", "run_code_uns", "browser_evaluate", "evaluate_script")],
+  ["browser_snapshot", B("browser_snapshot", "take_snapshot", "read_page")],
+  ["browser_navigate", B("browser_navigate", "navigate_page")],
+  ["access_verification", B("verify_access")],
+  ["repo_discovery", B("discover_repos")],
+  ["profile_shape", B("gen_profile", "assert_profile", "project_profile")],
+  ["env_scaffold", B("scaffold_env", "scaffold_secrets", "write_env")],
+  ["mcp_config", B("gen_mcp")],
+  ["dependency_install", B("npm_install", "install")],
+  ["repo_checkout", B("checkout", "clone", "git_clone")],
+  ["unit_test_harness", B("test", "tests", "vitest", "xunit", "dotnet_test")],
+  ["typecheck", B("tsc", "vue_tsc", "typecheck")],
+  ["lint", B("eslint", "lint")],
+  ["build", B("build", "msbuild", "vite")],
+  ["self_check_delivery", B("deliver", "vc_self_check", "upstream_reduce")],
+  ["collector_scan", B("session_telemetry", "collector_scan")],
+  ["collector_verdict_integrity", B("verdict_integrity")],
+  ["collector_capture", B("obs", "capture")],
+];
+
+/** Map an observation/DIAG subject onto the closed SUBJECTS vocabulary. Never echoes the input. */
+export function subjectEnum(subject) {
+  const s = String(subject ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (!s || s === "unknown") return "none";
+  if (SUBJECTS_SET.has(s)) return s; // already a vocabulary member (a sidecar supplying it directly)
+  for (const [val, re] of SUBJECT_MARKERS) if (re.test(s)) return val;
+  return "other";
+}
 
 // ─── observation classes (lock-step with the collector's OBS_CLASSES) ─────────
 // These never reach the upstream struct as-is: an observation's `class` is used only to
@@ -318,6 +412,11 @@ function foldObservations(obsRecords) {
     const verdict = severity === "S1" ? "BROKEN" : "DEGRADED";
     findings.push({
       skill: inSet(SKILLS_SET, g.skill, "other"),
+      // The observation's own subject, mapped onto the closed vocabulary — this is what turns
+      // `other | BROKEN | S1` into `S1 · qa-bug · ado_create_workitem · blocked`.
+      subject: subjectEnum(g.subject),
+      // An S1 observation group means a required step could not be trusted to have run.
+      blockedDeliverable: severity === "S1",
       verdict,
       severity,
       // Mirror the span path's outcome↔verdict pairing so the SAME defect fingerprints
@@ -390,6 +489,12 @@ export function reduce(local = {}) {
 
     findings.push({
       skill: inSet(SKILLS_SET, span.name, "other"),
+      // WHICH operation misbehaved (v2). A span's own `subject` is the failing child tool/script
+      // when the collector could attribute one, else the span's name.
+      subject: subjectEnum(failingTool?.subject || failingTool?.name || span.subject || ""),
+      // Did it stop the run? `failed`/`silent_suspect` mean the span did not achieve its purpose;
+      // `degraded` completed with a violated rule. Derived, never judged here.
+      blockedDeliverable: span.outcome === "failed" || span.outcome === "silent_suspect",
       verdict: outcomeToVerdict(span.outcome),
       severity: outcomeToSeverity(span.outcome),
       outcome: inSet(OUTCOMES_SET, span.outcome, "failed"),
@@ -417,6 +522,10 @@ export function reduce(local = {}) {
       if (!verdict || verdict === "OK") continue; // mirror the primary path: only flagged (BROKEN/DEGRADED)
       findings.push({
         skill: inSet(SKILLS_SET, f?.skill, "other"),
+        // A DIAG table cell may name the subject (`/qa-bug · `ado` create-workitem …`); anything
+        // unrecognized maps to "other", never the raw cell text.
+        subject: subjectEnum(f?.subject ?? ""),
+        blockedDeliverable: verdict === "BROKEN",
         verdict,
         // DERIVE severity from verdict (do NOT trust the DIAG's parsed `sev`): the primary path
         // derives S1/S2 from the outcome, so a fallback finding must match or the SAME defect
@@ -480,6 +589,8 @@ export function validateUpstream(struct) {
     const o = f && typeof f === "object" ? f : {};
     return {
       skill: inSet(SKILLS_SET, o.skill, "other"),
+      subject: inSet(SUBJECTS_SET, o.subject, "other"),
+      blockedDeliverable: o.blockedDeliverable === true,
       verdict: inSet(VERDICTS_SET, o.verdict, "OK"),
       severity: inSet(SEVERITIES_SET, o.severity, "S0"),
       outcome: inSet(OUTCOMES_SET, o.outcome, "failed"),
@@ -516,7 +627,8 @@ function outcomeSig(o) {
 /** Identity of a single finding, over its ENUM fields only (no text, no occurrences). */
 export function findingStructSig(f) {
   return [
-    f.skill, f.verdict, f.severity, outcomeSig(f.outcome), f.signalClass,
+    f.skill, f.subject ?? "none", f.blockedDeliverable ? "blocked" : "ok",
+    f.verdict, f.severity, outcomeSig(f.outcome), f.signalClass,
     (Array.isArray(f.struggle) ? [...f.struggle].sort().join("+") : ""),
     f.errorCode, f.toolFamily, f.repoKind,
   ].join("|");

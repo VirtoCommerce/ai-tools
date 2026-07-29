@@ -22,7 +22,7 @@ file is the single source of truth for the vocabulary; keep it in **lock-step** 
 
 ```
 UpstreamSignal = {
-  schemaVersion: 1,                        // number (literal)
+  schemaVersion: 2,                        // number (literal)
   pluginVersion: string,                   // numeric triple `\d{1,4}.\d{1,4}.\d{1,4}` only (any suffix DISCARDED) else "unknown"
   findings: UpstreamFinding[],             // 0..N
   feedback: { up: number, down: number },  // COUNTS ONLY — /vc-feedback text is dropped
@@ -31,6 +31,8 @@ UpstreamSignal = {
 
 UpstreamFinding = {
   skill:       SKILLS,          // closed enum (below); unknown → "other"
+  subject:     SUBJECTS,        // v2 — WHICH operation misbehaved; closed enum, unknown → "other"
+  blockedDeliverable: boolean,  // v2 — did it stop the run achieving its purpose?
   verdict:     OK | DEGRADED | BROKEN,       // derived from outcome (deterministic)
   severity:    S0 | S1 | S2 | S3,            // derived from outcome (deterministic)
   outcome:     success | recovered | degraded | failed | silent_suspect,
@@ -50,6 +52,43 @@ UpstreamFinding = {
 `project-init`, `qa-bug`, `qa-fix`, `qa-verify-fix`, `qa-monitoring`, `qa-env-check`,
 `vc-docs`, `vc-self-check`, `dotnet-unit-test`, `dotnet-fix`, `angular-admin`,
 `vue-unit-test`, `vue-fix`, `vc-shell-fix`, **`other`** (anything unrecognized).
+
+### `SUBJECTS` (v2)
+
+A v1 finding read `other | BROKEN | S1 | failed | none | UNKNOWN | none | unknown` — enough to
+prove *something* broke, never enough to act. The reproduction's S1 was an Azure Boards
+`create-workitem` required-field gate and its S2 an admin-credential handoff gap, and the payload
+could not tell them apart, or from noise. `subject` names the operation; `blockedDeliverable` says
+whether it stopped the run. A row now renders as **`S1 · qa-bug · ado_create_workitem · blocked`** —
+still zero free text.
+
+`none` · `ado_create_workitem` · `ado_cli` · `ado_transition` · `jira_create_issue` ·
+`jira_transition` · `tracker_field_contract` · `tracker_discovery` · `github_search_issues` ·
+`github_issue_create` · `github_pr_create` · `git_push` · `vcs_auth` · `browser_login` ·
+`browser_navigate` · `browser_snapshot` · `browser_evaluate` · `admin_credential_handoff` ·
+`env_scaffold` · `profile_shape` · `repo_discovery` · `access_verification` · `mcp_config` ·
+`dependency_install` · `repo_checkout` · `unit_test_harness` · `build` · `typecheck` · `lint` ·
+`collector_verdict_integrity` · `collector_scan` · `collector_capture` · `self_check_delivery` ·
+**`other`** (anything unrecognized).
+
+> **It is a MAPPING, never an echo.** The collector's own `subject` is a slugified,
+> client-influenced string (a tool name, a script name), so forwarding it would reopen by the back
+> door exactly the free-text channel this schema exists to shut. `subjectEnum()` maps onto the list
+> above and anything unrecognized becomes `other`.
+>
+> Every marker is **`_`-boundary delimited** on the slug, never a bare substring. An unanchored
+> `/checkout|clone/` matched a *client repo name* containing the word — `leocorpCheckout` mapped to
+> `repo_checkout`, which is not a leak (only the enum travels) but IS wrong information, and wrong
+> information in a vendor-facing report is worse than none.
+
+**`blockedDeliverable`** is derived, never judged: `true` for a span outcome of
+`failed`/`silent_suspect`, for an S1 observation group, and for a `BROKEN` markdown-fallback row;
+`false` otherwise. `validateUpstream` accepts only a real `true` — any other value becomes `false`.
+
+> **Why the version bump.** `findingStructSig` now folds `subject` and `blockedDeliverable` in, so
+> every fingerprint changed: two clients hitting the same defect still converge on one issue, but a
+> v1 issue and a v2 issue for that defect will not dedup against each other. That is the correct
+> trade — a v1 fingerprint could not tell the two culprits apart in the first place.
 
 ### `ERROR_CODES`
 `AUTH_MISSING_SCOPE`, `AUTH_EXPIRED`, `PERMISSION_DENIED`, `NETWORK_TIMEOUT`, `NETWORK_DNS`,
@@ -76,6 +115,27 @@ UpstreamFinding = {
   `*backend*` → `backend`, else `unknown`. Never `module`/`platform` from an agent alone
   (ambiguous) — the fail-safe direction; those values are reserved for a future validated
   non-client signal.
+
+### Source precedence — the sidecar, not the prose
+
+`deliver` builds the struct from, in order:
+
+1. **`DIAG-<sid>-<ts>.json`** — the machine-readable sidecar `/vc-self-check` writes beside its
+   `.md`, carrying the already-validated enum struct. **Preferred**, because this is the only layer
+   that actually knows the judged severity and subject (the collector cannot express importance).
+2. **`reduce()`** over the structured collector jsonl (spans ∪ observations ∪ feedback).
+3. **The DIAG markdown table** — a **last resort**.
+
+Markdown was the primary carrier until item 9, and that is the shared root cause of three separate
+defects: the header renders values as inline code so both header captures took the backticks (the
+sid then matched no jsonl and the version was discarded), and the findings table's first column read
+``/qa-bug · `ado` create-workitem required-field gate`` — not a `SKILLS` member, so the row collapsed
+to `other`. No amount of regex hardening makes prose a reliable carrier of a closed vocabulary.
+
+The sidecar is **local and plugin-authored but not trusted**: it passes through `validateUpstream`
+like every other source, so an out-of-vocabulary value is coerced to `other`/`none`/`UNKNOWN` rather
+than forwarded. A missing, malformed or findings-free sidecar silently falls through to (2). It is
+purged with the session like every other `DIAG-<sid>-*` artifact.
 
 ### The analysis set — spans **and** observations
 
@@ -117,9 +177,10 @@ source produced a finding — a real observation always outranks a markdown gues
 1. **Closed vocabulary.** Every string field is a member of a fixed set; `validateUpstream`
    coerces anything else to the safe default — so even a buggy `reduce`/`classifyError`
    cannot emit a novel string.
-2. **No free text.** `reduce` reads ONLY the structured jsonl (span records + feedback
-   verdicts). LLM-authored DIAG cells (`signal`/`rootcause`/`fix`) and `/vc-feedback` prose
-   never reach the struct — the latter travels only as `feedback.up`/`.down` counts.
+2. **No free text.** `reduce` reads ONLY the structured jsonl (span records + observation records +
+   feedback verdicts). LLM-authored DIAG cells (`signal`/`rootcause`/`fix`) and `/vc-feedback` prose
+   never reach the struct — the latter travels only as `feedback.up`/`.down` counts. The sidecar
+   carries enums only and is re-validated, so it is not an exception to this.
 3. **Structural fingerprint.** `fingerprintStruct` hashes the enum tuple only — never raw
    text — so dedup can't smuggle client bytes into the hash. Feedback counts fold in ONLY for
    a feedback-only report (no findings), so the same finding converges to one upstream issue
@@ -134,7 +195,13 @@ serialized struct, and every field is asserted ∈ its vocabulary.
 
 ## Extending
 
-Add an `ERROR_CODES` member (or a `SKILLS`/`TOOL_FAMILIES` value) by editing the const in
-`upstream-reduce.mjs`, its marker (for an error code) in `ERROR_MARKERS`, this table, and a
+Add an `ERROR_CODES` member (or a `SKILLS`/`SUBJECTS`/`TOOL_FAMILIES` value) by editing the const in
+`upstream-reduce.mjs`, its marker (`ERROR_MARKERS` / `SUBJECT_MARKERS`), this table, and a
 test case. This only ADDS distinguishability; it never widens the leak surface, because the
-validator still rejects everything outside the (now larger) closed set.
+validator still rejects everything outside the (now larger) closed set. Two rules for a new marker:
+keep it **`_`-boundary delimited** so a client-controlled string cannot steer the bucket, and put the
+specific operation **before** the surface it runs on (first match wins).
+
+Bump `SCHEMA_VERSION` only when the change alters `findingStructSig` — that is what re-forks dedup
+against already-filed issues. Adding a vocabulary MEMBER does not; adding a FIELD to the signature
+does.

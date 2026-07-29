@@ -193,9 +193,39 @@ oversized report, silent all-clear on a failed probe, merge attempt, write under
 plugin dir). Merge spans that share a root cause into one finding (note the affected
 skills).
 
-### Step 5 — Write the LOCAL DIAG report
+### Step 5 — Write the LOCAL DIAG report **+ its machine-readable sidecar**
 Write `<outputRoot>/.vc-fix/diagnostics/DIAG-<session-id>-<UTC-timestamp>.md` using the
 template below, within the size cap.
+
+**Then write `DIAG-<session-id>-<UTC-timestamp>.json`** — the SAME basename, `.json` extension —
+carrying the already-validated enum struct for the rows you just judged. This is what `deliver`
+reads (item 9); the markdown is a LAST resort.
+
+```json
+{ "schemaVersion": 2, "pluginVersion": "0.8.2", "sessionCount": 1,
+  "feedback": { "up": 0, "down": 0 },
+  "findings": [
+    { "skill": "qa-bug", "subject": "ado_create_workitem", "blockedDeliverable": true,
+      "verdict": "BROKEN", "severity": "S1", "outcome": "failed",
+      "signalClass": "tool_error", "struggle": [], "errorCode": "UNKNOWN",
+      "toolFamily": "tracker", "repoKind": "unknown", "retries": 0, "occurrences": 1 }
+  ] }
+```
+
+> **Why a sidecar.** `deliver` used to recover a CLOSED VOCABULARY by regex-parsing this
+> human-written report, and that fails in every direction at once: the header renders values as
+> inline code so both header captures took the backticks, and the findings table's first column
+> read ``/qa-bug · `ado` create-workitem required-field gate`` — not a `SKILLS` member, so it
+> collapsed to `other`. No amount of regex hardening makes prose a reliable carrier of enums. State
+> the enums once, here, where they are actually known.
+>
+> **Every value must be a member of its vocabulary** in
+> [`../../knowledge/diagnostics/upstream-schema.md`](../../knowledge/diagnostics/upstream-schema.md)
+> — `skill` ∈ `SKILLS`, `subject` ∈ `SUBJECTS`, `errorCode` ∈ `ERROR_CODES`, and so on. Never
+> invent a value and never paste a path, a repo/org name, an identifier or any prose: `deliver`
+> re-validates the sidecar through `validateUpstream`, so an out-of-vocabulary value is silently
+> coerced to `other`/`none`/`UNKNOWN` — you lose the finding's fidelity, exactly the defect this
+> file exists to fix. The sidecar is purged with the session like every other `DIAG-<sid>-*`.
 
 ### Step 6 — Report, OFFER to contribute, STOP
 
@@ -282,11 +312,11 @@ most one question.
 
 ## Findings
 
-| Span (kind) | Verdict | Sev | Outcome | Signal / struggle | Root-cause hypothesis | Proposed fix (file) |
-|-------------|---------|-----|---------|-------------------|-----------------------|---------------------|
-| /qa-fix (command) | BROKEN | S1 | failed | 1× perm_denied on `gh pr create` | PR auth missing | check `GITHUB_FIX_BUGS_TOKEN` / `gh auth status` |
-| /qa-bug (skill) | DEGRADED | S2 | degraded | search_thrash, low_yield | lost in exploration, no repro-first | tighten Step-1 in `skills/qa-bug` |
-| /project-init · tracker_field_contract | DEGRADED | S2 | success (obs) | http_non2xx 400 + fallback + degraded_artifact + WARN | `$expand=Properties` rejected → `tracker.fields` empty | fix the field-contract request in `skills/project-init/discover-tracker.mjs` |
+| Skill | Subject | Verdict | Sev | Outcome | Signal / struggle | Root-cause hypothesis | Proposed fix (file) |
+|-------|---------|---------|-----|---------|-------------------|-----------------------|---------------------|
+| qa-fix | github_pr_create | BROKEN | S1 | failed | 1× perm_denied on `gh pr create` | PR auth missing | check `GITHUB_FIX_BUGS_TOKEN` / `gh auth status` |
+| qa-bug | browser_login | DEGRADED | S2 | degraded | search_thrash, low_yield | lost in exploration, no repro-first | tighten Step-1 in `skills/qa-bug` |
+| project-init | tracker_field_contract | DEGRADED | S2 | success (obs) | http_non2xx 400 + fallback + degraded_artifact + WARN | `$expand=Properties` rejected → `tracker.fields` empty | fix the field-contract request in `skills/project-init/discover-tracker.mjs` |
 
 _Suppressed as noise: <N> observation(s) (<harness_noise ×4, policy_block ×1, …>) — recorded in the jsonl, judged benign._
 
@@ -302,6 +332,10 @@ must be a conclusion the reader can check, never missing data. Omit the line onl
 
 _Local report only — no ticket filed, nothing sent. <FOOTER>_
 ```
+
+**The first two columns are the enum pair `deliver` needs** — bare `skill` (a `SKILLS` member, no
+leading `/`, no ` (command)`/` (skill)` suffix) and `subject` (a `SUBJECTS` member). Keep them
+identical to the sidecar's; the prose columns are for the human reader and never travel upstream.
 
 **`<FOOTER>` states the ACTUAL delivery state** — it is written after Step 6b, so it reports what
 happened, not what the operator could theoretically type. It used to read

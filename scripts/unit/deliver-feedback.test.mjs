@@ -121,8 +121,9 @@ const brokenFinding = (over = {}) => ({
 test("buildDraft: renders a findings row from enum fields only", () => {
   const d = buildDraft({ struct: structOf({ findings: [brokenFinding()] }), route: "issue" });
   assert.match(d.body, /## Findings/);
-  assert.match(d.body, /qa-fix \| BROKEN \| S1 \| failed \| permission_denied \| AUTH_MISSING_SCOPE/);
-  assert.match(d.title, /qa-fix BROKEN/);
+  // Schema v2 (item 10) leads with severity and names the culprit: `S1 · qa-fix · <subject> · blocked`.
+  assert.match(d.body, /S1 \| qa-fix \| \w+ \| (?:blocked|—) \| BROKEN \| failed \| permission_denied \| AUTH_MISSING_SCOPE/);
+  assert.match(d.title, /qa-fix\/\w+ BROKEN/);
   assert.ok(d.fingerprint && typeof d.fingerprint === "string");
 });
 

@@ -21,7 +21,13 @@ import { mergeStructs, parseDiag } from "../../plugins/vc-fix/skills/vc-self-che
 // The EXACT key sets the struct must have — a strict-shape check so an UNFORESEEN extra field
 // carrying client bytes fails, not just the known fields (adversarial review #5, GAP 1).
 const TOP_KEYS = ["schemaVersion", "pluginVersion", "findings", "feedback", "sessionCount"];
-const FINDING_KEYS = ["skill", "verdict", "severity", "outcome", "signalClass", "struggle", "errorCode", "toolFamily", "repoKind", "retries", "occurrences"];
+// The closed-schema allowlist for UpstreamFinding: EXACTLY these keys, no others. `subject` and
+// `blockedDeliverable` were added by schema v2 (item 10) so a finding can name WHICH operation
+// misbehaved and whether it stopped the run — a v1 finding read `other | BROKEN | S1 | …` and could
+// not distinguish an Azure-Boards field-contract blocker from a credential-handoff gap. Both are
+// closed values (a SUBJECTS enum and a boolean), so this ADDS distinguishability without widening
+// the leak surface — which is what the property tests below still prove, byte for byte.
+const FINDING_KEYS = ["skill", "subject", "blockedDeliverable", "verdict", "severity", "outcome", "signalClass", "struggle", "errorCode", "toolFamily", "repoKind", "retries", "occurrences"];
 const FEEDBACK_KEYS = ["up", "down"];
 const assertExactKeys = (obj, keys, where) =>
   assert.deepEqual(Object.keys(obj).sort(), [...keys].sort(), `unexpected keys in ${where}: ${Object.keys(obj)}`);

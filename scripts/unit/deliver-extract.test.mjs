@@ -22,7 +22,7 @@
 // Run: `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { withTempHome } from "./_test-helpers.mjs";
 import {
@@ -32,10 +32,56 @@ import {
   stripInlineMd,
   readSessionRecords,
   assertNonEmpty,
+  buildDraft,
+  readSidecar,
+  sidecarPathFor,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
-import { reduce, validateUpstream, toolFamilyOfSubject } from "../../plugins/vc-fix/skills/vc-self-check/upstream-reduce.mjs";
+import {
+  reduce,
+  validateUpstream,
+  toolFamilyOfSubject,
+  subjectEnum,
+  findingStructSig,
+  SUBJECTS,
+  SCHEMA_VERSION,
+} from "../../plugins/vc-fix/skills/vc-self-check/upstream-reduce.mjs";
 
 const SID = "1cedb591-52ed-44c7-82b0-a5ec72463ecb";
+
+/**
+ * Drive deliver.main() with a STUBBED fetch, capture its JSON, restore everything.
+ * The stub is essential: the dry path probes GitHub and looks for a duplicate issue, and a real
+ * network call makes the test slow, flaky, and dependent on ambient credentials.
+ * Returns `{ plan, out, exitCode }`.
+ */
+async function runJson(argv) {
+  const prev = { fetch: globalThis.fetch, tok: process.env.GITHUB_FIX_BUGS_TOKEN, write: process.stdout.write, exit: process.exitCode };
+  let out = "";
+  process.env.GITHUB_FIX_BUGS_TOKEN = "ghp_classic_test_token";
+  process.stdout.write = (s) => { out += s; return true; };
+  globalThis.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    if ((opts.method || "GET").toUpperCase() === "POST") return { ok: true, json: async () => ({ number: 42, html_url: "http://issue/42" }) };
+    if (u.endsWith("/user")) return { ok: true, status: 200, headers: { get: (k) => (k.toLowerCase() === "x-oauth-scopes" ? "repo, gist" : null) }, json: async () => ({ login: "qa-bot" }) };
+    if (u.includes("/search/issues")) return { ok: true, json: async () => ({ items: [] }) };
+    if (u.includes("/issues")) return { ok: true, json: async () => [] };
+    return { ok: true, headers: { get: () => null }, json: async () => ({ permissions: {} }) };
+  };
+  let exitCode;
+  try {
+    await main(argv);
+    exitCode = process.exitCode ?? 0;
+  } finally {
+    globalThis.fetch = prev.fetch;
+    process.stdout.write = prev.write;
+    process.exitCode = prev.exit;
+    if (prev.tok === undefined) delete process.env.GITHUB_FIX_BUGS_TOKEN;
+    else process.env.GITHUB_FIX_BUGS_TOKEN = prev.tok;
+  }
+  let plan = null;
+  try { plan = JSON.parse(out.trim().split("\n").pop()); } catch { /* non-JSON output */ }
+  return { plan, out, exitCode };
+}
 
 /** The DIAG header + findings table exactly as the skill's own template renders them —
  *  inline code and all. This markdown IS the reproduction. */
@@ -82,12 +128,22 @@ function spanRecords(sid = SID) {
   ];
 }
 
-function seedSession(home, { sid = SID, stamp = "2026-07-29T11-55-12Z", withJsonl = true } = {}) {
+/** A DIAG whose findings rows name nothing in SKILLS — nothing structured can be recovered. */
+function unattributableMarkdown(sid) {
+  return [
+    `- Session: \`${sid}\` · Plugin: \`0.8.2\``,
+    "## Findings",
+    "| Span (kind) | Verdict | Sev | Signal | Root | Fix |",
+    "| something nobody recognizes | BROKEN | S1 | ? | ? | ? |",
+  ].join("\n");
+}
+
+function seedSession(home, { sid = SID, stamp = "2026-07-29T11-55-12Z", withJsonl = true, unattributable = false } = {}) {
   writeFileSync(join(home, "project-profile.json"), JSON.stringify({ feedback: { mode: "ask" } }));
   const dir = join(home, ".vc-fix", "diagnostics");
   mkdirSync(dir, { recursive: true });
   const diagPath = join(dir, `DIAG-${sid}-${stamp}.md`);
-  writeFileSync(diagPath, diagMarkdown(sid));
+  writeFileSync(diagPath, unattributable ? unattributableMarkdown(sid) : diagMarkdown(sid));
   if (withJsonl) {
     const lines = [
       { type: "session_start", sessionId: sid, pluginVersion: "0.8.2", projectType: "client" },
@@ -249,18 +305,32 @@ test("item 3: toolFamilyOfSubject maps the collector's SLUGIFIED subjects", () =
 
 // ─── item 11 — the information-free-payload guard ─────────────────────────────
 
-test("item 11: assertNonEmpty FAILS the pre-fix reproduction (all-degenerate findings)", () => {
-  const parsed = parseDiag(diagMarkdown());
-  // exactly what the pre-fix path produced: the DIAG-table fallback with nothing structured
-  const struct = validateUpstream(reduce({
-    spans: [], obs: [], feedback: [],
-    pluginVersion: "unknown",
-    fallbackFindings: parsed.findings,
-  }));
+test("item 11: assertNonEmpty FAILS when every finding is degenerate", () => {
+  // A DIAG whose skill cell names nothing in SKILLS — the shape the pre-fix path always produced,
+  // and still the shape a genuinely unattributable report produces.
+  const md = [
+    `- Session: \`s-x\` · Plugin: \`0.8.2\``,
+    "## Findings",
+    "| Span (kind) | Verdict | Sev | Signal | Root | Fix |",
+    "| something nobody recognizes | BROKEN | S1 | ? | ? | ? |",
+  ].join("\n");
+  const parsed = parseDiag(md);
+  const struct = validateUpstream(reduce({ spans: [], obs: [], feedback: [], pluginVersion: "0.8.2", fallbackFindings: parsed.findings }));
   assert.equal(struct.findings.every((f) => f.skill === "other" && f.signalClass === "none" && f.errorCode === "UNKNOWN"), true);
   const verdict = assertNonEmpty({ struct, parsed });
   assert.equal(verdict.ok, false);
   assert.match(verdict.reason, /skill:other/);
+});
+
+test("item 9/10: the markdown fallback now recovers the skill AND subject from the real DIAG cell", () => {
+  // The reproduction's own first cell was ``/qa-bug · `ado` create-workitem required-field gate``,
+  // which is not a SKILLS member — so the row used to collapse to `skill: other`. Markdown is now a
+  // last resort (the sidecar is primary), but when it IS used it must not throw the skill away.
+  const parsed = parseDiag(diagMarkdown());
+  assert.equal(parsed.findings[0].skill, "qa-bug", "the ` · ` decoration no longer poisons the enum");
+  const struct = validateUpstream(reduce({ spans: [], obs: [], feedback: [], pluginVersion: "0.8.2", fallbackFindings: parsed.findings }));
+  assert.ok(struct.findings.some((f) => f.skill === "qa-bug"));
+  assert.equal(assertNonEmpty({ struct, parsed }).ok, true);
 });
 
 test("item 11: assertNonEmpty FAILS when the DIAG has rows but the struct has none", () => {
@@ -284,44 +354,165 @@ test("item 11: assertNonEmpty is a no-op when the DIAG claims nothing", () => {
   assert.equal(assertNonEmpty({ struct: { findings: [] }, parsed }).ok, true);
 });
 
-// ─── the end-to-end reproduction, through the real CLI ────────────────────────
+// ─── item 10 — the vocabulary can name the culprit ────────────────────────────
 
-test("END TO END: --dry --assert-nonempty exits 0 on the reproduction, and the draft names the skill", async () => {
+test("item 10: subjectEnum maps onto the closed vocabulary and never echoes its input", () => {
+  assert.equal(subjectEnum("ado_create_workitem"), "ado_create_workitem");
+  assert.equal(subjectEnum("mcp_github_search_issues"), "github_search_issues");
+  assert.equal(subjectEnum("mcp_playwright_edge_browser_run_code_uns"), "browser_evaluate");
+  assert.equal(subjectEnum("verify_access"), "access_verification");
+  assert.equal(subjectEnum(""), "none");
+  assert.equal(subjectEnum("unknown"), "none");
+  // the fail-safe direction: an unrecognized subject is `other`, never the string
+  const evil = "AcmeCorp/secret-repo/token=ghp_x";
+  assert.equal(subjectEnum(evil), "other");
+  for (const v of [evil, "AcmeCorp", "leocorpCheckout"]) assert.ok(SUBJECTS.includes(subjectEnum(v)), v);
+});
+
+test("item 10: a client name containing a keyword does NOT steer the subject bucket", () => {
+  // An unanchored /checkout|clone/ mapped a client repo called `leocorpCheckout` to
+  // `repo_checkout` — not a leak (only the enum travels) but WRONG information, which in a
+  // vendor-facing report is worse than none. Every marker is `_`-boundary delimited.
+  assert.equal(subjectEnum("leocorpCheckout"), "other");
+  assert.equal(subjectEnum("AcmeBuildService"), "other");
+  assert.equal(subjectEnum("mytestingcorp"), "other");
+  // …while the plugin's own `_`-separated operation names still match
+  assert.equal(subjectEnum("git_checkout"), "repo_checkout");
+  assert.equal(subjectEnum("dotnet_build"), "build");
+});
+
+test("item 10: an observation finding names its subject and whether it blocked the run", () => {
+  const s = validateUpstream(reduce({ spans: [], obs: obsRecords(), feedback: [], pluginVersion: "0.8.2" }));
+  const ado = s.findings.find((f) => f.subject === "ado_cli");
+  assert.ok(ado, `expected an ado subject, got ${s.findings.map((f) => f.subject).join(",")}`);
+  assert.equal(ado.skill, "qa-bug");
+  assert.equal(ado.blockedDeliverable, false, "an S2 group completed — it did not block");
+  // …and an S1 group is marked blocked
+  const tri = ["script_exit_nonzero", "self_reported_fallback", "tool_error"].map((c) => ({
+    type: "obs", skill: "qa-bug", class: c, subject: "ado_create_workitem", code: "UNKNOWN", count: 1,
+  }));
+  const blocked = validateUpstream(reduce({ spans: [], obs: tri, pluginVersion: "0.8.2" })).findings[0];
+  assert.equal(blocked.severity, "S1");
+  assert.equal(blocked.subject, "ado_create_workitem");
+  assert.equal(blocked.blockedDeliverable, true);
+});
+
+test("item 10: validateUpstream coerces an out-of-vocabulary subject and a non-boolean flag", () => {
+  const s = validateUpstream({ findings: [{ skill: "qa-bug", subject: "AcmeCorp/private", blockedDeliverable: "yes-please", verdict: "BROKEN" }] });
+  assert.equal(s.findings[0].subject, "other", "a rogue subject never survives the boundary");
+  assert.equal(s.findings[0].blockedDeliverable, false, "only a real `true` counts");
+  assert.equal(JSON.stringify(s).includes("AcmeCorp"), false);
+});
+
+test("item 10: the rendered row reads `S1 · skill · subject · blocked`, still enums only", () => {
+  const struct = validateUpstream(reduce({ spans: [], obs: [
+    { type: "obs", skill: "qa-bug", class: "self_reported_fail", subject: "ado_create_workitem", code: "HTTP_4XX", count: 1 },
+  ], pluginVersion: "0.8.2" }));
+  const d = buildDraft({ struct, route: "issue" });
+  assert.match(d.body, /\| S1 \| qa-bug \| ado_create_workitem \| blocked \| BROKEN \|/);
+  assert.match(d.title, /qa-bug\/ado_create_workitem BROKEN/);
+});
+
+test("item 10: subject + blockedDeliverable are part of the finding identity", () => {
+  const base = { skill: "qa-bug", verdict: "BROKEN", severity: "S1", outcome: "failed", signalClass: "none", struggle: [], errorCode: "UNKNOWN", toolFamily: "none", repoKind: "unknown", retries: 0, occurrences: 1 };
+  const a = findingStructSig({ ...base, subject: "ado_create_workitem", blockedDeliverable: true });
+  const b = findingStructSig({ ...base, subject: "browser_login", blockedDeliverable: true });
+  const c = findingStructSig({ ...base, subject: "ado_create_workitem", blockedDeliverable: false });
+  assert.notEqual(a, b, "two different culprits are two different findings");
+  assert.notEqual(a, c, "blocking vs not is a different finding");
+  assert.equal(a, findingStructSig({ ...base, subject: "ado_create_workitem", blockedDeliverable: true }), "and identity is stable");
+});
+
+test("item 10: schemaVersion is 2 on every emitted struct", () => {
+  assert.equal(SCHEMA_VERSION, 2);
+  assert.equal(reduce({ spans: [] }).schemaVersion, 2);
+  assert.equal(validateUpstream({}).schemaVersion, 2);
+});
+
+// ─── item 9 — the machine-readable sidecar ────────────────────────────────────
+
+const SIDECAR = {
+  schemaVersion: 2, pluginVersion: "0.8.2", sessionCount: 1, feedback: { up: 0, down: 0 },
+  findings: [{
+    skill: "qa-bug", subject: "ado_create_workitem", blockedDeliverable: true,
+    verdict: "BROKEN", severity: "S1", outcome: "failed", signalClass: "tool_error",
+    struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+    retries: 0, occurrences: 1,
+  }],
+};
+
+test("item 9: sidecarPathFor swaps the extension, keeping the basename", () => {
+  assert.equal(sidecarPathFor(`/d/DIAG-${SID}-2026-07-29T11-55-12Z.md`), `/d/DIAG-${SID}-2026-07-29T11-55-12Z.json`);
+});
+
+test("item 9: deliver PREFERS the sidecar over the markdown table", async () => {
   await withTempHome(async (home) => {
     const { diagPath } = seedSession(home);
-    const prevExit = process.exitCode;
-    const chunks = [];
-    const write = process.stdout.write.bind(process.stdout);
-    process.stdout.write = (s) => (chunks.push(String(s)), true);
-    try {
-      await main(["--diag", diagPath, "--dry", "--assert-nonempty", "--json"]);
-    } finally {
-      process.stdout.write = write;
-    }
-    const out = JSON.parse(chunks.join(""));
-    assert.equal(process.exitCode ?? 0, 0, "the fixed pipeline passes the guard");
-    process.exitCode = prevExit;
-    assert.equal(out.ok, true);
-    assert.equal(out.pluginVersion, "0.8.2", "the version from the telemetry, not `unknown`");
-    assert.equal(out.session, SID, "the sid was recovered through the inline code");
+    writeFileSync(sidecarPathFor(diagPath), JSON.stringify(SIDECAR));
+    const { plan } = await runJson(["--diag", diagPath, "--dry", "--json"]);
+    assert.equal(plan.findings, 1, "the sidecar's single finding wins over the reducer's several");
+    assert.match(plan.title, /ado_create_workitem/, "and it names the culprit");
   });
 });
 
-test("END TO END: the same DIAG with its jsonl purged fails the guard loudly", async () => {
+test("item 9: a sidecar carrying rogue values is re-validated, not trusted", async () => {
   await withTempHome(async (home) => {
-    const { diagPath } = seedSession(home, { withJsonl: false });
-    const prevExit = process.exitCode;
-    const chunks = [];
-    const write = process.stdout.write.bind(process.stdout);
-    process.stdout.write = (s) => (chunks.push(String(s)), true);
-    try {
-      await main(["--diag", diagPath, "--dry", "--assert-nonempty", "--json"]);
-    } finally {
-      process.stdout.write = write;
+    const { diagPath } = seedSession(home);
+    writeFileSync(sidecarPathFor(diagPath), JSON.stringify({
+      ...SIDECAR,
+      pluginVersion: "9.9.9-AcmeCorp-github_pat_secret",
+      findings: [{ ...SIDECAR.findings[0], skill: "AcmeCorp-custom-skill", subject: "/c/clients/acme/src/Checkout.cs", errorCode: "LEAKED_ACME" }],
+    }));
+    const { plan } = await runJson(["--diag", diagPath, "--dry", "--json"]);
+    const draft = readFileSync(plan.deliveryDraft, "utf8");
+    for (const s of ["AcmeCorp", "github_pat_secret", "Checkout.cs", "LEAKED_ACME", "clients"]) {
+      assert.equal(draft.includes(s), false, `"${s}" must not reach the draft`);
     }
-    const out = JSON.parse(chunks.join(""));
-    assert.equal(out.ok, false, "an information-free payload must not pass silently");
-    assert.equal(process.exitCode, 3, "and it must exit non-zero");
-    process.exitCode = prevExit;
+    assert.match(draft, /Plugin version: 9\.9\.9\b/, "the version suffix is discarded, not echoed");
+  });
+});
+
+test("item 9: a malformed or empty sidecar falls back to the reducer instead of breaking", async () => {
+  for (const body of ["{ not json", "{}", '{"findings":[]}']) {
+    await withTempHome(async (home) => {
+      const { diagPath } = seedSession(home);
+      writeFileSync(sidecarPathFor(diagPath), body);
+      assert.equal(readSidecar(diagPath), null, `readSidecar(${body}) must be null`);
+      const { plan } = await runJson(["--diag", diagPath, "--dry", "--json"]);
+      assert.ok(plan.findings > 0, "the reducer still produces the findings");
+    });
+  }
+});
+
+test("item 9: the sidecar is purged with its session", async () => {
+  await withTempHome(async (home) => {
+    const { dir, diagPath } = seedSession(home);
+    const sc = sidecarPathFor(diagPath);
+    writeFileSync(sc, JSON.stringify(SIDECAR));
+    await runJson(["--diag", diagPath, "--purge", "--json"]);
+    assert.equal(existsSync(sc), false, "the sidecar is removed like every other DIAG-<sid>-* artifact");
+    assert.equal(existsSync(diagPath), false);
+  });
+});
+
+// ─── the end-to-end reproduction, through the real CLI ────────────────────────
+
+test("END TO END: --dry --assert-nonempty exits 0 on the reproduction, and it names the skill", async () => {
+  await withTempHome(async (home) => {
+    const { diagPath } = seedSession(home);
+    const { plan, exitCode } = await runJson(["--diag", diagPath, "--dry", "--assert-nonempty", "--json"]);
+    assert.equal(exitCode, 0, "the fixed pipeline passes the guard");
+    assert.equal(plan.ok, true);
+    assert.equal(plan.pluginVersion, "0.8.2", "the version from the telemetry, not `unknown`");
+    assert.equal(plan.session, SID, "the sid was recovered through the inline code");
+  });
+});
+
+test("END TO END: a DIAG with no telemetry and an unattributable row fails the guard loudly", async () => {
+  await withTempHome(async (home) => {
+    const { diagPath } = seedSession(home, { withJsonl: false, unattributable: true });
+    const { plan, exitCode } = await runJson(["--diag", diagPath, "--dry", "--assert-nonempty", "--json"]);
+    assert.equal(plan.ok, false, "an information-free payload must not pass silently");
+    assert.equal(exitCode, 3, "and it must exit non-zero");
   });
 });

@@ -161,6 +161,37 @@ export function readSessionRecords(sid) {
   return out;
 }
 
+/**
+ * Read the machine-readable sidecar `/vc-self-check` writes beside its `DIAG-<sid>-<ts>.md`
+ * (item 9): the SAME basename with a `.json` extension, holding the already-validated enum struct.
+ *
+ * Items 1, 2 and the `skill: other` coercion were three faces of one root cause — `deliver` was
+ * recovering a CLOSED VOCABULARY by regex-parsing a HUMAN-WRITTEN report. That can only keep
+ * breaking: the reproduction's first column was ``/qa-bug · `ado` create-workitem required-field
+ * gate``, which is not in `SKILLS_SET`, so it collapsed to `other` — and no amount of regex
+ * hardening makes prose a reliable carrier of enums. The sidecar is the enums, stated once, by the
+ * layer that actually knows them (the diagnostician assigns severity; the collector cannot).
+ *
+ * The sidecar is LOCAL and plugin-authored, but it is NOT trusted blindly: it goes through
+ * `validateUpstream` like everything else, so an out-of-vocabulary value is coerced to a safe
+ * default rather than forwarded. Missing / unparseable / findings-free ⇒ null, and the reducer path
+ * takes over. Never throws.
+ */
+export function sidecarPathFor(diagPath) {
+  return String(diagPath || "").replace(/\.md$/i, ".json");
+}
+export function readSidecar(diagPath) {
+  try {
+    const p = sidecarPathFor(diagPath);
+    if (!p || p === diagPath || !existsSync(p)) return null;
+    const raw = JSON.parse(readFileSync(p, "utf8"));
+    if (!raw || typeof raw !== "object" || !Array.isArray(raw.findings) || !raw.findings.length) return null;
+    return { struct: validateUpstream(raw), path: p };
+  } catch {
+    return null; // a malformed sidecar must never break delivery — fall back to the reducer
+  }
+}
+
 /** Assemble the reducer input for a session from its DIAG (fallback enums + version) + jsonl. */
 function sessionLocal(md, sid) {
   const parsed = parseDiag(md);
@@ -247,7 +278,15 @@ export function parseDiag(md) {
     if (cells.length && cells[0] === "") cells.shift();
     if (cells.length && cells[cells.length - 1] === "") cells.pop();
     if (cells.length < 4) continue;
-    const [skillCell, verdict, sev] = cells;
+    // The template's findings table gained a `Subject` column (schema v2, item 10), so the
+    // verdict/sev pair may sit at either offset. Locate them rather than assuming a position: an
+    // off-by-one would silently drop every row, which is the failure mode this whole file is about.
+    // A `subject` column exists only in the shifted layout.
+    const shifted = /^(OK|DEGRADED|BROKEN)$/.test(cells[2] ?? "") && /^S[0-3]$/.test(cells[3] ?? "");
+    const at = shifted ? 1 : 0;
+    const [verdict, sev] = [cells[at + 1], cells[at + 2]];
+    const skillCell = cells[0];
+    const subject = shifted ? stripInlineMd(cells[1]) : "";
     if (!/^(OK|DEGRADED|BROKEN)$/.test(verdict) || !/^S[0-3]$/.test(sev)) continue; // skip header/separator
     // Normalize the Skill cell to the bare enum name. The DIAG table renders it as
     // `/qa-fix (command)` / `/qa-bug (skill)`, but SKILLS holds bare names (`qa-fix`), so
@@ -255,15 +294,25 @@ export function parseDiag(md) {
     // skill → "other" — per-skill fidelity silently lost in exactly the case the fallback
     // exists for (PR #143 review round 2, Finding 3). Unknown names still fall through to
     // "other" via inSet in reduce/validateUpstream, so the fail-safe direction is preserved.
-    const skill = skillCell.replace(/^\//, "").replace(/\s*\((?:command|skill|agent)\)\s*$/i, "").trim();
-    const signal = cells[3] ?? "";
-    // 4-col table has no separate fix cell (cells[3] is the last) — don't alias the
+    // The Skill cell is stripped of inline markdown AND of the older `/qa-fix (command)` decoration
+    // (SKILLS holds bare names), then anything past a ` · ` separator is dropped: a real DIAG wrote
+    // ``/qa-bug · `ado` create-workitem required-field gate`` in this cell, which is not a SKILLS
+    // member, so the whole row coerced to `other` — the per-skill fidelity lost in exactly the case
+    // the fallback exists for. Unknown names still fall through to "other" via inSet, so the
+    // fail-safe direction is preserved. (The sidecar, item 9, is why this is now a last resort.)
+    const skill = stripInlineMd(skillCell)
+      .replace(/^\//, "")
+      .replace(/\s*\((?:command|skill|agent)\)\s*$/i, "")
+      .split(/\s+·\s+/)[0]
+      .trim();
+    const signal = cells[at + 3] ?? "";
+    // 4-col table has no separate fix cell (the signal is the last) — don't alias the
     // signal as the fix. fix only exists at ≥5 cols; root-cause only at ≥6.
-    const fix = cells.length >= 5 ? (cells[cells.length - 1] ?? "") : "";
-    const rootcause = cells.length >= 6 ? cells[4] : "";
-    findings.push({ skill, verdict, sev, signal, rootcause, fix });
+    const fix = cells.length >= at + 5 ? (cells[cells.length - 1] ?? "") : "";
+    const rootcause = cells.length >= at + 6 ? cells[at + 4] : "";
+    findings.push({ skill, subject, verdict, sev, signal, rootcause, fix });
   }
-  if (findings.length === 0) findings.push({ skill: "(session)", verdict: "DEGRADED", sev: "S2", signal: "see DIAG", rootcause: "", fix: "" });
+  if (findings.length === 0) findings.push({ skill: "(session)", subject: "", verdict: "DEGRADED", sev: "S2", signal: "see DIAG", rootcause: "", fix: "" });
   return { pluginVersion, findings };
 }
 
@@ -422,9 +471,13 @@ export function buildDraft({ struct, route }) {
   const rows = s.findings.map((f) => {
     const occ = f.occurrences > 1 ? ` _(×${f.occurrences} sessions)_` : "";
     const struggle = f.struggle.length ? f.struggle.join(",") : "—";
-    return `| ${f.skill} | ${f.verdict} | ${f.severity} | ${f.outcome} | ${f.signalClass} | ${f.errorCode} | ${struggle} | ${f.toolFamily} | ${f.repoKind}${occ} |`;
+    // `subject` + `blocked` are what make a row nameable (v2, item 10): a v1 row read
+    // `other | BROKEN | S1 | …` and could not distinguish an Azure-Boards field-contract blocker
+    // from a credential-handoff gap. Both are closed-vocabulary values — still zero free text.
+    return `| ${f.severity} | ${f.skill} | ${f.subject} | ${f.blockedDeliverable ? "blocked" : "—"} | ${f.verdict} | ${f.outcome} | ${f.signalClass} | ${f.errorCode} | ${struggle} | ${f.toolFamily} | ${f.repoKind}${occ} |`;
   });
-  const skills = [...new Set(s.findings.map((f) => `${f.skill} ${f.verdict}`))].slice(0, 3).join(", ");
+  // The title names the culprit too — `qa-bug/ado_create_workitem BROKEN` rather than a bare verdict.
+  const skills = [...new Set(s.findings.map((f) => `${f.skill}/${f.subject} ${f.verdict}`))].slice(0, 3).join(", ");
   const fbMark = s.feedback.down > 0 ? "👎" : s.feedback.up > 0 ? "👍" : "";
   const hasFb = s.feedback.up + s.feedback.down > 0;
   // Title never says a bare "OK": a feedback-only report reflects the operator verdict (D2).
@@ -435,7 +488,7 @@ export function buildDraft({ struct, route }) {
     `Automated quality report from the vc-fix self-diagnostics subsystem (\`/vc-self-check\`).`,
     `Plugin version: ${s.pluginVersion}. Sessions: ${s.sessionCount}. Generated from local session telemetry.`,
     ...(rows.length
-      ? [``, `## Findings`, `| Skill | Verdict | Sev | Outcome | Signal | Error | Struggle | Tool | Repo |`, `|-------|---------|-----|---------|--------|-------|----------|------|------|`, ...rows]
+      ? [``, `## Findings`, `| Sev | Skill | Subject | Impact | Verdict | Outcome | Signal | Error | Struggle | Tool | Repo |`, `|-----|-------|---------|--------|---------|---------|--------|-------|----------|------|------|`, ...rows]
       : []),
     // Operator /vc-feedback: COUNTS ONLY. The free-form note never leaves the machine — it
     // is not read into the struct (upstream-reduce reads only the `verdict`), so there is
@@ -539,7 +592,12 @@ function nextStepsFor({ route, confirmed, dup, batch = false }) {
  */
 export function assertNonEmpty({ struct, parsed }) {
   const rows = (parsed?.findings ?? []).filter((f) => f.verdict === "BROKEN" || f.verdict === "DEGRADED");
-  const degenerate = (f) => f.skill === "other" && f.signalClass === "none" && f.errorCode === "UNKNOWN";
+  // `subject` joined the degenerate test with schema v2: it is now the primary identifying field,
+  // so a finding that names neither the skill NOR the subject NOR the signal NOR the error carries
+  // nothing but a severity.
+  const degenerate = (f) =>
+    f.skill === "other" && (f.subject === "other" || f.subject === "none" || f.subject == null) &&
+    f.signalClass === "none" && f.errorCode === "UNKNOWN";
   const findings = struct?.findings ?? [];
   if (!rows.length) {
     return { ok: true, reason: "no BROKEN/DEGRADED row in the DIAG — nothing is expected upstream", diagRows: rows.length, findings: findings.length };
@@ -691,7 +749,9 @@ async function mainBatch(args) {
     if (sid) seenSids.add(sid);
     const { local, parsed } = sessionLocal(md, sid);
     if (pluginVersion === "unknown" && parsed.pluginVersion && parsed.pluginVersion !== "unknown") pluginVersion = parsed.pluginVersion;
-    structs.push(validateUpstream(reduce(local)));
+    // Same precedence as the single-session path (item 9): sidecar > reducer > markdown.
+    const sidecar = readSidecar(diagPath);
+    structs.push(sidecar ? sidecar.struct : validateUpstream(reduce(local)));
   }
   const dir = diagDir();
   const struct = mergeStructs(structs, pluginVersion);
@@ -838,7 +898,15 @@ export async function main(argv = process.argv.slice(2)) {
   const md = readFileSync(diagPath, "utf8");
   const sid = sessionIdFromDiag(md, diagPath);
   const { local, parsed } = sessionLocal(md, sid);
-  const struct = validateUpstream(reduce(local)); // closed-schema, enums only — the ONLY upstream source
+  // Source precedence (item 9): the machine-readable sidecar the diagnostician wrote > the reducer
+  // over the structured jsonl > the DIAG markdown table. Markdown is now the LAST resort, not the
+  // primary carrier of a closed vocabulary. The sidecar's pluginVersion falls back to the jsonl's
+  // when it is unknown, so a hand-written sidecar cannot lose a version the telemetry has.
+  const sidecar = readSidecar(diagPath);
+  const reduced = validateUpstream(reduce(local));
+  const struct = sidecar
+    ? validateUpstream({ ...sidecar.struct, pluginVersion: sidecar.struct.pluginVersion !== "unknown" ? sidecar.struct.pluginVersion : reduced.pluginVersion })
+    : reduced;
 
   // --assert-nonempty: offline regression gate — reduce, judge, exit. Deliberately BEFORE the
   // consent/token/route machinery so it needs no network and no profile, and so it reports on the
