@@ -556,40 +556,40 @@
     "storeOriginalCatalog": "fc596540864a41bf8ab78734ee7353a3"
   },
   "SR_REP_PRIMARY": {
-    "id": "51c9bf4b-a86f-4c61-98fb-c3cabaa9992b",
-    "user_id": "1c59bb6c-b742-4b0d-a2f3-d9afebf4033b"
+    "id": "796b58cc-a090-4bb5-9b76-5f214aeeec76",
+    "user_id": "9d20792d-dd0b-4d6f-a2d9-2cd4d335d3da"
   },
   "SR_REP_SECOND_STORE": {
-    "id": "6b8d5594-dbee-4d70-be08-8d8759da6344",
-    "user_id": "cf622552-5e84-432d-ac51-e57321e7c770"
+    "id": "2039203a-158b-41f2-ba3d-31acdfe80a16",
+    "user_id": "2addd963-8f50-4641-be6e-c1f87ae7e61c"
   },
   "SR_REP_BLOCKED": {
-    "id": "a9fa0d94-fedd-4200-b621-ba1844ea1235",
-    "user_id": "e38994a0-bf91-4292-9385-9b67e72afa2d"
+    "id": "022a77c5-4a08-4802-bcbe-d2861838b5f1",
+    "user_id": "9a975bf8-b813-4915-8615-2aaf580ac28d"
   },
   "SR_REP_LOCKED": {
-    "id": "13f3296b-099a-4409-9358-51eb71b6409f",
-    "user_id": "e769e93f-c8da-45c0-b319-d18cde46e649",
-    "membership_locked_id": "aa1c3075-8170-46cf-8ddd-0bfec8f88d8e"
+    "id": "4e8c1726-6c24-4d6f-893d-ab265415a74f",
+    "user_id": "26d6d359-4f30-4486-856c-f7393887fed0",
+    "membership_locked_id": "507d0578-b6e4-40f0-90b1-ab3e7e1dac79"
   },
   "SR_REP_EXCLUSIVE_TECHFLOW": {
-    "id": "12b7f6ea-a8be-4930-8179-397e252d7081",
-    "user_id": "152d171f-9a25-43f7-b25a-7e7aee2a905d"
+    "id": "7e0c7921-ab76-4e5c-8027-04f65e3c197f",
+    "user_id": "f0891e71-b6d2-4101-a375-e1a903e371be"
   },
   "SR_REP_ACME2": {
-    "id": "3ada8f10-8450-4ef9-aa06-64107f684c7a",
-    "user_id": "5e34cabb-2b87-4d0c-96d7-5fd53f945468"
+    "id": "58096657-94bb-4651-b4dd-9b0f203a4109",
+    "user_id": "6b627ebf-c167-43fb-8976-0950eba057d3"
   },
   "SR_REP_NOCUSTOMERS": {
-    "id": "30d58001-51c4-460d-a458-93409abdf503",
-    "user_id": "762eba3d-4c0d-43ce-818b-150138f688ba"
+    "id": "2f00fbeb-fad6-45f5-92fc-5d79017f8be0",
+    "user_id": "2db13fbf-0ce7-4c5e-a91a-c14e2474c813"
   },
   "SR_REP_PAGING": {
-    "id": "4b0a4d93-5f3b-4a06-9d38-498bc0e2853e",
-    "user_id": "3b74047b-6e1e-43d3-baea-d83e3380250f"
+    "id": "618de734-f7e4-4d44-beb5-537e17afe10d",
+    "user_id": "62ac88aa-3cf4-4217-a57c-513ffc1e7953"
   },
   "SR_OWNER_ACME": {
-    "id": "5a5e7056-e917-4556-b892-4e3270717d4e"
+    "id": "5a961c37-bc80-4076-8055-2d470c43d7c5"
   },
   "COMPLETED_ORDER": {
     "id": "51cc5eb9-23d4-47fe-b46d-36e03dc53b2f",
@@ -797,7 +797,7 @@
     "role_id": "AGENT-TEST-SalesRep-Full"
   },
   "SR_REP_ACME3": {
-    "id": "fa72d170-a908-4e5f-ab32-4a28e41b9a75",
-    "user_id": "681e8e84-b9ce-4f4d-ab20-4dafa901fdc9"
+    "id": "a31c108f-9601-4e28-812c-1424d28dc634",
+    "user_id": "567c91a6-8df0-48e3-9249-df486dd6faec"
   }
 }
