@@ -62,6 +62,20 @@ const ISSUE_TITLE_PREFIX = "[vc-fix self-check]";
 export const FINDING_MARKER = "vc-fix-finding:";
 /** Severity is recorded as a separate marker so a later run can tell whether it GREW. */
 export const SEVERITY_MARKER = "vc-fix-severity:";
+/**
+ * A content hash of the "## Where" evidence block (VCST-5582 B1). Embedded in the issue body AND in
+ * the FIRST occurrence comment that carries the block, so a later occurrence can tell the evidence
+ * already travelled and stay a short `+1` counter. Its ABSENCE (a legacy enum-only issue like #174,
+ * or an evidence-less issue) is exactly what makes the first comment carry full detail.
+ */
+export const WHERE_MARKER = "vc-fix-where:";
+
+/** Stable, Date-free djb2 → base36 hash of the rendered Where block (matches upstream-reduce's). */
+function hashWhere(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
 
 // outputRoot — where the local diagnostics live. Same rule as skills/project-init/lib/paths.mjs
 // `outputRoot()` (VC_FIX_HOME || cwd); inlined so this file stays byte-identical across trees.
@@ -429,13 +443,20 @@ export async function findFindingIssue({ repo, token, key, fetchImpl = fetch }) 
  *   • The containment note is ACCURATE to the new rule. It used to claim "NO free text, NO file
  *     paths", which is no longer true — and a containment note that overclaims is worse than none.
  */
-export function buildFindingIssue({ finding, struct, route = "issue" }) {
+/**
+ * The "## Where" evidence block — the plugin file:line, code excerpt, offending literal, vendor API
+ * shape, vendor error identity, vendor docs/message, and the proposed fix. Built ONCE here so the
+ * issue body AND the occurrence comment carry byte-for-byte the SAME evidence (VCST-5582 B1): a
+ * deduped finding used to reach the maintainer as a bare `+1` counter with no root cause, because
+ * this block lived only in the issue-body template. Returns `{ lines, hash, marker }`:
+ *   - `lines`  — the rendered block (`[]` when the finding carries no provenance);
+ *   - `hash`   — a content hash of the block (`""` when empty);
+ *   - `marker` — `<!-- vc-fix-where: <hash> -->` (`""` when empty), embedded wherever the block is
+ *                rendered so a later occurrence can detect the evidence already travelled.
+ */
+export function buildWhereBlock(finding) {
   const f = finding;
-  const key = findingKey(f);
-  const marker = findingMarkerFor(f);
-  const title = findingTitleFor(f);
   const fence = "```";
-
   const where = [];
   if (f.pluginFile) where.push(`- Location: \`${f.pluginFile}${f.pluginLine ? `:${f.pluginLine}` : ""}\``);
   if (f.codeExcerpt) where.push(`- Plugin source at that location:\n\n${fence}\n${f.codeExcerpt}\n${fence}\n`);
@@ -451,6 +472,17 @@ export function buildFindingIssue({ finding, struct, route = "issue" }) {
   if (f.vendorDocUrl) where.push(`- Vendor docs: ${f.vendorDocUrl}`);
   if (f.vendorErrorMessage) where.push(`- Vendor error message (normalized, operator-disclosed): \`${f.vendorErrorMessage}\``);
   if (f.proposedFix) where.push(`- Proposed fix: ${f.proposedFix}`);
+  const hash = where.length ? hashWhere(where.join("\n")) : "";
+  return { lines: where, hash, marker: hash ? `<!-- ${WHERE_MARKER} ${hash} -->` : "" };
+}
+
+export function buildFindingIssue({ finding, struct, route = "issue" }) {
+  const f = finding;
+  const key = findingKey(f);
+  const marker = findingMarkerFor(f);
+  const title = findingTitleFor(f);
+
+  const { lines: where, marker: whereMarker } = buildWhereBlock(f);
 
   const extras = [
     f.struggle?.length ? `Struggle: \`${f.struggle.join(", ")}\`` : "",
@@ -461,6 +493,7 @@ export function buildFindingIssue({ finding, struct, route = "issue" }) {
   const body = [
     marker,
     `<!-- ${SEVERITY_MARKER} ${f.severity} -->`,
+    ...(whereMarker ? [whereMarker] : []),
     `Automated quality report from the vc-fix self-diagnostics subsystem (\`/vc-self-check\`).`,
     ``,
     `| Sev | Skill | Subject | Verdict | Impact | Signal | Error |`,
@@ -506,8 +539,17 @@ async function createIssue({ repo, token, title, body, fetchImpl = fetch }) {
  * prevalence and urgency: how many sessions, which plugin version, and the severity observed NOW —
  * plus an explicit escalation note when this occurrence is WORSE than the one the issue was filed at
  * (the #173/#174 pair differed by exactly that, and nothing said so).
+ *
+ * TEMPLATE PARITY (VCST-5582 B1). When `includeWhere` is set, the comment ALSO carries the full
+ * `## Where` evidence block — the same block the issue body has — so a deduped finding reaches the
+ * maintainer with its root cause (location, excerpt, offending literal, proposed fix), not a bare
+ * counter. The caller sets `includeWhere` only when the target issue does NOT already carry that
+ * evidence (matched on `WHERE_MARKER` + the block's content hash), so the FIRST comment on an
+ * evidence-less/legacy issue is full and repeat occurrences stay short. When the block IS included,
+ * its own `## Where` lines already carry the vendor identity, so the standalone identity line is
+ * dropped to avoid duplication.
  */
-export function occurrenceCommentBody({ finding, struct, escalatedFrom = null }) {
+export function occurrenceCommentBody({ finding, struct, escalatedFrom = null, includeWhere = false }) {
   const lines = [
     `+1 occurrence — another vc-fix session hit \`${findingKey(finding)}\`.`,
     ``,
@@ -520,7 +562,10 @@ export function occurrenceCommentBody({ finding, struct, escalatedFrom = null })
       `- ⚠ **Severity escalated** from ${escalatedFrom} to ${finding.severity} — this occurrence was worse than the one this issue was filed at. Title verdict updated to ${finding.verdict}.`,
     );
   }
-  if (finding.vendorErrorTypeKey || finding.vendorErrorCode || finding.vendorHttpStatus) {
+  const { lines: whereLines, marker: whereMarker } = buildWhereBlock(finding);
+  if (includeWhere && whereLines.length) {
+    lines.push(``, whereMarker, `## Where`, ...whereLines);
+  } else if (finding.vendorErrorTypeKey || finding.vendorErrorCode || finding.vendorHttpStatus) {
     lines.push(`- Vendor error identity: ${[
       finding.vendorErrorTypeKey ? `typeKey \`${finding.vendorErrorTypeKey}\`` : "",
       finding.vendorErrorCode ? `errorCode \`${finding.vendorErrorCode}\`` : "",
@@ -528,6 +573,24 @@ export function occurrenceCommentBody({ finding, struct, escalatedFrom = null })
     ].filter(Boolean).join(" · ")}`);
   }
   return lines.join("\n");
+}
+
+/**
+ * Does any EXISTING comment on the issue already carry this Where-evidence marker? `findFindingIssue`
+ * returns the issue title+body but not its comments, so a Where block a PRIOR occurrence added in a
+ * comment lives only here. Fail OPEN (return false ⇒ "not carried" ⇒ include the evidence): under
+ * uncertainty, over-informing the maintainer beats silently dropping the root cause (B1's bias).
+ */
+export async function commentsCarryMarker({ repo, token, number, marker, fetchImpl = fetch }) {
+  if (!marker) return true; // no evidence to carry ⇒ nothing to add
+  try {
+    const r = await fetchImpl(`https://api.github.com/repos/${repo}/issues/${number}/comments?per_page=100`, { headers: ghHeaders(token) });
+    if (!r.ok) return false;
+    const list = await r.json();
+    return (Array.isArray(list) ? list : []).some((c) => String(c?.body || "").includes(marker));
+  } catch {
+    return false;
+  }
 }
 async function addComment({ repo, token, number, body, fetchImpl = fetch }) {
   try {
@@ -805,6 +868,12 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
       r.plan = "comment";
       const was = severityOfIssue(issue);
       r.escalatedFrom = was && severityRank(f.severity) > severityRank(was) ? was : null;
+      // Template parity (B1): does the target issue's TITLE/BODY already carry this finding's Where
+      // evidence? A legacy/enum-only issue (#174) does not — so its first comment must be full.
+      // `""` marker (finding has no provenance) ⇒ treat as "carried" (nothing to add).
+      const { marker: whereMarker } = buildWhereBlock(f);
+      r.whereMarker = whereMarker;
+      r.bodyHasWhere = whereMarker ? `${issue.title || ""}\n${issue.body || ""}`.includes(whereMarker) : true;
     }
     results.push(r);
   }
@@ -824,9 +893,18 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
         r.action = "already-fixed"; // nothing sent; not a failure
         recordFindingDecision(sid, r, { decision: "sent", issueNumber: r.issue.number });
       } else if (r.plan === "comment") {
+        // Include the full Where block ONLY when neither the issue body NOR a prior comment already
+        // carries this evidence (matched on WHERE_MARKER + content hash). So a legacy/evidence-less
+        // issue gets full detail on the first comment; repeat occurrences stay a short counter.
+        let includeWhere = false;
+        if (r.whereMarker && !r.bodyHasWhere) {
+          const inComments = await commentsCarryMarker({ repo, token, number: r.issue.number, marker: r.whereMarker, fetchImpl });
+          includeWhere = !inComments;
+        }
+        r.includedWhere = includeWhere;
         const ok = await addComment({
           repo, token, number: r.issue.number, fetchImpl,
-          body: occurrenceCommentBody({ finding: f, struct, escalatedFrom: r.escalatedFrom }),
+          body: occurrenceCommentBody({ finding: f, struct, escalatedFrom: r.escalatedFrom, includeWhere }),
         });
         r.action = ok ? "commented" : "error";
         if (ok && r.escalatedFrom) {

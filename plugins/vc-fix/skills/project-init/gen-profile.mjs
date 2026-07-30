@@ -213,6 +213,11 @@ function main() {
       if (t.projectId) set("tracker.azure.projectId", t.projectId);
       if (t.workItemTypes) set("tracker.azure.workItemTypes", t.workItemTypes);
       if (t.roleStates) set("tracker.azure.roleStates", t.roleStates);
+      // Bake the fix-side completeness as a CANONICAL boolean under tracker.azure.* (the same
+      // nested convention as roleStates / qaRoleStatesComplete) so readers — assert-profile.mjs,
+      // any future consumer — have one explicit field instead of re-deriving it from transitionPolicy
+      // or the map (VCST-5582 E3).
+      if (t.roleStatesComplete !== undefined) set("tracker.azure.roleStatesComplete", t.roleStatesComplete);
       // Default to silent role-based transitions ONLY when discover-tracker.mjs found a
       // state for every lifecycle role. A partial map (e.g. no distinct "in-review" state
       // was found) must keep "ask" — /qa-fix would otherwise transition a missing role

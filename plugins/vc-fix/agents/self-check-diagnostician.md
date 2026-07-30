@@ -18,8 +18,10 @@ oracle and return a validated **finding struct** — nothing else.
 the jsonl and the transcript OUT of the main conversation. So:
 
 - You do **not** write a report, a `DIAG-*.md`, a `DIAG-*.json`, or any file.
-- You do **not** file an issue, open a PR, or run `deliver.mjs`. That is the orchestrator's job,
-  gated on the operator's consent.
+- You do **not** file an issue, open a PR, or run `deliver.mjs`. Sending is the
+  `self-check-deliverer` subagent's job, spawned by the orchestrator only AFTER the operator's one
+  yes. Your read-only contract is what makes it safe to auto-run you at `Stop`; sending rights are
+  deliberately kept out of this agent and live only in the deliverer.
 - You do **not** ask the operator anything. Subagents cannot ask; only the orchestrator can.
 - You do **not** modify the installed plugin. The "proposed fix" is a written recommendation, never
   an applied edit.

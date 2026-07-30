@@ -50,6 +50,17 @@ export function profileViolations(profile) {
   // ─── tracker: the bug FIELD CONTRACT ─────────────────────────────────────────
   // Azure Boards only — Jira discovers its transitions live and bakes no field contract, so an
   // empty `fields` there is correct, not degraded.
+  //
+  // PROFILE SHAPE CONVENTION (VCST-5582 E3). The profile splits tracker data by reader:
+  //   • the generic bug FIELD CONTRACT lives at the TOP level — `tracker.fields` / `tracker.fieldMap`
+  //     / `tracker.fieldDefaults` — because the tracker-agnostic /qa-bug create path reads it there;
+  //   • the Azure-SPECIFIC transition/state model lives NESTED under `tracker.azure.*` —
+  //     `roleStates` / `roleStatesComplete` / `qaRoleStatesComplete` / `transitionPolicy` /
+  //     `workItemTypes` — because the runtime reader (skills/qa-fix-routing/trackers/azure-tracker.ts
+  //     `az.roleStates`) and the writer (gen-profile.mjs `set("tracker.azure.…")`) both use that path.
+  // This reader MUST read each field from where its runtime consumer reads it — the earlier top-level
+  // `tracker.roleStates` read was the bug: it resolved to undefined and emitted a false
+  // roleStatesComplete/qaRoleStatesComplete degradation on EVERY correctly onboarded Azure project.
   if (tracker.kind === "azure") {
     const types = Object.keys(tracker.fields || {});
     const bugType = types.find((t) => /^bug$/i.test(t)) || types[0] || "Bug";
@@ -67,12 +78,23 @@ export function profileViolations(profile) {
         add("tracker_fieldmap_stale", `tracker.fieldMap points at field(s) this process no longer has: ${slots.staleOverrides.join(", ")} — they are IGNORED`);
       }
     }
-    if (tracker.roleStatesComplete !== true) {
-      const have = Object.keys(tracker.roleStates || {});
-      add("tracker_role_states", `roleStatesComplete:false (resolved: ${have.join(", ") || "none"}) — /qa-fix cannot transition the ticket by lifecycle role`);
+    // Role-state completeness — read from tracker.azure.* (the canonical, runtime-read path). A
+    // profile that predates the explicit `roleStatesComplete` boolean still resolves correctly:
+    // completeness is confirmed by an explicit `true`, OR by transitionPolicy:"auto" (which
+    // gen-profile only sets when the scan found every fix role), OR by re-deriving from the map.
+    const az = tracker.azure || {};
+    const roleStates = az.roleStates || {};
+    const FIX_ROLES = ["in-progress", "in-review", "ready-for-test", "done"];
+    const QA_ROLES = ["testing", "tested", "reopen"];
+    const fixComplete =
+      az.roleStatesComplete === true || az.transitionPolicy === "auto" || FIX_ROLES.every((r) => roleStates[r]);
+    const qaComplete = az.qaRoleStatesComplete === true || QA_ROLES.every((r) => roleStates[r]);
+    if (!fixComplete) {
+      const have = Object.keys(roleStates);
+      add("tracker_role_states", `tracker.azure.roleStatesComplete:false (resolved: ${have.join(", ") || "none"}) — /qa-fix cannot transition the ticket by lifecycle role`);
     }
-    if (tracker.qaRoleStatesComplete !== true) {
-      add("tracker_qa_role_states", "qaRoleStatesComplete:false — affects /qa-verify-fix's transitions only");
+    if (!qaComplete) {
+      add("tracker_qa_role_states", "tracker.azure.qaRoleStatesComplete:false — affects /qa-verify-fix's transitions only");
     }
   }
 

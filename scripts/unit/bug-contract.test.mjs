@@ -65,9 +65,24 @@ test("resolveSlots (LEO/OPUS): auto-maps every slot the old code hardcoded, by N
   assert.equal(mapping.body, "System.Description");
   assert.equal(mapping.severity, "Microsoft.VSTS.Common.Severity");
   assert.equal(source.environment, "auto");
-  // System.State is required and has a defaultValue — it is not a bug-report slot, so it is
-  // reported as unmapped-required and handled by its default, never guessed.
-  assert.deepEqual(unmappedRequired.map((f) => f.ref), ["System.State"]);
+  // System.State is required but SERVER-DEFAULTED on create (and covered by roleStates), so it is
+  // deliberately excluded from unmappedRequired (VCST-5582 E2) — it is not a bug-report slot and the
+  // operator cannot act on it. Every other required LEO field auto-mapped, so nothing is unmapped.
+  assert.deepEqual(unmappedRequired.map((f) => f.ref), []);
+});
+
+test("resolveSlots: server-defaulted required fields never surface as unmappedRequired (E2)", () => {
+  // A synthetic contract whose ONLY required fields are the three Azure server-defaults + a Title
+  // (which auto-maps). A healthy onboarding must report ZERO unmapped-required — the old behaviour
+  // flagged all three as an un-actionable degradation on every Azure project.
+  const contract = [
+    { ref: "System.Title", name: "Title", required: true, type: "string" },
+    { ref: "System.AreaId", name: "Area", required: true, type: "integer" },
+    { ref: "System.IterationId", name: "Iteration", required: true, type: "integer" },
+    { ref: "System.State", name: "State", required: true, type: "string", defaultValue: "New" },
+  ];
+  const { unmappedRequired } = resolveSlots(contract, {});
+  assert.deepEqual(unmappedRequired.map((f) => f.ref), [], "AreaId/IterationId/State are server-defaulted — not the operator's to map");
 });
 
 test("resolveSlots: a name match with an INCOMPATIBLE type is rejected (the treePath trap)", () => {

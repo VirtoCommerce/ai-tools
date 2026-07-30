@@ -28,13 +28,27 @@ once a finding is upstream, the issue is the source of truth, so the processed s
   so the jsonl, the transcript and the oracle
   [`skill-expectations.md`](../knowledge/diagnostics/skill-expectations.md) stay OUT of the main
   conversation. The subagent returns a validated finding struct — no report file.
-- **Relays a short summary** of the exact fields that would be sent (the disclosure surface), then —
-  for a BROKEN/DEGRADED finding — asks ONE binary *file the issue(s) in Virto?* question.
-- On yes (or `feedback.mode: auto`), files **one GitHub Issue per finding**, deduped on
-  `(skill, subject)` against **open AND closed** issues: an open match gets a `+1 occurrence`
-  comment, a closed match is reported as already fixed (upgrade), only a genuine miss is filed.
+- **Relays the roll-up + disclosure ONCE**, before the question — the exact fields that would be
+  sent, and every OUTCOME the yes covers (a new issue per new finding; a comment carrying the SAME
+  evidence on an open match; a fixed-upstream report on a closed match; telemetry purged on success).
+  Never phrased as "one issue per finding".
+- **Asks ONE binary question and never again.** The binary *file the issue(s) in Virto?* is the ONLY
+  operator interaction in the delivery path. A **yes** means *"publish whatever is appropriate,
+  decide the form yourself"* — so after a yes the agent MUST NOT ask which route to take, whether to
+  supplement an evidence-less issue, what to do about a validator-dropped field, or whether to purge
+  telemetry. Each is the agent's own deterministic decision.
+- On yes (or `feedback.mode: auto`), spawns the `self-check-deliverer` subagent
+  ([`agents/self-check-deliverer.md`](../agents/self-check-deliverer.md)), which files **one GitHub
+  Issue per finding**, deduped on `(skill, subject)` against **open AND closed** issues: an open
+  match gets a `+1 occurrence` comment **carrying the full `## Where` evidence** (never a bare
+  counter), a closed match is reported as already fixed (upgrade), only a genuine miss is filed. It
+  then prints ONE result line. Telemetry is purged automatically on a fully successful delivery.
 
 ## What it never does
+- Never asks a second question. One binary consent per run, then silence until one result line —
+  regardless of how dedup resolves.
+- Never hand-authors or edits an upstream body to route around the boundary validator (B3). If a
+  field is dropped, it sends what passed and notes the omission in one clause of the result line.
 - Never writes a `DIAG-*.md` / `DIAG-*.json` / `DELIVERY-*.md` report artifact (PR #172 item 2 —
   the only persistence is a compact per-finding record in the session's `state.json`).
 - Never modifies the installed plugin (the proposed fix is a recommendation, not an edit).

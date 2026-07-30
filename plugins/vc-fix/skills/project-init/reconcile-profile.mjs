@@ -288,6 +288,20 @@ function reconcile(schema, existing, decisions) {
     report.added.push({ path: dotted, value, via: "set-open-map" });
   }
 
+  // ─── tracker.fields rescan (VCST-5582 E5) ──────────────────────────────────────────
+  // tracker.fields on an Azure profile is DISCOVERED live (discover-tracker.mjs). It is an OPEN
+  // MAP, so the walk keeps whatever is there and never flags it — but an existing profile whose
+  // scan ran before the `$expand=all` fix (E1) carries an EMPTY tracker.fields, so /qa-bug silently
+  // sends the legacy "unverified defaults" field set. Surface it under `rescan` so `/project-init
+  // --check` re-derives the contract (re-run discover-tracker.mjs + gen-profile --merge) without a
+  // full re-onboarding. Jira bakes no field contract, so an empty `fields` there is correct.
+  const trackerKind = migrated?.tracker?.kind ?? existing?.tracker?.kind ?? schema?.tracker?.kind;
+  const contractFields = migrated?.tracker?.fields;
+  const fieldsEmpty = !contractFields || (typeof contractFields === "object" && Object.keys(contractFields).length === 0);
+  if (trackerKind === "azure" && fieldsEmpty && !report.rescan.some((r) => r.path === "tracker.fields")) {
+    report.rescan.push({ path: "tracker.fields", source: "discover-tracker" });
+  }
+
   return { migrated, ...report };
 }
 
@@ -316,7 +330,10 @@ function main() {
 
   const { migrated, added, removed, pending, rescan } = reconcile(PROFILE_DEFAULTS, raw, decisions);
   const hasStructuralChange = added.length > 0 || removed.length > 0;
-  const status = hasStructuralChange || pending.length > 0 ? "changes" : "current";
+  // `rescan` (e.g. an Azure profile with an empty tracker.fields, VCST-5582 E5) also counts as
+  // "changes" so the skill knows to re-run the live discover step — even when nothing structural
+  // was added/removed. It does NOT trigger a --write (a rescan needs a live scan, not a struct edit).
+  const status = hasStructuralChange || pending.length > 0 || rescan.length > 0 ? "changes" : "current";
 
   // Prune safety valve. A normal reconcile drops 0–2 genuinely-obsolete fields; dropping a large
   // batch usually means this tree's schema is a SUBSET of the one that wrote the profile (e.g. a

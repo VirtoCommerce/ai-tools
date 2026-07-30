@@ -225,19 +225,25 @@ async function main() {
       obsHttp("workitem_states", e);
     }
     // The FIELD CONTRACT for this type — what this organization's process actually requires
-    // and allows. `$expand=Properties` is what returns allowedValues / defaultValue alongside
-    // alwaysRequired. Also best-effort: no contract ⇒ the create path falls back to the legacy
-    // field set, clearly labelled "unverified defaults" (the E-f ladder).
+    // and allows. `$expand=all` returns allowedValues / defaultValue alongside alwaysRequired.
+    // `all` (WorkItemTypeFieldsExpandLevel.All) is a MEMBER of the enum Azure DevOps accepts —
+    // None / AllowedValues / DependentFields / All — and All subsumes AllowedValues, so
+    // parseFieldContract()/resolveSlots() get the full contract with no other change. Best-effort:
+    // no contract ⇒ the create path falls back to the legacy field set, clearly labelled
+    // "unverified defaults" (the E-f ladder).
     try {
-      const typeFields = (await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/fields?$expand=Properties&api-version=7.1`, authHeader)).value || [];
+      const typeFields = (await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/fields?$expand=all&api-version=7.1`, authHeader)).value || [];
       const contract = parseFieldContract(typeFields, fieldTypes);
       if (contract.length) fields[t] = contract;
     } catch (e) {
       console.error(`[discover-tracker] field contract for '${t}' failed (create falls back to unverified defaults): ${e.message}`);
-      // THE reference defect (VCST-5582 H): this exact catch — an HTTP 400 on
-      // `…/fields?$expand=Properties` — degraded a real onboarding to "unverified defaults" while
-      // self-diagnostics reported the run clean. Two observations: the transport failure, and the
-      // functional consequence (/qa-bug will send a field set this organization never confirmed).
+      // A genuine field-contract failure now (permissions, transport). This is NOT the old
+      // "reference defect": that HTTP 400 came from a MALFORMED request the plugin itself sent —
+      // `$expand=Properties`, which is not a member of WorkItemTypeFieldsExpandLevel — so the scan
+      // failed on EVERY Azure deployment and tracker.fields was always empty, silently sending the
+      // legacy "unverified defaults" field set. That request bug is fixed above (`$expand=all`); a
+      // failure reaching this catch is now a real environmental/permission issue, still recorded as
+      // the transport failure plus its functional consequence (a field set this org never confirmed).
       obsHttp("tracker_field_contract", e);
       obs.push({ class: "self_reported_fallback", subject: "tracker_field_contract", code: "NONE", evidence: { snippet: `${t}: create falls back to the legacy field set labelled "unverified defaults"` } });
     }

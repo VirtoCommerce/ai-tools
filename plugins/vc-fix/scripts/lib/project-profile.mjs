@@ -166,6 +166,10 @@ export const PROFILE_DEFAULTS = {
       // No auto-migration: a profile generated before the QA roles / heuristic existed keeps
       // its old map until /project-init (discover-tracker) is re-run to refresh it.
       roleStates: {},
+      // Fix-side completeness signal (in-progress/in-review/ready-for-test/done all found by the
+      // discover-tracker scan). Baked as a canonical boolean under tracker.azure.* so readers do
+      // not have to re-derive it from transitionPolicy or the map (VCST-5582 E3). Defaults false.
+      roleStatesComplete: false,
       // "auto" = transition silently by role (log only); "confirm-once" = one upfront ok;
       // "ask" = ask before each transition (the original conservative behaviour).
       transitionPolicy: "ask",

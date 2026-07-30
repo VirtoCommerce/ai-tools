@@ -90,6 +90,28 @@ SURVIVES:
 names, repo/org/project names, any path outside the plugin. Send counts instead ("14 states, custom
 process").
 
+### `proposedFix` — its own allowlist gate (VCST-5582 B2), not `boundaryDenial`
+
+`proposedFix` is the single most actionable field, so it MUST be able to travel — but it is
+model-authored prose, and `boundaryDenial`'s `violatesFieldNamespace` denies **any** `Capitalized.dotted`
+token, which eats legitimate vendor-enum references (`WorkItemTypeFieldsExpandLevel.All`) and plugin
+symbol paths and used to null it wholesale. So `proposedFix` runs through `proposedFixDenial(value, {
+denyValues, files })` instead — same **default-deny**, plus an **allowlist** on the identifier shapes:
+
+- **DENY outright** (a real leak vector — the field is dropped, never scrubbed): a URL host, an
+  absolute filesystem path, an email, a token-shaped run, a GUID, or any value read from the client's
+  `.env.*` / `project-profile.json` (`denyValues`).
+- **ALLOWLIST** every `Capitalized.dotted` identifier — it must be a JS built-in namespace
+  (`JSON.stringify`), a `System.*` / `Microsoft.VSTS.*` WIT field ref, a plugin filename
+  (`*.mjs`/`*.ts`/`README.md`), or a literal that appears **verbatim in a cited plugin source file**.
+  A FOREIGN dotted identifier (`Custom.ReviewState`, `Web.config`) is denied — it could be the
+  client's own custom field or file.
+
+Plugin-relative paths (`skills/…`, `*.mjs`, `*.ts`), `file:line` pairs, and lower-case plugin symbols
+are permitted implicitly — they are not `Capitalized.dotted`, so the allowlist loop never inspects
+them and no leak-shape check matches them. As with every v3 string, a denied `proposedFix` is set to
+`null` while the finding SURVIVES, and **without a `ctx` it is dropped** (fail closed).
+
 ### §6b — the vendor error MESSAGE (the one bounded exception)
 
 The message CAN interpolate client identifiers, so it is the single field whose safety is not "impossible

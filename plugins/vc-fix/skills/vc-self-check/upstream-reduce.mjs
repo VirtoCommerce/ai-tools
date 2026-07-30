@@ -719,6 +719,59 @@ export function boundaryDenial(value, { kind = "text", denyValues = [], states =
   return null;
 }
 
+// A `.mjs`/`.ts`/… suffix marks a plugin FILENAME, not a client work-item field ref — used to relax
+// the dotted-identifier allowlist below for a proposedFix that names a plugin file.
+const PLUGIN_FILE_EXT = /\.(?:mjs|cjs|ts|tsx|js|jsx|json|md)$/i;
+
+/**
+ * The proposedFix boundary (VCST-5582 B2). `proposedFix` is the single most actionable field, so it
+ * must be able to TRAVEL — but it is model-authored prose, and the generic `boundaryDenial` denies
+ * ANY `Capitalized.dotted` token via `violatesFieldNamespace`, which eats legitimate vendor-enum
+ * references (`WorkItemTypeFieldsExpandLevel.All`) and plugin symbol paths. So proposedFix gets its
+ * own gate: KEEP default-deny on the real leak shapes, ADD an allowlist on the identifier shapes.
+ *
+ *   - DENY outright (a genuine leak vector, never scrubbed — the field is dropped): a URL host, an
+ *     absolute filesystem path, an email, a token-shaped run, a GUID, or any value read from the
+ *     client's `.env.*` / `project-profile.json` (the `denyValues`).
+ *   - ALLOWLIST every `Capitalized.dotted` identifier: it must be a JS built-in namespace
+ *     (`JSON.stringify`), a `System.*` / `Microsoft.VSTS.*` WIT field ref, a plugin filename
+ *     (`README.md`), or a literal that appears VERBATIM in a cited plugin source file. A FOREIGN
+ *     dotted identifier (`Custom.ReviewState`, `Web.config`) is denied — it could be the client's
+ *     own custom field or file.
+ *
+ * Plugin-relative paths, `*.mjs`/`*.ts` filenames, file:line pairs and lower-case plugin symbols are
+ * all permitted implicitly (they are not `Capitalized.dotted`, so the loop never inspects them, and
+ * none of the leak-shape checks match them). Returns a REASON to deny, or null to allow. Pure.
+ */
+export function proposedFixDenial(value, { denyValues = [], files = null } = {}) {
+  const v = String(value ?? "");
+  if (!v.trim()) return "empty";
+  if (HOSTISH.test(v) || BARE_HOST.test(v)) return "contains a URL host";
+  if (ABS_PATH.test(v)) return "contains an absolute filesystem path";
+  if (EMAILISH.test(v)) return "contains an email address";
+  if (TOKENISH.test(v)) return "contains a token-shaped run";
+  if (GUIDISH.test(v)) return "contains a GUID";
+  const low = v.toLowerCase();
+  for (const d of denyValues) {
+    if (d && low.includes(String(d).toLowerCase())) return "contains a value read from .env.* / project-profile.json";
+  }
+  const fileMap = files instanceof Map ? files : null;
+  const re = /\b([A-Z][A-Za-z0-9]*)((?:\.[A-Za-z0-9]+)+)\b/g;
+  for (let m = re.exec(v); m; m = re.exec(v)) {
+    const token = m[0];
+    if (CODE_NAMESPACES.has(m[1])) continue;                            // JSON.stringify, Object.keys, …
+    if (WIT_ALLOWED_NAMESPACES.some((rx) => rx.test(token))) continue;  // System.* / Microsoft.VSTS.*
+    if (PLUGIN_FILE_EXT.test(token)) continue;                          // a Capitalized plugin filename
+    if (fileMap) {
+      let inSource = false;
+      for (const content of fileMap.values()) if (lf(content).includes(token)) { inSource = true; break; }
+      if (inSource) continue;                                           // quoted from the plugin's OWN source
+    }
+    return `names a foreign dotted identifier "${token}" (not System.*/Microsoft.VSTS.*, not a plugin file, not in cited plugin source)`;
+  }
+  return null;
+}
+
 /**
  * §6b — normalize a vendor error MESSAGE before it is even considered. The message is the one place
  * where a vendor can interpolate client identifiers (project name, org, GUIDs), so it is normalized
@@ -780,8 +833,11 @@ export function provenanceFields(o, ctx) {
   // ── model-authored, boundary-validated ──
   const shape = capped(o.apiShape, FIELD_CAPS.apiShape);
   if (shape && shape.trim() && !boundaryDenial(shape, opts)) out.apiShape = shape.trim();
+  // proposedFix uses its OWN allowlist gate (B2), NOT boundaryDenial: it must be able to reference
+  // plugin paths / file:line / vendor-enum members without `violatesFieldNamespace` denying it
+  // wholesale. Still default-deny on the real leak shapes; still DENIED (dropped), never scrubbed.
   const fix = capped(o.proposedFix, FIELD_CAPS.proposedFix);
-  if (fix && fix.trim() && !boundaryDenial(fix, opts)) out.proposedFix = fix.trim();
+  if (fix && fix.trim() && !proposedFixDenial(fix, { denyValues: opts.denyValues, files })) out.proposedFix = fix.trim();
 
   // ── §6a vendor error IDENTITY: the vendor's own stable enums, no client interpolation ──
   const tk = capped(o.vendorErrorTypeKey, FIELD_CAPS.vendorErrorTypeKey);

@@ -12,7 +12,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   reduce, validateUpstream, classifyError, fingerprintStruct, findingStructSig, findingKey,
-  toolFamily, repoKindOfAgent, provenanceFields, boundaryDenial, normalizeVendorMessage,
+  toolFamily, repoKindOfAgent, provenanceFields, boundaryDenial, proposedFixDenial, normalizeVendorMessage,
   violatesFieldNamespace, severityRank, verdictRank,
   SKILLS, VERDICTS, SEVERITIES, OUTCOMES, SIGNAL_CLASSES, STRUGGLES,
   TOOL_FAMILIES, REPO_KINDS, ERROR_CODES, SCHEMA_VERSION, OS_VALUES, VENDOR_DOC_HOSTS,
@@ -513,6 +513,51 @@ test("v3 provenance: a proven code excerpt + offending literal from the cited pl
   assert.ok(g.codeExcerpt.includes("$expand=Properties"));
   assert.equal(g.apiShape, "GET {base}/{project}/_apis/wit/workitemtypes/{type}/fields?$expand=…");
   assert.equal(g.proposedFix, "drop $expand=Properties and request ?api-version=7.1");
+});
+
+test("B2 proposedFix: an actionable fix naming plugin paths + a System.* ref TRAVELS", () => {
+  const f = {
+    skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2", outcome: "degraded",
+    signalClass: "none", struggle: [], errorCode: "UNKNOWN", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    proposedFix: "in skills/qa-fix-routing/bug-contract.mjs:191 exclude System.AreaId from unmappedRequired",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  assert.equal(
+    s.findings[0].proposedFix,
+    "in skills/qa-fix-routing/bug-contract.mjs:191 exclude System.AreaId from unmappedRequired",
+    "the single most actionable field must survive — plugin path + file:line + System.* are all allowlisted",
+  );
+});
+
+test("B2 proposedFix: a FOREIGN dotted identifier (a client custom field) is DENIED (dropped, finding survives)", () => {
+  const f = {
+    skill: "qa-bug", subject: "tracker_field_contract", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    proposedFix: "map the Custom.ReviewState field so the bug can transition",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  assert.equal(s.findings[0].proposedFix, null, "a foreign Custom.* field ref could be client process data — dropped");
+  assert.equal(s.findings[0].verdict, "BROKEN", "the finding SURVIVES the dropped optional field");
+  assertNoLeak(s, "Custom.ReviewState");
+});
+
+test("B2 proposedFixDenial: default-deny on leak shapes; allowlist on identifiers", () => {
+  // Denied leak shapes (the field would be dropped).
+  assert.ok(proposedFixDenial("point it at https://acme.example.com"), "URL host");
+  assert.ok(proposedFixDenial("read C:/Users/acme/secret.txt"), "absolute path");
+  assert.ok(proposedFixDenial("email dev@acme.com"), "email");
+  assert.ok(proposedFixDenial("token github_pat_0123456789abcdefghijklmnopqrstuvwx"), "token");
+  assert.ok(proposedFixDenial("id 6f1c2b3a-1111-2222-3333-444455556666"), "GUID");
+  assert.ok(proposedFixDenial("use the org LeoCorpWebStore", { denyValues: ["LeoCorpWebStore"] }), "client env/profile value");
+  // Allowed: prose + plugin paths + vendor enums + a plugin-sourced Capitalized.dotted literal.
+  assert.equal(proposedFixDenial("drop $expand=Properties in discover-tracker.mjs; request api-version 7.1"), null);
+  assert.equal(proposedFixDenial("default System.State via roleStates, do not add a slot"), null);
+  assert.equal(
+    proposedFixDenial("reference AdoClient.Foo per the source", { files: new Map([["a.mjs", "class AdoClient { AdoClient.Foo }"]]) }),
+    null,
+    "a Capitalized.dotted literal quoted from the plugin's OWN source is allowlisted",
+  );
+  assert.ok(proposedFixDenial("touch the Custom.Widget field"), "a foreign Capitalized.dotted token with no source proof is denied");
 });
 
 test("v3 provenance (item 7): a codeExcerpt NOT present in the cited plugin file is REJECTED (dropped, finding survives)", () => {

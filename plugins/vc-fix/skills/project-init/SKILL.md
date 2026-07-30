@@ -920,7 +920,10 @@ report — no writes, no scans, no questions of its own:
 - For each **`pending`** entry, ask the operator with **`AskUserQuestion`**, using the
   entry's own `question` + `options` (make the `default` value the Recommended option).
 - For each **`rescan`** entry, re-run the matching discovery (`discover-repos` /
-  `discover-tracker`) and fold the result back via `gen-profile --merge` (§ Re-running).
+  `discover-tracker`) and fold the result back via `gen-profile --merge` (§ Re-running). An Azure
+  profile with an **empty `tracker.fields`** is reported here as `{ path: "tracker.fields", source:
+  "discover-tracker" }` (VCST-5582 E5) — an upgraded install whose original scan predates the
+  `$expand=all` fix re-derives the bug field contract on `--check`, no full re-onboarding needed.
 - Then apply everything in one write, one `--set path=value` per resolved decision:
 
 ```bash

@@ -193,6 +193,55 @@ test("reconcile --set: a dotted FIELD REF lands as ONE key in an open map, not n
   }
 });
 
+test("reconcile --print: an Azure profile with an EMPTY tracker.fields is reported under rescan (E5)", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-rescan-"));
+  try {
+    // A profile whose Azure scan predates the `$expand=all` fix (E1) — tracker.fields is empty, so
+    // /qa-bug would send the legacy "unverified defaults" field set. --check must surface it under
+    // `rescan` so the skill re-derives the contract without a full re-onboarding.
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "azure", fields: {}, azure: { organization: "acme", project: "Web" } },
+    }));
+    const out = execFileSync(process.execPath, [RECONCILE, "--print"], {
+      encoding: "utf8",
+      env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },
+    });
+    const report = JSON.parse(out);
+    assert.ok(
+      report.rescan.some((r) => r.path === "tracker.fields" && r.source === "discover-tracker"),
+      "an empty Azure tracker.fields must be listed under rescan",
+    );
+    assert.equal(report.status, "changes", "a pending rescan makes the profile 'changes', not 'current'");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("reconcile --print: a POPULATED tracker.fields is NOT flagged for rescan, and Jira never is", () => {
+  const run = (profile, dir) => {
+    const home = mkdtempSync(join(tmpdir(), dir));
+    try {
+      writeFileSync(join(home, "project-profile.json"), JSON.stringify(profile));
+      const out = execFileSync(process.execPath, [RECONCILE, "--print"], {
+        encoding: "utf8",
+        env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },
+      });
+      return JSON.parse(out);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  };
+  const azurePopulated = run({
+    projectType: "client",
+    tracker: { kind: "azure", fields: { Bug: [{ ref: "System.Title", name: "Title", required: true, type: "string" }] }, azure: { organization: "acme", project: "Web" } },
+  }, "vc-fix-reconcile-populated-");
+  assert.ok(!azurePopulated.rescan.some((r) => r.path === "tracker.fields"), "a populated contract needs no rescan");
+
+  const jiraEmpty = run({ projectType: "platform", tracker: { kind: "jira", projectKey: "VCST" } }, "vc-fix-reconcile-jira-");
+  assert.ok(!jiraEmpty.rescan.some((r) => r.path === "tracker.fields"), "Jira bakes no field contract — empty tracker.fields is correct there");
+});
+
 test("reconcile: a discovered tracker.fields contract survives reconcile untouched (open map)", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-contract-"));
   try {

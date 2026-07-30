@@ -78,6 +78,17 @@ const SLOT_SPECS = {
 
 const lc = (v) => String(v ?? "").toLowerCase();
 
+// Required fields Azure DevOps SERVER-DEFAULTS on create, so they need no semantic slot and must
+// never appear in `unmappedRequired` (VCST-5582 E2). `System.AreaId` / `System.IterationId` default
+// to the project's root area/iteration, and `System.State` defaults to the process's initial state
+// (also covered by the profile's roleStates). Left in `unmappedRequired`, each one made a perfectly
+// healthy Azure onboarding report a degradation the operator could not act on. They are matched by
+// reference name (case-insensitive); note ADO reports them on the CONTRACT as `System.AreaId` /
+// `System.IterationId` even though the create payload uses `System.AreaPath` / `System.IterationPath`.
+const SERVER_DEFAULTED_REQUIRED = new Set([
+  "system.areaid", "system.iterationid", "system.state",
+]);
+
 // ─── contract parsing (E-a) ──────────────────────────────────────────────────────────
 /**
  * Build the contract from the two Azure Boards metadata responses.
@@ -187,8 +198,13 @@ export function resolveSlots(contract, fieldMap = {}) {
 
   const unmapped = BUG_SLOTS.filter((s) => !mapping[s]);
   const requiredRefs = list.filter((f) => f.required).map((f) => f.ref);
-  // (3) The set that BLOCKS a POST: required by the process, and nothing bound it.
-  const unmappedRequired = list.filter((f) => f.required && !taken.has(lc(f.ref)));
+  // (3) The set that BLOCKS a POST: required by the process, and nothing bound it — EXCLUDING the
+  // fields Azure DevOps server-defaults on create (System.AreaId/IterationId/State). Those are
+  // `alwaysRequired` in the contract but need no semantic slot, so counting them would make every
+  // healthy Azure onboarding report an un-actionable degradation (VCST-5582 E2).
+  const unmappedRequired = list.filter(
+    (f) => f.required && !taken.has(lc(f.ref)) && !SERVER_DEFAULTED_REQUIRED.has(lc(f.ref)),
+  );
   return { mapping, source, unmapped, unmappedRequired, requiredRefs, staleOverrides };
 }
 

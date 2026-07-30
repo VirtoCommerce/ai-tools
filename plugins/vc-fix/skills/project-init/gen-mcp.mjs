@@ -22,7 +22,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join, dirname, resolve, isAbsolute } from "path";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
+import { config as dotenv } from "dotenv";
 import { outputRoot, pluginRoot, resolveOutPath } from "./lib/paths.mjs";
+import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { emitObservations } from "./lib/diag-obs.mjs";
 
 // Read the shipped template from the plugin's own dir (works from any cwd); write
@@ -157,6 +159,29 @@ export function ensureGitignoreEntries(root, entries) {
   return missing;
 }
 
+/**
+ * Layer the deployment's env files into process.env BEFORE injectTokens() reads them (VCST-5582 E4).
+ *
+ * gen-mcp used to read tokens straight from process.env, but /project-init's documented flow puts
+ * them in `.env.local` (scaffold-secrets.mjs tells the operator to) — a file no one has SOURCED into
+ * the environment on the first pass. So GITHUB_PERSONAL_ACCESS_TOKEN / POSTMAN_API_KEY / … read as
+ * unset, and the github/postman MCP shipped DISABLED (unresolved `<PLACEHOLDER>`). It only ever
+ * resolved if someone re-ran the generator with the secrets already exported — which the flow never
+ * tells anyone to do. Mirror derive-context.mjs exactly: `.env.defaults` → `.env.<TEST_ENV>` →
+ * `.env.local`, then promote the per-env `_<ENV>` suffix, all rooted at outputRoot (the project).
+ * Does NOT override a value already present in process.env (a real export wins over a file).
+ */
+function loadDeploymentEnv(root = outputRoot()) {
+  const TEST_ENV = resolveTestEnv("vcst");
+  dotenv({ path: join(root, ".env.defaults"), quiet: true });
+  dotenv({ path: join(root, `.env.${TEST_ENV}`), override: true, quiet: true });
+  dotenv({ path: join(root, ".env.local"), override: true, quiet: true });
+  const SUF = `_${TEST_ENV.toUpperCase()}`;
+  for (const [k, v] of Object.entries(process.env)) {
+    if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
+  }
+}
+
 let _ghToken;
 function ghAuthToken() {
   if (_ghToken !== undefined) return _ghToken;
@@ -170,6 +195,9 @@ function ghAuthToken() {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
+  // Load .env.defaults/.env.<env>/.env.local so a token the operator placed in .env.local (per the
+  // documented flow) is actually seen on the FIRST pass — before injectTokens() reads process.env.
+  loadDeploymentEnv();
   const os = detectOs(args.os);
   const tracker = args.tracker || "jira";
   const extras = String(args.with || "").split(",").map((s) => s.trim()).filter(Boolean);
