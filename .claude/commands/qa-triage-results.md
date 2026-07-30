@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /qa-triage-results — Regression-Results Triage & Analysis
 
-You are the **Triage Orchestrator** for Virto Commerce regression runs. A regression run tells you *which* tests failed; this flow works out *why* each one failed and what to do about it. It reads a completed run under `reports/regression/{RUN_ID}/`, classifies every non-passing case (FAIL, BLOCKED, SKIPPED), verifies the real bugs against the live environment, applies test-case fixes for the test-defects, drafts bug reports for confirmed product defects, and **STOPs for a human** — it never files a tracker ticket (Jira / Azure Boards) and never triggers `/qa-fix`.
+The owner of this flow is the **`qa-lead-orchestrator`** (acting here as the Triage Orchestrator) for Virto Commerce regression runs. A regression run tells you *which* tests failed; this flow works out *why* each one failed and what to do about it. It reads a completed run under `reports/regression/{RUN_ID}/`, classifies every non-passing case (FAIL, BLOCKED, SKIPPED), verifies the real bugs against the live environment, applies test-case fixes for the test-defects, drafts bug reports for confirmed product defects, and **STOPs for a human** — it never files a tracker ticket (Jira / Azure Boards) and never triggers `/qa-fix`.
 
 This is the missing consumer between `/qa-regression` (produces the run) and `/qa-bug`→`/qa-fix` (act on a confirmed bug). It clones the proven `/qa-monitoring` skeleton — collect → dedup → triage → live-verify → report → STOP — sourced from the regression run dir instead of App Insights.
 
@@ -27,13 +27,13 @@ This is the missing consumer between `/qa-regression` (produces the run) and `/q
 ---
 
 ## Phase 0 — Resolve the run
-> **Owner:** orchestrator
+> **Owner:** `qa-lead-orchestrator`
 
 1. Resolve the target run dir: `latest` (default) → newest `REG-*`/`SMOKE-*`/`AREG-*` under `reports/regression/`; else the given `RUN_ID`. Abort with a clear message if none exists.
 2. Confirm the run is complete (`test-run-status.json` `status: completed`, or the suite result files carry `completedAt`). If a run is still in progress, warn and triage only the completed suites.
 
 ## Phase 1 — Collect failures + evidence (deterministic)
-> **Owner:** orchestrator (via `scripts/lib/regression-triage.ts`)
+> **Owner:** `qa-lead-orchestrator` (via `scripts/lib/regression-triage.ts`)
 
 Run the collector — it does all the JSON/CSV/evidence archaeology so you don't:
 ```
@@ -44,7 +44,7 @@ It emits a JSON packet of every **non-passing case** — `FAIL`, `BLOCKED`, and 
 If `issueCount === 0` → skip to Phase 6 and emit a clean ≤15-line report.
 
 ## Phase 2 — Dedup & flakiness
-> **Owner:** orchestrator
+> **Owner:** `qa-lead-orchestrator`
 
 The collector already fingerprinted each failure and (via the store) marked `flaky:true` for any that has oscillated PASS↔FAIL across prior runs. Also feed the flakiness engine so trends stay honest:
 ```
@@ -73,7 +73,7 @@ For each `REAL_BUG` candidate that is `CONFIDENCE: HIGH` (or **all** of them und
 `STALE_TEST` candidates are confirmed cheaply via `/qa-review-tests <suite> --verify` (Dimension 8 env-check: is the control renamed/moved/removed?) rather than a full repro.
 
 ## Phase 5 — Route + act (only writes under `--fix`)
-> **Owner:** orchestrator → delegates
+> **Owner:** `qa-lead-orchestrator` → delegates
 
 Per the routing table in the skill (`routing-and-fix.md`):
 
@@ -90,7 +90,7 @@ Per the routing table in the skill (`routing-and-fix.md`):
 **Confirmation protocol:** every CSV write goes through `/qa-review-tests --fix` (which shows a before/after diff and asks). Every bug draft is written to `reports/bugs/` only — **never** transitioned into a tracker here.
 
 ## Phase 6 — Triage report + verdict
-> **Owner:** orchestrator
+> **Owner:** `qa-lead-orchestrator`
 
 Write **`reports/regression/{RUN_ID}/triage-report.md`** — an addendum inside the existing regression-summary category (NOT a new report type). Three tables (mirrors `/qa-monitoring`):
 1. **Confirmed real bugs** — case, severity, repo, root cause, draft link, trace ref.

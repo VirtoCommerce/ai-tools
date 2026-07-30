@@ -92,6 +92,11 @@ test-data/aliases.localhost.json
 # written under the project output root; transient, never committed (VCST-5475)
 .vc-fix/
 
+# vc-perf load/trace run artifacts (k6 summaries, counters CSV, .nettrace) — heavy,
+# machine-specific, regenerated per run; kept out of the plugin install dir so they
+# survive plugin updates (perf-loadtest RESULTS_DIR)
+.vc-perf/
+
 # Auto-fix pipeline — cloned product-repo source is transient working state
 .fix-workspace/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)

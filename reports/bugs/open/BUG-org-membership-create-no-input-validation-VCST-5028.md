@@ -13,6 +13,14 @@ Re-ran both cases against a **freshly created org** (`AGENT-TEST-Org-Owner-20260
 
 Confirms the validation gap is independent of the ProfileExperienceApi BUG-A fix (`pr-135-402e`) — it lives in the Customer module REST controller and is still open.
 
+## Re-confirmed + ESCALATED — 2026-07-30 (`/qa-regression` REG-2026-07-30-1040, `Customer 3.1021.0-pr-312-2257`; cases `CUST-093` suite 027, `COMP-E2E-022` suite 011b)
+Both original symptoms reproduce unchanged against TechFlow (missing `userId` → 500 + identical DB/table/FK-constraint leak; no membership row created). **New finding — the documented cleanup path is itself now broken:**
+- `DELETE /api/customer/organization-memberships?ids=<id>` against the orphan created by the empty-`userId` case now also returns **HTTP 500** — `{"message":"The value cannot be an empty string. (Parameter 'subject')","stackTrace":null}` — instead of the `204` this same report's original repro relied on for cleanup.
+- Net effect: an orphan created via the empty-`userId` bug can no longer be removed through the documented `DELETE ?ids=` form at all — it is a **permanently undeletable phantom member** on a live organization unless a caller happens to try the alternate `POST /organization-memberships/delete {ids:[...]}` form. This is worse than previously documented and should be tracked as part of the same defect (the `Create` and `Delete` actions share the same unguarded parameter-binding pattern on `UserId`/`subject`).
+- Cleanup for this run used the alternate delete form; no residue on TechFlow (verified via `organization-memberships/search`).
+
+No JIRA transition made here — VCST-5314 is already filed; recommend the assignee add the `DELETE` regression to scope before closing.
+
 ## Summary
 The new `OrganizationMembershipController.Create` action persists the request body with no validation. Omitting `userId` returns **HTTP 500** whose body leaks the database name and table (`vcst-qa-platform_restored.dbo.CustomerOrganizationMembership`); sending `userId: ""` returns **HTTP 200** and persists an **orphan membership** with no owning user and no roles. Both should be `400 Bad Request`. This is an info-disclosure + data-integrity defect introduced by VCST-5028.
 

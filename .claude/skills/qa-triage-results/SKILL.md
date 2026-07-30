@@ -7,7 +7,7 @@ argument-hint: "[RUN_ID | latest] [--fix] [--verify]"
 
 # /qa-triage-results — Regression-Results Triage & Analysis
 
-Methodology behind the [`/qa-triage-results` command](../../commands/qa-triage-results.md). A regression run answers *which* tests failed; this flow answers *why*, and hands each failure to the right follow-up. It is the missing consumer between `/qa-regression` and `/qa-bug`→`/qa-fix`, built on the proven `/qa-monitoring` skeleton: **collect → dedup → triage → live-verify → report → STOP.**
+Methodology behind the [`/qa-triage-results` command](../../commands/qa-triage-results.md). **Owned by `qa-lead-orchestrator`** (orchestrate-only — it delegates classification to `regression-triage-agent`, live verification to `qa-frontend/backend-expert`, test-defect fixes to `/qa-review-tests`, and bug drafts to `/qa-bug`; it never executes, edits a CSV, opens a browser, files a ticket, or calls `/qa-fix`). A regression run answers *which* tests failed; this flow answers *why*, and hands each failure to the right follow-up. It is the missing consumer between `/qa-regression` and `/qa-bug`→`/qa-fix`, built on the proven `/qa-monitoring` skeleton: **collect → dedup → triage → live-verify → report → STOP.**
 
 ## The problem it solves
 

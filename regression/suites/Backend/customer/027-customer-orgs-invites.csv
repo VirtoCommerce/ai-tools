@@ -429,18 +429,18 @@ Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in 
 [ASSERT] [DOM] AGENT-TEST-onboard-5028@yopmail.com appears in the members list (pending or active row)
 [ASSERT] [DOM] Row shows role label corresponding to org-employee
 --- LAYER: xAPI Verify (GraphQL) ---
-[HTTP POST] {{BACK_URL}}/graphql (authenticated with platform admin Bearer)
-[NOTE] Query: { contact(id: <new_contact_id>) { organizationMemberships { organizationId roles { id name } isLocked } } }
-[ASSERT] [BODY] organizationMemberships contains entry for @td(MULTI_ORG_TF_BR.org_techflow_id)
-[ASSERT] [BODY] roles[0].id = org-employee (org-scoped role -- BL-B2B-009)
-[ASSERT] [BODY] isLocked = false
+[HTTP POST] {{BACK_URL}}/graphql (authenticated with the TechFlow org-maintainer's storefront Bearer -- an org-admin/platform token returns rolesInOrganization=null per live probe, so this MUST be an org-scoped session token)
+[NOTE] Query: { contact(id: <new_contact_id>) { statusInOrganization isLockedInOrganization rolesInOrganization { id name } organizationsIds } } (ContactType has NO organizationMemberships field -- corrected 2026-07-30 per REG-2026-07-30-1040 CUST-089 live probe)
+[ASSERT] [BODY] organizationsIds contains @td(MULTI_ORG_TF_BR.org_techflow_id)
+[ASSERT] [BODY] rolesInOrganization contains exactly one entry {id: org-employee} scoped to TechFlow (BL-B2B-009) -- if it instead returns a merged multi-org union, that is a PRODUCT defect (see BUG-storefront-roles-column-shows-cross-org-role-union.md), not a test problem; do not loosen this assertion to accommodate a union result
+[ASSERT] [BODY] isLockedInOrganization = false
 [ASSERT] [BODY] errors[] empty or absent (query executes without GraphQL errors)","[BLADE] Invited contact appears in Contacts list in Admin SPA
 [BODY] REST search: OrganizationMembership row created with organizationId=TechFlow and role=org-employee
 [BODY] REST search: isLocked=false on new membership
 [DOM] Storefront /company/members: invited user visible with org-employee role label
-[BODY] GraphQL contact.organizationMemberships: membership entry exists with correct org and role
+[BODY] GraphQL contact.rolesInOrganization/organizationsIds: membership entry exists with correct org and role
 [BODY] GraphQL errors[] empty or absent","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {organizationId: @td(MULTI_ORG_TF_BR.org_techflow_id)} -> invited user membership present with role=org-employee and isLocked=false
-[API] GraphQL contact.organizationMemberships -> entry for TechFlow org with correct role (confirms xAPI/REST round-trip: BL-B2B-009)
+[API] GraphQL contact.rolesInOrganization/organizationsIds -> entry for TechFlow org with correct role (confirms xAPI/REST round-trip: BL-B2B-009)
 [DOM] Storefront /company/members list shows invited user row (confirms frontend consumes OrganizationMembership data, not global roles)","Invite via Admin SPA fails (widget absent or save returns error); REST membership search returns totalCount=0 after invite (membership not created -- BL-B2B-009 violation); membership created with global role instead of org-scoped role (role scope regression); invited user absent from /company/members on storefront (storefront does not consume OrganizationMembership data); GraphQL errors[] non-empty (organizationMemberships field not resolvable -- DEPLOY-1 remnant); membership.isLocked=true on newly created membership (unexpected lock state)","[SAVE] DELETE invited contact AGENT-TEST-onboard-5028@yopmail.com via REST: POST {{BACK_URL}}/api/customer/organization-memberships/search to get membershipId -> DELETE {{BACK_URL}}/api/customer/organization-memberships/{id} -> DELETE {{BACK_URL}}/api/members/{contactId} to remove contact record
 [PRE:CLEAR_SESSION] -- end with logged-out state","VCST-5028; BA-2026-06-15; BL-B2B-005; BL-B2B-009; CUST-086; Technique: Error Guessing (invite-path creates global-role not org-scoped membership)","Draft"
 "CUST-090","[VCST-5281] Existing-Customer 2nd-Org Invite Produces a Dead confirm-invitation Link (urlSuffix Regression)","Customer > Organization Management > Invite [E2E]","Critical","BL-B2B-009","ECL-10.2","Admin logged in to Backend ({{BACK_URL}}). {{ORG_USER_EMAIL}} (ORG_USER fixture) already has an active registered account and is a member of exactly one organization (its own). A throwaway AGENT-TEST organization is created in Steps so no shared org fixture is touched.","back_url={{BACK_URL}}; org_user_email={{ORG_USER_EMAIL}}; store_id={{STORE_ID}}; url_suffix=/confirm-invitation","--- LAYER: Setup ---
