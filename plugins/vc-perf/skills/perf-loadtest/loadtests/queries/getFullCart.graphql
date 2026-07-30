@@ -1,0 +1,349 @@
+# Standard vc-frontend operation (cart/queries/getFullCart) — fragments inlined for k6 (one
+# document per request). Source: VirtoCommerce/vc-frontend client-app/core/api/graphql/cart/.
+# If your project overrides the storefront schema, re-resolve this document against your own
+# frontend before using it for load testing — see ../README.md.
+query GetFullCart($storeId: String!, $userId: String!, $currencyCode: String!, $cultureName: String, $cartId: String) {
+  cart(storeId: $storeId, userId: $userId, currencyCode: $currencyCode, cultureName: $cultureName, cartId: $cartId) {
+    ...fullCart
+  }
+}
+
+fragment fullCart on CartType {
+  ...shortCart
+  purchaseOrderNumber
+  comment
+  availableGifts {
+    ...gift
+  }
+  availableShippingMethods {
+    ...shippingMethod
+  }
+  availablePaymentMethods {
+    ...paymentMethod
+  }
+  items {
+    ...fullLineItem
+  }
+  gifts {
+    ...gift
+  }
+  coupons {
+    ...coupon
+  }
+  discounts {
+    ...discount
+  }
+  shipments {
+    ...shipment
+  }
+  payments {
+    ...payment
+  }
+  currency {
+    ...currency
+  }
+  cartTotals {
+    isDefaultTotalCurrency
+    total {
+      ...money
+    }
+    subTotal {
+      ...money
+    }
+    discountTotal {
+      ...money
+    }
+    taxTotal {
+      ...money
+    }
+  }
+  total {
+    ...money
+  }
+  discountTotal {
+    ...money
+  }
+  subTotal {
+    ...money
+  }
+  shippingPrice {
+    ...money
+  }
+  shippingTotal {
+    ...money
+  }
+  taxTotal {
+    ...money
+  }
+}
+
+fragment shortCart on CartType {
+  ...cartId
+  itemsQuantity
+  items {
+    ...shortLineItem
+  }
+  validationErrors(ruleSet: "*") {
+    ...validationError
+  }
+  shipments {
+    id
+  }
+}
+
+fragment cartId on CartType {
+  id
+}
+
+fragment shortLineItem on LineItemType {
+  id
+  sku
+  quantity
+  productId
+  currencyCode
+}
+
+fragment fullLineItem on LineItemType {
+  ...shortLineItem
+  name
+  inStockQuantity
+  imageUrl
+  selectedForCheckout
+  productType
+  showPlacedPrice
+  listTotal {
+    ...money
+  }
+  product {
+    ...fullLineItemProduct
+  }
+  vendor {
+    ...commonVendor
+  }
+  extendedPrice {
+    ...money
+  }
+  placedPrice {
+    ...money
+  }
+  listPrice {
+    ...money
+  }
+  salePrice {
+    ...money
+  }
+  discountTotal {
+    ...money
+  }
+  validationErrors {
+    ...validationError
+  }
+  configurationItems {
+    id
+    name
+    customText
+    type
+    extendedPrice {
+      ...money
+    }
+    files {
+      name
+      url
+    }
+    configurationSection {
+      name
+    }
+  }
+}
+
+fragment fullLineItemProduct on Product {
+  id
+  slug
+  minQuantity
+  maxQuantity
+  masterVariation {
+    id
+    slug
+  }
+  properties {
+    ...property
+  }
+  availabilityData {
+    ...availabilityData
+  }
+  isConfigurable
+  packSize
+}
+
+fragment availabilityData on AvailabilityData {
+  isActive
+  isAvailable
+  isBuyable
+  isInStock
+  availableQuantity
+}
+
+fragment property on Property {
+  group {
+    id
+    name
+    displayOrder
+    description
+  }
+  name
+  colorCode
+  value
+  valueDisplayOrder
+  propertyType
+  hidden
+  propertyValueType
+  label
+  displayOrder
+}
+
+fragment commonVendor on CommonVendor {
+  id
+  name
+  rating {
+    value
+    reviewCount
+  }
+}
+
+fragment validationError on ValidationErrorType {
+  errorCode
+  errorMessage
+  errorParameters {
+    key
+    value
+  }
+  objectId
+  objectType
+}
+
+fragment cartAddress on CartAddressType {
+  id
+  name
+  organization
+  firstName
+  lastName
+  line1
+  line2
+  city
+  countryCode
+  countryName
+  regionId
+  regionName
+  postalCode
+  phone
+  email
+  addressType
+  outerId
+}
+
+fragment coupon on CouponType {
+  code
+  isAppliedSuccessfully
+}
+
+fragment discount on DiscountType {
+  description
+  amount
+  coupon
+}
+
+fragment gift on GiftItemType {
+  id
+  imageUrl
+  name
+  lineItemId
+  quantity
+}
+
+fragment payment on PaymentType {
+  id
+  paymentGatewayCode
+  billingAddress {
+    ...cartAddress
+  }
+}
+
+fragment paymentMethod on PaymentMethodType {
+  code
+  name
+  description
+  logoUrl
+  paymentMethodGroupType
+  allowCartPayment
+}
+
+fragment shipment on ShipmentType {
+  id
+  shipmentMethodCode
+  shipmentMethodOption
+  deliveryAddress {
+    ...cartAddress
+  }
+  price {
+    ...money
+  }
+  discountAmount {
+    ...money
+  }
+  pickupLocation {
+    id
+    name
+    description
+    geoLocation
+    deliveryDays
+    storageDays
+    contactEmail
+    contactPhone
+    workingHours
+    isActive
+    address {
+      id
+      key
+      name
+      organization
+      countryCode
+      countryName
+      city
+      postalCode
+      line1
+      line2
+      regionId
+      regionName
+      phone
+      email
+      outerId
+      description
+      addressType
+    }
+  }
+}
+
+fragment shippingMethod on ShippingMethodType {
+  id
+  code
+  logoUrl
+  optionName
+  optionDescription
+  price {
+    ...money
+  }
+}
+
+fragment currency on CurrencyType {
+  code
+  symbol
+}
+
+fragment money on MoneyType {
+  amount
+  formattedAmount
+  formattedAmountWithoutCurrency
+  currency {
+    ...currency
+  }
+}

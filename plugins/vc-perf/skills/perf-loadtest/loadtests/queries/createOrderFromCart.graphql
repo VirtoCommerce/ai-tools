@@ -1,0 +1,269 @@
+# Standard vc-frontend operation (orders/mutations/createOrderFromCart) — fragments inlined for
+# k6 (one document per request). Source: VirtoCommerce/vc-frontend
+# client-app/core/api/graphql/orders/ and client-app/core/api/graphql/fragments/.
+# If your project overrides the storefront schema, re-resolve this document against your own
+# frontend before using it for load testing — see ../README.md.
+mutation CreateOrderFromCart($command: InputCreateOrderFromCartType!) {
+  createOrderFromCart(command: $command) {
+    ...fullOrderFields
+  }
+}
+
+fragment fullOrderFields on CustomerOrderType {
+  ...shortOrderFields
+  comment
+  purchaseOrderNumber
+  cancelReason
+  currency {
+    ...currency
+  }
+  shipments {
+    shipmentMethodCode
+    shipmentMethodOption
+    shippingMethod {
+      logoUrl
+      typeName
+    }
+    price {
+      ...money
+    }
+    discountAmount {
+      ...money
+    }
+    deliveryAddress {
+      ...orderAddressFields
+    }
+    pickupLocation {
+      id
+      name
+      description
+      geoLocation
+      deliveryDays
+      storageDays
+      contactEmail
+      contactPhone
+      workingHours
+      isActive
+      address {
+        id
+        key
+        name
+        organization
+        countryCode
+        countryName
+        city
+        postalCode
+        line1
+        line2
+        regionId
+        regionName
+        phone
+        email
+        outerId
+        description
+        addressType
+      }
+    }
+  }
+  inPayments(first: 1, sort: "CreatedDate:desc") {
+    id
+    number
+    isApproved
+    gatewayCode
+    paymentMethod {
+      name
+      logoUrl
+      code
+      typeName
+      paymentMethodType
+      paymentMethodGroupType
+    }
+    billingAddress {
+      ...orderAddressFields
+    }
+  }
+  availablePaymentMethods {
+    name
+    code
+    logoUrl
+    price {
+      ...money
+    }
+  }
+}
+
+fragment shortOrderFields on CustomerOrderType {
+  id
+  number
+  createdDate
+  status
+  statusDisplayValue
+  items {
+    ...orderLineItemFields
+  }
+  discounts {
+    amount {
+      amount
+      formattedAmount
+      currency {
+        code
+      }
+    }
+    coupon
+    description
+    promotionId
+    promotionName
+  }
+  discountTotal {
+    ...money
+  }
+  shippingSubTotal {
+    ...money
+  }
+  shippingTotal {
+    ...money
+  }
+  taxTotal {
+    ...money
+  }
+  subTotal {
+    ...money
+  }
+  total {
+    ...money
+  }
+  orderTotals {
+    isDefaultTotalCurrency
+    total {
+      ...money
+    }
+    subTotal {
+      ...money
+    }
+    discountTotal {
+      ...money
+    }
+    taxTotal {
+      ...money
+    }
+  }
+}
+
+fragment orderLineItemFields on OrderLineItemType {
+  id
+  imageUrl
+  isGift
+  name
+  productId
+  productType
+  showPlacedPrice
+  currency {
+    ...currency
+  }
+  listTotal {
+    ...money
+  }
+  product {
+    id
+    brandName
+    slug
+    masterVariation {
+      id
+      slug
+    }
+    properties {
+      ...property
+    }
+  }
+  quantity
+  sku
+  extendedPrice {
+    ...money
+  }
+  price {
+    ...money
+  }
+  placedPrice {
+    ...money
+  }
+  taxTotal {
+    ...money
+  }
+  discountTotal {
+    ...money
+  }
+  discounts {
+    promotionId
+    promotionName
+  }
+  outerId
+  vendor {
+    id
+    name
+    rating {
+      value
+      reviewCount
+    }
+  }
+  configurationItems {
+    id
+    name
+    customText
+    type
+    files {
+      name
+      url
+    }
+  }
+}
+
+fragment orderAddressFields on OrderAddressType {
+  id
+  name
+  organization
+  firstName
+  lastName
+  line1
+  line2
+  city
+  countryCode
+  countryName
+  regionId
+  regionName
+  postalCode
+  phone
+  email
+  addressType
+}
+
+fragment property on Property {
+  group {
+    id
+    name
+    displayOrder
+    description
+  }
+  name
+  colorCode
+  value
+  valueDisplayOrder
+  propertyType
+  hidden
+  propertyValueType
+  label
+  displayOrder
+}
+
+fragment currency on CurrencyType {
+  code
+  symbol
+}
+
+fragment money on MoneyType {
+  amount
+  formattedAmount
+  formattedAmountWithoutCurrency
+  currency {
+    ...currency
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "_note": "vc-perf REUSES vc-fix's project-profile.json (via the vc-fix dependency) and ADDS this `perf` block through an additive deepMerge. This file documents ONLY the perf delta; the base fields (tracker, vcs, repos, runtime, paths) come from vc-fix's /project-init and are not restated here. Values below are placeholders for a client project — replace per deployment.",
+  "perf": {
+    "backendUrl": "https://localhost:8090",
+    "aspireHostPath": "../../aspire-host",
+    "platformProcess": "VirtoCommerce.Platform.Web",
+    "storeId": "<your-store-id>",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "benchmark": {
+      "xapiTargets": ["cart", "order"],
+      "benchPrefix": "<YourProject>.MainModule",
+      "runnerDirs": {
+        "cart": "benchmarks/<YourProject>.MainModule.Benchmark.Cart",
+        "order": "benchmarks/<YourProject>.MainModule.Benchmark.Order"
+      },
+      "upstreamRoot": "..",
+      "categories": ["items", "configuration", "checkout", "recalculate", "validation"]
+    },
+    "loadtest": {
+      "seedEndpoint": "/api/<your-module>/dev/seed-loadtest-users",
+      "fixtures": { "productIds": [] }
+    },
+    "thresholds": { "allocPct": 5, "timePct": 10 }
+  }
+}

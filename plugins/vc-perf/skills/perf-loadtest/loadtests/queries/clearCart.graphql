@@ -1,0 +1,9 @@
+# FIXTURE operation — not a vc-frontend-resolved document like its siblings here; no standard
+# storefront mutation clears a whole cart to resolve against. The minimal `id`/`itemsQuantity`
+# selection is deliberate: the smallest fieldset that stays valid on an overridden storefront schema.
+mutation ClearCart($command: InputClearCartType!) {
+  clearCart(command: $command) {
+    id
+    itemsQuantity
+  }
+}

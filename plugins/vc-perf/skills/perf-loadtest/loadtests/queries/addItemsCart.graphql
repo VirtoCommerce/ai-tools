@@ -1,0 +1,48 @@
+# Standard vc-frontend operation (cart/mutations/addItemsCart) — fragments inlined for k6 (one
+# document per request). Source: VirtoCommerce/vc-frontend client-app/core/api/graphql/cart/.
+# Command shape: { cartItems: [{ productId, quantity }], storeId, userId, currencyCode,
+# cultureName, cartId } — see client-app/shared/cart/composables/useCart.ts (addItemsToCart).
+# If your project overrides the storefront schema, re-resolve this document against your own
+# frontend before using it for load testing — see ../README.md.
+mutation AddItemsCart($command: InputAddItemsType!) {
+  addItemsCart(command: $command) {
+    ...shortCart
+  }
+}
+
+fragment shortCart on CartType {
+  ...cartId
+  itemsQuantity
+  items {
+    ...shortLineItem
+  }
+  validationErrors(ruleSet: "*") {
+    ...validationError
+  }
+  shipments {
+    id
+  }
+}
+
+fragment cartId on CartType {
+  id
+}
+
+fragment shortLineItem on LineItemType {
+  id
+  sku
+  quantity
+  productId
+  currencyCode
+}
+
+fragment validationError on ValidationErrorType {
+  errorCode
+  errorMessage
+  errorParameters {
+    key
+    value
+  }
+  objectId
+  objectType
+}
