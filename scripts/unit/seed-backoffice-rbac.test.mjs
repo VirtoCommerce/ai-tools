@@ -24,6 +24,9 @@ import {
   SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT, SALESREP_FULL_EXCLUDED_PERMISSIONS,
   SALESREP_FULL_REQUIRED_PERMISSIONS, SALESREP_FULL_EXCLUDED_PERMISSION,
   assertSalesRepFullRolePermissions,
+  CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSION,
+  CATALOG_READONLY_EXCLUDED_PERMISSIONS, CATALOG_READONLY_REQUIRED_PERMISSIONS,
+  assertCatalogReadOnlyRolePermissions, CATALOG_CREATE_ENDPOINT, CATALOG_DELETE_ENDPOINT,
 } from '../seed-data/platform/backoffice-rbac-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -372,4 +375,81 @@ test('all five back-office RBAC aliases are distinct and AGENT-TEST-prefixed (fu
   ];
   assert.equal(new Set(emails).size, emails.length, 'emails must be unique');
   for (const e of emails) assert.ok(e.startsWith('AGENT-TEST-'), `${e} must be AGENT-TEST-prefixed`);
+});
+
+// --- CATALOG_READ_ONLY (PLAT-079 "Authorization Scopes") — read-only catalog fixture ---
+
+test('read-only catalog role EXCLUDES catalog:create AND catalog:delete (the PLAT-079 boundary)', () => {
+  assert.deepEqual(CATALOG_READONLY_EXCLUDED_PERMISSIONS, ['catalog:create', 'catalog:delete']);
+  assert.equal(CATALOG_READONLY_EXCLUDED_PERMISSION, 'catalog:create');
+  assert.ok(CATALOG_READONLY_EXCLUDED_PERMISSIONS.includes(CATALOG_READONLY_EXCLUDED_PERMISSION));
+  for (const p of CATALOG_READONLY_EXCLUDED_PERMISSIONS) assert.ok(!CATALOG_READONLY_ROLE.permissions.includes(p), `must not hold ${p}`);
+});
+
+test('read-only catalog role HOLDS catalog:access + catalog:read and nothing else', () => {
+  assert.deepEqual(CATALOG_READONLY_ROLE.permissions, ['catalog:access', 'catalog:read']);
+  assert.deepEqual(CATALOG_READONLY_REQUIRED_PERMISSIONS, ['catalog:access', 'catalog:read']);
+  assert.doesNotThrow(() => assertCatalogReadOnlyRolePermissions());
+});
+
+test('assertCatalogReadOnlyRolePermissions throws when catalog:create leaks in', () => {
+  assert.throws(
+    () => assertCatalogReadOnlyRolePermissions([...CATALOG_READONLY_REQUIRED_PERMISSIONS, 'catalog:create']),
+    /must NOT carry/,
+  );
+});
+
+test('assertCatalogReadOnlyRolePermissions throws when catalog:delete leaks in', () => {
+  assert.throws(
+    () => assertCatalogReadOnlyRolePermissions([...CATALOG_READONLY_REQUIRED_PERMISSIONS, 'catalog:delete']),
+    /must NOT carry/,
+  );
+});
+
+test('assertCatalogReadOnlyRolePermissions throws when catalog:read is missing', () => {
+  assert.throws(() => assertCatalogReadOnlyRolePermissions(['catalog:access']), /missing required permission/);
+});
+
+test('roleBody(CATALOG_READONLY_ROLE) is a valid idempotent upsert body (fixed id, permission objects)', () => {
+  const b = roleBody(CATALOG_READONLY_ROLE);
+  assert.equal(b.id, CATALOG_READONLY_ROLE.role_id);
+  assert.deepEqual(b.permissions, [{ name: 'catalog:access' }, { name: 'catalog:read' }]);
+});
+
+test('accountBody(account=CATALOG_READONLY_ACCOUNT) builds a restricted Manager (isAdministrator=false)', () => {
+  const b = accountBody({ email: CATALOG_READONLY_ACCOUNT.email, password: 'x', roleId: 'RID', roleName: 'RN', storeId: 'B2B-store', account: CATALOG_READONLY_ACCOUNT });
+  assert.equal(b.userType, 'Manager');
+  assert.equal(b.isAdministrator, false);
+  assert.equal(b.userName, CATALOG_READONLY_ACCOUNT.email);
+  assert.deepEqual(b.roles, [{ id: 'RID', name: 'RN' }]);
+});
+
+test('CATALOG_READ_ONLY account + role are AGENT-TEST business keys (env-invariant, sweepable)', () => {
+  assert.ok(CATALOG_READONLY_ACCOUNT.email.startsWith('AGENT-TEST-'));
+  assert.ok(CATALOG_READONLY_ROLE.role_id.startsWith('AGENT-TEST-'));
+  assert.equal(CATALOG_READONLY_ACCOUNT.passwordVar, 'CATALOG_READ_ONLY_PASSWORD');
+});
+
+test('CATALOG_CREATE_ENDPOINT / CATALOG_DELETE_ENDPOINT match the PLAT-079 route shapes', () => {
+  assert.equal(CATALOG_CREATE_ENDPOINT, '/api/catalog/catalogs');
+  assert.equal(CATALOG_DELETE_ENDPOINT('AGENT-TEST-cat-nonexistent'), '/api/catalog/catalogs/AGENT-TEST-cat-nonexistent');
+});
+
+test('CATALOG_READ_ONLY alias is registered, coherent, and GUID-free in aliases.json', () => {
+  const aliases = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
+  const a = aliases[CATALOG_READONLY_ACCOUNT.aliasName];
+  assert.ok(a, 'alias must exist');
+  assert.equal(a.email || a.login, CATALOG_READONLY_ACCOUNT.email);
+  assert.equal(a.role, CATALOG_READONLY_ROLE.role_name);
+  assert.equal(a.excluded_permission, CATALOG_READONLY_EXCLUDED_PERMISSION);
+  assert.equal(a.password, '{{CATALOG_READ_ONLY_PASSWORD}}');
+  assert.deepEqual(findGuidLeaks(JSON.stringify(a)), []);
+});
+
+test('CATALOG_READ_ONLY is distinct from CATALOG_LINK_RESTRICTED (opposite boundary)', () => {
+  assert.notEqual(CATALOG_READONLY_ACCOUNT.email, CATALOG_LINK_ACCOUNT.email);
+  assert.notEqual(CATALOG_READONLY_ROLE.role_id, CATALOG_LINK_ROLE.role_id);
+  // CATALOG_LINK_ROLE holds catalog:create (needed to reach the Map flow); CATALOG_READONLY_ROLE excludes it.
+  assert.ok(CATALOG_LINK_ROLE.permissions.includes('catalog:create'));
+  assert.ok(!CATALOG_READONLY_ROLE.permissions.includes('catalog:create'));
 });

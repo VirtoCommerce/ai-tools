@@ -20,7 +20,7 @@ So "running this project" means one of two things:
    and browsers. Costs money and hits a live env — documented but not run by this skill.
 
 > Paths below are relative to the repo root (`<unit>/`). The driver lives at
-> `skills/run-vc-mcp-testing-module/driver.mjs`.
+> `.claude/skills/run-vc-mcp-testing-module/driver.mjs`.
 
 ## Prerequisites
 
@@ -37,10 +37,10 @@ So "running this project" means one of two things:
 One command runs every offline-verifiable entry point and prints a pass/fail table:
 
 ```bash
-node skills/run-vc-mcp-testing-module/driver.mjs
+node .claude/skills/run-vc-mcp-testing-module/driver.mjs
 ```
 
-Verified output this session (`7/7 checks OK`, exit 0):
+Verified output this session (`8/8 checks OK`, exit 0):
 
 ```
 ▶ env:check … PASS (exit 0) — APPINSIGHTS_RESOURCE_STOREFRONT: SET (len=18)
@@ -48,6 +48,7 @@ Verified output this session (`7/7 checks OK`, exit 0):
 ▶ scope … PASS (exit 0) — [scope:validate] Suites scanned: 103 CSV file(s) under regression\suites/
 ▶ suites:lint … PASS (exit 0) — [suites:lint] OK (104 suites, 35 selections)
 ▶ seed:dry-run … PASS (exit 0) — ✅ Seed complete!
+▶ b2b-data … PASS (exit 0) — ✓ B2B test-data consistent
 ▶ graphql:fixtures … PASS (exit 1) — Markdown report: …/reports/graphql-fixtures-validation.md
 ▶ graphql:labels … PASS (exit 0) — ✅ No findings …
 ```
@@ -59,8 +60,8 @@ passing as the repo grows.)
 List checks without running, or run a subset by name substring:
 
 ```bash
-node skills/run-vc-mcp-testing-module/driver.mjs --list
-node skills/run-vc-mcp-testing-module/driver.mjs td scope
+node .claude/skills/run-vc-mcp-testing-module/driver.mjs --list
+node .claude/skills/run-vc-mcp-testing-module/driver.mjs td scope
 ```
 
 What each check guards (all run from the repo root):
@@ -72,6 +73,7 @@ What each check guards (all run from the repo root):
 | `scope` | `npx tsx scripts/maintenance/validate-critical-ui-scope.ts` | critical-UI-scope matrix cells point at existing test IDs |
 | `suites:lint` | `npx tsx scripts/test-cases/sync-test-suites.ts --check` | `config/test-suites.json` matches CSVs on disk |
 | `seed:dry-run` | `node scripts/seed-data/seed-test-data.js catalog --dry-run` | seed planner resolves fixtures, makes no API writes |
+| `b2b-data` | `node scripts/seed-data/b2b/validate-b2b-data.mjs` | B2B test-data is consistent (org addresses, user→contact→org→role→membership) |
 | `graphql:fixtures` | `npx tsx scripts/graphql/validate-graphql-fixtures.ts` | every `.graphql` fixture validates vs cached schema |
 | `graphql:labels` | `npx tsx scripts/graphql/review-graphql-labels.ts <csv>` | runner-native GraphQL CSV has balanced labels |
 
@@ -88,7 +90,7 @@ npx tsx scripts/graphql/review-graphql-labels.ts regression/suites/Backend/graph
 
 (Verified: scans 16 files / 300 runner-native cases, exit 0 when balanced.) For
 non-GraphQL CSV edits, re-run the `td-refs` and `suites:lint` checks:
-`node skills/run-vc-mcp-testing-module/driver.mjs td-refs suites`.
+`node .claude/skills/run-vc-mcp-testing-module/driver.mjs td-refs suites`.
 
 ## Run (real storefront regression) — needs secrets + live env
 

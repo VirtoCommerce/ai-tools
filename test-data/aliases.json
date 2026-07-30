@@ -3887,6 +3887,17 @@
     "excluded_permission": "catalog:categories:link",
     "user_type": "Manager"
   },
+  "CATALOG_READ_ONLY": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account for PLAT-079 (Authorization Scopes, suite 020-platform-users-roles-settings): a catalog:read-ONLY role that can VIEW catalog items but is blocked on BOTH create and delete — holds catalog:access + catalog:read, EXCLUDES catalog:create AND catalog:delete (the RBAC boundary PLAT-079 asserts: 403 Forbidden, not 200, on either mutate direction). Distinct from CATALOG_LINK_RESTRICTED, which is a products-only Map/Link linker that HOLDS catalog:create. isAdministrator=false so the gate applies (an admin bypasses it and would get 200). email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{CATALOG_READ_ONLY_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (written by scripts/seed-data/platform/seed-backoffice-rbac.mjs — npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
+    "email": "AGENT-TEST-catalog-readonly@test.virtocommerce.com",
+    "login": "AGENT-TEST-catalog-readonly@test.virtocommerce.com",
+    "password": "{{CATALOG_READ_ONLY_PASSWORD}}",
+    "password_var": "CATALOG_READ_ONLY_PASSWORD",
+    "role": "AGENT-TEST-Catalog-Read-Only",
+    "excluded_permission": "catalog:create",
+    "user_type": "Manager"
+  },
   "RESTRICTED_ADMIN_SALESREP_READONLY": {
     "_inline": true,
     "_comment": "Restricted back-office (Manager) account for the Sales Rep admin RBAC verification SR-ADM-023 / candidate BL-SREP-003: a read-only Sales Rep admin who can OPEN the embedded Sales Rep back-office app and VIEW reps but CANNOT mutate them. The Sales Rep Admin app gates on the CUSTOMER module's member perms (verified in vc-module-sales-rep dev, useSalesRepPermissions), NOT on sales-rep:access. Holds customer:read (the access/read gate) and EXCLUDES all six mutate perms — customer:create/update/delete (the rep member) + platform:security:create/update/delete (the rep's login account). isAdministrator=false so the gate applies (an admin bypasses every check). Pairs with RESTRICTED_CMS_ADMIN as the no-access negative control (it lacks customer:read entirely). email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{RESTRICTED_SALESREP_ADMIN_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (written by scripts/seed-data/platform/seed-backoffice-rbac.mjs — npm run seed:rbac). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown.",
