@@ -82,3 +82,13 @@ In `notifications-edit-template.tpl.html` the tab switcher is built from plain l
 - **Component / module:** Notifications — template edit blade tab bar, help toggles, full-screen button, preview iframe
 - **RCA anchor:** `src/VirtoCommerce.NotificationsModule.Web/Scripts/blades/notifications-edit-template.tpl.html` → `<ul class="nt-tabs">` / `<li class="nt-tab" ng-click="setActiveTab(…)">`, `<i class="form-ico fa fa-question-circle" ng-click="…">`, `<iframe class="nt-preview-frame">`; styles in `src/VirtoCommerce.NotificationsModule.Web/Content/css/styles.css` (`.nt-tab`, `.nt-fs-btn` — `:hover` only, no `:focus`)
 - **Routing confidence:** HIGH
+
+## Verification 2026-07-30
+
+**Verdict: PARTIAL FIX** — re-ran STR live on vcst-qa @ `VirtoCommerce.Notifications 3.1013.0-pr-202-b644` (current HEAD of PR #202; fix landed in-flight on the same PR, not a separate fix PR — ticket stayed in Draft).
+
+Fixed (live-confirmed): #1 tab switcher (`role="tablist"/"tab"`, roving `tabindex`, `aria-selected`, arrow-key activation confirmed via keyboard walk — ArrowRight moved and activated focus from "Template (liquid)" to "Sample data (json)"), #3 focus-visible outline on tabs/`.nt-fs-btn`, #4 iframe `title`, #5 "Hide" link contrast (`#1565c0`, ~5.75:1), #7 active-tab contrast headroom.
+
+Still open (live-confirmed unchanged): #2 the three `?` help toggles remain unfocusable `<i>` elements (Tab walk still skips Subject/Language/Layout `?` icons entirely), #6 icon contrast (`__lightblue`, ~1.6:1) has no override.
+
+Full detail: JIRA comment on VCST-5605, 2026-07-30. Left in `open/` — not fully resolved.

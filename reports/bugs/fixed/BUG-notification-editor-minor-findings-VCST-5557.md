@@ -1,6 +1,6 @@
 # Notification template editor — minor findings, cosmetics and scope drift (grouped)
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **JIRA:** VCST-5614 (filed 2026-07-29, linked to VCST-5557 via "Relates")
 
@@ -64,3 +64,11 @@ Found during the same run and deliberately left out: the platform `ui-select` no
 - **Component / module:** Notifications — template edit blade + `Content/css/styles.css`
 - **RCA anchor:** `src/VirtoCommerce.NotificationsModule.Web/Scripts/blades/notifications-edit-template.js` and `.tpl.html`, `src/VirtoCommerce.NotificationsModule.Web/Content/css/styles.css` (per-item anchors in the table above)
 - **Routing confidence:** HIGH for the repo; **LOW as a single fix unit** — this is a grouped cleanup, not one root cause. `/qa-fix` should decline it as a batch and cherry-pick, or a human should fold these into the PR.
+
+## Resolution 2026-07-30
+
+**Verified against:** `VirtoCommerce.Notifications 3.1013.0-pr-202-02c0` (PR #202, merged to `dev`, commit `02c0c63`) · **JIRA:** VCST-5614 → **Tested**
+
+All 13 items resolved to a final disposition (operator sign-off): **7 Fixed** (1, 2, 3, 6, 10, 11, 12) · **4 Won't-fix, accepted** as low-severity/inert tech debt (4, 5, 9, 13 — per this ticket's own "decline as batch" routing note) · **2 Withdrawn as not-a-bug** (7, 8 — re-investigation showed no scope commitment for #7 and consistent platform-wide i18n behavior for #8).
+
+Full evidence and per-item basis: `reports/tickets/Sprint26-15/VCST-5614/verification-report.md`.

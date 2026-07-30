@@ -1,0 +1,29 @@
+{
+  "ticket": "VCST-5557",
+  "verdict": "FIX_INCOMPLETE",
+  "date": "2026-07-30",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1051.0",
+    "theme": "n/a (admin-only change)",
+    "relevant_modules": { "VirtoCommerce.Notifications": "3.1013.0-pr-202-b644" },
+    "pr_build": "3.1013.0-pr-202-b644 (VirtoCommerce/vc-module-notification#202, commit b644b77 \"fix multiple issues after QA\")"
+  },
+  "agent_used": "qa-backend-expert + ui-ux-expert",
+  "str_result": "6/10 findings fixed",
+  "baseline_reproduction": "RED (from prior /qa-test run 2026-07-29 against pr-202-0b9c, reports/tickets/Sprint26-15/VCST-5557/summary.json)",
+  "checklist_total": 10,
+  "checklist_passed": 6,
+  "checklist_failed": 4,
+  "regression_issues": [
+    "VCST-5605 fix introduced a new critical dangling aria-labelledby on the full-screen preview tabpanel (axe: aria-valid-attr-value)",
+    "VCST-5605 fix reintroduced the rejected #43b0e6 color (2.44:1) on the new Format JSON/HTML buttons"
+  ],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "jira_transition": "pending user confirmation (Need fixes -> REOPEN)",
+  "evidence": "reports/tickets/Sprint26-15/VCST-5557/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-15/VCST-5557/"
+}
