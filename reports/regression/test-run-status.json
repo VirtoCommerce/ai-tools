@@ -1,75 +1,41 @@
 {
-  "runId": "REG-2026-07-30-1040",
+  "runId": "REG-2026-07-30-1651",
   "status": "completed",
   "environment": "vcst",
-  "selection": "050d,027,008,011b",
-  "startedAt": "2026-07-30T08:20:00Z",
-  "finishedAt": "2026-07-30T13:02:58Z",
-  "context": "VCST-5281 regression. Regenerated 2026-07-30 from the per-suite results files after merge commit 381e441d committed git conflict markers into this file, leaving it unparseable. Derived artifact, so regenerated rather than resolving the conflict by hand. Totals: 102 pass / 48 fail / 6 blocked / 3 skipped of 159.",
+  "selection": "020,049",
+  "startedAt": "2026-07-30T16:52:00Z",
+  "finishedAt": "2026-07-30T18:13:29Z",
+  "context": "Regression run for VCST-5618 follow-up: suites 049 (Platform API) and 020 (Platform Users Roles & Settings), including the 7 Draft cases (API-040..043, PLAT-085..087) added earlier today. A /qa-test-lifecycle full-suite quality-fix pass on the same two files is running concurrently in the background.",
   "totals": {
-    "suites": 4,
-    "testCases": 159
+    "suites": 2,
+    "testCases": 91
   },
   "suites": [
     {
-      "id": "050d",
-      "name": "GraphQL xProfile",
-      "file": "regression/suites/Backend/graphql/050d-graphql-xprofile.csv",
-      "testCount": 49,
-      "priority": "P1",
+      "id": "049",
+      "name": "Platform API",
+      "file": "regression/suites/Backend/api/049-platform-api.csv",
+      "priority": "P0",
       "agent": "qa-backend-expert",
-      "browser": "none (HTTP)",
+      "browser": "playwright-chrome",
       "status": "done",
-      "pass": 32,
-      "fail": 14,
-      "blocked": 0,
-      "skipped": 3,
-      "attempts": 1
+      "pass": 20,
+      "fail": 20,
+      "blocked": 3,
+      "skipped": 0
     },
     {
-      "id": "027",
-      "name": "Customer Orgs & Invites",
-      "file": "regression/suites/Backend/customer/027-customer-orgs-invites.csv",
-      "testCount": 48,
+      "id": "020",
+      "name": "Platform Users Roles & Settings",
+      "file": "regression/suites/Backend/platform/020-platform-users-roles-settings.csv",
       "priority": "P1",
       "agent": "qa-backend-expert",
       "browser": "playwright-edge",
       "status": "done",
-      "pass": 29,
-      "fail": 18,
-      "blocked": 1,
-      "skipped": 0,
-      "attempts": 1
-    },
-    {
-      "id": "008",
-      "name": "B2B Members",
-      "file": "regression/suites/Frontend/b2b/008-b2b-members.csv",
-      "testCount": 36,
-      "priority": "P1",
-      "agent": "qa-frontend-expert",
-      "browser": "playwright-chrome",
-      "status": "done",
-      "pass": 22,
-      "fail": 9,
+      "pass": 39,
+      "fail": 1,
       "blocked": 5,
-      "skipped": 0,
-      "attempts": 1
-    },
-    {
-      "id": "011b",
-      "name": "B2B Company E2E",
-      "file": "regression/suites/Frontend/b2b/011b-b2b-company-e2e.csv",
-      "testCount": 26,
-      "priority": "P1",
-      "agent": "qa-frontend-expert",
-      "browser": "playwright-chrome",
-      "status": "done",
-      "pass": 19,
-      "fail": 7,
-      "blocked": 0,
-      "skipped": 0,
-      "attempts": 1
+      "skipped": 3
     }
   ]
 }

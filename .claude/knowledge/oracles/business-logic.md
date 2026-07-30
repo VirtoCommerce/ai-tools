@@ -440,6 +440,14 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Token endpoint returns a global lockout code for an org-scoped lock; storefront shows the generic lockout message.
 - **Agents:** qa-frontend-expert (sign-in form, org switcher), qa-backend-expert (token endpoint)
 
+### BL-AUTH-014: Admin/Platform API cookie-auth challenge returns a status code, never a login-page redirect `[P1-data]`
+- **Rule:** When cookie authentication challenges a request whose path's first segment is `api` (case-insensitive; a path that merely starts with the string "api", e.g. `/apiary/...`, does NOT match) or that carries the header `X-Requested-With: XMLHttpRequest`, the response is a direct status code — 401 if unauthenticated, 403 if authenticated but forbidden — with no `Location` header and no login-page HTML body. Any other cookie-authentication challenge (e.g. the OIDC `/connect/authorize` flow) still issues a 302 redirect to the login page, so browser-driven authorization flows are unaffected.
+- **Verify:** Unauthenticated `GET` to an `/api/platform/**` endpoint → 401, no `Location` header, body is not login-page HTML. Authenticated-but-forbidden call to an `/api/**` endpoint → direct 403 (not the old 302→AccessDenied→404 chain). A path that merely starts with the string "api" but isn't the `/api` segment (e.g. `/apiary/...`) is NOT treated as an API path. An AJAX/XHR request outside `/api` (e.g. SignalR hub negotiation) carrying `X-Requested-With: XMLHttpRequest` also gets a direct status code. Unauthenticated navigation to `/connect/authorize` still redirects (302) to the login page.
+- **Violation signal:** An unauthenticated `/api/**` call returns 200 with login-page HTML, or a 302 with a `Location` header, instead of a direct 401; an authenticated-but-forbidden `/api/**` call falls through a 302→AccessDenied→404 chain instead of a direct 403; a path like `/apiary/...` is incorrectly treated as an API path (false-positive segment match).
+- **Agents:** qa-backend-expert (Admin SPA / Platform API), qa-testing-expert (live confirmation)
+- **Source:** `ApiCookieRedirectHandler.cs` `IsApiRequest()` (`Path.StartsWithSegments("/api", OrdinalIgnoreCase)` OR `X-Requested-With: XMLHttpRequest`) + `Startup.cs` `OnRedirectToLogin`/`OnRedirectToAccessDenied` wiring; xUnit `ApiCookieRedirectHandlerTests.cs` (VCST-5618); live-verified on the environment (unauthenticated `/api/platform/**` → 401 with no `Location` header; `/apiary/...` → 404, not 401/302). Docs axis: no PlatformDeveloperGuide coverage of this status-code contract (waived). **NOTE: the fix ships in an open, not-yet-merged PR — re-confirm once merged to `dev`.**
+- **Promoted:** 2026-07-30 (triangulated — BL-AUDIT-2026-07-30; source+live CONFIRMED, docs waived).
+
 ---
 
 ## Domain 6: B2B / Organization (BL-B2B)
@@ -1399,7 +1407,7 @@ P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-dat
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 |
-| Users & Auth | BL-AUTH-001–013 | 13 | 3 | 9 | 1 |
+| Users & Auth | BL-AUTH-001–014 | 14 | 3 | 10 | 1 |
 | B2B / Organization | BL-B2B-001–011 | 11 | 4 | 7 | 0 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 |
 | Cross-Domain | BL-CROSS-001–012 | 12 | 7 | 5 | 0 |
