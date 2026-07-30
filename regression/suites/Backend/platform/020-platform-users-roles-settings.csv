@@ -468,21 +468,24 @@
 [ACT] Sign in with admin credentials
 [WAIT] Admin SPA home loads
 [ACT] Open Security > Users blade so a live data grid is visible
-[ACT] Simulate session expiry by deleting the ASP.NET Core Identity auth cookie via DevTools Application/Storage tab (without signing out through the UI)
-[ACT] Trigger a data-refresh action in the open blade (e.g. re-run the Users search) that fires an /api/platform/... call
+[ACT] Open a second browser tab (shares the same cookie jar as the first)
+[ACT] In the second tab, sign out
+[ACT] Return to the first tab
+[ACT] In the first tab's stale blade, trigger a data-refresh action (e.g. click Refresh, or re-run the Users search) that fires an /api/platform/... call
 [WAIT] observe the SPA's handling of the resulting failed call","[STATE] Admin SPA shows a clean sign-in screen — no broken/frozen blade left on screen {OBSERVED}
 [NETWORK] the triggering API call returns HTTP 401 (not a 302 the SPA's XHR handling cannot follow) {OBSERVED}
 [DOM] the sign-in page's username and password fields are visible and enabled (not frozen/disabled) {OBSERVED}","[NETWORK] no infinite-redirect loop on the failing request
 [CONSOLE] an unhandled 401 promise rejection may appear (tracked separately as VCST-5622) — informational only, NOT a failure criterion for this case","Blade remains open showing stale data after session expiry; SPA shows a blank/white screen instead of sign-in; infinite redirect loop; sign-in form fields not interactive","Sign out if left signed in; close any open blades","VCST-5618","Draft"
-"PLAT-086","Authenticated But Forbidden Admin Action Returns 403 Directly (Not Redirect-Then-404)","Platform > Security > Authorization","Critical","BL-AUTH-014","","Restricted role AGENT-TEST-Catalog-Link-Restricted exists, excluding permission catalog:categories:link; account @td(CATALOG_LINK_RESTRICTED.email) is assigned this role and can sign in to {{BACK_URL}}","restricted_email=@td(CATALOG_LINK_RESTRICTED.email); restricted_password={{CATALOG_LINK_RESTRICTED_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}
+"PLAT-086","Authenticated But Forbidden Admin Action Returns 403 Directly (Not Redirect-Then-404)","Platform > Security > Authorization","Critical","BL-AUTH-014","","Restricted role AGENT-TEST-Catalog-Link-Restricted exists, excluding permission catalog:categories:link; account @td(CATALOG_LINK_RESTRICTED.email) is assigned this role and can sign in to {{BACK_URL}}","restricted_email=@td(CATALOG_LINK_RESTRICTED.email); restricted_password={{DEFAULT_TEST_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}
 [ACT] Sign in as restricted_email / restricted_password
 [WAIT] Admin SPA home loads
-[ACT] Open Catalog > Categories
+[ACT] Open a virtual catalog (e.g. B2B-mixed)
+[ACT] Navigate into ""Categories and items""
 [ACT] Attempt the category-link action that requires catalog:categories:link (the permission this role excludes)
-[WAIT] observe the network response for the resulting forbidden request","[NETWORK] the forbidden action's API call returns HTTP 403 directly {OBSERVED}
-[STATE] no intermediate 302→AccessDenied→404 redirect chain is observed for this call {OBSERVED}
-[DOM] a forbidden/permission-denied indicator is visible on the categories blade for the action (not a blank or generically broken blade) {OBSERVED}","[NETWORK] no 404 following the forbidden call (old chain artifact)
-[CONSOLE] no unhandled exception triggered by the 403 response","HTTP 302 or a trailing 404 observed instead of a direct 403; categories blade shows a blank/broken state","Sign out restricted user","VCST-5618","Draft"
+[ACT] Note the network log's shell-bootstrap calls for this session (e.g. GET /api/platform/modules, GET /api/platform/localizable-settings) — these ARE reachable by this role","[DOM] the category-link action is pre-emptively disabled/blocked client-side with a visible permission-denied message (e.g. ""your role does not have permission to link them"") and non-interactive selection controls — this is the correct enforcement point for THIS action, not a bug {OBSERVED}
+[NETWORK] a reachable forbidden call for this role (e.g. GET /api/platform/modules) returns HTTP 403 directly {OBSERVED}
+[STATE] no intermediate 302→AccessDenied→404 redirect chain is observed for that call {OBSERVED}","[NETWORK] no 404 following the forbidden call (old chain artifact)
+[CONSOLE] no unhandled exception triggered by the 403 response","HTTP 302 or a trailing 404 observed instead of a direct 403 on the reachable call; category-link action is NOT blocked client-side (i.e. becomes reachable/API-calling) without the permission","Sign out restricted user","VCST-5618","Draft"
 "PLAT-087","Fresh Anonymous Visit to Admin SPA Still Completes Normal Sign-In Flow (Regression Guard)","Platform > Security > Authentication","High","BL-AUTH-014","","No admin session cookie present (fresh/incognito browser context); {{BACK_URL}} accessible","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} in a fresh browser context with no session cookie
 [WAIT] redirected into the sign-in flow
 [ACT] Complete sign-in with admin credentials
@@ -492,6 +495,6 @@
 [ACT] Navigate to {{BACK_URL}} again in a fresh anonymous context
 [WAIT] redirected into the sign-in flow again
 [ACT] Complete sign-in a second time with admin credentials
-[WAIT] Admin SPA home/dashboard loads again, identical to the first cycle","[NAV] each anonymous navigation to {{BACK_URL}} redirects into the login/OIDC flow, not a raw 401 page {SPEC}
+[WAIT] Admin SPA home/dashboard loads again, identical to the first cycle","[NAV] each anonymous navigation to {{BACK_URL}} lands on the sign-in screen via a client-side route (not a raw 401 page) {SPEC}
 [STATE] sign-in completes and lands on the Admin SPA home/dashboard on both cycles {OBSERVED}
-[NETWORK] no infinite redirect loop on /connect/authorize on either cycle {OBSERVED}","[CONSOLE] no JS errors during either sign-in cycle","Raw 401 JSON shown instead of the sign-in page; infinite redirect loop; sign-in succeeds but the SPA shell fails to load","Sign out","VCST-5618","Draft"
+[NETWORK] no infinite redirect/retry loop on POST /api/platform/security/login/ on either cycle {OBSERVED}","[CONSOLE] no NEW JS errors during either sign-in cycle beyond pre-existing env noise (the VCST-5622 unhandled 401 rejection on WidgetColorMarkers, and the 3 known module-logo 404s — builderio/logo.svg, page-builder-shell/.../logo-only.svg, app_search/logo.svg — are informational only, NOT a failure criterion for this case)","Raw 401 JSON shown instead of the sign-in page; infinite redirect loop; sign-in succeeds but the SPA shell fails to load","Sign out","VCST-5618","Draft"
