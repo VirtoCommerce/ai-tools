@@ -1,229 +1,269 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"PLAT-001","Add New User","Platform > User Management","Critical","BL-PLAT-002","ECL-2.1; ECL-8.1","Admin logged into backend ({{BACK_URL}})","username=test_user_001; email=test001@example.com; password=Test@1234; account_type=Manager","[NAV] Navigate to Security module at {{BACK_URL}}
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PLAT-001,Add New User,Platform > User Management,Critical,BL-PLAT-002,ECL-2.1; ECL-8.1,Admin logged into backend ({{BACK_URL}}),username=test_user_001; email=test001@example.com; password=Test@1234; account_type=Manager,"[NAV] Navigate to Security module at {{BACK_URL}}
 [ACT] Click Add User
+[WAIT] Wait for the dialog/action to complete
 [ACT] Enter user details: username, email, password
 [ACT] Select account type: Manager
-[ACT] Click Save","[STATE] User is created successfully
-[DOM] User appears in user list
-[STATE] Account type is set correctly","[API] GET {{BACK_URL}}/api/platform/security/users - verify user in response
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] New user record exists with the entered username, email, and account type
+[DOM] New user row is visible in the Users grid
+[STATE] User detail blade Account Type field shows 'Manager', matching the value selected in Steps","[API] GET {{BACK_URL}}/api/platform/security/users - verify user in response
 [CONSOLE] No error logs on save
-[NETWORK] POST /api/platform/security/users returns 200","Save button unresponsive; user not in list after save; 500 error in console","delete created user via Admin","C172798","Katalon"
-"PLAT-002","Add User with Already Existing Login","Platform > User Management","High","BL-PLAT-002","ECL-8.1","Admin logged into backend ({{BACK_URL}}), at least one user exists","username=existing_user (already in system); email=newemail@example.com","[NAV] Navigate to Security module at {{BACK_URL}}
+[NETWORK] POST /api/platform/security/users returns 200",Save button unresponsive; user not in list after save; 500 error in console,delete created user via Admin,C172798; smoke-baseline,Draft
+PLAT-002,Add User with Already Existing Login,Platform > User Management,High,BL-PLAT-002,ECL-8.1,"Admin logged into backend ({{BACK_URL}}), at least one user exists",username=existing_user (already in system); email=newemail@example.com,"[NAV] Navigate to Security module at {{BACK_URL}}
 [ACT] Click Add User
+[WAIT] Wait for the dialog/action to complete
 [ACT] Enter username that already exists in the system
 [ACT] Enter other required fields
-[ACT] Click Save","[DOM] User is NOT created
+[ACT] Click Save
+[WAIT] Wait for save to complete","[DOM] No new row is added to the Users grid; the existing user's row remains the only match (new row absent)
 [DOM] Error message displayed: 'Login already exists'
 [STATE] User does not appear in list","[API] GET {{BACK_URL}}/api/platform/security/users - verify duplicate not added
 [CONSOLE] No unhandled exceptions
-[NETWORK] POST returns 400 with validation error body","No error shown on duplicate; duplicate user created silently","none","C172819","Katalon"
-"PLAT-003","Edit User - Login","Platform > User Management","High","BL-PLAT-002","ECL-2.1; ECL-8.1","Admin logged into backend ({{BACK_URL}}), test user exists (C172798)","new_username=test_user_updated","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[NETWORK] POST returns 400 with validation error body",No error shown on duplicate; duplicate user created silently,none,C172819; smoke-baseline,Draft
+PLAT-003,Edit User - Login,Platform > User Management,High,BL-PLAT-002,ECL-2.1; ECL-8.1,"Admin logged into backend ({{BACK_URL}}), test user exists (C172798)",new_username=test_user_updated,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open existing user
 [ACT] Change Login field to new_username
-[ACT] Click Save","[STATE] Login is updated successfully
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] User detail blade Login field shows new_username after save
 [STATE] User can login with new username","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify updated login
 [CONSOLE] No errors on save
-[NETWORK] PUT /api/platform/security/users returns 200","Old login still accepted after update; save returns 500","restore original username via Admin","C172820","Katalon"
-"PLAT-004","Edit User - Email","Platform > User Management","High","BL-PLAT-002","ECL-2.1; ECL-8.1","Admin logged into backend ({{BACK_URL}}), test user exists (C172798)","new_email=updated001@example.com","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[NETWORK] PUT /api/platform/security/users returns 200",Old login still accepted after update; save returns 500,restore original username via Admin,C172820; smoke-baseline,Draft
+PLAT-004,Edit User - Email,Platform > User Management,High,BL-PLAT-002,ECL-2.1; ECL-8.1,"Admin logged into backend ({{BACK_URL}}), test user exists (C172798)",new_email=updated001@example.com,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open existing user
 [ACT] Change Email field to new_email
-[ACT] Click Save","[STATE] Email is updated successfully
-[DOM] Email change reflected in user profile","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify updated email
-[CONSOLE] No errors on save","Old email shown after save; profile does not reflect change","restore original email via Admin","C172821","Katalon"
-"PLAT-005","Edit User - StoreId","Platform > User Management","Medium","BL-PLAT-002; BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}}), test user exists (C172798)","store_id={{STORE_ID}}","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] User detail blade Email field shows new_email after save
+[DOM] User detail blade Email field is visible showing the updated address","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify updated email
+[CONSOLE] No errors on save",Old email shown after save; profile does not reflect change,restore original email via Admin,C172821; smoke-baseline,Draft
+PLAT-005,Edit User - StoreId,Platform > User Management,Medium,BL-PLAT-002; BL-PLAT-004,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), test user exists (C172798)",store_id={{STORE_ID}},"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open existing user
 [ACT] Change StoreId field to {{STORE_ID}}
-[ACT] Click Save","[STATE] StoreId is updated successfully
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] User detail blade StoreId field shows {{STORE_ID}} after save
 [STATE] User assigned to correct store","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify storeId in response
-[CONSOLE] No errors on save","StoreId not persisted; user assigned to wrong store after save","restore original StoreId via Admin","C344934","Katalon"
-"PLAT-006","Edit User - Account Type","Platform > User Management","High","BL-PLAT-001; BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), test user exists (C172798)","from_type=Manager; to_type=Administrator","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[CONSOLE] No errors on save",StoreId not persisted; user assigned to wrong store after save,restore original StoreId via Admin,C344934; smoke-baseline,Draft
+PLAT-006,Edit User - Account Type,Platform > User Management,High,BL-PLAT-001; BL-PLAT-002,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), test user exists (C172798)",from_type=Manager; to_type=Administrator,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open existing user
 [ACT] Change Account Type from Manager to Administrator
-[ACT] Click Save","[STATE] Account type is updated successfully
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] User detail blade Account Type field shows Administrator after save
 [STATE] User permissions reflect new account type","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify userType field
 [CONSOLE] No errors on save
-[NETWORK] PUT returns 200","Account type not changed; permissions unchanged after type switch","restore original account type via Admin","C172799","Katalon"
-"PLAT-007","Search User in List View","Platform > User Management","Medium","BL-PLAT-001","ECL-8.1","Admin logged into backend ({{BACK_URL}}), multiple users exist including 'user_1'","search_term=user_1","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[NETWORK] PUT returns 200",Account type not changed; permissions unchanged after type switch,restore original account type via Admin,C172799; smoke-baseline,Draft
+PLAT-007,Search User in List View,Platform > User Management,Medium,BL-PLAT-001,ECL-8.1,"Admin logged into backend ({{BACK_URL}}), multiple users exist including 'user_1'",search_term=user_1,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Enter search term 'user_1' in search field
 [ASSERT] Verify results","[DOM] Only users matching 'user_1' are shown in list
-[STATE] Search filters correctly","[API] GET {{BACK_URL}}/api/platform/security/users?keyword=user_1 - verify filtered results
-[CONSOLE] No errors during search","All users shown regardless of search; search field non-functional","none","C172823","Katalon"
-"PLAT-008","Delete User","Platform > User Management","High","BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), test user 'user_1' exists (C172798)","username=user_1","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[STATE] Users grid shows only rows whose Login/Email contains 'user_1'","[API] GET {{BACK_URL}}/api/platform/security/users?keyword=user_1 - verify filtered results
+[CONSOLE] No errors during search",All users shown regardless of search; search field non-functional,none,C172823; smoke-baseline,Draft
+PLAT-008,Delete User,Platform > User Management,High,BL-PLAT-002,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), test user 'user_1' exists (C172798)",username=user_1,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Select user 'user_1'
 [ACT] Click Delete
-[ACT] Confirm deletion","[STATE] User is deleted successfully
-[DOM] User disappears from user list
+[WAIT] Wait for deletion to complete
+[ACT] Confirm deletion
+[WAIT] Wait for the confirmed action to complete","[STATE] User record no longer exists (subsequent GET by id returns 404)
+[DOM] Deleted user's row is absent from the Users grid after refresh
 [STATE] User cannot login","[API] GET {{BACK_URL}}/api/platform/security/users - verify user absent from response
 [CONSOLE] No errors on delete
-[NETWORK] DELETE returns 204","User remains in list after delete; user can still login after deletion","none (user is deleted as cleanup target)","C172800","Katalon"
-"PLAT-009","Lock User Account","Platform > User Management","High","BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), test user 'user_1' exists (C172798). NOTE: PLAT-009 tests platform-level global lock (ApplicationUser.IsLockedOut). This is DISTINCT from org-scoped lock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.","username=user_1; storefront_url={{FRONT_URL}}","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[NETWORK] DELETE returns 204",User remains in list after delete; user can still login after deletion,none (user is deleted as cleanup target),C172800; smoke-baseline,Draft
+PLAT-009,Lock User Account,Platform > User Management,High,BL-PLAT-002,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), test user 'user_1' exists (C172798). NOTE: PLAT-009 tests platform-level global lock (ApplicationUser.IsLockedOut). This is DISTINCT from org-scoped lock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.",username=user_1; storefront_url={{FRONT_URL}},"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user 'user_1'
 [ACT] Click 'Lock Account' button
+[WAIT] Wait for lock to complete
 [ACT] Save changes
-[NAV] Navigate to storefront {{FRONT_URL}} and attempt login as locked user","[STATE] Account status changed to 'Locked'
+[WAIT] Wait for save to complete
+[NAV] Navigate to storefront {{FRONT_URL}}
+[ACT] Attempt login as the locked user","[STATE] Account status changed to 'Locked'
 [DOM] Login attempt displays: 'This account has been locked out, please try again later.'","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify isLockedOut=true
 [CONSOLE] No errors on lock
-[ADMIN] Audit log records lock action","Lock not reflected in UI; locked user can still login at storefront","unlock user account via Admin","C179518; Synced: VCST-5028 (2026-06-15) — VALID: platform-level lock remains global","Katalon"
-"PLAT-010","Unlock User Account","Platform > User Management","High","BL-PLAT-002","ECL-2.1","Locked user account exists (C179518). NOTE: PLAT-010 tests platform-level global unlock (ApplicationUser.IsLockedOut). This is DISTINCT from org-scoped unlock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.","username=user_1 (locked); storefront_url={{FRONT_URL}}","[NAV] Navigate to Backend > Security at {{BACK_URL}}
+[ADMIN] Audit log records lock action",Lock not reflected in UI; locked user can still login at storefront,unlock user account via Admin,C179518; Synced: VCST-5028 (2026-06-15) — VALID: platform-level lock remains global,Draft
+PLAT-010,Unlock User Account,Platform > User Management,High,BL-PLAT-002,ECL-2.1,Locked user account exists (C179518). NOTE: PLAT-010 tests platform-level global unlock (ApplicationUser.IsLockedOut). This is DISTINCT from org-scoped unlock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.,username=user_1 (locked); storefront_url={{FRONT_URL}},"[NAV] Navigate to Backend > Security at {{BACK_URL}}
 [ACT] Find locked user from preconditions
 [ACT] Click 'Unlock account'
+[WAIT] Wait for unlock to complete
 [ACT] Save changes
-[NAV] Go to storefront {{FRONT_URL}} and login as the user","[STATE] Account status changed from 'Locked' to 'Unlocked'
-[STATE] User can successfully login at storefront","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify isLockedOut=false
+[WAIT] Wait for save to complete
+[NAV] Go to storefront {{FRONT_URL}}
+[ACT] Log in as the user","[STATE] Account status changed from 'Locked' to 'Unlocked'
+[STATE] Storefront login with the unlocked user's credentials returns an authenticated session (redirected off the login page)","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify isLockedOut=false
 [CONSOLE] No errors on unlock
-[ADMIN] Audit log records unlock action","Unlock button missing; account remains locked after unlock; storefront login still rejected","none","C179519; Synced: VCST-5028 (2026-06-15) — VALID: platform-level lock remains global","Katalon"
-"PLAT-011","Add API Key","Platform > API Keys","Critical","BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), user account exists","api_key_name=apikey_test_001","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[ADMIN] Audit log records unlock action",Unlock button missing; account remains locked after unlock; storefront login still rejected,none,C179519; Synced: VCST-5028 (2026-06-15) — VALID: platform-level lock remains global,Draft
+PLAT-011,Add API Key,Platform > API Keys,Critical,BL-PLAT-002,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), user account exists",api_key_name=apikey_test_001,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user account
 [NAV] Navigate to API Keys widget
 [ACT] Click Add API Key
+[WAIT] Wait for the dialog/action to complete
 [ACT] Enter key name: apikey_test_001
-[ACT] Click Generate","[STATE] API key is generated successfully
-[DOM] API key displayed with secret
-[DOM] Key appears in API Keys list","[API] GET {{BACK_URL}}/api/platform/security/users/{id}/api-keys - verify key in response
+[ACT] Click Generate
+[WAIT] Wait for key generation to complete","[STATE] Generate action returns HTTP 200/201 with a non-empty key secret in the response body
+[DOM] Generated key secret is visible in the API Keys dialog
+[DOM] New key row is visible in the API Keys widget list","[API] GET {{BACK_URL}}/api/platform/security/users/{id}/api-keys - verify key in response
 [CONSOLE] No errors on generation
-[NETWORK] POST returns 200 with key secret","Generate button missing; secret not shown; key absent from list after generation","delete created API key via Admin","C184235","Katalon"
-"PLAT-012","Reset API Key","Platform > API Keys","High","BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), API key 'apikey_2' exists (C184235)","api_key_name=apikey_2","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[NETWORK] POST returns 200 with key secret",Generate button missing; secret not shown; key absent from list after generation,delete created API key via Admin,C184235; smoke-baseline,Draft
+PLAT-012,Reset API Key,Platform > API Keys,High,BL-PLAT-002,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), API key 'apikey_2' exists (C184235)",api_key_name=apikey_2,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user with API key
 [NAV] Navigate to API Keys widget
 [ACT] Select 'apikey_2'
 [ACT] Click Reset
-[ACT] Confirm reset","[STATE] API key 'apikey_2' is reset with new secret
+[WAIT] Wait for reset to complete
+[ACT] Confirm reset
+[WAIT] Wait for the confirmed action to complete","[STATE] API key 'apikey_2' is reset with new secret
 [STATE] Old secret no longer valid
-[DOM] New secret displayed","[API] Attempt auth with old secret - expect 401
+[DOM] New key secret is visible in the Reset Key dialog","[API] Attempt auth with old secret - expect 401
 [API] Attempt auth with new secret - expect 200
-[CONSOLE] No errors on reset","Old secret still valid after reset; new secret not displayed","none (key secret rotated, not deleted)","C184239","Katalon"
-"PLAT-013","Delete API Key","Platform > API Keys","High","BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), API key 'apikey_1' exists (C184235)","api_key_name=apikey_1","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[CONSOLE] No errors on reset",Old secret still valid after reset; new secret not displayed,"none (key secret rotated, not deleted)",C184239; smoke-baseline,Draft
+PLAT-013,Delete API Key,Platform > API Keys,High,BL-PLAT-002,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), API key 'apikey_1' exists (C184235)",api_key_name=apikey_1,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user with API key
 [NAV] Navigate to API Keys widget
 [ACT] Select 'apikey_1'
 [ACT] Click Delete
-[ACT] Confirm deletion","[STATE] API key 'apikey_1' is deleted
-[DOM] Key no longer appears in list
+[WAIT] Wait for deletion to complete
+[ACT] Confirm deletion
+[WAIT] Wait for the confirmed action to complete","[STATE] API key 'apikey_1' is deleted
+[DOM] Deleted key row is absent from the API Keys widget list
 [STATE] Key cannot be used for API calls","[API] GET {{BACK_URL}}/api/platform/security/users/{id}/api-keys - verify key absent
 [API] Attempt call with deleted key - expect 401
-[CONSOLE] No errors on deletion","Deleted key still appears in list; deleted key still authenticates","none (key is deleted as cleanup target)","C184245","Katalon"
-"PLAT-014","API Key Active TRUE - Unlocked Account Returns Results","Platform > API Keys","Critical","BL-PLAT-001; BL-PLAT-002","ECL-2.1","User account unlocked, API key exists with Active=TRUE (C172798, C184235)","api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<active_key_secret>","[NAV] Open browser
+[CONSOLE] No errors on deletion",Deleted key still appears in list; deleted key still authenticates,none (key is deleted as cleanup target),C184245; smoke-baseline,Draft
+PLAT-014,API Key Active TRUE - Unlocked Account Returns Results,Platform > API Keys,Critical,BL-PLAT-001; BL-PLAT-002,ECL-2.1,"User account unlocked, API key exists with Active=TRUE (C172798, C184235)",api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<active_key_secret>,"[NAV] Open browser
 [ACT] Enter API endpoint URL with valid api_key parameter: {{BACK_URL}}/api/platform/security/users?api_key=<secret>
 [ACT] Execute API request
 [ASSERT] Observe response","[FORMAT] JSON response is returned successfully
 [DOM] Data is displayed in browser window
 [STATE] No authentication errors","[NETWORK] Response status 200 with valid JSON body
-[CONSOLE] No auth errors","401 or 403 returned for valid active key; empty response body","none","C184249","Katalon"
-"PLAT-015","API Key Active FALSE - Unlocked Account Returns No Results","Platform > API Keys","High","BL-PLAT-001; BL-PLAT-002","ECL-2.1","User account unlocked, API key exists with Active=FALSE","api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<inactive_key_secret>","[ACT] Set API key Active flag to FALSE in backend
+[CONSOLE] No auth errors",401 or 403 returned for valid active key; empty response body,none,C184249; smoke-baseline,Draft
+PLAT-015,API Key Active FALSE - Unlocked Account Returns No Results,Platform > API Keys,High,BL-PLAT-001; BL-PLAT-002,ECL-2.1,"User account unlocked, API key exists with Active=FALSE",api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<inactive_key_secret>,"[ACT] Set API key Active flag to FALSE in backend
 [NAV] Open browser
 [ACT] Enter API endpoint URL with api_key parameter
 [ACT] Execute API request
 [ASSERT] Observe response","[STATE] JSON response is NOT returned
 [DOM] Authentication error displayed
 [STATE] Access denied","[NETWORK] Response status 401 or 403
-[CONSOLE] No unhandled server errors","200 returned for inactive key; data exposed despite inactive key","restore API key to Active=TRUE","C184253","Katalon"
-"PLAT-016","API Key Active TRUE - Locked Account Returns No Results","Platform > API Keys","High","BL-PLAT-001; BL-PLAT-002","ECL-2.1","User account locked (C179518), API key exists with Active=TRUE","api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<active_key_secret>","[ACT] Verify account is locked in backend
+[CONSOLE] No unhandled server errors",200 returned for inactive key; data exposed despite inactive key,restore API key to Active=TRUE,C184253; smoke-baseline,Draft
+PLAT-016,API Key Active TRUE - Locked Account Returns No Results,Platform > API Keys,High,BL-PLAT-001; BL-PLAT-002,ECL-2.1,"User account locked (C179518), API key exists with Active=TRUE",api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<active_key_secret>,"[SETUP] Confirm via GET {{BACK_URL}}/api/platform/security/users/{id} that isLockedOut=true before proceeding
 [NAV] Open browser
 [ACT] Enter API endpoint URL with api_key parameter
 [ACT] Execute API request
 [ASSERT] Observe response","[STATE] JSON response is NOT returned
 [DOM] Authentication error displayed
 [DOM] Account locked message","[NETWORK] Response status 401 or 403
-[CONSOLE] No unhandled server errors","200 returned for locked account; data accessible via API key despite account lock","unlock account after test","C184250","Katalon"
-"PLAT-017","API Key Active FALSE - Locked Account Returns No Results","Platform > API Keys","High","BL-PLAT-001; BL-PLAT-002","ECL-2.1","User account locked (C179518), API key exists with Active=FALSE","api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<inactive_key_secret>","[ACT] Verify account is locked and API key inactive
+[CONSOLE] No unhandled server errors",200 returned for locked account; data accessible via API key despite account lock,unlock account after test,C184250; smoke-baseline,Draft
+PLAT-017,API Key Active FALSE - Locked Account Returns No Results,Platform > API Keys,High,BL-PLAT-001; BL-PLAT-002,ECL-2.1,"User account locked (C179518), API key exists with Active=FALSE",api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<inactive_key_secret>,"[SETUP] Confirm account isLockedOut=true before proceeding
+[SETUP] Confirm API key Active flag is FALSE before proceeding
 [NAV] Open browser
 [ACT] Enter API endpoint URL with api_key parameter
 [ACT] Execute API request
 [ASSERT] Observe response","[STATE] JSON response is NOT returned
 [DOM] Authentication error displayed
 [STATE] Access denied","[NETWORK] Response status 401 or 403
-[CONSOLE] No unhandled server errors","200 returned; data accessible despite both locked account and inactive key","unlock account and activate key after test","C184251","Katalon"
-"PLAT-018","Delete Account with API Key - Key Invalidated","Platform > API Keys","Critical","BL-PLAT-002","ECL-2.1","User account exists with active API key (C172798, C184235)","api_key_secret=<noted_before_deletion>; api_endpoint={{BACK_URL}}/api/platform/security/users","[ACT] Note API key secret for later test
+[CONSOLE] No unhandled server errors",200 returned; data accessible despite both locked account and inactive key,unlock account and activate key after test,C184251; smoke-baseline,Draft
+PLAT-018,Delete Account with API Key - Key Invalidated,Platform > API Keys,Critical,BL-PLAT-002,ECL-2.1,"User account exists with active API key (C172798, C184235)",api_key_secret=<noted_before_deletion>; api_endpoint={{BACK_URL}}/api/platform/security/users,"[ACT] Note API key secret for later test
 [NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Delete user account with API key
 [ACT] Confirm deletion
-[ACT] Attempt API request with previous api_key","[STATE] User account deleted successfully
+[WAIT] Wait for the confirmed action to complete
+[ACT] Attempt API request with previous api_key","[STATE] User record no longer exists (subsequent GET by id returns 404)
 [STATE] API key no longer exists in system
 [STATE] API request with previous key returns authentication error
 [STATE] No results returned","[API] GET with old key - expect 401
 [API] GET {{BACK_URL}}/api/platform/security/users/{id} - expect 404
-[CONSOLE] No errors other than expected auth failure","Deleted user key still authenticates; orphaned key grants access","none (user deleted as part of test)","C184254","Katalon"
-"PLAT-019","Add New Role","Platform > Roles & Permissions","Critical","BL-PLAT-001","ECL-2.1; ECL-8.1","Admin logged into backend ({{BACK_URL}})","role_name=ContentEditor; role_description=Content editor role for testing","[NAV] Navigate to Security > Roles at {{BACK_URL}}
+[CONSOLE] No errors other than expected auth failure",Deleted user key still authenticates; orphaned key grants access,none (user deleted as part of test),C184254; smoke-baseline,Draft
+PLAT-019,Add New Role,Platform > Roles & Permissions,Critical,BL-PLAT-001,ECL-2.1; ECL-8.1,Admin logged into backend ({{BACK_URL}}),role_name=ContentEditor; role_description=Content editor role for testing,"[NAV] Navigate to Security > Roles at {{BACK_URL}}
 [ACT] Click Add Role
+[WAIT] Wait for the dialog/action to complete
 [ACT] Enter role name: ContentEditor
 [ACT] Enter description: Content editor role for testing
-[ACT] Click Save","[STATE] Role is added successfully
-[DOM] Role appears in roles list
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] New role record exists with the entered name and description
+[DOM] New role row is visible in the Roles grid
 [STATE] Role available for assignment","[API] GET {{BACK_URL}}/api/platform/security/roles - verify role in response
 [CONSOLE] No errors on save
-[NETWORK] POST returns 200","Role not in list after save; save returns error; role not selectable in assignment UI","delete created role via Admin","C172925","Katalon"
-"PLAT-020","Edit Role","Platform > Roles & Permissions","High","BL-PLAT-001","ECL-2.1; ECL-8.1","Admin logged into backend ({{BACK_URL}}), test role exists (C172925)","role_name=ContentEditor; new_name=ContentEditorUpdated","[NAV] Navigate to Security > Roles at {{BACK_URL}}
+[NETWORK] POST returns 200",Role not in list after save; save returns error; role not selectable in assignment UI,delete created role via Admin,C172925; smoke-baseline,Draft
+PLAT-020,Edit Role,Platform > Roles & Permissions,High,BL-PLAT-001,ECL-2.1; ECL-8.1,"Admin logged into backend ({{BACK_URL}}), test role exists (C172925)",role_name=ContentEditor; new_name=ContentEditorUpdated,"[NAV] Navigate to Security > Roles at {{BACK_URL}}
 [ACT] Open existing role: ContentEditor
 [ACT] Modify role name to: ContentEditorUpdated
-[ACT] Click Save","[STATE] Role is updated successfully
-[DOM] Changes reflected in roles list","[API] GET {{BACK_URL}}/api/platform/security/roles/{id} - verify updated name
-[CONSOLE] No errors on save","Role name unchanged after save; old name persists in list","restore original role name via Admin","C172929","Katalon"
-"PLAT-021","Delete Role","Platform > Roles & Permissions","High","BL-PLAT-001","ECL-2.1","Admin logged into backend ({{BACK_URL}}), test role exists (C172925)","role_name=ContentEditor","[NAV] Navigate to Security > Roles at {{BACK_URL}}
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] Role detail blade name field shows ContentEditorUpdated after save
+[DOM] Roles grid row for the role is visible showing the updated name","[API] GET {{BACK_URL}}/api/platform/security/roles/{id} - verify updated name
+[CONSOLE] No errors on save",Role name unchanged after save; old name persists in list,restore original role name via Admin,C172929; smoke-baseline,Draft
+PLAT-021,Delete Role,Platform > Roles & Permissions,High,BL-PLAT-001,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), test role exists (C172925)",role_name=ContentEditor,"[NAV] Navigate to Security > Roles at {{BACK_URL}}
 [ACT] Select role to delete: ContentEditor
 [ACT] Click Delete
-[ACT] Confirm deletion","[STATE] Role is deleted successfully
-[DOM] Role disappears from roles list
+[WAIT] Wait for deletion to complete
+[ACT] Confirm deletion
+[WAIT] Wait for the confirmed action to complete","[STATE] Role record no longer exists (subsequent GET by id returns 404)
+[DOM] Deleted role's row is absent from the Roles grid
 [STATE] Role no longer available for assignment","[API] GET {{BACK_URL}}/api/platform/security/roles - verify role absent
 [NETWORK] DELETE returns 204
-[CONSOLE] No errors on deletion","Role still appears after delete; role still selectable in user assignment","none (role is deleted as cleanup target)","C172927","Katalon"
-"PLAT-022","Assign Permission to Role","Platform > Roles & Permissions","Critical","BL-PLAT-001","ECL-3.1","Admin logged into backend ({{BACK_URL}}), role exists (C172925)","role_name=ContentEditor; permission=catalog:read","[NAV] Navigate to Security > Roles at {{BACK_URL}}
+[CONSOLE] No errors on deletion",Role still appears after delete; role still selectable in user assignment,none (role is deleted as cleanup target),C172927; smoke-baseline,Draft
+PLAT-022,Assign Permission to Role,Platform > Roles & Permissions,Critical,BL-PLAT-001,ECL-3.1,"Admin logged into backend ({{BACK_URL}}), role exists (C172925)",role_name=ContentEditor; permission=catalog:read,"[NAV] Navigate to Security > Roles at {{BACK_URL}}
 [ACT] Open role: ContentEditor
 [NAV] Navigate to Permissions widget
 [ACT] Select permission: catalog:read
 [ACT] Click Assign
-[ACT] Click Save","[STATE] Permission is assigned to role successfully
+[WAIT] Wait for assignment to complete
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] Role's permissions array includes catalog:read after save
 [DOM] Permission appears in role's permission list
 [STATE] Users with this role inherit permission","[API] GET {{BACK_URL}}/api/platform/security/roles/{id} - verify permissions array includes catalog:read
 [CONSOLE] No errors on assignment
-[NETWORK] PUT returns 200","Permission not in role after save; users with role do not gain permission","remove assigned permission via Admin","C172930","Katalon"
-"PLAT-023","Remove Permission from Role","Platform > Roles & Permissions","High","BL-PLAT-001","ECL-3.1","Admin logged into backend ({{BACK_URL}}), role with permissions exists (C172930)","role_name=ContentEditor; permission=catalog:read","[NAV] Navigate to Security > Roles at {{BACK_URL}}
+[NETWORK] PUT returns 200",Permission not in role after save; users with role do not gain permission,remove assigned permission via Admin,C172930; smoke-baseline,Draft
+PLAT-023,Remove Permission from Role,Platform > Roles & Permissions,High,BL-PLAT-001,ECL-3.1,"Admin logged into backend ({{BACK_URL}}), role with permissions exists (C172930)",role_name=ContentEditor; permission=catalog:read,"[NAV] Navigate to Security > Roles at {{BACK_URL}}
 [ACT] Open role with assigned permissions: ContentEditor
 [NAV] Navigate to Permissions widget
 [ACT] Select permission to remove: catalog:read
 [ACT] Click Remove
-[ACT] Click Save","[STATE] Permission is removed from role successfully
+[WAIT] Wait for deletion to complete
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] Role's permissions array excludes catalog:read after save
 [DOM] Permission no longer appears in role's permission list
 [STATE] Users with this role no longer have permission","[API] GET {{BACK_URL}}/api/platform/security/roles/{id} - verify permissions array excludes removed permission
-[CONSOLE] No errors on removal","Permission still in role after remove; users retain permission after removal","none (permission removed as test action)","C172931","Katalon"
-"PLAT-024","Assign Role to User","Platform > Roles & Permissions","Critical","BL-PLAT-001","ECL-2.1; ECL-3.1","Admin logged into backend ({{BACK_URL}}), user and role exist (C172798, C172925)","username=test_user_001; role_name=ContentEditor","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[CONSOLE] No errors on removal",Permission still in role after remove; users retain permission after removal,none (permission removed as test action),C172931; smoke-baseline,Draft
+PLAT-024,Assign Role to User,Platform > Roles & Permissions,Critical,BL-PLAT-001,ECL-2.1; ECL-3.1,"Admin logged into backend ({{BACK_URL}}), user and role exist (C172798, C172925)",username=test_user_001; role_name=ContentEditor,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user account: test_user_001
 [NAV] Navigate to Roles widget
 [ACT] Click Assign Role
+[WAIT] Wait for assignment to complete
 [ACT] Select role: ContentEditor from dropdown
-[ACT] Click Save","[STATE] Role is assigned to user successfully
-[DOM] Roles widget shows updated count
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] User's roles array includes ContentEditor after save
+[DOM] Roles widget badge/count is visible showing the incremented total
 [STATE] User inherits role permissions","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify roles array includes ContentEditor
-[CONSOLE] No errors on assignment","Role not shown on user after save; user does not inherit role permissions","remove role from user via Admin","C184070","Katalon"
-"PLAT-025","Edit Role Assignment for User","Platform > Roles & Permissions","High","BL-PLAT-001","ECL-2.1; ECL-3.1","Admin logged into backend ({{BACK_URL}}), user with assigned roles exists (C184070)","username=test_user_001; add_role=ContentEditor; remove_role=existing_role","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[CONSOLE] No errors on assignment",Role not shown on user after save; user does not inherit role permissions,remove role from user via Admin,C184070; smoke-baseline,Draft
+PLAT-025,Edit Role Assignment for User,Platform > Roles & Permissions,High,BL-PLAT-001,ECL-2.1; ECL-3.1,"Admin logged into backend ({{BACK_URL}}), user with assigned roles exists (C184070)",username=test_user_001; add_role=ContentEditor; remove_role=existing_role,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user account: test_user_001
 [NAV] Navigate to Roles widget
 [ACT] Change assigned roles (add/remove)
-[ACT] Click Save","[STATE] Role assignment updated successfully
-[DOM] Roles widget shows updated count
+[WAIT] Wait for deletion to complete
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] User's roles array reflects the added/removed role after save
+[DOM] Roles widget badge/count is visible showing the updated total
 [STATE] User permissions updated accordingly","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify updated roles array
-[CONSOLE] No errors on update","Roles not updated; permissions unchanged after role modification","restore original role assignments via Admin","C184071","Katalon"
-"PLAT-026","Delete Roles from User","Platform > Roles & Permissions","High","BL-PLAT-001","ECL-2.1; ECL-3.1","Admin logged into backend ({{BACK_URL}}), user with assigned roles exists (C184070)","username=test_user_001; role_to_remove=ContentEditor","[NAV] Navigate to Security > Users at {{BACK_URL}}
+[CONSOLE] No errors on update",Roles not updated; permissions unchanged after role modification,restore original role assignments via Admin,C184071; smoke-baseline,Draft
+PLAT-026,Delete Roles from User,Platform > Roles & Permissions,High,BL-PLAT-001,ECL-2.1; ECL-3.1,"Admin logged into backend ({{BACK_URL}}), user with assigned roles exists (C184070)",username=test_user_001; role_to_remove=ContentEditor,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user account: test_user_001
 [NAV] Navigate to Roles widget
 [ACT] Select role to remove: ContentEditor
 [ACT] Click Remove
-[ACT] Click Save","[STATE] Roles removed from user successfully
-[DOM] Roles widget shows updated count (decreased)
+[WAIT] Wait for deletion to complete
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] User's roles array no longer includes ContentEditor after save
+[DOM] Roles widget badge/count is visible showing the decremented total
 [STATE] User no longer has removed role permissions","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify roles array excludes removed role
-[CONSOLE] No errors on removal","Role count unchanged after remove; user retains removed role permissions","none (roles removed as test action)","C184072","Katalon"
-"PLAT-061","Platform Settings - User Types Configuration","Platform > Settings","Medium","BL-PLAT-001; BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}})","user_types_path=Settings > Platform > User types; new_type=CustomManager","[NAV] Navigate to Settings > Platform > User types at {{BACK_URL}}
+[CONSOLE] No errors on removal",Role count unchanged after remove; user retains removed role permissions,none (roles removed as test action),C184072; smoke-baseline,Draft
+PLAT-061,Platform Settings - User Types Configuration,Platform > Settings,Medium,BL-PLAT-001; BL-PLAT-004,ECL-2.1,Admin logged into backend ({{BACK_URL}}),user_types_path=Settings > Platform > User types; new_type=CustomManager,"[NAV] Navigate to Settings > Platform > User types at {{BACK_URL}}
 [ASSERT] Review available user types (Manager, Administrator, Customer, etc.)
 [ACT] Add new user type: CustomManager (if applicable)
+[WAIT] Wait for the dialog/action to complete
 [ACT] Modify user type settings
 [ASSERT] Verify settings persisted
 [ACT] Create user with new user type
-[ASSERT] Verify user created with correct type","[DOM] User types displayed correctly in Settings
+[ASSERT] Verify user created with correct type","[DOM] User Types list is visible in Settings showing the Manager, Administrator, and Customer entries
 [STATE] User types configurable
 [STATE] Settings persist after save
 [STATE] New user types can be assigned to users","[API] GET {{BACK_URL}}/api/platform/security/roles - verify user types
 [CONSOLE] No errors on save
-[NETWORK] PUT returns 200","Settings not persisted; new user type not assignable; user creation fails with new type","restore original user types settings via Admin","C242701","Katalon (generic)"
-"PLAT-062","Healthcheck - No Problems (Modules)","Platform > Healthcheck","Critical","BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}}), all modules healthy","healthcheck_endpoint={{BACK_URL}}/health","[NAV] Navigate to More > Healthcheck at {{BACK_URL}} (or access {{BACK_URL}}/health endpoint)
+[NETWORK] PUT returns 200",Settings not persisted; new user type not assignable; user creation fails with new type,restore original user types settings via Admin,C242701; smoke-baseline,Draft
+PLAT-062,Healthcheck - No Problems (Modules),Platform > Healthcheck,Critical,BL-PLAT-004,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), all modules healthy",healthcheck_endpoint={{BACK_URL}}/health,"[NAV] Navigate to More > Healthcheck at {{BACK_URL}} (or access {{BACK_URL}}/health endpoint)
 [ASSERT] Review overall system status
 [ASSERT] Review modules section
 [ASSERT] Verify all modules listed
@@ -232,8 +272,8 @@
 [STATE] No errors or warnings displayed
 [STATE] System operational","[API] GET {{BACK_URL}}/health - verify status=Healthy in JSON response
 [NETWORK] Response status 200
-[CONSOLE] No errors","Status shows Degraded despite all modules healthy; modules section missing from response","none","C343386","Katalon"
-"PLAT-063","Healthcheck - With Module Problems","Platform > Healthcheck","High","BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}}), at least one module with broken dependency installed","healthcheck_endpoint={{BACK_URL}}/health; broken_module=test_module_with_bad_dependency","[ACT] Install module with broken dependency
+[CONSOLE] No errors",Status shows Degraded despite all modules healthy; modules section missing from response,none,C343386; smoke-baseline,Draft
+PLAT-063,Healthcheck - With Module Problems,Platform > Healthcheck,High,BL-PLAT-004,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), at least one module with broken dependency installed NOTE: Requires isolated /qa-local-env — do not run against shared vcst-qa env; destructive to the shared instance.",healthcheck_endpoint={{BACK_URL}}/health; broken_module=test_module_with_bad_dependency,"[ACT] Install module with broken dependency
 [NAV] Navigate to More > Healthcheck at {{BACK_URL}} (or access {{BACK_URL}}/health endpoint)
 [ASSERT] Review overall system status
 [ASSERT] Review modules section
@@ -242,8 +282,8 @@
 [DOM] Error details displayed
 [DOM] Other healthy modules still shown as healthy","[API] GET {{BACK_URL}}/health - verify status=Degraded and error details in response
 [NETWORK] Response status 200 (health endpoint always returns 200 with degraded payload)
-[CONSOLE] No unhandled server errors","Status remains Healthy despite broken module; error details absent from response","uninstall broken module via Admin","C343387","Katalon"
-"PLAT-064","Healthcheck - No Problems (Cache)","Platform > Healthcheck","Critical","BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}}), Redis cache operational","healthcheck_endpoint={{BACK_URL}}/health","[NAV] Navigate to More > Healthcheck at {{BACK_URL}} (or access {{BACK_URL}}/health endpoint)
+[CONSOLE] No unhandled server errors",Status remains Healthy despite broken module; error details absent from response,uninstall broken module via Admin,C343387; smoke-baseline,Manual
+PLAT-064,Healthcheck - No Problems (Cache),Platform > Healthcheck,Critical,BL-PLAT-004,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), Redis cache operational",healthcheck_endpoint={{BACK_URL}}/health,"[NAV] Navigate to More > Healthcheck at {{BACK_URL}} (or access {{BACK_URL}}/health endpoint)
 [ASSERT] Review overall system status
 [ASSERT] Review cache section
 [ASSERT] Verify cache status (Redis)
@@ -252,8 +292,8 @@
 [STATE] Redis connection successful
 [STATE] No cache errors","[API] GET {{BACK_URL}}/health - verify Cache section status=Healthy in JSON response
 [NETWORK] Response status 200
-[CONSOLE] No cache-related errors","Cache section missing from response; Status Degraded despite healthy Redis","none","C343389","Katalon"
-"PLAT-065","Healthcheck - With Cache Problems","Platform > Healthcheck","High","BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}}), cache unavailable or misconfigured","healthcheck_endpoint={{BACK_URL}}/health; cache_state=stopped_or_misconfigured","[ACT] Stop Redis service or break cache connection
+[CONSOLE] No cache-related errors",Cache section missing from response; Status Degraded despite healthy Redis,none,C343389; smoke-baseline,Draft
+PLAT-065,Healthcheck - With Cache Problems,Platform > Healthcheck,High,BL-PLAT-004,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), cache unavailable or misconfigured NOTE: Requires isolated /qa-local-env — do not run against shared vcst-qa env; destructive to the shared instance.",healthcheck_endpoint={{BACK_URL}}/health; cache_state=stopped_or_misconfigured,"[ACT] Stop Redis service or break cache connection
 [NAV] Navigate to More > Healthcheck at {{BACK_URL}} (or access {{BACK_URL}}/health endpoint)
 [ASSERT] Review overall system status
 [ASSERT] Review cache section
@@ -262,8 +302,8 @@
 [DOM] Error description displayed (e.g., 'Redis connection failed')
 [STATE] System still partially operational","[API] GET {{BACK_URL}}/health - verify Cache section status=Unhealthy and error message in response
 [NETWORK] Response status 200 with degraded payload
-[CONSOLE] Redis connection error log visible","Status remains Healthy despite cache failure; no error details in cache section","restore Redis service / cache connection","C343388","Katalon"
-"PLAT-066","Account Lockout After Failed Login Attempts","Platform > Security > Authentication","Critical","BL-PLAT-002","ECL-2.1; ECL-3.1","Admin logged into Backend ({{BACK_URL}}), a test user account exists with known credentials, account lockout policy is enabled (e.g. 5 failed attempts)","test_user_email=lockout_test@example.com; test_user_password=ValidPass@1234; incorrect_password=WrongPass@9999; lockout_threshold=5","[NAV] Navigate to {{BACK_URL}} login page
+[CONSOLE] Redis connection error log visible",Status remains Healthy despite cache failure; no error details in cache section,restore Redis service / cache connection,C343388; smoke-baseline,Manual
+PLAT-066,Account Lockout After Failed Login Attempts,Platform > Security > Authentication,Critical,BL-PLAT-002,ECL-2.1; ECL-3.1,"Admin logged into Backend ({{BACK_URL}}), a test user account exists with known credentials, account lockout policy is enabled (e.g. 5 failed attempts)",test_user_email=lockout_test@example.com; test_user_password=ValidPass@1234; incorrect_password=WrongPass@9999; lockout_threshold=5,"[NAV] Navigate to {{BACK_URL}} login page
 [ACT] Enter the test user email
 [ACT] Enter an incorrect password 5 times consecutively
 [ASSERT] Observe the response after the 5th failed attempt
@@ -274,21 +314,25 @@
 [ADMIN] Lockout is recorded in platform audit logs
 [STATE] Successful login is prevented until account is unlocked","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify isLockedOut=true after lockout
 [ADMIN] Audit log contains lockout event with timestamp and user
-[CONSOLE] No unhandled exceptions during lockout","Lockout not triggered after threshold; correct credentials accepted despite lockout; audit log missing lockout event","unlock user account via Admin","C407704","Not Automated"
-"PLAT-067","Unlock Locked Account via Admin","Platform > Security > User Management","Critical","BL-PLAT-002","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), a user account is in locked state due to failed login attempts","locked_user_email=lockout_test@example.com; locked_user_password=ValidPass@1234","[NAV] Navigate to Security module > Users at {{BACK_URL}}
-[ACT] Search for and open the locked user account
+[CONSOLE] No unhandled exceptions during lockout",Lockout not triggered after threshold; correct credentials accepted despite lockout; audit log missing lockout event,unlock user account via Admin,C407704; smoke-baseline,Draft
+PLAT-067,Unlock Locked Account via Admin,Platform > Security > User Management,Critical,BL-PLAT-002,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), a user account is in locked state due to failed login attempts",locked_user_email=lockout_test@example.com; locked_user_password=ValidPass@1234,"[NAV] Navigate to Security module > Users at {{BACK_URL}}
+[ACT] Search for the locked user account in Security > Users
+[ACT] Open the locked user account
 [ASSERT] Observe the locked status indicator on the user profile
 [ACT] Click the Unlock Account button or toggle
+[WAIT] Wait for unlock to complete
 [ACT] Confirm the unlock action
+[WAIT] Wait for the confirmed action to complete
 [ASSERT] Verify the user status changes to active
 [ACT] Attempt to log in as the unlocked user with correct credentials","[STATE] Locked account displays a locked status indicator in the admin UI
-[DOM] Unlock button is available to admin users
+[DOM] 'Unlock' button is visible and enabled on the locked user's detail blade
 [STATE] Unlock action changes the account status to active immediately
-[STATE] Unlocked user can successfully log in with correct credentials
+[STATE] Login with correct credentials after unlock returns HTTP 200 with a non-empty access_token
 [ADMIN] Unlock action is recorded in the audit log","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify isLockedOut=false after unlock
 [ADMIN] Audit log contains unlock event with timestamp and admin user
-[CONSOLE] No errors on unlock","Unlock button absent; status remains locked after unlock action; unlocked user still cannot login; audit log missing","none","C407705","Not Automated"
-"PLAT-068","Session Termination on Admin Lock","Platform > Security > Session Management","High","BL-PLAT-002","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), a second browser session is open as the test user","test_user_email=session_test@example.com; test_user_password=ValidPass@1234","[NAV] Open a browser session as a test user and navigate to {{BACK_URL}}
+[CONSOLE] No errors on unlock",Unlock button absent; status remains locked after unlock action; unlocked user still cannot login; audit log missing,none,C407705; smoke-baseline,Draft
+PLAT-068,Session Termination on Admin Lock,Platform > Security > Session Management,High,BL-PLAT-002,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), a second browser session is open as the test user",test_user_email=session_test@example.com; test_user_password=ValidPass@1234,"[NAV] Open a separate browser session as the test user
+[NAV] Navigate to {{BACK_URL}} in that session
 [ACT] As admin in a separate session, navigate to Security module > Users
 [ACT] Open the test user account
 [ACT] Lock the account (or disable it)
@@ -300,11 +344,14 @@
 [STATE] The user cannot continue performing actions after account lock
 [ADMIN] Session termination is reflected in audit logs","[API] Verify test user's session token is invalidated (401 on any authenticated request)
 [ADMIN] Audit log contains session termination event
-[CONSOLE] No unhandled server errors","Active session not terminated after account lock; user can continue actions after lock; no redirect to login","unlock user account via Admin","C407706","Not Automated"
-"PLAT-069","Session Termination on Account Deletion","Platform > Security > Session Management","High","BL-PLAT-002","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), a test user has an active session open in a separate browser","test_user_email=session_delete_test@example.com; test_user_password=ValidPass@1234","[NAV] Open a browser session as the test user and navigate to {{BACK_URL}}
+[CONSOLE] No unhandled server errors",Active session not terminated after account lock; user can continue actions after lock; no redirect to login,unlock user account via Admin,C407706; smoke-baseline,Draft
+PLAT-069,Session Termination on Account Deletion,Platform > Security > Session Management,High,BL-PLAT-002,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), a test user has an active session open in a separate browser",test_user_email=session_delete_test@example.com; test_user_password=ValidPass@1234,"[NAV] Open a separate browser session as the test user
+[NAV] Navigate to {{BACK_URL}} in that session
 [ACT] As admin, navigate to Security module > Users
-[ACT] Select and delete the test user account
+[ACT] Select the test user account
+[ACT] Delete the test user account
 [ACT] Confirm the deletion
+[WAIT] Wait for the confirmed action to complete
 [NAV] Switch to the test user browser session
 [ACT] Attempt to navigate or perform an action
 [ASSERT] Observe whether the session is terminated","[STATE] Deleted user account session is immediately invalidated
@@ -314,89 +361,109 @@
 [STATE] No orphaned session data remains","[API] Verify test user's session token returns 401 after account deletion
 [API] GET {{BACK_URL}}/api/platform/security/users/{id} returns 404
 [ADMIN] Audit log contains deletion and session termination event
-[CONSOLE] No unhandled server errors","Active session not terminated after deletion; deleted user can still perform actions; audit log missing deletion event","none (user is deleted as test action)","C407707","Not Automated"
-"PLAT-075","User Profile Photo Upload","Platform > User Management > Profile","Low","BL-PLAT-002","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), a valid JPG or PNG image file under 2 MB is ready","image_file=profile_test.jpg (< 2MB, JPG or PNG); admin_url={{BACK_URL}}","[NAV] Navigate to Security module > Users at {{BACK_URL}}
+[CONSOLE] No unhandled server errors",Active session not terminated after deletion; deleted user can still perform actions; audit log missing deletion event,none (user is deleted as test action),C407707; smoke-baseline,Draft
+PLAT-075,User Profile Photo Upload,Platform > User Management > Profile,Low,BL-PLAT-002,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), a valid JPG or PNG image file under 2 MB is ready","image_file=profile_test.jpg (< 2MB, JPG or PNG); admin_url={{BACK_URL}}","[NAV] Navigate to Security module > Users at {{BACK_URL}}
 [ACT] Open a user profile
 [NAV] Locate the avatar or photo section
 [ACT] Click Upload Photo or Change Avatar
+[WAIT] Wait for upload to complete
 [ACT] Select a valid image file: profile_test.jpg
 [WAIT] Wait for upload to complete
 [ACT] Save the profile
-[ACT] Reload the page and verify the photo is displayed","[STATE] Photo upload button is visible on the user profile
-[STATE] Valid image file uploads successfully
-[DOM] Uploaded photo thumbnail appears on the profile
+[WAIT] Wait for save to complete
+[NAV] Reload the page","[STATE] Photo upload button is visible on the user profile
+[STATE] Upload request returns HTTP 200 and the response includes the new photo URL
+[DOM] Photo thumbnail image is visible in the profile avatar area
 [STATE] Photo persists after page reload
 [STATE] No errors occur during upload or save","[NETWORK] Verify image upload request returns 200
 [CONSOLE] No errors during upload or save
-[ADMIN] Photo thumbnail visible in user profile","Upload button missing; upload returns error; photo not shown after reload; photo reverts to default after save","delete uploaded photo via Admin","","Not Automated"
-"PLAT-076","User Profile Photo Delete","Platform > User Management > Profile","Low","BL-PLAT-002","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), a user profile has a photo already uploaded","user_with_photo=existing user with photo uploaded","[NAV] Navigate to Security module > Users at {{BACK_URL}}
+[ADMIN] Photo thumbnail visible in user profile",Upload button missing; upload returns error; photo not shown after reload; photo reverts to default after save,delete uploaded photo via Admin,"smoke-baseline; Deprecated: TLC triage sync 2026-07-30 (REG-2026-07-30-1651) — the Security > Users blade has no avatar/photo section at all (confirmed by direct visual enumeration: only Is administrator/Login/Email/Status/Account type/Locked/Last login + widgets are present, no photo UI); no confirmed Contacts-module UI path for photo upload could be established without live re-investigation. Retarget candidate for a future pass: Contacts module member profile, reached via the 'Show Contact' widget from a Users blade row — do not re-enable until that path is confirmed live.",Deprecated
+PLAT-076,User Profile Photo Delete,Platform > User Management > Profile,Low,BL-PLAT-002,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), a user profile has a photo already uploaded",user_with_photo=existing user with photo uploaded,"[NAV] Navigate to Security module > Users at {{BACK_URL}}
 [ACT] Open a user profile that has a photo
 [NAV] Locate the existing photo/avatar
 [ACT] Click the Remove or Delete Photo button
+[WAIT] Wait for deletion to complete
 [ACT] Confirm the deletion if prompted
+[WAIT] Wait for the confirmed action to complete
 [ACT] Save the profile
-[ACT] Reload the page and verify the photo is removed","[STATE] Remove photo option is available when a photo is set
+[WAIT] Wait for save to complete
+[NAV] Reload the page","[STATE] Remove photo option is available when a photo is set
 [STATE] Confirming removal clears the photo from the profile
-[DOM] Default avatar or placeholder appears after photo removal
+[DOM] Default avatar placeholder is visible in the avatar area after removal
 [STATE] Removal persists after page reload
 [STATE] No errors occur during the remove operation","[NETWORK] Verify photo delete request returns 200 or 204
 [CONSOLE] No errors during removal or save
-[ADMIN] Default avatar shown after removal","Remove button missing; photo persists after removal; default avatar not shown; error on save after removal","none","","Not Automated"
-"PLAT-077","Login Background Customization","Platform > Appearance > Login Page","Low","BL-PLAT-004","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), a valid background image file (JPG or PNG) is available","background_image=login_bg_test.jpg (JPG or PNG); incognito_url={{BACK_URL}}/login","[NAV] Navigate to Platform settings or Appearance section at {{BACK_URL}}
-[NAV] Locate the Login page customization settings
-[ACT] Upload a new background image: login_bg_test.jpg
-[ACT] Save the settings
-[NAV] Open a new incognito/private browser window
+[ADMIN] Default avatar shown after removal",Remove button missing; photo persists after removal; default avatar not shown; error on save after removal,none,"smoke-baseline; Deprecated: TLC triage sync 2026-07-30 (REG-2026-07-30-1651) — paired with PLAT-075 (Add): same wrong-surface issue, the Users blade has no avatar/photo section to remove a photo from. Retarget candidate for a future pass: Contacts module member profile, reached via the 'Show Contact' widget — do not re-enable until that path is confirmed live.",Deprecated
+PLAT-077,Login Background Customization,Platform > Appearance > Login Page,Low,BL-PLAT-004,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), a valid background image file (JPG or PNG) is available",background_image=login_bg_test.jpg (JPG or PNG); incognito_url={{BACK_URL}}/login,"[NAV] Navigate to Assets module at {{BACK_URL}}
+[ACT] Upload a new background image file: login_bg_test.jpg
+[WAIT] Wait for upload to complete
+[ASSERT] Note the uploaded asset's served URL/path
+[NAV] Navigate to Settings > Platform > User Interface at {{BACK_URL}}
+[ACT] Open 'The manager UI customization' setting (a single JSON blob)
+[ACT] Edit the JSON: set the background.url field to the uploaded asset's path
+[ACT] Click Save
+[WAIT] Wait for save to complete
+[NAV] Open a new cookie-less/incognito browser context
 [NAV] Navigate to the Backend login page: {{BACK_URL}}/login
-[ASSERT] Verify the custom background image is displayed","[STATE] Login page customization settings are accessible in admin
-[STATE] Background image upload succeeds
-[STATE] Settings save without errors
-[DOM] Custom background is visible on the login page in a new session
-[STATE] Image scales/covers correctly for different viewport sizes","[NETWORK] Verify background image asset is served from expected URL
-[CONSOLE] No errors in new browser session
-[ADMIN] Settings show uploaded image filename after save","Upload fails; settings not saved; custom background not visible in new session; default background persists","restore original background image via Admin","","Not Automated"
-"PLAT-078","Platform YAML Settings Override","Platform > Configuration","High","BL-PLAT-004","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), platform-cm.yaml configuration file is accessible for editing","config_file=platform-cm.yaml; test_setting=feature flag or numeric limit; override_value=non-default value","[ACT] Identify a configurable setting in platform-cm.yaml (e.g. a feature flag or limit)
+[ASSERT] Verify the custom background image referenced by background.url is displayed on the login page","[STATE] 'The manager UI customization' JSON setting is accessible under Settings > Platform > User Interface
+[STATE] Asset upload via the Assets module succeeds and returns a servable URL
+[STATE] Settings save without errors after editing background.url in the JSON
+[DOM] Custom background is visible on the login page in a new cookie-less session
+[STATE] Background image visually covers/scales to the login page viewport without visible distortion — FOLLOW-UP NEEDED: the exact CSS mechanism (e.g. background-size: cover) is not yet grounded; confirm via a live check before treating this line as a strict pass/fail criterion","[NETWORK] Verify the Assets module upload request returns 200 with the new asset URL
+[NETWORK] Verify the background image asset (background.url) is served with a 200 from its expected URL
+[CONSOLE] No errors in the new cookie-less browser session
+[ADMIN] 'The manager UI customization' JSON in Settings > Platform > User Interface shows the updated background.url value after save",Asset upload via Assets module fails; background.url edit not persisted in the JSON; save rejects a well-formed JSON edit; custom background not visible in a new cookie-less session; default background persists,restore original background.url value in 'The manager UI customization' JSON via Admin; delete the uploaded test asset via the Assets module,smoke-baseline; TEST_STEPS_DEFECT fix (REG-2026-07-30-1651 triage): rewritten to match the actual mechanism — there is no direct upload widget on an 'Appearance'/'Login page customization' section; the real path is Assets-module upload + Settings > Platform > User Interface > 'The manager UI customization' JSON background.url field,Draft
+PLAT-078,Platform YAML Settings Override,Platform > Configuration,High,BL-PLAT-004,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), platform-cm.yaml configuration file is accessible for editing NOTE: Requires isolated /qa-local-env — do not run against shared vcst-qa env; destructive to the shared instance.",config_file=platform-cm.yaml; test_setting=feature flag or numeric limit; override_value=non-default value,"[ACT] Identify a configurable setting in platform-cm.yaml (e.g. a feature flag or limit)
 [ACT] Edit platform-cm.yaml to set the value to a non-default value
 [ACT] Restart the application or apply config reload
+[WAIT] Wait for the application to restart
 [NAV] Log in to the Backend at {{BACK_URL}}
 [NAV] Navigate to the relevant module or setting
 [ASSERT] Verify the overridden value is in effect
-[ACT] Revert the YAML change and verify the default is restored","[STATE] platform-cm.yaml settings take effect after application restart
+[ACT] Revert the YAML change in platform-cm.yaml
+[ACT] Restart the application or apply config reload
+[WAIT] Wait for the application to restart","[STATE] platform-cm.yaml settings take effect after application restart
 [STATE] Overridden value is reflected in the admin UI or behavior
 [STATE] Default value is restored when the YAML override is removed
 [STATE] No startup errors occur from the config change
 [STATE] Config changes are logged in application startup logs","[API] Verify overridden setting via relevant API endpoint
 [CONSOLE] Application startup logs show config loaded from YAML
-[NETWORK] No startup errors (no 500 responses after restart)","YAML setting not applied after restart; startup errors from config change; default not restored after revert","restore original platform-cm.yaml settings","","Not Automated"
-"PLAT-079","Authorization Scopes","Platform > Security > Roles and Permissions","High","BL-PLAT-001","ECL-3.1","Admin logged into Backend ({{BACK_URL}}), a role with restricted permissions (e.g. catalog:read only) is created and assigned to a test user","restricted_user_email=restricted_user@example.com; restricted_user_password=Restricted@1234; allowed_permission=catalog:read; blocked_permissions=[catalog:create, catalog:delete]","[NAV] Log in to Backend as the restricted test user at {{BACK_URL}}
+[NETWORK] No startup errors (no 500 responses after restart)",YAML setting not applied after restart; startup errors from config change; default not restored after revert,restore original platform-cm.yaml settings,smoke-baseline,Manual
+PLAT-079,Authorization Scopes,Platform > Security > Roles and Permissions,High,BL-PLAT-001,ECL-3.1,"Admin logged into Backend ({{BACK_URL}}), a role with restricted permissions (e.g. catalog:read only) is created and assigned to a test user NOTE (TEST_DATA_DEFECT, REG-2026-07-30-1651 triage): the literal restricted_user@example.com fixture is not provisioned. The nearest existing alias, @td(CATALOG_LINK_RESTRICTED), has the wrong permission shape for this case — it grants catalog create/delete and only denies catalog:categories:link, not a catalog:read-only role. A dedicated catalog-read-only role+user fixture must be seeded via /qa-generate-data before this case can execute against real data; do not substitute CATALOG_LINK_RESTRICTED. (The narrower link-permission/redirect-chain invariant is already covered live by PLAT-086 with a correctly-scoped fixture — this case is kept because it separately covers create/delete blocking under a read-only role, which PLAT-086 does not exercise.)","restricted_user_email=<PENDING SEED — dedicated catalog:read-only fixture, see Preconditions>; restricted_user_password=<PENDING SEED>; allowed_permission=catalog:read; blocked_permissions=[catalog:create, catalog:delete]","[NAV] Log in to Backend as the restricted test user at {{BACK_URL}}
 [NAV] Navigate to the Catalog module
 [ACT] Attempt to view catalog items (should be allowed with catalog:read)
 [ACT] Attempt to create a new catalog item (should be blocked without catalog:create)
 [ACT] Attempt to delete a catalog item (should be blocked without catalog:delete)
 [ASSERT] Observe the UI feedback for blocked actions
-[ACT] Log out and verify admin can perform all operations","[STATE] User with catalog:read scope can view catalog items
+[ACT] Log out
+[NAV] Log in as admin","[STATE] User with catalog:read scope can view catalog items
 [DOM] Create button is hidden or disabled for user without catalog:create permission
 [DOM] Delete button is hidden or disabled without catalog:delete permission
 [API] API calls for restricted operations return 403 Forbidden
-[STATE] No privilege escalation is possible through the UI","[API] POST {{BACK_URL}}/api/catalog/catalogs - expect 403 for restricted user
+[STATE] No privilege escalation is possible through the UI
+[STATE] Admin user can create and delete catalog items without restriction after logging back in","[API] POST {{BACK_URL}}/api/catalog/catalogs - expect 403 for restricted user
 [API] DELETE {{BACK_URL}}/api/catalog/catalogs/{id} - expect 403 for restricted user
 [NETWORK] 403 responses for unauthorized operations
-[CONSOLE] No unhandled exceptions","Restricted user can create or delete catalog items; 200 returned for blocked operations; UI shows enabled buttons for disallowed actions","none","","Not Automated"
-"PLAT-080","Zero-Price and Negative Price Prevention","Platform > Catalog > Pricing Validation","Critical","BL-PLAT-004","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), a product with pricing enabled exists","product_id=test_product_with_price; negative_price=-10.00; zero_price=0.00; valid_price=9.99","[NAV] Navigate to Catalog module at {{BACK_URL}} and open a product with an existing price
+[CONSOLE] No unhandled exceptions",Restricted user can create or delete catalog items; 200 returned for blocked operations; UI shows enabled buttons for disallowed actions,none,smoke-baseline; TEST_DATA_DEFECT (REG-2026-07-30-1651 triage): needs a dedicated catalog:read-only fixture seeded via /qa-generate-data — do not run until a @td() alias exists for it,Draft
+PLAT-080,Zero-Price and Negative Price Prevention,Platform > Catalog > Pricing Validation,Critical,BL-PLAT-004,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), a product with pricing enabled exists",product_id=test_product_with_price; negative_price=-10.00; zero_price=0.00; valid_price=9.99,"[NAV] Navigate to Catalog module at {{BACK_URL}}
+[ACT] Open a product with an existing price
 [NAV] Navigate to the Prices tab or Pricing section
-[ACT] Attempt to enter a negative value: -10.00 in the price field
+[ACT] Attempt to enter a negative value: -10.00 in the 'Price' field
 [ACT] Attempt to save
+[WAIT] Wait for save to complete
 [ASSERT] Observe validation behavior
 [ACT] Attempt to enter 0.00 as the price
-[ACT] Attempt to save and observe behavior","[STATE] Negative price value triggers a validation error
+[ACT] Attempt to save
+[WAIT] Wait for save to complete
+[ASSERT] Observe behavior","[STATE] Negative price value triggers a validation error
 [DOM] Error message states that price must be zero or greater (or greater than zero depending on policy)
 [STATE] Product does not save with a negative price
 [STATE] Zero price behavior follows configured policy (allowed or blocked)
 [STATE] Positive price values save normally without errors","[API] POST/PUT price with negative value - expect 400 validation error
 [API] POST/PUT price with 0.00 - verify policy-compliant response
 [CONSOLE] Validation error for negative price
-[NETWORK] 400 response for negative price save","Negative price accepted without error; product saves with -10.00 price; no validation message shown; zero price treated inconsistently","restore original product price via Admin","BL-PRICE-002","Not Automated"
-"PLAT-081","Account Lockout — Admin UI Displays User in Locked State After AutoAccountsLockoutJob Runs","Platform > Security > Authentication > Account Lockout","Critical","BL-AUTH-003","ECL-2.1, ECL-3.1","Admin logged into Backend ({{BACK_URL}}); VCST-5074/VCST-5149 fix deployed (platform >=3.1007.12 or >=3.917.10); lockout policy configured (default 5 failed attempts); a DEDICATED lockout-test user AGENT-TEST-lockout-admin@test.virtocommerce.com exists (never use shared agent pool accounts)","back_url={{BACK_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; lockout_test_user_email=AGENT-TEST-lockout-admin@test.virtocommerce.com","[NAV] Navigate to {{BACK_URL}}
+[NETWORK] 400 response for negative price save",Negative price accepted without error; product saves with -10.00 price; no validation message shown; zero price treated inconsistently,restore original product price via Admin,BL-PRICE-002; smoke-baseline,Draft
+PLAT-081,Account Lockout — Admin UI Displays User in Locked State After AutoAccountsLockoutJob Runs,Platform > Security > Authentication > Account Lockout,Critical,BL-AUTH-003,"ECL-2.1, ECL-3.1",Admin logged into Backend ({{BACK_URL}}); VCST-5074/VCST-5149 fix deployed (platform >=3.1007.12 or >=3.917.10); lockout policy configured (default 5 failed attempts); a DEDICATED lockout-test user AGENT-TEST-lockout-admin@test.virtocommerce.com exists (never use shared agent pool accounts),back_url={{BACK_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; lockout_test_user_email=AGENT-TEST-lockout-admin@test.virtocommerce.com,"[NAV] Navigate to {{BACK_URL}}
 [WAIT] Admin SPA loaded
 [ACT] Navigate to Security > Users
 [BLADE] Security Users blade opens
@@ -408,19 +475,21 @@
 [ACT] Refresh or reload user list in Admin SPA
 [WAIT] Grid refreshes
 [ACT] Click on AGENT-TEST-lockout-admin user to open user detail blade
+[WAIT] Wait for the action to complete
 [BLADE] User detail blade opens","[BLADE] User detail blade title contains the username
 [FORM] User status shows Locked or a locked indicator is displayed — THIS IS THE VCST-5074 BUG FIX VERIFICATION: AutoAccountsLockoutJob previously failed to update the lockout state; after the fix, 5 consecutive failures must result in the account showing as Locked in Admin SPA
 [GRID] Locked column or status indicator in user list reflects Locked state after the failed attempts
 [STATE] Account is Locked (not still Unlocked after 5 failures)","[API] GET {{BACK_URL}}/api/platform/security/users/<id>/locked returns {locked: true} — confirms backend state matches Admin UI display
 [NETWORK] No 5xx on user detail load
-[CONSOLE] No JavaScript errors in Admin SPA","User shows Unlocked in Admin after 5 failed attempts (VCST-5074 regression — AutoAccountsLockoutJob not running or not locking); GET .../locked returns {locked: false}; Admin SPA shows 500 or blank blade","[SAVE] Unlock account: click Unlock button in user detail blade or via API POST {{BACK_URL}}/api/platform/security/users/<id>/unlock; Delete AGENT-TEST- user if created for this test","VCST-5074, VCST-5149","Draft"
-"PLAT-082","Account Lockout — Unlock User via Admin UI Restores Login Access","Platform > Security > User Management > Account Lockout","High","BL-AUTH-003","ECL-2.1","Admin logged into Backend ({{BACK_URL}}); a locked user account AGENT-TEST-lockout-unlock@test.virtocommerce.com exists (locked via 5 failed attempts or via Admin lock action)","back_url={{BACK_URL}}; front_url={{FRONT_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_email=AGENT-TEST-lockout-unlock@test.virtocommerce.com; test_password=ValidUnlockPw1!","[NAV] Navigate to {{BACK_URL}} Admin SPA
+[CONSOLE] No JavaScript errors in Admin SPA",User shows Unlocked in Admin after 5 failed attempts (VCST-5074 regression — AutoAccountsLockoutJob not running or not locking); GET .../locked returns {locked: false}; Admin SPA shows 500 or blank blade,[SAVE] Unlock account: click Unlock button in user detail blade or via API POST {{BACK_URL}}/api/platform/security/users/<id>/unlock; Delete AGENT-TEST- user if created for this test,"VCST-5074, VCST-5149",Draft
+PLAT-082,Account Lockout — Unlock User via Admin UI Restores Login Access,Platform > Security > User Management > Account Lockout,High,BL-AUTH-003,ECL-2.1,Admin logged into Backend ({{BACK_URL}}); a locked user account AGENT-TEST-lockout-unlock@test.virtocommerce.com exists (locked via 5 failed attempts or via Admin lock action),back_url={{BACK_URL}}; front_url={{FRONT_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_email=AGENT-TEST-lockout-unlock@test.virtocommerce.com; test_password=ValidUnlockPw1!,"[NAV] Navigate to {{BACK_URL}} Admin SPA
 [WAIT] Admin SPA loaded
 [ACT] Navigate to Security > Users
 [BLADE] Security Users blade
 [GRID] Search for AGENT-TEST-lockout-unlock user
 [WAIT] User found
 [ACT] Click user row to open detail blade
+[WAIT] Wait for the action to complete
 [BLADE] User detail blade opens
 [ASSERT] User shows Locked state
 [ACT] Click 'Unlock' button (or equivalent — 'Reset lockout' / 'Unlock user')
@@ -429,8 +498,9 @@
 [FORM] User detail blade shows status as Unlocked (or Locked indicator removed)
 [STATE] Locked state = false after unlock action","[API] GET {{BACK_URL}}/api/platform/security/users/<id>/locked returns {locked: false} after Admin unlock
 [NETWORK] POST {{BACK_URL}}/connect/token with valid credentials for the unlocked user returns HTTP 200 (storefront login now succeeds after Admin unlock)
-[CONSOLE] No JavaScript errors","Admin unlock action fails (no Unlock button visible, or button disabled); toast not shown; GET .../locked still returns {locked: true} after unlock; storefront login still rejected after Admin unlock","Delete AGENT-TEST- user after test","VCST-5074","Draft"
-"PLAT-083","Account Lockout — Manager-Type Account Subject to Same Lockout Policy","Platform > Security > Authentication > Account Lockout","High","BL-AUTH-003","ECL-2.1, ECL-3.1","Admin logged into Backend ({{BACK_URL}}); VCST-4999 fix deployed (vc-platform PR #3043); a DEDICATED Manager-type user AGENT-TEST-manager-lockout@test.virtocommerce.com exists; lockout policy configured","back_url={{BACK_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; mgr_email=AGENT-TEST-manager-lockout@test.virtocommerce.com; mgr_password=ValidMgrPw1!","[NAV] Navigate to {{BACK_URL}} Admin SPA
+[CONSOLE] No JavaScript errors","Admin unlock action fails (no Unlock button visible, or button disabled); toast not shown; GET .../locked still returns {locked: true} after unlock; storefront login still rejected after Admin unlock",Delete AGENT-TEST- user after test,VCST-5074,Draft
+PLAT-083,Account Lockout — Manager-Type Account Subject to Same Lockout Policy,Platform > Security > Authentication > Account Lockout,High,BL-AUTH-003,"ECL-2.1, ECL-3.1","Admin logged into Backend ({{BACK_URL}}); VCST-4999 fix deployed (vc-platform PR #3043); lockout policy configured. NOTE (TEST_DATA_DEFECT fix, REG-2026-07-30-1651 triage): no persistent Manager-type lockout fixture exists (the two surviving lockout fixtures, AGENT-TEST-lockout-admin and AGENT-TEST-lockout-unlock, are both Customer-type). This case now provisions its own disposable Manager-type account at case-start — matching the pattern PLAT-066 already uses for its Customer-type lockout account — instead of depending on a static missing fixture.",back_url={{BACK_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; mgr_email=AGENT-TEST-manager-lockout@test.virtocommerce.com; mgr_password=ValidMgrPw1!,"[SETUP] Provision AGENT-TEST-manager-lockout@test.virtocommerce.com as a disposable Manager-type user via admin API if not already present; ensure unlocked at start
+[NAV] Navigate to {{BACK_URL}} Admin SPA
 [WAIT] Admin SPA loaded
 [ACT] Navigate to Security > Users
 [BLADE] Users blade open
@@ -444,12 +514,14 @@
 [BLADE] User detail blade refreshed","[FORM] User detail blade shows Locked state for Manager-type account — VCST-4999 fix verification: Manager accounts are now subject to the same lockout policy as Customer accounts
 [STATE] Manager account locked after 5 failed attempts (not exempt from lockout)","[API] GET {{BACK_URL}}/api/platform/security/users/<id>/locked returns {locked: true} for Manager-type user after 5 failures
 [NETWORK] POST {{BACK_URL}}/connect/token attempt 6 with correct Manager password returns 400/401 (lockout enforced; not 200)
-[CONSOLE] No JavaScript errors","Manager account remains Unlocked after 5 failed attempts (VCST-4999 regression — Manager-type exempt from lockout); attempt 6 with correct Manager password returns 200 (lockout not applied to Manager); GET .../locked returns {locked: false}","[SAVE] Unlock Manager account: click Unlock in Admin SPA; delete AGENT-TEST- user","VCST-4999, VCST-5149","Draft"
-"PLAT-084","Global Lock vs Org-Scoped Lock — Distinct Mechanisms (VCST-5028)","Platform > User Management > Lockout","High","BL-AUTH-003","ECL-2.1","Admin logged into Backend ({{BACK_URL}}); a test user exists who is a member of at least one org (use @td(TECHFLOW_BUYER.email))","back_url={{BACK_URL}}; user_email=@td(TECHFLOW_BUYER.email)","[NAV] Navigate to {{BACK_URL}} > Security > Users
+[CONSOLE] No JavaScript errors",Manager account remains Unlocked after 5 failed attempts (VCST-4999 regression — Manager-type exempt from lockout); attempt 6 with correct Manager password returns 200 (lockout not applied to Manager); GET .../locked returns {locked: false},[SAVE] Unlock Manager account: click Unlock in Admin SPA; delete AGENT-TEST- user,"VCST-4999, VCST-5149; TEST_DATA_DEFECT fix (REG-2026-07-30-1651 triage): retargeted to an in-test-provisioned disposable Manager account (see added [SETUP] step) instead of a static missing fixture; underlying VCST-4999 invariant independently confirmed this run via PLAT-066 (Customer-type)",Draft
+PLAT-084,Global Lock vs Org-Scoped Lock — Distinct Mechanisms (VCST-5028),Platform > User Management > Lockout,High,BL-AUTH-003,ECL-2.1,Admin logged into Backend ({{BACK_URL}}); a test user exists who is a member of at least one org (use @td(TECHFLOW_BUYER.email)),back_url={{BACK_URL}}; user_email=@td(TECHFLOW_BUYER.email),"[NAV] Navigate to {{BACK_URL}} > Security > Users
 [BLADE] Users blade open
-[ACT] Search for @td(TECHFLOW_BUYER.email) and open user detail blade
+[ACT] Search for @td(TECHFLOW_BUYER.email)
+[ACT] Open user detail blade
 [ASSERT] Note current platform lock state (ApplicationUser.IsLockedOut) — should be Unlocked
 [ACT] Click Lock button in Admin SPA (platform-level global lock)
+[WAIT] Wait for lock to complete
 [SAVE] Confirm lock action
 [ASSERT] User detail blade shows Locked state
 [HTTP GET] {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_BUYER.platform_id)
@@ -459,12 +531,14 @@
 [BLADE] Open user's Organization Memberships widget (VCST-5028)
 [ASSERT] OrganizationMembership.IsLocked field for TechFlow membership is false — org-scoped lock is INDEPENDENT of platform lock
 [ASSERT] Platform lock (isLockedOut=true) and org lock (IsLocked=false) coexist simultaneously — they are distinct mechanisms
-[ACT] Return to Security > Users; click Unlock for @td(TECHFLOW_BUYER.email) to restore platform lock state","[FORM] Platform-level lock (ApplicationUser.IsLockedOut) reflects Locked after Admin SPA lock action
+[NAV] Return to Security > Users
+[ACT] Click Unlock for @td(TECHFLOW_BUYER.email) to restore platform lock state
+[WAIT] Wait for unlock to complete","[FORM] Platform-level lock (ApplicationUser.IsLockedOut) reflects Locked after Admin SPA lock action
 [API] GET ...users/{id} returns isLockedOut=true after platform lock
 [FORM] Organization Memberships widget shows org-scoped IsLocked = false (unchanged by platform lock) — mechanisms are independent
 [ASSERT] Both lock fields coexist without interfering: platform isLockedOut=true, org IsLocked=false in same user state","[API] GET {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_BUYER.platform_id) — verify isLockedOut field before and after lock action
-[VERIFY] Customer module org-memberships endpoint confirms org-scoped lock field is unaffected by platform lock action","Platform lock and org-scoped lock appear to be the same mechanism (regression: locking platform also sets org IsLocked=true); org lock widget absent (VCST-5028 widget not rendered); GET isLockedOut returns null or missing","[ACT] Unlock @td(TECHFLOW_BUYER.email) via Admin SPA after test to restore original state","VCST-5028; PLAT-009; PLAT-010; Synced: VCST-5028 (2026-06-15)","Draft"
-"PLAT-085","Admin SPA Session Expiry Shows Clean Sign-In Screen (No Broken Blade) After API 401","Platform > Security > Session Expiry","Critical","BL-AUTH-014","","Admin logged into Backend ({{BACK_URL}}) with a valid session; a blade is open showing live data (e.g. Security > Users grid)","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}
+[VERIFY] Customer module org-memberships endpoint confirms org-scoped lock field is unaffected by platform lock action",Platform lock and org-scoped lock appear to be the same mechanism (regression: locking platform also sets org IsLocked=true); org lock widget absent (VCST-5028 widget not rendered); GET isLockedOut returns null or missing,[ACT] Unlock @td(TECHFLOW_BUYER.email) via Admin SPA after test to restore original state,VCST-5028; PLAT-009; PLAT-010; Synced: VCST-5028 (2026-06-15),Draft
+PLAT-085,Admin SPA Session Expiry Shows Clean Sign-In Screen (No Broken Blade) After API 401,Platform > Security > Session Expiry,Critical,BL-AUTH-014,,Admin logged into Backend ({{BACK_URL}}) with a valid session; a blade is open showing live data (e.g. Security > Users grid),admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] Navigate to {{BACK_URL}}
 [ACT] Sign in with admin credentials
 [WAIT] Admin SPA home loads
 [ACT] Open Security > Users blade so a live data grid is visible
@@ -475,8 +549,8 @@
 [WAIT] observe the SPA's handling of the resulting failed call","[STATE] Admin SPA shows a clean sign-in screen — no broken/frozen blade left on screen {OBSERVED}
 [NETWORK] the triggering API call returns HTTP 401 (not a 302 the SPA's XHR handling cannot follow) {OBSERVED}
 [DOM] the sign-in page's username and password fields are visible and enabled (not frozen/disabled) {OBSERVED}","[NETWORK] no infinite-redirect loop on the failing request
-[CONSOLE] an unhandled 401 promise rejection may appear (tracked separately as VCST-5622) — informational only, NOT a failure criterion for this case","Blade remains open showing stale data after session expiry; SPA shows a blank/white screen instead of sign-in; infinite redirect loop; sign-in form fields not interactive","Sign out if left signed in; close any open blades","VCST-5618","Draft"
-"PLAT-086","Authenticated But Forbidden Admin Action Returns 403 Directly (Not Redirect-Then-404)","Platform > Security > Authorization","Critical","BL-AUTH-014","","Restricted role AGENT-TEST-Catalog-Link-Restricted exists, excluding permission catalog:categories:link; account @td(CATALOG_LINK_RESTRICTED.email) is assigned this role and can sign in to {{BACK_URL}}","restricted_email=@td(CATALOG_LINK_RESTRICTED.email); restricted_password={{DEFAULT_TEST_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}
+[CONSOLE] an unhandled 401 promise rejection may appear (tracked separately as VCST-5622) — informational only, NOT a failure criterion for this case",Blade remains open showing stale data after session expiry; SPA shows a blank/white screen instead of sign-in; infinite redirect loop; sign-in form fields not interactive,Sign out if left signed in; close any open blades,VCST-5618,Draft
+PLAT-086,Authenticated But Forbidden Admin Action Returns 403 Directly (Not Redirect-Then-404),Platform > Security > Authorization,Critical,BL-AUTH-014,,"Restricted role AGENT-TEST-Catalog-Link-Restricted exists, excluding permission catalog:categories:link; account @td(CATALOG_LINK_RESTRICTED.email) is assigned this role and can sign in to {{BACK_URL}}",restricted_email=@td(CATALOG_LINK_RESTRICTED.email); restricted_password={{DEFAULT_TEST_PASSWORD}},"[NAV] Navigate to {{BACK_URL}}
 [ACT] Sign in as restricted_email / restricted_password
 [WAIT] Admin SPA home loads
 [ACT] Open a virtual catalog (e.g. B2B-mixed)
@@ -485,8 +559,8 @@
 [ACT] Note the network log's shell-bootstrap calls for this session (e.g. GET /api/platform/modules, GET /api/platform/localizable-settings) — these ARE reachable by this role","[DOM] the category-link action is pre-emptively disabled/blocked client-side with a visible permission-denied message (e.g. ""your role does not have permission to link them"") and non-interactive selection controls — this is the correct enforcement point for THIS action, not a bug {OBSERVED}
 [NETWORK] a reachable forbidden call for this role (e.g. GET /api/platform/modules) returns HTTP 403 directly {OBSERVED}
 [STATE] no intermediate 302→AccessDenied→404 redirect chain is observed for that call {OBSERVED}","[NETWORK] no 404 following the forbidden call (old chain artifact)
-[CONSOLE] no unhandled exception triggered by the 403 response","HTTP 302 or a trailing 404 observed instead of a direct 403 on the reachable call; category-link action is NOT blocked client-side (i.e. becomes reachable/API-calling) without the permission","Sign out restricted user","VCST-5618","Draft"
-"PLAT-087","Fresh Anonymous Visit to Admin SPA Still Completes Normal Sign-In Flow (Regression Guard)","Platform > Security > Authentication","High","BL-AUTH-014","","No admin session cookie present (fresh/incognito browser context); {{BACK_URL}} accessible","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} in a fresh browser context with no session cookie
+[CONSOLE] no unhandled exception triggered by the 403 response",HTTP 302 or a trailing 404 observed instead of a direct 403 on the reachable call; category-link action is NOT blocked client-side (i.e. becomes reachable/API-calling) without the permission,Sign out restricted user,VCST-5618,Draft
+PLAT-087,Fresh Anonymous Visit to Admin SPA Still Completes Normal Sign-In Flow (Regression Guard),Platform > Security > Authentication,High,BL-AUTH-014,,No admin session cookie present (fresh/incognito browser context); {{BACK_URL}} accessible,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] Navigate to {{BACK_URL}} in a fresh browser context with no session cookie
 [WAIT] redirected into the sign-in flow
 [ACT] Complete sign-in with admin credentials
 [WAIT] Admin SPA home/dashboard loads
@@ -497,4 +571,53 @@
 [ACT] Complete sign-in a second time with admin credentials
 [WAIT] Admin SPA home/dashboard loads again, identical to the first cycle","[NAV] each anonymous navigation to {{BACK_URL}} lands on the sign-in screen via a client-side route (not a raw 401 page) {SPEC}
 [STATE] sign-in completes and lands on the Admin SPA home/dashboard on both cycles {OBSERVED}
-[NETWORK] no infinite redirect/retry loop on POST /api/platform/security/login/ on either cycle {OBSERVED}","[CONSOLE] no NEW JS errors during either sign-in cycle beyond pre-existing env noise (the VCST-5622 unhandled 401 rejection on WidgetColorMarkers, and the 3 known module-logo 404s — builderio/logo.svg, page-builder-shell/.../logo-only.svg, app_search/logo.svg — are informational only, NOT a failure criterion for this case)","Raw 401 JSON shown instead of the sign-in page; infinite redirect loop; sign-in succeeds but the SPA shell fails to load","Sign out","VCST-5618","Draft"
+[NETWORK] no infinite redirect/retry loop on POST /api/platform/security/login/ on either cycle {OBSERVED}","[CONSOLE] no NEW JS errors during either sign-in cycle beyond pre-existing env noise (the VCST-5622 unhandled 401 rejection on WidgetColorMarkers, and the 3 known module-logo 404s — builderio/logo.svg, page-builder-shell/.../logo-only.svg, app_search/logo.svg — are informational only, NOT a failure criterion for this case)",Raw 401 JSON shown instead of the sign-in page; infinite redirect loop; sign-in succeeds but the SPA shell fails to load,Sign out,VCST-5618,Draft
+PLAT-088,Add New User With Invalid Email Format Rejected,Platform > User Management,High,BL-PLAT-002,ECL-8.1,Admin logged into backend ({{BACK_URL}}),username=AGENT-TEST-baduser001; invalid_email=not-an-email; password=Test@1234,"[NAV] Navigate to Security module at {{BACK_URL}}
+[ACT] Click Add User
+[WAIT] Wait for the dialog/action to complete
+[ACT] Enter username AGENT-TEST-baduser001, email 'not-an-email' (malformed), password Test@1234
+[ACT] Click Save
+[WAIT] Wait for save to complete","[FORM] A validation error is shown on the Email field before/after Save — the dialog does not close as if saved
+[STATE] No user record is created with the malformed email
+[NETWORK] POST {{BACK_URL}}/api/platform/security/users returns 400 with a field-level validation error, not 200",[API] GET {{BACK_URL}}/api/platform/security/users — verify AGENT-TEST-baduser001 absent; [CONSOLE] No unhandled exceptions,User created with the malformed email; no validation error shown; 500 on save,delete AGENT-TEST-baduser001 via Admin if it was created,smoke-baseline,Draft
+PLAT-089,Username Field At Maximum-Length Boundary Is Rejected or Safely Truncated,Platform > User Management,Medium,BL-PLAT-002,ECL-3.1,Admin logged into backend ({{BACK_URL}}); state from PLAT-088: Add User dialog reachable via Security module > Add User,oversized_username=AGENT-TEST-<500 repeated characters>; password=Test@1234,"[NAV] Navigate to Security module at {{BACK_URL}}
+[ACT] Click Add User
+[WAIT] Wait for the dialog/action to complete
+[ACT] Enter a 500-character username (AGENT-TEST- prefix followed by repeated characters)
+[ACT] Enter a valid password
+[ACT] Click Save
+[WAIT] Wait for save to complete","[STATE] Save either rejects the oversized username with a validation error, or truncates/accepts it without a server error — no 500 either way
+[NETWORK] POST {{BACK_URL}}/api/platform/security/users does not return 500 for the oversized value
+[STATE] If a user record was created, its Login field does not exceed the platform's actual column length (no DB truncation exception)",[API] GET {{BACK_URL}}/api/platform/security/users — confirm no orphaned/corrupt record; [CONSOLE] No unhandled exceptions,500 Internal Server Error or SQL exception for the oversized value; corrupted/partial user record persisted,delete the AGENT-TEST- user if one was created,smoke-baseline,Draft
+PLAT-090,Authenticate With a Nonexistent API Key Is Rejected,Platform > API Keys,High,BL-PLAT-002,ECL-4.1,Backend accessible; no API key with the fabricated value has ever been issued,api_endpoint={{BACK_URL}}/api/platform/security/users; bogus_api_key=AGENT-TEST-never-issued-00000000,"[NAV] Open browser
+[ACT] Enter API endpoint URL with a fabricated, never-issued api_key parameter: {{BACK_URL}}/api/platform/security/users?api_key=AGENT-TEST-never-issued-00000000
+[ACT] Execute the request
+[WAIT] Wait for response","[STATUS] Response status is 401 or 403 — not 200
+[BODY] Response does not include user list data
+[STATE] No server error (500) is returned for the unrecognized key",[NETWORK] Response status 401/403; [CONSOLE] No unhandled server errors,200 returned with data for a never-issued key; 500 Internal Server Error instead of 401/403,none,smoke-baseline,Draft
+PLAT-091,Delete Role Currently Assigned to a User Must Not Fail or Corrupt User State,Platform > Roles & Permissions,High,BL-PLAT-001,ECL-3.1,Admin logged into backend ({{BACK_URL}}); a role exists and is currently assigned to at least one user (C184070),role_name=ContentEditor; username=test_user_001,"[NAV] Navigate to Security > Roles at {{BACK_URL}}
+[ACT] Select the role currently assigned to test_user_001: ContentEditor
+[ACT] Click Delete
+[WAIT] Wait for deletion to complete
+[ACT] Confirm deletion
+[WAIT] Wait for the confirmed action to complete
+[NAV] Navigate to Security > Users at {{BACK_URL}}
+[ACT] Open user test_user_001","[STATE] Role deletion succeeds (200/204) even though the role is currently assigned to a user — no blocking 500 or FK-constraint error
+[FORM] The user detail blade opens without error after the role's deletion (no broken/blank blade)
+[STATE] The deleted role no longer appears in the user's roles array; the user's remaining roles are unaffected
+[API] GET {{BACK_URL}}/api/platform/security/users/{id} — response is well-formed JSON, no dangling reference to the deleted role's id",[API] GET .../roles — verify ContentEditor absent; [CONSOLE] No unhandled exceptions opening the user blade,Role deletion returns 500 due to the existing assignment; user blade errors or is blank after the role is deleted; user record retains a dangling roleId,none (role deleted as test action); recreate ContentEditor role via Admin if subsequent cases depend on it,smoke-baseline,Draft
+PLAT-092,Health Check Endpoint Exposes No Secrets Despite Missing Authentication,Platform > Healthcheck,High,BL-PLAT-004,ECL-4.1,{{BACK_URL}} accessible; no Authorization header or session cookie present,healthcheck_endpoint={{BACK_URL}}/health,"[HTTP] GET {{BACK_URL}}/health with NO Authorization header and NO session cookie
+[WAIT] Wait for response","[STATUS] Response status is 200 (health endpoint is intentionally unauthenticated) {SPEC}
+[BODY] Response body does not contain a connection string, password, or API key value anywhere in the JSON {SPEC}
+[BODY] Per-check Description/Data fields describe status only (e.g. 'Redis responded to PING in 1 ms'), not raw configuration values {OBSERVED}",[NETWORK] Response status 200; [CONSOLE] No errors,"A connection string, password, or secret value appears anywhere in the unauthenticated /health response body",none,smoke-baseline,Draft
+PLAT-093,"Account Lockout Threshold Boundary — 4th Failed Attempt Allowed, 5th Locks",Platform > Security > Authentication,High,BL-AUTH-003,ECL-3.1,Lockout policy configured for 5 failed attempts; a DEDICATED AGENT-TEST lockout-boundary account exists (never use shared agent pool accounts),back_url={{BACK_URL}}; lockout_user=AGENT-TEST-lockout-boundary@test.virtocommerce.com; lockout_user_password=ValidBoundaryPw1!,"[SETUP] Provision AGENT-TEST-lockout-boundary@test.virtocommerce.com via admin API if not already present; ensure unlocked at start
+[HTTP] POST {{BACK_URL}}/connect/token username=lockout_user password=WrongPw1! — attempt 1 of 4
+[HTTP] POST {{BACK_URL}}/connect/token username=lockout_user password=WrongPw2! — attempt 2 of 4
+[HTTP] POST {{BACK_URL}}/connect/token username=lockout_user password=WrongPw3! — attempt 3 of 4
+[HTTP] POST {{BACK_URL}}/connect/token username=lockout_user password=WrongPw4! — attempt 4 of 4 (one below threshold)
+[WAIT] Wait for response
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/<id>/locked with admin Bearer token — check status after 4 attempts
+[HTTP] POST {{BACK_URL}}/connect/token username=lockout_user password=lockout_user_password (CORRECT) — attempt 5 not yet reached, this is the 5th POST overall but only the 1st with correct credentials
+[WAIT] Wait for response","[STATUS] GET .../locked after exactly 4 failed attempts returns {locked: false} — the account is NOT locked one attempt below threshold
+[STATE] The 4 wrong-password attempts each return 400/401 (invalid_grant), never 200
+[STATE] A CORRECT-password attempt made while only 4 failures are on record (below the 5-attempt threshold) succeeds with HTTP 200 and a non-empty access_token — proving the boundary is exactly at 5, not 4",[API] GET .../locked confirms locked=false at the 4-attempt boundary; [NETWORK] No 5xx on any attempt,Account already shows locked=true after only 4 failed attempts (threshold enforced one attempt too early); the correct-password attempt after 4 failures is rejected,[TEARDOWN] Unlock account via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock if any lock occurred; delete AGENT-TEST- user if created,smoke-baseline,Draft

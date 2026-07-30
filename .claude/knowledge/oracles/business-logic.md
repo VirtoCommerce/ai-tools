@@ -2736,4 +2736,74 @@ P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-dat
 | Payment Processors | BL-PAY-001/003/004 | 3 | 3 | 0 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 |
 | Sales Rep | BL-SREP-001–003 | 3 | 0 | 3 | 0 |
-| **Total** | | **148** | **48** | **79** | **21** |
+| Platform REST API | BL-API-001–004 | 4 | 0 | 4 | 0 |
+| Platform Administration | BL-PLAT-001/002/004 | 3 | 2 | 1 | 0 |
+| **Total** | | **155** | **50** | **84** | **21** |
+
+---
+
+## Domain 21: Platform REST API (BL-API)
+
+Formalizes 4 IDs (`BL-API-001..004`) that suite `049-platform-api.csv` had cited in ~68 of its 43 cases' `Business_Rule` column since before this file tracked them — a MISSING-classification found by `/qa-review-bl` triangulation (2026-07-30) rather than net-new invariants. VC's Admin SPA (vc-shell/Angular) is itself a REST API client with no separate server-rendered data layer, so "REST vs Admin UI" is largely one shared surface, not two independently-validated ones — the Rule text below reflects that architecture rather than treating them as parallel systems that merely happen to agree.
+
+### BL-API-001: REST endpoints return structured, correctly-statused JSON for the requested resource `[P1-data]`
+- **Rule:** Every Platform REST endpoint returns a strongly-typed JSON body (ASP.NET Core `ActionResult<T>`) whose HTTP status code reflects the actual outcome (2xx matching the verb on success; 4xx/5xx on failure) — never a 200 wrapping an error payload, and never a shape that omits the resource's documented fields.
+- **Verify:** Call the endpoint for a resource (e.g. `/api/catalog/search/products`, `/api/security/users/{id}`) → response fields match the resource's model (id/name/code, etc.) and the status code matches the real outcome.
+- **Violation signal:** A successful mutation returns 200 with an error message in the body; a missing/invalid resource returns 200 with `null` instead of 404; documented fields missing from the response.
+- **Agents:** qa-backend-expert
+- **Source:** `vc-platform` `SecurityController.cs` — every action typed `ActionResult<ApplicationUser>` / `ActionResult<SecurityResult>` / `ActionResult<RoleSearchResult>` etc.; suite 049 API-001..API-043 (26 citing cases) assert `[STATE] Response status is 200 OK` + per-resource `[FORMAT]` field checks.
+- **Promoted:** 2026-07-30 (`/qa-test-lifecycle` Phase 4c BL-audit — suite 049 MISSING-ID triangulation; docs+source CONFIRM, live axis via the suite's own long-established assertions).
+
+### BL-API-002: Paginated REST list endpoints return an accurate `totalCount` independent of page position `[P1-data]`
+- **Rule:** A REST search/list endpoint accepting `skip`/`take` returns a `totalCount` reflecting the full matching set, not the page size — stable across different `skip` offsets for the same filter, and ≥ the number of items actually returned.
+- **Verify:** Same filter, `skip=0` vs `skip=20` (same `take`) → identical `totalCount`; `items.length` ≤ `take` while `totalCount` reflects the true match count.
+- **Violation signal:** `totalCount` changes with page offset; `totalCount` equals `items.length` when more rows exist; `totalCount` missing from the response.
+- **Agents:** qa-backend-expert
+- **Source:** `VirtoCommerce.Platform.Core/Common/GenericSearchResult.cs` (`TotalCount` property) — the platform-wide search-result contract shared by catalog/security/customer/etc. REST search endpoints; suite 049 API-001/API-002 (`{"take":20,"skip":0}` → `[FORMAT] Response includes totalCount pagination metadata`).
+- **Promoted:** 2026-07-30 (`/qa-test-lifecycle` Phase 4c BL-audit — suite 049 MISSING-ID triangulation; source CONFIRMS strongly, docs corroborate via the xAPI `ProductConnection.totalCount` analog).
+
+### BL-API-003: REST mutations validate input and persist atomically through the one path the Admin UI also calls `[P1-data]`
+- **Rule:** A REST mutation (POST/PUT/DELETE) runs the same domain validation and persistence the Admin SPA's own call to that endpoint uses — the Admin UI is a REST client, not a second independent path. On success the change is atomic and immediately visible via the corresponding GET; on validation failure there is no partial state change.
+- **Verify:** A mutation with edge-case input (e.g. reserving inventory beyond availability) → non-2xx with no partial effect; a valid mutation → immediately visible on a follow-up GET.
+- **Violation signal:** Mutation reports success but the entity is unchanged or partially changed; any REST-only path bypasses validation the Admin UI enforces (there should be none — one shared endpoint).
+- **Agents:** qa-backend-expert
+- **Source:** suite 049 API-007 (inventory reserve/release round-trips quantity atomically) + 13 other mutation cases citing this ID; VC architecture — vc-shell blades call the same versioned, `[Authorize]`-gated controller actions as any other REST client (`PlatformDeveloperGuide` "Creating a custom module" — one `[Authorize(...)]`-gated action is the single entry point).
+- **Promoted:** 2026-07-30 (`/qa-test-lifecycle` Phase 4c BL-audit — suite 049 MISSING-ID triangulation).
+
+### BL-API-004: A REST entity's JSON shape is the same shape the Admin UI renders `[P1-data]`
+- **Rule:** Because the Admin SPA has no separate server-rendered data layer, a resource's REST JSON (fields, ids, nested objects) IS what the Admin UI displays — a field visible in the Admin UI resolves to a REST field of the same name/type, and a value set via a raw REST call is what the Admin UI shows on next load.
+- **Verify:** A field edited via the Admin UI (e.g. user `StoreId`, role permissions) appears with the same name/value in the REST GET for that entity; a value set via REST PUT appears in the Admin UI after reload.
+- **Violation signal:** An Admin-UI-visible field has no corresponding REST field (or a differently-named/typed one); a REST-set value doesn't surface in the Admin UI after reload.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** 25 citing cases in suite 049 cross-reference Admin UI state with REST GET; `SecurityController.cs` `GetUserById`/`GetRole` return the same `ApplicationUser`/`Role` models the vc-shell Users/Roles blades bind to directly (`PlatformDeveloperGuide` "vc-shell" composables consume REST/GraphQL responses with no admin-only DTO layer).
+- **Promoted:** 2026-07-30 (`/qa-test-lifecycle` Phase 4c BL-audit — suite 049 MISSING-ID triangulation).
+
+---
+
+## Domain 22: Platform Administration — Users, Roles & Settings (BL-PLAT)
+
+Formalizes 3 IDs (`BL-PLAT-001/002/004`) that suite `020-platform-users-roles-settings.csv` had cited since before this file tracked them — a MISSING-classification found by the same 2026-07-30 triangulation. Grounded in `vc-platform`'s `SecurityController.cs` (`src/VirtoCommerce.Platform.Web/Controllers/Api/`), whose per-action `[Authorize(PlatformPermissions.Security*)]` gates are the single enforcement point both the Admin UI's Security blade and any direct REST caller go through.
+
+### BL-PLAT-001: Role/permission changes via the Security API are enforced on every gated endpoint `[P0-security]`
+- **Rule:** A role/permission change made through the Security REST API (`PUT /api/security/roles` — the same endpoint the Admin UI's Roles blade calls) takes effect for every endpoint gated by a `PlatformPermissions.*` `[Authorize]` attribute on the caller's next request; there is no UI-only enforcement layer separate from the API gate.
+- **Verify:** Grant a permission to a role via the Roles blade (or REST) → a user in that role can now call the endpoint gated by that permission (e.g. `SecurityQuery`-gated `SearchUsers`), which previously 403'd.
+- **Violation signal:** A gated endpoint still 403s (or still allows) after the role change is saved; the Admin UI shows the change saved but REST-gated behavior disagrees.
+- **Agents:** qa-backend-expert
+- **Source:** `SecurityController.cs` `SearchRoles`/`GetRole`/`UpdateRole`/`DeleteRoles` gated by `PlatformPermissions.SecurityQuery/SecurityUpdate/SecurityDelete`, the same constants gating every other action in the controller; suite 020 PLAT-006 ("Edit User - Account Type" → "User permissions reflect new account type"), 16 citing cases.
+- **Promoted:** 2026-07-30 (`/qa-test-lifecycle` Phase 4c BL-audit — suite 020 MISSING-ID triangulation).
+
+### BL-PLAT-002: User lifecycle + API-key actions are the same Security REST endpoints the Admin UI's Users blade calls `[P0-security]`
+- **Rule:** Create/Update/Delete/Lock/Unlock a user, and Issue/Reset/Revoke an API key, are each backed by one dedicated, permission-gated Security REST endpoint — the Admin UI's Users blade has no separate code path; the REST call IS the action, each requiring its documented permission.
+- **Verify:** Lock a user via the Admin UI → `IsUserLocked` (REST) returns true immediately; issue an API key via the Admin UI → `GetUserApiKeys` (REST) lists it.
+- **Violation signal:** Admin UI shows a user/key state the REST state disagrees with; an action succeeds for a caller lacking the required `PlatformPermissions.Security*` permission.
+- **Agents:** qa-backend-expert
+- **Source:** `SecurityController.cs` `Create`/`Update`/`Delete` (`SecurityCreate`/`SecurityUpdate`/`SecurityDelete`), `LockUser`/`UnlockUser` (`SecurityUpdate`), `SaveUserApiKey`/`DeleteUserApiKeys` (`SecurityUpdate`/`SecurityDelete`); `PlatformDeveloperGuide` "Passwords Management — Lockout" (`Lockout:DefaultLockoutTimeSpan`); suite 020 PLAT-001 ("Add New User"), 23 citing cases.
+- **Promoted:** 2026-07-30 (`/qa-test-lifecycle` Phase 4c BL-audit — suite 020 MISSING-ID triangulation).
+
+### BL-PLAT-004: Settings take effect after save (or restart for YAML/appsettings overrides), reflected consistently across UI/REST/behavior `[P1-data]`
+- **Rule:** A Settings-blade value persists and is enforced immediately on the next relevant operation; a `platform-cm.yaml`/`appsettings.json` override needs an application restart/config-reload, but once applied is reflected uniformly across Admin UI display, REST, and runtime behavior — never partially (e.g. UI shows the new value while enforcement still uses the old one).
+- **Verify:** Change a Settings-blade value → immediately enforced; edit `platform-cm.yaml` + restart → override in effect in both UI and behavior; revert → default restored, no startup errors logged.
+- **Violation signal:** A Settings-blade save isn't enforced; a YAML override needs more than a restart, or applies to only one of {UI, REST, behavior}; reverting doesn't restore the default.
+- **Agents:** qa-backend-expert
+- **Source:** `PlatformDeveloperGuide` "Passwords Management — Lockout" (`Lockout:DefaultLockoutTimeSpan`, config-driven) as one instance of the pattern; suite 020 PLAT-061 (User Types "Settings persist after save"), PLAT-078 (`platform-cm.yaml` "settings take effect after application restart"), PLAT-080 (pricing validation is a configured policy), 9 citing cases.
+- **Promoted:** 2026-07-30 (`/qa-test-lifecycle` Phase 4c BL-audit — suite 020 MISSING-ID triangulation).
