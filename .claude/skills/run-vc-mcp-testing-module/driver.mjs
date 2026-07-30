@@ -73,7 +73,7 @@ const CHECKS = [
     name: "b2b-data",
     desc: "B2B test-data is consistent (org addresses, user→contact→org→role→membership)",
     cmd: "node",
-    args: ["scripts/seed-data/validate-b2b-data.mjs"],
+    args: ["scripts/seed-data/b2b/validate-b2b-data.mjs"],
     acceptExit: [0],
   },
   {
