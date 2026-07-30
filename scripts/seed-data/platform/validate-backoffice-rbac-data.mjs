@@ -27,6 +27,8 @@ import {
   SALESREP_ACCOUNTOPS_ROLE, SALESREP_ACCOUNTOPS_ACCOUNT, SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSION, assertSalesRepAccountOpsRolePermissions,
   SALESREP_MEMBERONLY_ROLE, SALESREP_MEMBERONLY_ACCOUNT, SALESREP_MEMBERONLY_EXCLUDED_PERMISSION, assertSalesRepMemberOnlyRolePermissions,
   SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT, SALESREP_FULL_REQUIRED_PERMISSIONS, assertSalesRepFullRolePermissions,
+  CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSION,
+  CATALOG_READONLY_EXCLUDED_PERMISSIONS, assertCatalogReadOnlyRolePermissions,
   findGuidLeaks,
 } from './backoffice-rbac-specs.mjs';
 
@@ -94,6 +96,9 @@ catch (e) { fail(e.message); }
 try { assertSalesRepFullRolePermissions(); ok(`role "${SALESREP_FULL_ROLE.role_name}" is the Sales Rep positive control — holds the full CRUD + account-ops set (${SALESREP_FULL_REQUIRED_PERMISSIONS.length} perms), isAdministrator=false`); }
 catch (e) { fail(e.message); }
 
+try { assertCatalogReadOnlyRolePermissions(); ok(`role "${CATALOG_READONLY_ROLE.role_name}" is read-only catalog (PLAT-079) — holds catalog:access + catalog:read, excludes ${CATALOG_READONLY_EXCLUDED_PERMISSIONS.join(', ')}`); }
+catch (e) { fail(e.message); }
+
 // 2. no GUID in the spec module (single scan covers both fixtures)
 const specSrc = readFileSync(join(ROOT, 'scripts/seed-data/platform/backoffice-rbac-specs.mjs'), 'utf8');
 const specLeaks = findGuidLeaks(specSrc);
@@ -107,6 +112,7 @@ checkAlias(SALESREP_READONLY_ROLE, SALESREP_READONLY_ACCOUNT, SALESREP_READONLY_
 checkAlias(SALESREP_ACCOUNTOPS_ROLE, SALESREP_ACCOUNTOPS_ACCOUNT, SALESREP_ACCOUNTOPS_EXCLUDED_PERMISSION);
 checkAlias(SALESREP_MEMBERONLY_ROLE, SALESREP_MEMBERONLY_ACCOUNT, SALESREP_MEMBERONLY_EXCLUDED_PERMISSION);
 checkAlias(SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT, null); // positive control — no boundary perm
+checkAlias(CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSION);
 
 console.log(`\n${problems.length ? `FAILED — ${problems.length} problem(s)` : 'OK'}`);
 process.exit(problems.length ? 1 : 0);

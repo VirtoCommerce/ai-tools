@@ -40,6 +40,8 @@ import {
   SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT,
   SALESREP_FULL_EXCLUDED_PERMISSIONS, SALESREP_FULL_REQUIRED_PERMISSIONS,
   assertSalesRepFullRolePermissions,
+  CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSIONS,
+  assertCatalogReadOnlyRolePermissions, CATALOG_CREATE_ENDPOINT, CATALOG_DELETE_ENDPOINT,
   roleBody, accountBody, assertRolePermissions, assertCatalogLinkRolePermissions,
   assertSalesRepReadOnlyRolePermissions,
   COPY_ENDPOINT, LISTENTRYLINKS_ENDPOINT, CURRENTUSER_ENDPOINT,
@@ -172,6 +174,35 @@ async function verifySalesRepReadOnlyAccess() {
   return false;
 }
 
+// --- live verification: PLAT-079 boundary (read-only catalog token → 403 on CREATE and DELETE) ---
+async function verifyCatalogReadOnlyForbidden() {
+  const { email } = CATALOG_READONLY_ACCOUNT;
+  const password = resolvePassword(CATALOG_READONLY_ACCOUNT);
+  log('\n  [verify] PLAT-079 — catalog:read-only token must get 403 on BOTH create and delete');
+  const tok = await loginToken(email, password);
+  if (!tok) return false;
+
+  const createRes = await fetch(`${BACK_URL}${CATALOG_CREATE_ENDPOINT}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'AGENT-TEST-verify-readonly-nonexistent', languages: [{ languageCode: 'en-US', isDefault: true }] }),
+  });
+  const createOk = createRes.status === 403;
+  if (createOk) log(`  ✓ create catalog → 403 Forbidden (PLAT-079 boundary confirmed; lacks catalog:create)`);
+  else log(`  ✗ create catalog → ${createRes.status} (expected 403). Role may be over-permissioned.`);
+
+  // The [Authorize] gate runs before handler binding, so a nonexistent catalog id still 403s.
+  const deleteRes = await fetch(`${BACK_URL}${CATALOG_DELETE_ENDPOINT('AGENT-TEST-cat-nonexistent')}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${tok}` },
+  });
+  const deleteOk = deleteRes.status === 403;
+  if (deleteOk) log(`  ✓ delete catalog → 403 Forbidden (PLAT-079 boundary confirmed; lacks catalog:delete)`);
+  else log(`  ✗ delete catalog → ${deleteRes.status} (expected 403). Role may be over-permissioned.`);
+
+  return createOk && deleteOk;
+}
+
 // --- generic effective-permission proof (read-only, no mutating call) ---------------------------
 // Auth-sanity for a Sales Rep matrix fixture: password grant 200, then /currentuser reflects EXACTLY
 // the intended include-set present, none of the exclude-set, and isAdministrator=false. This proves
@@ -269,6 +300,10 @@ const FIXTURES = [
   {
     role: SALESREP_FULL_ROLE, account: SALESREP_FULL_ACCOUNT,
     assertPerms: assertSalesRepFullRolePermissions, excluded: '(none — positive control, isAdministrator=false)', verify: verifyFull,
+  },
+  {
+    role: CATALOG_READONLY_ROLE, account: CATALOG_READONLY_ACCOUNT,
+    assertPerms: assertCatalogReadOnlyRolePermissions, excluded: CATALOG_READONLY_EXCLUDED_PERMISSIONS.join(', '), verify: verifyCatalogReadOnlyForbidden,
   },
 ];
 

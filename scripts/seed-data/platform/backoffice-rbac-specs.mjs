@@ -447,6 +447,80 @@ export function assertSalesRepFullRolePermissions(permissions = SALESREP_FULL_RO
   }
 }
 
+// ============================================================================
+// CATALOG READ-ONLY RBAC fixture (PLAT-079 "Authorization Scopes", suite
+// 020-platform-users-roles-settings) — a back-office role that can VIEW the
+// catalog but cannot create or delete catalog items.
+// ============================================================================
+//
+// PLAT-079 asserts that a role scoped to catalog:read ONLY still gets a 403
+// Forbidden (not 200) when it attempts a catalog CREATE or DELETE — i.e. the
+// RBAC gate blocks BOTH mutate directions, not just one. The nearest existing
+// fixture, CATALOG_LINK_ROLE above, is the wrong shape for this: it's a
+// products-only Map/Link linker that deliberately HOLDS catalog:create (to
+// reach the create-gated Map flow) and only excludes catalog:categories:link.
+// This fixture is the opposite boundary — read-only, both create AND delete
+// excluded.
+//
+// Same no-hardcode contract as the other fixtures in this file: no runtime
+// GUID here; role_id/email are stable business keys, and the account's
+// runtime platform user id + role id are written to aliases.<env>.json by the
+// seeder (writeEnvAliasOverride).
+
+// The two catalog mutate permissions the read-only role must NOT hold — the
+// PLAT-079 boundary hinges on BOTH being absent (create AND delete each 403).
+export const CATALOG_READONLY_EXCLUDED_PERMISSIONS = ['catalog:create', 'catalog:delete'];
+
+// Representative excluded permission for the alias's `excluded_permission` field
+// (mirrors the SalesRep ACCOUNTOPS/MEMBERONLY pattern — a single representative
+// value even though the full exclude-set has more than one member).
+export const CATALOG_READONLY_EXCLUDED_PERMISSION = 'catalog:create';
+
+// The permission(s) a usable read-only catalog viewer MUST hold: base access +
+// read — enough to enter the back office and view catalog items, nothing more.
+export const CATALOG_READONLY_REQUIRED_PERMISSIONS = ['catalog:access', 'catalog:read'];
+
+// Read-only catalog role: catalog:access + catalog:read only. EXCLUDES both
+// catalog:create and catalog:delete, which is exactly the PLAT-079 boundary.
+export const CATALOG_READONLY_ROLE = {
+  role_id: 'AGENT-TEST-Catalog-Read-Only',
+  role_name: 'AGENT-TEST-Catalog-Read-Only',
+  description: 'AGENT-TEST catalog:read-ONLY back-office role for PLAT-079 (Authorization Scopes): holds catalog:access + catalog:read (view catalog items) but EXCLUDES catalog:create AND catalog:delete — both mutate directions must 403, not just one. Safe to delete.',
+  permissions: [...CATALOG_READONLY_REQUIRED_PERMISSIONS],
+};
+
+// The restricted back-office (Manager) account that carries the read-only catalog role. Email is
+// an env-invariant AGENT-TEST business key; the password is a secret resolved from .env.local at
+// seed time. userType 'Manager' = back-office user; isAdministrator MUST be false so the
+// permission gate actually applies (an administrator bypasses it and would get 200, not 403).
+export const CATALOG_READONLY_ACCOUNT = {
+  aliasName: 'CATALOG_READ_ONLY',
+  email: 'AGENT-TEST-catalog-readonly@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'CATALOG_READ_ONLY_PASSWORD',
+  passwordFallback: 'Password1!', // localhost-safe default (mirrors user-provision.mjs PW_FALLBACK)
+};
+
+// The catalog endpoints PLAT-079 probes: POST creates a catalog (catalog:create), DELETE removes
+// one by id (catalog:delete). The seeder's --verify step calls both with the restricted token and
+// asserts 403 on each — the [Authorize] gate runs before handler binding, so a nonexistent
+// catalog id still returns 403 for the DELETE probe regardless of existence.
+export const CATALOG_CREATE_ENDPOINT = '/api/catalog/catalogs';
+export const CATALOG_DELETE_ENDPOINT = (id) => `/api/catalog/catalogs/${encodeURIComponent(id)}`;
+
+/**
+ * Assert the read-only catalog role's permission set is correct — used by the validator AND the
+ * unit tests. Throws with a clear message on any violation.
+ */
+export function assertCatalogReadOnlyRolePermissions(permissions = CATALOG_READONLY_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: CATALOG_READONLY_REQUIRED_PERMISSIONS,
+    excluded: CATALOG_READONLY_EXCLUDED_PERMISSIONS,
+    label: 'read-only catalog (PLAT-079)',
+  });
+}
+
 const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 /** Scan text for a runtime platform GUID that must never be committed to a spec/fixture. */
 export function findGuidLeaks(text) {

@@ -368,7 +368,7 @@
 [STATE] Config changes are logged in application startup logs","[API] Verify overridden setting via relevant API endpoint
 [CONSOLE] Application startup logs show config loaded from YAML
 [NETWORK] No startup errors (no 500 responses after restart)","YAML setting not applied after restart; startup errors from config change; default not restored after revert","restore original platform-cm.yaml settings","","Not Automated"
-"PLAT-079","Authorization Scopes","Platform > Security > Roles and Permissions","High","BL-PLAT-001","ECL-3.1","Admin logged into Backend ({{BACK_URL}}), a role with restricted permissions (e.g. catalog:read only) is created and assigned to a test user","restricted_user_email=restricted_user@example.com; restricted_user_password=Restricted@1234; allowed_permission=catalog:read; blocked_permissions=[catalog:create, catalog:delete]","[NAV] Log in to Backend as the restricted test user at {{BACK_URL}}
+"PLAT-079","Authorization Scopes","Platform > Security > Roles and Permissions","High","BL-PLAT-001","ECL-3.1","Admin logged into Backend ({{BACK_URL}}); the AGENT-TEST-Catalog-Read-Only role (catalog:read only, excludes catalog:create/catalog:delete) is seeded via npm run seed:rbac and assigned to a test user (backoffice-rbac-specs.mjs)","restricted_user_email=@td(CATALOG_READ_ONLY.email); restricted_user_password=@td(CATALOG_READ_ONLY.password); allowed_permission=catalog:read; blocked_permissions=[catalog:create, catalog:delete]","[NAV] Log in to Backend as the restricted test user at {{BACK_URL}}
 [NAV] Navigate to the Catalog module
 [ACT] Attempt to view catalog items (should be allowed with catalog:read)
 [ACT] Attempt to create a new catalog item (should be blocked without catalog:create)
