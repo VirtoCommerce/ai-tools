@@ -16,6 +16,7 @@
 
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
+import { parse as parseCsv } from "csv-parse/sync";
 import { TestDataResolver } from "../lib/test-data-resolver.js";
 
 const ROOT = process.cwd();
@@ -254,5 +255,60 @@ if (aliasGuidHits.length === 0) {
   );
 }
 
-const idFatal = (idHits.length > 0 || aliasGuidHits.length > 0) && !WARN_ONLY;
+// --- DV-022: fixture-SHAPE guard — per-org membership ops must not bind the legacy
+// multi-org fixture. {{MULTI_ORG_USER_EMAIL}} is an Approved contact with many
+// `contact.organizations` associations and ZERO OrganizationMembership rows. It is the
+// RIGHT fixture for org-switcher / global-contact-status cases, and unusable for anything
+// that locks, unlocks or re-roles a MEMBERSHIP row (there is none to act on). Those cases
+// need @td(MULTI_ORG_TF_BR.*), which has real membership rows in two orgs.
+//
+// Keyed on membership MUTATIONS, deliberately not on the mere mention of
+// `organization-memberships`: a case may legitimately reference the endpoint to assert that
+// NO membership row exists (e.g. 027 CUST-091 tests exactly that breaking change).
+// Escape hatch: put `DV-022-OK` anywhere in the row to record a reviewed exception.
+const LEGACY_MULTI_ORG_RE = /\{\{MULTI_ORG_USER_(?:EMAIL|PASSWORD)\}\}/;
+const MEMBERSHIP_MUTATION_RE =
+  /\b(?:lockOrganizationContact|unlockOrganizationContact|changeOrganizationContactRole)\b|organization-memberships\/[^\s"']*\/(?:lock|unlock)|\b(?:Block user|Unblock user|Edit role)\b/i;
+const shapeHits: { file: string; id: string; op: string }[] = [];
+{
+  const walk = (dir: string): string[] =>
+    readdirSync(dir).flatMap((e) => {
+      const p = join(dir, e);
+      return statSync(p).isDirectory() ? walk(p) : p.endsWith(".csv") ? [p] : [];
+    });
+  for (const file of walk(SUITES_DIR)) {
+    const content = readFileSync(file, "utf8");
+    if (!LEGACY_MULTI_ORG_RE.test(content)) continue;
+    let rows: string[][];
+    try {
+      rows = parseCsv(content, { columns: false, relax_column_count: true }) as string[][];
+    } catch { continue; } // structure errors are S-007's job, not ours
+    const header = rows[0] ?? [];
+    for (const row of rows.slice(1)) {
+      const blob = row.join("  ");
+      if (!LEGACY_MULTI_ORG_RE.test(blob)) continue;
+      if (/DV-022-OK/.test(blob)) continue;
+      const m = blob.match(MEMBERSHIP_MUTATION_RE);
+      if (m) shapeHits.push({ file: relative(ROOT, file), id: row[header.indexOf("ID")] ?? row[0], op: m[0] });
+    }
+  }
+}
+console.log("\n--- Fixture-Shape Guard: legacy multi-org fixture vs per-org membership ops (DV-022) ---\n");
+if (shapeHits.length === 0) {
+  console.log("  No per-org membership operation bound to the legacy multi-org fixture. ✓");
+} else {
+  const tag = WARN_ONLY ? "WARN" : "FAIL";
+  console.log(`  ${shapeHits.length} case(s) bind {{MULTI_ORG_USER_*}} to a membership-scoped operation [${tag}]:`);
+  for (const h of shapeHits) console.log(`    ${h.id}  (${h.file})  -> ${h.op}`);
+  console.log(
+    "\n  {{MULTI_ORG_USER_EMAIL}} has MANY contact.organizations associations but ZERO\n" +
+    "  OrganizationMembership rows, so lock / unlock / role-change have no row to act on and the\n" +
+    "  case silently tests nothing. Use @td(MULTI_ORG_TF_BR.email/.password) — real membership\n" +
+    "  rows in TechFlow + BuildRight. Keep the legacy fixture for org-switcher and\n" +
+    "  global-contact-status cases. Reviewed exception: add DV-022-OK to the row." +
+    (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
+  );
+}
+
+const idFatal = (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0) && !WARN_ONLY;
 process.exit(totalFailed > 0 || idFatal ? 1 : 0);

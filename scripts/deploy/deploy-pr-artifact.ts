@@ -12,7 +12,10 @@
  * resolves every one of them and repins them all at once:
  *   • backend module  → the AzureBlob source of backend/packages.json as {Id,Version,BlobName}
  *                        (removed from GithubReleases so there is no duplicate Id)
- *   • platform        → PlatformVersion + PlatformImageTag
+ *   • platform        → PlatformVersion (base semver) + PlatformImageTag (the container tag CI pushed).
+ *                       vc-platform publishes NO vc3prerelease zip — its PR body carries
+ *                       `Image tag: ghcr.io/VirtoCommerce/platform:<tag>`, and that tag is the only
+ *                       field vc-deploy-dev's deploy-backend.yml reads for the platform.
  *   • storefront theme→ the artifact URL inside theme/artifact.json
  *
  * INPUT — the artifact set is the UNION of:
@@ -49,7 +52,9 @@
  *   --env=<name>               Target env (default: resolved TEST_ENV). Picks the vc-deploy-dev branch + BACK_URL.
  *   --pr=<owner/repo#N|url>     Add a PR's latest artifact to the set (repeatable).
  *   --module=<Id=Version>       Add an explicit backend module pin (repeatable). Version = the -pr blob version.
- *   --platform=<Version>        Add an explicit Platform pin.
+ *   --platform=<Ver|tag|Ver=tag> Add an explicit Platform pin. A bare release version sets both fields;
+ *                               a PR container tag (`3.1053.0-pr-3092-…`, or a full ghcr.io ref) keeps
+ *                               PlatformVersion at the base semver and puts the tag in PlatformImageTag.
  *   --theme=<url|version>       Add an explicit storefront theme artifact (a full vc3prerelease URL, or a version).
  *   --apply                     Gated write: commit the bundle to the fork + open/print the cross-fork PR. Omit = dry-run.
  *   --dry-run                   Explicit no-op form of the default (wins over --apply if both given).
@@ -84,12 +89,21 @@ const PACKAGES_PATH_DEFAULT = 'backend/packages.json';
 const THEME_PATH_DEFAULT = 'theme/artifact.json';
 const POLL = 15_000;
 const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
-// vcst is the default QA env; its vc-deploy-dev branch is vcst-qa (its .env carries no DEPLOY_* block).
+// vcst / vcptcore are the two QA envs; their vc-deploy-dev branches carry a -qa suffix the env name
+// doesn't (there is no bare `vcst` or `vcptcore` branch), and neither .env carries a DEPLOY_* block.
 // Every other env's branch equals the env name (underscores → hyphens) unless .env.<env> overrides it.
-const BRANCH_MAP: Record<string, string> = { vcst: 'vcst-qa' };
+const BRANCH_MAP: Record<string, string> = { vcst: 'vcst-qa', vcptcore: 'vcptcore-qa' };
 const ARTIFACT_RE = /https?:\/\/vc3prerelease\.blob\.core\.windows\.net\/[^\s)"'<>]+?\.zip/gi;
 const PR_URL_RE = /github\.com\/(VirtoCommerce)\/([A-Za-z0-9._-]+)\/pull\/(\d+)/gi;
 const THEME_URL_RE = /https?:\/\/[^\s"'<>]*vc-theme[^\s"'<>]*\.zip/i;
+// A vc-platform PR does NOT publish a vc3prerelease zip — its CI pushes a CONTAINER IMAGE and the
+// PR body carries `Image tag: ghcr.io/VirtoCommerce/platform:<tag>`. That tag is the only thing
+// vc-deploy-dev's deploy-backend.yml reads for the platform (`PlatformImageTag` → docker build-arg),
+// so it is what a platform pin actually needs. Matched case-insensitively on the image path since
+// PR bodies use `VirtoCommerce` while the manifest's PlatformImage is lowercase.
+const PLATFORM_IMAGE_TAG_RE = /ghcr\.io\/[A-Za-z0-9._-]+\/platform:([A-Za-z0-9._-]+)/i;
+/** Leading semver of a container tag: `3.1053.0-pr-3092-2588-vcst-5532-2588d613` → `3.1053.0`. */
+const SEMVER_PREFIX_RE = /^(\d+\.\d+\.\d+(?:\.\d+)?)/;
 
 // ── types ──────────────────────────────────────────────────────────────────────
 type Kind = 'module' | 'platform' | 'theme';
@@ -99,7 +113,34 @@ interface Target {
   version?: string;        // module / platform version
   blobName?: string;       // backend module blob file name
   themeUrl?: string;       // full storefront theme artifact URL
+  imageTag?: string;       // platform ONLY: the container tag → PlatformImageTag. Defaults to `version`.
   source: string;          // "PR owner/repo#N" | "--module" | "--platform" | "--theme"
+}
+/** The tag a platform pin writes to PlatformImageTag (falls back to the version for a plain bump). */
+const tagOf = (t: Target): string => t.imageTag ?? t.version!;
+/**
+ * Build a platform Target from a container tag. `PlatformVersion` keeps the tag's BASE semver while
+ * `PlatformImageTag` carries the full pre-release tag — they are different fields with different
+ * consumers, and writing the tag into both leaves PlatformVersion a non-semver string that anything
+ * parsing it (vc-build module compat, humans reading the manifest) reads as garbage.
+ */
+export function platformTargetFromTag(tag: string, source: string): Target {
+  const base = SEMVER_PREFIX_RE.exec(tag);
+  return { kind: 'platform', version: base ? base[1] : tag, imageTag: tag, source };
+}
+/**
+ * `--platform` accepts three forms, so the caller never has to hand-split the two manifest fields:
+ *   • `3.1051.0`                                    → both fields (a plain release bump)
+ *   • `3.1053.0-pr-3092-2588-vcst-5532-2588d613`     → PlatformVersion 3.1053.0 + that tag
+ *   • `3.1053.0=<tag>` or a full `ghcr.io/...:<tag>` → explicit version / tag split
+ */
+export function parsePlatformFlag(raw: string, source: string): Target {
+  const v = raw.trim();
+  const fromImage = PLATFORM_IMAGE_TAG_RE.exec(v);
+  if (fromImage) return platformTargetFromTag(fromImage[1], source);
+  const eq = v.indexOf('=');
+  if (eq > 0) return { kind: 'platform', version: v.slice(0, eq).trim(), imageTag: v.slice(eq + 1).trim(), source };
+  return platformTargetFromTag(v, source);
 }
 interface EnvCoords {
   env: string; deployOwner: string; deployRepo: string; branch: string;
@@ -108,10 +149,22 @@ interface EnvCoords {
 interface ManifestFile { text: string; sha: string; json: any; }
 
 // ── env / token ──────────────────────────────────────────────────────────────
+/**
+ * Layered load with the SAME precedence as config.js (`override: true`): a LATER file wins over
+ * an earlier one, so `.env.local` (per-developer secrets + the identities they pair with) beats a
+ * committed `.env.<env>`. First-wins here silently mismatched a committed `.env.<env>` JIRA_EMAIL
+ * against the `.env.local` JIRA_API_TOKEN of whoever ran it → Jira 404 on a ticket that exists.
+ * An AMBIENT value (real process env — an inline `VAR=x npm run …`, or CI) still outranks every
+ * file, which is why this tracks file-supplied keys instead of using dotenv's own `override`.
+ */
 function loadEnvFiles(testEnv: string): void {
+  const fromFile = new Set<string>();
   for (const f of ['.env.defaults', `.env.${testEnv}`, '.env.local']) {
     const p = resolve(REPO_ROOT, f);
-    if (existsSync(p)) { const vars = parseDotenv(readFileSync(p)); for (const [k, v] of Object.entries(vars)) if (process.env[k] === undefined) process.env[k] = v; }
+    if (!existsSync(p)) continue;
+    for (const [k, v] of Object.entries(parseDotenv(readFileSync(p)))) {
+      if (process.env[k] === undefined || fromFile.has(k)) { process.env[k] = v; fromFile.add(k); }
+    }
   }
 }
 function readEnvFile(path: string): Record<string, string> {
@@ -132,8 +185,14 @@ function resolveEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   const repoSpec = e.DEPLOY_REPO || DEPLOY_REPO_DEFAULT;
   const [deployOwner, deployRepo] = repoSpec.includes('/') ? repoSpec.split('/') : [OWNER, repoSpec];
   const branch = e.DEPLOY_BRANCH || BRANCH_MAP[env] || env.replace(/_/g, '-');
+  // Per-env secret lookup, in config.js's own promotion form FIRST (`ADMIN_PASSWORD_${TEST_ENV}`
+  // upper-cased) — the vcptcore-suffix forms below only ever produce STABLE/REGRESSION, so a plain
+  // `vcptcore` used to strip to "" and silently fall through to the generic ADMIN_PASSWORD (wrong
+  // account → no admin token → --verify's live column reads "unavailable" instead of the version).
+  const envKey = env.toUpperCase().replace(/[^A-Z0-9]/g, '_');
   const suffix = env.replace(/^vcptcore[_-]?/, '').replace(/[^a-z0-9]/gi, '').toUpperCase();
   const password = passwordOverride
+    || local[`ADMIN_PASSWORD_${envKey}`]
     || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`] || local[`ADMIN_PASSWORD_${suffix}`]
     || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Password1';
   return {
@@ -168,7 +227,7 @@ async function jiraGet(path: string): Promise<any> {
   if (!res.ok) throw new Error(`JIRA ${path} → ${res.status} ${res.statusText}`);
   return res.json();
 }
-interface PrRef { owner: string; repo: string; number: number; source: string; }
+export interface PrRef { owner: string; repo: string; number: number; source: string; }
 async function prsFromJira(key: string): Promise<{ summary: string | null; prs: PrRef[] }> {
   const issue = await jiraGet(`/rest/api/3/issue/${encodeURIComponent(key)}?fields=summary,description,comment`);
   const found = new Map<string, PrRef>();
@@ -188,29 +247,57 @@ async function prsFromJira(key: string): Promise<{ summary: string | null; prs: 
   while ((m = PR_URL_RE.exec(blob)) !== null) add(m[1], m[2], +m[3], 'text');
   return { summary: issue.fields?.summary ?? null, prs: [...found.values()] };
 }
-/** Resolve a single PR's LATEST vc3prerelease artifact → a Target (or a reason it has none). */
-async function artifactFromPr(ref: PrRef): Promise<{ target?: Target; state?: string; note: string }> {
-  const pr = await ghJson(`https://api.github.com/repos/${ref.owner}/${ref.repo}/pulls/${ref.number}`);
-  if (!pr) return { note: `${ref.owner}/${ref.repo}#${ref.number}: not found` };
-  const urls = (pr.body || '').match(ARTIFACT_RE) || [];
+/**
+ * Resolve a single PR's LATEST artifact → a Target (or a reason it has none).
+ * Backend modules + the storefront theme publish a vc3prerelease ZIP; vc-platform instead publishes
+ * a CONTAINER IMAGE, so its PR body has an empty "Artifact URL:" and an `Image tag:` line — which is
+ * checked before giving up, otherwise every platform PR reads as "CI still running" forever.
+ */
+export function artifactFromPrBody(
+  ref: PrRef,
+  body: string,
+  state: string,
+): { target?: Target; state?: string; note: string } {
+  const urls = (body || '').match(ARTIFACT_RE) || [];
   const src = `PR ${ref.owner}/${ref.repo}#${ref.number}`;
-  if (urls.length === 0) return { state: pr.state, note: `${src} [${pr.state}]: no vc3prerelease Artifact URL yet (CI still running?)` };
+  const imageTag = PLATFORM_IMAGE_TAG_RE.exec(body || '')?.[1];
+  // Platform pin, tag-only (the normal vc-platform case — no zip is ever published).
+  if (urls.length === 0) {
+    if (imageTag) {
+      const t = platformTargetFromTag(imageTag, src);
+      return { target: t, state, note: `${src} [${state}] → Platform ${t.version} (image tag ${t.imageTag})` };
+    }
+    return { state, note: `${src} [${state}]: no vc3prerelease Artifact URL or platform image tag yet (CI still running?)` };
+  }
   const url = urls[urls.length - 1]; // last wins (bodies sometimes list older→newer)
   const file = decodeURIComponent(url.split('/').pop() || '');
   if (ref.repo.toLowerCase() === 'vc-frontend' || /^vc-theme/i.test(file)) {
-    return { target: { kind: 'theme', themeUrl: url, source: src }, state: pr.state, note: `${src} [${pr.state}] → theme ${file}` };
+    return { target: { kind: 'theme', themeUrl: url, source: src }, state, note: `${src} [${state}] → theme ${file}` };
   }
+  // A platform build that ALSO published a zip: keep the zip's version as PlatformVersion but prefer
+  // the body's image tag for PlatformImageTag — the tag is what the deploy actually pulls.
+  const platform = (version: string) => {
+    const t: Target = { kind: 'platform', version, imageTag: imageTag ?? version, source: src };
+    const suffix = t.imageTag !== version ? ` (image tag ${t.imageTag})` : '';
+    return { target: t, state, note: `${src} [${state}] → Platform ${version}${suffix}` };
+  };
   const fm = file.replace(/\.zip$/i, '').match(/^(VirtoCommerce\.[A-Za-z0-9.]+)_(\d.*)$/);
   if (fm) {
-    if (fm[1] === 'VirtoCommerce.Platform') return { target: { kind: 'platform', version: fm[2], source: src }, state: pr.state, note: `${src} [${pr.state}] → Platform ${fm[2]}` };
-    return { target: { kind: 'module', id: fm[1], version: fm[2], blobName: file, source: src }, state: pr.state, note: `${src} [${pr.state}] → ${fm[1]}=${fm[2]}` };
+    if (fm[1] === 'VirtoCommerce.Platform') return platform(fm[2]);
+    return { target: { kind: 'module', id: fm[1], version: fm[2], blobName: file, source: src }, state, note: `${src} [${state}] → ${fm[1]}=${fm[2]}` };
   }
   // vc-platform repo build whose file isn't the VirtoCommerce.Platform pattern.
   if (ref.repo.toLowerCase() === 'vc-platform') {
     const pv = file.replace(/\.zip$/i, '').match(/_(\d.*)$/);
-    if (pv) return { target: { kind: 'platform', version: pv[1], source: src }, state: pr.state, note: `${src} [${pr.state}] → Platform ${pv[1]}` };
+    if (pv) return platform(pv[1]);
   }
-  return { state: pr.state, note: `${src} [${pr.state}]: artifact not recognised (${file})` };
+  return { state, note: `${src} [${state}]: artifact not recognised (${file})` };
+}
+/** Network wrapper: fetch the PR, then delegate the (pure, unit-tested) body parse. */
+async function artifactFromPr(ref: PrRef): Promise<{ target?: Target; state?: string; note: string }> {
+  const pr = await ghJson(`https://api.github.com/repos/${ref.owner}/${ref.repo}/pulls/${ref.number}`);
+  if (!pr) return { note: `${ref.owner}/${ref.repo}#${ref.number}: not found` };
+  return artifactFromPrBody(ref, pr.body || '', pr.state);
 }
 
 export function parsePrRef(ref: string): PrRef | null {
@@ -249,9 +336,15 @@ export function applyModule(json: any, id: string, version: string, blobName: st
   if (existing) { existing.Version = version; existing.BlobName = blobName; }
   else blob.Modules.push({ Id: id, Version: version, BlobName: blobName });
 }
-export function applyPlatform(json: any, version: string): void {
+/**
+ * Pin the platform. `imageTag` defaults to `version` (a plain release bump, where the two are equal);
+ * a PR pre-release passes them separately — PlatformVersion keeps the base semver, PlatformImageTag
+ * carries the full `-pr-…` container tag, which is the ONLY field vc-deploy-dev's deploy-backend.yml
+ * reads (`PLATFORM_TAG` → the docker build-arg). Mutates `json`.
+ */
+export function applyPlatform(json: any, version: string, imageTag: string = version): void {
   json.PlatformVersion = version;
-  if (json.PlatformImageTag !== undefined) json.PlatformImageTag = version;
+  if (json.PlatformImageTag !== undefined) json.PlatformImageTag = imageTag;
 }
 function serialize(json: any): string { return JSON.stringify(json, null, 2) + '\n'; }
 /** Lines added + removed (multiset symmetric difference) — handles insertions/deletions, so a
@@ -402,7 +495,12 @@ export function upsertBlobEntry(text: string, id: string, blobName: string): str
   const sample = lines.findIndex((l) => /"BlobName"\s*:/.test(l));
   if (sample < 1) return insertFirstBlobEntry(lines, blobName, eol); // empty AzureBlob — no sibling to mirror
   const blobIndent = indentOf(lines[sample]);
-  const braceIndent = indentOf(lines[sample - 1]);
+  // Mirror the sibling ENTRY'S OPENING BRACE, found by scanning up from its BlobName line. Reading
+  // `sample - 1` assumed the brace always sits directly above, which only holds for a BlobName-ONLY
+  // entry — on the {Id,…,BlobName} shape that line is `"Id"`, so the braces inherited the FIELD
+  // indent and the inserted entry sat one step deeper than its siblings (valid JSON, untidy diff).
+  const openAt = (() => { for (let i = sample; i >= 0; i--) if (/^[ \t]*\{\s*$/.test(lines[i])) return i; return -1; })();
+  const braceIndent = openAt >= 0 ? indentOf(lines[openAt]) : blobIndent;
   let lastClose = -1;
   for (let i = 0; i < lines.length - 1; i++) if (/"BlobName"\s*:/.test(lines[i]) && /^\s*\}/.test(lines[i + 1])) lastClose = i + 1;
   if (lastClose < 0) return null;
@@ -410,10 +508,10 @@ export function upsertBlobEntry(text: string, id: string, blobName: string): str
   lines.splice(lastClose + 1, 0, `${braceIndent}{`, `${blobIndent}"BlobName": "${blobName}"`, `${braceIndent}}`);
   return lines.join(eol);
 }
-export function bumpPlatformText(text: string, version: string): string | null {
+export function bumpPlatformText(text: string, version: string, imageTag: string = version): string | null {
   let hit = 0;
   const out = text.replace(/("PlatformVersion"\s*:\s*")[^"]*(")/, (_m, a, b) => (hit++, a + version + b))
-                  .replace(/("PlatformImageTag"\s*:\s*")[^"]*(")/, (_m, a, b) => (hit++, a + version + b));
+                  .replace(/("PlatformImageTag"\s*:\s*")[^"]*(")/, (_m, a, b) => (hit++, a + imageTag + b));
   return hit > 0 ? out : null;
 }
 /** Apply all module moves + a platform bump. Prefer minimal surgery; verify (valid JSON + intended
@@ -424,7 +522,7 @@ export function editPackagesText(origText: string, origJson: any, modules: Targe
     text = removeGhReleaseEntry(text!, t.id!); if (text == null) break;
     text = upsertBlobEntry(text, t.id!, t.blobName!); if (text == null) break;
   }
-  if (text != null && platformT) text = bumpPlatformText(text, platformT.version!);
+  if (text != null && platformT) text = bumpPlatformText(text, platformT.version!, tagOf(platformT));
   if (text != null) {
     try {
       const j = JSON.parse(text);
@@ -444,13 +542,13 @@ export function editPackagesText(origText: string, origJson: any, modules: Targe
         if (pin?.version !== t.version || pin?.blobName !== t.blobName) good = false;
       }
       if (platformT && (String(j.PlatformVersion) !== platformT.version
-        || (j.PlatformImageTag !== undefined && String(j.PlatformImageTag) !== platformT.version))) good = false;
+        || (j.PlatformImageTag !== undefined && String(j.PlatformImageTag) !== tagOf(platformT)))) good = false;
       if (good) return { text, minimal: true };
     } catch { /* fall through */ }
   }
   const clone = JSON.parse(JSON.stringify(origJson));
   for (const t of modules) applyModule(clone, t.id!, t.version!, t.blobName!);
-  if (platformT) applyPlatform(clone, platformT.version!);
+  if (platformT) applyPlatform(clone, platformT.version!, tagOf(platformT));
   return { text: serialize(clone), minimal: false };
 }
 export function editThemeText(text: string, newUrl: string): { text: string; from: string | null } {
@@ -551,7 +649,15 @@ async function main() {
 
   if (key) {
     if (!/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(key)) fail(`"${key}" is not a ticket key. Usage: deploy-pr-artifact.ts <ticket-key> [--pr ...] [--module Id=Ver] [--platform Ver] [--theme url]`);
-    const r = await prsFromJira(key).catch((e) => fail(e.message));
+    // A tracker lookup failure is only FATAL when the ticket is the sole source of targets. With an
+    // explicit --pr/--module/--platform/--theme the run is tracker-agnostic by design (Azure Boards,
+    // no dev-links, dead creds) — the key then only labels the branch / commit message.
+    const explicit = flags('pr').length + flags('module').length + flags('theme').length + (flag('platform') ? 1 : 0) > 0;
+    const r = await prsFromJira(key).catch((e) => {
+      if (!explicit) fail(e.message);
+      resolveNotes.push(`ticket ${key}: tracker lookup FAILED (${e.message}) — using the explicit targets only`);
+      return { summary: null, prs: [] as PrRef[] };
+    });
     summary = r.summary;
     for (const ref of r.prs) { const a = await artifactFromPr(ref); resolveNotes.push(a.note); if (a.target) targets.push(a.target); }
   }
@@ -565,7 +671,7 @@ async function main() {
     targets.push({ kind: 'module', id, version, blobName: `${id}_${version}.zip`, source: '--module' });
   }
   const platformFlag = flag('platform');
-  if (platformFlag) targets.push({ kind: 'platform', version: platformFlag.trim(), source: '--platform' });
+  if (platformFlag) targets.push(parsePlatformFlag(platformFlag, '--platform'));
   for (const raw of flags('theme')) {
     const themeUrl = /^https?:\/\//.test(raw) ? raw : `https://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-${raw}.zip`;
     targets.push({ kind: 'theme', themeUrl, source: '--theme' });
@@ -601,7 +707,18 @@ async function main() {
   interface Row { target: Target; current: string; proposed: string; }
   const rows: Row[] = [];
   for (const t of modules) { const cur = pinnedModule(pkg.json, t.id!); rows.push({ target: t, current: cur ? `${cur.version} (${cur.source})` : 'absent', proposed: `${t.version} (AzureBlob)` }); }
-  if (platformT) rows.push({ target: platformT, current: String(pkg.json.PlatformVersion ?? 'absent'), proposed: platformT.version! });
+  if (platformT) {
+    // Show the TAG, not just the version — for a PR pre-release they differ, and the tag is what
+    // actually gets deployed. Hiding it made the table read as a no-op re-pin of the same version.
+    const curTag = pkg.json.PlatformImageTag !== undefined ? String(pkg.json.PlatformImageTag) : null;
+    const curVer = String(pkg.json.PlatformVersion ?? 'absent');
+    const newTag = tagOf(platformT);
+    rows.push({
+      target: platformT,
+      current: curTag && curTag !== curVer ? `${curVer} → tag ${curTag}` : curVer,
+      proposed: newTag !== platformT.version ? `${platformT.version} → tag ${newTag}` : platformT.version!,
+    });
+  }
   const pkgTouched = modules.length > 0 || !!platformT;
   const pkgEdit = pkgTouched ? editPackagesText(pkg.text, pkg.json, modules, platformT) : { text: pkg.text, minimal: true };
   const newPkgText = pkgEdit.text;
@@ -646,7 +763,15 @@ async function main() {
       if (verdict === 'MISSING') anyMissing = true;
       vrows.push({ label: t.id!, pinned, liveVer: lv, verdict });
     }
-    if (platformT) { const ok = String(pkg.json.PlatformVersion) === platformT.version; const healthy = c.backUrl ? await platformHealthy(c) : false; vrows.push({ label: 'Platform', pinned: ok ? 'yes' : 'no', liveVer: healthy ? 'healthy' : '?', verdict: ok ? (healthy ? 'LIVE' : 'PINNED') : 'MISSING' }); if (!ok) anyMissing = true; }
+    if (platformT) {
+      // The IMAGE TAG is the load-bearing field (deploy-backend.yml reads only PlatformImageTag), so
+      // checking PlatformVersion alone reported PINNED for a branch still running the old container.
+      const wantTag = tagOf(platformT);
+      const ok = String(pkg.json.PlatformImageTag ?? pkg.json.PlatformVersion) === wantTag;
+      const healthy = c.backUrl ? await platformHealthy(c) : false;
+      vrows.push({ label: 'Platform', pinned: ok ? 'yes' : 'no', liveVer: healthy ? 'healthy' : '?', verdict: ok ? (healthy ? 'LIVE' : 'PINNED') : 'MISSING' });
+      if (!ok) anyMissing = true;
+    }
     if (themeT && theme) { const has = THEME_URL_RE.test(theme.text) && theme.text.includes(themeT.themeUrl!.split('/').pop()!); vrows.push({ label: 'Theme', pinned: has ? 'yes' : 'no', liveVer: '—', verdict: has ? 'PINNED' : 'MISSING' }); if (!has) anyMissing = true; }
     if (asJson) { console.log(JSON.stringify({ env, branch: c.branch, verify: vrows, allDeployed: !anyMissing }, null, 2)); throw new Exit(anyMissing ? 1 : 0); }
     console.log(`\nVerify — is the bundle deployed on ${env}? (branch pin + live /api/platform/modules)`);

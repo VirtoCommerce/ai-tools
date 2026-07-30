@@ -1027,8 +1027,11 @@
       "password": "password",
       "name": "user_name",
       "platform_id": "platform_id",
-      "org_id": "org_id"
-    }
+      "org_id": "org_id",
+      "store_id": "store_id"
+    },
+    "organization_id": "@td(ORG_TECHFLOW.platform_id)",
+    "notes": "Org-maintainer actor for TechFlow (b2b/users.csv USR-006). `organization_id` makes the password grant EXPLICITLY org-scoped — without it the grant takes the implicit path, where the platform adopts the contact's currentOrganizationId without revalidating it against BlockingStatuses and issues a 200 token with zero permissions, so every org-scoped query fails as an opaque `Forbidden` (VCST-5281). It must resolve to the platform GUID, hence @td(ORG_TECHFLOW.platform_id) — the `org_id` field here is the business key ORG-002, not a GUID. Consumed by scripts/lib/graphql-auth.ts resolveRole()."
   },
   "TECHFLOW_BUYER": {
     "file": "b2b/users",

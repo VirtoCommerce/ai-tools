@@ -1,11 +1,11 @@
 {
-  "runId": "REG-2026-07-29-1704",
-  "status": "completed",
+  "runId": "REG-2026-07-30-1040",
+  "status": "in_progress",
   "environment": "vcst",
-  "selection": "027,050d,008,011b",
-  "startedAt": "2026-07-29T17:04:00Z",
-  "finishedAt": "2026-07-29T17:12:00Z",
-  "context": "HALTED AT THE CANARY — deliberately, before the browser suites. Canary ran 2 of 050d's 49 cases: new PRF-GQL-077 and, as a control, PRE-EXISTING PRF-GQL-047. BOTH fail identically: organization(id: TechFlow) returns Access denied / Forbidden INSIDE HTTP 200 for TECHFLOW_ADMIN. TECHFLOW_ADMIN = b2b/users USR-006 = ORG_USER = test-emily.johnson (userId 68fed13a) — the very user whose TechFlow membership carries status=Rejected in fixture-snapshot.json, while her currentOrganizationId IS TechFlow. So her token grant still returns 200 (td:reconcile check [10] passes) and every org-scoped query then 403s: the VCST-5281 P0 root cause, reproduced deterministically on canonical fixture data, and it takes down pre-existing coverage too. Suites 027/008/011b all authenticate as this same user against this same org, so continuing would have rediscovered one blocker across ~150 cases and misattributed the failures. No fixture was mutated by this run. Also found: td:reconcile does NOT validate OrganizationMembership.Status against the declared fixture status, so this drift vector is invisible to the reconciler.",
+  "selection": "050d,027,008,011b",
+  "startedAt": "2026-07-30T08:20:00Z",
+  "finishedAt": null,
+  "context": "VCST-5281 regression. 050d complete (32/49) with the shared-fixture leak CLOSED — PRF-GQL-076/079/081 were rewritten to be self-contained (own throwaway org/user) after 076 upserted the canonical ORG_USER membership and 079 restored it with HARDCODED status Approved + roleId org-employee over its real null/org-maintainer values. Canonical membership verified intact after the full run. Now dispatching the browser suites sequentially: 027 (edge) then 008 (chrome) then 011b (chrome) — never batched, because 008+011b both mutate TechFlow and 027 shares the same org-maintainer actor.",
   "totals": {
     "suites": 4,
     "testCases": 159
@@ -22,12 +22,12 @@
       "browser": "none (HTTP)",
       "batch": 1,
       "status": "done",
-      "pass": 0,
-      "fail": 2,
-      "blocked": 47,
-      "skipped": 0,
-      "attempts": 1,
-      "note": "Canary only: 2 of 49 cases executed (PRF-GQL-077 new, PRF-GQL-047 pre-existing control). Both FAIL on the same Forbidden-inside-200. Remaining 47 blocked behind the fixture/P0 condition."
+      "pass": 32,
+      "fail": 14,
+      "blocked": 0,
+      "skipped": 3,
+      "attempts": 3,
+      "note": "3 EMPTY (039/040/057 — pre-existing, assert nothing) counted under skipped. 14 FAIL: 4 pre-existing permission-denied (066-069), 9 new-batch cases failing on their real defect assertions, 1 resolver throw (074)."
     },
     {
       "id": "027",
@@ -39,13 +39,13 @@
       "lane": "browser",
       "browser": "playwright-edge",
       "batch": 2,
-      "status": "blocked",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 48,
+      "status": "done",
+      "pass": 29,
+      "fail": 18,
+      "blocked": 1,
       "skipped": 0,
-      "attempts": 0,
-      "note": "Not dispatched — halted at the canary; authenticates as the same blocked ORG_USER/TechFlow pair."
+      "attempts": 1,
+      "note": "29/48. 6 real product bugs (incl. CUST-093 SQL-detail leak in a 500, CUST-090 urlSuffix discarded so the existing-user invite link has no token), 11 test-case defects, 1 BLOCKED (no sample module on this env). Canonical fixture verified INTACT at suite end."
     },
     {
       "id": "008",
@@ -57,13 +57,13 @@
       "lane": "browser",
       "browser": "playwright-chrome",
       "batch": 3,
-      "status": "blocked",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 36,
+      "status": "done",
+      "pass": 22,
+      "fail": 9,
+      "blocked": 5,
       "skipped": 0,
       "attempts": 0,
-      "note": "Not dispatched — halted at the canary; authenticates as the same blocked ORG_USER/TechFlow pair."
+      "note": "22/36. 7 real product bugs — incl. BUG_008_002: a member blocked in their CURRENT org gets a generic /403 because the storefront omits organization_id, so the implicit grant adopts currentOrganizationId without validating the lock (same defect class as the VCST-5281 P0, on the lock path). Backend is correct when organization_id IS sent: HTTP 400 user_is_locked_in_organization. Also BUG_008_007 confirms the PR-review badge/facet divergence live. 5 BLOCKED = an undeployed delegated-purchasing module (013-017). Fixtures verified byte-identical."
     },
     {
       "id": "011b",
@@ -75,13 +75,13 @@
       "lane": "browser",
       "browser": "playwright-chrome",
       "batch": 4,
-      "status": "blocked",
-      "pass": 0,
-      "fail": 0,
-      "blocked": 26,
+      "status": "running",
+      "pass": 18,
+      "fail": 5,
+      "blocked": 0,
       "skipped": 0,
-      "attempts": 0,
-      "note": "Not dispatched — halted at the canary; authenticates as the same blocked ORG_USER/TechFlow pair."
+      "attempts": 0
     }
-  ]
+  ],
+  "lastProgressAt": "2026-07-30T12:51:08Z"
 }
