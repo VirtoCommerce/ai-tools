@@ -157,18 +157,55 @@ function lintSuiteCsvs(manifest: Manifest): { newErrors: string[]; baselineStale
   return { newErrors, baselineStale };
 }
 
+/**
+ * Actual executable case count for a suite CSV = rows carrying a non-empty ID.
+ * Returns null when the file is absent or unparseable (a baselined suite), so the
+ * caller leaves the declared count alone rather than zeroing it.
+ */
+function actualCaseCount(file: string): number | null {
+  if (!existsSync(file)) return null;
+  try {
+    const rows = parseCsv(readFileSync(file, "utf-8"), {
+      columns: true,
+      skip_empty_lines: true,
+      relax_column_count: true,
+      bom: true,
+    }) as Record<string, string>[];
+    if (rows.length === 0) return 0;
+    const idCol = Object.keys(rows[0])[0];
+    return rows.filter((r) => String(r[idCol] ?? "").trim() !== "").length;
+  } catch {
+    return null;
+  }
+}
+
 function regenerate(manifest: Manifest): { next: Manifest; drift: string[] } {
   const sortedSuites = [...manifest.suites].sort((a, b) => a.id.localeCompare(b.id));
   const today = new Date().toISOString().slice(0, 10);
+
+  // testCount reconciliation. This was previously DECLARED in the Suite interface but
+  // never compared or written, so `suites:lint` exited 0 while 33 of 120 suites carried
+  // a stale count. That is not cosmetic: the regression HTML dashboard reads
+  // `testCount` as the run's `totalCases`, so a drifted suite misreports its own
+  // denominator — the class of quiet wrongness that makes a pass-rate untrustworthy.
+  // Unparseable / missing CSVs (the CSV_LINT_BASELINE burn-down set) return null and
+  // keep their declared value, so this guard never zeroes a suite it cannot read.
+  const countDrift: string[] = [];
+  const reconciled = sortedSuites.map((s) => {
+    const actual = actualCaseCount(s.file);
+    if (actual === null || actual === s.testCount) return s;
+    countDrift.push(`${s.id}: testCount ${s.testCount} -> ${actual}`);
+    return { ...s, testCount: actual };
+  });
 
   const next: Manifest = {
     ...manifest,
     _meta: {
       ...manifest._meta,
       generated: today,
-      totalSuites: sortedSuites.length,
+      totalSuites: reconciled.length,
     },
-    suites: sortedSuites,
+    suites: reconciled,
   };
 
   const drift: string[] = [];
@@ -178,6 +215,13 @@ function regenerate(manifest: Manifest): { next: Manifest; drift: string[] } {
   const idsBefore = manifest.suites.map((s) => s.id).join(",");
   const idsAfter = next.suites.map((s) => s.id).join(",");
   if (idsBefore !== idsAfter) drift.push("suites order");
+  if (countDrift.length > 0) {
+    drift.push(
+      countDrift.length <= 6
+        ? countDrift.join(", ")
+        : `${countDrift.length} suites with stale testCount (${countDrift.slice(0, 4).join(", ")}, …)`,
+    );
+  }
 
   return { next, drift };
 }

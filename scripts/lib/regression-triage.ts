@@ -286,7 +286,7 @@ interface RawSuite {
   cases: RawCase[];
 }
 
-function normalizeSuiteRaw(raw: any): RawSuite {
+function normalizeSuiteRaw(raw: any, suiteIdFromFileName?: string): RawSuite {
   const cases: RawCase[] = [];
   const list = Array.isArray(raw.cases) ? raw.cases : Array.isArray(raw.testCases) ? raw.testCases : [];
   for (const c of list) {
@@ -311,9 +311,24 @@ function normalizeSuiteRaw(raw: any): RawSuite {
     else if (c.status === "BLOCKED") tally.blocked++;
     else if (c.status === "SKIPPED") tally.skipped++;
   }
+  // Any TERMINAL status outside the four known buckets (e.g. the runner-native
+  // GraphQL lane's "EMPTY" = a case that parsed to 0/0 assertions) still consumed a
+  // case slot. Dropping it silently understated the denominator — suite 050d logged
+  // total=46 against 49 real cases, quietly skewing the pass-rate trend that
+  // compute-metrics.ts reads. Count them as skipped so passed+failed+blocked+skipped
+  // === total holds. PENDING is deliberately excluded: it means "never executed".
+  for (const c of cases) {
+    if (!["PASS", "FAIL", "BLOCKED", "SKIPPED", "PENDING"].includes(c.status)) tally.skipped++;
+  }
   const recorded = tally.pass + tally.fail + tally.blocked + tally.skipped;
   return {
-    suiteId: String(raw.suiteId ?? "??"),
+    // Results files are written by several producers and the key is not uniform:
+    // the browser runner agents emit `suiteId`, while the runner-native GraphQL
+    // driver (and the pre-existing suite-042 example it was modelled on) emit only
+    // `suite`. Keying on `suiteId` alone sent a whole suite to "??" with no CSV row
+    // — 14 of this run's 54 issues arrived unjoinable instead of being flagged.
+    // Accept either, then fall back to the filename (`suite-050d-results.json`).
+    suiteId: String(raw.suiteId ?? raw.suite ?? suiteIdFromFileName ?? "??"),
     suiteName: String(raw.suiteName ?? ""),
     environment: String(raw.environment ?? process.env.TEST_ENV ?? "vcst"),
     browser: String(raw.browser ?? ""),
@@ -339,7 +354,9 @@ export function readRunSuites(runDir: string): RawSuite[] {
     } catch {
       continue;
     }
-    const suite = normalizeSuiteRaw(raw);
+    // `suite-050d-results.json` / `suite-042-trackA-batchB-results.json` → "050d" / "042"
+    const fromName = /^suite-([^-]+)-/.exec(f)?.[1];
+    const suite = normalizeSuiteRaw(raw, fromName);
     const cases = suite.cases.length;
     const mtime = statSync(full).mtimeMs;
     const prev = bySuite.get(suite.suiteId);
@@ -350,14 +367,25 @@ export function readRunSuites(runDir: string): RawSuite[] {
   return [...bySuite.values()].map((v) => v.suite);
 }
 
-/** All run-dir-relative image paths under screenshots/ + evidence/ (recursive-1). */
+/**
+ * All run-dir-relative image paths under screenshots/ + evidence/ + graphql-evidence/
+ * (recursive-1).
+ *
+ * `graphql-evidence/` is where the runner-native GraphQL lane writes its per-case
+ * evidence (`scripts/graphql/graphql-runner.ts --evidence-dir`). Omitting it meant
+ * every runner-native failure reached the classifier with `screenshots: []`, so a
+ * whole lane looked evidence-free rather than evidence-elsewhere.
+ */
 function collectRunShots(runDir: string): string[] {
   const out: string[] = [];
-  for (const sub of ["screenshots", "evidence"]) {
+  for (const sub of ["screenshots", "evidence", "graphql-evidence"]) {
     const dir = join(runDir, sub);
     if (!existsSync(dir)) continue;
+    // The GraphQL lane's evidence is per-case JSON (request/response/assertions),
+    // not an image — match it too, or the lane stays invisible here.
+    const keep = sub === "graphql-evidence" ? /\.(json|png|jpe?g|webp)$/i : /\.(png|jpe?g|webp)$/i;
     for (const f of readdirSync(dir)) {
-      if (/\.(png|jpe?g|webp)$/i.test(f)) out.push(`${sub}/${f}`);
+      if (keep.test(f)) out.push(`${sub}/${f}`);
     }
   }
   return out;
@@ -370,12 +398,30 @@ function shotsForCase(caseId: string, allShots: string[]): string[] {
   return allShots.filter((rel) => (rel.split("/").pop() ?? "").toLowerCase().includes(needle));
 }
 
-/** The per-browser-lane HAR path for a suite's browser (reference only). */
+/**
+ * The per-browser-lane HAR for a suite's browser (reference only — never inlined,
+ * per `.claude/rules/reports.md`).
+ *
+ * Resolves to the concrete `*.har` FILE when one exists, falling back to the lane's
+ * `har/` directory. Policy stores HARs as named `*.har` files inside
+ * `test-results/{browser}/har/`; a misconfigured `recordHar.path` (no `.har`
+ * extension) previously made Playwright write the archive to a file literally NAMED
+ * `har`, so `*.har` globs found nothing and this helper returned a path that was
+ * accidentally a file. Returning the real file makes the reference actionable.
+ */
 function harPathForBrowser(browser: string): string | null {
   const b = (browser || "").toLowerCase();
   const lane = b.includes("firefox") ? "firefox" : b.includes("edge") ? "edge" : b.includes("chrom") ? "chrome" : "";
   if (!lane) return null;
-  return join("test-results", lane, "har");
+  const dir = join("test-results", lane, "har");
+  if (existsSync(dir) && statSync(dir).isDirectory()) {
+    const hars = readdirSync(dir)
+      .filter((f) => /\.har$/i.test(f))
+      .map((f) => ({ f, m: statSync(join(dir, f)).mtimeMs }))
+      .sort((a, b2) => b2.m - a.m);
+    if (hars.length) return join(dir, hars[0].f); // newest lane archive
+  }
+  return dir;
 }
 
 function loadTrace(runDir: string, tracePath: string | null): TraceJson | null {

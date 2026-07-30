@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-07-17",
+    "generated": "2026-07-30",
     "totalSuites": 120,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -94,7 +94,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 33,
+      "testCount": 31,
       "estimatedMinutes": 24,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -113,7 +113,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 29,
+      "testCount": 30,
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -152,7 +152,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 38,
+      "testCount": 41,
       "estimatedMinutes": 23,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -194,7 +194,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 29,
+      "testCount": 31,
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -257,7 +257,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 52,
+      "testCount": 53,
       "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -281,7 +281,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 64,
+      "testCount": 71,
       "estimatedMinutes": 37,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -392,7 +392,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 30,
+      "testCount": 32,
       "estimatedMinutes": 21,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -412,7 +412,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 65,
+      "testCount": 70,
       "estimatedMinutes": 40,
       "agent": "qa-backend-expert",
       "tags": [
@@ -482,7 +482,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 41,
+      "testCount": 45,
       "estimatedMinutes": 29,
       "agent": "qa-backend-expert",
       "tags": [
@@ -747,7 +747,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 13,
+      "testCount": 18,
       "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -834,7 +834,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 50,
+      "testCount": 53,
       "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -853,7 +853,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 45,
+      "testCount": 46,
       "estimatedMinutes": 31,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -872,7 +872,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 8,
+      "testCount": 10,
       "estimatedMinutes": 6,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1060,7 +1060,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 33,
+      "testCount": 34,
       "estimatedMinutes": 23,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1080,7 +1080,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 23,
+      "testCount": 30,
       "estimatedMinutes": 16,
       "agent": "qa-testing-expert",
       "tags": [
@@ -1098,7 +1098,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 32,
+      "testCount": 31,
       "estimatedMinutes": 22,
       "agent": "qa-testing-expert",
       "tags": [
@@ -1179,7 +1179,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P0",
-      "testCount": 35,
+      "testCount": 39,
       "estimatedMinutes": 23,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1220,7 +1220,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 19,
+      "testCount": 20,
       "estimatedMinutes": 16,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1240,7 +1240,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 14,
+      "testCount": 16,
       "estimatedMinutes": 12,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1260,7 +1260,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 21,
+      "testCount": 23,
       "estimatedMinutes": 20,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1361,7 +1361,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 6,
+      "testCount": 10,
       "estimatedMinutes": 5,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1589,7 +1589,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 29,
+      "testCount": 31,
       "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1776,7 +1776,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 108,
+      "testCount": 101,
       "estimatedMinutes": 60,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2050,7 +2050,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 83,
+      "testCount": 113,
       "estimatedMinutes": 54,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2070,7 +2070,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 58,
+      "testCount": 76,
       "estimatedMinutes": 40,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2089,7 +2089,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 26,
+      "testCount": 30,
       "estimatedMinutes": 16,
       "agent": "qa-testing-expert",
       "tags": [
@@ -2109,7 +2109,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 19,
+      "testCount": 26,
       "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2225,7 +2225,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 8,
+      "testCount": 10,
       "estimatedMinutes": 12,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2271,7 +2271,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 62,
+      "testCount": 63,
       "estimatedMinutes": 37,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2292,7 +2292,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 50,
+      "testCount": 10,
       "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2534,7 +2534,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P2",
-      "testCount": 14,
+      "testCount": 15,
       "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2578,7 +2578,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 42,
+      "testCount": 48,
       "estimatedMinutes": 84,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2624,7 +2624,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 27,
+      "testCount": 35,
       "estimatedMinutes": 71,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2679,13 +2679,11 @@
         "admin",
         "vc-shell",
         "permissions",
-        "crud",
-        "vcptcore-only"
+        "crud"
       ],
       "requiresModules": [
         "sales-rep"
       ],
-      "env": "vcptcore",
       "customerApplicability": "reference"
     }
   ],

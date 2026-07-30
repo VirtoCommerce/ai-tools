@@ -120,11 +120,38 @@ const PROMOTED_STATUSES = new Set(["Reviewed", "Automated", "Manual", "Semi-Auto
 // PREFIX-NNN, with an optional trailing variant letter (e.g. CFG-GQL-VCST4961-A).
 // Requires at least one digit so plain words are rejected.
 const ID_RE = /^(?=.*\d)[A-Z0-9]+(?:-[A-Z0-9]+)*-(?:\d+[A-Z]?|[A-Z])$/;
-const STEP_TAG_RE = /^\s*(?:\[[A-Z][A-Z0-9:_-]*\b[^\]]*\]|---\s*[A-Z]+\s*---)/;
-const E2E_MARKER_RE = /^---\s*[A-Z]+\s*---$/;
+// A step line may carry an ORDINAL prefix ("1. [NAV] …") — the numbered style used by
+// many older suites — and still be properly tagged. Anchoring the tag to line start
+// made D-001 fire on ~240 correctly-tagged lines across 027+008 alone (262 in 008),
+// which made `--fail-on` unusable on any suite using numbered steps.
+// A SECTION MARKER may carry a ": description" suffix and mixed case
+// ("--- SCREEN: Invite dialog ---"); the old `[A-Z]+`-only form rejected 62 such
+// markers in the same two suites. Both are false positives, not test debt — and
+// rewriting cases to satisfy the regex would be linter-gaming, not a fix.
+const SECTION_MARKER_BODY = /---\s*[A-Za-z][A-Za-z0-9 _-]*(?:\s*:\s*[^\r\n]*?)?\s*---/;
+const STEP_TAG_RE = new RegExp(
+  `^\\s*(?:\\d+\\.\\s*)?(?:\\[[A-Z][A-Z0-9:_-]*\\b[^\\]]*\\]|${SECTION_MARKER_BODY.source})`,
+);
+const E2E_MARKER_RE = new RegExp(`^${SECTION_MARKER_BODY.source}$`);
 const REFERENCE_RE = /(VCST-\d+|REQ-[A-Z0-9-]+|smoke-baseline|https?:\/\/\S+)/i;
 const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+// DV-003 exemption: `.claude/rules/test-data.md` MANDATES the `AGENT-TEST-` prefix for
+// throwaway identities so `/qa-seed-data teardown` can sweep them, and the
+// `…$TS_SUFFIX@` / `…NNN@` forms are run-unique placeholders, not fixed credentials.
+// Flagging the convention the rules require made DV-003 cry wolf on 40 of the 73 lines
+// it fired on — and a rule that flags its own mandated convention trains people to
+// ignore the gate. A genuinely fixed address (e.g. a real user's email) still flags.
+const THROWAWAY_IDENTITY_RE = /(agent-test|TS_SUFFIX|\$\{?\w*SUFFIX)/i;
 const VAGUE_RE = /\b(correctly|properly|as expected|looks good|works fine|works as|displays? properly|successfully)\b/i;
+// A QUOTED span is grounded evidence — a verbatim UI/i18n literal — not a vague predicate.
+// `[DOM] toast reads 'The user has been successfully blocked'` asserts an exact observed
+// string; flagging it T-001 punishes the most precise form of assertion we have. So quoted
+// spans are stripped before the vagueness test (same carve-out GRD-002 makes for a
+// "grounded literal"). Unquoted prose — "saved successfully", "displayed correctly" — still
+// trips T-001. The single-quote arm requires a non-letter on each side so a possessive
+// ("the member's role updated correctly") cannot open a span and mask the real finding.
+const QUOTED_SPAN_RE = /"[^"]*"|(?<![A-Za-z])'[^']*'(?![A-Za-z])/g;
+const stripQuoted = (s: string) => s.replace(QUOTED_SPAN_RE, " ");
 const AMBIGUOUS_VERB_RE = /^\s*\[ACT\][^\n]*\b(check|ensure|validate|verify)\b/i;
 const COMPOUND_RE = /^\s*\[(?:ACT|NAV)\][^\n]*(?:\band\b|\bthen\b|;)/i;
 const MUTATION_HINT_RE = /\b(addItem|removeItem|removeCartItem|createOrder|createQuote|addOrUpdate|updateCart|placeOrder|create[A-Z]\w+|update[A-Z]\w+|delete[A-Z]\w+|place order|add to cart|submit|save|checkout)\b/i;
@@ -264,7 +291,7 @@ function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[]
 
   // --- Dimension 4: Testability ---
   for (const a of assertionLines) {
-    if (VAGUE_RE.test(a)) push("T-001", "High", `vague assertion predicate: "${truncate(a)}"`);
+    if (VAGUE_RE.test(stripQuoted(a))) push("T-001", "High", `vague assertion predicate: "${truncate(a)}"`);
     if (/^\[DOM\]/i.test(a) && !/['"]/.test(a) && !/\b(visible|enabled|disabled|hidden|present|absent|checked)\b/i.test(a))
       push("T-002", "High", `[DOM] assertion lacks element/text specifics: "${truncate(a)}"`);
     if (/^\[MATH\]/i.test(a) && !a.includes("="))
@@ -277,7 +304,7 @@ function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[]
   const scan = `${row.Steps}\n${row.Test_Data}`;
   if (/https?:\/\/(?!\{\{)/i.test(scan)) push("DV-002", "High", "hardcoded URL in Steps/Test_Data (use {{FRONT_URL}}/{{BACK_URL}}/{{ADMIN_URL}})");
   const credScan = lines(row.Steps).filter((l) => /\bfill\b.*(email|password)/i.test(l));
-  for (const l of credScan) if (EMAIL_RE.test(l) && !/\{\{/.test(l))
+  for (const l of credScan) if (EMAIL_RE.test(l) && !/\{\{/.test(l) && !THROWAWAY_IDENTITY_RE.test(l))
     push("DV-003", "Critical", `hardcoded credential literal: "${truncate(l)}"`);
   // DV-013 (bare GUID/32-hex) is intentionally NOT duplicated here: it is the
   // canonical build gate `npx tsx scripts/validate-td-refs.ts`, which carries

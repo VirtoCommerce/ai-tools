@@ -13,7 +13,7 @@
       },
       "locale": "en-US",
       "recordHar": {
-        "path": "./test-results/edge/har",
+        "path": "./test-results/edge/har/session.har",
         "omitContent": true
       }
     }
