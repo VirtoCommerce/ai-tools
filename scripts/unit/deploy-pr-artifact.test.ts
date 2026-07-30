@@ -275,6 +275,38 @@ test("upsertBlobEntry: appends a new entry for a module not yet present", () => 
   assert.equal(blobs.includes("VirtoCommerce.Order_3.50.0-pr-3.zip"), true);
 });
 
+// The sibling to mirror may be the {Id,…,BlobName} shape a reserialize writes — then the line ABOVE
+// its BlobName is `"Id"`, not the entry's opening brace. Reading `sample - 1` therefore copied the
+// FIELD indent onto the new entry's braces, appending it one step deeper than its siblings (valid
+// JSON, but an untidy diff in DevOps's file — seen on vc-deploy-dev#6257 @ vcptcore-qa).
+test("upsertBlobEntry: append mirrors the sibling's BRACE indent, not its field indent", () => {
+  const idShapedSibling = [
+    '{',
+    '  "Sources": [',
+    '    {',
+    '      "Name": "AzureBlob",',
+    '      "Modules": [',
+    '        {',
+    '          "Id": "VirtoCommerce.SeqLog",',
+    '          "BlobName": "VirtoCommerce.SeqLog_3.1000.0-pr-2-9e9c.zip"',
+    '        }',
+    '      ]',
+    '    }',
+    '  ]',
+    '}',
+    '',
+  ].join('\n');
+  const out = mod.upsertBlobEntry(idShapedSibling, "VirtoCommerce.Pricing", "VirtoCommerce.Pricing_3.1005.0-pr-236-8706.zip");
+  assert.ok(out);
+  assert.doesNotThrow(() => JSON.parse(out!));
+  const lines = out!.split('\n');
+  const at = lines.findIndex((l) => l.includes("VirtoCommerce.Pricing_3.1005.0"));
+  assert.ok(at > 0);
+  assert.equal(lines[at - 1], '        {', "opening brace must sit at the sibling's 8-space brace indent");
+  assert.equal(lines[at], '          "BlobName": "VirtoCommerce.Pricing_3.1005.0-pr-236-8706.zip"');
+  assert.equal(lines[at + 1], '        }', "closing brace must sit at the sibling's 8-space brace indent");
+});
+
 test("upsertBlobEntry: no BlobName sample anywhere → null (fall back to reserialize)", () => {
   const noBlob = '{\n  "Sources": []\n}\n';
   assert.equal(mod.upsertBlobEntry(noBlob, "VirtoCommerce.Cart", "x.zip"), null);
@@ -710,4 +742,131 @@ test("editThemeText: no recognisable vc-theme URL → text unchanged, from is nu
   const { text: out, from } = mod.editThemeText(text, "https://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-2.41.0.zip");
   assert.equal(from, null);
   assert.equal(out, text);
+});
+
+// ---- platform image tag (PlatformVersion vs PlatformImageTag are DIFFERENT fields) ------------
+// A vc-platform PR publishes a CONTAINER IMAGE, not a vc3prerelease zip: its body carries
+// `Image tag: ghcr.io/VirtoCommerce/platform:<tag>` and vc-deploy-dev's deploy-backend.yml reads
+// ONLY PlatformImageTag. Writing the full `-pr-…` tag into PlatformVersion too left that field a
+// non-semver string, and resolving a platform PR failed outright as "CI still running".
+
+const PR_TAG = "3.1053.0-pr-3092-2588-vcst-5532-2588d613";
+const PLATFORM_PR_BODY = `## Description\nRestrict admin UI access\n### Artifact URL:\n\nImage tag:\nghcr.io/VirtoCommerce/platform:${PR_TAG}`;
+const platformRef = { owner: "VirtoCommerce", repo: "vc-platform", number: 3092, source: "--pr" };
+
+test("platformTargetFromTag: splits a PR tag into base semver + full image tag", () => {
+  const t = mod.platformTargetFromTag(PR_TAG, "--pr");
+  assert.equal(t.kind, "platform");
+  assert.equal(t.version, "3.1053.0");
+  assert.equal(t.imageTag, PR_TAG);
+});
+
+test("platformTargetFromTag: a plain release tag leaves both fields equal", () => {
+  const t = mod.platformTargetFromTag("3.1051.0", "--platform");
+  assert.equal(t.version, "3.1051.0");
+  assert.equal(t.imageTag, "3.1051.0");
+});
+
+test("platformTargetFromTag: a 4-part version keeps all four segments", () => {
+  assert.equal(mod.platformTargetFromTag("3.1007.22.1-pr-5", "--platform").version, "3.1007.22.1");
+});
+
+test("platformTargetFromTag: an unparseable tag falls back to the tag as the version", () => {
+  const t = mod.platformTargetFromTag("nightly-main", "--platform");
+  assert.equal(t.version, "nightly-main");
+  assert.equal(t.imageTag, "nightly-main");
+});
+
+test("parsePlatformFlag: bare release version → both fields", () => {
+  const t = mod.parsePlatformFlag("3.1051.0", "--platform");
+  assert.equal(t.version, "3.1051.0");
+  assert.equal(t.imageTag, "3.1051.0");
+});
+
+test("parsePlatformFlag: bare PR tag → base semver + tag", () => {
+  const t = mod.parsePlatformFlag(PR_TAG, "--platform");
+  assert.equal(t.version, "3.1053.0");
+  assert.equal(t.imageTag, PR_TAG);
+});
+
+test("parsePlatformFlag: full ghcr.io ref → the tag after the colon", () => {
+  const t = mod.parsePlatformFlag(`ghcr.io/VirtoCommerce/platform:${PR_TAG}`, "--platform");
+  assert.equal(t.version, "3.1053.0");
+  assert.equal(t.imageTag, PR_TAG);
+});
+
+test("parsePlatformFlag: explicit Ver=tag split is honoured verbatim", () => {
+  const t = mod.parsePlatformFlag("3.1052.0=some-custom-tag", "--platform");
+  assert.equal(t.version, "3.1052.0");
+  assert.equal(t.imageTag, "some-custom-tag");
+});
+
+test("artifactFromPrBody: vc-platform PR with only an Image tag resolves a platform target", () => {
+  const r = mod.artifactFromPrBody(platformRef, PLATFORM_PR_BODY, "open");
+  assert.equal(r.target?.kind, "platform");
+  assert.equal(r.target?.version, "3.1053.0");
+  assert.equal(r.target?.imageTag, PR_TAG);
+  assert.match(r.note, /image tag/);
+});
+
+test("artifactFromPrBody: a PR with neither a zip nor an image tag still reports no artifact", () => {
+  const r = mod.artifactFromPrBody(platformRef, "## Description\n### Artifact URL:\n", "open");
+  assert.equal(r.target, undefined);
+  assert.match(r.note, /no vc3prerelease Artifact URL or platform image tag yet/);
+});
+
+test("artifactFromPrBody: a module zip is unaffected by the image-tag fallback", () => {
+  const body = "Artifact URL:\nhttps://vc3prerelease.blob.core.windows.net/packages/VirtoCommerce.Cart_3.101.0-pr-42-ab12.zip";
+  const r = mod.artifactFromPrBody({ owner: "VirtoCommerce", repo: "vc-module-cart", number: 42, source: "--pr" }, body, "open");
+  assert.equal(r.target?.kind, "module");
+  assert.equal(r.target?.id, "VirtoCommerce.Cart");
+  assert.equal(r.target?.version, "3.101.0-pr-42-ab12");
+});
+
+test("artifactFromPrBody: a platform zip PLUS an image tag keeps the zip version, prefers the tag", () => {
+  const body = `Artifact URL:\nhttps://vc3prerelease.blob.core.windows.net/packages/VirtoCommerce.Platform_3.1053.0.zip\nImage tag:\nghcr.io/VirtoCommerce/platform:${PR_TAG}`;
+  const r = mod.artifactFromPrBody(platformRef, body, "open");
+  assert.equal(r.target?.kind, "platform");
+  assert.equal(r.target?.version, "3.1053.0");
+  assert.equal(r.target?.imageTag, PR_TAG);
+});
+
+test("artifactFromPrBody: a theme zip is unaffected by the image-tag fallback", () => {
+  const body = "Artifact URL:\nhttps://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-2.41.0-pr-2280.zip";
+  const r = mod.artifactFromPrBody({ owner: "VirtoCommerce", repo: "vc-frontend", number: 2280, source: "--pr" }, body, "open");
+  assert.equal(r.target?.kind, "theme");
+});
+
+test("applyPlatform: writes the base version and the image tag to their own fields", () => {
+  const json: any = { PlatformVersion: "3.1051.0", PlatformImageTag: "3.1051.0" };
+  mod.applyPlatform(json, "3.1053.0", PR_TAG);
+  assert.equal(json.PlatformVersion, "3.1053.0");
+  assert.equal(json.PlatformImageTag, PR_TAG);
+});
+
+test("bumpPlatformText: writes the base version and the image tag to their own fields", () => {
+  const text = '{\n  "PlatformVersion": "3.1051.0",\n  "PlatformImageTag": "3.1051.0"\n}\n';
+  const out = mod.bumpPlatformText(text, "3.1053.0", PR_TAG);
+  assert.ok(out);
+  const j = JSON.parse(out!);
+  assert.equal(j.PlatformVersion, "3.1053.0");
+  assert.equal(j.PlatformImageTag, PR_TAG);
+});
+
+test("editPackagesText: a platform PR pin is a MINIMAL 2-line edit with the fields split", () => {
+  const orig = JSON.stringify({
+    ManifestVersion: "2.0",
+    PlatformVersion: "3.1051.0",
+    PlatformImage: "ghcr.io/virtocommerce/platform",
+    PlatformImageTag: "3.1051.0",
+    Sources: [{ Name: "AzureBlob", Container: "packages", ServiceUri: "https://vc3prerelease.blob.core.windows.net", Modules: [{ BlobName: "VirtoCommerce.Cart_3.101.0-pr-1.zip" }] }],
+  }, null, 2) + "\n";
+  const platformT = mod.platformTargetFromTag(PR_TAG, "--pr");
+  const { text: out, minimal } = mod.editPackagesText(orig, JSON.parse(orig), [], platformT);
+  assert.equal(minimal, true, "the platform pin must not fall back to a full reserialize");
+  const j = JSON.parse(out);
+  assert.equal(j.PlatformVersion, "3.1053.0");
+  assert.equal(j.PlatformImageTag, PR_TAG);
+  assert.equal(j.PlatformImage, "ghcr.io/virtocommerce/platform", "the image repo must not be touched");
+  assert.equal(mod.countChangedLines(orig, out), 4, "2 lines removed + 2 added");
 });

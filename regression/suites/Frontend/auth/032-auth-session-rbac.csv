@@ -256,14 +256,14 @@
 [API] changePassword mutation errors[] is empty
 [NETWORK] No 5xx on any step","changePassword mutation returns errors[]; succeeded=false; Token-B still returns 200 after password change (VCST-4531 regression — OpenIddict revocation not applied on changePassword); 500 errors","[TEARDOWN] Restore original password via admin API: PUT/PATCH {{BACK_URL}}/api/platform/security/users with new password or via admin panel","VCST-4531","Draft"
 "AUTH-065","[VCST-5028] Org-Scoped Lock — Blocked in Org B Can Still Login to Org A (AC3)","Auth > Session > Org-Scoped Access","Critical","BL-AUTH-003; BL-B2B-001","ECL-2.1; ECL-3.1","[PRE:CLEAR_SESSION]
-A multi-org user who is a member of BOTH TechFlow (ORG-002) and BuildRight (ORG-003) is required. User is locked in TechFlow org via lockOrganizationContact mutation (setup performed in Steps). {{MULTI_ORG_USER_EMAIL}} / {{MULTI_ORG_USER_PASSWORD}} env vars must be set in .env.local.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; user_email={{MULTI_ORG_USER_EMAIL}}; user_password={{MULTI_ORG_USER_PASSWORD}}; techflow_org_id=@td(ORG_TECHFLOW.id)","--- SCREEN: Setup — Lock User in TechFlow via xAPI ---
+Requires a member with REAL OrganizationMembership rows in BOTH TechFlow and BuildRight, because lockOrganizationContact operates on a membership row. Use @td(MULTI_ORG_TF_BR.email) + @td(MULTI_ORG_TF_BR.password) -- NOT the legacy MULTI_ORG_USER env fixture, which has many contact.organizations associations and ZERO membership rows (correct for org-switcher and global-status cases, unusable for per-org lock). User is locked in TechFlow via lockOrganizationContact (setup performed in Steps).","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; user_email=@td(MULTI_ORG_TF_BR.email); user_password=@td(MULTI_ORG_TF_BR.password); techflow_org_id=@td(ORG_TECHFLOW.platform_id)","--- SCREEN: Setup — Lock User in TechFlow via xAPI ---
 [HTTP POST] {{BACK_URL}}/graphql body: mutation { lockOrganizationContact(command: { memberId: ""@td(TECHFLOW_BUYER.platform_id)"" }) { id status } } with TECHFLOW_ADMIN credentials
 [STATUS] 200 — confirm mutation errors[] empty; status field returned before proceeding
 --- SCREEN: Login Attempt to TechFlow (Blocked Org) ---
 [PRE:CLEAR_SESSION]
 [NAV] Navigate to {{FRONT_URL}}/sign-in
-[ACT] Fill [data-test-id=""email-input""] with {{MULTI_ORG_USER_EMAIL}}
-[ACT] Fill [data-test-id=""password-input""] with {{MULTI_ORG_USER_PASSWORD}}
+[ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
+[ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
 [ACT] Click [data-test-id=""login-button""]
 [WAIT] Org-switcher or org selection shown (multi-org user)
 [ACT] Select TechFlow org
@@ -271,8 +271,8 @@ A multi-org user who is a member of BOTH TechFlow (ORG-002) and BuildRight (ORG-
 --- SCREEN: Login to BuildRight (Unblocked Org) ---
 [PRE:CLEAR_SESSION]
 [NAV] Navigate to {{FRONT_URL}}/sign-in
-[ACT] Fill [data-test-id=""email-input""] with {{MULTI_ORG_USER_EMAIL}}
-[ACT] Fill [data-test-id=""password-input""] with {{MULTI_ORG_USER_PASSWORD}}
+[ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
+[ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
 [ACT] Click [data-test-id=""login-button""]
 [WAIT] Org-switcher or org selection shown
 [ACT] Select BuildRight org

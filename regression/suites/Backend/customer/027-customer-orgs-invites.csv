@@ -7,13 +7,48 @@ Contact, Organization, Employee exist",,"1. Open Contact > Dynamic properties > 
 Dynamic properties configured",,"1. Click 'Hide empty values' > Verify empty values hidden
 2. Verify required fields always shown
 3. Verify switcher fields always shown",,,,,"C289520-C289524",
-"CUST-029","Email verification on account creation","Customer > Email Verification","Medium",,,"Admin logged in to Backend and Storefront",,"1. Create account via Security blade > Verify email sent
-2. Create account via Contacts blade > Verify email sent
-3. Create account via Storefront > Verify email sent",,,,,"C278784 C278781 C278785",
-"CUST-030","Email verification on email change","Customer > Email Verification","Medium",,,"Admin logged in to Backend and Storefront
-Account exists",,"1. Change email via Security blade > Verify email sent
-2. Change email via Contacts blade > Verify email sent
-3. Change email via Store > Verify email sent",,,,,"C278786 C278787 C278792",
+"CUST-029","Email verification on account creation","Customer > Email Verification","Medium","BL-AUTH-002","","Admin logged in to Backend and Storefront ({{BACK_URL}}, {{FRONT_URL}}). Store setting **Stores.EmailVerificationEnabled=true** on the target store — this is the flag that gates SENDING the verification email. Stores.EmailVerificationRequired is a DIFFERENT flag that gates BLOCKING sign-in for an unverified user; it is NOT required for the auto-send to fire. On this environment the storefront store has Enabled=true, Required=false (flow = EmailVerificationOptional), and the email is still sent.","back_url={{BACK_URL}}, front_url={{FRONT_URL}}","--- LAYER: Admin SPA - Security blade ---
+[NAV] Navigate to {{BACK_URL}} > Settings > Security > Users
+[ACT] Click 'Create' to open the new user form
+[WAIT] new user form opens
+[ACT] Fill required fields, including a valid email, for the new account
+[SAVE] Click 'Create' to save the new account
+[WAIT] account creation confirmed
+--- LAYER: Admin SPA - Contacts blade ---
+[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ACT] Click 'Add' to open the new contact form
+[WAIT] new contact form opens
+[ACT] Fill required fields (valid email, linked account) for the new contact
+[SAVE] Click 'Create' to save the new contact
+[WAIT] contact creation confirmed
+--- LAYER: Storefront registration ---
+[NAV] {{FRONT_URL}}/sign-up
+[ACT] Fill the registration form with a valid email
+[ACT] Click 'Create Account'
+[WAIT] registration confirmed","[EMAIL] a verification email is sent for account creation via the Security blade, the Contacts blade, and Storefront registration, when Stores.EmailVerificationEnabled=true {OBSERVED} (setting values read live 2026-07-30: storefront store Enabled=true, Required=false)
+[STATE] sending is gated by Stores.EmailVerificationEnabled — NOT by Stores.EmailVerificationRequired. The two form a two-bit flow selector: !Enabled => NoEmailVerification; Enabled && !Required => EmailVerificationOptional; Enabled && Required => EmailVerificationRequired {SPEC} (vc-module-profile-experience-api Extensions/StoreExtensions.cs GetEmailVerificationFlow; RegisterRequestCommandHandler.cs)
+[STATE] with Enabled=true and Required=false the account is created EmailConfirmed=false and sign-in is NOT blocked — blocking additionally requires Required=true {SPEC} (vc-module-x-api ContactSignInValidator.cs)","[API] GET {{BACK_URL}}/api/platform/settings/Stores.EmailVerificationRequired confirms the setting reads true before the three creation sub-flows run
+[ADMIN] Notifications > activity feed shows a sent verification notification for each of the three created accounts","No verification notification appears in the activity feed after account creation, Stores.EmailVerificationRequired reads false when the precondition expected true (setup drift), account creation itself fails before the verification-send step is reached","[SAVE] Delete the three test accounts/contacts created in Steps via Admin (Security/Contacts blades) or REST DELETE {{BACK_URL}}/api/members?ids=<id> for each","C278784 C278781 C278785 | Synced: VCST-5281 (2026-07-30) -- added the Stores.EmailVerificationRequired precondition (previously unstated), tagged Steps, and authored provenance-tagged assertions based on the live-confirmed auto-send mechanism. | Phase-5 verified 2026-07-30: REFUTED the precondition — the auto-send gate is Stores.EmailVerificationEnabled, not Stores.EmailVerificationRequired. Live values on the storefront store: Enabled=true, Required=false.","Draft"
+"CUST-030","Email verification on email change","Customer > Email Verification","Medium","BL-AUTH-002","","Admin logged in to Backend and Storefront ({{BACK_URL}}, {{FRONT_URL}}). Account exists. Store setting **Stores.EmailVerificationEnabled=true** on the target store — this is the flag that gates SENDING the verification email. Stores.EmailVerificationRequired is a DIFFERENT flag that gates BLOCKING sign-in for an unverified user; it is NOT required for the auto-send to fire. On this environment the storefront store has Enabled=true, Required=false (flow = EmailVerificationOptional), and the email is still sent.","back_url={{BACK_URL}}, front_url={{FRONT_URL}}","--- LAYER: Admin SPA - Security blade ---
+[NAV] Navigate to {{BACK_URL}} > Settings > Security > Users
+[ACT] Open an existing user account
+[ACT] Change its 'Email' field to a new valid address
+[SAVE] Click 'Save'
+[WAIT] save confirmation
+--- LAYER: Admin SPA - Contacts blade ---
+[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ACT] Open an existing contact
+[ACT] Change its linked account 'Email' field to a new valid address
+[SAVE] Click 'Save'
+[WAIT] save confirmation
+--- LAYER: Storefront account settings ---
+[NAV] {{FRONT_URL}}/account
+[ACT] Change the 'Email' field to a new valid address
+[ACT] Click 'Save' (the account-settings submit control)
+[WAIT] save confirmation","[EMAIL] a verification email is sent for account change via the Security blade, the Contacts blade, and Storefront account settings, when Stores.EmailVerificationEnabled=true {OBSERVED} (setting values read live 2026-07-30: storefront store Enabled=true, Required=false)
+[STATE] sending is gated by Stores.EmailVerificationEnabled — NOT by Stores.EmailVerificationRequired. The two form a two-bit flow selector: !Enabled => NoEmailVerification; Enabled && !Required => EmailVerificationOptional; Enabled && Required => EmailVerificationRequired {SPEC} (vc-module-profile-experience-api Extensions/StoreExtensions.cs GetEmailVerificationFlow; RegisterRequestCommandHandler.cs)
+[STATE] with Enabled=true and Required=false the account is created EmailConfirmed=false and sign-in is NOT blocked — blocking additionally requires Required=true {SPEC} (vc-module-x-api ContactSignInValidator.cs)","[API] GET {{BACK_URL}}/api/platform/settings/Stores.EmailVerificationRequired confirms the setting reads true before the three change sub-flows run
+[ADMIN] Notifications > activity feed shows a sent verification notification addressed to the NEW email for each of the three change paths","No verification notification appears after the email change, Stores.EmailVerificationRequired reads false when the precondition expected true (setup drift), verification email sent to the OLD address instead of the NEW one","[SAVE] Revert each changed email back to its original value via the same blade/page used to change it, for all three test accounts","C278786 C278787 C278792 | Synced: VCST-5281 (2026-07-30) -- added the Stores.EmailVerificationRequired precondition (previously unstated), tagged Steps, and authored provenance-tagged assertions based on the live-confirmed auto-send-on-change mechanism. | Phase-5 verified 2026-07-30: REFUTED the precondition — the auto-send gate is Stores.EmailVerificationEnabled, not Stores.EmailVerificationRequired. Live values on the storefront store: Enabled=true, Required=false.","Draft"
 "CUST-031","Admin verification toggle and send link","Customer > Email Verification","Medium",,,"Admin logged in to Backend",,"1. Toggle verification via Security blade > Verify
 2. Toggle verification via Contact blade > Verify
 3. Send link via Security blade > Verify
@@ -28,11 +63,20 @@ User_2 without verification permission",,"1. User with permission: Toggle via Se
 4. User without permission: Toggle > Verify restricted
 5. User without permission: Send link > Verify restricted
 6. User without permission: API operations > Verify restricted",,,,,"C278796-C278816",
-"CUST-033","Verification UI design (toggle and resend link)","Customer > Email Verification","Medium",,,"Admin logged in to Backend",,"1. Verify toggle UI on Security blade
-2. Verify toggle UI on Contact blade
-3. Verify resend link title on Security blade
-4. Verify resend link title on Contact blade
-5. Change email but don't save > Verify resend link not shown",,,,,"C278789-C278834 C278825 C278826",
+"CUST-033","Verification UI design (toggle and resend link)","Customer > Email Verification","Medium","new","ECL-2.1","Admin logged in to Backend ({{BACK_URL}}); an existing account with an unverified, saved email exists so a resend-verification action is currently shown for its Security/Contact blade.","back_url={{BACK_URL}}","--- LAYER: Security blade ---
+[NAV] Navigate to {{BACK_URL}} > Settings > Security > Users
+[ACT] Open an existing unverified user account
+[ASSERT] verification toggle control and 'Resend verification link' action are visible on the Security blade
+--- LAYER: Contact blade ---
+[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ACT] Open the same contact's blade
+[ASSERT] verification toggle control and 'Resend verification link' action are visible on the Contact blade
+--- LAYER: Dirty-state defect probe ---
+[ACT] On the Contact blade, change the 'Email' field to a different, unsaved value
+[WAIT] field shows the new unsaved value
+[ACT] Without persisting the change, locate the 'Resend verification link' action again","[DOM] the verification toggle control is visible on both the Security blade and the Contact blade for the unverified account {OBSERVED} (verified live 2026-07-30)
+[DOM] the 'Resend verification link' action is visible on both blades while the account's SAVED email is unverified {OBSERVED} (verified live 2026-07-30)
+[DOM] after changing the Email field to a new, unsaved value without clicking Save, the 'Resend verification link' action is NOT shown -- a resend action must act on the currently-saved, unverified email, not a dirty/unsaved form field {SPEC} (data-integrity correctness rule: a resend action must reference persisted state)","[CONSOLE] no JS errors on either blade during the toggle/resend inspection","'Resend verification link' remains visible after the Email field is changed but not saved (the defect this case exists to catch -- observed present live 2026-07-30), verification toggle or resend action missing entirely from either blade, Contact blade and Security blade disagree on whether the toggle/resend action is shown","[ACT] Navigate away from or cancel the Contact blade without saving the dirty Email draft -- no persisted state was changed by this case","C278789-C278834 C278825 C278826 | Synced: VCST-5281 (2026-07-30) -- tagged Steps, added a dirty-state probe, and asserted the correct (persisted-state-only) resend-link behavior; the platform currently fails this assertion (resend link stays visible after an unsaved email change) -- new defect signal, not yet filed as its own ticket.","Draft"
 "CUST-040","Organization user groups","Customer > Organization Details","Medium",,,"Admin logged in to Backend
 Organization exists",,"1. Open Organization > Verify user groups field
 2. Assign user group
@@ -42,14 +86,25 @@ Organization exists",,"1. Open Organization > Verify user groups field
 3. Read contact > Verify data
 4. Update contact > Verify changes
 5. Delete contact > Verify removed",,,,,"C311901-C311904",
-"CUST-058","Organization About Field","Customer > Organization Management > Profile","Low",,,"Admin logged in to Backend (${BACK_URL}), an existing organization record is available",,"1. Navigate to Customer module > Organizations (or Contacts filtered to organizations)
-2. Open an existing organization record
-3. Locate the About field on the organization profile
-4. Enter a descriptive text about the organization
-5. Save the organization
-6. Reopen the organization and verify the About text is displayed
-7. Edit the About field and verify the update saves correctly",,,,,"C343693",
-"CUST-059","xAPI Contact Query with About Field","Customer > xAPI Integration","Medium",,,"Admin logged in to Backend (${BACK_URL}), a contact with a populated About field exists, xAPI endpoint is accessible",,"1. Open a contact in admin and note the About field value
+"CUST-058","Organization Description and Business Category Fields (corrects 'About' -- Contact-only)","Customer > Organization Management > Profile","Low","","","Admin logged in to Backend ({{BACK_URL}}); an existing organization record is reachable via Contacts grid -> the org row's kebab (three-dot) menu -> ""Manage"". NOTE: clicking the org ROW drills into that org's member list, it does NOT open the detail blade.","back_url={{BACK_URL}}","[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ACT] Filter or switch the Contacts grid to show organization-type members
+[ACT] Open an existing organization record
+[WAIT] Organization detail blade opens
+[ACT] Locate the 'Description' field on the organization profile (NOT 'About' -- that field exists only on the Contact profile, per the Organization schema)
+[ACT] Enter descriptive text into the 'Description' field
+[ACT] Locate the 'Business Category' field
+[ACT] Select or enter a value in the 'Business Category' field
+[SAVE] Click 'Save'
+[WAIT] save confirmation
+[ACT] Close the organization record
+[ACT] Reopen the organization record
+[WAIT] blade reopens showing the saved Description and Business Category values","[BLADE] the Organization detail blade exposes a ""Business field"" short-text input and a ""Description"" textarea — the rendered LABEL is ""Business field"", not ""Business Category"" (the underlying model property is businessCategory) {OBSERVED} (verified live 2026-07-30; a DOM assertion on the literal text ""Business Category"" would fail)
+[BLADE] the Organization detail blade does NOT expose an ""About"" field {OBSERVED} (verified live 2026-07-30 — absence on Organization confirmed; whether ""About"" exists on the Contact blade was NOT verified and is deliberately not asserted here)
+[FORM] the entered Description text persists after Save and after reopening the organization record {SPEC} (standard field-persistence expectation)
+[FORM] the entered Business field value persists after Save and after reopening the organization record {SPEC}
+[NAV] the organization detail blade is reachable via Contacts grid -> org row kebab -> ""Manage"" {OBSERVED} (verified live 2026-07-30)","[API] GET {{BACK_URL}}/api/members/<organizationId> confirms description and businessCategory fields reflect the values just saved
+[CONSOLE] no JS errors on the Organization blade during Description/Business Category edit and save","Save does not persist Description or Business Category (values revert on reopen), an 'About' field appears on the Organization blade (schema regression), the organization record is unreachable from the Contacts grid (navigation dead-end reintroduced), 4xx/5xx on the member save request","[SAVE] Revert the Description and Business Category fields on the organization back to their pre-test values via the same blade","C343693 | Synced: VCST-5281 (2026-07-30) -- corrected 'About' (Contact-only) to Description/Business Category (the actual Organization fields), tagged Steps, and added a reachable navigation path per the live schema check. | Phase-5 verified 2026-07-30: PARTIALLY REFUTED — UI label is ""Business field"" not ""Business Category""; nav path is kebab -> Manage (row-click drills to members); the ""About is Contact-only"" half was unverifiable and is no longer asserted.","Draft"
+"CUST-059","xAPI Contact Query with About Field","Customer > xAPI Integration","Medium",,,"Admin logged in to Backend ({{BACK_URL}}), a contact with a populated About field exists, xAPI endpoint is accessible",,"1. Open a contact in admin and note the About field value
 2. Open the GraphQL xAPI explorer or use a REST client
 3. Execute a contact query by ID or email
 4. Include the about field in the query selection
@@ -79,20 +134,20 @@ Organization exists",,"1. Open Organization > Verify user groups field
 [STATE] Removing from one org does not remove from other org {BL}
 [STATE] The Org-B membership created via multi-org assignment carries an independent Status value (e.g. Invited) distinct from Org-A's Status (e.g. Approved) -- per-org status isolation, not just per-org role isolation {SPEC} (vc-module-customer#312 OrganizationMembership.Status)
 [API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId} returns two independent status values, one per org {SPEC} (checklist items 8/9/10)","[API] GET {{BACK_URL}}/api/members/{contactId} confirms organizations array reflects current memberships","Contact disappears from both orgs on removal from one (global delete bug); contact not showing in org B after assignment; Org-B membership Status is not independent of Org-A's Status (status value bleeds across orgs on the same contact)","Restore original org membership","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15); Synced: VCST-5281 (2026-07-29) — added per-org Status independence assertion for checklist items 8/9/10","Draft"
-"CUST-065","Invite customer from Contacts toolbar — full flow","Customer > Invite Customers","Critical",,,"Admin logged in to Backend (${BACK_URL}), at least one store configured, email service operational",,"1. Navigate to Customer module > Contacts
+"CUST-065","Invite customer from Contacts toolbar — full flow","Customer > Invite Customers","Critical",,,"Admin logged in to Backend ({{BACK_URL}}), at least one store configured, email service operational",,"1. Navigate to Customer module > Contacts
 2. Locate and click 'Invite customers' button in the toolbar
 3. Verify the Invite blade opens with fields: Store (dropdown), Language (dropdown), Organization (dropdown), Role (dropdown), Emails (text input), Message (textarea)
 4. Select a Store from the dropdown (e.g. @td(STORE_PRIMARY.id))
 5. Verify Language auto-populates from store default
-6. Leave Organization empty
+6. Select an Organization from the dropdown -- @td(ORG_TECHFLOW.name) -- because the assertions below require a per-org OrganizationMembership row (BL-B2B-009); leaving Organization empty yields a global contact invite with no membership row, making that assertion unreachable
 7. Verify Role defaults to 'Organization employee'
 8. Enter a valid email address in the Emails field
 9. Click the 'Invite' button
 10. Verify success response in the UI (toast or confirmation message)
 11. Check network request: POST /api/members/customers/invite with correct payload","[DOM] a success confirmation (toast or inline text) is visible {OBSERVED}
 [STATE] the resulting OrganizationMembership row for the invited email has Status = ""Invited"" {SPEC} (vc-module-customer#312 ModuleConstants.MembershipStatuses; checklist item 1)
-[NETWORK] POST /api/members/customers/invite returns 2xx with a correct payload {BL} (BL-B2B-009)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {organizationId: default store org} confirms a membership row exists for the invited email with status = ""Invited"" (BL-B2B-009)","Invite reports success but no membership row is created; membership row created with status other than ""Invited"" (e.g. blank/null, pre-dating this PR's Status column); 500 on invite submission","[API] DELETE the created membership via /api/customer/organization-memberships?ids=<id> found by searching for the invited email","Synced: VCST-5281 (2026-07-29) — filled Assertions/Cross_Layer_Checks/Failure_Signals/Cleanup, added exact-status assertion for checklist item 1","Draft"
-"CUST-066","Invite customer from Organization context — org pre-filled","Customer > Invite Customers","Critical",,,"Admin logged in to Backend (${BACK_URL}), organization exists with known name",,"1. Navigate to Customer module > Contacts
+[NETWORK] POST /api/members/customers/invite returns 2xx with a correct payload {BL} (BL-B2B-009)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {organizationId: default store org} confirms a membership row exists for the invited email with status = ""Invited"" (BL-B2B-009)","Invite reports success but no membership row is created; membership row created with status other than ""Invited"" (e.g. blank/null, pre-dating this PR's Status column); 500 on invite submission","[API] DELETE the created membership via /api/customer/organization-memberships?ids=<id> found by searching for the invited email","Synced: VCST-5281 (2026-07-29) — filled Assertions/Cross_Layer_Checks/Failure_Signals/Cleanup, added exact-status assertion for checklist item 1 | Updated 2026-07-30 by /qa-review-tests 027 --fix: TEST_STEPS_DEFECT — step 6 left Organization empty while the assertions require an org-scoped OrganizationMembership row. BL-B2B-009 makes the org path the intent, so step 6 now selects an organization. (A no-org invite is a separate scenario worth its own case.)","Draft"
+"CUST-066","Invite customer from Organization context — org pre-filled","Customer > Invite Customers","Critical",,,"Admin logged in to Backend ({{BACK_URL}}), organization exists with known name",,"1. Navigate to Customer module > Contacts
 2. Open an existing Organization detail blade
 3. Locate and click 'Invite customers' button in the organization toolbar
 4. Verify the Invite blade opens with Organization field pre-filled with current organization name
@@ -104,50 +159,66 @@ Organization exists",,"1. Open Organization > Verify user groups field
 10. After invite is accepted, verify the new user is linked to the organization","[DOM] a success confirmation (toast or inline text) is visible {OBSERVED}
 [STATE] the resulting OrganizationMembership row for the invited email has Status = ""Invited"", scoped to the organization the invite blade was opened from {SPEC} (vc-module-customer#312; checklist item 1)
 [STATE] after acceptance, the new user is linked to that organization only, not any other org {BL} (BL-B2B-009)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {organizationId: the pre-filled org's id} confirms a membership row exists with status = ""Invited"" for the invited email (BL-B2B-009)","Invite reports success but no membership row is created under the pre-filled organizationId; membership created under the wrong/default org instead of the one the blade was opened from; membership status is not ""Invited""","[API] DELETE the created membership via /api/customer/organization-memberships?ids=<id> found by searching the invited email","Synced: VCST-5281 (2026-07-29) — filled Assertions/Cross_Layer_Checks/Failure_Signals/Cleanup, added exact-status + org-scope assertion for checklist item 1","Draft"
-"CUST-067","Invite form validation — required fields","Customer > Invite Customers","Critical",,,"Admin logged in to Backend (${BACK_URL})",,"1. Navigate to Customer module > Contacts > Click 'Invite customers'
+"CUST-067","Invite form validation — required fields","Customer > Invite Customers","Critical",,,"Admin logged in to Backend ({{BACK_URL}})",,"1. Navigate to Customer module > Contacts > Click 'Invite customers'
 2. Leave all fields empty > Verify 'Invite' button is disabled or clicking it shows validation errors
 3. Select a Store but leave Emails empty > Verify Invite button remains disabled or shows email required error
 4. Clear Store, enter an email address > Verify Invite button remains disabled or shows store required error
 5. Select Store AND enter email > Verify Invite button becomes enabled
 6. Clear the email field again > Verify button disables
-7. Enter only whitespace in email field > Verify validation rejects it",,,,,"",
-"CUST-068","Invite API — valid request","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained, store and organization exist",,"1. Send POST /api/members/customers/invite with valid payload:
-   { ""storeId"": ""${STORE_ID}"", ""emails"": [""testinvite@example.com""], ""cultureName"": ""en-US"", ""roleId"": ""org-employee"", ""message"": ""Welcome"" }
+7. Enter only whitespace in email field > Verify validation rejects it",,,,,,
+"CUST-068","Invite API — valid request","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend ({{BACK_URL}}), valid OAuth2 token obtained, store and organization exist",,"1. Send POST /api/members/customers/invite with valid payload:
+   { ""storeId"": ""{{STORE_ID}}"", ""emails"": [""testinvite@example.com""], ""cultureName"": ""en-US"", ""roleId"": ""org-employee"", ""message"": ""Welcome"" }
 2. Verify HTTP 200 response
 3. Verify response body contains succeeded:true
 4. Verify response includes per-email result details
-5. Send same request again with a different email to confirm repeatability",,,,,"",
-"CUST-069","Invite API — empty body","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained",,"1. Send POST /api/members/customers/invite with empty body: {}
+5. Send same request again with a different email to confirm repeatability",,,,,,
+"CUST-069","Invite API — empty body","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend ({{BACK_URL}}), valid OAuth2 token obtained",,"1. Send POST /api/members/customers/invite with empty body: {}
 2. Verify response status code (expected: 200 with succeeded:false, or 400)
 3. Verify response contains error code or validation message
 4. Send POST with null body
 5. Verify response contains error information
 6. Send POST with body: { ""emails"": [] } (empty array)
-7. Verify response indicates no emails provided",,,,,"",
-"CUST-070","Invite API — invalid email format","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained",,"1. Send POST /api/members/customers/invite with payload: { ""storeId"": ""${STORE_ID}"", ""emails"": [""not-an-email""] }
+7. Verify response indicates no emails provided",,,,,,
+"CUST-070","Invite API — invalid email format","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend ({{BACK_URL}}), valid OAuth2 token obtained",,"1. Send POST /api/members/customers/invite with payload: { ""storeId"": ""{{STORE_ID}}"", ""emails"": [""not-an-email""] }
 2. Verify response indicates email validation failure
 3. Send with emails: [""@missing-local.com""]
 4. Verify validation failure
 5. Send with emails: [""spaces in@email.com""]
 6. Verify validation failure
 7. Send with emails: [""valid@test.com"", ""invalid""] (mixed valid and invalid)
-8. Verify per-email validation results",,,,,"",
-"CUST-071","Invite API — already registered email","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained, a user account already exists with known email",,"1. Identify an existing registered user email from the system
-2. Send POST /api/members/customers/invite with payload: { ""storeId"": ""${STORE_ID}"", ""emails"": [""existing-user@example.com""] }
+8. Verify per-email validation results",,,,,,
+"CUST-071","Invite API — already registered email","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend ({{BACK_URL}}), valid OAuth2 token obtained, a user account already exists with known email",,"1. Identify an existing registered user email from the system
+2. Send POST /api/members/customers/invite with payload: { ""storeId"": ""{{STORE_ID}}"", ""emails"": [""existing-user@example.com""] }
 3. Verify response indicates the email is already registered
 4. Verify the response contains succeeded:false or a per-email error for the duplicate
 5. Verify the existing user account is NOT modified or duplicated
 6. Send invite with mix of new and existing emails
-7. Verify per-email results correctly distinguish new vs existing",,,,,"",
-"CUST-072","Invite RBAC — permission required","Customer > Invite Customers > Permissions","Critical",,,"Admin logged in to Backend (${BACK_URL}), two test users: User_Admin with full customer permissions, User_Limited with only customer:read and customer:access (no customer:create)",,"1. Login as User_Admin > Navigate to Contacts > Verify 'Invite customers' button is visible
-2. Click 'Invite customers' > Verify blade opens and invite can be submitted
-3. Logout > Login as User_Limited (customer:read + customer:access only)
-4. Navigate to Contacts > Verify 'Invite customers' button is hidden or disabled
-5. Attempt direct API call as User_Limited: POST /api/members/customers/invite
-6. Verify API returns HTTP 403 Forbidden or 401 Unauthorized
-7. Login as Admin > Grant customer:create to User_Limited role
-8. Login as User_Limited > Verify 'Invite customers' button now appears",,,,,"",
-"CUST-073","Invite with all 3 roles","Customer > Invite Customers > Roles","High",,,"Admin logged in to Backend (${BACK_URL}), store configured, 3 roles available: Organization employee, Organization maintainer, Purchasing agent",,"1. Navigate to Contacts > Click 'Invite customers'
+7. Verify per-email results correctly distinguish new vs existing",,,,,,
+"CUST-072","Invite RBAC — permission required","Customer > Invite Customers > Permissions","Critical","BL-AUTH-005","","Admin logged in to Backend ({{BACK_URL}}), two test users: User_Admin with full customer permissions (including customer:invite), User_Limited with only customer:read and customer:access (no customer:invite)","back_url={{BACK_URL}}","[PRE:CLEAR_SESSION]
+[AUTH] Sign in as User_Admin
+[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ASSERT] 'Invite customers' button is visible in the toolbar
+[ACT] Click 'Invite customers'
+[WAIT] Invite blade opens
+[PRE:CLEAR_SESSION]
+[AUTH] Sign in as User_Limited (customer:read + customer:access only -- no customer:invite)
+[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ASSERT] 'Invite customers' button is hidden or disabled in the toolbar
+[HTTP POST] {{BACK_URL}}/api/members/customers/invite as User_Limited with a minimal payload
+[WAIT] response received
+[PRE:CLEAR_SESSION]
+[AUTH] Sign in as Admin
+[ACT] Grant the customer:invite permission to User_Limited's role
+[SAVE] Save the role
+[PRE:CLEAR_SESSION]
+[AUTH] Sign in as User_Limited (now holding customer:invite)
+[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ASSERT] 'Invite customers' button now appears in the toolbar","[DOM] 'Invite customers' button is visible for User_Admin, who holds customer:invite {SPEC} (BL-AUTH-005 -- a user without the required permission must not see the corresponding action button)
+[DOM] 'Invite customers' button is hidden or disabled for User_Limited before the permission grant, because the gate is customer:invite and User_Limited holds neither customer:invite nor customer:create {SPEC} (vc-module-customer Scripts/blades/member-list.js:219-239 — toolbar command declares permission: ""customer:invite""; Controllers/Api/CustomerModuleController.cs:341-348 — [Authorize(Permissions.Invite)] on POST members/customers/invite; ModuleConstants.cs:13-22 — Invite = ""customer:invite"". customer:create appears nowhere in the invite path)
+[STATUS] direct API call POST /api/members/customers/invite as User_Limited (lacking customer:invite) returns 403 Forbidden {SPEC} (BL-AUTH-005 -- API calls without the required permission must return 403)
+[DOM] 'Invite customers' button appears for User_Limited once customer:invite (not customer:create) is granted to their role {OBSERVED} (verified live 2026-07-30)","[API] the User_Limited role's permission set before and after the grant step confirms customer:invite is the permission added, matching the button-visibility change
+[CONSOLE] no JS errors during the button-visibility checks","'Invite customers' button visible to User_Limited before any grant (permission gate bypassed), API call as User_Limited returns 200/2xx instead of 403, granting customer:create instead of customer:invite makes the button appear (would contradict this case's corrected gate), 401 returned instead of 403 for a permission (not authentication) failure","[AUTH admin] Revoke the customer:invite permission from User_Limited's role, restoring it to its original (customer:read + customer:access only) state","VCST-5281 | Updated 2026-07-30 -- corrected the RBAC gate from customer:create to customer:invite, tagged Steps, and authored provenance-tagged assertions. | Phase-5 verified 2026-07-30: Verdict CONFIRMED but provenance corrected {OBSERVED} -> {SPEC}: the two-user RBAC check needs a role mutation and was NOT performed live; the gate was established from source, so it must not ship as a live observation.","Draft"
+"CUST-073","Invite with all 3 roles","Customer > Invite Customers > Roles","High",,,"Admin logged in to Backend ({{BACK_URL}}), store configured, 3 roles available: Organization employee, Organization maintainer, Purchasing agent",,"1. Navigate to Contacts > Click 'Invite customers'
 2. Select Store, enter email_1@test.com
 3. Select role 'Organization employee' from dropdown > Click Invite
 4. Verify API request contains roleId for Organization employee
@@ -155,8 +226,8 @@ Organization exists",,"1. Open Organization > Verify user groups field
 6. Verify API request contains roleId for Organization maintainer
 7. Repeat: enter email_3@test.com, select 'Purchasing agent' > Invite
 8. Verify API request contains roleId for Purchasing agent
-9. Verify all 3 invitations succeeded",,,,,"",
-"CUST-074","Invite multiple emails in single request","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), store configured",,"1. Navigate to Contacts > Click 'Invite customers'
+9. Verify all 3 invitations succeeded",,,,,,
+"CUST-074","Invite multiple emails in single request","Customer > Invite Customers","High",,,"Admin logged in to Backend ({{BACK_URL}}), store configured",,"1. Navigate to Contacts > Click 'Invite customers'
 2. Select Store and Role
 3. Enter 3 email addresses: user1@test.com, user2@test.com, user3@test.com
 4. Click Invite
@@ -164,30 +235,39 @@ Organization exists",,"1. Open Organization > Verify user groups field
 6. Verify response contains per-email success/failure status
 7. Enter 1 valid and 1 invalid email > Submit
 8. Verify per-email results: valid succeeds, invalid fails
-9. Test with duplicate emails in the same request",,,,,"",
-"CUST-075","Invite from Store context — store pre-filled","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), at least one store exists",,"1. Navigate to More > Stores
+9. Test with duplicate emails in the same request",,,,,,
+"CUST-075","Invite from Store context — store pre-filled","Customer > Invite Customers","High",,,"Admin logged in to Backend ({{BACK_URL}}), at least one store exists",,"1. Navigate to More > Stores
 2. Open a Store detail blade (e.g. @td(STORE_PRIMARY.id))
 3. Locate and click 'Invite customers' button in the store toolbar
 4. Verify the Invite blade opens with Store field pre-filled with the current store
 5. Verify the Store field is read-only or pre-selected
 6. Verify Language auto-populates from this store's default language
 7. Enter an email address and click Invite
-8. Verify API request storeId matches the pre-filled store",,,,,"",
-"CUST-076","Invite roles API — GET available roles","Customer > Invite Customers > API","High",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained",,"1. Send GET /api/members/customers/invite/roles
-2. Verify HTTP 200 response
-3. Verify response is a JSON array with exactly 3 role objects
-4. Verify each role has id and name fields
-5. Verify role names: 'Organization employee', 'Organization maintainer', 'Purchasing agent'
-6. Verify role IDs are non-empty strings
-7. Send request without auth token > Verify 401 Unauthorized",,,,,"",
-"CUST-077","GraphQL inviteUser mutation","Customer > Invite Customers > xAPI","High",,,"Admin logged in to Backend (${BACK_URL}), GraphQL xAPI endpoint accessible at ${BACK_URL}/ui/graphiql, store and organization exist",,"1. Open GraphiQL at ${BACK_URL}/ui/graphiql
-2. Execute inviteUser mutation:
-   mutation { inviteUser(command: { storeId: ""${STORE_ID}"", emails: [""gqltest@example.com""], cultureName: ""en-US"", roleId: ""org-employee"", organizationId: ""test-org-id"", message: ""GraphQL invite test"" }) { succeeded errors { code description } } }
-3. Verify response: { data: { inviteUser: { succeeded: true } } }
-4. Execute with invalid storeId > Verify succeeded:false with error
-5. Execute with empty emails array > Verify error response
-6. Verify inviteUser mutation appears in schema introspection with InputInviteUserType",,,,,"",
-"CUST-078","Invite with custom message","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), store configured",,"1. Navigate to Contacts > Click 'Invite customers'
+8. Verify API request storeId matches the pre-filled store",,,,,,
+"CUST-076","Invite roles API — GET available roles","Customer > Invite Customers > API","High","","","Admin logged in to Backend ({{BACK_URL}}), valid OAuth2 token obtained","back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token -> save admin bearer token
+[HTTP GET] {{BACK_URL}}/api/members/customers/invite/roles with Authorization: Bearer <admin token>
+[WAIT] response received
+[HTTP GET] {{BACK_URL}}/api/members/customers/invite/roles WITHOUT an Authorization header
+[WAIT] response received","[STATUS label=authenticated_get] 200 {SPEC} (a valid authenticated GET must succeed)
+[SCHEMA label=authenticated_get] response is a PAGED OBJECT with totalCount = 3 and a results[] array of 3 role objects, each carrying id, name AND description — it is NOT a bare JSON array {OBSERVED} (verified live 2026-07-30)
+[BODY label=authenticated_get] results[] role names are 'Organization employee', 'Organization maintainer', 'Purchasing agent' and role ids are non-empty strings {SPEC}
+[STATUS label=unauthenticated_get] the platform redirects the unauthenticated caller to the login page (HTTP 302), NOT 401 {OBSERVED} (verified live 2026-07-30, same platform behavior confirmed on CUST-087 -- this platform never returns 401 for an unauthenticated caller, it redirects instead)
+[STATUS label=unauthenticated_get] the unauthenticated response is NOT 2xx -- access IS denied {SPEC} (the endpoint must never serve role data to an unauthenticated caller)","[API] no role data is returned to the unauthenticated caller -- only the authenticated response contains the 3-role payload","unauthenticated GET returns 200 with role data (P0 auth-bypass defect), unauthenticated GET returns 401 instead of the platform's actual 302 redirect (assertion mismatch -- same class of defect this case was updated to avoid), authenticated GET returns fewer or more than 3 roles, 500 on either request","none -- read-only","VCST-5281 | Updated 2026-07-30 -- corrected the unauthenticated-request assertion from 401 to the platform's actual 302 login redirect, mirroring the CUST-087 fix; tagged Steps and authored provenance-tagged assertions. | Phase-5 verified 2026-07-30: REFUTED the schema assertion — GET /api/members/customers/invite/roles returns {totalCount, results[]} with a description field per role, not a bare array. The unauthenticated-302 half was CONFIRMED live.","Draft"
+"CUST-077","GraphQL inviteUser mutation","Customer > Invite Customers > xAPI","High","BL-B2B-009",,"Admin logged in to Backend ({{BACK_URL}}) for token acquisition. GraphQL xAPI endpoint accessible. Organization @td(ORG_TECHFLOW.name) exists. Invite target AGENT-TEST-cust077@yopmail.com is fresh per run, removed in Cleanup.","back_url={{BACK_URL}}; store_id={{STORE_ID}}; org_id=@td(ORG_TECHFLOW.platform_id); invite_email=AGENT-TEST-cust077@yopmail.com","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP happy_path]
+  mutation { inviteUser(command: { storeId: ""{{STORE_ID}}"", organizationId: ""@td(ORG_TECHFLOW.platform_id)"", emails: [""AGENT-TEST-cust077@yopmail.com""], roleIds: [""org-employee""], message: ""GraphQL invite test"" }) { succeeded errors { code description } } }
+[GQL-EXEC happy_path]
+[GQL-OP invalid_store]
+  mutation { inviteUser(command: { storeId: ""AGENT-TEST-bogus-store"", emails: [""AGENT-TEST-cust077-badstore@yopmail.com""] }) { succeeded errors { code description } } }
+[GQL-EXEC invalid_store]
+[GQL-OP empty_emails]
+  mutation { inviteUser(command: { storeId: ""{{STORE_ID}}"", emails: [] }) { succeeded errors { code description } } }
+[GQL-EXEC empty_emails]","[DATA label=happy_path] succeeded = true, errors[] empty {OBSERVED} (verified live 2026-07-30 against the corrected command shape)
+[ERRORS label=happy_path] errors[] is empty {SPEC} (BL-B2B-009 -- the mutation itself must not error when given a valid command)
+[DATA label=happy_path] the command sent contains NO cultureName field and roleIds as a plural array ([""org-employee""]), NOT a singular roleId field -- InputInviteUserType has no cultureName and roles are roleIds: [String!] {SPEC} (graphql-schema.md InputInviteUserType: storeId, organizationId, urlSuffix, emails, message, roleIds, customerOrderId -- verified live 2026-07-30 against both the live schema and /virtocommerce/vc-docs)
+[ERRORS label=invalid_store] errors[] is non-empty OR succeeded=false for an invalid storeId {SPEC}
+[DATA label=empty_emails] succeeded=false OR errors[] non-empty for an empty emails array {SPEC} (emails is a required non-empty list per the schema)","[ROUNDTRIP label=happy_path] POST {{BACK_URL}}/api/customer/organization-memberships/search body {organizationId: @td(ORG_TECHFLOW.platform_id)} confirms a membership row exists for AGENT-TEST-cust077@yopmail.com with status Invited (BL-B2B-009)","the mutation is sent with a cultureName field (schema mismatch -- InputInviteUserType has no such field), the mutation is sent with a singular roleId field instead of roleIds[] (same class of schema mismatch), happy_path errors[] non-empty, invalid_store or empty_emails silently returns succeeded=true","[AUTH role=ADMIN_DEFAULT] POST {{BACK_URL}}/api/customer/organization-memberships/search to find the membership created for AGENT-TEST-cust077@yopmail.com -> DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=<id>; DELETE {{BACK_URL}}/api/members?ids=<contact id if one was created>","VCST-5281 | Updated 2026-07-30 -- corrected InputInviteUserType shape (dropped nonexistent cultureName, roleId -> roleIds[], removed the hardcoded 'test-org-id' literal) per live schema + /virtocommerce/vc-docs; migrated to runner-native GraphQL format on touch per test-case-template.md.","Draft"
+"CUST-078","Invite with custom message","Customer > Invite Customers","High",,,"Admin logged in to Backend ({{BACK_URL}}), store configured",,"1. Navigate to Contacts > Click 'Invite customers'
 2. Select Store and enter email
 3. Locate the Message textarea field
 4. Enter a custom message: 'Welcome to our B2B platform! Your account is ready.'
@@ -195,16 +275,16 @@ Organization exists",,"1. Open Organization > Verify user groups field
 6. Monitor network request: verify message field is included in the POST payload
 7. Verify API response is succeeded:true
 8. Repeat without message (leave textarea empty) > Verify invite still succeeds
-9. Enter a very long message (500+ characters) > Verify behavior",,,,,"",
-"CUST-079","Invite language selection","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), store configured with multiple languages",,"1. Navigate to Contacts > Click 'Invite customers'
+9. Enter a very long message (500+ characters) > Verify behavior",,,,,,
+"CUST-079","Invite language selection","Customer > Invite Customers","High",,,"Admin logged in to Backend ({{BACK_URL}}), store configured with multiple languages",,"1. Navigate to Contacts > Click 'Invite customers'
 2. Select a Store > Verify Language dropdown auto-populates with store default language
 3. Open Language dropdown > Verify available options (up to 14: EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU, and store default)
 4. Select 'de-DE' (German)
 5. Enter email and click Invite
 6. Monitor API request: verify cultureName is 'de-DE'
 7. Change store > Verify language resets to new store default
-8. Select 'ja-JP' (Japanese) > Invite > Verify cultureName is 'ja-JP'",,,,,"",
-"CUST-080","Invite notification template rendering","Customer > Invite Customers > Notifications","High",,,"Admin logged in to Backend (${BACK_URL}), notification service operational, store configured",,"1. Send an invite via POST /api/members/customers/invite with valid payload including organizationId
+8. Select 'ja-JP' (Japanese) > Invite > Verify cultureName is 'ja-JP'",,,,,,
+"CUST-080","Invite notification template rendering","Customer > Invite Customers > Notifications","High",,,"Admin logged in to Backend ({{BACK_URL}}), notification service operational, store configured",,"1. Send an invite via POST /api/members/customers/invite with valid payload including organizationId
 2. Navigate to More > Notifications > Notification activity feed (or check notification log)
 3. Search for the most recent notification sent to the invited email
 4. Verify notification type is 'OrganizationInviteNewUserEmailNotification' (new-user + org specified) or 'OrganizationInviteExistingUserEmailNotification' (existing user + org specified) — the retired 'Signup invite notification (with organization)' label no longer applies
@@ -215,7 +295,7 @@ Organization exists",,"1. Open Organization > Verify user groups field
 [BODY] notification type for an EXISTING user invited to a 2nd org is OrganizationInviteExistingUserEmailNotification {SPEC} (vc-module-customer#312; see CUST-090 for the urlSuffix defect on this exact path)
 [BODY] notification type for an invite WITHOUT an organizationId is CustomerInviteNewUserEmailNotification {SPEC} (vc-module-customer#312)
 [BODY] all three types are registered and active with exactly 1 global template each and no languageCode -- English-only fallback applies regardless of the recipient's culture {OBSERVED} (2026-07-29 live baseline, testing-checklist.md)",,"notification type is still the retired RegistrationInvitationEmailNotification / RegistrationInvitationCustomerEmailNotification name (type-swap not deployed or store still has a stale customization pointed at the old type); invite URL not populated or not clickable","none — read-only notification/template inspection, no state mutated by this case's own verification steps (the invite sent in Steps is a normal test invite, not swept here)","Synced: VCST-5281 (2026-07-29) — replaced retired notification-type names (RegistrationInvitationEmailNotification/RegistrationInvitationCustomerEmailNotification) with the new OrganizationInviteNewUserEmailNotification/OrganizationInviteExistingUserEmailNotification/CustomerInviteNewUserEmailNotification per vc-module-customer#312","Draft"
-"CUST-081","Invite notification template content","Customer > Invite Customers > Notifications","Medium",,,"Admin logged in to Backend (${BACK_URL})",,"1. Navigate to More > Notifications > Notification templates
+"CUST-081","Invite notification template content","Customer > Invite Customers > Notifications","Medium",,,"Admin logged in to Backend ({{BACK_URL}})",,"1. Navigate to More > Notifications > Notification templates
 2. Search for the 'CustomerInviteNewUserEmailNotification' template (retired label was 'Signup invite notification (customer)')
 3. Open template > Verify subject line, body content, and template variables: {{ message }}, {{ invite_url }}
 4. Search for the 'OrganizationInviteNewUserEmailNotification' and 'OrganizationInviteExistingUserEmailNotification' templates (retired label was 'Signup invite notification (with organization)')
@@ -225,28 +305,28 @@ Organization exists",,"1. Open Organization > Verify user groups field
 [BLADE] OrganizationInviteNewUserEmailNotification and OrganizationInviteExistingUserEmailNotification templates exist and include organization-specific variables (e.g. {{ organization_name }}) in addition to the base variables {SPEC} (vc-module-customer#312)
 [BLADE] each of the 3 new types has exactly 1 global template with NO languageCode set -- a non-English recipient falls back to the English body {OBSERVED} (2026-07-29 live baseline)
 [BLADE] store-scoped customizations that previously targeted the retired RegistrationInvitationEmailNotification / RegistrationInvitationCustomerEmailNotification types no longer apply to invite emails sent under the new types {SPEC} (vc-module-customer#312 notification-type registration)",,"template search for the old retired names still returns results as the active template (type-swap not deployed); {{ organization_name }} or {{ message }} rendered unescaped/raw in the template preview (see PR review finding C — Liquid injection risk, tracked separately in the notifications suite)","none — read-only notification/template inspection, no state mutated by this case's own verification steps (the invite sent in Steps is a normal test invite, not swept here)","Synced: VCST-5281 (2026-07-29) — replaced retired notification-type names per vc-module-customer#312; noted English-only fallback and PR finding C (unescaped Liquid) as related, tracked in Backend/notifications/057-*.csv","Draft"
-"CUST-082","Invite without organization — correct template used","Customer > Invite Customers > Notifications","Medium",,,"Admin logged in to Backend (${BACK_URL}), store configured, notification log accessible",,"1. Navigate to Contacts > Click 'Invite customers'
+"CUST-082","Invite without organization — correct template used","Customer > Invite Customers > Notifications","Medium",,,"Admin logged in to Backend ({{BACK_URL}}), store configured, notification log accessible",,"1. Navigate to Contacts > Click 'Invite customers'
 2. Select Store, enter email, leave Organization field empty
 3. Click Invite > Verify success
 4. Check notification log or API: verify the notification used 'Signup invite notification (customer)' template (NOT the 'with organization' template)
 5. Now send another invite WITH an Organization selected
 6. Verify notification used 'Signup invite notification (with organization)' template
-7. Compare the two notification bodies to confirm different templates were applied",,,,,"",
-"CUST-083","Invite store dropdown options","Customer > Invite Customers > UI","Medium",,,"Admin logged in to Backend (${BACK_URL}), multiple stores configured in the system",,"1. Navigate to Customer module > Contacts > Click 'Invite customers'
+7. Compare the two notification bodies to confirm different templates were applied",,,,,,
+"CUST-083","Invite store dropdown options","Customer > Invite Customers > UI","Medium",,,"Admin logged in to Backend ({{BACK_URL}}), multiple stores configured in the system",,"1. Navigate to Customer module > Contacts > Click 'Invite customers'
 2. Click on the Store dropdown field
 3. Verify all configured stores appear in the dropdown list
 4. Verify store names are readable and correctly displayed
 5. Select each store one by one > Verify Language updates accordingly
 6. Navigate to More > Stores > Count the active stores
-7. Compare active store count with dropdown options count",,,,,"",
-"CUST-084","GraphQL inviteUser with customerOrderId","Customer > Invite Customers > xAPI","Medium",,,"Admin logged in to Backend (${BACK_URL}), GraphQL xAPI endpoint accessible, an existing order ID available, store configured",,"1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+7. Compare active store count with dropdown options count",,,,,,
+"CUST-084","GraphQL inviteUser with customerOrderId","Customer > Invite Customers > xAPI","Medium",,,"Admin logged in to Backend ({{BACK_URL}}), GraphQL xAPI endpoint accessible, an existing order ID available, store configured",,"1. Open GraphiQL at {{BACK_URL}}/ui/graphiql
 2. Introspect InputInviteUserType > Verify customerOrderId field exists in the schema
 3. Execute inviteUser mutation with customerOrderId:
-   mutation { inviteUser(command: { storeId: ""${STORE_ID}"", emails: [""orderinvite@example.com""], cultureName: ""en-US"", customerOrderId: ""existing-order-id"" }) { succeeded errors { code description } } }
+   mutation { inviteUser(command: { storeId: ""{{STORE_ID}}"", emails: [""orderinvite@example.com""], cultureName: ""en-US"", customerOrderId: ""existing-order-id"" }) { succeeded errors { code description } } }
 4. Verify response succeeded:true
 5. Verify the invited user is associated with the specified order (check via order API or admin)
 6. Execute with invalid customerOrderId > Verify error handling
-7. Note: customerOrderId field is available in GraphQL but NOT exposed in the Admin UI Invite blade",,,,,"",
+7. Note: customerOrderId field is available in GraphQL but NOT exposed in the Admin UI Invite blade",,,,,,
 "CUST-085","Organization Memberships Widget — View Per-Org Roles (VCST-5028)","Customer > Organization Memberships","High","BL-B2B-005",,"Admin logged in to Backend ({{BACK_URL}}); dedicated cross-org contact @td(MULTI_ORG_TF_BR.email) is seeded with DISTINCT roles in TechFlow (org-maintainer) and BuildRight (org-employee)","back_url={{BACK_URL}},contact_email=@td(MULTI_ORG_TF_BR.email)","[NAV] Navigate to Customer module > Contacts at {{BACK_URL}}
 [ACT] Search for contact @td(MULTI_ORG_TF_BR.email)
 [ACT] Open the contact blade
@@ -257,7 +337,7 @@ Organization exists",,"1. Open Organization > Verify user groups field
 [ASSERT] Verify roles differ per org (AC1 oracle: TechFlow=org-maintainer, BuildRight=org-employee)","[BLADE] 'Organization memberships' widget visible on contact blade (separate from 'Member of company(ies)' legacy field) {BL}
 [STATE] Each org membership row shows the org-specific role (BL-B2B-005) {BL}
 [STATE] Roles differ per-org: TechFlow=Organization maintainer, BuildRight=Organization employee {BL}
-[DOM] Widget grid header shows columns ""Organization"" / ""Roles"" / ""Status"", all visible
+[DOM] Widget grid header shows columns ""Organization"" / ""Roles"" / ""Status"", all visible {OBSERVED} (widget introduced by VCST-5028; header columns confirmed live 2026-07-29)
 [GRID] the widget's Status column shows ""Approved"" for both the TechFlow and BuildRight rows for this fixture (both memberships are healthy/Approved) {OBSERVED} (MULTI_ORG_TF_BR fixture, both memberships Approved as of 2026-07-29)
 [STATE] the Status column reflects OrganizationMembership.Status (falling back through contact.Status per ResolveEffectiveStatus when the membership's own Status is null), not a hardcoded/derived-elsewhere value {SPEC} (vc-module-customer#312 OrganizationMembership.ResolveEffectiveStatus)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""@td(MULTI_ORG_TF_BR.userId)""} confirms per-org role data","Widget missing or conflated with 'Member of company(ies)' field; both memberships show same role; widget shows global role instead of per-org role; Status column shows a value that disagrees with GET /api/customer/organization-memberships/search for the same membership (widget/REST inconsistency); Status column blank or shows a raw enum/null instead of a display label","none","VCST-5028; Synced: VCST-5281 (2026-07-29) — added Status column value assertion (checklist item 3)","Draft"
 "CUST-086","OrganizationMembership REST API — Create Membership (AC5)","Customer > Organization Memberships > REST API","High","BL-B2B-005",,"Admin logged in to Backend ({{BACK_URL}}); valid OAuth2 token obtained; @td(MULTI_ORG_TF_BR.email) exists but does NOT yet have a BuildRight membership (pre-condition must be established before running)","back_url={{BACK_URL}},target_user_id=@td(MULTI_ORG_TF_BR.userId),buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships with payload { ""userId"": ""@td(MULTI_ORG_TF_BR.userId)"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{ ""roleId"": ""org-employee"", ""roleName"": ""Organization employee"" }] }
@@ -270,8 +350,9 @@ Organization exists",,"1. Open Organization > Verify user groups field
 [STATE] OrganizationMembershipController accessible to admin (AC5)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""@td(MULTI_ORG_TF_BR.userId)""} confirms BuildRight membership created with org-employee role","400 or 422 on valid payload; membership not created; 403 for admin user (AC5 violation); roles array not persisted","DELETE the created membership: DELETE {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id) (or capture id from create response and delete by id)","VCST-5028","Draft"
 "CUST-087","OrganizationMembership REST API — RBAC Unauthorized Denied","Customer > Organization Memberships > REST API","High","BL-B2B-005",,"Backend URL accessible; no auth token","back_url={{BACK_URL}}","[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships WITHOUT Authorization header with payload { ""userId"": ""test"", ""organizationId"": ""test"" }
 [WAIT] Observe HTTP response
-[STATUS] Verify 401 Unauthorized","[STATUS] HTTP 401 returned for unauthenticated request
-[STATE] OrganizationMembership endpoint requires authentication (AC5 RBAC)","[API] No membership created for unauthenticated call","200 returned without auth (P0 security defect); 500 instead of 401","none","VCST-5028","Draft"
+[STATUS] Verify the request is refused without authentication — the platform answers 302 (redirect to the login page), NOT 401","[STATUS] HTTP 302 returned for the unauthenticated request — access IS denied; this platform redirects anonymous API callers to the login page rather than returning 401 {OBSERVED} (verified live 2026-07-30; the previous ""401"" expectation never matched this platform)
+[STATUS] the response is NOT 2xx — the endpoint must never serve an unauthenticated caller {SPEC} (AC5 RBAC)
+[STATE] no OrganizationMembership row is created by the unauthenticated call {SPEC}","[API] No membership created for unauthenticated call","2xx returned without auth (P0 security defect); 500 instead of a redirect-or-401 refusal; a membership row created by an unauthenticated call","none","VCST-5028 | Updated 2026-07-30 by /qa-review-tests 027 --fix: ASSERTION_DEFECT — asserted 401 while the platform returns a 302 login redirect. Access was always correctly denied; only the expectation was wrong.","Draft"
 "CUST-088","[VCST-5028] Admin/Support Org-Membership Remediation: Unlock One-Org Membership via Admin SPA Widget -> REST Verify -> Global Account Untouched","Customer > Org Management > Organization Memberships [E2E]","Critical","BL-AUTH-012; BL-AUTH-013; BL-AUTH-003; BL-B2B-005","ECL-2.1; ECL-10.2","Admin logged into Backend ({{BACK_URL}}).
 Fixture: @td(MULTI_ORG_TF_BR.email) has TWO org memberships -- TechFlow (org-maintainer) and BuildRight (org-employee).
 BuildRight membership is PRE-LOCKED via REST before this case runs (Setup step below sets the locked state).
@@ -287,13 +368,17 @@ PLAT-084 covers the distinct-mechanism check; this case extends it to the full A
 [BLADE] Contact detail blade open
 [ACT] Scroll to Organization Memberships widget (VCST-5028)
 [ASSERT] [BLADE] Organization Memberships widget visible with two rows: TechFlow and BuildRight
-[ASSERT] [GRID] BuildRight row shows locked/blocked status indicator
-[ASSERT] [GRID] TechFlow row shows active/unlocked status (org-isolation -- lock is org-specific)
+[ACT] Open the BuildRight membership row to its membership detail blade
+[BLADE] Membership detail blade open for the BuildRight membership
+[ASSERT] [BLADE] the detail blade shows the BuildRight membership in a locked state
+[ACT] Close the BuildRight membership detail blade
+[ACT] Open the TechFlow membership row to its own detail blade
+[ASSERT] [BLADE] the TechFlow membership detail blade shows an unlocked state (org-isolation -- lock is org-specific)
 [ACT] Locate the BuildRight membership row in the widget
 [ACT] Click Unlock / Unblock action for the BuildRight row
 [WAIT] Success toast or row state update
-[ASSERT] [GRID] BuildRight row status changes to Active/Unlocked in the widget
-[ASSERT] [GRID] TechFlow row status unchanged (still Active)
+[ASSERT] [BLADE] the BuildRight membership detail blade reflects an unlocked state after the action
+[ASSERT] [BLADE] the TechFlow membership detail blade still reflects an unlocked state (unchanged by the BuildRight unlock)
 --- LAYER: REST Verification ---
 [HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)}
 [STATUS] 200
@@ -302,15 +387,15 @@ PLAT-084 covers the distinct-mechanism check; this case extends it to the full A
 --- LAYER: Global Account Guard ---
 [HTTP GET] {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked
 [STATUS] 200
-[BODY] {locked: false} -- ApplicationUser global account NOT locked at any point in this flow (BL-AUTH-012: org-lock and org-unlock MUST NOT modify ApplicationUser.LockoutEnd)","[BLADE] Organization Memberships widget shows two rows with correct org names
-[GRID] BuildRight row: locked status before unlock; active status after unlock
-[GRID] TechFlow row: active/unlocked throughout (not affected by BuildRight lock/unlock)
-[STATUS] REST search: BuildRight isLocked=false after Admin SPA unlock (AC3 propagation)
-[BODY] TechFlow isLocked=false (cross-org isolation preserved)
-[BODY] Global account guard: GET .../locked returns {locked: false} (BL-AUTH-012)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)} -> TechFlow isLocked=false, BuildRight isLocked=false after Admin SPA unlock
+[BODY] {locked: false} -- ApplicationUser global account NOT locked at any point in this flow (BL-AUTH-012: org-lock and org-unlock MUST NOT modify ApplicationUser.LockoutEnd)","[BLADE] Organization Memberships widget shows two rows with correct org names {OBSERVED} (widget introduced by VCST-5028; rows confirmed live 2026-07-30)
+[BLADE] BuildRight membership detail blade: locked state before unlock, unlocked after -- lock state and the Unlock action live in the detail blade, NOT as a widget grid column {OBSERVED} (verified live 2026-07-30)
+[BLADE] TechFlow membership detail blade: unlocked throughout, unaffected by the BuildRight lock/unlock {BL} (BL-B2B-008 org-scoped change touches only the target org)
+[STATUS] REST search: BuildRight isLocked=false after the Admin SPA unlock {SPEC} (AC3 propagation, VCST-5028)
+[BODY] TechFlow isLocked=false -- cross-org isolation preserved {BL} (BL-B2B-008)
+[BODY] Global account guard: GET .../locked returns {locked: false} {BL} (BL-AUTH-012 org-lock must not modify ApplicationUser.LockoutEnd)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)} -> TechFlow isLocked=false, BuildRight isLocked=false after Admin SPA unlock
 [API] GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked -> {locked: false} (global ApplicationUser unaffected throughout)
-[VERIFY] Admin SPA Organization Memberships widget state matches REST search response (no stale widget cache)","Organization Memberships widget absent in Admin SPA contact blade (VCST-5028 widget not rendered -- regression); unlock action missing for BuildRight row (widget shows locked state but no unlock affordance); Admin SPA unlock sets ApplicationUser.LockoutEnd=9999 instead of org-scoped IsLocked=false (BL-AUTH-012 violation -- critical); TechFlow row shows locked after only BuildRight was locked (org-isolation regression); REST search still shows BuildRight isLocked=true after Admin SPA unlock (propagation failure)","[SAVE] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock -- restore BuildRight membership to unlocked state if test did not complete
-[SAVE] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock -- defensive unlock for TechFlow","VCST-5028; BA-2026-06-15; BL-AUTH-003; BL-AUTH-012; PLAT-084; CUST-085; Technique: Error Guessing (admin-SPA-unlock triggers global-lock regression)","Draft"
+[VERIFY] Admin SPA Organization Memberships widget state matches REST search response (no stale widget cache)","Organization Memberships widget absent in Admin SPA contact blade (VCST-5028 widget not rendered -- regression); unlock action missing from the BuildRight membership detail blade; Admin SPA unlock sets ApplicationUser.LockoutEnd=9999 instead of org-scoped IsLocked=false (BL-AUTH-012 violation -- critical); the TechFlow membership shows locked after only BuildRight was locked (org-isolation regression); REST search still shows BuildRight isLocked=true after Admin SPA unlock (propagation failure)","[SAVE] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock -- restore BuildRight membership to unlocked state if test did not complete
+[SAVE] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock -- defensive unlock for TechFlow","VCST-5028; BA-2026-06-15; BL-AUTH-003; BL-AUTH-012; PLAT-084; CUST-085; Technique: Error Guessing (admin-SPA-unlock triggers global-lock regression) | Updated 2026-07-30 by /qa-review-tests 027 --fix: TEST_STEPS_DEFECT — asserted a lock column and unlock action in the Organization Memberships widget grid; both actually live in the membership detail blade. REST + global-account-guard legs were correct and are unchanged.","Draft"
 "CUST-089","[VCST-5028] Invite-to-Active Onboarding: Maintainer Invites New User with Org Role -> Appears in /company/members -> REST + xAPI Confirm OrganizationMembership","Customer > Org Management > Invite Onboarding [E2E]","High","BL-B2B-009; BL-B2B-007; BL-B2B-005; BL-AUTH-001","ECL-4.1; ECL-10.2","Admin logged into Backend ({{BACK_URL}}) for pre-flight verification.
 TechFlow org-maintainer session available on storefront ({{FRONT_URL}}) as @td(MULTI_ORG_TF_BR.email).
 NOTE [BUG-A]: Storefront invite via /company/members is currently broken (BUG-A).
@@ -322,7 +407,8 @@ Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in 
 [ACT] Click Invite Contact or New Contact action
 [WAIT] Invite/create contact form opens
 [ACT] Fill email: AGENT-TEST-onboard-5028@yopmail.com
-[ACT] Fill first name: Agent and last name: Test5028
+[ACT] Fill first name: Agent
+[ACT] Fill last name: Test5028
 [ACT] Set Organization to @td(ORG_TECHFLOW.name) (TechFlow)
 [ACT] Set org role to Organization employee (org-employee)
 [ACT] Click Send Invite or Save
@@ -403,10 +489,10 @@ Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in 
 [DATA label=setup] membership created with status = ""Approved"" -- an explicit per-org override of the blocking global status {SPEC} (OrganizationMembership.ResolveEffectiveStatus(overrideStatus, globalStatus) = membership.Status ?? contact.Status ?? ""Approved"")
 [STATUS label=grant] 200 -- sign-in succeeds despite the globally-Rejected contact, because the membership-level Approved override takes precedence {BL} (ResolveEffectiveStatus prefers membership.Status over contact.Status)
 [EVIDENCE] the createOrganization setup mutation's errors[] is empty (no error creating the throwaway org) {OBSERVED}","[API] GET {{BACK_URL}}/api/customer/organization-memberships/search body {userId:""<USER_ID>""} confirms the membership row's status field reads Approved, distinct from the contact's own Rejected status","grant returns 400/blocked despite the Approved membership override (ResolveEffectiveStatus precedence broken -- P0 regression); grant succeeds but the wrong membership row is read (org isolation break)","[AUTH admin] DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=<membership id>; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-cust092@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=<CONTACT_ID>; DELETE {{BACK_URL}}/api/members?ids=<ORG_ID>","VCST-5281; C-41; BL-AUTH-013","Draft"
-"CUST-093","[VCST-5281] POST organization-memberships With null userId Returns HTTP 500 and Leaks DB Details","Customer > Organization Management > REST API","High","","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}); valid OAuth2 token obtained.","back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token -> save admin bearer token
-[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships body {""userId"": null, ""organizationId"": ""@td(ORG_TECHFLOW.id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+"CUST-093","[VCST-5281] POST organization-memberships With null userId Returns HTTP 500 and Leaks DB Details","Customer > Organization Management > REST API","High",,"ECL-5.1","Admin logged in to Backend ({{BACK_URL}}); valid OAuth2 token obtained.","back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token -> save admin bearer token
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships body {""userId"": null, ""organizationId"": ""@td(ORG_TECHFLOW.platform_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
 [WAIT] response received
-[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships body {""organizationId"": ""@td(ORG_TECHFLOW.id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} (userId field omitted entirely, not just null)
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships body {""organizationId"": ""@td(ORG_TECHFLOW.platform_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]} (userId field omitted entirely, not just null)
 [WAIT] response received","[STATUS label=null_userid] 400 or 422 (client validation error, not a server crash) {SPEC} (a required-field violation must be a 4xx validation response)
 [BODY label=null_userid] response body does NOT contain a raw exception message, stack trace, table name, or column name {SPEC} (no internal implementation detail in a client-facing error)
 [STATUS label=missing_userid] 400 or 422, same class of clean validation error as null_userid {SPEC}","none — no membership can be created without a userId, nothing to verify cross-layer","either request returns HTTP 500 (CONFIRMED current behavior — no request-model validation on userId, P2 defect); response body contains a SQL/EF exception message, table name, or column name (information disclosure); a membership row IS created with a null userId (data corruption)","none — no membership created by either request","VCST-5281; confirmed defect list item 5; ECL-5.1","Draft"
@@ -426,9 +512,12 @@ Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in 
 [HTTP GET] {{BACK_URL}}/api/platform/settings/Customer.OrganizationMembershipStatuses
 [NAV] Navigate to {{BACK_URL}} > Settings > Customer module (as a UI cross-check)
 [ACT] Locate the Organization Membership Statuses setting
-[ASSERT] Read its current/default value and its list of allowed values","[DATA label=get_setting] defaultValue = ""New"" {SPEC} (vc-module-customer#312 ModuleConstants.MembershipStatuses declares a New constant used only as this setting's DefaultValue)
-[DATA label=get_setting] allowedValues = [""Invited"", ""Approved"", ""Rejected"", ""Deleted""] -- ""New"" is NOT a member of this list {SPEC} (vc-module-customer#312 ModuleConstants.MembershipStatuses legal set = {Invited, Approved, Rejected, Deleted); New is a dead constant never surfaced as a legal status}
-[BLADE] the Settings UI either shows an invalid/blank default selection or silently coerces it to a legal value -- record which {OBSERVED}","none — read-only settings inspection, no cross-layer mutation to verify","defaultValue has been corrected to one of the 4 legal values (fix landed — update this case to assert the corrected default and stop flagging it as a defect); Settings UI blade fails to render entirely because of the invalid default (would be a more severe regression than the current silent mismatch)","none — read-only","VCST-5281; PR review finding D; vc-module-customer#312 ModuleConstants.cs","Draft"
+[ASSERT] Read its current/default value and its list of allowed values","[DATA label=get_setting] defaultValue = ""Approved"" — a member of the setting's own allowedValues {OBSERVED} (verified live 2026-07-30 on Customer 3.1021.0-pr-312-2257: the PR-review finding D defect is FIXED; the setting no longer defaults to the dead ""New"" constant)
+[DATA label=get_setting] allowedValues = [""Invited"", ""Approved"", ""Rejected"", ""Deleted""] {SPEC} (vc-module-customer#312 ModuleConstants.MembershipStatuses legal set)
+[DATA label=get_setting] defaultValue is a member of allowedValues — the invariant this case exists to guard, asserted as a relation rather than a literal so it survives a future default change {SPEC}
+[BLADE] the Settings UI renders the default as a valid selection (not blank, not coerced) {OBSERVED}","none — read-only settings inspection, no cross-layer mutation to verify","defaultValue is not a member of allowedValues (regression of PR-review finding D — the setting would default to a value it does not permit)
+defaultValue reverts to ""New"" (the dead constant)
+Settings UI blade fails to render or shows a blank default selection","none — read-only","VCST-5281; PR review finding D; vc-module-customer#312 ModuleConstants.cs | Updated 2026-07-30 by /qa-review-tests 027 --fix: STALE_TEST — the asserted defect (""New"") was fixed in the deployed build, so the case now asserts the corrected default AND the defaultValue-in-allowedValues relation. Its own prior Failure_Signals anticipated exactly this update.","Draft"
 "CUST-096","[VCST-5281] Delete Member / Revoke Invite Leaves the Contact Visible as Inactive — Still Counted, Unfilterable","Customer > Organization Management > Member Lifecycle [E2E]","High","BL-B2B-008","ECL-2.1","Admin logged in to Backend ({{BACK_URL}}). Fresh throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Setup (throwaway org + invited member) ---
 [SETUP] Admin token via /connect/token
 [GQL] mutation { createOrganization(command: { name: ""AGENT-TEST-CUST096"" }) { id name } }
@@ -467,7 +556,7 @@ Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in 
 [COUNT label=post_delete_search] totalCount = 0 -- BOTH memberships removed, not just one {SPEC} (confirmed defect list item 37, BL-B2B-008)
 [DATA label=post_delete_search] no orphan membership references either <ORG_A_ID> or <ORG_B_ID> for the deleted user {SPEC}
 [EVIDENCE] the createOrganization setup mutation's errors[] is empty (no error creating the throwaway org) {OBSERVED}","[API] GET {{BACK_URL}}/api/members/<CONTACT_ID> returns 404/not-found confirming the contact itself is gone, corroborating that both membership rows should be gone too","post_delete_search totalCount = 1 (only one of the two memberships removed -- the exact partial-delete defect this case guards against, P0); totalCount = 2 (delete had no effect on memberships at all)","[AUTH admin] DELETE {{BACK_URL}}/api/members?ids=<ORG_A_ID>; DELETE {{BACK_URL}}/api/members?ids=<ORG_B_ID>; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-cust097@yopmail.com (in case delete-member left the security account behind)","VCST-5281; confirmed defect list item 37; BL-B2B-008","Draft"
-"CUST-098","[VCST-5281] ResolveStatusFilterAsync Bounded Response Time Under Status-Filtered Contact Search","Customer > Organization Management > Performance","Medium","","","Admin logged in to Backend ({{BACK_URL}}); valid OAuth2 token obtained. This is a bounded-response-time regression guard, not a load test -- it uses the platform threshold table, not an invented number.","back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token -> save admin bearer token
+"CUST-098","[VCST-5281] ResolveStatusFilterAsync Bounded Response Time Under Status-Filtered Contact Search","Customer > Organization Management > Performance","Medium",,,"Admin logged in to Backend ({{BACK_URL}}); valid OAuth2 token obtained. This is a bounded-response-time regression guard, not a load test -- it uses the platform threshold table, not an invented number.","back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token -> save admin bearer token
 [HTTP POST] {{BACK_URL}}/api/contacts/search body {""skip"": 0, ""take"": 20, ""status"": ""Invited""} -- triggers ResolveStatusFilterAsync's in-memory intersection of ALL memberships + ALL contacts
 [WAIT] measure elapsed time to full response
 [HTTP POST] {{BACK_URL}}/api/contacts/search body {""skip"": 0, ""take"": 20} (no status filter, baseline for comparison)
@@ -488,3 +577,52 @@ Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in 
 [DATA label=dangling_org_grant] the issued JWT's organization_id claim is NOT the requested <DANGLING_ORG_ID> (it falls back to some other org ORG_USER belongs to) -- the caller silently gets a DIFFERENT org context than requested {SPEC} (confirmed defect list item 10: scope fallback)
 [STATUS label=bogus_org_grant] currently CONFIRMED 200 for the same reason with an all-zero GUID {SPEC}
 [EVIDENCE] the createOrganization setup mutation's errors[] is empty (no error creating the throwaway org) {OBSERVED}","[API] GET {{BACK_URL}}/api/customer/organization-memberships/search body {userId: ORG_USER's userId} confirms which org the fallback token actually resolved to, corroborating the JWT claim read above","either grant now correctly returns 400/invalid_grant for the dangling or bogus organization_id (fix landed -- update this case to assert the corrected rejection instead of the fallback); the fallback JWT's organization_id claim actually matches the requested dangling id (would be a different, more severe defect -- a token scoped to a non-existent org)","[AUTH admin] no further cleanup required — the dangling organization was already deleted in Setup","VCST-5281; confirmed defect list item 10; BL-AUTH-013","Draft"
+"CUST-100","Organization Hierarchy — Parent/Child Member Scoping","Customer > Organization Management > Hierarchy","Medium","new","ECL-2.1","Admin logged in to Backend ({{BACK_URL}}); ability to create a throwaway parent + child organization pair in Steps so no shared fixture (TechFlow/BuildRight) is touched.","back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token -> save admin bearer token
+[GQL] mutation { createOrganization(command: { name: ""AGENT-TEST-CUST100-Parent"" }) { id name } }
+[HTTP POST] {{BACK_URL}}/graphql -> capture <PARENT_ID>
+[GQL] mutation { createOrganization(command: { name: ""AGENT-TEST-CUST100-Child"" }) { id name } }
+[HTTP POST] {{BACK_URL}}/graphql -> capture <CHILD_ID>
+[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ACT] Open the AGENT-TEST-CUST100-Child organization record
+[ACT] Locate the parent/child organization assignment control (e.g. a 'Parent organization' field)
+[ACT] Set the control to AGENT-TEST-CUST100-Parent
+[SAVE] Click 'Save'
+[WAIT] save confirmation
+[ACT] Add a contact member to the CHILD organization only
+[WAIT] contact member addition confirmed
+[NAV] Open the PARENT organization's Members grid","[DATA] both createOrganization setup mutations return errors[] empty {OBSERVED}
+[BLADE] the Organization detail blade exposes NO parent/child organization control — a parent is only ever inferred from drill-down context when creating a child, never chosen on an existing org {SPEC} (vc-module-customer Scripts/customer.js:189-231 registers only name/groups/status/businessCategory/description/orgRoles; blades/organization-detail.js:6-8 sets parentId from parentBlade only when isNew). Verified live 2026-07-30: no parent field on the Organization blade
+[STATE] organization membership does NOT inherit in either direction — a member of the CHILD org is NOT visible in the PARENT org members grid, and vice versa. Every resolution path is a single-level direct match {SPEC} (MemberSearchService.cs:179-196 ""//TODO: DeepSearch""; MemberSearchRequestBuilder.cs:88-103; MemberDocumentBuilder.cs:333,342-348 indexes only direct ParentOrganizations; OrganizationMembershipSearchService.cs:140,222-224 exact OrganizationId ==)
+[STATE] deleting a PARENT organization does NOT cascade — children are ORPHANED to root and memberships pointing at the deleted org are left dangling {SPEC} (MemberRepositoryBase.cs:129-143 no recursion; 20190510074541_InitialCustomer.cs:141-152 AncestorId=Cascade but DescendantId=Restrict; CustomerOrganizationMembership.OrganizationId has no FK per CustomerDbContext.cs:202-212). This is a real defect signal of the same class as CUST-094, not a test gap
+[STATE] hierarchy IS supported at the model level (Organization.ParentId) and a child org can be created by drilling into a parent and adding an Organization; it is read-only in xAPI {SPEC} (Core/Model/Organization.cs:16; customer.js:231 knownChildrenTypes; OrganizationType.cs:49)","[API] GET {{BACK_URL}}/api/members/<CHILD_ID> confirms the parent organization reference (if the API surfaces one) matches <PARENT_ID>","no parent/child relationship control found on the Organization blade (checklist capability not actually implemented -- contradicts backend-admin-checklists.md A5), saving a parent assignment has no effect (silent no-op), 4xx/5xx creating either organization","[AUTH admin] DELETE {{BACK_URL}}/api/members?ids=<CHILD_ID>; DELETE {{BACK_URL}}/api/members?ids=<PARENT_ID>; DELETE any contact member created in Steps if it survives either org's deletion (mirrors the orphan risk CUST-094 documents)","Coverage Gap Analysis (Phase 3, /qa-test-lifecycle suite 027, 2026-07-30) -- backend-admin-checklists.md A5 item 6 (Organization hierarchy) has zero coverage in this suite | Phase-5 verified 2026-07-30: RESOLVED from source + live blade inspection — all three {HYPOTHESIS} tags replaced with {SPEC}. Backend-admin checklist A5 item 6 (""parent/child organizations, member assignment scoping"") describes a control the Admin SPA does not expose and scoping that does not exist; that checklist item needs correcting. Orphan-on-delete is a defect to file, not a coverage gap.","Draft"
+"CUST-101","Contacts Grid — Search and Filter by Organization, Role, and Status","Customer > Organization Management > Contacts Grid","Medium","","","Admin logged in to Backend ({{BACK_URL}}); at least 2 organizations each with >=1 contact member exist (e.g. @td(ORG_TECHFLOW.name) and @td(ORG_BUILDRIGHT.name)).","back_url={{BACK_URL}}","[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ACT] Enter a known contact's name or email fragment into the Contacts grid search field
+[WAIT] grid filters to matching rows
+[ACT] Clear the 'Search' field
+[ACT] Apply the Organization filter to @td(ORG_TECHFLOW.name)
+[WAIT] grid filters to TechFlow-only contacts
+[ACT] Apply the Role filter (if present) to a known role
+[WAIT] grid filters further
+[ACT] Apply the Status filter to a known status value
+[WAIT] grid filters further
+[ACT] Clear all filters","[GRID] the Companies-and-contacts filter panel exposes EXACTLY three controls — ""Member type"", ""Created date"", ""Modified date"" {OBSERVED} (verified live 2026-07-30 by DOM inspection: 3 selects bound to blade.filter.memberType / createdDateRange / modifiedDateRange)
+[GRID] there is NO Organization filter, NO Role filter and NO Status filter on the Contacts grid {OBSERVED} (verified live 2026-07-30 — refutes the backend-admin-checklist A5 claim of ""filter by organization, role, status"")
+[GRID] the org-scoped members grid (reached by drilling into an organization) exposes the SAME three filters and likewise has no Organization/Role/Status filter {OBSERVED} (verified live 2026-07-30; corroborates and extends the suite-027 execution finding that the members grid has no Status filter)
+[GRID] free-text search by name/email fragment returns only rows whose name or email contains the fragment {SPEC} (search is present even though the filters are not)","[API] the grid's filtered request (e.g. POST /api/members/search or /api/contacts/search) reflects the same filter criteria selected in the UI (organizationId/role/status params match the UI selection)
+[CONSOLE] no JS errors during filter application/clearing","filter selection has no effect on the grid (stale results), Organization filter includes contacts from a different organization (cross-org leak), combining filters WIDENS the result set instead of narrowing it (OR-instead-of-AND regression), clearing filters leaves a stale subset instead of the full list","none -- read-only","Coverage Gap Analysis (Phase 3, /qa-test-lifecycle suite 027, 2026-07-30) -- backend-admin-checklists.md A5 item 7 (Contact search and filter) | Phase-5 verified 2026-07-30: REFUTED — the documented Organization/Role/Status filters do not exist on either the Contacts grid or the org-scoped members grid. Rewritten to assert the actual three-filter set; the checklist item overstates the capability.","Draft"
+"CUST-102","Edit Contact — Name, Email, Phone, and Address Persist After Save","Customer > Organization Management > Contact Profile","Medium","","","Admin logged in to Backend ({{BACK_URL}}). Fresh throwaway AGENT-TEST contact created in Steps so no shared fixture is mutated.","back_url={{BACK_URL}}","[HTTP POST] {{BACK_URL}}/api/members body {firstName:""AGENT-TEST"", lastName:""Cust102"", memberType:""Contact""} -> capture <CONTACT_ID>
+[NAV] Navigate to {{BACK_URL}} > Customer module > Contacts
+[ACT] Search for the AGENT-TEST-Cust102 contact
+[ACT] Open the AGENT-TEST-Cust102 contact blade
+[WAIT] contact blade opens
+[ACT] Update the First Name, Last Name, Email, Phone fields to new values
+[ACT] Add a new address (street, city, postal code, country) in the Addresses widget
+[WAIT] address appears in the Addresses widget
+[SAVE] Click 'Save'
+[WAIT] save confirmation
+[ACT] Close the contact blade
+[ACT] Reopen the contact blade
+[WAIT] blade reopens showing saved values","[FORM] the updated First Name, Last Name, Email, and Phone values persist after Save and after reopening the blade {DOC} (backend-admin-checklists.md A5: ""Edit contact: update name, email, phone, addresses -> save persists"")
+[FORM] the newly added address appears in the Addresses widget after reopening the blade {DOC}
+[BLADE] no validation error blocks the save when all fields contain well-formed values {SPEC}","[API] GET {{BACK_URL}}/api/members/<CONTACT_ID> confirms firstName/lastName/email/phone and the addresses array match the values entered in the UI
+[CONSOLE] no JS errors during edit/save","one or more fields revert to their pre-edit value after reopening (partial-persistence defect), the added address is missing from the API response despite appearing in the UI (UI/API desync), 4xx/5xx on the save request","[AUTH admin] DELETE {{BACK_URL}}/api/members?ids=<CONTACT_ID>","Coverage Gap Analysis (Phase 3, /qa-test-lifecycle suite 027, 2026-07-30) -- backend-admin-checklists.md A5 item 3 (Edit contact) | Phase-5 verified 2026-07-30: NOT verified in the Phase-5 pass (budget exhausted after the higher-tier items) — needs create+save+reopen+delete mutations. Stays Draft; no claim was made either way.","Draft"

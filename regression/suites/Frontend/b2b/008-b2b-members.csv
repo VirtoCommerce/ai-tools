@@ -20,12 +20,12 @@ Org admin user logged in; organization has 5+ members","url={{FRONT_URL}},org_us
 [DOM] Results filtered by email search
 [STATE] Search works for both name and email fields","[CONSOLE] no uncaught JS errors","Search not filtering results; search input missing; search only works for name but not email","none","Coverage Gap Analysis","Draft"
 "B2C-MBR-003","Members List Pagination","B2C Features > Members","Medium","BL-B2B-005","ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Org admin user; organization has >10 members","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+Org admin user; organization has MORE members than one page holds. The page size is the storefront's GetOrganizationContacts 'first' variable (16 at time of writing) -- read it from the query at runtime; do NOT hardcode a literal threshold (feedback_never_hardcode_in_scripts)","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
 2. [ASSERT] Verify initial page shows first batch of members
 3. [SCROLL] Scroll to bottom of list
 4. [ACT] Click Load More or pagination control
 5. [ASSERT] Verify additional members are loaded
-6. [ASSERT] Verify no duplicate members","[DOM] Pagination or load-more control visible when >10 members
+6. [ASSERT] Verify no duplicate members","[DOM] Pagination or load-more control visible when the org's member count EXCEEDS one page (page size = GetOrganizationContacts 'first'); with a member count at or below one page, NO control is expected and its absence is correct
 [DOM] Additional members loaded after action
 [DOM] No duplicate entries across pages
 [STATE] Total visible members matches org member count","[CONSOLE] no uncaught JS errors","Members truncated with no pagination; duplicate members after loading more; pagination control missing","none","Coverage Gap Analysis","Draft"
@@ -34,7 +34,7 @@ Org admin user logged in","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_pas
 2. [ACT] Click the 'Invite members' button (top-right, next to Filters)
 3. [ASSERT] Verify the 'Invite member' dialog opens (heading level 2)
 4. [ASSERT] Verify the dialog has a required Role selector (combobox, defaulting to 'Organization employee')
-5. [ASSERT] Verify the dialog has a required multi-email textbox (hint: 'Use commas, semicolons, or the Enter key to separate multiple addresses')
+5. [ASSERT] Verify the dialog has a required multi-email textbox (hint: 'Use commas, semicolons, or line breaks to separate multiple entries')
 6. [ASSERT] Verify the dialog has an optional Message textbox
 7. [ASSERT] Verify the footer has Cancel and Send buttons, and Send is disabled until the required fields are filled
 8. [ASSERT] Verify there are NO First name and NO Last name fields","[DOM] 'Invite member' dialog/modal opens
@@ -123,26 +123,26 @@ Authorization: Bearer <purchaser session token — same JWT the storefront sessi
 [ERRORS label=purchaser_invite_refused] errors[] is non-empty — the purchaser JWT is refused server-side, not merely hidden client-side (BL-B2B-005; button-hiding alone is not proof of enforcement)","[CONSOLE] no uncaught JS errors","Purchaser can invite members (privilege escalation); purchaser can edit roles; no access difference between admin and purchaser; inviteUser SUCCEEDS (errors[] empty) with a purchaser JWT despite the button being hidden — a client-only gate is not authorization","none","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15); Synced: VCST-5281 PR#2399 (2026-07-29) — added GraphQL-layer mutation-refusal assertion per testing-checklist.md condition #43 (was button-only)","Draft"
 "B2C-MBR-010","Block Member - Org-Scoped Block (VCST-5028)","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
-TechFlow org admin logged in; active member to be blocked who is ALSO a member of BuildRight org; test member email known","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},multi_org_user_email={{MULTI_ORG_USER_EMAIL}},multi_org_user_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
+TechFlow org admin logged in; active member to be blocked who is ALSO a member of BuildRight org; test member email known","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},multi_org_user_email=@td(MULTI_ORG_TF_BR.email),multi_org_user_password=@td(MULTI_ORG_TF_BR.password)","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
 2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
 3. [ACT] Fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
 4. [ACT] Click [data-test-id=""login-button""]
 5. [WAIT] Header [data-test-id=""account-button""] shows TechFlow org name
 6. [NAV] Navigate to {{FRONT_URL}}/company/members
-7. [ASSERT] 'Company members' table visible; locate the multi-org test member ({{MULTI_ORG_USER_EMAIL}}) — Active column shows button 'Active'
+7. [ASSERT] 'Company members' table visible; locate the multi-org test member (@td(MULTI_ORG_TF_BR.email)) — Active column shows button 'Active'
 8. [ACT] In that member's row, click button 'Actions'
 9. [ACT] In the Actions dropdown, click button 'Block user'
 10. [ASSERT] Active column for that member now shows button 'Blocked' (status toggled); row reflects blocked state
 11. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""]
 12. [NAV] Navigate to {{FRONT_URL}}/sign-in
-13. [ACT] Fill [data-test-id=""email-input""] with {{MULTI_ORG_USER_EMAIL}}
-14. [ACT] Fill [data-test-id=""password-input""] with {{MULTI_ORG_USER_PASSWORD}}
+13. [ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
+14. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
 15. [ACT] Click [data-test-id=""login-button""]
 16. [ASSERT] Sign-in to TechFlow org context is REJECTED — error message visible verbatim: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013) — NOT a generic account-locked message
 17. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""] (if partially authenticated) or remain on sign-in page
 18. [NAV] Navigate to {{FRONT_URL}}/sign-in; select BuildRight org context on login
-19. [ACT] Fill [data-test-id=""email-input""] with {{MULTI_ORG_USER_EMAIL}}
-20. [ACT] Fill [data-test-id=""password-input""] with {{MULTI_ORG_USER_PASSWORD}}
+19. [ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
+20. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
 21. [ACT] Click [data-test-id=""login-button""]
 22. [ASSERT] Sign-in to BuildRight org context SUCCEEDS — user lands on account/storefront (blocking is per-org only; no global lock)","[DOM] 'Company members' table Active column: button 'Active' → button 'Blocked' after block action
 [STATE] Actions dropdown per row contains 'Block user' button (not 'Edit role')
@@ -152,20 +152,20 @@ TechFlow org admin logged in; active member to be blocked who is ALSO a member o
 [CONSOLE] no uncaught JS errors","Blocked member can still sign in to TechFlow (AC3 violation); Active column does not change after block; Actions dropdown missing 'Block user'; Blocked member ALSO cannot sign in to BuildRight (global block when should be org-scoped)","Sign in as TechFlow org admin; navigate to /company/members; locate blocked member; click button 'Actions' → click 'Unblock user' (or click button 'Blocked' in Active column to toggle back to Active)","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
 "B2C-MBR-011","Unblock Member - Org-Scoped Restore (VCST-5028)","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
-TechFlow org admin logged in; target member is currently in 'Blocked' state for TechFlow org (state from B2C-MBR-010 or pre-blocked via setup)","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},multi_org_user_email={{MULTI_ORG_USER_EMAIL}},multi_org_user_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
+TechFlow org admin logged in; target member is currently in 'Blocked' state for TechFlow org (state from B2C-MBR-010 or pre-blocked via setup)","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},multi_org_user_email=@td(MULTI_ORG_TF_BR.email),multi_org_user_password=@td(MULTI_ORG_TF_BR.password)","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
 2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
 3. [ACT] Fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
 4. [ACT] Click [data-test-id=""login-button""]
 5. [WAIT] Header [data-test-id=""account-button""] shows TechFlow org name
 6. [NAV] Navigate to {{FRONT_URL}}/company/members
-7. [ASSERT] 'Company members' table visible; locate the blocked member ({{MULTI_ORG_USER_EMAIL}}) — Active column shows button 'Blocked'
+7. [ASSERT] 'Company members' table visible; locate the blocked member (@td(MULTI_ORG_TF_BR.email)) — Active column shows button 'Blocked'
 8. [ACT] Click button 'Actions' in that member's row
 9. [ACT] In the Actions dropdown, click 'Unblock user' (or alternatively click the inline button 'Blocked' in the Active column to toggle back to Active)
 10. [ASSERT] Active column for that member now shows button 'Active' — blocked state cleared in TechFlow
 11. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""]
 12. [NAV] Navigate to {{FRONT_URL}}/sign-in
-13. [ACT] Fill [data-test-id=""email-input""] with {{MULTI_ORG_USER_EMAIL}}
-14. [ACT] Fill [data-test-id=""password-input""] with {{MULTI_ORG_USER_PASSWORD}}
+13. [ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
+14. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
 15. [ACT] Click [data-test-id=""login-button""]
 16. [ASSERT] Sign-in to TechFlow org context SUCCEEDS — user lands on account/storefront; no blocked error","[DOM] 'Company members' Active column: button 'Blocked' → button 'Active' after unblock
 [STATE] 'Unblock user' available in Actions dropdown for a blocked member
@@ -286,8 +286,8 @@ Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa; memb
 13. [ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
 14. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
 15. [ACT] Click [data-test-id=""login-button""]
-16. [WAIT] Org-switcher or org selection shown (multi-org user)
-17. [ACT] Select BuildRight org
+16. [WAIT] Sign-in completes and lands in the member's DEFAULT org context -- there is NO org selection on the /sign-in page
+17. [ACT] Click [data-test-id=""account-button""] and pick BuildRight from the account-menu 'Organizations' listbox (the org switcher is post-authentication)
 18. [ASSERT] Sign-in to BuildRight SUCCEEDS — user lands on storefront; no blocked error (per-org scope: blocked in TechFlow only)
 19. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""]
 --- SCREEN: Blocked member tries TechFlow ---
@@ -295,8 +295,8 @@ Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa; memb
 21. [ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
 22. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
 23. [ACT] Click [data-test-id=""login-button""]
-24. [WAIT] Org-switcher or org selection shown
-25. [ACT] Select TechFlow org
+24. [WAIT] Sign-in completes and lands in the default org context (no org selection on /sign-in)
+25. [ACT] Click [data-test-id=""account-button""] and pick TechFlow from the account-menu 'Organizations' listbox
 26. [ASSERT] Sign-in to TechFlow is REJECTED — error message visible verbatim: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013) — NOT a generic account-locked message","[STATE] Member blocked in TechFlow: login to TechFlow rejected
 [STATE] Same member ACTIVE in BuildRight: login to BuildRight succeeds (AC3)
 [DOM] Error message visible when blocked org login attempted: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013)
@@ -365,11 +365,26 @@ or action menus = a REGRESSION of the VCST-5028 fix (fail the case), not an expe
 [WAIT] Success toast or dialog close
 [ASSERT] [DOM] Success toast shown; dialog closed
 [ASSERT] [DOM] Invited member email appears in members list row (pending or active)
+--- SCREEN: Invitee Accepts Invite ---
+[NAV] Resolve the invite link from the notification journal (POST {{BACK_URL}}/api/notifications/journal -- newest entry addressed to the invitee)
+[NAV] Open the resolved {{FRONT_URL}}/confirm-invitation?userId&email&token&organizationId link
+[ACT] Fill ""First name""
+[ACT] Fill ""Last name"" using letters only -- digits are rejected by validation
+[ACT] Fill ""Password"" with {{DEFAULT_TEST_PASSWORD}}
+[ACT] Re-enter {{DEFAULT_TEST_PASSWORD}} in the second password field
+[ACT] Click ""Register""
+[WAIT] Registration result dialog appears
+[ASSERT] [DOM] Dialog reads ""Registration successfully completed!""
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Sign in as maintainer @td(MULTI_ORG_TF_BR.email)
+[WAIT] Header shows the TechFlow org context
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ASSERT] [STATE] The invited member's badge is now 'Active' -- MANDATORY GATE: a pending 'Invited' member exposes ONLY Resend invite / Revoke invite / Login on behalf, so the Edit role / Block / Unblock / Remove steps below are unreachable until the invite has been accepted
 --- SCREEN: Role Edit ---
 [ACT] Locate the invited member row (AGENT-TEST-invite-5028@yopmail.com)
 [ACT] Open per-row action menu (kebab/ellipsis) for that member
 [ACT] Select Edit role or role dropdown option
-[ACT] Change role to Organization manager (org-manager) if available, else alternate available role
+[ACT] Change role to an assignable role other than the current one. The assignable set on this build is Organization employee / Purchasing agent / Organization maintainer -- there is NO 'Organization manager' option in the role editor
 [ACT] Confirm / save role change
 [WAIT] Success feedback (toast or row update)
 [ASSERT] [DOM] Member row reflects updated role label without full page reload
@@ -527,7 +542,7 @@ TechFlow org admin logged in. A fresh AGENT-TEST TechFlow member is created in S
 [ASSERT] [STATUS] 200 on org-level role grant
 [NAV] Navigate to {{FRONT_URL}}/company/members (already signed in as TechFlow admin)
 [ASSERT] Locate the AGENT-TEST-UnionAll029 member row
-[ASSERT] Verify the Role column shows 'Organization manager' AND 'Purchasing agent' joined by comma -- 'Purchasing agent' must appear EXACTLY ONCE despite being granted via both the org-level role and this member's own membership role","[DOM] Role column for the AGENT-TEST-UnionAll029 row contains exactly 2 distinct role names: 'Organization manager' (global) and 'Purchasing agent' (org-level + membership, deduped)
+[ASSERT] Verify the Role column shows 'Organization manager' AND 'Purchasing agent' joined by comma -- 'Purchasing agent' must appear EXACTLY ONCE despite being granted via both the org-level role and this member's own membership role","[DOM] Role column for the AGENT-TEST-UnionAll029 row CONTAINS 'Organization manager' (global source) AND 'Purchasing agent' (org-level + membership, deduped) -- assert CONTAINMENT, never an exact role COUNT: this case's own setup is APPEND-ONLY onto $ORIGINAL_ROLES, so the org may carry further org-level roles that every member legitimately inherits
 [STATE] 'Purchasing agent' is NOT rendered twice despite being sourced from two different role tiers
 [DOM] Role column is not blank or truncated for this member","[API] rolesInOrganization (no-arg form) / getOrganizationContactsQuery for this member returns the deduped union {Organization manager, Purchasing agent}, while POST /api/customer/organization-memberships/search for {{USER_ID}} shows roles=[purchasing-agent] only -- this proves the GLOBAL role ('Organization manager') is not a per-member membership write (BL-B2B-005). Note: the org-level grant and the membership role deliberately share the name 'Purchasing agent' (to exercise dedup), so this membership-search probe cannot separately distinguish the org-level source from the membership source for that role -- only the DOM dedup assertion (single-occurrence in the Role column) exercises that path.","Role column shows 'Purchasing agent' twice (dedup broken across tiers); Role column missing 'Organization manager' (global source dropped from the merge); Role column missing 'Purchasing agent' entirely (both org-level and membership sources dropped); console GraphQL error on load; column blank/truncated for this member; org-level PUT replaces $ORIGINAL_ROLES instead of appending; cleanup leaves TechFlow's roles array as [] instead of the restored $ORIGINAL_ROLES; fixture email collision from a prior run's incomplete cleanup","[SAVE] Restore TechFlow's org-level roles to their exact pre-test state via REST PUT {{BACK_URL}}/api/organizations: {""id"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""name"": ""$ORG_NAME"", ""memberType"": ""Organization"", ""roles"": $ORIGINAL_ROLES} -- EXACT restore of the array captured in Steps; never send roles: []
 [SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-mbr029-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5239; extends B2C-MBR-024 + B2C-MBR-026 (the two-source cases this unifies)","Semi-Automated"

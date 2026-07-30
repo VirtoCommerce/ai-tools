@@ -128,11 +128,29 @@ export function resolveRole(
     let emailRaw = "";
     let passwordRaw = "";
     let sidRaw = "";
+    let orgRaw = "";
     try {
       const resolver = new TestDataResolver(testDataDir);
       emailRaw = resolver.resolve(`@td(${role}.email)`);
       passwordRaw = resolver.resolve(`@td(${role}.password)`);
       sidRaw = resolver.resolve(`@td(${role}.store_id)`);
+      // Org context for a CSV-backed / direct-field role. Declared on the alias as
+      // `organization_id` exactly like the _inline branch above, and resolved the same way
+      // so it can point at another alias for the runtime GUID — e.g.
+      // "organization_id": "@td(ORG_TECHFLOW.platform_id)". This MUST be the platform GUID,
+      // never a CSV business key (TECHFLOW_ADMIN.org_id is "ORG-002", which the token
+      // endpoint would reject/ignore).
+      //
+      // Without this, a CSV-backed role could never send `organization_id`, so its grant
+      // always took the IMPLICIT path — where the platform silently adopts the contact's
+      // currentOrganizationId without revalidating it against BlockingStatuses and returns a
+      // 200 token with ZERO permissions. Every org-scoped query then failed as an opaque
+      // `Forbidden` instead of the correct `user_is_rejected_in_organization` (VCST-5281).
+      const orgDecl = (entry as { organization_id?: string }).organization_id;
+      if (orgDecl) {
+        orgRaw = /^@td\(/.test(orgDecl) ? resolver.resolve(orgDecl) : orgDecl;
+        if (orgRaw === orgDecl && /^@td\(/.test(orgDecl)) orgRaw = ""; // unresolved token → treat as absent
+      }
     } catch {
       // resolver/alias error → fall through to the env-var pattern below
     }
@@ -148,7 +166,7 @@ export function resolveRole(
       const storeId = resolved(sidRaw, `@td(${role}.store_id)`)
         ? sidRaw
         : process.env.STORE_ID;
-      return { role, email, password, storeId };
+      return { role, email, password, storeId, organizationId: orgRaw || undefined };
     }
   }
 

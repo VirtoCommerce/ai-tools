@@ -54,6 +54,10 @@ npm run deploy:pr:apply -- <ticket-key> --env=vcst      # a human reviews + merg
      tracker-agnostic. Ticket-key auto-resolution uses the configured tracker's dev links
      (Jira today, via `JIRA_EMAIL`/`JIRA_API_TOKEN`); on **Azure Boards** (or when the tracker
      has no GitHub dev-links) pass the PRs explicitly with `--pr`.
+   - **`vc-platform` PRs publish a CONTAINER IMAGE, not a blob zip.** Their body leaves
+     `### Artifact URL:` empty and carries `Image tag: ghcr.io/VirtoCommerce/platform:<tag>`
+     instead, so the resolver falls back to that line. Without it every platform PR reported
+     "no vc3prerelease Artifact URL yet (CI still running?)" forever, no matter how long you waited.
 2. **Compute one combined diff** against the env-branch `backend/packages.json` (each module →
    AzureBlob `{Id,Version,BlobName}`, dropped from `GithubReleases`; platform →
    `PlatformVersion`+`PlatformImageTag`) and `theme/artifact.json` (the theme URL).
@@ -65,9 +69,24 @@ npm run deploy:pr:apply -- <ticket-key> --env=vcst      # a human reviews + merg
 
 | env (`--env`/`TEST_ENV`) | `vc-deploy-dev` branch | source |
 |---|---|---|
-| `vcst` (default QA) | `vcst-qa` | convention (`.env.vcst` has no DEPLOY_* block) |
-| `vcptcore` / `virtostart` | same name | convention |
+| `vcst` (default QA) | `vcst-qa` | `BRANCH_MAP` (`.env.vcst` has no DEPLOY_* block) |
+| `vcptcore` (second QA) | `vcptcore-qa` | `BRANCH_MAP` — the branch carries a `-qa` suffix the env name doesn't; there is **no** bare `vcptcore` branch |
+| `virtostart` | same name | convention |
 | `vcptcore_stable` / `vcptcore_regression` | `vcptcore-stable` / `-regression` | `.env.vcptcore_<key>` `DEPLOY_*` |
+
+Both QA envs are `BRANCH_MAP` entries, not convention: env name ≠ branch name for either. A new env
+whose branch differs from its name needs a `BRANCH_MAP` row or a `DEPLOY_BRANCH` in its `.env.<env>`.
+
+`--verify`'s live column needs the env's admin password. It is read in `config.js`'s own promotion
+form first — `ADMIN_PASSWORD_<ENV>` (e.g. `ADMIN_PASSWORD_VCPTCORE`) — then the
+`ADMIN_PASSWORD_VCPTCORE_<STABLE|REGRESSION>` forms, then generic `ADMIN_PASSWORD`. A missing
+per-env password degrades `--verify` to branch-pin-only (`live` reads `?`), it never fails the run.
+
+**`JIRA_EMAIL` belongs in `.env.local`, next to `JIRA_API_TOKEN`** — they are the two halves of one
+Basic-auth pair. A committed `.env.<env>` copy pins one teammate's identity against every other
+teammate's token, and Jira answers **404 on a ticket that exists** (not 401), which reads as "bad
+ticket key" rather than "bad auth". Ticket resolution is also non-fatal whenever explicit
+`--pr`/`--module`/`--platform`/`--theme` targets are given — the key then only labels the branch/PR.
 
 `BACK_URL` (for `--verify`) + any `DEPLOY_REPO`/`DEPLOY_BRANCH`/`DEPLOY_PACKAGES_PATH` override
 come from `.env.<env>`. Adding an env is config-only.
@@ -128,6 +147,17 @@ shape is unexpected.
 - **Prerelease version not bumped:** a PR artifact's `module.manifest` often keeps the base
   version (the `-pr-…` suffix lives only in the filename), so a live-version mismatch in
   `--verify` is an **ADVISORY**, not a failure — confirm by behaviour.
+- **`PlatformVersion` ≠ `PlatformImageTag` — they are two fields with two consumers.** `deploy-backend.yml`
+  reads **only** `PlatformImageTag` (→ the docker `PLATFORM_TAG` build-arg), so that is the field that
+  decides which platform actually runs; nothing in the deploy repo reads `PlatformVersion`. A platform PR
+  pin therefore keeps `PlatformVersion` at the tag's **base semver** (`3.1053.0`) and puts the full
+  `3.1053.0-pr-3092-…-2588d613` tag in `PlatformImageTag`. Writing the tag into both left `PlatformVersion`
+  a non-semver string; checking only `PlatformVersion` in `--verify` reported **PINNED** for a branch still
+  running the old container. `--platform` accepts a bare version, a bare PR tag, a full `ghcr.io/…:<tag>`
+  ref, or an explicit `Ver=tag` split.
+- **A platform PR pin also jumps the base version.** A PR branched off `dev` builds at `dev`'s version, so
+  pinning it moves the env off its current release (e.g. `3.1051.0` → `3.1053.0`) on top of the PR's own
+  change. That is inherent to testing a platform PR build — note it, and revert the pin after verifying.
 - **Stale SPA bundle:** after a deploy, clear the Playwright/MCP browser cache before verifying
   admin-SPA/storefront bundles (memory `feedback_mcp_browser_cache`).
 
