@@ -482,7 +482,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 45,
+      "testCount": 54,
       "estimatedMinutes": 29,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1179,7 +1179,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P0",
-      "testCount": 39,
+      "testCount": 46,
       "estimatedMinutes": 23,
       "agent": "qa-backend-expert",
       "tags": [

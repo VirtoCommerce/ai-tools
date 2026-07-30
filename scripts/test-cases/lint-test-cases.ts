@@ -155,7 +155,11 @@ const stripQuoted = (s: string) => s.replace(QUOTED_SPAN_RE, " ");
 const AMBIGUOUS_VERB_RE = /^\s*\[ACT\][^\n]*\b(check|ensure|validate|verify)\b/i;
 const COMPOUND_RE = /^\s*\[(?:ACT|NAV)\][^\n]*(?:\band\b|\bthen\b|;)/i;
 const MUTATION_HINT_RE = /\b(addItem|removeItem|removeCartItem|createOrder|createQuote|addOrUpdate|updateCart|placeOrder|create[A-Z]\w+|update[A-Z]\w+|delete[A-Z]\w+|place order|add to cart|submit|save|checkout)\b/i;
-const GRAPHQL_MUTATION_RE = /\b(addItem|removeItem|removeCartItem|createOrder|create\w+|update\w+|delete\w+|merge\w+|clearCart)\b/;
+// Requires an uppercase letter right after the verb (createOrder, updateCart) so this
+// cannot match the English past-participle "created"/"updated"/"deleted" that legitimately
+// appears in REST/Admin-UI assertion prose ("Verify order created") — see MUTATION_HINT_RE's
+// [A-Z] guard above, which this sibling regex had omitted (false-fired C-005 on suites 049/020).
+const GRAPHQL_MUTATION_RE = /\b(addItem|removeItem|removeCartItem|createOrder|create[A-Z]\w+|update[A-Z]\w+|delete[A-Z]\w+|merge[A-Z]\w+|clearCart)\b/;
 const ORDERING_RE = /\b(after running|following\s+[A-Z]+-\d+|requires?\s+[A-Z]+-\d+\s+to have (?:passed|run)|must be run first|run\s+[A-Z]+-\d+\s+first)\b/i;
 // Provenance suffix on an assertion (Dim 10). GROUNDED = may be a hard assertion;
 // {HYPOTHESIS} is a guess (question form only); no tag at all = ungrounded.
