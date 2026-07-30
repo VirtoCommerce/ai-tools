@@ -464,3 +464,34 @@
 [FORM] Organization Memberships widget shows org-scoped IsLocked = false (unchanged by platform lock) — mechanisms are independent
 [ASSERT] Both lock fields coexist without interfering: platform isLockedOut=true, org IsLocked=false in same user state","[API] GET {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_BUYER.platform_id) — verify isLockedOut field before and after lock action
 [VERIFY] Customer module org-memberships endpoint confirms org-scoped lock field is unaffected by platform lock action","Platform lock and org-scoped lock appear to be the same mechanism (regression: locking platform also sets org IsLocked=true); org lock widget absent (VCST-5028 widget not rendered); GET isLockedOut returns null or missing","[ACT] Unlock @td(TECHFLOW_BUYER.email) via Admin SPA after test to restore original state","VCST-5028; PLAT-009; PLAT-010; Synced: VCST-5028 (2026-06-15)","Draft"
+"PLAT-085","Admin SPA Session Expiry Shows Clean Sign-In Screen (No Broken Blade) After API 401","Platform > Security > Session Expiry","Critical","BL-AUTH-014","","Admin logged into Backend ({{BACK_URL}}) with a valid session; a blade is open showing live data (e.g. Security > Users grid)","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}
+[ACT] Sign in with admin credentials
+[WAIT] Admin SPA home loads
+[ACT] Open Security > Users blade so a live data grid is visible
+[ACT] Simulate session expiry by deleting the ASP.NET Core Identity auth cookie via DevTools Application/Storage tab (without signing out through the UI)
+[ACT] Trigger a data-refresh action in the open blade (e.g. re-run the Users search) that fires an /api/platform/... call
+[WAIT] observe the SPA's handling of the resulting failed call","[STATE] Admin SPA shows a clean sign-in screen — no broken/frozen blade left on screen {OBSERVED}
+[NETWORK] the triggering API call returns HTTP 401 (not a 302 the SPA's XHR handling cannot follow) {OBSERVED}
+[DOM] the sign-in page's username and password fields are visible and enabled (not frozen/disabled) {OBSERVED}","[NETWORK] no infinite-redirect loop on the failing request
+[CONSOLE] an unhandled 401 promise rejection may appear (tracked separately as VCST-5622) — informational only, NOT a failure criterion for this case","Blade remains open showing stale data after session expiry; SPA shows a blank/white screen instead of sign-in; infinite redirect loop; sign-in form fields not interactive","Sign out if left signed in; close any open blades","VCST-5618","Draft"
+"PLAT-086","Authenticated But Forbidden Admin Action Returns 403 Directly (Not Redirect-Then-404)","Platform > Security > Authorization","Critical","BL-AUTH-014","","Restricted role AGENT-TEST-Catalog-Link-Restricted exists, excluding permission catalog:categories:link; account @td(CATALOG_LINK_RESTRICTED.email) is assigned this role and can sign in to {{BACK_URL}}","restricted_email=@td(CATALOG_LINK_RESTRICTED.email); restricted_password={{CATALOG_LINK_RESTRICTED_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}
+[ACT] Sign in as restricted_email / restricted_password
+[WAIT] Admin SPA home loads
+[ACT] Open Catalog > Categories
+[ACT] Attempt the category-link action that requires catalog:categories:link (the permission this role excludes)
+[WAIT] observe the network response for the resulting forbidden request","[NETWORK] the forbidden action's API call returns HTTP 403 directly {OBSERVED}
+[STATE] no intermediate 302→AccessDenied→404 redirect chain is observed for this call {OBSERVED}
+[DOM] a forbidden/permission-denied indicator is visible on the categories blade for the action (not a blank or generically broken blade) {OBSERVED}","[NETWORK] no 404 following the forbidden call (old chain artifact)
+[CONSOLE] no unhandled exception triggered by the 403 response","HTTP 302 or a trailing 404 observed instead of a direct 403; categories blade shows a blank/broken state","Sign out restricted user","VCST-5618","Draft"
+"PLAT-087","Fresh Anonymous Visit to Admin SPA Still Completes Normal Sign-In Flow (Regression Guard)","Platform > Security > Authentication","High","BL-AUTH-014","","No admin session cookie present (fresh/incognito browser context); {{BACK_URL}} accessible","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} in a fresh browser context with no session cookie
+[WAIT] redirected into the sign-in flow
+[ACT] Complete sign-in with admin credentials
+[WAIT] Admin SPA home/dashboard loads
+[ACT] Sign out
+[WAIT] returned to the sign-in page
+[ACT] Navigate to {{BACK_URL}} again in a fresh anonymous context
+[WAIT] redirected into the sign-in flow again
+[ACT] Complete sign-in a second time with admin credentials
+[WAIT] Admin SPA home/dashboard loads again, identical to the first cycle","[NAV] each anonymous navigation to {{BACK_URL}} redirects into the login/OIDC flow, not a raw 401 page {SPEC}
+[STATE] sign-in completes and lands on the Admin SPA home/dashboard on both cycles {OBSERVED}
+[NETWORK] no infinite redirect loop on /connect/authorize on either cycle {OBSERVED}","[CONSOLE] no JS errors during either sign-in cycle","Raw 401 JSON shown instead of the sign-in page; infinite redirect loop; sign-in succeeds but the SPA shell fails to load","Sign out","VCST-5618","Draft"
