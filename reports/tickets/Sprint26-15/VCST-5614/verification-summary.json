@@ -1,0 +1,28 @@
+{
+  "ticket": "VCST-5614",
+  "verdict": "FIX_INCOMPLETE",
+  "date": "2026-07-30",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1051.0",
+    "theme": "n/a (admin-only change)",
+    "relevant_modules": { "VirtoCommerce.Notifications": "3.1013.0-pr-202-b644" },
+    "pr_build": "3.1013.0-pr-202-b644 (VirtoCommerce/vc-module-notification#202, commit b644b77 \"fix multiple issues after QA\")"
+  },
+  "agent_used": "qa-backend-expert (initial retest pass) + direct live/source verification of all remaining items (playwright-edge + GitHub source)",
+  "str_result": "6/13 items fixed",
+  "baseline_reproduction": "RED (from prior /qa-test run 2026-07-29 against pr-202-0b9c, cited in ticket description + reports/bugs/open/BUG-notification-editor-minor-findings-VCST-5557.md)",
+  "checklist_total": 13,
+  "checklist_passed": 6,
+  "checklist_failed": 7,
+  "checklist_not_reverified": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "note": "Ticket was in Draft status (never moved to Ready for test/Testing) when this verification ran; evidence reused from the same-session VCST-5557 re-test rather than a fresh dispatch, per operator confirmation.",
+  "jira_transition": "not applied — awaiting operator decision",
+  "evidence": "reports/tickets/Sprint26-15/VCST-5614/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-15/VCST-5614/"
+}
