@@ -276,7 +276,7 @@ test("END TO END: an information-free struct (S1 but all-degenerate) fails the g
 test("END TO END: no struct on stdin exits 2 with a clear message", async () => {
   const { plan, exitCode } = await runJson(["--session", SID, "--json"], { struct: null });
   assert.equal(exitCode, 2);
-  assert.match(plan.error, /No finding struct on stdin/);
+  assert.match(plan.error, /No finding struct/);
 });
 
 // ─── B5 — a finding with no locatable evidence is WITHHELD from filing (VCST-5582) ──────
@@ -401,4 +401,63 @@ test("D2 END TO END: a struct with two same-key findings files exactly ONE issue
   assert.equal(plan.findings.length, 1, "the two same-key findings became ONE filing");
   assert.equal(plan.findings[0].severity, "S1");
   assert.equal(plan.sent, 1, "exactly one issue filed, never two");
+});
+
+// ─── VCST-5582 — deliver reads the struct from --input <file> (no piped stdin) ──────────────
+import { mkdtempSync, writeFileSync as wfs, rmSync as rmrf } from "node:fs";
+import { tmpdir as tmp } from "node:os";
+test("--input: reads the validated struct from a FILE (the non-piped, allowlistable entry path)", async () => {
+  const dir = mkdtempSync(join(tmp(), "vc-fix-input-"));
+  try {
+    const structFile = join(dir, "struct.json");
+    wfs(structFile, JSON.stringify({
+      schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
+      feedback: { up: 0, down: 0 }, sessionCount: 1,
+      findings: [{
+        skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+        signalClass: "tool_error", errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+        struggle: [], retries: 0, occurrences: 1, vendorHttpStatus: 400,
+      }],
+    }));
+    // stdin is a TTY (nothing piped) — proving the struct came from the file, not stdin.
+    const ttyStdin = { isTTY: true, async *[Symbol.asyncIterator]() {} };
+    const prev = { write: process.stdout.write, exit: process.exitCode, tok: process.env.GITHUB_FIX_BUGS_TOKEN, fetch: globalThis.fetch };
+    let out = "";
+    process.stdout.write = (s) => { out += s; return true; };
+    process.env.GITHUB_FIX_BUGS_TOKEN = "ghp_classic_test_token";
+    globalThis.fetch = async (url, opts = {}) => {
+      const u = String(url);
+      if ((opts.method || "GET").toUpperCase() === "POST") return { ok: true, json: async () => ({ number: 7, html_url: "http://issue/7" }) };
+      if (u.endsWith("/user")) return { ok: true, status: 200, headers: { get: (k) => (k.toLowerCase() === "x-oauth-scopes" ? "repo" : null) }, json: async () => ({ login: "qa-bot" }) };
+      if (u.includes("/search/issues")) return { ok: true, json: async () => ({ items: [] }) };
+      if (u.includes("/issues")) return { ok: true, json: async () => [] };
+      return { ok: true, headers: { get: () => null }, json: async () => ({ permissions: {} }) };
+    };
+    try {
+      await main(["--input", structFile, "--session", "sid-file", "--dry", "--json"], { stdin: ttyStdin, fetchImpl: globalThis.fetch });
+    } finally {
+      process.stdout.write = prev.write; process.exitCode = prev.exit; globalThis.fetch = prev.fetch;
+      if (prev.tok === undefined) delete process.env.GITHUB_FIX_BUGS_TOKEN; else process.env.GITHUB_FIX_BUGS_TOKEN = prev.tok;
+    }
+    const plan = JSON.parse(out.trim().split("\n").pop());
+    assert.equal(plan.action, "deliver");
+    assert.equal(plan.findings.length, 1);
+    assert.equal(plan.dryRun, true);
+    assert.equal(plan.session, "sid-file");
+  } finally {
+    rmrf(dir, { recursive: true, force: true });
+  }
+});
+
+test("--input: a missing/unparseable file exits 2 with a clear message (never a stack trace)", async () => {
+  const prev = { write: process.stdout.write, exit: process.exitCode };
+  let out = "";
+  process.stdout.write = (s) => { out += s; return true; };
+  try {
+    await main(["--input", "/no/such/struct.json", "--session", "x", "--json"], { stdin: { isTTY: true, async *[Symbol.asyncIterator]() {} } });
+  } finally { process.stdout.write = prev.write; }
+  const exitCode = process.exitCode; process.exitCode = prev.exit;
+  const plan = JSON.parse(out.trim().split("\n").pop());
+  assert.equal(exitCode, 2);
+  assert.match(plan.error, /--input: cannot read\/parse/);
 });

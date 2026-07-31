@@ -750,6 +750,7 @@ function parseArgs(argv) {
     else if (t === "--repo") a.repo = argv[++i];
     else if (t === "--as") a.override = argv[++i];
     else if (t === "--session") a.session = argv[++i];
+    else if (t === "--input") a.input = argv[++i];
     else if (t === "--purge") a.purge = true;
     else if (t === "--keep") a.keep = true;
     else if (t === "--batch") a.batch = true;
@@ -1081,6 +1082,23 @@ export async function main(argv = process.argv.slice(2), { stdin = process.stdin
       feedback: { up: 0, down: 0 },
       sessionCount: batchSessions.length || 1,
     };
+  } else if (args.input) {
+    // `--input <file>`: read the validated struct from a FILE instead of piped stdin. This is the
+    // PREFERRED invocation (VCST-5582): the deliverer writes the struct to a scratch file and runs a
+    // plain `node deliver.mjs --input <file> --confirm` — no `<json> | node …` pipe. The piped-stdin
+    // form is rejected by Claude Code's auto-mode permission classifier BEFORE the script runs (a
+    // pipe feeding data into an interpreter reads as arbitrary execution) and, being a pipeline, is
+    // not cleanly allowlistable either. A plain non-piped command is both classifier-friendlier and
+    // narrowly allowlistable via a `Bash(node …deliver.mjs …)` rule.
+    try {
+      raw = JSON.parse(readFileSync(resolve(args.input), "utf8"));
+    } catch (e) {
+      const msg = `--input: cannot read/parse ${args.input}: ${e?.message ?? e}`;
+      emit(args.json, { error: msg }, msg);
+      process.exitCode = 2;
+      return;
+    }
+    if (!sid && typeof raw?.sessionId === "string") sid = raw.sessionId;
   } else {
     try {
       raw = await readStdinJson(stdin);
@@ -1091,7 +1109,7 @@ export async function main(argv = process.argv.slice(2), { stdin = process.stdin
       return;
     }
     if (!raw) {
-      const msg = "No finding struct on stdin. Pipe the diagnostician's validated struct: `… | node deliver.mjs --session <sid>`.";
+      const msg = "No finding struct. Preferred: `node deliver.mjs --input <struct.json> --session <sid>` (no pipe). Piped stdin (`… | node deliver.mjs`) also works but is blocked by the auto-mode classifier.";
       emit(args.json, { error: msg }, msg);
       process.exitCode = 2;
       return;

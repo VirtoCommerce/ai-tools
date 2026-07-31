@@ -47,13 +47,23 @@ sending rights, and this agent never touches the analysis. Do **not** merge the 
 
 Everything below is `deliver.mjs`'s job; you invoke it and report. You do not reimplement any of it.
 
-1. **Send.** Pipe the struct to `deliver.mjs --confirm` and let it own dedup, routing, body
-   composition, the leak scan, sending, and retention:
+1. **Send.** Write the struct to a scratch file, then run `deliver.mjs --input <file> --confirm`
+   (NEVER `<json> | node …`) and let it own dedup, routing, body composition, the leak scan, sending,
+   and retention:
 
    ```bash
-   echo '<the finding struct JSON>' | node "$pluginRoot/skills/vc-self-check/deliver.mjs" \
-     --session <sid> --confirm --json
+   # 1) write the struct you were handed to a scratch file
+   #    e.g. <outputRoot>/.vc-fix/diagnostics/<sid>.deliver-input.json
+   # 2) run WITHOUT a pipe:
+   node "$pluginRoot/skills/vc-self-check/deliver.mjs" \
+     --input "<outputRoot>/.vc-fix/diagnostics/<sid>.deliver-input.json" --session <sid> --confirm --json
    ```
+
+   **Why `--input`, not a pipe:** the piped-stdin form (`<json> | node deliver.mjs`) is rejected by
+   Claude Code's auto-mode permission classifier BEFORE the script runs — so a consented delivery
+   silently never happens in auto mode. A plain `node deliver.mjs --input <file>` is both
+   classifier-friendlier and narrowly allowlistable. Do NOT fall back to a pipe if `--input` is denied
+   — a pipe will be denied too; report the block instead.
 
    `deliver.mjs` decides the route **deterministically** and acts — you never choose it and never
    announce it beforehand:

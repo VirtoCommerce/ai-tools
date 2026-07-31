@@ -100,10 +100,18 @@ vc-fix self-check: 1 BROKEN, 1 DEGRADED (session <sid>, plugin 0.8.2)
 
 To compute the plan for disclosure, run `deliver.mjs` in its **dry** mode (it sends NOTHING) and read
 only what you need — the dedup split and the normalized string fields — without dumping the plan JSON
-into chat:
+into chat.
+
+**Pass the struct via `--input <file>`, NEVER a `<json> | node …` pipe.** Write the validated struct
+to a scratch file first, then run a plain command. The piped-stdin form is rejected by Claude Code's
+auto-mode permission classifier **before the script runs** (a pipe feeding data into an interpreter
+reads as arbitrary execution) and, being a pipeline, is not cleanly allowlistable — so a consented
+delivery silently never happens in auto mode. A plain `node deliver.mjs --input <file>` is both
+classifier-friendlier and narrowly allowlistable.
 
 ```bash
-echo '<the finding struct JSON>' | node "$pluginRoot/skills/vc-self-check/deliver.mjs" --session <sid> --json
+# write the struct to a scratch file (once), then run WITHOUT a pipe:
+node "$pluginRoot/skills/vc-self-check/deliver.mjs" --input "<outputRoot>/.vc-fix/diagnostics/<sid>.deliver-input.json" --session <sid> --json
 ```
 
 **Enumerate every possible OUTCOME the yes covers**, in this order — so the consent genuinely covers
@@ -181,12 +189,13 @@ A turn emits ONE info line + at most ONE question. Never a second question, neve
 
 ## The deliver step (consent-gated) — contribute upstream
 
-[`deliver.mjs`](./deliver.mjs) turns the finding struct on **stdin** into GitHub Issues on
-`VirtoCommerce/vc-mcp-testing-module`. On the interactive path the orchestrator does NOT run
-`--confirm` itself — after the one yes it spawns the [`self-check-deliverer`](../../agents/self-check-deliverer.md)
-subagent, which runs `deliver.mjs --confirm` off the main thread (so dedup output + issue/comment
-bodies never enter the conversation) and returns one line. `deliver.mjs` is still invoked directly
-for the dry disclosure plan (Step 2) and as `/vc-self-check deliver`.
+[`deliver.mjs`](./deliver.mjs) turns the finding struct (passed via **`--input <file>`**, never a
+pipe — see the auto-mode note in Step 2) into GitHub Issues on `VirtoCommerce/vc-mcp-testing-module`.
+On the interactive path the orchestrator does NOT run `--confirm` itself — after the one yes it spawns
+the [`self-check-deliverer`](../../agents/self-check-deliverer.md) subagent, which writes the struct to
+a scratch file and runs `deliver.mjs --input <file> --confirm` off the main thread (so dedup output +
+issue/comment bodies never enter the conversation) and returns one line. `deliver.mjs` is still invoked
+directly for the dry disclosure plan (Step 2) and as `/vc-self-check deliver`.
 
 **The validator is the only gateway (B3).** Neither the orchestrator, the deliverer, nor any skill
 may hand-author or edit an upstream body to route around a validator denial. The only outbound bytes
