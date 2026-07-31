@@ -253,12 +253,18 @@ console.log('\n[6] Address-book pagination fixture (pagination org)');
       const declared = aliases.TECHFLOW_ORG_ADDRESSES;
       if (declared) {
         const expect = { count: a.expectedTotal, csv_managed_count: a.csvDistinct, countries_distinct: a.countryCount, cities_distinct: a.cityCount, states_distinct: a.stateCount };
+        // Track THIS check's own outcome. Gating the ok() on the global `problems` array (or on
+        // `count` alone) printed "alias agrees" immediately after failing on a different field —
+        // e.g. cities_distinct drifts while count still matches — which is a false success sitting
+        // one line below its own failure.
+        const mismatched = [];
         for (const [k, v] of Object.entries(expect)) {
           if (declared[k] !== undefined && declared[k] !== v) {
+            mismatched.push(k);
             fail(`aliases.json TECHFLOW_ORG_ADDRESSES.${k} = ${JSON.stringify(declared[k])} but addresses.csv yields ${v} — the CSV is the source of truth; update the alias`);
           }
         }
-        if (!problems.length || declared.count === a.expectedTotal) ok(`TECHFLOW_ORG_ADDRESSES alias agrees with addresses.csv (count=${a.expectedTotal})`);
+        if (!mismatched.length) ok(`TECHFLOW_ORG_ADDRESSES alias agrees with addresses.csv (count=${a.expectedTotal})`);
       }
     }
   }

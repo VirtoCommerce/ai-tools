@@ -119,6 +119,7 @@
     "suites:append": "npx tsx scripts/test-cases/append-test-cases-to-suite.ts",
     "suites:review": "npx tsx scripts/test-cases/lint-test-cases.ts",
     "suites:gates": "npx tsx scripts/test-cases/check-smoke-gates.ts",
+    "td:check:pagesize": "node scripts/seed-data/b2b/check-address-page-size.mjs",
     "tc:audit:collect": "npx tsx scripts/test-cases/lint-test-cases.ts --json",
     "tc:audit:queue": "npx tsx scripts/test-cases/audit-queue.ts",
     "tc:audit:source": "npx tsx scripts/test-cases/suite-source-map.ts",
