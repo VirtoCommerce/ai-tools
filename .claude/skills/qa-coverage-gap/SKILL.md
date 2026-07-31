@@ -152,7 +152,7 @@ Never hardcode suite IDs in this skill — query the manifest. The manifest curr
 | Upstream | `knowledge/api/graphql-schema.md` | Schema verification before authoring GraphQL cases |
 | Sibling | `/qa-coverage-generation` | Orchestrated multi-agent counterpart (uses this skill via `domain` mode) |
 | Downstream | `/qa-test-cases-generator` | Receives `--layer` invocations to author cases |
-| Downstream | `/qa-review-tests` | Reviews generated cases on 8 dimensions before merge |
+| Downstream | `/qa-review-tests` | Reviews generated cases on 11 dimensions before merge |
 | Downstream | `/qa-test` | Generated cases can be executed by qa-testing-expert |
 | Downstream | `/qa-regression` | Updated suites feed into regression runs |
 | Downstream | `/qa-metrics` | Coverage metrics updated post-generation |

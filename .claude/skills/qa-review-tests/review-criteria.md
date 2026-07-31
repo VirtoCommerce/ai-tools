@@ -496,12 +496,95 @@ WITH WARNINGS verdict promotion requires.
 
 ---
 
+## Dimension 11: Behavioral Triangulation (3-axis, `--triangulate`)
+
+Dimension 10 checks that an assertion **carries** a grounded provenance tag. Dimension 11 checks the
+tag is **TRUE**. The gap is real and silent: `lint-test-cases.ts` GRD-001 passes a `{DOC}` tag whose
+doc changed, an `{OBSERVED}` tag captured against a build from six months ago, a `{BL}` tag citing a
+retired invariant, and a `{SPEC}` tag whose ticket was descoped. All four lint green today.
+
+Each assertion is triangulated against **docs + live + source** and assigned one verdict. The full
+judgment rules — evidence bar, `docs: N/A` waiver, suite→repo resolution, decision table, auto-fix
+matrix, edit-safety rules — live in **triangulation-criteria.md**. This section is the rule catalog.
+
+**Verdict severity ladder.** Note this dimension's severities describe *staleness of the expectation*,
+not executability — a TRI-002 case runs fine and reports a false FAIL, which is worse than a case that
+cannot run at all, because it burns triage time and erodes trust in the suite.
+
+### TRI-000: Missing or expired audit stamp `[Informational]`
+- **Detection:** the row's `References` carries no `Audited:` token, or its stamp is older than the
+  configured staleness window. Deterministic — emitted by `scripts/test-cases/lint-test-cases.ts`.
+- **Impact:** the case's expectations have never been (or not recently been) triangulated. Not a defect
+  in itself — a *scheduling* signal. This is the sort key the audit rotation reads
+  (`npm run tc:audit:queue`).
+- **Why Informational:** on day one this fires on all ~3,960 cases. Anything higher would turn the
+  default `--fail-on=High` gate red across the whole repo and force everyone to `--warn-only`, which
+  kills the signal permanently.
+- **Auto-fixable:** Yes — a completed triangulation run writes the stamp (this is the only rule whose
+  fix *is* running the dimension).
+
+### TRI-001: Confirmed — behavior still true `[no finding]`
+- **Detection:** every applicable axis produced concrete, agreeing evidence, and the case text matches it.
+- **Action:** not a finding. Refresh the `Audited:` stamp and re-date the assertion's provenance tag.
+- **Auto-fixable:** Yes — stamp only, never a text change.
+- **Note:** CONFIRMED does **not** promote `Automation_Status`. It supplies evidence for the promotion
+  decision; the peer-review gate still makes it.
+
+### TRI-002: Drift — case text stale, evidence agrees `[Critical]`
+- **Detection:** all applicable axes agree with **each other** but contradict the assertion (or step) as
+  written. The classic shape: a label was renamed, a validation moved from hidden→disabled, a status
+  vocabulary changed (`Pending` → `Invited`), a computed value's rounding changed.
+- **Bad (drifted):** `[DOM] member status badge reads 'Pending' {OBSERVED}` — live now renders `Invited`.
+- **Good (rewritten):** `[DOM] member status badge reads 'Invited' {OBSERVED}` + stamp.
+- **Impact:** a false FAIL on every regression run. Reads as a product bug, consumes triage, and after
+  a few cycles the suite gets ignored.
+- **Auto-fixable:** Yes — rewrite **only the drifted assertion**, not the whole cell, so a wrong rewrite
+  is revertible from `git diff`. Must keep `{{VAR}}`/`@td()` resolution and assert the structural
+  invariant, never the literal value observed live (DV-016). Grounding in source may quote an i18n
+  **key**, never a guessed rendering of it (GRD-002).
+
+### TRI-003: Missing — real behavior with no case `[Medium]`
+- **Detection:** the axes agree that a behavior exists in the suite's scope, and no case covers it.
+- **Impact:** a coverage gap, not a defect in an existing case.
+- **Auto-fixable:** **No.** Report the seed title + the axis evidence. Authoring belongs to
+  `/qa-test-lifecycle` Phase 3 / `/qa-test-cases-generator`. **Never fabricate a case here** — a case
+  invented from triangulation evidence has no reviewed steps and would enter the suite ungrounded.
+
+### TRI-004: Contradictory — axes disagree `[High]`
+- **Detection:** two or more axes produced evidence that conflicts.
+- **Dominant cause — deploy lag:** source shows a merged fix, live shows the old behavior, because the
+  pinned artifact trails master. **This is TRI-004, never TRI-002.** Rewriting the case to match a build
+  that is about to change creates a *new* drift in the opposite direction.
+- **Secondary cause:** the source axis resolved to the wrong repo. Re-resolve before concluding anything.
+- **Auto-fixable:** **No.** Proposal with a re-audit trigger. A human decides which axis is authoritative
+  — most often the answer is "wait for the deploy".
+
+### TRI-005: Ungrounded — an applicable axis produced nothing `[High]`
+- **Detection:** an applicable axis is absent or was unverifiable this run — no doc found (where a doc
+  *could* exist), unresolvable source repo, live blocked on a fixture/precondition, or fewer than two
+  axes remaining after waivers.
+- **Impact:** the assertion cannot be confirmed **or** refuted. It stays as-is; nothing is written.
+- **Discipline:** name **which** axis was absent and why, in the report. `docs: N/A` is only for a
+  *structurally* undocumentable behavior (triangulation-criteria.md §1a) — a doc that exists but wasn't
+  checked is TRI-005. **When in doubt, TRI-005, not `N/A`.** A lone surviving axis never confirms.
+- **Auto-fixable:** No.
+
+### TRI-006: Retire — behavior gone everywhere `[High]`
+- **Detection:** every applicable axis says the behavior no longer exists (removed feature, dropped
+  endpoint, deleted surface).
+- **Impact:** the case is dead — it will FAIL or BLOCK forever.
+- **Auto-fixable:** **No, deliberately.** Never set `Automation_Status: Deprecated` automatically.
+  Deprecation silently removes coverage, so a wrong TRI-006 is invisible until a real regression ships.
+  Always a human proposal. (Same reasoning as `/qa-review-bl`'s "retiring is destructive" rule.)
+
+---
+
 ## Severity Decision Matrix
 
 | Severity | Criteria | Action Required |
 |----------|----------|-----------------|
 | **Blocker** | Test case cannot be parsed or executed at all | Must fix before regression run |
-| **Critical** | Test case will produce flaky or unreliable results | Should fix before regression run |
-| **High** | Test case can execute but may miss real bugs | Fix when convenient |
+| **Critical** | Test case will produce flaky or unreliable results, **or asserts behavior that is no longer true** (TRI-002) | Should fix before regression run |
+| **High** | Test case can execute but may miss real bugs; **or its expectation could not be confirmed or refuted** (TRI-004/005/006) | Fix when convenient |
 | **Medium** | Informational finding — coverage or traceability gap | Track for improvement |
-| **Informational** | Expected pattern (e.g., cross-layer duplication) | No action needed |
+| **Informational** | Expected pattern (e.g., cross-layer duplication), or a scheduling signal (TRI-000) | No action needed |

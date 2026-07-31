@@ -1,0 +1,158 @@
+name: Test-Case Staleness Audit
+
+# Audits ONE regression suite per run for stale expectations (Dimension 11 —
+# behavioral triangulation against docs + live + source) and opens a DRAFT PR with
+# the CSV diff. Draft-only, never auto-merge: the PR review is the human gate that
+# replaces `--fix`'s interactive confirmation.
+#
+# Only CONFIRMED (audit-stamp refresh) and DRIFT (evidence-backed assertion
+# rewrite) are ever written. MISSING / CONTRADICTORY / UNGROUNDED / RETIRE are
+# reported in the PR body and never touch a CSV.
+#
+# The suite is picked by `scripts/test-cases/audit-queue.ts`: risk tier
+# (P0/revenue-critical first) → oldest `Audited:` stamp → testCount. The stamp
+# lives in the CSV row it describes, so there is no scheduler state to drift and a
+# skipped day simply leaves that suite at the head of the queue.
+#
+# NOTE: the schedule is intentionally commented out (same posture as the other four
+# workflows). Enable it after 2-3 successful workflow_dispatch runs have been
+# reviewed end-to-end.
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Suite id to audit (e.g. 015). Empty = the most overdue suite from the queue.'
+        required: false
+        default: ''
+        type: string
+      stale_days:
+        description: 'Re-audit window in days (a suite audited more recently is skipped)'
+        required: false
+        default: '180'
+        type: string
+      max_budget:
+        description: 'Max budget in USD for the audit'
+        required: false
+        default: '12.0'
+        type: string
+      model:
+        description: 'Claude model'
+        required: true
+        default: 'claude-sonnet-4-5-20250929'
+        type: choice
+        options:
+          - claude-sonnet-4-5-20250929
+          - claude-opus-4-6
+      dry_run:
+        description: 'Dry run (pick + report only — no branch, no agent, no PR)'
+        required: false
+        default: false
+        type: boolean
+  # One suite per weekday. Commented out until the flow is validated by hand.
+  # schedule:
+  #   - cron: '0 5 * * 1-5'  # Mon-Fri 05:00 UTC
+
+concurrency:
+  # Never two audits at once: both would branch from the same base and the second
+  # would pick the same suite (the first has not landed its stamp yet).
+  group: suite-audit
+  cancel-in-progress: false
+
+permissions:
+  contents: write        # push the claude/qa-suite-audit/* branch
+  pull-requests: write   # open the draft PR
+
+jobs:
+  suite-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # A PAT, NOT the default GITHUB_TOKEN: a PR authored by GITHUB_TOKEN does not
+      # trigger downstream checks, so the audit PR would sit with no CI signal.
+      GH_TOKEN: ${{ secrets.AUTOFIX_GITHUB_TOKEN }}
+      AUDIT_SUITE: ${{ github.event.inputs.suite }}
+      STALE_DAYS: ${{ github.event.inputs.stale_days || '180' }}
+      MAX_BUDGET_USD: ${{ github.event.inputs.max_budget || '12.0' }}
+      MODEL: ${{ github.event.inputs.model || 'claude-sonnet-4-5-20250929' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+      BASE_BRANCH: ${{ github.ref_name }}
+      TEST_ENV: vcst
+      # The LIVE axis needs the deployed storefront + admin. Without these the
+      # audit can still run, but every assertion scores UNGROUNDED on live.
+      FRONT_URL: ${{ secrets.FRONT_URL }}
+      BACK_URL: ${{ secrets.BACK_URL }}
+      STORE_ID: ${{ secrets.STORE_ID }}
+      ADMIN: ${{ secrets.ADMIN }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      USER_EMAIL: ${{ secrets.USER_EMAIL }}
+      USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+      USER2_EMAIL: ${{ secrets.USER2_EMAIL }}
+      USER2_PASSWORD: ${{ secrets.USER2_PASSWORD }}
+      B2B_USER_PASSWORD: ${{ secrets.B2B_USER_PASSWORD }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so the branch can be pushed and the PR diffed properly.
+          fetch-depth: 0
+          # Persist the PAT for `git push` of the audit branch.
+          token: ${{ secrets.AUTOFIX_GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "vc-qa-suite-audit[bot]"
+          git config --global user.email "qa-autofix@virtoworks.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Host-based rather than the ci/Dockerfile image: this job needs git + gh to
+      # open its PR, which is awkward inside the container. One browser is enough
+      # for a single-suite live axis.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify gh auth
+        if: github.event.inputs.dry_run != 'true'
+        run: gh auth status || (echo "::error::AUTOFIX_GITHUB_TOKEN missing or invalid"; exit 1)
+
+      - name: Show the audit queue
+        run: npm run tc:audit:queue -- --limit=15
+
+      - name: Run suite audit
+        id: audit
+        run: npm run ci:audit
+
+      - name: Upload run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: suite-audit-${{ github.run_number }}
+          path: reports/suite-audit/
+          retention-days: 30
+
+      - name: Publish summary
+        if: always()
+        run: |
+          BODY=$(find reports/suite-audit -name "pr-body.md" -type f | sort -r | head -1)
+          if [ -n "$BODY" ]; then
+            cat "$BODY" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No PR body produced — see the job log and summary.json." >> $GITHUB_STEP_SUMMARY
+            SUM=$(find reports/suite-audit -name "summary.json" -type f | sort -r | head -1)
+            if [ -n "$SUM" ]; then
+              echo '```json' >> $GITHUB_STEP_SUMMARY
+              cat "$SUM" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
