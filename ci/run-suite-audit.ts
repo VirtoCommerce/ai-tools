@@ -318,8 +318,25 @@ async function main(): Promise<void> {
   mkdirSync(outputDir, { recursive: true });
   log(`=== Suite audit: ${RUN_ID} ===`);
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    log("ANTHROPIC_API_KEY is not set.");
+  // The Agent SDK resolves credentials in order: ANTHROPIC_API_KEY →
+  // ANTHROPIC_AUTH_TOKEN → an `ant auth login` profile → Workload Identity
+  // Federation. An unset ANTHROPIC_API_KEY therefore does NOT mean there are no
+  // credentials, so this preflight accepts any env-supplied source rather than
+  // hard-requiring the key (which is what the other ci/run-*.ts entrypoints do).
+  // WIF is the documented choice for CI: GitHub Actions can supply the identity
+  // token via `permissions: id-token: write`, so no long-lived secret is needed.
+  const wif = !!(
+    process.env.ANTHROPIC_FEDERATION_RULE_ID &&
+    process.env.ANTHROPIC_ORGANIZATION_ID &&
+    process.env.ANTHROPIC_SERVICE_ACCOUNT_ID &&
+    (process.env.ANTHROPIC_IDENTITY_TOKEN || process.env.ANTHROPIC_IDENTITY_TOKEN_FILE)
+  );
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN && !wif) {
+    log("No Anthropic credentials in the environment.");
+    log("Set ANTHROPIC_API_KEY, or configure Workload Identity Federation");
+    log("(ANTHROPIC_FEDERATION_RULE_ID + ANTHROPIC_ORGANIZATION_ID +");
+    log(" ANTHROPIC_SERVICE_ACCOUNT_ID + ANTHROPIC_IDENTITY_TOKEN[_FILE]).");
+    log("An `ant auth login` profile also works locally but is not a CI credential.");
     process.exit(1);
   }
 
