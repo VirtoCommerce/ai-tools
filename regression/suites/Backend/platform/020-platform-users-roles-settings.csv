@@ -436,15 +436,15 @@ PLAT-079,Authorization Scopes,Platform > Security > Roles and Permissions,High,B
 [ACT] Attempt to delete a catalog item (should be blocked without catalog:delete)
 [ASSERT] Observe the UI feedback for blocked actions
 [ACT] Log out
-[NAV] Log in as admin","[STATE] User with catalog:read scope can view catalog items
-[DOM] Create button is hidden or disabled for user without catalog:create permission
-[DOM] Delete button is hidden or disabled without catalog:delete permission
-[API] API calls for restricted operations return 403 Forbidden
-[STATE] No privilege escalation is possible through the UI
-[STATE] Admin user can create and delete catalog items without restriction after logging back in","[API] POST {{BACK_URL}}/api/catalog/catalogs - expect 403 for restricted user
-[API] DELETE {{BACK_URL}}/api/catalog/catalogs/{id} - expect 403 for restricted user
-[NETWORK] 403 responses for unauthorized operations
-[CONSOLE] No unhandled exceptions",Restricted user can create or delete catalog items; 200 returned for blocked operations; UI shows enabled buttons for disallowed actions,none,smoke-baseline,Draft
+[NAV] Log in as admin","[STATE] User with catalog:read scope can view catalog items {OBSERVED}
+[DOM] Create button is hidden or disabled for user without catalog:create permission {OBSERVED}
+[DOM] Delete button is hidden or disabled without catalog:delete permission {OBSERVED}
+[API] API calls for restricted operations return 403 Forbidden {OBSERVED}
+[STATE] No privilege escalation is possible through the UI {OBSERVED}
+[STATE] Admin user can create and delete catalog items without restriction after logging back in {OBSERVED}","[API] POST {{BACK_URL}}/api/catalog/catalogs - expect 403 for restricted user {OBSERVED}
+[API] DELETE {{BACK_URL}}/api/catalog/catalogs/{id} - expect 403 for restricted user {OBSERVED}
+[NETWORK] 403 responses for unauthorized operations {OBSERVED}
+[CONSOLE] No unhandled exceptions {SPEC} — KNOWN ISSUE VCST-5622 (Admin SPA re-rejects handled 401/403; console-only, no functional impact). Classify a hit as KNOWN_ISSUE, not a new bug, until VCST-5622 ships",Restricted user can create or delete catalog items; 200 returned for blocked operations; UI shows enabled buttons for disallowed actions,none,smoke-baseline,Draft
 PLAT-080,Zero-Price and Negative Price Prevention,Platform > Catalog > Pricing Validation,Critical,BL-PLAT-004,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}), a product with pricing enabled exists",product_id=test_product_with_price; negative_price=-10.00; zero_price=0.00; valid_price=9.99,"[NAV] Navigate to Catalog module at {{BACK_URL}}
 [ACT] Open a product with an existing price
 [NAV] Navigate to the Prices tab or Pricing section

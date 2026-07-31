@@ -1,4 +1,4 @@
-# Admin SPA: unhandled 401 promise rejections after VCST-5618
+# Admin SPA: unhandled 401 *and 403* promise rejections after VCST-5618
 
 ## Status: READY_TO_SUBMIT
 
@@ -27,6 +27,7 @@ Also reproduces on a cold, fully anonymous load of the login page itself (fires 
 | Security blade ← Back after sign-out | 2x settings calls → 401 | `Possibly unhandled rejection` (x2) |
 | Security blade — roles search | `POST api/platform/security/roles/search` → 401 | **handled** — `Failed to load roles: {...}` (different code path, has a real error callback) |
 | Security blade — users search | `POST api/platform/security/users/search` → 401 | nothing — silently swallowed |
+| **403 branch** — login as a low-permission back-office user (`@td(CATALOG_READ_ONLY.email)`, `catalog:read` only) | `GET api/platform/modules`, `GET api/platform/localizable-settings` → **403** | `Possibly unhandled rejection` (x2) |
 
 All screenshots show a clean, correct login screen — this is console-only.
 
@@ -67,7 +68,21 @@ httpErrorInterceptor.responseError = function (rejection) {
 
 **RCA anchor:** `src/VirtoCommerce.Platform.Web/wwwroot/js/app/app.js:270`
 
-Suggested direction (not prescriptive): stop re-propagating specifically the `401` case once the global handler has taken ownership, since no consumer examined reacts to it. Caveats to weigh: a never-settling promise would leave `blade.isLoading = true` (harmless today since the login screen replaces the view, but a behavior change), and any future consumer wanting to react to a 401 would stop receiving it.
+**The 403 branch is a SECOND, distinct path to the same line — a 401-only fix would not close it.** A low-permission (but validly authenticated) user takes the `else` branch → `broadcast('httpError')`. That listener (`app.js`, appCtrl) only acts *if a blade is open*:
+
+```js
+$scope.$on('httpError', function (event, error) {
+    if (!event.defaultPrevented) {
+        if (bladeNavigationService.currentBlade) {          // <- no blade at bootstrap
+            bladeNavigationService.setError(error, bladeNavigationService.currentBlade);
+        }
+    }
+});
+```
+
+The 403s fire during post-login bootstrap (`modulesApi.query()`, localizable-settings), before any blade exists, so nothing consumes the broadcast and line 270 re-rejects into the void. (The `pushNotificationService.error` fallback for `httpError` is commented out at `app.js` run-block.) So 401 is "handled then re-rejected" while 403 is "broadcast to no one, then re-rejected" — two different holes, one line.
+
+Suggested direction (not prescriptive): stop re-propagating specifically the `401` case once the global handler has taken ownership, since no consumer examined reacts to it. **Weigh covering the `httpError` branch in the same change** — either don't re-reject once broadcast, or give the `httpError` listener a no-blade fallback; otherwise the read-only-user case above survives the fix. Caveats to weigh: a never-settling promise would leave `blade.isLoading = true` (harmless today since the login screen replaces the view, but a behavior change), and any future consumer wanting to react to a 401 would stop receiving it.
 
 ## Severity
 
@@ -80,7 +95,7 @@ Suggested direction (not prescriptive): stop re-propagating specifically the `40
 
 ## Duplicate Check
 
-Clean.
+Clean. The 403 branch was found independently on 2026-07-31 during a PLAT-079 run (suite `020`, `catalog:read`-only fixture) and folded in here rather than filed separately — same file, same line, same defect class.
 
 ## Fix Routing (→ /qa-fix)
 
