@@ -423,7 +423,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [NETWORK] no 4xx/5xx on address section render","no address pre-selected (user must manually pick every time); wrong address pre-selected (not the default/favorite); address form shown blank instead of pre-filled","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — new pre-selection behavior via composable default sort","Reviewed"
 "CHK-059","Ship-To Address - Search and Select Different Address Updates Shipping Methods","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-TechFlow org (id @td(TECHFLOW_ORG_ADDRESSES.org_id)) has 22 addresses across 3 countries / 13 US+CA regions / 20 cities seeded per test-data/addresses/techflow-org-addresses-state-20260423.json. Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
+TechFlow org (id @td(TECHFLOW_ORG_ADDRESSES.org_id)) has 22 addresses across 3 countries / 13 US+CA regions / 20 cities seeded per npm run seed:b2b:addresses (fixture test-data/b2b/addresses.csv). Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
 user={{ORG_USER_EMAIL}}
 password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
 [ASSERT] verify current address and shipping methods displayed
@@ -761,7 +761,7 @@ User logged in as {{USER_EMAIL}} with 3+ saved addresses; address popup open wit
 [NETWORK] no 4xx/5xx","list stays filtered after clearing input; full list not restored; extra network call fails; empty state shown despite addresses existing","Close popup without selection","Promoted from VCST-4710-SF-003 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-090","Address Popup — Country Facet Filters Address List","Checkout > Shipping > Address Popup > Facets","Critical","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Test org/user has addresses in 2+ countries; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses, 3 countries).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+Test org/user has addresses in 2+ countries; address popup open. Seed data: npm run seed:b2b:addresses (fixture test-data/b2b/addresses.csv) (22 addresses, 3 countries).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
 [WAIT] cart loaded
 [ACT] open address selection popup
 [WAIT] address list renders
@@ -776,7 +776,7 @@ Test org/user has addresses in 2+ countries; address popup open. Seed data: test
 [NETWORK] no 4xx/5xx","no filtering applied; count badge mismatched; facet checkbox has no visual selected state; spinner >5s","Close popup without selection","Promoted from VCST-4710-SF-004 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-091","Address Popup — State/Province Facet Filters Address List","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Test org has addresses in 2+ US states; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses across 13 US+CA regions).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+Test org has addresses in 2+ US states; address popup open. Seed data: npm run seed:b2b:addresses (fixture test-data/b2b/addresses.csv) (22 addresses across 13 US+CA regions).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
 [WAIT] cart loaded
 [ACT] open address selection popup
 [WAIT] address list renders
@@ -790,7 +790,7 @@ Test org has addresses in 2+ US states; address popup open. Seed data: test-data
 [NETWORK] no 4xx/5xx","facet shows region ID instead of name; no filtering applied; state facet empty despite addresses having state data","Close popup without selection","Promoted from VCST-4710-SF-005 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-092","Address Popup — City Facet Shows City Name NOT Postal Code (Defect #2 Verification)","Checkout > Shipping > Address Popup > Facets","Critical",,"ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Defect #2 must be fixed before PASS is achievable. Seed data available: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses with proper City/PostalCode separation). OQ-2: confirm defect #2 fix is in scope before running. VCST-4995 cancelled — seed data resolves dependency.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+Defect #2 must be fixed before PASS is achievable. Seed data available: npm run seed:b2b:addresses (fixture test-data/b2b/addresses.csv) (22 addresses with proper City/PostalCode separation). OQ-2: confirm defect #2 fix is in scope before running. VCST-4995 cancelled — seed data resolves dependency.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
 [WAIT] cart loaded
 [ACT] open address selection popup
 [WAIT] address list renders
@@ -802,7 +802,7 @@ Defect #2 must be fixed before PASS is achievable. Seed data available: test-dat
 [CONSOLE] no JS errors","city facet shows numeric postal codes instead of city names (Defect #2 regression); facet empty; spinner >5s","Close popup without selection","Promoted from VCST-4710-SF-006 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #2; VCST-4995 cancelled","Reviewed"
 "CHK-093","Address Popup — Combined Facets (Country + State + City) Narrow Results","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Addresses in multiple countries/states/cities available; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses, 3 countries, 13 regions, 20 cities).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+Addresses in multiple countries/states/cities available; address popup open. Seed data: npm run seed:b2b:addresses (fixture test-data/b2b/addresses.csv) (22 addresses, 3 countries, 13 regions, 20 cities).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
 [WAIT] cart loaded
 [ACT] open address selection popup
 [WAIT] address list renders
@@ -831,7 +831,7 @@ Build deployed to QA before Defect #1 fix. Verify column header is NOT interacti
 [NETWORK] no additional /graphql request on column header click","column sort fires and reorders list (would mean Defect #1 is fixed — update test); TypeError on column click","Close popup without selection","Promoted from VCST-4710-SF-008 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #1; RETIRED 2026-07-31: VCST-4992 is shipped, so Defect #1 no longer reproduces and this case's premise is false by design. Live 2026-07-31: the Address column header renders as a button (button.vc-table__sort-button) with cursor:pointer, and clicking it reorders the list - which is the exact condition this case's own Failure_Signals named as meaning Defect #1 is fixed and the test must be updated. Superseded by CHK-114 (sort works, ascending + descending). Kept for traceability only; do NOT include in regression selections. Audited: 2026-07-31 (TCA-2026-07-31-011); Source: vc-frontend/client-app/shared/checkout/components/select-address-modal.vue:358-379 + vc-table sort-button; Docs: N/A - implementation-detail: table sort mechanics","Deprecated"
 "CHK-095","Address Popup — Empty State When No Addresses Saved","Checkout > Shipping > Address Popup > Empty States","High","BL-CHK-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in with NO saved addresses in account; cart has at least 1 item. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json available for seeded account flows.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as user with no saved addresses
+User logged in with NO saved addresses in account; cart has at least 1 item. Seed data: npm run seed:b2b:addresses (fixture test-data/b2b/addresses.csv) available for seeded account flows.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as user with no saved addresses
 [WAIT] cart page loaded
 [ACT] click 'Please select a shipping address' link
 [WAIT] address popup opens","[DOM] popup renders an empty state message (no address rows in the table)
@@ -842,7 +842,7 @@ User logged in with NO saved addresses in account; cart has at least 1 item. See
 [NETWORK] no 4xx/5xx","popup shows error instead of empty state; spinner never resolves; 'Add New' missing; popup crashes with TypeError","Close popup","Promoted from VCST-4710-SF-009 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-096","Address Popup — Empty State When Filters Return No Results","Checkout > Shipping > Address Popup > Empty States","High","BL-CHK-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User has 3+ saved addresses; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+User has 3+ saved addresses; address popup open. Seed data: npm run seed:b2b:addresses (fixture test-data/b2b/addresses.csv).","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart loaded
 [ACT] open address selection popup
 [WAIT] address list renders with results
@@ -914,7 +914,7 @@ User logged in as personal account (no org membership) with personal addresses s
 [NETWORK] no 4xx/5xx","org addresses leaked into personal account popup; popup empty despite saved personal addresses","Close popup","Promoted from VCST-4710-SF-015 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-102","Address Popup — B2B Org Account Shows Org Addresses","Checkout > Shipping > Address Popup > Scope","High","BL-B2B-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as B2B org user with org addresses configured. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}} (org user)
+User logged in as B2B org user with org addresses configured. Seed data: npm run seed:b2b:addresses (fixture test-data/b2b/addresses.csv).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}} (org user)
 [WAIT] cart loaded
 [ACT] open address selection popup
 [WAIT] address list renders","[DOM] address list contains org addresses (scoped to organization via currentOrganizationAddresses)

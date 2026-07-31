@@ -78,7 +78,8 @@ Top-level structure (see [`test-data/README.md`](../../../test-data/README.md) f
 | [`test-data/inventory/`](../../../test-data/inventory) | Stock fixtures | |
 | [`test-data/payment/`](../../../test-data/payment) | Test cards per processor | `test-cards.csv` |
 | [`test-data/promotions/`](../../../test-data/promotions) | Coupons & promo codes | |
-| [`test-data/addresses/`](../../../test-data/addresses) | Address fixtures | TechFlow snapshot at `techflow-org-addresses-state-20260423.json` |
+| [`test-data/addresses/`](../../../test-data/addresses) | Address reference pool (not seeded) | `us-addresses.csv` — 100 US addresses used as a source pool, **not** provisioned to any account |
+| [`test-data/b2b/addresses.csv`](../../../test-data/b2b/addresses.csv) | **Seeded** org addresses | The real org-address fixture. `npm run seed:b2b:addresses` provisions them (teardown `:teardown`); TechFlow spans USA / CAN / GBR for facet coverage |
 | [`test-data/bopis/`](../../../test-data/bopis) | BOPIS test data | Includes `testProductCatalogId` for B2B virtual catalog root |
 | [`test-data/graphql/`](../../../test-data/graphql) | GraphQL queries/mutations + index | `index.json` |
 | [`test-data/search-queries/`](../../../test-data/search-queries) | Search test queries | |
