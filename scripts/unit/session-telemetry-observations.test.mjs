@@ -631,3 +631,72 @@ test("C2: an obs derived from a tool result carries that event's ts (not the sca
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ─── VCST-5582 — a Bash span that ECHOES plugin source is a read, not a self-report ─────────
+// The reference false positive: a diagnostic `cat`/`grep`/`sed`/`node -e readFileSync` of
+// bug-contract.mjs (whose JSDoc contains the literal "unverified defaults") minted a phantom
+// self_reported_fallback. The old guard skipped only the Read/Grep TOOL names, so a Bash echo of the
+// same source slipped through.
+for (const cmd of [
+  "cat plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs",
+  'grep -n "unverified" plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs',
+  "sed -n '80,95p' plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs",
+  'node -e "console.log(require(\'fs\').readFileSync(\'bug-contract.mjs\',\'utf8\'))"',
+  "Get-Content plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs",
+]) {
+  test(`FP fix: a Bash echo of plugin source does NOT mint self_reported_fallback (${cmd.split(" ")[0]})`, () => {
+    const home = setupHome();
+    try {
+      const t = tp(home);
+      run(home, "init", { session_id: "be", transcript_path: t });
+      run(home, "prompt", { session_id: "be", transcript_path: t, prompt: "/qa-bug x" });
+      appendLines(t, [
+        toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: cmd }),
+        // The command's OUTPUT is the file's content — a comment quoting the marker verbatim.
+        toolResult("2026-07-29T10:00:01.000Z", "t1", false, "// … clearly labelled \"unverified defaults\" (the E-f fallback ladder)."),
+      ]);
+      run(home, "finalize", { session_id: "be", transcript_path: t, background_tasks: [] });
+      const classes = obsOf(recordsOf(home, "be")).map((o) => o.class);
+      assert.ok(!classes.includes("self_reported_fallback"), `a Bash file-dump is data, not our own report: ${cmd}`);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+}
+
+test("FP fix control: a REAL plugin-script EXECUTION that self-reports a fallback STILL fires", () => {
+  const home = setupHome();
+  try {
+    const t = tp(home);
+    run(home, "init", { session_id: "real", transcript_path: t });
+    run(home, "prompt", { session_id: "real", transcript_path: t, prompt: "/project-init" });
+    appendLines(t, [
+      // NOT a read command — an actual run of the plugin script, whose OUTPUT reports a fallback.
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/discover-tracker.mjs"' }),
+      toolResult("2026-07-29T10:00:01.000Z", "t1", false, "scanned Bug type; falling back to the legacy field set (unverified defaults)"),
+    ]);
+    run(home, "finalize", { session_id: "real", transcript_path: t, background_tasks: [] });
+    const classes = obsOf(recordsOf(home, "real")).map((o) => o.class);
+    assert.ok(classes.includes("self_reported_fallback"), "a genuine self-report from an executed plugin script must still be captured");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("FP fix: piped output is still scanned — `node <plugin> | grep` is NOT treated as a file dump", () => {
+  const home = setupHome();
+  try {
+    const t = tp(home);
+    run(home, "init", { session_id: "pipe", transcript_path: t });
+    run(home, "prompt", { session_id: "pipe", transcript_path: t, prompt: "/project-init" });
+    appendLines(t, [
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/discover-tracker.mjs" | grep contract' }),
+      toolResult("2026-07-29T10:00:01.000Z", "t1", false, "falling back to the legacy field set"),
+    ]);
+    run(home, "finalize", { session_id: "pipe", transcript_path: t, background_tasks: [] });
+    const classes = obsOf(recordsOf(home, "pipe")).map((o) => o.class);
+    assert.ok(classes.includes("self_reported_fallback"), "a pipe filters script OUTPUT — the boundary anchor keeps it scanned");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

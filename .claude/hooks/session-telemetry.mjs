@@ -178,6 +178,15 @@ function hash(str) {
 // A "search/read" op gathers information; a "decisive" op changes the world. A
 // long run of the former with none of the latter is search_thrash / low_yield.
 const SEARCH_RE = /(^|__)(Read|Grep|Glob|LS|NotebookRead|WebFetch|WebSearch|get_file_contents|get_pull_request|get_issue|search_code|search_issues|search_repositories|list_|read_page|get_page_text|snapshot)/i;
+// A Bash command whose OUTPUT is a file's CONTENT (a read/dump) rather than fresh script output —
+// the Bash analogue of SEARCH_RE for the Read/Grep TOOLS. Such a result may quote plugin SOURCE that
+// contains a self-report marker in a COMMENT, so the `self_reported_fallback` scan must skip it. Its
+// absence was a real false-positive (VCST-5582): a `cat` / `grep` / `sed -n` / `node -e readFileSync`
+// / `Get-Content` of `bug-contract.mjs` (whose JSDoc literally contains "unverified defaults") minted
+// a phantom degradation signal, because the guard covered only the read TOOL NAMES, never a Bash span
+// that echoes the same source. Anchored to a STATEMENT boundary (start / `;` / `&&` / newline), NOT a
+// pipe, so `node <plugin-script> … | grep` (execution whose OUTPUT is filtered) is still scanned.
+const READ_CMD_RE = /(?:^|;|&&|&|\n)\s*(?:cat|bat|tac|nl|head|tail|less|more|type|Get-Content|gc|grep|egrep|fgrep|rg|Select-String|sls)\b|\bsed\b[^;&|]*\s-n\b|\b(?:node|deno|bun)\b[^;&|]*(?:-e|--eval)[^;&|]*readFile|\bpython3?\b[^;&|]*-c\b[^;&|]*(?:open\s*\(|\.read\s*\()/i;
 const DECISIVE_RE = /(^|__)(Edit|MultiEdit|Write|NotebookEdit|create_pull_request|create_issue|create_or_update_file|push_files|create_branch|add_issue_comment|update_issue|createJiraIssue|editJiraIssue|transitionJiraIssue|addCommentToJiraIssue)/i;
 function browserVariant(name) {
   const m = /mcp__playwright-(chrome|firefox|edge|webkit)__/i.exec(String(name || ""));
@@ -1232,6 +1241,11 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
           // span keeps only its name/arg_hash) — see opSubject.
           sp.subject = opSubject(sp.name, inputStr);
           sp.pluginScript = opIsPluginScript(inputStr);
+          // Is this a Bash read/dump of a file? If so its RESULT is file content the agent looked at,
+          // not fresh script output — so the self_reported_fallback scan must skip it (a boolean only;
+          // the raw command is never stored). Checked against the actual command string, not the
+          // redacted JSON, so the statement-boundary anchors in READ_CMD_RE are meaningful.
+          sp.echoesFile = name === "Bash" && typeof item.input?.command === "string" ? READ_CMD_RE.test(item.input.command) : false;
           state.openOps.set(item.id, sp);
         }
       } else if (type === "tool_result") {
@@ -1314,7 +1328,7 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         // so scanning a Read result would manufacture a `self_reported_fallback` every time someone
         // opens those files. Capture stays total for signals we can attribute; it does not invent
         // signals out of data the agent merely read.
-        const degradedText = SEARCH_RE.test(sp?.name || "") ? "" : seRaw ? `${body}\n${seRaw.slice(0, 4000)}` : body;
+        const degradedText = (SEARCH_RE.test(sp?.name || "") || sp?.echoesFile) ? "" : seRaw ? `${body}\n${seRaw.slice(0, 4000)}` : body;
         if (degradedText && FALLBACK_MARKER_RE.test(degradedText)) {
           const at = degradedText.search(FALLBACK_MARKER_RE);
           recordObs(jsonlPath, state, {
