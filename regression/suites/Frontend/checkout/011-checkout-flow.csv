@@ -726,9 +726,9 @@ User logged in as {{USER_EMAIL}} with at least 1 saved address; cart has at leas
 [DOM] popup contains keyword search input (data-test-id=""search-keyword-input"")
 [DOM] 3 facet dropdowns visible: Country (data-test-id=""filter-country""), State (data-test-id=""filter-region""), City (data-test-id=""filter-city"")
 [DOM] address list renders at least one address row
-[DOM] popup has 4 columns: Address / Description / Country / Active","[API] currentCustomerAddresses query called; response errors[] is empty
+[DOM] popup has 5 columns for a personal account: Recipient name / Address / Phone / Email / Active (a corporate account renders 4: Address / Description / Country / Active)","[API] currentCustomerAddresses query called; response errors[] is empty
 [CONSOLE] no JS errors on popup open
-[NETWORK] no 4xx/5xx on /graphql","popup does not open; popup opens blank; spinner persists >5s; JS TypeError in console","Close popup without selecting address (press Esc or click X)","Promoted from VCST-4710-SF-001 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
+[NETWORK] no 4xx/5xx on /graphql","popup does not open; popup opens blank; spinner persists >5s; JS TypeError in console","Close popup without selecting address (press Esc or click X)","Promoted from VCST-4710-SF-001 / TLC-2026-04-23-1230 / BA report 2026-04-23; Audited: 2026-07-31 (TCA-2026-07-31-011); Source: vc-frontend/client-app/shared/checkout/components/select-address-modal.vue:366-372 (personal branch) vs :360-365 (corporate); Docs: N/A - implementation-detail: table column composition","Reviewed"
 "CHK-088","Address Popup — Keyword Search Returns Filtered Results","Checkout > Shipping > Address Popup > Search","Critical","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as {{USER_EMAIL}} with 3+ saved addresses; address popup open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
