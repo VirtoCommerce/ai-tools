@@ -401,26 +401,26 @@ export async function findFindingIssue({ repo, token, key, fetchImpl = fetch }) 
     }
   };
 
-  // 1 + 2 — Search, `state: all` (no `is:open`), exact marker preferred over the legacy bridge.
+  // 1 + 2 — Search OPEN issues ONLY (`is:open`). VCST-5582: dedup looks at open issues only — a
+  // CLOSED issue is not proof the defect is gone (a "fixed"-and-closed bug that RECURS was being
+  // silently swallowed as "already fixed upstream" instead of surfacing as a fresh occurrence). So a
+  // recurrence whose prior issue is closed files a NEW issue rather than deduping onto the closed one.
   const items = [
-    ...(await search(`repo:${repo} is:issue "${marker}"`)),
-    ...(await search(`repo:${repo} is:issue "${key}"`)),
+    ...(await search(`repo:${repo} is:issue is:open "${marker}"`)),
+    ...(await search(`repo:${repo} is:issue is:open "${key}"`)),
   ];
   const pick = (list) => {
-    const hits = list.map(shape);
-    // Prefer an OPEN issue over a CLOSED one: if the defect is open somewhere, that is the ticket
-    // this occurrence belongs on. Prefer an exact-marker hit over the legacy text bridge.
-    return hits.find((h) => h.state === "open" && !h.legacy)
-      || hits.find((h) => h.state === "open")
-      || hits.find((h) => !h.legacy)
-      || hits[0] || null;
+    // OPEN-only: closed issues never count as a dedup match. Exact-marker hit preferred over the
+    // legacy text bridge.
+    const hits = list.map(shape).filter((h) => h.state === "open");
+    return hits.find((h) => !h.legacy) || hits[0] || null;
   };
   const fromSearch = pick(items.filter((it) => exact(it) || legacy(it)));
   if (fromSearch) return fromSearch;
 
-  // 3 — list fallback (Search unavailable / a just-filed issue not yet indexed).
+  // 3 — list fallback (Search unavailable / a just-filed issue not yet indexed), OPEN only.
   try {
-    const r = await fetchImpl(`https://api.github.com/repos/${repo}/issues?state=all&per_page=100&sort=created&direction=desc`, { headers });
+    const r = await fetchImpl(`https://api.github.com/repos/${repo}/issues?state=open&per_page=100&sort=created&direction=desc`, { headers });
     if (!r.ok) return null;
     const list = await r.json();
     return pick((Array.isArray(list) ? list : []).filter((it) => exact(it) || legacy(it)));
@@ -801,10 +801,8 @@ function nextStepsFor({ route, results, confirmed }) {
   }
   const nu = results.filter((r) => r.plan === "file").length;
   const known = results.filter((r) => r.plan === "comment").length;
-  const closed = results.filter((r) => r.plan === "already-fixed").length;
   const steps = [];
   if (nu || known) steps.push(`Nothing sent yet. Re-run with --confirm to file ${nu} new issue(s) and add ${known} occurrence comment(s).`);
-  if (closed) steps.push(`${closed} finding(s) are already FIXED upstream (closed issues) — upgrade the plugin rather than refiling.`);
   if (!steps.length) steps.push("Nothing to do — every finding is already tracked and up to date.");
   return steps;
 }
@@ -922,11 +920,9 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
       issue: issue ? { number: issue.number, url: issue.url, state: issue.state, legacy: issue.legacy } : null,
       plan: "file", action: "planned",
     };
-    if (issue?.state === "closed") {
-      r.plan = "already-fixed";
-      r.closedAt = issue.closedAt;
-      r.fixedIn = issue.milestone;
-    } else if (issue) {
+    if (issue) {
+      // `findFindingIssue` returns OPEN issues only (VCST-5582 — closed issues are not a dedup
+      // match), so a match here is always an open occurrence → a `+1` comment.
       r.plan = "comment";
       const was = severityOfIssue(issue);
       r.escalatedFrom = was && severityRank(f.severity) > severityRank(was) ? was : null;
@@ -949,7 +945,6 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
   // a route that cannot send must be a no-op, not a doomed request with a bad/absent token.
   if (!confirm || route !== "issue") {
     for (const r of results) {
-      if (r.plan === "already-fixed") continue;
       const decision = r.plan === "withhold" ? "withheld" : r.plan === "suppressed" ? "suppressed" : "pending";
       recordFindingDecision(sid, r, { decision });
     }
@@ -972,10 +967,7 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
       continue;
     }
     try {
-      if (r.plan === "already-fixed") {
-        r.action = "already-fixed"; // nothing sent; not a failure
-        recordFindingDecision(sid, r, { decision: "sent", issueNumber: r.issue.number });
-      } else if (r.plan === "comment") {
+      if (r.plan === "comment") {
         // Include the full Where block ONLY when neither the issue body NOR a prior comment already
         // carries this evidence (matched on WHERE_MARKER + content hash). So a legacy/evidence-less
         // issue gets full detail on the first comment; repeat occurrences stay a short counter.
@@ -1009,7 +1001,7 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
 
   // Delete the session's telemetry only when EVERY finding is resolved — a pending retry needs its
   // evidence. Nothing is deleted when nothing was delivered.
-  const allResolved = results.length > 0 && results.every((r) => r.action === "filed" || r.action === "commented" || r.action === "already-fixed" || r.action === "withheld" || r.action === "suppressed");
+  const allResolved = results.length > 0 && results.every((r) => r.action === "filed" || r.action === "commented" || r.action === "withheld" || r.action === "suppressed");
   if (allResolved && !keep) {
     const removed = purgeSession({ dir: diagDir(), sid });
     if (removed.length) results.purged = removed;
@@ -1019,14 +1011,10 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
 
 function summaryLine(results) {
   const known = results.filter((r) => r.plan === "comment");
-  const closed = results.filter((r) => r.plan === "already-fixed");
   const fresh = results.filter((r) => r.plan === "file");
   const withheld = results.filter((r) => r.plan === "withhold");
   const suppressed = results.filter((r) => r.plan === "suppressed");
-  const refs = [
-    ...known.map((r) => `#${r.issue.number} open`),
-    ...closed.map((r) => `#${r.issue.number} closed/fixed`),
-  ];
+  const refs = known.map((r) => `#${r.issue.number} open`); // dedup is OPEN-only (VCST-5582)
   const parts = [];
   if (refs.length) parts.push(`${refs.length} already reported (${refs.join(", ")})`);
   if (fresh.length) parts.push(`${fresh.length} new`);
@@ -1191,9 +1179,7 @@ export async function main(argv = process.argv.slice(2), { stdin = process.stdin
     ``,
   ];
   for (const r of results) {
-    const state = r.plan === "already-fixed"
-      ? `already FIXED upstream — issue #${r.issue.number} (${r.issue.url})${r.fixedIn ? `, released in ${r.fixedIn}` : ""}`
-      : r.plan === "comment"
+    const state = r.plan === "comment"
       ? `already reported — issue #${r.issue.number} (${r.issue.url})${r.escalatedFrom ? `, severity escalated ${r.escalatedFrom} → ${r.severity}` : ""}`
       : r.plan === "withhold"
       ? `WITHHELD — no locatable evidence (no plugin file:line, no proven excerpt, no vendor error identity); not filed`

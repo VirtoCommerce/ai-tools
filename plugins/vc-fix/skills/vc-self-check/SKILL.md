@@ -119,14 +119,15 @@ what follows. Do NOT describe the plan as "one issue per finding"; that phrasing
 real outcome (3 comments on 1 legacy issue) read as a deviation from consent:
 
 1. one **new Issue** per genuinely new finding;
-2. for an **already-reported** finding (an open dedup match), a **comment on the existing issue
+2. for an **already-reported** finding (an **open** dedup match), a **comment on the existing issue
    carrying the SAME evidence** the issue would — the `## Where` block, never a bare counter;
-3. for a **closed match**, reported as **fixed upstream** (upgrade, don't refile) — reopened only on
-   a severity escalation;
+3. **dedup is OPEN-only (VCST-5582):** a defect whose only prior issue is **closed** is NOT a match —
+   a closed issue is not proof the bug is gone, so a recurrence is filed as a **new** issue, not
+   swallowed as "already fixed";
 4. the session's **telemetry is purged** after a fully successful delivery (partial/failed keeps it).
 
 State the dedup split verbatim from the dry plan's `summary`, e.g.
-`2 already reported (#173 open, #119 closed/fixed), 2 new`. If a finding carries a
+`1 already reported (#173 open), 2 new`. If a finding carries a
 `vendorErrorMessage`, show the **normalized** value (the dry plan's `struct.findings[]` holds the
 post-validation string) **verbatim** on its line — that is the §6b informed-consent disclosure; if
 you cannot show it, it is not sent.
@@ -156,25 +157,24 @@ Decide by `feedback.mode` (read from `project-profile.json`, default `ask`):
 
 | dedup state | route |
 |---|---|
-| no match | file a new issue |
+| no OPEN match (incl. a closed prior issue) | file a new issue |
 | open match | comment with full evidence (the `## Where` block) |
-| closed match | report as fixed-upstream; reopen only if severity escalated |
+
+Dedup is **OPEN-only** — a closed prior issue is ignored, so a recurrence files a new issue.
 
 **Telemetry retention is automatic and never asked (A4):** a fully successful delivery purges this
 session (`<sid>.jsonl` + `<sid>.state.json`); a partial/failed one keeps it, and the deliverer says
-so in one clause of the result line. `already-fixed` findings never need the question — report them
-as "already fixed upstream (#N), upgrade the plugin" regardless of the answer.
+so in one clause of the result line.
 
 ### Step 4 — The result line (post-delivery output is ONE line — D1)
 
-Print the deliverer's single line verbatim: what was filed, what was commented (with links), any
-already-fixed upgrades, and the retention clause — **no tables, no restated roll-up** (Step 2 already
-showed it). Expand to a few lines **only** when delivery PARTIALLY FAILED (which finding failed, and
-that its telemetry was kept for retry). Examples:
+Print the deliverer's single line verbatim: what was filed, what was commented (with links), and the
+retention clause — **no tables, no restated roll-up** (Step 2 already showed it). Expand to a few
+lines **only** when delivery PARTIALLY FAILED (which finding failed, and that its telemetry was kept
+for retry). Example:
 
 ```
 filed #212 (project-init/tracker_field_contract), +1 on #174 (qa-bug/ado_create_workitem, evidence attached); telemetry purged.
-#119 already fixed upstream (closed) — upgrade; nothing filed; telemetry kept.
 ```
 
 For a session with no delivery:
@@ -221,7 +221,9 @@ node deliver.mjs --backfill [--json]                # one-off: mark legacy bundl
   sessions' `state.json` into one delivery pass (thinner than an interactive run — the batch record
   carries no provenance). `--purge` clears a session's telemetry + records.
 
-**One issue PER FINDING; dedup on `(skill, subject)` against open AND closed (item 3).** Defect
+**One issue PER FINDING; dedup on `(skill, subject)` against OPEN issues only (VCST-5582).** A closed
+prior issue is NOT a dedup match — a closed issue is not proof the defect is gone, so a recurrence
+files a NEW issue instead of being swallowed as "already fixed". Defect
 identity is exactly `(skill, subject)` (`findingKey`) — severity, verdict, outcome, errorCode and
 counts are per-session judgements about the same bug and MUST NOT enter the key. That divergence is
 why two sessions filed #173 and #174 for one `project-init/tracker_field_contract` defect
@@ -233,11 +235,11 @@ why two sessions filed #173 and #174 for one `project-init/tracker_field_contrac
   matched on `WHERE_MARKER` + a content hash, so a legacy/evidence-less issue (#174) gets full detail
   on the FIRST comment and repeat occurrences stay a short counter (B1). If the new severity is
   higher, the comment says so and the issue title's verdict is upgraded.
-- **Closed match** → the defect is already FIXED upstream — reported to the operator with the issue
-  number (and release if known); the remedy is an upgrade, not a refile.
-- **No match** → file it, embedding a searchable marker `<!-- vc-fix-finding: <skill>/<subject> -->`.
+- **No OPEN match** (no match at all, OR the only prior issue is CLOSED) → file it, embedding a
+  searchable marker `<!-- vc-fix-finding: <skill>/<subject> -->`. A closed prior issue is ignored, so
+  a recurrence surfaces as a fresh issue.
 - **Legacy bridge:** #173/#174 are bundled issues with no per-finding marker, so the search ALSO
-  matches `<skill>/<subject>` as text in the title/body (`state: all`) — else the first run refiles
+  matches `<skill>/<subject>` as text in the title/body (OPEN only) — else the first run refiles
   everything they contain. `--backfill` adds per-finding marker comments to open bundled issues.
 
 **Two routes only** (`issue` / `local`), by the GitHub token's real rights via

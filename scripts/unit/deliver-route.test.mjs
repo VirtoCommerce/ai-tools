@@ -303,19 +303,19 @@ test("findFindingIssue: an OPEN exact-marker match is returned as open", async (
   assert.equal(r.legacy, false);
 });
 
-test("findFindingIssue (item 3): a CLOSED match is recognised as closed, not refiled", async () => {
+test("findFindingIssue (VCST-5582): a CLOSED match is IGNORED — dedup is OPEN-only", async () => {
+  // A closed issue is not proof the defect is gone; a recurrence must surface as a fresh issue, not
+  // be swallowed as "already fixed". So a closed-only match returns null (→ the finding files anew).
   const closed = { number: 119, html_url: "u119", state: "closed", closed_at: "2026-01-01", title: "[vc-fix self-check] x", body: MARKER, milestone: { title: "0.9.0" } };
   const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: "t", key: KEY, fetchImpl: stub({ search: [closed] }) });
-  assert.equal(r.number, 119);
-  assert.equal(r.state, "closed");
-  assert.equal(r.milestone, "0.9.0");
+  assert.equal(r, null, "a closed issue is not a dedup match");
 });
 
-test("findFindingIssue: prefers an OPEN issue over a CLOSED one for the same key", async () => {
+test("findFindingIssue: an OPEN issue matches even when a CLOSED one for the same key also exists", async () => {
   const open = { number: 200, html_url: "u200", state: "open", title: "[vc-fix self-check] x", body: MARKER };
   const closed = { number: 119, html_url: "u119", state: "closed", title: "[vc-fix self-check] x", body: MARKER };
   const r = await findFindingIssue({ repo: "VirtoCommerce/x", token: "t", key: KEY, fetchImpl: stub({ search: [closed, open] }) });
-  assert.equal(r.number, 200, "the occurrence belongs on the open ticket");
+  assert.equal(r.number, 200, "the occurrence belongs on the open ticket; the closed one is ignored");
 });
 
 test("findFindingIssue (item 3 legacy bridge): a bundled issue with NO per-finding marker matches by key text", async () => {
@@ -441,14 +441,16 @@ test("main (item 3): an OPEN dup is NOT refiled — a +1 comment is posted inste
     assert.ok(r.calls.some((c) => c.method === "POST" && /\/issues\/173\/comments/.test(c.url)), "a +1 occurrence comment is posted");
   });
 });
-test("main (item 3): a CLOSED dup is neither refiled nor commented — reported as already fixed", async () => {
+test("main (VCST-5582): a CLOSED dup is IGNORED — the recurrence files a NEW issue", async () => {
   await withTempHome(async (home) => {
+    // Dedup is OPEN-only: a defect whose only prior issue is CLOSED is not "already fixed" — its
+    // recurrence must surface as a fresh issue, not be silently swallowed.
     const closed = { number: 119, html_url: "u119", state: "closed", title: "[vc-fix self-check] qa-bug/ado_create_workitem BROKEN", body: `<!-- vc-fix-finding: qa-bug/ado_create_workitem -->` };
     const r = await driveMain(home, ["--json", "--as", "issue", "--confirm"], { mode: "auto", search: [closed] });
-    assert.equal(r.posted, false, "a closed/fixed defect must not be refiled");
-    assert.ok(!r.calls.some((c) => c.method === "POST"), "and no comment is posted on a closed issue");
+    assert.equal(r.posted, true, "the recurrence is filed as a new issue (the closed one is not a match)");
     const plan = JSON.parse(r.out.trim().split("\n").pop());
-    assert.ok(plan.findings.some((f) => f.plan === "already-fixed"), "reported as already-fixed");
+    assert.ok(plan.findings.some((f) => f.plan === "file" && f.action === "filed"), "filed anew");
+    assert.ok(!plan.findings.some((f) => f.plan === "already-fixed"), "no already-fixed plan any more");
   });
 });
 test("main (item 6/repro): the SAME defect graded S2 then S1 resolves to ONE issue, escalated", async () => {

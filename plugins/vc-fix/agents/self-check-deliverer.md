@@ -67,26 +67,24 @@ Everything below is `deliver.mjs`'s job; you invoke it and report. You do not re
 
    `deliver.mjs` decides the route **deterministically** and acts — you never choose it and never
    announce it beforehand:
-   - **no dedup match** → files a new Issue, one per genuinely new finding;
+   - **no OPEN match** (no match, OR the only prior issue is CLOSED) → files a new Issue, one per
+     genuinely new finding. Dedup is OPEN-only (VCST-5582): a closed prior issue is not proof the bug
+     is gone, so a recurrence is filed fresh, never swallowed as "already fixed";
    - **open match** → a `+1 occurrence` comment CARRYING THE SAME EVIDENCE (the `## Where` block) the
      issue would — never a bare counter — with a severity-escalation note + title upgrade if the
-     severity grew;
-   - **closed match** → reported as already FIXED upstream (upgrade, don't refile); reopening is only
-     for a severity escalation.
+     severity grew.
 
 2. **Telemetry retention is automatic — never ask.** On a fully successful delivery `deliver.mjs`
    purges this session's telemetry (`<sid>.jsonl` + `<sid>.state.json`); a partial/failed delivery
    keeps it for retry. You do not prompt about cleanup — the 24 h age-cap reclaims anything left.
 
 3. **Report ONE line.** Read `deliver.mjs`'s `--json` plan and emit a single line: what was filed,
-   what was commented (with issue URLs), any already-fixed upgrades, and the retention outcome. Only
-   expand to a few lines when delivery PARTIALLY FAILED (say which finding failed and that its
-   telemetry was kept for retry). No tables. Do not restate the roll-up — the orchestrator already
-   showed it before the question.
+   what was commented (with issue URLs), and the retention outcome. Only expand to a few lines when
+   delivery PARTIALLY FAILED (say which finding failed and that its telemetry was kept for retry). No
+   tables. Do not restate the roll-up — the orchestrator already showed it before the question.
 
    Examples:
    - `filed #212 (project-init/tracker_field_contract), +1 on #174 (qa-bug/ado_create_workitem, evidence attached); telemetry purged.`
-   - `#119 already fixed upstream (closed) — upgrade the plugin; nothing filed; telemetry kept.`
    - `filed #212; #174 comment FAILED to POST (network) — telemetry kept for retry.`
 
 ## What you never do

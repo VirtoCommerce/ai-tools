@@ -1,5 +1,5 @@
 ---
-description: "Self-diagnose the vc-fix plugin from this session's telemetry. Spawns the self-check-diagnostician subagent to read the passive collector's jsonl + the transcript + the skill-expectations oracle and return a validated finding struct (per-finding OK/DEGRADED/BROKEN + severity + evidence + a proposed fix + vendor-provenance fields). The orchestrator relays a short summary and, for a BROKEN/DEGRADED finding, asks ONE binary question before filing one GitHub Issue PER FINDING (deduped against open AND closed issues). Writes NO local report files, never modifies the install, never sends without an explicit yes. Plugin-wide, not qa-prefixed."
+description: "Self-diagnose the vc-fix plugin from this session's telemetry. Spawns the self-check-diagnostician subagent to read the passive collector's jsonl + the transcript + the skill-expectations oracle and return a validated finding struct (per-finding OK/DEGRADED/BROKEN + severity + evidence + a proposed fix + vendor-provenance fields). The orchestrator relays a short summary and, for a BROKEN/DEGRADED finding, asks ONE binary question before filing one GitHub Issue PER FINDING (deduped against OPEN issues only — a closed prior issue is ignored, so a recurrence files a new issue). Writes NO local report files, never modifies the install, never sends without an explicit yes. Plugin-wide, not qa-prefixed."
 argument-hint: "[latest | <session-id>]  (or: deliver [latest | <session-id>])"
 ---
 
@@ -14,7 +14,7 @@ hand-off, and the delivery rules live in the
 /vc-self-check                 # diagnose the current (latest) session (spawns the diagnostician subagent)
 /vc-self-check latest          # same, explicit
 /vc-self-check <session-id>    # diagnose a specific recorded session
-/vc-self-check deliver         # dry plan: what would be filed, deduped against open+closed issues
+/vc-self-check deliver         # dry plan: what would be filed, deduped against OPEN issues only
 /vc-self-check deliver --confirm   # file the new issue(s) + comment the known ones — then delete this session's telemetry (--keep to retain)
 /vc-self-check deliver --batch      # consolidate the pending per-finding records across sessions into one pass
 /vc-self-check deliver --purge --session <sid>   # terminal cleanup: delete a session's telemetry, send nothing
@@ -30,8 +30,8 @@ once a finding is upstream, the issue is the source of truth, so the processed s
   conversation. The subagent returns a validated finding struct — no report file.
 - **Relays the roll-up + disclosure ONCE**, before the question — the exact fields that would be
   sent, and every OUTCOME the yes covers (a new issue per new finding; a comment carrying the SAME
-  evidence on an open match; a fixed-upstream report on a closed match; telemetry purged on success).
-  Never phrased as "one issue per finding".
+  evidence on an OPEN match; a recurrence whose only prior issue is CLOSED filed as a NEW issue —
+  dedup is open-only; telemetry purged on success). Never phrased as "one issue per finding".
 - **Asks ONE binary question and never again.** The binary *file the issue(s) in Virto?* is the ONLY
   operator interaction in the delivery path. A **yes** means *"publish whatever is appropriate,
   decide the form yourself"* — so after a yes the agent MUST NOT ask which route to take, whether to
@@ -39,10 +39,11 @@ once a finding is upstream, the issue is the source of truth, so the processed s
   telemetry. Each is the agent's own deterministic decision.
 - On yes (or `feedback.mode: auto`), spawns the `self-check-deliverer` subagent
   ([`agents/self-check-deliverer.md`](../agents/self-check-deliverer.md)), which files **one GitHub
-  Issue per finding**, deduped on `(skill, subject)` against **open AND closed** issues: an open
-  match gets a `+1 occurrence` comment **carrying the full `## Where` evidence** (never a bare
-  counter), a closed match is reported as already fixed (upgrade), only a genuine miss is filed. It
-  then prints ONE result line. Telemetry is purged automatically on a fully successful delivery.
+  Issue per finding**, deduped on `(skill, subject)` against **OPEN issues only**: an open match gets
+  a `+1 occurrence` comment **carrying the full `## Where` evidence** (never a bare counter); anything
+  with no OPEN match — including a defect whose only prior issue is CLOSED — is filed as a new issue
+  (a closed issue is not proof the bug is gone). It then prints ONE result line. Telemetry is purged
+  automatically on a fully successful delivery.
 
 ## What it never does
 - Never asks a second question. One binary consent per run, then silence until one result line —
