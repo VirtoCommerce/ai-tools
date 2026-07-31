@@ -35,7 +35,7 @@ Feature domains in this file map to `domain` field values in `config/test-suites
 | CMS, ASSETS, IMAGE TOOLS | content-cms | — | 050f, 059-060, 062, 069 |
 | USERS, STORE CONFIG, DYNAMIC PROPERTIES, CHANNELS, IMPORT/EXPORT, PAGE CONTEXT | platform-config | `platform` | 020-021, 034-035, 050e, 063-064, 076 |
 | WHITE LABELING, SEO | branding | `whitelabeling` | 066-067, 070-071 |
-| SMOKE, GA4, SECURITY, A11Y, I18N, PERFORMANCE, BROWSER COMPAT, GQL CROSS-CUTTING | cross-cutting | `smoke`, `critical` | 042-048, 050g, 078, 080 |
+| SMOKE, GA4, SECURITY, A11Y, I18N, PERFORMANCE, BROWSER COMPAT, GQL CROSS-CUTTING | cross-cutting | `smoke`, `critical` | 042-048, 050g, 078 |
 
 > **Layer routing:** `/qa-test-cases-generator --layer <name>` and the orchestrated `/qa-coverage-generation` map gaps to suites by combining `manifestDomain` + `layer` + `concern`. Backend GraphQL suites (`050a`–`050k`) follow the **runner-native** authoring contract in [`graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) — they are not browser-mode suites. See [`SKILL.md`](SKILL.md) § "Manifest-Domain Routing" for the target-suite resolution rule.
 
@@ -319,7 +319,7 @@ The legacy "Suite 050" has been split into 11 focused sub-suites. Route GraphQL 
 | Loyalty program | 075 | Covered |
 
 ### CROSS-CUTTING — Non-Functional
-**Domain:** `cross-cutting` | **Selection:** `smoke`, `critical` | **Suites:** 042-048, 078, 080
+**Domain:** `cross-cutting` | **Selection:** `smoke`, `critical` | **Suites:** 042-048, 078
 
 | Feature | Suites | Status |
 |---------|--------|--------|
@@ -331,7 +331,6 @@ The legacy "Suite 050" has been split into 11 focused sub-suites. Route GraphQL 
 | Localization / i18n | 046 | Covered |
 | Performance | 047 | Covered |
 | Browser compatibility | 048 | Covered |
-| Full regression release | 080 | Covered |
 | Admin impersonation ("login on behalf") | 020 | Partial — basic impersonation in platform admin, no cross-company or stop-impersonation tests |
 
 ## Gap Summary

@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-07-30",
-    "totalSuites": 120,
+    "generated": "2026-07-31",
+    "totalSuites": 119,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2359,27 +2359,6 @@
       "customerApplicability": "reference"
     },
     {
-      "id": "080",
-      "name": "Full Regression Release",
-      "file": "regression/suites/_release/080-full-regression-release.csv",
-      "domain": "cross-cutting",
-      "layer": "frontend",
-      "concern": "functional",
-      "priority": "P0",
-      "testCount": 100,
-      "estimatedMinutes": 70,
-      "agent": "qa-frontend-expert",
-      "tags": [
-        "release",
-        "master",
-        "p0",
-        "e2e",
-        "cross-layer",
-        "revenue-critical"
-      ],
-      "customerApplicability": "reference"
-    },
-    {
       "id": "081",
       "name": "Select Shipping Address Popup",
       "file": "regression/suites/Frontend/checkout/081-select-shipping-address-popup.csv",
@@ -2704,11 +2683,6 @@
         "049"
       ]
     },
-    "release": {
-      "include": [
-        "080"
-      ]
-    },
     "purchase-flow": {
       "where": {
         "domain": "purchase-flow"
@@ -2806,7 +2780,6 @@
         "layer": "frontend"
       },
       "exclude": [
-        "080",
         "089",
         "090",
         "091"
@@ -2833,7 +2806,6 @@
         "068",
         "069",
         "076",
-        "080",
         "089",
         "090",
         "091",

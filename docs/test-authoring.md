@@ -109,7 +109,7 @@ regression/suites/customer/                       ← all customer-authored suit
 └── README.md                                      ← convention reminder (you maintain)
 ```
 
-**Numbering convention:** start customer suite IDs at `100` to leave room for future shipped reference suites (current ceiling: `080`). Use sub-prefixes by domain: `1xx` for modules, `12x` for checkout, `13x` for UI, etc.
+**Numbering convention:** start customer suite IDs at `100` to leave room for future shipped reference suites (current ceiling: `092`). Use sub-prefixes by domain: `1xx` for modules, `12x` for checkout, `13x` for UI, etc.
 
 **Per-suite file size:** keep CSVs under 50 test cases. Split larger surfaces into multiple suites (a/b/c suffixes work well — see VC's `072` / `072b` / `072c`).
 
