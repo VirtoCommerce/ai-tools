@@ -23,7 +23,7 @@ skills/
 ├── qa-postman/                      # [Testing]  Postman MCP collection builder
 ├── qa-seed-data/                    # [Testing]  Seed / tear down test data
 ├── qa-generate-data/                # [Testing]  Design + author test-data combinations (offline)
-├── qa-review-tests/                 # [Testing]  8-dimension test-case quality review
+├── qa-review-tests/                 # [Testing]  11-dimension test-case quality review
 ├── qa-local-env/                    # [Testing]  Local VC stack via start-local (fresh DB per run)
 │
 ├── qa-process/                      # [QA Methodology]  ISTQB 7-phase lifecycle

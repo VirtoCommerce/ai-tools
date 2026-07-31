@@ -1,7 +1,7 @@
 ---
 name: qa-review-tests
-description: "[Testing] Review test cases for quality, determinism, completeness, data validity, coverage gaps, duplication, and live environment verification. Delegates browser verification to qa-testing-expert."
-argument-hint: "suite <ID> | file <path> | diff | all | domain <name> | --verify | --fix"
+description: "[Testing] Review test cases for quality, determinism, completeness, data validity, coverage gaps, duplication, live environment verification, and behavioral triangulation against docs + live + source. Delegates browser verification to qa-testing-expert; triangulation to ba-system-analyzer."
+argument-hint: "suite <ID> | file <path> | diff | all | domain <name> | stale | --verify | --triangulate | --fix | --ci"
 
 ---
 
@@ -19,13 +19,18 @@ Review test cases against quality criteria to catch issues before regression run
 /qa-review-tests suite 015 --fix        # Review + auto-fix issues (asks before writing)
 /qa-review-tests suite 015 --verify     # Static review + live environment verification via qa-testing-expert
 /qa-review-tests suite 015 --verify --fix  # Full review + fix + verify
+/qa-review-tests suite 015 --triangulate   # + Dim 11: is the asserted behavior still TRUE? (docs + live + source)
+/qa-review-tests suite 015 --triangulate --fix       # + auto-apply CONFIRMED/DRIFT (asks first)
+/qa-review-tests suite 015 --triangulate --fix --ci  # unattended: no prompt, PR review is the gate
+/qa-review-tests stale                  # Order suites by staleness (oldest `Audited:` stamp first) and report the queue
 ```
 
 ## Supporting Files
 
 - **review-criteria.md** — Full review criteria catalog with severity levels, check descriptions, and examples of good vs bad patterns.
+- **triangulation-criteria.md** — Dimension 11: the per-axis evidence bar, the `docs: N/A` waiver, the suite→repo source-axis resolution chain, the verdict decision table, the auto-fix matrix, and the edit-safety rules.
 
-## Review Dimensions (10)
+## Review Dimensions (11)
 
 | # | Dimension | What It Catches | Severity | Mode |
 |---|-----------|----------------|----------|------|
@@ -39,8 +44,11 @@ Review test cases against quality criteria to catch issues before regression run
 | 8 | **Environment Verification** | Steps reference UI elements/pages/flows that don't exist or have changed in the live environment | Critical | Live (`--verify`) |
 | 9 | **Technique Coverage** | Feature group (shared `Section` parent or `References` ticket, ≥3 cases) missing the ISTQB positive + negative + boundary mix (TC-001) | Medium | Static |
 | 10 | **Assertion Grounding** | Assertions asserting behavior with no source — ungrounded/`{HYPOTHESIS}`/untagged (GRD-001), invented literal message strings (GRD-002). Anti-hallucination gate; `--verify` grounds them live → `{OBSERVED}` | Blocker–Critical | Static + Live (`--verify`) |
+| 11 | **Behavioral Triangulation** | Assertions whose expected behavior is **no longer true** — stale `{DOC}`, expired `{OBSERVED}`, retired `{BL}`, descoped `{SPEC}`. Triangulates each assertion against **docs + live + source** and assigns CONFIRMED / DRIFT / MISSING / CONTRADICTORY / UNGROUNDED / RETIRE (TRI-001…006) | Blocker–Medium | 3-axis (`--triangulate`) |
 
-Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 requires `--verify` flag and delegates to `qa-testing-expert` agent for live browser verification. Dimension 10 is **static** for detecting ungrounded assertions but **needs `--verify`** to actually ground them (upgrade `{HYPOTHESIS}`/`{SPEC}` → `{OBSERVED}`).
+Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 requires `--verify` flag and delegates to `qa-testing-expert` agent for live browser verification. Dimension 10 is **static** for detecting ungrounded assertions but **needs `--verify`** to actually ground them (upgrade `{HYPOTHESIS}`/`{SPEC}` → `{OBSERVED}`). Dimension 11 requires `--triangulate` (which implies `--verify`) and delegates to `ba-system-analyzer` for the docs + source axes.
+
+> **Dim 10 vs Dim 11 — the distinction that matters.** Dimension 10 checks that an assertion **carries** a grounded provenance tag. Dimension 11 checks that the tag is **TRUE**. `lint-test-cases.ts` GRD-001 passes a `{DOC}` tag pointing at a doc that changed, an `{OBSERVED}` tag captured against a build from six months ago, and a `{BL}` tag citing a retired invariant — all three lint green. Dim 11 is the only dimension that asks *"is this asserted behavior still true?"*, and it is the direct port of the `/qa-review-bl` triangulation mechanism to test cases.
 
 > **`--verify` is MANDATORY before promoting a new-feature or ungrounded suite.** A suite that contains any `{HYPOTHESIS}` or unconfirmed-`{SPEC}` assertion (typical for a brand-new feature with no VirtoOZ doc / no source yet) cannot be promoted `Draft → Reviewed` on static review alone — the live `--verify` pass is the only step that can ground those assertions to `{OBSERVED}`. Fully `{BL}`/`{DOC}`/`{SPEC}`-grounded suites for existing features may promote on static review.
 
@@ -75,6 +83,7 @@ Read these files to inform the review:
 | `diff` | Run `git diff --name-only` → filter for `regression/suites/**/*.csv` → review only changed/added rows |
 | `all` | Read all 99 suite CSVs → produce summary-level review (top issues per suite, not line-by-line) |
 | `domain <name>` | Map domain to suites via `config/test-suites.json` tags → review those suites |
+| `stale` | Run `npm run tc:audit:queue` → report the staleness-ordered suite queue (risk tier, then oldest `Audited:` stamp) and stop. Read-only; this is the scope-selection helper the scheduled audit uses to pick its suite |
 
 ### Step 2: Parse & Validate Structure (Dimension 1)
 
@@ -215,6 +224,7 @@ Output a structured report:
 | Duplication | N | ... | ... | ... | ... |
 | Env Verification | N | ... | ... | ... | ... |
 | Technique Coverage | N | — | — | — | ... |
+| Behavioral Triangulation | N | ... | ... | ... | ... |
 | **Total** | **N** | **X** | **X** | **X** | **X** |
 
 ### Verdict: [PASS | PASS WITH WARNINGS | NEEDS FIXES]
@@ -272,6 +282,25 @@ Feature groups missing ISTQB positive + negative + boundary mix:
 
 Pages visited: N | Elements checked: N | Flows walked: N
 Verified: N | Changed: N | Broken: N | Blocked: N
+
+### Behavioral Triangulation (--triangulate only, Dimension 11)
+
+Source axis resolved to: `<repo>` (via requiresModules → module-suite-map → fix-repos routing)
+
+| Case ID | Assertion | Docs | Source | Live | Verdict | Action |
+|---------|-----------|------|--------|------|---------|--------|
+| QUOTE-003 | quote total excludes tax until approval | StorefrontUserGuide §Quotes | vc-module-quote/…/QuoteService.cs:141 | {OBSERVED} ✅ | CONFIRMED | stamp refreshed |
+| QUOTE-007 | 'Request Quote' disabled for guests | N/A — implementation-detail: button-state UX | vc-frontend/…/QuoteButton.vue:38 | {OBSERVED} ✅ | DRIFT | assertion rewritten (was 'hidden', is 'disabled') |
+| QUOTE-011 | decline emails the requester | PlatformUserGuide §Notifications | vc-module-quote/…/DeclineHandler.cs:66 | blocked — no SMTP on env | UNGROUNDED | proposal only |
+
+Verdicts: CONFIRMED N | DRIFT N | MISSING N | CONTRADICTORY N | UNGROUNDED N | RETIRE N
+Applied: N rows (stamp-only N, assertion rewrite N) | Proposals: N | `docs: N/A` rate: N/N
+
+#### Proposals (never auto-applied)
+
+| Case ID | Verdict | Conflicting / absent evidence | Recommended human action |
+|---------|---------|-------------------------------|--------------------------|
+| ... | CONTRADICTORY | source has fix @ abc123, live build trails | re-audit after next deploy |
 
 ### Statistics
 
@@ -332,6 +361,8 @@ Output: Per-case verification result:
 
 ### Step 7: Auto-Fix Mode (`--fix` flag)
 
+> **Ordering is fixed:** static review (Steps 2–5) → live verification (Step 6) → triangulation (Step 8) → **then** one apply pass. When `--triangulate` is set, run Step 8 **before** applying, because a DRIFT rewrite needs the gathered evidence to rewrite *to*. Never apply fixes before the axes are gathered.
+
 When `--fix` is specified:
 1. Present the review report first (Step 5)
 2. For each Blocker and Critical finding, propose a specific fix
@@ -339,6 +370,18 @@ When `--fix` is specified:
 4. Apply fixes to the CSV, preserving all existing IDs and non-affected columns
 5. Re-run structure validation (Step 2) on the fixed file to confirm no regressions
 6. Show a before/after diff of changes made
+
+**`--ci` (unattended) branch.** With `--fix --ci` there is no human present, so step 3's prompt is skipped and the write scope **narrows** instead of widening:
+
+| | interactive `--fix` | `--fix --ci` |
+|---|---|---|
+| Confirmation prompt | required | skipped — **the PR review is the gate** |
+| Dim 1–7/9 structural fixes | applied on approval | applied (deterministic, linter-verified) |
+| Dim 11 CONFIRMED / DRIFT | applied on approval | applied (three agreeing axes) |
+| Dim 11 MISSING / CONTRADICTORY / UNGROUNDED / RETIRE | reported | reported — **never written** |
+| `Automation_Status` promotion | human decision | **never** automatic |
+
+`--ci` therefore holds a *narrower* privilege than interactive `--fix`: it may only apply what the linter proved deterministically or what three agreeing axes confirmed. After applying it MUST re-run the deterministic gate (`suites:review --fail-on=High`, `td:validate`, and `graphql:lint-labels` for GraphQL suites); an auto-fix that introduces a new Blocker/Critical is **reverted, not shipped**.
 
 Fixable issues (auto-fix supported):
 - Missing type tags on steps → infer and add tags
@@ -353,9 +396,39 @@ Non-fixable issues (flagged for manual review):
 - Duplicate test cases → requires human decision on which to keep
 - Missing BL-*/ECL-* refs → requires domain analysis
 
+### Step 8: Behavioral Triangulation (`--triangulate` flag, Dimension 11)
+
+Read **triangulation-criteria.md** (this folder) first — it holds the evidence bar, the `docs: N/A` waiver, the suite→repo resolution chain, the verdict table, and the auto-fix matrix. `--triangulate` implies `--verify` and reuses its budget caps.
+
+**8a. Resolve the source axis.** For the suite in scope, resolve the backing repo: `config/test-suites.json` `requiresModules` → `.claude/knowledge/execution/module-suite-map.md` Module Map → `ci/config/fix-repos.json` `routing[]`. **Unresolvable ⇒ the source axis is ABSENT ⇒ every assertion in the suite is UNGROUNDED. Never guess a repo** — a wrong repo yields a confident `file:line` for unrelated code, manufacturing a false CONFIRMED.
+
+**8b. Fan out — PARALLEL (ba-system-analyzer).** Triangulation is read-only and per-assertion, so run it in parallel. Split the suite's cases into disjoint batches and dispatch **up to 3 `ba-system-analyzer` agents concurrently** (one Agent-tool call per batch, all in a single message — matches the 3-slot browser pool). Each gets its **own** browser slot (`playwright-firefox` / `playwright-chrome` / `playwright-edge`, never shared) and a **distinct test/org user** if the live axis needs auth (`feedback_concurrent_runners_distinct_org_users_taskstop`). Each agent captures all three axes with concrete evidence:
+
+- **Docs axis** — `/vc-docs` (VirtoOZ MCP), topic-scoped tool per the source map. Capture a **quote + doc reference**.
+- **Source axis** — GitHub MCP `search_code` / `get_file_contents` on the resolved repo (read-only; QA never clones). Capture a **`file:line` anchor**.
+- **Live axis** — the agent's **own** assigned slot. Capture an **`{OBSERVED}` result + screenshot**. REAL-USER rule — no `browser_evaluate` / `run_code_unsafe` bypass. Do NOT sub-delegate to `qa-testing-expert` from inside a batch agent; that would exceed the 3-browser cap.
+
+A batch agent **returns verdict + evidence tuple + proposed edit. It does NOT write the CSV.**
+
+**8c. Assign verdicts.** Per assertion, via the decision table. CONFIRMED/DRIFT require an evidence tuple from every *applicable* axis, all agreeing. Apply the waivers: a structurally-unavailable axis is `N/A (<reason>)` and the bar becomes the remaining axes (**minimum two, all agreeing** — a lone axis never confirms). An applicable axis missing/blocked ⇒ UNGROUNDED; conflicting ⇒ CONTRADICTORY. **Deploy lag** (source shows a merged fix, live shows the old behavior) is CONTRADICTORY with a re-audit trigger, **never** a DRIFT. Roll a case up to its **worst** assertion verdict.
+
+**8d. Apply — SINGLE WRITER.** Collect verdicts from all batch agents, then apply **serially in this one orchestrator process**. Per the auto-fix matrix: CONFIRMED → refresh the `Audited:` stamp only; DRIFT → rewrite **only the drifted assertion** + stamp; MISSING/CONTRADICTORY/UNGROUNDED/RETIRE → report only, never write. Stamp format, appended to the existing free-text `References` column (replacing any prior `Audited:` token, never accumulating):
+
+```
+Audited: <date> (TCA-<date>); Source: <repo>/<path>:<line>; Docs: <topic §section | N/A — <reason>>
+```
+
+A DRIFT rewrite must **keep `{{VAR}}` / `@td()` resolution** — rewriting an assertion to a literal price/SKU/URL observed live is a DV-013…020 violation, not a fix (assert the structural invariant, DV-016). This is the single most likely way an auto-fix does damage.
+
+**8e. Re-gate.** Re-run `suites:review -- <csv> --fail-on=High`, `td:validate`, and `graphql:lint-labels` (GraphQL suites). Any new Blocker/Critical ⇒ revert the applied edits.
+
 ## Rules
 
-- **Read-only by default** — never modify CSV files without the `--fix` flag AND explicit user confirmation
+- **Read-only by default** — never modify CSV files without the `--fix` flag AND explicit user confirmation. The one exception is `--fix --ci` (unattended), where the confirmation is replaced by PR review and the write scope narrows to linter-proven + three-axis-confirmed edits only (Step 7).
+- **Triangulation: parallel fan-out, single-writer fan-in.** Gather the three axes in parallel (≤3 browser agents, disjoint case batches, isolated sessions + distinct users), but apply from **one** serialized writer. Batch agents return proposed edits; they never write the CSV.
+- **Triangulation auto-apply is gated by evidence, never by silence.** CONFIRMED/DRIFT land only with concrete, agreeing evidence from every applicable axis. A missing axis ⇒ UNGROUNDED ⇒ proposal. **When in doubt, UNGROUNDED, not `N/A`.**
+- **Retiring and authoring are never automatic.** A RETIRE verdict never sets `Automation_Status: Deprecated` (it silently removes coverage if wrong); a MISSING verdict never fabricates a case (that is `/qa-test-lifecycle` Phase 3). Both are proposals.
+- **A DRIFT rewrite must not regress the no-hardcode rule** — keep `{{VAR}}` / `@td()`; assert the structural invariant, not the literal value observed live (DV-016). Grounding in source may quote an i18n **key**, never a guessed rendering of it (GRD-002).
 - **No false positives on legacy format** — if the CSV uses the legacy 11-column format, only check dimensions 1, 2, 4, and 7 (skip enriched-only columns)
 - **Severity reflects real impact** — a missing `[WAIT]` after a mutation is Critical (causes flaky tests), a missing ECL ref is Medium (informational)
 - **Actionable findings only** — every finding must include a specific suggested fix, not just "this is wrong"
@@ -365,17 +438,22 @@ Non-fixable issues (flagged for manual review):
 
 ## Agent Delegation
 
-| Agent | Role in Review | When |
-|-------|---------------|------|
-| **qa-testing-expert** | Live environment verification (Dimension 8) — navigates pages, checks elements, walks flows | `--verify` flag |
+| Agent | Role in Review | When | Browser |
+|-------|---------------|------|---------|
+| **qa-testing-expert** | Live environment verification (Dimension 8) — navigates pages, checks elements, walks flows | `--verify` flag | `playwright-firefox` |
+| **ba-system-analyzer** ×N (≤3 parallel) | Triangulation batch (Dimension 11) — docs + source + live + verdict per assertion, on disjoint case batches | `--triangulate` flag | one distinct slot each: `playwright-firefox` / `playwright-chrome` / `playwright-edge` |
+| the **orchestrator** (this skill) | Applies all CSV edits, serially — single writer | `--fix` | — |
 
 The `qa-testing-expert` uses `playwright-firefox` for browser verification. This is its standard browser assignment — no conflict with other agents during review. The static review (Dimensions 1-7) does NOT require any agent delegation or browser.
 
+**Concurrency cap: 3 browser agents total** (`.claude/rules/agents.md`). Under `--triangulate` each batch agent does its **own** live observation on its assigned slot — it does NOT additionally sub-delegate to `qa-testing-expert` (that would be a 4th browser). Reserve `qa-testing-expert` for a sequential single-case deep-dive on a hard live repro. Each parallel agent uses a distinct browser session **and** a distinct test user; never share.
+
 **Workflow:**
-1. Static review completes first (Dimensions 1-7)
-2. If `--verify` flag is set, extract verification targets from the static review findings
-3. Delegate to `qa-testing-expert` with the list of pages, elements, and flows to check
-4. Merge environment verification results into the final report
+1. Static review completes first (Dimensions 1-7, 9, static 10)
+2. If `--verify` flag is set, extract verification targets from the static review findings and delegate to `qa-testing-expert`
+3. If `--triangulate` is set, resolve the source repo, then fan out ≤3 `ba-system-analyzer` batches for the 3-axis evidence + verdicts (Step 8)
+4. Merge environment verification and triangulation results into the final report
+5. If `--fix` is set, apply serially from the orchestrator, then re-gate
 
 ## Integration with Other Skills
 
@@ -388,3 +466,5 @@ The `qa-testing-expert` uses `playwright-firefox` for browser verification. This
 | `/qa-metrics` | Review findings feed into quality metrics |
 | `/qa-env-check` | Run env check before `--verify` to ensure environment is healthy |
 | `test-case-template.md` | The format contract that review validates against |
+| `/qa-review-bl` | The **sibling triangulation mechanism** — same three axes, same evidence bar, applied to `BL-*` invariants instead of assertions. Its Step 4 reconciles coverage back into this skill; a `{BL}`-tagged assertion whose invariant it amended shows up here as a Dim 11 DRIFT |
+| `ci/run-suite-audit.ts` | The **headless twin** — runs `--triangulate --fix --ci` on one suite per weekday and lands each audit as its own draft PR (`.github/workflows/suite-audit.yml`) |

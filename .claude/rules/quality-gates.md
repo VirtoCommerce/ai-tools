@@ -14,7 +14,7 @@ module graph (`ci/lib/module-registry.ts`), workspace (`.fix-workspace/`), branc
 (`claude/qa-autofix/VCST-XXXX`), and output dir (`reports/fixes/FIX-*/`).
 
 > Scope of this ladder: **bug auto-fix only.** Test-quality gates live in `/qa-review-tests`
-> (8 dimensions); regression quality gates live in `/qa-metrics`. This file does not duplicate those.
+> (11 dimensions); regression quality gates live in `/qa-metrics`. This file does not duplicate those.
 
 ---
 

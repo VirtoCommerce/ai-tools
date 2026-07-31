@@ -102,7 +102,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-accessibility/` | **A** | WCAG 2.1 AA — universal. |
 | `qa-storybook/` | **B** | Storybook visual regression — Storybook is the constant, examples are vc-frontend. |
 | `qa-checklist/` | **B** | Per-domain checklists — domains C, structure B. **Becomes template + project pack.** |
-| `qa-review-tests/` | **B** | 8-dimension quality review — generic dimensions, examples C. |
+| `qa-review-tests/` | **B** | 11-dimension quality review — generic dimensions, examples C. |
 | `qa-coverage-gap/` | **B** | Coverage gap analysis pipeline — generic methodology, domain map is C. |
 | `qa-design/` | **B** | Design system + UX heuristics — generic; matrix is storefront. |
 | `qa-plan/` | **B** | E2E scenario catalog — scenarios are C, the planning skill is B. |

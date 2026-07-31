@@ -107,6 +107,13 @@ reports/fixes/FIX-*/**/*.png
 reports/fixes/FIX-*/**/*.har
 reports/fixes/FIX-*/**/*.jpg
 
+# Scheduled test-case staleness audit (ci/run-suite-audit.ts). Entirely ephemeral:
+# .claude/rules/reports.md has NO report category for a test-case review, so the
+# audit narrative ships in the PR BODY and the only durable artifact is the CSV
+# diff itself. Everything under here is pipeline working data (the agent
+# transcript, the generated PR body, the commit message, summary.json).
+reports/suite-audit/
+
 # Online monitoring (App Insights) — fingerprint dedup state is local working
 # state, not a report. Keep MONITOR-* reports; drop heavy run artifacts.
 reports/monitoring/.seen-fingerprints.json

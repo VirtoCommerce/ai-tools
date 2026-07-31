@@ -16,10 +16,19 @@
  *   Dim 7 Duplication    DUP-001 DUP-004 (DUP-002/003 are cross-suite — skipped)
  *   Dim 9 Technique      TC-001
  *   Dim 10 Grounding     GRD-001 (GRD-002 invented-literal needs judgment — skipped)
+ *   Dim 11 Triangulation TRI-000 audit-stamp staleness ONLY
+ *                        (TRI-001..006 verdicts need docs+live+source → the skill)
  *
  * Dimension 8, and the LIVE half of Dimension 10 (grounding {HYPOTHESIS}/{SPEC}
  * to {OBSERVED} against the deployed build), are intentionally NOT here — they
  * require a live browser and are the skill's remaining judgment slots.
+ *
+ * Dimension 11 is the same shape: this script decides only the DETERMINISTIC
+ * half — "when was this row last triangulated?" (TRI-000, read off the `Audited:`
+ * stamp in References). Whether an assertion's expected behavior is still TRUE
+ * needs the three axes and is /qa-review-tests --triangulate's judgment slot.
+ * `parseAuditStamp` is exported so scripts/test-cases/audit-queue.ts reads the
+ * stamp through the same parser instead of re-deriving the format.
  *
  * Reuses scripts/append-test-cases-to-suite.ts (parseSuite/COLUMNS) and
  * scripts/lib/graphql-case-parser.ts (parseSteps/validateStepBlocks) so the
@@ -165,6 +174,82 @@ const ORDERING_RE = /\b(after running|following\s+[A-Z]+-\d+|requires?\s+[A-Z]+-
 // {HYPOTHESIS} is a guess (question form only); no tag at all = ungrounded.
 const PROVENANCE_RE = /\{(?:SPEC|BL|DOC|OBSERVED|HYPOTHESIS)\}/;
 const GROUNDED_PROV_RE = /\{(?:SPEC|BL|DOC|OBSERVED)\}/;
+
+/**
+ * Dim 11 / TRI-000 — the triangulation audit stamp, written into the free-text
+ * `References` column by `/qa-review-tests --triangulate --fix`:
+ *
+ *   Audited: 2026-08-03 (TCA-2026-08-03); Source: vc-module-x-cart/…:214; Docs: …
+ *
+ * `References` already carries sibling stamps in exactly this shape (`Synced:
+ * VCST-5281 PR#2399 (2026-07-29)`, `Corrected: … (2026-06-26)`), which is why the
+ * stamp needs NO new CSV column — the 15-column contract in
+ * append-test-cases-to-suite.ts stays untouched.
+ *
+ * The stamp IS the rotation state: audit-queue.ts sorts suites by their oldest
+ * stamp, so there is no ledger file to desync. Only the most recent `Audited:`
+ * token is kept per row (the writer replaces, never appends), but this parser
+ * takes the MAX across all matches so a row that accumulated two stamps through
+ * a bad merge still reports its true latest audit rather than the first one.
+ */
+const AUDIT_STAMP_RE = /\bAudited:\s*(\d{4}-\d{2}-\d{2})/g;
+
+/** Default staleness window, in days, before an audited row is re-queued. */
+export const DEFAULT_STALE_DAYS = 180;
+
+/**
+ * Is this a real calendar date? `\d{4}-\d{2}-\d{2}` happily matches `2026-13-45`,
+ * and an unvalidated garbage stamp would become the suite's `oldestStamp` and
+ * poison the rotation sort in audit-queue.ts (it sorts lexically, so `2026-13-45`
+ * would outrank every legitimate date in that year). A malformed stamp is treated
+ * as NO stamp — consistently, everywhere — so the row is simply re-audited.
+ */
+function isRealDate(iso: string): boolean {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === iso;
+}
+
+/** Latest valid `Audited:` date in a References cell, or null when never audited. */
+export function parseAuditStamp(references: string): string | null {
+  const dates = [...(references ?? "").matchAll(AUDIT_STAMP_RE)]
+    .map((m) => m[1])
+    .filter(isRealDate)
+    .sort();
+  return dates.length ? dates[dates.length - 1] : null;
+}
+
+/**
+ * Whole days between an ISO date and `now` (negative for a future stamp). Callers
+ * only ever pass a stamp that already cleared `isRealDate`, so there is no NaN
+ * branch to handle here.
+ */
+function daysSince(iso: string, now: Date): number {
+  return Math.floor((now.getTime() - Date.parse(`${iso}T00:00:00Z`)) / 86_400_000);
+}
+
+export interface AuditStaleness {
+  unstamped: number;
+  stale: number;
+  fresh: number;
+  /** Oldest stamp present, or null when no row carries one. */
+  oldestStamp: string | null;
+}
+
+/**
+ * Per-suite triangulation-staleness summary. Exported for audit-queue.ts so the
+ * rotation and the linter agree on what "stale" means by construction.
+ */
+export function auditStaleness(rows: Row[], now: Date, staleDays = DEFAULT_STALE_DAYS): AuditStaleness {
+  let unstamped = 0, stale = 0, fresh = 0;
+  let oldestStamp: string | null = null;
+  for (const r of rows) {
+    const stamp = parseAuditStamp(r.References);
+    if (!stamp) { unstamped++; continue; }
+    if (!oldestStamp || stamp < oldestStamp) oldestStamp = stamp;
+    if (daysSince(stamp, now) > staleDays) stale++; else fresh++;
+  }
+  return { unstamped, stale, fresh, oldestStamp };
+}
 
 const find = (rule: string, severity: Severity, caseId: string, message: string): Finding => ({
   rule, severity, caseId, message,
@@ -372,8 +457,8 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return inter / (a.size + b.size - inter);
 }
 
-/** Dim 7 (DUP-001 / DUP-004) + Dim 9 (TC-001) operate across rows. */
-function lintCrossRow(rows: Row[]): Finding[] {
+/** Dim 7 (DUP-001 / DUP-004) + Dim 9 (TC-001) + Dim 11 (TRI-000) operate across rows. */
+function lintCrossRow(rows: Row[], now = new Date(), staleDays = DEFAULT_STALE_DAYS): Finding[] {
   const f: Finding[] = [];
   const tokenSets = rows.map((r) => stepTokens(r.Steps));
   // DUP-001/004 target UI login/add-to-cart repetition. Runner-native GraphQL
@@ -421,6 +506,23 @@ function lintCrossRow(rows: Row[]): Finding[] {
     f.push(find("GRD-001", "Informational", legacyUngrounded[0].ID || "<file>",
       `${legacyUngrounded.length} case(s) have no assertion provenance tags (Dim 10) — grounded on next touch/regeneration`));
 
+  // Dim 11 (TRI-000) staleness tally — one file-level signal, same shape as the
+  // GRD-001 tally above and for the same reason: a per-case finding would emit
+  // ~3,960 rows across the repo on day one. Informational keeps it below the
+  // default --fail-on=High gate, so adding this dimension cannot turn the whole
+  // suite corpus red and push everyone to --warn-only (which would kill the
+  // signal permanently). This is a SCHEDULING signal, not a case defect —
+  // audit-queue.ts consumes it to pick each day's suite.
+  if (rows.length) {
+    const st = auditStaleness(rows, now, staleDays);
+    const due = st.unstamped + st.stale;
+    if (due)
+      f.push(find("TRI-000", "Informational", rows[0].ID || "<file>",
+        `${due}/${rows.length} case(s) due for behavioral triangulation (${st.unstamped} never audited, ` +
+          `${st.stale} stamped >${staleDays}d ago${st.oldestStamp ? `, oldest ${st.oldestStamp}` : ""}) ` +
+          `— run /qa-review-tests --triangulate`));
+  }
+
   return f;
 }
 
@@ -434,9 +536,13 @@ function main(): void {
   const json = argv.includes("--json");
   const failOnArg = (argv.find((a) => a.startsWith("--fail-on=")) ?? "--fail-on=High").split("=")[1] as Severity;
   const failOn = SEVERITY_ORDER.includes(failOnArg) ? failOnArg : "High";
+  const staleArg = Number(argv.find((a) => a.startsWith("--stale-days="))?.split("=")[1]);
+  const staleDays = Number.isFinite(staleArg) && staleArg > 0 ? staleArg : DEFAULT_STALE_DAYS;
 
   if (!file) {
-    console.error("Usage: lint-test-cases.ts <suite.csv> [--json] [--fail-on=Blocker|Critical|High|Medium]");
+    console.error(
+      "Usage: lint-test-cases.ts <suite.csv> [--json] [--fail-on=Blocker|Critical|High|Medium] [--stale-days=N]",
+    );
     process.exit(1);
   }
 
@@ -461,7 +567,7 @@ function main(): void {
 
   const seenIds = new Map<string, number>();
   rows.forEach((r, i) => findings.push(...lintRow(r, i, seenIds)));
-  findings.push(...lintCrossRow(rows));
+  findings.push(...lintCrossRow(rows, new Date(), staleDays));
 
   report(findings, file, json, failOn);
 }
@@ -482,9 +588,11 @@ function report(findings: Finding[], file: string, json: boolean, failOn: Severi
       for (const x of group) console.log(`  [${x.severity}] ${x.rule} ${x.caseId}: ${x.message}`);
     }
     console.log(
-      `\n  Static dims 1-7,9,10 only. Run alongside: \`npm run graphql:lint-labels -- <csv>\` (DV-019) and ` +
+      `\n  Static dims 1-7,9,10 + TRI-000 only. Run alongside: \`npm run graphql:lint-labels -- <csv>\` (DV-019) and ` +
         `\`npx tsx scripts/validate-td-refs.ts\` (DV-013). Dimension 8 (live env) and the live half of Dim 10 ` +
-        `(grounding {HYPOTHESIS}/{SPEC} → {OBSERVED}) need a browser via /qa-review-tests --verify. Schema rules ` +
+        `(grounding {HYPOTHESIS}/{SPEC} → {OBSERVED}) need a browser via /qa-review-tests --verify. Dimension 11 ` +
+        `verdicts (TRI-001..006 — is the asserted behavior still TRUE?) need docs+live+source via ` +
+        `/qa-review-tests --triangulate; TRI-000 above only reports WHEN each row was last audited. Schema rules ` +
         `DV-006..012/016/020, GRD-002 (invented literal), and BL-002/004/005 need knowledge-file/LLM judgment.`,
     );
   }
