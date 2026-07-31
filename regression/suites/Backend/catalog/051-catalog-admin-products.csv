@@ -8,7 +8,7 @@
 [STATE] Language block visible and functional
 [STATE] System saves new catalog successfully
 [DOM] New catalog appears in catalog list","[API] GET /api/catalog/catalogs — verify new catalog returned
-[CONSOLE] No errors on create","Catalog save fails silently; required field validation not shown; duplicate catalog name accepted","delete created catalog via Admin","VP-660, C122780","Katalon"
+[CONSOLE] No errors on create","Catalog save fails silently; required field validation not shown; duplicate catalog name accepted","delete created catalog via Admin","VP-660, C122780","Automated"
 "CAT-002","Edit Existing Catalog","Catalog > Common Catalogs","High","BL-CAT-001","ECL-8.1","Admin logged in, at least one catalog exists","catalogName=UpdatedCatalog; adminUrl={{BACK_URL}}","[NAV] Right-click on existing catalog > Manage
 [ASSERT] Verify edit screen displays
 [ACT] Review blocks: Name (required), Language, Property
@@ -21,14 +21,14 @@
 [STATE] Property block displays correctly
 [STATE] System saves all changes
 [DOM] Updated catalog reflects changes","[API] GET /api/catalog/catalogs/{id} — verify updated fields
-[CONSOLE] No errors on save","Save button inactive after edits; name not persisted after save; language block missing","restore original catalog name via Admin","VP-660, C122781","Katalon"
+[CONSOLE] No errors on save","Save button inactive after edits; name not persisted after save; language block missing","restore original catalog name via Admin","VP-660, C122781","Automated"
 "CAT-003","Delete Catalog - Cancel","Catalog > Common Catalogs","High","BL-CAT-001","","Admin logged in, multiple catalogs exist","adminUrl={{BACK_URL}}","[NAV] Right-click on any catalog > Delete
 [ASSERT] Verify confirmation dialog appears
 [ACT] Click Cancel","[STATE] Confirmation dialog displays
 [STATE] System does not delete catalog
 [DOM] Catalog remains in list
 [STATE] No data loss","[API] GET /api/catalog/catalogs — verify catalog still exists
-[CONSOLE] No errors","Catalog deleted despite Cancel click; dialog not shown; list count changes","none","VP-660, C122782","Katalon"
+[CONSOLE] No errors","Catalog deleted despite Cancel click; dialog not shown; list count changes","none","VP-660, C122782","Automated"
 "CAT-004","Delete Catalog - Confirm","Catalog > Common Catalogs","High","BL-CAT-001","","Admin logged in, test catalog exists","catalogName=TestCatalogToDelete; adminUrl={{BACK_URL}}","[NAV] Right-click on test catalog > Delete
 [ASSERT] Verify confirmation dialog
 [ACT] Type 'Yes' in confirmation field
@@ -36,7 +36,7 @@
 [STATE] System deletes catalog after confirmation
 [DOM] Catalog removed from list
 [STATE] Related data handled appropriately","[API] GET /api/catalog/catalogs — verify catalog absent
-[CONSOLE] No errors on delete","Catalog not removed after confirm; 'Yes' field not enforced; related data orphaned","none (catalog was created for deletion)","VP-660, C122782","Katalon"
+[CONSOLE] No errors on delete","Catalog not removed after confirm; 'Yes' field not enforced; related data orphaned","none (catalog was created for deletion)","VP-660, C122782","Automated"
 "CAT-005","Add Catalog with Multiple Languages","Catalog > Common Catalogs","Medium","BL-CAT-001","ECL-8.1","Admin logged in, Catalog module accessible","languages=en-US,de-DE; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > Click Catalog
 [ACT] Click Language selector
 [ACT] Select default language
@@ -46,7 +46,7 @@
 [STATE] Can add multiple additional languages
 [STATE] System saves catalog with selected languages
 [STATE] All languages available in catalog","[API] GET /api/catalog/catalogs/{id} — verify languages array
-[CONSOLE] No errors","Only one language saved; additional languages lost after save; language selector empty","delete created catalog via Admin","VP-660, C122783","Katalon (generic)"
+[CONSOLE] No errors","Only one language saved; additional languages lost after save; language selector empty","delete created catalog via Admin","VP-660, C122783","Automated"
 "CAT-006","Add New Language Value to Catalog","Catalog > Common Catalogs","High","BL-CAT-001","ECL-8.1","Admin logged in, at least one catalog exists","langValue=TestLang; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module
 [NAV] Right-click on any catalog > Manage
 [ACT] Click on Languages widget
@@ -57,7 +57,7 @@
 [STATE] New language value added to list
 [STATE] Changes saved successfully
 [STATE] New language available for selection as default or additional","[API] GET /api/catalog/catalogs/{id} — verify language value in response
-[CONSOLE] No errors","Language value not persisted; duplicate language accepted; dictionary screen does not open","delete added language value via Admin","C180483","Katalon (generic)"
+[CONSOLE] No errors","Language value not persisted; duplicate language accepted; dictionary screen does not open","delete added language value via Admin","C180483","Automated"
 "CAT-007","Delete Language Value from Catalog","Catalog > Common Catalogs","Medium","BL-CAT-001","","Admin logged in, language value added via C180483","adminUrl={{BACK_URL}}","[NAV] Navigate to catalog Languages widget
 [ACT] Click Edit button
 [ACT] Select language value to delete
@@ -66,7 +66,7 @@
 [STATE] Delete confirmation appears
 [STATE] Selected language deleted from list
 [STATE] Changes saved successfully","[API] GET /api/catalog/catalogs/{id} — verify language removed
-[CONSOLE] No errors","Language value still in list after delete; no confirmation dialog; other values affected","none","C180484","Katalon (generic)"
+[CONSOLE] No errors","Language value still in list after delete; no confirmation dialog; other values affected","none","C180484","Automated"
 "CAT-019","Add New Physical Product","Catalog > Products","Critical","BL-CAT-001; BL-CAT-004","ECL-8.1","Admin logged in, category exists","sku={{TEST_SKU}}; productName=TestPhysicalProduct; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > Click on any category
 [ACT] Click Add > Physical product
 [ASSERT] Verify product details screen displays
@@ -83,7 +83,7 @@
 [DOM] Product appears in product list
 [STATE] Product indexed and searchable","[API] GET /api/catalog/products — verify new product returned
 [API] POST /api/catalog/search — verify product appears in search index within 60s
-[CONSOLE] No indexing errors","Product not indexed within 60s; SKU auto-generation fails; required field bypassed","delete created product via Admin","VP-660, C123091","Katalon"
+[CONSOLE] No indexing errors","Product not indexed within 60s; SKU auto-generation fails; required field bypassed","delete created product via Admin","VP-660, C123091","Automated"
 "CAT-020","Add New Digital Product","Catalog > Products","High","BL-CAT-001","","Admin logged in, catalog exists","productName=TestDigitalProduct; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
 [ACT] Click Add
 [ACT] Choose Digital Product from New category item blade
@@ -96,7 +96,7 @@
 [STATE] Product name field available
 [DOM] New digital product added to list
 [STATE] Digital product type persisted","[API] GET /api/catalog/products/{id} — verify productType=Digital
-[CONSOLE] No errors","SKU not auto-generated; product type not persisted; digital product not distinguished in list","delete created product via Admin","C180504","Katalon (generic)"
+[CONSOLE] No errors","SKU not auto-generated; product type not persisted; digital product not distinguished in list","delete created product via Admin","C180504","Automated"
 "CAT-021","Edit Existing Product","Catalog > Products","High","BL-CAT-001; BL-CAT-004","ECL-8.1","Admin logged in, test product exists","productName=UpdatedProduct; adminUrl={{BACK_URL}}","[NAV] Right-click on product > Manage
 [ASSERT] Verify edit screen loads with product data
 [ACT] Change product name
@@ -108,13 +108,13 @@
 [STATE] Changes saved successfully
 [DOM] Updated product reflects changes
 [STATE] No data loss on edit","[API] GET /api/catalog/products/{id} — verify updated name and properties
-[CONSOLE] No errors on save","Name revert after save; description lost; save button inactive after edits","restore original product name via Admin","VP-660, C123092","Katalon"
+[CONSOLE] No errors on save","Name revert after save; description lost; save button inactive after edits","restore original product name via Admin","VP-660, C123092","Automated"
 "CAT-022","Delete Product - Cancel","Catalog > Products","High","BL-CAT-001","","Admin logged in, products exist","adminUrl={{BACK_URL}}","[NAV] Right-click on product > Delete
 [ASSERT] Verify confirmation dialog
 [ACT] Click Cancel","[STATE] Confirmation dialog displays
 [STATE] System does not delete product
 [DOM] Product remains in list","[API] GET /api/catalog/products — verify product still listed
-[CONSOLE] No errors","Product deleted despite Cancel; dialog not shown; list count changes","none","VP-660, C123093","Katalon"
+[CONSOLE] No errors","Product deleted despite Cancel; dialog not shown; list count changes","none","VP-660, C123093","Automated"
 "CAT-023","Delete Product - Confirm","Catalog > Products","High","BL-CAT-001","ECL-5.1","Admin logged in, test product exists","adminUrl={{BACK_URL}}","[NAV] Right-click on test product > Delete
 [ASSERT] Verify confirmation dialog
 [ACT] Type 'Yes'
@@ -123,7 +123,7 @@
 [STATE] System deletes product
 [DOM] Product removed from list
 [STATE] Related data (inventory, pricing) handled","[API] GET /api/catalog/products — verify product absent
-[CONSOLE] No errors on delete","Product not removed; inventory record orphaned; 'Yes' not enforced","none (product was created for deletion)","VP-660, C123093","Katalon"
+[CONSOLE] No errors on delete","Product not removed; inventory record orphaned; 'Yes' not enforced","none (product was created for deletion)","VP-660, C123093","Automated"
 "CAT-024","Add Description to Product","Catalog > Products","High","BL-CAT-001","","Admin logged in, product exists","descType=QuickReview; lang=en-US; adminUrl={{BACK_URL}}","[NAV] Go to product details
 [ACT] Click on Descriptions widget
 [ACT] Click Add
@@ -135,7 +135,7 @@
 [STATE] Content editor available
 [DOM] New description added to descriptions list
 [STATE] Description saved with product","[API] GET /api/catalog/products/{id} — verify descriptions array
-[CONSOLE] No editor errors","Description not persisted; language not selectable; content editor broken","delete added description via Admin","C180500","Katalon (generic)"
+[CONSOLE] No editor errors","Description not persisted; language not selectable; content editor broken","delete added description via Admin","C180500","Automated"
 "CAT-025","Add Product Dimensions","Catalog > Products","Medium","BL-CAT-001","","Admin logged in, product exists","length=10; width=5; height=3; weight=1.5; adminUrl={{BACK_URL}}","[NAV] Go to product details
 [ACT] Click on Item dimensions widget
 [ACT] Fill in dimension fields (Length, Width, Height, Weight)
@@ -145,7 +145,7 @@
 [STATE] Entered data saved
 [DOM] Data displayed on widget
 [STATE] Dimensions used in shipping calculations","[API] GET /api/catalog/products/{id} — verify dimensions in response
-[CONSOLE] No errors","Dimension values not saved; widget not opening; values not used in shipping","restore original dimensions","C180501","Katalon (generic)"
+[CONSOLE] No errors","Dimension values not saved; widget not opening; values not used in shipping","restore original dimensions","C180501","Automated"
 "CAT-026","Clone Product","Catalog > Products","High","BL-CAT-001","ECL-5.1","Admin logged in, at least one product exists","sourceProductSku={{TEST_SKU}}; adminUrl={{BACK_URL}}","[NAV] Navigate to existing product
 [ACT] Click Clone button
 [ASSERT] Review cloned product data
@@ -156,7 +156,7 @@
 [STATE] SKU auto-generated (different from original)
 [DOM] Cloned product appears in list
 [STATE] Original product unchanged","[API] GET /api/catalog/products — verify both products exist with distinct IDs and SKUs
-[CONSOLE] No errors","Clone creates duplicate SKU; original product modified; clone missing properties or images","delete cloned product via Admin","C180619","Katalon"
+[CONSOLE] No errors","Clone creates duplicate SKU; original product modified; clone missing properties or images","delete cloned product via Admin","C180619","Automated"
 "CAT-027","Add Vendor to Product","Catalog > Products","High","BL-CAT-001","","Admin logged in, product exists","vendor1=Vendor_1; vendor2=Vendor_2; adminUrl={{BACK_URL}}","[NAV] Go to catalog > Open product details
 [ACT] Click blue pencil near Vendor field
 [ACT] Click Add > Choose Vendor
@@ -171,7 +171,7 @@
 [STATE] Vendor selection saved with product
 [STATE] Vendor value persisted on reopen
 [STATE] Can change vendor","[API] GET /api/catalog/products/{id} — verify vendor field
-[CONSOLE] No errors","Vendor not persisted after save; vendor dropdown empty; Companies module not updated","restore original vendor state via Admin","C340856","Katalon (generic)"
+[CONSOLE] No errors","Vendor not persisted after save; vendor dropdown empty; Companies module not updated","restore original vendor state via Admin","C340856","Automated"
 "CAT-028","Add Tax Type to Product","Catalog > Products","Medium","BL-CAT-003","","Admin logged in, product exists","tax1=Tax_1; tax2=Tax_2; adminUrl={{BACK_URL}}","[NAV] Go to Catalog > Open product details
 [ACT] Click blue pencil near Tax field
 [ACT] Click Add > Create tax types (Tax_1, Tax_2)
@@ -184,7 +184,7 @@
 [STATE] Tax selection saved with product
 [STATE] Tax value persisted on reopen
 [STATE] Can change tax type","[API] GET /api/catalog/products/{id} — verify taxType field
-[CONSOLE] No errors","Tax type not persisted; dropdown not showing created types; tax change not saved","restore original tax state via Admin","C340857","Katalon (generic)"
+[CONSOLE] No errors","Tax type not persisted; dropdown not showing created types; tax change not saved","restore original tax state via Admin","C340857","Automated"
 "CAT-029","Add New Product Description Type","Catalog > Products","Medium","BL-CAT-001","ECL-8.1","Admin logged in, product description types configurable","descTypeName=TestDescType; adminUrl={{BACK_URL}}","[NAV] Navigate to description type management
 [ACT] Create new description type
 [ACT] Enter type name and properties
@@ -194,7 +194,7 @@
 [STATE] New type saved successfully
 [DOM] New type appears in types dropdown
 [STATE] Type selectable when adding descriptions","[API] GET /api/catalog/producttypes — verify new type returned
-[CONSOLE] No errors","Type not appearing in dropdown; save fails; type name with special chars causes error","delete created description type via Admin","C200442","Katalon"
+[CONSOLE] No errors","Type not appearing in dropdown; save fails; type name with special chars causes error","delete created description type via Admin","C200442","Automated"
 "CAT-030","Edit Product Description Type","Catalog > Products","Medium","BL-CAT-001","ECL-8.1","Admin logged in, description type exists","descTypeName=UpdatedDescType; adminUrl={{BACK_URL}}","[NAV] Navigate to description type management
 [ACT] Select existing type
 [ACT] Modify type properties
@@ -203,7 +203,7 @@
 [STATE] Type properties updatable
 [STATE] Changes saved successfully
 [DOM] Updated type reflected in dropdown","[API] GET /api/catalog/producttypes — verify updated type
-[CONSOLE] No errors","Updated name not reflected in dropdown; save fails; products using type not updated","restore original type name via Admin","C200443","Katalon"
+[CONSOLE] No errors","Updated name not reflected in dropdown; save fails; products using type not updated","restore original type name via Admin","C200443","Automated"
 "CAT-031","Delete Product Description Type","Catalog > Products","Medium","BL-CAT-001","ECL-5.1","Admin logged in, description type C200442 exists","adminUrl={{BACK_URL}}","[NAV] Navigate to description type management
 [ACT] Select type to delete
 [ACT] Click Delete
@@ -213,7 +213,7 @@
 [STATE] Type deleted from system
 [DOM] Type removed from dropdown
 [STATE] Existing descriptions using type handled","[API] GET /api/catalog/producttypes — verify type absent
-[CONSOLE] No errors on delete","Type still in dropdown after delete; confirmation not required; descriptions using type break","none","C200444","Katalon"
+[CONSOLE] No errors on delete","Type still in dropdown after delete; confirmation not required; descriptions using type break","none","C200444","Automated"
 "CAT-032","Add New Image to Product with Alt Text","Catalog > Products","High","BL-CAT-001","","Admin logged in, product exists, image file ready","imageFile=test-product-image.jpg; altText=Test alt text; adminUrl={{BACK_URL}}","[NAV] Open product to edit
 [ACT] Click on Image blade > Add button
 [ACT] Upload image via drag-drop or file picker
@@ -226,7 +226,7 @@
 [STATE] Meta description available (SEO)
 [DOM] New image appears in list","[API] GET /api/catalog/products/{id} — verify images array with alt text
 [NETWORK] Image URL returns 200
-[CONSOLE] No upload errors","Alt text not saved; image not appearing in list; upload fails silently","delete uploaded image via Admin","C261112","Katalon"
+[CONSOLE] No upload errors","Alt text not saved; image not appearing in list; upload fails silently","delete uploaded image via Admin","C261112","Automated"
 "CAT-033","Edit Product Image Alt Text","Catalog > Products","Medium","BL-CAT-001","","Admin logged in, product with image exists","altText=UpdatedAltText; adminUrl={{BACK_URL}}","[NAV] Open product to edit
 [ACT] Click on Image blade
 [ACT] Select image > Right-click > Edit
@@ -238,7 +238,7 @@
 [STATE] Fields editable
 [STATE] Changes saved successfully
 [STATE] Updated values persist on reopen","[API] GET /api/catalog/products/{id} — verify updated alt text in images array
-[CONSOLE] No errors","Alt text reverts after save; edit blade not opening; fields read-only","restore original alt text via Admin","C261113","Katalon"
+[CONSOLE] No errors","Alt text reverts after save; edit blade not opening; fields read-only","restore original alt text via Admin","C261113","Automated"
 "CAT-VID-001","Video Widget Display","Catalog > Product > Video","Medium","BL-CAT-001","","Admin logged in, product with video exists","adminUrl={{BACK_URL}}","[NAV] Open Catalog module
 [NAV] Navigate to a product that has videos
 [ACT] Click on the Video widget/tab in product detail
