@@ -2262,15 +2262,16 @@
     "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "org_name": "AGENT-TEST-Org-TechFlow-20260310",
     "count": 22,
-    "seeded_count": 20,
+    "csv_managed_count": 21,
     "countries": [
       "US",
       "CA",
       "GB"
     ],
-    "states_distinct": 15,
-    "cities_distinct": 20,
-    "notes": "MIGRATED 2026-07-01: TechFlow was recreated by the company-users reseed (org_id 6fb516c1→96f109a7); the same 22 addresses (same ids) were re-seeded onto the new org from the 20260423 snapshot, so the per-address TECHFLOW_ADDR_* ids and counts below still resolve live. VCST-4710 OQ-5 seed 2026-04-23. 20 new addresses (10 US, 5 CA, 5 UK) plus 2 pre-existing. Unblocks SF-004/006/007/009/010/012 (list/search/facet/sort) and GQ-003/004/005 (currentOrganizationAddresses). Full per-address IDs in test-data/addresses/_seed-results-techflow-20260423.json. Known caveat: platform CustomerAddress schema has no isFavorite field — storefront MemberAddressType returns isFavorite=false for all 20 after seed; toggle favorite via storefront UI if needed."
+    "countries_distinct": 3,
+    "states_distinct": 12,
+    "cities_distinct": 18,
+    "notes": "RE-SOURCED 2026-07-31: the 20260423 snapshot file this alias used to cite was NEVER in the repo, and the org had drifted back to 4 live addresses, so CHK-060/CHK-098 could not execute. The fixture is now MANAGED DATA: 21 org rows in test-data/b2b/addresses.csv (ADDR-005/006/016 + the ADDR-017..034 pagination set) seeded by `npm run seed:b2b:addresses`, plus 1 inline org address created by the org seeder itself (user-provision.mjs orgBody(), BillingAndShipping at the org's own address) = 22 live. Counts here MIRROR the CSV and are gated by `npm run td:validate:b2b` check [6] — edit the CSV, never these numbers. 22 addresses = 4 pages at the storefront's 6/page (vc-frontend useCheckout.ts ADDRESSES_PER_PAGE), last page 4; pagination is OFFSET-based (after = (page-1)*pageSize), so pages REPLACE rather than accumulate. 21 of the 22 are shipping-selectable (ADDR-006 is Billing-only). Contract + page arithmetic: scripts/seed-data/b2b/addresses-specs.mjs. Unblocks 011 CHK-060/CHK-098 and 081 (list/search/facet/sort). Known caveat: platform CustomerAddress schema has no isFavorite field — storefront MemberAddressType returns isFavorite=false; toggle favorite via storefront UI if needed."
   },
   "TECHFLOW_ADDR_US_NEW_YORK": {
     "_inline": true,
@@ -2281,7 +2282,7 @@
     "postalCode": "10001",
     "line1": "456 Oak Avenue",
     "line2": "Apt 4B",
-    "notes": "VCST-4710 seed — primary US/NY address fixture for facet/filter/sort tests."
+    "notes": "Primary US/NY address fixture for facet/filter/sort tests. Backed by test-data/b2b/addresses.csv ADDR-017 (seeded by `npm run seed:b2b:addresses`); ADDR-018 repeats city+zip so a 10001 search matches >1 row. VCST-4710."
   },
   "TECHFLOW_ADDR_CA_TORONTO": {
     "_inline": true,
@@ -2292,19 +2293,19 @@
     "postalCode": "M5V 3A8",
     "line1": "100 King Street West",
     "line2": "Suite 4500",
-    "notes": "VCST-4710 seed — primary CA/ON address fixture for multi-country facet tests."
+    "notes": "Primary CA/ON address fixture for multi-country facet tests. Backed by test-data/b2b/addresses.csv ADDR-026 (seeded by `npm run seed:b2b:addresses`). VCST-4710."
   },
   "TECHFLOW_ADDR_UK_LONDON": {
     "_inline": true,
     "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "city": "London",
-    "regionCode": "ENG",
+    "regionCode": "",
     "countryCode": "GB",
     "postalCode": "E14 5LQ",
     "line1": "25 Canada Square",
     "line2": "Level 40",
-    "isDefault": true,
-    "notes": "VCST-4710 seed — default org address (isDefault=true). Primary UK/ENG fixture for GB country-facet tests."
+    "isDefault": false,
+    "notes": "Primary GB fixture for the country-facet tests. Backed by test-data/b2b/addresses.csv ADDR-030 (seeded by `npm run seed:b2b:addresses`); ADDR-031..034 add Manchester/Cardiff/Glasgow/Birmingham. CORRECTED 2026-07-31: regionCode is now EMPTY and isDefault FALSE. It previously claimed regionCode=ENG + isDefault=true, neither of which the fixture provides — GB rows are deliberately region-less so the State/Province facet stays hidden for non-USA/CAN (project_address_state_facet), and the org's default shipping address is ADDR-005 (San Francisco), which validate-b2b-data.mjs check [1] requires to match the inline organizations.csv address. VCST-4710."
   },
   "ADDR_SINGLE_CHAR_TERM": {
     "_inline": true,
@@ -2407,8 +2408,8 @@
     "totalCount": 22,
     "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "org_name": "AGENT-TEST-Org-TechFlow-20260310",
-    "snapshot": "test-data/addresses/techflow-org-addresses-state-20260423.json",
-    "notes": "MIGRATED 2026-07-01: TechFlow org_id 6fb516c1→96f109a7 (company-users reseed); the same 22 addresses were re-seeded onto the new org, so needles/counts/snapshot below remain valid. VCST-4710 GAP-01 needles for checkout address-popup search/facet/sort. All needles derived from existing TechFlow snapshot (no new seeding required, 2026-04-30). Counts: USA=12, CAN=5, GBR=5, total=22. Per project_address_state_facet.md, state/province facet only renders for USA/CAN — GBR addresses must hide it. Multi-match needles guarantee >1 row to validate filter behavior. Re-snapshot to a NEW filename if address set changes; do NOT mutate the 20260423 file."
+    "source": "test-data/b2b/addresses.csv (org rows for ORG-002) — seed with `npm run seed:b2b:addresses`",
+    "notes": "RE-SOURCED 2026-07-31: the `snapshot` field previously cited test-data/addresses/techflow-org-addresses-state-20260423.json, which was NEVER present in the repo — the needles are now backed by real committed rows in test-data/b2b/addresses.csv. Each needle has an explicit backing row: cityNeedle 'Hou' → ADDR-019 Houston/TX + ADDR-020 Huston/FL (deliberate near-miss spelling); zipNeedle '1000' → ADDR-017 + ADDR-018, both 10001/New York; nameNeedle 'Smith' → ADDR-030 Oliver Smith (London/GBR) + ADDR-021 John Smith (Los Angeles/USA). Counts USA=12 (11 CSV rows + the inline org address), CAN=5, GBR=5, total=22 — mirrored from the CSV and gated by `npm run td:validate:b2b` check [6]. The *_count fields are the number of rows that EXIST for each needle; whether the storefront's search matches all of them is the behaviour under test, not a fixture guarantee (the guard therefore does not substring-check them). Per project_address_state_facet, the state/province facet renders only for USA/CAN — the GBR rows are region-less so they must hide it."
   },
   "COUPONS": {
     "_inline": true,

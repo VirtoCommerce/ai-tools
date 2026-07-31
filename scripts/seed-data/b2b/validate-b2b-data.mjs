@@ -23,6 +23,11 @@
  *      a password (⇒ account creatable).
  *   5. organization-memberships.csv: user_email set; org_name resolves in
  *      organizations.csv (by NAME); role_id resolves in roles.csv.
+ *   6. Address-book PAGINATION fixture: the pagination org (addresses-specs.mjs
+ *      PAGINATION_ORG_ID) carries >= TARGET_TOTAL addresses, yielding >= MIN_PAGES pages at the
+ *      storefront's ADDRESSES_PER_PAGE — the precondition suite 011 CHK-060 / CHK-098 depend on;
+ *      no runtime GUID leaked into addresses.csv; facets span >1 country; and the
+ *      TECHFLOW_ORG_ADDRESSES alias numbers still match what the CSV yields.
  *
  * Usage:  npm run td:validate:b2b   (or  node scripts/seed-data/validate-b2b-data.mjs)
  * Exit 1 on any hard error; warnings (optional/pending fixtures) don't fail.
@@ -32,6 +37,10 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
+import {
+  paginationAudit, assertContractCoherent, findGuidLeaks,
+  ADDRESSES_PER_PAGE, MIN_PAGES, TARGET_TOTAL,
+} from './addresses-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const B2B = join(ROOT, 'test-data', 'b2b');
@@ -195,6 +204,63 @@ else {
   for (const m of memberships) (byEmail[m.user_email] ||= new Set()).add(norm(m.org_name));
   for (const [email, set] of Object.entries(byEmail)) {
     if (set.size > 1) ok(`multi-org member ${email}: ${set.size} orgs`);
+  }
+}
+
+// 6. Address-book PAGINATION fixture (unblocks suite 011 CHK-060 / CHK-098).
+// GRD-001 only checks that an assertion carries a provenance tag, never that the precondition it
+// names is satisfiable — so a pagination case whose org quietly dropped back to 4 addresses lints
+// green and fails as if the product were broken. This check makes the fixture size a gate.
+console.log('\n[6] Address-book pagination fixture (pagination org)');
+{
+  const contractErrs = assertContractCoherent();
+  for (const e of contractErrs) fail(`pagination contract incoherent: ${e}`);
+
+  const a = paginationAudit(addresses, orgs);
+  if (!a.orgName) {
+    fail(`pagination org ${a.orgId} not found in organizations.csv`);
+  } else {
+    // No runtime platform GUID may sit in the committed addresses.csv — an org address is matched
+    // by CONTENT, so there is nothing to pin, and a leaked GUID would resolve to the wrong entity
+    // (or nothing) on every other env.
+    const leaks = findGuidLeaks(readFileSync(join(B2B, 'addresses.csv'), 'utf8'));
+    if (leaks.length) fail(`addresses.csv leaks ${leaks.length} runtime GUID(s) (e.g. ${leaks[0]}) — org addresses are content-matched; ids belong in aliases.<env>.json`);
+    else ok('addresses.csv carries no runtime platform GUID');
+
+    if (a.duplicateRowIds.length) {
+      warn(`${a.orgId}: row(s) ${a.duplicateRowIds.join(', ')} duplicate another row's content key (addressType|line1|city|country) — the seeder creates ONE address for them`);
+    }
+    // The invariant CHK-060 / CHK-098 depend on: enough addresses for a multi-page address book.
+    if (a.expectedTotal < TARGET_TOTAL) {
+      fail(`${a.orgId} (${a.orgName}): ${a.expectedTotal} address(es) — needs >= ${TARGET_TOTAL} for the address-book pagination cases (${a.csvDistinct} distinct addresses.csv row(s) + ${a.unmanagedInline} inline org address). Add rows to addresses.csv, then: TEST_ENV=<env> npm run seed:b2b:addresses`);
+    } else if (a.pages < MIN_PAGES) {
+      fail(`${a.orgId}: ${a.expectedTotal} address(es) → only ${a.pages} page(s) at ${ADDRESSES_PER_PAGE}/page — needs >= ${MIN_PAGES}`);
+    } else {
+      ok(`${a.orgId} (${a.orgName}): ${a.expectedTotal} addresses → ${a.pages} pages at ${ADDRESSES_PER_PAGE}/page, last page ${a.lastPage}`);
+    }
+    if (!a.partialLastPage) {
+      warn(`${a.orgId}: ${a.expectedTotal} is an exact multiple of ${ADDRESSES_PER_PAGE} — a full last page hides the partial-last-page edge case`);
+    }
+    // The modal has Country / State / City facets; one value per facet exercises none of them.
+    if (a.countryCount < 2) fail(`${a.orgId}: addresses span ${a.countryCount} country(ies) — the Country facet needs >= 2`);
+    else ok(`facet spread: ${a.countryCount} countries, ${a.stateCount} states/provinces, ${a.cityCount} cities`);
+
+    // The @td() aliases suite 011/081 read must agree with the CSV, or a case asserts a count the
+    // fixture no longer has. Alias numbers are a MIRROR of the CSV — the CSV is the source.
+    const aliasPath = join(ROOT, 'test-data', 'aliases.json');
+    if (existsSync(aliasPath)) {
+      const aliases = JSON.parse(readFileSync(aliasPath, 'utf8'));
+      const declared = aliases.TECHFLOW_ORG_ADDRESSES;
+      if (declared) {
+        const expect = { count: a.expectedTotal, csv_managed_count: a.csvDistinct, countries_distinct: a.countryCount, cities_distinct: a.cityCount, states_distinct: a.stateCount };
+        for (const [k, v] of Object.entries(expect)) {
+          if (declared[k] !== undefined && declared[k] !== v) {
+            fail(`aliases.json TECHFLOW_ORG_ADDRESSES.${k} = ${JSON.stringify(declared[k])} but addresses.csv yields ${v} — the CSV is the source of truth; update the alias`);
+          }
+        }
+        if (!problems.length || declared.count === a.expectedTotal) ok(`TECHFLOW_ORG_ADDRESSES alias agrees with addresses.csv (count=${a.expectedTotal})`);
+      }
+    }
   }
 }
 

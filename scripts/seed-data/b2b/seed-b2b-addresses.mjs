@@ -13,6 +13,13 @@
  *   Runs AFTER the org graph exists (bootstrap priority 105, after company-users=100);
  *   resolves each org by the pinned platform_id in organizations.csv.
  *
+ * ALSO provisions the ADDRESS-BOOK PAGINATION fixture: the pagination org (ORG-002 / TechFlow,
+ * `PAGINATION_ORG_ID` in addresses-specs.mjs) carries enough addresses that the checkout
+ * address-selection modal renders >1 page at the storefront's 6-per-page size — which is what
+ * unblocks suite 011 CHK-060 / CHK-098. The row count and its page arithmetic are asserted
+ * statically by `npm run td:validate:b2b` (check [6]), so the fixture cannot silently shrink
+ * back below the pagination threshold.
+ *
  * IDEMPOTENT + teardown-safe by CONTENT KEY (addressType|line1|city|countryCode):
  *   - seed adds only CSV addresses not already present on the member (never duplicates,
  *     never touches the org's inline default unless it content-matches a CSV row);
@@ -29,34 +36,13 @@ import {
   assertSafeTarget, auth, api, loadCsv, log, verbose, iso3, csvBool, verifyRemoved,
   DRY_RUN, TEARDOWN, ONLY, BACK_URL, STORE_ID,
 } from '../../lib/seed-common.mjs';
-
-// Content key — stable across runs, identifies "the same address" without a platform id.
-const akey = (a) => [a?.addressType, a?.line1, a?.city, a?.countryCode]
-  .map((x) => String(x || '').trim().toLowerCase()).join('|');
-
-// Region CODE → display NAME (US states + DC + CA provinces). The platform address model
-// wants regionId = the ISO/subdivision CODE and regionName = the human NAME; the `state`
-// column in addresses.csv carries the CODE, so map it to the name for regionName. This is
-// the fix for the VCST-5304 D2 systematic drift (regionName held "NY" instead of "New York").
-const REGION_NAMES = {
-  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado',
-  CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho',
-  IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana',
-  ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
-  MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada',
-  NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina',
-  ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania',
-  RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas',
-  UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington', WV: 'West Virginia',
-  WI: 'Wisconsin', WY: 'Wyoming', DC: 'District of Columbia',
-  AB: 'Alberta', BC: 'British Columbia', MB: 'Manitoba', NB: 'New Brunswick',
-  NL: 'Newfoundland and Labrador', NS: 'Nova Scotia', ON: 'Ontario', PE: 'Prince Edward Island',
-  QC: 'Quebec', SK: 'Saskatchewan',
-};
-/** A known 2-letter subdivision code → true (so an already-full name passes through untouched). */
-const isRegionCode = (v) => { const s = String(v || '').trim().toUpperCase(); return s.length <= 3 && !!REGION_NAMES[s]; };
-/** Resolve a code to its display name; a value that's already a name (or unknown) passes through. */
-const regionNameFor = (v) => { const s = String(v || '').trim(); return s ? (REGION_NAMES[s.toUpperCase()] || s) : undefined; };
+// Pagination contract, region code→name mapping, and the idempotency content key live in the
+// side-effect-free spec module so the seeder, the drift guard (validate-b2b-data.mjs) and the
+// unit tests all share ONE definition (test-data-authoring.md §3).
+import {
+  addressContentKey as akey, isRegionCode, regionNameFor, PAGINATION_ORG_ID,
+  ADDRESSES_PER_PAGE, MIN_PAGES, pageCount, lastPageSize,
+} from './addresses-specs.mjs';
 
 function buildAddress(row) {
   return {
@@ -132,6 +118,29 @@ async function seed(byOrg, orgMap) {
 }
 
 /**
+ * Report the pagination org's LIVE address count and what it means for the checkout
+ * address-selection modal. This is the seeder's own evidence that the CHK-060 / CHK-098
+ * precondition actually holds on the target env — the static guard can only check the CSV.
+ * `shippingSelectable` is reported separately because a Billing-only address is not a valid
+ * ship-to, so the modal's row count can legitimately be lower than the member's total.
+ */
+async function reportPagination(orgMap) {
+  const org = orgMap.get(PAGINATION_ORG_ID);
+  const member = org?.platformId ? await getOrg(org.platformId) : null;
+  if (!member?.id) { verbose(`pagination org ${PAGINATION_ORG_ID} not resolvable — skipping readout`); return; }
+  const addrs = Array.isArray(member.addresses) ? member.addresses : [];
+  const shipping = addrs.filter((a) => /shipping/i.test(a.addressType || '')).length;
+  const countries = new Set(addrs.map((a) => a.countryCode).filter(Boolean));
+  console.log(`\n📄 Address-book pagination (${org.name}):`);
+  console.log(`   total addresses:      ${addrs.length}  → ${pageCount(addrs.length)} page(s) at ${ADDRESSES_PER_PAGE}/page (last page ${lastPageSize(addrs.length)})`);
+  console.log(`   shipping-selectable:  ${shipping}  → ${pageCount(shipping)} page(s) (last page ${lastPageSize(shipping)})`);
+  console.log(`   countries:            ${[...countries].sort().join(', ')}`);
+  if (pageCount(shipping) < MIN_PAGES) {
+    console.log(`   ⚠ fewer than ${MIN_PAGES} pages — CHK-060 / CHK-098 need a multi-page address book.`);
+  }
+}
+
+/**
  * Normalize regionName code→name across seeded orgs' member addresses (idempotent).
  * Fixes the systematic VCST-5304 D2 drift where the org default + any code-sourced address
  * stored the region CODE ("NY") in regionName instead of the display NAME ("New York").
@@ -203,7 +212,7 @@ async function main() {
   if (!byOrg.size) { console.error(`ABORT: --only ${ONLY} matched no org address rows`); process.exit(2); }
 
   if (TEARDOWN) await teardown(byOrg, orgMap);
-  else { await seed(byOrg, orgMap); await normalizeRegionNames(orgMap, byOrg); }
+  else { await seed(byOrg, orgMap); await normalizeRegionNames(orgMap, byOrg); await reportPagination(orgMap); }
 }
 
 main().catch((err) => { console.error(`\n❌ B2B addresses seed failed: ${err.message}`); process.exit(1); });
