@@ -799,5 +799,11 @@
   "SR_REP_ACME3": {
     "id": "a31c108f-9601-4e28-812c-1424d28dc634",
     "user_id": "567c91a6-8df0-48e3-9249-df486dd6faec"
+  },
+  "CATALOG_READ_ONLY": {
+    "_inline": true,
+    "platform_id": "1f52ca27-af77-407a-97d1-bd37fe3de229",
+    "user_id": "1f52ca27-af77-407a-97d1-bd37fe3de229",
+    "role_id": "AGENT-TEST-Catalog-Read-Only"
   }
 }
