@@ -32,7 +32,7 @@ opinion:
 | Axis | Concrete evidence required | Source |
 |------|----------------------------|--------|
 | **Docs** | A quote + a doc reference (VirtoOZ topic + section, or a docs URL) that states the behavior | `/vc-docs` (VirtoOZ MCP), Context7 fallback |
-| **Source** | A `file:line` anchor in an `org:VirtoCommerce` repo whose code implements the behavior | GitHub MCP `search_code` / `get_file_contents` (read-only; QA never clones) |
+| **Source** | A `file:line` anchor **for every surface that can write the asserted state** (§1c) — not one anchor | GitHub MCP `search_code` / `get_file_contents` (read-only; QA never clones) |
 | **Live** | An `{OBSERVED}` result (screenshot / captured API response) confirming the behavior on the deployed build | `qa-testing-expert` (playwright-firefox), real UI/API only — REAL-USER rule, no `browser_evaluate` / `run_code_unsafe` bypass |
 
 Any applicable axis with **no** evidence → **UNGROUNDED**. Axes that **disagree** → **CONTRADICTORY**.
@@ -72,7 +72,45 @@ axes must remain and agree.
 | Source repo cannot be resolved (see §2) | **Source** | Docs + Live must both be present and agree |
 | A P0-security assertion whose live probe is unsafe to run (real privilege escalation) | **Live** — treated as *absent*, not waived | ⇒ **UNGROUNDED** ⇒ proposal only, never auto-applied |
 
-### 1c. Deploy lag is CONTRADICTORY, never DRIFT
+### 1c. The source axis must cover EVERY writer, not one anchor
+
+A single `file:line` is not the source axis — it is one sample of it. Before claiming the source axis
+is satisfied, enumerate **every surface that can write the state being asserted**, and anchor each:
+
+| Surface | Where to look |
+|---|---|
+| Storefront (buyer-facing) | `vc-frontend/client-app/modules/<domain>/` — pages, composables, GraphQL mutations |
+| Module Admin SPA (operator-facing) | `vc-module-<x>/src/…Web/Scripts/blades/*.js` — **toolbar commands and their `canExecuteMethod`**, plus any field bound to a setting |
+| Backend / API | the module's `Core` constants + command handlers, and the xAPI (`vc-module-x-*`) mutation resolvers |
+| Configuration | a platform setting that constrains or seeds the value — a **dictionary** setting (`IsDictionary = true`) is operator-editable, so its live contents are **environment state**, not a code constant, and the code's `AllowedValues` is only the seeded default |
+
+**Worked failure (2026-07-31, suite 015).** A draft rule about quote status was authored from
+`vc-frontend`'s `view-quote.vue` plus the module's `ModuleConstants.cs`, and stated that approval was
+buyer-only and terminal. It was wrong on both counts. The module's **Admin blade** — never opened —
+showed that (a) an operator approves by setting the status directly via a dictionary-bound dropdown
+under `quote:update`, with no dedicated approve command, and (b) the *Put on hold* command toggles an
+`isLocked` boolean and never touches `status` at all. Four different sites write that one field; the
+draft had anchored one and met the old single-anchor bar while covering a quarter of the writers.
+
+**Scope bias is the trap.** The suite under audit constrains *what you assert*, never *where the
+behavior lives*. Auditing a `Frontend/` suite does not license a storefront-only model of a
+cross-surface field. Ask "who can change this?" before "what does the page show?".
+
+### 1d. Absence is never an explanation
+
+A missing constant, enum member, i18n key, or column is a **finding, not a cause**. It licenses
+exactly one conclusion — "this surface does not define it" — and never a story about *why*.
+
+When the expected definition is absent, the axis is **incomplete until you find the mechanism that
+replaces it**. In the worked failure above, `QuoteStatus` had no `OnHold` constant; the draft
+explained that as "the dictionary drifted from the code default," which was invented. The real
+mechanism was a separate boolean. The absence was the clue; the narrative was fabrication.
+
+If the replacing mechanism cannot be found this run, the verdict is **UNGROUNDED** and the write-up
+says *"no constant defines this and the writing mechanism was not located"* — which is a true,
+useful sentence — rather than a guess at the reason.
+
+### 1e. Deploy lag is CONTRADICTORY, never DRIFT
 
 The commonest disagreement: **source shows a merged fix, live shows the old behavior** — the pinned
 artifact simply trails master. This is a **CONTRADICTORY**, held as a proposal with a re-audit
@@ -133,7 +171,7 @@ Steps/Assertions **as written** describe what the agreeing axes show.
 | N/A (§1a) | ✓ | ✓ | (behavior is real but no case covers it) | **MISSING** |
 | an applicable axis absent (incl. docs that *could* exist but wasn't found — not §1a) | — | — | — | **UNGROUNDED** |
 | fewer than two axes remain after waivers | — | — | — | **UNGROUNDED** |
-| present but conflicting (incl. deploy lag, §1c) | — | — | — | **CONTRADICTORY** |
+| present but conflicting (incl. deploy lag, §1e) | — | — | — | **CONTRADICTORY** |
 | all applicable axes say the behavior is gone | — | — | — | **RETIRE** |
 
 **Roll-up:** a case's verdict is its **worst** assertion verdict, ordered
@@ -212,3 +250,25 @@ human approves; `--ci` applies only what three agreeing axes proved.
 
 All four are reported, never written. In the scheduled pipeline they appear as the **Proposals**
 section of the PR body, which is where a reviewer acts on them.
+
+### 6a. A proposal's prose is held to the same evidence bar as an applied edit
+
+The auto-fix matrix (§4) gates what reaches a CSV. It gates **nothing** about the *rule you write* in
+a proposal — that text is LLM-authored and ships straight to a human as though it were established.
+That asymmetry is the one place this dimension can be confidently wrong while every guard reports
+green.
+
+So, when writing a proposed rule:
+
+- **State only what an anchor supports.** Every clause traces to a `[DOC]` quote, a `file:line`, or an
+  `{OBSERVED}` result. A clause with no anchor is deleted, not softened.
+- **Name the axis coverage you actually achieved**, including what you did NOT read — "live axis
+  covered Admin only, not the storefront" is a required sentence when true, not a caveat to omit.
+- **Prefer a narrow true rule to a broad plausible one.** A rule about one surface, labelled as
+  such, is worth more than a system-wide rule inferred from one surface.
+- **No mechanism, no explanation** (§1d). Absence of a definition is reported as absence.
+
+A proposal that cannot meet this bar is still worth filing — as an *observation* with its evidence and
+an explicit open question, rather than as a `Rule:`. The 2026-07-31 worked failure (§1c) was a
+correctly-gated run — nothing wrong reached a CSV — that nevertheless handed a reviewer a confidently
+wrong rule. Treat the write-up as part of the deliverable, not as commentary on it.
