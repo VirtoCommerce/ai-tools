@@ -267,7 +267,7 @@ The following tickets have **no existing suite coverage** or require net-new tes
 | Pickup locations (>50 entries) | `/qa-seed-data` or live QA data | Required for VCST-4707 BVA — must have at least 51 indexed fulfillment centers |
 | Coupons: % discount, fixed amount, free shipping, expired | Admin → Marketing → Coupons | At least one per type; use `{{COUPON_CODE_*}}` vars |
 | Products with configurable sections: Text (with maxLength), File (optional), conditional show/hide | Admin → Catalog → Configurable Products | 2–3 products with different section combinations |
-| Address with USA + non-USA countries (for state/province facet testing, VCST-4710) | `test-data/addresses/` | Reference `techflow-org-addresses-state-20260423.json` |
+| Address with USA + non-USA countries (for state/province facet testing, VCST-4710) | `npm run seed:b2b:addresses` | Fixture `test-data/b2b/addresses.csv`; TechFlow spans USA / CAN / GBR, and the GBR rows are region-less so the state/province facet stays hidden for non-USA/CAN |
 | B2B org user + personal account user | `test-data/users/agent-user-pool.csv` | For checkout address popup (org context vs personal) |
 | Multi-locale store (EN + at least one non-EN locale) | Admin → Stores | For VCST-4893 payment localization |
 | Refundable order in status "Complete" | `test-data/` or seed via API | For VCST-4983 refund data model |
@@ -368,4 +368,4 @@ Applies to: VCST-4896 (coupons sidebar), VCST-4710 (address popup), VCST-4707 (B
 - Suite manifest: `config/test-suites.json`
 - Test case template: `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md`
 - Existing Sprint-current test artifacts: `tests/Sprint-current/VCST-4707/`, `VCST-4710/`, `VCST-4896/`, `VCST-4928/`, `VCST-4987/`
-- Test data: `test-data/addresses/techflow-org-addresses-state-20260423.json`, `test-data/users/agent-user-pool.csv`
+- Test data: `test-data/b2b/addresses.csv` (org addresses, seeded by `npm run seed:b2b:addresses`), `test-data/users/agent-user-pool.csv`

@@ -286,7 +286,7 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 
 ### VC-ADDR-001 — `countryCode` is ISO-3; UK regionId is null; isFavorite is storefront-only
 - **Pattern:** Address data: `countryCode` is ISO-3 (USA / CAN / GBR). UK addresses have `regionId = null`. `isFavorite` exists in the storefront xAPI ONLY.
-- **Detection probe:** When asserting on address payloads, use these conventions. Reference snapshot at `test-data/addresses/techflow-org-addresses-state-20260423.json`.
+- **Detection probe:** When asserting on address payloads, use these conventions. Reference rows: `test-data/b2b/addresses.csv` (seeded by `npm run seed:b2b:addresses`) — the TechFlow org set spans USA / CAN / GBR, and its GBR rows are deliberately region-less so they exercise the `regionId = null` case.
 - **Cross-ref:** `reference_address_data_conventions` in MEMORY
 
 ### VC-ADDR-002 — Advanced address search / facets scoped to checkout popup ONLY
