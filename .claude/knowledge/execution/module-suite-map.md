@@ -16,7 +16,8 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 | **Search** | 004, 005 | 061 | Search → Indexing, Configuration | `/api/search/` | — |
 | **Cart** | 028, 029, 030 | — | — (storefront-only) | — | xCart |
 | **Checkout** | 011, 012, 013 | — | — (storefront-only) | — | xCart |
-| **Orders** | 014, 015 | 017, 018, 019 | Orders → All Orders, Payment Requests | `/api/order/` | xOrder |
+| **Orders** | 014 | 017, 018, 019 | Orders → All Orders, Payment Requests | `/api/order/` | xOrder |
+| **Quotes** | 015 | — | Quotes (top-level menu) → quote list + quote detail blade; Status dictionary via the Status ✏️ ("Quote statuses") | `/api/quote/*` (`QuoteModuleController`) | `QuoteType` (unified `/graphql`) |
 | **Payment** | 039, 040a, 040b, 040c, 041 | — | Orders → Payments | `/api/payments/` | — |
 | **BOPIS/Shipping** | 036, 037, 038 | 065 | Shipping → Methods, BOPIS | `/api/shipping/` | — |
 | **Authentication** | 031, 032, 033 | — | Settings → Security, OAuth | `/connect/token` | — |
