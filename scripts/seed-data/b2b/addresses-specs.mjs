@@ -12,7 +12,8 @@
  * SOURCE OF TRUTH: `test-data/b2b/addresses.csv` is the ONE source for which addresses exist
  * (rule 2 in .claude/rules/test-data.md — CSV-as-input). This module transcribes no address; it
  * holds only what a flat CSV cannot express: the address-book PAGINATION contract, the region
- * code→name mapping, and the content key that makes the seeder idempotent.
+ * code→name mapping, the content key that makes the seeder idempotent, and the seed MARKER that
+ * makes teardown work even after a row is deleted from the CSV.
  *
  * The committed CSV carries NO runtime platform GUID: an org address lives inside
  * `Member.addresses[]` and is matched by CONTENT (addressType|line1|city|countryCode), never by a
@@ -84,6 +85,94 @@ export function assertContractCoherent() {
  */
 export const addressContentKey = (a) => [a?.addressType, a?.line1, a?.city, a?.countryCode]
   .map((x) => String(x || '').trim().toLowerCase()).join('|');
+
+/* ── Seed marker — the teardown fallback when a CSV row is DELETED ────────────
+ * The content key above is enough for idempotency, but NOT for teardown. Teardown derives the
+ * set of addresses to remove from the CURRENT CSV, so deleting a row from addresses.csv silently
+ * ORPHANS its live address: no CSV row content-matches it any more, teardown steps over it, and
+ * it stays on the org forever — inflating the pagination count the very cases this fixture serves
+ * assert on. Editing a row's line1/city has the same effect (the old content key is unreachable).
+ *
+ * So every address this seeder creates also carries a marker in `outerId`, and teardown removes an
+ * address when it content-matches a CSV row **OR** carries the marker. The marker is what makes
+ * teardown independent of the CSV's current contents.
+ *
+ * WHY `outerId`, verified against the platform rather than assumed:
+ *   - `Address : ValueObject, IHasOuterId` — vc-module-core Common/Address.cs (OuterId is part of
+ *     the shared address model, not a customer-module extension).
+ *   - It PERSISTS and ROUND-TRIPS: vc-module-customer Data/Model/AddressEntity.cs declares
+ *     `[StringLength(128)] OuterId` and copies it in all three directions — FromModel, ToModel,
+ *     and Patch. A field that were dropped by any one of those would make the marker vanish on
+ *     the next write and the sweep would silently do nothing.
+ *   - It is metadata for "this row came from an external system", not customer-facing copy. The
+ *     repo convention is exactly this: the AGENT-TEST family prefix rides an internal identifier,
+ *     never a display name (seed-common.mjs — "the AGENT-TEST-SEED family prefix lives on the
+ *     CODE only"). Putting it in `name`/`description` would surface it in the corporate address
+ *     table's Description column that suite 011 reads.
+ *   - It is NOT part of addressContentKey, so adding it cannot affect idempotency or the
+ *     pagination audit.
+ */
+export const SEED_MARKER_PREFIX = 'AGENT-TEST-ADDR';
+
+/** vc-module-customer AddressEntity.OuterId is [StringLength(128)] — a longer marker is truncated. */
+export const SEED_MARKER_MAX_LENGTH = 128;
+
+/** Marker for a CSV row: `AGENT-TEST-ADDR:ADDR-017`. Carries the business key, so an orphan found
+ *  live can be traced back to the row that created it (or reported as a deleted row). */
+export const seedOuterId = (row) => `${SEED_MARKER_PREFIX}:${String(row?.address_id ?? '').trim()}`;
+
+/** Does this live address carry OUR marker? The teardown fallback predicate. */
+export const isSeededOuterId = (v) => String(v ?? '').trim().startsWith(`${SEED_MARKER_PREFIX}:`);
+
+/** Business key back out of a marker (`AGENT-TEST-ADDR:ADDR-017` → `ADDR-017`); null if not ours. */
+export const seedMarkerRowId = (v) => {
+  const s = String(v ?? '').trim();
+  return isSeededOuterId(s) ? s.slice(SEED_MARKER_PREFIX.length + 1) || null : null;
+};
+
+/**
+ * Is a live address in scope for the MARKER sweep?
+ *
+ * Content-key removal is inherently scoped — the keys come from whichever CSV rows `--only`
+ * resolved. A marker match is NOT, so `--only` has to be honoured explicitly here, or
+ * `--only ADDR-017` would sweep every marked address on that org. Lives in this side-effect-free
+ * module (not the seeder) precisely so the three scoping cases are unit-testable without env,
+ * network, or an org graph:
+ *   --only <ORG-ID>   → every marked address on that org (the org IS the scope)
+ *   --only <ADDR-ID>  → only the marker minted from that one row
+ *   no --only         → every marked address on every org the seeder manages
+ */
+export function markerSweepInScope(addr, { only = null, orgIds = null } = {}) {
+  if (!isSeededOuterId(addr?.outerId)) return false;
+  if (!only) return true;
+  if (orgIds && typeof orgIds.has === 'function' && orgIds.has(only)) return true;
+  return seedMarkerRowId(addr.outerId) === only;
+}
+
+/**
+ * Static guard for the marker's two failure modes, both of which break the sweep silently:
+ *   - a DUPLICATE marker (two rows sharing an address_id) makes the marker ambiguous, so a
+ *     `--only <ADDR-ID>` teardown would reach an address it was not scoped to;
+ *   - an OVER-LENGTH marker is truncated by the column, so `isSeededOuterId` may still match but
+ *     `seedMarkerRowId` returns the wrong key.
+ * Returns [] when every row's marker is sound.
+ */
+export function findMarkerProblems(addressRows) {
+  const errs = [];
+  const seen = new Map();
+  for (const r of addressRows || []) {
+    if (!r.org_id || r.contact_id) continue; // org-level rows only — matches the seeder's scope
+    const id = String(r.address_id ?? '').trim();
+    if (!id) { errs.push('a row has an empty address_id — its marker would be the bare prefix'); continue; }
+    const marker = seedOuterId(r);
+    if (marker.length > SEED_MARKER_MAX_LENGTH) {
+      errs.push(`${id}: marker is ${marker.length} chars — exceeds OuterId's ${SEED_MARKER_MAX_LENGTH}`);
+    }
+    if (seen.has(id)) errs.push(`duplicate address_id ${id} — marker ${marker} would be ambiguous`);
+    else seen.set(id, r);
+  }
+  return errs;
+}
 
 /* ── Region code → display name ───────────────────────────────────────────────
  * The platform address model wants regionId = the subdivision CODE and regionName = the human

@@ -22,6 +22,9 @@ import {
   ADDRESSES_PER_PAGE, MIN_PAGES, TARGET_TOTAL, PAGINATION_ORG_ID, REQUIRE_PARTIAL_LAST_PAGE,
   pageCount, lastPageSize, assertContractCoherent, addressContentKey,
   isRegionCode, regionNameFor, findGuidLeaks, paginationAudit,
+  SEED_MARKER_PREFIX, SEED_MARKER_MAX_LENGTH, seedOuterId, isSeededOuterId, seedMarkerRowId,
+  markerSweepInScope,
+  findMarkerProblems,
 } from '../seed-data/b2b/addresses-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -210,4 +213,119 @@ test('every ADDRESS_SEARCH needle has the backing rows it claims', () => {
   // 'Hou' is a fuzzy-search needle: Houston matches literally, Huston is the deliberate near-miss.
   assert.ok(orgRows.some((r) => r.city === 'Houston'), 'Houston row present');
   assert.ok(orgRows.some((r) => r.city === 'Huston'), 'Huston near-miss row present');
+});
+
+/* ── Teardown seed marker ──────────────────────────────────────────────────────
+ * The content key makes the seeder idempotent; the marker makes TEARDOWN work after a CSV row is
+ * deleted or edited. Without it, teardown derives its removal set from the current CSV, so a
+ * deleted row's live address is orphaned permanently and keeps inflating the address count the
+ * pagination cases assert on.
+ */
+
+test('seedOuterId mints a prefixed marker carrying the row business key', () => {
+  assert.equal(seedOuterId({ address_id: 'ADDR-017' }), `${SEED_MARKER_PREFIX}:ADDR-017`);
+  assert.equal(seedOuterId({ address_id: '  ADDR-017  ' }), `${SEED_MARKER_PREFIX}:ADDR-017`, 'trims');
+});
+
+test('isSeededOuterId recognises our marker and nothing else', () => {
+  assert.ok(isSeededOuterId(`${SEED_MARKER_PREFIX}:ADDR-017`));
+  assert.ok(isSeededOuterId(`  ${SEED_MARKER_PREFIX}:ADDR-001  `), 'tolerates surrounding space');
+  // A foreign outerId must NOT be swept — clobbering another system's identifier is worse than a
+  // teardown gap, and the content key still covers that address while its CSV row exists.
+  assert.equal(isSeededOuterId('ERP-4417'), false);
+  assert.equal(isSeededOuterId(''), false);
+  assert.equal(isSeededOuterId(null), false);
+  assert.equal(isSeededOuterId(undefined), false);
+  // Near-misses: the separator matters, or an unrelated prefix could be swept.
+  assert.equal(isSeededOuterId(`${SEED_MARKER_PREFIX}-ADDR-017`), false);
+  assert.equal(isSeededOuterId(`X-${SEED_MARKER_PREFIX}:ADDR-017`), false, 'must be a PREFIX, not a substring');
+});
+
+test('seedMarkerRowId round-trips the business key, and refuses a foreign id', () => {
+  assert.equal(seedMarkerRowId(seedOuterId({ address_id: 'ADDR-034' })), 'ADDR-034');
+  assert.equal(seedMarkerRowId('ERP-4417'), null);
+  // The bare prefix carries no key — it must not resolve to an empty-string "match", or a
+  // `--only <ADDR-ID>` sweep could treat it as in scope.
+  assert.equal(seedMarkerRowId(`${SEED_MARKER_PREFIX}:`), null);
+});
+
+test('findMarkerProblems rejects a duplicate address_id (an ambiguous marker)', () => {
+  const errs = findMarkerProblems([
+    { address_id: 'ADDR-900', org_id: 'ORG-002' },
+    { address_id: 'ADDR-900', org_id: 'ORG-002' },
+  ]);
+  assert.equal(errs.length, 1);
+  assert.match(errs[0], /duplicate address_id ADDR-900/);
+});
+
+test('findMarkerProblems rejects a marker longer than the OuterId column', () => {
+  const errs = findMarkerProblems([{ address_id: 'A'.repeat(SEED_MARKER_MAX_LENGTH), org_id: 'ORG-002' }]);
+  assert.equal(errs.length, 1);
+  assert.match(errs[0], /exceeds OuterId/);
+});
+
+test('findMarkerProblems rejects an empty address_id and ignores contact-level rows', () => {
+  assert.match(findMarkerProblems([{ address_id: '', org_id: 'ORG-002' }])[0], /empty address_id/);
+  // Contact-level rows are out of this seeder's scope, so they mint no marker and must not fail it.
+  assert.deepEqual(findMarkerProblems([{ address_id: '', org_id: 'ORG-002', contact_id: 'C-1' }]), []);
+});
+
+test('the committed addresses.csv mints a sound marker for every org row', () => {
+  assert.deepEqual(findMarkerProblems(ADDRESSES), []);
+});
+
+test('the marker is NOT part of the content key (adding it cannot break idempotency)', () => {
+  const base = { addressType: 'Shipping', line1: '1 A St', city: 'Austin', countryCode: 'USA' };
+  assert.equal(
+    addressContentKey({ ...base, outerId: seedOuterId({ address_id: 'ADDR-017' }) }),
+    addressContentKey(base),
+    'an address with a marker must key identically to the same address without one',
+  );
+});
+
+test('a deleted CSV row is unreachable by content key but still reachable by marker', () => {
+  // This is the exact orphaning scenario, expressed as the two predicates teardown uses.
+  const live = { addressType: 'Shipping', line1: '99 Gone Rd', city: 'Dallas', countryCode: 'USA',
+    outerId: seedOuterId({ address_id: 'ADDR-999' }) };
+  const csvKeys = new Set(ADDRESSES.filter((r) => r.org_id && !r.contact_id)
+    .map((r) => addressContentKey({ addressType: r.address_type, line1: r.line1, city: r.city, countryCode: r.country_code })));
+  assert.equal(csvKeys.has(addressContentKey(live)), false, 'no CSV row content-matches it — teardown would step over it');
+  assert.ok(isSeededOuterId(live.outerId), 'the marker is the only thing that can still reclaim it');
+});
+
+/* ── marker sweep scoping (--only) ─────────────────────────────────────────────
+ * Content-key removal is scoped for free (the keys come from whichever rows --only resolved), but a
+ * marker match is not. If the sweep ignored --only, `--only ADDR-017` would silently reclaim EVERY
+ * marked address on that org — a far wider blast radius than the flag asks for.
+ */
+
+const ORG_IDS = new Set(['ORG-001', 'ORG-002']);
+const marked = (id) => ({ outerId: seedOuterId({ address_id: id }) });
+
+test('no --only: every marked address is in scope, unmarked ones never are', () => {
+  assert.equal(markerSweepInScope(marked('ADDR-017'), { orgIds: ORG_IDS }), true);
+  assert.equal(markerSweepInScope({ outerId: 'ERP-4417' }, { orgIds: ORG_IDS }), false, 'foreign id untouched');
+  assert.equal(markerSweepInScope({}, { orgIds: ORG_IDS }), false, 'unmarked address untouched');
+  assert.equal(markerSweepInScope(marked('ADDR-017')), true, 'no orgIds supplied is still in scope');
+});
+
+test('--only <ORG-ID>: the org is the scope, so every marked address on it sweeps', () => {
+  const opts = { only: 'ORG-002', orgIds: ORG_IDS };
+  assert.equal(markerSweepInScope(marked('ADDR-017'), opts), true);
+  assert.equal(markerSweepInScope(marked('ADDR-034'), opts), true);
+  assert.equal(markerSweepInScope({ outerId: 'ERP-4417' }, opts), false);
+});
+
+test('--only <ADDR-ID>: ONLY that row sweeps — not its org siblings', () => {
+  const opts = { only: 'ADDR-017', orgIds: ORG_IDS };
+  assert.equal(markerSweepInScope(marked('ADDR-017'), opts), true, 'the named row');
+  assert.equal(markerSweepInScope(marked('ADDR-018'), opts), false, 'a sibling must NOT be swept');
+  assert.equal(markerSweepInScope(marked('ADDR-034'), opts), false);
+});
+
+test('--only that matches nothing sweeps nothing (no accidental full-org fallback)', () => {
+  const opts = { only: 'ADDR-DOES-NOT-EXIST', orgIds: ORG_IDS };
+  assert.equal(markerSweepInScope(marked('ADDR-017'), opts), false);
+  // A bare-prefix marker must not be treated as matching an empty --only key.
+  assert.equal(markerSweepInScope({ outerId: `${SEED_MARKER_PREFIX}:` }, opts), false);
 });

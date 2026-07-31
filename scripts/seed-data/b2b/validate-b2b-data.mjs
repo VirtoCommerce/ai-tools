@@ -38,8 +38,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  paginationAudit, assertContractCoherent, findGuidLeaks,
-  ADDRESSES_PER_PAGE, MIN_PAGES, TARGET_TOTAL,
+  paginationAudit, assertContractCoherent, findGuidLeaks, findMarkerProblems,
+  ADDRESSES_PER_PAGE, MIN_PAGES, TARGET_TOTAL, SEED_MARKER_PREFIX,
 } from './addresses-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -267,6 +267,20 @@ console.log('\n[6] Address-book pagination fixture (pagination org)');
         if (!mismatched.length) ok(`TECHFLOW_ORG_ADDRESSES alias agrees with addresses.csv (count=${a.expectedTotal})`);
       }
     }
+  }
+}
+
+console.log('\n[7] Teardown seed markers (address_id → outerId)');
+{
+  // Teardown reclaims an address by content key OR by the `outerId` marker the seeder writes
+  // (AGENT-TEST-ADDR:<address_id>). The marker is what survives a row being DELETED from the CSV —
+  // so a duplicate or over-length address_id does not just look untidy, it breaks the only
+  // mechanism that can reclaim an orphaned address, and it breaks it silently.
+  const errs = findMarkerProblems(addresses);
+  for (const e of errs) fail(`teardown marker: ${e}`);
+  if (!errs.length) {
+    const orgRows = addresses.filter((r) => r.org_id && !r.contact_id).length;
+    ok(`${orgRows} org address row(s) mint a unique, in-length ${SEED_MARKER_PREFIX}: marker`);
   }
 }
 

@@ -109,6 +109,36 @@ zero-residue assert. Delete bottom-up (children before parents; orders/quotes be
 they reference). Register the seeder in `seed-bootstrap.mjs` — both the forward `STEPS` (by `priority`)
 and the reverse `TEARDOWN_STEPS`.
 
+**Teardown must not derive its removal set from the CURRENT CSV alone.** A top-level entity carries
+the `AGENT-TEST-` prefix on its own name/code, so teardown can find it whatever the CSV now says. A
+**sub-entity of another record** has no such handle — an org address is an element of
+`Member.addresses[]` with no id we control — so the tempting shortcut is to match on CONTENT
+(`addressType|line1|city|country`). That is correct for idempotency and **wrong for teardown**:
+delete a row from the CSV, or edit its `line1`, and the live entity it created is **orphaned
+permanently**. No content key reaches it, teardown steps over it, and it keeps counting toward
+whatever the fixture asserts — silently, since teardown still reports success.
+
+So mark what you create. Write `AGENT-TEST-<DOMAIN>:<business_key>` into an **internal identifier**
+field — `outerId` on anything `IHasOuterId` — and remove on *content key OR marker*. Three rules
+learned the hard way:
+
+1. **Verify the field round-trips before relying on it.** Check the persisted entity copies it in
+   *all* directions (`FromModel` / `ToModel` / `Patch`). A field dropped by any one of them makes the
+   marker vanish on the next write and the sweep silently does nothing.
+2. **Never put the marker in a displayed field.** The prefix rides an internal id, never a display
+   name (`seed-common.mjs`: "the AGENT-TEST-SEED family prefix lives on the CODE only") — a marker in
+   `name`/`description` leaks into UI that test cases read.
+3. **Sweep every record you manage, and honour `--only`.** Iterate the full parent registry, not just
+   parents that still have CSV rows — a fully-deleted set removes that parent from the CSV-derived map
+   entirely, which is the exact case the marker exists for. And scope the marker match to `--only`
+   explicitly: content matching is scoped for free, a marker match is not.
+4. **Backfill on the next seed.** Entities created before the marker existed have none; patch it onto
+   anything that content-matches a row, and leave a *foreign* identifier alone (clobbering another
+   system's id is worse than a teardown gap).
+
+Reference implementation: `scripts/seed-data/b2b/addresses-specs.mjs` (`seedOuterId`,
+`isSeededOuterId`, `markerSweepInScope`, `findMarkerProblems`) + `seed-b2b-addresses.mjs`.
+
 ## 7. Unit tests (`scripts/unit/<name>.test.mjs`)
 
 Test the **pure** logic from `*-specs.mjs` (body/row mapping, token resolution, transition/status
