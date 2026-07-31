@@ -177,9 +177,25 @@ export const CATALOG_LINK_ACCOUNT = {
 
 // The Create-Links endpoint the VCST-5318 backend guard protects; the seeder's --verify step
 // posts a CATEGORY link entry with the restricted token and asserts 403 (products:link cannot
-// link a category). The [Authorize] gate is entity-type keyed, so a category-typed entry is
-// forbidden regardless of whether the referenced ids exist.
+// link a category).
+//
+// The probe MUST use REAL, resolvable ids. This endpoint short-circuits to 200 when the
+// referenced entries do not resolve — BEFORE the permission gate evaluates — so a dummy-id
+// probe proves nothing: measured 2026-07-31 on vcst-qa, a token holding ZERO catalog
+// permissions got 200 on a dummy-id category link, while the same token got 403 on a real
+// one. The earlier "the gate is entity-type keyed, so ids need not exist" premise was wrong
+// and made this check unable to fail for the right reason. See LINK_PROBE_VCATALOG_NAME.
 export const LISTENTRYLINKS_ENDPOINT = '/api/catalog/listentrylinks';
+
+// Single catalog-by-id route: the link probe READS the source catalog through it (to inherit its
+// languages instead of hardcoding a locale) and DELETES its temp catalog through it. The id must be
+// a PATH segment — the `?ids=` query form returns 405 here. PLAT-079's delete probe reuses it below.
+export const CATALOG_BY_ID_ENDPOINT = (id) => `/api/catalog/catalogs/${encodeURIComponent(id)}`;
+
+// The throwaway virtual catalog the link probe links INTO, so the probe never mutates a real
+// (storefront-bound) virtual catalog. AGENT-TEST-prefixed and deleted in the probe's `finally`;
+// a re-run reuses then deletes a leftover from a crashed run, and --teardown sweeps it.
+export const LINK_PROBE_VCATALOG_NAME = 'AGENT-TEST-VERIFY-LINK-PROBE';
 
 /**
  * Assert the products-only Map/Link role's permission set is correct — used by the validator
@@ -504,10 +520,11 @@ export const CATALOG_READONLY_ACCOUNT = {
 
 // The catalog endpoints PLAT-079 probes: POST creates a catalog (catalog:create), DELETE removes
 // one by id (catalog:delete). The seeder's --verify step calls both with the restricted token and
-// asserts 403 on each — the [Authorize] gate runs before handler binding, so a nonexistent
-// catalog id still returns 403 for the DELETE probe regardless of existence.
+// asserts 403 on each — here the [Authorize] gate DOES run before handler binding, so a
+// nonexistent catalog id still returns 403 for the DELETE probe (measured 2026-07-31 on vcst-qa).
+// That is route-specific: LISTENTRYLINKS_ENDPOINT behaves the opposite way — see its note.
 export const CATALOG_CREATE_ENDPOINT = '/api/catalog/catalogs';
-export const CATALOG_DELETE_ENDPOINT = (id) => `/api/catalog/catalogs/${encodeURIComponent(id)}`;
+export const CATALOG_DELETE_ENDPOINT = CATALOG_BY_ID_ENDPOINT;
 
 /**
  * Assert the read-only catalog role's permission set is correct — used by the validator AND the

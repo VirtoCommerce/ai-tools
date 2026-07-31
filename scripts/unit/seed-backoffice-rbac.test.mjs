@@ -27,6 +27,7 @@ import {
   CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSION,
   CATALOG_READONLY_EXCLUDED_PERMISSIONS, CATALOG_READONLY_REQUIRED_PERMISSIONS,
   assertCatalogReadOnlyRolePermissions, CATALOG_CREATE_ENDPOINT, CATALOG_DELETE_ENDPOINT,
+  LISTENTRYLINKS_ENDPOINT, LINK_PROBE_VCATALOG_NAME,
 } from '../seed-data/platform/backoffice-rbac-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -146,6 +147,36 @@ test('CATALOG_LINK_RESTRICTED alias is registered, coherent, and GUID-free in al
   assert.equal(a.email || a.login, CATALOG_LINK_ACCOUNT.email);
   assert.equal(a.excluded_permission, CATALOG_LINK_EXCLUDED_PERMISSION);
   assert.deepEqual(findGuidLeaks(JSON.stringify(a)), []);
+});
+
+// --- VCST-5318 link-probe fixture (the real-id probe the seeder's --verify uses) ---
+
+test('link probe targets a throwaway AGENT-TEST virtual catalog, never a real one', () => {
+  assert.ok(LINK_PROBE_VCATALOG_NAME.startsWith('AGENT-TEST-'),
+    'probe catalog must carry the AGENT-TEST prefix so teardown can sweep it');
+  assert.notEqual(LINK_PROBE_VCATALOG_NAME, CATALOG_LINK_ROLE.role_id, 'must be its own entity, not a role name');
+});
+
+test('link probe cleanup uses the path-segment catalog route (the ?ids= query form 405s)', () => {
+  const url = CATALOG_DELETE_ENDPOINT('abc-123');
+  assert.equal(url, '/api/catalog/catalogs/abc-123');
+  assert.ok(!url.includes('?'), 'id must be a path segment, not a query param');
+});
+
+test('LISTENTRYLINKS_ENDPOINT is documented as requiring REAL ids (it 200s on unresolvable ones)', () => {
+  assert.equal(LISTENTRYLINKS_ENDPOINT, '/api/catalog/listentrylinks');
+  const src = readFileSync(join(ROOT, 'scripts/seed-data/platform/backoffice-rbac-specs.mjs'), 'utf8');
+  assert.match(src, /REAL, resolvable ids/, 'the dummy-id trap must stay documented at the constant');
+});
+
+test('the seeder probe sends no placeholder ids and fails a run whose boundary is unproven', () => {
+  const src = readFileSync(join(ROOT, 'scripts/seed-data/platform/seed-backoffice-rbac.mjs'), 'utf8');
+  // Scoped to the link body: a literal listEntryId/catalogId is the dummy-id trap. (PLAT-079's
+  // catalog create/delete probe legitimately uses a nonexistent id — that route gates first.)
+  assert.ok(!/listEntryId:\s*['"]/.test(src), 'listEntryId must come from a live-resolved entry, never a literal');
+  assert.match(src, /listEntryId,\s*listEntryType/, 'the link body must be built from resolved ids');
+  assert.match(src, /process\.exitCode = 1/, '--verify must exit non-zero when a proof fails');
+  assert.match(src, /finally\s*\{\s*\n?\s*await deleteProbeVirtualCatalog/, 'probe must clean up its temp catalog');
 });
 
 // --- RESTRICTED_ADMIN_SALESREP_READONLY (SR-ADM-023 / candidate BL-SREP-003) — read-only Sales Rep admin ---

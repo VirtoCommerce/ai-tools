@@ -19,12 +19,16 @@
  *   TEST_ENV=vcst npm run seed:rbac -- --verify      # + live boundary proof (403) per fixture
  *   TEST_ENV=vcst npm run seed:rbac:teardown
  *
+ * --verify EXITS NON-ZERO when any boundary cannot be proven (it used to only warn, so an
+ * unprovable check still reported success). A probe that cannot reach the data it needs FAILS —
+ * it never degrades to a weaker call that would pass for the wrong reason.
+ *
  * Flags: --dry-run, --verbose, --teardown, --verify.
  */
 
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, VERBOSE,
-  BACK_URL, STORE_ID, writeEnvAliasOverride,
+  BACK_URL, STORE_ID, writeEnvAliasOverride, discoverCatalogProducts,
 } from '../../lib/seed-common.mjs';
 import {
   RESTRICTED_ROLE, RESTRICTED_ACCOUNT, EXCLUDED_PERMISSION,
@@ -41,10 +45,10 @@ import {
   SALESREP_FULL_EXCLUDED_PERMISSIONS, SALESREP_FULL_REQUIRED_PERMISSIONS,
   assertSalesRepFullRolePermissions,
   CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSIONS,
-  assertCatalogReadOnlyRolePermissions, CATALOG_CREATE_ENDPOINT, CATALOG_DELETE_ENDPOINT,
+  assertCatalogReadOnlyRolePermissions, CATALOG_CREATE_ENDPOINT, CATALOG_DELETE_ENDPOINT, CATALOG_BY_ID_ENDPOINT,
   roleBody, accountBody, assertRolePermissions, assertCatalogLinkRolePermissions,
   assertSalesRepReadOnlyRolePermissions,
-  COPY_ENDPOINT, LISTENTRYLINKS_ENDPOINT, CURRENTUSER_ENDPOINT,
+  COPY_ENDPOINT, LISTENTRYLINKS_ENDPOINT, CURRENTUSER_ENDPOINT, LINK_PROBE_VCATALOG_NAME,
 } from './backoffice-rbac-specs.mjs';
 
 const VERIFY = process.argv.includes('--verify');
@@ -125,27 +129,118 @@ async function verifyCopyForbidden() {
 }
 
 // --- live verification: VCST-5318 boundary (products-only token → 403 linking a CATEGORY) ---
-async function verifyCategoryLinkForbidden() {
-  const { email } = CATALOG_LINK_ACCOUNT;
-  const password = resolvePassword(CATALOG_LINK_ACCOUNT);
-  log('\n  [verify] VCST-5318 — products-only token must get 403 linking a CATEGORY');
-  const tok = await loginToken(email, password);
-  if (!tok) return false;
-  // The CreateLinks [Authorize] gate is entity-TYPE keyed, so a category-typed entry is forbidden
-  // regardless of whether the referenced ids exist. Dummy AGENT-TEST ids keep this data-free.
-  const body = [{
-    listEntryId: 'AGENT-TEST-cat-nonexistent',
-    listEntryType: 'category',
-    catalogId: 'AGENT-TEST-vcat-nonexistent',
-  }];
+//
+// REAL ids are mandatory here. /api/catalog/listentrylinks short-circuits to 200 when the
+// referenced entries do not resolve, BEFORE the permission gate evaluates — so the dummy-id probe
+// this used to send could never fail for the right reason (measured 2026-07-31 on vcst-qa: a token
+// with ZERO catalog permissions got 200 on a dummy-id category link, 403 on a real one).
+//
+// So the probe resolves a real category + product, links them into a THROWAWAY virtual catalog
+// (never a storefront-bound one), and asserts BOTH sides of the boundary:
+//   negative — category link → 403 (lacks catalog:categories:link)
+//   positive — product  link → 2xx (holds catalog:products:link)
+// The positive control is what stops a role that lost ALL link perms from passing the negative for
+// the wrong reason. Cleanup deletes the temp catalog in `finally` (which drops its links with it).
+
+/** First real category in a catalog that has one — prefers our own AGENT-TEST seed catalogs. */
+async function resolveProbeEntries() {
+  const cats = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
+  const all = cats?.results || cats?.items || [];
+  const physical = all.filter((c) => c && c.id && !c.isVirtual);
+  const candidates = [
+    ...physical.filter((c) => /^AGENT-TEST/i.test(c.name || '')),
+    ...physical.filter((c) => !/^AGENT-TEST/i.test(c.name || '')),
+  ].slice(0, 8);
+
+  for (const cat of candidates) {
+    const entries = await api('POST', '/api/catalog/listentries', { catalogId: cat.id, take: 50 }, { expectStatus: [200, 201] }).catch(() => null);
+    const category = (entries?.results || entries?.listEntries || []).find((e) => e.type === 'category');
+    if (!category) continue;
+    // Product is the positive control — optional (a category-only catalog still proves the negative).
+    const products = await discoverCatalogProducts(api, 1, { catalogId: cat.id }).catch(() => []);
+    verbose(`link probe fixture: catalog "${cat.name}" category "${category.name}" product "${products[0]?.sku || '(none)'}"`);
+    return { category, product: products[0] || null, sourceCatalog: cat };
+  }
+  return null;
+}
+
+/**
+ * Throwaway virtual catalog to link INTO. Reuses a leftover from a crashed run, else creates.
+ * Its languages are inherited from the SOURCE catalog we resolved the probe entries from, so the
+ * probe carries no hardcoded locale (a link into a catalog with an incompatible default language
+ * would fail for a reason that has nothing to do with the permission boundary).
+ */
+async function ensureProbeVirtualCatalog(sourceCatalog) {
+  const cats = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
+  const existing = (cats?.results || cats?.items || []).find((c) => c.name === LINK_PROBE_VCATALOG_NAME);
+  if (existing?.id) return existing.id;
+  // The search projection may omit languages — read the full source catalog before falling back.
+  let src = sourceCatalog;
+  if (!src?.languages?.length && src?.id) {
+    src = await api('GET', CATALOG_BY_ID_ENDPOINT(src.id), null, { expectStatus: [200, 404] }).catch(() => null) || sourceCatalog;
+  }
+  const languages = src?.languages?.length
+    ? src.languages.map((l) => ({ languageCode: l.languageCode, isDefault: !!l.isDefault }))
+    : [{ languageCode: src?.defaultLanguage?.languageCode || process.env.CULTURE_NAME, isDefault: true }];
+  const created = await api('POST', '/api/catalog/catalogs', {
+    name: LINK_PROBE_VCATALOG_NAME, isVirtual: true, languages,
+  }, { expectStatus: [200, 201] });
+  return created?.id || null;
+}
+
+async function deleteProbeVirtualCatalog(vcatId) {
+  if (!vcatId) return;
+  // Deleting the catalog drops the links it holds. Path-segment id — `?ids=` returns 405 here.
+  await api('DELETE', CATALOG_BY_ID_ENDPOINT(vcatId), null, { expectStatus: [200, 204, 404] })
+    .catch((e) => log(`  ⚠ probe cleanup: could not delete ${LINK_PROBE_VCATALOG_NAME} (${String(e.message).slice(0, 100)}) — sweep with --teardown`));
+}
+
+async function postLink(tok, vcatId, listEntryId, listEntryType) {
   const res = await fetch(`${BACK_URL}${LISTENTRYLINKS_ENDPOINT}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify([{ listEntryId, listEntryType, catalogId: vcatId }]),
   });
-  if (res.status === 403) { log(`  ✓ create-links (category) → 403 Forbidden (VCST-5318 boundary confirmed; lacks ${CATALOG_LINK_EXCLUDED_PERMISSION})`); return true; }
-  log(`  ⚠ create-links (category) → ${res.status} (expected 403). Check the role perms or the endpoint auth/shape on this build.`);
-  return false;
+  return res.status;
+}
+
+async function verifyCategoryLinkForbidden() {
+  const { email } = CATALOG_LINK_ACCOUNT;
+  const password = resolvePassword(CATALOG_LINK_ACCOUNT);
+  log('\n  [verify] VCST-5318 — products-only token must get 403 linking a CATEGORY (real ids)');
+  const tok = await loginToken(email, password);
+  if (!tok) return false;
+
+  const fixture = await resolveProbeEntries();
+  if (!fixture) {
+    // Unreachable source ⇒ FAIL, never a silent pass: a dummy-id fallback would 200 and read green.
+    log('  ✗ no real category found on this environment — VCST-5318 boundary UNPROVEN (seed a catalog first)');
+    return false;
+  }
+
+  let vcatId = null;
+  try {
+    vcatId = await ensureProbeVirtualCatalog(fixture.sourceCatalog);
+    if (!vcatId) { log(`  ✗ could not provision ${LINK_PROBE_VCATALOG_NAME} — boundary UNPROVEN`); return false; }
+
+    const catStatus = await postLink(tok, vcatId, fixture.category.id, 'category');
+    const negativeOk = catStatus === 403;
+    if (negativeOk) log(`  ✓ create-links (category "${fixture.category.name}") → 403 Forbidden (VCST-5318 boundary confirmed; lacks ${CATALOG_LINK_EXCLUDED_PERMISSION})`);
+    else log(`  ✗ create-links (category "${fixture.category.name}") → ${catStatus} (expected 403). Role may be over-permissioned or the endpoint auth changed.`);
+
+    if (!fixture.product) {
+      log('  ⚠ positive control SKIPPED — no product resolved in the source catalog (negative side proven alone)');
+      return negativeOk;
+    }
+    const prodStatus = await postLink(tok, vcatId, fixture.product.id, 'product');
+    const positiveOk = prodStatus >= 200 && prodStatus < 300;
+    if (positiveOk) log(`  ✓ create-links (product ${fixture.product.sku}) → ${prodStatus} (positive control: catalog:products:link still works)`);
+    else log(`  ✗ create-links (product ${fixture.product.sku}) → ${prodStatus} (expected 2xx). The role lost catalog:products:link — the 403 above proves nothing.`);
+
+    return negativeOk && positiveOk;
+  } finally {
+    await deleteProbeVirtualCatalog(vcatId);
+  }
 }
 
 // --- live verification: SR-ADM-023 boundary (read-only Sales Rep admin) ---
@@ -160,7 +255,7 @@ async function verifySalesRepReadOnlyAccess() {
   const tok = await loginToken(email, password);
   if (!tok) return false;
   const res = await fetch(`${BACK_URL}${CURRENTUSER_ENDPOINT}`, { headers: { Authorization: `Bearer ${tok}` } });
-  if (!res.ok) { log(`  ⚠ /currentuser → ${res.status} (expected 200). Cannot confirm effective perms.`); return false; }
+  if (!res.ok) { log(`  ✗ /currentuser → ${res.status} (expected 200). Cannot confirm effective perms — boundary UNPROVEN.`); return false; }
   const me = await res.json();
   const perms = new Set(me?.permissions || []);
   const hasRead = SALESREP_READONLY_REQUIRED_PERMISSIONS.every((p) => perms.has(p));
@@ -215,7 +310,7 @@ async function verifyEffectivePermissions(account, required, excluded, label) {
   const tok = await loginToken(email, password);
   if (!tok) return false;
   const res = await fetch(`${BACK_URL}${CURRENTUSER_ENDPOINT}`, { headers: { Authorization: `Bearer ${tok}` } });
-  if (!res.ok) { log(`  ⚠ /currentuser → ${res.status} (expected 200). Cannot confirm effective perms.`); return false; }
+  if (!res.ok) { log(`  ✗ /currentuser → ${res.status} (expected 200). Cannot confirm effective perms — boundary UNPROVEN.`); return false; }
   const me = await res.json();
   const perms = new Set(me?.permissions || []);
   const missing = required.filter((p) => !perms.has(p));
@@ -314,6 +409,13 @@ async function main() {
   if (TEARDOWN) {
     // Reverse order (symmetry): tear down in the mirror of the create order.
     for (const { role, account } of [...FIXTURES].reverse()) await teardownFixture(role, account);
+    // Sweep the link probe's throwaway virtual catalog if a crashed --verify run left one behind.
+    if (!DRY_RUN) {
+      const cats = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
+      const leftover = (cats?.results || cats?.items || []).find((c) => c.name === LINK_PROBE_VCATALOG_NAME);
+      if (leftover?.id) { await deleteProbeVirtualCatalog(leftover.id); log(`✗ deleted leftover ${LINK_PROBE_VCATALOG_NAME}`); }
+      else verbose(`${LINK_PROBE_VCATALOG_NAME} already gone`);
+    }
     return;
   }
 
@@ -329,8 +431,21 @@ async function main() {
     }
   }
 
-  if (VERIFY) for (const { verify } of FIXTURES) await verify();
   log(DRY_RUN ? 'DRY RUN complete.' : 'Seed complete.');
+
+  // A boundary that could not be PROVEN must fail the run — a warning-only --verify reported
+  // success while one of its seven proofs proved nothing (VCST-5318 dummy-id probe, 2026-07-31).
+  if (VERIFY) {
+    const results = [];
+    for (const { role, verify } of FIXTURES) results.push({ name: role.role_name, ok: await verify() });
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length) {
+      log(`\n✗ ${failed.length}/${results.length} boundary proof(s) FAILED: ${failed.map((f) => f.name).join(', ')}`);
+      process.exitCode = 1;
+    } else {
+      log(`\n✓ all ${results.length} boundary proofs confirmed live.`);
+    }
+  }
 }
 
 main().catch((e) => { console.error('SEED FAILED:', e.message); process.exit(1); });
