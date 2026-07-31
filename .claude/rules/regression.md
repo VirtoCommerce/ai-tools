@@ -38,67 +38,73 @@ Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser t
 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: 110 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: 38 groups — `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, …)
+- **Suite definitions**: 119 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Selection groups**: 37 groups — `smoke`, `critical`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, …)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
 
-110 suites in `regression/suites/` organized by module (44 directories) under `Frontend/` and `Backend/` + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,480 test cases** (per manifest `testCount`; the source of truth is `config/test-suites.json`).
+119 suites in `regression/suites/` organized by module (48 directories) under `Frontend/` and `Backend/`. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,860 test cases** (per manifest `testCount`; the source of truth is `config/test-suites.json`).
 
-### Frontend Suites (50 suites, ~1,630 tests — user-facing features & flows)
+### Frontend Suites (54 suites, ~1,810 tests — user-facing features & flows)
 
 | Directory | Suites | Tests | Description |
 |-----------|--------|-------|-------------|
-| `Frontend/auth/` | 031-033, 082 | 108 | Login, registration, session, RBAC, company menu |
+| `Frontend/auth/` | 031-033, 082 | 118 | Login, registration, session, RBAC, company menu |
 | `Frontend/catalog/` | 001-003 | 87 | Navigation, product detail, filters |
-| `Frontend/search/` | 004-005 | 79 | Core search, filters & advanced |
-| `Frontend/cart/` | 028-030 | 96 | Core, validation/persistence, merge |
-| `Frontend/checkout/` | 011-013, 081 | 118 | Flow, guest, B2B |
-| `Frontend/orders/` | 014-015 | 125 | Orders frontend, quotes |
-| `Frontend/payment/` | 039, 040a-040c, 041 | 89 | CyberSource, Skyflow, Authorize.Net, Datatrans, cross-cutting |
-| `Frontend/bopis/` | 036-038 | 88 | Store selector, cart, checkout |
-| `Frontend/b2b/` | 006-010, 011b | 193 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
-| `Frontend/configurable-products/` | 072, 072b-072d | 186 | UI, E2E scenarios, cross-cutting |
+| `Frontend/search/` | 004-005 | 82 | Core search, filters & advanced |
+| `Frontend/cart/` | 028-030 | 104 | Core, validation/persistence, merge |
+| `Frontend/checkout/` | 011-013, 081 | 116 | Flow, guest, B2B |
+| `Frontend/orders/` | 014-015 | 130 | Orders frontend, quotes |
+| `Frontend/payment/` | 039, 040a-040c, 041 | 86 | CyberSource, Skyflow, Authorize.Net, Datatrans, cross-cutting |
+| `Frontend/bopis/` | 036-038 | 109 | Store selector, cart, checkout |
+| `Frontend/b2b/` | 006-010, 011b | 217 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
+| `Frontend/configurable-products/` | 072, 072b-072d | 245 | UI, E2E scenarios, cross-cutting |
 | `Frontend/whitelabeling/` | 070-071 | 68 | Storefront, branding |
-| `Frontend/marketing/` | 077, 077b | 112 | Coupons & promotions storefront |
+| `Frontend/marketing/` | 077, 077b | 73 | Coupons & promotions storefront |
 | `Frontend/loyalty/` | 083, 083b | 33 | Loyalty storefront (earn/redeem, balance) |
-| `Frontend/cross-cutting/` | 043-048 | 162 | GA4, security, a11y, i18n, performance, browser compat |
+| `Frontend/cross-cutting/` | 043-048, 048c | 196 | GA4, security, a11y, i18n, performance, browser compat |
+| `Frontend/customer-reviews/` | 088 | 11 | Customer reviews storefront |
+| `Frontend/sales-rep/` | 089-091 | 103 | Sales-rep storefront (impersonation, orders, dashboard) |
 | `Frontend/smoke/` | 042 | 34 | Storefront smoke (P0) |
 
-### Backend Suites (59 suites, ~1,752 tests — admin UI, modules & APIs)
+### Backend Suites (65 suites, ~2,050 tests — admin UI, modules & APIs)
 
 | Directory | Suites | Tests | Description |
 |-----------|--------|-------|-------------|
-| `Backend/platform/` | 020-021, 063 | 94 | Users/roles, dynamic properties, core settings |
-| `Backend/store/` | 034-035 | 65 | Management, rounding/email |
-| `Backend/catalog/` | 051, 053 | 67 | Products admin, categories admin |
-| `Backend/customer/` | 026, 027, 027b | 106 | Contacts, orgs & invites |
+| `Backend/platform/` | 020-021, 063 | 107 | Users/roles, dynamic properties, core settings |
+| `Backend/store/` | 034-035 | 69 | Management, rounding/email |
+| `Backend/catalog/` | 051, 053 | 71 | Products admin, categories admin |
+| `Backend/customer/` | 026, 027, 027b | 122 | Contacts, orgs & invites |
 | `Backend/pricing/` | 054-055 | 62 | Logic, management |
 | `Backend/inventory/` | 056 | 43 | Fulfillment centers, stock |
 | `Backend/marketing/` | 023-025 | 89 | Promotions, content, coupons/API |
-| `Backend/notifications/` | 057-058 | 53 | Templates, triggers |
-| `Backend/page-builder/` | 059-060 | 153 | Page Builder — page management, design/content |
-| `Backend/orders/` | 017-019 | 98 | Management, payments, shipments admin |
-| `Backend/api/` | 049 | 35 | Platform REST API |
-| `Backend/graphql/` | 050a, 050b1-050b5, 050c-050l | 337 | GraphQL xAPI (16 suites) |
+| `Backend/notifications/` | 057-058 | 81 | Templates, triggers |
+| `Backend/page-builder/` | 059-060 | 151 | Page Builder — page management, design/content |
+| `Backend/orders/` | 017-019 | 103 | Management, payments, shipments admin |
+| `Backend/api/` | 049 | 46 | Platform REST API |
+| `Backend/graphql/` | 050a, 050b1-050b5, 050c-050n | 479 | GraphQL xAPI (18 suites) |
 | `Backend/search/` | 061 | 47 | Search indexing admin |
-| `Backend/configurable-products/` | 052 | 29 | Configurable products admin |
+| `Backend/configurable-products/` | 052 | 31 | Configurable products admin |
 | `Backend/whitelabeling/` | 067 | 40 | White labeling admin |
-| `Backend/smoke/` | 078 | 114 | Backend/API smoke (P0) |
+| `Backend/customer-reviews/` | 086-087 | 31 | Customer reviews admin & API |
+| `Backend/sales-rep/` | 092 | 40 | Sales-rep admin + embedded app (⚠ two CSVs both declare id `092`) |
+| `Backend/smoke/` | 078 | 115 | Backend/API smoke (P0) |
 | Other modules | 15 suites | ~320 | assets (062), channels (076), contracts (074), image-tools (069), import-export (064), loyalty (075/075b/075c), news (084), push-messages (068), returns (073), seo (066), shipping (065), task-management (085), xmarketing (079) |
 
-- **Release suite**: `_release/080-full-regression-release.csv` (100 P0/P1 tests for major releases)
-- **P0 suites**: 042 (Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)
+- **Release suite**: none. The master release suite `080` (`_release/080-full-regression-release.csv`) was **retired on 2026-07-31** — its CSV was deleted in commit `9dd9f3e3` and the manifest entry plus the `release` selection were removed once it was found that `release` had been resolving to a missing file (running zero cases while reporting a valid selection). For a major release, use `full` (all 119 suites) or a plan-driven `sprint` selection. `npm run suites:lint` now hard-fails on any declared-but-absent suite CSV, so this cannot recur silently.
+- **P0 suites**: 042 (Smoke), 078 (Backend/API Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)
+- **FOLLOW-UP — two open `sales-rep` manifest defects** (surfaced as `npm run suites:lint` WARNs; not yet fixed because both need a renumbering decision, not a mechanical edit):
+  1. **Duplicate id `092`** — `Backend/sales-rep/092-sales-rep-admin.csv` and `092-sales-rep-admin-embedded-app.csv` both declare id `092`. Consumers build their lookup as `Object.fromEntries(suites.map(s => [s.id, s]))` (`ci/run-regression.ts` SUITE_MAP), so the **last entry silently wins and the other CSV never runs**. Fix by giving one a free id (e.g. `092b`).
+  2. **Orphan CSV `093`** — `Frontend/sales-rep/093-sales-rep-hub-dashboard-storefront.csv` exists on disk with **no manifest entry**, so no selection can reach it and it never runs. Fix by declaring it (or deleting it if superseded).
 - **Critical UI scope**: `knowledge/oracles/critical-ui-scope.md` defines the checklist of 36 components and 16 pages with applicable BL-UI invariants per cell. **Currently UNCOVERED** — its sole covering suite `048b-layout-stability.csv` (selection `layout-stability`) was removed on 2026-07-25, so all 197 applicable cells are marked `GAP`. The file is retained as the scope definition + audit-protocol reference for `/qa-design`. `npm run scope:validate` still hard-fails if a cell points at a *missing* test ID and warns on the GAP count; `--strict` makes GAPs fatal again once a replacement suite lands.
 
 ### Selection Groups
 
 | Selection | Suites | Use Case |
 |-----------|--------|----------|
-| `smoke` | 042 | Daily validation before deployment |
-| `critical` | 042, 039, 044, 049 | P0 suites only |
-| `release` | 080 | Master suite for major releases |
+| `smoke` | 042, 078 | Daily validation before deployment |
+| `critical` | 042, 078, 039, 044, 049 | P0 suites only |
 | `purchase-flow` | cart + checkout + orders-frontend + payment | Purchase flow regression |
 | `catalog` | 001-003, 051, 053 | Catalog module (frontend + admin) |
 | `search` | 004-005, 061 | Search module (frontend + admin) |
@@ -111,7 +117,7 @@ Central configuration for regression orchestration. Defines:
 | `backend` | All Backend/ suites (59) | Backend-only regression |
 | `sprint` | **Plan-driven** — `/qa-regression sprint` reads `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set. | Before sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan in `vc/shared/docs/Sprint plans/` | Re-run a past sprint's regression scope |
-| `full` | All 110 suites | Before production release |
+| `full` | All 119 suites | Before production release |
 
 ## CI Regression Testing
 
@@ -133,7 +139,7 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 **Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
 - **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 042 ($5 budget)
-- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 110 suites ($80 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 119 suites ($80 budget)
 - **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.

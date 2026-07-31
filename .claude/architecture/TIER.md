@@ -176,7 +176,6 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `ci/notify-teams.ts` | **A** | Generic Teams webhook adapter. |
 | `regression/suites/Frontend/` | **C** | 40 storefront suites. |
 | `regression/suites/Backend/` | **C** | 38 admin/platform suites. |
-| `regression/suites/_release/080-full-regression-release.csv` | **C** | Storefront release suite. |
 | `test-data/aliases.json` | **B** schema / **C** content | Registry shape = B. Entries are storefront. |
 | `test-data/orgs/`, `products/`, `addresses/`, etc. | **C** | All storefront-domain. |
 | `reports/tickets/SprintXX-XX/` | **C** | Per-ticket evidence — project-local. |

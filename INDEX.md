@@ -88,7 +88,7 @@ subdirectories under `Frontend/` and `Backend/`. Per-module breakdown:
 [regression/suites/README.md](regression/suites/README.md). Authoritative definitions and selection
 groups: [config/test-suites.json](config/test-suites.json).
 
-**Selection groups:** `smoke` (042, 078) · `critical` (042, 078, 039, 044, 049) · `release` (080) ·
+**Selection groups:** `smoke` (042, 078) · `critical` (042, 078, 039, 044, 049) ·
 `frontend` · `backend` · `sprint` (plan-driven) · `full` (104) · plus module/feature groups
 (`catalog`, `search`, `orders`, `auth`, `b2c`, `marketing`, `platform`, `bopis`, `payment`,
 `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`).

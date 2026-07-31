@@ -29,7 +29,7 @@ npm run ci:smoke         # Smoke tests only (suites 042, 078)
 npm run ci:critical      # P0 suites (042, 078, 039, 044, 049)
 npm run ci:frontend      # Frontend-layer suites
 npm run ci:backend       # Backend-layer suites
-npm run ci:full          # Full regression (all 110 suites)
+npm run ci:full          # Full regression (all 119 suites)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
 npm run ci:cycle         # Full cycle: sync → lifecycle → regression
 npm run ci:coverage      # Coverage generation pipeline
@@ -69,7 +69,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/                 # Plugin distribution/onboarding docs (prompt templates: vc/shared/docs/prompts/)
 ├── vc/                    # Layer 2 — VC internal per-env data (vcst-qa, shared); customers ignore
-├── regression/suites/    # 110 CSV suites (~3,480 cases) in 44 module directories
+├── regression/suites/    # 119 CSV suites (~3,860 cases) in 48 module directories
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── reports/              # Bug reports + regression reports
 ├── test-data/            # Orgs, search queries, uploads

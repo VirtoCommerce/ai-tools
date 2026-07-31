@@ -54,8 +54,7 @@ Use these in `/qa-regression <group>` or CI `SUITE_SELECTION`:
 | Group | Suites | Description |
 |-------|--------|-------------|
 | `smoke` | 042 | Daily go/no-go (19 P0 tests) |
-| `critical` | 042, 039, 044, 049 | P0 suites only |
-| `release` | 080 | Master release suite |
+| `critical` | 042, 078, 039, 044, 049 | P0 suites only |
 | `purchase-flow` | 028-030, 011-013, 014-015, 039, 040a, 040b, 040c, 041 | Revenue path: cart → checkout → payment → orders |
 | `catalog` | 001-003, 051, 053 | Catalog frontend + admin |
 | `search` | 004-005, 061 | Search frontend + admin |

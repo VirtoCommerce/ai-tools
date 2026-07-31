@@ -6,32 +6,36 @@
  * them at load time. This script only:
  *   - sorts `suites` by id
  *   - refreshes `_meta.totalSuites` and `_meta.generated`
- *   - verifies every rule expands to known suite IDs
+ *   - verifies every rule expands to known suite IDs (and to a non-empty list)
+ *   - **manifest integrity**: hard-fails if any declared suite `file` is absent
+ *     (`findMissingFiles`), and warns on duplicate ids / orphan CSVs
+ *     (`findManifestDisagreements`) — the three ways a declared suite can
+ *     silently never run
+ *   - strict-parses every suite CSV against a burn-down baseline
  *
  * Usage:
  *   npm run suites:sync          rewrite the file
  *   npm run suites:lint          exit 1 if file is out of sync (for CI)
  */
 
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
+import { join, sep } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
 
 const MANIFEST_PATH = join("config", "test-suites.json");
 const CHECK_MODE = process.argv.includes("--check");
 
 /**
- * Strict CSV lint baseline — a BURN-DOWN list of suites that already fail the
- * strict parse as of 2026-07-01 (malformed quote-escaping / unquoted commas, or
- * a missing file for 080). This is a ratchet, NOT a permanent exemption: the lint
- * hard-fails on any suite NOT in this set, so new drift is caught immediately.
- * Fix a listed suite and remove its id here — the lint will remind you (a
- * baselined suite that now passes is reported as "stale baseline entry").
- * Goal: shrink this to empty.
+ * Strict CSV lint baseline — a BURN-DOWN list of suites whose CSV already fails
+ * the strict PARSE (malformed quote-escaping / unquoted commas). This is a
+ * ratchet, NOT a permanent exemption: the lint hard-fails on any suite NOT in
+ * this set, so new drift is caught immediately. Fix a listed suite and remove
+ * its id here — the lint will remind you (a baselined suite that now passes is
+ * reported as "stale baseline entry"). Goal: keep this empty.
+ *
+ * A MISSING FILE is deliberately NOT baselineable — see `lintSuiteCsvs`.
  */
-const CSV_LINT_BASELINE = new Set<string>([
-  "015", "026", "044", "045", "052", "080",
-]);
+const CSV_LINT_BASELINE = new Set<string>([]);
 
 interface Suite {
   id: string;
@@ -124,31 +128,83 @@ function validateRules(manifest: Manifest): string[] {
 }
 
 /**
- * Strict-parse every suite CSV with the repo's canonical settings (bom + strict
- * column count + strict quotes — same as graphql-runner.ts / review-graphql-labels.ts).
- * Returns errors for suites NOT in the burn-down baseline, plus any baseline entries
- * that now pass (stale — should be removed from the baseline).
+ * Manifest integrity: every declared suite `file` must EXIST on disk. Unlike a
+ * strict-parse failure this is NOT baselineable, because it fails silently in the
+ * worst possible way — a selection that resolves entirely to missing files runs
+ * ZERO cases while the runner still reports a valid selection and a green run.
+ * That is exactly how suite 080 (`_release/080-full-regression-release.csv`,
+ * deleted in 9dd9f3e3) left the `release` selection a no-op for a month: the
+ * check existed, but 080 sat in CSV_LINT_BASELINE, so the lint stayed green.
+ * A missing CSV means "delete the entry or restore the file" — never "baseline it".
+ */
+function findMissingFiles(manifest: Manifest): string[] {
+  return manifest.suites
+    .filter((s) => !existsSync(s.file))
+    .map((s) => `suite ${s.id} (${s.name}): declared file does not exist — ${s.file}`);
+}
+
+/**
+ * The two OTHER ways the manifest and the CSVs on disk can silently disagree.
+ * Both are reported as warnings (not hard failures) because each has a known
+ * pre-existing instance whose correct fix is a renumbering decision, not a
+ * mechanical one — see the FOLLOW-UP note in `.claude/rules/regression.md`.
+ *
+ *  - **Duplicate id** — consumers build their suite lookup with
+ *    `Object.fromEntries(suites.map(s => [s.id, s]))` (`ci/run-regression.ts`
+ *    SUITE_MAP), so on a collision the LAST entry silently wins and the other
+ *    CSV never runs. Case IDs must be globally unique for the same reason:
+ *    colliding results overwrite each other's failure evidence.
+ *  - **Orphan CSV** — a suite file on disk that no manifest entry declares is
+ *    unreachable by every selection, so it never runs and nothing says so.
+ */
+function findManifestDisagreements(manifest: Manifest): { dupIds: string[]; orphans: string[] } {
+  const byId = new Map<string, string[]>();
+  for (const s of manifest.suites) {
+    byId.set(s.id, [...(byId.get(s.id) ?? []), s.file]);
+  }
+  const dupIds = [...byId.entries()]
+    .filter(([, files]) => files.length > 1)
+    .map(([id, files]) => `id "${id}" declared ${files.length}× — only the last runs: ${files.join(", ")}`);
+
+  const declared = new Set(manifest.suites.map((s) => s.file.split(sep).join("/")));
+  const onDisk: string[] = [];
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const f = join(dir, e.name);
+      if (e.isDirectory()) walk(f);
+      else if (e.name.endsWith(".csv")) onDisk.push(f.split(sep).join("/"));
+    }
+  };
+  walk(join("regression", "suites"));
+  const orphans = onDisk.filter((f) => !declared.has(f));
+
+  return { dupIds, orphans };
+}
+
+/**
+ * Strict-parse every suite CSV that EXISTS, with the repo's canonical settings
+ * (bom + strict column count + strict quotes — same as graphql-runner.ts /
+ * review-graphql-labels.ts). Returns errors for suites NOT in the burn-down
+ * baseline, plus any baseline entries that now pass (stale — remove them).
+ * Missing files are handled by `findMissingFiles`, not here.
  */
 function lintSuiteCsvs(manifest: Manifest): { newErrors: string[]; baselineStale: string[] } {
   const newErrors: string[] = [];
   const baselineStale: string[] = [];
   for (const suite of manifest.suites) {
+    if (!existsSync(suite.file)) continue; // reported by findMissingFiles
     let problem: string | null = null;
-    if (!existsSync(suite.file)) {
-      problem = `CSV file missing: ${suite.file}`;
-    } else {
-      try {
-        parseCsv(readFileSync(suite.file, "utf-8"), {
-          columns: true,
-          skip_empty_lines: true,
-          relax_column_count: false,
-          bom: true,
-        });
-      } catch (e) {
-        const err = e as { code?: string; lines?: number; message?: string };
-        const at = err.lines !== undefined ? ` @line ${err.lines}` : "";
-        problem = `${err.code ?? "PARSE_ERROR"}${at}`;
-      }
+    try {
+      parseCsv(readFileSync(suite.file, "utf-8"), {
+        columns: true,
+        skip_empty_lines: true,
+        relax_column_count: false,
+        bom: true,
+      });
+    } catch (e) {
+      const err = e as { code?: string; lines?: number; message?: string };
+      const at = err.lines !== undefined ? ` @line ${err.lines}` : "";
+      problem = `${err.code ?? "PARSE_ERROR"}${at}`;
     }
     const inBaseline = CSV_LINT_BASELINE.has(suite.id);
     if (problem && !inBaseline) newErrors.push(`suite ${suite.id} (${suite.file}): ${problem}`);
@@ -229,6 +285,27 @@ function regenerate(manifest: Manifest): { next: Manifest; drift: string[] } {
 function main(): void {
   const raw = readFileSync(MANIFEST_PATH, "utf-8");
   const manifest = JSON.parse(raw) as Manifest;
+
+  // Manifest integrity first: a declared-but-absent CSV makes every downstream
+  // signal (selection expansion, testCount, pass rate) silently meaningless.
+  const missing = findMissingFiles(manifest);
+  if (missing.length > 0) {
+    console.error(`[suites:lint] FAIL — ${missing.length} declared suite file(s) missing:`);
+    for (const e of missing) console.error(`  - ${e}`);
+    console.error(
+      `A selection resolving to a missing file runs ZERO cases and still reports success.`,
+    );
+    console.error(
+      `Fix by RESTORING the CSV, or by REMOVING the suite entry (and every \`selections\` reference to its id).`,
+    );
+    process.exit(1);
+  }
+
+  const { dupIds, orphans } = findManifestDisagreements(manifest);
+  for (const d of dupIds) console.warn(`[suites:lint] WARN duplicate suite ${d}`);
+  for (const o of orphans) {
+    console.warn(`[suites:lint] WARN orphan CSV (no manifest entry — never runs): ${o}`);
+  }
 
   const errors = validateRules(manifest);
   if (errors.length > 0) {

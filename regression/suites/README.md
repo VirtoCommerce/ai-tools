@@ -9,7 +9,6 @@ Suites are organized into **module-aligned subdirectories** under `Frontend/` an
 zero-padded and may carry letter suffixes for split suites (e.g. `040a`, `050b1`, `072c`).
 
 **Totals:** 104 CSV suites · ~3,790 test cases · 48 Frontend (15 modules) + 56 Backend (29 modules).
-The master release suite `080` is defined in the manifest (`_release/080-full-regression-release.csv`).
 
 ---
 
@@ -80,7 +79,6 @@ Authoritative definitions live in the manifest's `selections` block. Regenerate 
 |-----------|--------|------------|
 | `smoke` | 042, 078 | `npm run ci:smoke` |
 | `critical` | 042, 078, 039, 044, 049 | `npm run ci:critical` |
-| `release` | 080 | — |
 | `sprint` | Plan-driven via `vc/shared/docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1) | — |
 | `full` | All 104 | `npm run ci:full` |
 
