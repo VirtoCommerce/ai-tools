@@ -189,7 +189,7 @@ Assignment created [PRICE-027]","condition_type=UserGroup; condition_value=VIP",
 [ACT] Click 'Save'
 [ASSERT] Verify conditions are displayed","[STATE] Condition saved and displayed in Eligible Shoppers section
 [DOM] Condition shows type and configured value; delete option available for each condition","[ADMIN] Reload assignment blade and confirm conditions persist
-[API] GET /api/pricing/assignments/{id} — confirm conditions in response","Conditions not saved; 'Add condition' button missing; conditions reset after save","restore original prices","C178870","Katalon"
+[API] GET /api/pricing/assignments/{id} — confirm conditions in response","Conditions not saved; 'Add condition' button missing; conditions reset after save","restore original prices","C178870","Automated"
 "PRICE-031","Export price list assignments","Pricing > Assignment Logic","Medium","BL-PRICE-004","ECL-5.1","Admin logged in to Backend
 Multiple assignments exist","export_format=CSV","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
 [ACT] Select assignments to export

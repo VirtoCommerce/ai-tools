@@ -5,7 +5,7 @@
 [ACT] Select currency USD
 [ACT] Click 'Create' button","[STATE] New price list is created and visible in list
 [DOM] Price list name appears in Price Lists table","[ADMIN] Verify price list persists after page refresh
-[API] GET /api/pricing/pricelists — confirm new entry exists","Price list not created; 'Create' button unresponsive; name not reflected in list","delete created price list via Admin","C178828","Katalon"
+[API] GET /api/pricing/pricelists — confirm new entry exists","Price list not created; 'Create' button unresponsive; name not reflected in list","delete created price list via Admin","C178828","Automated"
 "PRICE-002","Edit price list","Pricing > Pricelist Management","High","BL-PRICE-004","ECL-8.1","Admin logged in to Backend
 Price list created [PRICE-001]","updated_name={{TEST_SKU}}-PL-EDIT; updated_description=test description","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
 [ACT] Open existing price list
@@ -13,14 +13,14 @@ Price list created [PRICE-001]","updated_name={{TEST_SKU}}-PL-EDIT; updated_desc
 [ACT] Click 'Save' button
 [ASSERT] Verify changes reflected in table","[STATE] All changes are saved
 [DOM] Updated name and description appear in the Price Lists table","[ADMIN] Re-open price list blade and confirm persisted values
-[API] GET /api/pricing/pricelists/{id} — confirm updated fields","Changes not saved; stale data in table after save; save button unresponsive","restore original prices","C178873","Katalon"
+[API] GET /api/pricing/pricelists/{id} — confirm updated fields","Changes not saved; stale data in table after save; save button unresponsive","restore original prices","C178873","Automated"
 "PRICE-003","Delete price list","Pricing > Pricelist Management","High","BL-PRICE-004","","Admin logged in to Backend
 Price list created [PRICE-001]","target_pricelist_id from PRICE-001","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
 [ACT] Select price list to delete
 [ACT] Click 'Delete' button
 [ACT] Confirm deletion
 [ASSERT] Verify price list removed from list","[STATE] Price list is deleted
-[DOM] Price list no longer appears in table","[API] GET /api/pricing/pricelists/{id} returns 404 after deletion","Price list still visible after deletion; confirmation dialog not appearing; delete fails silently","none","C178875","Katalon"
+[DOM] Price list no longer appears in table","[API] GET /api/pricing/pricelists/{id} returns 404 after deletion","Price list still visible after deletion; confirmation dialog not appearing; delete fails silently","none","C178875","Automated"
 "PRICE-004","Filter pricelists","Pricing > Pricelist Management","Medium","BL-PRICE-004","","Admin logged in to Backend
 Multiple price lists exist with different currencies
 Filter_1 already created","filter_name=Filter_1; currency=USD; new_filter_name=Filter_2","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
@@ -35,7 +35,7 @@ Filter_1 already created","filter_name=Filter_1; currency=USD; new_filter_name=F
 [STATE] Filter cleared successfully
 [DOM] New filter_2 blade opens with filter criteria fields
 [STATE] filter_2 created and saved in filter list; price list sorted by filter_2","[ADMIN] Verify filter persists across sessions
-[ADMIN] Confirm filter_2 appears in filter dropdown","Filter not applied; filter clear button missing; new filter not saved","delete created price list via Admin","C178894","Katalon"
+[ADMIN] Confirm filter_2 appears in filter dropdown","Filter not applied; filter clear button missing; new filter not saved","delete created price list via Admin","C178894","Automated"
 "PRICE-005","Add products to the price list","Pricing > Prices","Critical","BL-PRICE-001","","Admin logged in to Backend
 Price list created [PRICE-001]","product_ids={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
 [ACT] Open price list from PRICE-001
@@ -45,7 +45,7 @@ Price list created [PRICE-001]","product_ids={{TEST_SKU}}","[NAV] Navigate to {{
 [ACT] Confirm selection
 [ASSERT] Verify products appear in Prices widget","[STATE] Selected products are added to the price list
 [DOM] Number of products added is displayed in Prices widget count","[ADMIN] Reload price list blade and confirm product count persists
-[API] GET /api/pricing/pricelists/{id}/prices — confirm product entries","Product selection dialog not opening; products not saved; widget count not updated","delete created price list via Admin","C178829","Katalon"
+[API] GET /api/pricing/pricelists/{id}/prices — confirm product entries","Product selection dialog not opening; products not saved; widget count not updated","delete created price list via Admin","C178829","Automated"
 "PRICE-006","Add prices to the product","Pricing > Prices","High","BL-PRICE-001","ECL-7.1","Admin logged in to Backend
 Price list created [PRICE-001]
 Products added to price list [PRICE-005]","list_price=100.00; sale_price=80.00; min_qty_tier=5; list_price_tier=70.00; sale_price_tier=60.00","[NAV] Navigate to {{BACK_URL}} Pricing > Price Lists > open PRICE-001 > Prices widget
@@ -62,13 +62,13 @@ Products added to price list [PRICE-005]","list_price=100.00; sale_price=80.00; 
 [ASSERT] Verify tier price row saved","[STATE] Step 1: List price saved; product Price range column shows $100.00
 [STATE] Step 2: Price range shows list price ($100) and sale price ($80)
 [STATE] Step 3: New price row with min qty=5 saved; '#' column shows 2 price rows; tier price available for qty>=5","[API] GET /api/pricing/pricelists/{id}/prices — confirm all three price entries
-[CONSOLE] No JS errors during save operations","Save fails silently; price range column not updated; tier price row not persisting","restore original prices","C178848","Katalon"
+[CONSOLE] No JS errors during save operations","Save fails silently; price range column not updated; tier price row not persisting","restore original prices","C178848","Automated"
 "PRICE-007","View price list via catalog module","Pricing > Prices","Medium","BL-PRICE-001","","Admin logged in to Backend
 Product has prices in multiple price lists","product_id={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Catalog module > Products
 [ACT] Open any product with prices ({{TEST_SKU}})
 [ACT] Click on 'Price' widget
 [ASSERT] Review all prices from all price lists","[DOM] Screen displays all prices for selected item from every Price list that contains this item
-[STATE] All price list entries visible with their respective list/sale prices","[API] GET /api/pricing/products/{id}/prices — cross-check count and values with UI display","Price widget not opening; prices from some price lists missing; widget shows 0 prices","none","C178852","Katalon (generic)"
+[STATE] All price list entries visible with their respective list/sale prices","[API] GET /api/pricing/products/{id}/prices — cross-check count and values with UI display","Price widget not opening; prices from some price lists missing; widget shows 0 prices","none","C178852","Automated"
 "PRICE-008","Export price lists","Pricing > Pricelist Management","Medium","BL-PRICE-004","ECL-5.1","Admin logged in to Backend
 Multiple price lists exist","export_format=CSV","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
 [ACT] Select price lists to export
@@ -98,21 +98,21 @@ Price list exists","assignment_name=TestAssignment-001; catalog_id={{STORE_ID}}"
 [ASSERT] Verify assignment appears in list","[STATE] System creates assignment without additional rules and conditions
 [DOM] Assignment count in 'Assignment' widget is incremented
 [STATE] New assignment visible in Assignments list","[API] GET /api/pricing/assignments — confirm new assignment entry exists
-[ADMIN] Reload Assignments blade and confirm assignment persists","Assignment not created; widget count not updated; assignment not visible in list","delete created price list via Admin","C178853","Katalon"
+[ADMIN] Reload Assignments blade and confirm assignment persists","Assignment not created; widget count not updated; assignment not visible in list","delete created price list via Admin","C178853","Automated"
 "PRICE-028","Edit price list assignment","Pricing > Assignment Management","High","BL-PRICE-004","","Admin logged in to Backend
 Assignment created [PRICE-027]","updated_name=TestAssignment-EDIT; updated_description=edited description; updated_priority=10","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
 [ACT] Open existing assignment (TestAssignment-001)
 [ACT] Modify assignment name, description, and priority
 [ACT] Click 'Save' button
 [ASSERT] Verify changes reflected in table","[STATE] All changes are saved
-[DOM] Updated name, description, and priority appear in the Assignments table","[API] GET /api/pricing/assignments/{id} — confirm updated fields match input values","Changes not saved; stale data in table; save button unresponsive","restore original prices","C178874","Katalon"
+[DOM] Updated name, description, and priority appear in the Assignments table","[API] GET /api/pricing/assignments/{id} — confirm updated fields match input values","Changes not saved; stale data in table; save button unresponsive","restore original prices","C178874","Automated"
 "PRICE-029","Delete price list assignment","Pricing > Assignment Management","High","BL-PRICE-004","","Admin logged in to Backend
 Assignment created [PRICE-027]","assignment_id from PRICE-027","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
 [ACT] Select assignment to delete
 [ACT] Click 'Delete' button
 [ACT] Confirm deletion
 [ASSERT] Verify assignment removed from list","[STATE] Assignment is deleted
-[DOM] Assignment no longer appears in Assignments table","[API] GET /api/pricing/assignments/{id} returns 404","Assignment still visible after deletion; confirmation dialog missing; delete fails silently","none","C178876","Katalon"
+[DOM] Assignment no longer appears in Assignments table","[API] GET /api/pricing/assignments/{id} returns 404","Assignment still visible after deletion; confirmation dialog missing; delete fails silently","none","C178876","Automated"
 "PRICE-036","Search pricelist by various criteria","Pricing > Search & Filter","Medium","BL-PRICE-004","","Admin logged in to Backend
 Multiple price lists exist with various names and currencies","search_term_1=Clothing; search_term_2=elect; search_term_3=USD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
 [ACT] Enter 'Clothing' in search field
