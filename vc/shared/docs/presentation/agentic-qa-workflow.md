@@ -410,7 +410,7 @@ agents)   progress) BL-*)    reject)
 | `/qa-test-lifecycle [scope]` | Unified pipeline: sync stale → analyze gaps → generate → review → fix → approve |
 | `/qa-test-plan [sprint]` | Build sprint test plan from JIRA + merged PRs |
 | `/qa-verify-fix VCST-XXXX` | Verify a bug fix and transition JIRA |
-| `/qa-sync-tests` | _Deprecated_ — redirects to `/qa-test-lifecycle` |
+| ~~`/qa-sync-tests`~~ | **Removed** — file deleted, no redirect. Use `/qa-test-lifecycle` |
 | `/qa-seed-data [profile]` | Seed test data via Postman MCP / teardown AGENT-TEST-* entities |
 | `/ba-analyze [scope]` | Business analysis coordination |
 | `/ba-stories [feature]` | Generate BDD user stories |

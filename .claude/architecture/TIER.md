@@ -130,7 +130,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-regression.md` | **B** | Generic regression runner — argument hints are storefront groups. |
 | `qa-coverage-generation.md` | **B** | Generic pipeline; domains are storefront. |
 | `qa-test-plan.md` | **B** | Sprint test plan — generic shape, storefront sprint plans. |
-| `qa-sync-tests.md` | **B** | Deprecated — redirects to qa-test-lifecycle. |
+| ~~`qa-sync-tests.md`~~ | **B** | **Removed** — file deleted, no redirect. Merged into qa-test-lifecycle. |
 | `qa-smoke.md` | **C** | Hardcoded 12 P0 tests for storefront/admin. **Becomes template.** |
 | `qa-design.md` | **C** | Storefront component/page audit. |
 | `qa-seed-data.md` | **C** | Storefront seed presets. |

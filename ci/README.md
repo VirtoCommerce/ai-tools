@@ -95,11 +95,14 @@ Syncs test cases with code changes, validates them, then runs regression.
 **Phases:**
 | Phase | Budget Share | What it does |
 |-------|-------------|-------------|
-| 1. Sync | 30% | Detect stale/broken cases, update steps/assertions, generate for new behavior |
-| 2. Lifecycle | 20% | 7-dimension static quality review, auto-fix structural issues |
-| 3. Regression | 50% | Execute affected suites via `run-regression.ts` |
+| 1. Scope + Sync | 50% of remaining | `/qa-test-lifecycle {CHANGE_SOURCE} --ci` — detect stale/broken cases, update steps/assertions, **and review** (dims 1–7, 9, 10) |
+| 2. Review | 50% of remaining | Same command at `suite <ids>` scope. **Runs only when `SKIP_SYNC=true`** — Phase 1 already reviews what it synced |
+| 3. Regression | the remainder | Execute affected suites via `run-regression.ts` |
 
-Each phase can be skipped independently via `SKIP_SYNC`, `SKIP_LIFECYCLE`, `SKIP_REGRESSION`.
+`SKIP_SYNC` / `SKIP_REGRESSION` skip their phase. `SKIP_LIFECYCLE` skips only the **standalone** review
+pass (Phase 2) — a change-driven Phase 1 always reviews, because `/qa-test-lifecycle`'s Review phase
+always runs. Neither model phase generates cases or opens a browser, so CI cannot ground a
+`{HYPOTHESIS}` assertion; such cases stay `Draft` and out of regression selections.
 
 ### Auto-Fix (`auto-fix.yml`)
 

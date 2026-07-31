@@ -50,7 +50,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
   │ 1. SCOPE │──▶│ 2. SYNC  │──▶│3. ANALYZE│──▶│4. REVIEW │──▶│5. VERIFY │──▶│6. APPROVE│
   │          │   │ & UPDATE │   │& GENERATE│   │ & FIX    │   │          │   │          │
-  │ Resolve  │   │ Stale    │   │ Coverage │   │ 7-dim    │   │ Live env │   │ Quality  │
+  │ Resolve  │   │ Stale    │   │ Coverage │   │ static   │   │ Live env │   │ Quality  │
   │ scope    │   │ cases    │   │ gaps     │   │ quality  │   │ browser  │   │ gate     │
   └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
   orchestrator   test-mgmt      test-mgmt      test-mgmt      qa-testing     orchestrator
@@ -66,7 +66,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | 1. Scope | Orchestrator (you) | Not needed | Parse input, resolve affected suites, build change inventory |
 | 2. Sync & Update | `test-management-specialist` | Not needed | Assess staleness via Context7, update stale/broken cases |
 | 3. Analyze & Generate | `test-management-specialist` | Not needed | Coverage gap detection, data-prep via `/qa-generate-data` (combination design + gap fixtures), test case creation |
-| 4. Review & Fix | `test-management-specialist` | Not needed | 7-dimension quality review, auto-fix, manual items |
+| 4. Review & Fix | `test-management-specialist` | Not needed | `/qa-review-tests` static dimensions (1–7, 9, 10), auto-fix, manual items |
 | 5. Verify | `qa-testing-expert` | `playwright-firefox` | Live environment browser verification |
 | 6. Approve | Orchestrator (you) | Not needed | Quality gate evaluation, final verdict, report |
 
@@ -230,8 +230,13 @@ Reclassify each case:
 2. Query Context7 for correct current behavior
 3. Update Steps and Assertions to match new behavior
 4. Preserve: case ID, Title (update if feature name changed), Section, Priority, Business_Rule, Edge_Case_Refs
-5. Set `Automation_Status` to `synced`
-6. Add to References: `"Synced: {source} ({date})"`
+5. **Leave `Automation_Status` alone.** The legal values are exactly `Draft` | `Reviewed` | `Automated` |
+   `Manual` | `Semi-Automated` | `Deprecated` (`test-case-template.md` §Automation_Status, enforced by
+   `suites:review` **S-006**). There is no `synced` state — a sync is recorded in `References`, not in the
+   status column. Only Phase 6 may *demote* a case to `Draft`, and promotion out of `Draft` is never
+   automatic (it needs zero GRD-001 + human approval — see the skill's promotion rule).
+6. Add to References: `"Synced: {source} ({date})"` — append; never clobber an existing
+   `Audited:` / `Corrected:` stamp on that row (the `Audited:` stamp is the Dim-11 rotation state)
 
 **For INCOMPLETE cases:**
 - Add new assertions for changed/added behavior
@@ -239,7 +244,7 @@ Reclassify each case:
 - Update Failure_Signals for new failure modes
 
 **For BROKEN cases:**
-- Feature removed → mark `Automation_Status: deprecated`, add note to References
+- Feature removed → mark `Automation_Status: Deprecated` (capitalized — the enum is case-sensitive), add note to References
 - Feature replaced → rewrite for replacement
 - Feature split → generate separate cases
 - **Always confirm with user** before deprecating or rewriting
@@ -334,22 +339,42 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
 
 **Always runs.** Dispatch `test-management-specialist` (continuing delegation).
 
-#### 4a. Static Analysis (10 dimensions — the `/qa-review-tests` skill)
+#### 4a. Static Analysis (`/qa-review-tests` dimensions 1–7, 9, 10)
 
-Reviews ALL cases in scope (existing + updated + newly generated). The canonical
-dimension set is the **10 dimensions** of the [`/qa-review-tests` skill](../skills/qa-review-tests/SKILL.md)
-(run `npm run suites:review -- <csv>` for the deterministic core of dims 1–7, 9, 10).
-The core seven:
+Reviews ALL cases in scope (existing + updated + newly generated). **The
+[`/qa-review-tests` skill](../skills/qa-review-tests/SKILL.md) owns the dimension set — this command
+does not restate it.** Read its Review Dimensions table (and `review-criteria.md`) for the checks,
+codes, and severities; a restated copy here would drift, and has. Delegate by *dimension number*:
 
-1. **Structure** — CSV format, IDs, required fields
-2. **Determinism** — Step tags, specific element refs, no ambiguity
-3. **Completeness** — Preconditions, assertions, failure signals, cleanup, `errors[]` checks
-4. **Testability** — Falsifiable assertions, no vague predicates
-5. **Data Validity** — Valid `{{VAR}}` tokens, no hardcoded URLs/creds; GraphQL suites: schema validation (DV-006–DV-011)
-6. **BL/ECL Coverage** — Business rule and edge case traceability
-7. **Duplication** — Cross-suite overlap detection
+| Dimensions | Where they run in this pipeline |
+|------------|-------------------------------|
+| **1–7, 9, 10** — structure, determinism, completeness, testability, data validity, BL/ECL + requirement traceability, duplication, technique coverage, assertion grounding | **Here (Phase 4a)**, static, no browser. Start with the deterministic core: `npm run suites:review -- <csv>` (dims 1–7, 9, 10 as exact rules, plus `TRI-000` stamp staleness), then spend LLM effort only on the judgment rules it can't decide |
+| **8** — live environment verification | **Phase 5** (`qa-testing-expert`, `playwright-firefox`) |
+| **10 (live half)** — grounding `{HYPOTHESIS}`/unconfirmed-`{SPEC}` → `{OBSERVED}` | **Phase 5** — static 4a only *detects* an ungrounded assertion; only the live pass can ground it |
+| **11** — behavioral triangulation (*is the asserted behavior still TRUE?*) | **Not run wholesale by this pipeline.** Phase 2's change signal is a *candidate*, not confirmation — see 4a-bis below. A full suite sweep is `/qa-review-tests suite <ID> --triangulate` or its scheduled twin `ci/run-suite-audit.ts` |
 
-…plus **9. Technique Coverage** (positive/negative/boundary mix) and **10. Assertion Grounding** (GRD anti-hallucination gate). Dimension 8 (live env) runs in Phase 5.
+Also run, per the skill's Step 3/3.5: `npx tsx scripts/test-data/validate-td-refs.ts` (DV-013…020) and
+`npm run graphql:lint-labels -- <csv>` for every GraphQL suite (DV-019).
+
+#### 4a-bis. Behavior rewrites go through the Dimension-11 evidence bar
+
+Phase 2 reclassifies a case as STALE/BROKEN from **one** axis (the change inventory + Context7 docs).
+That is enough to justify a *mechanical* update (renamed selector, moved URL, added field), but **not
+enough to rewrite what a case asserts happens** — the skill's Dimension 11 requires an agreeing
+evidence tuple from every applicable axis (**docs + live + source**) before a DRIFT rewrite lands, and
+treats source-vs-live disagreement as CONTRADICTORY (usually deploy lag), never as a rewrite.
+
+So, symmetrically with 4c's handling of `BL-*`:
+
+- A Phase-2 STALE/BROKEN finding that changes only *how* a case is driven → apply in 4b.
+- A finding that changes *what behavior is expected* → run `/qa-review-tests --triangulate` **scoped to
+  those cases only**, and apply strictly under its auto-fix matrix (CONFIRMED → stamp refresh; DRIFT →
+  rewrite the drifted assertion only; MISSING/CONTRADICTORY/UNGROUNDED/RETIRE → report, never write).
+- A DRIFT rewrite must keep `{{VAR}}`/`@td()` and assert the structural invariant — never a literal
+  price/SKU/URL observed live (DV-016). This is the most likely way an auto-fix does damage.
+- On a **legacy untagged case, do not add a provenance tag** to the assertion you rewrote — one tag
+  makes the case provenance-adopted and turns every untagged sibling into a GRD-001 High. The row-level
+  `Audited:` stamp carries the evidence (`triangulation-criteria.md` §5 rule 4).
 
 #### 4b. Auto-Fix
 
@@ -369,7 +394,21 @@ The core seven:
 - Missing BL-*/ECL-* refs — needs domain mapping
 - GraphQL: invalid query/mutation name (DV-006) — needs correct alternative
 
-After fixes: re-run structure validation to confirm no regressions.
+**After fixes — re-gate, and revert on regression** (the skill's Step 7 gate; a structure-only re-check
+is not sufficient): re-run `npm run suites:review -- <csv> --fail-on=High`, `npm run td:validate`, and
+`npm run graphql:lint-labels -- <csv>` for GraphQL suites. **An auto-fix that introduces a new
+Blocker/Critical is reverted, not shipped.**
+
+**Write-scope ceiling (same as the skill's `--fix`, and narrower under `--ci`):**
+
+| | Phase 4b default (auto-fix on) | `--no-auto-fix` | `--ci` |
+|---|---|---|---|
+| Confirmation | none, diff summary shown | per-fix confirm | none — the PR review is the gate |
+| Deterministic dim 1–7/9/10 fixes | applied | on approval | applied |
+| Dim 11 CONFIRMED / DRIFT (via 4a-bis) | applied | on approval | applied |
+| Dim 11 MISSING / CONTRADICTORY / UNGROUNDED / RETIRE | reported | reported | reported — **never written** |
+| `Automation_Status` promotion out of `Draft` | **never** automatic | **never** automatic | **never** automatic |
+| Deprecating / authoring a case | user confirmation required | user confirmation required | **never** — proposal only |
 
 #### 4c. BL Audit (always — scoped to the run's BL candidates)
 
@@ -403,7 +442,11 @@ This is gated by an **evidence bar, not human approval** — the **applicable-ax
 3. **Flow walkability** — first 3-4 steps of top 5 P0 cases
 4. **Precondition validity** — test user login, feature visibility
 5. **Console baseline** — JS errors and failed network requests per page
-6. **Staleness spot-checks** (change-driven only) — verify STALE/BROKEN reclassifications from Phase 2 against live env
+6. **Asserted-behavior grounding (Dimension 10, live half)** — for every `{HYPOTHESIS}` and
+   unconfirmed-`{SPEC}` assertion in scope (typically the cases Phase 3 just generated), confirm the
+   behavior it claims **actually happens** on the deployed build. This is the only step that can ground a
+   new-feature assertion; without it those cases stay `Draft` and are excluded from regression.
+7. **Staleness spot-checks** (change-driven only) — verify STALE/BROKEN reclassifications from Phase 2 against live env
 
 **Result classification:**
 
@@ -413,6 +456,8 @@ This is gated by an **evidence bar, not human approval** — the **applicable-ax
 | CHANGED | Critical | Element renamed/moved → auto-fix label |
 | BROKEN | Blocker | Page error or flow blocked → investigate |
 | BLOCKED | High | Precondition can't be met → may be env issue |
+| **Behavior CONFIRMED** | — | Upgrade that assertion's provenance tag to `{OBSERVED}` (clears GRD-001) |
+| **Behavior REFUTED** | Critical | **ENV-008** — the asserted behavior isn't implemented. Rewrite to the observed behavior + `{OBSERVED}`, or drop the assertion. **Never** upgrade the tag. |
 
 Screenshots captured for every CHANGED/BROKEN/BLOCKED finding.
 
@@ -435,12 +480,20 @@ The orchestrator (you) evaluates all phases:
 | G7: Duplication | No same-layer duplicates | Recommended |
 | G8: Environment | 0 BROKEN findings | Yes (if verified) |
 | G9: Sync | All STALE cases updated, all BROKEN addressed | Yes (if synced) |
+| G10: Assertion Grounding | **0 GRD-001 Blocker/High** + 0 ENV-008. Provenance is **opt-in per case**: a fully-untagged *legacy* case is Informational only (it does not fail this gate), but once a case is **provenance-adopted** (any assertion tagged — i.e. everything Phase 3 generated or Phase 2/4 touched) an untagged sibling is **High** and a `{HYPOTHESIS}` in a past-`Draft` case is a **Blocker** | Yes |
+| G11: Technique Coverage | No feature group (≥3 cases) missing the positive + negative + boundary mix (TC-001) | Recommended |
+
+**G10 is the promotion gate, not a nice-to-have.** Per the skill's promotion rule + `test-case-template.md`
+§Automation_Status, a case moves `Draft → Reviewed` only when (a) the review verdict is ≥ PASS WITH
+WARNINGS, (b) every assertion is grounded — and for a new-feature suite that requires a passing Phase 5
+live pass — and (c) a human or `qa-lead-orchestrator` approves. **This pipeline never performs (c)
+itself.** A gate-green run means *eligible for promotion*, not promoted.
 
 #### Verdicts
 
 | Verdict | Meaning |
 |---------|---------|
-| **APPROVED** | All required gates pass — ready for `/qa-regression` |
+| **APPROVED** | All required gates pass. Cases already past `Draft` are ready for `/qa-regression`; any case still `Draft` (incl. everything Phase 3 generated) needs the human promotion step first — **`Draft` cases MUST NOT be included in a regression selection** |
 | **APPROVED WITH WARNINGS** | Required gates pass, recommended have minor findings |
 | **NEEDS FIXES** | Required gate(s) failed — must address before regression |
 | **BLOCKED** | Environment issues prevent verification — investigate env first |
@@ -505,7 +558,7 @@ screenshots (`reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`, screenshots only). P
 
 | Gate | Status | Details |
 |------|--------|---------|
-| G1-G9 | PASS/FAIL/WARN/SKIP | ... |
+| G1-G11 | PASS/FAIL/WARN/SKIP | ... |
 
 ## Environment Verification (if Phase 5 ran)
 
@@ -590,20 +643,32 @@ already consumes this agent's returned chat text directly, not a file), so the s
 
 ### Full Cycle Pipeline (`ci/run-full-cycle.ts`)
 
-In CI mode, `/qa-test-lifecycle` with `--ci` replaces the old 2-command flow. The pipeline is now:
+In CI mode, `/qa-test-lifecycle --ci` replaces the old 2-command flow — `/qa-sync-tests` was **removed**
+(its command file is deleted, not aliased), so both change-driven sync and standalone review are this one
+command at different scopes:
 
 ```
 PR merged → ci/run-full-cycle.ts
               │
-              ├─ Phase 1: SCOPE + SYNC (detect changes, update stale cases)
-              │   → Formerly: /qa-sync-tests --ci
+              ├─ Phase 1: SCOPE + SYNC + REVIEW          [runs unless SKIP_SYNC]
+              │   → /qa-test-lifecycle {CHANGE_SOURCE} --ci --skip-generate --skip-verify
+              │   → emits AFFECTED_SUITES: <ids> for Phase 3
               │
-              ├─ Phase 2: ANALYZE + REVIEW (gap analysis + quality check)
-              │   → Formerly: /qa-test-lifecycle --skip-generate --skip-verify
+              ├─ Phase 2: REVIEW ONLY                    [runs ONLY when SKIP_SYNC=true]
+              │   → /qa-test-lifecycle suite <ids> --ci --skip-sync --skip-generate --skip-verify
               │
               └─ Phase 3: REGRESSION (run affected suites)
                   → Delegates to ci/run-regression.ts
 ```
+
+**Phases 1 and 2 are mutually exclusive.** Phase 4 (Review) always runs inside this command, so a
+change-driven Phase 1 has already reviewed the suites it synced — re-running the review as Phase 2
+would only pay for it twice. Consequence: `SKIP_LIFECYCLE` skips the **standalone** review pass only.
+There is no "sync without reviewing" mode, because this command has none.
+
+Neither CI phase generates cases (`--skip-generate`) or verifies live (`--skip-verify`, no browser in
+CI) — so **CI can never clear GRD-001**, and any case it touches that carries an ungrounded assertion
+stays `Draft` (G10 unmet) until an interactive `--verify` run grounds it.
 
 ### npm scripts
 
@@ -618,9 +683,16 @@ SUITE_SELECTION=critical npm run ci:cycle:no-sync    # Skip sync, run review+reg
 
 When `--ci` flag is set:
 - Phase 5 (browser verification) is skipped automatically
-- All updates applied without user confirmation
 - Output includes machine-readable JSON block for pipeline parsing
 - No interactive prompts
+- **The confirmation is replaced by PR review, and the write scope NARROWS — it does not widen.** `--ci`
+  holds a *narrower* privilege than an interactive run: it may write only what the deterministic linter
+  proved or what agreeing axes confirmed (see the Phase-4b write-scope table). It **never** promotes
+  `Automation_Status` out of `Draft`, **never** deprecates a case, and **never** writes a Dim-11
+  MISSING / CONTRADICTORY / UNGROUNDED / RETIRE verdict.
+- Because Phase 5 is skipped, `--ci` **cannot ground a `{HYPOTHESIS}`/`{SPEC}` assertion** — a suite
+  generated in the same `--ci` run stays `Draft` (G10 unmet) and is not regression-eligible until a
+  later `--verify` pass grounds it.
 
 ---
 
@@ -645,8 +717,10 @@ Input:
   - references:
     - config/test-suites.json (suite definitions)
     - regression/suites/ (target CSV files)
+    - skills/qa-review-tests/SKILL.md (canonical dimension set — do not restate it)
     - skills/qa-review-tests/review-criteria.md
-    - skills/qa-test-cases-generator/test-case-template.md
+    - skills/qa-review-tests/triangulation-criteria.md (only when 4a-bis triangulates a behavior rewrite)
+    - skills/qa-test-cases-generator/test-case-template.md (column contract + Automation_Status enum)
     - knowledge/oracles/business-logic.md
     - knowledge/oracles/e-commerce-edge-cases-library.md
     - knowledge/domain/products.md
@@ -704,7 +778,9 @@ Output: per-case verification:
 | After a platform release | `/qa-test-lifecycle changelog <version>` |
 | Quick quality check on a suite | `/qa-test-lifecycle suite <ID> --skip-verify` |
 | After `/qa-coverage-generation` | `/qa-test-lifecycle suite <IDs> --skip-sync --skip-generate` (review only) |
-| After Phase 6 APPROVED | Run `/qa-regression <affected suites>` |
+| After Phase 6 APPROVED | Promote the `Draft` cases (human step), then run `/qa-regression <affected suites>` |
+| A whole suite's assertions may have gone stale (not tied to one change) | `/qa-review-tests suite <ID> --triangulate` — Dimension 11 wholesale; this pipeline only triangulates the cases a change touched (4a-bis) |
+| Which suite is most overdue for triangulation | `/qa-review-tests stale` (or `npm run tc:audit:queue`) |
 
 ---
 
@@ -713,7 +789,17 @@ Output: per-case verification:
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - **Agent delegation is mandatory** — do NOT run Phases 2-4 directly in the orchestrator; always dispatch to `test-management-specialist`
-- **Never delete test cases without user confirmation** — prefer deprecation (`Automation_Status: deprecated`) over removal
+- **Division of labour with `/qa-review-tests` — complementary, never competing.** This command owns the
+  *pipeline* (what runs when, in which phase, under which gate); the **skill owns the review methodology**
+  (the 11 dimensions, their check codes, severities, evidence bars, and auto-fix matrix). When the two
+  appear to disagree, **the skill wins on any dimension question** and this file is the bug. Never restate
+  the dimension list, a check code's severity, or the triangulation evidence bar here — reference it.
+- **`Automation_Status` is a closed, case-sensitive enum** — `Draft` | `Reviewed` | `Automated` | `Manual` |
+  `Semi-Automated` | `Deprecated` (`test-case-template.md`, gated by `suites:review` S-006). Never invent a
+  state (`synced` is not one); a sync is recorded in `References`.
+- **Promotion out of `Draft` is never automatic** — it needs 0 GRD-001 plus explicit human/`qa-lead-orchestrator`
+  approval. This pipeline reports *eligibility* (G10), it does not promote. `Draft` cases stay out of regression selections.
+- **Never delete test cases without user confirmation** — prefer deprecation (`Automation_Status: Deprecated`) over removal
 - **Preserve case IDs** — never renumber or reuse IDs. Deprecated cases keep their IDs.
 - **Context7 is mandatory** — always query `/virtocommerce/vc-docs` for current module behavior before updating or generating cases
 - **Deduplication** — before generating cases, check target suite and related suites for semantic duplicates

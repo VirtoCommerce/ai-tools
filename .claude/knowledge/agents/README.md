@@ -94,7 +94,7 @@ Full argument reference: [`.claude/rules/skills-commands.md`](../../rules/skills
 | `/qa-onboarding [env]` | Customer onboarding flow: install → first green smoke run + first bug filed | varies |
 | `/code-review-full` | Full multi-dimension code review of the working diff | varies |
 | `/vc-self-check [session]` | Self-diagnose the plugin from this session's telemetry → local `DIAG-*.md` (never modifies the install, never sends) | varies |
-| `/qa-sync-tests` | _(deprecated — redirects to `/qa-test-lifecycle`)_ | — |
+| ~~`/qa-sync-tests`~~ | _(**removed** — file deleted, no redirect. Use `/qa-test-lifecycle PR #NNN \| module <name> \| diff`)_ | — |
 
 ### BA Commands
 
