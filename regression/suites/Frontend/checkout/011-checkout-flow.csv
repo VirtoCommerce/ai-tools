@@ -447,23 +447,23 @@ password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to ch
 [NETWORK] no 4xx/5xx on address change or shipping methods refresh","shipping methods not refreshed after address change; old address shown in summary despite selecting new one; shipping cost unchanged after address zone change; popup missing search or facet controls","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23)","Reviewed"
 "CHK-060","Ship-To Address - Show More Addresses Pagination","Checkout > Shipping > Address Selector","Medium","BL-CHK-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-TechFlow org (id @td(TECHFLOW_ORG_ADDRESSES.org_id)) has 22 addresses seeded per test-data/addresses/techflow-org-addresses-state-20260423.json — 22 rows unblocks pagination (default 8 per page, 3 pages total). Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
+TechFlow org has 22 addresses seeded - run: npm run seed:b2b:addresses (source fixture test-data/b2b/addresses.csv; teardown npm run seed:b2b:addresses:teardown). Storefront page size is 6 (ADDRESSES_PER_PAGE), so 22 rows yield ceil(22/6) = 4 pages with a partial final page of 4. Log in as a TechFlow org member. Cart has items. NOTE: the previously referenced test-data/addresses/techflow-org-addresses-state-20260423.json never existed in the repo, and the previously stated 8-per-page / 3-pages-total figures were wrong on both counts - do not restore either.","url={{FRONT_URL}}
 user={{ORG_USER_EMAIL}}
 password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
 [ACT] click [data-test-id=""select-address-button""] to open the Select Address popup
 [WAIT] wait for address popup to render
-[ASSERT] verify initial address table shows partial set (default page size ~8 rows)
+[ASSERT] verify the initial address table shows one page only, not the full set (page size is 6)
 [ASSERT] verify 'Show more' button OR pagination control is visible below the address table (verify actual UI label in current build)
 [ACT] click 'Show more' or the next-page pagination control
 [WAIT] wait for additional addresses to load (server-side cursor-based fetch)
 [ASSERT] verify additional addresses appended or paginated correctly (new rows visible, no overlap with first set)
-[ASSERT] verify all displayed addresses are selectable via click","[DOM] initial address list shows partial set (not all 22 addresses at once)
+[ASSERT] verify all displayed addresses are selectable via click","[DOM] initial address list shows one page only, not the full seeded set; page count equals ceil(totalAddresses / 6)
 [DOM] 'Show more' button or numbered pagination control present
 [STATE] clicking pagination control loads next page of addresses without full page refresh
 [DOM] newly loaded addresses selectable via click
 [STATE] no duplicate addresses across pages","[API] currentCustomerAddresses called with after cursor on pagination action; second call returns new non-overlapping items; totalCount unchanged across calls. Standard GraphQL errors empty.
 [CONSOLE] no JS errors on show more / pagination click
-[NETWORK] no 4xx/5xx on address pagination request","'Show more' or pagination absent despite 22 addresses; clicking pagination causes full page refresh or error; duplicate addresses across pages; addresses not selectable after loading next page","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — pagination now server-side via cursor","Reviewed"
+[NETWORK] no 4xx/5xx on address pagination request","'Show more' or pagination absent despite 22 addresses; clicking pagination causes full page refresh or error; duplicate addresses across pages; addresses not selectable after loading next page","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23); Corrected 2026-07-31: the precondition named a seed file that never existed and stated the wrong page size (8) and page count (3); page size is 6, so 22 rows give 4 pages. The server-side-via-cursor note is also wrong - pagination is OFFSET-based (useCustomerAddresses.ts:30 sends after=(page-1)*itemsPerPage; the backend maps Skip/Take) and pages REPLACE rather than accumulate. The cursor/accumulate assertions in this case and in CHK-098 remain UNGROUNDED pending a live check once the 22-address fixture lands. Audited: 2026-07-31 (TCA-2026-07-31-011); Source: vc-frontend/client-app/shared/checkout/composables/useCheckout.ts:32 (ADDRESSES_PER_PAGE=6) + useCustomerAddresses.ts:30 (offset); Docs: N/A - implementation-detail: pagination mechanics","Reviewed"
 "CHK-061","Session Timeout During Checkout - Cart Preserved After Re-authentication","Checkout > Session > Timeout","Medium",,"ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 MANUAL-ONLY: Simulating session expiry requires deleting the access_token/refresh_token cookies. browser_evaluate is blocked by the real-user-interaction enforcement hook, so automated runners must SKIP (not BLOCK) this case. Manual execution: clear the auth cookies via the browser's DevTools > Application > Cookies panel (a real-user action), or wait for the natural session timeout, then proceed.","url={{FRONT_URL}}
@@ -828,7 +828,7 @@ Build deployed to QA before Defect #1 fix. Verify column header is NOT interacti
 [DOM] column header has cursor: auto style (NOT cursor: pointer) — sort is NOT wired
 [STATE] address list order does NOT change after clicking column header
 [DOM] no sort indicator arrows appear","[CONSOLE] no click handler fires on column header click; no JS error from unhandled sort
-[NETWORK] no additional /graphql request on column header click","column sort fires and reorders list (would mean Defect #1 is fixed — update test); TypeError on column click","Close popup without selection","Promoted from VCST-4710-SF-008 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #1; BLOCKED by VCST-4992 (column sort not wired, P0)","Manual"
+[NETWORK] no additional /graphql request on column header click","column sort fires and reorders list (would mean Defect #1 is fixed — update test); TypeError on column click","Close popup without selection","Promoted from VCST-4710-SF-008 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #1; RETIRED 2026-07-31: VCST-4992 is shipped, so Defect #1 no longer reproduces and this case's premise is false by design. Live 2026-07-31: the Address column header renders as a button (button.vc-table__sort-button) with cursor:pointer, and clicking it reorders the list - which is the exact condition this case's own Failure_Signals named as meaning Defect #1 is fixed and the test must be updated. Superseded by CHK-114 (sort works, ascending + descending). Kept for traceability only; do NOT include in regression selections. Audited: 2026-07-31 (TCA-2026-07-31-011); Source: vc-frontend/client-app/shared/checkout/components/select-address-modal.vue:358-379 + vc-table sort-button; Docs: N/A - implementation-detail: table sort mechanics","Deprecated"
 "CHK-095","Address Popup — Empty State When No Addresses Saved","Checkout > Shipping > Address Popup > Empty States","High","BL-CHK-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in with NO saved addresses in account; cart has at least 1 item. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json available for seeded account flows.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as user with no saved addresses
@@ -869,7 +869,7 @@ User logged in as {{USER_EMAIL}} with 1+ saved addresses; cart has items","url={
 [NETWORK] no 4xx/5xx","popup stays open after selection; wrong address shown in Shipping Details; Shipping Details unchanged; spinner >5s","No cleanup (address selection persists for session)","Promoted from VCST-4710-SF-011 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-098","Address Popup — Pagination Loads Next Page of Addresses","Checkout > Shipping > Address Popup > Pagination","High","BL-CHK-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Test org has 20+ saved addresses to trigger pagination; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+TechFlow org has 22 addresses seeded - run: npm run seed:b2b:addresses (source fixture test-data/b2b/addresses.csv; teardown npm run seed:b2b:addresses:teardown). At the storefront page size of 6 that is 4 pages (6+6+6+4), so the final page is deliberately partial. Address popup open. NOTE: the previously referenced test-data/addresses/techflow-org-addresses-state-20260423.json never existed in the repo - do not look for it.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
 [WAIT] cart loaded
 [ACT] open address selection popup
 [WAIT] first page of addresses renders
@@ -880,7 +880,7 @@ Test org has 20+ saved addresses to trigger pagination; address popup open. Seed
 [COUNT] total visible addresses increases (or second page shows new rows)
 [STATE] addresses from first page remain accessible (cursor-based pagination)","[API] currentCustomerAddresses called with after cursor; second call returns new items; errors[] is empty
 [CONSOLE] no JS errors on pagination
-[NETWORK] no 4xx/5xx","pagination control absent for 20+ addresses; second page request fails; addresses duplicated; cursor not used in request","Close popup","Promoted from VCST-4710-SF-012 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
+[NETWORK] no 4xx/5xx","pagination control absent for 20+ addresses; second page request fails; addresses duplicated; cursor not used in request","Close popup","Promoted from VCST-4710-SF-012 / TLC-2026-04-23-1230 / BA report 2026-04-23; Corrected 2026-07-31: the precondition named a seed file that never existed; it now names the real seeder. Audited: 2026-07-31 (TCA-2026-07-31-011); Source: vc-frontend/client-app/shared/checkout/composables/useCheckout.ts:32 (ADDRESSES_PER_PAGE=6) + useCustomerAddresses.ts:30 (offset); Docs: N/A - implementation-detail: pagination mechanics","Reviewed"
 "CHK-099","Address Popup — Aria-Label on Search Input Should Be Address Context (Defect #3)","Checkout > Shipping > Address Popup > A11y","High",,"ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in with addresses; address popup open. Defect #3 must be fixed before PASS is achievable.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -1195,21 +1195,29 @@ country=USA","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- addre
 [STATE] Country facet and keyword search filters are applied simultaneously (AND logic)
 [STATE] Result count is intersection of both filters -- not union","[NETWORK] GraphQL request contains both countryCodes and keyword arguments simultaneously; response count consistent with visible rows
 [CONSOLE] no JS errors when both filters are active","keyword search clears facet selection when typed; facet selection clears keyword; combined filter returns union instead of intersection; 4xx/5xx on combined-filter GraphQL request","Clear keyword and facet; close popup without selecting address","VCST-4710; PR #129; BL-CHK-008","Reviewed"
-"CHK-114","Address Popup — Column Sort Ascending Reorders Address List","Checkout > Shipping > Address Popup > Sort","High","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CHK-114","Address Popup — Column Sort Reorders List (Ascending + Descending Toggle)","Checkout > Shipping > Address Popup > Sort","High","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Cart has at least 1 product added
 - User has >=3 saved addresses with different names/values in sortable columns
 - Checkout is at the shipping step","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- address selection popup opens automatically
 [ASSERT] browser_snapshot to capture the default address list order
-[ACT] browser_click on the ""Name"" column header (or first sortable column)
+[ACT] browser_click button.vc-table__sort-button -- the Address header, which is the only sortable header in either the personal or the corporate column set
 [WAIT] Wait for list to reorder
 [ASSERT] browser_snapshot to capture sorted state
 [ASSERT] Verify the address rows are now in ascending alphabetical order by the sorted column
-[ASSERT] Verify the clicked column header shows a visual ascending sort indicator","[DOM] Address rows reordered: first row has the alphabetically earliest value in the sorted column
+[ASSERT] Verify the clicked column header shows a visual sort indicator
+[ACT] browser_click the same column header a second time
+[WAIT] Wait for list to reorder
+[ASSERT] browser_snapshot to capture the second-click order
+[ASSERT] Verify the second-click order is the exact reverse of the first-click order
+[ASSERT] Verify the sort indicator direction flipped","[DOM] Address row order after the first click differs from the captured default order. Do NOT assert alphabetical order of the visible Address text: the sortable column is titled Address but sorts by the underlying recipient-name field, which the corporate column set does not display
 [DOM] Sort indicator (arrow icon or similar) visible on the clicked column header
 [STATE] Sort is stable -- rows with equal column values maintain consistent relative order
-[STATE] Default sort for personal account: lastName ascending (per VCST-4992 AC)","[NETWORK] GraphQL sort argument on currentCustomerAddresses / currentOrganizationAddresses reflects ascending direction; response order matches visible rows
-[CONSOLE] no JS errors during sort interaction","list order unchanged after clicking column header (VCST-4710/4992 regression); column header shows no visual sort indicator; rows reorder to descending instead of ascending on first click; 4xx/5xx on sorted GraphQL request","Close popup without selecting address","VCST-4710; VCST-4992; PR #129; BL-CHK-008","Reviewed"
+[STATE] Second click reverses the order exactly - row order equals the first-click order reversed
+[DOM] the sort indicator inside button.vc-table__sort-button points the opposite direction after the second click
+[STATE] Only one column shows an active sort indicator at a time","[NETWORK] GraphQL sort argument on currentCustomerAddresses / currentOrganizationAddresses reflects ascending direction; response order matches visible rows
+[NETWORK] GraphQL sort direction flips between the two clicks; response order matches the visible rows
+[CONSOLE] no JS errors during either sort interaction","list order unchanged after clicking column header (VCST-4710/4992 regression); column header not interactive with cursor:auto - the pre-VCST-4992 defect; no visual sort indicator; second click has no effect or clears the sort instead of reversing it; indicator direction does not flip; multiple columns show an active indicator simultaneously; 4xx/5xx on sorted GraphQL request","Close popup without selecting address","VCST-4710; VCST-4992; PR #129; BL-CHK-008; MERGED 2026-07-31: absorbed CHK-115 (descending toggle) - one interaction, one case. VCST-4992 confirmed shipped; live 2026-07-31 verified the click reorders, the second click reverses exactly, the indicator flips, and only one indicator is active. Audited: 2026-07-31 (TCA-2026-07-31-011); Source: vc-frontend/client-app/shared/checkout/components/select-address-modal.vue:358-379 + vc-table sort-button; Docs: N/A - implementation-detail: table sort mechanics","Reviewed"
 "CHK-115","Address Popup — Column Sort Descending on Second Click","Checkout > Shipping > Address Popup > Sort","High","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Cart has at least 1 product added
@@ -1225,4 +1233,4 @@ country=USA","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- addre
 [DOM] Sort indicator reflects descending direction after second click
 [STATE] Sort direction toggles ascending -> descending on the same column header
 [STATE] Only one column has an active sort indicator at a time","[NETWORK] GraphQL sort argument direction flips from ascending to descending on second click; response order consistent with visible rows
-[CONSOLE] no JS errors on second sort click","second click has no effect (sort stuck at ascending); second click resets to no-sort instead of descending; sort indicator does not update direction; multiple column headers show active sort indicators simultaneously","Close popup without selecting address","VCST-4710; VCST-4992; PR #129; BL-CHK-008","Reviewed"
+[CONSOLE] no JS errors on second sort click","second click has no effect (sort stuck at ascending); second click resets to no-sort instead of descending; sort indicator does not update direction; multiple column headers show active sort indicators simultaneously","Close popup without selecting address","VCST-4710; VCST-4992; PR #129; BL-CHK-008; RETIRED 2026-07-31: merged into CHK-114, which now covers the ascending click AND the descending second click as one interaction. No coverage lost - CHK-114 asserts the exact-reverse relation, the indicator flip and the single-active-indicator rule that were this case's assertions. Kept for traceability only; do NOT include in regression selections. Audited: 2026-07-31 (TCA-2026-07-31-011); Source: vc-frontend/client-app/shared/checkout/components/select-address-modal.vue:358-379 + vc-table sort-button; Docs: N/A - implementation-detail: table sort mechanics","Deprecated"
