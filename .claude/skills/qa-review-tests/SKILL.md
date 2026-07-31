@@ -422,6 +422,8 @@ Audited: <date> (TCA-<date>); Source: <repo>/<path>:<line>; Docs: <topic §secti
 
 A DRIFT rewrite must **keep `{{VAR}}` / `@td()` resolution** — rewriting an assertion to a literal price/SKU/URL observed live is a DV-013…020 violation, not a fix (assert the structural invariant, DV-016). This is the single most likely way an auto-fix does damage.
 
+> **On a legacy untagged case, do NOT add a provenance tag to the assertion you rewrote.** Provenance is opt-in *per case*: one `{...}` tag makes the case provenance-adopted, and every untagged sibling then becomes a GRD-001 **High** — so tagging your one fix creates new findings and step 8e reverts it. Rewrite without a tag; the row-level `Audited:` stamp carries the evidence. See triangulation-criteria.md **§5 rule 4**.
+
 **8e. Re-gate.** Re-run `suites:review -- <csv> --fail-on=High`, `td:validate`, and `graphql:lint-labels` (GraphQL suites). Any new Blocker/Critical ⇒ revert the applied edits.
 
 ## Rules

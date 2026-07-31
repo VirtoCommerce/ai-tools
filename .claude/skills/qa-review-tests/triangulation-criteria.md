@@ -176,7 +176,7 @@ Steps/Assertions **as written** describe what the agreeing axes show.
 
 **Roll-up:** a case's verdict is its **worst** assertion verdict, ordered
 `CONFIRMED < MISSING < DRIFT < UNGROUNDED < CONTRADICTORY < RETIRE`. A case with one DRIFT assertion
-and nine CONFIRMED ones is a DRIFT case — but only the DRIFT assertion is rewritten (§4 rule 2).
+and nine CONFIRMED ones is a DRIFT case — but only the DRIFT assertion is rewritten (§5 rule 2).
 
 ## 4. Auto-fix matrix — what `--triangulate --fix` may write
 
@@ -223,19 +223,34 @@ human approves; `--ci` applies only what three agreeing axes proved.
    ```
    Replace a prior `Audited:` token rather than accumulating them — one stamp per row, always the
    most recent.
-4. **Preserve every untouched column.** `ID`, `Priority`, `Business_Rule`, `Test_Data`, `Cleanup`,
+4. **Do NOT add a provenance tag to a legacy untagged case.** Provenance is opt-in **per case**
+   (GRD-001, `scripts/test-cases/lint-test-cases.ts`): a case becomes *provenance-adopted* the moment
+   **any** of its assertions carries a `{...}` tag, and from then on every untagged sibling is a
+   **High** finding. So tagging the single assertion you rewrote converts its untouched siblings into
+   new findings and fails rule 8's re-gate — the fix gets reverted for a reason that has nothing to do
+   with the fix. On a legacy untagged case, rewrite the assertion **without** a tag and let the
+   `Audited:` stamp (rule 3) carry the evidence; the stamp is row-level and triggers nothing. Add tags
+   only to a case that is *already* provenance-adopted, or tag every assertion in the case — which is
+   a larger change than a DRIFT rewrite and belongs to `/qa-test-lifecycle`, not here.
+
+   > Worked case (2026-07-31, suite 011 CHK-087): the row had five untagged assertions. Tagging the
+   > one rewritten assertion `{OBSERVED}` would have made the other four GRD-001 High and reverted an
+   > otherwise correct, three-axis-confirmed fix. Note this is the mirror image of rule 3 — row-level
+   > stamp: always; assertion-level tag: only if already adopted.
+5. **Preserve every untouched column.** `ID`, `Priority`, `Business_Rule`, `Test_Data`, `Cleanup`,
    `Automation_Status` are not this dimension's business unless a verdict specifically implicates them.
-5. **Never regress the no-hardcode rule.** A DRIFT rewrite must keep `{{VAR}}` / `@td()` resolution
+6. **Never regress the no-hardcode rule.** A DRIFT rewrite must keep `{{VAR}}` / `@td()` resolution
    (`.claude/rules/test-data.md`) — rewriting an assertion to a literal price/SKU/URL observed live
    is a DV-013…020 violation, not a fix. Assert the structural invariant, not the observed literal
    (DV-016). This is the single most likely way an auto-fix does damage.
-6. **Never assert an invented literal.** Only a `{DOC}`- or `{OBSERVED}`-grounded message string may
+7. **Never assert an invented literal.** Only a `{DOC}`- or `{OBSERVED}`-grounded message string may
    be asserted verbatim (GRD-002). A DRIFT rewrite grounded in source code may quote an i18n **key**,
    not a guessed rendering of it.
-7. **Re-run the deterministic gate after applying** — `npm run suites:review -- <csv>` plus
+8. **Re-run the deterministic gate after applying** — `npm run suites:review -- <csv>` plus
    `td:validate` and, for GraphQL suites, `graphql:lint-labels`. An auto-fix that introduces a new
-   Blocker/Critical is reverted, not shipped.
-8. **`Automation_Status` transitions are not automatic.** A CONFIRMED case does **not** get promoted
+   Blocker/Critical is reverted, not shipped. Compare against the **pre-edit baseline**, not against
+   zero: these suites carry large pre-existing backlogs, so "no NEW finding" is the bar.
+9. **`Automation_Status` transitions are not automatic.** A CONFIRMED case does **not** get promoted
    `Draft → Reviewed` by this dimension; promotion still requires the full peer-review gate in
    SKILL.md Rules. Triangulation supplies evidence *for* that decision, it does not make it.
 
