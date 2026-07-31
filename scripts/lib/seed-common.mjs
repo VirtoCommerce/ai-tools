@@ -42,9 +42,21 @@ loadDotenv({ path: '.env.local', override: true });
 // `.env.local`'s base ADMIN_PASSWORD (loaded last with override) clobbers any
 // inline override and auth fails with invalid_grant.
 const _ENV_SUFFIX = `_${_TEST_ENV.toUpperCase()}`;
+/**
+ * Base keys that actually got a per-env value this run. Promotion is a SILENT no-op when the
+ * suffixed key is absent or misnamed — the base value simply stays in place — so callers that
+ * care (assertSafeTarget below) need to know whether a per-env value was really found, not just
+ * whether the base key is populated. Real case this catches: `.env.local` carrying
+ * `ADMIN_VIRTO_PASSWORD` instead of `ADMIN_PASSWORD_VIRTOSTART`. The rule promotes
+ * `_${TEST_ENV}` and nothing else, so that key is dead and `TEST_ENV=virtostart` silently
+ * authenticated with another env's admin password.
+ */
+export const PROMOTED_PER_ENV = new Set();
 for (const [key, value] of Object.entries(process.env)) {
   if (key.endsWith(_ENV_SUFFIX) && value) {
-    process.env[key.slice(0, -_ENV_SUFFIX.length)] = value;
+    const base = key.slice(0, -_ENV_SUFFIX.length);
+    process.env[base] = value;
+    PROMOTED_PER_ENV.add(base);
   }
 }
 
@@ -72,19 +84,52 @@ export const verbose = (msg) => { if (VERBOSE) console.log(`    [v] ${msg}`); };
 
 /**
  * Prod-safety guard — by CONFIG, not by hostname. The repo gates destructive ops on
- * ENV_RISK (dev | test | staging | production; default 'dev' — same logic as config.js),
- * NOT a hardcoded host list, so seeders run freely against localhost, any QA, staging,
- * or a new customer env. Only a production-risk env is blocked, and even that is
- * overridable with --allow-admin-writes-on-prod (mirrors config.js's flag). Set ENV_RISK
- * per env in its .env.${TEST_ENV} file.
+ * ENV_RISK (dev | test | staging | production), NOT a hardcoded host list, so seeders run
+ * freely against localhost, any QA, staging, or a new customer env. Only a production-risk
+ * env is blocked, and even that is overridable with --allow-admin-writes-on-prod (mirrors
+ * config.js's flag). Set ENV_RISK per env in its .env.${TEST_ENV} file.
+ *
+ * DECLARING IT IS MANDATORY for a seeder. It used to default to 'dev', which meant an env
+ * that never declared a risk class was treated as the SAFEST possible one — so a
+ * customer-facing demo env (`virtostart`, whose file carried no ENV_RISK) passed the gate
+ * with nothing objecting. An undeclared risk class is not evidence of low risk, so
+ * assertSafeTarget now refuses rather than assuming. Read-only consumers
+ * (bundle-evidence.ts) keep their own lenient default; this strictness is scoped to the
+ * write path.
  */
-export const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
+const ENV_RISK_DECLARED = String(process.env.ENV_RISK || '').trim();
+export const ENV_RISK = (ENV_RISK_DECLARED || 'dev').toLowerCase();
+const VALID_ENV_RISK = ['dev', 'test', 'staging', 'production'];
+
 export function assertSafeTarget() {
   if (!BACK_URL || !ADMIN || !ADMIN_PASSWORD) {
     console.error('ABORT: BACK_URL / ADMIN / ADMIN_PASSWORD missing from env (run npm run env:check).');
     process.exit(2);
   }
   const host = new URL(BACK_URL).host;
+
+  if (!ENV_RISK_DECLARED) {
+    console.error(`ABORT: ENV_RISK is not declared for TEST_ENV=${_TEST_ENV} (${host}).`);
+    console.error(`  A seeder writes data, so it will not assume a risk class. Add one line to .env.${_TEST_ENV}:`);
+    console.error(`    ENV_RISK=test          # dev | test | staging | production`);
+    process.exit(2);
+  }
+  if (!VALID_ENV_RISK.includes(ENV_RISK)) {
+    console.error(`ABORT: ENV_RISK="${ENV_RISK_DECLARED}" is not one of ${VALID_ENV_RISK.join(' | ')} — a typo would silently downgrade the gate.`);
+    process.exit(2);
+  }
+
+  // The per-env admin password did not resolve. Promotion is a silent no-op on a misnamed key
+  // (`ADMIN_VIRTO_PASSWORD` vs `ADMIN_PASSWORD_VIRTOSTART`), so without this the run just
+  // authenticates with whatever base password `.env.local` holds — i.e. another env's admin
+  // credential — and burns a failed login against a SHARED account. Warn, don't abort: a
+  // deployment may legitimately use one admin password across envs.
+  if (!PROMOTED_PER_ENV.has('ADMIN_PASSWORD')) {
+    log(`⚠ no ADMIN_PASSWORD_${_TEST_ENV.toUpperCase()} in .env.local — using the shared base ADMIN_PASSWORD for ${host}.`);
+    log(`  If that is not this env's admin password, auth will fail and the attempt counts against a shared account.`);
+    log(`  The promotion rule matches _${_TEST_ENV.toUpperCase()} EXACTLY — a differently-shaped name is never picked up.`);
+  }
+
   if (ENV_RISK === 'production' && !ALLOW_PROD && !DRY_RUN) {
     console.error(`ABORT: ENV_RISK=production for ${host} — refusing to seed a production-risk env. Re-run with --allow-admin-writes-on-prod to override.`);
     process.exit(2);
@@ -100,7 +145,22 @@ export async function auth() {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'password', username: ADMIN, password: ADMIN_PASSWORD, scope: 'offline_access' }),
   });
-  if (!res.ok) throw new Error(`auth failed: ${res.status} ${(await res.text().catch(() => '')).slice(0, 200)}`);
+  if (!res.ok) {
+    const body = (await res.text().catch(() => '')).slice(0, 200);
+    // `invalid_grant` is almost always a per-env credential that never resolved, not a real
+    // outage — so say which key the loader looked for instead of leaving the caller to guess.
+    if (/invalid_grant/i.test(body) && !PROMOTED_PER_ENV.has('ADMIN_PASSWORD')) {
+      throw new Error(
+        `auth failed: ${res.status} ${body}\n`
+        + `  Likely cause: no ADMIN_PASSWORD_${_TEST_ENV.toUpperCase()} in .env.local, so the shared base\n`
+        + `  ADMIN_PASSWORD was used against ${new URL(BACK_URL).host} (admin: ${ADMIN}).\n`
+        + `  Add ADMIN_PASSWORD_${_TEST_ENV.toUpperCase()}=<this env's admin password> — the suffix must match\n`
+        + `  TEST_ENV exactly; a name like ADMIN_VIRTO_PASSWORD is never promoted.\n`
+        + `  Stop re-running until it is set: each attempt is a failed login on a shared admin account.`,
+      );
+    }
+    throw new Error(`auth failed: ${res.status} ${body}`);
+  }
   TOKEN = (await res.json()).access_token;
   log(`Auth: OK${DRY_RUN ? ' [DRY RUN — reads only]' : ''}`);
 }
