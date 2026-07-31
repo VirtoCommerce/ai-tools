@@ -13,7 +13,8 @@ import assert from "node:assert/strict";
 import {
   reduce, validateUpstream, classifyError, fingerprintStruct, findingStructSig, findingKey,
   toolFamily, repoKindOfAgent, provenanceFields, boundaryDenial, proposedFixDenial, normalizeVendorMessage,
-  violatesFieldNamespace, severityRank, verdictRank,
+  violatesFieldNamespace, severityRank, verdictRank, subjectEnum, SUBJECTS, locateExcerpt, truncField,
+  TRUNC_MARK, WITHHELD_REASONS,
   SKILLS, VERDICTS, SEVERITIES, OUTCOMES, SIGNAL_CLASSES, STRUGGLES,
   TOOL_FAMILIES, REPO_KINDS, ERROR_CODES, SCHEMA_VERSION, OS_VALUES, VENDOR_DOC_HOSTS,
 } from "../../plugins/vc-fix/skills/vc-self-check/upstream-reduce.mjs";
@@ -36,7 +37,13 @@ const FINDING_KEYS = [
   ...V3_STRING_KEYS,
   "skill", "subject", "blockedDeliverable", "verdict", "severity", "outcome", "signalClass",
   "struggle", "errorCode", "toolFamily", "repoKind", "retries", "occurrences",
+  "withheld", // B6 — per-field withhold reasons: {field, reason} with reason ∈ WITHHELD_REASONS
 ];
+// The field names a `withheld` entry may name — the provenance/string fields only.
+const WITHHELDABLE_FIELDS = new Set([
+  "pluginFile", "codeExcerpt", "offendingLiteral", "apiShape", "proposedFix",
+  "vendorErrorTypeKey", "vendorErrorName", "vendorErrorCode", "vendorDocUrl", "vendorErrorMessage",
+]);
 const FEEDBACK_KEYS = ["up", "down"];
 const assertExactKeys = (obj, keys, where) =>
   assert.deepEqual(Object.keys(obj).sort(), [...keys].sort(), `unexpected keys in ${where}: ${Object.keys(obj)}`);
@@ -90,6 +97,14 @@ function assertAllFieldsInVocabulary(struct) {
     for (const k of V3_STRING_KEYS) {
       if (k === "pluginLine" || k === "vendorHttpStatus") assert.ok(f[k] === null || Number.isInteger(f[k]), `${k} null|int`);
       else assert.ok(f[k] === null || typeof f[k] === "string", `${k} null|string`);
+    }
+    // B6 — `withheld` is a closed-vocabulary array: {field ∈ withheldable, reason ∈ WITHHELD_REASONS},
+    // NEVER a value. Its presence must not open a free-text channel.
+    assert.ok(Array.isArray(f.withheld), "withheld is an array");
+    for (const w of f.withheld) {
+      assert.ok(w && typeof w === "object" && WITHHELDABLE_FIELDS.has(w.field), `withheld.field ∈ vocab: ${w.field}`);
+      assert.ok(WITHHELD_REASONS.includes(w.reason), `withheld.reason ∈ vocab: ${w.reason}`);
+      assert.equal(Object.keys(w).length, 2, "withheld entry is exactly {field, reason}");
     }
   }
 }
@@ -431,8 +446,30 @@ test("findingKey: identity is (skill, subject) ONLY — severity/verdict/errorCo
 test("findingKey: a different subject or skill IS a different defect", () => {
   assert.notEqual(findingKey({ skill: "qa-bug", subject: "ado_create_workitem" }), findingKey({ skill: "qa-bug", subject: "admin_credential_handoff" }));
   assert.notEqual(findingKey({ skill: "qa-bug", subject: "ado_create_workitem" }), findingKey({ skill: "qa-fix", subject: "ado_create_workitem" }));
-  // out-of-vocab halves coerce, never echo
-  assert.equal(findingKey({ skill: "AcmeSkill", subject: "/c/acme/Checkout.cs" }), "other/other");
+  // out-of-vocab halves coerce, never echo — a subject with no marker maps to `other`
+  assert.equal(findingKey({ skill: "AcmeSkill", subject: "acme wonky nonsense zzz" }), "other/other");
+});
+// B1: a FREE-TEXT diagnostician subject is MAPPED, not membership-tested — the four the reference
+// session produced must reach real vocabulary members, not collapse to `other`.
+test("B1 findingKey: free-text diagnostician subjects map onto the closed vocabulary (not `other`)", () => {
+  assert.equal(findingKey({ skill: "project-init", subject: "tracker_bug_field_contract" }), "project-init/tracker_field_contract");
+  assert.equal(findingKey({ skill: "qa-bug", subject: "ado_auth_error_diagnosability" }), "qa-bug/ado_cli");
+  assert.equal(findingKey({ skill: "qa-bug", subject: "ado_get_file_path_mangling" }), "qa-bug/ado_cli");
+  assert.equal(findingKey({ skill: "qa-bug", subject: "ado_exitcode_masked_by_pipe" }), "qa-bug/ado_cli");
+});
+// B2: two DISTINCT defects that both map to `other` must NOT share an identity — disambiguated by
+// (pluginFile, pluginLine). This is the #181/#182/#183 collision: three distinct ado.mjs defects
+// that all shared `qa-bug/other`.
+test("B2 findingKey: two distinct `other`-subject defects at different sites get distinct keys", () => {
+  const a = { skill: "qa-bug", subject: "wholly unknown thing", pluginFile: "skills/qa-fix-routing/ado.mjs", pluginLine: 40 };
+  const b = { skill: "qa-bug", subject: "another unknown thing", pluginFile: "skills/qa-fix-routing/ado.mjs", pluginLine: 88 };
+  assert.ok(findingKey(a).startsWith("qa-bug/other#"), `key carries a site hash: ${findingKey(a)}`);
+  assert.notEqual(findingKey(a), findingKey(b), "different site → different identity");
+  // the SAME defect (same file:line) from two sessions still converges
+  const a2 = { skill: "qa-bug", subject: "unknown thing", pluginFile: "skills/qa-fix-routing/ado.mjs", pluginLine: 40 };
+  assert.equal(findingKey(a), findingKey(a2), "same site → same identity (dedup converges)");
+  // no site info ⇒ no hash (legacy shape preserved)
+  assert.equal(findingKey({ skill: "qa-bug", subject: "unknown thing" }), "qa-bug/other");
 });
 test("severityRank / verdictRank: comparable so an issue title can be upgraded S2→S1", () => {
   assert.ok(severityRank("S1") > severityRank("S2") && severityRank("S2") > severityRank("S3"));
@@ -702,4 +739,95 @@ test("v3: nodeVersion + os are the RUNTIME, coerced to a bounded shape", () => {
   assert.equal(s.os, "win32");
   assert.equal(validateUpstream({ os: "AcmeOS" }).os, "other"); // out-of-vocab → other
   assertNoLeak(s, "AcmeBuild");
+});
+
+// ─── GROUP B acceptance (VCST-5582 upstream-reporting-pipeline fixes) ─────────────────
+// The finding-shaped fixture the reference session's diagnostician actually produced, over the
+// real cited plugin file, with the drifted-scan defect at discover-tracker.mjs.
+const B_PLUGIN_FILE = "skills/project-init/discover-tracker.mjs";
+const B_PLUGIN_SRC =
+  "  const url = `${base}/${project}/_apis/wit/workitemtypes/${type}/fields?$expand=Properties&api-version=7.1`;\n" +
+  "  return fetchJson(url);\n";
+const bCtx = (over = {}) => ({ files: new Map([[B_PLUGIN_FILE, B_PLUGIN_SRC]]), denyValues: over.denyValues ?? [], states: over.states ?? [] });
+const bValidate = (finding, ctx = bCtx()) =>
+  validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [finding], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctx).findings[0];
+
+// Acceptance #2 — subjectEnum output is ALWAYS a member of SUBJECTS across an adversarial corpus.
+test("B acc#2: subjectEnum never leaves the closed vocabulary for adversarial input", () => {
+  const corpus = [
+    "https://acme.example.com/x", "C:\src\Acme\Checkout.cs", "/home/user/acme/checkout.ts",
+    "dev@acme-client.com", "6f1c2b3a-1111-2222-3333-444455556666",
+    "github_pat_11ABxz0aai0abcdefghijklmnop", "LeoCorpWebStore", "leocorp-theme-fork",
+    "ОООРомашка", "株式会社アクメ", "", null, undefined, "   ", "unknown",
+    "tracker_bug_field_contract", "ado_auth_error_diagnosability", "wholly novel free text",
+  ];
+  for (const s of corpus) assert.ok(SUBJECTS.includes(subjectEnum(s)), `subjectEnum(${JSON.stringify(s)}) ∈ SUBJECTS`);
+});
+
+// Acceptance #3 — a proposedFix over the OLD 300 cap survives (not null); one over the NEW 800 cap
+// survives as truncated text with a marker.
+test("B acc#3: a 445-char proposedFix survives (old cap would null it); >800 truncates with marker", () => {
+  const fix445 = "drop the $expand=Properties query parameter and request ?api-version=7.1 instead; " + "then reconcile the Bug field contract. ".repeat(10);
+  assert.ok(fix445.length > 300 && fix445.length < 800, `445-ish: over the old 300 cap, under 800 (${fix445.length})`);
+  const g1 = bValidate({ skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2", proposedFix: fix445 });
+  assert.equal(g1.proposedFix, fix445.trim(), "445 chars (over the old 300 cap, under 800) survives WHOLE, not null");
+  assert.equal(g1.withheld.find((w) => w.field === "proposedFix"), undefined, "not withheld");
+
+  const fixLong = "drop $expand=Properties and request api-version 7.1; " + "word ".repeat(300);
+  assert.ok(fixLong.length > 800);
+  const g2 = bValidate({ skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2", proposedFix: fixLong });
+  assert.ok(g2.proposedFix.length <= 800 && g2.proposedFix.endsWith(TRUNC_MARK), `truncated with marker: …${g2.proposedFix.slice(-12)}`);
+  assert.ok(g2.proposedFix.startsWith("drop $expand=Properties"), "keeps the informative head");
+});
+
+// Acceptance #4 — a RE-INDENTED codeExcerpt still proves against the shipped file (the old
+// content.includes failed the moment indentation differed), and the stored text is the file's OWN.
+test("B acc#4: a re-indented codeExcerpt still proves; stored verbatim from the file", () => {
+  // The diagnostician re-indented the excerpt (no leading spaces, single spaces) — NOT byte-equal
+  // to the file's 2-space-indented source line.
+  const reindented = "const url = `${base}/${project}/_apis/wit/workitemtypes/${type}/fields?$expand=Properties&api-version=7.1`;";
+  const g = bValidate({
+    skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2",
+    pluginFile: B_PLUGIN_FILE, pluginLine: 235, codeExcerpt: reindented,
+  });
+  assert.ok(g.codeExcerpt, "re-indented excerpt proves");
+  assert.ok(g.codeExcerpt.includes("$expand=Properties"), "carries the offending token");
+  assert.ok(B_PLUGIN_SRC.includes(g.codeExcerpt), "stored VERBATIM from the shipped file, not the model's copy");
+  assert.equal(g.withheld.find((w) => w.field === "codeExcerpt"), undefined, "proven → not withheld");
+});
+
+// B6 — a PROVIDED string dropped by the boundary/provenance is reported in `withheld` with a reason;
+// a field simply not supplied gets NO entry.
+test("B6: withheld distinguishes 'denied' from 'not supplied'", () => {
+  // proposedFix carries a client URL → boundary-denied; codeExcerpt not in the file → proof-failed;
+  // apiShape absent → no entry at all.
+  const g = bValidate({
+    skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2",
+    pluginFile: B_PLUGIN_FILE, pluginLine: 235,
+    proposedFix: "point it at https://acme.example.com/internal",
+    codeExcerpt: "const secret = process.env.CLIENT_KEY; // not in the real file",
+  });
+  assert.equal(g.proposedFix, null);
+  assert.equal(g.codeExcerpt, null);
+  const reasons = Object.fromEntries(g.withheld.map((w) => [w.field, w.reason]));
+  assert.equal(reasons.proposedFix, "boundary-denied");
+  assert.equal(reasons.codeExcerpt, "proof-failed");
+  assert.equal(reasons.apiShape, undefined, "a field never supplied is not 'withheld'");
+  for (const w of g.withheld) assert.ok(WITHHELD_REASONS.includes(w.reason));
+});
+
+// locateExcerpt / truncField units.
+test("B4 locateExcerpt: tolerant match, verbatim read-back; miss → null", () => {
+  const src = "function f() {\n    return a\n        + b;\n}\n";
+  const got = locateExcerpt(src, "return a\n+ b;"); // reflowed indentation
+  assert.ok(got && src.includes(got), "returns a verbatim substring of the source");
+  assert.equal(locateExcerpt(src, "return zzz"), null, "a genuine miss is null");
+});
+test("B3 truncField: whole under cap; marker + word boundary over cap; empty → null", () => {
+  assert.equal(truncField("short", 800), "short");
+  assert.equal(truncField("   ", 800), null);
+  const long = "alpha beta gamma delta ".repeat(60);
+  const t = truncField(long, 100);
+  assert.ok(t.length <= 100 && t.endsWith(TRUNC_MARK));
+  assert.ok(!/\s$/.test(t.slice(0, -TRUNC_MARK.length)), "no trailing space before the marker");
 });

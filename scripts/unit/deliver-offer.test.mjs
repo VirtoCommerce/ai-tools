@@ -20,6 +20,10 @@ const FINDING = {
   skill: "qa-bug", subject: "ado_create_workitem", blockedDeliverable: true, verdict: "BROKEN",
   severity: "S1", outcome: "failed", signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX",
   toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+  // Locatable evidence (a vendor error identity) so the finding is FILE-able under the B5 withhold
+  // gate (VCST-5582): a finding with no plugin file:line / excerpt / vendor identity is no longer
+  // filed. These tests exercise the offer/route mechanics, so they use an evidence-carrying finding.
+  vendorErrorCode: "TF401347", vendorHttpStatus: 400,
 };
 const structOf = (over = {}) => ({
   schemaVersion: 3, sessionId: SID, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
@@ -169,4 +173,35 @@ test("SKILL.md + command: /project-init no longer asks the delivery mode (item 4
   const cmd = readFileSync(join(ROOT, "plugins/vc-fix/commands/project-init.md"), "utf8");
   assert.match(skill, /NOT asked here|is NOT asked/i, "§0c documents the removal");
   assert.doesNotMatch(cmd, /--feedback-mode <ask\|auto\|off> from the/, "the interview no longer passes --feedback-mode");
+});
+
+// ─── VCST-5582 C4 — deliver REFUSES to file a finding declared expected in .vc-fix/expected.json ──
+test("C4: a finding matching .vc-fix/expected.json is SUPPRESSED — never filed, even on --confirm", async () => {
+  await withTempHome(async (home) => {
+    seedProfile(home);
+    mkdirSync(join(home, ".vc-fix"), { recursive: true });
+    writeFileSync(join(home, ".vc-fix", "expected.json"), JSON.stringify([
+      { subject: "ado_create_workitem", reason: "planted self-test fixture (VCST-5582)" },
+    ]));
+    const { plan, posted } = await drive(home, ["--json", "--session", SID, "--confirm"]);
+    assert.equal(posted, false, "an expected finding is never sent, even with --confirm");
+    assert.equal(plan.findings[0].plan, "suppressed");
+    assert.equal(plan.findings[0].action, "suppressed");
+    assert.match(plan.findings[0].suppressReason, /planted self-test fixture/);
+    assert.match(plan.summary, /suppressed by \.vc-fix\/expected\.json/);
+    assert.equal(plan.sent, 0);
+  });
+});
+
+test("C4: an UNRELATED expected.json subject leaves the real finding filable", async () => {
+  await withTempHome(async (home) => {
+    seedProfile(home);
+    mkdirSync(join(home, ".vc-fix"), { recursive: true });
+    writeFileSync(join(home, ".vc-fix", "expected.json"), JSON.stringify([
+      { subject: "browser_login", reason: "unrelated" },
+    ]));
+    const { plan, posted } = await drive(home, ["--json", "--session", SID, "--confirm"]);
+    assert.notEqual(plan.findings[0].plan, "suppressed", "an unrelated suppression must not mask a real finding");
+    assert.equal(posted, true, "the real finding is filed");
+  });
 });

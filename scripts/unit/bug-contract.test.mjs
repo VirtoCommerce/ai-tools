@@ -184,6 +184,41 @@ test("buildContractFields: satisfiedRefs does not mask a genuinely unset require
   assert.deepEqual(r.missingRequired.map((f) => f.ref), ["Custom.Reportedby"]);
 });
 
+// ─── VCST-5582 A2 — the required-field sweep must not block on server-defaulted / path-satisfied fields ──
+// The REAL Azure Bug contract reports System.AreaId / System.IterationId as `alwaysRequired` with a
+// NULL defaultValue (the create payload uses the *Path fields). buildContractFields must treat them
+// as satisfied — otherwise a POST that passes `--iteration current` (→ System.IterationPath) is
+// blocked on "System.IterationId has no default", the exact reproduction.
+const REAL_ADO_BUG = [
+  { ref: "System.Title", name: "Title", required: true, type: "string" },
+  { ref: "System.Description", name: "Description", required: true, type: "html" },
+  { ref: "System.AreaId", name: "Area", required: true, type: "integer" },       // no defaultValue
+  { ref: "System.IterationId", name: "Iteration", required: true, type: "integer" }, // no defaultValue
+  { ref: "System.State", name: "State", required: true, type: "string", defaultValue: "New" },
+];
+test("A2 buildContractFields: System.AreaId/IterationId (required, no default) never block the POST", () => {
+  // The caller emits Title + Description + IterationPath itself (satisfiedRefs), as create-workitem does.
+  const r = buildContractFields(REAL_ADO_BUG, {}, {}, {}, ["System.Title", "System.Description", "System.IterationPath"]);
+  assert.deepEqual(r.missingRequired.map((f) => f.ref), [], "AreaId/IterationId server-defaulted; State filled from its default");
+  assert.equal(r.fields["System.State"], "New", "State still filled from its defaultValue");
+  assert.equal(r.fields["System.AreaId"], undefined, "server-defaulted fields are not sent");
+  assert.equal(r.fields["System.IterationId"], undefined);
+});
+test("A2 buildContractFields: passes with an EMPTY fieldDefaults + --iteration current (acceptance #7)", () => {
+  // No tracker.fieldDefaults entry for Iteration/Area at all — the profile must not need one.
+  const r = buildContractFields(REAL_ADO_BUG, {}, {}, {}, ["System.Title", "System.Description", "System.IterationPath"]);
+  assert.equal(r.missingRequired.length, 0);
+});
+test("A2 buildContractFields: a *Id required field whose *Path is NOT sent is still server-defaulted (never blocks)", () => {
+  const r = buildContractFields(REAL_ADO_BUG, {}, {}, {}, ["System.Title", "System.Description"]);
+  assert.deepEqual(r.missingRequired.map((f) => f.ref), [], "AreaId/IterationId are in SERVER_DEFAULTED_REQUIRED — ADO fills them regardless");
+});
+test("A2 buildContractFields: a genuinely-unmapped custom required field STILL blocks (no over-relaxation)", () => {
+  const contract = [...REAL_ADO_BUG, { ref: "Custom.Reportedby", name: "Reported by", required: true, type: "string" }];
+  const r = buildContractFields(contract, {}, {}, {}, ["System.Title", "System.Description", "System.IterationPath"]);
+  assert.deepEqual(r.missingRequired.map((f) => f.ref), ["Custom.Reportedby"], "a real gap is not masked");
+});
+
 test("buildContractFields: no contract at all ⇒ everything passes through (the legacy fallback)", () => {
   const r = buildContractFields([], {}, {}, { "Custom.Anything": "v" });
   assert.deepEqual(r.fields, { "Custom.Anything": "v" });

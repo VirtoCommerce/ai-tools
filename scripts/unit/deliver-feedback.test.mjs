@@ -168,9 +168,18 @@ test("buildFindingIssue (§5 provenance): a Where block renders the vendor-prove
 test("buildFindingIssue: the containment note is ACCURATE to the v3 rule (not 'NO file paths')", () => {
   const struct = structOf({ findings: [brokenFinding()] });
   const b = buildFindingIssue({ finding: struct.findings[0], struct, route: "issue" });
-  assert.match(b.body, /## Containment/);
+  // D1 (VCST-5582): the ~200-word paragraph is now ONE line linking the ADR — but it still names the
+  // containment guarantee accurately (vendor-provenance, default-deny) and never overclaims.
+  assert.match(b.body, /Containment/);
   assert.match(b.body, /vendor-provenance/i);
+  assert.match(b.body, /adr-upstream-default-deny\.md/, "the containment detail lives in the ADR now, linked");
   assert.doesNotMatch(b.body, /NO file paths/, "the old overclaiming note is gone");
+});
+test("D1: the issue body no longer carries the ~200-word containment paragraph", () => {
+  const struct = structOf({ findings: [brokenFinding()] });
+  const b = buildFindingIssue({ finding: struct.findings[0], struct, route: "issue" });
+  // The paragraph that was LONGER than the finding in #180–#183 is gone; the body stays compact.
+  assert.doesNotMatch(b.body, /Enum\/number fields come from a closed/, "the boilerplate paragraph is removed");
 });
 
 test("buildFindingIssue: operator feedback renders as COUNTS only", () => {

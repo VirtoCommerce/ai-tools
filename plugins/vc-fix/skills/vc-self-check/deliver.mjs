@@ -53,8 +53,9 @@ import { resolve, join, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { resolveGithubToken, probeGithubUpstream, GITHUB_UPSTREAM_REMEDY } from "../project-init/probe-lib.mjs";
 import {
-  validateUpstream, fingerprintStruct, findingStructSig, findingKey, severityRank, verdictRank,
+  validateUpstream, fingerprintStruct, findingStructSig, findingKey, severityRank, verdictRank, subjectEnum,
 } from "./upstream-reduce.mjs";
+import { loadExpected, findExpected } from "../../hooks/expected.mjs";
 
 const PLUGIN_REPO = "VirtoCommerce/vc-mcp-testing-module";
 const ISSUE_TITLE_PREFIX = "[vc-fix self-check]";
@@ -476,6 +477,26 @@ export function buildWhereBlock(finding) {
   return { lines: where, hash, marker: hash ? `<!-- ${WHERE_MARKER} ${hash} -->` : "" };
 }
 
+// B5 — would filing a NEW issue for this finding tell a maintainer anything they could act on? A
+// finding with no cited plugin file, no proven code excerpt/literal, and no vendor error identity is
+// a severity table plus boilerplate and nothing else (#183). It may still comment "+1" on an
+// EXISTING issue (that issue already carries the evidence), but it must never be FILED fresh.
+export function hasLocatableEvidence(f) {
+  return Boolean(
+    f?.pluginFile || f?.codeExcerpt || f?.offendingLiteral
+    || f?.vendorErrorTypeKey || f?.vendorErrorName || f?.vendorErrorCode || f?.vendorHttpStatus,
+  );
+}
+
+// B6 — one line naming every string the boundary validator withheld, so a maintainer can tell "no
+// fix was proposed" from "a fix was proposed and did not survive the boundary". `finding.withheld`
+// is a closed-vocabulary list ({field, reason}); this renders it, never a value.
+export function withheldLine(finding) {
+  const w = Array.isArray(finding?.withheld) ? finding.withheld : [];
+  if (!w.length) return "";
+  return `Withheld by boundary validator: ${w.map((x) => `${x.field} (${x.reason})`).join(", ")}`;
+}
+
 export function buildFindingIssue({ finding, struct, route = "issue" }) {
   const f = finding;
   const key = findingKey(f);
@@ -503,18 +524,13 @@ export function buildFindingIssue({ finding, struct, route = "issue" }) {
     `Observed in ${struct.sessionCount} session(s)${f.occurrences > 1 ? ` · ${f.occurrences} occurrence(s)` : ""} · plugin \`${struct.pluginVersion}\` · node \`${struct.nodeVersion}\` · ${struct.os}`,
     ...(extras.length ? [``, extras.map((e) => `- ${e}`).join("\n")] : []),
     ...(where.length ? [``, `## Where`, ...where] : []),
+    ...(withheldLine(f) ? [``, `> ${withheldLine(f)}`] : []),
     ...(struct.feedback.up + struct.feedback.down > 0 ? [``, `## Operator feedback`, `👍 ${struct.feedback.up} · 👎 ${struct.feedback.down} (counts only — the note never leaves the client machine)`] : []),
     ``,
-    `## Containment`,
-    `Enum/number fields come from a closed, plugin-authored vocabulary`,
-    `(\`knowledge/diagnostics/upstream-schema.md\`). The string fields above are **vendor-provenance**`,
-    `only: a code excerpt or literal is a verbatim substring of this plugin's OWN shipped source, and`,
-    `every string was denied — not scrubbed — if it carried a URL host, an absolute path, an email, a`,
-    `token-shaped run, a GUID, any value read from the client's \`.env.*\` / \`project-profile.json\`, or a`,
-    `work-item field outside \`System.*\` / \`Microsoft.VSTS.*\`. Work-item state names, custom work-item`,
-    `types, and repo/org/project names never travel. A vendor error message, if present, was`,
-    `normalized to placeholders and shown to the operator verbatim before this was sent`,
-    `(quality-gates §2a; ADR \`adr-upstream-default-deny.md\`).`,
+    // D1 — the ~200-word containment paragraph used to be LONGER than the actual finding in three of
+    // #180–#183, drowning the content. It is a stable, per-repo fact, so it lives in the ADR now; the
+    // body carries a one-line link instead.
+    `<sub>Containment (closed enum vocabulary · vendor-provenance strings only · default-deny boundary): \`knowledge/diagnostics/adr-upstream-default-deny.md\` · quality-gates §2a.</sub>`,
     ``,
     `<sub>${FINDING_MARKER} ${key} · route ${route}</sub>`,
   ].join("\n");
@@ -572,6 +588,7 @@ export function occurrenceCommentBody({ finding, struct, escalatedFrom = null, i
       finding.vendorHttpStatus ? `HTTP ${finding.vendorHttpStatus}` : "",
     ].filter(Boolean).join(" · ")}`);
   }
+  if (withheldLine(finding)) lines.push(`- ${withheldLine(finding)}`);
   return lines.join("\n");
 }
 
@@ -848,15 +865,59 @@ function mergeBatchRecords(bySession) {
  * operator can see "2 already reported (#173 open, #119 closed/fixed), 2 new" rather than a single
  * opaque verdict.
  */
+// D2 — cluster findings that share an IDENTITY (`findingKey` = skill/subject, +file-hash for the
+// `other` subject) into ONE issue before filing. The obs path already emits one finding per
+// (skill, subject), but the SPAN path can emit a SECOND finding for the same pair (a flagged span +
+// an observation of the same operation), so without this two issues (or a double-file) result from a
+// single run. Representative = the highest-severity/verdict member; occurrences are summed; withheld
+// fields are unioned. A different subject or a different plugin site keeps a SEPARATE issue (their
+// `findingKey` differs), exactly as D2 requires.
+export function clusterFindingsByKey(findings) {
+  const groups = new Map();
+  for (const f of Array.isArray(findings) ? findings : []) {
+    const k = findingKey(f);
+    const g = groups.get(k);
+    const occ = f.occurrences ?? 1;
+    if (!g) { groups.set(k, { ...f, occurrences: occ }); continue; }
+    const merged = severityRank(f.severity) > severityRank(g.severity) || verdictRank(f.verdict) > verdictRank(g.verdict)
+      ? { ...f } : { ...g };
+    merged.occurrences = (g.occurrences ?? 1) + occ;
+    const wh = [...(Array.isArray(g.withheld) ? g.withheld : []), ...(Array.isArray(f.withheld) ? f.withheld : [])];
+    const seen = new Set();
+    merged.withheld = wh.filter((w) => { const key = `${w.field}|${w.reason}`; if (seen.has(key)) return false; seen.add(key); return true; });
+    groups.set(k, merged);
+  }
+  return [...groups.values()];
+}
+
 async function deliverFindings({ struct, sid, repo, token, route, confirm, keep, json, fetchImpl = fetch }) {
   const results = [];
-  for (const f of struct.findings) {
+  // D2 — one issue per distinct identity: collapse same-key findings from a single run.
+  const findings = clusterFindingsByKey(struct.findings);
+  // C4 — .vc-fix/expected.json: a finding the operator declared EXPECTED (a planted fixture, a known
+  // benign friction) is NEVER filed, even on an explicit `--confirm`. Matched by subject (normalized
+  // to the reduced enum so a raw-slug entry still matches) + optional pluginFile.
+  const expected = loadExpected(outputRoot());
+  const subjectEq = (entrySubject, findingSubject) => subjectEnum(entrySubject) === findingSubject;
+  for (const f of findings) {
     const key = findingKey(f);
+    const suppressor = expected.entries.length
+      ? findExpected(expected.entries, { subject: f.subject, pluginFile: f.pluginFile }, subjectEq)
+      : null;
+    if (suppressor) {
+      results.push({
+        key, skill: f.skill, subject: f.subject, severity: f.severity, verdict: f.verdict,
+        withheldFields: Array.isArray(f.withheld) ? f.withheld : [],
+        issue: null, plan: "suppressed", action: "planned", suppressReason: suppressor.reason,
+      });
+      continue;
+    }
     const issue = route === "issue" ? await findFindingIssue({ repo, token, key, fetchImpl }) : null;
     const built = buildFindingIssue({ finding: f, struct, route });
     const r = {
       key, skill: f.skill, subject: f.subject, severity: f.severity, verdict: f.verdict,
       title: built.title, body: built.body, marker: built.marker,
+      withheldFields: Array.isArray(f.withheld) ? f.withheld : [], // B6 — echoed in the result line
       issue: issue ? { number: issue.number, url: issue.url, state: issue.state, legacy: issue.legacy } : null,
       plan: "file", action: "planned",
     };
@@ -874,6 +935,10 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
       const { marker: whereMarker } = buildWhereBlock(f);
       r.whereMarker = whereMarker;
       r.bodyHasWhere = whereMarker ? `${issue.title || ""}\n${issue.body || ""}`.includes(whereMarker) : true;
+    } else if (!hasLocatableEvidence(f)) {
+      // B5 — no existing issue AND nothing locatable to say: do NOT file a contentless issue (#183).
+      r.plan = "withhold";
+      r.withholdReason = "no-locatable-evidence";
     }
     results.push(r);
   }
@@ -882,12 +947,29 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
   // pending so a later authenticated run delivers them, and never attempt a POST — a `--confirm` on
   // a route that cannot send must be a no-op, not a doomed request with a bad/absent token.
   if (!confirm || route !== "issue") {
-    for (const r of results) if (r.plan !== "already-fixed") recordFindingDecision(sid, r, { decision: "pending" });
+    for (const r of results) {
+      if (r.plan === "already-fixed") continue;
+      const decision = r.plan === "withhold" ? "withheld" : r.plan === "suppressed" ? "suppressed" : "pending";
+      recordFindingDecision(sid, r, { decision });
+    }
     return results;
   }
 
   for (const r of results) {
-    const f = struct.findings.find((x) => findingKey(x) === r.key);
+    const f = findings.find((x) => findingKey(x) === r.key);
+    if (r.plan === "suppressed") {
+      // C4 — declared expected in .vc-fix/expected.json: refuse to file even on --confirm. Resolved
+      // (nothing to retry), recorded so the audit shows it was withheld deliberately.
+      r.action = "suppressed";
+      recordFindingDecision(sid, r, { decision: "suppressed" });
+      continue;
+    }
+    if (r.plan === "withhold") {
+      // B5 — nothing sent, but it IS resolved (there is nothing to retry): record + move on.
+      r.action = "withheld";
+      recordFindingDecision(sid, r, { decision: "withheld" });
+      continue;
+    }
     try {
       if (r.plan === "already-fixed") {
         r.action = "already-fixed"; // nothing sent; not a failure
@@ -926,7 +1008,7 @@ async function deliverFindings({ struct, sid, repo, token, route, confirm, keep,
 
   // Delete the session's telemetry only when EVERY finding is resolved — a pending retry needs its
   // evidence. Nothing is deleted when nothing was delivered.
-  const allResolved = results.length > 0 && results.every((r) => r.action === "filed" || r.action === "commented" || r.action === "already-fixed");
+  const allResolved = results.length > 0 && results.every((r) => r.action === "filed" || r.action === "commented" || r.action === "already-fixed" || r.action === "withheld" || r.action === "suppressed");
   if (allResolved && !keep) {
     const removed = purgeSession({ dir: diagDir(), sid });
     if (removed.length) results.purged = removed;
@@ -938,6 +1020,8 @@ function summaryLine(results) {
   const known = results.filter((r) => r.plan === "comment");
   const closed = results.filter((r) => r.plan === "already-fixed");
   const fresh = results.filter((r) => r.plan === "file");
+  const withheld = results.filter((r) => r.plan === "withhold");
+  const suppressed = results.filter((r) => r.plan === "suppressed");
   const refs = [
     ...known.map((r) => `#${r.issue.number} open`),
     ...closed.map((r) => `#${r.issue.number} closed/fixed`),
@@ -945,6 +1029,8 @@ function summaryLine(results) {
   const parts = [];
   if (refs.length) parts.push(`${refs.length} already reported (${refs.join(", ")})`);
   if (fresh.length) parts.push(`${fresh.length} new`);
+  if (withheld.length) parts.push(`${withheld.length} withheld: no locatable evidence`);
+  if (suppressed.length) parts.push(`${suppressed.length} suppressed by .vc-fix/expected.json`);
   return parts.length ? parts.join(", ") : "no findings";
 }
 
@@ -1091,8 +1177,15 @@ export async function main(argv = process.argv.slice(2), { stdin = process.stdin
       ? `already FIXED upstream — issue #${r.issue.number} (${r.issue.url})${r.fixedIn ? `, released in ${r.fixedIn}` : ""}`
       : r.plan === "comment"
       ? `already reported — issue #${r.issue.number} (${r.issue.url})${r.escalatedFrom ? `, severity escalated ${r.escalatedFrom} → ${r.severity}` : ""}`
+      : r.plan === "withhold"
+      ? `WITHHELD — no locatable evidence (no plugin file:line, no proven excerpt, no vendor error identity); not filed`
+      : r.plan === "suppressed"
+      ? `SUPPRESSED by .vc-fix/expected.json (${r.suppressReason}); not filed`
       : `NEW — would be filed as "${r.title}"`;
     lines.push(`• ${r.severity} ${r.key}: ${state}${r.action !== "planned" ? ` [${r.action}]` : ""}`);
+    // B6 — echo the boundary validator's per-field withholds so a maintainer knows a field was
+    // proposed and dropped, not simply absent.
+    if (r.withheldFields?.length) lines.push(`    ↳ ${withheldLine({ withheld: r.withheldFields })}`);
   }
   lines.push(``, ...plan.nextSteps);
   process.stdout.write(lines.filter((l) => l !== undefined).join("\n") + "\n");

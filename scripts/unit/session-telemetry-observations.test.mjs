@@ -542,3 +542,92 @@ test("an unknown observation class is RECORDED as `unclassified`, never dropped"
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ─── VCST-5582 C1 — the post-delivery re-nag: purge → rebuild → no re-surface ──────────────
+const diagDirOf = (home) => join(home, ".vc-fix", "diagnostics");
+const surfacedFile = (home, sid) => join(diagDirOf(home), `${sid}.surfaced.json`);
+
+test("C1: finalize writes a surfaced tombstone; a purge+rebuild does NOT re-surface (no re-nag)", () => {
+  const home = setupHome();
+  try {
+    const t = tp(home);
+    const sid = "renag";
+    run(home, "init", { session_id: sid, transcript_path: t });
+    run(home, "prompt", { session_id: sid, transcript_path: t, prompt: "/project-init" });
+    // A transcript-driven, PLUGIN-OWNED script_exit_nonzero — the exact reference re-nag shape. It
+    // survives a rebuild because it lives in the TRANSCRIPT, not just the (purged) state.
+    appendLines(t, [
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs"' }),
+      toolResultSidecar("2026-07-29T10:00:01.000Z", "t1", true, "Exit code 1\nNOT READY — resolve: Azure DevOps auth", { interrupted: false }),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: t, background_tasks: [] });
+    const fin1 = lastFinalize(home, sid);
+    assert.equal(fin1.decision.surfaceDecision, "tail-trigger", "the first run surfaces the defect (arms the diagnostician)");
+    assert.ok(existsSync(surfacedFile(home, sid)), "a surfaced tombstone was written");
+
+    // Simulate a SUCCESSFUL delivery purge: deliver.mjs removes ONLY <sid>.jsonl + <sid>.state.json,
+    // and DELIBERATELY keeps <sid>.surfaced.json.
+    rmSync(join(diagDirOf(home), `${sid}.jsonl`), { force: true });
+    rmSync(join(diagDirOf(home), `${sid}.state.json`), { force: true });
+    assert.ok(existsSync(surfacedFile(home, sid)), "the tombstone survives the delivery purge");
+
+    // Next turn: the session is REBUILT from the transcript with an empty seenSignatures. Before C1
+    // this re-derived the SAME script_exit_nonzero and re-armed /vc-self-check. The tombstone must
+    // now suppress it.
+    run(home, "prompt", { session_id: sid, transcript_path: t, prompt: "next question" });
+    run(home, "finalize", { session_id: sid, transcript_path: t, background_tasks: [] });
+    const fin2 = lastFinalize(home, sid);
+    assert.notEqual(fin2.decision.surfaceDecision, "tail-trigger", "the rebuilt session does NOT re-surface an already-delivered defect");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("C1: a GENUINELY NEW defect after delivery still surfaces (the tombstone only suppresses what it holds)", () => {
+  const home = setupHome();
+  try {
+    const t = tp(home);
+    const sid = "newdefect";
+    run(home, "init", { session_id: sid, transcript_path: t });
+    run(home, "prompt", { session_id: sid, transcript_path: t, prompt: "/project-init" });
+    appendLines(t, [
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs"' }),
+      toolResultSidecar("2026-07-29T10:00:01.000Z", "t1", true, "Exit code 1\nNOT READY — resolve: Azure DevOps auth", { interrupted: false }),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: t, background_tasks: [] });
+    rmSync(join(diagDirOf(home), `${sid}.jsonl`), { force: true });
+    rmSync(join(diagDirOf(home), `${sid}.state.json`), { force: true });
+    // A DIFFERENT plugin script fails after delivery — a new signature the tombstone does not hold.
+    run(home, "prompt", { session_id: sid, transcript_path: t, prompt: "retry" });
+    appendLines(t, [
+      toolUse("2026-07-29T11:00:00.000Z", "t2", "Bash", { command: 'node "$ROOT/skills/project-init/discover-tracker.mjs"' }),
+      toolResultSidecar("2026-07-29T11:00:01.000Z", "t2", true, "Exit code 2\nfield contract scan failed", { interrupted: false }),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: t, background_tasks: [] });
+    const fin2 = lastFinalize(home, sid);
+    assert.equal(fin2.decision.surfaceDecision, "tail-trigger", "a new, un-tombstoned defect still arms the diagnostician");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── VCST-5582 C2 — a transcript-derived observation keeps the EVENT's timestamp ────────────
+test("C2: an obs derived from a tool result carries that event's ts (not the scan/rebuild time)", () => {
+  const home = setupHome();
+  try {
+    const t = tp(home);
+    const evTs = "2026-07-29T10:00:01.000Z";
+    run(home, "init", { session_id: "ts", transcript_path: t });
+    run(home, "prompt", { session_id: "ts", transcript_path: t, prompt: "/project-init" });
+    appendLines(t, [
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs"' }),
+      toolResultSidecar(evTs, "t1", true, "Exit code 1\nNOT READY", { interrupted: false }),
+    ]);
+    run(home, "finalize", { session_id: "ts", transcript_path: t, background_tasks: [] });
+    const exit = obsOf(recordsOf(home, "ts")).find((o) => o.class === "script_exit_nonzero");
+    assert.ok(exit, "the exit obs exists");
+    assert.equal(exit.ts, evTs, "the obs is stamped at the EVENT's transcript time, not nowIso()");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

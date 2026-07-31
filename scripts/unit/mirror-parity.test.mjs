@@ -20,6 +20,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 // commands) may legitimately diverge and is intentionally NOT listed here.
 const MIRRORED = [
   "hooks/redact.mjs",
+  "hooks/expected.mjs",
   "hooks/session-telemetry.mjs",
   "skills/vc-self-check/deliver.mjs",
   "skills/vc-self-check/upstream-reduce.mjs",

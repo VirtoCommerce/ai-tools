@@ -102,16 +102,22 @@ const CONDITIONAL = [
 ];
 
 // ─── arg parsing ─────────────────────────────────────────────────────────────
+// A work-item field whose VALUE is time-varying (a sprint/area NODE id: `System.IterationId`
+// = 22 in Sprint 19, 23 in Sprint 20). Persisting it as a fieldDefaults constant is a time bomb —
+// after the sprint rolls over, every new bug lands in a CLOSED sprint (VCST-5582 A3). Iteration is
+// resolved at CREATE time via `--iteration current`; the Path field is stored, never the id.
+const ILLEGAL_FIELDDEFAULT_REF = /(^|\.)(iteration|area)id$/i;
+
 function parseArgs(argv) {
-  const args = { set: [] };
+  const args = { set: [], unset: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (!a.startsWith("--")) continue;
     const key = a.slice(2);
     const next = argv[i + 1];
-    if (key === "set") {
+    if (key === "set" || key === "unset") {
       if (next !== undefined && !next.startsWith("--")) {
-        args.set.push(next);
+        args[key].push(next);
         i++;
       }
     } else if (next === undefined || next.startsWith("--")) {
@@ -165,8 +171,8 @@ function setDeep(obj, dotted, value) {
  * Pure — returns { migrated, added, removed, pending, rescan }. `migrated` omits any
  * pending (unresolved ask/rescan) field, so it is always safe to write.
  */
-function reconcile(schema, existing, decisions) {
-  const report = { added: [], removed: [], pending: [], rescan: [] };
+function reconcile(schema, existing, decisions, unsets = []) {
+  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [] };
   // A conditional sub-object is "disabled" (not in schema for this profile) when its
   // discriminator predicate is false against the existing profile.
   const conditionalDisabled = (path) => {
@@ -282,10 +288,55 @@ function reconcile(schema, existing, decisions) {
       if (isPlainObject(schemaCur) && Object.keys(schemaCur).length === 0) { openMap = true; i++; break; }
     }
     if (!openMap) continue; // only open-map writes are handled here; everything else is unchanged
+    const openMapPath = parts.slice(0, i).join(".");
     const key = parts.slice(i).join("."); // the ref, dots and all
     if (!key) continue;
+    // A3 — REFUSE to persist a time-varying id (System.IterationId / System.AreaId) into
+    // tracker.fieldDefaults. A stored sprint-node id silently sends every future bug to a closed
+    // sprint; store the *Path (resolved at create time via `--iteration current`) instead.
+    if (openMapPath === "tracker.fieldDefaults" && ILLEGAL_FIELDDEFAULT_REF.test(key)) {
+      report.rejected.push({
+        path: dotted, value,
+        reason: `refusing to persist "${key}" — its value is a sprint/area NODE id that changes when the sprint rolls over, so a stored default silently files future bugs into a CLOSED sprint. Iteration/area are resolved at create time (\`--iteration current\` → System.IterationPath); store the *Path field, never the id.`,
+      });
+      continue;
+    }
     objCur[key] = value;
     report.added.push({ path: dotted, value, via: "set-open-map" });
+  }
+
+  // ─── `--unset <path>` — remove a key from a writable OPEN MAP (VCST-5582 A4) ────────────
+  // The mirror of the open-map `--set` above: walk the SCHEMA to the open-map boundary, then delete
+  // the literal remainder key. A path that is NOT inside a writable open map (a fixed-shape struct
+  // key, a managed field, a typo) is REJECTED — reconcile-profile must never let a hand-edit strip a
+  // schema field. This is how the stale System.IterationId workaround is removed WITHOUT hand-editing
+  // project-profile.json (the very thing this tool exists to avoid).
+  for (const dotted of unsets || []) {
+    const parts = dotted.split(".");
+    let schemaCur = schema;
+    let objCur = migrated;
+    let i = 0;
+    let openMap = false;
+    let reachable = true;
+    for (; i < parts.length - 1; i++) {
+      const next = isPlainObject(schemaCur) ? schemaCur[parts[i]] : undefined;
+      if (next === undefined) break; // not a schema path
+      if (!isPlainObject(objCur?.[parts[i]])) { reachable = false; break; }
+      objCur = objCur[parts[i]];
+      schemaCur = next;
+      if (isPlainObject(schemaCur) && Object.keys(schemaCur).length === 0) { openMap = true; i++; break; }
+    }
+    const key = parts.slice(i).join(".");
+    if (!openMap || !reachable || !key) {
+      report.rejected.push({ path: dotted, reason: "--unset only removes a key from a writable open map (tracker.fieldMap / tracker.fieldDefaults / tracker.azure.roleStates / stateMap)" });
+      continue;
+    }
+    if (Object.prototype.hasOwnProperty.call(objCur, key)) {
+      report.unset.push({ path: dotted, value: objCur[key], via: "unset-open-map" });
+      delete objCur[key];
+    } else {
+      report.rejected.push({ path: dotted, reason: `key "${key}" is not present — nothing to unset` });
+    }
   }
 
   // ─── tracker.fields rescan (VCST-5582 E5) ──────────────────────────────────────────
@@ -328,12 +379,12 @@ function main() {
   const meta = raw._meta;
   delete raw._meta;
 
-  const { migrated, added, removed, pending, rescan } = reconcile(PROFILE_DEFAULTS, raw, decisions);
-  const hasStructuralChange = added.length > 0 || removed.length > 0;
+  const { migrated, added, removed, pending, rescan, unset, rejected } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
+  const hasStructuralChange = added.length > 0 || removed.length > 0 || unset.length > 0;
   // `rescan` (e.g. an Azure profile with an empty tracker.fields, VCST-5582 E5) also counts as
   // "changes" so the skill knows to re-run the live discover step — even when nothing structural
   // was added/removed. It does NOT trigger a --write (a rescan needs a live scan, not a struct edit).
-  const status = hasStructuralChange || pending.length > 0 || rescan.length > 0 ? "changes" : "current";
+  const status = hasStructuralChange || pending.length > 0 || rescan.length > 0 || rejected.length > 0 ? "changes" : "current";
 
   // Prune safety valve. A normal reconcile drops 0–2 genuinely-obsolete fields; dropping a large
   // batch usually means this tree's schema is a SUBSET of the one that wrote the profile (e.g. a
@@ -350,6 +401,8 @@ function main() {
           reason: `refusing to remove ${removed.length} fields without --force — this looks like a schema mismatch (a leaner schema than the one that wrote the profile), not stale fields. Review 'removed'; re-run with --force only if the removals are truly intended.`,
           added,
           removed,
+          unset,
+          rejected,
           pending,
           rescan,
         },
@@ -384,7 +437,7 @@ function main() {
 
   console.log(
     JSON.stringify(
-      { status, path: outPath, wrote, added, removed, pending, rescan },
+      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan },
       null,
       2,
     ),

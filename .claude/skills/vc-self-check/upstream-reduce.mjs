@@ -589,7 +589,20 @@ export function verdictRank(v) {
 export function findingKey(f) {
   const o = f && typeof f === "object" ? f : {};
   const skill = inSet(SKILLS_SET, o.skill, "other");
-  const subject = inSet(SUBJECTS_SET, o.subject, "other");
+  // B2: MAP the subject onto the closed vocabulary (never an exact-membership test) — the same
+  // `subjectEnum` the telemetry path already uses. The old `inSet` collapsed EVERY free-text
+  // diagnostician subject to `other`, which is how #181/#182/#183 (three distinct ado.mjs defects)
+  // shared one `qa-bug/other` identity and dedup-matched each other arbitrarily.
+  const subject = subjectEnum(o.subject);
+  // A subject that genuinely maps to the catch-all `other` cannot, on its own, tell two different
+  // defects apart. When (and only when) it does, append a short hash of the plugin SITE the finding
+  // points at, so two distinct defects never share an identity while the SAME defect from two
+  // sessions still converges (both cite the same file:line). The hash covers plugin-owned values
+  // only — never client text.
+  if (subject === "other") {
+    const site = `${o.pluginFile ?? ""}:${o.pluginLine ?? ""}`;
+    if (site !== ":") return `${skill}/${subject}#${hash36(site)}`;
+  }
   return `${skill}/${subject}`;
 }
 
@@ -642,7 +655,9 @@ const FIELD_CAPS = {
   codeExcerpt: 400,
   offendingLiteral: 120,
   apiShape: 200,
-  proposedFix: 300,
+  proposedFix: 800, // B3: a root cause + a concrete fix does not fit in 300 chars (the old cap
+                    // nulled three real 445-char fixes for being ONE char over). Human-readable, so
+                    // over-cap now TRUNCATES with a marker (see `truncField`), never hard-drops.
   vendorErrorTypeKey: 80,
   vendorErrorName: 120,
   vendorErrorCode: 40,
@@ -780,7 +795,7 @@ export function proposedFixDenial(value, { denyValues = [], files = null } = {})
  * not be sent.
  */
 export function normalizeVendorMessage(text) {
-  return String(text ?? "")
+  const norm = String(text ?? "")
     .replace(/[\r\n\t]+/g, " ")
     .replace(GUIDISH, "<guid>")
     .replace(EMAILISH, "<email>")
@@ -789,14 +804,85 @@ export function normalizeVendorMessage(text) {
     .replace(IPISH, "<ip>")
     .replace(TOKENISH, "<token>")
     .replace(/\s{2,}/g, " ")
-    .trim()
-    .slice(0, FIELD_CAPS.vendorErrorMessage);
+    .trim();
+  return truncField(norm, FIELD_CAPS.vendorErrorMessage) ?? ""; // B3: truncate-with-marker, not a hard slice
 }
 
 const capped = (v, n) => (typeof v === "string" && v.length <= n ? v : null);
 
+// B3 — truncate-with-marker for the HUMAN-READABLE fields (proposedFix, apiShape, codeExcerpt,
+// vendorErrorMessage). Cutting an already-boundary-CLEAN string short cannot leak the client (the
+// bytes that survive are a prefix of a value that already passed the deny gate), and a truncated
+// root-cause note is strictly better than the `null` a one-char-over string used to become. This is
+// deliberately NOT used for the pattern-validated IDENTITY fields (vendorErrorCode / vendorErrorName
+// / vendorErrorTypeKey / vendorDocUrl) — a truncated identity is WRONG, not merely short, so those
+// keep the hard-drop `capped`.
+export const TRUNC_MARK = " […]";
+export function truncField(v, n) {
+  const s = typeof v === "string" ? v.trim() : "";
+  if (!s) return null;
+  if (s.length <= n) return s;
+  const budget = Math.max(1, n - TRUNC_MARK.length);
+  let cut = s.slice(0, budget);
+  const sp = cut.lastIndexOf(" ");
+  if (sp >= budget * 0.6) cut = cut.slice(0, sp); // prefer a word boundary, but not one too early
+  return cut.replace(/\s+$/, "") + TRUNC_MARK;
+}
+
 /** Normalize line endings so a substring proof is not defeated by CRLF vs LF. */
 const lf = (s) => String(s ?? "").replace(/\r\n/g, "\n");
+
+// B4 — whitespace-normalize a string for excerpt matching WHILE keeping a map from each
+// normalized-string index back to the ORIGINAL index, so a match found tolerantly can be read back
+// VERBATIM from the source. Rules: LF-normalize, drop per-line leading indentation, collapse runs of
+// horizontal whitespace to a single space. This is what lets a diagnostician that RE-INDENTED an
+// excerpt still prove it against the shipped file (the old `content.includes(excerpt)` failed the
+// moment indentation differed — #180 lost its excerpt that way).
+function normalizeWithMap(s) {
+  const src = lf(s);
+  let out = "";
+  const map = []; // map[i] = index in `src` of out[i]
+  let atLineStart = true;
+  let prevWasSpace = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (c === "\n") { out += "\n"; map.push(i); atLineStart = true; prevWasSpace = false; continue; }
+    if (c === " " || c === "\t") {
+      if (atLineStart || prevWasSpace) continue; // drop leading indent + collapse runs
+      out += " "; map.push(i); prevWasSpace = true; continue;
+    }
+    out += c; map.push(i); atLineStart = false; prevWasSpace = false;
+  }
+  return { norm: out, map };
+}
+
+/**
+ * Locate `excerpt` inside `content` tolerant of indentation / whitespace reflow, and return the
+ * VERBATIM substring of `content` at the matched span (never the model's re-typed copy — default
+ * deny: the bytes that travel are the plugin's OWN shipped source). Returns null when the normalized
+ * excerpt is not a substring of the normalized content.
+ */
+export function locateExcerpt(content, excerpt) {
+  const c = normalizeWithMap(content);
+  const needle = normalizeWithMap(excerpt).norm.trim();
+  if (!needle) return null;
+  const idx = c.norm.indexOf(needle);
+  if (idx < 0) return null;
+  const rawStart = c.map[idx];
+  const rawEnd = c.map[idx + needle.length - 1];
+  if (rawStart == null || rawEnd == null) return null;
+  return lf(content).slice(rawStart, rawEnd + 1);
+}
+
+// B2 — a stable, Date-free djb2→base36 hash. Used ONLY to disambiguate a finding whose subject maps
+// to the catch-all `other`, over its (pluginFile, pluginLine) — both plugin-owned values, never
+// client text.
+function hash36(str) {
+  const s = String(str ?? "");
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
 
 /**
  * Build the v3 field set for ONE finding. Returns only the fields that PROVED themselves; a denied
@@ -809,10 +895,19 @@ export function provenanceFields(o, ctx) {
     apiShape: null, proposedFix: null,
     vendorErrorTypeKey: null, vendorErrorName: null, vendorErrorCode: null,
     vendorHttpStatus: null, vendorDocUrl: null, vendorErrorMessage: null,
+    // B6 — why a PROVIDED string did not survive, so a maintainer can tell "no fix was proposed"
+    // from "a fix was proposed and did not survive the boundary". Entries are {field, reason} with
+    // `field` a fixed field name and `reason` ∈ WITHHELD_REASONS — closed constants, never a value,
+    // so this can never carry a client byte. A field the diagnostician simply did not supply gets
+    // NO entry (its absence is self-evident from the missing line); only provided-but-dropped fields
+    // are recorded.
+    withheld: [],
   };
   if (!ctx || typeof ctx !== "object") return out; // no proof available ⇒ nothing travels
   const files = ctx.files instanceof Map ? ctx.files : new Map();
   const opts = { denyValues: Array.isArray(ctx.denyValues) ? ctx.denyValues : [], states: Array.isArray(ctx.states) ? ctx.states : [] };
+  const provided = (v) => typeof v === "string" && v.trim();
+  const withhold = (field, reason) => out.withheld.push({ field, reason });
 
   // ── the cited plugin location ──
   const file = capped(o.pluginFile, FIELD_CAPS.pluginFile);
@@ -823,29 +918,53 @@ export function provenanceFields(o, ctx) {
     const line = Math.trunc(Number(o.pluginLine));
     if (Number.isFinite(line) && line >= 1 && line <= 1_000_000) out.pluginLine = line;
     const content = lf(files.get(file));
-    // Provenance: the excerpt/literal must literally BE in the vendor's own shipped file.
-    const ex = capped(o.codeExcerpt, FIELD_CAPS.codeExcerpt);
-    if (ex && ex.trim() && content.includes(lf(ex).trim()) && !boundaryDenial(ex, { ...opts, kind: "code" })) out.codeExcerpt = lf(ex).trim();
-    const lit = capped(o.offendingLiteral, FIELD_CAPS.offendingLiteral);
-    if (lit && lit.trim() && content.includes(lit.trim()) && !boundaryDenial(lit, opts)) out.offendingLiteral = lit.trim();
+    // B4 provenance: match the excerpt against a WHITESPACE-NORMALIZED projection of the shipped
+    // file (so a re-indented / reflowed excerpt still proves), then store the text read back VERBATIM
+    // from the file at the matched span — never the model's copy.
+    if (provided(o.codeExcerpt)) {
+      const verbatim = locateExcerpt(content, o.codeExcerpt);
+      if (verbatim && !boundaryDenial(verbatim, { ...opts, kind: "code" })) out.codeExcerpt = truncField(verbatim, FIELD_CAPS.codeExcerpt);
+      else withhold("codeExcerpt", verbatim ? "boundary-denied" : "proof-failed");
+    }
+    if (provided(o.offendingLiteral)) {
+      const lit = capped(o.offendingLiteral, FIELD_CAPS.offendingLiteral);
+      if (lit && content.includes(lit.trim()) && !boundaryDenial(lit, opts)) out.offendingLiteral = lit.trim();
+      else withhold("offendingLiteral", lit && content.includes(lit.trim()) ? "boundary-denied" : lit ? "proof-failed" : "over-cap");
+    }
+  } else if (provided(o.pluginFile)) {
+    withhold("pluginFile", "proof-failed");
+    // The excerpt/literal cannot be proven without a proven file — report them as such if supplied.
+    if (provided(o.codeExcerpt)) withhold("codeExcerpt", "proof-failed");
+    if (provided(o.offendingLiteral)) withhold("offendingLiteral", "proof-failed");
   }
 
-  // ── model-authored, boundary-validated ──
-  const shape = capped(o.apiShape, FIELD_CAPS.apiShape);
-  if (shape && shape.trim() && !boundaryDenial(shape, opts)) out.apiShape = shape.trim();
-  // proposedFix uses its OWN allowlist gate (B2), NOT boundaryDenial: it must be able to reference
-  // plugin paths / file:line / vendor-enum members without `violatesFieldNamespace` denying it
-  // wholesale. Still default-deny on the real leak shapes; still DENIED (dropped), never scrubbed.
-  const fix = capped(o.proposedFix, FIELD_CAPS.proposedFix);
-  if (fix && fix.trim() && !proposedFixDenial(fix, { denyValues: opts.denyValues, files })) out.proposedFix = fix.trim();
+  // ── model-authored, boundary-validated ── (B3: deny on the FULL raw string, THEN truncate)
+  if (provided(o.apiShape)) {
+    const raw = o.apiShape.trim();
+    if (!boundaryDenial(raw, opts)) out.apiShape = truncField(raw, FIELD_CAPS.apiShape);
+    else withhold("apiShape", "boundary-denied");
+  }
+  // proposedFix uses its OWN allowlist gate (B2 gate), NOT boundaryDenial: it must be able to
+  // reference plugin paths / file:line / vendor-enum members without `violatesFieldNamespace`
+  // denying it wholesale. The deny decision runs on the FULL string (never the truncated one), so a
+  // leak shape past the cap is still caught; only then does a clean fix get truncated with a marker.
+  if (provided(o.proposedFix)) {
+    const raw = o.proposedFix.trim();
+    if (!proposedFixDenial(raw, { denyValues: opts.denyValues, files })) out.proposedFix = truncField(raw, FIELD_CAPS.proposedFix);
+    else withhold("proposedFix", "boundary-denied");
+  }
 
   // ── §6a vendor error IDENTITY: the vendor's own stable enums, no client interpolation ──
+  // These stay HARD-DROP (`capped`): a truncated identity is wrong, not merely short.
   const tk = capped(o.vendorErrorTypeKey, FIELD_CAPS.vendorErrorTypeKey);
   if (tk && /^[A-Za-z][A-Za-z0-9._-]*$/.test(tk) && !boundaryDenial(tk, opts)) out.vendorErrorTypeKey = tk;
+  else if (provided(o.vendorErrorTypeKey)) withhold("vendorErrorTypeKey", tk ? "boundary-denied" : "over-cap");
   const tn = capped(o.vendorErrorName, FIELD_CAPS.vendorErrorName);
   if (tn && /^[A-Za-z][A-Za-z0-9._,\- ]*$/.test(tn) && !boundaryDenial(tn, opts)) out.vendorErrorName = tn;
+  else if (provided(o.vendorErrorName)) withhold("vendorErrorName", tn ? "boundary-denied" : "over-cap");
   const code = capped(o.vendorErrorCode, FIELD_CAPS.vendorErrorCode);
   if (code && /^[A-Za-z0-9._-]+$/.test(code) && !boundaryDenial(code, opts)) out.vendorErrorCode = code;
+  else if (provided(o.vendorErrorCode)) withhold("vendorErrorCode", code ? "boundary-denied" : "over-cap");
   const st = Math.trunc(Number(o.vendorHttpStatus));
   if (Number.isFinite(st) && st >= 100 && st <= 599) out.vendorHttpStatus = st;
   const doc = capped(o.vendorDocUrl, FIELD_CAPS.vendorDocUrl);
@@ -854,17 +973,23 @@ export function provenanceFields(o, ctx) {
     try { host = new URL(doc).host.toLowerCase(); } catch { host = ""; }
     const httpsOk = /^https:\/\//i.test(doc);
     if (httpsOk && VENDOR_DOC_HOSTS.includes(host) && !boundaryDenial(doc, { ...opts, kind: "url" })) out.vendorDocUrl = doc;
-  }
+    else withhold("vendorDocUrl", "boundary-denied");
+  } else if (provided(o.vendorDocUrl)) withhold("vendorDocUrl", "over-cap");
 
-  // ── §6b vendor error MESSAGE: normalize, then deny on any surviving client value ──
-  if (typeof o.vendorErrorMessage === "string" && o.vendorErrorMessage.trim()) {
+  // ── §6b vendor error MESSAGE: normalize, then deny on any surviving client value (B3: truncate) ──
+  if (provided(o.vendorErrorMessage)) {
     const norm = normalizeVendorMessage(o.vendorErrorMessage);
     // The normalizer already replaced URLs/paths/GUIDs/IPs/tokens with placeholders, so what remains
     // must be denied only for a value we can actually name — a client org/project/repo/state.
     if (norm && !boundaryDenial(norm, opts)) out.vendorErrorMessage = norm;
+    else withhold("vendorErrorMessage", "boundary-denied");
   }
   return out;
 }
+
+// B6 — the closed set of reasons a provided string was withheld from the outbound artifact.
+export const WITHHELD_REASONS = ["over-cap", "proof-failed", "boundary-denied", "absent"];
+const WITHHELD_REASONS_SET = new Set(WITHHELD_REASONS);
 
 // ─── validateUpstream — the runtime boundary barrier ─────────────────────────
 /**
@@ -884,7 +1009,12 @@ export function validateUpstream(struct, ctx = null) {
     return {
       ...provenanceFields(o, ctx),
       skill: inSet(SKILLS_SET, o.skill, "other"),
-      subject: inSet(SUBJECTS_SET, o.subject, "other"),
+      // B1: MAP the subject onto the closed vocabulary. The diagnostician authors `subject` as free
+      // text (its contract does not constrain it to the enum), so the old `inSet` membership test
+      // collapsed EVERY diagnostician finding to `other` while the telemetry path at line ~433
+      // correctly used `subjectEnum`. `subjectEnum` never echoes its input — an unrecognized subject
+      // still becomes `other` — so this is containment-neutral.
+      subject: subjectEnum(o.subject),
       blockedDeliverable: o.blockedDeliverable === true,
       verdict: inSet(VERDICTS_SET, o.verdict, "OK"),
       severity: inSet(SEVERITIES_SET, o.severity, "S0"),

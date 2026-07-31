@@ -262,12 +262,24 @@ export function buildContractFields(contract, mapping, slotValues = {}, extraFie
 
   // Required-field sweep — after everything above, so a defaultValue only fills a real gap.
   const satisfied = new Set([...(satisfiedRefs || [])].map((r) => lc(r)));
+  const filledPath = (pathRef) =>
+    satisfied.has(lc(pathRef)) || Object.keys(fields).some((k) => lc(k) === lc(pathRef) && fields[k] !== undefined && fields[k] !== "");
   const missingRequired = [];
   for (const f of list) {
     if (!f.required) continue;
     if (fields[f.ref] !== undefined && fields[f.ref] !== "") continue;
     if (satisfied.has(lc(f.ref))) continue; // the caller emits this one itself
-    if (f.defaultValue) { fields[f.ref] = f.defaultValue; continue; }
+    if (f.defaultValue) { fields[f.ref] = f.defaultValue; continue; } // e.g. System.State → "New"
+    // VCST-5582 A2 — the pre-flight must NOT block on a required field that will nonetheless be
+    // populated. A contract-required field with no value AND no default is still satisfied when:
+    //  (1) Azure server-defaults it on create (System.AreaId / System.IterationId — the same
+    //      SERVER_DEFAULTED_REQUIRED set `resolveSlots` already honours); OR
+    //  (2) its governing *Path field will be sent (System.IterationPath via `--iteration current`,
+    //      System.AreaPath), which is exactly how ADO derives the corresponding *Id. Before this,
+    //      `System.IterationId` (alwaysRequired, no defaultValue, bound by no slot) BLOCKED a POST
+    //      that carried `--iteration current` and would have set System.IterationPath.
+    if (SERVER_DEFAULTED_REQUIRED.has(lc(f.ref))) continue;
+    if (/id$/i.test(f.ref) && filledPath(f.ref.replace(/Id$/i, "Path"))) continue;
     missingRequired.push(f);
   }
   return { fields, dropped, errors, missingRequired };

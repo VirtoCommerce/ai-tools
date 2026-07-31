@@ -54,6 +54,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 - Resolve ticket details via the profile's tracker (`tracker-ops.md` §2), using the tracker's own key format (Jira `ABC-123` / Azure Boards bare `12345`):
   - **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `getJiraIssue`
   - **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <n>` (do NOT hand-roll `curl`+`python`). Resolve `$pluginRoot` = the active install path at runtime via `claude plugin list --json` (not the profile; see [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)) — applies to every `$pluginRoot/…` invocation below too.
+  - **NEVER pipe an `ado.mjs` call (or any plugin script) through `head`/`tail`.** A pipe makes the shell report `head`'s exit code (0), so a failed `create-workitem`/`transition` looks successful and the self-diagnostics collector — which reads the tool's exit status — records nothing (VCST-5582 C3). Redirect to a file and read it, or use `--json`; never `… | head`.
 - Use qa-testing-expert to reproduce based on ticket description
 - Follow `/qa-investigate` common VC patterns (P1–P8) to isolate the layer
 - Add QA evidence to the ticket as a comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`)

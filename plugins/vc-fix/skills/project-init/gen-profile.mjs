@@ -38,6 +38,12 @@ import { resolve } from "path";
 import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 
+// A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
+// System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
+// CLOSED sprint once it rolls over (VCST-5582 A3) — never bake it. The *Path is stored instead and
+// iteration resolves at create time via `--iteration current`.
+const ILLEGAL_FIELDDEFAULT_REF = /(^|\.)(iteration|area)id$/i;
+
 const ENUMS = {
   "project-type": ["platform", "client"],
   operator: ["virto-engineer", "client", "ask"],
@@ -234,6 +240,16 @@ function main() {
       // hardcoded Custom.* set of one org. `tracker.fieldMap` stays an OPERATOR-owned override
       // (never written from the scan) and is applied on top at create time.
       if (t.fields && Object.keys(t.fields).length) set("tracker.fields", t.fields);
+      // A3 — a fieldDefaults carried by the scan is FILTERED: a time-varying sprint/area node id
+      // (System.IterationId / System.AreaId) is never persisted (see ILLEGAL_FIELDDEFAULT_REF). The
+      // guard mirrors reconcile-profile's `--set` guard so neither write path can plant the time bomb.
+      if (t.fieldDefaults && typeof t.fieldDefaults === "object" && !Array.isArray(t.fieldDefaults)) {
+        const clean = {};
+        for (const [ref, val] of Object.entries(t.fieldDefaults)) {
+          if (!ILLEGAL_FIELDDEFAULT_REF.test(ref)) clean[ref] = val;
+        }
+        if (Object.keys(clean).length) set("tracker.fieldDefaults", clean);
+      }
     } catch (err) {
       fail(`--tracker-json: cannot read ${args["tracker-json"]}: ${err.message}`);
     }

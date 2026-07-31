@@ -132,6 +132,7 @@ import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, ren
 import { dirname, resolve, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { redact } from "./redact.mjs";
+import { loadExpected, findExpected } from "./expected.mjs";
 
 // ─── output root resolution ────────────────────────────────────────────────
 // Canonical definition lives in skills/project-init/lib/paths.mjs `outputRoot()`
@@ -1267,7 +1268,14 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
         // (stderr + exit 0) produced a "clean" self-diagnosis. Also the only place an INTERRUPT
         // is visible. Cap before redact, like every other body here.
         const tur = ev.toolUseResult;
-        const attrib = { spanId: (p || sp)?.id ?? null, skill: p && (p.kind === "skill" || p.kind === "command") ? p.name : null };
+        // C2 — bind each observation to the EVENT's own transcript timestamp, not `nowIso()`. Before
+        // this, every transcript-derived obs was stamped at scan time, so a post-purge REBUILD
+        // recorded them all within ~40 ms of the rebuild instant instead of at their real times.
+        // (`skill` is still the currently-open span's name; on a rebuild the command span lived only
+        // in the purged state, so it can be null — the C1 tombstone dedups skill-independently and the
+        // diagnostician re-reads the transcript, so this residual mis-attribution does not re-nag or
+        // mislead. A full transcript-position skill rebind is a scoped follow-up.)
+        const attrib = { spanId: (p || sp)?.id ?? null, skill: p && (p.kind === "skill" || p.kind === "command") ? p.name : null, ts };
         // Hoisted: the degradation-marker scan below must cover stderr TOO. `discover-tracker.mjs`
         // prints "…will fall back to the legacy field set, labelled 'unverified defaults'" to
         // STDERR, so scanning only the stdout body would miss the single most important instance.
@@ -1414,6 +1422,64 @@ async function paths(ev) {
 function ensureDir(dir) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
+
+// ─── C1 — the surfaced-signature TOMBSTONE (survives delivery purge) ─────────────────────
+// On a SUCCESSFUL delivery, deliver.mjs purges `<sid>.jsonl` + `<sid>.state.json` — and
+// `seenSignatures`/`obsSurfaced` lived in that state. The next Stop then REBUILDS the session from
+// the transcript (which still holds every tool call) with `seenSignatures: []`, re-derives the SAME
+// signatures, and RE-SURFACES an already-delivered defect (VCST-5582 C1 — the `script_exit_nonzero:
+// ado` re-nag). So the surfaced signatures are persisted OUTSIDE the per-session file, in
+// `<sid>.surfaced.json`, which purge deliberately does NOT delete (only the 24h age-cap reclaims it).
+// finalize seeds its dedup sets from it, so a rebuilt session still suppresses what it already
+// surfaced. This is a `Set`-union tombstone, so it is safe to re-write and to seed unconditionally.
+function surfacedPath(dir, sid) { return join(dir, `${sid}.surfaced.json`); }
+// The SKILL-INDEPENDENT identity of an observation: class|subject|code. The full obs signature also
+// folds in the SKILL, but a post-purge rebuild re-attributes the same observation to a DIFFERENT (or
+// null) skill — because the open command span that owned it lived only in the purged state, not the
+// transcript (VCST-5582 C2). So the full signature is unstable across a rebuild, and the tombstone
+// must dedup on this stable projection instead. Never carries client text (the subject is already
+// slugified by obsSubject, the code is a closed taxonomy).
+function obsStableKey(o) { return `${o?.class ?? ""}|${o?.subject ?? ""}|${o?.code ?? "NONE"}`; }
+function loadSurfaced(dir, sid) {
+  try {
+    const p = surfacedPath(dir, sid);
+    if (!existsSync(p)) return null;
+    const j = JSON.parse(readFileSync(p, "utf8"));
+    return {
+      signatures: Array.isArray(j.signatures) ? j.signatures : [],
+      // { stableKey -> the occurrence count it was surfaced/delivered AT }, so a GROWN recurrence
+      // still re-qualifies (mirrors `obsSurfacedCount` / a flagged span's `surfacedAt`).
+      deliveredObs: (j.deliveredObs && typeof j.deliveredObs === "object" && !Array.isArray(j.deliveredObs)) ? j.deliveredObs : {},
+    };
+  } catch { return null; }
+}
+function writeSurfaced(dir, sid, { signatures = [], deliveredObs = {} } = {}) {
+  try {
+    // Union with whatever the tombstone already holds — a session can surface across several turns.
+    // For a stable key seen more than once, keep the LATEST (highest) count it was surfaced at.
+    const prev = loadSurfaced(dir, sid) || { signatures: [], deliveredObs: {} };
+    const mergedObs = { ...prev.deliveredObs };
+    for (const [k, c] of Object.entries(deliveredObs)) mergedObs[k] = Math.max(mergedObs[k] ?? 0, c);
+    writeFileSync(
+      surfacedPath(dir, sid),
+      JSON.stringify({
+        sid, ts: nowIso(),
+        signatures: [...new Set([...prev.signatures, ...signatures])],
+        deliveredObs: mergedObs,
+      }),
+      "utf8",
+    );
+  } catch { /* best-effort — the tombstone is an optimization, never a correctness dependency */ }
+}
+// Seed the SPAN dedup set from the tombstone (so a re-derivable flagged span is not re-surfaced), and
+// RETURN the tombstone so the caller can consult `deliveredObs` for the skill-independent obs check.
+function seedSurfacedFromTombstone(dir, sid, state) {
+  const tomb = loadSurfaced(dir, sid);
+  if (!tomb) return null;
+  if (!Array.isArray(state.seenSignatures)) state.seenSignatures = [];
+  for (const s of tomb.signatures) if (!state.seenSignatures.includes(s)) state.seenSignatures.push(s);
+  return tomb;
+}
 function appendRecord(jsonlPath, record) {
   appendFileSync(jsonlPath, JSON.stringify(record) + "\n", "utf8");
 }
@@ -1514,9 +1580,11 @@ function pruneOldDiagnostics(dir, sid, nowMs) {
     // Never the CURRENT session's own artifacts (it's just starting). Includes DELIVERY-<sid>-*
     // for symmetry with collectInactiveArtifacts — else a resume >24h after start could reap this
     // session's own delivery draft.
-    if (sid && (f === `${sid}.jsonl` || f === `${sid}.state.json` || f.startsWith(`DIAG-${sid}-`) || f.startsWith(`DELIVERY-${sid}-`))) continue;
-    // Only OUR OWN artifact shapes — a stray file a user dropped here is left alone.
-    const isOurs = f.endsWith(".jsonl") || f.endsWith(".state.json") || (f.startsWith("DIAG-") && f.endsWith(".md")) || (f.startsWith("DELIVERY-") && f.endsWith(".md"));
+    if (sid && (f === `${sid}.jsonl` || f === `${sid}.state.json` || f === `${sid}.surfaced.json` || f.startsWith(`DIAG-${sid}-`) || f.startsWith(`DELIVERY-${sid}-`))) continue;
+    // Only OUR OWN artifact shapes — a stray file a user dropped here is left alone. The C1 surfaced
+    // tombstone (`<sid>.surfaced.json`) is reaped by the SAME 24h age-cap (a delivery purge keeps it;
+    // the age-cap is its lifecycle bound), never by the more aggressive 1h cleanup offer.
+    const isOurs = f.endsWith(".surfaced.json") || f.endsWith(".jsonl") || f.endsWith(".state.json") || (f.startsWith("DIAG-") && f.endsWith(".md")) || (f.startsWith("DELIVERY-") && f.endsWith(".md"));
     if (!isOurs) continue;
     // EVIDENCE PROTECTION (P1-10): retain a session that recorded a finding nobody has diagnosed
     // yet. Silent 24h reclamation of an un-analysed finding destroys the only copy of it.
@@ -1538,6 +1606,7 @@ function pruneOldDiagnostics(dir, sid, nowMs) {
 // `DIAG-<sid>-<ts>.md`, `DELIVERY-<fp>-<ts>.md` (a DELIVERY is keyed by finding fingerprint, not a
 // session, so it has no owner). Pure; "" when unknown.
 function ownerSidOf(f) {
+  if (f.endsWith(".surfaced.json")) return f.slice(0, -".surfaced.json".length);
   if (f.endsWith(".state.json")) return f.slice(0, -".state.json".length);
   if (f.endsWith(".jsonl")) return f.slice(0, -".jsonl".length);
   const m = /^DIAG-(.+)-\d{4}-?\d{2}-?\d{2}T/.exec(f);
@@ -1804,6 +1873,13 @@ async function cmdInit(ev) {
   // After the silent age-cap sweep, count what's LEFT from other inactive sessions — the
   // cleanup offer (surfaced at the next terminal Stop) proposes clearing these now.
   const inactive = collectInactiveArtifacts(dir, sid, Date.now());
+  // C4 — a startup WARNING while any non-expired .vc-fix/expected.json suppression is active, so a
+  // forgotten entry cannot silently hide a real regression for the whole session. Durable in the
+  // session_start record; also a one-line stderr note (best-effort, never blocks).
+  const expected = loadExpected(root);
+  if (expected.entries.length) {
+    try { process.stderr.write(`vc-fix: ${expected.entries.length} active .vc-fix/expected.json suppression(s) — matching diagnostics will be withheld this session.\n`); } catch { /* ignore */ }
+  }
   appendRecord(jsonl, {
     type: "session_start",
     sessionId: sid,
@@ -1819,6 +1895,7 @@ async function cmdInit(ev) {
     source: ev.source ?? null,
     ...(pruned > 0 ? { prunedOldArtifacts: pruned } : {}),
     ...(inactive.files.length > 0 ? { staleInactiveSessions: inactive.sessions.size, staleInactiveFiles: inactive.files.length } : {}),
+    ...(expected.entries.length > 0 ? { expectedSuppressions: expected.entries.length } : {}),
   });
   // ─── resume / compact — carry the persisted state over, DON'T reset ──────────────
   // A `resume`/`compact` SessionStart fires MID-command when the context is summarized
@@ -1980,6 +2057,12 @@ async function cmdFinalize(ev) {
   const transcriptPath = ev.transcript_path ?? state.transcriptPath;
   scanTranscript(jsonl, transcriptPath, state);
   state.transcriptPath = transcriptPath;
+  // C1 — recover the surfaced-signature dedup set from the purge-surviving tombstone, so a session
+  // that was REBUILT from the transcript after a successful delivery does not re-surface a defect it
+  // already delivered. Idempotent on a non-rebuilt session. `deliveredTombstone.deliveredObs` holds
+  // the SKILL-INDEPENDENT obs keys, consulted in the freshObs filter below (a rebuild re-attributes
+  // the obs's skill, so the full signature is unstable — C2).
+  const deliveredTombstone = seedSurfacedFromTombstone(dir, sid, state);
 
   // ─── CHECKPOINT vs TERMINAL (subagent-timing fix) ───────────────────────────
   // `Stop` fires at the end of EVERY turn — including a turn that only handed work
@@ -2256,7 +2339,31 @@ async function cmdFinalize(ev) {
     const surfacedAt = (state.obsSurfacedCount || {})[sig];
     const seen = (state.obsSurfaced || []).includes(sig);
     if (seen && !(surfacedAt != null && (o.count ?? 1) > surfacedAt)) continue;
+    // C1 — an already-DELIVERED observation (skill-independent key in the tombstone) must not
+    // re-surface on a post-purge rebuild, even though its full signature changed (the rebuild
+    // re-attributed its skill — C2). A GROWN count still re-qualifies, exactly like the `seen` path.
+    if (deliveredTombstone) {
+      const deliveredAt = deliveredTombstone.deliveredObs[obsStableKey(o)];
+      if (deliveredAt != null && !((o.count ?? 1) > deliveredAt)) continue;
+    }
     freshObs.push({ signature: sig, class: o.class, subject: o.subject, count: o.count ?? 1, grew: seen });
+  }
+  // ─── C4 — .vc-fix/expected.json suppression ──────────────────────────────────────────
+  // An operator-declared EXPECTED observation (a planted fixture, a known benign friction) must not
+  // arm the diagnostician. It stays RECORDED and COUNTED (capture is total) — it just does not
+  // ROUTE. A non-empty file is reported (`expectedActive`) so a forgotten entry cannot quietly mask
+  // a real regression. Matched on (class, subject); a pluginFile-only entry can't match a pluginFile-
+  // less observation, so it is a no-op here (it applies on the deliver/finding side).
+  const expected = loadExpected(root);
+  let suppressedByExpected = 0;
+  if (expected.entries.length) {
+    for (let i = freshObs.length - 1; i >= 0; i--) {
+      const fo = freshObs[i];
+      if (findExpected(expected.entries, { cls: fo.class, subject: fo.subject })) {
+        freshObs.splice(i, 1);
+        suppressedByExpected++;
+      }
+    }
   }
   const flaggedRun = uniqueFresh.length > 0 || negFeedback || freshObs.length > 0;
   // `state.selfCheckSeen` is NO LONGER a gate here (P0-5). It used to latch for the WHOLE session,
@@ -2349,6 +2456,10 @@ async function cmdFinalize(ev) {
     pluginActivity,
     freshCount: uniqueFresh.length,
     freshObsCount: freshObs.length, // routing-class observations not previously routed
+    // C4 — how many routing observations were suppressed by .vc-fix/expected.json this turn, and how
+    // many active suppressions exist (always reported so a forgotten entry can't hide a regression).
+    ...(suppressedByExpected > 0 ? { suppressedByExpected } : {}),
+    ...(expected.entries.length > 0 ? { expectedActive: expected.entries.length } : {}),
     observations: obs, // { distinct, total, visible, routing, selfReported, dropped, byClass }
     negativeFeedback: negFeedback, // did a /vc-feedback 👎 flag this run (may be true with freshCount:0)
     flaggedTotal: state.flagged.length,
@@ -2411,6 +2522,15 @@ async function cmdFinalize(ev) {
       state.obsSurfacedCount[o.signature] = o.count ?? 1;
     }
     state.negativeFeedback = false; // one-shot: the 👎 trigger is spent once vc-self-check is armed
+    // C1 — persist the surfaced signals to the purge-surviving tombstone, so a post-delivery rebuild
+    // does not re-nag on an already-surfaced/delivered defect. Spans by full signature; observations
+    // by their SKILL-INDEPENDENT key (the rebuild re-attributes the skill — C2).
+    const deliveredObs = {};
+    for (const o of freshObs) {
+      const full = state.observations?.[o.signature];
+      if (full) deliveredObs[obsStableKey(full)] = o.count ?? 1;
+    }
+    writeSurfaced(dir, sid, { signatures: state.seenSignatures, deliveredObs });
   }
   // Consume the completion signal on ANY terminal Stop that evaluated it — not only when it
   // surfaced. A completion signal is for THIS terminal Stop; if the clean line can't surface now

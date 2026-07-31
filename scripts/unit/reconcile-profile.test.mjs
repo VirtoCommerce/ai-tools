@@ -256,3 +256,71 @@ test("reconcile: a discovered tracker.fields contract survives reconcile untouch
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ─── VCST-5582 A3 / A4 — the fieldDefaults time-bomb guard + --unset ─────────────────────
+// A helper that captures the JSON REPORT on stdout (not just the written file), for the reject/unset
+// paths whose effect is visible in the report.
+function reconcileReport(home, args = []) {
+  const out = execFileSync(process.execPath, [RECONCILE, "--write", ...args], {
+    encoding: "utf8",
+    env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },
+  });
+  return JSON.parse(out);
+}
+function seedAzure(home, over = {}) {
+  writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+    projectType: "client", operator: "client",
+    tracker: { kind: "azure", baseUrl: "https://dev.azure.com/acme", fieldDefaults: over.fieldDefaults ?? {} },
+    vcs: { clientHost: "github", clientOrg: "acmecorp" },
+  }));
+}
+
+test("A3 reconcile --set: REFUSES to persist System.IterationId into tracker.fieldDefaults", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    seedAzure(home);
+    const rep = reconcileReport(home, ["--set", 'tracker.fieldDefaults.System.IterationId=22']);
+    const rejected = rep.rejected.map((r) => r.path);
+    assert.ok(rejected.includes("tracker.fieldDefaults.System.IterationId"), `rejected: ${JSON.stringify(rep.rejected)}`);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(p.tracker.fieldDefaults["System.IterationId"], undefined, "the time-varying id must NOT be written");
+    assert.match(rep.rejected[0].reason, /closed sprint|System\.IterationPath/i);
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
+
+test("A3 reconcile --set: System.AreaId is refused too; a legit fieldDefault (Custom.Environment) is written", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    seedAzure(home);
+    const rep = reconcileReport(home, ["--set", "tracker.fieldDefaults.System.AreaId=4", "--set", "tracker.fieldDefaults.Custom.Environment=QA"]);
+    assert.deepEqual(rep.rejected.map((r) => r.path), ["tracker.fieldDefaults.System.AreaId"]);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(p.tracker.fieldDefaults["System.AreaId"], undefined);
+    assert.equal(p.tracker.fieldDefaults["Custom.Environment"], "QA", "a non-time-varying default is fine");
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
+
+test("A4 reconcile --unset: removes a fieldDefaults entry without hand-editing the profile (item 9)", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    // A profile that ALREADY carries the stale workaround (hand-planted before the A3 guard existed).
+    seedAzure(home, { fieldDefaults: { "System.IterationId": 22, "Custom.Environment": "QA" } });
+    const rep = reconcileReport(home, ["--unset", "tracker.fieldDefaults.System.IterationId"]);
+    assert.deepEqual(rep.unset.map((u) => u.path), ["tracker.fieldDefaults.System.IterationId"]);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(p.tracker.fieldDefaults["System.IterationId"], undefined, "the stale key is gone");
+    assert.equal(p.tracker.fieldDefaults["Custom.Environment"], "QA", "sibling defaults untouched");
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
+
+test("A4 reconcile --unset: a path outside a writable open map is REJECTED, never strips a schema field", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    seedAzure(home);
+    const rep = reconcileReport(home, ["--unset", "tracker.kind"]);
+    assert.equal(rep.unset.length, 0);
+    assert.ok(rep.rejected.some((r) => r.path === "tracker.kind"), `rejected: ${JSON.stringify(rep.rejected)}`);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(p.tracker.kind, "azure", "a fixed-shape schema field is never removed by --unset");
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});

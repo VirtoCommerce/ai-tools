@@ -15,6 +15,10 @@ import { withTempHome } from "./_test-helpers.mjs";
 import {
   main,
   assertNonEmpty,
+  hasLocatableEvidence,
+  withheldLine,
+  buildFindingIssue,
+  clusterFindingsByKey,
 } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
 import {
   reduce,
@@ -273,4 +277,128 @@ test("END TO END: no struct on stdin exits 2 with a clear message", async () => 
   const { plan, exitCode } = await runJson(["--session", SID, "--json"], { struct: null });
   assert.equal(exitCode, 2);
   assert.match(plan.error, /No finding struct on stdin/);
+});
+
+// ─── B5 — a finding with no locatable evidence is WITHHELD from filing (VCST-5582) ──────
+test("B5 hasLocatableEvidence: true iff a plugin file/excerpt/literal or a vendor error identity", () => {
+  assert.equal(hasLocatableEvidence({ pluginFile: "skills/qa-fix-routing/ado.mjs" }), true);
+  assert.equal(hasLocatableEvidence({ codeExcerpt: "const x = 1;" }), true);
+  assert.equal(hasLocatableEvidence({ vendorErrorCode: "TF401347" }), true);
+  assert.equal(hasLocatableEvidence({ vendorHttpStatus: 400 }), true);
+  assert.equal(hasLocatableEvidence({ skill: "qa-bug", subject: "ado_create_workitem" }), false);
+  assert.equal(hasLocatableEvidence({}), false);
+});
+
+test("B5 END TO END: a contentless finding is NOT filed; it is reported as withheld", async () => {
+  // A real subject but zero locatable evidence — exactly #183 (a severity table + boilerplate).
+  const struct = {
+    schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
+    feedback: { up: 0, down: 0 }, sessionCount: 1,
+    findings: [{
+      skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+      signalClass: "tool_error", errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+      struggle: [], retries: 0, occurrences: 1,
+    }],
+  };
+  const { plan } = await runJson(["--session", SID, "--confirm", "--json"], { struct });
+  assert.ok(plan, "got a plan");
+  assert.equal(plan.findings.length, 1);
+  assert.equal(plan.findings[0].plan, "withhold", "no locatable evidence ⇒ withhold, not file");
+  assert.equal(plan.findings[0].action, "withheld");
+  assert.equal(plan.sent, 0, "nothing was filed");
+  assert.match(plan.summary, /withheld: no locatable evidence/);
+});
+
+test("B5 END TO END: a finding WITH locatable evidence (vendor error identity) IS filed", async () => {
+  const struct = {
+    schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
+    feedback: { up: 0, down: 0 }, sessionCount: 1,
+    findings: [{
+      skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+      signalClass: "tool_error", errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+      struggle: [], retries: 0, occurrences: 1,
+      vendorErrorCode: "TF401347", vendorHttpStatus: 400,
+    }],
+  };
+  const { plan } = await runJson(["--session", SID, "--confirm", "--json"], { struct });
+  assert.equal(plan.findings[0].plan, "file");
+  assert.equal(plan.findings[0].action, "filed");
+  assert.equal(plan.sent, 1);
+});
+
+// ─── B6 — a withheld field is rendered in the issue body + the deliverer's result line ──
+test("B6 withheldLine: renders {field, reason} pairs; empty ⇒ ''", () => {
+  assert.equal(withheldLine({ withheld: [] }), "");
+  assert.equal(withheldLine({}), "");
+  assert.equal(
+    withheldLine({ withheld: [{ field: "proposedFix", reason: "over-cap" }, { field: "codeExcerpt", reason: "proof-failed" }] }),
+    "Withheld by boundary validator: proposedFix (over-cap), codeExcerpt (proof-failed)",
+  );
+});
+
+test("B6: buildFindingIssue body carries the withheld line", () => {
+  const finding = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+    struggle: [], retries: 0, occurrences: 1, blockedDeliverable: true,
+    vendorErrorCode: "TF401347", vendorHttpStatus: 400,
+    withheld: [{ field: "proposedFix", reason: "boundary-denied" }],
+  };
+  const struct = { pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32", sessionCount: 1, feedback: { up: 0, down: 0 } };
+  const { body } = buildFindingIssue({ finding, struct });
+  assert.match(body, /Withheld by boundary validator: proposedFix \(boundary-denied\)/);
+});
+
+// ─── VCST-5582 D2 — cluster same-identity findings into ONE issue (no double-file) ──────────
+const clFinding = (over = {}) => ({
+  skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+  signalClass: "tool_error", errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+  struggle: [], retries: 0, occurrences: 1, withheld: [], ...over,
+});
+
+test("D2 clusterFindingsByKey: two findings with the SAME key collapse to one (occurrences summed, max severity)", () => {
+  // The span path + the obs path can each emit a finding for the same (skill, subject).
+  const a = clFinding({ severity: "S2", verdict: "DEGRADED", occurrences: 1 });
+  const b = clFinding({ severity: "S1", verdict: "BROKEN", occurrences: 2 });
+  const out = clusterFindingsByKey([a, b]);
+  assert.equal(out.length, 1, "one identity ⇒ one issue");
+  assert.equal(out[0].severity, "S1", "representative is the highest severity");
+  assert.equal(out[0].verdict, "BROKEN");
+  assert.equal(out[0].occurrences, 3, "occurrences are summed");
+});
+
+test("D2 clusterFindingsByKey: a different subject or plugin site stays SEPARATE", () => {
+  const a = clFinding({ subject: "ado_create_workitem" });
+  const b = clFinding({ subject: "browser_login" });
+  assert.equal(clusterFindingsByKey([a, b]).length, 2, "different subject → different issue");
+  // two `other`-subject findings at DIFFERENT plugin sites keep distinct keys (B2 hash)
+  const c = clFinding({ subject: "novel free text", pluginFile: "skills/qa-fix-routing/ado.mjs", pluginLine: 40 });
+  const d = clFinding({ subject: "other novel text", pluginFile: "skills/qa-fix-routing/ado.mjs", pluginLine: 88 });
+  assert.equal(clusterFindingsByKey([c, d]).length, 2, "different plugin site → different issue");
+});
+
+test("D2 clusterFindingsByKey: withheld fields are unioned + deduped across the cluster", () => {
+  const a = clFinding({ withheld: [{ field: "proposedFix", reason: "over-cap" }] });
+  const b = clFinding({ withheld: [{ field: "proposedFix", reason: "over-cap" }, { field: "codeExcerpt", reason: "proof-failed" }] });
+  const out = clusterFindingsByKey([a, b]);
+  assert.equal(out.length, 1);
+  assert.deepEqual(
+    out[0].withheld.map((w) => `${w.field}|${w.reason}`).sort(),
+    ["codeExcerpt|proof-failed", "proposedFix|over-cap"],
+  );
+});
+
+test("D2 END TO END: a struct with two same-key findings files exactly ONE issue", async () => {
+  const struct = {
+    schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
+    feedback: { up: 0, down: 0 }, sessionCount: 1,
+    findings: [
+      clFinding({ severity: "S2", verdict: "DEGRADED", vendorHttpStatus: 400 }),
+      clFinding({ severity: "S1", verdict: "BROKEN", vendorHttpStatus: 400 }),
+    ],
+  };
+  const { plan } = await runJson(["--session", SID, "--confirm", "--json"], { struct });
+  assert.equal(plan.findings.length, 1, "the two same-key findings became ONE filing");
+  assert.equal(plan.findings[0].severity, "S1");
+  assert.equal(plan.sent, 1, "exactly one issue filed, never two");
 });

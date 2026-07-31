@@ -21,7 +21,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, appendFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, appendFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -330,6 +330,63 @@ test("item 9: a self-check-diagnostician agent span is not itself flagged (loop 
     // The diagnostician's own failure must not surface as a plugin finding to contribute.
     assert.equal((fin.flagged || []).some((f) => /self-check|diagnostician/i.test(f.name || "")), false);
     assert.ok(NON_TRIGGER.has(fin.decision.suppressReason), `expected a non-trigger, got ${fin.decision.suppressReason}`);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── VCST-5582 C4 — .vc-fix/expected.json suppresses a matching routing observation ────────
+test("C4: an expected.json entry suppresses a routing observation (no tail-trigger; still recorded)", () => {
+  const home = setupHome();
+  try {
+    mkdirSync(join(home, ".vc-fix"), { recursive: true }), writeFileSync(join(home, ".vc-fix", "expected.json"), JSON.stringify([
+      { class: "degraded_artifact", subject: "profile_shape", reason: "planted regression fixture (VCST-5582 E)" },
+    ]));
+    const done = pluginSession(home, "supp", "project-init");
+    obs(home, [{ class: "degraded_artifact", subject: "profile_shape", code: "NONE" }], ["--skill", "project-init"]);
+    done();
+    run(home, "finalize", { session_id: "supp", transcript_path: tp(home) });
+    const fin = lastFinalize(home, "supp");
+    assert.equal(obsOf(home, "supp").length, 1, "still captured in full — suppression is a ROUTING decision, not retention");
+    assert.notEqual(fin.decision.surfaceDecision, "tail-trigger", "the expected observation does not arm the diagnostician");
+    assert.equal(fin.decision.suppressedByExpected, 1);
+    assert.equal(fin.decision.expectedActive, 1);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("C4: a NON-matching expected.json entry does NOT suppress a real routing observation", () => {
+  const home = setupHome();
+  try {
+    mkdirSync(join(home, ".vc-fix"), { recursive: true }), writeFileSync(join(home, ".vc-fix", "expected.json"), JSON.stringify([
+      { class: "degraded_artifact", subject: "some_other_subject", reason: "unrelated" },
+    ]));
+    const done = pluginSession(home, "nomatch", "project-init");
+    obs(home, [{ class: "degraded_artifact", subject: "profile_shape", code: "NONE" }], ["--skill", "project-init"]);
+    done();
+    run(home, "finalize", { session_id: "nomatch", transcript_path: tp(home) });
+    const fin = lastFinalize(home, "nomatch");
+    assert.equal(fin.decision.surfaceDecision, "tail-trigger", "a real defect still routes past an unrelated suppression");
+    assert.equal(fin.decision.expectedActive, 1, "the active-suppression count is still reported (forgotten-entry safety)");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("C4: an EXPIRED expected.json entry does not suppress (auto-retires)", () => {
+  const home = setupHome();
+  try {
+    mkdirSync(join(home, ".vc-fix"), { recursive: true }), writeFileSync(join(home, ".vc-fix", "expected.json"), JSON.stringify([
+      { class: "degraded_artifact", subject: "profile_shape", reason: "old fixture", expires: "2000-01-01T00:00:00Z" },
+    ]));
+    const done = pluginSession(home, "expd", "project-init");
+    obs(home, [{ class: "degraded_artifact", subject: "profile_shape", code: "NONE" }], ["--skill", "project-init"]);
+    done();
+    run(home, "finalize", { session_id: "expd", transcript_path: tp(home) });
+    const fin = lastFinalize(home, "expd");
+    assert.equal(fin.decision.surfaceDecision, "tail-trigger", "an expired suppression is inert");
+    assert.equal(fin.decision.expectedActive, undefined, "no active suppressions");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

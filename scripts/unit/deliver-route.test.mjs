@@ -370,6 +370,10 @@ const STRUCT = {
     skill: "qa-bug", subject: "ado_create_workitem", blockedDeliverable: true, verdict: "BROKEN",
     severity: "S1", outcome: "failed", signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX",
     toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    // Locatable evidence (a vendor error identity) so the finding is FILE-able — the B5 withhold
+    // gate (VCST-5582) only files a finding a maintainer could act on. These tests exercise the
+    // route/confirm mechanics, so they use a finding that carries evidence (the realistic case).
+    vendorErrorCode: "TF401347", vendorHttpStatus: 400,
   }],
 };
 async function driveMain(home, argv, { mode = "ask", struct = STRUCT, search = [], list = [] } = {}) {

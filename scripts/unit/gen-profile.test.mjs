@@ -148,3 +148,22 @@ test("gen-profile: a malformed --self-diagnostics value is rejected, not silentl
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ─── VCST-5582 A3 — gen-profile FILTERS an illegal fieldDefault from a scan ──────────────
+test("A3 gen-profile: a scan-carried System.IterationId/AreaId fieldDefault is filtered; legit ones kept", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-genprofile-a3-"));
+  try {
+    // A tracker-json (discover-tracker output shape) that carries a fieldDefaults map with the
+    // time-varying ids alongside a legitimate per-deployment constant.
+    writeFileSync(join(home, "tracker.json"), JSON.stringify({
+      ticketKeyFormat: "numeric",
+      fieldDefaults: { "System.IterationId": 22, "System.AreaId": 4, "Custom.Environment": "QA" },
+    }));
+    const p = genProfile(home, ["--tracker", "azure", "--azure-org", "acme", "--azure-project", "Web", "--tracker-json", "tracker.json"]);
+    assert.equal(p.tracker.fieldDefaults["System.IterationId"], undefined, "time-varying sprint id filtered");
+    assert.equal(p.tracker.fieldDefaults["System.AreaId"], undefined, "time-varying area id filtered");
+    assert.equal(p.tracker.fieldDefaults["Custom.Environment"], "QA", "a real per-deployment default is kept");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
