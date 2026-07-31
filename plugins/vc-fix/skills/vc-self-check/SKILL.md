@@ -38,6 +38,13 @@ re-asking about a defect already declined and lets a failed send be retried.
 - **The subagent's output is not user-visible.** The orchestrator MUST restate it in chat — that
   restatement, showing the exact fields that would be sent, is the disclosure surface (it replaces
   the old "Show what would be sent" option).
+- **The consent MUST be an actual `AskUserQuestion` TOOL CALL — never a prose "yes/no" typed into
+  chat.** Emit the disclosure as text, then STOP and call the `AskUserQuestion` tool with a single
+  binary question ("File the issue(s) in Virto?" → **Yes** / **No**). A question typed as plain prose
+  (e.g. `File the issue(s) in Virto? (yes / no)`) does NOT count — it doesn't render the interactive
+  form, is easy to miss, and does not gate delivery. If `AskUserQuestion` is unavailable (a headless /
+  non-interactive run), do NOT fall back to a prose question: report the plan and stop (or rely on
+  `feedback.mode: auto`). The disclosure text and the tool call are two separate steps.
 - **The binary AskUserQuestion is the ONLY operator interaction in the delivery path, and a yes ends
   it.** After the operator says yes you MUST NOT ask again for ANY reason — the yes means *"publish
   whatever is appropriate, decide the form yourself"*. In particular, NEVER ask any of these (each is
@@ -140,7 +147,7 @@ Decide by `feedback.mode` (read from `project-profile.json`, default `ask`):
 |---|---|
 | **off** | No question, no send. Report the plan, note delivery is disabled, stop. |
 | **auto** | No question — the operator consented at onboarding. Spawn the deliverer and print its line. |
-| **ask** (default) | If ≥1 finding is BROKEN/DEGRADED and any has `plan: file` or `plan: comment`, ask **ONE** `AskUserQuestion`: *"File these in the VirtoCommerce plugin repo?"* — **Yes** / **No**. There is no third option — Step 2 already showed what would be sent. |
+| **ask** (default) | If ≥1 finding is BROKEN/DEGRADED and any has `plan: file` or `plan: comment`, call the **`AskUserQuestion` TOOL** (the interactive form — NOT a prose "yes/no" in chat; see Hard invariants) with ONE binary question: *"File these in the VirtoCommerce plugin repo?"* — **Yes** / **No**. There is no third option — Step 2 already showed what would be sent. |
 
 - **Already offered this session?** If every finding's record in `state.json` is already `sent`/
   `declined` (the dry run wrote `pending` for anything new), stay silent — do not re-ask.
