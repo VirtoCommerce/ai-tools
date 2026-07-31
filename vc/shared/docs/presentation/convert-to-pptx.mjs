@@ -1251,7 +1251,7 @@ function addBilingualNotes(slide, en, ru) {
     { text: "sync stale", bg: COLORS.accentSoft },
     { text: "analyze gaps", bg: COLORS.accentSoft },
     { text: "generate", bg: COLORS.blueSoft },
-    { text: "review\n(7-dim)", bg: COLORS.blueSoft },
+    { text: "review\n(11-dim)", bg: COLORS.blueSoft },
     { text: "fix", bg: COLORS.blueSoft },
     { text: "verify", bg: COLORS.greenSoft },
     { text: "approve", bg: COLORS.greenSoft },
@@ -1301,7 +1301,7 @@ function addBilingualNotes(slide, en, ru) {
     "✓  Updated Steps / Assertions for stale cases",
     "✓  New cases with BL-* + ECL-* citations",
     "✓  Typed step + assertion tags ([NAV]·[ACT]·[DOM]·[MATH])",
-    "✓  7-dimension quality review report",
+    "✓  11-dimension quality review report",
     "✓  Live verification + approval gate before merge",
   ];
   slide.addText(outputs.join("\n"), {
@@ -1314,13 +1314,13 @@ function addBilingualNotes(slide, en, ru) {
     x: 0.4, y: 6.4, w: 12.5, h: 0.8,
     fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
   });
-  slide.addText("Why it matters: tests stop rotting after PRs land. Delegates to test-management-specialist (authoring + review) and qa-testing-expert (live verification). Replaces the deprecated /qa-sync-tests command.", {
+  slide.addText("Why it matters: tests stop rotting after PRs land. Delegates to test-management-specialist (authoring + review) and qa-testing-expert (live verification). Replaces /qa-sync-tests, since removed outright (no redirect).", {
     x: 0.6, y: 6.4, w: 12.1, h: 0.8,
     fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI", valign: "middle",
   });
   addBilingualNotes(slide,
-    "One command for the entire test-case lifecycle. Run it against a suite, domain, JIRA ticket, PR, module, or git diff — it carries you all the way from change detection to approved coverage. Pipeline: scope → sync stale → analyze gaps → generate → 7-dimension review → fix → live verify → approve. Replaces the deprecated /qa-sync-tests. Delegates to test-management-specialist for authoring and review, and qa-testing-expert for live verification before merge.",
-    "Одна команда на весь цикл работы с тест-кейсами. Принимает сьют, домен, JIRA-тикет, PR, модуль или git diff — ведёт от обнаружения изменения до одобренного покрытия. Пайплайн: scope → sync stale → analyze gaps → generate → 7-dimension review → fix → live verify → approve. Заменяет устаревший /qa-sync-tests. Делегирует test-management-specialist на авторинг и ревью и qa-testing-expert на live-верификацию перед мерджем."
+    "One command for the entire test-case lifecycle. Run it against a suite, domain, JIRA ticket, PR, module, or git diff — it carries you all the way from change detection to approved coverage. Pipeline: scope → sync stale → analyze gaps → generate → 11-dimension review → fix → live verify → approve. Replaces /qa-sync-tests, since removed outright (no redirect). Delegates to test-management-specialist for authoring and review, and qa-testing-expert for live verification before merge.",
+    "Одна команда на весь цикл работы с тест-кейсами. Принимает сьют, домен, JIRA-тикет, PR, модуль или git diff — ведёт от обнаружения изменения до одобренного покрытия. Пайплайн: scope → sync stale → analyze gaps → generate → 11-dimension review → fix → live verify → approve. Заменяет /qa-sync-tests — он удалён полностью, редиректа нет. Делегирует test-management-specialist на авторинг и ревью и qa-testing-expert на live-верификацию перед мерджем."
   );
 }
 

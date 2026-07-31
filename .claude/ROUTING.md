@@ -36,7 +36,7 @@ Quick decision tree for commands, skills, and agents. New here? Start with `/qa-
 | **Run business analysis** | `/ba-analyze [full\|flows\|api\|docs\|stories\|ui\|module]` | Command |
 | **Generate user stories** | `/ba-stories feature-name \| VCST-XXXX` | Command |
 
-> `/qa-sync-tests` is **deprecated** — it redirects to `/qa-test-lifecycle PR #NNN \| module <name> \| diff`.
+> `/qa-sync-tests` was **removed** — the command file is deleted and there is no redirect or alias. Use `/qa-test-lifecycle PR #NNN \| module <name> \| diff` instead.
 
 ## By Category
 
@@ -64,7 +64,7 @@ Quick decision tree for commands, skills, and agents. New here? Start with `/qa-
 - `/qa-risk` — Risk-based prioritization (5×5 matrix)
 - `/qa-sbtm` — SBTM charters, heuristics, tours, debrief
 - `/qa-coverage-gap` — Autonomous coverage gap analysis and test case generation (4-cycle pipeline)
-- `/qa-review-tests` — Review test cases: 11-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification)
+- `/qa-review-tests` — Review test cases: 11-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification, technique coverage, assertion grounding, behavioral triangulation)
 
 ### Test Data (Skills)
 - `/qa-seed-data` — Seed / teardown test data via repo seed scripts (`npm run seed*`) or Postman MCP

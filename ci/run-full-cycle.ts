@@ -6,12 +6,25 @@ import { join } from "path";
  * Full Test Cycle CI Pipeline
  *
  * Simply calls existing commands in sequence:
- *   1. /qa-sync-tests {CHANGE_SOURCE} --ci
- *   2. /qa-test-lifecycle {affected suites} --skip-generate --skip-verify
+ *   1. /qa-test-lifecycle {CHANGE_SOURCE} --ci --skip-generate --skip-verify   (change-driven)
+ *   2. /qa-test-lifecycle suite {suites} --ci --skip-sync --skip-generate --skip-verify  (review-only)
  *   3. /qa-regression {affected suites}
  *
  * Each phase is a single Agent SDK query() that tells Claude
  * to execute the command. The command files define all the logic.
+ *
+ * NOTE — `/qa-sync-tests` is GONE, not merely deprecated: the command file was deleted when
+ * sync was merged into the unified `/qa-test-lifecycle` pipeline. Phase 1 used to invoke it,
+ * which meant the SDK agent was handed a slash command that does not resolve and would
+ * improvise. Both phases now invoke `/qa-test-lifecycle`, differing only in scope.
+ *
+ * Phases 1 and 2 are MUTUALLY EXCLUSIVE, because in the unified command Phase 4 (Review)
+ * ALWAYS runs — a change-driven run therefore already reviews the suites it synced, and
+ * running the review again would just pay for it twice:
+ *   - SKIP_SYNC unset → Phase 1 (scope + sync + review of the affected suites)
+ *   - SKIP_SYNC=true  → Phase 2 (review only, over SUITE_SELECTION — no change detection)
+ * Consequence: SKIP_LIFECYCLE now skips only the STANDALONE review pass (Phase 2). There is
+ * no flag that syncs without reviewing, because the command has no such mode.
  */
 
 const CHANGE_SOURCE = process.env.CHANGE_SOURCE || "diff";
@@ -74,18 +87,22 @@ async function main() {
   let budgetLeft = MAX_BUDGET_USD;
   let affectedSuites = SUITE_SELECTION;
 
-  // --- Phase 1: /qa-sync-tests ---
+  // --- Phase 1: /qa-test-lifecycle (change-driven: scope + sync + review) ---
   if (!SKIP_SYNC) {
     const sync = await runPhase(
-      "Phase 1: Sync",
-      `Execute /qa-sync-tests ${CHANGE_SOURCE} --ci
+      "Phase 1: Scope + Sync",
+      `Execute /qa-test-lifecycle ${CHANGE_SOURCE} --ci --skip-generate --skip-verify
 
 This is a CI run. Apply all updates without asking for confirmation.
 Skip browser verification. Output affected suite IDs at the end.
 
+Write scope is NARROWER than an interactive run, not wider (see the command's "CI mode
+behavior"): apply only what the deterministic linters proved. Never promote
+Automation_Status out of Draft, never set Deprecated, never delete a case.
+
 After completing, output exactly this line:
 AFFECTED_SUITES: <comma-separated suite IDs or "none">`,
-      budgetLeft * 0.3,
+      budgetLeft * 0.5,
       ["Read", "Glob", "Grep", "Edit", "Write", "Bash"],
     );
 
@@ -100,16 +117,22 @@ AFFECTED_SUITES: <comma-separated suite IDs or "none">`,
     log(`Affected suites: ${affectedSuites || "none"}`);
   }
 
-  // --- Phase 2: /qa-test-lifecycle ---
-  if (!SKIP_LIFECYCLE && affectedSuites) {
+  // --- Phase 2: /qa-test-lifecycle (review-only — ONLY when Phase 1 didn't run) ---
+  // Phase 1 already reviews everything it synced (the command's Phase 4 always runs), so this
+  // standalone pass exists for the SKIP_SYNC=true path: review a given SUITE_SELECTION with no
+  // change detection. Running it after Phase 1 would review the same suites a second time.
+  if (SKIP_SYNC && !SKIP_LIFECYCLE && affectedSuites) {
     const lifecycle = await runPhase(
-      "Phase 2: Lifecycle",
-      `Execute /qa-test-lifecycle suite ${affectedSuites} --skip-generate --skip-verify
+      "Phase 2: Review",
+      `Execute /qa-test-lifecycle suite ${affectedSuites} --ci --skip-sync --skip-generate --skip-verify
 
 This is a CI run. Auto-fix structural issues without asking.
-Report the quality gate verdict at the end.`,
-      budgetLeft * 0.3,
-      ["Read", "Glob", "Grep", "Edit"],
+Report the quality gate verdict at the end.
+
+Write scope is NARROWER than an interactive run: apply only what the deterministic linters
+proved. Never promote Automation_Status out of Draft, never set Deprecated, never delete a case.`,
+      budgetLeft * 0.5,
+      ["Read", "Glob", "Grep", "Edit", "Bash"],
     );
 
     budgetLeft -= lifecycle.costUsd;

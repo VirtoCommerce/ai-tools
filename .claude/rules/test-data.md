@@ -120,4 +120,4 @@ You should not. If you genuinely cannot resolve via `{{VAR}}` or `@td()`:
 3. Run `npx tsx scripts/test-data/validate-td-refs.ts` to confirm resolution
 4. If neither works, the value is environmental — promote it to `.env` and reference as `{{VAR}}`
 
-A literal in a Steps/Test_Data column without one of these resolvers is a review failure (see `/qa-review-tests` Dimension 6 — Data Validity).
+A literal in a Steps/Test_Data column without one of these resolvers is a review failure (see `/qa-review-tests` Dimension 5 — Data Validity; Dimension 6 is BL/ECL Coverage + Requirement Traceability).

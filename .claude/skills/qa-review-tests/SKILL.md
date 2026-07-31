@@ -14,7 +14,7 @@ Review test cases against quality criteria to catch issues before regression run
 /qa-review-tests suite 015              # Review a specific suite by ID (static analysis)
 /qa-review-tests file regression/suites/Frontend/orders/015-quotes.csv
 /qa-review-tests diff                   # Review only git-changed test cases
-/qa-review-tests all                    # Review all 99 suites (summary mode)
+/qa-review-tests all                    # Review every suite in config/test-suites.json (summary mode)
 /qa-review-tests domain checkout        # Review all suites touching a domain
 /qa-review-tests suite 015 --fix        # Review + auto-fix issues (asks before writing)
 /qa-review-tests suite 015 --verify     # Static review + live environment verification via qa-testing-expert
@@ -53,8 +53,9 @@ Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 re
 > **`--verify` is MANDATORY before promoting a new-feature or ungrounded suite.** A suite that contains any `{HYPOTHESIS}` or unconfirmed-`{SPEC}` assertion (typical for a brand-new feature with no VirtoOZ doc / no source yet) cannot be promoted `Draft → Reviewed` on static review alone — the live `--verify` pass is the only step that can ground those assertions to `{OBSERVED}`. Fully `{BL}`/`{DOC}`/`{SPEC}`-grounded suites for existing features may promote on static review.
 
 > **Run the deterministic linter first.** `npm run suites:review -- <csv>` (`scripts/test-cases/lint-test-cases.ts`)
-> mechanises the rule-based core of dimensions **1–7 and 9** — S-/D-/C-/T-/DV-/BL-/REQ-/DUP-/TC- checks
-> as exact rules, with `--json` for machine consumption and a `--fail-on` severity gate. It is the single
+> mechanises the rule-based core of dimensions **1–7, 9 and 10** — S-/D-/C-/T-/DV-/BL-/REQ-/DUP-/TC-/GRD-001
+> checks as exact rules, plus **TRI-000** (`Audited:` stamp staleness, the Dim-11 rotation signal) — with
+> `--json` for machine consumption and a `--fail-on` severity gate. It is the single
 > source for these rules; DV-013 still runs via `validate-td-refs.ts` and DV-019 via `graphql:lint-labels`
 > (the linter footer reminds you). Start every review by running it, then spend LLM effort only on what it
 > can't decide: **Dimension 8** (live env, `--verify`), the fuzzy-edge calls it flags (C-008 order-vs-state
@@ -81,7 +82,7 @@ Read these files to inform the review:
 | `suite NN` | Read `config/test-suites.json` → find suite → read its CSV file |
 | `file <path>` | Read the CSV file directly |
 | `diff` | Run `git diff --name-only` → filter for `regression/suites/**/*.csv` → review only changed/added rows |
-| `all` | Read all 99 suite CSVs → produce summary-level review (top issues per suite, not line-by-line) |
+| `all` | Read every suite CSV declared in `config/test-suites.json` → produce summary-level review (top issues per suite, not line-by-line) |
 | `domain <name>` | Map domain to suites via `config/test-suites.json` tags → review those suites |
 | `stale` | Run `npm run tc:audit:queue` → report the staleness-ordered suite queue (risk tier, then oldest `Audited:` stamp) and stop. Read-only; this is the scope-selection helper the scheduled audit uses to pick its suite |
 
@@ -470,5 +471,6 @@ The `qa-testing-expert` uses `playwright-firefox` for browser verification. This
 | `/qa-metrics` | Review findings feed into quality metrics |
 | `/qa-env-check` | Run env check before `--verify` to ensure environment is healthy |
 | `test-case-template.md` | The format contract that review validates against |
+| `/qa-test-lifecycle` | The **pipeline that embeds this skill** — complementary, not overlapping. It owns *when* review runs (Phase 4a = dims 1–7, 9, 10 static; Phase 5 = dim 8 + the live half of dim 10) and its own G1–G11 gates; **this skill remains the single owner of the dimension set, check codes, severities, and evidence bars**, and that command must reference them rather than restate them. Its Phase 2 change signal is a *single-axis candidate*: a rewrite of what a case **asserts** must clear this skill's Dim-11 bar (`--triangulate`, its Phase 4a-bis), while a mechanical selector/URL update may be applied directly. It never promotes `Automation_Status` — the `Draft → Reviewed` rule below is the shared gate |
 | `/qa-review-bl` | The **sibling triangulation mechanism** — same three axes, same evidence bar, applied to `BL-*` invariants instead of assertions. Its Step 4 reconciles coverage back into this skill; a `{BL}`-tagged assertion whose invariant it amended shows up here as a Dim 11 DRIFT |
 | `ci/run-suite-audit.ts` | The **headless twin** — runs `--triangulate --fix --ci` on one suite per weekday and lands each audit as its own draft PR (`.github/workflows/suite-audit.yml`) |

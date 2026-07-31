@@ -199,7 +199,7 @@ Catalogs get reseeded. B2B orgs get re-created. Virtual-catalog roots migrate be
 
 Four data layers solve this. **`{{VAR}}`** — environment config from `.env`: URLs, credentials, store IDs. **`@td(ALIAS.field)`** — named entities you assert by name: "the configurable laptop the test was designed for", "the canonical Skyflow card", "the TechFlow org". **`live-discover`** — when you need shape, not exact value: "first available product", "any active coupon". **`random-data`** — for unique inputs you never assert exactly: registration emails, org names. Defaults to the `AGENT-TEST-*` prefix so teardown sweeps cleanly.
 
-The anti-pattern is hardcoding a product GUID or SKU in `Test_Data`. A literal that isn't `{{VAR}}` or `@td()` is a review failure — Dimension 6 of the 7-dimension review.
+The anti-pattern is hardcoding a product GUID or SKU in `Test_Data`. A literal that isn't `{{VAR}}` or `@td()` is a review failure — Dimension 5 of the 11-dimension review.
 
 *[~70 sec]*
 
@@ -243,13 +243,13 @@ Suite `048b-layout-stability.csv` covers this matrix exclusively. Selection name
 
 This is the command that fixes the oldest problem in test maintenance — tests rotting after PRs land.
 
-One command for the entire test-case lifecycle. Eight steps: **scope → sync stale → analyze gaps → generate → review (7-dim) → fix → verify → approve**. Each step has clear deliverables.
+One command for the entire test-case lifecycle. Eight steps: **scope → sync stale → analyze gaps → generate → review (11-dim) → fix → verify → approve**. Each step has clear deliverables.
 
 It accepts any scope. `suite <ID>` for direct quality review. `domain <name>` for a per-domain coverage audit. `VCST-XXXX` to derive cases from a JIRA ticket's acceptance criteria. `PR #NNN` for change-driven sync against a pull request. `module <name>` for a `vc-module-*` repo. `diff` or `changelog <ver>` for pure git-driven gap analysis.
 
-What it produces: updated Steps and Assertions for stale cases, new cases with BL-* and ECL-* citations, typed tags, a 7-dimension quality review report, and a live-verification gate before merge.
+What it produces: updated Steps and Assertions for stale cases, new cases with BL-* and ECL-* citations, typed tags, a 11-dimension quality review report, and a live-verification gate before merge.
 
-This command replaced the deprecated `/qa-sync-tests`. Delegates to test-management-specialist for authoring and review, and qa-testing-expert for live verification.
+This command replaced `/qa-sync-tests`, which has since been removed outright — its command file is deleted and there is no redirect. Delegates to test-management-specialist for authoring and review, and qa-testing-expert for live verification.
 
 The pipeline runs unattended. You point it at a PR, you get back an approval-ready set of test-case updates.
 

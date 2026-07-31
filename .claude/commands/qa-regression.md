@@ -74,7 +74,7 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
    - Include full deploy state in the regression report header (Step 6)
    - Save to `reports/deploy-state-cache.json` for cross-reference
 3. **Duplicate check** — check `reports/regression/test-run-status.json` for an active run with the same suite selection. If found, block — wait for current run to complete.
-4. **Context7 query** (for `sprint` and `full` selections) — resolve `/virtocommerce/vc-docs`, query `"platform release notes recent changes"` with `tokens: 8000`. Flag any API contract changes that may cause false failures in existing test cases. Consider running `/qa-sync-tests` first if breaking changes detected.
+4. **Context7 query** (for `sprint` and `full` selections) — resolve `/virtocommerce/vc-docs`, query `"platform release notes recent changes"` with `tokens: 8000`. Flag any API contract changes that may cause false failures in existing test cases. Consider running `/qa-test-lifecycle diff` (or `changelog <version>`) first if breaking changes detected.
 
 ### Step 0.5 — Seed Data (only if `--seed=<profile>` provided)
 
@@ -241,7 +241,7 @@ Agents MUST resolve credentials via `@td()` at runtime — never hardcode in pro
 - **Always auto-launch the live dashboard watcher (Step 3) — every run, every mode, without asking.** Spawn `npm run report:regression:watch -- --run-id {RUN_ID}` in the background immediately after writing `test-run-status.json` and before dispatching any suite agent. Never wait for the user to request it, and never ask whether to launch it — it applies to browser-pool runs and single runner-native suites (e.g. 050m) equally.
 - **Split the suite-by-suite results by layer.** The Step 6 report's results table is written as two subsections — `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`) — classified by the layer directory each suite's CSV lives under in `config/test-suites.json`, each with its own pass/fail sub-total. Loyalty splits across layers (083/083b → Frontend; 075/075b/075c → Backend); admin/GraphQL suites (050*, 0XX admin) → Backend.
 - Read URLs from .env via `config.js`, never hardcode
-- If >50% suites fail, flag as critical_failure — suggest `/qa-sync-tests` to check for stale test cases
+- If >50% suites fail, flag as critical_failure — suggest `/qa-triage-results latest` to classify the failures (real bug vs stale test), or `/qa-test-lifecycle diff` to sync against recent code changes
 - If a browser fails to launch, retry with fallback chain (see Browser Pool table above)
 - `--seed` with `smoke`/`042` is rejected — smoke tests don't need seeded data; warn and skip seeding
 - `--seed` runs sequentially before Step 1; it blocks the regression run and must succeed
