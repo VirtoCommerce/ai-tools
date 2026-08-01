@@ -625,6 +625,14 @@ function classifyStderr(text) {
 // non-zero exit never reaches the transcript at all — that is why plugin scripts must not be
 // piped (skill-expectations §1e note), and why the `obs` subcommand exists.
 const EXIT_CODE_RE = /^\s*Exit code (\d{1,3})\b/;
+// A SELF-REPORTED non-zero exit the AGENT echoed into stdout — `echo exit=$?` → `exit=1`,
+// `echo "exit code: $?"`, `rc=$?; echo exit_code=$rc`. This is the blind spot EXIT_CODE_RE cannot
+// reach: `cmd > file 2>&1; echo exit=$?` makes the PIPELINE exit 0 (echo succeeds), so the harness
+// marks is_error false, adds NO `Exit code N` line, and stderr went to a file (not tur.stderr) — a
+// real script failure recorded as success (the MSYS get-file finding produced ZERO telemetry this
+// exact way). Requires `=`/`:` (so the harness "Exit code N" line, space-separated, never matches it
+// → no double-record) and a non-zero code (`[1-9]…` — `exit=0` is success and never fires).
+const SELF_EXIT_RE = /\bexit(?:[ _-]?(?:code|status))?\s*[=:]\s*([1-9]\d{0,2})\b/i;
 
 // ─── bail detection (VCST-5582 F2) ───────────────────────────────────────────
 // A bail is something the AGENT DECLARED ("STOP — handing off", "FIX_STATUS: FAILED"). The old
@@ -1318,6 +1326,23 @@ function scanTranscript(jsonlPath, transcriptPath, state) {
             pluginOwned: opPluginOwnedOf(sp),
             code: _classifyError(body), evidence: { exitCode, snippet: body },
           });
+        }
+        // Self-reported non-zero exit the AGENT echoed to stdout (SELF_EXIT_RE) — the blind spot the
+        // harness Exit-code line cannot reach (`cmd > file 2>&1; echo exit=$?` → pipeline exit 0,
+        // is_error false, no harness line). Independent of is_error, like the degradation scan below.
+        // Only when the harness did NOT already surface an Exit code line (no double-record), and
+        // scoped to skip a Read/dump op whose body is FILE CONTENT the agent merely read (an echoed
+        // number in a source file must not manufacture a failure) — same scope as `degradedText`.
+        if (exitCode === null && !(SEARCH_RE.test(sp?.name || "") || sp?.echoesFile)) {
+          const selfExitText = seRaw ? `${body}\n${seRaw.slice(0, 4000)}` : body;
+          const selfExit = SELF_EXIT_RE.exec(selfExitText);
+          if (selfExit) {
+            recordObs(jsonlPath, state, {
+              ...attrib, class: "script_exit_nonzero", subject: opSubjectOf(sp),
+              pluginOwned: opPluginOwnedOf(sp),
+              code: _classifyError(body), evidence: { exitCode: Number(selfExit[1]), snippet: body },
+            });
+          }
         }
         // Self-labelled degradation anywhere in the output (P1-7) — a WARN table, an
         // "unverified defaults" note. Independent of is_error: the whole point is that these

@@ -277,6 +277,47 @@ test("a non-zero exit is captured as its own class with the code as DATA", () =>
   }
 });
 
+test("self-reported exit: `cmd > file 2>&1; echo exit=$?` is captured despite is_error:false (the MSYS-finding blind spot)", () => {
+  const home = setupHome();
+  try {
+    const t = tp(home);
+    run(home, "init", { session_id: "se", transcript_path: t });
+    run(home, "prompt", { session_id: "se", transcript_path: t, prompt: "/project-init" });
+    appendLines(t, [
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs" > out.log 2>&1; echo exit=$?' }),
+      // The pipeline exits 0 (echo succeeded) → the harness marks is_error:false, adds NO
+      // "Exit code N" line, and stderr went to out.log — the exact shape that recorded a real
+      // failure as success. The echoed `exit=1` is the only surviving signal.
+      toolResult("2026-07-29T10:00:01.000Z", "t1", false, "exit=1"),
+    ]);
+    run(home, "finalize", { session_id: "se", transcript_path: t, background_tasks: [] });
+    const o = obsOf(recordsOf(home, "se"));
+    const exit = o.find((x) => x.class === "script_exit_nonzero");
+    assert.ok(exit, "a self-reported non-zero exit is captured even when the op is is_error:false");
+    assert.equal(exit.evidence.exitCode, 1);
+    assert.equal(exit.subject, "verify_access", "the subject is the plugin SCRIPT, not 'bash'");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("self-reported exit: `echo exit=$?` printing 0 does NOT manufacture a failure", () => {
+  const home = setupHome();
+  try {
+    const t = tp(home);
+    run(home, "init", { session_id: "se0", transcript_path: t });
+    run(home, "prompt", { session_id: "se0", transcript_path: t, prompt: "/project-init" });
+    appendLines(t, [
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs" > out.log 2>&1; echo exit=$?' }),
+      toolResult("2026-07-29T10:00:01.000Z", "t1", false, "exit=0"),
+    ]);
+    run(home, "finalize", { session_id: "se0", transcript_path: t, background_tasks: [] });
+    assert.ok(!obsOf(recordsOf(home, "se0")).some((x) => x.class === "script_exit_nonzero"), "exit=0 is success — never fires");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("an interrupted tool is captured", () => {
   const home = setupHome();
   try {

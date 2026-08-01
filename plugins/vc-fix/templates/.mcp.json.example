@@ -8,7 +8,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@latest",
+        "@playwright/mcp@0.0.77",
         "--browser",
         "chrome",
         "--isolated",
@@ -24,7 +24,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@latest",
+        "@playwright/mcp@0.0.77",
         "--browser",
         "firefox",
         "--isolated",
@@ -40,7 +40,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@latest",
+        "@playwright/mcp@0.0.77",
         "--browser",
         "msedge",
         "--isolated",

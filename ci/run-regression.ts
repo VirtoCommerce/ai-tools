@@ -110,7 +110,7 @@ const mcpServers = {
   "playwright-chrome": {
     command: "npx",
     args: [
-      "@playwright/mcp@latest",
+      "@playwright/mcp@0.0.77",
       "--config",
       "ci/config/mcp-playwright-chrome.ci.json",
     ],

@@ -220,10 +220,35 @@ function orgUrl(args) {
 }
 
 // ---- fetch wrapper ------------------------------------------------------------------
+// Transient ADO failures worth a bounded retry: a network throw, a 429 throttle, or a gateway
+// 5xx (502/503/504 are common on dev.azure.com under load). A single fetch with ZERO backoff
+// turned an intermittent 504 into a hard command failure — so retry a few times with exponential
+// backoff before surfacing it. A 4xx other than 429 is a caller error and is NEVER retried.
+const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function fetchRetry(url, opts, { attempts = 3, baseMs = 250 } = {}) {
+  let lastErr;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const res = await fetch(url, opts);
+      if (RETRY_STATUS.has(res.status) && attempt < attempts) {
+        await sleep(baseMs * 2 ** (attempt - 1)); // 250ms, 500ms
+        continue;
+      }
+      return res;
+    } catch (e) {
+      lastErr = e; // network-level failure (DNS, ECONNRESET, socket timeout)
+      if (attempt >= attempts) throw e;
+      await sleep(baseMs * 2 ** (attempt - 1));
+    }
+  }
+  throw lastErr;
+}
+
 async function call(method, url, { body, contentType } = {}) {
   const headers = { Authorization: await authHeader(), Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = contentType || "application/json";
-  const res = await fetch(url, {
+  const res = await fetchRetry(url, {
     method,
     headers,
     body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
@@ -258,7 +283,7 @@ async function callSoft(method, url, { body, contentType } = {}) {
   const headers = { Authorization: await authHeader(), Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = contentType || "application/json";
   try {
-    const res = await fetch(url, {
+    const res = await fetchRetry(url, {
       method, headers,
       body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
       redirect: "manual",
@@ -693,6 +718,18 @@ const COMMANDS = {
 
   async "get-file"(args) {
     if (!args.repo || !args.path) fail("--repo and --path required");
+    // ADO item paths are repo-RELATIVE (`client-app/x.vue` or `/client-app/x.vue`). On Git Bash /
+    // MSYS, a leading-slash arg is silently rewritten into a Windows path — `--path /client-app/x.vue`
+    // arrives here as `C:/Program Files/Git/client-app/x.vue`. Forwarding that to ADO 404s opaquely,
+    // so detect the drive-letter/Git-install mangle and tell the caller how to stop it.
+    if (/^[A-Za-z]:[\\/]/.test(args.path) || /[\\/](?:Program Files[\\/]Git|mingw\d*|usr[\\/]bin)[\\/]/i.test(args.path)) {
+      fail(
+        `--path looks MSYS-mangled (a leading '/' was rewritten to a Windows path): ${args.path}\n` +
+        "      ADO item paths are repo-relative. Re-run with MSYS_NO_PATHCONV=1 (e.g.\n" +
+        "      `MSYS_NO_PATHCONV=1 node ado.mjs get-file --repo <r> --path /client-app/x.vue ...`),\n" +
+        "      or drop the leading slash (`--path client-app/x.vue`)."
+      );
+    }
     const b = args.branch || "";
     const q = b
       ? `&versionDescriptor.version=${enc(b)}&versionDescriptor.versionType=branch`
