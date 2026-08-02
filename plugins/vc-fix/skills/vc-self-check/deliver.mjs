@@ -53,7 +53,7 @@ import { resolve, join, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { resolveGithubToken, probeGithubUpstream, GITHUB_UPSTREAM_REMEDY } from "../project-init/probe-lib.mjs";
 import {
-  validateUpstream, fingerprintStruct, findingStructSig, findingKey, severityRank, verdictRank, subjectEnum,
+  validateUpstream, fingerprintStruct, findingKey, severityRank, verdictRank, subjectEnum,
 } from "./upstream-reduce.mjs";
 import { loadExpected, findExpected } from "../../hooks/expected.mjs";
 
@@ -387,11 +387,6 @@ export function severityOfIssue(issue) {
   if (!m) return null;
   return m[1].startsWith("S") ? m[1] : `S${m[1]}`;
 }
-export function verdictOfIssue(issue) {
-  const m = /\b(BROKEN|DEGRADED|OK)\b/.exec(`${issue?.title ?? ""}`);
-  return m ? m[1] : null;
-}
-
 const ghHeaders = (token) => ({
   Authorization: `Bearer ${token}`,
   "User-Agent": "vc-self-check",

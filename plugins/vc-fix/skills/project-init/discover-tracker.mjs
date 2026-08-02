@@ -24,6 +24,7 @@
  */
 import { writeFileSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import { resolveAdoAuth } from "./probe-lib.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 // Layer .env.defaults → .env.<env> → .env.local into process.env before reading ADO_PAT.
@@ -363,6 +364,7 @@ async function main() {
   emit(out, args);
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("discover-tracker.mjs")) {
+// CLI only — the pure helpers above are imported by the unit tests (repo-standard main-guard).
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main();
 }

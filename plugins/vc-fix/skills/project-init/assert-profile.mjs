@@ -28,6 +28,8 @@
  *
  * Usage:  node skills/project-init/assert-profile.mjs [--json]
  */
+import { resolve } from "path";
+import { fileURLToPath } from "url";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
@@ -150,6 +152,7 @@ function main() {
   process.exit(0);
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("assert-profile.mjs")) {
+// CLI only — the pure helpers above are imported by the unit tests (repo-standard main-guard).
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main();
 }
