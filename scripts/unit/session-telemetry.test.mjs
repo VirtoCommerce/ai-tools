@@ -509,6 +509,62 @@ test("classify: a read-only skill (many reads, no decisive op) that produced its
   }
 });
 
+// ─── Fix (VCST-5582): human think-time on a consent question is NOT a `stall` ─────────
+// detectStruggle()'s per-op stall check excludes AskUserQuestion ops — their wall-clock is the
+// operator's answer wait, not a hang. A ~20-min consent answer once ran 1,240,749 ms and minted a
+// false `stall`, degrading the span and arming the silent self-check tail-trigger (a user-facing
+// nag). These two tests lock the exclusion in AND prove it is question-specific: a non-question op
+// of the SAME duration must still stall, so deleting the guard fails a test instead of regressing
+// silently.
+test("struggle: a >STALL_MS AskUserQuestion op (human think-time) does NOT produce a `stall`", () => {
+  const home = setupHome();
+  try {
+    const sid = "stall-question";
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-bug the dropdown is empty" });
+    appendLines(tp, [
+      // 20-min gap (> STALL_MS = 8min) between the question and the operator's answer.
+      toolUse("2026-01-01T00:00:00Z", "q1", "AskUserQuestion", { questions: [{ question: "Create a bug-tracker ticket?" }] }),
+      toolResult("2026-01-01T00:20:00Z", "q1", false, "Yes — file the ticket"),
+      // a decisive op so the span has progress and the stall signal is isolated.
+      toolUse("2026-01-01T00:20:01Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-Q.md", content: "# Bug" }),
+      toolResult("2026-01-01T00:20:02Z", "w1", false, "File written"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-bug");
+    assert.equal(cmd.length, 1);
+    assert.ok(!cmd[0].struggle.includes("stall"), "a long AskUserQuestion answer-wait must not be classified as a stall");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("struggle: a >STALL_MS NON-question op DOES still produce a `stall` (exclusion is question-specific)", () => {
+  const home = setupHome();
+  try {
+    const sid = "stall-bash";
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-bug the dropdown is empty" });
+    appendLines(tp, [
+      // same 20-min gap, but on a Bash op — a genuine long-running tool that must still trip `stall`.
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "npm run some:long:task" }),
+      toolResult("2026-01-01T00:20:00Z", "b1", false, "done"),
+      toolUse("2026-01-01T00:20:01Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-B.md", content: "# Bug" }),
+      toolResult("2026-01-01T00:20:02Z", "w1", false, "File written"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-bug");
+    assert.equal(cmd.length, 1);
+    assert.ok(cmd[0].struggle.includes("stall"), "a non-question op over STALL_MS must still be a stall");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── secret redaction — the hook's hard invariant (public-repo delivery) ────────────
 test("redaction: secrets in a tool_result never reach a span's details[].snippet or the block reason", () => {
   const home = setupHome();

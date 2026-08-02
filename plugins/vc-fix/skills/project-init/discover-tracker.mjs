@@ -26,6 +26,11 @@ import { writeFileSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { resolveAdoAuth } from "./probe-lib.mjs";
 import { outputRoot } from "./lib/paths.mjs";
+// Layer .env.defaults → .env.<env> → .env.local into process.env before reading ADO_PAT.
+// resolveAdoAuth() reads a bare process.env.ADO_PAT, which the shell rarely exports — the token
+// lives in .env.local. Siblings (discover-repos/verify-access/ensure-session) already load it;
+// without this call the ADO scan authed against an empty PAT and 302'd to sign-in (VCST-5582).
+import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 // Self-diagnostics CAPTURE channel (VCST-5582 H). Every scan step below degrades GRACEFULLY —
 // warn to stderr, write a partial result, exit 0 — which is correct onboarding behaviour and was
 // also a total blind spot: the field-contract scan 400s, `fields` comes out `{}`, /qa-bug silently
@@ -154,6 +159,14 @@ async function main() {
     // Jira: format facts only; transitions are discovered live at runtime.
     emit({ kind: "jira", ticketKeyFormat: "prefixed", crossLinkToken: "" }, args);
     return;
+  }
+
+  // Azure path: bring .env.local's ADO_PAT (and any ADO_ORG/ADO_PROJECT) into process.env before
+  // the reads below. Best-effort — the explicit org/project/auth guards still fire on a real miss.
+  try {
+    loadLayeredEnv("vcst");
+  } catch (e) {
+    console.error(`[discover-tracker] env load skipped: ${e.message}`);
   }
 
   const org = args.org || process.env.ADO_ORG || "";

@@ -848,8 +848,11 @@ function detectStruggle(span) {
   }
   for (const n of errSig.values()) if (n >= T.RECURRING_ERROR) { struggle.push("recurring_error"); break; }
 
-  // stall — a single op ran abnormally long.
-  if (ops.some((o) => (o.durationMs || 0) > T.STALL_MS)) struggle.push("stall");
+  // stall — a single op ran abnormally long. EXCLUDE operator-facing question tools
+  // (AskUserQuestion): their "duration" is human think-time waiting for an answer, not a hang —
+  // a ~20-min consent answer once ran 1,240,749 ms and minted a false stall (VCST-5582).
+  // QUESTION_TOOL_RE is the same matcher the consent/dedup path uses (see its definition above).
+  if (ops.some((o) => !QUESTION_TOOL_RE.test(String(o.tool || "")) && (o.durationMs || 0) > T.STALL_MS)) struggle.push("stall");
 
   // low_yield — many tool ops (whole-span count) with NO progress: neither a decisive op
   // nor the skill's expected output (sawExpected). A read-only skill that produced its
