@@ -758,7 +758,7 @@ const PLUGIN_FILE_EXT = /\.(?:mjs|cjs|ts|tsx|js|jsx|json|md)$/i;
  * all permitted implicitly (they are not `Capitalized.dotted`, so the loop never inspects them, and
  * none of the leak-shape checks match them). Returns a REASON to deny, or null to allow. Pure.
  */
-export function proposedFixDenial(value, { denyValues = [], files = null } = {}) {
+export function proposedFixDenial(value, { denyValues = [], states = [], files = null } = {}) {
   const v = String(value ?? "");
   if (!v.trim()) return "empty";
   if (HOSTISH.test(v) || BARE_HOST.test(v)) return "contains a URL host";
@@ -766,9 +766,17 @@ export function proposedFixDenial(value, { denyValues = [], files = null } = {})
   if (EMAILISH.test(v)) return "contains an email address";
   if (TOKENISH.test(v)) return "contains a token-shaped run";
   if (GUIDISH.test(v)) return "contains a GUID";
+  // Same default-deny leak shapes boundaryDenial enforces — proposedFix relaxes ONLY the
+  // Capitalized.dotted namespace (allowlisted below), never these. Without the IP + state-name
+  // checks a client internal IP or a custom work-item state name could ride this one field upstream
+  // while every other field denies it (VCST-5582 containment asymmetry).
+  if (IPISH.test(v)) return "contains an IP address";
   const low = v.toLowerCase();
   for (const d of denyValues) {
     if (d && low.includes(String(d).toLowerCase())) return "contains a value read from .env.* / project-profile.json";
+  }
+  for (const s of states) {
+    if (s && low.includes(String(s).toLowerCase())) return "contains a work-item state name";
   }
   const fileMap = files instanceof Map ? files : null;
   const re = /\b([A-Z][A-Za-z0-9]*)((?:\.[A-Za-z0-9]+)+)\b/g;
@@ -976,7 +984,7 @@ export function provenanceFields(o, ctx) {
   // leak shape past the cap is still caught; only then does a clean fix get truncated with a marker.
   if (provided(o.proposedFix)) {
     const raw = o.proposedFix.trim();
-    if (!proposedFixDenial(raw, { denyValues: opts.denyValues, files })) out.proposedFix = truncField(raw, FIELD_CAPS.proposedFix);
+    if (!proposedFixDenial(raw, { denyValues: opts.denyValues, states: opts.states, files })) out.proposedFix = truncField(raw, FIELD_CAPS.proposedFix);
     else withhold("proposedFix", "boundary-denied");
   }
 

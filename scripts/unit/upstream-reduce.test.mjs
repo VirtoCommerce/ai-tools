@@ -593,6 +593,10 @@ test("B2 proposedFixDenial: default-deny on leak shapes; allowlist on identifier
   assert.ok(proposedFixDenial("token github_pat_0123456789abcdefghijklmnopqrstuvwx"), "token");
   assert.ok(proposedFixDenial("id 6f1c2b3a-1111-2222-3333-444455556666"), "GUID");
   assert.ok(proposedFixDenial("use the org LeoCorpWebStore", { denyValues: ["LeoCorpWebStore"] }), "client env/profile value");
+  // VCST-5582 — parity with boundaryDenial: proposedFix must also deny an IP and a client work-item
+  // state name (it travels upstream; without these two it was the one fail-OPEN field).
+  assert.ok(proposedFixDenial("the request to 10.0.0.5 timed out"), "internal IP address");
+  assert.ok(proposedFixDenial("add handling for the Blocked-Waiting-Vendor state", { states: ["Blocked-Waiting-Vendor"] }), "client work-item state name");
   // Allowed: prose + plugin paths + vendor enums + a plugin-sourced Capitalized.dotted literal.
   assert.equal(proposedFixDenial("drop $expand=Properties in discover-tracker.mjs; request api-version 7.1"), null);
   assert.equal(proposedFixDenial("default System.State via roleStates, do not add a slot"), null);
@@ -602,6 +606,24 @@ test("B2 proposedFixDenial: default-deny on leak shapes; allowlist on identifier
     "a Capitalized.dotted literal quoted from the plugin's OWN source is allowlisted",
   );
   assert.ok(proposedFixDenial("touch the Custom.Widget field"), "a foreign Capitalized.dotted token with no source proof is denied");
+});
+
+test("B2 wiring (VCST-5582): validateUpstream threads ctx.states into proposedFix — a state name is WITHHELD, not shipped", () => {
+  const base = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+    retries: 0, occurrences: 1, pluginFile: PLUGIN_FILE,
+    proposedFix: "add handling for the Blocked-Waiting-Vendor state before the transition",
+  };
+  // The call site once passed only { denyValues, files } — so ctx.states never reached the gate and a
+  // client custom state name shipped. This proves the wiring, not just proposedFixDenial in isolation.
+  const out = validateUpstream(
+    { schemaVersion: 3, pluginVersion: "0.8.2", findings: [{ ...base }], feedback: { up: 0, down: 0 }, sessionCount: 1 },
+    ctxOf({ states: ["Blocked-Waiting-Vendor"] }),
+  );
+  assert.equal(out.findings[0].proposedFix ?? null, null, "the client state name must NOT travel");
+  assert.ok(out.findings[0].withheld.some((w) => w.field === "proposedFix"), "the drop is recorded as withheld");
+  assertNoLeak(out, "Blocked-Waiting-Vendor");
 });
 
 test("v3 provenance (item 7): a codeExcerpt NOT present in the cited plugin file is REJECTED (dropped, finding survives)", () => {
