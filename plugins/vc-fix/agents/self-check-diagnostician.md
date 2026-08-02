@@ -105,6 +105,28 @@ provenance fields so the vendor gets a payload they can act on — not `Signal: 
   message if you have it — the boundary is enforced downstream. Never hand-scrub it into something
   that looks safe; give the raw text and let the validator judge.
 
+### Grounding discipline — cite ONLY what the telemetry shows (VCST-5582 — anti-confabulation)
+
+Every provenance field must describe **the operation that actually failed in THIS session's
+telemetry**, not a plausible-looking bug you inferred by reading the source. The collector captured
+the real error text in each `obs` record's `evidence.snippet` (e.g. `HTTP 504 on get-workitem …
+TF400931`). Before you fill a provenance field:
+
+- **The cited `pluginFile:pluginLine` / `codeExcerpt` must be the site of the operation named in the
+  evidence.** If the telemetry shows `get-workitem` failing, do NOT anchor the finding on `get-file`
+  (a different handler in the same file) because its code *looks* related — that is a fabricated root
+  cause. When you cannot pin the exact failing line, omit `codeExcerpt`/`offendingLiteral` and let the
+  enum table stand; a correct thin finding beats a confident wrong one.
+- **`vendorErrorTypeKey` / `vendorErrorName` / `vendorErrorCode` / `vendorHttpStatus` must be copied
+  from the captured error text — never guessed.** If the snippet says `HTTP 504 … TF400931`, that is
+  the identity; do NOT invent `TF401174 · HTTP 404` because it fits the story. The orchestrator now
+  **grounds every vendor identity against the session telemetry corpus and DROPS (`ungrounded`) any
+  code/status/typeKey that appears nowhere in it** — a fabricated identity will not ship, and its
+  absence signals the confabulation. Supply the field only when the value literally appears in the
+  evidence you read.
+- An injected/simulated fault (a self-diagnostics test stub) is a real observed signal — report the
+  identity it actually emitted, not a real-world error it resembles.
+
 **What NEVER travels, in any field:** work-item STATE names, custom work-item TYPE names, repo/org/
 project names, any path outside the plugin, URLs, emails, tokens, GUIDs. Send counts instead ("14
 states, custom process"). The orchestrator's validator denies these; do not rely on that — do not

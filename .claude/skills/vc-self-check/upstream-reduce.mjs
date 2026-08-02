@@ -909,6 +909,32 @@ export function provenanceFields(o, ctx) {
   const provided = (v) => typeof v === "string" && v.trim();
   const withhold = (field, reason) => out.withheld.push({ field, reason });
 
+  // VCST-5582 — telemetry grounding for the vendor error IDENTITY. When the ctx carries the session
+  // evidence corpus (`ctx.evidence` is a string — the single-session send path always sets it; a bare
+  // hand-built ctx or the batch path leaves it null), a vendor typeKey / name / code / http-status
+  // the diagnostician supplied but that appears NOWHERE in what the collector captured is DROPPED as
+  // `ungrounded`. Shape + boundary alone let a fabricated "Vendor error identity: TF401174 · HTTP 404"
+  // (an operation that never ran) ship on plausibility; grounding makes it impossible. A real error's
+  // raw text is captured verbatim, so a genuine identity always matches. An empty corpus ("" — sid
+  // known but jsonl lost) grounds NOTHING → fail closed, matching the ADR default-deny stance.
+  const evid = typeof ctx.evidence === "string" ? ctx.evidence.toLowerCase() : null;
+  // Normalized (spacing/punctuation-insensitive) projection so a genuine multi-word identity
+  // (`GatewayTimeout` vs a captured "gateway timeout") still grounds, while a token that appears
+  // NOWHERE (`TF401174`) still fails — normalization removes only separators, never invents a match.
+  const evidNorm = evid == null ? null : evid.replace(/[^a-z0-9]+/g, "");
+  const httpClasses = ctx.httpClasses instanceof Set ? ctx.httpClasses : new Set();
+  const idGrounded = (tok) => {
+    if (evid == null) return true; // grounding not requested (batch / hand-built ctx) ⇒ shape-only
+    if (tok == null) return false;
+    const t = String(tok).toLowerCase();
+    // Min length 3 on BOTH branches: a 1–2 char token carries ~no identity and would be spuriously
+    // grounded by almost any corpus. Real vendor keys/codes are long; a status ships via statusGrounded.
+    if (t.length >= 3 && evid.includes(t)) return true;
+    const tn = t.replace(/[^a-z0-9]+/g, "");
+    return tn.length >= 3 && evidNorm.includes(tn);
+  };
+  const statusGrounded = (n) => evid == null || evid.includes(String(n)) || httpClasses.has(`HTTP_${Math.floor(n / 100)}XX`);
+
   // ── the cited plugin location ──
   const file = capped(o.pluginFile, FIELD_CAPS.pluginFile);
   const fileOk = file && PLUGIN_REL_PATH.test(file) && !file.includes("..") && files.has(file)
@@ -957,16 +983,25 @@ export function provenanceFields(o, ctx) {
   // ── §6a vendor error IDENTITY: the vendor's own stable enums, no client interpolation ──
   // These stay HARD-DROP (`capped`): a truncated identity is wrong, not merely short.
   const tk = capped(o.vendorErrorTypeKey, FIELD_CAPS.vendorErrorTypeKey);
-  if (tk && /^[A-Za-z][A-Za-z0-9._-]*$/.test(tk) && !boundaryDenial(tk, opts)) out.vendorErrorTypeKey = tk;
-  else if (provided(o.vendorErrorTypeKey)) withhold("vendorErrorTypeKey", tk ? "boundary-denied" : "over-cap");
+  if (tk && /^[A-Za-z][A-Za-z0-9._-]*$/.test(tk) && !boundaryDenial(tk, opts)) {
+    if (idGrounded(tk)) out.vendorErrorTypeKey = tk;
+    else withhold("vendorErrorTypeKey", "ungrounded");
+  } else if (provided(o.vendorErrorTypeKey)) withhold("vendorErrorTypeKey", tk ? "boundary-denied" : "over-cap");
   const tn = capped(o.vendorErrorName, FIELD_CAPS.vendorErrorName);
-  if (tn && /^[A-Za-z][A-Za-z0-9._,\- ]*$/.test(tn) && !boundaryDenial(tn, opts)) out.vendorErrorName = tn;
-  else if (provided(o.vendorErrorName)) withhold("vendorErrorName", tn ? "boundary-denied" : "over-cap");
+  if (tn && /^[A-Za-z][A-Za-z0-9._,\- ]*$/.test(tn) && !boundaryDenial(tn, opts)) {
+    if (idGrounded(tn)) out.vendorErrorName = tn;
+    else withhold("vendorErrorName", "ungrounded");
+  } else if (provided(o.vendorErrorName)) withhold("vendorErrorName", tn ? "boundary-denied" : "over-cap");
   const code = capped(o.vendorErrorCode, FIELD_CAPS.vendorErrorCode);
-  if (code && /^[A-Za-z0-9._-]+$/.test(code) && !boundaryDenial(code, opts)) out.vendorErrorCode = code;
-  else if (provided(o.vendorErrorCode)) withhold("vendorErrorCode", code ? "boundary-denied" : "over-cap");
+  if (code && /^[A-Za-z0-9._-]+$/.test(code) && !boundaryDenial(code, opts)) {
+    if (idGrounded(code)) out.vendorErrorCode = code;
+    else withhold("vendorErrorCode", "ungrounded");
+  } else if (provided(o.vendorErrorCode)) withhold("vendorErrorCode", code ? "boundary-denied" : "over-cap");
   const st = Math.trunc(Number(o.vendorHttpStatus));
-  if (Number.isFinite(st) && st >= 100 && st <= 599) out.vendorHttpStatus = st;
+  if (Number.isFinite(st) && st >= 100 && st <= 599) {
+    if (statusGrounded(st)) out.vendorHttpStatus = st;
+    else withhold("vendorHttpStatus", "ungrounded");
+  } else if (provided(o.vendorHttpStatus)) withhold("vendorHttpStatus", "over-cap");
   const doc = capped(o.vendorDocUrl, FIELD_CAPS.vendorDocUrl);
   if (doc) {
     let host = "";
@@ -988,7 +1023,7 @@ export function provenanceFields(o, ctx) {
 }
 
 // B6 — the closed set of reasons a provided string was withheld from the outbound artifact.
-export const WITHHELD_REASONS = ["over-cap", "proof-failed", "boundary-denied", "absent"];
+export const WITHHELD_REASONS = ["over-cap", "proof-failed", "boundary-denied", "ungrounded", "absent"];
 const WITHHELD_REASONS_SET = new Set(WITHHELD_REASONS);
 
 // ─── validateUpstream — the runtime boundary barrier ─────────────────────────

@@ -40,6 +40,14 @@ function seedProfile(home, mode = "ask") {
   const dir = join(home, ".vc-fix", "diagnostics");
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, `${SID}.state.json`), JSON.stringify({ sid: SID, selfCheckSeen: true }));
+  // Grounding corpus (VCST-5582 confabulation gate): a REAL session that hit this ADO error captures
+  // its raw text, so the finding's vendor identity (TF401347 · 400) is grounded and stays filable.
+  // Without this the identity is dropped as `ungrounded` — which is the gate correctly rejecting a
+  // vendor error that left NO telemetry trace.
+  writeFileSync(join(dir, `${SID}.jsonl`), JSON.stringify({
+    type: "obs", class: "http_non2xx", subject: "ado_create_workitem", code: "HTTP_4XX",
+    evidence: { snippet: `ADO create workitem 400: ${FINDING.vendorErrorCode} field-contract violation`, httpStatus: 400 },
+  }) + "\n");
   return dir;
 }
 

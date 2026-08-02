@@ -248,7 +248,48 @@ function collectProfileDenyValues(profile, set, states) {
   const org = profile?.clientOrg ?? profile?.upstream?.clientGithubAccount ?? profile?.vcs?.clientOrg;
   if (typeof org === "string" && org.trim().length >= 3) set.add(org.trim());
 }
-export function buildProvenanceCtx(struct, { pluginRoot = pluginRootOfThisFile(), root = outputRoot() } = {}) {
+/**
+ * VCST-5582 (confabulation gate) — the lowercased corpus of everything the COLLECTOR actually
+ * captured this session: obs evidence snippets + span error-detail snippets, plus the obs HTTP-class
+ * codes. Threaded into the provenance ctx so `upstream-reduce` can DROP a vendor error IDENTITY
+ * (typeKey / name / code / http-status) the diagnostician supplied but that appears NOWHERE in the
+ * telemetry — i.e. a fabricated "Vendor error identity: TF401174 · HTTP 404" for an operation that
+ * never ran. A real error's raw text is captured verbatim by the collector, so a genuine identity is
+ * always grounded; only invented ones fail. Returns `evidence:""` (not null) when a sid is given but
+ * the jsonl is missing, so a real send with lost telemetry FAILS CLOSED (identity dropped), matching
+ * the ADR default-deny stance.
+ */
+function loadSessionEvidence(sid) {
+  const empty = { evidence: "", httpClasses: new Set() };
+  if (!sid) return empty;
+  const p = join(diagDir(), `${sid}.jsonl`);
+  let text = "";
+  try {
+    if (!existsSync(p)) return empty;
+    text = readFileSync(p, "utf8");
+  } catch {
+    return empty;
+  }
+  const parts = [];
+  const httpClasses = new Set();
+  for (const line of text.split(/\r?\n/)) {
+    const s = line.trim();
+    if (!s) continue;
+    let r;
+    try { r = JSON.parse(s); } catch { continue; }
+    if (r && r.type === "obs") {
+      const ev = r.evidence || {};
+      if (typeof ev.snippet === "string") parts.push(ev.snippet);
+      if (ev.httpStatus != null) parts.push(String(ev.httpStatus));
+      if (typeof r.code === "string" && /^HTTP_\dXX$/.test(r.code)) httpClasses.add(r.code);
+    }
+    if (r && r.type === "span" && Array.isArray(r.details)) {
+      for (const d of r.details) if (d && typeof d.snippet === "string") parts.push(d.snippet);
+    }
+  }
+  return { evidence: parts.join("\n").toLowerCase(), httpClasses };
+}
+export function buildProvenanceCtx(struct, { pluginRoot = pluginRootOfThisFile(), root = outputRoot(), sid = "" } = {}) {
   const files = new Map();
   for (const f of struct?.findings ?? []) {
     const rel = typeof f?.pluginFile === "string" ? f.pluginFile : "";
@@ -267,7 +308,12 @@ export function buildProvenanceCtx(struct, { pluginRoot = pluginRootOfThisFile()
   collectEnvDenyValues(root, deny);
   const profile = readProfileObj();
   if (profile) collectProfileDenyValues(profile, deny, states);
-  return { files, denyValues: [...deny], states: [...states] };
+  // Grounding corpus (VCST-5582): loaded ONLY when a session id is known. With no sid (e.g. batch
+  // aggregation across sessions) `evidence` stays null and provenanceFields keeps its prior
+  // shape-only vendor-identity behavior; with a sid it is a string (possibly "") and every vendor
+  // error identity must appear in the captured telemetry or it is dropped as `ungrounded`.
+  const ground = sid ? loadSessionEvidence(sid) : { evidence: null, httpClasses: new Set() };
+  return { files, denyValues: [...deny], states: [...states], evidence: ground.evidence, httpClasses: ground.httpClasses };
 }
 
 // ─── route resolution ────────────────────────────────────────────────────────
@@ -1107,7 +1153,7 @@ export async function main(argv = process.argv.slice(2), { stdin = process.stdin
 
   // `sessionId` is LOCAL routing data (which state.json to touch) and is deliberately absent from
   // the validated struct, so it can never reach the outbound artifact.
-  const ctx = buildProvenanceCtx(raw);
+  const ctx = buildProvenanceCtx(raw, { sid });
   const struct = validateUpstream(raw, ctx);
 
   // --assert-nonempty: offline gate — validate, judge, exit. Before any consent/token/route work so

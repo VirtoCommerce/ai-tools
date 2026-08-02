@@ -43,6 +43,9 @@ const FINDING_KEYS = [
 const WITHHELDABLE_FIELDS = new Set([
   "pluginFile", "codeExcerpt", "offendingLiteral", "apiShape", "proposedFix",
   "vendorErrorTypeKey", "vendorErrorName", "vendorErrorCode", "vendorDocUrl", "vendorErrorMessage",
+  // VCST-5582 confabulation gate: the numeric vendor HTTP status is now withheld too (over-cap /
+  // out-of-range, or `ungrounded` when it appears nowhere in the captured telemetry).
+  "vendorHttpStatus",
 ]);
 const FEEDBACK_KEYS = ["up", "down"];
 const assertExactKeys = (obj, keys, where) =>
@@ -529,6 +532,10 @@ const ctxOf = (over = {}) => ({
   files: new Map([[PLUGIN_FILE, PLUGIN_SRC]]),
   denyValues: over.denyValues ?? [],
   states: over.states ?? [],
+  // Grounding corpus (VCST-5582). Default undefined ⇒ the gate is INERT (batch / hand-built ctx),
+  // preserving every existing test's shape-only vendor-identity behavior; pass a string to exercise it.
+  evidence: over.evidence,
+  httpClasses: over.httpClasses,
 });
 
 test("v3 provenance: a proven code excerpt + offending literal from the cited plugin file TRAVELS", () => {
@@ -691,6 +698,29 @@ test("v3 §6a: vendorErrorTypeKey/code/status travel for an ADO 4xx; a doc URL o
   const bad = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [{ ...base, vendorDocUrl: "https://acme.example.com/doc" }], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
   assert.equal(bad.findings[0].vendorDocUrl, null);
   assertNoLeak(bad, "acme.example.com");
+});
+
+// The core of the confabulation gate: a fabricated identity (present in the diagnostician's finding
+// but NOWHERE in the captured telemetry) is DROPPED, while a genuine one — verbatim in the corpus —
+// travels. Without a positive test the gate could silently regress to shape-only.
+test("v3 grounding (VCST-5582): a vendor identity ABSENT from the corpus is dropped `ungrounded`; a PRESENT one travels", () => {
+  const base = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    vendorErrorCode: "TF401347", vendorHttpStatus: 400,
+  };
+  const structOf = () => ({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [{ ...base }], feedback: { up: 0, down: 0 }, sessionCount: 1 });
+  // The corpus captured a DIFFERENT error (a 5xx gateway timeout); neither TF401347 nor the digits
+  // "400" appear anywhere in it, so both the code and the status are ungrounded.
+  const ungrounded = validateUpstream(structOf(), ctxOf({ evidence: "http 504 gateway timeout on get-workitem", httpClasses: new Set(["HTTP_5XX"]) }));
+  assert.equal(ungrounded.findings[0].vendorErrorCode ?? null, null, "an ungrounded vendor code must NOT travel");
+  assert.equal(ungrounded.findings[0].vendorHttpStatus ?? null, null, "an ungrounded status must NOT travel");
+  assert.ok(ungrounded.findings[0].withheld.some((w) => w.field === "vendorErrorCode" && w.reason === "ungrounded"), "the drop is recorded as `ungrounded`");
+  assertNoLeak(ungrounded, "TF401347");
+  // The SAME identity, now captured verbatim by the collector, is grounded and travels.
+  const grounded = validateUpstream(structOf(), ctxOf({ evidence: "ado create workitem 400: tf401347 field-contract violation", httpClasses: new Set(["HTTP_4XX"]) }));
+  assert.equal(grounded.findings[0].vendorErrorCode, "TF401347");
+  assert.equal(grounded.findings[0].vendorHttpStatus, 400);
 });
 
 test("v3 PROPERTY: adversarial bytes injected into every v3 string slot never leak", () => {

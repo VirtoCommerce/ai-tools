@@ -64,6 +64,24 @@ async function runJson(argv, { struct = null } = {}) {
   return { plan, out, exitCode };
 }
 
+/**
+ * Seed the session's grounding corpus (VCST-5582 confabulation gate) so a GENUINE vendor identity —
+ * which a real collector captures verbatim — stays filable instead of being dropped as `ungrounded`.
+ * Must run under a withTempHome so VC_FIX_HOME points at `home`.
+ */
+function seedGrounding(home, sid, findings) {
+  const dir = join(home, ".vc-fix", "diagnostics");
+  mkdirSync(dir, { recursive: true });
+  const lines = (findings ?? [])
+    .filter((f) => f.vendorErrorCode || f.vendorErrorTypeKey || f.vendorErrorName || f.vendorHttpStatus)
+    .map((f) => JSON.stringify({
+      type: "obs", class: "http_non2xx", subject: f.subject || "op",
+      code: f.errorCode && /^HTTP_\dXX$/.test(f.errorCode) ? f.errorCode : "HTTP_4XX",
+      evidence: { snippet: `vendor error ${f.vendorErrorTypeKey || f.vendorErrorName || f.vendorErrorCode || ""} status ${f.vendorHttpStatus ?? ""}`.trim(), httpStatus: f.vendorHttpStatus ?? undefined },
+    }));
+  if (lines.length) writeFileSync(join(dir, `${sid}.jsonl`), lines.join("\n") + "\n");
+}
+
 /** The observation stream from the real client session, trimmed to what matters. */
 function obsRecords(sid = SID) {
   const base = { type: "obs", sessionId: sid, ts: "2026-07-29T11:52:49.279Z", count: 1, source: "collector" };
@@ -310,20 +328,23 @@ test("B5 END TO END: a contentless finding is NOT filed; it is reported as withh
 });
 
 test("B5 END TO END: a finding WITH locatable evidence (vendor error identity) IS filed", async () => {
-  const struct = {
-    schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
-    feedback: { up: 0, down: 0 }, sessionCount: 1,
-    findings: [{
-      skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
-      signalClass: "tool_error", errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
-      struggle: [], retries: 0, occurrences: 1,
-      vendorErrorCode: "TF401347", vendorHttpStatus: 400,
-    }],
-  };
-  const { plan } = await runJson(["--session", SID, "--confirm", "--json"], { struct });
-  assert.equal(plan.findings[0].plan, "file");
-  assert.equal(plan.findings[0].action, "filed");
-  assert.equal(plan.sent, 1);
+  await withTempHome(async (home) => {
+    const struct = {
+      schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
+      feedback: { up: 0, down: 0 }, sessionCount: 1,
+      findings: [{
+        skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+        signalClass: "tool_error", errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+        struggle: [], retries: 0, occurrences: 1,
+        vendorErrorCode: "TF401347", vendorHttpStatus: 400,
+      }],
+    };
+    seedGrounding(home, SID, struct.findings);
+    const { plan } = await runJson(["--session", SID, "--confirm", "--json"], { struct });
+    assert.equal(plan.findings[0].plan, "file");
+    assert.equal(plan.findings[0].action, "filed");
+    assert.equal(plan.sent, 1);
+  });
 });
 
 // ─── B6 — a withheld field is rendered in the issue body + the deliverer's result line ──
@@ -389,18 +410,21 @@ test("D2 clusterFindingsByKey: withheld fields are unioned + deduped across the 
 });
 
 test("D2 END TO END: a struct with two same-key findings files exactly ONE issue", async () => {
-  const struct = {
-    schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
-    feedback: { up: 0, down: 0 }, sessionCount: 1,
-    findings: [
-      clFinding({ severity: "S2", verdict: "DEGRADED", vendorHttpStatus: 400 }),
-      clFinding({ severity: "S1", verdict: "BROKEN", vendorHttpStatus: 400 }),
-    ],
-  };
-  const { plan } = await runJson(["--session", SID, "--confirm", "--json"], { struct });
-  assert.equal(plan.findings.length, 1, "the two same-key findings became ONE filing");
-  assert.equal(plan.findings[0].severity, "S1");
-  assert.equal(plan.sent, 1, "exactly one issue filed, never two");
+  await withTempHome(async (home) => {
+    const struct = {
+      schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.0.0", os: "win32",
+      feedback: { up: 0, down: 0 }, sessionCount: 1,
+      findings: [
+        clFinding({ severity: "S2", verdict: "DEGRADED", vendorHttpStatus: 400 }),
+        clFinding({ severity: "S1", verdict: "BROKEN", vendorHttpStatus: 400 }),
+      ],
+    };
+    seedGrounding(home, SID, struct.findings);
+    const { plan } = await runJson(["--session", SID, "--confirm", "--json"], { struct });
+    assert.equal(plan.findings.length, 1, "the two same-key findings became ONE filing");
+    assert.equal(plan.findings[0].severity, "S1");
+    assert.equal(plan.sent, 1, "exactly one issue filed, never two");
+  });
 });
 
 // ─── VCST-5582 — deliver reads the struct from --input <file> (no piped stdin) ──────────────

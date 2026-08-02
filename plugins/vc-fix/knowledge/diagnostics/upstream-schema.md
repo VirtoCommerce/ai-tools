@@ -70,12 +70,15 @@ UpstreamFinding = {
 ### v3 provenance rule — how a string is allowed to travel
 
 `validateUpstream(struct, ctx)` takes a `ctx = { files: Map<pluginRelPath, content>, denyValues:
-string[], states: string[] }` assembled by `deliver.mjs` (`buildProvenanceCtx`): the content of each
-cited plugin file (read from the INSTALLED plugin, read-only), plus every value it can name from the
-client's `.env.*` and `project-profile.json`. **Without a `ctx` every v3 string is dropped** —
-unproven is the default, so a code path that forgets the context fails closed.
+string[], states: string[], evidence: string|null, httpClasses: Set<string> }` assembled by
+`deliver.mjs` (`buildProvenanceCtx`): the content of each cited plugin file (read from the INSTALLED
+plugin, read-only), every value it can name from the client's `.env.*` and `project-profile.json`,
+and — when a session id is known — the lowercased corpus of everything the COLLECTOR captured this
+session (`obs` evidence snippets + span error detail + the obs HTTP-class codes). **Without a `ctx`
+every v3 string is dropped** — unproven is the default, so a code path that forgets the context fails
+closed.
 
-Two gates, both required, and a DENIED field is set to `null` (never coerced) while the finding
+Three gates, all required, and a DENIED field is set to `null` (never coerced) while the finding
 SURVIVES:
 
 1. **Provenance** — `codeExcerpt` / `offendingLiteral` must be a literal substring of the cited
@@ -85,6 +88,13 @@ SURVIVES:
    value present in `denyValues`, a work-item state name in `states`, or a work-item field reference
    name outside `System.*` / `Microsoft.VSTS.*`. `pluginFile` is exempt from the absolute-path check
    (it is a relative path) and `vendorDocUrl` from the URL-host check (host-allowlisted instead).
+3. **Grounding** (VCST-5582 — anti-confabulation) — the vendor error IDENTITY
+   (`vendorErrorTypeKey` / `vendorErrorName` / `vendorErrorCode` / `vendorHttpStatus`) must appear in
+   `ctx.evidence` (separator-insensitive; `vendorHttpStatus` also matches its `HTTP_NXX` class code).
+   A value the diagnostician supplied that the collector never captured is dropped as `ungrounded` —
+   this is what makes a fabricated `Vendor error identity: TF401174 · HTTP 404` (an operation that
+   never ran) impossible to ship. When `ctx.evidence` is `null` (batch aggregation / a hand-built
+   ctx with no session) this gate is inert and the identity travels on gates 1–2 alone.
 
 **Still forbidden outright** (no field carries them): work-item STATE names, custom work-item TYPE
 names, repo/org/project names, any path outside the plugin. Send counts instead ("14 states, custom

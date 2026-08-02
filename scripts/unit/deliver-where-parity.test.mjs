@@ -43,6 +43,13 @@ function seedProfile(home) {
   const dir = join(home, ".vc-fix", "diagnostics");
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, `${SID}.state.json`), JSON.stringify({ sid: SID }));
+  // Grounding corpus (VCST-5582 confabulation gate): the ADO field-contract 400 this finding cites is
+  // captured by a real collector (discover-tracker emits an HTTP_4XX obs), so vendorHttpStatus stays in
+  // the validated struct — keeping the Where-marker stable for the dedup +1 path.
+  writeFileSync(join(dir, `${SID}.jsonl`), JSON.stringify({
+    type: "obs", class: "http_non2xx", subject: "tracker_field_contract", code: "HTTP_4XX",
+    evidence: { snippet: `ADO field contract failed: HTTP ${FINDING.vendorHttpStatus}`, httpStatus: FINDING.vendorHttpStatus },
+  }) + "\n");
 }
 
 // ─── pure-unit parity ─────────────────────────────────────────────────────────────

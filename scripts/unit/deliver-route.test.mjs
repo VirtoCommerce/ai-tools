@@ -378,6 +378,21 @@ const STRUCT = {
 };
 async function driveMain(home, argv, { mode = "ask", struct = STRUCT, search = [], list = [] } = {}) {
   writeFileSync(join(home, "project-profile.json"), JSON.stringify({ feedback: { mode }, pluginVersion: "0.8.2" }));
+  // Grounding corpus (VCST-5582 confabulation gate): seed the session jsonl with the vendor identity
+  // each finding carries, so a genuine error (captured verbatim by a real collector) stays filable
+  // rather than being dropped as `ungrounded`. sid falls back to struct.sessionId when no --session.
+  const sid = struct?.sessionId;
+  if (sid) {
+    const dir = join(home, ".vc-fix", "diagnostics");
+    mkdirSync(dir, { recursive: true });
+    const lines = (struct.findings ?? [])
+      .filter((f) => f.vendorErrorCode || f.vendorErrorTypeKey || f.vendorErrorName || f.vendorHttpStatus)
+      .map((f) => JSON.stringify({
+        type: "obs", class: "http_non2xx", subject: f.subject || "op", code: f.errorCode && /^HTTP_\dXX$/.test(f.errorCode) ? f.errorCode : "HTTP_4XX",
+        evidence: { snippet: `vendor error ${f.vendorErrorTypeKey || f.vendorErrorName || f.vendorErrorCode || ""} status ${f.vendorHttpStatus ?? ""}`.trim(), httpStatus: f.vendorHttpStatus ?? undefined },
+      }));
+    if (lines.length) writeFileSync(join(dir, `${sid}.jsonl`), lines.join("\n") + "\n");
+  }
   const calls = [];
   const prev = { tok: process.env.GITHUB_FIX_BUGS_TOKEN, exit: process.exitCode, write: process.stdout.write, fetch: globalThis.fetch };
   process.env.GITHUB_FIX_BUGS_TOKEN = "test-token"; // short-circuits resolveGithubToken (no gh subprocess)
