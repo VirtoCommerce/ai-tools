@@ -225,13 +225,22 @@ function orgUrl(args) {
 // turned an intermittent 504 into a hard command failure — so retry a few times with exponential
 // backoff before surfacing it. A 4xx other than 429 is a caller error and is NEVER retried.
 const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
+// A NON-idempotent verb (the create POST) must NOT be retried on a 5xx: dev.azure.com routinely
+// returns 502/503/504 from the gateway AFTER the work item was already created server-side, so a
+// blind retry files a DUPLICATE bug (the self-heal + read-back only ever see the last response's
+// id, leaving the first item orphaned and unnoticed). 429 (throttle) is safe for any verb — the
+// server rejected the request before doing any work — so it stays retryable everywhere.
+const THROTTLE_ONLY = new Set([429]);
+const IDEMPOTENT_METHODS = new Set(["GET", "HEAD", "PUT", "PATCH", "DELETE"]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function fetchRetry(url, opts, { attempts = 3, baseMs = 250 } = {}) {
+  const method = String(opts?.method || "GET").toUpperCase();
+  const retryStatus = IDEMPOTENT_METHODS.has(method) ? RETRY_STATUS : THROTTLE_ONLY;
   let lastErr;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
       const res = await fetch(url, opts);
-      if (RETRY_STATUS.has(res.status) && attempt < attempts) {
+      if (retryStatus.has(res.status) && attempt < attempts) {
         await sleep(baseMs * 2 ** (attempt - 1)); // 250ms, 500ms
         continue;
       }

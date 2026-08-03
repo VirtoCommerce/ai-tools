@@ -262,7 +262,7 @@ test("a non-zero exit is captured as its own class with the code as DATA", () =>
     run(home, "init", { session_id: "ec", transcript_path: t });
     run(home, "prompt", { session_id: "ec", transcript_path: t, prompt: "/project-init" });
     appendLines(t, [
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs"' }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"' }),
       toolResultSidecar("2026-07-29T10:00:01.000Z", "t1", true, "Exit code 1\nNOT READY — resolve: Azure DevOps auth", { interrupted: false }),
     ]);
     run(home, "finalize", { session_id: "ec", transcript_path: t, background_tasks: [] });
@@ -284,7 +284,7 @@ test("self-reported exit: `cmd > file 2>&1; echo exit=$?` is captured despite is
     run(home, "init", { session_id: "se", transcript_path: t });
     run(home, "prompt", { session_id: "se", transcript_path: t, prompt: "/project-init" });
     appendLines(t, [
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs" > out.log 2>&1; echo exit=$?' }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs" > out.log 2>&1; echo exit=$?' }),
       // The pipeline exits 0 (echo succeeded) → the harness marks is_error:false, adds NO
       // "Exit code N" line, and stderr went to out.log — the exact shape that recorded a real
       // failure as success. The echoed `exit=1` is the only surviving signal.
@@ -308,7 +308,7 @@ test("self-reported exit: `echo exit=$?` printing 0 does NOT manufacture a failu
     run(home, "init", { session_id: "se0", transcript_path: t });
     run(home, "prompt", { session_id: "se0", transcript_path: t, prompt: "/project-init" });
     appendLines(t, [
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs" > out.log 2>&1; echo exit=$?' }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs" > out.log 2>&1; echo exit=$?' }),
       toolResult("2026-07-29T10:00:01.000Z", "t1", false, "exit=0"),
     ]);
     run(home, "finalize", { session_id: "se0", transcript_path: t, background_tasks: [] });
@@ -598,7 +598,7 @@ test("C1: finalize writes a surfaced tombstone; a purge+rebuild does NOT re-surf
     // A transcript-driven, PLUGIN-OWNED script_exit_nonzero — the exact reference re-nag shape. It
     // survives a rebuild because it lives in the TRANSCRIPT, not just the (purged) state.
     appendLines(t, [
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs"' }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"' }),
       toolResultSidecar("2026-07-29T10:00:01.000Z", "t1", true, "Exit code 1\nNOT READY — resolve: Azure DevOps auth", { interrupted: false }),
     ]);
     run(home, "finalize", { session_id: sid, transcript_path: t, background_tasks: [] });
@@ -632,7 +632,7 @@ test("C1: a GENUINELY NEW defect after delivery still surfaces (the tombstone on
     run(home, "init", { session_id: sid, transcript_path: t });
     run(home, "prompt", { session_id: sid, transcript_path: t, prompt: "/project-init" });
     appendLines(t, [
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs"' }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"' }),
       toolResultSidecar("2026-07-29T10:00:01.000Z", "t1", true, "Exit code 1\nNOT READY — resolve: Azure DevOps auth", { interrupted: false }),
     ]);
     run(home, "finalize", { session_id: sid, transcript_path: t, background_tasks: [] });
@@ -641,7 +641,7 @@ test("C1: a GENUINELY NEW defect after delivery still surfaces (the tombstone on
     // A DIFFERENT plugin script fails after delivery — a new signature the tombstone does not hold.
     run(home, "prompt", { session_id: sid, transcript_path: t, prompt: "retry" });
     appendLines(t, [
-      toolUse("2026-07-29T11:00:00.000Z", "t2", "Bash", { command: 'node "$ROOT/skills/project-init/discover-tracker.mjs"' }),
+      toolUse("2026-07-29T11:00:00.000Z", "t2", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs"' }),
       toolResultSidecar("2026-07-29T11:00:01.000Z", "t2", true, "Exit code 2\nfield contract scan failed", { interrupted: false }),
     ]);
     run(home, "finalize", { session_id: sid, transcript_path: t, background_tasks: [] });
@@ -661,7 +661,7 @@ test("C2: an obs derived from a tool result carries that event's ts (not the sca
     run(home, "init", { session_id: "ts", transcript_path: t });
     run(home, "prompt", { session_id: "ts", transcript_path: t, prompt: "/project-init" });
     appendLines(t, [
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/verify-access.mjs"' }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"' }),
       toolResultSidecar(evTs, "t1", true, "Exit code 1\nNOT READY", { interrupted: false }),
     ]);
     run(home, "finalize", { session_id: "ts", transcript_path: t, background_tasks: [] });
@@ -713,7 +713,7 @@ test("FP fix control: a REAL plugin-script EXECUTION that self-reports a fallbac
     run(home, "prompt", { session_id: "real", transcript_path: t, prompt: "/project-init" });
     appendLines(t, [
       // NOT a read command — an actual run of the plugin script, whose OUTPUT reports a fallback.
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/discover-tracker.mjs"' }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs"' }),
       toolResult("2026-07-29T10:00:01.000Z", "t1", false, "scanned Bug type; falling back to the legacy field set (unverified defaults)"),
     ]);
     run(home, "finalize", { session_id: "real", transcript_path: t, background_tasks: [] });
@@ -731,7 +731,7 @@ test("FP fix: piped output is still scanned — `node <plugin> | grep` is NOT tr
     run(home, "init", { session_id: "pipe", transcript_path: t });
     run(home, "prompt", { session_id: "pipe", transcript_path: t, prompt: "/project-init" });
     appendLines(t, [
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$ROOT/skills/project-init/discover-tracker.mjs" | grep contract' }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" | grep contract' }),
       toolResult("2026-07-29T10:00:01.000Z", "t1", false, "falling back to the legacy field set"),
     ]);
     run(home, "finalize", { session_id: "pipe", transcript_path: t, background_tasks: [] });

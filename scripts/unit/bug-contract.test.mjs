@@ -56,6 +56,18 @@ test("isHtmlByContract: html ⇒ true, plainText ⇒ false, unknown field ⇒ nu
   assert.equal(isHtmlByContract(AGILE, "System.Description"), null, "the stock Agile Bug has no Description field at all");
 });
 
+test("isHtmlByContract: a `string`-typed field DEFERS to the legacy set (degraded-contract HTML gap)", () => {
+  // When the org-level field-types call fails, parseFieldContract degrades EVERY type to "string".
+  // A hard `false` there would suppress the legacy isHtmlField fallback and POST
+  // System.Description/ReproSteps/SystemInfo as raw markdown; `null` makes them defer to
+  // HTML_FIELD_REFS (VCST-5582 review). Only `plainText` is a definitive non-HTML.
+  const degraded = parseFieldContract(LEO_OPUS_BUG_FIELDS, []);
+  assert.ok(degraded.every((f) => f.type === "string"));
+  for (const f of degraded) {
+    assert.equal(isHtmlByContract(degraded, f.ref), null, `${f.ref}: string ⇒ null, never a hard false`);
+  }
+});
+
 // ─── E-b — semantic slot mapping ──────────────────────────────────────────────────
 test("resolveSlots (LEO/OPUS): auto-maps every slot the old code hardcoded, by NAME not by ref", () => {
   const { mapping, source, unmappedRequired } = resolveSlots(LEO, {});

@@ -145,7 +145,13 @@ export function isHtmlByContract(contract, ref) {
   const f = fieldOf(contract, ref);
   if (!f) return null;
   if (f.type === "html") return true;
-  if (f.type === "plaintext" || f.type === "string") return false;
+  // Only `plainText` is a DEFINITIVE non-HTML. `string` is ADO's ambiguous single-line-text type
+  // AND the value `parseFieldContract` falls back to when the org-level field-types call failed
+  // (discover-tracker.mjs degrades every type to "string") — returning a hard `false` there would
+  // suppress the legacy `isHtmlField` fallback and POST System.Description/ReproSteps/SystemInfo as
+  // raw markdown. Return null so those defer to HTML_FIELD_REFS; a genuine non-HTML custom field
+  // reporting `string` is still handled correctly (it isn't in the legacy set → false).
+  if (f.type === "plaintext") return false;
   return null;
 }
 

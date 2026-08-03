@@ -40,9 +40,9 @@ function obs(home, records, args = []) {
     env: { ...process.env, VC_FIX_HOME: home },
   });
 }
-function complete(home, skill) {
+function complete(home, skill, extraEnv = {}) {
   return execFileSync(process.execPath, [HOOK, "complete", "--skill", skill], {
-    input: "", encoding: "utf8", env: { ...process.env, VC_FIX_HOME: home },
+    input: "", encoding: "utf8", env: { ...process.env, VC_FIX_HOME: home, ...extraEnv },
   });
 }
 function setupHome() {
@@ -64,10 +64,10 @@ const obsOf = (home, sid) => recordsOf(home, sid).filter((r) => r.type === "obs"
 const blockOf = (out) => { try { return JSON.parse(out || "{}"); } catch { return {}; } };
 
 /** A session that ran a plugin command and completed it — the shape a real /qa-bug run has. */
-function pluginSession(home, sid, cmd = "qa-bug") {
-  run(home, "init", { session_id: sid, transcript_path: tp(home) });
-  run(home, "prompt", { session_id: sid, transcript_path: tp(home), prompt: `/${cmd}` });
-  return () => complete(home, cmd);
+function pluginSession(home, sid, cmd = "qa-bug", extraEnv = {}) {
+  run(home, "init", { session_id: sid, transcript_path: tp(home) }, extraEnv);
+  run(home, "prompt", { session_id: sid, transcript_path: tp(home), prompt: `/${cmd}` }, extraEnv);
+  return () => complete(home, cmd, extraEnv);
 }
 
 // ─── item 7 — routing is a HARD set ──────────────────────────────────────────
@@ -141,7 +141,7 @@ test("item 7: script_exit_nonzero routes for a PLUGIN-owned script", () => {
   try {
     const done = pluginSession(home, "own");
     appendLines(tp(home), [
-      toolUse("2026-01-01T00:00:00Z", "t1", "Bash", { command: 'node "/p/skills/qa-fix-routing/ado.mjs" create-workitem' }),
+      toolUse("2026-01-01T00:00:00Z", "t1", "Bash", { command: 'node "$CLAUDE_PLUGIN_ROOT/skills/qa-fix-routing/ado.mjs" create-workitem' }),
       toolResult("2026-01-01T00:00:01Z", "t1", true, "Exit code 1\n[ado] 2 REQUIRED Bug field(s) have no value"),
     ]);
     done();
@@ -172,6 +172,32 @@ test("item 7: script_exit_nonzero from a CLIENT script is recorded but does NOT 
     assert.equal(rec.pluginOwned, false);
     const fin = lastFinalize(home, "client");
     assert.equal(fin.decision.observations.routing, 0, "the plugin does not nag about the client's own build");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("item 7: a client .mjs under a bare scripts/ dir is NOT plugin-owned (dir-name match is not ownership)", () => {
+  // The client's own project has a scripts//skills//hooks/ dir too; a bare dir-name match would
+  // wrongly flag `node ./scripts/build.mjs` as ours and arm the diagnostician on the client's build
+  // (VCST-5582 review). Ownership is anchored to the installed plugin root — a relative client path
+  // resolves under the project cwd, never under pluginRoot, so it is recorded but does NOT route.
+  const home = setupHome();
+  // Pin the plugin root to a temp dir the client's `./scripts/build.mjs` (resolved against the
+  // process cwd) can never fall under — so the assertion holds regardless of the ambient env.
+  const env = { CLAUDE_PLUGIN_ROOT: join(home, "plugin-root") };
+  try {
+    const done = pluginSession(home, "cscript", "qa-bug", env);
+    appendLines(tp(home), [
+      toolUse("2026-01-01T00:00:00Z", "t1", "Bash", { command: "node ./scripts/build.mjs" }),
+      toolResult("2026-01-01T00:00:01Z", "t1", true, "Exit code 1\ntheir client build broke"),
+    ]);
+    done();
+    run(home, "finalize", { session_id: "cscript", transcript_path: tp(home) }, env);
+    const rec = obsOf(home, "cscript").find((o) => o.class === "script_exit_nonzero");
+    assert.ok(rec, "captured — a bare dir-name match still counts, it just does not route");
+    assert.equal(rec.pluginOwned, false, "a client .mjs under scripts/ is NOT the plugin's");
+    assert.equal(lastFinalize(home, "cscript").decision.observations.routing, 0);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

@@ -397,12 +397,31 @@ function opSubject(toolName, inputStr) {
   const m = PLUGIN_SCRIPT_RE.exec(String(inputStr || ""));
   return obsSubject(m ? m[1] : toolName);
 }
-/** Did this op run a script the PLUGIN owns? The same PLUGIN_SCRIPT_RE match `opSubject` uses,
- *  kept as its own fact because ROUTING needs it (item 7): a client's own failing build is
- *  recorded like everything else, but it must not arm the plugin's diagnostician. Derived once,
- *  while the input is still in hand. */
+/** Did this op run a script the PLUGIN owns? ROUTING needs this (item 7): a client's own failing
+ *  build is recorded like everything else, but it must NOT arm the plugin's diagnostician. A bare
+ *  dir-name match is NOT ownership — a client project has its own `scripts/`//`skills/`//`hooks/`
+ *  dirs, so `node ./scripts/build.mjs` would wrongly flag as ours. Ownership = the referenced .mjs
+ *  resolves UNDER the installed plugin root (the same anchor deliver.mjs uses for its proof files).
+ *  The plugin invokes its own scripts by an absolute path (the model expands `$pluginRoot`) or,
+ *  occasionally, the literal `$CLAUDE_PLUGIN_ROOT/…` — expand that marker to the real root first.
+ *  Derived once, while the input is still in hand. */
 function opIsPluginScript(inputStr) {
-  return PLUGIN_SCRIPT_RE.test(String(inputStr || ""));
+  const s = String(inputStr || "");
+  if (!PLUGIN_SCRIPT_RE.test(s)) return false; // not even a hooks//skills//scripts .mjs reference
+  // Unambiguous convention: the plugin invokes its own scripts via `$CLAUDE_PLUGIN_ROOT/{hooks,
+  // skills,scripts}/…` (the model may keep the literal marker); a client build never references
+  // our root variable.
+  if (/\$\{?CLAUDE_PLUGIN_ROOT\}?[/\\](?:hooks|skills|scripts)[/\\]/.test(s)) return true;
+  // Otherwise the model expanded `$pluginRoot` to an ABSOLUTE path — owned iff it lies under the
+  // installed plugin root. inputStr is JSON.stringify(input), so quotes are `\"` and Windows
+  // separators are `\\`; flatten ALL backslashes to `/` and case-fold, then substring-test against
+  // the normalized root (a client's relative `./scripts/build.mjs` or its own absolute path never
+  // contains the install dir).
+  let root;
+  try { root = pluginRoot(); } catch { return false; }
+  const flat = s.replace(/\\+/g, "/").toLowerCase();
+  const rootN = resolve(root).replace(/\\+/g, "/").replace(/\/+$/, "").toLowerCase();
+  return flat.includes(rootN + "/");
 }
 function opSubjectOf(sp) {
   return sp ? (sp.subject || obsSubject(sp.name)) : "unknown";
