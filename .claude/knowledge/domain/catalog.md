@@ -231,15 +231,15 @@ Tags: `catalog`, `admin`, `crud`, `configurable-products`
 
 | ID | Title | Section | Priority |
 |----|-------|---------|----------|
-| CAT-001 | Add New Catalog | Catalog > Common Catalogs | Critical |
-| CAT-002 | Edit Existing Catalog | Catalog > Common Catalogs | High |
-| CAT-003 | Delete Catalog - Cancel | Catalog > Common Catalogs | High |
-| CAT-004 | Delete Catalog - Confirm | Catalog > Common Catalogs | High |
-| CAT-005 | Add Catalog with Multiple Languages | Catalog > Common Catalogs | Medium |
-| CAT-006 | Add New Language Value to Catalog | Catalog > Common Catalogs | High |
-| CAT-007 | Delete Language Value from Catalog | Catalog > Common Catalogs | Medium |
-| CAT-008 | Add New Category | Catalog > Categories | Critical |
-| CAT-009 | Edit Existing Category | Catalog > Categories | High |
+| CATA-001 | Add New Catalog | Catalog > Common Catalogs | Critical |
+| CATA-002 | Edit Existing Catalog | Catalog > Common Catalogs | High |
+| CATA-003 | Delete Catalog - Cancel | Catalog > Common Catalogs | High |
+| CATA-004 | Delete Catalog - Confirm | Catalog > Common Catalogs | High |
+| CATA-005 | Add Catalog with Multiple Languages | Catalog > Common Catalogs | Medium |
+| CATA-006 | Add New Language Value to Catalog | Catalog > Common Catalogs | High |
+| CATA-007 | Delete Language Value from Catalog | Catalog > Common Catalogs | Medium |
+| CATA-008 | Add New Category | Catalog > Categories | Critical |
+| CATA-009 | Edit Existing Category | Catalog > Categories | High |
 
 ### Related Suites
 

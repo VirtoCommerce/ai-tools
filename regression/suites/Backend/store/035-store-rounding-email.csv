@@ -128,13 +128,13 @@
 [STATE] Anonymous order creation prevented","[API] POST /xapi/order (anonymous) returns 401 with error_code: Unauthorized
 [NETWORK] Anonymous order request blocked
 [CONSOLE] Expected authorization error logged","Anonymous order succeeds when disabled; API returns 200 instead of 401; Error code mismatch","restore original settings","C369082","None"
-"STORE-052","Email Address Verification Setting Available","Store > Email Verification","Medium","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Go to Store module at {{BACK_URL}}
+"STORE-066","Email Address Verification Setting Available","Store > Email Verification","Medium","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Go to Store module at {{BACK_URL}}
 [ACT] Open any store
 [ACT] Click Settings widget
 [SCROLL] Scroll through settings list","[DOM] Email address verification toggle visible in settings list
 [STATE] Toggle accessible and functional","[CONSOLE] No JS errors on settings blade load
 [ADMIN] Toggle visible without any permission errors","Toggle not visible in settings; Settings blade fails to load; Toggle not interactive","none","C278771","None"
-"STORE-053","Enable Email Verification","Store > Email Verification","High","BL-STORE-001","","Admin logged in; Email confirmation notification active; Template_1 set for notification; User_1 created in Store_1 with Email_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=User_1; email1=user1@test.com; email2=user1new@test.com","[NAV] Go to Stores module > Open Store_1 at {{BACK_URL}}
+"STORE-067","Enable Email Verification","Store > Email Verification","High","BL-STORE-001","","Admin logged in; Email confirmation notification active; Template_1 set for notification; User_1 created in Store_1 with Email_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=User_1; email1=user1@test.com; email2=user1new@test.com","[NAV] Go to Stores module > Open Store_1 at {{BACK_URL}}
 [ACT] Open Settings blade
 [ACT] Switch on Enable email address verification toggle
 [ACT] Click OK and Save
@@ -153,7 +153,7 @@
 [STATE] Email verification process completed","[NETWORK] Email notification API called after email change
 [CONSOLE] No notification send errors
 [ADMIN] User_1 shows unverified email status until link clicked","Toggle reverts to OFF after save; No email sent after change; Verification link returns 404; User not redirected to verification page","restore original settings","C278768","None"
-"STORE-054","Disable Email Verification","Store > Email Verification","High","BL-STORE-001","","Admin logged in; Email confirmation notification active; Template_1 set; User_1 created in Store_1 with Email_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=User_1; email1=user1@test.com; email2=user1new@test.com","[NAV] Go to Stores module > Open Store_1 at {{BACK_URL}}
+"STORE-068","Disable Email Verification","Store > Email Verification","High","BL-STORE-001","","Admin logged in; Email confirmation notification active; Template_1 set; User_1 created in Store_1 with Email_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=User_1; email1=user1@test.com; email2=user1new@test.com","[NAV] Go to Stores module > Open Store_1 at {{BACK_URL}}
 [ACT] Open Settings blade
 [ACT] Switch off Enable email address verification toggle
 [ACT] Click OK and Save
@@ -168,7 +168,7 @@
 [STATE] Email address changed without verification","[NETWORK] No notification API call after email change when disabled
 [CONSOLE] No unexpected notification errors
 [ADMIN] User_1 email updated immediately without verification step","Toggle reverts to ON after save; Verification email sent when disabled; Email change rejected without verification","restore original settings","C278769","None"
-"STORE-055","Disable Email Verification - Statuses Unchanged","Store > Email Verification","Medium","BL-STORE-001","","Admin on Store page; Verification_link sent to User_1; User_1 assigned to Store_1; Enable email address verification set to TRUE","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; user=User_1","[ACT] Send verification link to User_1
+"STORE-069","Disable Email Verification - Statuses Unchanged","Store > Email Verification","Medium","BL-STORE-001","","Admin on Store page; Verification_link sent to User_1; User_1 assigned to Store_1; Enable email address verification set to TRUE","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; user=User_1","[ACT] Send verification link to User_1
 [ACT] Before User_1 verifies, disable Enable email address verification in Store settings
 [ACT] Save
 [ACT] User_1 clicks verification link","[STATE] Email not verified via disabled link

@@ -232,7 +232,7 @@ Category with facets; DevTools or accessibility checker available","url={{FRONT_
 [ASSERT] Measure badge text contrast ratio against badge background","[DOM] Badge text contrast ratio >= 4.5:1 against badge background (WCAG AA for normal text)
 [DOM] Contrast maintained at xs badge size despite reduced padding
 [DOM] Badge meets WCAG 2.1 Level AA criterion 1.4.3","[CONSOLE] no TypeError or JS errors","Contrast ratio below 4.5:1; badge failing WCAG AA; DevTools flagging color contrast issue; console TypeError","none","VCST-4623","Manual"
-"CAT-030","Range Facet - Non-Price Numeric Property Rendering","Catalog > Filters > Range","Critical","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-068","Range Facet - Non-Price Numeric Property Rendering","Catalog > Filters > Range","Critical","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 Category with a numeric range property (non-price) configured in Admin > Stores > Aggregation properties; range filter visible on that category page; resolve the category URL and range property name at runtime","url={{FRONT_URL}}","[NAV] Navigate to a category page that has a non-price numeric range filter in its facet panel on {{FRONT_URL}} (resolve the category URL at runtime by inspecting the filter bar for any range filter that is not the price range)
 [WAIT] Wait for category page and filter bar to load
 [ASSERT] Locate the non-price numeric range filter button in the filter bar (e.g., a property like volume, weight, or size)
@@ -249,7 +249,7 @@ Category with a numeric range property (non-price) configured in Admin > Stores 
 [DOM] Products outside the selected range are excluded","[NETWORK] POST /graphql (products) returns HTTP 200 with the range filter applied
 [NETWORK] Response totalCount matches displayed product count
 [CONSOLE] no TypeError or JS errors","Range filter button missing from filter bar; slider not rendering; products outside range appearing; range values corrupted in URL; console TypeError","none","VP-9035, VCST-4833, GAP-RF-01","Manual"
-"CAT-031","Range Facet - VP-9035 Regression: Underscore Field Name Preserved in Chip","Catalog > Filters > Range > Regression","Critical","BL-CAT-002, BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-069","Range Facet - VP-9035 Regression: Underscore Field Name Preserved in Chip","Catalog > Filters > Range > Regression","Critical","BL-CAT-002, BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with an underscore-named numeric property range filter configured (e.g., a property whose name contains an underscore character); VP-9035 fix deployed; resolve the category URL and property name at runtime","url={{FRONT_URL}}","[NAV] Navigate to a category page that has a range filter whose field name contains an underscore character on {{FRONT_URL}} (resolve at runtime by inspecting the aggregation properties or filter bar labels)
 [WAIT] Wait for filter bar to load
 [ACT] Click the underscore-named range filter button
@@ -265,7 +265,7 @@ Category page with an underscore-named numeric property range filter configured 
 [NETWORK] Response aggregations match the full field name
 [NETWORK] No mismatched IsApplied states in aggregation response
 [CONSOLE] no TypeError or JS errors","Filter chip shows truncated name without underscore; URL mutates to wrong facet range; products outside range visible; GetFieldName splits on underscore","none","VP-9035, VCST-4833, GAP-RF-02","Manual"
-"CAT-032","Range Facet - Price Range Chip Display and Removal","Catalog > Filters > Range > Chips","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-070","Range Facet - Price Range Chip Display and Removal","Catalog > Filters > Range > Chips","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with price range filter available","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for filter bar to load
 [ACT] Open price range filter dropdown/slider
@@ -282,7 +282,7 @@ Category page with price range filter available","url={{FRONT_URL}}","[NAV] Navi
 [MATH] Product count returns to original unfiltered count after chip removal
 [STATE] URL filter parameters are cleared after chip removal","[NETWORK] no 4xx/5xx on range filter apply and remove
 [CONSOLE] no TypeError or JS errors","Range chip not appearing after filter apply; chip label missing range values; chip removal not clearing filter; products not restoring after chip close; URL retaining filter params; console TypeError","none","GAP-RF-03","Manual"
-"CAT-033","Range Facet - Slider Min Greater Than Max Validation","Catalog > Filters > Range > Validation","Medium","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-071","Range Facet - Slider Min Greater Than Max Validation","Catalog > Filters > Range > Validation","Medium","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with price range slider or min/max input fields","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for filter controls
 [ACT] Open price range filter
@@ -294,7 +294,7 @@ Category page with price range slider or min/max input fields","url={{FRONT_URL}
 [DOM] Filter chip shows the corrected range (lower value to higher value)
 [DOM] No JS crash or broken UI state","[NETWORK] No 4xx/5xx triggered by invalid range input
 [CONSOLE] no TypeError or JS errors","JS crash on invalid range; empty page with no error message; corrupted URL params; console TypeError","none","GAP-RF-04","Manual"
-"CAT-034","Range Facet - Combined with Term Facet (AND Logic)","Catalog > Filters > Range > Combined","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-072","Range Facet - Combined with Term Facet (AND Logic)","Catalog > Filters > Range > Combined","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with both term facets (e.g., Brand or Type) and range facets (price) available","url={{FRONT_URL}}","[NAV] Navigate to any category page with multiple filter types on {{FRONT_URL}}
 [WAIT] Wait for filter panel to load
 [ACT] Apply any term facet filter value
@@ -311,7 +311,7 @@ Category page with both term facets (e.g., Brand or Type) and range facets (pric
 [DOM] Both chips visible when both filters active
 [STATE] Removing range chip preserves term facet chip","[NETWORK] POST /graphql returns results matching both filter and facet criteria
 [CONSOLE] no TypeError or JS errors","Combined filter returning more results than single filter (OR instead of AND); products outside price range appearing with correct facet value; removing range chip also removes term chip; console TypeError","none","GAP-RF-05","Manual"
-"CAT-035","Range Facet - URL Persistence on Refresh and Back/Forward","Catalog > Filters > Range > Navigation","Medium","BL-CAT-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-073","Range Facet - URL Persistence on Refresh and Back/Forward","Catalog > Filters > Range > Navigation","Medium","BL-CAT-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with price range filter applied","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply any price range filter (choose any valid range)
 [WAIT] Wait for filtered results and URL to update
@@ -330,7 +330,7 @@ Category page with price range filter applied","url={{FRONT_URL}}","[NAV] Naviga
 [DOM] Range filter chip renders correctly after refresh and back navigation
 [MATH] Filtered product count is consistent before and after refresh","[NETWORK] no 4xx/5xx on refresh or back navigation
 [CONSOLE] no TypeError or JS errors","Range filter cleared after refresh; chip not rendering after back navigation; URL losing filter params; different product count after refresh; console TypeError","none","GAP-RF-06","Manual"
-"CAT-036","Range Facet - Cascading Bucket Counts Accuracy","Catalog > Filters > Range > Counts","High","BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-074","Range Facet - Cascading Bucket Counts Accuracy","Catalog > Filters > Range > Counts","High","BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with price range filter showing bucket options (e.g., distinct price ranges with product counts)","url={{FRONT_URL}}","[NAV] Navigate to any category page with range facet buckets on {{FRONT_URL}}
 [WAIT] Wait for filter panel to load
 [ASSERT] Locate range facet with bucket options showing product counts
@@ -346,7 +346,7 @@ Category page with price range filter showing bucket options (e.g., distinct pri
 [DOM] Each range bucket displays a non-negative count
 [STATE] Zero-count buckets are either hidden or shown as (0)","[NETWORK] POST /graphql aggregation counts match displayed bucket counts
 [CONSOLE] no TypeError or JS errors","Bucket count shown does not match number of products displayed; bucket counts not updating after term facet applied; zero products returned for non-zero bucket; console TypeError","none","BL-SRCH-001, ECL-3.2, GAP-RF-07","Manual"
-"CAT-037","Range Facet - Currency Switch Updates Price Range Values","Catalog > Filters > Range > Currency","High","BL-CAT-002, BL-PRICE-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-075","Range Facet - Currency Switch Updates Price Range Values","Catalog > Filters > Range > Currency","High","BL-CAT-002, BL-PRICE-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with price range filter; store supports multiple currencies","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for filter panel to load
 [ASSERT] Note price range min/max values in default currency
@@ -362,7 +362,7 @@ Category page with price range filter; store supports multiple currencies","url=
 [STATE] Product count may decrease significantly if few products have prices in the new currency — this is expected behavior (BL-PRICE-005)","[NETWORK] POST /graphql uses currencyCode matching selected currency
 [NETWORK] Filter parameter uses price.[currency_code] (not the previous currency)
 [CONSOLE] no TypeError or JS errors","Range values unchanged after currency switch; products showing previous-currency prices; mixed currencies in filter and product cards; filter parameter still using old currency; console TypeError","none","BL-PRICE-005, GAP-RF-08","Manual"
-"CAT-038","Range Facet - Open-Ended Range: Up To Maximum","Catalog > Filters > Range > Boundaries","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-076","Range Facet - Open-Ended Range: Up To Maximum","Catalog > Filters > Range > Boundaries","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with price range filter; products at various price points","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for range filter to load
 [ASSERT] Note the current price range min and max values from the filter controls
@@ -375,7 +375,7 @@ Category page with price range filter; products at various price points","url={{
 [DOM] Filter chip shows an open-ended upper-bound label (e.g., 'price: <= X' with the chosen max value)
 [MATH] Product count > 0 (valid range has products) and matches actual products at or below maximum","[NETWORK] GraphQL filter uses open-ended syntax [TO max_value] in URL facets parameter
 [CONSOLE] no TypeError or JS errors","Products above maximum appearing in results; filter chip showing wrong range; product count mismatch; console TypeError","none","GAP-RF-09","Manual"
-"CAT-039","Range Facet - Open-Ended Range: From Minimum","Catalog > Filters > Range > Boundaries","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-077","Range Facet - Open-Ended Range: From Minimum","Catalog > Filters > Range > Boundaries","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 Category page with price range filter; products at various price points","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for range filter to load
 [ASSERT] Note the current price range min and max values from the filter controls
@@ -390,7 +390,7 @@ Category page with price range filter; products at various price points","url={{
 [MATH] Product count > 0 (valid range has products) and matches actual products at or above minimum
 [STATE] Products at exactly the minimum price are included (boundary is inclusive)","[NETWORK] GraphQL filter uses open-ended syntax [min_value TO] in URL facets parameter
 [CONSOLE] no TypeError or JS errors","Products below minimum appearing in results; filter chip showing wrong range; product count mismatch; boundary product excluded; console TypeError","none","GAP-RF-10","Manual"
-"CAT-040","Category Permalink — Slug Preserved Without Truncation After EN→DE Locale Switch","Catalog > Filters > Locale > Permalink Integrity","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-078","Category Permalink — Slug Preserved Without Truncation After EN→DE Locale Switch","Catalog > Filters > Locale > Permalink Integrity","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 Storefront accessible at {{FRONT_URL}}; EN is the active locale; at least one top-level category is reachable; DE locale is available in the language switcher","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Category listing page loads
 [ACT] Click the first top-level category link in the category grid
