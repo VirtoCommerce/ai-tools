@@ -356,3 +356,47 @@ Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Mixed Cart"", ""loyalty
 [DATA label=read_validation] data.cart.validationErrors[?errorCode=LOYALTY_PAYMENT_METHOD_NOT_ALLOWED].errorCode = LOYALTY_PAYMENT_METHOD_NOT_ALLOWED","[EVIDENCE] vcst-qa store is in Mixed Cart mode (Loyalty.Mode != ""Payment Method""), so adding a payment via the LoyaltyPaymentMethod gateway must trip LoyaltyCartValidator rule 3. No store-mode flip needed — Mixed Cart is itself a non-Payment-Method mode. If addOrUpdateCartPayment rejects the gateway code before validation, this case is downgraded to Semi-Automated (gateway-availability dependent).","set_loyalty_payment errors[] non-empty (gateway code rejected by addOrUpdateCartPayment before the validator runs — gateway not registered/available; downgrade to Semi-Automated); LOYALTY_PAYMENT_METHOD_NOT_ALLOWED absent from validationErrors (rule 3 not firing or wrong gateway code constant); validationErrors empty (validator chain not running)","[GQL-OP cleanup_post_safe]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
 [GQL-EXEC cleanup_post_safe]","VCST-5103; vc-module-loyalty#10 (LoyaltyCartValidator rule 3 — LOYALTY_PAYMENT_METHOD_NOT_ALLOWED); vc-module-x-cart#125 (ICartValidatorRegistry chain)","Draft"
+MCO-GQL-012,NEGATIVE — LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED must fire when every cash line is DESELECTED (not removed),GraphQL > xCart > Validator > Points Only Cart,High,BL-LOY-010,ECL-13.2,"Runner-native. @needs-test-data: LOYALTY_VIP_USER must have a loyalty balance covering 1 PTS line. Store in Mixed Cart mode. Selection-scoped sibling of MCO-GQL-006: that case proves the rule for a cart with NO cash line; this one proves it for a cart whose cash line is present but selectedForCheckout=false. EXPECTED-RED until VCST-5657 is fixed — LoyaltyCartValidator derives hasPointProducts from the selection-aware cart.CartTotals but hasCashProducts from the selection-BLIND cart.Items, so the guard never fires while a deselected cash line remains in the cart.",store_id={{STORE_ID}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_pts]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC find_pts]
+[GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_pts]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts]
+[GQL-OP add_cash]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_cash]
+[GQL-OP read_mixed_baseline]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"") { id items { id currencyCode selectedForCheckout } cartTotals { isDefaultTotalCurrency total { amount } } validationErrors { errorCode } } }
+[GQL-EXEC read_mixed_baseline]
+[GQL-CAPTURE read_mixed_baseline.data.cart.items[?currencyCode={{CURRENCY_CODE}}].id → CASH_LINE_ID]
+[GQL-OP unselect_cash]
+  mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" lineItemIds: [""{{CASH_LINE_ID}}""] }) { id items { id selectedForCheckout } } }
+[GQL-EXEC unselect_cash]
+[GQL-OP read_after_unselect]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"") { id items { id currencyCode selectedForCheckout } cartTotals { isDefaultTotalCurrency total { amount } } validationErrors { errorCode errorMessage } } }
+[GQL-EXEC read_after_unselect]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_mixed_baseline] errors[] empty
+[DATA label=read_mixed_baseline] data.cart.items[?currencyCode={{CURRENCY_CODE}}].selectedForCheckout = true
+[COUNT label=read_mixed_baseline] data.cart.validationErrors = 0
+[ERRORS label=unselect_cash] errors[] empty
+[ERRORS label=read_after_unselect] errors[] empty
+[DATA label=read_after_unselect] data.cart.items[?currencyCode={{CURRENCY_CODE}}].selectedForCheckout = false
+[DATA label=read_after_unselect] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].selectedForCheckout = true
+[DATA label=read_after_unselect] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount = 0
+[COUNT label=read_after_unselect] data.cart.validationErrors >= 1
+[DATA label=read_after_unselect] data.cart.validationErrors[?errorCode=LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED].errorCode = LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED","[EVIDENCE] The baseline read proves the mixed cart is valid (0 validation errors) BEFORE the unselect, so a failure on read_after_unselect isolates the selection path rather than a pre-existing invalid cart.
+[EVIDENCE] cartTotals default-currency total = 0 after the unselect proves cart.CartTotals IS selection-aware (DefaultShoppingCartTotalsCalculator filters on SelectedForCheckout) — which is exactly what makes the validator's use of the unfiltered cart.Items for hasCashProducts asymmetric.
+[EVIDENCE] Storefront twin: MCO-E2E-008 (083b) asserts the rendered warning + disabled PLACE ORDER for the same state.","LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED absent from validationErrors after the unselect (VCST-5657 — the open defect this case guards); validationErrors non-empty on read_mixed_baseline (cart invalid before the unselect — fixture problem, not this rule); unselect_cash errors[] non-empty (lineItemIds capture failed or mutation shape drifted); default-currency cartTotals total non-zero after the unselect (totals calculator stopped honouring SelectedForCheckout — would invalidate the premise of this case)","[GQL-OP cleanup_post_safe]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post_safe]","VCST-5657; BL-LOY-010; vc-module-loyalty LoyaltyCartValidator.cs:28 (hasCashProducts reads cart.Items, selection-blind); vc-module-cart DefaultShoppingCartTotalsCalculator.cs:81 (CartTotals selection-scoped); selection-scoped sibling of MCO-GQL-006; Authored: 2026-08-04",Draft

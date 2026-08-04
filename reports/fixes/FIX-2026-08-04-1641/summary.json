@@ -1,0 +1,45 @@
+{
+  "runId": "FIX-2026-08-04-1641",
+  "ticket": "VCST-5657",
+  "ticketStatus": "In review",
+  "repo": "VirtoCommerce/vc-module-loyalty",
+  "repoKind": "module",
+  "ownership": "platform",
+  "branch": "claude/qa-autofix/VCST-5657",
+  "baseBranch": "dev",
+  "commit": "838baab",
+  "pr": "https://github.com/VirtoCommerce/vc-module-loyalty/pull/15",
+  "prState": "OPEN",
+  "merged": false,
+  "gates": {
+    "G0_triage": "PASS",
+    "G1_route": "PASS",
+    "G1b_provenance": "N/A",
+    "G2_reproduction": "PASS",
+    "G3_fix": "PASS",
+    "G4_review": "APPROVE_after_1_revision",
+    "G5_ci": "RED_non_blocking_infra",
+    "G6_e2e": "NOT_RUN_needs_deploy",
+    "G7_human_review": "STOP_pr_open"
+  },
+  "ciDetail": {
+    "build": "success",
+    "unitTests": "success",
+    "sonarQualityGate": "success",
+    "licenseCla": "success",
+    "failingStep": "Push Build Info to Jira",
+    "failureCause": "branch segment 'qa-autofix' is parsed as a Jira issue key and rejected by the action's key pattern (requires digits after the hyphen)",
+    "codeRelated": false
+  },
+  "filesChanged": 3,
+  "newTests": 3,
+  "existingTestsModified": 0,
+  "newDependencies": 0,
+  "confidence": "HIGH",
+  "followUps": [
+    "Human review + merge PR #15",
+    "/qa-verify-fix VCST-5657 post-deploy (pin payment method to Manual)",
+    "MCO-GQL-012 + MCO-E2E-008 expected-RED until deployed",
+    "Plugin branch convention claude/qa-autofix/<KEY> breaks the VirtoCommerce Jira build-info CI step on every run"
+  ]
+}

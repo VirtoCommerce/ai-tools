@@ -158,3 +158,27 @@ Store in Mixed Cart mode. LOYALTY_VIP_USER has a balance (so this isolates the p
 [DOM] after adding a cash line, the points-only error is gone and the cart is valid
 [ASSERT] the valid mixed cart completes the full checkout (select payment -> fill form -> Place Order) and produces an order number","[API] cart.validationErrors contains LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED on the points-only cart and is empty after the cash line is added — cross-ref MCO-GQL-006 (075b)
 [CONSOLE] note the 500 on createOrderFromCart during the points-only place-order probe (KNOWN issue — generic toast, not a fresh defect)","Points-only cart is allowed to check out (order created); no validation message AND no block; place-order returns a 500 or a generic untranslated error toast (regression — the clean localized rejection observed 2026-07-25 has been lost); adding a cash line does not clear the error; valid mixed cart cannot complete checkout","Cancel/clean up the order created from the valid mixed cart if the store does not auto-clear it; remove leftover cart items; sign out.","VCST-5103; BL-LOY-010; backend contract MCO-GQL-006 (075b); vc-module-loyalty#10 (LoyaltyCartValidator rule 2); known place-order 500 (REG-2026-06-23 MCO-E2E-006 finding)","automated"
+MCO-E2E-008,Deselecting all cash lines blocks PLACE ORDER with the points-only warning (cash line kept in cart),Loyalty > Mixed Cart > Checkout Guard,High,BL-LOY-010,ECL-13.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+Store in Mixed Cart mode. LOYALTY_VIP_USER balance must cover 1 PTS line. Cart will hold 1 cash line + 1 PTS line; the cash line is DESELECTED, never removed. EXPECTED-RED until VCST-5657 is fixed. Storefront twin of MCO-GQL-012 (075b).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded
+[ACT] add the first PTS product to cart
+[WAIT] cart badge increments
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] standard catalog grid loaded
+[ACT] add the first {{CURRENCY_CODE}} product to cart
+[WAIT] cart badge shows 2
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page + order summary loaded
+[ACT] untick the line-item checkbox on the {{CURRENCY_CODE}} (cash) line — do NOT remove the line
+[WAIT] order summary default-currency subtotal refreshes to 0
+[ACT] set Delivery method to 'Fixed Rate (Ground)'
+[ACT] set Payment method to 'Manual' — NOT 'Pay with points'
+[WAIT] place-order control settles","[DOM] the {{CURRENCY_CODE}} cash line is still present in the cart with its checkbox unticked (deselected, not removed) {OBSERVED}
+[DOM] order summary default-currency Total shows 0 while the 'Total in @td(LOYALTY_SETTINGS.currency_code)' block still shows a non-zero amount {OBSERVED}
+[DOM] a loyalty warning is rendered — common.messages.loyalty_only_point_products_not_allowed ('Loyalty points can't be used on their own. Add at least one regular product to your cart to place this order.') or its compact variant ('Add a regular product to check out.') {SPEC}
+[STATE] the PLACE ORDER button is DISABLED {BL}
+[NEG] no order is created and no order confirmation is reached {BL}","[API] the cart query's validationErrors[] contains LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED after the unselect; cross-ref MCO-GQL-012 (075b)
+[NOTE] Payment method MUST be 'Manual'. 'Pay with points' is blocked by a DIFFERENT rule (LOYALTY_PAYMENT_METHOD_NOT_ALLOWED) and masks this defect — a run using it will wrongly report PASS.
+[CONSOLE] no JS errors","PLACE ORDER enabled while only loyalty lines are selected (VCST-5657 — the open defect this case guards); no warning rendered anywhere (silent failure, not a wrong-message failure); order placeable at 0.00 in the default currency; cart validationErrors[] empty after the unselect; raw i18n key shown instead of the resolved message",Remove items from cart; sign out,"VCST-5657; BL-LOY-010; vc-module-loyalty LoyaltyCartValidator.cs:28; vc-frontend locales/en.json:190,193 + client-app/shared/cart/enums/index.ts (Place Order guard already wired, VCST-5365 AC-6); storefront twin of MCO-GQL-012; Authored: 2026-08-04",Draft

@@ -33,6 +33,14 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    matches the bug, not a tautology.
 4. **Minimal & idiomatic** — no refactors, no formatting churn, no dep bumps, no unrelated files;
    .NET 10 / Angular idioms match the repo (`dotnet10-best-practices.md`, `angular-patterns.md`).
+4a. **Comment discipline** — comments explain non-obvious *why*, never *what*. REQUEST_CHANGES on: a
+   comment that restates the code beside it; a multi-line block narrating the investigation, the root
+   cause, or a source path/line that belongs in the PR body or commit message; `// added for VCST-XXXX`
+   / changelog-style notes; re-commented untouched code; XML docs on private test helpers that add
+   nothing over the member name. **Rule of thumb: a one-line production change carries at most a
+   one-line comment.** Judge density against the surrounding file, not in the abstract — if the diff is
+   visibly more commented than the code it sits in, it is over-commented. The authoring-side rule is
+   `knowledge/agents/developers/shared-instructions.md` §Minimal diff; this is its Gate-4 enforcement.
 4b. **Admin SPA blade markup (layout/CSS)** — if the diff touches a `*.tpl.html` layout/style: it uses
    platform classes (`/angular-admin` `admin-spa-ui-conventions.md`) mirroring a canonical sibling blade, and
    contains **NO** inline `position:absolute|fixed`, fixed-px `width/height/left/top`, or `ng-style` height

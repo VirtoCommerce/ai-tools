@@ -2,7 +2,35 @@
   "ticket": "VCST-5281",
   "ticket_type": "Story",
   "verdict": "PENDING — BLOCKED, not in progress. The org hit its monthly API spend limit, so every remaining step that needs a sub-agent is stopped: the Step-4 gate re-verification (which must be an INDEPENDENT verifier — the orchestrator cannot self-certify, that independence is the gate), Step 5 exploratory, the unfinished regression suites 049/032/027, 6d's triage of the 8 042/078 failures, and 6i's promotion harvest. No verdict is asserted from a truncated run.",
-  "release_gate": "NOT EVALUATED — never GO. Requires either a completed regression RUN_ID or an explicit operator-signed deferral. compute-metrics.ts --gate feature does NOT abstain on a partial run: it falls back to unrelated history and returns a misleading number.",
+  "release_gate": {
+    "verdict": "NO-GO",
+    "computed_by": "scripts/regression/compute-metrics.ts --gate feature --run-id REG-2026-08-03-1900 (deterministic; not a judgement call)",
+    "including_032": {
+      "execution": "206P / 33F / 21B / 62S of 393 planned",
+      "passRate": "86.19%",
+      "floor": "93%",
+      "verdict": "NO-GO"
+    },
+    "excluding_032": {
+      "passRate": "83.17%",
+      "floor": "93%",
+      "verdict": "NO-GO"
+    },
+    "robustness": "The verdict does not depend on the contested 032 file. The pass rate sits between 83.17% and 86.19% depending on how 032 is counted; both are far below the 93% floor.",
+    "p0_p1_inputs": {
+      "note": "The gate assumed 0 P0/P1 bugs because none were supplied. Feature-scoped reality:",
+      "feature_scoped_open_p0": "reports/bugs/open/BUG-invite-to-second-org-locks-out-entire-storefront-VCST-5281.md is still filed as an OPEN P0, but THIS RUN's evidence says its symptom no longer reproduces (sign-in without organization_id returns HTTP 200; suite 027 CUST-090 closed that loop). It is a candidate for open -> fixed, but moving a bug file is /qa-verify-fix's job and was not done unilaterally here.",
+      "feature_scoped_open_p1": "reports/bugs/open/BUG-multiorg-no-self-recovery-when-pinned-org-blocked-VCST-5281.md — status not re-established in this run.",
+      "out_of_feature_scope_open_p0": [
+        "BUG-guest-checkout-card-gateway-no-payment.md",
+        "BUG-nested-impersonation-privilege-escalation.md"
+      ],
+      "consequence": "Supplying real P0/P1 counts can only keep the gate at NO-GO; it cannot flip it. So the verdict stands, but the reason list is incomplete until those two VCST-5281 bugs are re-adjudicated.",
+      "blocked_by_budget": "Re-adjudicating the two VCST-5281 bug files, and re-running 032 cleanly, both need agent/browser work that is currently blocked: the org has hit its monthly spend limit and agent dispatches are failing."
+    },
+    "WHY_THIS_IS_NOT_A_VERDICT_ON_THE_FIX": "The NO-GO is driven by regression pass rate across a run with badly degraded coverage — 62 skipped, 21 blocked, and 71 cases never executed at all after an orchestrator was killed mid-run — plus pre-existing failures unrelated to this change. It is NOT evidence that the VCST-5281 fix is broken. The fix itself verified repeatedly and independently (see fix_verification below). These are two different questions and must not be collapsed.",
+    "new_trend_signal": "With history now populated, compute-metrics surfaces suite 042 as DEGRADING with 3 consecutive drops. Unrelated to this ticket; worth its own look."
+  },
   "date": "2026-08-03",
   "supersedes": "the 2026-07-29 47-condition run (verdict FAIL) and this file's own earlier 2026-08-03 build-delta revision; both preserved in git history",
   "environment": "https://vcst-qa-storefront.govirto.com",
@@ -480,6 +508,46 @@
         "the_one_conflict": "AUTH-063 — edge recorded AMBIGUOUS on the theory that no revocation endpoint exists on this deployment; chrome re-verified directly (/connect/revocation 404, /connect/revoke 404, /connect/token/revoke 404, /revoke/token 200) and recorded FAIL with full evidence. Chrome's verdict is retained as the better-evidenced one, and the disagreement is documented in the case notes.",
         "invalidates": "My earlier ORCHESTRATOR_KILL_consequence conclusion that all the killed orchestrator's children were dead. 011b/049/078-p2/078-p3 have been stale 2.5-4h and ARE dead; but the general inference was unsound, and 032 is the counterexample.",
         "lesson": "Before re-dispatching any suite from a killed orchestrator, confirm the lane is dead by watching for a NEW results file over several minutes — not by a single existence check."
+      },
+      "DISK_FILE_UNRELIABLE": {
+        "status": "The on-disk suite-032-results.json is CONTESTED. Two runners wrote it concurrently; the last write was 01:02:00 and it has been stable since.",
+        "proof_of_corruption": "startedAt 2026-08-04T02:40:00Z is AFTER completedAt 2026-08-04T00:53:15Z — a run cannot start after it finished. That is mixed metadata from two writers, not a coherent record.",
+        "disk_state_final": {
+          "PASS": 9,
+          "FAIL": 1,
+          "AMBIGUOUS": 8,
+          "passRate": "90.0%",
+          "failRows": [
+            "AUTH-067"
+          ]
+        },
+        "chrome_state_as_read": {
+          "PASS": 9,
+          "FAIL": 2,
+          "AMBIGUOUS": 7,
+          "passRate": "81.8%",
+          "failRows": [
+            "AUTH-063",
+            "AUTH-064"
+          ]
+        },
+        "three_cases_disagree": [
+          "AUTH-063 (chrome FAIL / disk AMBIGUOUS)",
+          "AUTH-064 (chrome FAIL / disk AMBIGUOUS)",
+          "AUTH-067 (chrome AMBIGUOUS / disk FAIL)"
+        ],
+        "which_to_trust": "UNRESOLVED — do not treat either version as authoritative. Two competing explanations remain live: (a) two concurrent executions clobbered each other, in which case the chrome verdicts (read in full with evidence) are the better record; (b) a single 032 agent revised its own verdicts and the settled disk state (F=1) is its considered final answer, in which case what I read at F=2 was a mid-flight snapshot I should not have triaged. The orchestrator was about to adjudicate exactly this when it died on the spend limit. The startedAt-after-completedAt incoherence is real either way and still argues the file is not a single coherent record. RESOLUTION: re-run suite 032 alone on one lane (18 cases, ~15min) once budget allows. Until then, no 032 number should be quoted as fact.",
+        "history_row": "reports/regression/history.json was re-synced to the settled DISK state (F=1) so it is deterministic and reproducible from the file. It therefore does NOT match the chrome narrative. Deliberate: history is a mechanical feed, the triage record is the judgement.",
+        "remediation": "Re-run suite 032 alone, on one lane, with no competing runner, before trusting any 032 number. 18 cases, ~15min.",
+        "WRITER_IDENTIFIED": {
+          "who": "The original Tier-1 orchestrator agent was STILL ALIVE and was the writer. It was not a rogue detached child and it was not my monitor (the HTML generator only writes HTML — verified).",
+          "how_it_ended": "It terminated on an API error: the org hit its MONTHLY SPEND LIMIT. It died mid-sentence while reconciling, having just said: 'the 032 agent revised its own verdicts after I reported a mid-flight snapshot. Let me read the authoritative final state.'",
+          "my_earlier_conclusion_was_wrong_twice": [
+            "I concluded the killed orchestrator's children were all dead. They were not — the orchestrator ITSELF was alive.",
+            "I then concluded the later write was clobbering and that the chrome verdicts were authoritative. The orchestrator — which had visibility I do not — asserts the later write was the 032 agent's OWN REVISION of a verdict I had read mid-flight. That is a materially different explanation and I cannot rule it out."
+          ]
+        },
+        "what_survives_the_dispute": "The three disputed cases are AUTH-063, AUTH-064, AUTH-067 — and NONE of them changes any conclusion in this run. AUTH-063 and AUTH-064 are tracked known issues either way (VCST-4576 config-gated by design; VCST-4531), and neither was filed. AUTH-067's underlying measurements are not in dispute — both versions agree the REST lock/isolation cycle behaved correctly; they disagree only on how to label a UI assertion about an error message that does not exist in the real UX. The VCST-5028 AC3 confirmation rests on AUTH-065 and AUTH-066, neither of which is disputed. And the release gate is NO-GO at both 86.19% (incl 032) and 83.17% (excl 032). So the dispute is contained: it affects 032's own pass-rate line and nothing else."
       }
     },
     "TIER1_NET_NEW_DEFECTS": {
@@ -489,15 +557,80 @@
     }
   },
   "promotion": {
-    "eligible": [],
-    "blocked": [
+    "status": "PROMOTED 2026-08-04 via /qa-test-lifecycle Phase 6P (--promote-only path), approved by the user after release.",
+    "supersedes": "The previous promotion block said 'eligible: [], blocked: all 19 (6i not yet run)'. That record was STALE — it was written before the Step-4 revise loop completed. 6P re-derived eligibility from the CSV itself, as it is required to do, rather than trusting it.",
+    "g10_rederivation": {
+      "suites:review --fail-on=High": "PASS — 0 GRD-001 Blocker/High, 0 ENV-008. Findings: 1 Medium (D-006 B2C-MBR-038: [ASSERT] inside Steps) + 1 Informational (TRI-000, 19/19 never triangulated).",
+      "td:validate": "PASS — DV-013 no bare GUID/ID literals, DV-021 no runtime GUIDs in base aliases, DV-022 no per-org membership op bound to the legacy multi-org fixture.",
+      "grounding": "PASS — zero {HYPOTHESIS} across all 19 rows (CUST-113's was resolved live: lock beats blocking status, one error user_is_locked_in_organization). Tag totals: {OBSERVED} 13, {SPEC} 17, {BL} 19, {DOC} 3.",
+      "execution_evidence": "PASS — all 19 carry PASS/FAIL evidence. 11 re-executed PASS with verbatim premise read-backs after the Step-4 revise loop (CUST-103/104/106/113/114/115 backend; B2C-MBR-038/039/040 + the two AUTH cases frontend); the remainder previously evidenced.",
+      "note_on_the_two_earlier_verifier_findings": "The first Step-4 REJECT flagged AUTH-069 as a proven FALSE PASS and B2C-MBR-039 as non-discriminating. Both were fixed and re-executed in the revise loop before promotion — they were not promoted on the strength of the original defective runs. The second REJECT concerned RUN INTEGRITY (history.json, passRate, unstarted suites), not case quality, so it does not bear on G10."
+    },
+    "g12_promotion_integrity": {
+      "global_id_collisions": "2 FOUND AND FIXED. AUTH-068 and AUTH-069 already existed in regression/suites/Frontend/auth/031-auth-login-register.csv. Per 6P the INCOMING cases were re-IDed (never renumber the existing one, never reuse a retired ID): AUTH-068 -> AUTH-076, AUTH-069 -> AUTH-077. Chose 076/077 (beyond max-used 75) rather than the interior gaps 27/44/45/46/47, because a gap may be a retired ID.",
+      "append --check-global-ids --dry-run": "exit 0 on all three targets before any write.",
+      "suites:lint after sync": "OK (119 suites, 37 selections). The 2 WARNs are the pre-existing sales-rep defects (duplicate id 092, orphan 093) — not introduced here.",
+      "no_worse_review": {
+        "027": "303 -> 303 findings, identical (180C/71H/50M/2I). 13 cases added zero findings.",
+        "032": "36 -> 36 findings, identical.",
+        "008": "38 -> 39 (+1 Medium). This is the SAME D-006 the ticket CSV already carried on B2C-MBR-038 — the finding travelled with the case; promotion created nothing new. Critical/High unchanged in all three."
+      },
+      "csv_integrity": "All three targets uniformly 15 columns after append, CRLF preserved, zero bare LF/CR — the merged-row corruption failure mode (feedback_csv_append_newline_corruption) did not occur. Written only via the deterministic appender, never hand-rolled."
+    },
+    "promoted": [
       {
-        "case": "all 19",
-        "reason": "6i not yet run — the --verify pass that upgrades assertions to {OBSERVED} has not been harvested, and re-verification of Step 4 is still in flight"
+        "suite": "027 Customer Orgs & Invites",
+        "file": "regression/suites/Backend/customer/027-customer-orgs-invites.csv",
+        "count": 13,
+        "testCount": "51 -> 64",
+        "cases": [
+          "CUST-103",
+          "CUST-104",
+          "CUST-105",
+          "CUST-106",
+          "CUST-107",
+          "CUST-108",
+          "CUST-109",
+          "CUST-110",
+          "CUST-111",
+          "CUST-112",
+          "CUST-113",
+          "CUST-114",
+          "CUST-115"
+        ]
+      },
+      {
+        "suite": "008 B2B Members",
+        "file": "regression/suites/Frontend/b2b/008-b2b-members.csv",
+        "count": 4,
+        "testCount": "36 -> 40",
+        "cases": [
+          "B2C-MBR-038",
+          "B2C-MBR-039",
+          "B2C-MBR-040",
+          "B2C-MBR-041"
+        ]
+      },
+      {
+        "suite": "032 Auth Session & RBAC",
+        "file": "regression/suites/Frontend/auth/032-auth-session-rbac.csv",
+        "count": 2,
+        "testCount": "18 -> 20",
+        "cases": [
+          "AUTH-076 (was AUTH-068)",
+          "AUTH-077 (was AUTH-069)"
+        ]
       }
     ],
-    "verify_pass_run": false,
-    "note": "Draft is correct and mandatory pre-execution. Do NOT promote into regression/suites/ on this run: TRI-000 stands (19/19 never triangulated) and the Step-3 gate ruled promotion is a post-execution /qa-test-lifecycle step gated on --verify. /qa-test-lifecycle's G10 re-derives eligibility independently and promotion still needs human approval."
+    "total_promoted": 19,
+    "blocked": [],
+    "references_stamp": "COMPLETED 2026-08-04 by a follow-up /qa-test-lifecycle VCST-5281 run. The original 6P pass appended the rows and flipped Automation_Status but SKIPPED 6P step 4 - none of the 19 rows carried the mandated References stamp. All 19 now end with \"; Promoted: VCST-5281 -> <suite> (2026-08-04)\", appended after the existing refs, clobbering no Synced:/Audited:/Corrected: stamp. Applied by a scoped tail-match inside the appended block only (these suites carry unescaped inner double-quotes, so a full CSV re-serialisation is unsafe): byte delta exactly 533/164/82 B, CRLF counts unchanged, pre-existing rows byte-identical, git diff still pure additions (387/171/83, 0 deletions). Re-gated after: suites:lint OK (119 suites, 37 selections), per-severity finding counts identical to pre-stamp in all three suites, td:validate 317/317 + 199/199 + 97/97 resolved.",
+    "automation_status": "All 19 appended rows carry Automation_Status=Reviewed. That flip, applied in the rows being appended, IS the promotion. They are now reachable by /qa-regression selections; previously nothing in the manifest-driven runner read reports/tickets/**, so they were one-shot.",
+    "outstanding_for_the_users_full_review": [
+      "D-006 on B2C-MBR-038 — [ASSERT] sits inside Steps. Deliberately NOT rewritten: D-006 says 'confirm it gates a step, else move to Assertions', which is a judgement, not a mechanical fix.",
+      "TRI-000 — all 19 are Dimension-11 unaudited (never triangulated). Expected for brand-new cases; /qa-review-tests --triangulate is the follow-up.",
+      "Suite 027 carries 303 pre-existing findings including 180 Critical. Legacy debt, untouched by this promotion, but it is the dominant quality signal in that file."
+    ]
   },
   "coverage_map_corrections": {
     "F4": "covered by B2C-MBR-038's cross-layer checks, NOT by CUST-064 — that case declares BL-B2B-001, performs a UI org assignment rather than an invite, asserts nothing about global roles, and the checklist marks it PARTIAL.",
@@ -602,5 +735,49 @@
     "then": "reduced P0 regression subset (042,078,049,011b,032,027) -> Step 5 exploratory (mandatory) -> Step 6 triage/verdict/6a App Insights correlation -> 6i promotion-evidence harvest",
     "close_out": "A developer fix landed 12 minutes after the Reopen + backlog comment. /qa-fix is not applicable — the remaining work spans vc-module-customer AND vc-frontend (a G1 multi-repo STOP) and the new P1 needs a product decision, not a patch."
   },
-  "screenshots": "reports/tickets/Sprint26-15/VCST-5281/screenshots/"
+  "screenshots": "reports/tickets/Sprint26-15/VCST-5281/screenshots/",
+  "fix_verification": {
+    "verdict": "The VCST-5281 P0 fix is CONFIRMED WORKING on Customer 3.1021.0-pr-312-2605.",
+    "independent_confirmations": [
+      "011b COMP-E2E-005 PASS — explicit regression guard for the org-pinning defect",
+      "025 PASS and 024 BLOCKED-cannot-reproduce — the original symptom could not be re-created",
+      "B2C-MBR-038 discriminating PASS",
+      "F9a/F9b — accept and decline invite, then re-login, both behave correctly",
+      "Direct measurement: the organization_id claim is ABSENT on all three blocked fixtures",
+      "008 AC1 and AC3 independently corroborated; 008 B2C-MBR-037 confirms reviewer defect D fixed",
+      "027 CUST-095 — Customer.OrganizationMembershipStatuses defaultValue=Approved IS in allowedValues (third confirmation of defect D fixed)",
+      "027 CUST-090 — sign-in WITHOUT organization_id returns 200; the whole-storefront 403 lockout no longer reproduces, and the org refusal is now a specific 400 user_invitation_pending_in_organization",
+      "032 AUTH-065 — VCST-5028 AC3 confirmed at API and UI: locked in org B, still reaches org A",
+      "032 AUTH-067 — BUG-A confirmed fixed; BL-B2B-008 cross-org isolation and BL-AUTH-012 global-lock guard both hold"
+    ],
+    "overturned_claim": "050d's 'P0 STILL OPEN' was overturned: its failed assertion was only `access_token is null`, and direct measurement showed the pinned-to-blocked-org claim was ABSENT with 0 permissions. It self-marked confirmed:false. That was an inference error, not a measurement.",
+    "net_new_defects_from_tier1": 0,
+    "dedup_outcome": "6 prevented re-files across the run: VCST-5314 (x2 sightings), VCST-4576, VCST-4531, BUG-existing-user-invite-link-discards-urlsuffix.md, BUG-backend-provisioned-membership-not-linked-to-contact-organizations.md"
+  },
+  "RUN_STATUS": {
+    "state": "STOPPED FOR HUMAN — unchanged. Two Step-4 verifier REJECTs were already spent, so the ≤2-iteration limit is reached and the gate cannot be self-cleared.",
+    "mechanical_blockers_now_cleared": [
+      "history.json had 0 entries for this run -> now 11 per-suite rows (npm run triage:history)",
+      "passRate corruption in 011b (0.0% -> 88.9%) and 042 (82.4% -> 90.3%) -> fixed earlier",
+      "027 and 032 had never started -> both now executed (032 with the concurrency caveat)"
+    ],
+    "still_open": [
+      "049 remains partial: 26 of its cases never executed",
+      "011b has 1 stranded case (COMP-E2E-026) — completes the P0 guard set for ~1 case of work",
+      "70 further stranded Tier-2 cases",
+      "032 needs a clean single-lane re-run before any of its numbers are trusted",
+      "The two VCST-5281 bug files need re-adjudication (the P0 looks fixed by this run's evidence)"
+    ],
+    "human_decisions_required": [
+      "Resume 011b COMP-E2E-026? (recommended — 1 case, completes the P0 guard set)",
+      "Re-dispatch or write off the 70 stranded Tier-2 cases?",
+      "File the remembered-org P1? It needs a PRODUCT decision, because CUST-111 ('refuse an explicitly-requested blocked org') and 'never lock the user out' genuinely conflict.",
+      "Route the 9 suite/test defects to /qa-review-tests --fix — including the HIGH-priority AUTH-065 fixture-corruption hazard"
+    ],
+    "BUDGET_BLOCKER": {
+      "what": "The org has hit its MONTHLY SPEND LIMIT. The Tier-1 orchestrator died from it mid-reconciliation.",
+      "consequence": "No further agent dispatch or browser-lane work can be attempted until the limit is raised (/usage-credits). This blocks: the clean 032 re-run, resuming 011b COMP-E2E-026, the 70 stranded Tier-2 cases, re-adjudicating the two VCST-5281 bug files, and routing the 9 suite/test defects through /qa-review-tests --fix.",
+      "not_blocked": "Everything already measured is recorded and needs no further spend. The release gate is computed deterministically from files on disk and is final at NO-GO."
+    }
+  }
 }
