@@ -2673,7 +2673,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 45,
+      "testCount": 46,
       "estimatedMinutes": 61,
       "agent": "qa-frontend-expert",
       "tags": [

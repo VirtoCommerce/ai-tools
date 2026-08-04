@@ -229,13 +229,16 @@ I proposed closing all five with `browser_run_code_unsafe` (raw Playwright `page
 
 The sanctioned route is the one the CSV rows already prescribe — **Chrome DevTools MCP** ("force-fail … via devtools network interception", "throttle network (devtools) to slow 3G") — which simply was not connected in this session.
 
-| Case(s) | Needs | Status |
-|---|---|---|
-| `SR-HD-035` / `SR-CP-047` failed read, `SR-HD-036` / `SR-CP-048` failed save | devtools request interception | **Wired** — `Chrome DevTools` added to `.mcp.json`, copied verbatim from the repo's own `templates/.mcp.json.example`. Effective next MCP restart |
-| `SR-HD-034` skeleton | devtools network throttling (6 attempts at full speed never caught the window) | **Wired** — same server |
-| `SR-HD-022` cross-device | a second `--secrets`-enabled browser | **Wired** — firefox/edge `--secrets` gap fixed (repo defect #11). Effective next restart |
-| `SR-HD-041` touch | a `hasTouch` / `isMobile` context, which `browser_resize` cannot produce | **Wired** — new tracked `config/mcp-playwright-mobile.config.json` (390×844, `hasTouch`, `isMobile`, dsf 3) + a `playwright-mobile` server |
-| Mid-drag visuals (`.sortable-ghost` at .45, dark `shadow-xl`) + the `mainLeft` drag-geometry retry | holding a drag open, which needs manual mouse choreography | **Not wired — needs an operator decision.** The only permitted-path-free item. Worth doing: it would also settle whether the one unreordered mouse drag was a synthetic-drag artifact (the current read) or a real finding |
+The MCP was restarted mid-session and the new servers came up, so this table records what the restart actually settled — which was **less than I predicted**.
+
+| Case(s) | Outcome after the restart |
+|---|---|
+| `SR-HD-022` cross-device | **CLOSED — PASS.** Two genuinely separate browsers: arranged + saved in one, signed in as the same rep in a second isolated browser, which **rendered** the saved arrangement (a third context corroborated). Also exposed a defect in the case itself: its precondition named `SR_REP_PRIMARY`, whose never-saved baseline ~40 other cases depend on — corrected to the disposable rep |
+| `SR-HD-041` touch | **Still blocked, but the old reason was wrong.** A touch context now exists and was used — yet a drag with **no hold at all** succeeded on it, which `delay: 200` would have prevented had Sortable seen touch events. So the tool-level drag primitive drives the **mouse** path, `delayOnTouchOnly` never engages, and no bound server exposes a tap/touchscreen primitive. Both of the case's assertions are **structurally unverifiable**; only real hardware can settle them |
+| `SR-HD-034` skeleton · `SR-HD-035`/`SR-CP-047` failed read · `SR-HD-036`/`SR-CP-048` failed save | **Still blocked, for a reason I should have checked before wiring the server.** Chrome DevTools MCP has throttling and emulation but **cannot authenticate** — it launches its own browser with no session and no secrets support, so `/company/dashboard` redirects to `/sign-in`. The Playwright servers authenticate but expose no throttling or interception. **Throttling and auth live in different browsers**, so nothing can reach a signed-in dashboard *and* degrade its network. Tracked as `B-09` with a concrete fix (a throttling primitive on the Playwright servers, or a shared CDP endpoint via `--remote-debugging-port` + `--browser-url`) |
+| Mid-drag visuals (`.sortable-ghost` at .45, dark `shadow-xl`) | **Still blocked**, unchanged — holding a drag open needs manual mouse choreography, only reachable through the hook-forbidden tools. Backlog `B-05`; an owner decision, not a unilateral fix |
+
+**A caveat resolved, though.** The "one `mainLeft` mouse drag didn't reorder" note from pass 2 is explained: reordering **does** work at 390×844 once source and target are both in view (proven by swapping two adjacent stat cards). Every earlier 390 px failure was a **harness artifact** — the single-step drag primitive cannot drive the mid-drag autoscroll a 3607 px-tall stacked page needs. Recorded as the new case `SR-HD-046`, so nobody re-investigates it as a product defect.
 
 ## Decisions taken, and recorded observations
 
@@ -245,8 +248,12 @@ The sanctioned route is the one the CSV rows already prescribe — **Chrome DevT
 
 **Recorded as observations — no action, no ticket:**
 
-2. **Hit targets are 32×32 CSS px** for both the drag handle and the hide ✕, measured at a 390 px viewport. This **passes** WCAG 2.2 AA (2.5.8 requires 24×24) but **breaches this repo's own `<44×44` mobile heuristic**, and the design spec deliberately specifies `VcButton xs`, so the size is intentional rather than an oversight. Recorded here and on the mobile case so a future a11y pass finds the measurement instead of re-deriving it; not filed, because the repo heuristic is stricter than the standard the product is held to.
-3. **The parked-zone empty hint** (`text-neutral-400` on the 45° hatch) is readable but low-contrast in dark mode. Observation only — **no contrast ratio was measured**, so this is explicitly not a WCAG claim.
+2. **Hit targets — 32×32 CSS px for the *widget* handle and hide ✕** at a 390 px viewport. This **passes** WCAG 2.2 AA (2.5.8 requires 24×24) but **breaches this repo's own `<44×44` mobile heuristic`**, and the design spec deliberately specifies `VcButton xs`, so the size is intentional rather than an oversight. Not filed, because the repo heuristic is stricter than the standard the product is held to. **Correction from the post-restart pass:** this does **not** apply to stat cards — they expose a full-card `Reorder` button of ~342×113–143 px, which passes comfortably. My earlier note conflated the two.
+
+**Promoted from an observation to a filed defect, and the conclusion reversed:**
+
+3. **The parked-zone empty hint fails contrast in BOTH themes.** I had recorded this as "readable but low-contrast in dark mode, no ratio measured". Measured from captured pixels: dark `rgb(83,83,85)` on `rgb(36,36,37)`/`rgb(20,20,21)` = **2.02:1** / 2.40:1; light `rgb(189,189,189)` on `rgb(247,247,247)`/`rgb(250,250,250)` = **1.75:1** / 1.80:1. It fails 4.5:1 *and* the 3:1 large-text floor, so the verdict is size-independent — and **light mode is worse than dark**, the opposite of how I first framed it. Filed: `reports/bugs/open/BUG-SalesRep-Layout-Parked-Zone-Hint-Contrast.md`.
+4. **Touch drag has no affordance.** At 390 px the edit-bar instruction is verbatim the desktop wording — *"drag a block by its handle to reorder it"* — with **no mention of press-and-hold anywhere**, while the code requires a ~200 ms hold with a 5 px drift tolerance (`delay: 200`, `delayOnTouchOnly: true`, `touchStartThreshold: 5`). A user reported "drag-and-drop doesn't work on mobile"; this is why. Filed as a discoverability defect: `reports/bugs/open/BUG-SalesRep-Layout-Touch-Drag-Affordance.md`. The *functional* touch verdict remains unverified (see the blocked table above) — the report says so explicitly rather than implying the gesture works.
 
 ## Next Steps
 

@@ -15,7 +15,7 @@
       "hasTouch": true,
       "locale": "en-US",
       "recordHar": {
-        "path": "./test-results/mobile/har",
+        "path": "./test-results/mobile/har/session.har",
         "omitContent": true
       }
     }
