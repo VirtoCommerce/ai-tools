@@ -11,6 +11,8 @@
  *     (`findMissingFiles`), and warns on duplicate ids / orphan CSVs
  *     (`findManifestDisagreements`) — the three ways a declared suite can
  *     silently never run
+ *   - **globally unique case IDs**: hard-fails if one case ID appears in more
+ *     than one suite CSV (`findDuplicateCaseIds`)
  *   - strict-parses every suite CSV against a burn-down baseline
  *
  * Usage:
@@ -20,7 +22,9 @@
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join, sep } from "path";
+import { fileURLToPath } from "url";
 import { parse as parseCsv } from "csv-parse/sync";
+import { extractExistingIds } from "./append-test-cases-to-suite.js";
 
 const MANIFEST_PATH = join("config", "test-suites.json");
 const CHECK_MODE = process.argv.includes("--check");
@@ -167,18 +171,62 @@ function findManifestDisagreements(manifest: Manifest): { dupIds: string[]; orph
     .map(([id, files]) => `id "${id}" declared ${files.length}× — only the last runs: ${files.join(", ")}`);
 
   const declared = new Set(manifest.suites.map((s) => s.file.split(sep).join("/")));
-  const onDisk: string[] = [];
+  const orphans = allSuiteCsvs().filter((f) => !declared.has(f));
+
+  return { dupIds, orphans };
+}
+
+/** Every suite CSV on disk, as forward-slash repo-relative paths. */
+export function allSuiteCsvs(root = join("regression", "suites")): string[] {
+  const out: string[] = [];
   const walk = (dir: string): void => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
       const f = join(dir, e.name);
       if (e.isDirectory()) walk(f);
-      else if (e.name.endsWith(".csv")) onDisk.push(f.split(sep).join("/"));
+      else if (e.name.toLowerCase().endsWith(".csv")) out.push(f.split(sep).join("/"));
     }
   };
-  walk(join("regression", "suites"));
-  const orphans = onDisk.filter((f) => !declared.has(f));
+  if (existsSync(root)) walk(root);
+  return out;
+}
 
-  return { dupIds, orphans };
+/**
+ * Case IDs must be globally unique across the WHOLE corpus, not just within a
+ * suite (memory `reference_case_ids_must_be_globally_unique`). Consumers key
+ * per-case results and failure evidence by bare case ID — the runner writes
+ * `suite-*-results.json` rows and `traces/{TC-ID}-FAIL-trace.json` files, and
+ * `scripts/lib/regression-triage.ts` fingerprints by ID — so when two suites
+ * both declare `CAT-001`, one run's evidence silently overwrites the other's and
+ * a real failure can read as someone else's pass.
+ *
+ * This is a HARD failure, not a warning: the corpus was cleaned to zero
+ * collisions (223 of them, resolved by re-prefixing the admin-side namespaces —
+ * `CATA-*`/`ORDA-*`/`SRCHA-*`/`WISH-*`/`SR-EMB-*`/`CPN-SMK-*`/`CFG-XAPI-*` — and
+ * renumbering same-domain clashes), so there is no pre-existing debt to
+ * baseline and any hit is genuinely new drift.
+ *
+ * IDs are harvested with `extractExistingIds`' line-start scan rather than a
+ * field parse, deliberately: several suites carry unescaped inner double-quotes
+ * that strict CSV parsing rejects, and this check must still cover them.
+ *
+ * A lone CR is promoted to LF first, because `extractExistingIds` splits on
+ * `/\r?\n/` and would otherwise treat a bare-CR-terminated file as one giant
+ * line — harvesting only its first ID and passing the rest vacuously. Today's
+ * corpus is CRLF throughout (`.gitattributes` pins `eol=crlf`) so this changes
+ * nothing now; it stops the gate degrading silently if that ever slips.
+ */
+export function findDuplicateCaseIds(root?: string): string[] {
+  const byId = new Map<string, string[]>();
+  for (const file of allSuiteCsvs(root)) {
+    const text = readFileSync(file, "utf-8").replace(/\r(?!\n)/g, "\n");
+    for (const id of extractExistingIds(text)) {
+      byId.set(id, [...(byId.get(id) ?? []), file]);
+    }
+  }
+  return [...byId.entries()]
+    .filter(([, files]) => files.length > 1)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([id, files]) => `case ID "${id}" appears in ${files.length} suites: ${files.join(", ")}`);
 }
 
 /**
@@ -307,6 +355,28 @@ function main(): void {
     console.warn(`[suites:lint] WARN orphan CSV (no manifest entry — never runs): ${o}`);
   }
 
+  // Globally unique case IDs. Runs on every CSV on disk (orphans included), so an
+  // undeclared suite can't smuggle a collision in ahead of being wired up.
+  const dupCaseIds = findDuplicateCaseIds();
+  if (dupCaseIds.length > 0) {
+    console.error(`[suites:lint] FAIL — ${dupCaseIds.length} case ID(s) declared in more than one suite:`);
+    for (const d of dupCaseIds.slice(0, 25)) console.error(`  - ${d}`);
+    if (dupCaseIds.length > 25) console.error(`  … and ${dupCaseIds.length - 25} more`);
+    console.error(
+      `Per-case results and failure evidence are keyed by bare case ID (suite-*-results.json,`,
+    );
+    console.error(
+      `traces/{TC-ID}-FAIL-trace.json), so a collision lets one suite overwrite another's evidence.`,
+    );
+    console.error(
+      `Fix by re-prefixing the non-canonical side (admin-side namespaces use the -A/…A convention:`,
+    );
+    console.error(
+      `CATA-*, ORDA-*, SRCHA-*) or renumbering into a free range when both suites share one domain.`,
+    );
+    process.exit(1);
+  }
+
   const errors = validateRules(manifest);
   if (errors.length > 0) {
     console.error(`[suites:lint] FAIL — ${errors.length} rule errors:`);
@@ -359,4 +429,7 @@ function main(): void {
   }
 }
 
-main();
+// Only run as a CLI, so unit tests can import `findDuplicateCaseIds` / `allSuiteCsvs`
+// without executing the manifest lint (same guard as append-test-cases-to-suite.ts).
+const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isCli) main();
