@@ -1397,6 +1397,153 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 
 ---
 
+### BL-SR-015: Configurable layout is keyed by rep + surface + optional store; a never-saved key resolves null; per-user isolation `[P1-data]`
+- **Rule:** `salesRepLayout` / `saveSalesRepLayout` address a document keyed on the calling user's id, the `scope` argument (a per-surface identifier, e.g. `"dashboard"` / `"customerProfile"`), and an optional `storeId` — three distinct `storeId` values (omitted, a nonexistent store, a real store) address three distinct documents. A (user, scope, storeId) combination that was never saved resolves `salesRepLayout` to `null`, never an error. A rep's saved layout is never visible to a different rep querying the same scope.
+- **Verify:** Query `salesRepLayout` with a fresh `scope` → `null` (SR-GQL-099/103/116). Save under one `storeId`, query under a different `storeId`/omitted → `null`, not the saved doc (SR-GQL-104). Two different authenticated reps querying the same `scope` each resolve only their own document, never the other's (SR-GQL-102).
+- **Violation signal:** A scope/storeId combination that was never saved returns anything but `null`; a rep's saved layout is visible to a different rep querying the same scope; `storeId` omitted and a real value resolve the same document.
+- **Agents:** qa-backend-expert
+- **Source:** `vc-module-sales-rep` `LayoutService.GetLayoutAsync`/`BuildNameParts` (keys the customer-preference lookup on `[PreferenceName, scope, storeId?]` under the resolved `userId`); `SalesRepLayoutQuery.Map` (`UserId = context.GetCurrentUserId()`).
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A — pre-GA module, undocumented).
+
+### BL-SR-016: `saveSalesRepLayout` is a full-document replace, never a merge `[P1-data]`
+- **Rule:** Saving a layout replaces the entire stored document for that key — every region and block the caller omits from the mutation is gone after the save, not merely left unchanged. There is no partial-update / patch semantics.
+- **Verify:** Save a document containing two regions; save again with only one region → reload resolves only that region; the omitted region and its blocks are gone, not carried over from the prior save (SR-GQL-107).
+- **Violation signal:** A region/block omitted from a save survives in the reloaded document (silent merge instead of replace).
+- **Agents:** qa-backend-expert
+- **Source:** `vc-module-sales-rep` `SaveLayoutCommandHandler.Handle` (builds a brand-new `Layout` from only `request.SchemaVersion`/`request.Regions` — the prior stored value is never read or merged).
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A).
+
+### BL-SR-017: Persisted block order and `hidden` are independent, verbatim round-trip fields `[P2-ux]`
+- **Rule:** Within a `SalesRepLayoutRegion.blocks[]`, array position is the only signal of render order and `hidden` is a flag independent of position — both are stored and returned exactly as sent, with no server-side reordering, deduplication, or reinterpretation.
+- **Verify:** Save a region with blocks in a specific order and one block `hidden:true`; reload → same order, same hidden flags (SR-GQL-100/108/109/115).
+- **Violation signal:** Reload returns blocks in a different order than saved; a `hidden:true` block reverts to `false` (or vice versa) without a save.
+- **Agents:** qa-backend-expert
+- **Source:** `vc-module-sales-rep` `LayoutBlock`/`LayoutRegion` (plain properties, no reordering logic); `LayoutService.SaveLayoutAsync`/`GetLayoutAsync` (verbatim JSON serialize/deserialize, no transform).
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A).
+
+### BL-SR-018: Save mutation echoes the persisted document, including a fresh UTC `modifiedDate` `[P2-ux]`
+- **Rule:** `saveSalesRepLayout`'s response IS the just-persisted document — the same regions/blocks that were sent, plus a `modifiedDate` set to the save's UTC instant. A caller does not need to re-query `salesRepLayout` after a successful save to see the current state.
+- **Verify:** Save a document; the mutation response's regions/blocks match what was sent and `modifiedDate` is a fresh UTC timestamp; an immediate follow-up `salesRepLayout` query returns an identical document (SR-GQL-106/115).
+- **Violation signal:** The mutation response omits `modifiedDate` (or returns it null); the echoed document disagrees with what was sent; a follow-up query disagrees with the echo.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** `vc-module-sales-rep` `LayoutService.SaveLayoutAsync` (sets `layout.ModifiedDate = DateTime.UtcNow` before persisting); `SaveLayoutCommandHandler.Handle` (returns the same `layout` instance it just saved).
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A).
+
+### BL-SR-019: `SalesRepLayoutSetting.value` (`AnyValue`) preserves its scalar JSON type across the round trip `[P2-ux]`
+- **Rule:** A block setting's `value` keeps the scalar type it was sent as — string, number, or boolean — with no coercion. A date-shaped string is stored and returned as a string, never parsed into a date type.
+- **Verify:** Save a setting `value` as a number, a boolean, and a date-formatted string; reload each → same JSON type as sent, same value (SR-GQL-111).
+- **Violation signal:** A scalar value changes type across the round trip (e.g. a date-formatted string is returned reformatted/parsed, or a number is returned as a string).
+- **Agents:** qa-backend-expert
+- **Source:** `vc-module-sales-rep` `LayoutService` `_serializerSettings` (`DateParseHandling.None`); `SalesRepLayoutSettingType` (`Value` typed `AnyValueGraphType`, a scalar passthrough).
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A).
+
+### BL-SR-020: `scope` and `region.id` are free-form strings, not enums; an unrecognized value fails silently to a different (empty) document `[P1-data]`
+- **Rule:** Neither the layout surface identifier (`scope`) nor a region id is validated against a fixed vocabulary — both are plain `String` arguments. An unrecognized value never errors; it addresses a document that has never been saved (`null` on read; a new, independent document on write).
+- **Verify:** Query/save with a `scope` (or `region.id`) value no known surface/region uses → HTTP 200; read resolves `null`; write creates a new, independent document, never the "real" surface's (SR-GQL-105/114).
+- **Violation signal:** An unrecognized `scope`/region id errors instead of addressing an empty document, or is silently coerced to a known value.
+- **Agents:** qa-backend-expert
+- **Source:** `vc-module-sales-rep` `InputSalesRepLayoutType`/`SalesRepLayoutQuery` (`Scope`/region id typed `StringGraphType`, no enum/validator); `LayoutService.BuildNameParts` (raw string concatenation, no allow-list check).
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A).
+
+### BL-SR-021: Both layout operations require an authenticated caller `[P0-security]`
+- **Rule:** `salesRepLayout` and `saveSalesRepLayout` both require a valid authenticated session. An anonymous caller never receives layout data or a successful save; the response is a structured authorization error, not a silently-empty success.
+- **Verify:** Call both operations without an Authorization header → HTTP 200, the field's `data` is `null`, `errors[0].extensions.code` denotes an authorization failure; the same calls with a valid rep session succeed (SR-GQL-101/112).
+- **Violation signal:** An anonymous caller receives usable data, or a 5xx instead of a structured `errors[]` entry.
+- **Agents:** qa-backend-expert
+- **Source:** `vc-module-sales-rep` `SalesRepLayoutQuery.Map` (`UserId = context.GetCurrentUserId()`); `LayoutService.GetLayoutAsync`/`SaveLayoutAsync` (`ArgumentException.ThrowIfNullOrEmpty(userId)`) — consistent with the domain's established anonymous-access contract (BL-SR-002).
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A).
+
+### BL-SR-022: Required layout-input fields are schema-enforced; a non-scalar setting `value` is rejected `[P1-data]`
+- **Rule:** `scope`, `schemaVersion`, `block.hidden`, and `block.settings` are non-null on the input type — omitting any of them fails the mutation before it persists anything. `settings` may be an empty list but not absent. A setting `value` that is a list or object (rather than a scalar) is rejected, not silently coerced or dropped.
+- **Verify:** Omit `scope`/`schemaVersion`/`hidden`/`settings` in turn → the mutation fails with a structured validation error before any persistence (SR-GQL-113); an empty `settings:[]` is accepted (SR-GQL-110); `settings[].value` sent as an array or object → rejected with a structured error (SR-GQL-117).
+- **Violation signal:** A required field can be omitted and the mutation still succeeds; an array/object `value` is accepted or silently stringified.
+- **Agents:** qa-backend-expert
+- **Source:** `vc-module-sales-rep` `InputSalesRepLayoutType` (`Scope`/`SchemaVersion` non-null); mirrored output shape in `SalesRepLayoutBlockType`/`SalesRepLayoutSettingType` (`Hidden`/`Settings` non-null; `Value` a scalar `AnyValueGraphType`).
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A).
+
+### BL-SR-023: The customer-profile layout is scope-wide — one document per rep, not per customer `[P1-data]`
+- **Rule:** The saved layout for the `customerProfile` surface has no per-customer dimension — `salesRepLayout`/`saveSalesRepLayout` take only `scope` and an optional `storeId`, never a customer/organization id. A rep's customer-profile arrangement is the same document regardless of which customer they are viewing.
+- **Verify:** Save a `customerProfile` layout while viewing one served customer; open a different served customer's profile → the same arrangement renders, confirmed in **both directions** (a save while viewing customer A renders on customer B, and a save while viewing B renders on A); inspecting the `saveSalesRepLayout` mutation payload shows no organization/customer id field anywhere in the request (SR-CP-042; draft/edit-mode carry-over: SR-CP-043).
+- **Violation signal:** A customer-profile layout differs per customer, or the schema/backend accepts a customer/organization argument for this query/mutation.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** `vc-module-sales-rep` `SalesRepLayoutQuery`/`SaveLayoutCommand` (only `Scope`/`StoreId`/`UserId` fields — no customer/organization id anywhere in the layout schema); live-confirmed bidirectionally on the storefront, with the mutation payload inspected and carrying no organization/customer id.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04; source + live CONFIRM; docs N/A). **Suite coverage note:** no dedicated 050m case yet cites this id at the API layer (it is API-observable via the absent org argument) — coverage gap for a future 050m addition; storefront coverage via SR-CP-042/043.
+- **Amended:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit — strengthened `Verify`/`Source` with live bidirectional confirmation; no Rule change).
+
+### BL-SR-024: Configurable-layout changes persist only on explicit Save, are scoped to the rep's account, and survive reload and re-authentication `[P1-data]`
+- **Rule:** No drag, hide, or reorder action is persisted on its own — each is a draft-only change until the rep explicitly saves, and one Save issues exactly one full-document replace (BL-SR-016), never more. The persisted arrangement is scoped to the rep's account rather than a device or browser session: reloading, signing out and back in, or opening an independent browser session all resolve the same saved arrangement. Cancel and Reset discard the in-progress draft without issuing any save.
+- **Verify:** Perform a drag/hide/reorder without saving, then reload → the pre-change arrangement still renders; Save once → exactly one save call is issued; a reload and a fresh sign-in both then show the saved arrangement; Cancel and Reset both complete with zero save calls.
+- **Violation signal:** An unsaved change survives a reload; a drag/hide/reorder issues a save call by itself; Cancel or Reset issues a save call; the arrangement differs after sign-out/sign-in.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** module composable governing the edit draft (`save()` as the sole mutation call site; reorder/hide actions touch only the draft) — consistent with BL-SR-015 (account-scoped key) and BL-SR-016 (full-document replace). Live-confirmed: save→reload returned the arrangement exactly; a second save fully replaced the first save's state with no leftovers; Cancel and Reset each issued zero network requests; the arrangement survived a full sign-out/sign-in.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM; docs N/A — pre-GA module, undocumented).
+
+### BL-SR-025: The block registry owns structure and region placement; the saved document owns only order and hidden, with unknown types dropped and missing blocks appended `[P1-data]`
+- **Rule:** Which block types exist and which region each renders in is decided by the frontend's block registry alone — never by the saved document. The document contributes only per-block order and a hidden flag. On load: a persisted block type absent from the registry is dropped silently (no error, no placeholder, no orphan entry); a registered block type absent from the document is appended after the document's own blocks; a registered block whose document region disagrees with the registry's region for that type renders in the registry's region, not the document's. Every such deviation self-heals on the next save — the round-trip payload always matches the registry's current structure.
+- **Verify:** Plant a document containing an unregistered block type → received by the client but rendered nowhere, no console error, no gap in the layout; plant a document omitting a registered type → it appears, appended after the document's survivors; plant a document placing a registered block in the wrong region → it renders in its registry region, not the document's; save afterward and reload → the unknown type is gone and every block sits in its registry region.
+- **Violation signal:** An unregistered type renders as a blank slot, an error, or a stray entry; a block absent from the document stays missing rather than being appended; a block renders in the document's region rather than the registry's; a save fails to correct a planted deviation.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** module load-path reconciliation logic (pure function reconciling persisted blocks against the registry). Live-confirmed: two unregistered block types received by the client rendered nowhere; two registered blocks missing from a planted document were appended after the document's survivors; blocks planted in the wrong region were re-homed to their registry region (leaving that region empty); a subsequent save purged the unknown types and reset every block to its registry region, and reload showed no oscillation.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM; docs N/A).
+
+### BL-SR-026: A layout key that was never saved (`null`) is not a failure — registry defaults render with editing enabled `[P1-data]`
+- **Rule:** `null` from the layout query (a never-saved key, BL-SR-015) is a normal, expected state, not an error condition — the surface renders the registry's default arrangement and leaves editing enabled, with no error alert.
+- **Verify:** Load a layout-driven surface for a (user, scope, storeId) combination that was never saved → registry defaults render, Edit is enabled, no error/alert appears.
+- **Violation signal:** A never-saved key disables Edit, shows an error/alert, or is otherwise treated the same as a genuine read failure.
+- **Agents:** qa-frontend-expert
+- **Source:** module composable distinguishing a `null` result from a fetch failure. Live-confirmed: a never-saved rep's surface loaded registry defaults with Edit enabled and no alert.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM; docs N/A). **Split note:** the companion failure-handling behavior (a genuine read failure disables Edit; a genuine save failure keeps the draft and edit mode) remains drafted — its axes are source-only this run; see `bl-proposals`.
+
+### BL-SR-027: The two widget columns are structurally separate drag groups — cross-column drag is impossible in either direction `[P2-ux]`
+- **Rule:** The wide and rail widget columns are distinct drag-and-drop groups by construction; no widget can be dropped from one column into the other, regardless of runtime state.
+- **Verify:** Attempt to drag a wide-column widget into the rail column, and a rail-column widget into the wide column → both attempts are no-ops; neither widget changes column.
+- **Violation signal:** A widget crosses from one column to the other via drag.
+- **Agents:** qa-frontend-expert
+- **Source:** module layout-surface component (per-column, distinct drag-group identifiers). Live-confirmed both directions as no-ops.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM; docs N/A).
+
+### BL-SR-028: Stat cards park/restore by drag or keyboard; widgets hide via a dismiss control and restore only from a hidden-items tray `[P2-ux]`
+- **Rule:** A stat card has no per-card dismiss control — it moves between visible and parked by dragging into/out of a parked zone, or by the equivalent keyboard gesture; a mouse-driven park drops at the drop position, a keyboard park appends to the end of the target zone. A widget hides via an explicit dismiss control and can be restored only by choosing it from a hidden-items tray — dragging a hidden widget back in is not a valid restore path. A parked/hidden item is absent from the rendered surface outside edit mode and appears in a distinct "hidden" grouping only in edit mode; the state persists across a reload.
+- **Verify:** Confirm a stat card renders no dismiss control; drag a stat card into and out of the parked zone — both work, and the drop lands at the drop position, not appended; a widget's dismiss control hides it, and it can only be restored from the hidden-items tray; outside edit mode a parked/hidden item is absent from the page; in edit mode it appears under a "hidden" grouping; the parked/hidden state survives a reload.
+- **Violation signal:** A stat card exposes a dismiss control; a hidden widget can be restored by dragging; a parked/hidden item remains rendered outside edit mode, or its state resets on reload.
+- **Agents:** qa-frontend-expert
+- **Source:** module layout-region component (park-only toggle for stat cards) and hidden-items tray component (button-only widget restore). Live-confirmed: no dismiss control on a stat card; drag in/out of the parked zone both worked, landing at drop position (vs. keyboard append); widget dismiss→tray→restore confirmed; a parked card is absent from the page outside edit mode and appears under a "hidden" grouping in edit mode, including across a persisted hidden state.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM; docs N/A).
+
+### BL-SR-029: Keyboard grab-and-move announces every transition via `aria-live`, with position for reorder and without position for park/restore; however a grab ended by a pointer interruption is a tracked violation `[P2-ux]`
+- **Rule:** Grabbing a block for keyboard reordering, moving it, and dropping it all announce via `aria-live`, including position (e.g. "position N of M") for reorder moves and edge cases; park and restore append to the end of their target zone and announce without a position — this asymmetry is intentional. Ending a grab must always restore the pre-grab state and announce the cancellation, regardless of what ends it — an explicit keyboard cancel (Escape / blur / tab-out) or any other interaction that terminates the grab.
+- **Verify:** Grab a block via keyboard, move with arrow keys → announcements include position; drive a block to an edge → the edge announcement is distinct; park then restore via keyboard → announcements omit position; end a grab via Escape → the pre-grab position is restored and the cancellation announced; end a grab via any other interaction (e.g. a pointer action on another block) → the pre-grab position must still be restored and the cancellation still announced.
+- **Violation signal:** A reorder or edge announcement omits position; a park/restore announcement includes one; ending a grab by any means other than Escape/blur/tab commits the moved position without restoring it or announcing the cancellation.
+- **Agents:** qa-frontend-expert
+- **Source:** module keyboard-sort composable (`moved`/`edge` signal payloads carry position; `parked`/`restored` carry only an id). Live-confirmed: eight verbatim announcement strings captured across grab/move/edge/park/restore/drop; Escape correctly restored on all three regions and a neutral-area click also restored correctly. The same live pass also found a **pointer press on another draggable block while a grab is live silently ends the grab without restoring the pre-grab position and without an announcement**, committing the in-progress move by accident — a confirmed violation of this Rule, tracked as a separate defect rather than reflected as intended behavior.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM; docs N/A). **Note:** the Rule is stated as the full intended contract — restore-and-announce on ANY grab-ending interaction — precisely so the pointer-interrupt path stays a tracked violation rather than being silently blessed as acceptable behavior once fixed.
+
+### BL-SR-030: A save already in flight cannot be duplicated by a rapid repeat trigger `[P2-ux]`
+- **Rule:** Triggering Save again while a save is already in flight never results in a second full-document-replace call reaching the backend — exactly one save request is issued per user-intended save, regardless of how a repeat trigger is delivered.
+- **Verify:** Rapidly trigger Save twice in immediate succession → exactly one save mutation call is observed.
+- **Violation signal:** Two save mutation calls are observed for a single rapid repeat trigger.
+- **Agents:** qa-frontend-expert
+- **Source:** module composable's save guard (client-side only — the backend has no concurrency guard of its own; each save is an independent full replace, per BL-SR-016). Live-confirmed: a rapid double-trigger on the Save control produced exactly one save mutation call; the specific guard mechanism (composable guard vs. a disabled control swallowing the second click) could not be isolated from the UI alone, so this Rule is stated as the observable **outcome**, not the mechanism.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM of the outcome; docs N/A).
+
+### BL-SR-031: A hidden widget's data query does not fire; a hidden stat card's page-level statistics query still fires unchanged `[P2-ux]`
+- **Rule:** A widget that is hidden and saved is not mounted at all, so none of its own data queries fire on load. Stat cards are different: every card's data comes from one shared page-level statistics query, so hiding a card does not shrink that query's scope or omit it — it still fires with the same request shape whether or not any card is hidden.
+- **Verify:** Hide a widget and save, then reload → none of that widget's own data queries appear in the reload's network trace (checked against a positive control with the widget visible); hide a stat card and save, then reload → the page-level statistics query still fires with an unchanged request shape. A tray-only restore without a reload is served from cache and does not exercise this — the check must cross a reload.
+- **Violation signal:** A hidden widget's query still fires; a hidden stat card causes the page-level statistics query to change scope, drop a parameter, or stop firing.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** module layout-surface component (mounts a block's component only when currently visible) and the shared page-level statistics composable feeding every stat card regardless of hidden state. Live-confirmed: hiding and saving a widget dropped exactly that widget's own operations from the reload trace against a positive control; hiding and saving a stat card left the page-level statistics query firing with an unchanged request shape.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM; docs N/A).
+
+### BL-SR-032: The rail region mounts only while it holds at least one visible block, and unmounts structurally (not just visually) when empty `[P2-ux]`
+- **Rule:** The narrow rail column is not rendered at all when it has no visible blocks — the main column then runs full width — and mounts as soon as at least one block becomes visible in it. This is a structural mount/unmount, not a visual collapse; the unmounted state persists across a reload.
+- **Verify:** Hide every block in the rail and save, then reload → the rail element is absent from the page (not merely empty or zero-width), and the main column occupies the full width; restore one block to the rail → the rail element reappears.
+- **Violation signal:** The rail region remains in the page (even empty/zero-height) when it holds no visible blocks; the main column does not expand to fill the freed width.
+- **Agents:** qa-frontend-expert
+- **Source:** module layout-surface component (mount of the rail region gated on the count of currently-visible rail blocks). Live-confirmed: with the rail's only blocks hidden and saved, the rail element was absent from the page after reload and the main column ran full width; restoring one block remounted the rail.
+- **Promoted:** 2026-08-04 (BL-AUDIT-2026-08-04 re-audit; source + live CONFIRM; docs N/A).
+
+---
+
 ## Invariant Coverage Summary
 
 P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-data]` + `[P1-ux]`.
@@ -1423,6 +1570,5 @@ P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-dat
 | Loyalty & Mixed Cart | BL-LOY-001–014 (011 reserved) | 13 | 4 | 7 | 2 |
 | Payment Processors | BL-PAY-001/003/004 | 3 | 3 | 0 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 |
-| Sales Rep | BL-SR-001–014 | 14 | 2 | 10 | 2 |
-| **Total** | | **169** | **50** | **94** | **25** |
-| **Total** | | **159** | **50** | **86** | **23** |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 |
+| **Total** | | **188** | **51** | **103** | **34** |

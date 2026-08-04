@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-07-31",
-    "totalSuites": 119,
+    "generated": "2026-08-04",
+    "totalSuites": 120,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1522,7 +1522,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 98,
+      "testCount": 117,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2603,37 +2603,13 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 35,
+      "testCount": 50,
       "estimatedMinutes": 71,
       "agent": "qa-frontend-expert",
       "tags": [
         "sales-rep",
         "storefront",
         "customer-profile",
-        "b2b",
-        "feature-gated"
-      ],
-      "requiresModules": [
-        "sales-rep"
-      ],
-      "customerApplicability": "reference"
-    },
-    {
-      "id": "092",
-      "name": "Sales Rep — Admin Embedded App (back-office)",
-      "file": "regression/suites/Backend/sales-rep/092-sales-rep-admin-embedded-app.csv",
-      "domain": "sales-rep",
-      "layer": "backend",
-      "concern": "functional",
-      "priority": "P1",
-      "testCount": 22,
-      "estimatedMinutes": 95,
-      "agent": "qa-backend-expert",
-      "tags": [
-        "sales-rep",
-        "admin",
-        "embedded-app",
-        "backend",
         "b2b",
         "feature-gated"
       ],
@@ -2659,6 +2635,54 @@
         "vc-shell",
         "permissions",
         "crud"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "092b",
+      "name": "Sales Rep — Admin Embedded App (back-office)",
+      "file": "regression/suites/Backend/sales-rep/092b-sales-rep-admin-embedded-app.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 22,
+      "estimatedMinutes": 95,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "sales-rep",
+        "admin",
+        "embedded-app",
+        "backend",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "093",
+      "name": "Sales Rep — Hub Dashboard (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/093-sales-rep-hub-dashboard-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 45,
+      "estimatedMinutes": 61,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "hub-dashboard",
+        "saved-layout",
+        "b2b",
+        "feature-gated"
       ],
       "requiresModules": [
         "sales-rep"
@@ -2791,7 +2815,8 @@
       },
       "exclude": [
         "050m",
-        "092"
+        "092",
+        "092b"
       ]
     },
     "sprint": {
@@ -2809,7 +2834,9 @@
         "089",
         "090",
         "091",
-        "092"
+        "092",
+        "092b",
+        "093"
       ]
     },
     "full": {
@@ -2819,7 +2846,9 @@
         "089",
         "090",
         "091",
-        "092"
+        "092",
+        "092b",
+        "093"
       ]
     },
     "sales-rep": {
@@ -2828,7 +2857,9 @@
         "089",
         "090",
         "091",
-        "092"
+        "092",
+        "092b",
+        "093"
       ]
     },
     "domain:purchase-flow": {
