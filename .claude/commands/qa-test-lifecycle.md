@@ -1,7 +1,7 @@
 ---
-description: "Full test case lifecycle: detect changes → sync stale cases → analyze gaps → generate → review → fix → verify → approve → promote. Unified pipeline for change-driven sync and quality assurance; the only promoter of /qa-test's run-scoped cases into regression/suites/."
+description: "Full test case lifecycle: detect changes → sync stale cases → analyze gaps → generate → review → fix → verify → approve → promote. Unified pipeline for change-driven sync and quality assurance; the promoter for handoff / re-promotion / legacy run-scoped cases into regression/suites/ (/qa-test now appends + flips its own ticket cases in-run)."
 argument-hint: "suite <ID> | domain <name> | VCST-XXXX | PR #NNN | module <name> | diff | changelog <version> [--promote-only]"
-disable-model-invocation: true
+
 ---
 
 # /qa-test-lifecycle — Unified Test Case Pipeline
@@ -28,11 +28,15 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 /qa-test-lifecycle VCST-1234 --promote-only  # Skip Phases 2-5: re-derive G10 eligibility and promote only
 ```
 
-> **This command is the only promoter.** `/qa-test` authors ticket cases into a **run-scoped**
-> `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv` that **no runner ever reads**, and it never promotes
-> (`.claude/commands/qa-test.md` 6i/6j). Phase **6P** below is the step that turns those cases into durable
-> coverage — `regression/suites/<layer>/<module>/*.csv` + a `config/test-suites.json` entry. Without it a
-> `/qa-test` run's new coverage is a one-shot.
+> **This command is the promoter for handoff, re-promotion, and non-`/qa-test` sources.** As of the
+> `/qa-test` rework, `/qa-test` **appends its own ticket cases directly into `regression/suites/` as `Draft`
+> in its Step 3** and **flips them in-run at its 5i gate** (`Draft → Automated` for a case that ran green
+> under the automated regression runner, else `Reviewed`/`Manual`; non-promotable rows reverted) — verified
+> by a fresh `qa-lead` §Verifier Mode instance re-deriving G10 + user confirmation, so it no longer hands a
+> run-scoped CSV off to this command. Phase **6P** below remains the promoter for everything else: a case
+> set produced elsewhere, a re-promotion, or a legacy `reports/tickets/*/VCST-XXXX/test-cases.csv` that still
+> needs folding into durable coverage — `regression/suites/<layer>/<module>/*.csv` + a
+> `config/test-suites.json` entry, re-deriving G10 from the CSV itself (never trusting a hand-off record).
 
 ## Flags
 
@@ -529,7 +533,12 @@ itself.** A gate-green run means *eligible for promotion*, not promoted.
 | **NEEDS FIXES** | Required gate(s) failed — must address before regression |
 | **BLOCKED** | Environment issues prevent verification — investigate env first |
 
-#### 6P. PROMOTE — fold `/qa-test`'s run-scoped cases into durable coverage
+#### 6P. PROMOTE — fold a legacy/handoff run-scoped case set into durable coverage
+
+Serves case sets `/qa-test` did **not** finish in-run: a legacy `reports/tickets/*/VCST-XXXX/test-cases.csv`
+left by an older `/qa-test`, or a re-promotion of cases that stayed `Draft`. (A current `/qa-test` run
+appends its cases into `regression/suites/` and flips them at its own 5i gate, so it produces no
+`promotionSource`.)
 
 **Runs when** Phase 1 resolved a `promotionSource` **and** step 1 below re-derives G10 clean. **No-op**
 when there is no `promotionSource`. **Never runs** under `--ci` or `--report-only`.
@@ -537,10 +546,10 @@ when there is no `promotionSource`. **Never runs** under `--ci` or `--report-onl
 **Precondition, stated precisely — 6P does NOT require an APPROVED pipeline verdict.** It requires the
 **G10 re-derivation in step 1 to come back clean for the cases being promoted**, plus the step-2 approval.
 The distinction matters because `--promote-only` skips Phases 2–5 and therefore produces no
-APPROVED/NEEDS-FIXES verdict at all: gating 6P on that verdict would make the documented hand-off command
-(`/qa-test-lifecycle VCST-XXXX --promote-only`, `.claude/commands/qa-test.md` 6j) a silent no-op. On a
-**full** run the pipeline verdict still applies as a second condition — NEEDS FIXES / BLOCKED means the
-suites in scope are not in a state to receive new cases, so do not promote into them.
+APPROVED/NEEDS-FIXES verdict at all: gating 6P on that verdict would make the manual promotion command
+(`/qa-test-lifecycle VCST-XXXX --promote-only`) a silent no-op. On a **full** run the pipeline verdict
+still applies as a second condition — NEEDS FIXES / BLOCKED means the suites in scope are not in a state to
+receive new cases, so do not promote into them.
 
 The problem this closes: `/qa-test` authors ticket cases into `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv`,
 and **nothing in the manifest-driven runner reads `reports/tickets/**`** — a case left there executes once,
@@ -922,7 +931,7 @@ Output: per-case verification:
 | After a platform release | `/qa-test-lifecycle changelog <version>` |
 | Quick quality check on a suite | `/qa-test-lifecycle suite <ID> --skip-verify` |
 | After `/qa-coverage-generation` | `/qa-test-lifecycle suite <IDs> --skip-sync --skip-generate` (review only) |
-| **After a `/qa-test` run authored new cases (`new_cases_authored > 0`)** | **`/qa-test-lifecycle VCST-XXXX`** — Phase 6P promotes the eligible ones into `regression/suites/` + `config/test-suites.json`. Add `--promote-only` when the `/qa-test` run already reviewed + executed them and only promotion is outstanding. Skip it and that coverage never runs again |
+| **After a `/qa-test` run authored new cases** | Usually **nothing** — `/qa-test` now appends its cases into `regression/suites/` and flips the eligible ones `Draft → Automated`/`Reviewed` **in-run at its own 5i gate**. Only reach for `/qa-test-lifecycle VCST-XXXX --promote-only` for a **legacy** run that left a run-scoped `reports/tickets/*/VCST-XXXX/test-cases.csv`, or to re-derive/re-promote cases that stayed `Draft` |
 | After Phase 6 APPROVED | Promote the `Draft` cases (6P for `/qa-test` hand-offs; the human approval step otherwise), then run `/qa-regression <affected suites>` |
 | A whole suite's assertions may have gone stale (not tied to one change) | `/qa-review-tests suite <ID> --triangulate` — Dimension 11 wholesale; this pipeline only triangulates the cases a change touched (4a-bis) |
 | Which suite is most overdue for triangulation | `/qa-review-tests stale` (or `npm run tc:audit:queue`) |
@@ -948,14 +957,15 @@ Output: per-case verification:
   `--ci` and `--report-only` never promote. `Draft` cases stay out of regression selections.
 - **A `/qa-test` hand-off is a record, not an approval.** `summary.json`'s `promotion.eligible[]` says where
   the previous run got to; 6P **re-derives eligibility from the CSV** and freely demotes an "eligible" case
-  that fails re-derivation. `/qa-test` prepares promotion (5i) and never performs it — if this command
-  trusted the hand-off, the promotion gate would be self-certified by the author.
+  that fails re-derivation. When this pipeline promotes a legacy/handoff CSV it re-derives eligibility
+  itself — if it trusted a hand-off record, the promotion gate would be self-certified by the author.
 - **`/qa-test` Step 3 and this pipeline's Phases 3–4 run the SAME mechanism — the skills own it, both
   commands consume it.** `/qa-test-cases-generator` (+ `test-case-template.md`) owns the authoring contract
   and the `Automation_Status` enum; `/qa-review-tests` owns the dimensions/codes/severities/auto-fix matrix;
-  `/qa-generate-data` → `/qa-seed-data` owns data prep. Neither command restates any of it. The difference
-  is only **where the rows land** — `/qa-test` writes a run-scoped ticket CSV, this pipeline writes durable
-  `regression/suites/` coverage — and **who may promote** (only here, 6P).
+  `/qa-generate-data` → `/qa-seed-data` owns data prep. Neither command restates any of it. Both now write
+  into **durable `regression/suites/` coverage** via the same appender — `/qa-test` appends its ticket cases
+  as `Draft` and flips them in-run at 5i (`Draft → Automated`/`Reviewed`); this pipeline's 6P promotes
+  legacy/handoff/re-promotion case sets and remains the promoter for anything `/qa-test` didn't finish.
 - **Never hand-roll a CSV append** — `regression/suites/` writes go through
   `npx tsx scripts/test-cases/append-test-cases-to-suite.ts --check-global-ids` (dry-run first), then
   `npm run suites:sync` + `npm run suites:lint`. A missing boundary newline merges two 15-column rows into

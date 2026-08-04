@@ -278,7 +278,7 @@ Dual-purpose field: **review state** + **execution mode**.
 
 | Value | Meaning | Included in regression? |
 |-------|---------|-------------------------|
-| `Draft` | Just generated, not yet reviewed. Default output of `/qa-test-cases-generator`. | **No** — excluded from all regression selections |
+| `Draft` | Just generated, not yet reviewed. Default output of `/qa-test-cases-generator`. | **No** — a *convention*, NOT a runtime filter: the runner does not check `Automation_Status`, so a `Draft` row physically in a selected suite CSV *will* execute. Keep Draft cases out of durable suites except in the deliberate `/qa-test` window (Step 3 appends Draft → Step 4 runs them → 5i flips to `Automated`/`Reviewed` or reverts). |
 | `Reviewed` | Passed `/qa-review-tests` ≥ PASS WITH WARNINGS AND peer-approved (human or `qa-lead-orchestrator`), but execution mode not yet assigned | Yes — eligible for manual execution |
 | `Automated` | Reviewed + MCP-executable by an agent | Yes |
 | `Manual` | Reviewed + requires human execution (no MCP path) | Yes (manual test runs only) |
@@ -293,7 +293,7 @@ Dual-purpose field: **review state** + **execution mode**.
    `{OBSERVED}`, AND
 3. A human reviewer or `qa-lead-orchestrator` explicitly approves.
 
-From `Reviewed`, the author assigns the execution mode (`Automated` / `Manual` / `Semi-Automated`) based on MCP-executability.
+From `Reviewed`, the author assigns the execution mode (`Automated` / `Manual` / `Semi-Automated`) based on MCP-executability. **`/qa-test` collapses this into one in-run flip at its 5i gate:** a case it authored `Draft`, executed green under the automated regression runner (Step 4), and grounded to `{OBSERVED}` goes straight to `Automated` (all three promotion conditions above are met in the same run, verifier-ratified + user-confirmed); a checklist-only case goes to `Reviewed`/`Manual`.
 
 ---
 

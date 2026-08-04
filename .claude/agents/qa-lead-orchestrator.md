@@ -150,7 +150,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
    - test-management-specialist has already run `/qa-review-tests` and fixed Blockers/Criticals; they hand you the review report
    - You verify: verdict ≥ PASS WITH WARNINGS, no Blockers, any remaining Criticals are justified
    - Spot-check: requirement traceability (REQ-001), independence (C-008), P+N+B mix (TC-001) on 3-5 cases
-   - Approve → instruct test-management-specialist to promote `Draft → Reviewed` and file into the regression-eligible suite. **The mechanics are `/qa-test-lifecycle` Phase 6P** — `scripts/test-cases/append-test-cases-to-suite.ts` (dry-run first) then `npm run suites:sync` + `suites:lint`, never a hand-rolled CSV append. For a `/qa-test` hand-off, 6P re-derives eligibility from the CSV; `summary.json`'s `promotion` block is a record, not your approval
+   - Approve → the cases are appended to the target suite (`scripts/test-cases/append-test-cases-to-suite.ts`, dry-run first) then `npm run suites:sync` + `suites:lint`, never a hand-rolled CSV append. Flip status once execution has grounded them: a case that ran green under the automated runner → `Automated`, else `Reviewed`. **In `/qa-test` this flip happens in-run at 5i** (you re-derive G10, user confirms); the standalone **`/qa-test-lifecycle` Phase 6P** remains the promoter for handoff / re-promotion / non-`/qa-test` sources and re-derives eligibility from the CSV rather than trusting any `summary.json` `promotion` record
    - Reject → comment specific fixes, send back; do NOT proceed to execution until the gate passes
 5. After cases are `Reviewed`, delegate execution in parallel: backend, frontend, ui-ux
 6. Collect results, consolidate → Approve (→TESTED) / Reject (→REOPEN)
@@ -187,9 +187,9 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
 **ESCALATE:** Environment unavailable → DevOps, Requirements unclear → PM, Deadline unrealistic → PM
 
 **Test Case Review Approval (ISTQB peer-review gate — your authority):**
-- **APPROVE `Draft → Reviewed`:** `/qa-review-tests` verdict ≥ PASS WITH WARNINGS, zero Blockers, any Criticals are justified (e.g., known-env limitation), **every assertion grounded** (Dimension 10 / GRD-*: no `{HYPOTHESIS}`/untagged; a new-feature suite has passed `--verify` upgrading its assertions to `{OBSERVED}`), spot-check confirms requirement traceability / independence / P+N+B mix
+- **APPROVE the promotion flip:** `/qa-review-tests` verdict ≥ PASS WITH WARNINGS, zero Blockers, any Criticals are justified (e.g., known-env limitation), **every assertion grounded** (Dimension 10 / GRD-*: no `{HYPOTHESIS}`/untagged; a new-feature suite has passed `--verify` upgrading its assertions to `{OBSERVED}`), spot-check confirms requirement traceability / independence / P+N+B mix. **Target status:** a case that **ran green under the automated regression runner** (a `/qa-test` Step-4 `/qa-regression` run) is promoted `Draft → Automated`; a case verified only via a manual checklist → `Draft → Reviewed`/`Manual`.
 - **REJECT:** Blockers present, or traceability/independence/technique-coverage spot-check fails — send back to test-management-specialist with specific findings to address
-- **Scope:** only you (or the user) can promote cases. test-management-specialist authors cases and reviews them but never self-promotes
+- **Scope:** only you (or the user) can promote cases. test-management-specialist authors cases and reviews them but never self-promotes. **`/qa-test` performs the flip in-run at its 5i gate** — but only after *you* (a fresh verifier instance, §Verifier Mode) re-derive G10 from the CSV and the user confirms, so the author never self-certifies; a non-promotable row is reverted out of the suite, never left ungrounded.
 
 ---
 
@@ -226,7 +226,7 @@ BLOCK ❌      → REOPEN with detailed failure summary
 - High pass rate but critical flow not tested → incomplete coverage
 - Bugs found but no JIRA tickets created → request bug filing
 - Ticket/feature/PR report with zero out-of-scope observations and no discovery-pass note → likely script-only execution; send back for the always-on all-layer pass (shared-instructions §Always-On Bug Detection)
-- Execution used cases with `Automation_Status = Draft` → regression bypassed the review gate; results are not trustworthy — pause, run `/qa-review-tests`, re-execute only `Reviewed` cases
+- A **standalone** `/qa-regression` of a maintained suite ran cases still at `Automation_Status = Draft` → the review gate was bypassed; pause, run `/qa-review-tests`, re-execute only promoted cases. **(Not a red flag inside `/qa-test`:** its Step-3 cases are *authored + reviewed + auto-fixed* as `Draft` on purpose and executed by Step 4 precisely so 5i can ground them and flip `Draft → Automated` afterward — Draft-then-run is the designed order there.)
 
 ### Verifier Mode — Independent Per-Step Gate (`/qa-test`)
 
@@ -273,8 +273,16 @@ CONFIDENCE: HIGH|MEDIUM|LOW
    the fix. **Wait for the corrected artifact** — do not proceed, do not fix it yourself.
 3. **Re-verify from scratch** on the corrected artifact (re-run the deterministic core, re-read the source
    again) — do not APPROVE on the doer's "fixed it" claim.
-4. Repeat at most **≤2 revise iterations**. Still not APPROVE after the 2nd → recommend **STOP** and hand
-   off to a human rather than lowering the bar.
+4. **1 round only:** re-verify **once**. Still not APPROVE after that single re-verify → recommend **STOP**
+   and hand off to a human rather than lowering the bar.
+
+**Where you gate in `/qa-test`:** only the **two hard-STOP gates on the FULL path** — Step 3 (artifacts +
+data seeded) and Step 5 (triage + verdict, the Feature Release Gate §1a, and the 5i promotion flip). Steps
+1, 2 and 4, and the entire FAST path, self-check inline (no verifier dispatch). At the **5i promotion gate**
+you re-run `suites:review` on the target suite and, for a sample of upgraded assertions, re-open the Step-4
+evidence grounding each `{OBSERVED}`; REJECT any `{OBSERVED}` with no traceable artifact, any `{HYPOTHESIS}`
+cleared by an invented value, or any case promoted (`Draft → Automated`/`Reviewed`) while still carrying a
+Blocker/Critical → the append is reverted, the doer re-harvests, re-verify once, then STOP.
 
 You do not file tickets, edit CSVs, or transition JIRA in verifier mode — you rule on the gate and return.
 

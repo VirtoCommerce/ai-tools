@@ -6,7 +6,7 @@
 |---------------|------|----------|
 | **Test documentation** (plans, cases, testrail CSVs — NOT execution reports, see below) | `reports/tickets/SprintXX-XX/VCST-XXXX/` | `test-plan.md` (`/qa-plan`), `test-cases.csv` (`/qa-test-cases-generator`), `testrail-import.csv` |
 | **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
-| **`/qa-test` run summary** (AC analysis, checklist, execution results, exploratory findings) | **Terminal only** — folded into one chat report, never written as separate files (`.claude/rules/reports.md` §1) | n/a — only `summary.json` (duplicate-run marker) + `screenshots/` persist to `reports/tickets/SprintXX-XX/VCST-XXXX/` |
+| **`/qa-test` run summary** (AC analysis, checklist, execution + change-scoped regression results) | **Terminal only** — folded into one chat report, never written as separate files (`.claude/rules/reports.md` §1) | n/a — only `summary.json` (duplicate-run marker) + `screenshots/` persist to `reports/tickets/SprintXX-XX/VCST-XXXX/`; new cases persist to `regression/suites/` |
 | **Bug reports — open** (active bugs) | `reports/bugs/open/` | `BUG-Checkout-Payment-Overlap-iOS.md` |
 | **Bug reports — fixed** (verified fixes, kept for regression reference) | `reports/bugs/fixed/` | `BUG-Cart-Total-Reset-VCST-4700.md` |
 | **Bug reports — closed** (won't fix, false positive, cannot reproduce) | `reports/bugs/closed/` | `BUG-GA4-add-payment-info.md` |
@@ -16,7 +16,7 @@
 | **Full regression runs** (multi-suite reports) | `reports/regression/REG-YYYY-MM-DD-HHMM/` | suite reports, `REGRESSION-REPORT.md` |
 | **Smoke test runs** (`/qa-smoke` Track A + Track B) | `reports/regression/SMOKE-YYYY-MM-DD-HHMM/` | `smoke-report.md`, `suite-01-trackA-results.json`, `suite-01-trackB-results.json`, `trackA-evidence/`, `trackB-evidence/` |
 | **Performance reports** (standalone investigations worth keeping) | `reports/performance/` | `lists-page-performance-report-2026-02-11.md` |
-| **Exploratory session reports** (standalone `/qa-sbtm` / `/qa-exploratory` domain charters — read back for the 24h duplicate-charter check; NOT `/qa-test`'s own ticket-scoped mini-charter, which is terminal-only) | `reports/exploratory/` | `SBTM-checkout-edge-cases-2026-03-01.md` |
+| **Exploratory session reports** (standalone `/qa-sbtm` / `/qa-exploratory` domain charters — read back for the 24h duplicate-charter check; `/qa-test` no longer runs an exploratory charter) | `reports/exploratory/` | `SBTM-checkout-edge-cases-2026-03-01.md` |
 | **Checklists** (`/qa-checklist` output) | **Terminal only** — no active writer today; `reports/checklists/` is reserved for a future durable checklist artifact | n/a |
 | **BA analysis reports** (system analysis, stories, API audit) | `reports/ba/` | `ba-report-2026-03-04.md`, `checkout-stories.md` |
 | **BA business logic proposals** (draft `PROPOSED-BL-*` invariants from `/ba-analyze`; human-promoted into `business-logic.md`) | `reports/ba/` | `bl-proposals-2026-04-22.md` |

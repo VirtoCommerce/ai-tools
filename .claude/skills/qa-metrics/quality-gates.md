@@ -71,8 +71,7 @@ and are combined with that math by the verifier.
 | `BL-*` invariants for the domain | Verified, none violated | `business-logic.md` |
 | Open P0 bugs in the feature | 0 | `reports/bugs/` |
 | Open P1 bugs in the feature | 0, or deferred with documented workaround + risk acceptance | `reports/bugs/` |
-| Change-scoped regression | ≥95% pass on the Artifact-C suites for the touched surface | `/qa-regression` result |
-| Exploratory session | Completed (mandatory P0/P1 + critical revenue flows) | `/qa-test` Step 4 |
+| Change-scoped regression | ≥95% pass on the Artifact-C suites for the touched surface (this run also executes the ticket's newly authored cases) | `/qa-regression` result |
 | NFRs on the touched surface (as applicable) | No new a11y / performance / security violations introduced | `/qa-accessibility`, perf, security suites |
 | Smoke gate (§1) | PASS — the feature doesn't break a P0 flow | Suite 042/078 |
 
@@ -94,6 +93,11 @@ and are combined with that math by the verifier.
 - The GO/NO-GO decision + evidence links are recorded in the per-ticket QA report
   (`reports/tickets/<Sprint>/<TICKET>/`, category 6 per `.claude/rules/reports.md`), not a new artifact
   type.
+- **Epic roll-up (`/qa-test --epic` runs).** This gate stays **per story**; an Epic-scoped run combines the
+  per-story verdicts into one Epic-level recommendation: **all** child stories GO/CONDITIONAL GO + the
+  **cross-story E2E** clean + **0 open P0 across the whole Epic** → the Epic's feature is releasable. Any
+  child NO-GO, a broken cross-story seam, or an open P0 anywhere in the Epic → the Epic is NO-GO (name the
+  blocking story). Recommendation only; recorded in the Epic's `summary.json.epic.roll_up`.
 
 ---
 
@@ -256,7 +260,7 @@ Conditions that trigger an automatic rollback of a deployment.
 | Cross-Browser Testing | No | If UI-facing | Smoke suite only | Full (Chrome + Edge + Firefox) | Smoke suite only |
 | Performance Check | No | If touched | Spot check | Full baseline comparison | Spot check |
 | Security Scan | No | If touched | Changed areas only | Full scan (Suite 08) | Changed areas only |
-| Exploratory Testing | No | Required (P0/P1) | Optional | Required (2+ sessions) | No |
+| Exploratory Testing | No | No (run `/qa-exploratory` separately) | Optional | Required (2+ sessions) | No |
 | Accessibility Check | No | If UI-facing | No | Required (Suite 09) | No |
 | Scope | Suite 01 (12 P0 tests) | One story/feature + its change-scoped suites | Sprint tickets + affected suites | All regression suites | Hotfix area + smoke |
 | Typical Duration | ~15 minutes | 30 min - 2 hours | 4-8 hours | Full day or more | 1-2 hours |
