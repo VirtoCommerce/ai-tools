@@ -1,0 +1,71 @@
+{
+  "$comment": "Schema for /qa-test's summary.json (reports/tickets/{SPRINT}/<ticket-key>/summary.json). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5h's Feature Release Gate reads `regression`; 5i records `promotion`. Replace <..> placeholders; 0/[]/null are empty defaults.",
+  "ticket": "<ticket-key>",
+  "ticket_type": "Bug|Story|Task|Tweak",
+  "path": "fast|full",
+  "verdict": "PASS|PASS_WITH_NOTES|FAIL|BLOCKED",
+  "date": "YYYY-MM-DD",
+  "environment": "{FRONT_URL}",
+  "build": {
+    "platform": "{PlatformVersion}",
+    "theme": "{theme version}",
+    "relevant_modules": { "module-name": "version" }
+  },
+  "agents_dispatched": ["ba-story-writer", "qa-frontend-expert", "qa-backend-expert"],
+  "epic": {
+    "$comment": "parent = the Epic this story belongs to (null if none). roll_up is written only on an --epic serial run (in the Epic's own summary), combining the child-story verdicts + the cross-story E2E into one Epic recommendation.",
+    "parent": null,
+    "siblings": { "done": [], "in_progress": [], "blocked_dependency": [] },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "pass|fail|not-run",
+      "halted_at": null,
+      "verdict": "GO|CONDITIONAL GO|NO-GO|n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 0,
+    "impl_coverage": { "satisfied": 0, "drift": 0, "contradicts": 0, "not_found": 0 },
+    "conditions_total": 0,
+    "conditions_with_evidence": 0
+  },
+  "total_cases": 0,
+  "passed": 0,
+  "failed": 0,
+  "blocked": 0,
+  "iterations": {
+    "$comment": "Only when invoked with --iterate. rounds = how many test(→fix→re-test) rounds ran (initial run = round 1); outcome = how the loop ended.",
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "passed|max-rounds|bailed|blocked"
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "$comment": "Filled by 5i. Cases are appended to regression/suites/ as Draft in Step 3; after Step 4's automated regression run 5i flips each promotable case Draft→Automated (green under the automated runner) or Draft→Reviewed/Manual (checklist-only), reverts non-promotable rows, and leaves a case that failed on a real in-scope bug at Draft with a reason.",
+    "automated": [],
+    "reviewed": [],
+    "blocked": [{ "case": "TC-ID", "reason": "unresolved {HYPOTHESIS} — <what stayed unknown> | failed on in-scope bug <link>" }],
+    "reverted": [{ "case": "TC-ID", "reason": "unresolvable data / invented value" }]
+  },
+  "regression": {
+    "$comment": "The change-scoped Artifact-C /qa-regression run — the Feature Release Gate (5h) is defined on THIS run_id, not whole-history.",
+    "suites": [],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": null
+  },
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CART-001"],
+  "appinsights": {
+    "checked": true,
+    "layers": ["frontend", "backend"],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": []
+  },
+  "screenshots": "reports/tickets/{SPRINT}/<ticket-key>/screenshots/"
+}
