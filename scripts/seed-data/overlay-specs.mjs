@@ -34,6 +34,8 @@
 export const MEMBER_FIELDS = new Set([
   'contact_id', // sales-rep reps → their Contact
   'memberId',   // loyalty users → their Contact
+  'contactId',  // ORG_ASSOC_ONLY_NO_GLOBAL → its Contact (camelCase spelling of the same thing).
+                // Its sibling `userId` is a SECURITY-ACCOUNT id and stays unprobeable (header note 3).
 ]);
 
 /**
@@ -41,9 +43,21 @@ export const MEMBER_FIELDS = new Set([
  * so it is probeable only for aliases known to hold a member.
  */
 export const MEMBER_ID_ALIASES = [
-  /^SR_REP_/,        // sales-rep reps → Contact id
-  /^SR_OWNER_/,      // sales-rep ACME owner Contact
-  /^ORG_REP_ONLY$/,  // rep-only served Organization
+  /^SR_REP_/,          // sales-rep reps → Contact id
+  /^SR_OWNER_/,        // sales-rep ACME owner Contact
+  /^ORG_REP_ONLY$/,    // rep-only served Organization
+  // VCST-5281 cross-org fixtures: `id` is the Contact/member id written by the membership seeder
+  // (`userId` alongside it is a SECURITY-ACCOUNT id and stays unprobeable — header note 3). These
+  // are torn down + re-seeded per run, which is exactly the stale-overlay case this check exists
+  // for: without them, @td(ALIAS.id) can silently point at a deleted contact.
+  /^MULTI_ORG_TF_BR/,  // MULTI_ORG_TF_BR + its _ALT twin (the _EMPLOYEE/_MAINTAINER auth aliases carry no `id`)
+  /^ORG_TF_ONLY_/,     // single-org invitee / blocking-status-WALK fixtures
+  // The three AT-REST blocking-status representatives (MOM-007/008/009 → Invited/Rejected/Deleted).
+  // They need this MORE than the others, not less: a `Deleted` membership_status does NOT delete the
+  // contact, so the only thing that removes these accounts is teardown — and a teardown+re-seed is
+  // precisely what leaves @td(ORG_TF_MBR_*.id) pointing at a deleted contact. Without the probe that
+  // is silent: the assertion simply never matches and the case reads as a product bug.
+  /^ORG_TF_MBR_/,
 ];
 
 /**

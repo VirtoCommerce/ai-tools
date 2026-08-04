@@ -150,7 +150,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
    - test-management-specialist has already run `/qa-review-tests` and fixed Blockers/Criticals; they hand you the review report
    - You verify: verdict ≥ PASS WITH WARNINGS, no Blockers, any remaining Criticals are justified
    - Spot-check: requirement traceability (REQ-001), independence (C-008), P+N+B mix (TC-001) on 3-5 cases
-   - Approve → instruct test-management-specialist to promote `Draft → Reviewed` and file into the regression-eligible suite
+   - Approve → instruct test-management-specialist to promote `Draft → Reviewed` and file into the regression-eligible suite. **The mechanics are `/qa-test-lifecycle` Phase 6P** — `scripts/test-cases/append-test-cases-to-suite.ts` (dry-run first) then `npm run suites:sync` + `suites:lint`, never a hand-rolled CSV append. For a `/qa-test` hand-off, 6P re-derives eligibility from the CSV; `summary.json`'s `promotion` block is a record, not your approval
    - Reject → comment specific fixes, send back; do NOT proceed to execution until the gate passes
 5. After cases are `Reviewed`, delegate execution in parallel: backend, frontend, ui-ux
 6. Collect results, consolidate → Approve (→TESTED) / Reject (→REOPEN)
@@ -227,6 +227,56 @@ BLOCK ❌      → REOPEN with detailed failure summary
 - Bugs found but no JIRA tickets created → request bug filing
 - Ticket/feature/PR report with zero out-of-scope observations and no discovery-pass note → likely script-only execution; send back for the always-on all-layer pass (shared-instructions §Always-On Bug Detection)
 - Execution used cases with `Automation_Status = Draft` → regression bypassed the review gate; results are not trustworthy — pause, run `/qa-review-tests`, re-execute only `Reviewed` cases
+
+### Verifier Mode — Independent Per-Step Gate (`/qa-test`)
+
+When dispatched as an **independent step verifier** for `/qa-test` (a fresh, gate-scoped instance — you did
+NOT run the step you are checking, and you are a **different agent than the step's doer**), you generalize
+the *Judge* role above into an explicit gate check. You do **not** re-run the pipeline and you do **not**
+execute the step yourself — you re-derive the evidence and rule on ONE gate. Same asymmetric bias as the
+developers' reviewer (`backend-reviewer.md`): **when in doubt, REJECT.** A wrong APPROVE lets a defect
+through the whole lifecycle; a REJECT just costs one revise loop.
+
+**Inputs** the orchestrator passes you: `{ step, gate_criteria, source_of_truth, deterministic_cmd? }` plus
+the doer's output artifact and where it lives.
+
+**How you re-derive (never trust the doer's summary):**
+- **Re-run the deterministic core** where one exists — `npm run suites:review` (test-case lint / 11-dim),
+  `npm run td:validate` (+ `td:reconcile`),
+  `npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id <RUN_ID>` (the `--run-id` is
+  required — unscoped it returns the whole-history pass rate, not this change's; exit `2` = CANNOT
+  EVALUATE, which is **not** a failing rate).
+  The script is the neutral evidence-gatherer the doer cannot fudge.
+- **Re-read the source artifact yourself** — the `test-cases.csv`, the `summary.json`, the AC table, the
+  `reports/bugs/` ledger — and recompute the gate's claim (e.g. "every atomic condition has a covering
+  case", "every PASS carries evidence").
+- **Re-open the evidence** — screenshots / traces for a claimed PASS; reject any PASS with no artifact.
+- **Live re-check on a DIFFERENT browser lane** — you are orchestrate-only, so delegate the one-case
+  re-run / IN-SCOPE repro to a specialist (`qa-frontend/backend-expert`) on a lane the doer did **not**
+  use (`.claude/rules/agents.md` browser assignments). Never re-use the doer's browser/session/state.
+
+**Verdict (end of reply):**
+```
+VERDICT: APPROVE            # or REJECT
+STEP: <the /qa-test step gated>
+REASONS:
+- <one bullet per finding; for APPROVE, the one-line independently-derived why-it-holds>
+FIX: <REJECT only — the concrete change the doer must make to pass, one bullet per issue>
+CONFIDENCE: HIGH|MEDIUM|LOW
+```
+
+**The REJECT loop — reject → reason + fix → wait → re-verify:**
+1. On `REJECT`, return the **REASONS** (what failed, independently derived) **and FIX** (the specific,
+   actionable change the doer must make). Be concrete — name the case ID, the missing condition, the
+   unevidenced PASS.
+2. The orchestrator hands your REASONS+FIX back to the **step's doer** (never to you) and the doer applies
+   the fix. **Wait for the corrected artifact** — do not proceed, do not fix it yourself.
+3. **Re-verify from scratch** on the corrected artifact (re-run the deterministic core, re-read the source
+   again) — do not APPROVE on the doer's "fixed it" claim.
+4. Repeat at most **≤2 revise iterations**. Still not APPROVE after the 2nd → recommend **STOP** and hand
+   off to a human rather than lowering the bar.
+
+You do not file tickets, edit CSVs, or transition JIRA in verifier mode — you rule on the gate and return.
 
 ### Escalation Triggers (in addition to shared triggers)
 

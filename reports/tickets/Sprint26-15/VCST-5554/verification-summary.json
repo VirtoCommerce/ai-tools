@@ -1,0 +1,74 @@
+{
+  "ticket": "VCST-5554",
+  "verdict": "VERIFIED",
+  "date": "2026-08-03",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1053.0",
+    "platform_image_tag": "3.1053.0-pr-3089-c16b-vcst-5554-c16b5029",
+    "theme": "n/a — Admin-only defect, storefront not involved",
+    "relevant_modules": { "VirtoCommerce.Orders": "3.1013.0" },
+    "pr_build": "vc-platform#3089 (open) — branch build confirmed running, not a plain release"
+  },
+  "deployment": {
+    "source": "vc-deploy-dev",
+    "branch": "vcst-qa",
+    "deploy_pr": "VirtoCommerce/vc-deploy-dev#6274",
+    "merged_at": "2026-08-03T09:50:51Z",
+    "deploy_run": "30803137555",
+    "deploy_conclusion": "success",
+    "rollout_confirmed_by": [
+      "packages.json@vcst-qa PlatformImageTag matches",
+      "docker build --build-arg PLATFORM_TAG=3.1053.0-pr-3089-c16b-vcst-5554-c16b5029",
+      "ACR push virtopaasregistrymain.azurecr.io/vcst/platform:...-6ccfe2e @ sha256:9583625c",
+      "Admin SPA header reports 3.1053.0-pr-3089-c16b"
+    ],
+    "temporary_repin": {
+      "displaced": "3.1053.0-pr-3093-e27a-vcst-5618-e27ac905 (VCST-5618, PR #3093 still open)",
+      "must_revert": true
+    }
+  },
+  "agent_used": "qa-backend-expert (L2 Admin SPA, playwright-edge); L4 REST probes run by the orchestrator",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug — 2026-07-23 reproduction on Platform 3.1046.0 / Orders 3.1012.0 (500 InvalidCastException + screenshot + 8x App Insights 500s + vcptcore-qa 200 control). NOT re-run on pre-fix code.",
+  "repro_method": "drift re-created via POST /api/platform/settings, which persists the posted ValueType verbatim (SettingEntity.FromModel) — no DB access required, fully reversible",
+  "stored_state_matrix": [
+    { "stored": "ShortText \"True\"", "descriptor": "Boolean", "resolved": true, "endpoint": "200", "runs": "3/3", "note": "exact original corruption; pre-fix threw InvalidCastException" },
+    { "stored": "ShortText \"yes\"", "descriptor": "Boolean", "resolved": true, "endpoint": "200", "note": "unconvertible -> descriptor DefaultValue; POST 204 proves the row is ShortText (a Boolean write of 'yes' throws at save)" },
+    { "stored": "ShortText \"False\"", "descriptor": "Boolean", "resolved": false, "endpoint": "200 (disabled path, revenue null)", "note": "proves the stored string is read and converted — no silent no-op" },
+    { "stored": "Boolean true", "descriptor": "Boolean", "resolved": true, "endpoint": "200", "runs": "3/3", "note": "restored baseline" }
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "checklist_na": 1,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — no BL-* invariant covers settings ValueType coercion",
+  "environment_restored": {
+    "setting": "Order.DashboardStatistics.Enable",
+    "restored_to": "Boolean / true",
+    "row_id": "c4476df4-238a-4071-a650-a098d259746d",
+    "post_restore_probe": "200 3/3, populated DashboardStatisticsResult",
+    "basis": "stored type is Boolean by construction — FromModel persists the posted ValueType; post-fix reads cannot distinguish stored types"
+  },
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested",
+    "path": "Ready for test -> On QA (Testing, transition 4) -> Finish test (Tested, transition 8)",
+    "comment_id": "104534",
+    "done_withheld": "PR #3089 not merged and its auto-tests are red — 'done' is not QA's to apply"
+  },
+  "outstanding": [
+    "PR #3089 auto-tests red on all 3 DBs (seed-step page-builder DI 500, not the settings change) — owned by the PR",
+    "WarnOnValueTypeDrift log line not captured — App Insights unreachable (expired MFA); corroboration only",
+    "Revert the vcst-qa deploy pin (displaces VCST-5618's build)",
+    "reports/bugs/ held this bug in both open/ and fixed/ — stale open/ duplicate removed this run",
+    "*.png gitignore gap: per-ticket evidence is ignored despite reports.md §5 saying it stays tracked"
+  ],
+  "evidence": "reports/tickets/Sprint26-15/VCST-5554/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-15/VCST-5554/"
+}

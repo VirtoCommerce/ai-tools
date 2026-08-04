@@ -83,6 +83,16 @@ Before you report a task complete, **verify your own output** — a tool call su
 
 Codified in memory `feedback_agents_self_check_and_verify`.
 
+**Self-check ≠ independent verification — two tiers.** The self-check above is the *doer* checking its own
+work. On top of it, gated pipelines add an **independent check by a different agent**: the checker
+**re-derives evidence from source and never APPROVEs on the doer's summary** (re-runs the deterministic
+gate itself, re-reads the artifact, re-opens the evidence, or delegates a live re-check on a *different
+browser lane*), and biases **when-in-doubt-REJECT**. In `/qa-test` this is `qa-lead-orchestrator`
+§Verifier Mode, dispatched fresh per step (never the step's own doer); the analog for code fixes is the
+developers' `backend-reviewer`/`frontend-reviewer` at Gate 4. A doer must expect its output to be
+independently re-verified — so make it re-derivable (cite the case ID, leave the evidence file, name the
+deterministic command that proves the claim).
+
 ## Evidence Collection Standards
 
 - **Screenshots**: FAIL state + critical-flow final state only. Skip passing-step captures. Budget per scope defined in evidence-capture-policy.md §1.

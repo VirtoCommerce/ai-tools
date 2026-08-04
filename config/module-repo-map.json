@@ -16,6 +16,7 @@
     "VirtoCommerce.AzureAD": "vc-module-azure-ad",
     "VirtoCommerce.AzureBlobAssets": "vc-module-azureblob-assets",
     "VirtoCommerce.AzureSearch": "vc-module-azure-search",
+    "VirtoCommerce.BackupRestore": "vc-module-backup-restore",
     "VirtoCommerce.BulkActionsModule": "vc-module-bulk-actions",
     "VirtoCommerce.Cart": "vc-module-cart",
     "VirtoCommerce.Catalog": "vc-module-catalog",

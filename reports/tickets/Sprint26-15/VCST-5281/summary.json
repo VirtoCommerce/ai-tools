@@ -1,98 +1,606 @@
 {
   "ticket": "VCST-5281",
-  "verdict": "FAIL",
-  "date": "2026-07-29",
+  "ticket_type": "Story",
+  "verdict": "PENDING — BLOCKED, not in progress. The org hit its monthly API spend limit, so every remaining step that needs a sub-agent is stopped: the Step-4 gate re-verification (which must be an INDEPENDENT verifier — the orchestrator cannot self-certify, that independence is the gate), Step 5 exploratory, the unfinished regression suites 049/032/027, 6d's triage of the 8 042/078 failures, and 6i's promotion harvest. No verdict is asserted from a truncated run.",
+  "release_gate": "NOT EVALUATED — never GO. Requires either a completed regression RUN_ID or an explicit operator-signed deferral. compute-metrics.ts --gate feature does NOT abstain on a partial run: it falls back to unrelated history and returns a misleading number.",
+  "date": "2026-08-03",
+  "supersedes": "the 2026-07-29 47-condition run (verdict FAIL) and this file's own earlier 2026-08-03 build-delta revision; both preserved in git history",
   "environment": "https://vcst-qa-storefront.govirto.com",
+  "run_shape": {
+    "kind": "fix verification — 21-condition model scoped to the OrganizationAccessResolver commit, executed twice (initial + revise iteration 1 after a Step-4 gate REJECT)",
+    "test_window_start": "2026-08-03T14:09:33Z",
+    "cases_executed": 19,
+    "extra_conditions_executed": "F9a (accept + re-login) and F9b (decline + re-login) — NEW coverage added mid-run at the operator's prompting; see scoping_error below",
+    "lanes": "qa-backend-expert on playwright-edge (CUST-103..115) + qa-frontend-expert on playwright-chrome (B2C-MBR-038..041, AUTH-068/069) on disjoint fixtures; a third lane (playwright-firefox) was used only by the Step-4 gate verifier for an independent live re-check"
+  },
   "build": {
-    "platform": "3.1051.0",
-    "theme": "vc-theme-b2b-vue-2.55.0-pr-2399-845a",
+    "platform": "3.1053.0",
+    "theme": "vc-theme-b2b-vue-2.55.0-pr-2399-f69e-f69e3377",
     "relevant_modules": {
-      "VirtoCommerce.Customer": "3.1021.0-pr-312-2257",
+      "VirtoCommerce.Customer": "3.1021.0-pr-312-2605 (the fix under test — confirmed LIVE)",
       "VirtoCommerce.ProfileExperienceApiModule": "3.1015.0-pr-141-d7d8"
+    },
+    "fix_under_test": {
+      "commit": "vc-module-customer 2605501d 'VCST-5281: Fixed 403 error', CI fully green incl. all 3 auto-tests DB providers",
+      "what_it_does": "adds OrganizationAccessResolver.cs (+80) resolving the active org as CurrentOrganizationId -> DefaultOrganizationId -> first accessible, where accessible = NOT IsCurrentlyLocked AND ResolveEffectiveStatus(membership.Status, member.Status) not in BlockingStatuses{Invited,Rejected,Deleted}; OrganizationIdClaimProvider (+1/-22) and OrganizationIdRequestValidator (+5/-62) both delegate to it; adds OrganizationIdClaimProviderTests (+95)",
+      "verified_framing": "the VALIDATOR change is a behaviour-preserving extract-to-shared-static refactor (deleted bodies byte-identical to the new statics); OrganizationIdClaimProvider is the ONLY behavioural change — its old path filtered nothing. Established by diff equivalence, not inference."
     }
   },
-  "agents_dispatched": ["ba-story-writer", "test-management-specialist", "qa-backend-expert", "qa-frontend-expert"],
-  "ac_analysis": {
-    "story_acs": 2,
-    "weak_acs": 2,
-    "gap_acs_added": 8,
-    "impl_coverage": { "satisfied": 30, "drift": 7, "contradicts": 5, "not_found": 5 },
-    "conditions_total": 47,
-    "conditions_with_evidence": 43
+  "product_verdict": {
+    "P0_1_invite_bricks_storefront": "RESOLVED. B2C-MBR-038 discriminating: pin null, contact.organizations[0] = the blocking newly-invited BuildRight, resolver SKIPPED it and resolved healthy TechFlow; landed / not /403; /account/dashboard rendered the invitation with Accept/Decline. Memberships 1->2, TechFlow untouched, global roles[] unchanged (BL-B2B-009).",
+    "P0_2_no_self_recovery": "RESOLVED — and more completely than the ticket or the earlier reports claimed. See correction_org_switcher.",
+    "CUST_112_VERBATIM_EVIDENCE": {
+      "why_recorded_here": "The Step-4 gate required the FAIL's verbatim request/response pair be preserved in the Step 6 report, because a trace file is only written for a real FAIL by the regression runner and this is a per-ticket case — no traces/ file carries it. 6c also confirmed the backend lane produced NO screenshots for its REST rows (adequate in FORM per the verifier, but not durable), so this JSON is the only durable record.",
+      "request": "POST {BACK_URL}/connect/token  (application/x-www-form-urlencoded)  body: grant_type=password&username=agent-test-multiorg-20260615%40yopmail.com&password=<REDACTED>&storeId=B2B-store&scope=offline_access&organization_id=<probe>",
+      "probes_and_results": [
+        "organization_id=95f0c4ae… (random GUID, no such org)        -> HTTP 200 (563ms, 6186 bytes)  token issued, organization_id claim = 96f109a7… TECHFLOW, 11 permissions",
+        "organization_id=37d4c11b-8a73-439d-931e-4eb347547907 ('Müller' % Schmidt GmbH — a FOREIGN org the user is not a member of) -> HTTP 200 (519ms, 6186 bytes)  token issued, organization_id claim = 96f109a7… TECHFLOW, 11 permissions",
+        "organization_id=organization-double-quotes (foreign, non-GUID id)  -> HTTP 200  token issued, claim = TechFlow, 2 permissions"
+      ],
+      "response_body_shape": "{\"access_token\":\"<1998-char JWT elided>\",\"token_type\":\"Bearer\",\"expires_in\":1800,\"refresh_token\":\"<4093-char JWT elided>\"} — token-only; there is no error surface at all",
+      "assertion_4_result": "PASS — no 5xx (200 on both probes) and no DB name/table/column/stack leak: 0 of 14 leak patterns matched the RAW bodies (SQL verbs, dbo., SqlException, DbUpdate*, EF, connection-string shapes, 'at VirtoCommerce.', StackTrace, table/column identifiers, OrganizationMembership). [DB] confirmed no membership row was created (rows=2, both status null).",
+      "the_defect": "The caller asks for org X and receives a 200 token silently scoped to org Y, with no indication. Privilege delta RELATIVE TO THE REQUEST: asking for a bogus org yielded TechFlow's full org-maintainer set including xapi:my_organization:edit, storefront:user:delete and platform:security:loginOnBehalf — a client believing it holds a narrowly scoped token actually holds the user's MOST-privileged org token. NOT cross-tenant escalation: the substituted org is always one the user legitimately belongs to."
+    },
+    "CUST_112": "FAIL — an explicit bogus/foreign organization_id on a PASSWORD grant is silently substituted with the user's first accessible org and returns 200 (BL-B2B-007). Root cause read in source: HandleUnavailableOrganizationAsync returns InvalidOrganizationId only for NON-password grants and never consults isAutoResolved, while the sibling ValidateOrganizationAccessAsync does. VERIFIED PRE-EXISTING — byte-equivalent in parent ca2f5960; the parent-build summary already logged the same silent fallback. Recommend its own ticket, not a blocker for this one.",
+    "BL_B2B_007_VCST_5239_candidate_regression": "RULED OUT on measurement. On ORG_ASSOC_ONLY_NO_GLOBAL (zero membership rows, zero global roles): TechFlow-scoped token = 2 permissions, BuildRight-scoped = 0 (claim ABSENT). Counts differ, so the org-level Organization.Roles term IS flowing into the org-scoped JWT."
   },
-  "total_cases": 47,
-  "passed": 32,
-  "failed": 6,
-  "blocked": 1,
-  "partial": 6,
-  "untested": 1,
-  "not_verifiable": 1,
-  "root_cause": {
-    "statement": "contact.organizationId - the persisted default org that login pins the active context to - is NEVER validated against BlockingStatuses, while contact.organizations correctly filters blocked orgs out of the eligible list. So login pins the user to an org the same backend just excluded, and every org-scoped query then returns Forbidden inside an HTTP 200.",
-    "retracted_hypothesis": "An earlier synthesis blamed the storefront for omitting organization_id from the token grant. That is wrong as a root cause: the org-SWITCH grant does carry organization_id (verified on the wire: grant_type=refresh_token&organization_id=organization-acme-store). The login password grant does omit it, but the defect is the unvalidated server-side default, not the client.",
-    "fix_location": "server-side - validate contact.organizationId against BlockingStatuses when resolving the login active-org context (vc-module-customer OrganizationIdClaimProvider / OrganizationIdRequestValidator area)",
-    "frontend_contribution": "renders the active org as a [selected] switcher option even when it is absent from the eligible list - which is incidentally what gives multi-org users their escape hatch"
+  "new_defect_found": {
+    "title": "Sign-in lockout via remembered org — the VCST-5281 class resurfacing through a path the backend fix cannot reach",
+    "recommended_severity": "P1",
+    "found_in": "F9b, independently corroborated by the backend lane",
+    "detail": "After using the org switcher the storefront REMEMBERS the selected org and sends it as an explicit organization_id on the NEXT sign-in, bypassing OrganizationAccessResolver entirely. If that org has since become blocked: HTTP 400, bounced to /sign-in, even though the user holds a healthy membership elsewhere (verified: implicit grant 200, explicit TechFlow 200, explicit BuildRight 400). HARD LOCKOUT — the only recovery is clearing site data, proved by a successful sign-in with the same credentials in a fresh isolated context. Reachable by ordinary use: switch org -> become blocked/re-invited there -> locked out. Error copy names a raw GUID, gives no org name and no recovery affordance.",
+    "why_it_needs_a_product_decision_not_a_patch": "The two plausible fixes conflict with an existing requirement. Either stop replaying a remembered organization_id on a password grant, or treat an explicit-but-inaccessible org on a PASSWORD grant as auto-resolved and fall through. But CUST-111 asserts an explicit blocked organization_id MUST be refused (and it passed), because silent substitution is exactly what CUST-112 fails on. 'Refuse explicit' and 'never lock the user out' are in genuine tension.",
+    "evidence": "F9b-00-BUG-signin-blocked-by-remembered-org-raw-guid-no-recovery.png"
   },
-  "p0_blast_radius": {
-    "single_org_user": "P0 - inescapable. Forced into the blocking org context, 403 on every /account/* and /company/* route incl. /account/dashboard which hosts pending-invites-widget.vue, and the invite email's only CTA points there. The invite can never be accepted.",
-    "multi_org_user": "P1/P2 - misrouted, not stuck. Same forced-context trigger and same 403 landing, but the header account menu and org switcher stay functional on /403, so selecting an Approved org recovers full access without signing out.",
-    "verified_on": "MULTI_ORG_USER with one Rejected membership override on 1 of 11 orgs"
+  "correction_org_switcher": {
+    "what_was_reported": "Both the 2026-07-29 run and this run's earlier reports stated the storefront has NO org switcher on a denial landing, and treated that as the never-fixed 'storefront half' of P0 #2.",
+    "what_is_actually_true": "The switcher EXISTS — an 'Organizations' listbox in the account menu — and is conditional on TWO OR MORE ACCESSIBLE orgs. It was absent in every earlier observation because exactly one org was ever accessible, blocked orgs being filtered server-side. So the storefront has org-switching UI; what it lacks is an affordance when only one org is accessible, which post-fix is unreachable anyway.",
+    "consequence": "P0 #2's storefront half is not a missing feature. Do not carry the 'known-open storefront defect' framing forward."
   },
-  "bugs_filed": [],
-  "bugs_pending_confirmation": [
-    "P0 - Invited membership bricks the account; pending invite can never be accepted (widget behind 403, invite email links there)",
-    "High - Storefront sign-in is not org-scoped: no organization_id on /connect/token, so blocking status yields generic 403 instead of user_is_locked_in_organization (BL-AUTH-013 violation)",
-    "High - Delete member / Revoke invite leave the contact visible as Inactive, still counted, unfilterable",
-    "P1 - Breaking change: pre-existing global contact status Invited/Rejected/Deleted now blocks org sign-in (105 accounts on this env)",
-    "Medium - Status vocabulary conflated; admin shows raw Approved/Rejected, storefront shows Active/Inactive; Rejected has no storefront producer",
-    "P2 - Silent org-scope fallback: deleted/foreign/bogus organization_id issues a 200 token scoped to a different org",
-    "P2 - POST /api/customer/organization-memberships with null userId returns 500 leaking DB name/table/column",
-    "P2 - Deleting an organization does not cascade to OrganizationMembership (orphan rows, stale organizationName)",
-    "P2 - GraphQL authorization/resolver failures surface as HTTP 500 (GetOrganizationAddresses, acceptOrganizationInvite)",
-    "P3 - Organization.myStatusInOrganization returns the caller's status, not the queried contact's",
-    "P3 - statuses:[String] invalid input silently returns empty and is case-sensitive",
-    "P1 - Permission propagation lag: a new maintainer membership cannot invite for several seconds",
-    "a11y - language flag alt text identical for all languages; invite dialog inputs have no accessible name; status conveyed by icon/colour only"
-  ],
-  "business_rules_verified": [
-    "BL-B2B-008", "BL-B2B-009", "BL-AUTH-012", "BL-AUTH-013", "BL-B2B-005", "BL-B2B-001", "BL-B2B-007"
-  ],
-  "business_rules_violated": ["BL-AUTH-013"],
-  "regression_checks": {
-    "VCST-5374": "FIXED by this PR - 5th failed login now returns user_is_temporary_locked_out with lockoutEnd 15min future, not the permanent user_is_locked_out"
+  "F9_new_coverage": {
+    "F9a_accept": "PASS — recovery level (a), IMMEDIATE. After Accept the token is byte-identical (same jti, no /connect/token call), yet the panel entry clears, THE SWITCHER APPEARS, me.permissions matches the token, contact.organizations.totalCount -> 2, both orgs myStatusInOrganization='Approved'. Selecting the new org fires a silent grant_type=refresh_token&organization_id=<new org>. No reload, no re-login required. acceptOrganizationInvite: Invited -> Approved.",
+    "F9b_decline": "PASS — and the most direct proof the fix works. rejectOrganizationInvite resolves to 'Rejected' (PREVIOUSLY UNDOCUMENTED anywhere in source): the row PERSISTS rather than being deleted and contact.organizations RETAINS the org. Rejected is in both BlockingStatuses and ReinvitableStatuses; re-invite after decline succeeds (Rejected -> Invited). Re-login while pinned to the DECLINED org resolved into healthy TechFlow — not /403, not the declined org.",
+    "vs_ticket_text": "The current build is BETTER than the ticket's own comment-1 steps 13-15: there is no redirect-to-login step at all; sign-in resolves straight into the healthy active org. The ticket documents pre-fix behaviour.",
+    "closes_prior_gaps": "checklist #13 (rejectOrganizationInvite => Rejected) and #23 (acceptOrganizationInvite => sign-in works), both previously marked 'GAP — mutation never exercised'"
   },
-  "exploratory": {
-    "charter": "skipped as a formal Step 5 - ticket is Medium priority and both execution agents ran always-on bug detection, which surfaced ~20 incidental defects; the C-12 blocker also makes the accept/reject flow unexplorable until fixed",
-    "heuristic": null,
-    "findings": { "bugs": 0, "questions": 0, "observations": 0, "risks": 0 }
+  "scoping_error": {
+    "what": "The 21 conditions were scoped to the fix's DIFF rather than the FEATURE, so the invite mutations (accept / decline) were excluded — and the Step 1 gate verifier approved that narrowing for the same reason ('correctly drops transitions this commit cannot reach').",
+    "why_it_was_wrong": "The ticket's own comment-1 specifies the flow at steps 11-15, accept/decline is the terminal step of the recovery path the fix exists to restore, and the prior 47-condition checklist had #11/#13/#21/#22/#23 all marked 'GAP — mutation never exercised'. So the mutations had never been tested in ANY run.",
+    "how_it_surfaced": "Operator prompt, not a gate. Both the orchestrator and an independent verifier missed it.",
+    "lesson": "'Not in the diff' is not the same as 'not in scope' when the diff's purpose is to restore a user journey. The F8 interlock existed to stop a case passing on a rendered surface without a working outcome; it was applied to /company/* reachability but not to the invite buttons."
   },
-  "appinsights": {
-    "checked": true,
-    "layers": ["frontend", "backend"],
-    "window_minutes": 90,
-    "signals": { "real_bug": 2, "needs_review": 0, "dismissed": 4 },
-    "correlated_failures": [
-      "POST graphql/ 500 x4 incl. unhandled InvalidOperationException: Error trying to resolve field 'acceptOrganizationInvite'",
-      "POST graphql/GetOrganizationAddresses 500 x1 co-timed with AuthorizationError - authorization denial surfacing as HTTP 500"
-    ],
-    "dismissed_signals": [
-      "POST Notifications/RenderingTemplate 500 x6 - pre-existing, fails identically for old notification types, not a VCST-5281 regression",
-      "AuthorizationError Access denied. x3 / missing xapi:my_organization:edit x1 - expected, produced by our own C-43/C-45 authorization probes",
-      "ResizeObserver loop x18 (storefront) - benign browser noise",
-      "ApolloError Failed to fetch x1 - transient"
+  "RUN_STOPPED_FOR_HUMAN": {
+    "why": "SECOND REJECT on the Step 4 gate. Per the pipeline's ≤2-revise-iteration rule a persistent REJECT is a hard STOP for a human, never a silent proceed. I did not loop again.",
+    "what_the_gate_APPROVED": "Clause 1, evidence completeness — and it was confirmed LIVE on a lane no doer used, on two separate occasions. Baseline as found pinned the HEALTHY org (so the gate's original rejection was factually correct: the first run never entered the broken path); the corrected row pins the BLOCKED org with read-backs; the token falls through to BuildRight with a non-empty permission[]; / and /catalog render with no 403. Deterministic checks: 0 {HYPOTHESIS}, lint 0 Blocker/Critical/High, 9 rows carry a real pin + read-back, F8b coverable on the purpose-seeded fixture, BL-B2B-007 candidate closed on measurement, restore verified clean (9 membership fields + 4 contact org fields, 0 mismatches).",
+    "what_the_gate_FAILED": "Clause 2, regression RUN_ID + pass rate — three independent reasons: (a) reports/regression/history.json has ZERO entries for REG-2026-08-03-1900, so compute-metrics --gate feature --run-id returns CANNOT EVALUATE — a RUN_ID exists but a computable pass rate does not; (b) passRate is corrupt in TWO suite result files, 011b AND 078-p2, both emitting '0.0%' against 16 and 9 passes, and compute-metrics consumes that field; (c) suites 049 (P0 Platform REST), 032 (auth) and 027 (customer orgs & invites — the F9 surface) never started, and test-run-status.json was never finalized.",
+    "FIX_list_for_the_human": [
+      "Fix the results-writer passRate computation (011b, 078-p2) and re-emit those suite result files",
+      "Record the run to reports/regression/history.json (npm run triage:history) so the run-scoped gate can evaluate at all",
+      "Run the three never-started suites 049, 032, 027 — the verifier ruled these REQUIRED, they are the change-adjacent ones. (049 + the 078 remainder were dispatched before the REJECT landed and may have completed; 027/032 were deliberately held back to avoid colliding with the verifier's own live re-check on the same org fixtures.)",
+      "Finalize test-run-status.json so it agrees with the results files",
+      "Pin suite 011b OFF firefox (Chrome/Edge). The verifier found the click failure is LANE-WIDE, not dropdown-specific — browser_click timed out on the SIGN-IN button too (Enter worked), which broadens the explanation for 011b's 4 AMBIGUOUS verdicts",
+      "Reconcile the fixture divergence below, and add a LIVE guard — the static check provably cannot catch declared-vs-live status drift",
+      "Settle the org-switcher-exists correction on a chrome/edge lane before relying on it to close P0 #2's storefront half. Firefox provably cannot reach that control, and the DOM fallback does NOT substitute: the account-menu panel is lazily mounted and absent from the DOM while collapsed, so neither state can be confirmed or refuted without opening it. That correction currently rests on a single run's observation.",
+      "Keep release_gate NOT EVALUATED — never GO — until a real change-scoped pass rate exists"
     ]
   },
-  "test_data_issues": [
-    "RETRACTED - the reported MULTI_ORG_USER credential drift was NOT real. MULTI_ORG_USER_PASSWORD (Password1!) authenticates ricreyacrouyi-3425@yopmail.com correctly; the failure was a missing storeId=B2B-store parameter on the /connect/token password grant, which fails regardless of password. C-18/C-27 were re-tested.",
-    ".env.playwright.local contains dictionary-word secret values; ADMIN_VCMP-DEV matches ordinary page text and the MCP redacted real evidence content"
+  "CORRECTED_DEFAULT_STATUS_MODEL": {
+    "the_rule": "Approved is the DEFAULT membership status for a real membership. null is ONLY a legacy fallback for rows that predate the migration, where ResolveEffectiveStatus(null, contactStatus) deliberately falls through to the contact's status.",
+    "what_I_had_backwards": "Throughout this run I treated null as the correct baseline and instructed BOTH execution lanes to 'restore to status: null, never explicit Approved', reasoning that Approved would override the contact status and pre-satisfy inheritance premises. That reasoning was about test premises and inverted the DATA-MODEL intent: my restore instruction pushed the fixtures AWAY from the correct baseline. The seeder contract I had authored (blank cell => key omitted from POST / null on PUT) encodes the same inversion for NEW fixtures.",
+    "consequences_of_the_correction": [
+      "The concurrent session's commit 8e3c5116, which filled membership_status='Approved' for MOM-001..006, was CORRECT — not drift. My 'declared vs live divergence' framing had the right facts and the wrong villain.",
+      "The 132 pre-existing all-null rows are precisely the LEGACY population that null exists for — they are not a template for new fixtures, and I wrongly cited them as justification for a null baseline.",
+      "The mid-run 'drift to Approved' both lanes reported was the other session correctly seeding the declared baseline. My instruction to restore it to null actively undid a correct state.",
+      "RESOLVED by re-seeding: TEST_ENV=vcst npm run seed:b2b:memberships reconciled all six rows up to Approved and additionally healed a real ROLE drift on MOM-001 ([drift: roles purchasing-agent->org-maintainer; status null->Approved]) — which Step 5 had observed and I had filed as mere fixture-doc drift. MOM-007/008/009 needed no write (already correct at rest).",
+      "Live state now verified: MULTI_ORG_TF_BR + _ALT both orgs Approved (org-maintainer / org-employee); ORG_TF_ONLY_INVITEE + ORG_TF_ONLY_STATUS Approved single-org; ORG_TF_MBR_INVITED/_REJECTED/_DELETED at Invited/Rejected/Deleted as intended; ORG_ASSOC_ONLY_NO_GLOBAL still 0 rows."
+    ],
+    "follow_ups_this_creates": [
+      "SEEDER: the blank-cell default should be Approved for a new membership, with null reserved for an explicitly-declared legacy row. Right now blank means null, which is the legacy case, so every new fixture defaults to the fallback rather than the norm.",
+      "TEST CASES: any row whose Preconditions state the baseline as 'OrganizationMembership.Status is null => effective status inherits the contact' is now describing the LEGACY shape, not the fixtures' actual baseline. F7/CUST-105 (membership override beats a blocking global status) is unaffected in intent and arguably cleaner — with an Approved baseline the override IS the baseline — but its prose needs rewriting. Conditions premised on the ABSENCE of a membership row (e.g. #40 / D14) are unaffected.",
+      "LIVE GUARD: still needed. td:validate:b2b is static and passed 34/34 while live disagreed, so only a live check can catch declared-vs-live status drift. This re-seed fixed the instance, not the class."
+    ]
+  },
+  "FIXTURE_DIVERGENCE_declared_vs_live": {
+    "finding": "test-data/b2b/organization-memberships.csv now DECLARES membership_status='Approved' for MOM-001..006 and adds three new at-rest rows MOM-007/008/009 (Invited/Rejected/Deleted). But all four MULTI_ORG_TF_BR / MULTI_ORG_TF_BR_ALT rows read LIVE as status: null.",
+    "attribution": "A CONCURRENT SESSION committed it mid-run: commit 8e3c5116 'fixes for test data b2b-users; Add org-membership status' (git diff is empty, so it is committed, not a working-tree edit). The last seed run in THIS session predated that commit, when every cell was blank — hence live null vs declared Approved.",
+    "this_explains_a_run_integrity_mystery": "Both lanes reported membership statuses 'drifting to explicit Approved' mid-run by an unattributable `admin` writer — the backend lane's decisive evidence being that ORG_TF_ONLY_STATUS flipped null->Approved at 16:04:38 although it never touched that fixture. The cause was NOT an unknown external writer: the other session ran the seeder against a CSV that now declares Approved. modifiedBy could not distinguish it because every lane and every seeder authenticates as `admin`.",
+    "why_it_matters_for_test_validity": "With live status null, ResolveEffectiveStatus(null, contactStatus) INHERITS from the contact rather than applying a per-org override. So any case premised on exercising a per-org override is actually exercising inheritance — the exact provenance ambiguity the membership_status column was added to eliminate.",
+    "invisible_to_the_existing_guard": "td:validate:b2b is STATIC (it reads the CSV) and PASSES — 34/34 membership-creating rows declare a concrete status. Only a LIVE check (td:reconcile) could catch declared-vs-live drift, and none exists for this field.",
+    "also_note": "Step 5's exploratory session USED the other session's new at-rest fixtures (ORG_TF_MBR_INVITED/_REJECTED/_DELETED) and reported them intact at rest — so those rows were in play during this run."
+  },
+  "gates": {
+    "step_1_test_model": "REJECT then APPROVE (revise iteration 1). First pass rejected a FALSE-PASS PATH: F1/F2/F3/F5/S2 could all have passed while the P0 403 survived on /company/*, because MergeRoles collapses to Organization.Roles when no membership row exists. Fixes: added F8 (org-scoped AUTHORITY interlock, both MergeRoles shapes), re-baselined N1 to observe-and-record, added N7 (Deleted), re-attributed the primary risk.",
+    "step_3_artifacts": "APPROVE. Verifier independently re-ran suites:review, re-resolved 31/31 @td() tokens itself, and confirmed td:reconcile check [11] live-probed all 4 fixtures. Also ruled that Automation_Status=Draft is CORRECT and mandatory pre-execution (promotion needs no-{HYPOTHESIS} + a --verify pass only Step 4 can supply), and that the Draft escalation trigger scopes to /qa-regression consuming promoted suite cases, not a ticket-scoped run reviewed in the same turn.",
+    "step_4_execution": "REJECT, revise iteration 1 complete, RE-VERIFICATION IN FLIGHT. The gate confirmed the PRODUCT fix live on a third browser lane but rejected the EVIDENCE: AUTH-069 was a proven false PASS (a control token at the untouched baseline resolved the same org at tier 1, i.e. identical on the broken build), B2C-MBR-039 was non-discriminating as written, an assertion targeted a nonexistent route, a PASS was reported on an unexecuted step, F8b was uncovered, three assertions were unevidenced (one a [P0-revenue] invariant), and there was no regression RUN_ID.",
+    "step_5_exploratory": "NOT RUN — mandatory here (defects are P0, auth is a critical revenue flow). Outstanding.",
+    "step_6h_release_gate": "CANNOT BE EVALUATED — see regression."
+  },
+  "case_results_after_revise": {
+    "backend_lane": "6/6 re-executed PASS (CUST-103,104,106,113,114,115) with verbatim premise read-backs proving the pin named the BLOCKED org at grant time; CUST-112 assertion 4 evidenced (no 5xx, 0 of 14 leak patterns matched the raw bodies); CUST-105,107,108,109,110,111 already evidenced, not re-run. A pageContext/parity leg for CUST-103/104/114 is in flight (those assertions were added after the re-execution).",
+    "frontend_lane": "5/5 re-executed PASS (B2C-MBR-038,039,040,AUTH-068,069) with premise read-backs; B2C-MBR-041 already evidenced, not re-run. AUTH-068's switcher assertion is correctly N/A — with the pin genuinely on the blocked org the resolver falls through and NO denial landing renders, so the precondition is unmet.",
+    "CUST_113_hypothesis_resolved": "LOCK beats blocking status. With TechFlow simultaneously status='Invited' AND permanently locked, the grant returned exactly one error: user_is_locked_in_organization. Documented precedence for this build: lock > blocking status. The file now carries ZERO {HYPOTHESIS} assertions."
+  },
+  "test_case_defects_found_by_executing": [
+    "B2C-MBR-039 + AUTH-069 + (audit) CUST-103/104/106/113/114/115/AUTH-068 — a case whose expected outcome is 'resolution lands on the healthy org' is UNDECIDABLE unless currentOrganizationId names the org it blocks, because tier 1 selects the same org on the filtered and unfiltered resolver alike. The gate flagged 2 rows; the all-19 audit found the same latent defect in ~8 more. 9 rows now carry an explicit pin/clear + read-back + restore and 7 carry a visible premise assertion. B2C-MBR-038 is the INVERSE case and correctly CLEARS the pin — that P0 reproduced BECAUSE the pin was null, so pinning a healthy org would shield the trigger.",
+    "/company/dashboard is NOT a real route (absent from sitemap.md; slugInfo null; redirects to /account/dashboard). Asserted in B2C-MBR-039 and also found unflagged in CUST-114. Replaced with /company/info.",
+    "me { organizations } is a hard schema error (organizations lives on ContactType, not the UserType that me returns). A CLASS defect across 5 rows: CUST-114, AUTH-068 (its CENTRAL switcher-data assertion), B2C-MBR-040, B2C-MBR-039 (whose steps probed me while its assertion claimed pageContext — it would have reported PASS on evidence it never collected), CUST-104 (bare me, no selection set).",
+    "pageContext resolves ONLY through {{FRONT_URL}}/graphql. Against {{BACK_URL}}/graphql it returns permissions:[] and contact:null inside HTTP 200 with errors:null — a SILENT failure that would fabricate a VCST-5028 BUG-A divergence. Orchestrator error: the wrong endpoint was briefed to both lanes.",
+    "The parity assertion as first written demanded the token claim be IDENTICAL to pageContext.user.permissions. That FAILS on correct behaviour: the token claim is ABSENT while the projection is [], because the storefront normalizes absent to empty. Re-based on CARDINALITY, treating absent as zero.",
+    "AUTH-068's premise 'me reports organizations.totalCount > 0 on the denial page' is FALSE on this build — it is 0 when every org is blocked, because blocked orgs are filtered server-side. And its switcher assertion needed the >=2-accessible-orgs precondition plus an explicit N/A gate, or it fails on correct behaviour.",
+    "CUST-115's 'one-way door' precondition was false — currentOrganizationId IS resettable via PUT /api/contacts (204, read-back confirmed). The case now clears both pins itself, so it no longer has to be sequenced last.",
+    "B2C-MBR-040 needed a fixture that does not exist in the repo: association-only (zero membership rows) AND no global role. {{MULTI_ORG_USER_EMAIL}} satisfies only the first — its global org-maintainer yields an INVARIANT 11 permissions across every org claim, masking the org-level term. ORG_ASSOC_ONLY_NO_GLOBAL was seeded for it.",
+    "B2C-MBR-038's teardown must DELETE the created membership row, not merely revoke: rejectOrganizationInvite leaves the row in place, so a status-only teardown would leave the fixture two-org and silently destroy its load-bearing single-org shape."
+  ],
+  "regression": {
+    "suites": [
+      "042",
+      "078",
+      "049",
+      "011b",
+      "032",
+      "027"
+    ],
+    "run_id": "REG-2026-08-03-1900",
+    "pass_rate": "INCOMPLETE — 88 PASS / 8 FAIL / 9 BLOCKED / 4 AMBIGUOUS of 175 evaluated; 66 PENDING and suites 049/032 never started",
+    "status": "ABORTED — the org hit its monthly API spend limit mid-run, killing the orchestrator and both in-flight suite agents. This is an external stop, NOT a test outcome. Do not read the partial pass rate as a gate result.",
+    "per_suite": {
+      "011b": "16 PASS / 2 FAIL / 3 BLOCKED / 4 AMBIGUOUS of 26 — the highest-signal suite, nearly complete",
+      "042": "28 PASS / 3 FAIL / 3 BLOCKED of 34 — complete",
+      "078-p1": "35 PASS / 3 FAIL of 38 — complete",
+      "078-p2": "9 PASS / 2 BLOCKED / 28 PENDING of 39 — partial",
+      "078-p3": "1 BLOCKED / 37 PENDING of 38 — barely started",
+      "049": "never started",
+      "032": "never started",
+      "027": "never started"
+    },
+    "DECISIVE_INDEPENDENT_CONFIRMATION": "Suite 011b is the suite that ORIGINALLY reproduced BOTH P0s against the parent build ca2f5960. On this build, on a different browser and by a different agent than any ticket-case lane: COMP-E2E-005 PASS ('P0 REGRESSION GUARD — VCST-5281 fix verified working, evidence-backed'), COMP-E2E-025 PASS (evidence-backed, fresh 2-org user), COMP-E2E-024 BLOCKED because it 'could NOT reproduce the documented P0 scenario'. COMP-E2E-026 never ran (budget kill). This is corroboration from outside the test design authored for this ticket and is the strongest single evidence in the run.",
+    "DEDUP_OUTCOME_011b": "ALL THREE of 011b's 'new' findings are ALREADY FILED — do NOT re-file. (1) COMP-E2E-015 orphaned-membership is a duplicate of the open reports/bugs/open/BUG-backend-provisioned-membership-not-linked-to-contact-organizations.md, found by the SAME case in the PREVIOUS run REG-2026-07-30-1040 against the PARENT build pr-312-2257. (2) COMP-E2E-022's missing-userId 500 + DB-name leak AND (3) the empty-userId silent orphan are BOTH covered by reports/bugs/open/BUG-org-membership-create-no-input-validation-VCST-5028.md = JIRA VCST-5314 (Bug, High, filed 2026-06-19), which additionally records that the orphan is now PERMANENTLY UNDELETABLE via the documented DELETE ?ids= form (500 'The value cannot be an empty string. (Parameter subject)'). So 011b re-CONFIRMED three known open defects rather than finding new ones — valuable as liveness evidence, not as new filings.",
+    "new_findings_from_011b": [
+      "High — a backend-created OrganizationMembership (by userId, the contract the CSV documents as CORRECT) is ORPHANED from the storefront: POST /users/create + POST /organization-memberships both return 200 and the row is confirmed via search, yet the account is NOT usable as an org member from the storefront (BUG_011b_002, COMP-E2E-015 FAIL)",
+      "High — POST /api/customer/organization-memberships with userId='' (empty string) SILENTLY creates an orphan membership record (BUG_011b_003)",
+      "CONFIRMS the 2026-07-29 P2 as still open, with verbatim evidence: POST /organization-memberships with userId omitted returns HTTP 500 whose body is a raw SQL exception leaking the DB server/database/table — 'Cannot insert the value NULL into column UserId, table vcst-qa-platform_restored.dbo.CustomerOrganizationMembership' (COMP-E2E-022 FAIL)",
+      "Low — blank page + unhandled ApolloError when a signed-in user's account is deleted server-side mid-session; no session-invalid redirect (BUG_011b_INCIDENTAL_001)"
+    ],
+    "SUITE_008_TRIAGE": {
+      "raw": "B2B Members — 22 PASS / 9 FAIL / 5 BLOCKED of 36, passRate 71.0%, on playwright-EDGE (correctly pinned off firefox). 2 bugs logged.",
+      "why_this_suite_mattered_most": "It is the promotion target for the authored B2C-MBR-038..041 cases and exercises invite / block / unblock / role-change — the mutations that PRODUCE the blocking states the resolver filters on. It was the headline omission from my reduced subset.",
+      "THE_HEADLINE_NUMBER_MISREPRESENTS_IT": "ALL NINE FAILs had their formal assertions PASS. The consistent shape: graded assertions pass, then an inline step checkpoint fails on an already-filed cosmetic dialog bug, dragging Critical-priority cases to FAIL. Raw FAIL count is a poor severity proxy for this suite.",
+      "only_ONE_genuinely_new_finding": "Medium/Low — BUG_008_102 (B2C-MBR-032): the Members-list Roles column renders a completely BLANK cell with no empty-state marker for a member with zero roles. Surfaced because BuildRight's org-level roles are empty. Filed as preliminary.",
+      "TWO_FAILS_ARE_ACTUALLY_FIX_CONFIRMATIONS": [
+        "B2C-MBR-037 (Medium): ALL 3 formal assertions PASSED — 'reviewer finding D is FIXED': Resend shows 'Invite resent' and Revoke shows 'Invite revoked', so both invite-management actions now surface user-visible success feedback.",
+        "B2C-MBR-023 (Critical): 5 of 6 assertions PASSED including the VCST-5028 BUG-A REGRESSION GATE — the Invite button and per-row Actions are PRESENT for the org-maintainer, i.e. the maintainer-actions-hidden defect has not returned."
+      ],
+      "independent_confirmation_of_the_test_model_ACs": "B2C-MBR-019 confirmed AC1 (org-isolation, at REST and in the UI in BOTH org contexts). B2C-MBR-020 confirmed AC3 (the headline invariant — a member blocked in org B still signs in to org A), with lockOrganizationContact org-scoping and BL-AUTH-012 both holding. These are the test model's own rewritten ACs corroborated by a regression suite rather than only by the cases I authored.",
+      "already_filed_duplicates_NOT_re_filed": "B2C-MBR-008 + B2C-MBR-019 share BUG_008_101 (change-role dialog pre-selects an ORG-LEVEL role instead of the member's own membership role) — a DUPLICATE of the open reports/bugs/open/BUG-change-role-dialog-preselects-org-level-role.md, found by the SAME suite and SAME case in run REG-2026-07-30-1040 against the PARENT build. B2C-MBR-010/020 are known class BUG_008_002 (CSV assertions ALREADY marked REFUTED). B2C-MBR-023/025/031 are known classes BUG_008_003/004/005.",
+      "a_fix_mechanism_note_worth_keeping": "B2C-MBR-010's notes record a mechanism refinement vs its CSV: 'no generic /403 on this build — the blocked org is omitted from the resolvable org set entirely.' That is INDEPENDENT corroboration of the OrganizationAccessResolver behaviour and matches the orchestrator's direct measurement of an ABSENT organization_id claim. The case fails only because its expectation encodes pre-fix behaviour.",
+      "FIVE_BLOCKED_ARE_ONE_TEST_AUTHORING_DEFECT": "B2C-MBR-013/014/015/016/017 ('Delegated Purchasing' — purchaser order goes to approval, approver sees pending, approve, reject, amount threshold) are ALL blocked on the same unmeetable precondition: they assume per-order spending-limit / budget-threshold approval, but BL-B2B-004 (P0-revenue, LIVE-VERIFIED 2026-07-15) states VC has NO native such feature. Five Critical/High cases (14% of the suite) can never pass by construction, asserting against a capability the oracle already documents as absent. Needs a /qa-review-tests pass on 008, independent of this ticket.",
+      "verdict_for_this_ticket": "No regression attributable to VCST-5281. One new Medium/Low cosmetic defect, two fix confirmations, two of the test model's ACs independently corroborated."
+    },
+    "SUITE_027b_TRIAGE": {
+      "raw": "Customer Org-Scoped Roles — 8 PASS / 4 FAIL / 2 BLOCKED / 4 AMBIGUOUS of 18, passRate 66.7%. Zero bugs logged by the suite, deliberately: it classified every failure as either a known unshipped-story gap or a tooling limitation rather than filing new defects.",
+      "why_this_suite_mattered": "Artifact C flagged it as the F8 interlock's permission oracle — MergeRoles (org-level Organization.Roles union membership OrganizationMembership.Roles) is exactly what F8 asserts. My original reduced subset omitted it.",
+      "ONE_REAL_NEW_DEFECT": "High — ORGROLE-006, root-caused at the NETWORK layer, not guessed: the per-member role-editor picker issues POST /api/platform/security/roles/search {\"keyword\":\"\",\"take\":20} against totalCount 52, and the result is ordered DESCENDING by name so page 1 ends at 'pick-up location manager' — putting ALL THREE 'Organization *' roles outside the fetched page. 'Purchasing agent' survives only incidentally by alphabetical position. A pagination defect that makes org roles unreachable in the picker. Not a VCST-5281 regression.",
+      "THREE_CRITICAL_FAILS_ARE_A_KNOWN_UNSHIPPED_STORY_not_regressions": "ORGROLE-009 (Critical), ORGROLE-010 (Critical) and ORGROLE-012 (Medium) all trace to server-side whitelist enforcement being UNIMPLEMENTED — BA report finding F1, Story EPIC-5239-03 not shipped in VirtoCommerce.Customer 3.1021.0-pr-312-2605. Each case was authored against expected POST-fix behaviour and its own Preconditions state it CURRENTLY FAILS. Correctly NOT re-filed. Corroborating evidence it is missing-restriction rather than over-blocking: ORGROLE-010's positive twin ORGROLE-011 PASSED in the same run.",
+      "FOUR_AMBIGUOUS_are_a_REFUSAL_TO_GUESS_and_that_is_correct": "ORGROLE-001/002/003/008 were deliberately NOT scored FAIL because (a) each case's own Failure_Signals forbid conflating an unopened dropdown with a genuine result and require confirming the dropdown container actually rendered, and (b) each case MANDATES CDP (Chrome DevTools MCP) and warns that a synthetic-click-only session yields a false read. This is precisely the discipline that was missing when firefox produced four false AMBIGUOUS verdicts in 011b — here the runner honoured the case contract instead of inventing a verdict. These need a CDP re-run to reach a real result.",
+      "TWO_RUNNER_DEFECTS_surfaced_beyond_this_ticket": [
+        "The [STATUS] assertion tag is UNSUPPORTED by the runner — ORGROLE-010's verdict rests on its other assertions because that one was never evaluated. A silently-unevaluated assertion is worse than a failing one.",
+        "A NaN MASKED A GENUINE PASS in ORGROLE-012: the ground-truth probe shows the retroactive non-purge behaviour is CORRECT, so part of that FAIL is a reporting artifact. No purge regression exists."
+      ],
+      "verdict_for_this_ticket": "No regression attributable to VCST-5281. The one real defect is a role-picker pagination bug; the three Criticals are an unshipped story; the four AMBIGUOUS need CDP."
+    },
+    "SUITE_050d_TRIAGE": {
+      "raw": "GraphQL xProfile — 33 PASS / 7 FAIL / 3 BLOCKED / 2 SKIPPED / 4 AMBIGUOUS, passRate 82.5% (33/40). Ran BROWSERLESS (fast-path, 0 browser slots) so it never contended for a lane. 4 bugs logged by the suite itself.",
+      "the_7_FAILs_decompose_into_3_categories": {
+        "1_MISCHARACTERISED — PRF-GQL-079 / BUG_050d_002 (logged Critical, '[P0, STILL OPEN]')": {
+          "its_claim": "actual = 'HTTP 200 with a real access_token, PINNED TO THE BLOCKED ORG and carrying zero permissions' => 'a single-org Rejected user cannot escape the blocked context; every org-scoped call returns Forbidden'. Asserted the documented P0 is still open.",
+          "what_I_measured_directly": "On all THREE at-rest single-org blocked fixtures (ORG_TF_MBR_REJECTED / _INVITED / _DELETED), the implicit password grant returns: TOKEN issued, organization_id claim ABSENT (not pinned, not null-valued — the key is not present), permission count 0.",
+          "verdict": "The OBSERVATION is correct (a token IS issued). The CHARACTERISATION is an inference error carried from the P0's original PRE-FIX description, not a measurement — its own failedAssertion was only '[NULL] body.access_token is null', which proves a token exists and says nothing about the claim. The suite itself marked the bug \"confirmed\": false, which was the right call.",
+          "so_the_P0_remains_FIXED": "Now corroborated FOUR independent ways: 011b COMP-E2E-005 PASS (explicit regression guard) + COMP-E2E-024 BLOCKED-cannot-reproduce; B2C-MBR-038 discriminating PASS; F9a/F9b in-session recovery; and this direct claim measurement. Absent claim => personal-session demotion with /account/dashboard reachable and the invitations panel actionable, which IS the fix mechanism.",
+          "the_LEGITIMATE_residual": "Its expected value ('No token issued — the login-pinned org context must be revalidated against BlockingStatuses') is a DEFENSIBLE PRODUCT POSITION and restates the open design question: should a fully-blocked user receive a token at all? The case encodes 'no' as its expectation. That is a case-expectation-vs-product-intent disagreement to resolve, NOT evidence the P0 is unfixed. Do not let it be reported as 'P0 still open'."
+        },
+        "2_INVERTED_POSITIVE — PRF-GQL-076 (Critical, BL-B2B-001)": "Reads 'IMPORTANT POSITIVE: the open P0 data-exposure this case was written to pin is now FIXED in this build' — a REJECTED caller can no longer enumerate other members' PII: data.organization = null with a structured errors[] {code: Forbidden}. It is scored FAIL only because the case was authored pre-fix and asserts the buggy behaviour. This is a SECURITY FIX CONFIRMATION, not a failure. The case needs re-baselining.",
+        "3_THREE_GENUINELY_NEW_DEFECTS_on_the_invite_surface_this_ticket_owns": [
+          "High — BUG_050d_003 (PRF-GQL-073 + PRF-GQL-075, reproduced INDEPENDENTLY on two fixtures): resendOrganizationInvite is UNINVOKABLE. It fails with OrganizationIdRequired, but InputResendOrganizationInviteType has NO organizationId field — a schema contradiction. Consequence: the documented escape hatch for a non-reinvitable Invited membership does not work. Note the positive half PASSED: reinvite correctly refused with {code: AlreadyMemberOfOrganization}, so the ReinvitableStatuses boundary IS enforced.",
+          "High — BUG_050d_001 (PRF-GQL-072): accept/rejectOrganizationInvite return the CALLER's ambient default-org status in ContactType.statusInOrganization instead of the status for the organization acted upon. The mutation itself is correct (200, errors[] empty, Rejected persisted) — only the returned projection is wrong-context. Same family as the previously-logged P3 'myStatusInOrganization returns the caller's status'.",
+          "High — BUG_050d_004 (PRF-GQL-081 + PRF-GQL-074): accept/revokeOrganizationInvite surface an unhandled InvalidOperationException as a generic INVALID_OPERATION resolve-field error instead of a structured actionable code. The REFUSAL is correct (errors[] non-empty, data null — an invite never issued is NOT accepted); only the ERROR SHAPE is wrong."
+        ]
+      },
+      "why_this_vindicates_the_selection_correction": "050d found three real invite-surface defects plus a security-fix confirmation. My original reduced subset omitted it in favour of 195 cases of smoke + platform API, which touched none of this. The operator caught the omission."
+    },
+    "SUITE_SELECTION_ERROR_mine": {
+      "what": "The reduced subset I ran (042, 078, 049, 011b, 032, 027) dropped the b2b member scope. The test model's Regression-Suite Mapping named 027, 008, 050d, 057, 032 — I kept 2 of the 5 and substituted three generic release gates.",
+      "why_it_was_wrong": "I optimised for 'P0 gates + the suite that found the P0s' rather than proximity to the diff. 078 alone is 115 cases — more than 008 (36) + 027b (18) + 050d (49) combined, all three of which sit directly on the changed surface. Spotted by the operator, not by me or any gate.",
+      "the_omitted_suites_and_why_they_matter": {
+        "008 B2B Members (36)": "the promotion target for the authored B2C-MBR-038..041 — invite / block / unblock / role change, i.e. the mutations that PRODUCE the blocking states this fix filters on",
+        "027b Customer Org-Scoped Roles (18)": "MergeRoles (org-level union membership) is the F8 interlock's permission oracle — the very interlock a gate rejected twice",
+        "050d GraphQL xProfile (49)": "statusInOrganization / isLockedInOrganization / organizations(statuses:) project the same effective status the resolver filters on",
+        "057 Notifications (54)": "AC7's new invite notification types — deprioritised, since this build's notification delta was localization-only and already verified PASS in the label check"
+      },
+      "corrected_priority": "TIER 1 (change-scoped, 172 cases): 008, 027b, 050d, plus 027 and 032. TIER 2 (release gates, only if budget allows): finish 078, run 049. 042 already complete. Pin 008 to Chrome/Edge — it is Frontend/b2b with member dropdowns and action menus."
+    },
+    "THIRD_FIXTURE_COLLISION_found_late": {
+      "finding": "Suite 049's API-039 performs 5 failed-password attempts against {{ORG_USER_EMAIL}} to verify the VCST-5374 temporary-lock guard. That resolves to test-emily.johnson-20260310@test-agent.com — the SHARED CANONICAL org account, not one of the five reserved VCST-5281 fixtures — putting it into a ~15-minute lockout.",
+      "why_it_matters": "It is the same account that already carries the contested-password warning (declared under two different password vars, so the seeders disable password reconciliation for it), AND the account that created the two orphan Deleted TechFlow memberships on 2026-07-29. A lockout on it blocks any concurrently-running org suite.",
+      "how_it_was_handled": "The (since-killed) orchestrator scoped it rather than silently colliding or silently skipping a P0: the parts of API-039 using its own dedicated AGENT-TEST-lockunlock account run in full (admin lock/unlock lifecycle, permanent-vs-temporary codes, non-org temporary walk); only the org-user sub-assertion defers as AMBIGUOUS with a reason, to be scheduled alongside 027/032. API-036/037/038 use their own dedicated lockout accounts and ran in full.",
+      "scheduling_constraint": "049's API-039 org-user leg must NOT overlap 027, 032 or 008."
+    },
+    "PASSRATE_BUG_SCOPE_corrected": "The verifier found passRate: 0.0% in TWO files (011b, 078-p2). It is actually THREE — 078-p3 carried it too. All three were written by the aborted run. The resumed agents were instructed to write a passRate consistent with their own counts plus a passRateBasis denominator, and the new files do so correctly (049 94.4%, 078-p2 95.2%, 078-p3 100.0%), so the FIX item is closed for the resumed units. 011b's file still needs re-emitting, and it additionally still holds 1 PENDING and 4 AMBIGUOUS of 26.",
+    "ORCHESTRATOR_KILL_consequence": "I stopped the 049/078 orchestrator to free lanes for the re-prioritised Tier 1. CORRECTED ACCOUNT: I first reported that only the coordinator died and its three children survived — that was a SNAPSHOT ARTIFACT. I checked result-file mtimes ~30s after the kill, saw writes seconds old, and concluded the children were alive; they were flushing in-flight writes and died about a minute later. Confirmed dead by staleness an hour on (049 last wrote 23:00:08, 078-p2 22:56:56, 078-p3 22:59:57, while the live Tier-1 unit 027b was writing 22 seconds prior). So the stop DID free the lanes, and the sequential-execution constraint I imposed on Tier 1 was based on a false premise (harmless, but unnecessary). THE REAL COST is 70 permanently stranded cases: 049 26 pending, 078-p2 14, 078-p3 30 — they will never complete unless re-dispatched. The consolidator loss is real: the final per-suite report for 049/078-p2/p3 must be assembled by the parent session. 078's partition boundaries were confirmed contiguous and resumable (p1 = BSM-001-038, p2 = 039-077, p3 = 078-115) and p1's 35 PASS / 3 FAIL was preserved rather than re-run, so a re-dispatch can resume cleanly. LESSON: after a TaskStop, confirm child death by mtime STALENESS over a multi-minute window, not by a single instantaneous sample.",
+    "run_configuration_defects": [
+      "011b ran on playwright-firefox, the browser with the documented dropdown/popover actionability quirk. All FOUR AMBIGUOUS verdicts (COMP-E2E-017/018/023 — 11 and 6 consecutive click timeouts on the Filters button and the Contacts nav link) are that quirk, NOT product defects. This suite should be pinned to Chrome/Edge.",
+      "The results writer emitted passRate: 0.0% while passed=16 of 26. compute-metrics.ts consumes that field, so a wrong passRate propagates into the gate."
+    ],
+    "fixture_state_after_abort": "td:validate:standard is CLEAN (0 hard problems, 0 warnings, price coherence intact, no GUID leakage). Suite 078-p3 died with 'Let's restore the original price (cleanup) before finalizing this case', but it had barely started (1 BLOCKED / 37 PENDING) and no DECLARED fixture price drifted. An unreverted price on a NON-fixture catalog product cannot be fully ruled out. Suite 011b's agent reported 'All fixtures cleaned up' before it was killed.",
+    "skipped_reason": "Sequenced AFTER the case re-execution because 027/011b/032 mutate the same org/membership space as the reserved fixtures; a concurrent run could produce a false PASS or FAIL in either direction. Then aborted externally by the spend limit.",
+    "why_it_is_not_separable": "compute-metrics.ts --gate feature does NOT abstain on a null RUN_ID — it falls back to 83 runs of unrelated history and returns NO-GO at 82.86%, substituting unrelated data for the change scope. The earlier deferral rationale was void: suite 011b (which independently reproduced both P0s) last ran against PARENT ca2f5960, and 2605501d is exactly what changed the claim path that 031/032/033/082 and 006/008/011b exercise.",
+    "consequence": "Step 5 may proceed; Step 6 may NOT reach a ship/no-ship verdict. The Feature Release Gate must be reported NOT EVALUATED — never GO — until a real RUN_ID exists or an operator-signed deferral is recorded.",
+    "SUITE_027_TRIAGE": {
+      "note": "FINAL — suite 027 completed 2026-08-04T00:30:34Z on playwright-edge.",
+      "decided_at_write": {
+        "PASS": 4,
+        "FAIL": 2,
+        "AMBIGUOUS": 3,
+        "PENDING": 42
+      },
+      "lane": "playwright-edge",
+      "new_defects": [],
+      "fix_confirmations": [
+        {
+          "case": "CUST-090",
+          "what": "P0 fix confirmed: sign-in WITHOUT organization_id returns 200 (no whole-storefront 403); org refusal is a specific 400 user_invitation_pending_in_organization, not a blanket denial"
+        },
+        {
+          "case": "CUST-095",
+          "what": "Reviewer defect D FIXED: Customer.OrganizationMembershipStatuses defaultValue=Approved IS a member of allowedValues. Third independent confirmation (after 008 B2C-MBR-037)"
+        }
+      ],
+      "confirmed_duplicates_not_refiled": [
+        {
+          "case": "CUST-093",
+          "ticket": "VCST-5314",
+          "what": "POST organization-memberships userId:null (and omitted) -> HTTP 500 leaking DB/table/column/FK names. Verified twice on Customer 3.1021.0-pr-312-2605"
+        },
+        {
+          "case": "CUST-096",
+          "crossref": "008 B2C-MBR-023 / B2C-MBR-037 + BUG-backend-provisioned-membership-not-linked-to-contact-organizations.md",
+          "what": "Admin org Members grid still shows contact + count badge 1 after membership DELETE while memberships/search totalCount=0. ROOT CAUSE: grid reads legacy contact.organizations, which the DELETE never clears; widget reads membership rows. INVERSE direction of the already-filed link-desync bug"
+        },
+        {
+          "case": "CUST-090",
+          "bug_file": "reports/bugs/open/BUG-existing-user-invite-link-discards-urlsuffix.md",
+          "severity": "High",
+          "what": "inviteUser accepts urlSuffix but silently discards it on the EXISTING-user notification branch, while honoring it (plus userId/email/token/organizationId) on the NEW-user branch. Re-confirmed on Customer 3.1021.0-pr-312-2605.",
+          "filed_previously": "REG-2026-07-30-1040",
+          "refiled": false
+        }
+      ],
+      "open_design_question": {
+        "from": "CUST-095",
+        "claim": "Locked is a legal Customer.OrganizationMembershipStatuses value (live allowedValues = [Approved,Invited,Rejected,Locked,Deleted]) but is NOT in BlockingStatuses {Invited,Rejected,Deleted}, so a membership with Status=Locked would not be blocked via ResolveEffectiveStatus — blocking flows only through IsCurrentlyLocked",
+        "status": "UNPROVEN — needs one API probe (set a membership Status=Locked, request an org-scoped token). Not run: out of the approved scope of this run",
+        "why_it_matters": "an admin setting membership status to Locked would reasonably expect org access denied"
+      },
+      "suite_test_defects_found": [
+        {
+          "case": "CUST-090",
+          "defect": "Steps pass cultureName to inviteUser; InputInviteUserType does not define it — live schema rejects with \"In field cultureName: Unknown field\". Case was re-run without it"
+        },
+        {
+          "case": "CUST-090",
+          "defect": "Assertion 3 pins a /confirm-invitation literal that the product never emits; needs re-grounding to {OBSERVED}"
+        },
+        {
+          "case": "CUST-095",
+          "defect": "Sub-assertion 2 pins a stale 4-value list [Invited,Approved,Rejected,Deleted]; live build exposes 5 incl. Locked"
+        },
+        {
+          "case": "CUST-096",
+          "defect": "Assertion 1 expects contact Status literal \"Inactive\"; blade renders EMPTY (\"Please select a value\")"
+        },
+        {
+          "case": "CUST-098",
+          "defect": "Request shape never engages ResolveStatusFilterAsync — totalCount is identically 496 for no-filter, status:Invited, statuses:[Approved] AND statuses:[NONSENSE-XYZ]. Timings green but meaningless. Needs the real ContactSearchCriteria contract before this case can measure anything"
+        },
+        {
+          "case": "CUST-079",
+          "defect": "Asserts a GraphQL invite language selection that InputInviteUserType does not expose — RETIRE or re-scope to REST"
+        }
+      ],
+      "fixture_substitutions": [
+        {
+          "case": "CUST-090",
+          "what": "throwaway AGENT-TEST existing account instead of ORG_USER (password unprovisioned for API use + heavily shared fixture); SendExistingUserInviteNotification branch is identical"
+        }
+      ],
+      "final_tally": {
+        "totalCases": 51,
+        "PASS": 11,
+        "FAIL": 2,
+        "AMBIGUOUS": 5,
+        "BLOCKED": 1,
+        "SKIPPED": 32,
+        "PENDING": 0
+      },
+      "passRate": "84.6%",
+      "passRateBasis": "PASS/(PASS+FAIL) = 11/13; excluded 1 BLOCKED, 32 SKIPPED, 5 AMBIGUOUS, 0 PENDING. Matches compute-metrics.ts executed-only rule — NOT corrupt.",
+      "skipped_32_assessment": {
+        "verdict": "LEGITIMATE, not a runner failure or bulk-marking",
+        "rationale": "Budget was deliberately spent on the change-under-test band CUST-086..CUST-099 per the run instruction to prioritise the VCST-5281/5028 diff over routine Customer-module CRUD. Every one of the 32 carries its own case-specific reason; several attach partial evidence gathered incidentally. No verdicts were invented.",
+        "coverage_consequence": "63% of suite 027 is UNEXECUTED on this build. The change-scoped band was covered; routine Customer CRUD (email verification, dynamic properties, user groups, contact edit, invite UI flows) was not. Do not read 84.6% as suite health."
+      },
+      "notable_skip_findings": [
+        {
+          "case": "CUST-079",
+          "finding": "RETIRE/RE-SCOPE CANDIDATE. Live introspection: InputInviteUserType fields are ONLY storeId, organizationId, urlSuffix, emails, message, roleIds, customerOrderId. There is NO cultureName and NO language field on the GraphQL invite at all. The case tests a capability that endpoint does not have; needs re-scoping to the REST invite (which does accept cultureName) or retiring. This same fact is the root of the CUST-090 authoring defect."
+        },
+        {
+          "case": "CUST-101",
+          "finding": "Contacts grid renders only Type + Name columns by default; keyword search works. Combined with CUST-098 (every status-filter field name ignored), the status/role/org filtering this case asserts may not exist as written."
+        },
+        {
+          "case": "CUST-073/076",
+          "finding": "The 3 assignable roles were confirmed live (org-employee, org-maintainer, purchasing-agent) even though CUST-073 itself was skipped."
+        },
+        {
+          "case": "CUST-077/080/082",
+          "finding": "Partially covered as a side effect of CUST-090: inviteUser succeeded=true with empty errors[] and created an Invited membership; the WITH-organization existing-user template is OrganizationInviteExistingUserEmailNotification."
+        },
+        {
+          "case": "CUST-079",
+          "finding_crossref": "reports/bugs/open/BUG-invite-culture-selection-dropped-existing-user-de-DE.md (Medium, already open) covers the invite-culture gap. Check that before treating the CUST-079 no-language-field observation as new."
+        }
+      ],
+      "blocked_assessment": {
+        "case": "CUST-091",
+        "verdict": "CORRECTLY HANDLED — do not treat as a lane defect",
+        "what": "Read-only baseline fully verified (MULTI_ORG_USER contact.status=Approved, 11 contact.organizations, 0 OrganizationMembership rows, both org grants HTTP 200). The mutation (flip global contact.status to Rejected) was DENIED by the harness permission layer.",
+        "why_correct": "The lane did NOT retry or reshape the command to get around the denial, because MULTI_ORG_USER is heavily shared and other suites were touching B2B members concurrently — an unrestored blocking status would have broken them. Fixture re-verified at baseline afterwards. BLOCKED (a real attempt was made) rather than SKIPPED.",
+        "to_unblock": "an explicit Bash permission grant, OR a dedicated throwaway multi-association contact fixture"
+      },
+      "fixture_hygiene": {
+        "verdict": "CLEAN — all shared fixtures re-GET-verified at baseline; every throwaway AGENT-TEST entity deleted and deletion verified",
+        "near_miss": "ORG_USER_PASSWORD is not provisioned in .env.local for API use. The lane made ONE failed password grant and stopped immediately, at 1 of the 5 attempts that would trigger lockout, substituting a throwaway account. Had it retried blindly it would have locked out a shared fixture mid-run.",
+        "preexisting_pollution_left_alone": "TechFlow org keeps its 2 pre-existing org-level roles (org-employee, purchasing-agent) — flagged in the run instructions as deliberate, not cleaned."
+      },
+      "new_defects_note": "CORRECTED — zero new defects from suite 027. CUST-090 was initially recorded here as a new High defect; it is in fact a confirmed re-reproduction of the already-filed reports/bugs/open/BUG-existing-user-invite-link-discards-urlsuffix.md (same case id CUST-090, same suite 027, same BL-B2B-009, originally found in REG-2026-07-30-1040 on build ...-2257). Value is re-confirmation on the newer ...-2605 build, NOT a new filing.",
+      "MY_MISTRIAGE_CORRECTED": {
+        "what_i_claimed": "CUST-090 is a NEW High defect: the invite has NO working acceptance path because no link carries an identifying parameter, so the invitee can neither accept nor get org access.",
+        "why_it_was_wrong": [
+          "It is not new — BUG-existing-user-invite-link-discards-urlsuffix.md was already filed for this exact case from the 07-30 run.",
+          "The /account/dashboard destination is BY DESIGN, not a broken link. That page hosts the pending-invites widget, which resolves the pending invite from the AUTHENTICATED SESSION rather than from URL parameters — so the absence of identifying params is not by itself a broken acceptance path. This was already established by COMP-E2E-026 (suite 011b) and is written into the filed bug.",
+          "The real historical reason the invite could not be accepted was the VCST-5281 org-pinning P0 making /account/dashboard unreachable — not the URL gap."
+        ],
+        "what_is_actually_defective": "Only the inconsistency: urlSuffix is accepted by the mutation and then silently ignored on the existing-user branch while honored on the new-user branch. That is exactly, and only, what the filed bug claims.",
+        "consequence_favours_the_fix": "Because the dashboard is the acceptance surface and this build lets the invitee sign in (no organization_id -> HTTP 200), the acceptance path is REACHABLE again on this build. My framing overstated the severity in the wrong direction."
+      }
+    },
+    "TIER1_STATUS": {
+      "selected_by_user": [
+        "008",
+        "027b",
+        "050d",
+        "027",
+        "032"
+      ],
+      "completed": [
+        "050d",
+        "027b",
+        "008",
+        "027",
+        "032"
+      ],
+      "in_flight": [],
+      "note": "032 had a resolved CSV but NO results file — it was never dispatched, stranded by the earlier orchestrator kill (see ORCHESTRATOR_KILL_consequence). Re-dispatched 2026-08-04 on playwright-chrome (18 cases, P1, qa-frontend-expert) to close out the user-selected Tier 1 set. This completes assigned scope, it is not an expansion.",
+      "all_complete": true,
+      "caveat": "032 carries the concurrency_incident integrity caveat above."
+    },
+    "SUITE_032_TRIAGE": {
+      "note": "FINAL, with an integrity caveat — see concurrency_incident below.",
+      "lane": "playwright-chrome (re-dispatched); an edge-lane runner from the original P0 subset was concurrently alive",
+      "final_tally": {
+        "totalCases": 18,
+        "PASS": 9,
+        "FAIL": 2,
+        "AMBIGUOUS": 7,
+        "BLOCKED": 0,
+        "SKIPPED": 0,
+        "PENDING": 0
+      },
+      "passRate": "81.8%",
+      "passRateBasis": "PASS/(PASS+FAIL) = 9/11; excluded 0 BLOCKED, 0 SKIPPED, 7 AMBIGUOUS, 0 PENDING",
+      "new_defects": [],
+      "new_defects_note": "ZERO new product defects. bugs[] is empty and that is correct — both FAILs are tracked known issues.",
+      "fails_both_known": [
+        {
+          "case": "AUTH-063",
+          "bl": "BL-AUTH-005, BL-AUTH-006",
+          "tracked": "VCST-4576",
+          "measured": "/revoke/token with the refresh token -> HTTP 200 (revocation itself succeeds), but Token-A ACCESS token still returns 200 with empty errors[] on /graphql. Reproduced twice. Token-B untouched also still works, so no over-broad revocation either.",
+          "triage": "KNOWN / BY-DESIGN / CONFIG-GATED — not a code defect. Root cause: AuthorizationOptions.EnablePersistentStorageTokenValidation defaults to FALSE => stateless JWT validation => an already-issued access token cannot be invalidated before its ~30min TTL. Refresh-token revocation DOES work. Remediation is ops config (EnablePersistentStorageTokenValidation=true and/or a shorter AccessTokenLifeTime), not code.",
+          "memory_ref": "reference_token_revocation_config_gated",
+          "filed": false,
+          "important": "The lane did NOT make the classic mistake that memory warns about — it did not probe the non-existent /connect/revocation and call the 404 the defect. It found the real working /revoke/token path and measured the access token. The measurement is sound; only the interpretation as a product regression needed the config-gating context."
+        },
+        {
+          "case": "AUTH-064",
+          "bl": "BL-AUTH-003",
+          "tracked": "VCST-4531",
+          "measured": "changePassword succeeded=true via Token-A; immediately after, an independent Token-B for the same user STILL returns 200 on /graphql (expected 401) — the other-device session is not invalidated.",
+          "triage": "Known-open. VCST-4531 (OpenIddict revocation not applied on changePassword) is the cited ticket in this case's own References column — NOT re-filed.",
+          "filed": false,
+          "fixture_restore": "Password was changed and FULLY restored: verified the new password worked, reset via platform admin POST /api/platform/security/users/{email}/resetpassword, then verified the ORIGINAL password logs in again."
+        }
+      ],
+      "fix_confirmations": [
+        {
+          "cases": "AUTH-065",
+          "what": "VCST-5028 AC3 CONFIRMED at API and UI: a member locked in org B can still sign in and reach org A. Lock via org-scoped token -> 200; login silently auto-resolved to the one accessible org."
+        },
+        {
+          "cases": "AUTH-067",
+          "what": "BUG-A CONFIRMED FIXED on pr-135-402e+: TechFlow org-maintainer retains write permissions after an org switch — /company/members renders 'Invite members' plus per-row Actions for every member except the caller's own row."
+        },
+        {
+          "cases": "AUTH-067",
+          "what": "BL-B2B-008 cross-org isolation CONFIRMED: locking the BuildRight membership left TechFlow isLocked=false and TechFlow access unaffected."
+        },
+        {
+          "cases": "AUTH-067",
+          "what": "BL-AUTH-012 global-account guard CONFIRMED: GET /api/platform/security/users/{id}/locked stayed {locked:false} before, during and after the org-level lock — an org lock never touches the global account."
+        },
+        {
+          "cases": "AUTH-049",
+          "what": "Two independent /connect/token grants for the SAME user both authorized /graphql simultaneously — the server does not invalidate session A when session B logs in."
+        }
+      ],
+      "ambiguous_assessment": "7 AMBIGUOUS, all honest non-verdicts rather than banked false results. AUTH-050/051 (Remember Me) could not be discriminated because every new MCP Playwright context starts cookie-less regardless of session-vs-persistent cookie scope — consistent with the known finding that Remember Me is vestigial. AUTH-057 correctly REFUSED to extract the httpOnly access token via a hook-blocked browser_evaluate, and refused to pass a captured JWT into a shell replay; it marked the case rather than bypassing the guard. AUTH-048 confirmed the cart-preservation invariant (same item/qty/total after re-auth) while noting the literal redirect-to-login mechanism does not apply on this guest-checkout-configured store.",
+      "suite_test_defects_found": [
+        {
+          "case": "AUTH-063",
+          "defect": "Steps literal {{BACK_URL}}/connect/revocation does not exist (404). The real working path is /revoke/token (200) — the same non-standard path AUTH-024/AUTH-057 already use. This wrong literal is exactly what has caused prior runs to re-file the 404 as a security P1."
+        },
+        {
+          "case": "AUTH-064",
+          "defect": "changePassword body uses currentPassword; InputChangePasswordType defines userId/oldPassword/newPassword. The live schema rejects the case as written."
+        },
+        {
+          "case": "AUTH-065",
+          "severity": "HIGH — latent fixture-corruption hazard in a COMMITTED suite",
+          "defect": "Preconditions/Test_Data memberId literal 557dee63-a7ea-4932-9ef2-3635f353e7a2 is TECHFLOW_BUYER's (test-david.kim's) contact id, NOT the intended MULTI_ORG_TF_BR member. Independently confirmed two ways (GraphQL me.id while authenticated as test-david.kim, and aliases.vcst.json TECHFLOW_BUYER.platform_id). Running the case AS WRITTEN would lock the wrong, heavily-shared, actively-used fixture. The correct id is 85d1aeea-ee57-4041-9c18-c16431fe23ec (aliases.vcst.json MULTI_ORG_TF_BR.id).",
+          "not_a_blanket_replace": "AUTH-066 uses the SAME 557dee63 literal CORRECTLY — it deliberately targets TECHFLOW_BUYER as the cross-org lock target. Only AUTH-065's copy is wrong.",
+          "also": "Both are hardcoded GUIDs in a committed suite CSV and should be @td(MULTI_ORG_TF_BR.id) / @td(TECHFLOW_BUYER.platform_id) per the no-hardcode rule."
+        }
+      ],
+      "fixture_hygiene": "CLEAN. TECHFLOW_BUYER's password and MULTI_ORG_TF_BR's org-lock state (both TechFlow and BuildRight legs) were mutated and fully restored + re-verified; the AUTH-048 cart item was removed. Nothing left non-baseline.",
+      "concurrency_incident": {
+        "what": "Suite 032 was executed TWICE concurrently against the same results file — an edge-lane runner from the original P0 subset dispatch (042,078,049,011b,032,027) was still alive when I re-dispatched 032 to playwright-chrome.",
+        "my_error": "I inferred 032 was never dispatched because suite-032-results.json did not exist. Absence of a results file is NOT evidence of absence of a runner — that runner simply had not reached its first write yet.",
+        "detected_by": "the chrome runner itself, which saw the browser field reverting to playwright-edge, cases it never produced, and one conflicting verdict.",
+        "data_impact": "suite-032-results.json is a MERGE of two independent executions, not one clean run. The chrome runner merged conservatively rather than clobbering, and its notes preserve the audit trail of the conflict.",
+        "the_one_conflict": "AUTH-063 — edge recorded AMBIGUOUS on the theory that no revocation endpoint exists on this deployment; chrome re-verified directly (/connect/revocation 404, /connect/revoke 404, /connect/token/revoke 404, /revoke/token 200) and recorded FAIL with full evidence. Chrome's verdict is retained as the better-evidenced one, and the disagreement is documented in the case notes.",
+        "invalidates": "My earlier ORCHESTRATOR_KILL_consequence conclusion that all the killed orchestrator's children were dead. 011b/049/078-p2/078-p3 have been stale 2.5-4h and ARE dead; but the general inference was unsound, and 032 is the counterexample.",
+        "lesson": "Before re-dispatching any suite from a killed orchestrator, confirm the lane is dead by watching for a NEW results file over several minutes — not by a single existence check."
+      }
+    },
+    "TIER1_NET_NEW_DEFECTS": {
+      "count": 0,
+      "note": "Across all five Tier 1 suites (008, 027b, 050d, 027, 032) the net-new product defect count is ZERO after dedup. Everything reproduced maps to an already-filed bug or an already-tracked ticket: VCST-5314 (027 CUST-093), VCST-4576 (032 AUTH-063, config-gated by design), VCST-4531 (032 AUTH-064), BUG-existing-user-invite-link-discards-urlsuffix.md (027 CUST-090), BUG-backend-provisioned-membership-not-linked-to-contact-organizations.md (027 CUST-096). 008's BUG_008_102 (Medium/Low) is the one item still to be checked against the open set before any filing.",
+      "correction": "An earlier count in this file said 3 new defects for Tier 1. That was inflated by counting CUST-090 as new. Dedup against reports/bugs/open/ is what caught it."
+    }
+  },
+  "promotion": {
+    "eligible": [],
+    "blocked": [
+      {
+        "case": "all 19",
+        "reason": "6i not yet run — the --verify pass that upgrades assertions to {OBSERVED} has not been harvested, and re-verification of Step 4 is still in flight"
+      }
+    ],
+    "verify_pass_run": false,
+    "note": "Draft is correct and mandatory pre-execution. Do NOT promote into regression/suites/ on this run: TRI-000 stands (19/19 never triangulated) and the Step-3 gate ruled promotion is a post-execution /qa-test-lifecycle step gated on --verify. /qa-test-lifecycle's G10 re-derives eligibility independently and promotion still needs human approval."
+  },
+  "coverage_map_corrections": {
+    "F4": "covered by B2C-MBR-038's cross-layer checks, NOT by CUST-064 — that case declares BL-B2B-001, performs a UI org assignment rather than an invite, asserts nothing about global roles, and the checklist marks it PARTIAL.",
+    "R4": "covered by CUST-103/106/110 (CUST-110's before/after $GLOBAL_AFTER == $GLOBAL_BEFORE pair is stronger than a single post-cycle read), NOT by CUST-088 — which does assert it but is not in the executed set.",
+    "D_006_waiver": "substantively valid but was mis-cited: there is no 'Frontend Journey Exception' in .claude/skills/qa-review-tests/. The real exemption is D-006's own note that a mid-flow [ASSERT] is acceptable when it gates the next step."
+  },
+  "bugs_filed": [],
+  "bugs_pending_filing": [
+    "P1 (NEW) — sign-in lockout via remembered org; needs a product decision, see new_defect_found",
+    "CUST-112 — explicit bogus/foreign organization_id silently substituted on a password grant (BL-B2B-007); pre-existing, own ticket",
+    "Confirmed evidence for the prior run's orphan-membership finding: two TechFlow OrganizationMembership rows (users 44ac9069, 22bb6cd2) created 2026-07-29 14:55-15:20 by test-emily.johnson-20260310@test-agent.com survive with NO security account and NO contact — GET /users/{guid} and /api/members/{id} both return 200+null, and neither id appears in a 1000-user search. TechFlow reports totalCount=14 of which 2 are orphans, so the member count is inflated. NOT customer data (test residue), so the AC4 migration blast-radius finding stands on its own evidence.",
+    "Medium — the org-refusal copy renders a raw org GUID where the display name belongs, on the storefront sign-in form as well as in API strings, across all four org-scoped codes",
+    "Real UI defect (unrelated to this ticket) — untranslated i18n keys on a cold first navigation to /company/members (Back_in_stock/Loyalty/Sales_rep .navigation.*), resolving on warm reload; a lazy locale-chunk race",
+    "Service-worker registration 404s on every page load (/sw.js, /service-worker.js, /firebase-messaging-sw.js) — web push likely non-functional",
+    "BuildRight carries duplicate addresses with TWO rows flagged Default"
+  ],
+  "business_rules_verified": [
+    "BL-AUTH-012",
+    "BL-AUTH-013",
+    "BL-B2B-001",
+    "BL-B2B-005",
+    "BL-B2B-007",
+    "BL-B2B-008",
+    "BL-B2B-009"
+  ],
+  "business_rules_violated": [
+    "BL-B2B-007 (via CUST-112, pre-existing)"
+  ],
+  "bl_scope_extension_candidate": "BL-AUTH-013 specifies user_is_locked_in_organization for the LOCK axis. This build also returns distinct codes for the STATUS axis — user_invitation_pending_in_organization / user_is_rejected_in_organization / user_is_removed_from_organization — which looks correct but is unstated in the oracle. Triangulate via /qa-review-bl once #312 merges.",
+  "exploratory": {
+    "charter": "NOT RUN — Step 5 outstanding. Mandatory: the defects are P0 and auth is a critical revenue flow.",
+    "heuristic": null,
+    "findings": {
+      "bugs": 0,
+      "questions": 0,
+      "observations": 0,
+      "risks": 0
+    }
+  },
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": [],
+    "skipped_reason": "6a not yet performed for this execution window (2026-08-03T14:09:33Z onward). Outstanding for Step 6."
+  },
+  "run_integrity_findings": [
+    "modifiedBy CANNOT distinguish parallel lanes — every lane authenticates as `admin` for REST setup, so fixture-reservation breaches are unattributable from the audit trail. Membership statuses drifted to explicit 'Approved' several times mid-run; the frontend lane ruled out four candidate causes with controlled tests (no-op PUT /api/contacts, cur->null, cur->TechFlow, storefront sign-in all left statuses null), most plausibly a concurrent seeder. For real isolation each lane needs its own admin identity.",
+    "Explicit 'Approved' is NOT equivalent to null: null INHERITS the contact status, explicit Approved OVERRIDES it. So a drifted Approved silently pre-satisfies the premise of any case that sets a blocking Contact.Status and expects inheritance (CUST-105's shape). Restore to the declared baseline null, never to a drifted captured value.",
+    "Restore from a FRESH GET, never a captured baseline object: a restore PUT of a 3-minute-old snapshot returned HTTP 204 but silently NO-OP'd (organizations and currentOrganizationId unchanged). A lane can believe the 204 and leave the fixture dirty.",
+    "An explicit organization_id grant is a WRITE — it persists contact.currentOrganizationId. Both lanes repinned a shared fixture with supposedly read-only probes, caught it, and restored.",
+    "The backend lane nearly filed a FALSE authorization bug (full member roster rendered for what it believed was an org-less session). It checked the token actually on the wire before reporting: organization_id present with 11 permissions, and the DB showed the memberships had been flipped to Approved. Access was legitimate. Verify the token IN USE, not the one you minted, and re-verify fixture state inside the observation window.",
+    "The Playwright MCP loads --secrets at process start, so removing ADMIN_VCMP-DEV from .env.playwright.local did not take effect until the servers were reconnected. Until then every 'admin' substring in captured page text was redacted, mangling member emails."
   ],
   "harness_notes": [
-    "/connect/token requires storeId (camelCase) alongside organization_id (snake_case); without storeId every customer login returns user_cannot_login_in_store even with a correct password, masking real status errors"
+    "/connect/token requires storeId (camelCase) alongside organization_id (snake_case). A grant WITHOUT storeId returns HTTP 400 invalid_grant / code user_cannot_login_in_store — an older fixture note claiming a different code was wrong.",
+    "pageContext resolves ONLY through {{FRONT_URL}}/graphql; against {{BACK_URL}}/graphql it silently returns an empty projection inside HTTP 200 with errors:null. pageContext also needs at least storeId — with no args it returns a NULL_REFERENCE resolver error inside HTTP 200. Args: domain, cultureName, permalink, organizationId, userId, storeId (all nullable).",
+    "myStatusInOrganization (on me { contact { organizations { items } } }) returns the SERVER-COMPUTED effective status, i.e. ResolveEffectiveStatus(membership.Status, contact.Status). It is a better per-org oracle than inferring status from a token refusal code, and it is what the storefront's own GetPendingOrganizationInvites uses.",
+    "Organization.Roles entries are ASSIGNMENT RECORDS {organizationId, roleId, roleName, id} — roleId is the slug, id is the assignment record's own id. GET /api/platform/security/roles/{key} returns 200 + null body for KNOWN-GOOD slugs too, so it cannot be used to test whether a role resolves. A 'dangling role GUIDs' finding was raised on that basis and is WITHDRAWN. Confirmed: TechFlow [purchasing-agent, org-employee], BuildRight [] (empty).",
+    "The membership role a8bf53733b7b42c7aa97602035defd7e is a REAL role, 'Sales Representative'. 40+ of the 52 platform roles are GUID-ids (UI-created roles get GUIDs; only seeder/config roles use slugs).",
+    "GitHub MCP returned 'Bad credentials' all session; the gh CLI via `env -u GITHUB_TOKEN` worked. scripts/deploy/deploy-pr-artifact.ts reads GIT_TOKEN, so it needed GIT_TOKEN=$(env -u GITHUB_TOKEN gh auth token). deploy:pr ticket-key auto-resolution returns nothing for VCST-5281 because the ticket has ZERO GitHub dev-links (dev-status returns {\"detail\":[]}) — the explicit --pr path is required.",
+    "REPO GAP: scripts/test-data/validate-td-refs.ts only scans regression/suites/, so per-ticket CSVs under reports/tickets/** are outside the @td() build gate entirely. suites:review does not cover it either (it delegates DV-013 to that script). Two consequences hit this run: the Step-3 verifier had to hand-resolve 31 tokens, and a bare @td(MULTI_ORG_TF_BR) with no .field survived until an ad-hoc check found it."
   ],
-  "c40_refinement": {
-    "finding": "For a user with legacy org associations but NO OrganizationMembership row, effective status resolves entirely from contact.Status, so a blocking global status denies EVERY org - and the C-41 membership-override remedy is unavailable because no row exists to override with. Verified live on MULTI_ORG_USER (11 orgs, 0 rows): Invited -> user_invitation_pending_in_organization, Rejected -> user_is_rejected_in_organization, restored to Approved -> 200.",
-    "population": "104 of the 105 at-risk accounts on this env have no membership row",
-    "healthy_baseline": "With contact.Status=Approved and no membership row, myStatusInOrganization resolves to Approved and an org-scoped token is issued with full permissions - the fallback works correctly"
+  "test_data_added": {
+    "MULTI_ORG_TF_BR_ALT": "frontend-lane twin of MULTI_ORG_TF_BR (TechFlow org-maintainer + BuildRight org-employee) so the two lanes never share membership rows",
+    "ORG_TF_ONLY_INVITEE": "TechFlow-only; the ABSENCE of a BuildRight membership is load-bearing (the P0 trigger needs a genuine first-time invite, and an already-Invited membership is not re-invitable, only resendable)",
+    "ORG_TF_ONLY_STATUS": "TechFlow-only, dedicated to the Invited->Rejected->Deleted status walk so it never blocks another suite",
+    "ORG_ASSOC_ONLY_NO_GLOBAL": "association-only (zero OrganizationMembership rows) AND empty global ApplicationUser.Roles — both properties load-bearing; the only fixture on which the BL-B2B-007 org-level term is measurable",
+    "seeder_capability_added": "optional membership_status column, now declarable on ALL THREE membership-creating sources (organization-memberships.csv, b2b/users.csv, white-labeling/users.csv = 32/32 memberships), threaded at all three ensureOrgMembership call sites. validate-b2b-data check [9] HARD-FAILS any membership-creating source that lacks the column. The reuse comparison now includes status, so a re-seed HEALS a drifted status instead of preserving it — previously it compared only roles + isLocked, meaning a left-behind blocking status silently survived and poisoned later runs."
+  },
+  "deploy_actions": [
+    {
+      "pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6277",
+      "state": "MERGED 11:58:22Z, deploy green 12:00:35Z",
+      "change": "Customer pr-312-2257 -> pr-312-ca2f (the localization delta)"
+    },
+    {
+      "pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6279",
+      "state": "MERGED 12:48:38Z, platform + theme deploys green 12:50:44Z",
+      "change": "Customer pr-312-ca2f -> pr-312-2605 (the 403 fix) + theme 2399-845a -> 2399-f69e",
+      "note": "PR opened by the vc-ci bot for the theme half; this run's apply added the Customer pin to the same branch. Verified after the fact that nothing was lost."
+    }
+  ],
+  "label_delta_verification": {
+    "verdict": "PASS — the 2026-08-03 localization delta (26 strings, 13 languages) rendered correctly",
+    "scope": "Admin-SPA display labels only: the OrganizationMembershipStatuses settings-group title/description + displayName/description for the three new notification types",
+    "results": "T1-T7 PASS in en/de/ru (T2 confirmed at the served-resource level only — the description surfaces solely as a native tooltip, not screenshot-capturable); old notification types still registered and unbroken on page 2 of the list; templates still English-only, so a German or Russian admin gets localized LABELS but an English email BODY (matches the documented fallback, i.e. it confirms test-model AC7)",
+    "T8": "Admin-vs-storefront status-VALUE vocabulary conflict persists as predicted — and the Admin org-memberships widget's 'Invite status' cell is EMPTY for an approved membership, i.e. it surfaces no membership-status label at all"
+  },
+  "withdrawn_findings": [
+    "'PR #312 head CI is RED' — at ca2f5960 auto-tests failed on all three DB providers on one unrelated test (test_page_about_store.py::test_page_about_store_accessible[chromium]). The next build (2605501d) came back fully green, confirming it was transient. NOT a defect; do not report it.",
+    "'TechFlow Organization.Roles holds two dangling role GUIDs' — the assignment-record id was misread as a role id, and the GET-by-key control returns 200+null for valid slugs too. Withdrawn.",
+    "'Those two Deleted-status accounts can no longer sign into TechFlow' — wrong: the accounts do not exist. The rows are orphans with no account and no contact behind them."
+  ],
+  "next_steps": {
+    "immediate": "pageContext/parity legs for CUST-103/104/114 in flight -> then re-verify the Step 4 gate from scratch (revise iteration 1 of <=2; a second REJECT stops for a human)",
+    "then": "reduced P0 regression subset (042,078,049,011b,032,027) -> Step 5 exploratory (mandatory) -> Step 6 triage/verdict/6a App Insights correlation -> 6i promotion-evidence harvest",
+    "close_out": "A developer fix landed 12 minutes after the Reopen + backlog comment. /qa-fix is not applicable — the remaining work spans vc-module-customer AND vc-frontend (a G1 multi-repo STOP) and the new P1 needs a product decision, not a patch."
   },
   "screenshots": "reports/tickets/Sprint26-15/VCST-5281/screenshots/"
 }

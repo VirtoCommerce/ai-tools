@@ -1,9 +1,27 @@
 # BUG: Admin Orders dashboard 500 — `InvalidCastException` (String→Boolean) on `GET /api/order/dashboardStatistics`
 
-## Status: FIXED (environment data correction — no code change)
+## Status: FIXED (code fix verified — supersedes the earlier env-data-only resolution)
 **Tracker:** [VCST-5554](https://virtocommerce.atlassian.net/browse/VCST-5554) (Jira Bug, filed 2026-07-23)
 
-## Resolution
+## Resolution — code fix (2026-08-03, supersedes the env-data correction below)
+- **Fixed in:** `vc-platform` PR [#3089](https://github.com/VirtoCommerce/vc-platform/pull/3089) "Safe setting value converter" — a new `SettingValueConverter` makes the registered descriptor the authority on a setting's type. `SettingEntity.ToModel` reconciles stored values against the descriptor (falling back to `DefaultValue` when unconvertible), `SettingsExtension.GetValueInternalAsync<T>` converts instead of casting, and `SettingsManager` logs one warning per cache load naming both types. No migration, no save-path self-healing — drifted rows are tolerated on read, not repaired.
+- **Verified:** 2026-08-03 on vcst-qa @ platform image tag `3.1053.0-pr-3089-c16b-vcst-5554-c16b5029` (Orders `3.1013.0`). Deployed via `vc-deploy-dev` [#6274](https://github.com/VirtoCommerce/vc-deploy-dev/pull/6274) (merged 09:50 UTC, deploy Action `30803137555` green).
+- **Method:** the drift was re-created deliberately — `POST /api/platform/settings` persists the posted `ValueType` verbatim (`SettingEntity.FromModel`), so no DB access was needed and the change was fully reversible. Four stored states were probed live:
+
+  | Stored row | Descriptor | Resolves to | Endpoint |
+  |---|---|---|---|
+  | `ShortText "True"` (original corruption) | Boolean | `true` | **200**, 3/3 |
+  | `ShortText "yes"` (unconvertible) | Boolean | `true` (descriptor default) | **200** |
+  | `ShortText "False"` (convertible) | Boolean | `false` | **200**, disabled path (`revenue: null`) |
+  | `Boolean true` (restored) | Boolean | `true` | **200**, 3/3 |
+
+  The `"yes"` case proves the row really is `ShortText` (a `Boolean` write of `"yes"` throws at save, yet the POST returned `204`); the `"False"` case proves the stored string is genuinely read and converted, so none of the writes was a silent no-op. `GET /api/platform/settings/v2/global/values` additionally returned the setting as a JSON **boolean** `true` while the row was still `ShortText`.
+- **Layer 2 (Admin SPA):** PASS 3/3 under the drifted row — all 6 KPI cards populated, both quarterly charts render, Orders list + order detail unaffected, no console errors, no 4xx/5xx on any `/api/` call (`qa-backend-expert`, `playwright-edge`).
+- **Environment restored** to `Boolean` / `true` (row `c4476df4-238a-4071-a650-a098d259746d`); post-restore probe 200 3/3 populated.
+- **Evidence:** `reports/tickets/Sprint26-15/VCST-5554/evidence.html` (+ `screenshots/`).
+- **Outstanding:** PR #3089's `auto-tests` job is red on all 3 DBs — a seed-step page-builder DI 500, not the settings change (owned by the PR). The `WarnOnValueTypeDrift` log line was not captured (App Insights unreachable, expired MFA) — corroboration only. The vcst-qa deploy pin still needs reverting (it displaces VCST-5618's build).
+
+## Earlier resolution — environment data correction (2026-07-23, superseded)
 - **Fixed in:** environment data correction on vcst-qa (no code deployed). The mistyped persisted setting `Order.DashboardStatistics.Enable` was stored as the STRING `"True"` under a `Boolean` descriptor; re-saved via the Admin SPA Settings UI (Settings → Orders → General → "Enable dashboard statistics", toggled OFF→Save→ON→Save) to rewrite the value as a real boolean.
 - **Verified:** 2026-07-23 (qa-backend-expert, Admin SPA, real-user interaction). `GET /api/order/dashboardStatistics` → **200** (was 500) with a populated `DashboardStatisticsResult` (orderCount 1677, customersCount 244, itemsPurchased 5174, lineItemsPerOrder ≈3.09, multi-currency revenue). All 6 KPI cards + both quarterly charts render. No `dashboardStatistics` console error remains. Evidence: `reports/bugs/screenshots/BUG-order-dashboard-statistics-FIXED-2026-07-23.png`.
 - **`/qa-fix` verdict:** Gate 0 BAIL (env-data-drift) — correct. The live symptom was resolved by data correction, not code.

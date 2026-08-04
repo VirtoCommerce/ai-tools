@@ -1,7 +1,7 @@
-user_id,alias_name,email,password,first_name,last_name,org_id,roles,status,seeded,test_purpose,membership_locked
-WL-USER-01,WL_USER_ELECTRONICS,wl-electronics@virtocommerce.com,{{TEST_USER_PASSWORD}},Alex,Electronics,WL-ORG-A,Organization maintainer,Approved,true,Test storefront as Electronics org user (org maintainer),false
-WL-USER-02,WL_USER_FASHION,wl-fashion@virtocommerce.com,{{TEST_USER_PASSWORD}},Beth,Fashion,WL-ORG-B,Organization employee,Approved,true,Test storefront as Fashion org user,false
-WL-USER-03,WL_USER_DEFAULT,wl-default@virtocommerce.com,{{TEST_USER_PASSWORD}},Chris,Default,WL-ORG-C,Organization employee,Approved,true,Test fallback behavior (no WL config),false
-WL-USER-04,WL_USER_MULTI,wl-multi@virtocommerce.com,{{TEST_USER_PASSWORD}},Diana,Multi,WL-ORG-A;WL-ORG-B,Organization employee;Purchasing agent,Approved,true,Test org switching - member of 2 orgs with different roles per org (VCST-5028),false
-WL-USER-05,WL_USER_MENU_ONLY,wl-menuonly@virtocommerce.com,{{TEST_USER_PASSWORD}},Edward,MenuOnly,WL-ORG-D,Organization employee,Approved,true,Test partial config (menu only),false
-WL-USER-06,WL_USER_FOOTER_ONLY,wl-footeronly@virtocommerce.com,{{TEST_USER_PASSWORD}},Fiona,FooterOnly,WL-ORG-E,Organization employee,Approved,true,Test partial config (footer only),false
+user_id,alias_name,email,password,first_name,last_name,org_id,roles,status,seeded,test_purpose,membership_locked,membership_status
+WL-USER-01,WL_USER_ELECTRONICS,wl-electronics@virtocommerce.com,{{TEST_USER_PASSWORD}},Alex,Electronics,WL-ORG-A,Organization maintainer,Approved,true,Test storefront as Electronics org user (org maintainer),false,Approved
+WL-USER-02,WL_USER_FASHION,wl-fashion@virtocommerce.com,{{TEST_USER_PASSWORD}},Beth,Fashion,WL-ORG-B,Organization employee,Approved,true,Test storefront as Fashion org user,false,Approved
+WL-USER-03,WL_USER_DEFAULT,wl-default@virtocommerce.com,{{TEST_USER_PASSWORD}},Chris,Default,WL-ORG-C,Organization employee,Approved,true,Test fallback behavior (no WL config),false,Approved
+WL-USER-04,WL_USER_MULTI,wl-multi@virtocommerce.com,{{TEST_USER_PASSWORD}},Diana,Multi,WL-ORG-A;WL-ORG-B,Organization employee;Purchasing agent,Approved,true,Test org switching - member of 2 orgs with different roles per org (VCST-5028),false,Approved
+WL-USER-05,WL_USER_MENU_ONLY,wl-menuonly@virtocommerce.com,{{TEST_USER_PASSWORD}},Edward,MenuOnly,WL-ORG-D,Organization employee,Approved,true,Test partial config (menu only),false,Approved
+WL-USER-06,WL_USER_FOOTER_ONLY,wl-footeronly@virtocommerce.com,{{TEST_USER_PASSWORD}},Fiona,FooterOnly,WL-ORG-E,Organization employee,Approved,true,Test partial config (footer only),false,Approved

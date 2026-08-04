@@ -36,7 +36,10 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
-import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases, idsParam, resetSecurityPassword } from './seed-common.mjs';
+import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases, writeEnvAliasOverride, idsParam, resetSecurityPassword } from './seed-common.mjs';
+import {
+  matchesOnly, normalizeMembershipStatus, resolveMembershipStatusForIndex, STATUS_COLUMN, ALIAS_COLUMN,
+} from '../seed-data/b2b/membership-alias-specs.mjs';
 import { resolveAllRoles, roleByKey } from './user-roles.mjs';
 import { CSV_CREDENTIAL_SOURCES, collectDeclarations, findPasswordConflicts } from '../seed-data/credential-specs.mjs';
 
@@ -601,7 +604,11 @@ export async function searchMemberships(userId) {
 // contact's `organizations` array (set when the contact was created); org-scoped roles don't exist
 // there. Best-effort ensure the contact↔org link (usually already present) and no-op the role with a
 // documented note, so a legacy-bundle env still completes the seed. Never throws.
-async function ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email = null) {
+async function ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email = null, status = null) {
+  // A legacy Customer module has no OrganizationMembership entity at all, so there is nowhere to put
+  // a per-org status. Say so LOUDLY rather than dropping it: silently ignoring a declared baseline is
+  // exactly how a fixture ends up not being the thing the test believes it is.
+  if (status) console.warn(`    ⚠ ${STATUS_COLUMN}="${status}" declared for ${orgName} but this Customer module has no OrganizationMembership entity — per-org status CANNOT be provisioned on this env; the fixture will inherit the contact's status`);
   try {
     // Resolve by EMAIL when we have it — the legacy platform's GET-by-GUID returns 200 with an empty
     // body (getUserById → null), so it can't load the account to edit roles; the by-userName GET works.
@@ -633,37 +640,61 @@ async function ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleNam
   return 'legacy';
 }
 
-export async function ensureOrgMembership(userId, orgId, orgName, roleId, existing, locked = false, email = null) {
+// `status` = the declared OrganizationMembership.Status baseline (VCST-5281), normalized to a legal
+// value or null. null ⇒ don't override; ResolveEffectiveStatus falls through to the contact's status.
+export async function ensureOrgMembership(userId, orgId, orgName, roleId, existing, locked = false, email = null, status = null) {
   const roleName = await resolveRoleName(roleId);
-  if (_legacyMembershipApi) return ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email);
+  const declaredStatus = normalizeMembershipStatus(status);
+  if (_legacyMembershipApi) return ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email, declaredStatus);
   try {
-    return await ensureOrgMembershipModern(userId, orgId, orgName, roleId, roleName, existing, locked);
+    return await ensureOrgMembershipModern(userId, orgId, orgName, roleId, roleName, existing, locked, declaredStatus);
   } catch (e) {
     if (!isMissingEndpoint(e)) throw e;
     latchLegacyMembership('create/update');
-    return ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email);
+    return ensureLegacyOrgMembership(userId, orgId, orgName, roleId, roleName, email, declaredStatus);
   }
 }
 
-async function ensureOrgMembershipModern(userId, orgId, orgName, roleId, roleName, existing, locked) {
+async function ensureOrgMembershipModern(userId, orgId, orgName, roleId, roleName, existing, locked, status = null) {
+  const label = `${orgName} → ${roleName}${locked ? ', LOCKED' : ''}${status ? `, status=${status}` : ''}`;
   const found = (existing || []).find(m => m.organizationId === orgId);
   if (found) {
     const currentRoleIds = (found.roles || []).map(r => r.roleId || r.id);
-    if (currentRoleIds.length === 1 && currentRoleIds[0] === roleId && found.isLocked === locked) {
-      if (VERBOSE) console.log(`    ↻ reuse  membership ${found.id} (${orgName} → ${roleName}${locked ? ', LOCKED' : ''})`);
+    // Status IS part of the reuse comparison (VCST-5281). Without it, a status a test left behind
+    // (e.g. Rejected) took the no-write "reuse" branch, so a re-seed did NOT heal it: the fixture
+    // stayed silently blocked and every later positive condition failed as if the product were
+    // broken. Comparing it makes a re-seed self-healing. The platform stores an absent status as
+    // null (some builds as ''), so both normalize to null before comparing.
+    const currentStatus = normalizeMembershipStatus(found.status);
+    const rolesMatch = currentRoleIds.length === 1 && currentRoleIds[0] === roleId;
+    if (rolesMatch && found.isLocked === locked && currentStatus === status) {
+      if (VERBOSE) console.log(`    ↻ reuse  membership ${found.id} (${label})`);
       return found.id;
     }
+    const drift = [
+      rolesMatch ? null : `roles ${currentRoleIds.join(',') || 'none'}→${roleId}`,
+      found.isLocked === locked ? null : `isLocked ${found.isLocked}→${locked}`,
+      currentStatus === status ? null : `status ${currentStatus ?? 'null'}→${status ?? 'null'}`,
+    ].filter(Boolean).join('; ');
     if (!DRY_RUN) {
+      // PUT is a FULL replace (the controller does membership.Id = id; SaveChangesAsync([membership])),
+      // so every field we want must be assigned here — assigning the DECLARED status is what heals
+      // the drift; echoing back `found.status` unchanged would persist it.
       found.roles = [{ roleId, roleName }];
       found.isLocked = locked;
+      found.status = status;
       await api('PUT', `/api/customer/organization-memberships/${encodeURIComponent(found.id)}`, found, { expectStatus: [200, 204] });
     }
-    console.log(`    ✓ reconcile membership ${found.id} (${orgName} → ${roleName}${locked ? ', LOCKED' : ''}) [was: ${currentRoleIds.join(',') || 'none'}]`);
+    console.log(`    ✓ reconcile membership ${found.id} (${label}) [drift: ${drift}]`);
     return found.id;
   }
-  const created = await api('POST', '/api/customer/organization-memberships', { userId, organizationId: orgId, organizationName: orgName, roles: [{ roleId, roleName }], isLocked: locked });
+  const body = { userId, organizationId: orgId, organizationName: orgName, roles: [{ roleId, roleName }], isLocked: locked };
+  // Only send `status` when declared — POST does NOT validate it server-side, and an explicit null
+  // is indistinguishable from omission to ResolveEffectiveStatus, so omitting keeps the body minimal.
+  if (status !== null) body.status = status;
+  const created = await api('POST', '/api/customer/organization-memberships', body);
   const id = created?.id || `dry-mom-${orgId}`;
-  console.log(`    ✓ create membership ${id} (${orgName} → ${roleName}${locked ? ', LOCKED in org' : ''})`);
+  console.log(`    ✓ create membership ${id} (${orgName} → ${roleName}${locked ? ', LOCKED in org' : ''}${status ? `, status=${status}` : ''})`);
   return id;
 }
 
@@ -707,8 +738,10 @@ function byUserIdFromEmails(userRows, idByEmail) {
 }
 
 // Give each seeded contact a login + org-scoped membership (role + status from users.csv).
-export async function provisionContactLogins(contactMap, orgMap) {
-  const userRows = readCsv(USERS_CSV);
+// `rows` overrides the CSV read — used ONLY by unit tests, so the per-row status/role grammar can be
+// exercised without a committed fixture that declares one. Production callers pass nothing.
+export async function provisionContactLogins(contactMap, orgMap, { rows = null } = {}) {
+  const userRows = rows ?? readCsv(USERS_CSV);
   const userByContact = {};
   for (const u of userRows) if (u.contact_id) userByContact[u.contact_id] = u;
   console.log(`\n  Provisioning contact logins + org memberships...`);
@@ -735,15 +768,18 @@ export async function provisionContactLogins(contactMap, orgMap) {
     const roleNames = (u.roles || '').split(';').map(s => s.trim()).filter(Boolean);
     // pair each org with its index-parallel role BEFORE filtering unseeded orgs, so a dropped org
     // never shifts the remaining orgs' roles.
+    // `membership_status` (optional, VCST-5281) resolves from the SAME row and the SAME index as the
+    // role, so a multi-org member can carry a different per-org status exactly as it carries a
+    // different per-org role. Blank / absent ⇒ null ⇒ inherit the contact's status (unchanged).
     const pairs = orgIds
-      .map((oid, i) => ({ org: orgMap[oid], roleName: roleNames[i] || roleNames[0] }))
+      .map((oid, i) => ({ org: orgMap[oid], roleName: roleNames[i] || roleNames[0], status: resolveMembershipStatusForIndex(u[STATUS_COLUMN], i) }))
       .filter(p => p.org?.platform_id && p.roleName);
     if (pairs.length) {
       const existing = await searchMemberships(userId);
-      for (const { org, roleName } of pairs) {
+      for (const { org, roleName, status } of pairs) {
         const roleId = roleIdByName(roleName);
         if (!roleId) { console.warn(`    ⚠ role "${roleName}" not found in roles.csv — skipping membership for ${email} @ ${org.name}`); continue; }
-        await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existing, locked, email);
+        await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existing, locked, email, status);
         nMem++;
       }
     }
@@ -758,6 +794,22 @@ export async function provisionContactLogins(contactMap, orgMap) {
     const byUserId = byUserIdFromEmails(userRows, idByEmail);
     syncEnvAliases('b2b/users', byUserId);
     console.log(`  ✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote ${Object.keys(byUserId).length} b2b user platform_id(s)`);
+    // An INLINE alias can't be reached by syncEnvAliases (which only serves aliases whose `file` is
+    // b2b/users), so a users.csv row may name one in its optional `alias` column and get its runtime
+    // `userId` + `contactId` written directly. Without this the ids would have to be hand-captured —
+    // the very drift the per-env overlay exists to prevent.
+    const inlineUpdates = {};
+    for (const u of userRows) {
+      const aliasName = String(u[ALIAS_COLUMN] || '').trim();
+      const userId = idByEmail[(u.email || '').trim()];
+      if (!aliasName || !userId || String(userId).startsWith('dry-')) continue;
+      const contactId = contactMap[u.contact_id]?.platform_id;
+      inlineUpdates[aliasName] = { userId, ...(contactId && !String(contactId).startsWith('dry-') ? { contactId } : {}) };
+    }
+    if (Object.keys(inlineUpdates).length) {
+      writeEnvAliasOverride(inlineUpdates);
+      console.log(`  ✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: ${Object.keys(inlineUpdates).join(', ')}`);
+    }
   }
   return { accounts: nAcct, memberships: nMem };
 }
@@ -810,7 +862,9 @@ export async function seedInlineOrgUsers(rows, orgMap) {
       const roleName = roleNames[i] || roleNames[0];
       const roleId = roleIdByName(roleName);
       if (!roleId) { console.warn(`    ⚠ role "${roleName}" not found in roles.csv — skipping membership for ${email} @ ${org.name}`); continue; }
-      await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existingMemberships, locked);
+      // Same row, same index as the role (VCST-5281) — see provisionContactLogins for the grammar.
+      const status = resolveMembershipStatusForIndex(row[STATUS_COLUMN], i);
+      await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existingMemberships, locked, email, status);
       nMem++;
     }
   }
@@ -878,9 +932,16 @@ export async function seedWhiteLabelingUsers() {
 }
 
 // Cross-org memberships from organization-memberships.csv (orgs must already exist).
-export async function seedMemberships() {
-  const rows = readCsv(MEMBERSHIPS_CSV).filter(r => r.user_email && r.org_name);
-  if (!rows.length) { console.log('\n  Memberships: organization-memberships.csv empty — skipping.'); return []; }
+// `only` scopes the run to matching rows (membership_id / user_email / alias substring) so a new
+// cross-org fixture can be seeded WITHOUT touching a reserved one that another lane is using —
+// re-running an in-use fixture would reconcile its membership rows' isLocked/roles back to baseline
+// mid-test. Predicate lives in the side-effect-free membership-alias-specs.mjs.
+export async function seedMemberships({ only = null } = {}) {
+  const all = readCsv(MEMBERSHIPS_CSV).filter(r => r.user_email && r.org_name);
+  const rows = only ? all.filter(r => matchesOnly(r, only)) : all;
+  if (!all.length) { console.log('\n  Memberships: organization-memberships.csv empty — skipping.'); return []; }
+  if (only) console.log(`\n  Memberships: --only "${only}" → ${rows.length}/${all.length} row(s)`);
+  if (!rows.length) { console.log(`  ⚠ no membership row matches --only "${only}" — nothing to seed.`); return []; }
   console.log(`\n  Seeding ${rows.length} org membership row(s)...`);
   const byEmail = {};
   for (const r of rows) (byEmail[r.user_email] ||= []).push(r);
@@ -900,8 +961,11 @@ export async function seedMemberships() {
     await stripSeededGlobalRoles(email);
     const existing = await searchMemberships(userId);
     for (const { row, orgId } of orgs) {
-      const membershipId = await ensureOrgMembership(userId, orgId, row.org_name, row.role_id, existing);
-      out.push({ membership_id: row.membership_id, email, contact_id: contactId, user_id: userId, org_name: row.org_name, org_id: orgId, role_id: row.role_id, platform_membership_id: membershipId });
+      // `locked=false` / `email=null` preserve the previous call exactly; the 8th arg is the new
+      // optional per-org status baseline (blank cell / absent column ⇒ null ⇒ unchanged behaviour).
+      const status = normalizeMembershipStatus(row[STATUS_COLUMN]);
+      const membershipId = await ensureOrgMembership(userId, orgId, row.org_name, row.role_id, existing, false, null, status);
+      out.push({ membership_id: row.membership_id, email, contact_id: contactId, user_id: userId, org_name: row.org_name, org_id: orgId, role_id: row.role_id, membership_status: status, platform_membership_id: membershipId });
     }
   }
   return out;

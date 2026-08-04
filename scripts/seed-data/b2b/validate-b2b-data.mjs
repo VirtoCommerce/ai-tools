@@ -41,6 +41,10 @@ import {
   paginationAudit, assertContractCoherent, findGuidLeaks, findMarkerProblems,
   ADDRESSES_PER_PAGE, MIN_PAGES, TARGET_TOTAL, SEED_MARKER_PREFIX,
 } from './addresses-specs.mjs';
+import {
+  findAliasDeclarationProblems, findStatusProblems, rowCreatesMembership, statusCoverage,
+  ALIAS_COLUMN, STATUS_COLUMN, MANUALLY_SELECTABLE_STATUSES, STATUS_SOURCE_REF,
+} from './membership-alias-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const B2B = join(ROOT, 'test-data', 'b2b');
@@ -171,10 +175,18 @@ for (const u of users) {
   // `roles` is `;`-joined and INDEX-PARALLEL with `org_id` (VCST-5028): a single role applies to
   // every org; N roles ⇒ the i-th role scopes the i-th org (a multi-org member with distinct
   // per-org roles). Each part must resolve in roles.csv; a multi-role list must match the org count.
+  // An ASSOCIATION-ONLY fixture deliberately has no role: that is what makes provisionContactLogins
+  // create the login WITHOUT any OrganizationMembership row (the legacy `contact.organizations` shape
+  // — 104 of the 105 at-risk accounts on this env). It must be declared with the explicit
+  // ASSOCIATION-ONLY marker so "no role" can never pass silently as an authoring slip.
+  const assocOnly = /ASSOCIATION-ONLY/.test(u.test_purpose || '');
   const roleNames = (u.roles || '').split(';').map((s) => s.trim()).filter(Boolean);
   if (!roleNames.length) {
-    if (invited) warn(`user ${tag}: no role — OK (invitation-pending)`);
+    if (assocOnly) ok(`user ${tag}: no role — OK (ASSOCIATION-ONLY fixture: contact.organizations without any OrganizationMembership row, by design)`);
+    else if (invited) warn(`user ${tag}: no role — OK (invitation-pending)`);
     else fail(`user ${tag}: no role → no org membership with a role`);
+  } else if (assocOnly) {
+    fail(`user ${tag}: declared ASSOCIATION-ONLY but carries role(s) "${roleNames.join('", "')}" — a role makes the seeder create an OrganizationMembership row, which destroys the fixture's only reason to exist`);
   } else {
     const badRoles = roleNames.filter((r) => !roleKeys.has(r));
     if (badRoles.length) fail(`user ${tag}: role(s) "${badRoles.join('", "')}" do not resolve in roles.csv`);
@@ -281,6 +293,91 @@ console.log('\n[7] Teardown seed markers (address_id → outerId)');
   if (!errs.length) {
     const orgRows = addresses.filter((r) => r.org_id && !r.contact_id).length;
     ok(`${orgRows} org address row(s) mint a unique, in-length ${SEED_MARKER_PREFIX}: marker`);
+  }
+}
+
+// 8. Cross-org membership → @td() alias declaration (the overlay writeback contract).
+// The seeder writes each cross-org fixture's four runtime GUIDs (contact id, security-account id,
+// two membership ids) into aliases.<env>.json using the CSV's own `alias` / `membership_id_field`
+// columns. If the alias doesn't exist, doesn't declare the field, or two aliases claim one account,
+// the seeder writes an id nothing can read — and the fixture fails SILENTLY: @td() resolves to ""
+// and the case looks like a product bug. Also re-asserts no runtime GUID leaked into the CSV.
+console.log('\n[8] organization-memberships.csv → @td() alias writeback declaration');
+{
+  const aliasPath = join(ROOT, 'test-data', 'aliases.json');
+  const aliasReg = existsSync(aliasPath) ? JSON.parse(readFileSync(aliasPath, 'utf8')) : {};
+  const errs = findAliasDeclarationProblems(memberships, aliasReg);
+  for (const e of errs) fail(e);
+  if (!errs.length) {
+    const declared = [...new Set(memberships.map((m) => (m[ALIAS_COLUMN] || '').trim()).filter(Boolean))];
+    const undeclared = memberships.filter((m) => !(m[ALIAS_COLUMN] || '').trim()).length;
+    if (declared.length) ok(`${declared.length} cross-org alias(es) declared coherently: ${declared.join(', ')}`);
+    else warn('no membership row declares an `alias` — runtime GUIDs will not be written back to aliases.<env>.json');
+    if (undeclared) warn(`${undeclared} membership row(s) declare no alias — their runtime ids are not written back`);
+  }
+}
+
+// 9. membership_status column — legal value, and blocking statuses surfaced (VCST-5281).
+// POST /organization-memberships does NOT validate status server-side (only PUT does, and only when
+// the value both is non-empty and differs), so an illegal value on a NEW membership would be
+// persisted silently. Gate it statically here. Legal set is imported, never re-listed.
+// Covers ALL THREE membership-creating sources, because the seeder is authoritative over membership
+// status on every one of them: organization-memberships.csv (seedMemberships), b2b/users.csv
+// (provisionContactLogins) and white-labeling/users.csv (seedInlineOrgUsers). b2b/contacts.csv,
+// users/test-users.csv and users/agent-user-pool.csv are deliberately NOT here — they create no
+// OrganizationMembership at all (contacts / personal accounts only), so a status column there would
+// be inert. Legal set imported from membership-alias-specs.mjs — never re-listed per source.
+console.log(`\n[9] ${STATUS_COLUMN} (OrganizationMembership.Status) across every membership-creating source`);
+{
+  const wlUsers = (() => {
+    const p = join(ROOT, 'test-data', 'white-labeling', 'users.csv');
+    if (!existsSync(p)) return [];
+    return parse(readFileSync(p, 'utf8'), { columns: true, skip_empty_lines: true, trim: true, relax_quotes: true, relax_column_count: true });
+  })();
+  // `roleCol` is the column that GATES membership creation on each source, and it is what makes the
+  // required-vs-inert split decidable statically: the seeder pairs each org with its index-parallel
+  // role and drops any pair without one, so an empty role cell provably yields zero membership rows.
+  const SOURCES = [
+    { rows: memberships, label: 'membership', idCol: 'membership_id', emailCol: 'user_email', orgCol: null, roleCol: 'role_id', name: 'b2b/organization-memberships.csv', via: 'seedMemberships' },
+    { rows: users, label: 'user', idCol: 'user_id', emailCol: 'email', orgCol: 'org_id', roleCol: 'roles', name: 'b2b/users.csv', via: 'provisionContactLogins' },
+    { rows: wlUsers, label: 'wl-user', idCol: 'user_id', emailCol: 'email', orgCol: 'org_id', roleCol: 'roles', name: 'white-labeling/users.csv', via: 'seedInlineOrgUsers' },
+  ];
+  let totalDeclared = 0, totalCreating = 0, missingColumn = 0;
+  const coveredOverall = new Set();
+  for (const src of SOURCES) {
+    if (!src.rows.length) { warn(`${src.name}: no rows — skipping`); continue; }
+    if (!src.rows.some((r) => r[STATUS_COLUMN] !== undefined)) {
+      // NOT cosmetic: the seeder passes null for a source that cannot declare a status, and null is
+      // now enforced on reconcile — so a missing column means every re-seed force-resets a real
+      // status to null on that source's memberships, with no way to express otherwise.
+      fail(`${src.name} (→ ${src.via}) creates OrganizationMemberships but has NO ${STATUS_COLUMN} column — the seeder would force every one of its memberships to status=null on each re-seed with no way to declare otherwise. Add the trailing column and declare a concrete status on every membership-creating row.`);
+      missingColumn++;
+      continue;
+    }
+    const { problems: statusErrs, blocking } = findStatusProblems(src.rows, src);
+    for (const e of statusErrs) fail(`${src.name}: ${e}`);
+    for (const b of blocking) warn(`${src.name}: ${b}`);
+
+    const creating = src.rows.filter((r) => rowCreatesMembership(r, src.roleCol));
+    const declared = creating.filter((r) => (r[STATUS_COLUMN] || '').trim()).length;
+    totalDeclared += declared;
+    totalCreating += creating.length;
+    const cov = statusCoverage(src.rows, src.roleCol);
+    for (const s of cov.covered) coveredOverall.add(s);
+    if (!statusErrs.length) {
+      console.log(`    · ${src.name} (→ ${src.via}): ${declared}/${creating.length} membership-creating row(s) declare a status; ${src.rows.length - creating.length} row(s) create none (status correctly blank) — ${cov.covered.map((s) => `${s}×${cov.counts[s]}`).join(', ') || 'none'}`);
+    }
+  }
+
+  // Fixture-set coverage over the legal vocabulary. Informational (a single source need not carry all
+  // four), but a set that only ever says `Approved` cannot exercise MembershipStatuses.IsBlocking at
+  // all — that is a coverage hole worth naming rather than discovering during a run.
+  const missingOverall = MANUALLY_SELECTABLE_STATUSES.filter((s) => !coveredOverall.has(s));
+  if (missingOverall.length) warn(`no fixture anywhere declares ${STATUS_COLUMN} = ${missingOverall.join(', ')} — the blocking/reinvitable branches of that value have no seeded representative`);
+  else ok(`every legal status has a seeded representative across the three sources: ${MANUALLY_SELECTABLE_STATUSES.join(', ')}`);
+
+  if (!missingColumn && !problems.length) {
+    ok(`${totalDeclared}/${totalCreating} membership-creating row(s) declare a CONCRETE ${STATUS_COLUMN} — no seeded membership inherits its status by omission. Legal set: ${MANUALLY_SELECTABLE_STATUSES.join(', ')} (${STATUS_SOURCE_REF})`);
   }
 }
 

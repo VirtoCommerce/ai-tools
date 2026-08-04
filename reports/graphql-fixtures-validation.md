@@ -1,8 +1,18 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-07-20T16:17:19.979Z
+**Validated at:** 2026-08-03T16:24:16.964Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 72 fixtures — 72 passed, 0 failed
+**Total:** 73 fixtures — 72 passed, 1 failed
+
+## ❌ Failed Fixtures (1)
+
+### salesRepOrderStatuses (query)
+
+- **Path:** `test-data/graphql/queries/salesRepOrderStatuses.graphql`
+- **Role:** SALES_REP
+- **Purpose:** Store's configured order statuses with localized labels, for the Orders section status-filter chips
+- **Errors:**
+  - `DV-006`: Cannot query field "salesRepOrderStatuses" on type "Query". Did you mean "salesRepOrderSortRules", "salesRepOrderFilterRules", "salesRepOrders", or "orderStatuses"?
 
 ## ✅ Passed Fixtures (72)
 
@@ -48,6 +58,7 @@
 | order-detail-full | query | ORG_USER | orders | ORDER_NUMBER (String) | 2026-07-13 | 3 noted |
 | orders-list | query | ORG_USER | orders | (none) | 2026-07-13 | 1 noted |
 | organization | query | ORG_USER | profile | ORG_ID (String) | 2026-07-13 | 1 noted |
+| pageContext | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-08-03 | 1 noted |
 | pages | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-07-13 | 1 noted |
 | pickupLocations | query | PUBLIC | pickup | (none) | 2026-07-13 | 1 noted |
 | product | query | PUBLIC or ORG_USER | catalog | PRODUCT_ID (String), STORE_ID (String) | 2026-07-13 | 1 noted |
@@ -64,7 +75,6 @@
 | salesRepCustomer | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-07-17 | 1 noted |
 | salesRepCustomers | query | SALES_REP | sales-rep | (none) | 2026-07-17 | 1 noted |
 | salesRepOrders | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-07-17 | 1 noted |
-| salesRepOrderStatuses | query | SALES_REP | sales-rep | (none) | 2026-07-17 | 1 noted |
 | selectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 2 noted |
 | selectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
 | selectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
@@ -205,6 +215,9 @@
 
 **organization**:
 - (none)
+
+**pageContext**:
+- called anonymously (no Bearer token), pageContext.user returns a fresh session-anonymous user GUID per request — the userId arg is a resolver session hint, NOT an authoritative id echoed back. Assert structural invariants (non-null, valid GUID), not userId equality.
 
 **pages**:
 - (none)

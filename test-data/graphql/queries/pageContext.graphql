@@ -1,0 +1,45 @@
+# name: pageContext
+# category: cms
+# role: PUBLIC or ORG_USER
+# purpose: Resolve the storefront page context for a permalink — store, resolved slug entity, current user, and white-labeling settings (the payload vc-frontend loads per route)
+# required-vars: STORE_ID (String)
+# optional-vars: STOREFRONT_DOMAIN (String), TEST_USER_ID (String)
+# last-validated: 2026-08-03
+# known-issues: called anonymously (no Bearer token), pageContext.user returns a fresh session-anonymous user GUID per request — the userId arg is a resolver session hint, NOT an authoritative id echoed back. Assert structural invariants (non-null, valid GUID), not userId equality.
+# gql-vars: { "permalink": "String!", "domain": "String", "userId": "String", "cultureName": "String" }
+# runner-note: Pass permalink/domain/userId/cultureName via [GQL-VARS label] JSON, e.g. {"permalink": "/", "domain": "vcst-qa-storefront.govirto.com", "userId": "{{TEST_USER_ID}}", "cultureName": "en-US"}. slugInfo.entityInfo.objectType reflects what the permalink resolves to (ContentFile for home, Catalog for /catalog, etc.). Anonymous (no userId) still resolves store + slugInfo.
+# example-vars: {"permalink": "/", "domain": "vcst-qa-storefront.govirto.com", "cultureName": "en-US"}
+
+query PageContext($permalink: String!, $domain: String, $userId: String, $cultureName: String) {
+  pageContext(
+    storeId: "{{STORE_ID}}"
+    domain: $domain
+    permalink: $permalink
+    userId: $userId
+    cultureName: $cultureName
+  ) {
+    store {
+      storeId
+      storeName
+    }
+    slugInfo {
+      redirectUrl
+      entityInfo {
+        objectType
+        id
+        semanticUrl
+      }
+    }
+    user {
+      id
+      userName
+      email
+      memberId
+    }
+    whiteLabelingSettings {
+      footerLinks {
+        title
+      }
+    }
+  }
+}

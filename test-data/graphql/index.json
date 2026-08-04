@@ -2,7 +2,7 @@
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
   "lastValidated": "2026-07-17",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 72,
+  "totalFixtures": 73,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -144,6 +144,25 @@
       "requiredVars": ["STORE_ID"],
       "gqlVars": { "keyword": "String!", "first": "Int", "after": "String" },
       "exampleVars": { "first": 10, "keyword": "" }
+    },
+    "pageContext": {
+      "path": "queries/pageContext.graphql",
+      "category": "cms",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID"],
+      "gqlVars": {
+        "permalink": "String!",
+        "domain": "String",
+        "userId": "String",
+        "cultureName": "String"
+      },
+      "runnerNote": "Pass variables via [GQL-VARS label] JSON. permalink is mandatory; slugInfo.entityInfo.objectType reflects what the permalink resolves to (ContentFile for home, Catalog for /catalog). Anonymous (no userId) still resolves store + slugInfo.",
+      "exampleVars": {
+        "permalink": "/",
+        "domain": "vcst-qa-storefront.govirto.com",
+        "cultureName": "en-US"
+      },
+      "usedBy": ["CMS-GQL-123", "CMS-GQL-126"]
     },
     "cart": {
       "path": "queries/cart.graphql",

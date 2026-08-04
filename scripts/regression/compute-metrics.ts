@@ -19,11 +19,21 @@
  * verdict honest about what was measured vs. supplied.
  *
  * Usage:
- *   npx tsx scripts/compute-metrics.ts [--history <path>] [--suite <id>]
- *       [--since <ISO>] [--gate smoke|sprint|release|hotfix]
+ *   npx tsx scripts/regression/compute-metrics.ts [--history <path>]
+ *       [--run-id <RUN_ID>] [--suites <id,id,...>] [--suite <id>] [--since <ISO>]
+ *       [--gate smoke|sprint|release|hotfix|feature]
  *       [--p0-bugs N] [--p1-bugs N] [--json]
  *
- * Exit: 0 unless --gate yields BLOCKED/FAIL (then 1), so it can gate CI.
+ * SCOPE. Unscoped, every number aggregates the whole rolling history. `--gate feature`
+ * (quality-gates.md §1a) is defined on ONE change-scoped run, so it REFUSES to run
+ * unscoped — pass `--run-id <summary.json regression.run_id>` (preferred) or
+ * `--suites <regression.suites>`. Without that guard it silently returned the global
+ * pass rate, identical for every feature.
+ *
+ * Exit: 0 = evaluated, gate not blocking · 1 = gate BLOCKED/FAIL/NO-GO, or bad
+ * arguments · 2 = CANNOT EVALUATE (no entries in scope: the run was deferred,
+ * skipped, or never recorded). 2 is deliberately distinct from 1 — an absent run
+ * is not a failing pass rate, and must never be reported as a regression failure.
  */
 import { readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
@@ -157,8 +167,36 @@ export function trends(entries: RunEntry[]): SuiteTrend[] {
   return out;
 }
 
-type GateType = "smoke" | "sprint" | "release" | "hotfix";
-type Verdict = "PASS" | "FAIL" | "APPROVED" | "APPROVED WITH CONDITIONS" | "BLOCKED";
+export const GATE_TYPES = ["smoke", "sprint", "release", "hotfix", "feature"] as const;
+type GateType = (typeof GATE_TYPES)[number];
+
+/**
+ * An unknown --gate string must NOT fall through to the sprint/release branch:
+ * `--gate featrue` used to print "Gate (featrue): BLOCKED" against SPRINT
+ * thresholds and exit 1, i.e. a typo produced a confident wrong verdict instead
+ * of an error. Callers are agents copying a documented command line, so the
+ * cheap typo is the likely one.
+ */
+export const isGateType = (v: string): v is GateType => (GATE_TYPES as readonly string[]).includes(v);
+
+/**
+ * Gates whose criteria are defined on a SPECIFIC run's suites, not on the
+ * rolling history. `feature` (quality-gates.md §1a) keys off the change-scoped
+ * Artifact-C run recorded in `summary.json` `regression.run_id`; computing it
+ * over the whole 90-day window returns a number that has nothing to do with the
+ * feature under test (and is identical for every feature), so scoping is
+ * REQUIRED rather than optional.
+ */
+export const SCOPE_REQUIRED_GATES: readonly GateType[] = ["feature"];
+type Verdict =
+  | "PASS"
+  | "FAIL"
+  | "APPROVED"
+  | "APPROVED WITH CONDITIONS"
+  | "BLOCKED"
+  | "GO"
+  | "CONDITIONAL GO"
+  | "NO-GO";
 
 export interface GateResult {
   gate: GateType;
@@ -194,6 +232,25 @@ export function evaluateGate(
       if (pr < 95) reasons.push(`affected-area pass rate ${pr}% < 95%`);
       if (p0Bugs > 0) reasons.push(`${p0Bugs} open P0 bug(s) in hotfix area`);
     }
+  } else if (gate === "feature") {
+    // Feature Release Gate (quality-gates.md §1a) — per-feature GO / CONDITIONAL GO / NO-GO.
+    // pr = change-scoped (Artifact-C) regression pass rate; p0/p1 = open IN-SCOPE bug counts.
+    // This computes ONLY the pass-rate + bug-count math; the qualitative §1a criteria (AC coverage,
+    // BL-* preserved, NFRs, smoke, /qa-test verdict, security) stay agent-judged and are combined by the
+    // Step-6h verifier. GO floor 95%, conditional band 93-95%, any open P0 or <93% => NO-GO.
+    if (p0Bugs > 0) {
+      verdict = "NO-GO";
+      reasons.push(`${p0Bugs} open in-scope P0 bug(s) (non-negotiable)`);
+    } else if (pr < 93) {
+      verdict = "NO-GO";
+      reasons.push(`change-scoped regression ${pr}% < 93% floor`);
+    } else if (pr >= 95 && p1Bugs === 0) {
+      verdict = "GO";
+    } else {
+      verdict = "CONDITIONAL GO";
+      if (pr < 95) reasons.push(`regression ${pr}% in conditional band (93-94.99%) — risk acceptance required`);
+      if (p1Bugs > 0) reasons.push(`${p1Bugs} open in-scope P1 bug(s) — documented workaround + risk acceptance required`);
+    }
   } else {
     // sprint / release share the same shape, different thresholds.
     const approveAt = gate === "release" ? 98 : 95;
@@ -227,11 +284,15 @@ function parseArgs(argv: string[]) {
     const i = argv.indexOf(flag);
     return i !== -1 ? argv[i + 1] : undefined;
   };
+  const suites = get("--suites");
   return {
     history: get("--history") ?? "reports/regression/history.json",
     suite: get("--suite"),
+    // Multi-suite scope (e.g. a /qa-test Artifact-C selection: --suites 028,029,030).
+    suiteIds: suites ? suites.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
+    runId: get("--run-id"),
     since: get("--since"),
-    gate: get("--gate") as GateType | undefined,
+    gate: get("--gate"),
     p0Bugs: Number(get("--p0-bugs") ?? 0),
     p1Bugs: Number(get("--p1-bugs") ?? 0),
     json: argv.includes("--json"),
@@ -240,6 +301,30 @@ function parseArgs(argv: string[]) {
 
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
+
+  if (args.gate !== undefined && !isGateType(args.gate)) {
+    console.error(
+      `✗ Unknown --gate "${args.gate}". Valid: ${GATE_TYPES.join(" | ")}.\n` +
+        `  (Refusing to evaluate — an unrecognised gate previously fell through to the sprint\n` +
+        `  thresholds and printed a confident verdict for a gate that does not exist.)`,
+    );
+    process.exit(1);
+  }
+  const gateType: GateType | undefined = args.gate as GateType | undefined;
+
+  // A scope-required gate (feature) must be pinned to its own run before any number is computed.
+  const scoped = !!(args.runId || args.suiteIds || args.suite);
+  if (gateType && SCOPE_REQUIRED_GATES.includes(gateType) && !scoped) {
+    console.error(
+      `✗ --gate ${gateType} requires a run scope.\n` +
+        `  This gate is defined on the CHANGE-SCOPED regression run, not the rolling history —\n` +
+        `  unscoped it aggregates every suite in ${args.history} and returns the same number for\n` +
+        `  every feature. Pass the run recorded by /qa-test in summary.json:\n` +
+        `    --run-id <regression.run_id>            (preferred)\n` +
+        `    --suites <regression.suites, e.g. 028,029,030>`,
+    );
+    process.exit(1);
+  }
 
   if (!existsSync(args.history)) {
     console.error(
@@ -259,24 +344,51 @@ function main(): void {
     process.exit(1);
   }
 
-  if (args.suite) entries = entries.filter((e) => e.suiteId === args.suite);
-  if (args.since) entries = entries.filter((e) => e.date >= args.since!);
+  const scopeLabel: string[] = [];
+  if (args.runId) {
+    entries = entries.filter((e) => e.runId === args.runId);
+    scopeLabel.push(`run ${args.runId}`);
+  }
+  if (args.suiteIds) {
+    entries = entries.filter((e) => args.suiteIds!.includes(e.suiteId));
+    scopeLabel.push(`suites ${args.suiteIds.join(",")}`);
+  }
+  if (args.suite) {
+    entries = entries.filter((e) => e.suiteId === args.suite);
+    scopeLabel.push(`suite ${args.suite}`);
+  }
+  if (args.since) {
+    entries = entries.filter((e) => e.date >= args.since!);
+    scopeLabel.push(`since ${args.since}`);
+  }
 
   if (entries.length === 0) {
-    console.error("✗ No run entries after filtering.");
-    process.exit(1);
+    // CANNOT EVALUATE ≠ FAILED. An empty scope means the run was deferred, skipped, or never
+    // written to history — NOT that its pass rate was 0%. Aggregating on to a 0% pass rate would
+    // hand the caller a NO-GO/BLOCKED that looks exactly like a catastrophic regression. Exit 2
+    // (distinct from the gate-failure 1) so a caller can tell the two apart.
+    console.error(
+      `✗ Cannot evaluate: no run entries in ${args.history}` +
+        (scopeLabel.length ? ` for ${scopeLabel.join(" + ")}` : "") +
+        `.\n  This is NOT a failing pass rate — the run is absent (deferred, skipped, or not yet\n` +
+        `  recorded). Report the gate as NOT EVALUATED; do not read it as a regression failure.`,
+    );
+    process.exit(2);
   }
 
   const agg = aggregate(entries);
   const trend = trends(entries);
-  const gate = args.gate ? evaluateGate(args.gate, agg, args.p0Bugs, args.p1Bugs) : null;
+  const gate = gateType ? evaluateGate(gateType, agg, args.p0Bugs, args.p1Bugs) : null;
 
-  const blocking = gate ? gate.verdict === "BLOCKED" || gate.verdict === "FAIL" : false;
+  const blocking = gate
+    ? gate.verdict === "BLOCKED" || gate.verdict === "FAIL" || gate.verdict === "NO-GO"
+    : false;
 
   if (args.json) {
-    console.log(JSON.stringify({ source: args.history, entries: entries.length, aggregate: agg, trends: trend, gate }, null, 2));
+    console.log(JSON.stringify({ source: args.history, scope: scopeLabel.length ? scopeLabel.join(" + ") : "all", entries: entries.length, aggregate: agg, trends: trend, gate }, null, 2));
   } else {
-    console.log(`\nQuality metrics — ${args.history} (${entries.length} run entr${entries.length === 1 ? "y" : "ies"})`);
+    console.log(`\nQuality metrics — ${args.history} (${entries.length} run entr${entries.length === 1 ? "y" : "ies"}` +
+      `${scopeLabel.length ? `, scope: ${scopeLabel.join(" + ")}` : ", scope: all"})`);
     console.log(`  Execution: ${agg.passed}P / ${agg.failed}F / ${agg.blocked}B / ${agg.skipped}S of ${agg.planned} planned`);
     console.log(`  Pass ${agg.passRate}%  Fail ${agg.failRate}%  Blocked ${agg.blockedRate}%  Skip ${agg.skipRate}%` +
       (agg.velocityPerHour != null ? `  Velocity ${agg.velocityPerHour}/hr` : ""));

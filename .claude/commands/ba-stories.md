@@ -21,7 +21,7 @@ Generate Agile user stories with full BDD acceptance criteria for a specific fea
 
 ## Review mode (`--review VCST-XXXX`)
 
-Backlog-grooming / pre-test entry to `ba-story-writer` **Mode B**. Use it to harden a story's ACs before development or before `/qa-test` (which calls the same review inline at its Step 1b).
+Backlog-grooming / pre-test entry to `ba-story-writer` **Mode B**. Use it to harden a story's ACs before development or before `/qa-test` (which calls the same review inline at its Step 1d).
 
 1. Fetch the ticket via Atlassian MCP (`getJiraIssue`) — summary, description, ACs, components, linked PR. If Atlassian MCP is unavailable, ask the user to paste the story + ACs.
 2. Identify the affected domain(s) → pass as `domains` so the BA loads the right `BL-*`/`ECL-*` sets.
