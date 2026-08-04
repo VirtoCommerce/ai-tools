@@ -66,6 +66,25 @@ prefix; `gh auth status` confirms write scope). Azure Repos / Boards: `ADO_PAT` 
 (`ADO_AUTH=az-login`). The platform upstream is **always GitHub** (public repos), so a platform fork-PR
 or upstream issue uses `gh` even when the client's own code lives on Azure Repos.
 
+**One credential, and its KIND is part of the auth fact** (VCST-5582 A). The recommended setup is
+**ONE classic PAT with the `repo` scope** (or an ambient `gh auth login` session): it covers both
+the client's own repos and the upstream rows above, so onboarding asks for a single value. The
+upstream rows — **fork-PR** and **upstream Issue** — are reachable ONLY by a classic PAT
+(`public_repo` suffices for the upstream half alone; `repo` is what also covers private client
+repos). A **fine-grained** PAT
+is bound to a single resource owner and is READ-ONLY on public repos it does not own (GitHub: *"Only
+personal access tokens (classic) have write access for public repositories that are not owned by
+you…"*), so it authenticates, reads `VirtoCommerce/*`, is classified `contributionMode: "fork"`, and
+then 403s at fork / push / issue-create. `/project-init` probes the kind
+(`probe-lib.classifyGithubTokenKind`) and persists it as **`vcs.githubTokenKind`** +
+**`vcs.githubForkCapable`**; **G1 STOPs before clone** when a fork/issue plan meets anything other
+than `githubForkCapable === "yes"` (`""`/`"unknown"` counts as NOT capable), and `/vc-self-check
+deliver`'s `resolveRoute` never routes `fork-pr` without a proven capability. Splitting into two
+tokens — `gh auth login` upstream + a fine-grained token (Contents + Pull requests + Issues =
+Read/Write, resource owner = that org) for the client's own repos — is the **exception**, for an
+organization whose policy forbids classic PATs or a least-privilege requirement; both axes still
+work, it is just two things to create instead of one.
+
 ### Gate 1b — frontend provenance (a client storefront is a vc-frontend fork)
 
 `repoOwnership` routes by repo, but a **client storefront fork** contains both client-customized files

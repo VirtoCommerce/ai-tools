@@ -26,6 +26,9 @@
  * @property {"virto-engineer"|"client"|"ask"} operator
  * @property {{kind:"jira"|"azure", baseUrl:string, projectKey:string,
  *   ticketKeyFormat:"prefixed"|"numeric", crossLinkToken:string,
+ *   fields:Record<string, Array<{ref:string,name:string,required:boolean,type:string,
+ *     allowedValues?:string[],defaultValue?:string}>>,
+ *   fieldMap:Record<string,string>, fieldDefaults:Record<string,string>,
  *   azure:{organization:string, project:string, team:string, apiBase:string,
  *   projectId:string, stateMap:Record<string,string>,
  *   workItemTypes:Record<string,object>,
@@ -33,7 +36,9 @@
  *   transitionPolicy:"auto"|"confirm-once"|"ask",
  *   qaRoleStatesComplete:boolean}}} tracker
  * @property {{clientHost:"github"|"azure-repos", clientOrg:string,
- *   azure:{organization:string, project:string}, auth:"gh-cli"|"pat"|"az-login"}} vcs
+ *   azure:{organization:string, project:string}, auth:"gh-cli"|"pat"|"az-login",
+ *   authEnv:string, githubTokenKind:""|"classic"|"fine-grained"|"gh-cli"|"none",
+ *   githubForkCapable:""|"yes"|"no"|"unknown"}} vcs
  * @property {{host:"github", org:string, fileIssues:boolean,
  *   contributionMode:"fork"|"direct", clientGithubAccount:string}} upstream
  * @property {{client:Array<ClientRepo>, platform:Array<object>}} repos
@@ -119,6 +124,30 @@ export const PROFILE_DEFAULTS = {
     //   "prefixed" = Jira `ABC-123`; "numeric" = Azure Boards bare `12345` (+ crossLinkToken "AB#").
     ticketKeyFormat: "prefixed",
     crossLinkToken: "",
+    // ─── the per-ORGANIZATION bug FIELD CONTRACT (VCST-5582 E) ─────────────────────────
+    // `fields` is DISCOVERED (by /project-init's discover-tracker.mjs scan), `fieldMap` is
+    // OPERATOR-OWNED. Together they replace the hardcoded `Custom.Environment` /
+    // `Custom.Reportedby` / `Custom.Typeofbug` set that only ever existed in one org's process
+    // (and was rejected or silently blank on every other one, while THAT process's required
+    // fields went unfilled).
+    //
+    //   fields:   { "<WorkItemType>": [ { ref, name, required, type,
+    //                                     allowedValues?, defaultValue? } ] }
+    //             `type` (html / plainText / string / picklistString / identity / treePath /
+    //             integer) makes the HTML decision DERIVED, not asserted. EMPTY ⇒ metadata was
+    //             unreachable ⇒ the create path falls back to the legacy field set, clearly
+    //             labelled "unverified defaults" (the E-f fallback ladder).
+    //   fieldMap: { "<semantic slot>": "<field ref>" } — the operator's LAST WORD, applied on
+    //             top of auto-matching. Also where an answer to "which field is Environment?"
+    //             is persisted, so it is asked exactly ONCE per deployment. Slots:
+    //             title/body/repro/expected/actual/severity/priority/environment/bugType/
+    //             reportedBy/systemInfo/foundIn/sprint/assignee/tags (see
+    //             skills/qa-fix-routing/bug-contract.mjs BUG_SLOTS).
+    //   fieldDefaults: { "<field ref>": "<value>" } — per-deployment CONSTANTS the operator
+    //             confirmed once (e.g. Environment = QA). A stored default, never a per-bug guess.
+    fields: {},
+    fieldMap: {},
+    fieldDefaults: {},
     azure: {
       organization: "",
       project: "",
@@ -137,6 +166,10 @@ export const PROFILE_DEFAULTS = {
       // No auto-migration: a profile generated before the QA roles / heuristic existed keeps
       // its old map until /project-init (discover-tracker) is re-run to refresh it.
       roleStates: {},
+      // Fix-side completeness signal (in-progress/in-review/ready-for-test/done all found by the
+      // discover-tracker scan). Baked as a canonical boolean under tracker.azure.* so readers do
+      // not have to re-derive it from transitionPolicy or the map (VCST-5582 E3). Defaults false.
+      roleStatesComplete: false,
       // "auto" = transition silently by role (log only); "confirm-once" = one upfront ok;
       // "ask" = ask before each transition (the original conservative behaviour).
       transitionPolicy: "ask",
@@ -157,6 +190,19 @@ export const PROFILE_DEFAULTS = {
     // authEnv: which env var carries the WRITE credential for the client host
     //   (github PAT ⇒ "GITHUB_FIX_BUGS_TOKEN"; azure-repos ⇒ "ADO_PAT"; empty ⇒ session/gh-cli).
     authEnv: "",
+    // githubTokenKind / githubForkCapable — the PROBED kind of the GitHub credential
+    // (VCST-5582 A), written by /project-init from probe-lib.classifyGithubTokenKind().
+    //   githubTokenKind:   "" (unprobed) | "classic" | "fine-grained" | "gh-cli" | "none"
+    //   githubForkCapable: "" (unprobed) | "yes" | "no" | "unknown"
+    // WHY this is stored next to contributionMode: `contributionMode: "fork"` says WHERE a
+    // platform PR should go, not whether this credential CAN get it there. A fine-grained PAT
+    // is bound to one resource owner and is read-only on public repos it does not own, so it
+    // authenticates, reads vc-platform as pull(read-only), is classified "fork", and then 403s
+    // at fork/push/issue-create time. With the kind persisted, /qa-fix Gate 1 and
+    // /vc-self-check deliver refuse an impossible route UP FRONT. Empty = never probed ⇒
+    // consumers must treat it as unknown, never as capable.
+    githubTokenKind: "",
+    githubForkCapable: "",
   },
   upstream: {
     host: "github",

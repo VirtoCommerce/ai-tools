@@ -115,7 +115,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 const PLAYWRIGHT_MCP = {
   "playwright-chrome": {
     command: "npx",
-    args: ["@playwright/mcp@latest", "--config", "ci/config/mcp-playwright-chrome.ci.json"],
+    args: ["@playwright/mcp@0.0.77", "--config", "ci/config/mcp-playwright-chrome.ci.json"],
   },
 };
 

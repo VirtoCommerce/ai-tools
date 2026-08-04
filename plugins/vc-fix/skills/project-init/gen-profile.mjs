@@ -38,6 +38,12 @@ import { resolve } from "path";
 import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 
+// A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
+// System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
+// CLOSED sprint once it rolls over (VCST-5582 A3) — never bake it. The *Path is stored instead and
+// iteration resolves at create time via `--iteration current`.
+const ILLEGAL_FIELDDEFAULT_REF = /(^|\.)(iteration|area)id$/i;
+
 const ENUMS = {
   "project-type": ["platform", "client"],
   operator: ["virto-engineer", "client", "ask"],
@@ -135,6 +141,12 @@ function main() {
   set("vcs.azure.organization", args["azure-org"]);
   set("vcs.azure.project", args["azure-project"]);
   set("vcs.auth", args["vcs-auth"]);
+  // The PROBED GitHub token kind (VCST-5582 A) — derive-context.mjs `github.tokenKind` /
+  // `github.forkCapable`. Stored so /qa-fix Gate 1 and /vc-self-check deliver can refuse an
+  // impossible upstream route instead of discovering it at push time. Unset ⇒ left "" (unprobed),
+  // which every consumer must read as "unknown", never as capable.
+  set("vcs.githubTokenKind", args["github-token-kind"]);
+  set("vcs.githubForkCapable", args["github-fork-capable"]);
   set("upstream.org", args["upstream-org"]);
   set("upstream.contributionMode", args["contribution-mode"]);
   set("upstream.clientGithubAccount", args["upstream-account"]);
@@ -207,6 +219,11 @@ function main() {
       if (t.projectId) set("tracker.azure.projectId", t.projectId);
       if (t.workItemTypes) set("tracker.azure.workItemTypes", t.workItemTypes);
       if (t.roleStates) set("tracker.azure.roleStates", t.roleStates);
+      // Bake the fix-side completeness as a CANONICAL boolean under tracker.azure.* (the same
+      // nested convention as roleStates / qaRoleStatesComplete) so readers — assert-profile.mjs,
+      // any future consumer — have one explicit field instead of re-deriving it from transitionPolicy
+      // or the map (VCST-5582 E3).
+      if (t.roleStatesComplete !== undefined) set("tracker.azure.roleStatesComplete", t.roleStatesComplete);
       // Default to silent role-based transitions ONLY when discover-tracker.mjs found a
       // state for every lifecycle role. A partial map (e.g. no distinct "in-review" state
       // was found) must keep "ask" — /qa-fix would otherwise transition a missing role
@@ -218,6 +235,21 @@ function main() {
       // completeness that unlocks "auto". Bake it so /qa-verify-fix can gate its OWN
       // auto-transition behavior on QA-role confidence, independent of the fix-side policy.
       if (t.qaRoleStatesComplete !== undefined) set("tracker.azure.qaRoleStatesComplete", t.qaRoleStatesComplete);
+      // Per-type BUG FIELD CONTRACT (VCST-5582 E-a): what THIS organization's process actually
+      // has, requires, and allows — so /qa-bug builds the payload from data instead of the
+      // hardcoded Custom.* set of one org. `tracker.fieldMap` stays an OPERATOR-owned override
+      // (never written from the scan) and is applied on top at create time.
+      if (t.fields && Object.keys(t.fields).length) set("tracker.fields", t.fields);
+      // A3 — a fieldDefaults carried by the scan is FILTERED: a time-varying sprint/area node id
+      // (System.IterationId / System.AreaId) is never persisted (see ILLEGAL_FIELDDEFAULT_REF). The
+      // guard mirrors reconcile-profile's `--set` guard so neither write path can plant the time bomb.
+      if (t.fieldDefaults && typeof t.fieldDefaults === "object" && !Array.isArray(t.fieldDefaults)) {
+        const clean = {};
+        for (const [ref, val] of Object.entries(t.fieldDefaults)) {
+          if (!ILLEGAL_FIELDDEFAULT_REF.test(ref)) clean[ref] = val;
+        }
+        if (Object.keys(clean).length) set("tracker.fieldDefaults", clean);
+      }
     } catch (err) {
       fail(`--tracker-json: cannot read ${args["tracker-json"]}: ${err.message}`);
     }
@@ -260,7 +292,8 @@ function main() {
   console.log(
     `[gen-profile] projectType=${profile.projectType} tracker=${profile.tracker.kind} ` +
       `clientVcs=${profile.vcs.clientHost} upstream=${profile.upstream.org} ` +
-      `contributionMode=${profile.upstream.contributionMode}`,
+      `contributionMode=${profile.upstream.contributionMode}` +
+      (profile.vcs.githubTokenKind ? ` githubToken=${profile.vcs.githubTokenKind}/${profile.vcs.githubForkCapable || "unknown"}` : ""),
   );
   if (args.print) console.log(JSON.stringify(withMeta, null, 2));
 }

@@ -216,6 +216,18 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   shows write), or Azure Repos (`GET {base}/_apis/git/repositories/<repo>` returns JSON, not the 203+HTML
   sign-in). Missing/insufficient → STOP before clone. (`tracker-ops.md` §3–4; native platform resolves to
   the original `GITHUB_FIX_BUGS_TOKEN` + `VirtoCommerce/<repo>` probe.)
+- **Upstream token-KIND preflight — only when the plan is a FORK-PR or an upstream Issue** (i.e.
+  `contributionPlan(routeRepo).mode === "fork"`, or a Gate-0 upstream Issue). Read
+  `profile.vcs.githubForkCapable`: anything other than `"yes"` ⇒ **STOP before clone** and print
+  `profile.vcs.githubTokenKind` + the remedy. A **fine-grained** PAT authenticates and READS
+  `VirtoCommerce/*` perfectly while being structurally unable to fork it — GitHub: *"Only personal
+  access tokens (classic) have write access for public repositories that are not owned by you…"* — so
+  the push-permission probe above passes and the run only dies at fork/push time (VCST-5582 A). The
+  remedy: **ONE classic token with the `repo` scope** — the recommended single credential, it covers
+  the client's own repos too — or an ambient `gh auth login` session. `""`/`"unknown"` (never probed)
+  is treated as NOT capable — re-run `/project-init --check` to probe it. A **client-repo direct** PR
+  is unaffected: a fine-grained token scoped to that org works there, it just cannot serve the
+  upstream half as well.
 - On PASS: transition the ticket to the **in-progress** role state (Jira: discover the transition live via
   `getTransitionsForJiraIssue`, don't hardcode "Take to development"; Azure Boards: set `System.State` to
   `profile.tracker.azure.roleStates["in-progress"]` via `ado.mjs transition`). **Follow

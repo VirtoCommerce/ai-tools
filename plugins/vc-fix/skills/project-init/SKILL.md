@@ -39,8 +39,9 @@ platform) and to the correct bug tracker.
 ## Pipeline
 
 ```
-0 preconditions (confirm dir · self-diagnostics consent FIRST + write flag · install) → 2 interview (env name · tracker · code host · auth pref · upstream-feedback consent)
+0 preconditions (confirm dir · BOTH self-diagnostics consents FIRST + write flag · install) → 2 interview (env name · tracker · code host · auth pref)
 → 3 scaffold BOTH env templates + operator fills + pause
+→ 3d normalize + validate the filled .env.<env> (normalize-env) — STOP on exit 1
 → 4 discover repos (ALWAYS) → projectType · clientOrg · repo split · storefront
 → 4b discover tracker (Azure) → per-type states · role→state map · apiBase · projectId
 → 5 derive block (derive-context) → auth-fact · contributionMode · forkAccount · operator
@@ -51,6 +52,98 @@ platform) and to the correct bug tracker.
 All scripts live in the plugin's own `skills/project-init/` directory and are
 **non-interactive** — you (the model) collect the interview answers, run the scan +
 derive scripts, then call the writers with the results as flags.
+
+### Output discipline — the operator is onboarding, not reading a report
+
+Onboarding is the operator's FIRST contact with the plugin. Every extra table teaches them that
+this tool is heavy, and it buries the two or three things they actually have to decide. Three
+rules, applied at every step:
+
+1. **A question goes immediately after the thing it asks about.** Never table → table → table →
+   question: the operator has to scroll back, so they approve unread. One table, one question,
+   nothing in between.
+2. **Show what the operator can DECIDE. Summarise what they cannot.** A scan result they can
+   correct earns a table. A derived fact (a token's permission, an API base, a state map that
+   resolved cleanly) earns ONE line — or nothing. Internals that only feed `/qa-fix`
+   (`apiBase`, `projectId`, `forkAccount`, `upstreamRef`, local-verify commands) go into the
+   profile, not onto the screen.
+3. **Exceptions get the space, happy paths get a line.** Anything that resolved cleanly is one
+   line; anything WARN/missing/unverified gets its own line or small table and says what to do.
+   That contrast is what makes a real problem visible.
+
+Never print the same fact twice in two shapes (a "provenance" table repeating a Notes column, a
+role grid restating "all roles mapped"). If it is already on screen, reference it.
+
+### Output FORMAT — two shapes, used consistently
+
+Two client-side constraints decide this format; both were confirmed on a live run, not assumed:
+
+- **Colour is unavailable.** This output is Markdown and the client paints it — an ANSI escape
+  never reaches the screen.
+- **`---` does NOT render as a rule** in the Claude Code terminal — it prints as three literal
+  dashes. Do not use it as a separator. **Box-drawing characters always render**, because they
+  are ordinary text, not markup.
+- **Markdown collapses adjacent lines into one paragraph**, so a multi-line frame only survives
+  inside a fenced code block — which is also what gives it a real border on both surfaces.
+
+Reliable everywhere: box-drawing (`┌─┐│└┘`), CAPS, **bold**, `code`, emoji, fenced blocks.
+
+**1. Step header — a framed, iconed, CAPS name in a fenced block.**
+
+````markdown
+```
+┌──────────────────────────────┐
+│  ⚙   ENVIRONMENT NAME        │
+└──────────────────────────────┘
+```
+````
+
+- Size the frame to the text (a couple of spaces of padding); do not pad to a fixed width — a
+  long step name in a narrow box wraps and the frame breaks.
+- **The frame replaces the separator.** It already stops the eye, so no rule is needed above it.
+- **Icon per step kind** — one consistent glyph, so a returning operator recognises the phase
+  before reading it:
+
+  | Icon | Step kind | Examples |
+  |---|---|---|
+  | 📁 | preconditions / where things land | confirm directory |
+  | 🔒 | consent + credentials | self-diagnostics consents, auth preference |
+  | ⚙ | interview / configuration | environment name, tracker + code host |
+  | 📝 | generating files | env templates, profile, `.mcp.json` |
+  | 🔍 | scanning / deriving | repo split, tracker states, derive block |
+  | ✅ | verification | readiness table |
+  | 🎉 | finished | the wrap-up |
+
+- **No step numbers.** `2a` / `4b` / `0c` are THIS file's internal numbering; they mean nothing
+  to the operator. (They stay here in the doc — the model and the reviewer navigate by them.)
+
+**2. A question asked in PLAIN CHAT — question first, WAITING last.**
+
+```markdown
+**What should this environment be named?**
+
+It becomes `TEST_ENV` and the suffix of the env file (`.env.<name>`). Typical: `qa`, `dev`,
+`staging`, or a customer short name like `acme_qa`. I normalise it to `[a-z0-9_]+`.
+
+⏸️ **WAITING FOR YOU** — reply with the name.
+```
+
+Why this order:
+
+- **The question comes FIRST, as its own bold line.** The original banner said only "waiting"
+  while the actual ask sat buried mid-paragraph above it — a cue with no question attached, so
+  the operator scrolled past both.
+- **Context in the middle**, ≤2 lines: what the value becomes, typical answers, what you do to it.
+- **`⏸️ WAITING FOR YOU` is the LAST line**, and names the action (`reply with the name`,
+  `reply "done"`). It is the hand-off, so it belongs at the hand-off point — the operator's eye
+  lands there last and knows exactly what to type.
+- **Nothing follows it.** No further prose, no tool call — the turn ends so the ask stays on
+  screen.
+- No progress counter (operator's call — noise on a 3-question interview).
+
+**When the question is an `AskUserQuestion`, drop the WAITING line.** That tool renders its own
+picker, so the banner is duplicate chrome. Framed step header, one line of context if the
+options need it, then the tool call.
 
 ### Where things go — read this once (two roots, kept separate)
 
@@ -133,7 +226,28 @@ write re-passes it, so the final profile always reflects this decision). This is
 (Note: the `session_start` record still misses this run — `SessionStart` fired before the flag
 existed — but every span + the finalize verdict are captured from the write onward. Accepted.)
 
-### 0c. Detect AND install the required tooling
+### 0c. Upstream-delivery consent is NOT asked here (PR #172 item 4)
+
+> There used to be a second consent step here for `feedback.mode` (ask / auto / off). It was
+> **removed**. Asking at onboarding meant the operator had to decide how a finding should be
+> contributed **before any finding existed** — a context-free question, minutes after the capture
+> opt-in, about a decision only meaningful when there is actually something to send.
+
+The delivery flow now asks **once, per finding, at the moment a BROKEN/DEGRADED finding exists**:
+`/vc-self-check` spawns the diagnostician, and if it returns a routable finding the orchestrator
+asks a single binary *file the issue in Virto — yes/no?* — with the exact payload on screen. So
+`feedback.mode` needs no onboarding question:
+
+- It stays at its **`ask`** default (`PROFILE_DEFAULTS`) — meaning "ask each time, per finding".
+- Hand-edit `project-profile.json` (or `gen-profile --feedback-mode <v>`) to set **`auto`** (CI /
+  standing consent — file directly) or **`off`** (kill switch — nothing ever leaves the machine).
+- `reconcile-profile.mjs` no longer lists `feedback` as a MANAGED "ask" field, so
+  `/project-init --check` fills it as a safe default and never surfaces it as a pending decision.
+
+**Do not pass `--feedback-mode` from the interview.** §0b's `--self-diagnostics` is the ONLY
+self-diagnostics answer carried to step 6.
+
+### 0d. Detect AND install the required tooling
 
 Run a detection pass, then **install whatever is missing** — do not just report a
 gap and move on (that leaves `/qa-fix` unable to open PRs).
@@ -182,12 +296,27 @@ scripts unable to find `dotenv`. The subshell `( … )` keeps your project cwd u
 
 ### 2a. ENV_NAME — one plain chat question
 
-Ask, in plain chat, what the environment should be named (it becomes `TEST_ENV`).
-The operator replies with the value. Do **not** use `AskUserQuestion` (always ≥2
-option buttons — no option-less input) or a `show_widget` input (unreliable) for
-this — a plain chat question is the stable way to collect one free-text value.
-Normalise mixed case / spaces / hyphens to `[a-z0-9_]+` (e.g. `My QA` → `my_qa`)
-and tell the operator what you used.
+Do **not** use `AskUserQuestion` (always ≥2 option buttons — no option-less input) or a
+`show_widget` input (unreliable) for this — a plain chat question is the stable way to collect
+one free-text value. Emit exactly this (§Output FORMAT):
+
+````markdown
+```
+┌──────────────────────────────┐
+│  ⚙   ENVIRONMENT NAME        │
+└──────────────────────────────┘
+```
+
+**What should this environment be named?**
+
+It becomes `TEST_ENV` and the suffix of the env file (`.env.<name>`). Typical: `qa`, `dev`,
+`staging`, or a customer short name like `acme_qa`. I normalise it to `[a-z0-9_]+`.
+
+⏸️ **WAITING FOR YOU** — reply with the environment name.
+````
+
+End the turn there — nothing after. On the reply, normalise mixed case / spaces / hyphens to
+`[a-z0-9_]+` (e.g. `My QA` → `my_qa`) and tell the operator what you used.
 
 ### 2b. Tracker + code host — one `AskUserQuestion` block
 
@@ -236,29 +365,6 @@ Applicable axes:
 Map the answers to the scaffold flags: `--github-auth pat|gh-cli`, `--ado-auth
 pat|az-login`, `--jira-auth token|oauth`.
 
-### 2e. Upstream-feedback consent — one `AskUserQuestion`
-
-> The **local-capture** opt-in (`selfDiagnostics`) was already asked and written as the FIRST
-> step (§0b) — do **not** ask it again here. This step is only the *upstream delivery* consent.
-
-**Skip this step entirely when §0b was answered No** — with capture off there is nothing to
-deliver, so leave `feedback.mode` at its default and move on. Otherwise ask the delivery
-consent — a **single** `AskUserQuestion`, wording/options verbatim from `reconcile-profile.mjs`
-`MANAGED_FIELDS.feedback` so the fresh interview and `/project-init --check` never diverge
-(make the first option the `default`):
-
-- **feedback.mode** (upstream delivery consent — gates ONLY outbound `deliver`, never local
-  capture/diagnosis; nothing is ever sent without scrubbing all client identifiers first):
-  - Question: *"When vc-fix self-diagnostics finds a plugin quality issue, how should it be
-    contributed back to VirtoCommerce to improve the plugin?"*
-  - Options: **Ask each time (recommended)** → `ask` (dry-run + a single
-    Show-diff/Send/Don't-send decision) · **Automatic** → `auto` (file the scrubbed GitHub
-    Issue automatically; PR/fork-PR handed off as commands) · **Off** → `off` (nothing
-    leaves the machine — the DIAG stays local).
-
-Carry the answer to step 6 as `--feedback-mode <ask|auto|off>` (and re-pass the §0b
-`--self-diagnostics <true|false>` decision there too).
-
 ## 3. Scaffold the two env templates, then hand off for filling
 
 Using the env name + tracker + code host + auth preferences, create **both** env
@@ -301,31 +407,61 @@ disabled; not needed for `/qa-fix`) — each with a "which tool it powers" comme
 
 ### 3c. Tell the operator: two files created — fill them, then pause
 
-Print a message that:
-- says **two files were created**: `.env.<env>` (non-secret URLs/identifiers) and
-  `.env.local` (secrets, gitignored),
-- lists the placeholder keys each emitted,
-- tells the operator to open both files and fill every value (the inline comments
-  say what each is and where to get it), and
-- says that once filled, the scan + verify (steps 4 + 8) proceed.
+Under a framed `📝  FILL IN THE TWO ENV FILES` step header (§Output FORMAT), print:
+- **two files were created**: `.env.<env>` (non-secret URLs/identifiers) and `.env.local`
+  (secrets, gitignored) — with the placeholder keys each emitted;
+- that the inline comments say what each value is and where to get it;
+- for any **browser-login** choice (github `gh auth login`, ado `az login`, Jira Atlassian MCP
+  OAuth) there is no token line — remind the operator to run that login instead (step 8's
+  `ensure-session.mjs` drives it).
 
-For any **browser-login** choice (github `gh auth login`, ado `az login`, Jira
-Atlassian MCP OAuth) there is no token line — remind the operator to run that login
-instead (see step 8's `ensure-session.mjs` for the driven flow).
+Then the plain-chat question block (§Output FORMAT), which is what makes the pause impossible
+to scroll past:
 
-**Then pause — wait for the operator to confirm both files are filled.** Make the
-wait VISUALLY OBVIOUS: end the message with an unmistakable, set-apart call-to-action
-on its own line — a blockquote banner such as
-`> ⏸️ **WAITING FOR YOU** — fill in both files, then reply "done".`
-Do not append any further tool calls after it — the turn ends there so the prompt
-is the last thing on screen. (Reuse this banner wherever the pipeline blocks on the
-operator.)
+```markdown
+**Filled in both files?**
+
+I normalise and validate them first (trailing slashes, quotes, unfilled placeholders), then
+scan your repos and verify every credential.
+
+⏸️ **WAITING FOR YOU** — reply "done" when both files are filled.
+```
+
+Nothing after the block — no further tool calls; the turn ends there so the ask is the last
+thing on screen. This is the same format every blocking question uses.
 
 Note the env name (e.g. `myqa`) — that's your `TEST_ENV` for every later run.
 
+### 3d. On "done" — NORMALIZE + VALIDATE the filled `.env.<env>` (MANDATORY, before the scan)
+
+The very first thing you do on the operator's "done" — **before** the repo scan in step 4 and
+before any access probe:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
+```
+
+It rewrites the file **in place** and prints, line by line, exactly what it corrected: surrounding
+quotes and padding stripped, **every trailing slash removed** from `FRONT_URL` / `BACK_URL` /
+`JIRA_BASE_URL`, a pasted `https://dev.azure.com/<org>` reduced to the bare `ADO_ORG` slug. It
+**exits 1** on an unfilled placeholder, a URL with no `http(s)://` scheme, or an `ADO_ORG`/
+`ADO_PROJECT` that is still path-shaped, and WARNs when `FRONT_URL`/`BACK_URL` carries a path
+component. Comments, ordering, and any variable the operator added themselves are untouched.
+
+**On exit 1: STOP.** Show the errors verbatim, then re-ask with the plain-chat question block
+(§Output FORMAT — *"Fixed them? Reply 'done'."*), and wait — do not
+scan, do not probe. Every downstream check would otherwise fail for a reason the operator cannot
+see: a stray `/` used to be stripped only *in memory* by `verify-access.mjs` while the file stayed
+wrong, and every runtime `${BACK_URL}/api/...` template produced `//api/...` (VCST-5582 B). The
+rules are not restated in this skill — `scaffold-env.mjs` `CATALOG` declares each key's type and
+requiredness, and `normalize-env.mjs` reads them from there.
+
+Relay the printed fixes to the operator in one line ("normalized N value(s): …") so they know the
+file changed under them, then continue to step 4.
+
 ## 4. Discover the repo split — ALWAYS run; it is the source of projectType
 
-**After the files are filled**, run the scan **unconditionally** (it needs no
+**After the files are filled and normalized (§3d)**, run the scan **unconditionally** (it needs no
 `--client-org` — clients are recognised by module owner / id-namespace). It classifies
 installed modules client-vs-platform, scans the client's code host for the
 storefront/theme repo, and **derives `projectType` + `clientOrg`**:
@@ -360,12 +496,40 @@ It writes `{ projectType, clientOrg, client:[…], platform:[…] }`:
   an unmodified-platform bug** — if it couldn't be derived/verified, ASK the operator for the
   vc-frontend line base tag and set `repos.client[].upstreamRef` (e.g. `2.49` → `2.49.0`).
 
-**Show the proposed map to the operator to confirm/correct** — a starting point, not
-gospel. **Genuine-ambiguity asks (only these):**
+### 4a. Show the map and ask RIGHT THERE — one table, one question, nothing between them
+
+The operator confirms the repo map **immediately after seeing it**. Do **not** run step 4b or 5
+first: a table separated from its question by two more sections forces the operator to scroll
+back, and they will approve it unread. Sequence is exactly: repo table → `AskUserQuestion` →
+(only then) 4b.
+
+**ONE table. Columns: `Repo · Kind · Branch · Notes`** — and nothing else.
+
+- **Branch** = `default → PR target` in one cell (`main → dev`). Two columns for two branch
+  names is padding.
+- **Notes** = only what is repo-SPECIFIC: the toolchain, and for a storefront fork its
+  provenance in one phrase — `fork of vc-frontend 2.49.7, base 2.49.0`. Do **NOT** render a
+  separate "fork provenance" table: `upstream` / `upstreamRef` / `forkVersion` are the same
+  three facts, and the operator cannot verify them anyway — they are `/qa-fix` Gate-1b inputs,
+  not decisions. If `upstreamRefResolved: false`, that IS a decision → say so in Notes and ask.
+- **Drop `Host` and `Auth`** when every client repo shares them (the usual case) — the operator
+  chose both in the interview two minutes ago. State once above the table:
+  `2 client repos on azure-repos (ADO_PAT) · 53 platform repos`. Keep a `Host` column only for a
+  genuinely mixed set.
+- **Never list the 53 platform repos.** A count is the whole signal; they are not the operator's
+  decision and the list buries the two rows that are.
+- Local-verify facts (`yarn dev`, port, cert) are `/qa-fix` plumbing — omit from the table.
+
+Then ask with `AskUserQuestion`, and **put the actual discrepancy in the question text**, not
+just in an option label — e.g. *"`frontend` defaults to `main` but the scan set PR target `dev`.
+Correct?"* Options: accept as scanned · fix the one thing named · something else.
+
+**Genuine-ambiguity asks (only these — everything else is confirm-or-correct):**
 - host = `github`, **no** client modules found, org not resolvable → ask the operator:
   native platform (no client repos), or name the client GitHub org.
 - **no** storefront/theme repo matched → ask the operator to name it; add it to
   `repos.client` as `kind:"frontend"`.
+- `upstreamRefResolved: false` → ask for the vc-frontend line base tag (see above).
 
 ## 4b. Discover the tracker status model — Azure Boards only
 
@@ -388,10 +552,26 @@ projectId, workItemTypes:{<Type>:{states:[…]}}, roleStates:{in-progress,in-rev
 ready-for-test,done} }`. Auth = `ADO_PAT` (Basic) or an `az login` session — the same creds
 the operator filled in step 3; if neither is present yet, this step FAILS loudly (fix the ADO
 auth, don't skip it — an empty `roleStates` makes `/qa-fix` fall back to asking on every
-transition). Step 6 ingests it via `--tracker-json`. **Show the derived `roleStates` to the
-operator to confirm** (e.g. a custom board maps `in-progress → Active`, `in-review → On Review`,
-`ready-for-test → Ready for QA`) — the heuristic is a starting point; correct a mismapped role
-by hand-editing `.local-env/tracker.json` (or the profile) before continuing.
+transition). Step 6 ingests it via `--tracker-json`.
+
+**Reporting — scale it to whether the operator has anything to decide:**
+
+- **`roleStatesComplete: true`** (every role mapped) → **ONE line, no table**:
+  `Board states mapped: Active → On Review → Ready for QA → … → Closed (custom process, 14 Bug
+  states). Transitions will be silent.` The full role→state grid is `/qa-fix` plumbing — correct
+  by construction, nothing to approve. State counts per work-item type, `apiBase`, `projectId`,
+  `ticketKeyFormat` and the cross-link token are internals: **do not print them.**
+- **A role is MISSING or looks wrong** → *then* show a table, of the affected roles only, and ask.
+  This is the case worth the operator's attention, and it stands out precisely because the happy
+  path was one line.
+
+Correct a mismapped role by hand-editing `.local-env/tracker.json` (or the profile) before
+continuing.
+
+Also captured here: the **bug FIELD CONTRACT** per work-item type (VCST-5582 E-a) —
+`tracker.fields.<Type>[]`. Report it the same way: one line on the happy path
+(`Bug field contract: 13 fields, 5 required — all mapped`), a table + a question only when a
+required field has no semantic slot.
 
 `--out` is optional (accepts `--out <path>`; the default flag set here writes it so step 6 can
 read it). If you omit `--out`, capture the printed JSON and pass its path to step 6 another way.
@@ -409,7 +589,8 @@ It prints ONE JSON object on stdout (notes on stderr):
 ```json
 { "auth": { "github": "pat|gh-cli|none", "ado": "pat|az-login|none|n/a", "jira": "token|none|n/a" },
   "github": { "login": "...", "upstreamPerm": "push|pull...", "contributionMode": "direct|fork",
-              "forkAccount": "...", "via": "PAT|gh CLI" },
+              "forkAccount": "...", "via": "PAT|gh CLI",
+              "tokenKind": "classic|fine-grained|gh-cli|none", "forkCapable": "yes|no|unknown" },
   "operator": "virto-engineer|client", "upstreamOrg": "VirtoCommerce" }
 ```
 - **contributionMode / operator** — from the token's permission on
@@ -418,8 +599,35 @@ It prints ONE JSON object on stdout (notes on stderr):
   safe default `fork` (verify-access confirms).
 - **forkAccount** — the GitHub token owner's login (PR head = `<forkAccount>:<branch>`;
   only used when `contributionMode=fork`).
+- **tokenKind / forkCapable** — the token's PROBED type (VCST-5582 A). The recommended
+  credential is **ONE classic PAT with `repo`** (or `gh auth login`): it covers both the
+  client's own repos and the upstream, so onboarding asks for a single value.
+  `contributionMode: "fork"` says WHERE a platform PR goes; `forkCapable` says whether this
+  credential can actually get it there. A **fine-grained** PAT is bound to one resource owner
+  and is read-only on public repos it does not own, so it reads `vc-platform` fine, is
+  classified `fork`, and then 403s on fork / fork-PR / issue-create. Only `forkCapable: "yes"` is
+  trusted — `"unknown"` is never assumed capable. Both land in the profile
+  (`vcs.githubTokenKind` / `vcs.githubForkCapable`) so `/qa-fix` Gate 1 and
+  `/vc-self-check deliver` refuse an impossible route up front, and `verify-access` shows
+  the **GitHub token kind / upstream capability** row with the exact remedy.
 
 Capture these values for step 6.
+
+**Reporting — this step has NO question in it, so it gets no table.** Everything here is
+derived, not chosen: the operator cannot approve or correct a token's permission on
+`vc-platform`. Print **ONE line**:
+
+`Derived: classic PAT (Dan-BV) with push on vc-platform → direct PRs upstream, no fork · ADO: PAT`
+
+Then **only the exceptions**, one line each — these are the whole point of showing anything:
+
+- `forkCapable` is not `yes` while the plan needs the upstream → the WARN + remedy (VCST-5582 A);
+- an auth axis came back `none` → say which, and that it must be fixed before `/qa-fix`;
+- `contributionMode` fell back to `fork` because nothing could be probed (offline / no token) →
+  say it is a default, not a measurement.
+
+`forkAccount`, `upstreamOrg`, the raw `auth` triple and the JSON itself are internals — they go
+into the profile, not onto the screen.
 
 ## 6. Write the deployment profile
 
@@ -436,7 +644,9 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --client-vcs github \
   --operator <derived> --contribution-mode <derived> \
   --upstream-account <forkAccount, only if fork> \
-  --self-diagnostics <true|false, from step 0b> --feedback-mode <ask|auto|off, from step 2e> \
+  --github-token-kind <derived: github.tokenKind> --github-fork-capable <derived: github.forkCapable> \
+  --self-diagnostics <true|false, from step 0b> \
+  # NB: NO --feedback-mode (item 4) — it stays at the `ask` default; the interview never sets it. \
   --vcs-auth <derived: client host's auth — github⇒gh-cli|pat, azure-repos⇒az-login|pat> --print
 # Azure Boards + Azure Repos:
 #   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --vcs-auth pat ...
@@ -483,6 +693,7 @@ operator only ever sees a plain table.
 
 ```bash
 FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
 Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.
@@ -656,6 +867,7 @@ then **pause** with the unmistakable waiting banner (§3c) — no tool calls aft
 
 ```bash
 FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
 Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new env's URLs +
@@ -708,45 +920,57 @@ report — no writes, no scans, no questions of its own:
 - For each **`pending`** entry, ask the operator with **`AskUserQuestion`**, using the
   entry's own `question` + `options` (make the `default` value the Recommended option).
 - For each **`rescan`** entry, re-run the matching discovery (`discover-repos` /
-  `discover-tracker`) and fold the result back via `gen-profile --merge` (§ Re-running).
+  `discover-tracker`) and fold the result back via `gen-profile --merge` (§ Re-running). An Azure
+  profile with an **empty `tracker.fields`** is reported here as `{ path: "tracker.fields", source:
+  "discover-tracker" }` (VCST-5582 E5) — an upgraded install whose original scan predates the
+  `$expand=all` fix re-derives the bug field contract on `--check`, no full re-onboarding needed.
 - Then apply everything in one write, one `--set path=value` per resolved decision:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write \
-  --set selfDiagnostics=<true|false> \
-  --set feedback.mode=<auto|ask|off>
+  --set selfDiagnostics=<true|false>
 ```
 
-`feedback.mode` (VCST-5509) is the DELIVERY-consent opt-in — it gates only the outbound
-`/vc-self-check deliver` step, never local capture/diagnosis. Default `ask` = a dry-run +
-a single Show-diff/Send/Don't-send decision; `auto` = the Issue route files automatically
-(scrubbed) and a PR/fork-PR is handed off as commands; `off` = nothing ever leaves the
-machine. It surfaces as its own `pending` entry with a three-way `question`/`options`.
+`selfDiagnostics` is the CAPTURE opt-in and the ONLY self-diagnostics decision `--check` asks.
+`feedback.mode` (VCST-5509) — the DELIVERY consent — is **no longer a managed "ask" field**
+(item 4): it fills as a safe default (`ask`) and is never surfaced as a pending decision. To
+change it, hand-edit `project-profile.json` or re-run `gen-profile --feedback-mode <auto|ask|off>`.
+`ask` = the per-finding binary offer at delivery time; `auto` = file the Issue directly; `off` =
+nothing ever leaves the machine.
 
 `--write` applies the structural adds/removes plus any `--set` decisions. Unresolved
 `pending`/`rescan` fields are left **absent** — safe, because a missing field reads as its
 safe default (no `selfDiagnostics` ⇒ capture stays **OFF** — the opt-in gate; set
-`selfDiagnostics:true` to opt in; no `feedback`
-⇒ delivery falls back to `ask` — a dry-run + confirm, never an unattended send) — and stay
-in the report so a later `--check` can finish
-them. Reconciling is **idempotent**: once done,
-the report is `current`.
+`selfDiagnostics:true` to opt in; no `feedback` ⇒ delivery falls back to `ask` — a per-finding
+offer + confirm, never an unattended send) — and stay in the report so a later `--check` can finish
+them. Reconciling is **idempotent**: once done, the report is `current`.
 
 If a `--write` would remove **≥5 fields** it returns `status:"needs-force"` and writes
 nothing — that many removals usually means a schema mismatch (reconciling against a leaner
 schema than the one that wrote the profile), not stale fields. **Review the `removed` list**;
 only if the removals are genuinely intended, re-run with `--force`.
 
-### Step C — verify access
+### Step C — normalize the env file, then verify access
 
-Run the readiness table (§8) so a stale token / URL / login surfaces too:
+First re-run the §3d normalizer — an env file edited by hand since onboarding can have
+re-acquired a trailing slash or a quoted value, and every probe below would then fail for an
+invisible reason:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
+```
+
+Then the readiness table (§8), so a stale token / URL / login surfaces too:
 
 ```bash
 FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
-**Restate BOTH** the reconciliation summary (added / removed / decided) **and** the
-readiness table in your reply.
+**Restate all three** — the reconciliation summary (added / removed / decided), any value the
+normalizer corrected, and the readiness table — in your reply. A normalizer exit 1 (unfilled
+placeholder / missing scheme) is a **STOP**: report it and skip the readiness table, which would
+only produce misleading failures.
 
 Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
 marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
@@ -792,6 +1016,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 |--------|------|
 | `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent |
 | `scaffold-secrets.mjs` | write a commented `.env.local` **template** (secret placeholders + what/why/where per secret); topology-driven, idempotent |
+| `normalize-env.mjs` | **run on the operator's "done" (§3d) and in `--check` Step C** — normalize the hand-filled `.env.<env>` IN PLACE (quotes / padding / **all** trailing slashes; a pasted `dev.azure.com/<org>` → the bare slug) and validate it: exit 1 on an unfilled placeholder, a URL with no `http(s)://`, or a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path component in `FRONT_URL`/`BACK_URL`. Prints every fix. Rules come from `scaffold-env.mjs` `CATALOG` (`type` + no-`def`), never a private copy |
 | `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` from a JSON answer object on STDIN when values ARE known programmatically; idempotent |
 | `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; bakes per-repo `contribution`/`integrationBranch`/`toolchain`/`localVerify`; emits `{ projectType, clientOrg, client, platform }` |
 | `discover-tracker.mjs` | **Azure-only** scan of work-item types → per-type `states` + a `role→state` map (`roleStates`), plus `apiBase`/`projectId`/`ticketKeyFormat`/`crossLinkToken`; emits `.local-env/tracker.json` for `gen-profile --tracker-json`. Jira: format facts only (transitions discovered live). Enables `/qa-fix`'s silent role-based transitions |
@@ -801,13 +1026,15 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `reconcile-profile.mjs` | **`--check` migration**: diff an existing profile against the current `PROFILE_DEFAULTS` schema → JSON report of `added` (safe-default) / `removed` (obsolete, open-maps+arrays preserved) / `pending` (operator-decision fields with `question`+`options`, e.g. `selfDiagnostics`) / `rescan` (re-derive live). Deterministic, dry-run by default; `--write` applies structural changes + `--set path=value` decisions. Idempotent. Mirrors `gen-profile`'s `tracker.azure`/`vcs.azure` discriminated pruning |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see `knowledge/execution/plugin-root.md`.) |
-| `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
+| `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
+| `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference
 > per axis. The **self-diagnostics capture opt-in** (`selfDiagnostics`) is asked FIRST, as
-> step 0b, and the flag is written immediately on Yes; the **`feedback.mode`
-> upstream-delivery consent** is step 2e — the same two decisions the `--check` reconcile
-> surfaces. Both env files are scaffolded as commented templates the operator fills;
+> step 0b, and the flag is written immediately on Yes — the ONE self-diagnostics decision
+> `--check` also surfaces. The **`feedback.mode` upstream-delivery consent is NOT asked** (item 4):
+> it stays at its `ask` default and the delivery flow asks once, per finding, at send time.
+> Both env files are scaffolded as commented templates the operator fills;
 > the scan (step 4) derives projectType + clientOrg, the derive block (step 5) derives
 > contribution mode + fork account + operator, and verify-access (step 8) confirms.

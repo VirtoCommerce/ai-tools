@@ -11,17 +11,42 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  reduce, validateUpstream, classifyError, fingerprintStruct, findingStructSig,
-  toolFamily, repoKindOfAgent,
+  reduce, validateUpstream, classifyError, fingerprintStruct, findingStructSig, findingKey,
+  toolFamily, repoKindOfAgent, provenanceFields, boundaryDenial, proposedFixDenial, normalizeVendorMessage,
+  violatesFieldNamespace, severityRank, verdictRank, subjectEnum, SUBJECTS, locateExcerpt, truncField,
+  TRUNC_MARK, WITHHELD_REASONS,
   SKILLS, VERDICTS, SEVERITIES, OUTCOMES, SIGNAL_CLASSES, STRUGGLES,
-  TOOL_FAMILIES, REPO_KINDS, ERROR_CODES, SCHEMA_VERSION,
+  TOOL_FAMILIES, REPO_KINDS, ERROR_CODES, SCHEMA_VERSION, OS_VALUES, VENDOR_DOC_HOSTS,
 } from "../../plugins/vc-fix/skills/vc-self-check/upstream-reduce.mjs";
-import { mergeStructs, parseDiag } from "../../plugins/vc-fix/skills/vc-self-check/deliver.mjs";
 
 // The EXACT key sets the struct must have — a strict-shape check so an UNFORESEEN extra field
 // carrying client bytes fails, not just the known fields (adversarial review #5, GAP 1).
-const TOP_KEYS = ["schemaVersion", "pluginVersion", "findings", "feedback", "sessionCount"];
-const FINDING_KEYS = ["skill", "verdict", "severity", "outcome", "signalClass", "struggle", "errorCode", "toolFamily", "repoKind", "retries", "occurrences"];
+// v3 (PR #172) added the runtime env pair (nodeVersion/os) at top level and the provenance-gated
+// string fields per finding.
+const TOP_KEYS = ["schemaVersion", "pluginVersion", "nodeVersion", "os", "findings", "feedback", "sessionCount"];
+// The closed-schema allowlist for UpstreamFinding: EXACTLY these keys, no others. `subject` and
+// `blockedDeliverable` were added by schema v2 (item 10). v3 adds the provenance string fields —
+// each is `null` unless it PROVES vendor provenance + passes the boundary validator, so the strict
+// shape still holds (the KEY is always present; the VALUE is null when unproven).
+const V3_STRING_KEYS = [
+  "pluginFile", "pluginLine", "codeExcerpt", "offendingLiteral", "apiShape", "proposedFix",
+  "vendorErrorTypeKey", "vendorErrorName", "vendorErrorCode", "vendorHttpStatus", "vendorDocUrl",
+  "vendorErrorMessage",
+];
+const FINDING_KEYS = [
+  ...V3_STRING_KEYS,
+  "skill", "subject", "blockedDeliverable", "verdict", "severity", "outcome", "signalClass",
+  "struggle", "errorCode", "toolFamily", "repoKind", "retries", "occurrences",
+  "withheld", // B6 — per-field withhold reasons: {field, reason} with reason ∈ WITHHELD_REASONS
+];
+// The field names a `withheld` entry may name — the provenance/string fields only.
+const WITHHELDABLE_FIELDS = new Set([
+  "pluginFile", "codeExcerpt", "offendingLiteral", "apiShape", "proposedFix",
+  "vendorErrorTypeKey", "vendorErrorName", "vendorErrorCode", "vendorDocUrl", "vendorErrorMessage",
+  // VCST-5582 confabulation gate: the numeric vendor HTTP status is now withheld too (over-cap /
+  // out-of-range, or `ungrounded` when it appears nowhere in the captured telemetry).
+  "vendorHttpStatus",
+]);
 const FEEDBACK_KEYS = ["up", "down"];
 const assertExactKeys = (obj, keys, where) =>
   assert.deepEqual(Object.keys(obj).sort(), [...keys].sort(), `unexpected keys in ${where}: ${Object.keys(obj)}`);
@@ -51,6 +76,8 @@ function assertAllFieldsInVocabulary(struct) {
   // pluginVersion is a bounded numeric triple or "unknown" — NEVER an echoed free string
   // (adversarial review A: the old `-\S+` prerelease tail was an unbounded leak channel).
   assert.match(struct.pluginVersion, /^(?:\d{1,4}\.\d{1,4}\.\d{1,4}|unknown)$/);
+  assert.match(struct.nodeVersion, /^(?:v\d{1,3}\.\d{1,3}\.\d{1,4}|unknown)$/);
+  assert.ok(OS_VALUES.includes(struct.os), `os ∈ vocab: ${struct.os}`);
   assert.ok(Number.isInteger(struct.sessionCount) && struct.sessionCount >= 1);
   assertExactKeys(struct.feedback, FEEDBACK_KEYS, "feedback");
   assert.ok(Number.isInteger(struct.feedback.up) && struct.feedback.up >= 0);
@@ -68,6 +95,20 @@ function assertAllFieldsInVocabulary(struct) {
     assert.ok(REPO_KINDS.includes(f.repoKind), `repoKind ∈ vocab: ${f.repoKind}`);
     assert.ok(Number.isInteger(f.retries) && f.retries >= 0 && f.retries <= 99);
     assert.ok(Number.isInteger(f.occurrences) && f.occurrences >= 1);
+    // v3 provenance fields: each is either null or its typed value. Absent a ctx (the default in
+    // reduce/validateUpstream here) every one MUST be null — unproven is the fail-closed default.
+    for (const k of V3_STRING_KEYS) {
+      if (k === "pluginLine" || k === "vendorHttpStatus") assert.ok(f[k] === null || Number.isInteger(f[k]), `${k} null|int`);
+      else assert.ok(f[k] === null || typeof f[k] === "string", `${k} null|string`);
+    }
+    // B6 — `withheld` is a closed-vocabulary array: {field ∈ withheldable, reason ∈ WITHHELD_REASONS},
+    // NEVER a value. Its presence must not open a free-text channel.
+    assert.ok(Array.isArray(f.withheld), "withheld is an array");
+    for (const w of f.withheld) {
+      assert.ok(w && typeof w === "object" && WITHHELDABLE_FIELDS.has(w.field), `withheld.field ∈ vocab: ${w.field}`);
+      assert.ok(WITHHELD_REASONS.includes(w.reason), `withheld.reason ∈ vocab: ${w.reason}`);
+      assert.equal(Object.keys(w).length, 2, "withheld entry is exactly {field, reason}");
+    }
   }
 }
 
@@ -307,35 +348,14 @@ test("reduce: vc-self-check's own flagged span is dropped (loop guard)", () => {
   assert.equal(s.findings.length, 0);
 });
 
-test("reduce: enum-only fallback when jsonl is absent (only DIAG survived)", () => {
+test("reduce: the removed DIAG-fallback path is gone — fallbackFindings is IGNORED (item 2)", () => {
+  // DIAG-*.md no longer exists, so reduce reads ONLY the structured jsonl. A leftover
+  // `fallbackFindings` field (there is no producer for it any more) must not resurrect a finding.
   const s = reduce({ spans: [], pluginVersion: "0.8.1", fallbackFindings: [
     { skill: "qa-fix", verdict: "BROKEN", sev: "S1", signal: "AcmeCorp leaked here", fix: "C:\\src\\x.cs" },
-    { skill: "AcmeSkill", verdict: "DEGRADED", sev: "S2", signal: "x", fix: "y" },
   ] });
-  assert.equal(s.findings.length, 2);
-  assertNoLeak(s, "AcmeCorp leaked here");
-  assertNoLeak(s, "C:\\src\\x.cs");
-  assertNoLeak(s, "AcmeSkill");
+  assert.equal(s.findings.length, 0, "fallbackFindings is dead input — no finding, no prose channel");
   assertAllFieldsInVocabulary(s);
-  assert.equal(s.findings[0].skill, "qa-fix");
-  assert.equal(s.findings[0].severity, "S1"); // derived from verdict, not the DIAG cell (B2)
-  assert.equal(s.findings[1].skill, "other"); // AcmeSkill → other
-});
-
-test("PROPERTY (Gap B): the fallbackFindings path never leaks a poisoned cell, any field", () => {
-  for (const bad of ADVERSARIAL) {
-    const struct = validateUpstream(reduce({
-      spans: [],
-      pluginVersion: "0.8.1",
-      fallbackFindings: [{ skill: bad, verdict: bad, sev: bad, signal: bad, rootcause: bad, fix: bad }],
-    }));
-    assertNoLeak(struct, bad);
-    assertAllFieldsInVocabulary(struct);
-  }
-  // a fallback row with a VALID flagged verdict but a poisoned skill still maps skill→other
-  const s = validateUpstream(reduce({ spans: [], fallbackFindings: [{ skill: "AcmeSkill", verdict: "BROKEN", sev: "S1" }] }));
-  assert.equal(s.findings.length, 1);
-  assert.equal(s.findings[0].skill, "other");
 });
 
 test("Gap D: degenerate inputs yield the empty safe struct and never throw", () => {
@@ -417,61 +437,46 @@ test("fingerprintStruct (D2): a feedback-ONLY report still distinguishes 👍 vs
   assert.notEqual(fingerprintStruct(up), fingerprintStruct(down));
 });
 
-// ─── GAP 2 (review #5): mergeStructs + parseDiag are exercised with real assertions ──
-test("mergeStructs (Gap 2): dedups findings by structural sig, occurrence-counts, sums feedback, no leak", () => {
-  const s1 = validateUpstream(reduce({ spans: spansWithInjectedText("AcmeCorp"), feedback: [{ verdict: "down", text: "AcmeCorp broke it" }], pluginVersion: "0.8.1" }));
-  const s2 = validateUpstream(reduce({ spans: spansWithInjectedText("leocorpCheckout"), feedback: [{ verdict: "up", text: "leocorpCheckout ok" }], pluginVersion: "0.8.1" }));
-  // both sessions reduce to the SAME structural finding (skill "other", failed, none/UNKNOWN/none/unknown)
-  const merged = mergeStructs([s1, s2], "0.8.1");
-  assertAllFieldsInVocabulary(merged);
-  assertNoLeak(merged, "AcmeCorp");
-  assertNoLeak(merged, "leocorpCheckout");
-  assert.equal(merged.findings.length, 1, "identical structural findings merge to one");
-  assert.equal(merged.findings[0].occurrences, 2, "occurrences summed across sessions");
-  assert.deepEqual(merged.feedback, { up: 1, down: 1 }, "feedback counts summed");
+// ─── v3: findingKey — the PER-FINDING dedup identity (item 3) ────────────────────────
+test("findingKey: identity is (skill, subject) ONLY — severity/verdict/errorCode do NOT enter it", () => {
+  // The #173/#174 reproduction: two sessions graded the SAME defect differently (S2/UNKNOWN vs
+  // S1/HTTP_4XX). If the dedup key folded severity/verdict/errorCode they would NOT converge.
+  const a = { skill: "project-init", subject: "tracker_field_contract", severity: "S2", verdict: "DEGRADED", errorCode: "UNKNOWN", outcome: "degraded" };
+  const b = { skill: "project-init", subject: "tracker_field_contract", severity: "S1", verdict: "BROKEN", errorCode: "HTTP_4XX", outcome: "failed" };
+  assert.equal(findingKey(a), findingKey(b), "same (skill,subject) → same key regardless of severity/verdict/errorCode");
+  assert.equal(findingKey(a), "project-init/tracker_field_contract");
 });
-test("mergeStructs: two DIFFERENT structural findings stay separate", () => {
-  const a = structOf({ errorCode: "AUTH_MISSING_SCOPE" });
-  const b = structOf({ errorCode: "NETWORK_TIMEOUT" });
-  const merged = mergeStructs([a, b], "0.8.1");
-  assert.equal(merged.findings.length, 2);
+test("findingKey: a different subject or skill IS a different defect", () => {
+  assert.notEqual(findingKey({ skill: "qa-bug", subject: "ado_create_workitem" }), findingKey({ skill: "qa-bug", subject: "admin_credential_handoff" }));
+  assert.notEqual(findingKey({ skill: "qa-bug", subject: "ado_create_workitem" }), findingKey({ skill: "qa-fix", subject: "ado_create_workitem" }));
+  // out-of-vocab halves coerce, never echo — a subject with no marker maps to `other`
+  assert.equal(findingKey({ skill: "AcmeSkill", subject: "acme wonky nonsense zzz" }), "other/other");
 });
-
-test("parseDiag + reduce (Gap 2): a poisoned DIAG (Plugin: line + free-text rows) yields no client bytes", () => {
-  const md = [
-    "# DIAG — s1",
-    "- Session: s1 · Plugin: 1.0.0-github_pat_AcmeSecretBlob0000",   // poisoned version-shaped blob
-    "## Findings",
-    "| Skill | Verdict | Sev | Signal | Root | Fix |",
-    "| /qa-fix | BROKEN | S1 | AcmeCorp.CartController at C:\\src\\x.cs | leocorp root cause | github_pat_LEAK000 |",
-    "| AcmeCheckoutSkill | DEGRADED | S3 | orderSyncService null | x | y |",
-  ].join("\n");
-  const parsed = parseDiag(md);
-  // parseDiag captures free text (that's fine — LOCAL); the guarantee is the REDUCED struct is clean.
-  const struct = validateUpstream(reduce({ spans: [], pluginVersion: parsed.pluginVersion, fallbackFindings: parsed.findings }));
-  assertAllFieldsInVocabulary(struct);
-  for (const n of ["AcmeCorp", "github_pat_", "C:\\src", "leocorp", "orderSyncService", "AcmeCheckoutSkill", "AcmeSecretBlob"]) assertNoLeak(struct, n);
-  assert.equal(struct.pluginVersion, "1.0.0"); // suffix discarded
-  // both rows are flagged verdicts → 2 findings; skills coerced (qa-fix kept, AcmeCheckoutSkill→other)
-  assert.equal(struct.findings.length, 2);
-  assert.deepEqual(struct.findings.map((f) => f.severity).sort(), ["S1", "S2"]); // derived, DIAG's S3 ignored (B2)
+// B1: a FREE-TEXT diagnostician subject is MAPPED, not membership-tested — the four the reference
+// session produced must reach real vocabulary members, not collapse to `other`.
+test("B1 findingKey: free-text diagnostician subjects map onto the closed vocabulary (not `other`)", () => {
+  assert.equal(findingKey({ skill: "project-init", subject: "tracker_bug_field_contract" }), "project-init/tracker_field_contract");
+  assert.equal(findingKey({ skill: "qa-bug", subject: "ado_auth_error_diagnosability" }), "qa-bug/ado_cli");
+  assert.equal(findingKey({ skill: "qa-bug", subject: "ado_get_file_path_mangling" }), "qa-bug/ado_cli");
+  assert.equal(findingKey({ skill: "qa-bug", subject: "ado_exitcode_masked_by_pipe" }), "qa-bug/ado_cli");
 });
-
-test("parseDiag (PR#143 R2 F3): the DIAG Skill cell `/qa-fix (command)` normalizes to the bare enum, not `other`", () => {
-  // The real DIAG table renders the Skill column as `/qa-fix (command)` / `/qa-bug (skill)`
-  // (see skills/vc-self-check/SKILL.md). Before the fix parseDiag kept the cell verbatim and the
-  // jsonl-purged fallback coerced every such row to "other" — per-skill fidelity silently lost.
-  const md = [
-    "## Findings",
-    "| Skill | Verdict | Sev | Signal | Root | Fix |",
-    "| /qa-fix (command) | BROKEN | S1 | perm denied | auth | check token |",
-    "| /qa-bug (skill) | DEGRADED | S2 | search_thrash | lost | tighten step 1 |",
-    "| /made-up-thing (command) | BROKEN | S1 | x | y | z |", // unknown → still "other" (fail-safe preserved)
-  ].join("\n");
-  const parsed = parseDiag(md);
-  assert.deepEqual(parsed.findings.map((f) => f.skill), ["qa-fix", "qa-bug", "made-up-thing"]);
-  const struct = validateUpstream(reduce({ spans: [], fallbackFindings: parsed.findings }));
-  assert.deepEqual(struct.findings.map((f) => f.skill), ["qa-fix", "qa-bug", "other"]);
+// B2: two DISTINCT defects that both map to `other` must NOT share an identity — disambiguated by
+// (pluginFile, pluginLine). This is the #181/#182/#183 collision: three distinct ado.mjs defects
+// that all shared `qa-bug/other`.
+test("B2 findingKey: two distinct `other`-subject defects at different sites get distinct keys", () => {
+  const a = { skill: "qa-bug", subject: "wholly unknown thing", pluginFile: "skills/qa-fix-routing/ado.mjs", pluginLine: 40 };
+  const b = { skill: "qa-bug", subject: "another unknown thing", pluginFile: "skills/qa-fix-routing/ado.mjs", pluginLine: 88 };
+  assert.ok(findingKey(a).startsWith("qa-bug/other#"), `key carries a site hash: ${findingKey(a)}`);
+  assert.notEqual(findingKey(a), findingKey(b), "different site → different identity");
+  // the SAME defect (same file:line) from two sessions still converges
+  const a2 = { skill: "qa-bug", subject: "unknown thing", pluginFile: "skills/qa-fix-routing/ado.mjs", pluginLine: 40 };
+  assert.equal(findingKey(a), findingKey(a2), "same site → same identity (dedup converges)");
+  // no site info ⇒ no hash (legacy shape preserved)
+  assert.equal(findingKey({ skill: "qa-bug", subject: "unknown thing" }), "qa-bug/other");
+});
+test("severityRank / verdictRank: comparable so an issue title can be upgraded S2→S1", () => {
+  assert.ok(severityRank("S1") > severityRank("S2") && severityRank("S2") > severityRank("S3"));
+  assert.ok(verdictRank("BROKEN") > verdictRank("DEGRADED") && verdictRank("DEGRADED") > verdictRank("OK"));
 });
 
 // ─── code review #2: silent_suspect vs failed must fingerprint the SAME ──────────────
@@ -517,4 +522,364 @@ test("code review #3: two DIFFERENT-signature spans are BOTH kept", () => {
   const b = { type: "span", id: "b", parentId: null, kind: "skill", name: "qa-bug", status: "error", outcome: "failed", struggle: [], retries: 0, signals: { tool_error: 1, permission_denied: 0, hook_failure: 0, stop_bail: 0 }, details: [] };
   const struct = validateUpstream(reduce({ spans: [a, b], pluginVersion: "0.8.1" }));
   assert.equal(struct.findings.length, 2);
+});
+
+// ─── v3: the vendor-provenance string channel (item 5) ───────────────────────────────
+// The plugin file the finding cites — a real vendor source line.
+const PLUGIN_FILE = "skills/project-init/discover-tracker.mjs";
+const PLUGIN_SRC = 'const url = `${base}/${project}/_apis/wit/workitemtypes/${type}/fields?$expand=Properties`;\nreturn fetchJson(url);\n';
+const ctxOf = (over = {}) => ({
+  files: new Map([[PLUGIN_FILE, PLUGIN_SRC]]),
+  denyValues: over.denyValues ?? [],
+  states: over.states ?? [],
+  // Grounding corpus (VCST-5582). Default undefined ⇒ the gate is INERT (batch / hand-built ctx),
+  // preserving every existing test's shape-only vendor-identity behavior; pass a string to exercise it.
+  evidence: over.evidence,
+  httpClasses: over.httpClasses,
+});
+
+test("v3 provenance: a proven code excerpt + offending literal from the cited plugin file TRAVELS", () => {
+  const f = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+    retries: 0, occurrences: 1,
+    pluginFile: PLUGIN_FILE, pluginLine: 232,
+    codeExcerpt: "?$expand=Properties`;",
+    offendingLiteral: "$expand=Properties",
+    apiShape: "GET {base}/{project}/_apis/wit/workitemtypes/{type}/fields?$expand=…",
+    proposedFix: "drop $expand=Properties and request ?api-version=7.1",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  const g = s.findings[0];
+  assert.equal(g.pluginFile, PLUGIN_FILE);
+  assert.equal(g.pluginLine, 232);
+  assert.equal(g.offendingLiteral, "$expand=Properties");
+  assert.ok(g.codeExcerpt.includes("$expand=Properties"));
+  assert.equal(g.apiShape, "GET {base}/{project}/_apis/wit/workitemtypes/{type}/fields?$expand=…");
+  assert.equal(g.proposedFix, "drop $expand=Properties and request ?api-version=7.1");
+});
+
+test("B2 proposedFix: an actionable fix naming plugin paths + a System.* ref TRAVELS", () => {
+  const f = {
+    skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2", outcome: "degraded",
+    signalClass: "none", struggle: [], errorCode: "UNKNOWN", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    proposedFix: "in skills/qa-fix-routing/bug-contract.mjs:191 exclude System.AreaId from unmappedRequired",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  assert.equal(
+    s.findings[0].proposedFix,
+    "in skills/qa-fix-routing/bug-contract.mjs:191 exclude System.AreaId from unmappedRequired",
+    "the single most actionable field must survive — plugin path + file:line + System.* are all allowlisted",
+  );
+});
+
+test("B2 proposedFix: a FOREIGN dotted identifier (a client custom field) is DENIED (dropped, finding survives)", () => {
+  const f = {
+    skill: "qa-bug", subject: "tracker_field_contract", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    proposedFix: "map the Custom.ReviewState field so the bug can transition",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  assert.equal(s.findings[0].proposedFix, null, "a foreign Custom.* field ref could be client process data — dropped");
+  assert.equal(s.findings[0].verdict, "BROKEN", "the finding SURVIVES the dropped optional field");
+  assertNoLeak(s, "Custom.ReviewState");
+});
+
+test("B2 proposedFixDenial: default-deny on leak shapes; allowlist on identifiers", () => {
+  // Denied leak shapes (the field would be dropped).
+  assert.ok(proposedFixDenial("point it at https://acme.example.com"), "URL host");
+  assert.ok(proposedFixDenial("read C:/Users/acme/secret.txt"), "absolute path");
+  assert.ok(proposedFixDenial("email dev@acme.com"), "email");
+  assert.ok(proposedFixDenial("token github_pat_0123456789abcdefghijklmnopqrstuvwx"), "token");
+  assert.ok(proposedFixDenial("id 6f1c2b3a-1111-2222-3333-444455556666"), "GUID");
+  assert.ok(proposedFixDenial("use the org LeoCorpWebStore", { denyValues: ["LeoCorpWebStore"] }), "client env/profile value");
+  // VCST-5582 — parity with boundaryDenial: proposedFix must also deny an IP and a client work-item
+  // state name (it travels upstream; without these two it was the one fail-OPEN field).
+  assert.ok(proposedFixDenial("the request to 10.0.0.5 timed out"), "internal IP address");
+  assert.ok(proposedFixDenial("add handling for the Blocked-Waiting-Vendor state", { states: ["Blocked-Waiting-Vendor"] }), "client work-item state name");
+  // Allowed: prose + plugin paths + vendor enums + a plugin-sourced Capitalized.dotted literal.
+  assert.equal(proposedFixDenial("drop $expand=Properties in discover-tracker.mjs; request api-version 7.1"), null);
+  assert.equal(proposedFixDenial("default System.State via roleStates, do not add a slot"), null);
+  assert.equal(
+    proposedFixDenial("reference AdoClient.Foo per the source", { files: new Map([["a.mjs", "class AdoClient { AdoClient.Foo }"]]) }),
+    null,
+    "a Capitalized.dotted literal quoted from the plugin's OWN source is allowlisted",
+  );
+  assert.ok(proposedFixDenial("touch the Custom.Widget field"), "a foreign Capitalized.dotted token with no source proof is denied");
+});
+
+test("B2 wiring (VCST-5582): validateUpstream threads ctx.states into proposedFix — a state name is WITHHELD, not shipped", () => {
+  const base = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown",
+    retries: 0, occurrences: 1, pluginFile: PLUGIN_FILE,
+    proposedFix: "add handling for the Blocked-Waiting-Vendor state before the transition",
+  };
+  // The call site once passed only { denyValues, files } — so ctx.states never reached the gate and a
+  // client custom state name shipped. This proves the wiring, not just proposedFixDenial in isolation.
+  const out = validateUpstream(
+    { schemaVersion: 3, pluginVersion: "0.8.2", findings: [{ ...base }], feedback: { up: 0, down: 0 }, sessionCount: 1 },
+    ctxOf({ states: ["Blocked-Waiting-Vendor"] }),
+  );
+  assert.equal(out.findings[0].proposedFix ?? null, null, "the client state name must NOT travel");
+  assert.ok(out.findings[0].withheld.some((w) => w.field === "proposedFix"), "the drop is recorded as withheld");
+  assertNoLeak(out, "Blocked-Waiting-Vendor");
+});
+
+test("v3 provenance (item 7): a codeExcerpt NOT present in the cited plugin file is REJECTED (dropped, finding survives)", () => {
+  const f = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    pluginFile: PLUGIN_FILE, pluginLine: 5,
+    codeExcerpt: "const secret = process.env.CLIENT_ACME_KEY; // never in the real file",
+    offendingLiteral: "CLIENT_ACME_KEY",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  const g = s.findings[0];
+  assert.equal(g.codeExcerpt, null, "unproven excerpt is dropped");
+  assert.equal(g.offendingLiteral, null, "unproven literal is dropped");
+  assert.equal(g.pluginFile, PLUGIN_FILE, "the file citation itself is fine");
+  assert.equal(g.verdict, "BROKEN", "the finding SURVIVES — never dropped for a bad optional string");
+  assertNoLeak(s, "CLIENT_ACME_KEY");
+});
+
+test("v3 provenance: NO ctx ⇒ every v3 string is dropped (fail closed)", () => {
+  const f = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    pluginFile: PLUGIN_FILE, pluginLine: 232, codeExcerpt: "?$expand=Properties`;", offendingLiteral: "$expand=Properties",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }); // no ctx
+  for (const k of V3_STRING_KEYS) assert.equal(s.findings[0][k], null, `${k} dropped without a ctx`);
+});
+
+test("v3 boundaryDenial (item 7): rejects URL host / absolute path / email / token / GUID / IP", () => {
+  assert.ok(boundaryDenial("see https://acme.example.com/x"));
+  assert.ok(boundaryDenial("acme.example.com is the org"));
+  assert.ok(boundaryDenial("C:\\src\\Acme\\Cart.cs"));
+  assert.ok(boundaryDenial("/home/user/acme/checkout.ts"));
+  assert.ok(boundaryDenial("ping dev@acme-client.com"));
+  assert.ok(boundaryDenial("token github_pat_11ABxz0aai0abcdefghijklmnopqrstuv"));
+  assert.ok(boundaryDenial("projectId 6f1c2b3a-1111-2222-3333-444455556666"));
+  assert.ok(boundaryDenial("host at 10.0.12.34"));
+  assert.equal(boundaryDenial("drop $expand=Properties and request ?api-version=7.1"), null, "clean plugin prose passes");
+});
+
+test("v3 boundaryDenial (item 7): rejects a client value from .env / profile, and a work-item state name", () => {
+  assert.ok(boundaryDenial("the org is LeoCorpWebStore", { denyValues: ["LeoCorpWebStore"] }));
+  assert.ok(boundaryDenial("blocked in On Review state", { states: ["On Review"] }));
+  assert.equal(boundaryDenial("the field contract request was rejected", { denyValues: ["LeoCorpWebStore"], states: ["On Review"] }), null);
+});
+
+test("v3 violatesFieldNamespace: System.* / Microsoft.VSTS.* allowed; a custom namespace denied; JS code allowed", () => {
+  assert.equal(violatesFieldNamespace("System.AreaId and System.IterationId are required"), false);
+  assert.equal(violatesFieldNamespace("Microsoft.VSTS.Common.Priority missing"), false);
+  assert.ok(violatesFieldNamespace("Leo.Bug.Severity is a custom field")); // client process
+  assert.ok(violatesFieldNamespace("Custom.ReviewState blocks the POST"));
+  assert.equal(violatesFieldNamespace("call JSON.stringify(x) then Object.keys(y)"), false); // ordinary code
+});
+
+test("v3 §6b normalizeVendorMessage: GUIDs/emails/URLs/paths/IPs/tokens → placeholders, single line, capped", () => {
+  const raw = "Project 6f1c2b3a-1111-2222-3333-444455556666 at https://leo.example.com failed for a@b.com\non C:\\src\\x.cs from 10.0.0.1 token github_pat_11ABxz0aai0abcdefghijklmnop";
+  const n = normalizeVendorMessage(raw);
+  assert.ok(!/\r|\n/.test(n), "single line");
+  assert.ok(n.length <= 300);
+  for (const leak of ["6f1c2b3a", "leo.example.com", "a@b.com", "C:\\src", "10.0.0.1", "github_pat_"]) assert.ok(!n.includes(leak), `normalized away: ${leak}`);
+  assert.ok(n.includes("<guid>") && n.includes("<url>") && n.includes("<email>"));
+});
+
+test("v3 §6b (item 10): a vendor message with a surviving client org is DROPPED while the finding survives", () => {
+  const f = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    vendorErrorTypeKey: "RuleValidationException",
+    vendorHttpStatus: 400,
+    vendorErrorMessage: "TF401347: field is required for project LeoCorpWebStore process",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf({ denyValues: ["LeoCorpWebStore"] }));
+  const g = s.findings[0];
+  assert.equal(g.vendorErrorMessage, null, "message carrying the client org is dropped");
+  assert.equal(g.vendorErrorTypeKey, "RuleValidationException", "the vendor's OWN enum still travels (§6a)");
+  assert.equal(g.vendorHttpStatus, 400);
+  assert.equal(g.verdict, "BROKEN", "finding survives");
+  assertNoLeak(s, "LeoCorpWebStore");
+});
+
+test("v3 §6a: vendorErrorTypeKey/code/status travel for an ADO 4xx; a doc URL only on the allowlist", () => {
+  const base = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    vendorErrorTypeKey: "RuleValidationException", vendorErrorCode: "TF401347", vendorHttpStatus: 400,
+  };
+  const good = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [{ ...base, vendorDocUrl: `https://${VENDOR_DOC_HOSTS[0]}/azure/devops/x` }], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  assert.equal(good.findings[0].vendorErrorTypeKey, "RuleValidationException");
+  assert.equal(good.findings[0].vendorErrorCode, "TF401347");
+  assert.equal(good.findings[0].vendorHttpStatus, 400);
+  assert.ok(good.findings[0].vendorDocUrl.includes(VENDOR_DOC_HOSTS[0]));
+  // an off-allowlist doc host is dropped
+  const bad = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [{ ...base, vendorDocUrl: "https://acme.example.com/doc" }], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  assert.equal(bad.findings[0].vendorDocUrl, null);
+  assertNoLeak(bad, "acme.example.com");
+});
+
+// The core of the confabulation gate: a fabricated identity (present in the diagnostician's finding
+// but NOWHERE in the captured telemetry) is DROPPED, while a genuine one — verbatim in the corpus —
+// travels. Without a positive test the gate could silently regress to shape-only.
+test("v3 grounding (VCST-5582): a vendor identity ABSENT from the corpus is dropped `ungrounded`; a PRESENT one travels", () => {
+  const base = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    vendorErrorCode: "TF401347", vendorHttpStatus: 400,
+  };
+  const structOf = () => ({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [{ ...base }], feedback: { up: 0, down: 0 }, sessionCount: 1 });
+  // The corpus captured a DIFFERENT error (a 5xx gateway timeout); neither TF401347 nor the digits
+  // "400" appear anywhere in it, so both the code and the status are ungrounded.
+  const ungrounded = validateUpstream(structOf(), ctxOf({ evidence: "http 504 gateway timeout on get-workitem", httpClasses: new Set(["HTTP_5XX"]) }));
+  assert.equal(ungrounded.findings[0].vendorErrorCode ?? null, null, "an ungrounded vendor code must NOT travel");
+  assert.equal(ungrounded.findings[0].vendorHttpStatus ?? null, null, "an ungrounded status must NOT travel");
+  assert.ok(ungrounded.findings[0].withheld.some((w) => w.field === "vendorErrorCode" && w.reason === "ungrounded"), "the drop is recorded as `ungrounded`");
+  assertNoLeak(ungrounded, "TF401347");
+  // The SAME identity, now captured verbatim by the collector, is grounded and travels.
+  const grounded = validateUpstream(structOf(), ctxOf({ evidence: "ado create workitem 400: tf401347 field-contract violation", httpClasses: new Set(["HTTP_4XX"]) }));
+  assert.equal(grounded.findings[0].vendorErrorCode, "TF401347");
+  assert.equal(grounded.findings[0].vendorHttpStatus, 400);
+});
+
+test("v3 PROPERTY: adversarial bytes injected into every v3 string slot never leak", () => {
+  // v3 lets a string travel IF it is either vendor-provenance (a substring of the cited plugin file)
+  // or boundary-clean. The realistic threat model is that the client's OWN identifiers are known
+  // from `.env.*` / `project-profile.json` — `buildProvenanceCtx` collects exactly those into
+  // `denyValues`. So we pass every adversarial fixture as a denyValue and assert none survives.
+  // (The provenance fields drop regardless: `bad` is never a substring of the plugin file, and a
+  // `bad` pluginFile fails the relative-path shape.)
+  const denyValues = [...ADVERSARIAL];
+  for (const bad of ADVERSARIAL) {
+    const f = {
+      skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+      signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+      pluginFile: bad, pluginLine: 1, codeExcerpt: bad, offendingLiteral: bad, apiShape: bad, proposedFix: bad,
+      vendorErrorTypeKey: bad, vendorErrorName: bad, vendorErrorCode: bad, vendorHttpStatus: bad, vendorDocUrl: bad, vendorErrorMessage: bad,
+    };
+    const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf({ denyValues }));
+    assertNoLeak(s, bad);
+    assertAllFieldsInVocabulary(s);
+  }
+});
+
+test("v3 PROPERTY: a model-authored string with NO namable client value + NO provenance is still dropped for the provenance fields but MAY pass for apiShape/proposedFix", () => {
+  // The deliberate v3 relaxation: apiShape/proposedFix are model-authored and travel when
+  // boundary-clean. This documents that a benign, client-free string DOES travel (that is the whole
+  // point of v3 — a useful payload), while codeExcerpt/offendingLiteral STILL require provenance.
+  const f = {
+    skill: "qa-bug", subject: "ado_create_workitem", verdict: "BROKEN", severity: "S1", outcome: "failed",
+    signalClass: "tool_error", struggle: [], errorCode: "HTTP_4XX", toolFamily: "tracker", repoKind: "unknown", retries: 0, occurrences: 1,
+    pluginFile: PLUGIN_FILE, pluginLine: 232,
+    codeExcerpt: "this text is not in the file", offendingLiteral: "alsoNotInFile",
+    apiShape: "GET {base}/{project}/_apis/wit/…", proposedFix: "request api-version 7.1 instead",
+  };
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [f], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctxOf());
+  const g = s.findings[0];
+  assert.equal(g.codeExcerpt, null, "no provenance → dropped");
+  assert.equal(g.offendingLiteral, null, "no provenance → dropped");
+  assert.equal(g.apiShape, "GET {base}/{project}/_apis/wit/…", "boundary-clean model string travels (v3 intent)");
+  assert.equal(g.proposedFix, "request api-version 7.1 instead");
+});
+
+test("v3: nodeVersion + os are the RUNTIME, coerced to a bounded shape", () => {
+  const s = validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", nodeVersion: "v22.22.2-AcmeBuild", os: "win32", findings: [], feedback: { up: 0, down: 0 }, sessionCount: 1 });
+  assert.equal(s.nodeVersion, "v22.22.2"); // suffix discarded
+  assert.equal(s.os, "win32");
+  assert.equal(validateUpstream({ os: "AcmeOS" }).os, "other"); // out-of-vocab → other
+  assertNoLeak(s, "AcmeBuild");
+});
+
+// ─── GROUP B acceptance (VCST-5582 upstream-reporting-pipeline fixes) ─────────────────
+// The finding-shaped fixture the reference session's diagnostician actually produced, over the
+// real cited plugin file, with the drifted-scan defect at discover-tracker.mjs.
+const B_PLUGIN_FILE = "skills/project-init/discover-tracker.mjs";
+const B_PLUGIN_SRC =
+  "  const url = `${base}/${project}/_apis/wit/workitemtypes/${type}/fields?$expand=Properties&api-version=7.1`;\n" +
+  "  return fetchJson(url);\n";
+const bCtx = (over = {}) => ({ files: new Map([[B_PLUGIN_FILE, B_PLUGIN_SRC]]), denyValues: over.denyValues ?? [], states: over.states ?? [] });
+const bValidate = (finding, ctx = bCtx()) =>
+  validateUpstream({ schemaVersion: 3, pluginVersion: "0.8.2", findings: [finding], feedback: { up: 0, down: 0 }, sessionCount: 1 }, ctx).findings[0];
+
+// Acceptance #2 — subjectEnum output is ALWAYS a member of SUBJECTS across an adversarial corpus.
+test("B acc#2: subjectEnum never leaves the closed vocabulary for adversarial input", () => {
+  const corpus = [
+    "https://acme.example.com/x", "C:\src\Acme\Checkout.cs", "/home/user/acme/checkout.ts",
+    "dev@acme-client.com", "6f1c2b3a-1111-2222-3333-444455556666",
+    "github_pat_11ABxz0aai0abcdefghijklmnop", "LeoCorpWebStore", "leocorp-theme-fork",
+    "ОООРомашка", "株式会社アクメ", "", null, undefined, "   ", "unknown",
+    "tracker_bug_field_contract", "ado_auth_error_diagnosability", "wholly novel free text",
+  ];
+  for (const s of corpus) assert.ok(SUBJECTS.includes(subjectEnum(s)), `subjectEnum(${JSON.stringify(s)}) ∈ SUBJECTS`);
+});
+
+// Acceptance #3 — a proposedFix over the OLD 300 cap survives (not null); one over the NEW 800 cap
+// survives as truncated text with a marker.
+test("B acc#3: a 445-char proposedFix survives (old cap would null it); >800 truncates with marker", () => {
+  const fix445 = "drop the $expand=Properties query parameter and request ?api-version=7.1 instead; " + "then reconcile the Bug field contract. ".repeat(10);
+  assert.ok(fix445.length > 300 && fix445.length < 800, `445-ish: over the old 300 cap, under 800 (${fix445.length})`);
+  const g1 = bValidate({ skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2", proposedFix: fix445 });
+  assert.equal(g1.proposedFix, fix445.trim(), "445 chars (over the old 300 cap, under 800) survives WHOLE, not null");
+  assert.equal(g1.withheld.find((w) => w.field === "proposedFix"), undefined, "not withheld");
+
+  const fixLong = "drop $expand=Properties and request api-version 7.1; " + "word ".repeat(300);
+  assert.ok(fixLong.length > 800);
+  const g2 = bValidate({ skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2", proposedFix: fixLong });
+  assert.ok(g2.proposedFix.length <= 800 && g2.proposedFix.endsWith(TRUNC_MARK), `truncated with marker: …${g2.proposedFix.slice(-12)}`);
+  assert.ok(g2.proposedFix.startsWith("drop $expand=Properties"), "keeps the informative head");
+});
+
+// Acceptance #4 — a RE-INDENTED codeExcerpt still proves against the shipped file (the old
+// content.includes failed the moment indentation differed), and the stored text is the file's OWN.
+test("B acc#4: a re-indented codeExcerpt still proves; stored verbatim from the file", () => {
+  // The diagnostician re-indented the excerpt (no leading spaces, single spaces) — NOT byte-equal
+  // to the file's 2-space-indented source line.
+  const reindented = "const url = `${base}/${project}/_apis/wit/workitemtypes/${type}/fields?$expand=Properties&api-version=7.1`;";
+  const g = bValidate({
+    skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2",
+    pluginFile: B_PLUGIN_FILE, pluginLine: 235, codeExcerpt: reindented,
+  });
+  assert.ok(g.codeExcerpt, "re-indented excerpt proves");
+  assert.ok(g.codeExcerpt.includes("$expand=Properties"), "carries the offending token");
+  assert.ok(B_PLUGIN_SRC.includes(g.codeExcerpt), "stored VERBATIM from the shipped file, not the model's copy");
+  assert.equal(g.withheld.find((w) => w.field === "codeExcerpt"), undefined, "proven → not withheld");
+});
+
+// B6 — a PROVIDED string dropped by the boundary/provenance is reported in `withheld` with a reason;
+// a field simply not supplied gets NO entry.
+test("B6: withheld distinguishes 'denied' from 'not supplied'", () => {
+  // proposedFix carries a client URL → boundary-denied; codeExcerpt not in the file → proof-failed;
+  // apiShape absent → no entry at all.
+  const g = bValidate({
+    skill: "project-init", subject: "tracker_field_contract", verdict: "DEGRADED", severity: "S2",
+    pluginFile: B_PLUGIN_FILE, pluginLine: 235,
+    proposedFix: "point it at https://acme.example.com/internal",
+    codeExcerpt: "const secret = process.env.CLIENT_KEY; // not in the real file",
+  });
+  assert.equal(g.proposedFix, null);
+  assert.equal(g.codeExcerpt, null);
+  const reasons = Object.fromEntries(g.withheld.map((w) => [w.field, w.reason]));
+  assert.equal(reasons.proposedFix, "boundary-denied");
+  assert.equal(reasons.codeExcerpt, "proof-failed");
+  assert.equal(reasons.apiShape, undefined, "a field never supplied is not 'withheld'");
+  for (const w of g.withheld) assert.ok(WITHHELD_REASONS.includes(w.reason));
+});
+
+// locateExcerpt / truncField units.
+test("B4 locateExcerpt: tolerant match, verbatim read-back; miss → null", () => {
+  const src = "function f() {\n    return a\n        + b;\n}\n";
+  const got = locateExcerpt(src, "return a\n+ b;"); // reflowed indentation
+  assert.ok(got && src.includes(got), "returns a verbatim substring of the source");
+  assert.equal(locateExcerpt(src, "return zzz"), null, "a genuine miss is null");
+});
+test("B3 truncField: whole under cap; marker + word boundary over cap; empty → null", () => {
+  assert.equal(truncField("short", 800), "short");
+  assert.equal(truncField("   ", 800), null);
+  const long = "alpha beta gamma delta ".repeat(60);
+  const t = truncField(long, 100);
+  assert.ok(t.length <= 100 && t.endsWith(TRUNC_MARK));
+  assert.ok(!/\s$/.test(t.slice(0, -TRUNC_MARK.length)), "no trailing space before the marker");
 });

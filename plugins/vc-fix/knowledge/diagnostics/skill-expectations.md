@@ -38,25 +38,33 @@ invocation) ▷ `agent` (a Task/Agent delegation) / `tool` (any other tool). Eac
 | `tool_error` | A tool returned `is_error: true` | transcript `tool_result.is_error === true` |
 | `permission_denied` | A tool call was denied / declined | permission-denied phrase in a `tool_result` / text |
 | `hook_failure` | A PostToolUse/other hook failed (e.g. `tsc` on every Edit, `npm error`) | `error TS####`, `tsc … error`, `command failed…` in output |
-| `stop_bail` | A STOP / BAIL / hand-off / `FIX_STATUS: FAILED` marker | marker regex in assistant text |
+| `stop_bail` | A STOP / BAIL / hand-off / `FIX_STATUS: FAILED` marker the AGENT declared | marker regex in **assistant** text, excluding an echoed command/skill DEFINITION body, and requiring a bail context around the weak `hand off` marker (VCST-5582 F2 — `commands/qa-bug.md` contains the literal "hand off", which used to make the plugin trip its own detector) |
+| `policy_block` | **Non-blocking.** A by-design guardrail refused a call and the agent obeyed + adapted (`hooks/enforce-real-user.mjs` blocking `browser_evaluate`) | `BLOCKED by real-user interaction rule` in a `tool_result`. Recorded and reported, but **excluded from `blockingErr`** — a rule working as intended can never make a run `failed` (VCST-5582 F4) |
 | `tool_calls` | Count of tool invocations in the span | `tool_use` items |
 | `agent_calls` | Count of agents delegated (Task/Agent tool) | `tool_use` name ∈ {Task, Agent}. A COUNT — a FAILED delegation surfaces as `tool_error`/`permission_denied` on the parent span |
 
 The **numeric `anomalyScore >= 6` gate is GONE** (VCST-5509). Escalation is driven by
-the per-span `outcome` (§1a), not a weighted count. `finalize` carries `spanCounts`
-(outcome histogram), `flagged[]` (the non-`success`/non-`recovered` skill/command
-spans with their dedup `signature`), `feedbackCount`, `anySkillSeen`, and a **`decision`**
+the per-span `outcome` (§1a) **plus the observation stream (§1e)**, not a weighted count.
+`finalize` carries `spanCounts` (outcome histogram), `flagged[]` (the
+non-`success`/non-`recovered` skill/command spans with their dedup `signature` **and an
+`occurrences` count**), `feedbackCount`, `anySkillSeen`, and a **`decision`**
 object — the durable, deterministic audit of the decision moment. A **terminal** Stop
-records `{ verdict:"clean|flagged", pluginActivity, freshCount, flaggedTotal, surfaced,
-suppressReason }`; a **checkpoint** Stop (a background sub-agent is still running — detected
+records `{ verdict, surfaceDecision, pluginActivity, freshCount, freshObsCount,
+observations:{distinct,total,visible,routing,selfReported,dropped,byClass}, flaggedTotal,
+scanErrors, scanErrorsTotal, surfaced, suppressReason }` — where **`verdict` (`clean` |
+`observed` | `attention` | `degraded-collector`) describes the RUN and is derived from COUNTS
+alone, while `surfaceDecision`/`suppressReason` describe the UI choice** (§1e; conflating the
+two in one field is how a `failed` span once landed inside a record that called itself `clean`);
+a **checkpoint** Stop (a background sub-agent is still running — detected
 via `background_tasks`, fallback to an open agent op) records `{ verdict:"deferred",
 pendingSubagents, surfaced:false, suppressReason:"subagent-running" }` and returns without
 closing spans or surfacing anything, so a verdict/line never lands mid-task. `surfaced` is
 whether a user-visible line was produced (a `Stop` hook cannot show a line without resuming
-the agent). On a terminal plugin turn the hook resumes to print one line: a finding →
-`/vc-self-check`; a clean turn → "no plugin issues detected" (default ON — silence with
-`VC_FIX_DIAG_LINE=off`). Grep `"type":"finalize"` to see when the collector ran and what it
-decided.
+the agent). On a terminal plugin turn the hook resumes to print **one of three** lines: a
+finding/routing observation → run `/vc-self-check`; observations but none routing →
+`no blocking issues — N observation(s) recorded (run /vc-self-check for detail)`; a genuinely
+empty record → `no plugin issues detected` (default ON — silence with `VC_FIX_DIAG_LINE=off`).
+Grep `"type":"finalize"` to see when the collector ran and what it decided.
 
 **Load-bearing nuance (quality-gates §3):** a `stop_bail` is a **SUCCESS**, not an
 anomaly, when the run reached the bail *legitimately* (a G0/G1 BAIL with a reason
@@ -71,14 +79,21 @@ outcome. `error ≠ failure`: a self-corrected error is `recovered`, not `failed
 | Outcome | Meaning | Escalate? | Maps to |
 |---------|---------|-----------|---------|
 | `success` | Ran clean, produced its expected output (§1c). A clean BAIL is `success`. | no | S0 |
-| `recovered` | An error occurred but the **same invocation** (same `tool` + `arg_hash`) later succeeded within the span (self-corrected). Keyed on the exact invocation, NOT the tool name — `Read(A)` fail then `Read(B)` ok is NOT a recovery of A. Applies to `tool_error`, `permission_denied`, and a `hook_failure` **surfaced via a `tool_result`** tied to a `tool_use_id`. A `hook_failure` detected from a bare top-level string echo (an untied PostToolUse note, e.g. a `tsc` message after an Edit — no `tool_use_id` to key an op on) has no invocation to resolve against and can **never** classify as `recovered`; it always forces `failed` for its span, even if the very next Edit is clean. Deliberate fail-toward-escalation, not an oversight. | **no** | S3 (note only) |
+| `recovered` | An error occurred but was resolved **either** way: (a) **literal retry** — the same invocation (same `tool` + `arg_hash`) later succeeded within the span; **or** (b) **adaptation** (VCST-5582 F1) — the failed invocation was never repeated AND the span **provably produced** its expected artifact (`sawProduced`: a §1c marker backed by an operation that SUCCEEDED — never by a failed attempt, so "tried `gh pr create`, denied" is still `failed`). Clause (b) exists because the correct agent response to an error is to ADAPT (fix the quoting, pick another selector, switch tool), which mints a NEW `arg_hash` — keying recovery on (a) alone classified **every adaptive run** as `failed`. Applies to `tool_error`, `permission_denied`, and a `hook_failure` **surfaced via a `tool_result`** tied to a `tool_use_id`. A `hook_failure` detected from a bare top-level string echo (an untied PostToolUse note, e.g. a `tsc` message after an Edit — no `tool_use_id` to key an op on) has no invocation to resolve against and can **never** classify as `recovered`; it always forces `failed` for its span, even if the very next Edit is clean. Deliberate fail-toward-escalation, not an oversight. | **no** | S3 (note only) |
 | `degraded` | Completed but a **struggle** sub-signal fired (§1d) — persistence without progress. | yes | S2 |
 | `failed` | A blocking error that was **not** recovered (its exact `tool`+`arg_hash` never succeeded afterward, or — for an untied `hook_failure` echo — unconditionally, per the `recovered` row above) — a `tool_error`, `permission_denied`, or `hook_failure`. Signals come ONLY from `is_error` tool results (never from narration or the text content of a successful tool). | yes | S1 |
 | `silent_suspect` | Closed with no error and no struggle, but produced **none** of its expected-output markers (§1c) — task likely done wrong with no error signal. Requires a **minimum of real work** (`SILENT_MIN_OPS = 2` ops): a command span that opened and closed with ~0 ops (e.g. `/qa-fix` → the agent asks a clarifying question → stop) is a trivial/deferred turn, not a silent failure, and is NOT flagged. | yes | S1/S2 |
 
 Only `degraded`/`failed`/`silent_suspect` spans are `flagged`; the tail-trigger runs the
-diagnostician once per turn on **new** signatures only (dedup). `recovered`/`success`
+diagnostician once per turn on **new** signatures (dedup) — or on one whose `occurrences` count
+has since **grown**, because a recurrence is not a duplicate. `recovered`/`success`
 never escalate. `vc-self-check`'s own spans are dropped (loop guard).
+
+**But `flagged[]` is no longer the whole truth.** It is one input to the analysis set, and it is
+now best read as *a routing hint*: a `success`/`recovered` span can still carry real signals, and
+those live in the **observation stream (§1e)** — which is where the WARN/degraded-artifact/stderr
+class of finding comes from. A session with `flagged: []` is **not** evidence of a healthy run;
+check `decision.observations` before concluding anything.
 
 ### 1c. Expected-output markers (Tier 1 `silent_suspect` — machine-readable)
 
@@ -122,6 +137,140 @@ so normal thorough work does NOT trip them. Any hit ⇒ `degraded`.
 > **Progress, not volume (both `search_thrash` + `low_yield`).** Neither fires while the span
 > has already produced its expected output — a read-heavy but successful read-only skill is
 > not struggling. Volume alone never flags.
+
+> **What §1d structurally CANNOT catch.** Every sub-signal above is **behavioural** — it needs
+> visible repetition, a recurring error, wall-clock, or aimlessness. So a **first-try,
+> clean-exit, wrong result** trips none of them, by construction. That is not a threshold to
+> tune; it is the reason §1e/§1f exist.
+
+### 1e. Observations — the capture stream (`type:"obs"`)
+
+**Capture is forbidden from judging.** Before VCST-5582 H the collector's non-success test at
+span close was simultaneously the *retention*, *analysis-scope* and *surfacing* decision
+(`state.flagged[]` was the only thing this skill read), so a signal Tier 1 did not recognise
+did not get downgraded — it **ceased to exist**. A real `/project-init` run printed a **WARN**
+in its own readiness table (the Azure Bug field contract was never scanned — HTTP 400) and
+self-diagnosed `no plugin issues detected`, `spanCounts:{success:31}`, `flagged:[]`. Worse, the
+readiness table *carrying* the warning is what satisfied §1c and certified the run healthy.
+
+So every anomaly signal — however minor, however likely-benign — is now recorded as a durable
+`obs` record, and **severity is assigned here (§1f), never at capture time**:
+
+```
+{ type:"obs", sessionId, ts, lastTs, spanId, skill, class, subject, code,
+  pluginOwned, count, source:"collector|script|profile-assert", signature,
+  evidence:{ snippet, exitCode, httpStatus, path } }
+```
+
+`pluginOwned` says whether the observed script belongs to the PLUGIN (routing input only — see the
+routing set below). It is **not** a severity or a verdict: the collector still has no way to express
+importance.
+
+There is deliberately **no `severity` and no `verdict` field** — the collector has no way to
+express importance. `class` is a closed vocabulary (lock-step with `OBS_CLASSES` in
+`hooks/session-telemetry.mjs`):
+
+| Class | Recorded when | Emitted by |
+|---|---|---|
+| `tool_error` · `permission_denied` · `hook_failure` · `policy_block` · `stop_bail` | any signal, **including on a span that ends `success`/`recovered`** — which `flagged[]` structurally cannot carry | collector |
+| `script_stderr` | a tool wrote to **stderr**, whatever its exit code — read from the transcript's `toolUseResult.stderr` sidecar, which the scan used to ignore entirely | collector |
+| `script_exit_nonzero` | the result body opens `Exit code N` | collector |
+| `http_non2xx` | a plugin script's own HTTP call failed (status travels as data, URLs are scrubbed) | scripts |
+| `tool_interrupted` | `toolUseResult.interrupted === true` | collector |
+| `self_reported_warn` · `self_reported_fail` · `self_reported_skip` | a **non-PASS row of our own readiness table** (`verify-access.mjs`) | scripts |
+| `self_reported_fallback` | our own output announced a degradation: `unverified defaults`, `falling back to`, `best-effort`, `could not be derived`, `not scanned` | collector + scripts |
+| `degraded_artifact` | a generated artifact came out empty/partial — `tracker.fields=={}`, `roleStatesComplete:false`, empty `repos.client` on a client project, `upstreamRefResolved:false` | scripts / `assert-profile.mjs` |
+| `recovered_error` · `struggle` | outcomes Tier 1 deliberately does **not** escalate — recorded so the vendor still learns the happy path fails routinely | collector |
+| `capture_truncated` | a cap (`OBS_SIGNATURE_CAP` 200, per-class 25, `FLAGGED_CAP`) refused a distinct signal. **Truncation is never silent** | collector |
+| `collector_scan_error` · `collector_contention` | the measurement itself broke (`scanErrorsTotal` is the monotone twin of the resettable `scanErrors`) | collector |
+| `question_unanswered` | a Stop deferred on an open `AskUserQuestion` | collector |
+| `harness_noise` | stderr whose **every** line is known harness chatter (`Shell cwd was reset`, npm notices) | collector |
+| `unclassified` | an emitter passed a class this build does not know — **recorded, never dropped** | any |
+
+**Bounded growth.** Aggregated by `signature = hash(class|subject|code|skill)`: the first
+sighting appends a line, later ones bump `count`. Worst case ≈ 200 signatures ≈ 65 KB; a typical
+run < 20 ≈ 6 KB (one real session's *span* records alone are 230 KB, so observations are a
+rounding error). The jsonl is append-only, so a second collector process can duplicate a line
+but can never lose one.
+
+**The routing set — TIMING, not severity.** The Stop hook spends a model turn only for a **hard**
+set (`OBS_ROUTING_CLASSES` + `obsRoutes()`):
+
+| Class | Routes when |
+|---|---|
+| `self_reported_fail` | always — one of OUR surfaces said a required step FAILED |
+| `degraded_artifact` | always — we generated something empty/partial (the reference incident below still routes on this) |
+| `script_exit_nonzero` | **only for a PLUGIN-OWNED script** (`obs.pluginOwned`, from the same `PLUGIN_SCRIPT_RE` match that derives `subject`). A client's own failing `npm run build` is recorded like everything else, but must not arm the plugin's diagnostician about code that is none of its business |
+
+Plus, outside the observation stream: a **flagged span**, a **👎**, and a **grown occurrence
+count** — `obsSurfacedCount` records the count a signature routed AT (mirroring the flagged path's
+`surfacedAt`), so a defect that keeps RECURRING re-qualifies instead of being silenced for the rest
+of the session (§1f rule 5: *a recurrence is not a duplicate*). Growth re-routes only within the
+hard set, so a growing noise tally can never re-nag.
+
+**Demoted out of routing** (item 7): `self_reported_warn`, `http_non2xx` and
+`collector_contention`. The old set made routing fire on essentially any new signal — a run whose
+command span ended `recovered`, whose deliverable landed, and whose findings were all S2/S3
+friction still cost the operator a whole extra turn. These are still recorded, still forbid the
+word "clean" (a WARN/`_fail` forces `attention` via invariant 2 below — that is a VERDICT rule, not
+a routing one), still counted in the visible line, and still diagnosed by the next
+`/vc-self-check`; `collector_contention` additionally surfaces as the `degraded-collector` verdict.
+They just do not interrupt.
+
+Still **absent** for the original reason: raw `tool_error`/`permission_denied`/`hook_failure` (a
+*blocking* one already routes via the §1a outcome; a *recovered* one must not, or every adaptive run
+nags again — the regression §1a clause (b) fixed), and every noise class. **Never** routed:
+`recovered_error`, `harness_noise`.
+
+**The two hard invariants** (deterministic, in `computeVerdict`):
+
+1. `decision.verdict === "clean"` requires `observations.total === 0 && flaggedTotal === 0 && !scanErrors`.
+2. Any `self_reported_warn` / `self_reported_fail` forces at least `attention`.
+
+So **a run containing a WARN can never record itself clean**, whatever Tier 1 thought of it.
+`verdict` (`clean` | `observed` | `attention` | `degraded-collector`) describes the **run**;
+`surfaceDecision` / `suppressReason` describe the **UI choice**. Conflating those two in one
+field is exactly how a `failed` span ended up inside a record that called itself `clean`.
+
+> **Authoring note.** Never pipe a plugin script (`node …/verify-access.mjs | head -20`): the
+> pipe's exit 0 masks the script's own exit code, so `script_exit_nonzero` can never fire.
+
+### 1f. Observation → severity (Tier 2 — THIS SKILL'S JOB)
+
+Candidate severity per class; the §2 rubric and §3 per-skill expectations still override, and
+the correlation rules below run **after**.
+
+| Class | Candidate | Promote when |
+|---|---|---|
+| `self_reported_fail` · `forbidden_tool` · `write_outside_output_root` | **S1** | — |
+| `self_reported_warn` · `degraded_artifact` · `http_non2xx` · `script_exit_nonzero` | **S2** | the `subject` is a **required output/phase** for that skill (§3) ⇒ **S1** |
+| `self_reported_fallback` · `report_oversize` · `struggle` · `question_unanswered` | **S2** | — |
+| `script_stderr` · `recovered_error` · `tool_interrupted` · `capture_truncated` · `collector_scan_error` | **S3** | `count ≥ 3`, or correlated with an S2 on the same `subject` ⇒ **S2** |
+| `collector_contention` | **S2** | it invalidates the measurement — the verdict may not be `OK` |
+| `policy_block` · `self_reported_skip` · `harness_noise` | **NOISE** | never on its own; still usable as supporting evidence |
+| `unclassified`, or a class/subject this table does not cover | **S3 + LOW confidence** | report as an **oracle gap** ("propose extending §1e/§1f") — never silently drop |
+
+**Correlation rules — N observations = ONE finding.**
+
+1. **Same-subject merge.** Observations sharing a `subject` collapse into one finding at
+   `max(severity)`, citing each as separate evidence. The reference incident becomes ONE finding
+   — `http_non2xx(tracker_field_contract)` + `self_reported_fallback` + `degraded_artifact` +
+   `self_reported_warn` — even though **every span was `success`**.
+2. **Triangulation escalates.** ≥3 *different* classes on one `subject` ⇒ **+1 severity step**. A
+   corroborated degradation is not friction.
+3. **Cross-surface contradiction ⇒ S1.** A `self_reported_warn`/`_fail` in a run whose
+   `decision.verdict` is `clean`, **or** a `flaggedTotal > 0` next to `verdict:"clean"`, is a
+   finding **against the collector** (`subject: collector_verdict_integrity`). This is the
+   highest-value row in the rubric: it is what catches the failure mode where the plugin's own
+   surfaces disagree with each other.
+4. **Same-code clustering across skills** ⇒ one cross-cutting finding (§4), now with data.
+5. **Occurrence weighting.** `count ≥ 3` promotes S3 → S2. `flagged[].occurrences` /
+   `obs.count` growing since the last DIAG makes a signature **worth re-reporting** — a
+   recurrence is not a duplicate.
+
+**Suppression is a VERDICT, not a hole.** A NOISE class is written into the DIAG as one line —
+`Suppressed as noise: N observations (harness_noise ×4, policy_block ×1)` — and stays in the
+jsonl. "Benign" must be a conclusion the reader can check, never missing data.
 
 ---
 
@@ -282,6 +431,19 @@ Rules:
 - Run it **exactly once**, at the real end of the workflow (e.g. after the final "Done"/STOP step),
   **AFTER** all user-visible output — never at an intermediate pause, and never before a step that
   still waits on the operator.
+- **NEVER while an operator DECISION is pending** (VCST-5582 D — this is the rule the OPUS run
+  broke). A skill that asks the operator anything — `/qa-bug`'s Step-5 "create a ticket?", its
+  parent-link question, a field-mapping question — emits `complete` only **after** that question is
+  answered or the step is explicitly declined. Two things go wrong otherwise: (1) everything the
+  skill does after `complete` lands **outside** the span as `parentId: null` orphans, so neither the
+  oracle nor `/vc-self-check` ever evaluates it (on the OPUS run that was the entire
+  ticket-creation phase); (2) with the span closed, the `Stop` hook may resume the agent to print a
+  verdict, pushing the unanswered question out of view.
+- **Ask with `AskUserQuestion`, not prose.** A prose question ends the turn, which is what lets an
+  end-of-turn hook interleave with it. `AskUserQuestion` blocks inside the turn. Belt-and-braces:
+  `cmdFinalize` DEFERS any `Stop` whose transcript tail holds an `AskUserQuestion` `tool_use` with no
+  matching `tool_result` — recorded as `{ verdict: "deferred", surfaced: false, suppressReason:
+  "question-pending" }`, and it emits no block. That is a safety net, not a licence to signal early.
 - Only the **top-level command/skill the operator invoked** emits it. A **dispatched sub-agent**
   (the `fullstack-*` devs, `qa-*-expert`s) must NOT — its spans run in a collector-skipped sidechain
   and roll up to the enclosing command, and a sub-agent's `complete` would set the marker with a
@@ -306,5 +468,7 @@ escalation (a flagged span → silent `/vc-self-check`) is independent and needs
 
 - [ ] The terminal step's LAST action emits `session-telemetry.mjs complete --skill "<name>"`.
 - [ ] Every early-exit path (BAIL / NOT READY / no-op) also emits it.
+- [ ] Every operator question uses `AskUserQuestion` (never prose), and no `complete` is emitted
+      while one is still unanswered.
 - [ ] `<name>` matches the skill/command name the collector attributes spans to (the slash-command
       name without its namespace, e.g. `qa-fix`, `project-init`).

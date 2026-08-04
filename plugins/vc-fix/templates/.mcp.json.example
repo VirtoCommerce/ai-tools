@@ -8,14 +8,14 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@latest",
+        "@playwright/mcp@0.0.77",
         "--browser",
         "chrome",
         "--isolated",
         "--viewport-size",
         "1920x1080",
         "--output-dir",
-        "test-results/chrome"
+        "reports/bugs/screenshots/_incoming/chrome"
       ]
     },
     "playwright-firefox": {
@@ -24,14 +24,14 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@latest",
+        "@playwright/mcp@0.0.77",
         "--browser",
         "firefox",
         "--isolated",
         "--viewport-size",
         "1920x1080",
         "--output-dir",
-        "test-results/firefox"
+        "reports/bugs/screenshots/_incoming/firefox"
       ]
     },
     "playwright-edge": {
@@ -40,14 +40,14 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@latest",
+        "@playwright/mcp@0.0.77",
         "--browser",
         "msedge",
         "--isolated",
         "--viewport-size",
         "1920x1080",
         "--output-dir",
-        "test-results/edge"
+        "reports/bugs/screenshots/_incoming/edge"
       ]
     },
     "Chrome DevTools": {

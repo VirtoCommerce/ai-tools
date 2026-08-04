@@ -321,6 +321,41 @@ test("classify: an unrecovered permission_denied is `failed` and triggers the si
   }
 });
 
+// ─── the findings-branch reason must not kill the skill's delivery offer (Step 6b) ──
+// Regression: session 5cab0e1f-12ce-4453-9eee-b98cc053e4b5 (plugin 0.8.2, env leo_qa) produced a
+// DIAG with an S1 BROKEN + an S2 DEGRADED row and `feedback.mode: "ask"` — every Step 6b condition
+// satisfied — yet the operator was never offered the contribution, because the block reason said
+// "print ONE line … and stop. Nothing is sent anywhere.": "and stop" terminated the turn BEFORE 6b,
+// and the absolute reassurance read as a prohibition on even the DRY draft 6b needs. That is the
+// dead-hint failure VCST-5582 G fixed at the skill layer, regressed into the hook layer.
+test("tail-trigger: the findings block reason routes to the delivery offer — no turn-ending 'and stop', no absolute send prohibition", () => {
+  const home = setupHome();
+  try {
+    const sid = "offer-reachable-1";
+    const transcriptPath = join(home, "transcript.jsonl");
+    writeFileSync(transcriptPath, "");
+    run(home, "init", { session_id: sid, transcript_path: transcriptPath });
+    run(home, "prompt", { session_id: sid, transcript_path: transcriptPath, prompt: "/qa-fix VCST-1" });
+
+    appendLines(transcriptPath, [
+      toolUse("2026-01-01T00:00:00Z", "tu1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "tu1", true, "permission denied: token missing pull-request scope"),
+    ]);
+
+    const { reason } = JSON.parse(run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" }));
+
+    // PR #172: diagnosis + the offer moved into the vc-self-check skill (which spawns the
+    // subagent). The reason must instruct running that skill and must NOT end the turn early.
+    assert.match(reason, /vc-self-check skill/, "the reason must hand off to the skill that orchestrates the offer");
+    assert.match(reason, /self-check-diagnostician|asks you once/i, "…which spawns the subagent and asks once");
+    assert.doesNotMatch(reason, /\band stop\b/i, "'and stop' terminates the turn before the offer can happen");
+    assert.doesNotMatch(reason, /Nothing is sent anywhere/i, "an absolute prohibition blocks even the dry plan the offer needs");
+    assert.match(reason, /without an explicit (?:Send|yes)/i, "the reassurance must stay CONDITIONAL, not absolute");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ─── silent_suspect: clean close, real work, no expected-output marker ───────────
 test("classify: a clean close with real work but none of the skill's expected-output markers is `silent_suspect`", () => {
   const home = setupHome();
@@ -469,6 +504,62 @@ test("classify: a read-only skill (many reads, no decisive op) that produced its
     assert.equal(cmd.length, 1);
     assert.equal(cmd[0].outcome, "success", "expected output = progress; must not be search_thrash/low_yield degraded");
     assert.deepEqual(cmd[0].struggle, [], "no struggle sub-signal should fire");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── Fix (VCST-5582): human think-time on a consent question is NOT a `stall` ─────────
+// detectStruggle()'s per-op stall check excludes AskUserQuestion ops — their wall-clock is the
+// operator's answer wait, not a hang. A ~20-min consent answer once ran 1,240,749 ms and minted a
+// false `stall`, degrading the span and arming the silent self-check tail-trigger (a user-facing
+// nag). These two tests lock the exclusion in AND prove it is question-specific: a non-question op
+// of the SAME duration must still stall, so deleting the guard fails a test instead of regressing
+// silently.
+test("struggle: a >STALL_MS AskUserQuestion op (human think-time) does NOT produce a `stall`", () => {
+  const home = setupHome();
+  try {
+    const sid = "stall-question";
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-bug the dropdown is empty" });
+    appendLines(tp, [
+      // 20-min gap (> STALL_MS = 8min) between the question and the operator's answer.
+      toolUse("2026-01-01T00:00:00Z", "q1", "AskUserQuestion", { questions: [{ question: "Create a bug-tracker ticket?" }] }),
+      toolResult("2026-01-01T00:20:00Z", "q1", false, "Yes — file the ticket"),
+      // a decisive op so the span has progress and the stall signal is isolated.
+      toolUse("2026-01-01T00:20:01Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-Q.md", content: "# Bug" }),
+      toolResult("2026-01-01T00:20:02Z", "w1", false, "File written"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-bug");
+    assert.equal(cmd.length, 1);
+    assert.ok(!cmd[0].struggle.includes("stall"), "a long AskUserQuestion answer-wait must not be classified as a stall");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("struggle: a >STALL_MS NON-question op DOES still produce a `stall` (exclusion is question-specific)", () => {
+  const home = setupHome();
+  try {
+    const sid = "stall-bash";
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-bug the dropdown is empty" });
+    appendLines(tp, [
+      // same 20-min gap, but on a Bash op — a genuine long-running tool that must still trip `stall`.
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "npm run some:long:task" }),
+      toolResult("2026-01-01T00:20:00Z", "b1", false, "done"),
+      toolUse("2026-01-01T00:20:01Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-B.md", content: "# Bug" }),
+      toolResult("2026-01-01T00:20:02Z", "w1", false, "File written"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-bug");
+    assert.equal(cmd.length, 1);
+    assert.ok(cmd[0].struggle.includes("stall"), "a non-question op over STALL_MS must still be a stall");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -729,7 +820,7 @@ test("/vc-feedback 👎: a negative verdict alone (no flagged span) tail-trigger
     assert.match(decision.reason, /feedback|👎/i, "the block reason names the feedback trigger");
 
     const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.verdict, "flagged", "a 👎 run is flagged, not clean");
+    assert.equal(fin.decision.verdict, "attention", "a 👎 run needs attention, not clean");
     assert.equal(fin.decision.negativeFeedback, true);
     assert.equal(fin.decision.freshCount, 0, "no span was flagged — the trigger came from the 👎");
     assert.equal(fin.decision.surfaced, true);
@@ -811,7 +902,7 @@ test("decision record: a finding is recorded flagged + surfaced (visible line vi
     assert.equal(JSON.parse(out).decision, "block", "a fresh finding surfaces via decision:block");
 
     const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.verdict, "flagged");
+    assert.equal(fin.decision.verdict, "attention");
     assert.equal(fin.decision.freshCount, 1);
     assert.equal(fin.decision.surfaced, true);
     assert.equal(fin.decision.suppressReason, null);
@@ -1165,7 +1256,7 @@ test("stop_hook_active:true suppresses the findings block", () => {
     assert.equal(out.trim(), "", "stop_hook_active must suppress even the findings block");
     // still recorded flagged, just not surfaced — and the suppression reason is accurate
     const fin = finalizeOf(readSpans(home, sid));
-    assert.equal(fin.decision.verdict, "flagged");
+    assert.equal(fin.decision.verdict, "attention");
     assert.equal(fin.decision.surfaced, false);
     assert.equal(fin.decision.suppressReason, "stop-hook-active", "suppression by our own resume-turn is logged as stop-hook-active, not already-surfaced");
   } finally {
@@ -1299,7 +1390,7 @@ test("checkpoint suppresses a findings escalation until the terminal Stop", () =
     assert.equal(dec.decision, "block", "the finding surfaces at the terminal Stop");
     assert.match(dec.reason, /vc-self-check/);
     const fins = finalizesOf(readSpans(home, sid));
-    assert.equal(fins[fins.length - 1].decision.verdict, "flagged");
+    assert.equal(fins[fins.length - 1].decision.verdict, "attention");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -1576,7 +1667,7 @@ test("Fix 2: a synthesized command span makes an orphaned failed tool op flaggab
     assert.equal(cmd.length, 1, "the run is represented by ONE synthesized command span");
     assert.equal(cmd[0].outcome, "failed", "the orphaned blocking failure rolls up → the command span is failed");
     const fin = finalizeOf(recs);
-    assert.equal(fin.decision.verdict, "flagged", "a synthesized failed span is flaggable");
+    assert.equal(fin.decision.verdict, "attention", "a synthesized failed span is flaggable");
     assert.ok(fin.flagged.some((f) => f.kind === "command" && f.name === "project-init"), "the synthesized span appears in flagged[]");
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -1616,7 +1707,7 @@ test("code review #1: a retried-then-recovered orphan probe synthesizes a RECOVE
     assert.equal(cmd[0].outcome, "recovered", "a self-corrected orphan probe is RECOVERED, not a spurious failed");
     const fin = finalizeOf(recs);
     assert.ok(!fin.flagged.some((f) => f.kind === "command" && f.name === "project-init"), "a recovered synthesized span is NOT flagged (no bogus upstream issue)");
-    assert.notEqual(fin.decision.verdict, "flagged", "a clean/recovered run does not flag");
+    assert.notEqual(fin.decision.verdict, "attention", "a clean/recovered run does not flag");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -1917,15 +2008,19 @@ test("cleanup offer: NOT standalone on a plain dev turn — it rides a diagnosti
     const out = run(home, "finalize", { session_id: sid, transcript_path: transcriptPath, reason: "stop" });
 
     const dec = JSON.parse(out);
-    assert.equal(dec.decision, "block", "the clean line + cleanup offer surface via decision:block");
+    assert.equal(dec.decision, "block", "the clean line surfaces via decision:block");
     assert.match(dec.reason, /no plugin issues detected/i, "the clean verdict comes FIRST");
-    assert.match(dec.reason, /Clean up vc-fix diagnostic files/, "the 3-option AskUserQuestion is set up, AFTER the verdict");
-    assert.match(dec.reason, /Delete all sessions \(incl\. this one\)/);
-    assert.match(dec.reason, /Delete all except this session/);
-    assert.match(dec.reason, /Keep them \(auto-deleted after 24h\)/);
-    assert.match(dec.reason, /purge-inactive --all --dir/, "option 1 (all incl. this) ignores the 1h floor");
-    assert.match(dec.reason, /purge-inactive --keep "cur-cleanup" --dir/, "option 2 (all except this) keeps the 1h floor → spares a live parallel session");
-    assert.doesNotMatch(dec.reason, /purge-inactive --all --keep/, "option 2 must NOT use --all (that would delete a live parallel session)");
+    // item 8 — the cleanup 3-option AskUserQuestion was REMOVED. The reproduction turn asked the
+    // operator three things at once (verdict + delivery offer + cleanup), so the delivery offer had
+    // to be re-asked later. Cleanup never needed a question: the 24h age-cap already reclaims
+    // leftovers unprompted at every session start, and deleting without asking would trade a nag
+    // for an unsanctioned destructive action. The count now rides the ONE line as information.
+    assert.doesNotMatch(dec.reason, /Clean up vc-fix diagnostic files/, "no cleanup question any more");
+    assert.doesNotMatch(dec.reason, /AskUserQuestion/, "the turn asks nothing about cleanup");
+    assert.doesNotMatch(dec.reason, /purge-inactive/, "and it proposes no deletion command");
+    assert.match(dec.reason, /local diagnostic file\(s\) from 2 session\(s\)/, "the count rides the verdict line as a note");
+    assert.match(dec.reason, /auto-cleaned after 24h/, "…stating that it resolves itself");
+    assert.equal(dec.reason.split("\n").length, 1, "ONE line, one turn (item 8)");
     assert.equal(finalizesOf(readSpans(home, sid)).pop().decision.cleanupOffered, true);
 
     // A repeat finalize (same turn / resume) must NOT re-offer — once per session.
@@ -1968,7 +2063,9 @@ test("cleanup offer: NOT surfaced mid-skill (awaiting-completion) — rides the 
     const dec = JSON.parse(term);
     assert.equal(dec.decision, "block");
     assert.match(dec.reason, /no plugin issues detected/i, "the clean line surfaces at the terminal step");
-    assert.match(dec.reason, /Clean up vc-fix diagnostic files/, "the cleanup offer rides the same terminal resume");
+    // item 8 — a NOTE on the same line, not a question (see the previous test).
+    assert.match(dec.reason, /local diagnostic file\(s\)/, "the cleanup note rides the same terminal resume");
+    assert.doesNotMatch(dec.reason, /Clean up vc-fix diagnostic files/);
     assert.equal(finalizesOf(readSpans(home, sid)).pop().decision.cleanupOffered, true);
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -2240,4 +2337,287 @@ test("A-F1: user prose quoting an error does NOT raise hook_failure; injected/me
   const echoMeta = build("af1-echo-meta", metaEcho);
   assert.ok(echoMeta.signals.hook_failure >= 1, "a meta (isMeta:true) hook echo still raises hook_failure");
   assert.equal(echoMeta.outcome, "failed", "an untied meta hook echo still forces `failed`");
+});
+
+// ───────────────────────────────────────────────────────────────────────────────
+// VCST-5582 item F — four Tier-1 classifier defects that made a SUCCESSFUL /qa-bug
+// run look `failed` on the OPUS deployment (session 89078465-…, DIAG rows 2-5).
+// ───────────────────────────────────────────────────────────────────────────────
+
+// A narrative text block whose provenance is the USER (a paste, or the harness expanding a slash
+// command into the transcript) — NOT the agent speaking.
+function userText(ts, text) {
+  return JSON.stringify({ type: "user", timestamp: ts, message: { role: "user", content: [{ type: "text", text }] } });
+}
+// The real head of plugins/vc-fix/commands/qa-bug.md as it is echoed on load (frontmatter stripped
+// by the harness). Line 44 of that file carries the literal "hand off", which is what tripped the
+// plugin's own bail detector.
+const QA_BUG_DEFINITION_ECHO =
+  "# /qa-bug — File a Bug Report\n\n" +
+  "Create a structured bug report from a description, screenshot, or observed issue. Optionally creates a bug-tracker ticket.\n\n" +
+  "> **Skills:** Use `/qa-investigate` for structured 5-phase investigation (reproduce → isolate layer → gather evidence → root cause → hand off).\n";
+
+// Drive one /qa-bug command span over a synthetic transcript and return its span record.
+function qaBugSpan(sid, lines, { skill = "qa-bug", prompt = "/qa-bug the dropdown is empty" } = {}) {
+  const home = setupHome();
+  try {
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt });
+    appendLines(tp, lines);
+    run(home, "record", { session_id: sid, transcript_path: tp });
+    run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    return spansOf(readSpans(home, sid), "command", skill)[0];
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+}
+
+// ─── F1 — adaptation counts as recovery ─────────────────────────────────────────
+test("F1: a one-off failure the span ADAPTED around (new arg_hash) is `recovered`, not `failed`", () => {
+  // The defect: recovery was keyed on the SAME (tool, arg_hash) succeeding later, so correct agent
+  // behaviour — fix the selector and move on — minted a new key and could never register.
+  const cmd = qaBugSpan("f1-adapt", [
+    toolUse("2026-01-01T00:00:00Z", "s1", "mcp__playwright-chrome__browser_click", { element: "nav", ref: "navigation[aria-label=\"Main menu\"]" }),
+    toolResult("2026-01-01T00:00:01Z", "s1", true, "### Error\nError: \"navigation[aria-label=\"Main menu\"]\" does not match any elements."),
+    // ADAPTED: a different tool/target — a NEW arg_hash, so the old key never turns "ok".
+    toolUse("2026-01-01T00:00:02Z", "s2", "mcp__playwright-chrome__browser_find", { query: "main menu" }),
+    toolResult("2026-01-01T00:00:03Z", "s2", false, "ref=e12 navigation"),
+    // …and the skill still produced its expected artifact.
+    toolUse("2026-01-01T00:00:04Z", "s3", "Write", { file_path: "reports/bugs/open/BUG-Menu-Empty.md", content: "# Bug" }),
+    toolResult("2026-01-01T00:00:05Z", "s3", false, "File written"),
+  ]);
+  assert.ok(cmd, "the qa-bug command span exists");
+  assert.equal(cmd.signals.tool_error, 1, "the failure is still RECORDED (capture is unchanged)");
+  assert.equal(cmd.outcome, "recovered", "an adapted-around one-off failure + the expected artifact ⇒ recovered");
+});
+
+test("F1 (control): the same one-off failure with NO expected artifact stays `failed`", () => {
+  // Isolates the sawExpected requirement: adaptation alone is not recovery — the skill must have
+  // produced its real output. Without the reports/bugs write this must still escalate.
+  const cmd = qaBugSpan("f1-adapt-noartifact", [
+    toolUse("2026-01-01T00:00:00Z", "s1", "mcp__playwright-chrome__browser_click", { ref: "nav" }),
+    toolResult("2026-01-01T00:00:01Z", "s1", true, "### Error\nError: does not match any elements."),
+    toolUse("2026-01-01T00:00:02Z", "s2", "mcp__playwright-chrome__browser_find", { query: "main menu" }),
+    toolResult("2026-01-01T00:00:03Z", "s2", false, "ref=e12"),
+  ]);
+  assert.equal(cmd.outcome, "failed", "no expected-output marker ⇒ the adaptation clause must not apply");
+});
+
+test("F1 (control): a key hammered twice and abandoned stays `failed` even with the artifact", () => {
+  // Keeps the clause conservative: `attempts === 1`. A repeatedly-failing op that was never resolved
+  // is genuinely unresolved, whatever else the span produced.
+  const cmd = qaBugSpan("f1-repeat", [
+    toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "curl -s /connect/token" }),
+    toolResult("2026-01-01T00:00:01Z", "b1", true, "Exit code 7: connection refused"),
+    toolUse("2026-01-01T00:00:02Z", "b2", "Bash", { command: "curl -s /connect/token" }),
+    toolResult("2026-01-01T00:00:03Z", "b2", true, "Exit code 7: connection refused"),
+    toolUse("2026-01-01T00:00:04Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-X.md", content: "# Bug" }),
+    toolResult("2026-01-01T00:00:05Z", "w1", false, "File written"),
+  ]);
+  assert.equal(cmd.outcome, "failed", "two unresolved attempts of the same op ⇒ still failed");
+});
+
+// ─── F2 — the plugin must not trip its own bail detector ────────────────────────
+test("F2: the /qa-bug command DEFINITION echo does not raise stop_bail (user provenance)", () => {
+  const cmd = qaBugSpan("f2-echo-user", [
+    userText("2026-01-01T00:00:00Z", QA_BUG_DEFINITION_ECHO),
+    toolUse("2026-01-01T00:00:01Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-Y.md", content: "# Bug" }),
+    toolResult("2026-01-01T00:00:02Z", "w1", false, "File written"),
+    toolUse("2026-01-01T00:00:03Z", "r1", "Read", { file_path: "reports/bugs/open/BUG-Y.md" }),
+    toolResult("2026-01-01T00:00:04Z", "r1", false, "# Bug"),
+  ]);
+  assert.equal(cmd.signals.stop_bail || 0, 0, "the plugin's own instruction text is not a bail declaration");
+  assert.equal(cmd.outcome, "success");
+});
+
+test("F2: the definition echo is skipped even when the AGENT quotes it back", () => {
+  // Second guard (DEFINITION_HEAD_RE): a leading slash-command title heading marks a definition
+  // body regardless of who emitted it, so quoting the doc can't manufacture a bail either.
+  const cmd = qaBugSpan("f2-echo-assistant", [
+    assistantText("2026-01-01T00:00:00Z", QA_BUG_DEFINITION_ECHO),
+    toolUse("2026-01-01T00:00:01Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-Z.md", content: "# Bug" }),
+    toolResult("2026-01-01T00:00:02Z", "w1", false, "File written"),
+  ]);
+  assert.equal(cmd.signals.stop_bail || 0, 0, "a definition-echo heading suppresses bail scanning on any provenance");
+});
+
+test("F2: a bare \"handed off\" with no bail context does not raise stop_bail", () => {
+  const cmd = qaBugSpan("f2-weak", [
+    assistantText("2026-01-01T00:00:00Z", "The ticket was handed off to the support team last sprint, per the notes."),
+    toolUse("2026-01-01T00:00:01Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-W.md", content: "# Bug" }),
+    toolResult("2026-01-01T00:00:02Z", "w1", false, "File written"),
+  ]);
+  assert.equal(cmd.signals.stop_bail || 0, 0, "the weak marker needs an explicit bail context");
+});
+
+test("F2 (control): a GENUINE agent bail declaration still raises stop_bail", () => {
+  // The detector must stay useful — this is the whole point of the signal.
+  const cmd = qaBugSpan("f2-real-bail", [
+    assistantText("2026-01-01T00:00:00Z", "STOP — cannot reproduce without client data. Handing off; BAIL_CLASS: not-a-bug."),
+  ], { skill: "qa-fix", prompt: "/qa-fix VCST-1" });
+  assert.ok(cmd.signals.stop_bail >= 1, "an explicit agent bail is still recorded");
+});
+
+// ─── F3 — the current auto-mode denial wording ──────────────────────────────────
+test("F3: Claude Code's auto-mode classifier denial is classed permission_denied, not tool_error", () => {
+  const cmd = qaBugSpan("f3-denial", [
+    toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "curl -s -X POST /connect/token" }),
+    toolResult("2026-01-01T00:00:01Z", "b1", true, "Permission for this action was denied by the Claude Code auto mode classifier. Reason: Blocked by classifier. If you want to proceed, ask the user."),
+  ], { skill: "qa-fix", prompt: "/qa-fix VCST-2" });
+  assert.equal(cmd.signals.permission_denied, 1, "the denial is sub-typed permission_denied");
+  assert.equal(cmd.signals.tool_error || 0, 0, "…and no longer lands in the generic tool_error bucket");
+});
+
+// ─── F4 — an obeyed guardrail is non-blocking ───────────────────────────────────
+test("F4: an enforce-real-user hook block is policy_block and does NOT make the span failed", () => {
+  const cmd = qaBugSpan("f4-policy", [
+    toolUse("2026-01-01T00:00:00Z", "e1", "mcp__playwright-chrome__browser_evaluate", { function: "() => document.querySelectorAll('a').length" }),
+    toolResult("2026-01-01T00:00:01Z", "e1", true, "BLOCKED by real-user interaction rule.\n\nYou attempted to call a browser evaluate/run-code tool. Use real-user MCP tools instead: browser_click, browser_type, …"),
+    // The agent obeyed and adapted — the guardrail did its job.
+    toolUse("2026-01-01T00:00:02Z", "s1", "mcp__playwright-chrome__browser_snapshot", {}),
+    toolResult("2026-01-01T00:00:03Z", "s1", false, "- navigation [ref=e1]"),
+    toolUse("2026-01-01T00:00:04Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-P.md", content: "# Bug" }),
+    toolResult("2026-01-01T00:00:05Z", "w1", false, "File written"),
+  ]);
+  assert.equal(cmd.signals.policy_block, 1, "the guardrail block is recorded under its own class");
+  assert.equal(cmd.signals.tool_error || 0, 0, "…and not as a blocking tool_error");
+  assert.equal(cmd.outcome, "success", "an obeyed by-design guardrail must not degrade or fail the span");
+  assert.equal(cmd.status, "ok", "policy_block is excluded from the span's error status too");
+});
+
+// ─── AC 9 — replay of the real OPUS session shape ───────────────────────────────
+test("AC9: replaying the OPUS /qa-bug run classifies it recovered — stop_bail 0, denial + guardrail correctly classed", () => {
+  // The exact five signals the real span recorded (jsonl span …-27: tool_error 5, stop_bail 1,
+  // outcome `failed`) plus the reports/bugs write it actually produced. Every one of the five was
+  // adapted around; none blocked. Expected now: stop_bail 0, one permission_denied, one
+  // policy_block, and outcome `recovered` — S3 friction, not a failure.
+  const cmd = qaBugSpan("ac9-opus-replay", [
+    // 1 — the slash-command definition echoed on load (was scored stop_bail:1)
+    userText("2026-07-28T10:50:07Z", QA_BUG_DEFINITION_ECHO),
+    // 2 — a bash quoting slip on a Windows path, then the corrected command
+    toolUse("2026-07-28T10:51:00Z", "t1", "Bash", { command: "node -e \"require('fs')\\\"" }),
+    toolResult("2026-07-28T10:51:01Z", "t1", true, "Exit code 2\n/usr/bin/bash: eval: line 1: unexpected EOF while looking for matching `\"'"),
+    toolUse("2026-07-28T10:51:02Z", "t2", "Bash", { command: "node -e \"require('fs')\"" }),
+    toolResult("2026-07-28T10:51:03Z", "t2", false, "ok"),
+    // 3 — the enforce-real-user guardrail (agent switched to snapshot/click)
+    toolUse("2026-07-28T10:52:00Z", "t3", "mcp__playwright-chrome__browser_evaluate", { function: "() => 1" }),
+    toolResult("2026-07-28T10:52:01Z", "t3", true, "BLOCKED by real-user interaction rule. You attempted to call a browser evaluate/run-code tool. Use real-user MCP tools instead."),
+    toolUse("2026-07-28T10:52:02Z", "t4", "mcp__playwright-chrome__browser_snapshot", {}),
+    toolResult("2026-07-28T10:52:03Z", "t4", false, "- navigation [ref=e1]"),
+    // 4 — a non-matching Playwright selector (switched to browser_find)
+    toolUse("2026-07-28T10:53:00Z", "t5", "mcp__playwright-chrome__browser_click", { ref: "navigation[aria-label=\"Main menu\"]" }),
+    toolResult("2026-07-28T10:53:01Z", "t5", true, "### Error\nError: \"navigation[aria-label=\"Main menu\"]\" does not match any elements."),
+    toolUse("2026-07-28T10:53:02Z", "t6", "mcp__playwright-chrome__browser_find", { query: "Products menu" }),
+    toolResult("2026-07-28T10:53:03Z", "t6", false, "ref=e42"),
+    // 5 — the genuine auto-mode classifier denial (Layer-4 REST verified via the Admin SPA instead)
+    toolUse("2026-07-28T10:54:00Z", "t7", "Bash", { command: "curl -s -X POST /connect/token" }),
+    toolResult("2026-07-28T10:54:01Z", "t7", true, "Permission for this action was denied by the Claude Code auto mode classifier. Reason: Blocked by classifier."),
+    // 6 — one wrong screenshot path guess, then the right one
+    toolUse("2026-07-28T10:55:00Z", "t8", "Read", { file_path: "products-menu.png" }),
+    toolResult("2026-07-28T10:55:01Z", "t8", true, "File does not exist. Note: your current working directory is C:\\opus\\opus-bugfix-plugin."),
+    toolUse("2026-07-28T10:55:02Z", "t9", "Glob", { pattern: "**/*.png" }),
+    toolResult("2026-07-28T10:55:03Z", "t9", false, "reports/bugs/screenshots/products-menu.png"),
+    // …and the required oracle marker: the bug report was actually written.
+    toolUse("2026-07-28T11:03:00Z", "t10", "Write", { file_path: "reports/bugs/open/BUG-Products-Main-Menu-Dropdown-Empty.md", content: "# Bug" }),
+    toolResult("2026-07-28T11:03:01Z", "t10", false, "File written"),
+  ]);
+  assert.ok(cmd, "the qa-bug command span exists");
+  assert.equal(cmd.signals.stop_bail || 0, 0, "AC9: no self-match on the command markdown");
+  assert.equal(cmd.signals.permission_denied, 1, "AC9: the auto-mode-classifier denial counts as permission_denied");
+  assert.equal(cmd.signals.policy_block, 1, "AC9: the enforce-real-user block is policy_block, not tool_error");
+  assert.equal(cmd.signals.tool_error, 3, "the three genuine (adapted-around) tool errors are still recorded");
+  assert.ok(["success", "recovered"].includes(cmd.outcome), `AC9: expected success/recovered, got ${cmd.outcome}`);
+  assert.equal(cmd.outcome, "recovered", "specifically `recovered` — errors occurred but every one was adapted around");
+});
+
+// ───────────────────────────────────────────────────────────────────────────────
+// VCST-5582 item D — an operator question can never be preempted by diagnostics.
+// ───────────────────────────────────────────────────────────────────────────────
+
+test("D: a Stop with an unanswered AskUserQuestion defers (question-pending) and emits NO block", () => {
+  const home = setupHome();
+  try {
+    const sid = "d-question-pending";
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-bug the dropdown is empty" });
+    // A blocking failure that WOULD trip the tail-trigger on its own…
+    appendLines(tp, [
+      toolUse("2026-01-01T00:00:00Z", "b1", "Bash", { command: "gh pr create" }),
+      toolResult("2026-01-01T00:00:01Z", "b1", true, "permission denied: token missing pull-request scope"),
+      // …and then Step 5 asks the operator, with no answer yet.
+      toolUse("2026-01-01T00:00:02Z", "q1", "AskUserQuestion", { questions: [{ question: "Create a bug-tracker ticket for this bug?" }] }),
+    ]);
+    const out = run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    assert.equal(out.trim(), "", "no block may be emitted while the operator is being asked something");
+
+    const deferred = finalizesOf(readSpans(home, sid)).pop();
+    assert.equal(deferred.decision.verdict, "deferred");
+    assert.equal(deferred.decision.suppressReason, "question-pending");
+    assert.equal(deferred.decision.pendingQuestions, 1);
+    assert.equal(deferred.decision.surfaced, false);
+    // Nothing was drained or closed — the command span must still be open for the ticket phase.
+    assert.equal(spansOf(readSpans(home, sid), "command", "qa-bug").length, 0, "the command span stays OPEN across the checkpoint");
+
+    // The operator answers → the next Stop is terminal and now surfaces the finding.
+    appendLines(tp, [toolResult("2026-01-01T00:00:03Z", "q1", false, "Yes — create the ticket")]);
+    const out2 = run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    assert.equal(JSON.parse(out2).decision, "block", "once answered, the deferred verdict surfaces normally");
+    const cmd = spansOf(readSpans(home, sid), "command", "qa-bug");
+    assert.equal(cmd.length, 1, "the command span closes on the TERMINAL Stop");
+    assert.equal(cmd[0].outcome, "failed");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("D: an ANSWERED AskUserQuestion does not defer (regression guard)", () => {
+  const home = setupHome();
+  try {
+    const sid = "d-question-answered";
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-bug the dropdown is empty" });
+    appendLines(tp, [
+      toolUse("2026-01-01T00:00:00Z", "q1", "AskUserQuestion", { questions: [{ question: "Create a bug-tracker ticket for this bug?" }] }),
+      toolResult("2026-01-01T00:00:01Z", "q1", false, "No — keep the local report only"),
+      toolUse("2026-01-01T00:00:02Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-D.md", content: "# Bug" }),
+      toolResult("2026-01-01T00:00:03Z", "w1", false, "File written"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    const fin = finalizesOf(readSpans(home, sid)).pop();
+    assert.notEqual(fin.decision.suppressReason, "question-pending", "an answered question must not defer");
+    assert.equal(spansOf(readSpans(home, sid), "command", "qa-bug").length, 1, "the span closes normally");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("D: a question left open past QUESTION_PENDING_MS drains, it does not defer forever", () => {
+  // Backstop against a missed/lost tool_result making the session go dark. The session clock is the
+  // newest transcript event ts, so a later event 46min on ages the abandoned question out.
+  const home = setupHome();
+  try {
+    const sid = "d-question-stale";
+    const tp = join(home, "transcript.jsonl");
+    writeFileSync(tp, "");
+    run(home, "init", { session_id: sid, transcript_path: tp });
+    run(home, "prompt", { session_id: sid, transcript_path: tp, prompt: "/qa-bug the dropdown is empty" });
+    appendLines(tp, [
+      toolUse("2026-01-01T00:00:00Z", "q1", "AskUserQuestion", { questions: [{ question: "Create a ticket?" }] }),
+      // …no tool_result for q1 ever arrives, but the session keeps moving 46 minutes later.
+      toolUse("2026-01-01T00:46:00Z", "w1", "Write", { file_path: "reports/bugs/open/BUG-S.md", content: "# Bug" }),
+      toolResult("2026-01-01T00:46:01Z", "w1", false, "File written"),
+    ]);
+    run(home, "finalize", { session_id: sid, transcript_path: tp, reason: "stop" });
+    const fin = finalizesOf(readSpans(home, sid)).pop();
+    assert.notEqual(fin.decision.suppressReason, "question-pending", "a stale question must not defer indefinitely");
+    assert.equal(spansOf(readSpans(home, sid), "command", "qa-bug").length, 1, "the span drains and closes");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
 });

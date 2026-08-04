@@ -38,6 +38,13 @@ Use whichever surface is available; prefer the MCP when connected, else the CLI/
 > escaping, and ADO REST 400s from inline `-d` JSON. Hand-rolled `curl` is the fallback for a native
 > agentic checkout only. `comment --text-file` (never inline prose with em-dashes); `create-pr`/policy
 > endpoints already use the right `-preview`/`7.1` api-versions.
+>
+> **NEVER pipe a plugin script through `head`/`tail` (or any pager).** `node … ado.mjs … | head`
+> makes the exit code that of `head` (0), not `ado.mjs` — a `create-workitem` / `transition` that
+> failed 4xx then looks like it *succeeded*, and the self-diagnostics collector, which reads the
+> tool's exit status, records nothing (VCST-5582 C3). If you must shorten the output, redirect to a
+> file and read the file (`node … ado.mjs … > out.json 2>&1; echo "exit=$?"`), or use the tool's own
+> `--json` and read the fields — never a pipe that swallows the status.
 
 | Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) — via `ado.mjs` |
 |---|---|---|

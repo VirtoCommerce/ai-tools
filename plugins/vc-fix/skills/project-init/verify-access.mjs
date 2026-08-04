@@ -40,11 +40,19 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { pluginRoot } from "./lib/paths.mjs";
+// Self-diagnostics CAPTURE channel. This table is the plugin's own structured verdict on the
+// deployment; before VCST-5582 H it was rendered and then discarded (exit 0 unless a hard FAIL),
+// so a WARN the operator could plainly see — e.g. "no field contract scanned for Bug" — was
+// invisible to /vc-self-check and the run self-diagnosed "no plugin issues detected".
+import { emitObservations, httpStatusFrom, classForStatus } from "./lib/diag-obs.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
   writeProbeSeverity,
 } from "./probe-lib.mjs";
+// Slot resolution for the "tracker bug field contract" readiness row (VCST-5582 E-g) — the
+// SAME pure function the create path uses, so the row can't claim a mapping create won't make.
+import { resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
 
 let TEST_ENV;
 try {
@@ -282,6 +290,36 @@ async function main() {
         }
       } catch (e) { add("Azure DevOps auth", "FAIL", e.message); }
     }
+
+    // ─── tracker bug field contract (VCST-5582 E-g) ─────────────────────────────────────
+    // Read from the PROFILE (discover-tracker.mjs already scanned it) rather than re-probing:
+    // this row answers "will /qa-bug be able to fill this organization's Bug correctly?", and
+    // the honest answer is whatever got persisted. No contract is a WARN, not a FAIL — the
+    // create path degrades to the legacy field set labelled "unverified defaults" (E-f).
+    const bugType = Object.keys(profile.tracker?.fields || {}).find((t) => /^bug$/i.test(t))
+      || Object.keys(profile.tracker?.fields || {})[0]
+      || "Bug";
+    const bugContract = profile.tracker?.fields?.[bugType] || [];
+    if (!bugContract.length) {
+      add("Tracker bug field contract", "WARN",
+        `no field contract scanned for ${bugType} — /qa-bug will send the LEGACY field set labelled "unverified defaults" (a field this organization does not have is rejected or silently blank). Re-run /project-init (discover-tracker) with a PAT that has Work Items READ to scan it.`);
+    } else {
+      const slots = resolveSlots(bugContract, profile.tracker?.fieldMap || {});
+      const req = bugContract.filter((f) => f.required).length;
+      const base = `${bugType}: ${bugContract.length} field(s), ${req} required`;
+      if (slots.unmappedRequired.length) {
+        add("Tracker bug field contract", "WARN",
+          `${base} — ${slots.unmappedRequired.length} required field(s) no semantic slot maps: ` +
+          slots.unmappedRequired.map((f) => `${f.name} (${f.ref})${f.allowedValues?.length ? ` [${f.allowedValues.slice(0, 6).join(" | ")}]` : ""}`).join("; ") +
+          ". You will be asked for each ONCE at the first bug creation, and the answer is persisted to tracker.fieldMap / tracker.fieldDefaults.");
+      } else {
+        add("Tracker bug field contract", "PASS", `${base} — every required field is mapped to a semantic slot`);
+      }
+      if (slots.staleOverrides.length) {
+        add("Tracker fieldMap override", "WARN",
+          `tracker.fieldMap points at field(s) this process no longer has: ${slots.staleOverrides.join(", ")} — they are IGNORED (never sent). Re-run the tracker scan or fix the map.`);
+      }
+    }
   }
 
   // 8. GitHub auth for fix PRs/issues — REAL probe, whether the token comes from a PAT
@@ -294,7 +332,31 @@ async function main() {
   const { token: ghtok, via: ghVia, scopes: ghScopes } = resolveGithubToken();
   if (ghtok) {
     const label = `GitHub auth (${forkMode ? "fork-PR" : "direct PR"})`;
-    const p = await probeGithubUpstream({ upstreamOrg: profile.upstream.org || "VirtoCommerce", token: ghtok });
+    const p = await probeGithubUpstream({ upstreamOrg: profile.upstream.org || "VirtoCommerce", token: ghtok, via: ghVia, scopes: ghScopes });
+    // ── GitHub token kind / upstream capability (VCST-5582 A) ──────────────────────────
+    // The row above only checks whether the token READS the upstream — which a fine-grained PAT
+    // does perfectly, while being structurally unable to fork / open a fork-PR / file an Issue
+    // there. That is why the OPUS deployment reported READY on a token that could never deliver.
+    // So the token KIND gets its own row, and it is NEVER a silent green when the upstream axis
+    // is actually needed. Not a FAIL: consistent with writeProbeSeverity's design call, a missing
+    // capability is a WARN with the exact remedy — the operator can fix it before /qa-fix.
+    const upstreamNeeded = forkMode || profile.upstream?.fileIssues === true;
+    const kindLabel = "GitHub token kind / upstream capability";
+    const kindBase = `${p.tokenKind}${p.tokenScopes?.length ? ` [scopes: ${p.tokenScopes.join(",")}]` : ""}`;
+    // The recommended shape — ONE classic `repo` token — is called out explicitly so the operator
+    // sees "nothing further to decide" rather than wondering whether a second token is needed.
+    const coversBoth = p.tokenKind === "classic" && (p.tokenScopes || []).some((s) => /^repo$/i.test(s));
+    if (!upstreamNeeded) {
+      add(kindLabel, "SKIP", `${kindBase} — direct-PR operator with upstream issue-filing off; the upstream fork/issue path is not used`);
+    } else if (coversBoth) {
+      add(kindLabel, "PASS", `classic PAT with \`repo\` — the recommended single credential: covers BOTH your own org's repos and the ${profile.upstream.org || "VirtoCommerce"} upstream (fork / fork-PR / Issue). Nothing else to set up.`);
+    } else if (p.forkCapable === "yes") {
+      add(kindLabel, "PASS", `${kindBase} — can fork / open a fork-PR / file an upstream Issue on ${profile.upstream.org || "VirtoCommerce"}${p.tokenKind === "classic" ? '. NOTE: `public_repo` only — add the full `repo` scope if any of YOUR OWN repos are private' : ""}`);
+    } else if (p.tokenKind === "fine-grained") {
+      add(kindLabel, "WARN", `fine-grained PAT — CANNOT fork, open a fork-PR, or file an Issue on ${profile.upstream.org || "VirtoCommerce"} (it is read-only on public repos it does not own, so /qa-fix §1a platform delivery and /vc-self-check deliver will 403). Remedy: ${p.remedy}`);
+    } else {
+      add(kindLabel, "WARN", `${kindBase} — no \`repo\` / \`public_repo\` scope detected, so the upstream fork/issue path cannot be confirmed. Remedy: ${p.remedy}`);
+    }
     if (p.ok && p.login) {
       // fork mode: read is enough (you PR from your OWN fork, which you can always write).
       // direct mode: /qa-fix pushes to the upstream. `${p.repo}` (vc-platform) is only a PROXY
@@ -403,6 +465,24 @@ async function main() {
 
   renderTable(results);
   renderMcp();
+  // ─── report the table AS TELEMETRY, not only to the screen (VCST-5582 H) ─────────────
+  // One observation per NON-PASS row. Capture only: we record that the row said WARN/FAIL/SKIP
+  // and what it was about; whether that matters is decided later by /vc-self-check against the
+  // oracle (§1f), which knows e.g. that a WARN on the tracker field contract means /qa-bug will
+  // send unverified defaults. Emitted BEFORE the completion marker so the finalize that consumes
+  // that marker already sees them. Never affects the readiness verdict or the exit code.
+  emitObservations(
+    results
+      .map((r) => ({ cls: classForStatus(r.status), r }))
+      .filter((x) => x.cls)
+      .map(({ cls, r }) => ({
+        class: cls,
+        subject: r.name,
+        code: "NONE",
+        evidence: { snippet: `${r.status}: ${r.detail}`, httpStatus: httpStatusFrom(r.detail) },
+      })),
+    { skill: "project-init" },
+  );
   // Best-effort self-diagnostics COMPLETION signal. verify-access is the LAST script every
   // /project-init path runs (fresh §9, --check §C, --add-env §D), so emitting the terminal-step
   // marker HERE makes the clean self-check line ("no plugin issues detected") fire reliably —

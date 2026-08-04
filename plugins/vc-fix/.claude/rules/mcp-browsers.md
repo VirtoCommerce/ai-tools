@@ -29,7 +29,14 @@ The 6 servers in the table above are configured in `.mcp.json` (project-level). 
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
 - Playwright servers are configured entirely via CLI flags in `.mcp.json` — `--browser chrome|firefox|msedge`,
   `--isolated` (a clean in-memory context per session), `--viewport-size 1920x1080`, and
-  `--output-dir test-results/<browser>`. Headed is the default (we deliberately do NOT pass `--headless`).
+  `--output-dir`. Headed is the default (we deliberately do NOT pass `--headless`).
+- **`--output-dir` is an ABSOLUTE path into the project's evidence tree** —
+  `<project>/reports/bugs/screenshots/_incoming/<browser>/`, written by `gen-mcp.mjs`. It is absolute
+  on purpose: playwright-mcp resolves a *relative* `--output-dir` against the MCP server's own cwd,
+  which the plugin does not control, and that is how captures ended up at the project root
+  (VCST-5582 C). Take screenshots with a **bare relative filename** (playwright-mcp: *"Prefer
+  relative file names to stay within the output directory"*); `/qa-bug` Step 4a then makes ONE
+  move into `reports/bugs/screenshots/<bug-slug>/`. Full mechanism: `skills/qa-evidence/output-paths.md`.
 - **Teardown:** after a browser task, tear down what you started — kill any local dev server you launched
   (find the PID on its port, `taskkill //PID <pid> //F` on Windows / `kill` on POSIX) and delete stray
   helper files the MCP created that are not evidence. Keep only intentional evidence (screenshots) under

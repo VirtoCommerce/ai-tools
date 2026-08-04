@@ -1,25 +1,6 @@
 {
+  "_comment_telemetry": "The vc-fix self-diagnostics collector is deliberately NOT registered here. It ships with the vc-fix plugin (plugins/vc-fix/hooks/hooks.json), which is enabled at the USER level on the team's machines, so registering the .claude/ mirror as well ran TWO collector processes per event against the same .vc-fix/diagnostics/<sid>.* files — duplicated span records and racing saveState() writes with lost cursor updates (observed: two finalize records 12ms apart reporting 292 vs 290 spans). The mirror FILE stays (scripts/unit/mirror-parity.test.mjs keeps it byte-identical, and it is the copy a client-side .claude/ install would use); only the registration is gone, so this repo exercises exactly the copy a client runs. Trade-off: a checkout WITHOUT the vc-fix plugin installed gets no telemetry here — acceptable, since this repo's telemetry was corrupt while both were live.",
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-telemetry.mjs\" init"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-telemetry.mjs\" prompt"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "mcp__(playwright-(chrome|firefox|edge|webkit)|Chrome_DevTools)__(browser_evaluate|browser_run_code_unsafe|evaluate_script)",
@@ -40,15 +21,6 @@
             "command": "npx tsc --noEmit -p \"$CLAUDE_PROJECT_DIR/ci/tsconfig.json\" --pretty 2>&1 | head -20"
           }
         ]
-      },
-      {
-        "matcher": "Skill",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-telemetry.mjs\" record"
-          }
-        ]
       }
     ],
     "SubagentStop": [
@@ -57,10 +29,6 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/sweep-stray-screenshots.mjs\""
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-telemetry.mjs\" agentstop"
           }
         ]
       }
@@ -71,10 +39,6 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/sweep-stray-screenshots.mjs\""
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-telemetry.mjs\" finalize"
           }
         ]
       }

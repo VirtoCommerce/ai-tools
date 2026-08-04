@@ -86,9 +86,37 @@ const CATALOG = {
   },
   GITHUB_FIX_BUGS_TOKEN: {
     perEnv: false, include: (o) => o.githubAuth === "pat",
-    what: "GitHub fine-grained Personal Access Token.",
-    why: "Lets /qa-fix open PRs and file issues on GitHub (client GitHub repos and/or the platform upstream fork-PR).",
-    where: "github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Perms: Contents + Pull requests = Read/Write (public_repo is enough to fork + file issues).",
+    // ONE classic `repo` token is the prescribed answer (VCST-5582 A). The token has two jobs —
+    // the client's own repos and the VirtoCommerce upstream — and a classic `repo` scope covers
+    // both, so the operator has exactly one thing to create.
+    //
+    // The old instruction asked for a FINE-GRAINED token and added "(public_repo is enough)". That
+    // is impossible to follow twice over: a fine-grained PAT is scoped to a single resource owner
+    // and is READ-ONLY on public repos it does not own — GitHub's own docs: "Only personal access
+    // tokens (classic) have write access for public repositories that are not owned by you or an
+    // organization that you are not a member of" — so it can never fork VirtoCommerce/*, open a
+    // fork-PR, or file an upstream Issue (the platform delivery path of /qa-fix §1a and of
+    // /vc-self-check deliver); and `public_repo` is a CLASSIC scope, named inside fine-grained
+    // instructions.
+    //
+    // The `where:` line stays as short as every other secret's (what / why / where). This
+    // rationale is for whoever maintains the table; the OPERATOR gets it only when it MATTERS —
+    // verify-access's "GitHub token kind / upstream capability" row WARNs with the full remedy
+    // (probe-lib GITHUB_UPSTREAM_REMEDY) if the token they supplied cannot do the job. A wall of
+    // text in .env.local is not where that belongs.
+    //
+    // Exception path (org policy forbids classic PATs, or least-privilege is required):
+    // `gh auth login` for the upstream + a fine-grained token for the client's own org.
+    // Documented in .claude/rules/quality-gates.md §1a — not in the operator's env file.
+    what: "GitHub Personal Access Token — classic, NOT fine-grained.",
+    why: "Lets /qa-fix open PRs on your own repos and contribute fixes/issues to the VirtoCommerce upstream.",
+    // `where:` = the click path, ending in the scope to tick — the same shape as ADO_PAT's
+    // ("dev.azure.com → … Scopes: Work Items R/W, Code R/W."). Nothing beyond that: the
+    // `gh auth login` alternative would contradict the operator's own answer (this entry is
+    // emitted ONLY when they chose PAT).
+    // The last hop matters: even on the "Tokens (classic)" page the "Generate new token" button
+    // opens a menu whose FIRST item is fine-grained, so the classic item is named verbatim.
+    where: "github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → \"Generate new token\" ▾ → \"Generate new token (classic)\". Scope: repo.",
   },
   ADO_PAT: {
     perEnv: false, include: (o) => (o.tracker === "azure" || o.clientVcs === "azure-repos") && o.adoAuth !== "az-login",

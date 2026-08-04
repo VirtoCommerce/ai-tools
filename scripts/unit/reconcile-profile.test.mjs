@@ -66,22 +66,22 @@ test("reconcile --write: preserves user answers, fills a missing plain default, 
   }
 });
 
-test("reconcile --write: a MISSING managed (ask) field is NOT silently defaulted — it stays pending until decided", () => {
+test("reconcile --write: the MISSING managed (ask) selfDiagnostics stays pending; feedback fills as a safe default (item 4)", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
   try {
-    // An old profile predating the selfDiagnostics/feedback consent fields — both ABSENT.
+    // An old profile predating the consent fields — both ABSENT.
     writeFileSync(join(home, "project-profile.json"), JSON.stringify({
       projectType: "client",
       tracker: { kind: "jira", projectKey: "ACME" },
       vcs: { clientHost: "github", clientOrg: "acmecorp" },
     }));
 
-    // --set resolves the ask decision explicitly, mirroring how the /project-init skill folds the
-    // operator's AskUserQuestion answer in. Without a decision the field is reported pending, not
-    // guessed — so a plain --write must not fabricate a consent value.
-    const p = reconcile(home, ["--set", "selfDiagnostics=false", "--set", "feedback.mode=off"]);
-    assert.equal(p.selfDiagnostics, false, "the explicitly-decided ask value is applied");
-    assert.equal(p.feedback.mode, "off");
+    // selfDiagnostics is STILL a managed (ask) capture opt-in — --set folds the operator's answer in.
+    // feedback.mode is NO LONGER managed (PR #172 item 4): it fills silently from PROFILE_DEFAULTS
+    // ("ask") and is never a pending decision. --check no longer asks it.
+    const p = reconcile(home, ["--set", "selfDiagnostics=false"]);
+    assert.equal(p.selfDiagnostics, false, "the explicitly-decided capture opt-in is applied");
+    assert.equal(p.feedback.mode, "ask", "delivery consent fills as a safe default, not a pending ask");
     // sibling user answers still preserved through the reconcile
     assert.equal(p.projectType, "client");
     assert.equal(p.vcs.clientOrg, "acmecorp");
@@ -148,23 +148,179 @@ test("reconcile --write: prunes the conditional azure blocks off-discriminator a
   }
 });
 
-test("reconcile --write WITHOUT a --set decision leaves the consent fields ABSENT — never guesses (T2)", () => {
+test("reconcile --write WITHOUT a --set decision leaves the CAPTURE opt-in ABSENT; delivery consent safe-defaults (item 4)", () => {
   const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
   try {
-    // Old profile predating the consent fields — selfDiagnostics + feedback ABSENT, and NO --set
-    // decision provided. The security-critical contract: a plain --write must NOT fabricate a consent
-    // value (a mutation doing `out[k] = managed.default` would set selfDiagnostics=true here). This is
-    // the "leave pending until decided" branch the sibling test never exercises (it always --sets).
+    // Old profile predating the consent fields — selfDiagnostics + feedback ABSENT, and NO --set.
+    // selfDiagnostics is the CAPTURE opt-in and stays managed/ask: a plain --write must NOT fabricate
+    // it (a mutation doing `out[k] = managed.default` would set selfDiagnostics=true — fail-open).
+    // feedback.mode is the DELIVERY consent and is now a plain safe default (PR #172 item 4): it fills
+    // to "ask" — which is fail-SAFE (a per-finding offer + explicit yes, never an unattended send).
     writeFileSync(join(home, "project-profile.json"), JSON.stringify({
       projectType: "client",
       tracker: { kind: "jira", projectKey: "ACME" },
       vcs: { clientHost: "github", clientOrg: "acmecorp" },
     }));
-    const p = reconcile(home); // NO --set for the managed/ask consent fields
+    const p = reconcile(home); // NO --set
     assert.equal(p.selfDiagnostics, undefined, "capture consent must NOT be fabricated by a plain --write");
-    assert.ok(!p.feedback || p.feedback.mode === undefined, "delivery consent must NOT be fabricated");
+    assert.equal(p.feedback.mode, "ask", "delivery consent fills to the fail-safe 'ask', not a fabricated 'auto'");
     assert.equal(p.projectType, "client"); // sibling answers still preserved through reconcile
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
+});
+
+// ─── `--set` into an OPEN MAP (VCST-5582 E-b) ──────────────────────────────────────
+// The persistence mechanism for "which field is this process's Environment?", asked ONCE at the
+// first bug creation. The open maps' KEYS are data — and an Azure field ref contains dots, so a
+// naive split-on-every-dot would write {Custom:{Environment:"QA"}} instead of the flat key.
+test("reconcile --set: a dotted FIELD REF lands as ONE key in an open map, not nested objects", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-openmap-"));
+  try {
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "azure", azure: { organization: "acme", project: "Web" } },
+    }));
+    const p = reconcile(home, [
+      "--set", "tracker.fieldDefaults.Custom.Environment=QA",
+      "--set", "tracker.fieldMap.environment=Custom.Environment",
+    ]);
+    assert.deepEqual(p.tracker.fieldDefaults, { "Custom.Environment": "QA" }, "the ref is ONE flat key");
+    assert.equal(p.tracker.fieldDefaults.Custom, undefined, "never split into nested objects");
+    assert.deepEqual(p.tracker.fieldMap, { environment: "Custom.Environment" });
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("reconcile --print: an Azure profile with an EMPTY tracker.fields is reported under rescan (E5)", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-rescan-"));
+  try {
+    // A profile whose Azure scan predates the `$expand=all` fix (E1) — tracker.fields is empty, so
+    // /qa-bug would send the legacy "unverified defaults" field set. --check must surface it under
+    // `rescan` so the skill re-derives the contract without a full re-onboarding.
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "azure", fields: {}, azure: { organization: "acme", project: "Web" } },
+    }));
+    const out = execFileSync(process.execPath, [RECONCILE, "--print"], {
+      encoding: "utf8",
+      env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },
+    });
+    const report = JSON.parse(out);
+    assert.ok(
+      report.rescan.some((r) => r.path === "tracker.fields" && r.source === "discover-tracker"),
+      "an empty Azure tracker.fields must be listed under rescan",
+    );
+    assert.equal(report.status, "changes", "a pending rescan makes the profile 'changes', not 'current'");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("reconcile --print: a POPULATED tracker.fields is NOT flagged for rescan, and Jira never is", () => {
+  const run = (profile, dir) => {
+    const home = mkdtempSync(join(tmpdir(), dir));
+    try {
+      writeFileSync(join(home, "project-profile.json"), JSON.stringify(profile));
+      const out = execFileSync(process.execPath, [RECONCILE, "--print"], {
+        encoding: "utf8",
+        env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },
+      });
+      return JSON.parse(out);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  };
+  const azurePopulated = run({
+    projectType: "client",
+    tracker: { kind: "azure", fields: { Bug: [{ ref: "System.Title", name: "Title", required: true, type: "string" }] }, azure: { organization: "acme", project: "Web" } },
+  }, "vc-fix-reconcile-populated-");
+  assert.ok(!azurePopulated.rescan.some((r) => r.path === "tracker.fields"), "a populated contract needs no rescan");
+
+  const jiraEmpty = run({ projectType: "platform", tracker: { kind: "jira", projectKey: "VCST" } }, "vc-fix-reconcile-jira-");
+  assert.ok(!jiraEmpty.rescan.some((r) => r.path === "tracker.fields"), "Jira bakes no field contract — empty tracker.fields is correct there");
+});
+
+test("reconcile: a discovered tracker.fields contract survives reconcile untouched (open map)", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-contract-"));
+  try {
+    const contract = [{ ref: "Custom.Environment", name: "Environment", required: true, type: "string", allowedValues: ["QA", "PROD"] }];
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "azure", fields: { Bug: contract }, azure: { organization: "acme", project: "Web" } },
+    }));
+    const p = reconcile(home, ["--set", "selfDiagnostics=true"]);
+    assert.deepEqual(p.tracker.fields.Bug, contract, "the scanned contract is DATA — never pruned as schema");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── VCST-5582 A3 / A4 — the fieldDefaults time-bomb guard + --unset ─────────────────────
+// A helper that captures the JSON REPORT on stdout (not just the written file), for the reject/unset
+// paths whose effect is visible in the report.
+function reconcileReport(home, args = []) {
+  const out = execFileSync(process.execPath, [RECONCILE, "--write", ...args], {
+    encoding: "utf8",
+    env: { ...process.env, VC_FIX_HOME: home, CLAUDE_PLUGIN_ROOT: "" },
+  });
+  return JSON.parse(out);
+}
+function seedAzure(home, over = {}) {
+  writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+    projectType: "client", operator: "client",
+    tracker: { kind: "azure", baseUrl: "https://dev.azure.com/acme", fieldDefaults: over.fieldDefaults ?? {} },
+    vcs: { clientHost: "github", clientOrg: "acmecorp" },
+  }));
+}
+
+test("A3 reconcile --set: REFUSES to persist System.IterationId into tracker.fieldDefaults", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    seedAzure(home);
+    const rep = reconcileReport(home, ["--set", 'tracker.fieldDefaults.System.IterationId=22']);
+    const rejected = rep.rejected.map((r) => r.path);
+    assert.ok(rejected.includes("tracker.fieldDefaults.System.IterationId"), `rejected: ${JSON.stringify(rep.rejected)}`);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(p.tracker.fieldDefaults["System.IterationId"], undefined, "the time-varying id must NOT be written");
+    assert.match(rep.rejected[0].reason, /closed sprint|System\.IterationPath/i);
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
+
+test("A3 reconcile --set: System.AreaId is refused too; a legit fieldDefault (Custom.Environment) is written", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    seedAzure(home);
+    const rep = reconcileReport(home, ["--set", "tracker.fieldDefaults.System.AreaId=4", "--set", "tracker.fieldDefaults.Custom.Environment=QA"]);
+    assert.deepEqual(rep.rejected.map((r) => r.path), ["tracker.fieldDefaults.System.AreaId"]);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(p.tracker.fieldDefaults["System.AreaId"], undefined);
+    assert.equal(p.tracker.fieldDefaults["Custom.Environment"], "QA", "a non-time-varying default is fine");
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
+
+test("A4 reconcile --unset: removes a fieldDefaults entry without hand-editing the profile (item 9)", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    // A profile that ALREADY carries the stale workaround (hand-planted before the A3 guard existed).
+    seedAzure(home, { fieldDefaults: { "System.IterationId": 22, "Custom.Environment": "QA" } });
+    const rep = reconcileReport(home, ["--unset", "tracker.fieldDefaults.System.IterationId"]);
+    assert.deepEqual(rep.unset.map((u) => u.path), ["tracker.fieldDefaults.System.IterationId"]);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(p.tracker.fieldDefaults["System.IterationId"], undefined, "the stale key is gone");
+    assert.equal(p.tracker.fieldDefaults["Custom.Environment"], "QA", "sibling defaults untouched");
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
+
+test("A4 reconcile --unset: a path outside a writable open map is REJECTED, never strips a schema field", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-"));
+  try {
+    seedAzure(home);
+    const rep = reconcileReport(home, ["--unset", "tracker.kind"]);
+    assert.equal(rep.unset.length, 0);
+    assert.ok(rep.rejected.some((r) => r.path === "tracker.kind"), `rejected: ${JSON.stringify(rep.rejected)}`);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.equal(p.tracker.kind, "azure", "a fixed-shape schema field is never removed by --unset");
+  } finally { rmSync(home, { recursive: true, force: true }); }
 });

@@ -250,7 +250,11 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 > **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
-Ask the user: "Create a JIRA ticket for this bug?"
+**Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
+**"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
+a prose question ENDS THE TURN, which lets an end-of-turn hook (the self-diagnostics tail-trigger)
+resume the agent and push the question out of view (VCST-5582 D). And emit the self-diagnostics
+`complete --skill` signal only **after** this decision — never while it is pending.
 
 If yes, file to the deployment's tracker. **Follow `knowledge/execution/tracker-ops.md` §5a for field mapping + body format + Comment & body style** (Jira vs Azure Boards — never hardcode; clear, brief, outcome-first, evidence referenced not inlined — same rule for any follow-up comment). For the native Jira path, use Atlassian MCP (`createJiraIssue`):
 - Project: read from `env.JIRA_PROJECT_KEY` (defaults to `VCST` for backwards compatibility; customer sets their own in `.env` or `.env.${TEST_ENV}`)

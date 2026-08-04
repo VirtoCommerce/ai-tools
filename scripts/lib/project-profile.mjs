@@ -84,6 +84,17 @@ export const PROFILE_DEFAULTS = {
   // RAW and requires the field to be strictly === true, so an absent profile or an
   // absent/false flag ⇒ the hook is a full no-op and never creates `.vc-fix/`.
   selfDiagnostics: false,
+
+  // feedback.mode — consent for UPSTREAM delivery of a self-diagnostics finding (VCST-5509).
+  //   off  — nothing ever leaves the machine.
+  //   ask  — DEFAULT: the delivery flow asks once, per finding, when a BROKEN/DEGRADED finding
+  //          actually exists (a binary file-the-issue? question).
+  //   auto — file the scrubbed GitHub Issue directly (a hand-set CI/consent value).
+  // Since PR #172 item 4 `/project-init` no longer ASKS this at onboarding — the question was a
+  // second, context-free ask for a decision only meaningful when there is something to send. It is
+  // a plain safe-default field (`ask`), hand-editable via `gen-profile --feedback-mode <v>` or a
+  // direct edit; it gates ONLY the outbound `deliver` step, never local capture/diagnosis.
+  feedback: { mode: "ask" },
 };
 
 /** Recursive merge: objects merge key-by-key; arrays + scalars are replaced wholesale. */

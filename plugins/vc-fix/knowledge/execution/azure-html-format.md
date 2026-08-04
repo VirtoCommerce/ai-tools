@@ -6,20 +6,37 @@ keeps its own wiki/markdown markup, unchanged.
 
 ## Why this exists
 
-Azure DevOps stores these fields as **HTML**, not Markdown:
+Azure DevOps stores long-text fields as **HTML**, not Markdown. If you write Markdown into one,
+Azure renders it **literally** — the `#`, `**`, and `| table |` characters show up as text, and
+newlines collapse into one blob. That is the exact defect this format fixes (raw-Markdown bug
+descriptions and unreadable single-paragraph comments).
+
+**Which fields are HTML is DERIVED from the organization's own metadata, not asserted here**
+(VCST-5582 E-a). `/project-init`'s tracker scan records each field's real data type in
+`project-profile.json` `tracker.fields.<Type>[].type`, and `ado.mjs` reads it:
+
+| Contract `type` | Treated as |
+|---|---|
+| `html` | HTML — author HTML, Markdown is converted |
+| `plainText` / `string` | plain text — sent **verbatim**, never HTML-converted |
+| anything else / no contract | fall back to the canonical list below |
+
+This matters because processes differ: on a stock Agile Bug there is no `System.Description` at
+all and `Microsoft.VSTS.TCM.ReproSteps` carries the body, while a custom single-line field like
+`Custom.Reportedby` is `plainText` and must NOT be wrapped in `<p>`.
+
+**Canonical fallback** — the three refs Azure ships as HTML on the out-of-the-box processes, used
+only when no contract was scanned (the "unverified defaults" rung of the fallback ladder):
 
 - `System.Description`
 - `Microsoft.VSTS.TCM.ReproSteps`
 - `Microsoft.VSTS.TCM.SystemInfo`
-- work-item **comments** (`System.History`)
+- work-item **comments** (`System.History`) — always HTML, not a contract field
 
-If you write Markdown into them, Azure renders it **literally** — the `#`, `**`, and `| table |`
-characters show up as text, and newlines collapse into one blob. That is the exact defect this
-format fixes (raw-Markdown bug descriptions and unreadable single-paragraph comments).
-
-So: **when the profile's tracker is Azure (`tracker.kind === "azure"`), author these fields as HTML.**
-`ado.mjs` also carries a safety net — if it detects Markdown reaching an Azure HTML field it converts
-it — but authoring HTML directly gives the clean, structured result below. Do not rely on the net.
+So: **when the profile's tracker is Azure (`tracker.kind === "azure"`), author the html-typed
+fields as HTML.** `ado.mjs` also carries a safety net — if it detects Markdown reaching an HTML
+field it converts it — but authoring HTML directly gives the clean, structured result below. Do
+not rely on the net.
 
 ## The shape we want (read this first)
 
@@ -81,30 +98,41 @@ Azure needs a real attachment URL to render an image inline. Flow:
 
 ## Environment & metadata → dedicated fields, NOT the description
 
-Do **not** write an "Environment:" / "Module Versions:" section into `System.Description`. Azure has
+Do **not** write an "Environment:" / "Module Versions:" section into the description field. Azure has
 purpose-built fields; put it there so the description stays a clean repro and the metadata is filterable.
 
-| What | Field | How to set (`ado.mjs create-workitem`) | Value |
+**Which fields, on THIS deployment, comes from the discovered contract** — `project-profile.json`
+`tracker.fields.<Type>[]`, scanned by `/project-init` (VCST-5582 E). Do not transcribe a field ref
+from this file into a skill: `ado.mjs create-workitem` reads the contract, drops any field this
+organization does not have, and validates every picklist value against the discovered
+`allowedValues` before the POST. These are the STANDARD fields, present on every process:
+
+| Semantic slot | Field | How to set (`ado.mjs create-workitem`) | Value |
 |------|-------|------------------------------------------|-------|
-| Environment | `Custom.Environment` (picklist) | `--field "Custom.Environment=QA"` | `QA` \| `UAT` \| `PROD` \| `Dev` \| `Local` |
-| Reported by | `Custom.Reportedby` (picklist) | `--field "Custom.Reportedby=QA team"` | `QA team` (always — never an individual name) |
-| Type of bug | `Custom.Typeofbug` (picklist) | `--field "Custom.Typeofbug=Functional"` | `Functional` \| `Regression` \| `Performance` \| `Data` \| `Integration` (UI/visual ⇒ `Functional`) |
-| Build / browser / repro-rate | `Microsoft.VSTS.TCM.SystemInfo` (HTML) | `--system-info-file sysinfo.html` | see below |
-| Severity | `Microsoft.VSTS.Common.Severity` | `--severity "2 - High"` | `1 - Critical` … `4 - Low` |
-| Priority | `Microsoft.VSTS.Common.Priority` | `--priority 2` | `1`–`4` |
+| `systemInfo` — build / browser / repro-rate | `Microsoft.VSTS.TCM.SystemInfo` | `--system-info-file sysinfo.html` | see below |
+| `severity` | `Microsoft.VSTS.Common.Severity` | `--severity "2 - High"` | `1 - Critical` … `4 - Low` |
+| `priority` | `Microsoft.VSTS.Common.Priority` | `--priority 2` | `1`–`4` |
+| `assignee` | `System.AssignedTo` | `--assign-self` (owner via `ado.mjs whoami`) | the token/session owner |
+| `sprint` | `System.IterationPath` | `--iteration current` (via `ado.mjs current-iteration`) | the team's active sprint |
+| parent (a RELATION, not a field) | `System.LinkTypes.Hierarchy-Reverse` | `--parent <id>` | **ask the operator** which work item to link under |
 
-| Assignee | `System.AssignedTo` | `--assign-self` (owner via `ado.mjs whoami`) | the token/session owner |
-| Sprint | `System.IterationPath` | `--iteration current` (via `ado.mjs current-iteration`) | the team's active sprint |
-| Parent | `System.LinkTypes.Hierarchy-Reverse` | `--parent <id>` | **ask the operator** which work item to link under |
+**Custom fields differ per organization** — `environment`, `bugType`, `reportedBy`, `foundIn` and
+friends exist only where that process defines them. Read them from the contract and pass them as
+`--field "<ref>=<value>"`. One deployment's shape, as an EXAMPLE only (do not copy these refs —
+they exist in exactly one process and are rejected or silently blank anywhere else):
 
-> The `Custom.*` fields above are the **LEO** bug template's. They are the deployment's *custom* fields —
-> discover a different deployment's from its Bug form (or `ado.mjs list-types`) and omit any it doesn't
-> have. Severity/Priority/AssignedTo/IterationPath are standard VSTS fields present everywhere. `--assign-self`
-> assigns to the creator; `--iteration current` files into the active sprint; `--parent` is **asked**, not assumed.
+| Slot | Example ref on ONE deployment | Example allowed values |
+|---|---|---|
+| `environment` | a picklist named "Environment" | `QA` \| `UAT` \| `PROD` \| `Dev` \| `Local` |
+| `reportedBy` | a field named "Reported by" | `QA team` (always — never an individual name) |
+| `bugType` | a picklist named "Type of bug" | `Functional` \| `Regression` \| `Performance` \| `Data` \| `Integration` (UI/visual ⇒ `Functional`) |
+
+A required field the contract reports but no slot maps is **asked once** at the first bug creation
+and persisted to `tracker.fieldMap` / `tracker.fieldDefaults` — see `commands/qa-bug.md` Step 5.
 
 > **Tags = area + module only** (`--tags "front; orders"`, `"back; catalog"`). Do **not** repeat what a
-> field already carries — the bug type (`Regression`) belongs in `Custom.Typeofbug`, the environment in
-> `Custom.Environment`; neither is a tag. Keep them lowercase, no org/deployment names.
+> field already carries — the bug type belongs in the `bugType` field, the environment in the
+> `environment` field; neither is a tag. Keep them lowercase, no org/deployment names.
 
 **System Info block** (`Microsoft.VSTS.TCM.SystemInfo`) — the platform/build facts, as compact HTML
 (this is the reference bug's exact shape; add a `Platform:`/`Theme:` line for a backend/version bug):
@@ -198,15 +226,17 @@ discipline (short, structured, reference links — don't inline logs).
 ## Passing HTML to `ado.mjs` — always via a file
 
 Write each HTML field to a temp file and pass `--description-file` / `--system-info-file` / `--text-file`.
-Never pass long HTML inline on the command line (quoting/em-dash grabli). Environment/metadata picklists
-go via repeatable `--field "Ref=value"`. Example (LEO):
+Never pass long HTML inline on the command line (quoting/em-dash grabli). Pass a `--*-file` path
+relative to `VC_FIX_HOME || cwd` (the pre-flight resolves and stats it, and shows the ABSOLUTE path
+if it is missing). Per-organization custom fields go via repeatable `--field "<ref>=<value>"`, with
+`<ref>` taken from the DISCOVERED contract — never transcribed from another deployment:
 
 ```bash
 node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug \
   --title "[Orders] Line-item total ignores tier price after quantity bump" \
   --description-file .tmp/desc.html \
   --system-info-file .tmp/sysinfo.html \
-  --field "Custom.Environment=QA" --field "Custom.Reportedby=QA team" --field "Custom.Typeofbug=Functional" \
+  --field "<environment-ref>=QA" --field "<reportedBy-ref>=QA team" --field "<bugType-ref>=Functional" \
   --severity "2 - High" --priority 2 --tags "qa-autofix,orders" \
   --attachments "$SHOT_URL"
 ```

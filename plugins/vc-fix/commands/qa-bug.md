@@ -54,6 +54,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 - Resolve ticket details via the profile's tracker (`tracker-ops.md` §2), using the tracker's own key format (Jira `ABC-123` / Azure Boards bare `12345`):
   - **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `getJiraIssue`
   - **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <n>` (do NOT hand-roll `curl`+`python`). Resolve `$pluginRoot` = the active install path at runtime via `claude plugin list --json` (not the profile; see [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)) — applies to every `$pluginRoot/…` invocation below too.
+  - **NEVER pipe an `ado.mjs` call (or any plugin script) through `head`/`tail`.** A pipe makes the shell report `head`'s exit code (0), so a failed `create-workitem`/`transition` looks successful and the self-diagnostics collector — which reads the tool's exit status — records nothing (VCST-5582 C3). Redirect to a file and read it, or use `--json`; never `… | head`.
 - Use qa-testing-expert to reproduce based on ticket description
 - Follow `/qa-investigate` common VC patterns (P1–P8) to isolate the layer
 - Add QA evidence to the ticket as a comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`)
@@ -69,6 +70,20 @@ Create a structured bug report from a description, screenshot, or observed issue
 > **Purpose:** Pinpoint which layer owns the bug. Same request flow, four observation points. If the bug appears only at the UI layer but APIs return correct data, it's a presentation bug. If the REST API is wrong, the whole stack inherits it. This isolation is load-bearing for the Root Cause Analysis in the bug report.
 
 Validate the failing scenario across all four layers. Record per-layer PASS / FAIL / N/A in the bug report. Stop early if a lower layer (REST) already fails — higher layers will inherit. Use the browsers/tools listed below and capture evidence at each layer that reproduces.
+
+> ### Screenshots — RELATIVE filenames only, never a path
+>
+> Call `browser_take_screenshot` with a bare **filename** — `filename: "layer1-menu-empty.png"` —
+> **never** a path and **never** an absolute path. playwright-mcp documents *"Prefer relative file
+> names to stay within the output directory"*; absolute paths are undocumented, so nothing may be
+> built on them. `/project-init` pins each Playwright server's `--output-dir` to an **absolute**
+> path inside this project — `reports/bugs/screenshots/_incoming/<browser>/` — so a relative
+> filename lands there whatever cwd the MCP server started in, and the project root can never be
+> the target (VCST-5582 C).
+>
+> Do **not** try to place a screenshot at its final location during capture, and do not guess where
+> it went. `_incoming/` is a landing zone; Step 4 performs ONE deterministic move. Mechanism +
+> the hard "no artifact at the project root" rule: [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md).
 
 ### Layer 1 — Storefront Frontend (vc-frontend)
 - **Where:** `FRONT_URL` (storefront UI)
@@ -190,6 +205,25 @@ routing confidence LOW and say why — `/qa-fix` will still re-validate, but an 
 
 > **Skills:** Use `/qa-evidence compact|detailed` for report verbosity tier. Use `/qa-defect classify` for defect type taxonomy and root cause categories.
 
+### 4a. Consolidate the evidence — ONE deterministic move
+
+Before writing a single line of the report, pick the bug slug (the `{Short-Description}` you are
+about to use in the filename) and move the captures you are KEEPING out of the landing zone into
+their permanent home — one move, one destination, no guessing:
+
+```bash
+# <slug> = the same Short-Description the report filename uses, e.g. Products-Main-Menu-Dropdown-Empty
+mkdir -p reports/bugs/screenshots/<slug>
+mv reports/bugs/screenshots/_incoming/*/<kept>.png reports/bugs/screenshots/<slug>/
+```
+
+- Move **only** the 1–5 captures the report actually references (`.claude/rules/reports.md` §5);
+  leave the rest in `_incoming/` — it is gitignored and disposable.
+- The report then references the **final** path (`reports/bugs/screenshots/<slug>/<file>.png`) —
+  never an `_incoming/` path and never a bare filename.
+- If a capture is not where you expect, **list `reports/bugs/screenshots/_incoming/`** — do not
+  guess a path. A guessed path was one of the two `Read` failures on the OPUS run.
+
 Generate a report in `reports/bugs/open/` using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-VCST-XXXX.md` (if a JIRA ticket is known)
 
@@ -266,7 +300,12 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 > **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
-Ask the user: "Create a bug-tracker ticket for this bug?"
+**Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
+**"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
+a prose question ENDS THE TURN, which lets an end-of-turn hook (the self-diagnostics tail-trigger)
+resume the agent and push the question out of view — exactly what happened on the OPUS deployment
+(VCST-5582 D). `AskUserQuestion` blocks inside the turn, so nothing can bury it. This is the same
+mechanism the parent-link question below already uses.
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
 - **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`, default `VCST` for backwards compatibility; customer sets their own). Body = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
@@ -281,14 +320,32 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
        ```
     4. **Verify it renders** — persisted ≠ rendered. Read back `?fields=description&expand=renderedFields` and assert the HTML contains `<img src="…/rest/api/3/attachment/content/{attachmentId}" …>`. No `<img>` ⇒ the node is wrong; don't claim success.
     **Do not bother trying** (each fails): markdown `![alt](file.png)` → silently dropped (MD→ADF can't resolve a filename to an attachment); wiki `!file.png!` → renders literally (VCST-5212 class); `attrs.id` = attachment id → `400`. Embed the 1–3 images that show the defect (`.claude/rules/reports.md` §5); attach-only is fine for supporting shots.
-- **Azure Boards** (`tracker.kind = azure`) → **author the body as HTML** per [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) (that file is the single source of truth for the shape — read it). Azure's `System.Description` / `Microsoft.VSTS.TCM.SystemInfo` are **HTML fields**, so raw Markdown renders as a literal `#`/`**`/`| … |` wall (do NOT feed the markdown report file straight in). The work item is the **lean, replayable** version of the bug — not a copy of the full markdown report:
-  - **`System.Description` = abstract Summary → Preconditions → Steps → Actual → Expected**, and nothing else competes with them. The Summary is 1–3 sentences with **no user-specific data** (no emails, IDs, order numbers, GUIDs, names) — reproducible by anyone who meets the Preconditions. The VC extras (4-Layer Validation, Module Versions, Root Cause Analysis, Fix Routing) go into **one collapsed `🔧 Technical Details` block below**, trimmed to the essentials — never as top-level sections. Leave `--repro-file` **unset** (LEO's `ReproSteps` field is hidden; everything lives in `System.Description`).
-  - **Environment & metadata → dedicated fields, never a description section:** `--field "Custom.Environment=<QA|UAT|PROD|Dev|Local>"`, `--field "Custom.Reportedby=QA team"`, `--field "Custom.Typeofbug=<Functional|Regression|Performance|Data|Integration>"`, and the build/theme/browser/repro-rate go to the **System Info** block via `--system-info-file <sysinfo.html>` (the Module-Versions table from Step 0 lives here, not in the body).
-  - **Screenshots first:** upload each and capture the URL — `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" upload-attachment --file <png>` → `{ url }`. Embed inline in the relevant `<li>` via `<img src="{url}" width="700">`.
-  - **Assignee & sprint are automatic:** pass `--assign-self` (assigns the new bug to the token/session owner — resolved via `ado.mjs whoami`) and `--iteration current` (stamps the team's active sprint via `ado.mjs current-iteration`, so the bug lands in the current sprint, not the backlog).
+- **Azure Boards** (`tracker.kind = azure`) → the work item is the **lean, replayable** version of the bug, not a copy of the markdown report. Its field set is **DISCOVERED, never hardcoded** (VCST-5582 E): `project-profile.json` `tracker.fields.Bug[]` carries THIS organization's contract — `{ ref, name, required, type, allowedValues?, defaultValue? }` — scanned by `/project-init`. Body format follows [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) (the single source of truth for the SHAPE); whether a field is HTML is **derived from its contract `type`** (`html` ⇒ HTML, `plainText` ⇒ text), not assumed.
+  - **`System.Description` (or whatever the contract binds the `body` slot to) = abstract Summary → Preconditions → Steps → Actual → Expected**, and nothing else competes with them. The Summary is 1–3 sentences with **no user-specific data** (no emails, IDs, order numbers, GUIDs, names) — reproducible by anyone who meets the Preconditions. The VC extras (4-Layer Validation, Module Versions, Root Cause Analysis, Fix Routing) go into **one collapsed `🔧 Technical Details` block below**, trimmed to the essentials — never as top-level sections. Pass `--repro-file` only when the contract maps a `repro` slot **and** that field is visible in this process (on LEO/OPUS `ReproSteps` is hidden, so everything lives in the body field).
+  - **Metadata → dedicated fields, never a description section.** Do **NOT** hardcode `Custom.Environment` / `Custom.Reportedby` / `Custom.Typeofbug` — those exist in ONE organization's process and are rejected or silently blank anywhere else. Instead read `tracker.fields.Bug[]` and fill the fields it lists, via the semantic slots in [`skills/qa-fix-routing/bug-contract.mjs`](../skills/qa-fix-routing/bug-contract.mjs) (`environment`, `bugType`, `reportedBy`, `systemInfo`, `foundIn`, `severity`, `priority`, …). Resolution order: an explicit `tracker.fieldMap` override → auto-match on name/ref + type → **ask once** (below). `tracker.fieldDefaults` supplies per-deployment constants (e.g. `Custom.Environment = QA`) — a stored default, never a per-bug guess. The build/theme/browser/repro-rate go to the `systemInfo` slot via `--system-info-file <sysinfo.html>`.
+  - **First creation on a deployment — ONE question per unmapped REQUIRED field.** `create-workitem` refuses to POST while a contract-`required` field has no value and no default, and names each one with its `allowedValues`. Ask the operator via **`AskUserQuestion`**, offering those discovered values as the options, then **persist** the answer so it is asked exactly once per deployment:
+    ```bash
+    node "$pluginRoot/skills/project-init/reconcile-profile.mjs" --write \
+      --set 'tracker.fieldDefaults.<field-ref>=<the operator's answer>'
+    # a slot BINDING instead of a constant value:
+    #   --set 'tracker.fieldMap.<slot>=<field-ref>'
+    # <field-ref> is whatever the contract reported — never a ref copied from another deployment.
+    # Dots inside a ref are safe: tracker.fieldMap / fieldDefaults are open maps, so the whole
+    # remainder of the path becomes ONE flat key rather than nested objects.
+    ```
+    Ask at the FIRST bug creation, never at onboarding — the operator has context here that they do not have during the interview.
+  - **Screenshots first:** upload each and capture the URL — `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" upload-attachment --file <png>` → `{ url }`. Embed inline in the relevant `<li>` via `<img src="{url}" width="700">`. `--attachments` takes **URLs**, never local paths (the pre-flight rejects a path).
+  - **Assignee & sprint are automatic:** pass `--assign-self` (the token/session owner) and `--iteration current` (the team's active sprint, so the bug lands in the sprint and not the backlog).
   - **Parent link — ASK the operator.** Before creating, ask via `AskUserQuestion` **which work item to link this bug under** (its parent). Offer **"No parent"** + **"Other (enter ID)"** (you may also list a few likely candidates, e.g. the sprint's User Stories, if you already have them). On a chosen id, pass `--parent <id>` (adds a Hierarchy-Reverse link); on "No parent", omit the flag.
-  - **Create:** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <desc.html> --system-info-file <sysinfo.html> --field "Custom.Environment=QA" --field "Custom.Reportedby=QA team" --field "Custom.Typeofbug=Functional" --severity <"2 - High"> --priority <N> --tags <...> --attachments "<url1>,<url2>" --assign-self --iteration current [--parent <id>]` (org/project default from the profile). Returns `{ id, type, title, state, url }`.
-  - **Safety net:** `create-workitem` auto-converts Markdown→HTML if any slips through, but author HTML directly for the clean, structured result — don't lean on the net.
+  - **Create:** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <desc.html> --system-info-file <sysinfo.html> [--field "<Ref>=<value>" …from the contract] --severity <"2 - High"> --priority <N> --tags <...> --attachments "<url1>,<url2>" --assign-self --iteration current [--parent <id>]` (org/project default from the profile).
+  - **What it does for you, before and after the POST:**
+    - **Pre-flight (ONE message, nothing created):** resolves and stats every `--*-file` against `VC_FIX_HOME || cwd` (shown as an ABSOLUTE path when missing), resolves the `--assign-self` identity and `--iteration current`, checks the attachment URLs, and probes the Work-Items **write** scope non-mutatingly. Every problem is reported together with the exact PAT scope to grant.
+    - **Contract validation:** a picklist value outside `allowedValues` and a required-but-empty field both block the POST — a doomed request is never sent, and a field this organization lacks is dropped rather than rejected.
+    - **Read-back (E-e):** re-reads the created item and returns `fieldsOk` + a per-field **PASS/MISSING** table (`verifyTable`) + `stillMissing`. A 200 from ADO means "an item exists", not "the fields are populated". Gaps are PATCHed **once** and re-verified (`patchedAfterCreate`).
+    - Returns `{ id, type, title, state, url, contract, fieldsOk, verifyTable, … }`.
+  - **On a create failure: FIX THE INPUT — never retry with fields removed.** Dropping fields until the POST succeeds is exactly how the OPUS work item ended up with its fields unset. The one automatic exception is handled for you: an **optional** field the server itself rejected is dropped and the create retried **once** (reported as `selfHealed`). A **required** field is never dropped — STOP and ask the operator.
+  - **Fallback ladder (E-f) — "universal" must not mean "fragile":** contract in the profile ⇒ use it · contract absent ⇒ re-run `/project-init`'s tracker scan, or proceed and let the create report `contract: "unverified defaults"` · metadata unreachable (read permission / offline) ⇒ the legacy field set is sent, **clearly labelled "unverified defaults"** in your report to the operator · a specific field rejected ⇒ the single self-heal above.
+  - **Safety net:** `create-workitem` auto-converts Markdown→HTML for html-typed fields if any slips through, but author HTML directly for the clean, structured result — don't lean on the net.
 
 Fields either way:
 - Summary: from bug title
@@ -297,11 +354,54 @@ Fields either way:
 
 **Use the returned key verbatim** in the tracker's own format (Jira `ABC-123`, Azure Boards bare `12345`) for the report filename and any cross-links. Follow `/qa-defect workflow` (role-based, §0) for status transitions.
 
-Report the ticket key back to the user, and say explicitly whether the evidence rendered **inline** in the ticket body or is attachment-only.
+**Report the RESULT, not just the key.** Show the operator:
+
+1. the ticket key + URL,
+2. the per-field **PASS/MISSING** table (`verifyTable` from the create result) — this is the proof
+   the bug is actually filled in; the key alone never was,
+3. `contract:` — `contract-driven (N fields, M required)` or `unverified defaults`. Say
+   **"unverified defaults"** out loud when that is what happened, so nobody assumes the
+   organization's own required fields were honoured,
+4. anything the run had to do: `droppedFields` (not present in this organization),
+   `selfHealed` (one optional field the server rejected), `patchedAfterCreate`,
+   `stillMissing` (report it honestly — do NOT quietly re-try),
+5. whether the evidence rendered **inline** in the ticket body or is attachment-only (the Jira
+   image dance and the Azure `<img src>` both persist ≠ render — say which you confirmed).
+
+Then transition and move on. Only after this decision is complete does the run signal completion
+(see §Signal completion — the ordering rule).
 
 ---
 
+## Final sweep — the project root must be clean, and anything found is NAMED
+
+Right before signalling completion, check whether the run left anything at the **project root**:
+
+```bash
+git status --porcelain -- ':(top)*.png' ':(top)*.har' ':(top)*.zip' ':(top)*.webm' ':(top)*.jpeg' ':(top)*.jpg'
+ls -1 *.png *.har *.zip *.webm 2>/dev/null   # also catches an already-ignored file
+```
+
+- **Nothing found** → say so in one line: `root clean — no stray artifacts`.
+- **Something found** → **NAME each file** (and its size/mtime) in your final message, THEN move it
+  into `reports/bugs/screenshots/<slug>/` if it is evidence, or delete it if it is a temp file.
+  Naming it is the point: the OPUS telemetry could not pin down WHICH writer produced the
+  root-level files, so a silent move would erase the only clue if the pattern repeats
+  (VCST-5582 C). Report it as an observation, not a failure — the run still succeeded.
+
+Never create anything at the project root yourself: reports go under `reports/bugs/`, browser
+captures under `reports/bugs/screenshots/`, scratch files under the session temp dir.
+
 ## Signal completion (self-diagnostics — the LAST action)
+
+> **ORDERING RULE — never signal completion while an operator decision is pending.** `complete
+> --skill` is emitted **only after** the Step-5 ticket was created **or** explicitly declined (and
+> after any parent-link / field-mapping question was answered). Signalling early is what broke the
+> OPUS run (VCST-5582 D/E1): `complete` fired at 11:04:19Z while the ticket question was still
+> unanswered, so the whole ticket-creation phase ran OUTSIDE the span (`parentId: null` orphans) and
+> was never diagnosed — and the `Stop` hook, seeing a closed span, resumed the agent and buried the
+> question. The collector now also defers a `Stop` that finds an unanswered `AskUserQuestion`
+> (`suppressReason: "question-pending"`), but that is a safety net, not a licence to signal early.
 
 Whether or not a ticket was filed — after the report is written and reported back, **and equally
 on any early exit** (couldn't reproduce → not a bug; nothing to file) — run this once as your last
@@ -328,7 +428,8 @@ already resolved this run, else resolve via `claude plugin list --json` (see
 - Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A).
 - Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`)
 - Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
-- Ask before creating tracker tickets (explicit permission required)
+- Ask before creating tracker tickets (explicit permission required) — via **`AskUserQuestion`**, never
+  prose, and emit `complete --skill` only **after** that decision (see Step 5 + Signal completion)
 - If a new regression is found during investigation, escalate via `/qa-bug` (separate report)
 - **File every confirmed bug** `/qa-bug` reports all defects and routes each one; auto-fix
   eligibility (Gate 0) is `/qa-fix`'s decision, not `/qa-bug`'s.

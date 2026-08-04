@@ -69,17 +69,31 @@ recorded silently; only *interesting* (non-clean) work is ever surfaced or sent.
   are never stored** — tool inputs are hashed (`arg_hash`) and **secrets are redacted** (tokens,
   passwords, card numbers, JWTs). The collector never blocks a tool and never fails your session.
   Capture is **opt-in**: it runs only when `project-profile.json` explicitly sets `selfDiagnostics: true` (and the env kill-switch `VC_FIX_DIAG_CAPTURE` is not off). No profile / no flag / any non-`true` value ⇒ a **full no-op** — no `.vc-fix/` is created. The opt-in is owned by `/project-init`, which asks the consent question as its **first** step and — on Yes — writes the flag **immediately** (before the interview), so its own remaining run is captured from that point on.
-- **Outcome, not error count, drives escalation.** Each skill/command span is classified with cheap
-  heuristics (no LLM): `success` · `recovered` (a self-corrected error — **not** escalated) ·
+- **Capture records everything; judging happens later.** The collector logs *that* something
+  happened and is **forbidden from deciding whether it matters** — every anomaly signal, however
+  minor, becomes a durable observation with **no severity field**: a non-PASS row of its own
+  readiness table, a script's **stderr even when it exited 0**, a non-zero exit, an HTTP non-2xx, a
+  self-labelled fallback ("unverified defaults"), an artifact that came out empty, a signal on a
+  span that ended fine, a sub-agent error, its own truncation and scan failures. `/vc-self-check`
+  assigns severity afterwards. This inverted the original design, where the classifier's verdict at
+  span close also decided what was *kept*, so anything it did not recognise ceased to exist — a real
+  onboarding run printed a **WARN** in its own table and reported itself perfectly healthy.
+- **Outcome, not error count, drives span classification.** Each skill/command span is classified with
+  cheap heuristics (no LLM): `success` · `recovered` (a self-corrected error — **not** escalated) ·
   `degraded` (a *struggle* pattern: retry storm, search thrash, reread/fallback loop, low yield) ·
   `failed` (a blocking, unrecovered error) · `silent_suspect` (finished clean but produced none of
-  its expected output — a *silent* failure). The old numeric `>= 6` anomaly gate is gone.
-- **One silent auto-diagnosis, deduped.** When a span is `failed`/`degraded`/`silent_suspect` with a
-  **new** signature, the end-of-turn hook runs `/vc-self-check` **silently** (no yes/no modal) to
-  write a **local** `DIAG-*.md` and prints one info line. On a **clean** plugin turn it instead prints
-  a single `vc-fix self-check: no plugin issues detected` line (default ON; silence with
-  `VC_FIX_DIAG_LINE=off`). The same signature never re-triggers. Kill switch:
-  `VC_FIX_DIAG_CONSENT=off` suppresses both the auto-run and the clean line (capture still records).
+  its expected output — a *silent* failure). The old numeric `>= 6` anomaly gate is gone. Note these
+  are **behavioural** detectors: a first-try, clean-exit *wrong* result trips none of them, which is
+  why the observation layer above exists.
+- **One silent auto-diagnosis, deduped — and three honest status lines.** When there is something
+  new worth a look (a `failed`/`degraded`/`silent_suspect` span, a self-reported WARN/FAIL, a
+  degraded artifact, a 👎 — or a signature whose occurrence count has *grown*), the end-of-turn hook
+  runs `/vc-self-check` **silently** (no yes/no modal) to write a **local** `DIAG-*.md` and prints one
+  info line. Otherwise it prints `vc-fix self-check: no blocking issues — N observation(s) recorded`
+  when anything at all was observed, and `vc-fix self-check: no plugin issues detected` **only** when
+  the record is genuinely empty (default ON; silence with `VC_FIX_DIAG_LINE=off`). It can therefore
+  stay quiet without ever claiming "clean" while observations exist. Kill switch:
+  `VC_FIX_DIAG_CONSENT=off` suppresses both the auto-run and the status line (capture still records).
 - **Timed around sub-agents.** `Stop` fires at the end of *every* turn, including one that just handed
   work to a background sub-agent and is waiting. The hook detects that (`background_tasks`, with a
   fallback to any still-open agent op) and treats such a Stop as a **checkpoint** — it records a

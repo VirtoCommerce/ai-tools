@@ -35,7 +35,7 @@ plugin-symbol allowlist — a second denylist fighting the first.
   - **UPSTREAM signal** — a strongly-typed struct of **enum / number / bool fields only**,
     with **zero free-text fields** (see [`upstream-schema.md`](./upstream-schema.md)).
 - A pure, deterministic `reduce(local) -> UpstreamSignal` builds it from **only the
-  collector's structured jsonl** (span records + feedback verdicts). LLM-authored DIAG
+  collector's structured jsonl** (span records + **observation records** + feedback verdicts). LLM-authored DIAG
   free-text cells never enter the upstream path; `/vc-feedback` prose is dropped (only
   `up`/`down` counts travel).
 - Error **text** is never sent: a LOCAL `classifyError()` maps an already-redacted snippet
@@ -83,6 +83,51 @@ promising an active backstop that did not exist was worse than none. The closed 
 (`validateUpstream`) is the sole upstream guard, in both the distributed `plugins/vc-fix/`
 surface and the in-repo `.claude/` mirror (kept in sync for this subsystem).
 
+## Amendment (2026-07-29, PR #172) — provenance + boundary, not type-level impossibility
+
+The v1/v2 guarantee ("no strings at all") was sound containment and **useless reporting**. On the
+reference client run the payload rendered `Signal: none · Struggle: — · Repo: unknown · Outcome:
+success` — a maintainer learned only that *something* 4xx'd, while the diagnosing session knew the
+file, the line, the offending literal (`$expand=Properties`) and the one-line fix. None travelled.
+
+**Schema v3 replaces the guarantee with a sharper one:** a string MAY travel, but only if it
+originates from the **vendor's own shipped plugin source** (or is the vendor API's own stable error
+enum), and only after a boundary validator has failed to find any client value in it. Returning the
+vendor their own code cannot leak the client. The new fields are `pluginFile`/`pluginLine`/
+`codeExcerpt`/`offendingLiteral`/`apiShape`/`proposedFix` + the vendor error identity.
+
+Two gates enforce it (`upstream-reduce.mjs` `provenanceFields` / `boundaryDenial`, spec in
+`upstream-schema.md`), and both must pass or the field is set to `null` (never coerced) with the
+finding surviving:
+
+1. **Provenance** — a `codeExcerpt`/`offendingLiteral` must be a verbatim substring of the cited
+   plugin file, which `deliver` re-reads from the INSTALLED plugin at send time.
+2. **Boundary** — no URL host, no absolute path, no email, no token-shaped run, no GUID (the ADO
+   `projectId` is a GUID), no value read from the client's `.env.*` / `project-profile.json`, and no
+   work-item field reference outside `System.*` / `Microsoft.VSTS.*`.
+
+**§6a — vendor error identity is added unconditionally.** `typeKey`/`typeName`/`errorCode`/`eventId`
+(ADO) and `errors[].code`/`documentation_url` (GitHub) are the vendor's OWN enums with no client
+interpolation and are diagnostically stronger than the prose message. For the reference defect, ADO's
+`typeKey` + our own `offendingLiteral` pin the bug with zero free text.
+
+**§6b — the vendor error MESSAGE is the deliberate, bounded exception.** The message CAN interpolate
+client identifiers (project name, org, `projectId` GUID), so this is the one field whose safety is
+not "impossible by construction". It is judged sufficient because THREE controls compound: (1) cap +
+single line; (2) **normalize first** — GUIDs/emails/URLs/paths/IPs/tokens → placeholders; (3) **then
+deny, never coerce** — drop the field (keep the finding) if any named client value survives; and the
+orchestrator **discloses the exact final string verbatim** to the operator before the yes/no. That
+mandatory disclosure is what makes it acceptable: consent is informed about the specific text, and if
+the summary cannot show it, it is not sent.
+
+`findingStructSig` must NOT fold any v3 string, or dedup breaks on a refactor that shifts a line
+number — it is unchanged, so v2 and v3 issues for one defect still converge.
+
+This is a genuine relaxation from "type-level impossibility" to "vendor-provenance + boundary
+validation + mandatory disclosure". It is judged worth it: the v2 payload was contained AND
+information-free, and an information-free vendor report is a report nobody can act on.
+
 ## Invariants preserved
-Client-code containment (quality-gates §2a) — now structural. No-auto-merge (§2) — end at an
-open PR/issue for human review. Capture stays OPT-IN and the collector is unchanged.
+Client-code containment (quality-gates §2a) — now provenance-gated + boundary-validated (v3), no
+longer pure type-level. No-auto-merge (§2) — end at an open issue for human review. Capture stays
+OPT-IN and the collector is unchanged.
