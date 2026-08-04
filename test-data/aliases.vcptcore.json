@@ -150,5 +150,21 @@
     "_inline": true,
     "group_id": "9434dd46-7eb9-44c6-893a-9c0a1fcf6947",
     "permalink": "/qa-partner-portal-support"
+  },
+  "SR_STATS_TOPSELLER_ORDER": {
+    "id": "30d1725a-2b9f-4887-b5e8-00b885d13b24",
+    "number": "AGENT-TEST-SRO-STATS-TOPSELLERS"
+  },
+  "SR_STATS_CART_ACME": {
+    "id": "4707dc43-e00c-41f5-a643-f946ff1fb0fe",
+    "name": "AGENT-TEST-SR-CART-ACME"
+  },
+  "SR_STATS_CART_WEST": {
+    "id": "569e0a6f-733f-4dfb-9367-f7d968704f1e",
+    "name": "AGENT-TEST-SR-CART-WEST"
+  },
+  "SR_REP_LAYOUT": {
+    "id": "31d8b2ad-3d53-47f2-9a3c-2918e3758282",
+    "user_id": "385ee8ea-44fb-4637-a4af-503f121725de"
   }
 }

@@ -1,0 +1,25 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "isolated": true,
+    "launchOptions": {
+      "headless": false
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 3,
+      "isMobile": true,
+      "hasTouch": true,
+      "locale": "en-US",
+      "recordHar": {
+        "path": "./test-results/mobile/har",
+        "omitContent": true
+      }
+    }
+  },
+  "outputDir": "./test-results/mobile",
+  "screenshot": "only-on-failure"
+}

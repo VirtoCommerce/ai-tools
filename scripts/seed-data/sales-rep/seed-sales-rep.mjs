@@ -15,17 +15,27 @@
  * Phases (idempotent, look-up-then-create):
  *   1. Owner contact for ACME (distinct from the reps) + enrich ACME org (ownerId, businessCategory, address).
  *   2. 5 sales reps + their served-org memberships (POST /api/sales-rep).
- *   3. Block SR_REP_BLOCKED's account; lock SR_REP_LOCKED's ACME membership.
+ *   3. Block SR_REP_BLOCKED's account; lock SR_REP_LOCKED's ACME membership;
+ *      wipe the DISPOSABLE-layout rep's persisted SalesRepLayout.* preferences (VCST-5367).
  *   4. Orders per org across stores + statuses (POST /api/order/customerOrders).
  *   5. Write-back: contact/user/membership/owner GUIDs -> aliases.<env>.json.
+ *
+ * VCST-5367 saved layout: `salesRepLayout`/`saveSalesRepLayout` persist a Customer-module
+ * CustomerPreference named `SalesRepLayout.{scope}[.{storeId}]` on the CALLER'S OWN user id. Only
+ * SR_REP_LAYOUT's is disposable (allowlist in sales-rep-layout-specs.mjs) — the seeder resets it to
+ * never-saved on every reseed so the "never saved => query returns null" precondition is reproducible,
+ * and SR_REP_PRIMARY's null baseline (relied on by ~40 cases) is never written.
  *
  * Flags: --dry-run (reads only), --verbose, --teardown (delete only what this seeder created), --only <rep_key|order_key>.
  */
 import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, loadAliases,
   writeEnvAliasOverride, syncEnvAliases, csvBool, DRY_RUN, TEARDOWN, ONLY, STORE_ID, verifyRemoved,
-  discoverCatalogProducts, resetSecurityPassword,
+  discoverCatalogProducts, resetSecurityPassword, idsParam,
 } from '../../lib/seed-common.mjs';
+import {
+  parseServedOrgs, isDisposableLayoutRep, isLayoutPreference, LAYOUT_PREF_PREFIX, LAYOUT_SCOPES,
+} from './sales-rep-layout-specs.mjs';
 
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
 const OWNER_PHONE = '+1-206-555-0142';
@@ -94,6 +104,40 @@ async function confirmRepEmail(email) {
   verbose(`emailConfirmed=true for ${email}`);
 }
 
+/* ── VCST-5367 persisted layout (CustomerPreference SalesRepLayout.{scope}[.{storeId}]) ───────────
+ * The layout the storefront saves is a Customer-module preference on the CALLER'S OWN ApplicationUser,
+ * reachable from this seeder via POST /api/customer-preferences/search + DELETE /api/customer-preferences.
+ * Deleting the rep does NOT cascade it (the row is keyed on the security account, not the Contact), so
+ * the seeder wipes it explicitly — forward (restore the never-saved precondition) and at teardown
+ * (zero residue). Only reps on the DISPOSABLE_LAYOUT_REP_KEYS allowlist are ever touched. */
+
+/** The rep's persisted SalesRepLayout.* preference rows ([] when none / module route absent). */
+async function findLayoutPreferences(userId) {
+  if (!userId) return [];
+  const res = await api('POST', '/api/customer-preferences/search', { userId, take: 100 }, { expectStatus: [200, 201, 404] });
+  return (res?.results || res?.items || []).filter((p) => isLayoutPreference(p?.name));
+}
+
+/** Delete every SalesRepLayout.* row for a rep, so salesRepLayout(scope:…) resolves to null again. */
+async function resetLayoutPreferences(userId, label) {
+  if (!userId) {
+    // In --dry-run a not-yet-created rep has no account, which is expected — not a warning.
+    const msg = `${label} — no ApplicationUser id resolved, cannot reset ${LAYOUT_PREF_PREFIX}.* preferences`;
+    if (DRY_RUN) verbose(msg); else log(`  WARN: ${msg}`);
+    return 0;
+  }
+  const rows = await findLayoutPreferences(userId);
+  if (rows.length === 0) {
+    verbose(`${label}: no ${LAYOUT_PREF_PREFIX}.* preference — already never-saved (${LAYOUT_SCOPES.join(' / ')} resolve to null)`);
+    return 0;
+  }
+  const names = rows.map((r) => r.name).join(', ');
+  if (DRY_RUN) { log(`  ${label}: would delete ${rows.length} ${LAYOUT_PREF_PREFIX}.* preference(s): ${names}`); return rows.length; }
+  await api('DELETE', `/api/customer-preferences?${idsParam(rows.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
+  log(`  ${label}: layout reset to never-saved — deleted ${rows.length} preference(s) (${names})`);
+  return rows.length;
+}
+
 /** Create/resolve N dedicated paging orgs (no orders, no pinned id) served by a paging rep. Idempotent by name. */
 async function ensurePagingOrgs(n) {
   const served = [];
@@ -115,7 +159,7 @@ async function ensurePagingOrgs(n) {
 
 async function ensureServedOrgs(orgs, repRows) {
   const needed = new Set();
-  for (const r of repRows) (r.served_orgs || '').split(';').map((s) => s.trim()).filter(Boolean).filter((k) => !k.startsWith('PAGING:')).forEach((k) => needed.add(k));
+  for (const r of repRows) parseServedOrgs(r.served_orgs).orgKeys.forEach((k) => needed.add(k));
   for (const key of needed) {
     const o = orgs[key];
     if (!o) { log(`WARN: org ${key} not in b2b CSV — skip`); continue; }
@@ -181,13 +225,10 @@ async function ensureRep(row, orgs, roleId) {
     // accounts). A newly-created rep already gets REP_PASSWORD at create, so only reuse needs it.
     await resetSecurityPassword(api, row.email, REP_PASSWORD);
   } else {
-    let served;
-    if ((row.served_orgs || '').startsWith('PAGING:')) {
-      served = await ensurePagingOrgs(parseInt(row.served_orgs.split(':')[1], 10) || 12);
-    } else {
-      served = (row.served_orgs || '').split(';').map((s) => s.trim()).filter(Boolean)
-        .map((k) => orgs[k] ? { organizationId: orgs[k].id, organizationName: orgs[k].name } : null).filter(Boolean);
-    }
+    const { orgKeys, pagingCount } = parseServedOrgs(row.served_orgs);
+    const served = pagingCount
+      ? await ensurePagingOrgs(pagingCount)
+      : orgKeys.map((k) => orgs[k] ? { organizationId: orgs[k].id, organizationName: orgs[k].name } : null).filter(Boolean);
     const body = {
       firstName: row.first_name, lastName: row.last_name, fullName: row.full_name,
       emails: [row.email], storeId: row.store, password: REP_PASSWORD,
@@ -198,6 +239,11 @@ async function ensureRep(row, orgs, roleId) {
   }
   // Confirm the account email so the rep can sign in to the storefront UI (idempotent, all reps).
   await confirmRepEmail(row.email);
+  // VCST-5367: only the DISPOSABLE-layout rep starts each seed never-saved (both scopes -> null).
+  // SR_REP_PRIMARY is deliberately NOT on the allowlist — its null baseline is shared by ~40 cases.
+  if (isDisposableLayoutRep(row.rep_key)) {
+    await resetLayoutPreferences(rep?.userId || await resolveUserId(row.email), row.rep_key);
+  }
   // Per-org membership lock (SR_REP_LOCKED): lock the named org's membership.
   let lockedMembershipId = '';
   if (row.lock_membership_org && orgs[row.lock_membership_org]) {
@@ -356,31 +402,59 @@ async function ensureOrder(row, orgs, customerId, products = []) {
 // ---- teardown --------------------------------------------------------------
 
 async function teardown(orgs) {
-  log('TEARDOWN — deleting only AGENT-TEST-SR fixtures');
+  // `--teardown --only <rep_key|order_key|user_key>` tears down exactly ONE fixture. The QA envs are
+  // SHARED, so an unscoped teardown (which also sweeps the paging orgs, the ACME owner contact and the
+  // 092 admin users) is the wrong tool for reverting a single rep. Shared infrastructure is swept only
+  // in a FULL teardown.
+  const scoped = !!ONLY;
+  const only = (key) => !ONLY || key === ONLY;
+  log(scoped ? `TEARDOWN (scoped to ${ONLY}) — deleting only that AGENT-TEST-SR fixture` : 'TEARDOWN — deleting only AGENT-TEST-SR fixtures');
   // Orders
-  for (const row of loadCsv('test-data/sales-rep/sales-rep-orders.csv')) {
+  for (const row of loadCsv('test-data/sales-rep/sales-rep-orders.csv').filter((r) => only(r.order_key))) {
     const number = `${ORDER_MARK}-${row.order_key}`;
     const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
     for (const o of (found?.results || [])) { await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] }); log(`  deleted order ${number}`); }
   }
-  // Reps (cascades to account + memberships)
-  for (const row of loadCsv('test-data/sales-rep/sales-reps.csv')) {
+  // Reps (cascades to account + memberships). A persisted VCST-5367 layout does NOT cascade —
+  // the CustomerPreference is keyed on the ApplicationUser — so wipe it FIRST, while the account
+  // (and therefore its id) still resolves, then verify zero residue.
+  const layoutResidue = [];
+  for (const row of loadCsv('test-data/sales-rep/sales-reps.csv').filter((r) => only(r.rep_key))) {
+    if (isDisposableLayoutRep(row.rep_key)) {
+      const uid = await resolveUserId(row.email);
+      await resetLayoutPreferences(uid, row.rep_key);
+      if (uid) layoutResidue.push({ repKey: row.rep_key, uid });
+    }
     const rep = await findRepByFullName(row.full_name);
     if (rep?.id) { await api('DELETE', `/api/sales-rep?ids=${rep.id}`, null, { expectStatus: [200, 204] }); log(`  deleted rep ${row.rep_key}`); }
   }
-  // Paging orgs (AGENT-TEST-SR-Paging-NN) created for SR_REP_PAGING
-  for (let i = 1; i <= 20; i++) {
-    const name = `${PAGING_PREFIX}${String(i).padStart(2, '0')}`;
-    const m = await findMemberByName(name);
-    if (m?.id) { await api('DELETE', `/api/members?ids=${m.id}`, null, { expectStatus: [200, 204] }); log(`  deleted paging org ${name}`); }
+  for (const { repKey, uid } of layoutResidue) {
+    const residue = await verifyRemoved(() => findLayoutPreferences(uid));
+    log(residue === 0
+      ? `  verifyRemoved: ${repKey} has zero ${LAYOUT_PREF_PREFIX}.* residue`
+      : `  WARN verifyRemoved: ${repKey} still has ${residue} ${LAYOUT_PREF_PREFIX}.* preference(s)`);
+  }
+  // Also confirm the rep's LOGIN ACCOUNT went with it (the module cascades Contact -> ApplicationUser;
+  // a leftover account would keep the email taken and re-seed a rep that cannot be re-created).
+  for (const row of loadCsv('test-data/sales-rep/sales-reps.csv').filter((r) => only(r.rep_key))) {
+    const stillThere = await resolveUserId(row.email);
+    if (stillThere) log(`  WARN: login account for ${row.rep_key} (${row.email}) still exists after the rep delete`);
+    else verbose(`login account for ${row.rep_key} removed with the rep`);
   }
   // Restricted admin (Manager) users + their roles (suite 092 fixtures)
-  for (const row of loadCsv('test-data/sales-rep/admin-users.csv')) {
+  for (const row of loadCsv('test-data/sales-rep/admin-users.csv').filter((r) => only(r.user_key))) {
     const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(row.email)}`, null, { expectStatus: [200, 404] });
     if (u?.id) { await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(row.user_name)}`, null, { expectStatus: [200, 204] }); log(`  deleted admin user ${row.user_key}`); }
     const search = await api('POST', '/api/platform/security/roles/search', { keyword: row.role_name, take: 20 }, { expectStatus: [200, 201] });
     const role = (search?.results || search?.roles || []).find((r) => r.name === row.role_name);
     if (role?.id) { await api('DELETE', `/api/platform/security/roles?ids=${role.id}`, null, { expectStatus: [200, 204] }); log(`  deleted role ${row.role_name}`); }
+  }
+  if (scoped) { log('Teardown complete (scoped — shared paging orgs + ACME owner contact left intact).'); return; }
+  // Paging orgs (AGENT-TEST-SR-Paging-NN) created for SR_REP_PAGING
+  for (let i = 1; i <= 20; i++) {
+    const name = `${PAGING_PREFIX}${String(i).padStart(2, '0')}`;
+    const m = await findMemberByName(name);
+    if (m?.id) { await api('DELETE', `/api/members?ids=${m.id}`, null, { expectStatus: [200, 204] }); log(`  deleted paging org ${name}`); }
   }
   // Owner contact + ACME de-enrichment (only the owner link)
   const owner = await findMemberByName(OWNER_NAME);

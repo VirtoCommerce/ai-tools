@@ -1,8 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.39",
+    "version": "1.5.40",
     "updated": "GENERATED",
+    "changelog_1_5_40": "VCST-5367 saved layout: new DEDICATED, DISPOSABLE-layout sales rep SR_REP_LAYOUT (agent-test-sr-layout@example.com, B2B-store, serves ORG-001 ACME + ORG-002 TECHFLOW). WHY: the per-user persisted layout (salesRepLayout/saveSalesRepLayout on POST /graphql/sales-rep) is a Customer-module CustomerPreference named SalesRepLayout.{scope}[.{storeId}] on the CALLER'S OWN user id, so the 091/093 drag/hide/Save cases MUTATE it. Pointing them at the shared SR_REP_PRIMARY would make ~40 cases in 050m/089/091/093 order-dependent and destroy its verified never-saved (null, both scopes — vcptcore-qa 2026-08-04) baseline. Two served orgs are load-bearing: the customerProfile scope needs a customer to open, and one case proves the layout is scope-wide rather than per-customer (arrange on customer A → open customer B). New side-effect-free source of truth scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs (LAYOUT_REP, DISPOSABLE_LAYOUT_REP_KEYS allowlist — primary deliberately excluded, layoutPreferenceName/isLayoutPreference, parseServedOrgs, column contract); seed-sales-rep.mjs now WIPES the disposable rep's SalesRepLayout.* preferences on every reseed (POST /api/customer-preferences/search + DELETE /api/customer-preferences?ids=) and again at teardown before deleting the rep (a preference is keyed on the ApplicationUser and does NOT cascade), with a verifyRemoved zero-residue assert. New drift guard npm run td:validate:sales-rep (validate-sales-rep-data.mjs) + unit tests in scripts/unit/seed-sales-rep.test.mjs. Runtime GUIDs (contact_id/user_id) land in aliases.<env>.json only; the CSV stays GUID-free and password-free (login via SR_REP_PASSWORD).",
     "changelog_1_5_38": "PAGE-3 fr-FR: added a French sibling of the return-policy page (store cultures en-GB default / de-DE / fr-FR). /qa-return-policy now serves THREE separate single-culture pages (the platform's multi-lang model): en-US 'QA Return Policy', de-DE 'QA Rückgaberichtlinie', fr-FR 'QA Politique de retour et de remboursement' — all Published, 5 blocks each, on vcst. New alias PB_RETURN_POLICY_FR (group_id in aliases.vcst.json). FR content authored in test-data/cms/page-content.json (PB_RETURN_POLICY.fr-FR). Spec gained frName/frAlias; seed-pagebuilder-pages.mjs reconcileMultiLang gained an FR branch + a culture-heal step (enforceCulture, content-safe metadata upsert — a create/publish at a SHARED permalink can flip a sibling's cultureName, proven live when the FR create flipped EN→fr-FR; healed back). Idempotent; td:validate:cms-pages + 168 unit tests + td:reconcile green. NOTE (not a fix): this only gives PAGE-3 an FR version — it does NOT fix the underlying content-leak defect where an UNPUBLISHED language serves default-language content instead of 404. CMS-028's 'unpublished-language → 404' coverage should be re-pointed to a genuinely-unpublished culture and the product defect filed separately. Browser DOM render of /en|/de|/fr/qa-return-policy remains delegated to qa-frontend-expert.",
     "changelog_1_5_37": "REG-2026-07-21-1438 PageBuilder CONTENT: audited canonical qa-* pages' block content and found 3 of 5 were EMPTY shells (rendered blank despite Published): PB_HOMEPAGE, PB_RETURN_POLICY(en-US), PB_SUMMER_PREVIEW = 0 blocks (PB_WHOLESALE_GUIDE/PB_RETURN_POLICY(de-DE)/PB_PARTNER_SUPPORT had 5 each). Added content-block fixture test-data/cms/page-content.json (JSON-shaped to POST /api/page-builder-pages/grouped/{id}/content — {settings,content:[title|text|predefined-product-list]}; SKUs use the @discover:N marker resolved live, no hardcoded SKUs/GUIDs). seed-pagebuilder-pages.mjs now fills EMPTY shells from the fixture (preserving existing content on populated pages) via ensurePageState(). Live result: HOMEPAGE 7, RP(en) 5, SUMMER 6 blocks filled; the 3 populated pages kept. Two proven platform facts drove the impl (documented in pagebuilder-pages-specs.mjs): (1) content+schedule MUST land in ONE publish — a 2nd publish drains the just-promoted empty draft and wipes content; (2) a future/Pending page hides content in every projection. Consequently PB_SUMMER_PREVIEW's baseline is IN-WINDOW/Active (start -1d, end +60d) — the only state with verifiable live content (CMS-034 200); CMS-033 (future→404) toggles start to future in its own steps. Fixture drift-guard folded into td:validate:cms-pages; unit tests in scripts/unit/seed-pagebuilder-pages.test.mjs. CAVEAT (browser, delegated): storefront DOM render of all pages + the CMS-033/034 date-toggle reveal remain to be confirmed by qa-frontend-expert in the re-run.",
     "changelog_1_5_36": "REG-2026-07-21-1438 PAGE-3/PAGE-4 reconcile completed on vcst (coordinator-approved). PAGE-3 (return policy): the PageBuilder multi-language model is TWO single-culture pages SHARING a permalink (not one group with pages[]) — reconciled /qa-return-policy to serve BOTH en-US 'QA Return Policy' (Published, group a08d0245 — promoted from the drifted 'QA Return Policy-2') AND de-DE 'QA Rückgaberichtlinie' (Published, group 216bcc85). Archived (reversible, NOT deleted) 5 drifted duplicates: QA Return Policy (copy)/(copy 2), QA Rückgaberichtlinie-DE -2, QA Rückgaberichtlinießde, QA Rückgaberichtlinie (copy 2). PB_RETURN_POLICY group_id now written to aliases.vcst.json (= EN group). PAGE-4 (summer): schedule set to future-launch baseline StartDate=+7d / EndDate=+60d (relative-to-now, recomputed each seed) per pagebuilder-pages.md — the CMS-033 not-yet-live→404 precondition; CMS-034 toggles StartDate to past per its own steps. seed-pagebuilder-pages.mjs extended with multiLang + schedule handling (idempotent); specs + unit tests + td:validate:cms-pages updated. CAVEAT (needs browser, delegated): the vcst storefront is an SPA returning HTTP 200 for every route, so EN-renders / DE-renders / wrong-language-404 (CMS-027/028/035) must be confirmed at DOM level by qa-frontend-expert; and the EN page's block content (content API returns null) may need UI re-authoring if the render is thin.",
@@ -3757,6 +3758,24 @@
     "name": "AGENT-TEST-SR-Owner-Acme",
     "phone": "+1-206-555-0142"
   },
+  "SR_STATS_TOPSELLER_ORDER": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-STATS-TOPSELLERS",
+    "_notes": "Shaped multi-line order (per-line product x quantity x unit price) in the SECOND served org ORG-002/TechFlow, so salesRepTopSellers re-ranks between by-units and by-revenue (BL-SR-008). Line shape is the single source of truth in scripts/seed-data/sales-rep/sales-rep-stats-specs.mjs TOP_SELLER_LINES; the flat sales-rep-orders.csv cannot express it (items_count + total only, even split at qty 1). `number` is the business key; the runtime id lands in aliases.<env>.json via npm run seed:sales-rep-stats."
+  },
+  "SR_STATS_CART_ACME": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-SR-CART-ACME",
+    "_notes": "Active (non-empty, non-wishlist) cart in ORG-001/ACME created through the storefront xAPI AS the rep under an organization_id-scoped grant, so cart.organizationId is stamped and salesRepCustomerCartStatistics count/lastCartDate are non-zero (BL-SR-006). There is no cart REST API (/api/cart/* -> 404). Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
+  },
+  "SR_STATS_CART_WEST": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-SR-CART-WEST",
+    "_notes": "Second active cart, in ORG-004/AcmeWest, so the cross-customer dashboard cart count is >1 and cross-org cart scoping is exercised (BL-SR-002/BL-SR-006). Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
+  },
   "ORG_REP_ONLY": {
     "_inline": true,
     "_notes": "Rep-only served org: SR_REP_PRIMARY is its ONLY member (no buyer contacts). Backs the sendCustomerCommunication initiator-exclusion boundary (commit 6d918d82) — a served org whose only member is the sending rep yields 0 effective recipients so the mutation returns false. Seeded by scripts/seed-data/sales-rep/seed-rep-only-org.mjs (idempotent, teardown-symmetric). Business key = the stable name below; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json, written by the seeder — never a GUID in this committed file.",
@@ -3830,6 +3849,22 @@
       "fullName": "full_name",
       "store": "store"
     }
+  },
+  "SR_REP_LAYOUT": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_LAYOUT"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    },
+    "_notes": "VCST-5367 saved-layout rep — the ONLY rep whose persisted layout (salesRepLayout/saveSalesRepLayout; CustomerPreference SalesRepLayout.{scope}[.{storeId}] on the caller's own user id) the 091/093 drag/hide/Save cases may mutate. Use this alias, NOT SR_REP_PRIMARY, in any case that Saves a layout: primary's both scopes are verified never-saved (null) and ~40 cases in 050m/089/091/093 depend on that baseline. Serves ORG-001 + ORG-002 so the customerProfile scope has a customer to open and the scope-wide (not per-customer) case has a second customer. seed-sales-rep.mjs wipes its SalesRepLayout.* preferences on every reseed (disposable by design — see scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs). Login password: SR_REP_PASSWORD (never committed); runtime GUIDs in aliases.<env>.json."
   },
   "SR_REP_NOCUSTOMERS_ORGCTX": {
     "file": "sales-rep/sales-reps",
