@@ -210,3 +210,31 @@ test('no committed alias for this domain carries a runtime platform GUID (DV-021
     }
   }
 });
+
+// ---- --dry-run must not write ----------------------------------------------
+
+// REGRESSION GUARD (2026-08-05). `seed-common.mjs`'s `api()` short-circuits every non-read call
+// under --dry-run, so anything routed through it is dry-safe for free. `gql()` is a RAW fetch with
+// no such short-circuit, so a GraphQL *mutation* is only dry-safe if the call site guards it
+// explicitly. The teardown's `removeCart` did not: `--teardown --dry-run` printed
+// "removed cart …" and really deleted both cart fixtures. A dry run that mutates is worse than no
+// dry run, because it is used precisely to inspect a destructive path before committing to it.
+test('every GraphQL mutation in the stats seeder is DRY_RUN-guarded (a --dry-run must never write)', () => {
+  const src = readFileSync(join(ROOT, 'scripts', 'seed-data', 'sales-rep', 'seed-sales-rep-stats.mjs'), 'utf8');
+  const lines = src.split(/\r?\n/);
+  // Scope the check to the ENCLOSING FUNCTION, not an adjacent line: a mutation is equally dry-safe
+  // whether it sits behind a neighbouring `if (DRY_RUN) …` or behind an early `if (DRY_RUN) return`
+  // at the top of its function (which is how seedCart does it). Requiring adjacency would flag both
+  // of seedCart's mutations, which are already safe.
+  // Deliberately scoped to THIS seeder. The heuristic does not follow call graphs, so a helper whose
+  // only guard lives in its CALLER reads as unguarded — e.g. loyalty/seed-loyalty-balance.mjs, which
+  // is dry-safe because main() returns before the order loop. Do not lift this check repo-wide as-is.
+  const fnStart = (i) => { for (let j = i; j >= 0; j--) if (/^(async )?function /.test(lines[j])) return j; return 0; };
+  const unguarded = [];
+  lines.forEach((line, i) => {
+    if (!/\bgql\s*\(/.test(line) || !/mutation/.test(line)) return;
+    const before = lines.slice(fnStart(i), i).join('\n');
+    if (!/if\s*\(\s*DRY_RUN\s*\)/.test(before)) unguarded.push(`line ${i + 1}: ${line.trim().slice(0, 90)}`);
+  });
+  assert.deepEqual(unguarded, [], `unguarded GraphQL mutation(s) — a --dry-run would really write:\n${unguarded.join('\n')}`);
+});

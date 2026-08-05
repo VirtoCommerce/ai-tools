@@ -846,15 +846,15 @@
     "user_id": "0da37dd7-f29c-4153-a0e1-b10a55836c57"
   },
   "SR_STATS_TOPSELLER_ORDER": {
-    "id": "89759ae1-6975-43df-bd8c-0f0760ba9093",
+    "id": "c8f67524-7726-40cc-9e7d-9603d40a8179",
     "number": "AGENT-TEST-SRO-STATS-TOPSELLERS"
   },
   "SR_STATS_CART_ACME": {
-    "id": "ba3ecf91-1033-42cb-b051-7d13e9f5e505",
+    "id": "463c6a87-feb8-4856-bc57-129ffc80cb42",
     "name": "AGENT-TEST-SR-CART-ACME"
   },
   "SR_STATS_CART_WEST": {
-    "id": "3aeef319-d46a-492f-b7ac-5ee91f349c45",
+    "id": "f9e5b334-e495-446e-a6b7-4e6c4ae575fc",
     "name": "AGENT-TEST-SR-CART-WEST"
   }
 }

@@ -101,12 +101,19 @@ const CART_SEL = 'id name organizationId organizationName itemsCount total { amo
 async function discoverStoreProducts(token, need, { cartable = false } = {}) {
   const out = []; const seenSku = new Set();
   // Cartable candidates are scarce, so scan a wider net and then apply the price-sanity preference
-  // (see MAX_SANE_UNIT_PRICE) instead of taking the first `need` matches in raw catalog order.
+  // (see MAX_SANE_UNIT_PRICE) instead of taking the first `need` matches.
   const target = cartable ? Math.max(need * 4, 8) : need;
+  // `sort: "code:asc"` is LOAD-BEARING, not cosmetic. Without it the query returns relevance order,
+  // which is not stable across calls once you page into a large catalog — and vcst's B2B-store has
+  // 4523 products, so the old 10-page (500-product) scan was a SHIFTING WINDOW. Two consecutive
+  // seeds on 2026-08-05 picked entirely disjoint product sets (15018752… then 15198098…), so the
+  // shaped order was torn down and rebuilt on EVERY reseed and the reproducible top-seller identity
+  // the browser oracle needs never actually held. Sorting the RESULT client-side cannot fix that:
+  // it orders whatever subset happened to come back. Ordering must come from the QUERY.
   for (let page = 0; page < 10 && out.length < target; page++) {
     // catalogId is REQUIRED: OrderLineItem.CatalogId is NOT NULL, so an order create without it
     // 500s at the DB layer ("Cannot insert the value NULL into column 'CatalogId'").
-    const d = await gql(token, `{ products(storeId:"${STORE_ID}", cultureName:"en-US", currencyCode:"USD", first: 50, after:"${page * 50}", query:"") {
+    const d = await gql(token, `{ products(storeId:"${STORE_ID}", cultureName:"en-US", currencyCode:"USD", first: 50, after:"${page * 50}", sort:"code:asc", query:"") {
         items { id code name catalogId availabilityData { isBuyable isInStock } price { actual { amount } } } } }`);
     const items = d?.products?.items || [];
     if (!items.length) break;
@@ -121,10 +128,9 @@ async function discoverStoreProducts(token, need, { cartable = false } = {}) {
       if (out.length >= target) break;
     }
   }
-  // Sort by SKU before slots are assigned. The storefront `products` query does NOT return a stable
-  // order between calls, so without this the slot->product mapping drifts run to run and the
-  // idempotency shape check rebuilds the order on EVERY reseed (observed: slots 1 and 2 swapping).
-  // A stable mapping also keeps the top-seller ranking identity reproducible for the browser oracle.
+  // Belt-and-braces: the query already returns code:asc, so this is a no-op on a healthy response.
+  // It is kept so a platform that ignores the `sort` argument degrades to a stable-within-page
+  // mapping rather than a silently drifting one.
   out.sort((a, b) => String(a.sku).localeCompare(String(b.sku)));
   return cartable ? preferSanelyPriced(out) : out;
 }
@@ -261,6 +267,11 @@ async function teardown(orgs, rep, userId) {
       const name = cartName(spec.key);
       const c = await findCart(tok, name, userId);
       if (c?.id) {
+        // DRY_RUN guard is MANDATORY here: carts are removed over GraphQL, and `gql()` is a raw
+        // fetch with no dry-run short-circuit — unlike `api()`, which skips every non-read call.
+        // Without this, `--teardown --dry-run` really deleted both carts while printing what
+        // looked like a preview (found 2026-08-05 by dry-running the teardown to prove its scope).
+        if (DRY_RUN) { log(`  [DRY] would remove cart ${name}`); continue; }
         await gql(tok, 'mutation($cmd: InputRemoveCartType!) { removeCart(command: $cmd) }', { cmd: { cartId: c.id, userId } });
         log(`  removed cart ${name}`);
       } else verbose(`cart ${name} absent`);
@@ -270,11 +281,15 @@ async function teardown(orgs, rep, userId) {
   const number = statsOrderNumber(TOP_SELLER_ORDER.key);
   const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
   for (const o of (found?.results || [])) {
+    // `api()` already skips the DELETE under --dry-run; say so rather than reporting a deletion
+    // that did not happen (the log line runs either way).
     await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
-    log(`  deleted shaped order ${number}`);
+    log(DRY_RUN ? `  [DRY] would delete shaped order ${number}` : `  deleted shaped order ${number}`);
   }
 
-  // Zero-residue assert.
+  // Zero-residue assert. Meaningless in a dry run — nothing was deleted, so the fixture is still
+  // there by design and a WARN would read as a teardown failure.
+  if (DRY_RUN) { log('  [DRY] residue check skipped (nothing was deleted)'); log('Teardown complete (dry run — no writes).'); return; }
   const after = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
   const residue = (after?.results || []).length;
   log(residue === 0 ? '  verifyRemoved: zero residue' : `  WARN verifyRemoved: ${residue} order(s) still present`);
