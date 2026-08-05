@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-08-04",
+    "generated": "2026-08-05",
     "totalSuites": 120,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -213,7 +213,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 36,
+      "testCount": 40,
       "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -617,7 +617,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 51,
+      "testCount": 71,
       "estimatedMinutes": 23,
       "agent": "qa-backend-expert",
       "tags": [
@@ -747,7 +747,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 18,
+      "testCount": 20,
       "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2200,7 +2200,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 11,
+      "testCount": 12,
       "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2430,7 +2430,7 @@
       "layer": "frontend",
       "concern": "e2e",
       "priority": "P1",
-      "testCount": 7,
+      "testCount": 8,
       "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
       "tags": [

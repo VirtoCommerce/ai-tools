@@ -1,153 +1,128 @@
 {
   "ticket": "VCST-5412",
   "title": "[vc-shell] accessibility and bundle size improvements",
+  "ticket_type": "Task",
+  "path": "full",
+  "run_kind": "re-test (verify-fix) of VCST-5412 + its 15 linked tickets",
   "verdict": "FAIL",
-  "date": "2026-07-28",
-  "pr": "https://github.com/VirtoCommerce/vc-shell/pull/255",
+  "date": "2026-08-04",
+  "previous_run": {
+    "date": "2026-07-28",
+    "verdict": "FAIL",
+    "note": "Original run against framework 2.3.0. Its findings became the 15 linked tickets. Superseded by this record; see Jira comments on VCST-5412 for the full prior report."
+  },
   "environment": {
     "app": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
     "storybook": "https://vc-shell-storybook.govirto.com/"
   },
   "build": {
-    "framework_deployed": "2.3.0",
-    "framework_build": "2026-07-28T09:06:51Z",
-    "framework_commit": "eb3675e7a",
-    "framework_under_test_per_plan": "2.2.0",
-    "baseline_per_plan": "2.1.0",
-    "attribution_caveat": "deployed is one minor AHEAD of the version under test; only source-traced findings are attributed to PR #255"
+    "framework_deployed": "2.4.0",
+    "vendor_portal_app": "2.1.0",
+    "vendor_portal_deployed_at": "2026-08-04T10:25:50Z",
+    "storybook_built_at": "2026-08-04T07:41:08Z",
+    "theme_audited": "Light (Coffee is a storefront theme and does not exist in the Vendor Portal)"
+  },
+  "provenance_gate": {
+    "passed": true,
+    "note": "All 14 fix PRs merged BEFORE the deployed build was cut, so every failure recorded here is a real remaining defect, not a stale deploy.",
+    "prs_merged": [
+      "vc-shell#266", "vc-shell#267", "vc-shell#268", "vc-shell#269", "vc-shell#270",
+      "vc-shell#271", "vc-shell#272", "vc-shell#273", "vc-shell#274", "vc-shell#278",
+      "vc-shell#279", "vc-shell#280", "vc-shell#281", "vendor-portal#146"
+    ]
   },
   "agents_dispatched": [
-    "ui-ux-expert (FAILED — internal API tool-parse error; Storybook axis executed inline by orchestrator)",
-    "qa-frontend-expert",
-    "qa-backend-expert"
+    "qa-testing-expert (playwright-firefox — live shell a11y)",
+    "ui-ux-expert (Chrome DevTools MCP — hosted Storybook)",
+    "qa-frontend-expert (playwright-chrome — live app behaviour)"
   ],
   "ac_analysis": {
-    "story_acs": 0,
-    "note": "ticket description is empty; the governing artifact is a QA-authored test plan in a comment, adopted as the traceability spine",
-    "ba_review_skipped": true,
-    "gap_acs_added": 1,
-    "gap_ac_detail": "BH-15 verifies Storybook INDEXING only; added and executed 'every indexed story must render without error' — this gap-AC found 2 of the 3 confirmed defects",
-    "artifact": "reports/tickets/Sprint26-15/VCST-5412/ac-analysis.md"
+    "story_acs": 55,
+    "note": "Acceptance criteria taken from the 15 linked tickets, not from VCST-5412 itself (its description is empty).",
+    "gap_acs_added": 0,
+    "impl_coverage": { "satisfied": 38, "drift": 8, "contradicts": 1, "not_found": 0 },
+    "conditions_total": 55,
+    "conditions_with_evidence": 47
   },
-  "coverage": {
-    "storybook_stories_axe_audited": 170,
-    "storybook_components_audited": 13,
-    "storybook_stories_render_swept": 615,
-    "deployed_chunks_measured": 79,
-    "page_states_axe_audited": 5
+  "total_cases": 15,
+  "passed": 8,
+  "failed": 2,
+  "blocked": 3,
+  "verdicts_revised_after_reading_dev_comments": "Three verdicts changed once the dev comments were read: 5595 and 5599 had documented, reasoned deferrals I had first counted as misses, and 5598's notification burst was the 403 path (where the latch is designed to stay disengaged), not a dedup failure. See per_ticket_verdicts below for the final call.",
+  "per_ticket_verdicts": {
+    "VCST-5594": "TESTED — YouTube+Vimeo play, allowlist + dot-boundary negative control confirmed",
+    "VCST-5595": "TESTED with notes — Level A closed 14/14; href is the dev's documented deferral; focus-order finding routed to VCST-5632",
+    "VCST-5596": "REOPEN — button-name critical persists; fix landed on vc-breadcrumbs-item.vue, offending control is the #trigger VcButton at vc-blade.vue:50",
+    "VCST-5597": "TESTED — story renders (9,154B), validation demonstrable, all 16 files clean",
+    "VCST-5598": "Left at Ready for test — 403-no-signout verified; the 302->HTML trigger does not occur on vcmp-dev (dead session answers 403 + /Account/AccessDenied). Burst-dedup AC untested, NOT failed",
+    "VCST-5599": "TESTED with notes — declared scope complete, axe target-size = 0 across 156 stories; 2 NEW out-of-scope findings (vc-multivalue __chip-remove 12x12, vc-scheduler '+N more')",
+    "VCST-5600": "REOPEN — resizeWidgetBy reads the stale widget.size baseline while moveWidgetBy reads the live node; keyboard resize not equivalent to dragging (SC 2.5.7)",
+    "VCST-5601": "TESTED — wcag22 tags live, storybook-tests job green on PR #278, color-contrast exclusion is the documented AC not a gap",
+    "VCST-5602": "Left at Ready for test — lang/viewport/zoom/axe pass; locale-switch AC BLOCKED (single locale on env)",
+    "VCST-5617": "Left at Ready for test — template/setLocale/docs pass; same BLOCKED locale-switch AC",
+    "VCST-5619": "Untouched (In review, dev-owned) — CI job verified wired and green on PR #278",
+    "VCST-5632": "Untouched (To do) — added live focus-order evidence as a comment",
+    "VCST-5633": "TESTED — 24x24 / 24x24 / 354x24, no target-size violations",
+    "VCST-5634": "TESTED — tokens on the native inputs (password-manager autofill untested)",
+    "VCST-5635": "TESTED — 65/65 keys, 0 identical to EN"
   },
-  "results": {
-    "pass": 21,
-    "fail": 6,
-    "partial": 6,
-    "not_executed": 14,
-    "not_executable": 6
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [], "reviewed": [], "blocked": [], "reverted": [],
+    "note": "No cases authored. No suite in config/test-suites.json covers vc-shell; authoring durable coverage for a separate product was out of scope for this re-test."
   },
-  "bugs_filed": [
-    "reports/bugs/open/BUG-vc-video-sandbox-blocks-youtube-playback.md",
-    "reports/bugs/open/BUG-vcdatatable-inline-editing-story-missing-vue-imports.md",
-    "reports/bugs/open/BUG-vendor-portal-primary-nav-not-keyboard-operable.md"
+  "regression": {
+    "suites": [],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": "No suite in config/test-suites.json covers vc-shell or the Vendor Portal. The Feature Release Gate cannot be evaluated on a null pass rate."
+  },
+  "bugs_filed": [],
+  "new_tickets_still_to_be_filed": [
+    "vc-scheduler '+N more' (MonthWeekRow.vue:24) is a plain div with a click handler — WCAG 2.1.1 A + 4.1.2 A + 2.5.8 AA. Recorded on VCST-5599",
+    "vc-multivalue __chip-remove is 12x12 — sibling __clear got tw-min-h-6 in PR #278, it did not. Recorded on VCST-5599",
+    "INCIDENTAL HIGH — POST /api/vcmp/seller/categories/search 500 MissingMethodException Category.set_Path (marketplace<->catalog assembly version mismatch); category picker silently has no options",
+    "vc-frontend: video-create 500s produce no toast and no inline message",
+    "vc-shell: <a href> for route-bound menu items (dev's documented deferral from VCST-5595) — restores middle-click / open-in-new-tab",
+    "vc-shell: ChangePassword/Invite/ResetPassword lack autocomplete (dev's out-of-scope note on VCST-5634)",
+    "vc-shell: include *.stories.ts in typecheck — 245 errors across 44 files (dev's deferral from VCST-5601)"
   ],
-  "defects_attributable_to_pr": [
-    "vc-video secure-default sandbox prevents YouTube playback (High) — CONFIRMED on 2 surfaces + falsification control",
-    "VcDataTable inline-editing story crashes: onMounted/onUnmounted not imported (Medium) — source-verified"
-  ],
-  "defects_in_scope_of_goal_but_not_regressions": [
-    "Vendor Portal primary navigation not keyboard operable — 14 unfocusable div items (High, WCAG 2.1.1 Level A) — CONFIRMED by 3 independent measurements"
-  ],
-  "ci_gaps_identified": [
-    "framework/tsconfig.json excludes **/*.stories.ts from typecheck (with a literal '// TODO: fix this') — a plain undefined identifier in a story file is invisible to `yarn typecheck`",
-    "vc-video.test.ts asserts only the sandbox attribute string, never playback — it passes while the component is broken, and would fail if the bug were naively fixed"
-  ],
-  "bundle_measurements": {
-    "package_unpacked_2_1_0_bytes": 26676181,
-    "package_unpacked_2_2_0_bytes": 27095320,
-    "package_unpacked_2_3_0_bytes": 27171909,
-    "package_delta_2_1_to_2_2": "+419139 bytes (+1.6%), +117 files",
-    "deployed_static_chunks": 79,
-    "deployed_raw_bytes": 4750000,
-    "deployed_gzip_bytes": 1342177,
-    "first_load_js_wire_bytes": 1625292,
-    "first_load_js_decoded_bytes": 5525504,
-    "first_load_js_files": 157,
-    "js_compression_ratio": 3.4,
-    "framework_chunk_fetches": 1,
-    "login_screen_feature_chunk_wire_bytes": 572723,
-    "login_screen_feature_chunk_share_of_js_wire": "35%",
-    "local_build_2_3_0_js_bytes": 4748752,
-    "local_build_2_3_0_js_files": 80,
-    "local_build_2_3_0_total_bytes": 8831994,
-    "local_build_2_3_0_gzip_js_css_bytes": 1476978,
-    "barrel_framework_js_2_1_0": "176K",
-    "barrel_framework_js_2_2_0": "156K (-11%)",
-    "barrel_gridstack_refs": "9 -> 1",
-    "barrel_unovis_refs": "1 -> 0",
-    "caveat": "BS-01 as specified is NOT EXECUTABLE, proven empirically: the current vendor-portal@dev HEAD requires framework >=2.3.0 (uses `hotkey` and IBladeToolbar.shortcut). Builds against 2.1.0 and 2.2.0 fail at TYPE level (39 errors) AND, with the type gate stubbed, at BUNDLE level (Rollup: 'hotkey' is not exported by framework.js). Verified `hotkey` present in framework.js in 2.3.0 only. Recommend replacing BS-01 with the barrel-level metric above."
-  },
-  "bs01_attempt": {
-    "executed": true,
-    "repo": "VirtoCommerce/vendor-portal@dev",
-    "head": "463d0af",
-    "toolchain": "Node 22.23.1 / Yarn 4.9.1",
-    "framework_2_1_0": "BUILD FAILED (type + bundle)",
-    "framework_2_2_0": "BUILD FAILED (type + bundle)",
-    "framework_2_3_0": "BUILD OK, cross-validates deployed measurements",
-    "conclusion": "not answerable as written; app/framework version coupling prevents an isolated A/B"
-  },
-  "i18n_verification": {
-    "method": "source diff of shipped locale bundles",
-    "en_keys_2_1_0": 262,
-    "en_keys_2_2_0": 388,
-    "de_keys_2_2_0": 388,
-    "new_keys_present_in_de": "126/126",
-    "aria_label_keys_untranslated_in_de": 0,
-    "untranslated_new_keys": "14 (all VC_SCHEDULER.*, out of scope)"
-  },
-  "wcag22_audit": {
-    "gate": "WCAG 2.2 Level AA",
-    "verdict": "FAIL",
-    "tool": "axe-core 4.12.1 via scripts/lib/axe-runner.ts canonical helpers; Lighthouse via Chrome DevTools MCP",
-    "correction_to_earlier_result": "the earlier Storybook sweep used tags wcag2a/wcag2aa/wcag21a/wcag21aa and reported 0 violations of any impact; adding wcag22a/wcag22aa surfaces 3 serious target-size violations. Read as PASS at 2.1, FAIL at 2.2.",
-    "six_2_2_additions": {
-      "2.4.11_focus_not_obscured": "PASS (70 tab stops, 0 obscured by fixed/sticky)",
-      "2.5.7_dragging_movements": "FAIL (dashboard widget reorder+resize drag-only; grid items tabIndex=-1, handles not tabbable, no alternative)",
-      "2.5.8_target_size": "FAIL (VcInput adornments 12-14px wide; one shared root cause across both surfaces)",
-      "3.2.6_consistent_help": "N/A (no help mechanism exists anywhere; SC governs placement consistency of help that exists, not its provision)",
-      "3.3.7_redundant_entry": "NOT ASSESSED (no genuine multi-step flow in the portal)",
-      "3.3.8_accessible_authentication": "PASS (no CAPTCHA/cognitive test; paste allowed, not readonly). Gap: autocomplete null on username+password degrades password-manager autofill"
-    },
-    "lighthouse_accessibility_login_desktop": 78,
-    "lighthouse_adds_signal_beyond_axe": false,
-    "keyboard_trail": { "login": "PASS (25 stops, no traps/off-screen)", "dashboard": "WARN (4 upward focus jumps >100px)" },
-    "eaa_accessibility_statement": "ABSENT (no accessib* link, empty footer). Normally P1; scope caveat — login-gated B2B back-office, not a public consumer storefront. Product-owner routing question.",
-    "theme_note": "the project's Coffee-theme-only a11y rule is a storefront rule; the Vendor Portal ships Light/Dark/Green. Audited on Light.",
-    "bugs_filed": [
-      "reports/bugs/open/BUG-vc-shell-target-size-below-wcag22-minimum.md",
-      "reports/bugs/open/BUG-vc-shell-dashboard-drag-only-no-keyboard-alternative.md"
-    ],
-    "artifact": "reports/tickets/Sprint26-15/VCST-5412/wcag22-accessibility-audit.md"
-  },
-  "exit_criteria_met": false,
-  "exit_criteria_unmet": [
-    "no critical/serious a11y in the running app (1 critical + serious on all 5 states)",
-    "primary scenario completable keyboard-only",
-    "bundle size concrete baseline-vs-current numbers",
-    "every section-5 behaviour case passes (BH-03, BH-04 FAIL)",
-    "full section-6 regression on desktop + mobile",
-    "yarn test:unit / test:storybook / test:a11y / check green"
-  ],
-  "not_executable": [
-    "screen-reader cases (no NVDA/VoiceOver) — substituted with labelled a11y-tree inspection",
-    "BS-15 Safari (mandatory in plan; not available on Windows)",
-    "A11Y-18 / BH-16 German (only English provisioned on this deployment; verified at source instead)",
-    "BH-09 malformed UI settings (would require mutating shared platform config)",
-    "VcDropdownPanel (no stories exist — plan defect)"
-  ],
+  "business_rules_verified": [],
+  "business_rules_note": "BL-* / BL-UI-* invariants are storefront-scoped and do not apply to vc-shell. WCAG 2.1 + 2.2 A/AA was the oracle instead.",
   "appinsights": {
     "checked": false,
-    "reason": "vcmp-dev marketplace deployment has no APPINSIGHTS_* resource configured in this repo's env layers; log correlation skipped"
+    "layers": [],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": [],
+    "skipped_reason": "vcmp-dev has no APPINSIGHTS_* resource configured in this repo's env layers."
   },
-  "security_note": "A subagent attempted to widen the allowlist in .claude/hooks/enforce-real-user.mjs (permission-enforcement hook). DENIED by the permission classifier; nothing written — verified git-clean, diff empty, mtime predates session. Change NOT applied.",
-  "tracker_writes": "none",
+  "bundle_size_axis": {
+    "framework_js_raw_kb": { "2.1.0": 173, "2.2.0": 154, "2.3.0": 154, "2.4.0": 155 },
+    "framework_js_gzip_kb": { "2.1.0": 44, "2.2.0": 41, "2.3.0": 41, "2.4.0": 41 },
+    "verdict": "PR #255's reduction holds; the 13-fix wave cost ~1KB raw / 0KB gzip — no regression.",
+    "claims_still_true_in_2_4_0": [
+      "./dashboard and ./charts remain opt-in subpath exports",
+      "vee-validate is a peerDependency",
+      "whatwg-fetch removed",
+      "js-beautify replaced prettier"
+    ]
+  },
+  "environment_limitations": [
+    "Only ONE locale (English) provisioned — the 'switching language updates <html lang>' AC for VCST-5602/5617 is unverifiable here",
+    "VimeoAccessToken not configured — live Vimeo playback 500s (verified in Storybook instead)",
+    "Backend restricts video providers to YouTube/Vimeo, so the sandbox negative control is unreachable from the live UI (verified in Storybook instead)",
+    "A dead session surfaces as 403/AccessDenied on this deployment, so VCST-5598's 302->HTML path rarely fires"
+  ],
+  "tracker_writes": {
+    "transitioned_to_tested": ["VCST-5594", "VCST-5595", "VCST-5597", "VCST-5599", "VCST-5601", "VCST-5633", "VCST-5634", "VCST-5635"],
+    "transitioned_to_reopen": ["VCST-5596", "VCST-5600", "VCST-5412"],
+    "left_unchanged_with_comment": ["VCST-5598", "VCST-5602", "VCST-5617", "VCST-5632"],
+    "untouched": ["VCST-5619"],
+    "comments_added": 15,
+    "bugs_filed": "none",
+    "note": "Jira workflow required an 'On QA' -> Testing hop before 'Finish test'/'Need fixes' became available; VCST-5412 has a different workflow and transitions directly. Cancelled and On hold were never used."
+  },
+  "screenshots": "reports/tickets/Sprint26-15/VCST-5412/screenshots/",
   "artifacts": "reports/tickets/Sprint26-15/VCST-5412/"
 }

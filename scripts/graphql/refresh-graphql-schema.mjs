@@ -70,6 +70,12 @@ function formatArg(a) {
 }
 
 function formatField(f) {
+  // Render a field's ARGS when it has them. Without this the doc showed a bare
+  // `organizations`, hiding `ContactType.organizations(statuses: [String])` — the
+  // filter argument a caller needs — so the doc read as if the field took nothing.
+  if (f.args?.length) {
+    return `${f.name}(${f.args.map((a) => `${a.name}: ${renderType(a.type)}`).join(', ')})`;
+  }
   return f.name;
 }
 
@@ -110,7 +116,7 @@ async function introspectType(typeName) {
   const data = await gql(`{
     __type(name: "${typeName}") {
       kind
-      fields { name type { ${typeRef} } }
+      fields { name type { ${typeRef} } args { name type { ${typeRef} } } }
       inputFields { name type { ${typeRef} } }
     }
   }`);
@@ -164,6 +170,11 @@ async function main() {
     'PaymentMethodType', 'PaymentType', 'PaymentInType',
     'InitializeCartPaymentResultType', 'InitializePaymentResultType',
     'AuthorizePaymentResultType', 'KeyValueType',
+    // Member domain (VCST-5028 / VCST-5281: per-organization roles, membership status,
+    // multi-org invites). Omitting these made the doc silently unable to show
+    // `Organization.myStatusInOrganization` and `ContactType.organizations(statuses:)`,
+    // so an agent consulting only this file concluded they did not exist.
+    'Organization', 'ContactType',
   ];
 
   // Introspect key input types (from mutations used in suite 050)
@@ -182,16 +193,33 @@ async function main() {
     // VCST-5028: per-organization roles & access control
     'InputInviteUserType', 'InputChangeOrganizationContactRoleType',
     'InputLockUnlockOrganizationContactType',
+    // VCST-5281: multi-org invite lifecycle. NOTE accept and reject SHARE one input
+    // type — there is no separate InputAcceptOrganizationInviteType.
+    'InputAcceptRejectOrganizationInviteType',
+    'InputRevokeOrganizationInviteType', 'InputResendOrganizationInviteType',
   ];
 
   const typeResults = {};
+  const missingTypes = [];
   for (const t of [...keyTypes, ...keyInputTypes]) {
     try {
       typeResults[t] = await introspectType(t);
-    } catch { /* skip missing types */ }
+    } catch (err) {
+      // Announce, never swallow. A silent skip here means a renamed or removed type
+      // just vanishes from the doc, and the next reader treats its absence as proof
+      // the field does not exist — which is exactly how a real miss happened.
+      missingTypes.push({ name: t, reason: err?.message || String(err) });
+    }
   }
 
   console.error(`Introspected ${Object.keys(typeResults).length} types`);
+  if (missingTypes.length) {
+    console.error(
+      `[schema:refresh] WARN ${missingTypes.length} requested type(s) NOT found — ` +
+      `renamed, removed, or not installed on this environment:`
+    );
+    for (const m of missingTypes) console.error(`  - ${m.name}: ${m.reason}`);
+  }
 
   // Build markdown
   const today = new Date().toISOString().split('T')[0];
@@ -200,7 +228,18 @@ async function main() {
   md += `# GraphQL xAPI Schema Reference\n\n`;
   md += `> **Source**: Live introspection of \`{{BACK_URL}}/graphql\` (${today})\n`;
   md += `> **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.\n`;
-  md += `> **Refresh**: \`node scripts/refresh-graphql-schema.mjs\` — run when schema may have changed.\n\n`;
+  md += `> **Refresh**: \`npm run schema:refresh\` — run when the schema may have changed.\n`;
+  md += `> **SCOPE — read this before concluding a field does not exist.** The query and mutation\n`;
+  md += `> lists below are the COMPLETE live set, but the type sections are a **curated allowlist**\n`;
+  md += `> (\`keyTypes\`/\`keyInputTypes\` in \`scripts/graphql/refresh-graphql-schema.mjs\`), not every type\n`;
+  md += `> in the schema. **A field's absence here is NOT evidence it does not exist** — if the type\n`;
+  md += `> you need is not listed, introspect it live (\`{__type(name:"X"){fields{name args{name}}}}\`)\n`;
+  md += `> and add it to the allowlist. Absence was misread as nonexistence once already.\n\n`;
+  if (missingTypes.length) {
+    md += `> ⚠ **${missingTypes.length} allowlisted type(s) were NOT found on this environment** and are\n`;
+    md += `> therefore missing below: ${missingTypes.map((m) => `\`${m.name}\``).join(', ')}.\n`;
+    md += `> Renamed, removed, or the owning module is not installed — verify before relying on them.\n\n`;
+  }
 
   // Critical rules
   md += `## Critical Rules\n\n`;
