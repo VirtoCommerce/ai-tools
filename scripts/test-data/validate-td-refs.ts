@@ -310,5 +310,59 @@ if (shapeHits.length === 0) {
   );
 }
 
-const idFatal = (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0) && !WARN_ONLY;
+// --- DV-023: derived-boundary drift guard (golden rule: never transcribe a constant
+// that has a source of truth). A BVA alias whose value is a multiple of another
+// alias's field must declare `_multiplier`/`_offset` and still equal the product, so
+// changing the source (e.g. BOPIS.pageSize) fails loudly here instead of leaving the
+// boundary cases silently asserting the wrong count. Today's only family is
+// BOPIS_BVA_* off BOPIS.pageSize; the check is written generically so the next one
+// costs a table row, not a new script.
+type DerivedFamily = { prefix: string; sourceAlias: string; sourceField: string; targetField: string };
+const DERIVED_FAMILIES: DerivedFamily[] = [
+  { prefix: "BOPIS_BVA_", sourceAlias: "BOPIS", sourceField: "pageSize", targetField: "activeCount" },
+];
+const driftHits: string[] = [];
+{
+  const aliasesRaw = JSON.parse(readFileSync(join(TEST_DATA_DIR, "aliases.json"), "utf8")) as Record<
+    string,
+    Record<string, unknown>
+  >;
+  for (const fam of DERIVED_FAMILIES) {
+    const src = aliasesRaw[fam.sourceAlias];
+    const base = Number(src?.[fam.sourceField]);
+    if (!src || !Number.isFinite(base)) {
+      driftHits.push(`${fam.prefix}*: source ${fam.sourceAlias}.${fam.sourceField} missing or non-numeric — cannot verify derivation`);
+      continue;
+    }
+    for (const [name, def] of Object.entries(aliasesRaw)) {
+      if (!name.startsWith(fam.prefix) || !def || typeof def !== "object") continue;
+      const actual = Number(def[fam.targetField]);
+      const mult = Number(def["_multiplier"]);
+      const off = Number(def["_offset"]);
+      if (!Number.isFinite(mult) || !Number.isFinite(off)) {
+        driftHits.push(`${name}: missing numeric _multiplier/_offset — a derived boundary must declare how it is derived`);
+        continue;
+      }
+      const expected = base * mult + off;
+      if (actual !== expected)
+        driftHits.push(`${name}.${fam.targetField} = ${actual} but ${fam.sourceAlias}.${fam.sourceField}(${base}) * ${mult} + ${off} = ${expected}`);
+    }
+  }
+}
+console.log("\n--- Derived-Boundary Drift Guard (DV-023) ---\n");
+if (driftHits.length === 0) {
+  console.log("  All derived boundary aliases match their source-of-truth derivation. ✓");
+} else {
+  const tag = WARN_ONLY ? "WARN" : "FAIL";
+  console.log(`  ${driftHits.length} derived-boundary mismatch(es) [${tag}]:`);
+  for (const h of driftHits) console.log(`    ${h}`);
+  console.log(
+    "\n  A boundary transcribed from a source constant is correct exactly once. Re-derive it\n" +
+    "  (or fix _multiplier/_offset) rather than editing the literal to match." +
+    (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
+  );
+}
+
+const idFatal =
+  (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0 || driftHits.length > 0) && !WARN_ONLY;
 process.exit(totalFailed > 0 || idFatal ? 1 : 0);

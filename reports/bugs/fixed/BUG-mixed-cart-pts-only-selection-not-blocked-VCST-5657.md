@@ -1,6 +1,6 @@
 # BUG: Mixed cart — unselecting all cash lines bypasses the points-only checkout guard
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Tracker:** VCST-5657 (High, To do) · **Severity:** High · **Reported:** 2026-08-04
 **Env:** vcst-qa @ Platform 3.1055.0, Loyalty 3.1004.0, Theme 2.55.0-pr-2407-5893-5893b5d7, store `B2B-store`
@@ -123,3 +123,21 @@ operands share the same semantics —
 - **BL-LOY-010** — points-only cart rejected, at least one cash line required (this is its selection-scoped hole)
 - **BL-LOY-003 / BL-LOY-004** — `cartTotals` and promotion context are selection-scoped (the semantics `hasCashProducts` fails to match)
 - Suites: `Backend/loyalty/075b-loyalty-mixed-cart-order.csv`, `Frontend/loyalty/083b-loyalty-mixed-cart-order.csv`
+
+## Resolution
+
+**Verified 2026-08-05** on vcst-qa @ Platform `3.1057.0-pr-3095-3abb`, Loyalty `3.1005.0-pr-15-838b`,
+Theme `2.55.0-pr-2422-1c98`. Tracker: **VCST-5657 → Tested**.
+**Fix:** [vc-module-loyalty#15](https://github.com/VirtoCommerce/vc-module-loyalty/pull/15) — rule 2's
+`hasCashProducts` now reads `CartAggregate.SelectedLineItems`, not the selection-blind `cart.Items`.
+
+**Method:** backend `MCO-GQL-012` (075b) 10/10 assertions via the canonical GraphQL runner; storefront
+`MCO-E2E-008` (083b) 3/3 runs, payment pinned to `DefaultManualPaymentMethod`. Deselecting the cash line
+now yields `["LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED"]`, PLACE ORDER is disabled, and *"Add a regular
+product to check out."* renders in a `role="status"` region; re-selecting recovers. BL-LOY-010 restored.
+
+> **Not yet shipped.** PR #15 is open and unmerged; vcst-qa runs a temporary prerelease pin
+> (`VirtoCommerce.Loyalty_3.1005.0-pr-15-838b.zip`, `AzureBlob` in `vc-deploy-dev@vcst-qa`). A repin or
+> blob expiry makes this live again — re-verify against a released artifact after merge.
+
+**Evidence:** `reports/tickets/VCST-5657/` (`evidence.html`, `verification-report.md`, `verification-summary.json`, 4 screenshots).

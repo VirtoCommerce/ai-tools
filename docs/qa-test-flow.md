@@ -1,17 +1,24 @@
 # `/qa-test` — Test Flow
 
 Sequence of the `/qa-test VCST-XXXX` pipeline: **Gather Context · Story · Test Model → Plan →
-Write·Review·Provision → Execute → Report**. Step `1a` **routes the run to a FAST or FULL path** so effort
-tracks risk; story analysis is a sub-part of Step 1 (`1d`), not a step of its own, and there is **no
-separate exploratory step**. Canonical spec:
-[`.claude/commands/qa-test.md`](../.claude/commands/qa-test.md).
+Write·Review·Provision → Execute → Report**. Step `1a` routes on **two axes** — first **FLOW** (which
+pipeline), then, within `feature-test`, a **FAST or FULL** path so effort tracks risk; story analysis is a
+sub-part of Step 1 (`1d`), not a step of its own, and there is **no separate exploratory step**. Canonical
+spec: [`.claude/commands/qa-test.md`](../.claude/commands/qa-test.md); the routing matrix's single source of
+truth is [`.claude/knowledge/execution/ticket-routing.md`](../.claude/knowledge/execution/ticket-routing.md).
 
-**Fast vs full path.** A bug fix / copy-tweak / config change that is P2–P3, single-layer and single-domain
-takes the **FAST** path — it skips the `1c` BA-context and `1d` story-review agents, authors minimal cases,
-runs one execution agent, and self-checks inline (no independent verifier). A new feature / Story, anything
-P0–P1, cross-layer, ≥2 domains, a critical-revenue flow, or an unclear surface takes the **FULL** path —
-`1c ‖ 1d` concurrently, full authoring, and the two hard-STOP independent verifiers. **When in doubt →
-FULL.**
+**Flow routing (decided first, by type × status).** A fix-ready **Bug** (READY FOR TEST / TESTING) is a
+*verification*, so `1a` runs `/qa-verify-fix` **inline** (RED→GREEN, VERIFIED/REOPEN) and the five-step
+feature-test pipeline below does not run; a hotfix-status Bug points to `/qa-hotfix-check`; a Sub-task
+inherits its parent's type; everything else (Story / Task / Technical task / Epic, and a not-yet-fixed Bug)
+is a **`feature-test`** and runs the pipeline below.
+
+**Fast vs full path (feature-test only).** A bug fix / copy-tweak / config / Technical task that is P2–P3,
+single-layer and single-domain takes the **FAST** path — it skips the `1c` BA-context and `1d` story-review
+agents, authors minimal cases, runs one execution agent, and self-checks inline (no independent verifier). A
+new feature / Story / Epic, anything P0–P1, cross-layer, ≥2 domains, a critical-revenue flow, or an unclear
+surface takes the **FULL** path — `1c ‖ 1d` concurrently, full authoring, and the two hard-STOP independent
+verifiers. **When in doubt → FULL.**
 
 ### Diagram 1 — the `/qa-test` run (Steps 1–5)
 
@@ -36,9 +43,9 @@ sequenceDiagram
     note over Orch,V: FULL path only: GATE at Step 3 + Step 5 (fresh qa-lead, re-derives from source). 1 round: REJECT to reason+fix, re-verify once, then STOP. Other steps + the whole FAST path self-check inline
 
     note over Orch,BA1: Step 1 · sub-parts 1a-1e (each consumes the prior)
-    note over Orch: 1a · Fetch, classify TYPE, ROUTE fast/full
-    Orch->>TR: Fetch ticket (type, priority, ACs, PR diff) + COMMENTS + ATTACHMENTS + parent EPIC & siblings (both paths)
-    Orch->>Orch: Classify TYPE + PATH (fast = P2/P3 single-layer bug/tweak; else full)
+    note over Orch: 1a · Fetch, classify TYPE×STATUS, ROUTE flow then fast/full
+    Orch->>TR: Fetch ticket (type, STATUS, priority, ACs, PR diff) + COMMENTS + ATTACHMENTS + parent EPIC & siblings (both paths)
+    Orch->>Orch: Route FLOW per ticket-routing.md (fix-ready Bug → /qa-verify-fix inline; hotfix → /qa-hotfix-check; else feature-test), then TYPE + PATH (fast = P2/P3 single-layer bug/tweak/tech-task; else full)
     note over Orch: 1b · Pre-flight, resolve SPRINT, dedup (all sprints)
     alt FULL path
         note over Orch,BA2: 1c + 1d dispatched CONCURRENTLY (both read the 1a fetch)
@@ -125,6 +132,7 @@ sequenceDiagram
     participant VF as /qa-verify-fix
     participant TR as Tracker
 
+    note over Orch,VF: A fix-ready Bug reaches /qa-verify-fix DIRECTLY from Step 1a (run inline) — this FAIL→fix→verify loop is only one way to get there
     alt PASS / PASS WITH NOTES
         Orch->>Gate: 5h Feed verdict + regression pass rate + release criteria
         Gate->>V: Ratify GO/NO-GO (compute-metrics --gate feature --run-id RUN_ID + re-check ledger)
@@ -163,8 +171,13 @@ sequenceDiagram
   `APPROVE`/`REJECT`, and on REJECT gives reason + fix → the doer fixes → **re-verify once (1 round), then
   STOP**. **Every other step, and the whole FAST path, self-checks inline** — no verifier dispatch. **Doer ≠
   checker at the gates that matter.**
-- **Step 1a routing** — the type + priority classification decides FAST vs FULL and thereby how much of
-  Steps 1, 3 and 5 runs. When in doubt → FULL (fail-safe).
+- **Step 1a routing (two axes)** — first the **FLOW** (`verify-fix` / `hotfix-verify` / `feature-test`) by
+  the ticket's **type × status** (single source of truth:
+  [`.claude/knowledge/execution/ticket-routing.md`](../.claude/knowledge/execution/ticket-routing.md)),
+  then, for `feature-test`, the **FAST vs FULL** path by priority/layer/domain. A fix-ready Bug reaches
+  `/qa-verify-fix` **directly from 1a** (not only via the FAIL→fix loop in Diagram 2); a hotfix-status Bug
+  points to `/qa-hotfix-check`; a Sub-task inherits its parent. When in doubt → `feature-test` FULL
+  (fail-safe).
 - **Step 1 ordering** — `1a`–`1e` are sequential dependencies: the fetch (`1a`) must precede the type/route
   gate, the BA delegation, the dedup glob and the story review; `{SPRINT}` is resolved in `1b` *before* the
   duplicate check that globs it (and the check spans **all** sprints). On the full path, `1c` and `1d` are

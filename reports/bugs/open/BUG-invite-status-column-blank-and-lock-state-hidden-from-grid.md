@@ -34,6 +34,27 @@ correctly (`isLocked`/`isCurrentlyLocked` flip via API, cross-org isolation hold
 — BL-AUTH-012) — only the list-level visibility is missing; an operator scanning the grid cannot see which
 membership is locked without opening each row's detail blade.
 
+## Re-check 2026-08-05 — part 2 is FIXED; part 1 stands
+
+**Env:** vcst-qa @ Platform 3.1055.0 · Customer `3.1021.0-pr-312-**3aa7**` (this report was filed against
+`pr-312-2257`) · Theme `2.55.0-pr-2407-81dd`. Evidence: suite `027` `CUST-121`, executed live.
+
+- **§2 (no lock-state column) — FIXED.** Suggested fix (2) landed. The memberships grid now exposes a
+  **`Locked state`** column, plus `Is Currently Locked` and `Locked until`, via the column chooser. It is
+  **not visible by default** (default set is Organization / Roles / Invite status) and must be enabled;
+  once enabled it renders `Unlocked`/`Locked` and tracks the persisted `isLocked` flag across a
+  lock→unlock cycle without reopening the blade. If "must enable a column" is considered to satisfy the
+  original ask, §2 can be closed; if the ask was *visible by default*, it is narrowed rather than fixed.
+  `CUST-121` now asserts the current behaviour, so a change here needs that case updated too.
+- **§1 (blank Invite-status cell) — STILL OPEN, and worth stating precisely** because a nearby
+  observation is by design and the two are easy to conflate. On the **detail blade** the Status *control*
+  renders the `status-inherited` placeholder ("Inherit from member") for a null override — that is
+  correct by design, since `labels.status` names the per-org **override**, which is genuinely null. What
+  this report describes is the **grid column**, which renders **empty** rather than either the placeholder
+  or the resolved effective status. The storefront does fall back — `getDisplayStatus = isLocked ?
+  "Locked" : (statusInOrganization ?? status)` (VCST-5281 comment 104736) — so the inconsistency with the
+  storefront that this report identifies is real.
+
 ## Impact
 
 Cosmetic/discoverability only — no data or authorization impact. An operator cannot tell invite or lock

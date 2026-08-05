@@ -1,7 +1,7 @@
 ---
 description: "Audit BL invariants against docs + live + source code, auto-apply confirmed changes to business-logic.md, and reconcile test-case coverage. Gated by a 3-source evidence bar (not human approval); unconfirmed items route to the proposals file."
 argument-hint: "all | domain <name> | BL-<ID> | diff [--dry-run]"
-disable-model-invocation: true
+
 ---
 
 # /qa-review-bl — BL Invariant Triangulation Review & Auto-Apply

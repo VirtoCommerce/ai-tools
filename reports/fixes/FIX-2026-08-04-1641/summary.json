@@ -18,7 +18,7 @@
     "G2_reproduction": "PASS",
     "G3_fix": "PASS",
     "G4_review": "APPROVE_after_1_revision",
-    "G5_ci": "RED_non_blocking_infra",
+    "G5_ci": "PASS",
     "G6_e2e": "NOT_RUN_needs_deploy",
     "G7_human_review": "STOP_pr_open"
   },
@@ -27,9 +27,14 @@
     "unitTests": "success",
     "sonarQualityGate": "success",
     "licenseCla": "success",
-    "failingStep": "Push Build Info to Jira",
-    "failureCause": "branch segment 'qa-autofix' is parsed as a Jira issue key and rejected by the action's key pattern (requires digits after the hyphen)",
-    "codeRelated": false
+    "swaggerValidation": "success",
+    "autoTestsMysql": "success",
+    "autoTestsPostgres": "success",
+    "autoTestsSqlserver": "success_on_rerun_first_attempt_flaky",
+    "resolvedFailure": "Push Build Info to Jira — PR body cited MCO-E2E-008; get-jira-keys regex backtracked to E-008 (1-char prefix) and failed Jira key pattern. Reworded; ci now passes.",
+    "sqlserverFailure": "FLAKE (confirmed): test_page_about_store_accessible — CMS text not rendered on first attempt, passed on rerun (7m54s vs 14m50s). Unrelated to loyalty.",
+    "codeRelated": false,
+    "allChecksGreen": true
   },
   "filesChanged": 3,
   "newTests": 3,
@@ -37,9 +42,10 @@
   "newDependencies": 0,
   "confidence": "HIGH",
   "followUps": [
-    "Human review + merge PR #15",
+    "Human review + merge PR #15 (confirm sqlserver auto-tests rerun)",
     "/qa-verify-fix VCST-5657 post-deploy (pin payment method to Manual)",
-    "MCO-GQL-012 + MCO-E2E-008 expected-RED until deployed",
-    "Plugin branch convention claude/qa-autofix/<KEY> breaks the VirtoCommerce Jira build-info CI step on every run"
-  ]
+    "MCO-GQL-012 + 083b E2E case 008 expected-RED until deployed",
+    "GITHUB_FIX_BUGS_TOKEN lacks Pull-requests rights (fine-grained PAT); gh keyring used as fallback"
+  ],
+  "mergeable": "MERGEABLE"
 }

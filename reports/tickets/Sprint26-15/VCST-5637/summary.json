@@ -1,0 +1,71 @@
+{
+  "ticket": "VCST-5637",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "full",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-08-05",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1057.0-pr-3095-3abb-vcst-5637-json-hash-extensions-3abbc5bb",
+    "theme": "n/a — backend-only change, no storefront files touched",
+    "relevant_modules": {
+      "VirtoCommerce.XCatalog": "3.1016.0-pr-106-3559"
+    }
+  },
+  "agents_dispatched": ["ba-system-analyzer", "test-management-specialist", "regression-orchestrator", "qa-frontend-expert"],
+  "epic": {
+    "parent": null,
+    "siblings": { "done": [], "in_progress": [], "blocked_dependency": [] },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 8,
+    "impl_coverage": { "satisfied": 7, "drift": 0, "contradicts": 0, "not_found": 1 },
+    "conditions_total": 8,
+    "conditions_with_evidence": 7
+  },
+  "total_cases": 7,
+  "passed": 7,
+  "failed": 0,
+  "blocked": 0,
+  "iterations": {
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "passed"
+  },
+  "new_cases_authored": 7,
+  "promotion": {
+    "automated": ["CAT-GQL-133", "CAT-GQL-134", "CAT-GQL-135", "CAT-GQL-136", "CAT-GQL-137", "CAT-GQL-138", "CAT-GQL-139"],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "regression": {
+    "suites": ["050a", "050b1", "050b2", "001", "002", "003", "028", "029", "030"],
+    "run_id": "REG-2026-08-05-1416",
+    "pass_rate": 0.9435,
+    "skipped_reason": "suite 002 excluded from the pass-rate/triage scope — hit failed_max_retries (Firefox lane defect + 2 external Anthropic API 529 overloads), 18/31 resolved; needs an out-of-band re-run"
+  },
+  "bugs_filed": [
+    "reports/bugs/open/BUG-xapi-seoinfo-id-objecttype-invalid-operation-nulls-product.md"
+  ],
+  "business_rules_verified": ["BL-GQL-002", "BL-GQL-003"],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": []
+  },
+  "screenshots": "reports/tickets/Sprint26-15/VCST-5637/screenshots/"
+}

@@ -135,7 +135,7 @@ coupon2=@td(COUPONS.fixedAmountCode)","[NAV] Navigate to cart page at {{FRONT_UR
 [ACT] fill coupon code input field with an invalid code: 'BOGUS-XYZ-REGRESSION-TEST'
 [WAIT] coupon code input reflects the typed value
 [ACT] click the 'Apply' button (custom coupon card apply button)
-[WAIT] coupon sidebar updates — error message appears below the input
+[WAIT] coupon sidebar updates — error message appears below the input — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)
 [ASSERT] browser_snapshot — capture the error state of the coupon card","[DOM] error message element <p class=""coupon-card__error""> is visible with text 'This code is not valid' or equivalent
 [DOM] the error <p> element has attribute role=""alert"" (WCAG 4.1.3 Status Messages — verified fix in PR #2303: '<p role=""alert"" class=""coupon-card__error"">{{error}}</p>')
 [STATE] the error element is not hidden (v-if renders the <p> when view === 'error' AND error is non-empty)","[CONSOLE] zero console errors during coupon apply attempt

@@ -81,31 +81,30 @@
 [ASSERT] Inspect <head> section for meta tags
 [ASSERT] Verify meta title tag is present and non-empty
 [ASSERT] Verify meta description tag is present and non-empty
-[ASSERT] Verify canonical URL tag is present and points to correct PDP URL
-[ASSERT] Verify og:title, og:description, og:image, og:url tags are present
+[ASSERT] Verify og:url tag is present and points to the product's own resolved PDP URL (per BL-SEO-003: this theme's @unhead/vue implementation uses og:url as its sole canonical-URL signal — no link[rel=canonical] is emitted, by design, verified live 2026-07-15)
+[ASSERT] Verify og:title, og:description, og:image tags are present
 [ASSERT] Verify og:image points to a valid product image URL","[DOM] <title> or meta[name=title] is present and non-empty
 [DOM] meta[name=description] is present with meaningful content (not empty or placeholder)
-[DOM] link[rel=canonical] present with href matching current PDP URL (no query params)
+[DOM] meta[property=og:url] present with content matching current PDP URL (no query params) — per BL-SEO-003, do NOT assert link[rel=canonical]; its absence is the documented default, not a violation
 [DOM] meta[property=og:title] present and non-empty
 [DOM] meta[property=og:description] present and non-empty
-[DOM] meta[property=og:image] present with non-empty image URL
-[DOM] meta[property=og:url] present and matches canonical URL","[NETWORK] og:image URL returns HTTP 200 (image is accessible)
-[CONSOLE] no TypeError or JS errors","Meta title missing or showing generic site title; meta description empty; canonical URL absent or pointing to wrong page; og:tags missing; og:image returning 404; console TypeError","none","Checklist #4 SEO, GAP-CS-02","Draft"
+[DOM] meta[property=og:image] present with non-empty image URL","[NETWORK] og:image URL returns HTTP 200 (image is accessible)
+[CONSOLE] no TypeError or JS errors","Meta title missing or showing generic site title; meta description empty; og:url absent or pointing to wrong page; og:tags missing; og:image returning 404; console TypeError","none","Checklist #4 SEO, GAP-CS-02; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05)","Draft"
 "CAT-041","Category Page SEO - JSON-LD BreadcrumbList and Canonical URL","Catalog > SEO","Medium","BL-CAT-001, BL-CAT-006",,"Category page with at least one level of subcategory hierarchy exists","url={{FRONT_URL}}","[NAV] Navigate to any subcategory page on {{FRONT_URL}} (a category with parent > child structure)
 [WAIT] Wait for page to fully render
 [ACT] Open browser DevTools Elements panel
-[ASSERT] Inspect <head> for canonical URL
+[ASSERT] Inspect <head> for og:url (per BL-SEO-003: this theme uses og:url as its sole canonical-URL signal — no link[rel=canonical] is emitted, by design)
 [ASSERT] Search for <script type=application/ld+json> in page source
 [ASSERT] Verify JSON-LD contains @type: BreadcrumbList
 [ASSERT] Verify breadcrumb items match the visible breadcrumb trail on page
-[ASSERT] Verify each breadcrumb item has name and item (URL) properties","[DOM] link[rel=canonical] present with href matching current category URL
+[ASSERT] Verify each breadcrumb item has name and item (URL) properties","[DOM] meta[property=og:url] present with content matching current category URL — per BL-SEO-003, do NOT assert link[rel=canonical]
 [DOM] JSON-LD script tag present with @type: BreadcrumbList
 [DOM] BreadcrumbList itemListElement array has correct number of items matching visible breadcrumbs
 [DOM] Each itemListElement has @type: ListItem, position (integer), name, and item (URL)
 [DOM] Breadcrumb positions are sequential starting from 1
 [FORMAT] JSON-LD is valid JSON (no parse errors)","[NETWORK] GET category page returns HTTP 200
 [CONSOLE] no JSON parse errors from structured data
-[CONSOLE] no TypeError or JS errors","Canonical URL missing or pointing to wrong category; JSON-LD absent from page; BreadcrumbList items not matching visible breadcrumbs; JSON-LD parse errors; console TypeError","none","Checklist #4 SEO, GAP-CS-02","Draft"
+[CONSOLE] no TypeError or JS errors","og:url missing or pointing to wrong category; JSON-LD absent from page; BreadcrumbList items not matching visible breadcrumbs; JSON-LD parse errors; console TypeError","none","Checklist #4 SEO, GAP-CS-02; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05); JSON-LD BreadcrumbList assertion still needs independent grounding — not addressed by this fix","Draft"
 "CAT-042","Multi-Level Category Navigation with Breadcrumbs","Catalog > Navigation","Medium","BL-CAT-001",,"Category hierarchy exists with at least 3 levels (top-level > subcategory > sub-subcategory)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} main catalog page
 [ACT] Click on a top-level category in the navigation menu
 [WAIT] Wait for top-level category page to load
@@ -174,13 +173,12 @@
 [ASSERT] Verify the URL remains as the slug URL (no redirect to an ID-based URL)
 [ASSERT] Verify the category heading is non-empty
 [ASSERT] Verify products are listed on the category page
-[ACT] Open browser DevTools and check the link[rel=canonical] tag value
-[ASSERT] Verify the canonical URL matches the slug URL","[NAV] Slug URL resolves to the correct category page without redirect to an ID-based URL
+[ASSERT] Verify the og:url meta tag matches the slug URL (per BL-SEO-003: this theme uses og:url as its canonical-URL signal — no link[rel=canonical] is emitted, by design)","[NAV] Slug URL resolves to the correct category page without redirect to an ID-based URL
 [DOM] Category heading is non-empty
 [DOM] Products are displayed on the page
-[DOM] link[rel=canonical] href equals the current slug URL (not an ID-based URL)
+[DOM] meta[property=og:url] content equals the current slug URL (not an ID-based URL) — per BL-SEO-003, do NOT assert link[rel=canonical]
 [STATE] No 301/302 redirect from slug to ID URL","[NETWORK] GET slug URL returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Slug URL returning 404; slug redirecting to an ID-based URL; canonical pointing to a different URL; heading empty; console TypeError","none","Coverage Gap Analysis; GAP-CS-14","Draft"
+[CONSOLE] no TypeError or JS errors","Slug URL returning 404; slug redirecting to an ID-based URL; og:url pointing to a different URL; heading empty; console TypeError","none","Coverage Gap Analysis; GAP-CS-14; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05)","Draft"
 "CAT-056","Catalog Listing Page Renders Correctly at 768px Tablet Viewport","Catalog > Responsive","Medium","BL-CAT-001",,"Category with products exists; storefront accessible","url={{FRONT_URL}}","[NAV] Navigate to any category listing page on {{FRONT_URL}}
 [ACT] Resize the browser viewport to 768x1024 (tablet portrait)
 [WAIT] Wait for layout to reflow

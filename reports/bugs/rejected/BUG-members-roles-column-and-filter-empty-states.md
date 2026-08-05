@@ -3,6 +3,7 @@
 **Env:** vcst-qa @ Platform 3.1051.0 · Customer 3.1021.0-pr-312-2257 · ProfileExperienceApi 3.1015.0-pr-141-d7d8 · Theme 2.55.0-pr-2399-845a
 **Found by:** `/qa-regression` REG-2026-07-30-1040, suite 008 (B2C-MBR-032, B2C-MBR-025) · triaged `REAL_BUG`
 **BL:** BL-B2B-005 · ECL-2.3
+**Status**: Rejected
 
 Two independent Low-severity presentation defects on the same page. Filed together because both are one-line
 copy/marker fixes in the same component; split if they are routed separately.

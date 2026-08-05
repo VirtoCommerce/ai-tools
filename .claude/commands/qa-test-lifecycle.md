@@ -23,8 +23,8 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 /qa-test-lifecycle domain orders          # Full pipeline for all suites in a domain
 /qa-test-lifecycle suite 06 --skip-sync   # Skip sync, review existing cases only
 
-# Promotion (fold a /qa-test run's run-scoped cases into durable coverage)
-/qa-test-lifecycle VCST-1234                 # Also picks up reports/tickets/*/VCST-1234/test-cases.csv → Phase 6P
+# Promotion (fold a legacy/handoff run-scoped case set into durable coverage)
+/qa-test-lifecycle VCST-1234                 # Also picks up a leftover reports/tickets/*/VCST-1234/test-cases.csv → Phase 6P
 /qa-test-lifecycle VCST-1234 --promote-only  # Skip Phases 2-5: re-derive G10 eligibility and promote only
 ```
 
@@ -49,7 +49,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | `--no-auto-fix` | **Opt OUT** of the default auto-fix — confirm each auto-fixable update individually before it's written. Auto-fix is **on by default**: Phase 4b applies auto-fixable updates without asking (still shows a diff summary). |
 | `--layer <name>` | Scope to a specific layer: `api`, `graphql`, `admin`, `storefront`, `e2e` |
 | `--report-only` | Run all phases but don't modify any CSV files — output report only. **Also blocks Phase 6P** (promotion is a write) |
-| `--promote-only` | Skip Phases 2–5. Resolve the `/qa-test` run-scoped CSV, re-derive G10 eligibility, and run **Phase 6P** only. Use when a `/qa-test` run already reviewed + executed the cases and only promotion is outstanding |
+| `--promote-only` | Skip Phases 2–5. Resolve the legacy/handoff run-scoped CSV, re-derive G10 eligibility, and run **Phase 6P** only. Use when a case set was already reviewed + executed and only promotion is outstanding |
 | `--ci` | CI mode: skip browser verification, apply all updates without confirmation, output machine-readable JSON. **Never promotes** (6P requires human/`qa-lead` approval) |
 
 > **BL audit is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (stale refs + new-rule candidates); **Phase 4c always runs, scoped to exactly those candidates** — triangulating each against docs + live + source via `/qa-review-bl` and auto-applying the confirmed ones. No candidates ⇒ 4c is a no-op. For a broader sweep (a whole domain, not just what this run touched), use standalone `/qa-review-bl domain <name>`. (The former `--update-bl` opt-in flag is retired — the audit is safe by default because it's gated by an **applicable-axes evidence bar** — docs + live + source, with a structurally-unavailable axis such as docs-for-a-new-module *waived*, promoting only when every applicable axis agrees and at least two remain — so there's nothing to opt into.)
@@ -84,7 +84,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | 4. Review & Fix | `test-management-specialist` | Not needed | `/qa-review-tests` static dimensions (1–7, 9, 10), auto-fix, manual items |
 | 5. Verify | `qa-testing-expert` | `playwright-firefox` | Live environment browser verification |
 | 6. Approve | Orchestrator (you) | Not needed | Quality gate evaluation, final verdict, report |
-| 6P. Promote | Orchestrator (you) | Not needed | Fold a `/qa-test` run's run-scoped cases into `regression/suites/` + the manifest, via `suites:append` + `suites:sync`. Approval-gated; verified by a fresh `qa-lead` (G12) |
+| 6P. Promote | Orchestrator (you) | Not needed | Fold a legacy/handoff run-scoped case set into `regression/suites/` + the manifest, via `suites:append` + `suites:sync`. Approval-gated; verified by a fresh `qa-lead` (G12) |
 
 ---
 
@@ -129,7 +129,7 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 2. Extract: summary, components, acceptance criteria, linked PRs, comments
 3. For each linked PR: run the PR analysis above
 4. Map JIRA components to VC modules
-5. **Detect a `/qa-test` promotion hand-off (this is what makes Phase 6P reachable).** Glob
+5. **Detect a legacy/handoff promotion source (this is what makes Phase 6P reachable — a current `/qa-test` run produces none).** Glob
    `reports/tickets/*/VCST-XXXX/test-cases.csv` — **across all sprints**, per
    `feedback_duplicate_check_across_all_sprints`; a ticket tested before a sprint rollover lives under the
    older folder. When a match exists, read its sibling `summary.json` and add to the scope:
@@ -199,7 +199,7 @@ These inputs skip Phase 2 by default (no code change to sync against). Use `--sk
   "inputType": "change-source | direct-scope",
   "source": "PR #123 | VCST-1234 | module orders | diff | changelog 3.850.0 | suite 04c | domain orders",
   "affectedSuites": ["04a", "04c", "20", "15"],
-  "promotionSource": null,                     // set only when a /qa-test run-scoped test-cases.csv exists (drives Phase 6P)
+  "promotionSource": null,                     // set only when a legacy/handoff run-scoped test-cases.csv exists (drives Phase 6P; a current /qa-test run produces none)
   "changeInventory": {                         // only for change sources
     "changedModules": ["Orders", "Cart"],
     "changedLayers": ["backend", "graphql", "storefront"],

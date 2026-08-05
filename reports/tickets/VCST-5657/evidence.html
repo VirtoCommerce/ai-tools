@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCST-5657 — Fix Verification Evidence</title>
+<style>
+  :root{
+    --bg:#fbfbfa; --panel:#fff; --ink:#1c1c1a; --muted:#63635e; --line:#e0dfda;
+    --pass:#1a7f4b; --pass-bg:#e8f5ed; --fail:#b3261e; --fail-bg:#fdeceb;
+    --warn:#8a5a00; --warn-bg:#fdf4e3; --code-bg:#f5f4f1; --accent:#2f5fa8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#16171a; --panel:#1e2024; --ink:#e8e8e4; --muted:#a0a09a; --line:#31343a;
+      --pass:#5cc98d; --pass-bg:#152a20; --fail:#f2857c; --fail-bg:#2c1917;
+      --warn:#e0b25c; --warn-bg:#2b2114; --code-bg:#15171a; --accent:#7fa8e8;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#fbfbfa; --panel:#fff; --ink:#1c1c1a; --muted:#63635e; --line:#e0dfda;
+    --pass:#1a7f4b; --pass-bg:#e8f5ed; --fail:#b3261e; --fail-bg:#fdeceb;
+    --warn:#8a5a00; --warn-bg:#fdf4e3; --code-bg:#f5f4f1; --accent:#2f5fa8;
+  }
+  :root[data-theme="dark"]{
+    --bg:#16171a; --panel:#1e2024; --ink:#e8e8e4; --muted:#a0a09a; --line:#31343a;
+    --pass:#5cc98d; --pass-bg:#152a20; --fail:#f2857c; --fail-bg:#2c1917;
+    --warn:#e0b25c; --warn-bg:#2b2114; --code-bg:#15171a; --accent:#7fa8e8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding:28px 20px 60px;overflow-x:hidden}
+  main{max-width:940px;margin:0 auto}
+  code,pre,.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  h1{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+  h2{font-size:15px;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);
+    text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  h3{font-size:13px;margin:18px 0 6px;color:var(--muted);font-weight:600}
+  p{margin:0 0 10px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:3px;font-size:12px;
+    font-weight:700;letter-spacing:.04em;vertical-align:2px}
+  .b-pass{background:var(--pass-bg);color:var(--pass);border:1px solid var(--pass)}
+  .b-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn)}
+  .strip{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:4px;
+    overflow:hidden;background:var(--panel);margin:14px 0 4px}
+  .strip div{padding:8px 12px;border-right:1px solid var(--line);flex:1 1 auto;min-width:130px}
+  .strip div:last-child{border-right:0}
+  .strip dt{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .strip dd{margin:2px 0 0;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--panel)}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--code-bg);font-size:11.5px;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+  td.red{background:var(--fail-bg);color:var(--fail);font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+  td.green{background:var(--pass-bg);color:var(--pass);font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+  .tag{font-weight:700;font-size:12px;letter-spacing:.03em}
+  .t-pass{color:var(--pass)} .t-fail{color:var(--fail)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:4px;
+    padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:8px 0}
+  pre b{color:var(--pass);font-weight:700}
+  pre i{color:var(--fail);font-style:normal;font-weight:700}
+  pre .cm{color:var(--muted)}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);
+    border-radius:0 4px 4px 0;padding:10px 14px;margin:10px 0;font-size:13.5px}
+  .note strong{color:var(--warn)}
+  figure{margin:14px 0;border:1px solid var(--line);border-radius:4px;
+    overflow:hidden;background:var(--panel)}
+  figure img{display:block;width:100%;max-width:100%;height:auto}
+  figcaption{padding:7px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  ol.notes{padding-left:20px;font-size:13.5px} ol.notes li{margin-bottom:7px}
+  footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--muted)}
+  footer p{margin:0 0 5px}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+
+  <h1>VCST-5657 — Mixed cart: deselecting all cash lines bypassed the points-only guard</h1>
+  <p class="sub">
+    Fix verification · <span class="badge b-pass">VERIFIED</span>
+    <span class="badge b-warn">HELD AT TESTED</span> · 2026-08-05
+  </p>
+
+  <div class="strip">
+    <div><dt>Environment</dt><dd>vcst-qa</dd></div>
+    <div><dt>Platform</dt><dd>3.1057.0-pr-3095-3abb</dd></div>
+    <div><dt>Loyalty module</dt><dd>3.1005.0-pr-15-838b</dd></div>
+    <div><dt>Theme</dt><dd>2.55.0-pr-2422-1c98</dd></div>
+    <div><dt>Store</dt><dd>B2B-store · Mixed Cart</dd></div>
+    <div><dt>PR</dt><dd><a href="https://github.com/VirtoCommerce/vc-module-loyalty/pull/15">loyalty#15</a> — OPEN</dd></div>
+  </div>
+
+  <h2>The bug and its root cause</h2>
+  <p>
+    In a mixed cart (one cash line + one loyalty/points line), <strong>unticking</strong> the cash line —
+    leaving it in the cart — left PLACE ORDER enabled with no warning, so a points-only order was placeable.
+  </p>
+  <p>
+    <code>LoyaltyCartValidator</code> rule 2 derived <code>hasPointProducts</code> from the
+    selection-<em>aware</em> <code>cart.CartTotals</code> but <code>hasCashProducts</code> from the
+    selection-<em>blind</em> <code>cart.Items</code>. A deselected cash line therefore still satisfied
+    <code>hasCashProducts</code>, so the guard could never fire while any cash line existed at all.
+  </p>
+<pre><span class="cm">// vc-module-loyalty · Validators/LoyaltyCartValidator.cs — rule 2's cash operand</span>
+<i>- var hasCashProducts = cart.Items?.Any(x =&gt; !x.Currency.EqualsIgnoreCase(loyaltyCurrencyCode)) == true;</i>
+<b>+ var hasCashProducts = cartValidationContext.CartAggregate.SelectedLineItems.Any(x =&gt; !x.Currency.EqualsIgnoreCase(loyaltyCurrencyCode));</b></pre>
+
+  <h2>Before → after</h2>
+  <p class="sub" style="margin-bottom:0">
+    Identical state in both columns: cash line present but <code>selectedForCheckout=false</code>, points line selected.
+  </p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Observation</th><th>RED — Loyalty 3.1004.0</th><th>GREEN — Loyalty 3.1005.0-pr-15-838b</th></tr></thead>
+    <tbody>
+      <tr><td><code>cart.validationErrors[]</code></td>
+          <td class="red">[] &nbsp;— guard silently absent</td>
+          <td class="green">["LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED"]</td></tr>
+      <tr><td>Default-currency total</td><td class="red">$0.00</td><td class="green">$0.00</td></tr>
+      <tr><td>Loyalty total</td><td class="red">PTS 6.00</td><td class="green">PTS 66.00</td></tr>
+      <tr><td>PLACE ORDER</td>
+          <td class="red">ENABLED — order placeable</td>
+          <td class="green">DISABLED</td></tr>
+      <tr><td>Warning rendered</td>
+          <td class="red">none — silent failure</td>
+          <td class="green">"Add a regular product to check out."</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note">
+    <strong>Baseline provenance.</strong> The fix was already deployed when this run started, so a live RED
+    was impossible. The RED column is <em>cited</em>, not re-captured — from the original
+    <code>/qa-bug</code> reproduction (<code>reports/bugs/open/BUG-mixed-cart-pts-only-selection-not-blocked-VCST-5657.md</code>,
+    Loyalty 3.1004.0). Its screenshots are linked at the bottom of this page.
+  </div>
+
+  <h2>GREEN — the real request and response</h2>
+  <p class="sub">Verbatim from <code>scripts/.graphql-evidence/MCO-GQL-012-1785931045837.json</code>, captured 2026-08-05T11:57:25Z against <code>{BACK_URL}/graphql</code>. Secrets redacted; bearer token never recorded.</p>
+
+  <h3>1 · Baseline — both lines selected, cart valid</h3>
+<pre>query { cart(cartName: "default" storeId: "B2B-store" userId: "&lt;LOYALTY_VIP_USER&gt;"
+             currencyCode: "USD" cultureName: "en-US") {
+  items { id currencyCode selectedForCheckout }
+  cartTotals { isDefaultTotalCurrency total { amount } }
+  validationErrors { errorCode } } }
+
+<span class="cm">→ 200 OK · 496ms · errors: []</span>
+{ "cart": {
+    "items": [ { "currencyCode": "USD", "selectedForCheckout": true },
+               { "currencyCode": "PTS", "selectedForCheckout": true } ],
+    "cartTotals": [ { "isDefaultTotalCurrency": true,  "total": { "amount": 71.99 } },
+                    { "isDefaultTotalCurrency": false, "total": { "amount": 552 } } ],
+    "validationErrors": [] } }</pre>
+
+  <h3>2 · Trigger — deselect the cash line (it stays in the cart)</h3>
+<pre>mutation { unSelectCartItems(command: { cartName: "default" storeId: "B2B-store"
+    userId: "&lt;LOYALTY_VIP_USER&gt;" currencyCode: "USD" cultureName: "en-US"
+    lineItemIds: ["f0d9e205-a388-4e97-a7a4-610366673006"] })
+  { id items { id selectedForCheckout } } }
+
+<span class="cm">→ 200 OK · 693ms · errors: []</span>
+{ "unSelectCartItems": { "items": [
+    { "id": "f0d9e205-…", "selectedForCheckout": <b>false</b> },   <span class="cm">// cash — deselected, NOT removed</span>
+    { "id": "15cd6586-…", "selectedForCheckout": true } ] } }</pre>
+
+  <h3>3 · Re-read — the guard now fires</h3>
+<pre><span class="cm">→ 200 OK · 516ms · errors: []</span>
+{ "cart": {
+    "items": [ { "currencyCode": "USD", "selectedForCheckout": false },
+               { "currencyCode": "PTS", "selectedForCheckout": true } ],
+    "cartTotals": [ { "isDefaultTotalCurrency": true,  "total": { "amount": <b>0</b> } },
+                    { "isDefaultTotalCurrency": false, "total": { "amount": 552 } } ],
+    "validationErrors": [ {
+      "errorCode": <b>"LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED"</b>,
+      "errorMessage": "A cart cannot contain only loyalty point products" } ] } }</pre>
+
+  <p class="sub" style="margin-top:12px">
+    On the pre-fix build the same read returned <span class="mono" style="color:var(--fail)">"validationErrors": []</span>
+    for this exact state — recorded in the <code>/qa-bug</code> reproduction, three independent capture points
+    (the unselect mutation response, <code>addOrUpdateCartPayment</code>, and a <code>GetFullCart</code> after a
+    full page reload), all with <code>validationErrors(ruleSet:"*")</code>.
+  </p>
+
+  <h2>Storefront — 3/3 consecutive runs</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>State</th><th>Default total</th><th>Points total</th><th>PLACE ORDER</th><th>Warning</th></tr></thead>
+    <tbody>
+      <tr><td>Both lines selected <span class="cm">(baseline, each run)</span></td>
+          <td class="mono">$406.80</td><td class="mono">PTS 66.00</td>
+          <td><span class="tag t-pass">ENABLED</span></td><td>none</td></tr>
+      <tr><td>Cash line unticked, kept in cart</td>
+          <td class="mono">$0.00</td><td class="mono">PTS 66.00</td>
+          <td><span class="tag t-fail">DISABLED</span></td><td>rendered</td></tr>
+      <tr><td>Cash line re-ticked <span class="cm">(recovery)</span></td>
+          <td class="mono">$406.80</td><td class="mono">PTS 66.00</td>
+          <td><span class="tag t-pass">ENABLED</span></td><td>cleared</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    Delivery and payment were set <strong>before</strong> the untick and PLACE ORDER was confirmed enabled
+    at that point — so the disabled state is attributable to the loyalty guard, not to the generic
+    "complete all required information" gate. Payment was pinned to
+    <code>DefaultManualPaymentMethod</code> in request and response on every run, so
+    <code>LOYALTY_PAYMENT_METHOD_NOT_ALLOWED</code> could not have masked the result.
+    Warning node: a native <code>&lt;output&gt;</code> element — implicit ARIA
+    <code>role="status"</code>, a polite live region, so it is announced. <strong>No order was placed.</strong>
+  </p>
+
+  <h2>Verification checklist — 10/10 PASS</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>#</th><th>Item</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>1–3</td><td>Original STR → fixed behaviour, runs 1 / 2 / 3</td><td><span class="tag t-pass">PASS 3/3</span></td></tr>
+      <tr><td>4</td><td>Root cause addressed — real <code>validationErrors[]</code>, sole entry, no masking error</td><td><span class="tag t-pass">PASS</span></td></tr>
+      <tr><td>5</td><td>Resolved i18n string, not a raw <code>common.messages.*</code> key</td><td><span class="tag t-pass">PASS</span></td></tr>
+      <tr><td>6</td><td>Warning in an accessible node (<code>&lt;output&gt;</code> ⇒ <code>role="status"</code>)</td><td><span class="tag t-pass">PASS</span></td></tr>
+      <tr><td>7</td><td>Re-selecting the cash line recovers — no over-correction</td><td><span class="tag t-pass">PASS</span></td></tr>
+      <tr><td>8</td><td>Normal mixed cart (both selected) clean, PLACE ORDER enabled</td><td><span class="tag t-pass">PASS</span></td></tr>
+      <tr><td>9</td><td>Removing the points line → <code>ALL_LINE_ITEMS_UNSELECTED</code>, zero spurious loyalty errors</td><td><span class="tag t-pass">PASS</span></td></tr>
+      <tr><td>10</td><td>No new console JS errors; all cart mutations HTTP 200, <code>errors: null</code></td><td><span class="tag t-pass">PASS</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="sub">
+    Backend <code>MCO-GQL-012</code> (suite 075b): 10/10 assertions PASS ·
+    Storefront <code>MCO-E2E-008</code> (suite 083b): PASS 3/3 ·
+    BL-LOY-010 restored (selection-scoped variant), BL-LOY-008 unaffected.
+  </p>
+
+  <h2>Captures — this run (GREEN)</h2>
+  <div class="grid">
+    <figure>
+      <img src="screenshots/MCO-E2E-008-both-selected-place-order-enabled.png" alt="Mixed cart with both lines selected, PLACE ORDER enabled">
+      <figcaption>Baseline — both lines selected, delivery + payment set, PLACE ORDER enabled ($406.80 / PTS 66.00).</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/MCO-E2E-008-cash-deselected-place-order-disabled.png" alt="Cash line unticked, warning shown, PLACE ORDER disabled">
+      <figcaption>The fix — cash line unticked but still present, total $0.00 / PTS 66.00, warning rendered, PLACE ORDER greyed out.</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/MCO-E2E-008-warning-element.png" alt="Close crop of the loyalty guard warning">
+      <figcaption>The guard message verbatim — "Add a regular product to check out."</figcaption>
+    </figure>
+    <figure>
+      <img src="screenshots/MCO-E2E-008-reselect-recovers.png" alt="After re-selecting the cash line the cart recovers">
+      <figcaption>Recovery — re-ticking the cash line clears the error and re-enables PLACE ORDER.</figcaption>
+    </figure>
+  </div>
+
+  <h2>Notes — pre-existing, none caused by this PR</h2>
+  <ol class="notes">
+    <li><strong>A11y (Medium).</strong> Every line-item checkbox is labelled <code>"Toggle vendor select"</code>,
+      identical to the vendor group's select-all. A screen-reader user cannot tell which product a checkbox
+      controls — directly relevant here, since deselecting a specific line <em>is</em> the action under test.
+      WCAG 1.3.1 / 2.4.6.</li>
+    <li><strong>UX (Low).</strong> <code>ALL_LINE_ITEMS_UNSELECTED</code> renders no message at all — PLACE ORDER
+      is disabled with no explanation. The storefront's error-code→i18n map covers the loyalty codes but not this one.</li>
+    <li><strong>Test cases.</strong> The committed <code>MCO-E2E-008</code> Steps untick the cash line
+      <em>before</em> setting delivery/payment, so they never establish PLACE ORDER was enabled first; this run
+      used the corrected ordering. Both new cases now pass and are eligible to leave
+      <code>Automation_Status = Draft</code> and drop their <code>EXPECTED-RED until VCST-5657</code> notes.</li>
+    <li><strong>Fixture drift (carried over).</strong> <code>LOYALTY_NOBAL_USER</code> holds ~1,044 PTS, so
+      insufficient-balance cases silently test nothing — needs a re-seed.</li>
+    <li><strong>Behaviour change.</strong> Storefront loyalty validation is now <em>pre-emptive</em> on
+      <code>/cart</code> (inline message + disabled control) rather than a toast at placement. Older loyalty
+      cases written against the toast expectation will false-FAIL.</li>
+  </ol>
+
+  <footer>
+    <p><strong>Held at TESTED, not Done.</strong> PR #15 is still OPEN and unmerged. vcst-qa runs a temporary
+      prerelease pin — <code>VirtoCommerce.Loyalty_3.1005.0-pr-15-838b.zip</code> as an <code>AzureBlob</code>
+      entry in <code>vc-deploy-dev@vcst-qa</code> <code>backend/packages.json</code>. If the environment is
+      repinned or that blob ages out, the fix disappears from QA. Re-verify against a released artifact after
+      merge before closing.</p>
+    <p><strong>Test cases:</strong> <code>MCO-GQL-012</code> (<code>regression/suites/Backend/loyalty/075b-loyalty-mixed-cart-order.csv</code>) ·
+      <code>MCO-E2E-008</code> (<code>regression/suites/Frontend/loyalty/083b-loyalty-mixed-cart-order.csv</code>)</p>
+    <p><strong>Evidence paths:</strong> backend payloads <code>scripts/.graphql-evidence/MCO-GQL-012-1785931045837.json</code> ·
+      HAR <code>test-results/chrome/har/session.har</code> ·
+      raw storefront payloads <code>test-results/chrome/vcst5657-run{1,2,3}-*.json</code> ·
+      RED baseline <code>reports/bugs/screenshots/mixed-cart-pts-only-selection-not-blocked/</code>
+      (<code>place-order-enabled-pts-only.png</code>, <code>cart-regular-unselected.png</code>)</p>
+    <p>Generated by <code>/qa-verify-fix VCST-5657</code> · report <code>verification-report.md</code> · summary <code>verification-summary.json</code></p>
+  </footer>
+
+</main>
+</body>
+</html>

@@ -2440,6 +2440,51 @@
     "bestRewardActive_source": "project_promotion_engine.md — QA store uses BestRewardPromotionPolicy (default for B2B-store). When applying multiple eligible promotions, the engine selects the single best discount; coupon-backed rewards win ties over automatic ones.",
     "notes": "VCST-4896 GAP-03 coupons-sidebar fixtures. PROVISIONED — all five seeded codes already exist in QA env via promotions/coupons.csv (no new seeding done). usedUpCode requires 1-time redemption pre-step before each test run. invalidCode is a literal random string (do NOT seed). bestRewardActive=true means tests must expect winner-take-all reward selection, not stacking. Tag any new admin-side coupons created during test runs with prefix 'AGENT-TEST-CPN-' for /qa-seed-data teardown."
   },
+  "BOPIS_BVA_50": {
+    "_inline": true,
+    "activeCount": 50,
+    "_multiplier": 1,
+    "_offset": 0,
+    "_derivation": "1 x BOPIS.pageSize + 0 — the exact-page-size boundary (no Load More expected). Guarded by DV-023 in scripts/test-data/validate-td-refs.ts: activeCount MUST equal BOPIS.pageSize * _multiplier + _offset, so if pageSize ever changes these boundaries fail loudly instead of silently asserting the wrong count.",
+    "_provisioning": "Reached by deactivating pickup locations down from the live active pool (isActive toggling only reduces). Consumed by BOPIS-104 (Draft).",
+    "notes": "VCST-4646 Load-More pagination BVA. Added 2026-08-05 — the 5 BOPIS_BVA_* aliases were referenced by BOPIS-104..108 but never existed, so td:validate failed with 5 unresolved refs (17/22 on suite 036)."
+  },
+  "BOPIS_BVA_51": {
+    "_inline": true,
+    "activeCount": 51,
+    "_multiplier": 1,
+    "_offset": 1,
+    "_derivation": "1 x BOPIS.pageSize + 1 — one Load More click reveals exactly the final item. Guarded by DV-023.",
+    "_provisioning": "Within the live active pool. Consumed by BOPIS-105 (Draft).",
+    "notes": "VCST-4646 / VCST-4707 Load-More pagination BVA. Added 2026-08-05."
+  },
+  "BOPIS_BVA_100": {
+    "_inline": true,
+    "activeCount": 100,
+    "_multiplier": 2,
+    "_offset": 0,
+    "_derivation": "2 x BOPIS.pageSize + 0 — exact-multiple boundary; one click loads the remaining full page. Guarded by DV-023.",
+    "_provisioning": "Within the live active pool. Consumed by BOPIS-106 (Draft).",
+    "notes": "VCST-4646 Load-More pagination BVA. Added 2026-08-05."
+  },
+  "BOPIS_BVA_101": {
+    "_inline": true,
+    "activeCount": 101,
+    "_multiplier": 2,
+    "_offset": 1,
+    "_derivation": "2 x BOPIS.pageSize + 1 — two clicks required to reach the final item. Guarded by DV-023.",
+    "_provisioning": "Within the live active pool. Consumed by BOPIS-107 (Draft).",
+    "notes": "VCST-4646 / VCST-4707 Load-More pagination BVA. Added 2026-08-05."
+  },
+  "BOPIS_BVA_151": {
+    "_inline": true,
+    "activeCount": 151,
+    "_multiplier": 3,
+    "_offset": 1,
+    "_derivation": "3 x BOPIS.pageSize + 1 — deepest tested boundary, three clicks. Guarded by DV-023.",
+    "_provisioning": "NOT PROVISIONABLE on the current environment — the live active pool was measured at 115, and isActive toggling can only REDUCE the active count, so 151 cannot be produced without new location records. Its consumer BOPIS-108 is explicitly BLOCKED-PENDING-NEW-LOCATION-RECORDS and stays Draft. This alias exists so the reference RESOLVES (a missing alias and an unprovisionable fixture are different failures, and conflating them hid both).",
+    "notes": "VCST-4646 / VCST-4707 Load-More pagination BVA. Added 2026-08-05."
+  },
   "BOPIS": {
     "_inline": true,
     "locationCount": 102,
@@ -4189,5 +4234,20 @@
       "store": "store"
     },
     "_notes": "VCST-5367 saved-layout rep — the ONLY rep whose persisted layout (salesRepLayout/saveSalesRepLayout; CustomerPreference SalesRepLayout.{scope}[.{storeId}] on the caller's own user id) the 091/093 drag/hide/Save cases may mutate. Use this alias, NOT SR_REP_PRIMARY, in any case that Saves a layout: primary's both scopes are verified never-saved (null) and ~40 cases in 050m/089/091/093 depend on that baseline. Serves ORG-001 + ORG-002 so the customerProfile scope has a customer to open and the scope-wide (not per-customer) case has a second customer. seed-sales-rep.mjs wipes its SalesRepLayout.* preferences on every reseed (disposable by design — see scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs). Login password: SR_REP_PASSWORD (never committed); runtime GUIDs in aliases.<env>.json."
+  },
+  "LOYALTY_ZERO_USER": {
+    "_inline": true,
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "account_type": "Customer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "memberId": "memberId",
+      "securityAccountId": "securityAccountId"
+    },
+    "_notes": "EMPTY-BY-DESIGN base values: email/memberId/securityAccountId are all RUN-variant and are supplied by aliases.<env>.json when the seeder runs. Per the multi-env rule an unseeded env therefore resolves them to an empty string - a CLEAR MISS that fails loudly at sign-in - rather than a stale or wrong-env value. EPHEMERAL, PER-RUN, GENUINELY ZERO-BALANCE loyalty user. Provisioned by npm run seed:loyalty:zero-user (scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs) and swept by --teardown. NO fields are pinned here on purpose: the email is RUN-variant (AGENT-TEST-loyzero-<utc>-<rand>@test-agent.com) and the ids are runtime GUIDs, so all three live only in aliases.<env>.json. An unseeded env therefore resolves them to '' (a clear miss) rather than a stale value. WHY IT EXISTS: a loyalty balance CANNOT be reset (vc-module-loyalty exposes the op-log read-only; no balance set/debit), so the shared LOYALTY_NOBAL_USER drifts upward every time a case earns points - it reached 1,044 PTS by 2026-08-05, above the dearest PTS catalog item (PTS344), which made MCO-E2E-002 unable to produce a shortfall at qty 1 and silently PASS while testing nothing. A fresh account starts at 0, so ANY PTS line at qty 1 is a guaranteed shortfall - deterministic, and parallel-safe (no contention between runners). PROVEN 2026-08-05: a fresh user with groups=[] and organizations=[] authenticates, reports currentBalance 0, and sees 39 PTS-priced products - PTS pricing is catalog-scoped (the price list is assigned by catalogId, not memberId), so no VIP group is required for PTS VISIBILITY. IMPORTANT: the seeder still provisions the user WITH org membership (createUser withOrg:true) because the ORG is what supplies the shipping ADDRESSES a checkout case needs - a brand-new contact has none, and without an address the cart cannot reach a decisive place-order state. Do not \"simplify\" this to no-org on the strength of the pricing finding. Password is DEFAULT_TEST_PASSWORD - ONE shared value, never a per-run random, and specifically the var that EXISTS in .env.playwright.local so Playwright --secrets can substitute it by NAME and redact it. A dedicated EPHEMERAL_USER_PASSWORD was removed: it is absent from the secrets file, so setting it would have silently forced the password into the transcript in plaintext. CAVEAT: deleting the account does NOT purge its loyalty op-log (read-only, no purge API) - stranded rows accumulate; harmless for balances since each new account is a new id.",
+    "email": "",
+    "memberId": "",
+    "securityAccountId": ""
   }
 }

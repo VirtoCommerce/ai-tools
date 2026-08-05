@@ -60,6 +60,29 @@ The three primitives (`validateCartCoupon`/`addCartCoupon`/`removeCartCoupon` in
 - **Routing confidence:** HIGH (layer + exact file/function confirmed against `dev` HEAD)
 - **Invariant:** BL-CART-009 (coupon-state integrity / radio-button coupon transition) — the documented sequence `removeCoupon → validateCoupon → addCoupon` lacks a failure path that preserves the prior coupon.
 
+## Verification 2026-08-05 — FIX_INCOMPLETE (reopened)
+
+Full RED→GREEN run completed. **The reported defect is fixed; the ticket is reopened for a second defect the fix leaves behind.**
+
+**The reported defect: FIXED, 3/3 deterministic.**
+- Phase A RED: 4/4 on the pre-fix build (Theme `2.55.0-pr-2412`) — `RemoveCoupon` fired first, `coupons:[]`, discount lost.
+- Phase B GREEN: theme `2.55.0-pr-2422` confirmed live (footer version + entry bundle `index-ByEnEQVD.js`, deploy Action success 11:06:53Z). The working coupon survives: `coupons:[{ZUR10,isAppliedSuccessfully:true}]`, `discountTotal $50.00`, verified by an independent post-reload `GetFullCart`.
+- **Strong fix variant** — `RemoveCoupon` is *absent from the wire*, not issued-and-undone. `vc-frontend#2422` moves `validateCartCoupon` ahead of the removal.
+- Checklist 10/10, zero regressions, BL-CHK-006 verified on every response. Valid replacement still works in the new `Validate → Remove → Add` order, no stacking.
+
+**Why reopened — the stale error never clears `[P3-ux]`.**
+After the invalid apply, "This code is not valid" stays on screen permanently while the cart is perfectly healthy. `couponError` is a **module-scope** `ref` declared outside `useCoupon()`, so it outlives the component; its only reset is `clearError()` at the top of `applyCoupon`/`removeCoupon`, and **no component destructures or calls the exported `clearError`**. It therefore survives typing, blur, cart updates, and navigating away and back — clearing only on a later apply/remove or a page reload.
+Byte-identical on `dev` and the fix branch, so **pre-existing** — but newly load-bearing: pre-fix the invalid apply also mutated the cart, so the error accompanied a real state change; post-fix a stale error is the *only* outcome the interaction produces. Established from source (operator accepted source evidence; no live re-run).
+**Suggested minimal fix:** wire the exported `clearError` into the custom-code input's `@input` and clear on unmount, or move `couponError`/`loadingCouponCode` inside `useCoupon()`.
+
+**Evidence:** `reports/tickets/Sprint26-15/VCST-5518/` — `evidence.html`, `verification-report.md`, `phase-a-baseline.md`, `verification-summary.json`.
+
+**Two corrections to this report's own text below:**
+- The STR's `QA`/`FriDAY` codes are not reachable on the environment — all 4 rendered presets validate `true` for a single-item >$1000 cart, so the invalid coupon must be a nonexistent code.
+- The Notes claim that the "Custom code" input is `readonly` while a coupon is applied is **false** on this build. Triangulated as oracle drift, not a defect — BL-CART-009 corrected 2026-08-05 (`reports/knowledge/BL-AUDIT-2026-08-05.md`); the real binding locks that input only when its own value equals the applied code.
+
+**Deploy note:** the environment is temporarily repinned to the `pr-2422` prerelease (`vc-deploy-dev#6295`, merged). Revert once a normal build carries the fix.
+
 ## Notes
 - Found during VCST-5233 exploratory Save-for-Later testing (2026-06-12); confirmed with a dedicated single-scenario repro. Filed as **VCST-5518** (2026-07-21).
 - **Consolidates** `reports/bugs/BUG-invalid-coupon-removes-valid-coupon.md` (regression case CART-015 / suite 028, typed-`FAKECODE`-over-`FIXED5` path). Same defect, same `applyCoupon()` root cause — one ticket (VCST-5518) covers both discovery paths.

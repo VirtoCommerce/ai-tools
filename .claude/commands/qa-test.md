@@ -1,5 +1,5 @@
 ---
-description: "Test a tracker ticket, feature area, or PR. Routes to a fast or full path, dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
+description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /qa-verify-fix inline, else feature-test at a fast or full path — dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
 argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]]"
 disable-model-invocation: true
 ---
@@ -22,13 +22,22 @@ Analyze scope, dispatch specialist agents, collect results, and produce a verdic
 
 ## Pipeline: Context · Story · Test Model → Plan → Write·Review·Provision → Execute → Report
 
-Five steps. Step `1a` **routes the run to a FAST or FULL path** so effort tracks risk (below); the path
-decides how much of Steps 1, 3 and 5 actually runs.
+Step `1a` routes on **two axes** — first **FLOW** (which pipeline), then, only within the `feature-test`
+flow, **EFFORT** (FAST vs FULL, how much of Steps 1/3/5 runs). Both are decided by the ticket's
+**type × status** per the single source of truth,
+[`.claude/knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md) — cite it,
+never restate its matrix here:
 
-| Path | When | What runs |
+1. **FLOW** — `verify-fix` · `hotfix-verify` · `feature-test`. A fix-ready **Bug** is a *verification*,
+   not a feature test — it runs `/qa-verify-fix` inline (§1a); a hotfix-status Bug points to
+   `/qa-hotfix-check`; a Sub-task inherits its parent; everything else is a `feature-test` and continues
+   through the five steps below.
+2. **EFFORT** — the FAST/FULL table below, which applies **only** to the `feature-test` flow.
+
+| Path (feature-test only) | When | What runs |
 |---|---|---|
-| **FAST** | Bug fix / copy-tweak / config; **P2–P3**, single-layer, single-domain, obvious surface | Skip `1c` BA context + `1d` story review; minimal case authoring; **one** execution agent; **inline self-checks only** (no independent verifier); no exploratory |
-| **FULL** | New feature / Story; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface | `1c` ‖ `1d` (concurrent) → full Test Model → full authoring → both hard-STOP independent verifiers |
+| **FAST** | Bug fix / copy-tweak / config / Technical task; **P2–P3**, single-layer, single-domain, obvious surface | Skip `1c` BA context + `1d` story review; minimal case authoring; **one** execution agent; **inline self-checks only** (no independent verifier); no exploratory |
+| **FULL** | New feature / Story / Epic; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface | `1c` ‖ `1d` (concurrent) → full Test Model → full authoring → both hard-STOP independent verifiers |
 
 **When in doubt, take the FULL path** (fail-safe: a real regression is worse missed than a fast run saved).
 
@@ -80,7 +89,7 @@ Five ordered sub-parts (each consumes the one before it, so don't reorder): `1a`
 **part of this step**: its AC table is a field of the Test Model, the single hand-off to
 `test-management-specialist` (Step 3).
 
-#### 1a — Fetch the scope, classify the type, route the path
+#### 1a — Fetch the scope, classify the type × status, route the flow & path
 
 **Fetch first** — every later sub-part depends on these fields.
 
@@ -92,18 +101,48 @@ Five ordered sub-parts (each consumes the one before it, so don't reorder): `1a`
 - **A feature name** — use it to determine which areas are affected.
 - **Identify applicable domain(s)** — map to the 63 `/qa-checklist` domains.
 
-**Classify the type, then route:**
+**Classify the type × status, then route the FLOW — per
+[`.claude/knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md)** (the single
+source of truth for the routing matrix; do **not** restate it here):
 
-| Type | Signal | Default path |
-|------|--------|--------------|
-| **New feature / Story** | JIRA Type = Story/Epic; net-new; multiple ACs | **FULL** |
-| **Enhancement / Task** | JIRA Type = Task; changes existing behavior | **FULL if it crosses layers/domains or is P0/P1**, else FAST |
-| **Bug fix** | JIRA Type = Bug; localized defect | **FAST** unless P0/P1 or cross-layer |
-| **Copy/UI tweak / config** | one-file, single-surface | **FAST** |
+1. **Normalize the type** — resolve the JIRA `Type` (`fields.issuetype.name`) / Azure `System.WorkItemType`
+   per `tracker-ops.md` §5a, then map to a canonical type (`Story` / `Bug` / `Task` / `Technical task` /
+   `Sub-task` / `Epic`) through the profile's `workItemTypes` map. For a PR / bare feature, infer from diff
+   size + surface.
+2. **Normalize the status to a role** — `fix-ready` / `hotfix-ready` / `not-fixed` / `testable`, resolved
+   live (`defect-lifecycle-workflow.md` §2 + `tracker-ops.md` §Live transition discovery). Never hardcode a
+   status name.
+3. **Look up the FLOW** in `ticket-routing.md` §4, then the **EFFORT** (FAST/FULL) in §5 when the flow is
+   `feature-test`. Record **flow + type + path** — all three are `summary.json` fields (5g); the path gates
+   Steps 1c/1d, 3 and 5. Fail-safe defaults (§6): unresolvable → `feature-test` FULL; when in doubt → FULL.
 
-Resolve the type from the JIRA `Type` field (or infer from diff size + surface for a PR/feature). Record
-the type **and the chosen path** — both are `summary.json` fields (5g), and the path gates Steps 1c/1d, 3
-and 5. When in doubt → FULL.
+Then branch on the resolved FLOW:
+
+- **`feature-test`** (Story / Task / Technical task / Epic, and a `not-fixed` Bug) → continue to `1b` and
+  run the five-step pipeline at the resolved FAST/FULL effort. (A `not-fixed` Bug runs FAST to
+  reproduce/characterize the defect live and attach fresh evidence — there is no fix to *verify* yet;
+  state the next step is `/qa-fix <ticket-key>`.) This is the rest of this document.
+- **`verify-fix`** (a `fix-ready` Bug) → **run `/qa-verify-fix` inline (see below)**; do not run Steps 2–5.
+- **`hotfix-verify`** (a `hotfix-ready` Bug) → **STOP** with a one-line pointer: `Run /qa-hotfix-check
+  <ticket-key>` (hotfix delivery/verification is that command's job). File nothing; transition nothing.
+- **`Sub-task`** → resolve the parent work item and re-enter this classification as the **parent's**
+  type × status; route on that.
+
+##### Flow = `verify-fix` — run `/qa-verify-fix` inline
+
+When the FLOW resolves to `verify-fix`, `/qa-test` **runs the `/qa-verify-fix` pipeline inline** in this
+same session (it already runs its orchestration inline and never delegates to another orchestrator — same
+model). The single source of truth for that pipeline is
+[`.claude/commands/qa-verify-fix.md`](qa-verify-fix.md) — **execute its Steps 0–7 as written; do not
+duplicate or paraphrase them here.** In short: pre-flight → fetch + understand the bug → transition to
+in-testing → confirm the fix is deployed → **RED→GREEN two-phase reproduction (3×)** → verification
+checklist → decide + transition (VERIFIED / REOPEN / …) → evidence page + `verification-summary.json`.
+The feature-test authoring/AC-reconcile/promotion machinery (Steps 2, 3, 5i) is **not** run — a fix-ready
+Bug needs its fix verified, not new cases authored. The run ends at the verify-fix verdict.
+
+**Fail-safe (per `ticket-routing.md` §6):** if a `fix-ready` Bug has no STR **and** no linked fix PR,
+`verify-fix` has nothing to prove RED→GREEN against → fall back to the `feature-test` FAST path and note
+the missing repro basis, rather than forcing an empty verification.
 
 #### 1b — Pre-flight, sprint resolution & duplicate check
 
@@ -159,7 +198,7 @@ Distill `1c` context + `1d` story analysis + `1a` scope/domains into one structu
 spine Step 3 consumes. Keep it in working context (terminal-only, no file):
 ```
 TEST MODEL — <ticket-key>
-Ticket:      <ticket-key> | Type: Bug/Story/Task | Priority: P0/P1/P2 | Path: FAST/FULL | Changed: Backend / Frontend / Both
+Ticket:      <ticket-key> | Type: Bug/Story/Task/Technical task/Sub-task/Epic | Status role: fix-ready/not-fixed/testable | Flow: feature-test | Priority: P0/P1/P2 | Path: FAST/FULL | Changed: Backend / Frontend / Both
 Context:     [FULL: ba-system-analyzer | FAST/inline]
 Affected surface: [module(s)/repo(s), layer(s), code sites]
 Ticket signals: [load-bearing facts from COMMENTS + ATTACHMENTS — real repro, PO/dev clarifications, "fixed in build X"/reopen notes, prior QA findings; screenshot expected-vs-actual, design mockup ref, log/HAR repro]   (from 1a)
@@ -180,7 +219,8 @@ from in Step 3** — enumerate the scenarios that cover the feature's condition 
 as a Mermaid `flowchart` (primary path + the alternate/error branches a test must exercise). On the FAST
 path the scenario list is short and the diagram may be omitted for a single-surface tweak.
 
-**Gate (inline self-check):** ticket **type + path** set; ACs decomposed to **atomic conditions**;
+**Gate (inline self-check):** ticket **flow + type + path** set (flow = `feature-test` — a `verify-fix` /
+`hotfix-verify` route never reaches 1e); ACs decomposed to **atomic conditions**;
 scenarios enumerated; **BL/ECL/domains** and **risk areas** present. On the full path, if the model is
 missing an atomic condition or a `ba-system-analyzer` risk area, add it before moving on. (No fresh-`qa-lead`
 dispatch here — this is the doer's own completeness check.)
@@ -501,9 +541,11 @@ An ungrounded `{OBSERVED}` is worse than a `Draft` case: it puts a fabricated ex
 coverage. The author never self-certifies this — only `qa-lead-orchestrator` or the user promotes.
 
 **Close the loop.** By default `/qa-test` verifies and reports; it never fixes — it states the next command
-and stops (pointers, not auto-triggers):
+and stops (pointers, not auto-triggers). This close-out is the `feature-test` flow's; the `verify-fix`
+flow already ended at its own VERIFIED/REOPEN verdict (§1a), and `hotfix-verify` handed off to
+`/qa-hotfix-check` before Step 1b:
 - **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate (5h). Done.
-- **FAIL → REOPEN** → `/qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge + deploy → `/qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human, resuming at `/qa-verify-fix`.
+- **FAIL → REOPEN** → `/qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge + deploy → `/qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human, resuming at `/qa-verify-fix`. (Once the fix is deployed, a re-run of `/qa-test <ticket-key>` now auto-routes the Bug to the `verify-fix` flow, since its status is `fix-ready` — §1a.)
 - **BLOCKED** → resolve the blocker (env/data/dependency) and **re-run `/qa-test <ticket-key>`** from the top; no partial credit.
 
 **5k. `--iterate` — the bounded test → fix → re-test loop (opt-in).** With `--iterate` (default
