@@ -37,6 +37,7 @@ sequenceDiagram
     participant TDE as test-data-engineer
     participant EX as Execution agents
     participant REG as /qa-regression
+    participant TRG as /qa-triage-results
     participant AI as App Insights
 
     User->>Orch: /qa-test VCST-XXXX
@@ -95,30 +96,42 @@ sequenceDiagram
     REG-->>Orch: RUN_ID + pass rate (feeds the release gate)
     note over Orch: Gate 4 = inline self-check (every PASS has an artifact); independent re-check happens at the Step-5 verdict gate
 
-    note over Orch,AI: Step 5a-5c · Correlate, reconcile, validate
+    note over Orch,TRG: Step 5a · Triage — /qa-triage-results on the RUN_ID, then correlate + evidence-check
+    Orch->>TRG: /qa-triage-results RUN_ID --fix
+    TRG-->>Orch: confirmed bugs / test-fixes applied / dismissed (+ flakiness history fed)
     opt App Insights configured
         Orch->>AI: Query window, dedup (label, not filter), triage
         AI-->>Orch: Correlated signals
     end
-    Orch->>Orch: 5b reconcile ACs live (from working context) + 5c evidence checks
+    Orch->>Orch: classify non-RUN_ID findings + provenance + severity + dedup (files nothing)
 
-    note over Orch,TR: Step 5d-5f · Triage, then verdict, then file
-    Orch->>Orch: 5d classify + provenance + severity + dedup (files nothing)
-    Orch->>Orch: 5e verdict (keyed off 5d provenance)
+    note over Orch,V: Step 5b · Compare AC & DoD vs implementation (quantified estimate via qa-metrics)
+    Orch->>Orch: reconcile ACs + DoD items live, compute AC-coverage%/DoD%
     alt FULL path
-        Orch->>V: GATE 5 · re-classify sample (live repro, diff lane), ratify verdict
-        V-->>Orch: APPROVE (REJECT: mislabel or under-grade to re-triage, hard STOP before file)
+        Orch->>V: GATE · re-derive AC/DoD table+% AND re-classify a 5a sample (live repro, diff lane)
+        V-->>Orch: APPROVE (REJECT: mislabel/under-grade/unsupported %, hard STOP before verdict)
     else FAST path
-        Orch->>Orch: inline self-check before filing
+        Orch->>Orch: inline self-check
     end
+    Orch->>Orch: 5c verdict (keyed off 5a provenance + 5b reconciliation)
+
+    note over Orch,TR: Step 5d · File bugs — sub-task (in-scope) / link-only (pre-existing) / standalone (incidental)
     opt Confirmed non-duplicate bugs
-        Orch->>TR: 5f file via /qa-bug (confirm, with Fix Routing)
+        Orch->>TR: 5d file via /qa-bug (confirm, with Fix Routing + relationship)
     end
+
+    note over Orch,TR: Step 5e · Report — feed/ratify release gate, THEN post comment, THEN summary + chat
+    Orch->>V: feed + ratify Feature Release Gate (compute-metrics --gate feature)
+    V-->>Orch: ratify or downgrade
+    Orch->>TR: post QA comment
+    Orch->>Orch: persist summary.json + output chat report
+
+    note over Orch,TR: Step 5f · Change status (strictly after the report is posted)
     Orch->>TR: TESTED (pass) / REOPEN (fail)
     Orch-->>User: Verdict + report + next steps
 ```
 
-### Diagram 2 — after the verdict (Steps 5h / 5i)
+### Diagram 2 — after the verdict (Steps 5e / 5g)
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace','background':'#eef4f6','primaryColor':'#0d7d8a','primaryBorderColor':'#0a5f6a','primaryTextColor':'#ffffff','lineColor':'#5b6b7a','textColor':'#2b3a45','actorBkg':'#0d7d8a','actorBorder':'#0a5f6a','actorTextColor':'#ffffff','actorLineColor':'#a9c4c8','signalColor':'#54687a','signalTextColor':'#2b3a45','noteBkgColor':'#d3e8ea','noteBorderColor':'#0d7d8a','noteTextColor':'#0e2a2e','sequenceNumberColor':'#ffffff','labelBoxBkgColor':'#e2ecef','labelBoxBorderColor':'#9fb6bd','labelTextColor':'#2b3a45','loopTextColor':'#0a5f6a','activationBkgColor':'#bfe0e3','activationBorderColor':'#0d7d8a'}}}%%
@@ -134,7 +147,7 @@ sequenceDiagram
 
     note over Orch,VF: A fix-ready Bug reaches /qa-verify-fix DIRECTLY from Step 1a (run inline) — this FAIL→fix→verify loop is only one way to get there
     alt PASS / PASS WITH NOTES
-        Orch->>Gate: 5h Feed verdict + regression pass rate + release criteria
+        Orch->>Gate: 5e Feed verdict + regression pass rate + release criteria
         Gate->>V: Ratify GO/NO-GO (compute-metrics --gate feature --run-id RUN_ID + re-check ledger)
         V-->>Gate: APPROVE or downgrade
         Gate-->>User: GO / CONDITIONAL GO / NO-GO (independently ratified)
@@ -150,9 +163,9 @@ sequenceDiagram
     else BLOCKED
         Orch-->>User: Resolve env/data/dependency, re-run /qa-test
     end
-    opt Step 3 authored new cases (new_cases_authored > 0)
-        Orch->>Orch: 5i Harvest Step 4 as --verify evidence (HYPOTHESIS to OBSERVED)
-        Orch->>V: GATE 5i · re-run suites:review, re-open the artifact behind each OBSERVED
+    opt Step 3 authored new cases (new_cases_authored > 0) — runs LAST, non-blocking (5a-5f already delivered)
+        Orch->>Orch: 5g Harvest Step 4 as --verify evidence (HYPOTHESIS to OBSERVED)
+        Orch->>V: GATE 5g · re-run suites:review, re-open the artifact behind each OBSERVED
         V-->>Orch: APPROVE (REJECT: ungrounded OBSERVED or invented value; revert the append)
         Orch->>User: Promote the eligible set? (never automatic)
         User-->>Orch: Approve
@@ -162,9 +175,11 @@ sequenceDiagram
 
 ## Decision gates encoded in the flow
 
-- **Independent verification at the two hard-STOP gates (FULL path).** Step 3 (artifacts + data) and Step 5
-  (triage + verdict, the Feature Release Gate §1a, and the 5i promotion flip) run
-  `DOER → GATE → INDEPENDENT VERIFIER`. The verifier is a **fresh `qa-lead-orchestrator` instance in
+- **Independent verification at the three hard-STOP gates (FULL path).** Step 3 (artifacts + data), Step 5b
+  (triage + AC/DoD vs implementation, incl. the quantified estimate), and Step 5g (the promotion flip) run
+  `DOER → GATE → INDEPENDENT VERIFIER`. (The Feature Release Gate §1a inside Step 5e is *also* independently
+  ratified, but that's the verifier confirming a downstream recommendation off already-gated inputs, not a
+  fourth from-scratch gate.) The verifier is a **fresh `qa-lead-orchestrator` instance in
   §Verifier Mode**, never the pipeline's inline orchestrator and **never the step's own doer**. It re-derives
   evidence from source (re-runs `suites:review`/`td:validate`/`compute-metrics --gate feature`, re-opens the
   evidence, or delegates a live re-check to a specialist on a **different browser lane**), returns
@@ -187,7 +202,7 @@ sequenceDiagram
   and attachments are primary evidence (a screenshot's expected-vs-actual, a design mockup, a log/HAR that
   narrows the repro). They land in the Test Model's `Ticket signals` field and feed `1c` (the affected code
   site), `1d` (AC-affecting clarifications override a stale description), and Step 5b (the expected-vs-actual
-  baseline). Open attachments, don't just note them; flag any that can't be fetched.
+  baseline for AC reconciliation). Open attachments, don't just note them; flag any that can't be fetched.
 - **Epic-awareness (both paths) + `--epic` serial mode.** `1a` resolves a story's **parent Epic** (goal +
   Epic-level ACs) and its **child stories with statuses**: Done siblings = the integration surface (add
   seam coverage to Artifact B + their suites to Artifact C), In-progress siblings = dependencies (a hard
@@ -213,33 +228,53 @@ sequenceDiagram
   the verdict). **There is no exploratory charter.**
 - **Step 4 tracker gate** — Jira-only in-testing transition, deliberately unconfirmed (precondition for the
   Step 5f close); the test-window start anchors the Step 5a App Insights correlation.
-- **Step 5 order** — `5d` triage runs **before** `5e` verdict, because PASS/FAIL are expressed in terms of a
-  finding's provenance, which only exists once triage assigns it. `5d` files nothing; `5f` files.
-- **Step 5d triage gate** — every finding is classified (real bug / test-defect / by-design), given a
-  **provenance** (**PRE-EXISTING** → link, don't re-file · **IN-SCOPE** → fails this ticket ·
-  **OUT-OF-SCOPE incidental** → own ticket, doesn't fail this one), given a severity, and **deduped across
-  all sprints + the tracker** before a bug is filed via `/qa-bug`; a test-defect routes to
-  `/qa-review-tests --fix`, never a ticket. Only an in-scope P0/P1 (or an out-of-scope P0 revenue break)
-  fails the verdict.
+- **Step 5 order** — `5a` triage (incl. the `/qa-triage-results <RUN_ID> --fix` call on the Artifact-C run)
+  runs **before** `5b` AC/DoD reconciliation, which runs **before** `5c` verdict, because PASS/FAIL is
+  expressed in terms of a finding's provenance (from `5a`) and the reconciled AC/DoD state (from `5b`). `5a`
+  and `5b` file nothing; `5d` files; `5f` transitions.
+- **Step 5a triage** — the Artifact-C `RUN_ID`'s own FAILs are triaged via `/qa-triage-results <RUN_ID>
+  --fix` (deterministic collect, per-batch classification, live-verify, test-case auto-fix for the
+  *existing* suites, flakiness-history feed) instead of ad hoc re-derivation; findings without a RUN_ID
+  (failed ACs, checklist-track bugs, App-Insights signals) use the same taxonomy inline. Every finding is
+  classified (real bug / test-defect / by-design), given a **provenance** (**PRE-EXISTING** → link, don't
+  re-file · **IN-SCOPE** → fails this ticket, files as a tracker **Sub-task** · **OUT-OF-SCOPE incidental**
+  → own standalone ticket, doesn't fail this one), given a severity, and **deduped across all sprints + the
+  tracker** — all before `5d` files anything via `/qa-bug`. A test-defect routes to `/qa-review-tests
+  --fix`, never a ticket. Only an in-scope P0/P1 (or an out-of-scope P0 revenue break) fails the verdict.
+- **Step 5b AC/DoD gate** — the Step-5 hard-STOP: reconciles every AC condition live, resolves any DoD items
+  the `1e` Test Model deferred, and computes a **quantified estimate** (AC-coverage %, DoD-completion %)
+  from the actual condition/checklist counts — `compute-metrics.ts` has no AC/DoD-shaped metric, so this is
+  a simple deterministic ratio in `qa-metrics`' own style, not a repurposed regression-pass-rate number. The
+  FULL-path verifier re-derives this **and** re-classifies a sample of `5a`'s findings in one dispatch.
+- **Step 5d filing — relationship by provenance.** **IN-SCOPE → filed as a tracker Sub-task of the ticket**
+  (parent-child; `.claude/knowledge/execution/tracker-ops.md` §5b), replacing a plain link — it *is* this
+  ticket's defect. **PRE-EXISTING → linked only, never re-filed.** **OUT-OF-SCOPE incidental → its own
+  standalone ticket + a related link (unchanged)**, since it wasn't caused by this ticket's change.
+- **Step 5e Report, before Step 5f status change.** The tracker comment (QA Complete summary, incl. the
+  AC/DoD percentages, the regression-triage counts, and the release-gate recommendation) is posted **before**
+  the TESTED/REOPEN transition — two distinct actions, not bundled.
 - **Close-out loop (pointer, not auto-trigger — the default)** — FAIL/REOPEN → `/qa-fix` → human
   merge/deploy → `/qa-verify-fix` (RED→GREEN re-test) → TESTED/DONE; BLOCKED → resolve → re-run `/qa-test`.
-  `/qa-test` states the next command and stops; it never fixes.
+  `/qa-test` states the next command and stops; it never fixes. `5g` (promotion) still runs after, whichever
+  branch fires, if Step 3 authored new cases — it never blocks or delays the close-out above.
 - **`--iterate` — the bounded test → fix → re-test loop (opt-in, Step 5k)** — with `--iterate` (default
   `--max-rounds 2`) a FAIL is *driven*, not pointed: per round `/qa-test` runs `/qa-fix` for each IN-SCOPE
   fixable bug (G0–G7, **never merges**; a G0 BAIL STOPs to a human) → `/qa-deploy-pr` deploys the fix's
   **prerelease** to the test env (**confirm each deploy**; no merge, so the §2 guard is never touched) →
   re-runs the previously-FAILED cases + the change-scoped regression → re-verdicts. PASS exits to the
-  Feature Release Gate (5h); still-FAIL at the cap STOPs with a per-round summary; BLOCKED STOPs. **Merge +
+  Feature Release Gate (5e); still-FAIL at the cap STOPs with a per-round summary; BLOCKED STOPs. **Merge +
   release are always the human's.** Diagram 2's FAIL branch is one round of this loop.
-- **Promotion is append-Draft → execute → harvest → flip, in-run.** Cases are appended `Draft` (Step 3),
-  executed as `Draft` by the automated regression runner (Step 4), and **5i harvests that execution as the
-  `--verify` evidence** that upgrades assertions `{HYPOTHESIS}`→`{OBSERVED}` — `--verify` is the sole emitter
-  of `{OBSERVED}` and needs a live browser, so promoting before execution is impossible. 5i then flips each
-  eligible case `Draft → Automated` (green under the automated runner) or `Reviewed`/`Manual`
-  (checklist-only), **reverts non-promotable rows**, and leaves a case that failed on a real in-scope bug at
-  `Draft` with a reason. This flip is ratified by the fresh `qa-lead` verifier (re-derives G10 from the CSV)
-  + user confirmation — the author never self-certifies. The standalone **`/qa-test-lifecycle` Phase 6P**
-  remains the promoter for handoff / re-promotion / non-`/qa-test` sources.
+- **Promotion is append-Draft → execute → harvest → flip, last and non-blocking.** Cases are appended
+  `Draft` (Step 3), executed as `Draft` by the automated regression runner (Step 4), and **5g harvests that
+  execution as the `--verify` evidence** that upgrades assertions `{HYPOTHESIS}`→`{OBSERVED}` — `--verify`
+  is the sole emitter of `{OBSERVED}` and needs a live browser, so promoting before execution is impossible.
+  5g runs **after** 5a–5f have already delivered the verdict/report/status-change to the user — it is a
+  non-blocking follow-up, never a gate on TESTED/REOPEN. 5g then flips each eligible case `Draft →
+  Automated` (green under the automated runner) or `Reviewed`/`Manual` (checklist-only), **reverts
+  non-promotable rows**, and leaves a case that failed on a real in-scope bug at `Draft` with a reason. This
+  flip is ratified by the fresh `qa-lead` verifier (re-derives G10 from the CSV) + user confirmation — the
+  author never self-certifies. The standalone **`/qa-test-lifecycle` Phase 6P** remains the promoter for
+  handoff / re-promotion / non-`/qa-test` sources.
 
 ## Quality gates that apply to a story
 
@@ -249,7 +284,7 @@ verdict (plus the team-level release criteria) into the global **GO / NO-GO**:
 | Layer | Gate | Verdict | Where |
 |-------|------|---------|-------|
 | Test artifacts | `/qa-review-tests` 11-dimension quality gate (enforced in Step 3 via `--fix`) | per-dimension | [`skills/qa-review-tests`](../.claude/skills/qa-review-tests/) |
-| The story run | Step 5c evidence checks + Step 5d triage + Step 5e verdict — every AC condition carries PASS evidence, all reconciled SATISFIED-live, all `BL-*` verified, no **in-scope** P0/P1 bug, no correlated App-Insights REAL_BUG | PASS / PASS WITH NOTES / FAIL / BLOCKED | [`commands/qa-test.md`](../.claude/commands/qa-test.md) §5c–5e |
+| The story run | Step 5a triage + Step 5b AC/DoD vs implementation (incl. the quantified estimate) + Step 5c verdict — every AC condition carries PASS evidence, all reconciled SATISFIED-live, DoD items MET/N-A, all `BL-*` verified, no **in-scope** P0/P1 bug, no correlated App-Insights REAL_BUG | PASS / PASS WITH NOTES / FAIL / BLOCKED | [`commands/qa-test.md`](../.claude/commands/qa-test.md) §5a–5c |
 | **Feature release (team go/no-go)** | **Feature Release Gate** — consumes the story verdict + open-bug ledger + change-scoped regression + NFRs + smoke. Owned by `qa-lead-orchestrator`. *"Can we release this feature?"* | **GO / CONDITIONAL GO / NO-GO** | [`skills/qa-metrics/quality-gates.md`](../.claude/skills/qa-metrics/quality-gates.md) **§1a** |
 | Release (folds many features) | Smoke / Sprint Release / Full Release / Hotfix gates | PASS·FAIL / APPROVED·CONDITIONS·BLOCKED | [`skills/qa-metrics/quality-gates.md`](../.claude/skills/qa-metrics/quality-gates.md) |
 | Bug auto-fix (if the story spawns a fix) | G0–G7 auto-fix ladder | open PR | [`.claude/rules/quality-gates.md`](../.claude/rules/quality-gates.md) |
@@ -279,7 +314,7 @@ flowchart TB
     subgraph L0["L0 · Orchestration (inline, never delegated)"]
         O["/qa-test<br/>route fast/full · Test Model · summary.json · report"]
     end
-    subgraph L1["L1 · Verification (fresh instance, FULL path, Step 3 + Step 5)"]
+    subgraph L1["L1 · Verification (fresh instance, FULL path, Step 3 + Step 5b + Step 5g)"]
         V["qa-lead — Verifier Mode<br/>re-derives from source · APPROVE/REJECT"]
     end
     subgraph L2["L2 · Analysis & Authoring (repo-write only)"]
@@ -302,7 +337,7 @@ flowchart TB
     end
 
     H -->|VCST-XXXX| O
-    O -->|gate ruling req (Step 3 / Step 5, full path)| V
+    O -->|gate ruling req (Step 3 / Step 5b / Step 5g, full path)| V
     V -.->|APPROVE / REJECT+FIX (1 round)| O
     O -->|context / story / authoring| L2
     L2 -.->|Test Model · A/B/C · seeded data| O
@@ -332,16 +367,17 @@ flowchart TB
 | Agent | Layer | Step(s) | Consumes | Produces | Lane |
 |---|---|---|---|---|---|
 | `/qa-test` | L0 | all | user invocation | route, Test Model, dispatches, `summary.json`, chat report | — |
-| `qa-lead` verifier | L1 | 3, 5 (full path) | doer artifact + `{step, gate_criteria, source_of_truth, cmd?}` | `APPROVE`/`REJECT` + `REASONS`+`FIX` | delegates re-check to a **different** lane |
+| `qa-lead` verifier | L1 | 3, 5b, 5g (full path) | doer artifact + `{step, gate_criteria, source_of_truth, cmd?}` | `APPROVE`/`REJECT` + `REASONS`+`FIX` | delegates re-check to a **different** lane |
 | `ba-system-analyzer` | L2 | 1c (full path) | ticket fields + PR diff + comment/attachment signals | affected surface, flows, `VC-*` risk, docs grounding | firefox (RO) |
-| `ba-story-writer` (B) | L2 | 1d (full path) | existing ACs + PR diff | AC scorecard, gap-ACs, AC↔impl (static) | none |
+| `ba-story-writer` (B) | L2 | 1d (full path) | existing ACs + PR diff | AC scorecard, gap-ACs, AC↔impl (static), DoD checklist | none |
 | `test-management-specialist` | L2 | 3 | Test Model (scenarios + user-flow diagram) | Artifact A (cases → suite as Draft), B (checklist), C (selection) | chrome (seq) |
-| `/qa-review-tests` | L2 | 3, 5i | authored cases | fixed cases / unshippable flag; `--verify` upgrades to `{OBSERVED}` | — |
+| `/qa-review-tests` | L2 | 3, 5g | authored cases | fixed cases / unshippable flag; `--verify` upgrades to `{OBSERVED}` | — |
 | `test-data-engineer` | L2 | 3 (cond.) | gap fixtures needed | seeded data, `@td()` aliases, green `td:validate` | none |
 | `qa-frontend-expert` | L3 | 4 | checklist + A + `@td()` + BL/ECL | pass/fail + evidence + bugs | chrome |
 | `qa-backend-expert` | L3 | 4, 5a | same; triage oracle at 5a | same; App-Insights classification | edge |
 | `ui-ux-expert` | L3 | 4 (UI) | component scope | a11y / design findings | DevTools MCP |
 | `/qa-regression` | L3 | 4 (track 2) | Artifact-C suite IDs (incl. the new Draft cases) | `RUN_ID` + pass rate | own pool |
+| `/qa-triage-results` | L3 | 5a | `RUN_ID` + `--fix` | `triage-report.md` (confirmed bugs / test-fixes applied / dismissed) + flakiness history feed | own pool |
 
 ### Hand-off rules (load-bearing)
 
@@ -360,28 +396,33 @@ flowchart TB
 | **1** Test Model | type + path set; ACs → atomic conditions; scenarios enumerated; BL/ECL/domains + risk areas present | inline self-check (no verifier dispatch) | inline |
 | **2** Plan | every domain has BL/ECL/E2E loaded + agent routed | inline self-check | inline |
 | **3** Artifacts + data | new cases pass 11-dim (0 blocker/critical); every condition maps to a case; data green `td:validate` | **FULL:** V **re-runs** `suites:review` + `td:validate` (1 round). **FAST:** inline self-check | **HARD STOP** |
-| **4** Execution | every condition has PASS/FAIL evidence; regression `RUN_ID`+rate exist (the run also executed the new Draft cases) | inline self-check (independent re-check deferred to Step 5) | inline |
-| **5d/5e** Triage + verdict | each finding classified + provenance + severity + deduped; verdict follows table | **FULL:** V re-classifies a sample via live repro (diff lane), confirms the RUN_ID rate. **FAST:** inline self-check | **HARD STOP before 5f** |
-| **5h** Release gate | §1a criteria → GO/CONDITIONAL/NO-GO | **FULL:** V re-evaluates `compute-metrics.ts --gate feature --run-id <RUN_ID>` (scope required; exit 2 = CANNOT EVALUATE, not a failure) + open-bug ledger | ratify/downgrade |
-| **5i** Promotion *(only if new cases authored)* | every `{OBSERVED}` traces to a real Step-4 artifact; every surviving `{HYPOTHESIS}` resolved or reworded; eligible cases flipped `Draft → Automated`/`Reviewed`, non-promotable reverted | V **re-runs** `suites:review` on the target suite + re-opens the evidence behind a sample of the upgrades; REJECT reverts the append (1 round) | required (never skipped when cases authored) |
+| **4** Execution | every condition has PASS/FAIL evidence; regression `RUN_ID`+rate exist (the run also executed the new Draft cases) | inline self-check (independent re-check deferred to Step 5b) | inline |
+| **5a** Triage | Artifact-C `RUN_ID`'s FAILs triaged via `/qa-triage-results --fix` (not ad hoc); every other finding classified + provenance + severity + deduped | folded into the Step 5b gate below | inline (no separate dispatch) |
+| **5b** AC & DoD vs implementation | every AC condition reconciled; every DoD item resolved MET/NOT-MET/N-A; AC-coverage % + DoD % computed from actual counts | **FULL:** V re-derives the AC/DoD table + both percentages from Step-4 evidence **and** re-classifies a sample of 5a's findings via live repro (diff lane), confirms the RUN_ID rate. **FAST:** inline self-check | **HARD STOP before 5c** |
+| **5d** File bugs | IN-SCOPE → Sub-task of the ticket; PRE-EXISTING → linked, not re-filed; incidental → standalone + related link | inline self-check (mechanical — 5b already ratified the provenance/severity calls) | inline |
+| **5e** Report → release gate | §1a criteria → GO/CONDITIONAL/NO-GO | **FULL:** V re-evaluates `compute-metrics.ts --gate feature --run-id <RUN_ID>` (scope required; exit 2 = CANNOT EVALUATE, not a failure) + open-bug ledger (now current, post-5d) | ratify/downgrade |
+| **5g** Promotion *(only if new cases authored; runs last, non-blocking)* | every `{OBSERVED}` traces to a real Step-4 artifact; every surviving `{HYPOTHESIS}` resolved or reworded; eligible cases flipped `Draft → Automated`/`Reviewed`, non-promotable reverted | V **re-runs** `suites:review` on the target suite + re-opens the evidence behind a sample of the upgrades; REJECT reverts the append (1 round) | required (never skipped when cases authored) |
 
 ### End of flow — DoD
 
 A `/qa-test` run is **Done** when all hold:
 
-1. **The two FULL-path gates APPROVED** (Step 3, Step 5) — or the FAST path's inline self-checks passed; no
-   gate left at REJECT.
-2. **Every atomic condition** (story ACs + gap-ACs) carries PASS/FAIL evidence and is reconciled live (5b).
-3. **Every finding triaged** (class + provenance + severity + dedup, 5d); confirmed bugs filed with
-   confirmation + `## Fix Routing` (5f).
-4. A **verdict** (5e) issued, consistent with the triage table.
+1. **The three FULL-path gates APPROVED** (Step 3, Step 5b, Step 5g) — or the FAST path's inline self-checks
+   passed; no gate left at REJECT.
+2. **Every atomic condition** (story ACs + gap-ACs) carries PASS/FAIL evidence and is reconciled live, and
+   every DoD item is resolved MET/NOT-MET/N-A, with the AC-coverage/DoD percentages computed (5b).
+3. **Every finding triaged** (class + provenance + severity + dedup, 5a); confirmed bugs filed with
+   confirmation, the right tracker relationship (Sub-task / link / standalone), and `## Fix Routing` (5d).
+4. A **verdict** (5c) issued, consistent with the triage + AC/DoD tables.
 5. **`summary.json`** persisted (schema at [`.claude/templates/qa-test-summary.schema.json`](../.claude/templates/qa-test-summary.schema.json))
-   with `path`, the regression block (`run_id`, `pass_rate`), `new_cases_authored`, and the `promotion` split.
-6. **Tracker transitioned** to TESTED/REOPEN — the terminal reach; never Done/Cancelled.
-7. **Feature Release Gate fed** (5h) and independently ratified GO/CONDITIONAL/NO-GO.
-8. **New cases promoted in-run** (5i) when `new_cases_authored > 0` — assertions grounded to `{OBSERVED}`
-   from this run's own artifacts, each surviving `{HYPOTHESIS}` resolved or reworded, eligible cases flipped
-   `Draft → Automated` (or `Reviewed`/`Manual`), non-promotable rows reverted, and the split recorded in
-   `summary.json` `promotion`.
+   with `path`, the `ac_dod_estimate` block, the `regression` + `regression_triage` blocks, `bugs_filed`
+   (with relationship), `new_cases_authored`, and the `promotion` split.
+6. **QA comment posted, then tracker transitioned** to TESTED/REOPEN — the terminal reach; never
+   Done/Cancelled (5e then 5f, in that order).
+7. **Feature Release Gate fed** (5e) and independently ratified GO/CONDITIONAL/NO-GO.
+8. **New cases promoted, last and non-blocking** (5g) when `new_cases_authored > 0` — assertions grounded to
+   `{OBSERVED}` from this run's own artifacts, each surviving `{HYPOTHESIS}` resolved or reworded, eligible
+   cases flipped `Draft → Automated` (or `Reviewed`/`Manual`), non-promotable rows reverted, and the split
+   recorded in `summary.json` `promotion` — after, and independent of, the close-out above.
 9. **Close-out pointers stated**, never auto-triggered: FAIL/REOPEN → `/qa-fix` → human merge/deploy →
    `/qa-verify-fix`; BLOCKED → resolve → re-run `/qa-test`.

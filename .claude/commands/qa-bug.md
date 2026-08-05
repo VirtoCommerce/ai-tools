@@ -264,6 +264,17 @@ If yes, file to the deployment's tracker. **Follow `knowledge/execution/tracker-
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low)
 - Follow `/qa-defect workflow` for correct JIRA Bug Workflow status transitions
 
+**Relationship context (caller-supplied, additive — default behavior above is unchanged for a standalone
+call).** A caller (e.g. `/qa-test` Step 5d) may invoke this step with an explicit relationship instead of a
+bare description:
+- `sub-task-of:<ticket-key>` — file as a tracker **Sub-task** of `<ticket-key>` instead of a standalone Bug.
+- `link-only:<existing-bug-key>` — **file nothing**; just create the link between the existing bug and the
+  ticket this call is scoped to.
+
+Both follow `knowledge/execution/tracker-ops.md` §5b for the exact Jira/Azure mechanics (issue type + parent
+field, or the link-type + relation, including the Sub-task-unavailable fallback). Report back which
+relationship was actually used (a fallback downgrade must be stated, not silent).
+
 ### Step 5a — Attach the evidence AND embed it inline (required when the bug has screenshots)
 
 A filename in the body is not evidence a reviewer will look at. Upload the screenshots **and** render

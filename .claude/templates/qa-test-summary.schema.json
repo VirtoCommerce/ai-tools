@@ -1,5 +1,5 @@
 {
-  "$comment": "Schema for /qa-test's summary.json (reports/tickets/{SPRINT}/<ticket-key>/summary.json). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5h's Feature Release Gate reads `regression`; 5i records `promotion`. Replace <..> placeholders; 0/[]/null are empty defaults.",
+  "$comment": "Schema for /qa-test's summary.json (reports/tickets/{SPRINT}/<ticket-key>/summary.json). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5e's Feature Release Gate reads `regression`; 5g records `promotion`. Replace <..> placeholders; 0/[]/null are empty defaults.",
   "ticket": "<ticket-key>",
   "ticket_type": "Bug|Story|Task|Technical task|Sub-task|Epic|Tweak",
   "flow": "feature-test|verify-fix|hotfix-verify",
@@ -31,7 +31,14 @@
     "gap_acs_added": 0,
     "impl_coverage": { "satisfied": 0, "drift": 0, "contradicts": 0, "not_found": 0 },
     "conditions_total": 0,
-    "conditions_with_evidence": 0
+    "conditions_with_evidence": 0,
+    "ac_dod_estimate": {
+      "$comment": "Filled by 5b. ac_coverage_pct = conditions_with_evidence/conditions_total. dod_* are null/0 when the ticket states no DoD (1e DoD field = 'none stated').",
+      "ac_coverage_pct": null,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    }
   },
   "total_cases": 0,
   "passed": 0,
@@ -46,20 +53,31 @@
   },
   "new_cases_authored": 0,
   "promotion": {
-    "$comment": "Filled by 5i. Cases are appended to regression/suites/ as Draft in Step 3; after Step 4's automated regression run 5i flips each promotable case Draft→Automated (green under the automated runner) or Draft→Reviewed/Manual (checklist-only), reverts non-promotable rows, and leaves a case that failed on a real in-scope bug at Draft with a reason.",
+    "$comment": "Filled by 5g (runs last, non-blocking). Cases are appended to regression/suites/ as Draft in Step 3; after Step 4's automated regression run 5g flips each promotable case Draft→Automated (green under the automated runner) or Draft→Reviewed/Manual (checklist-only), reverts non-promotable rows, and leaves a case that failed on a real in-scope bug at Draft with a reason.",
     "automated": [],
     "reviewed": [],
     "blocked": [{ "case": "TC-ID", "reason": "unresolved {HYPOTHESIS} — <what stayed unknown> | failed on in-scope bug <link>" }],
     "reverted": [{ "case": "TC-ID", "reason": "unresolvable data / invented value" }]
   },
   "regression": {
-    "$comment": "The change-scoped Artifact-C /qa-regression run — the Feature Release Gate (5h) is defined on THIS run_id, not whole-history.",
+    "$comment": "The change-scoped Artifact-C /qa-regression run — the Feature Release Gate (5e) is defined on THIS run_id, not whole-history.",
     "suites": [],
     "run_id": null,
     "pass_rate": null,
     "skipped_reason": null
   },
-  "bugs_filed": [],
+  "regression_triage": {
+    "$comment": "Filled by 5a item 0 when Artifact C produced a RUN_ID. invoked = whether /qa-triage-results <run_id> --fix ran; the three arrays mirror its triage-report.md tables (confirmed bugs / test-case fixes applied / dismissed).",
+    "invoked": false,
+    "run_id": null,
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "bugs_filed": [
+    { "$comment": "One entry per confirmed bug filed at 5d.", "key": "<tracker-key>", "relationship": "sub-task|related|standalone", "parent_or_linked_ticket": "<ticket-key or existing-bug-key>" }
+  ],
   "business_rules_verified": ["BL-CART-001"],
   "appinsights": {
     "checked": true,
