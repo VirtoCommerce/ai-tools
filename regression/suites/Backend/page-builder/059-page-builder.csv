@@ -255,7 +255,7 @@ Page shows Scheduled badge in grid after publish","[CONSOLE] no JS errors while 
 [STATUS] Unauthenticated request returns 401
 [STATUS] Invalid sourceGroupId returns 404","[DB] GET target content after copy confirms data persisted
 [CONSOLE] No JS errors during API calls","Copy returns error code other than 204; target content empty after copy; anonymous access succeeds (security issue — 401 not enforced); invalid IDs return 500 instead of 404","none","VCST-4872; PR #116 (2026-04-14)",
-"CMS-121","Load content — invalid file handling","Content Portability","High","","ECL-13.4","Admin logged in; PageBuilder shell on Draft tab","Invalid test files: empty.json (0 bytes), malformed.json (invalid JSON syntax), large.txt (renamed to .json); back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+"CMS-121","Load content — invalid file handling","Content Portability","High","","ECL-6.4","Admin logged in; PageBuilder shell on Draft tab","Invalid test files: empty.json (0 bytes), malformed.json (invalid JSON syntax), large.txt (renamed to .json); back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 [BLADE] Wait for Draft page list toolbar to render
 [ACT] Click 'Load content' toolbar button
 [WAIT] File selection dialog opens

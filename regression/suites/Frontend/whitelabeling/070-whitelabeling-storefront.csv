@@ -221,7 +221,7 @@ Organization @td(WL_ELECTRONICS.name) with hierarchical main menu configured (st
 [NAV] Clicking child link navigates to correct URL
 [STATE] Dropdown closes when mouse leaves
 [STATE] Parent links without children have no dropdown","[CONSOLE] no uncaught JS errors","Dropdown not opening on hover; Wrong children shown; Navigation to wrong URL; Dropdown flickers; Hover state missing","none","VCST-4637","Manual"
-"FWL-023","Verify main menu links on mobile - hamburger menu with hierarchy","Main Menu Links","Critical","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-023","Verify main menu links on mobile - hamburger menu with hierarchy","Main Menu Links","Critical","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with main menu configured; Mobile device or responsive viewport (375px width)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Resize browser to mobile viewport: 375px width (iPhone size)
 [NAV] 2. Sign in to storefront with user from @td(WL_ELECTRONICS.name)
 [NAV] 3. Navigate to homepage
@@ -325,7 +325,7 @@ query {
 [DOM] Data consistent with separate whiteLabelingSettings query
 [FORMAT] Response time approximately 200-400ms","[API] pageContext query returns whiteLabelingSettings with mainMenuLinks
 [API] errors[] is empty in GraphQL response","GraphQL errors; whiteLabelingSettings missing from pageContext; mainMenuLinks not embedded; Response time > 1000ms","none","VCST-4637","Manual"
-"FWL-033","Verify logo renders correctly on mobile viewport (375px - iPhone)","Responsive Mobile","High","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-033","Verify logo renders correctly on mobile viewport (375px - iPhone)","Responsive Mobile","High","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 [PRE:RESET_CART]
 Organization @td(WL_ELECTRONICS.name) with custom logo configured; Mobile device or browser with responsive mode","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) organization user
 [ACT] 2. Open browser DevTools
@@ -341,7 +341,7 @@ Organization @td(WL_ELECTRONICS.name) with custom logo configured; Mobile device
 [STATE] Logo is positioned correctly in mobile header layout
 [STATE] Logo remains clickable (tappable) and links to homepage
 [DOM] Logo does not overlap other mobile header elements","[CONSOLE] no uncaught JS errors","Logo missing on mobile; Logo overlapping hamburger menu; Logo pixelated on mobile; Logo not tappable","none","Mobile Responsive","Manual"
-"FWL-034","Verify main menu links accessible via hamburger menu on mobile","Responsive Mobile","Critical","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-034","Verify main menu links accessible via hamburger menu on mobile","Responsive Mobile","Critical","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with main menu configured; Mobile viewport 375px width","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Resize browser to mobile viewport: 375px width
 [NAV] 2. Sign in with @td(WL_ELECTRONICS.name) user
 [NAV] 3. Navigate to homepage
@@ -361,7 +361,7 @@ Organization @td(WL_ELECTRONICS.name) with main menu configured; Mobile viewport
 [DOM] Child links are indented or visually nested
 [NAV] Tapping child link navigates to correct page
 [STATE] Menu drawer closes after navigation","[CONSOLE] no uncaught JS errors","Hamburger icon missing; Drawer not opening; Children not expanding on tap; Menu not closing after navigation; Tap targets too small","none","Mobile Responsive","Manual"
-"FWL-035","Verify footer links display correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-035","Verify footer links display correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with footer links configured; Mobile viewport","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Resize to mobile: 375px width
 [NAV] 2. Sign in with @td(WL_ELECTRONICS.name) user
 [SCROLL] 3. Scroll to bottom of page
@@ -374,7 +374,7 @@ Organization @td(WL_ELECTRONICS.name) with footer links configured; Mobile viewp
 [STATE] Child links are tappable (adequate tap targets)
 [STATE] Footer does not overlap content
 [NAV] Tapping a revealed child link navigates correctly","[CONSOLE] no uncaught JS errors","Footer sections not visible on mobile; accordion expands to nothing (no child links); Links too small to tap; Footer overlapping content; Hierarchy broken on mobile","none","Mobile Responsive","Manual"
-"FWL-036","Verify theme colors applied correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:WL_USER_FASHION]
+"FWL-036","Verify theme colors applied correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_FASHION]
 [PRE:RESET_CART]
 Organization @td(WL_FASHION.name) with @td(WL_FASHION.theme) theme configured; Mobile viewport","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password)","[ACT] 1. Resize to mobile: 375px width
 [NAV] 2. Sign in with @td(WL_FASHION.theme) theme org user
@@ -387,7 +387,7 @@ Organization @td(WL_FASHION.name) with @td(WL_FASHION.theme) theme configured; M
 [FORMAT] Buttons use Coffee theme primary color
 [FORMAT] Links use Coffee theme accent color
 [STATE] Theme is consistent across all mobile pages","[CONSOLE] no uncaught JS errors","Default theme showing on mobile; Coffee colors not applied; Theme inconsistent on mobile pages","none","Mobile Responsive","Manual"
-"FWL-037","Verify logo renders correctly on tablet viewport (768px - iPad)","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-037","Verify logo renders correctly on tablet viewport (768px - iPad)","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with custom logo; Tablet device or browser responsive mode","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Set viewport: 768px width x 1024px height (iPad size)
 [NAV] 2. Sign in with @td(WL_ELECTRONICS.name) user
 [NAV] 3. Navigate to homepage
@@ -398,7 +398,7 @@ Organization @td(WL_ELECTRONICS.name) with custom logo; Tablet device or browser
 [DOM] Logo positioning is correct in tablet header
 [STATE] Logo works in both portrait (768px) and landscape (1024px) orientations
 [STATE] Logo is clickable and links to homepage","[CONSOLE] no uncaught JS errors","Logo missing or broken on tablet; Logo distorted in landscape; Logo not clickable on tablet","none","Mobile Responsive","Manual"
-"FWL-038","Verify whitelabeling renders correctly in Chrome browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-038","Verify whitelabeling renders correctly in Chrome browser (desktop)","Cross-Browser","High","BL-WL-001","","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 [PRE:RESET_CART]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; Chrome browser latest version (120+)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Chrome browser (version 120 or later)
 [NAV] 2. Navigate to {{FRONT_URL}}
@@ -415,7 +415,7 @@ Organization @td(WL_ELECTRONICS.name) with full branding configured; Chrome brow
 [DOM] Footer links display in correct hierarchy
 [STATE] All branding persists across pages","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Chrome; CSS not loading in Chrome; Dropdown malfunction in Chrome; Console errors","none","Chrome Cross-Browser","Manual"
-"FWL-039","Verify whitelabeling renders correctly in Firefox browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-039","Verify whitelabeling renders correctly in Firefox browser (desktop)","Cross-Browser","High","BL-WL-001","","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; Firefox browser latest version (121+)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Firefox browser (version 121 or later)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with @td(WL_ELECTRONICS.name) organization user
@@ -429,7 +429,7 @@ Organization @td(WL_ELECTRONICS.name) with full branding configured; Firefox bro
 [DOM] Footer links display correctly
 [STATE] No Firefox-specific rendering issues","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Firefox; Firefox-specific CSS rendering issue; Dropdown not working on hover in Firefox","none","Firefox Cross-Browser","Manual"
-"FWL-040","Verify whitelabeling renders correctly in Edge browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-040","Verify whitelabeling renders correctly in Edge browser (desktop)","Cross-Browser","High","BL-WL-001","","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; Edge browser latest version (120+)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Edge browser (version 120 or later)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with @td(WL_ELECTRONICS.name) organization user
@@ -443,7 +443,7 @@ Organization @td(WL_ELECTRONICS.name) with full branding configured; Edge browse
 [DOM] Footer links display correctly
 [STATE] Rendering is nearly identical to Chrome (both Chromium-based)","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Edge; Edge-specific rendering issue; Behavior differs significantly from Chrome","none","Edge Cross-Browser","Manual"
-"FWL-041","Verify whitelabeling renders correctly on iPhone Safari (iOS)","Cross-Browser Mobile","Critical","BL-WL-001","ECL-13.1, ECL-13.2","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-041","Verify whitelabeling renders correctly on iPhone Safari (iOS)","Cross-Browser Mobile","Critical","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; iPhone device (iPhone 14/15/16) with Safari browser OR BrowserStack iOS simulator","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Safari on iPhone (or BrowserStack iOS simulator)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with @td(WL_ELECTRONICS.name) organization user
@@ -459,7 +459,7 @@ Organization @td(WL_ELECTRONICS.name) with full branding configured; iPhone devi
 [FORMAT] Theme colors applied correctly
 [STATE] No iOS-specific rendering issues","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Logo broken on iOS Safari; Touch interactions not working; iOS Safari-specific CSS quirks; Favicon not updating on iOS","none","iOS Safari Mobile","Manual"
-"FWL-042","Verify whitelabeling renders correctly on Android Chrome (mobile)","Cross-Browser Mobile","High","BL-WL-001","ECL-13.1, ECL-13.2","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-042","Verify whitelabeling renders correctly on Android Chrome (mobile)","Cross-Browser Mobile","High","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; Android device (Samsung Galaxy or Google Pixel) with Chrome browser OR BrowserStack Android simulator","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Chrome on Android device (or BrowserStack simulator)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with @td(WL_ELECTRONICS.name) organization user

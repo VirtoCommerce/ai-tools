@@ -1633,6 +1633,56 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 
 ---
 
+## Domain 21: Accessibility (BL-A11Y)
+
+These invariants hold for any rendered customer-facing surface on the accessibility-gated storefront themes (and, per BL-UI-007, the Admin SPA), and are grounded directly in the WCAG 2.1/2.2 success criteria rather than in Virto documentation, which states no conformance target (bl-audit-criteria §1a class 2 — same basis as BL-UI-006/BL-UI-007). Exercised by `045-accessibility-tests.csv` via axe-core scans, keyboard-only traversal, and accessibility-tree observation.
+
+### BL-A11Y-001: Keyboard operability and focus management `[P1-data]`
+- **Rule:** On the accessibility-gated storefront themes, every interactive element MUST be reachable and operable via keyboard alone, in a logical DOM/tab order, with a visible focus indicator on the currently focused element (WCAG 2.1.1, 2.4.3, 2.4.7). A modal/dialog overlay MUST contain keyboard focus within itself while open — Tab from its last focusable element cycles to its first, Shift+Tab from the first cycles to the last — and closing it (via Escape or an explicit close control) MUST release the trap and return focus to the triggering control.
+- **Verify:** From a neutral starting point, Tab through the surface and confirm every interactive element receives focus in DOM order with a visible focus ring. Open a modal, Tab to its last focusable element and confirm wrap to the first (Shift+Tab from the first wraps to the last). Close it and confirm focus returns to the trigger and Tab no longer reaches the closed modal's contents.
+- **Violation signal:** An element skipped by Tab; `outline:none` with no visible replacement; Tab exits an open modal to page content behind it; focus remains trapped, or does not return to the trigger, after close.
+- **Agents:** ui-ux-expert (component/Storybook keyboard audits), qa-frontend-expert (storefront revenue flows — checkout, BOPIS, payment)
+- **Docs:** N/A — project-specific: a QA-authored accessibility-methodology invariant grounded in the external WCAG 2.1/2.2 success criteria rather than in Virto documentation, which states no storefront conformance target (bl-audit-criteria §1a class 2; same basis as BL-UI-006/BL-UI-007).
+- **Source:** `client-app/ui-kit/composables/useFocusManagement.ts` — the focusable-elements selector and the Tab-cycle keydown handler that wraps focus at the first/last element when `trapFocus` is enabled; wired into `client-app/ui-kit/components/molecules/dialog/vc-dialog.vue`.
+- **Severity rationale:** P1 (not P2) on the same basis as BL-UI-006/007 — a keyboard trap (WCAG 2.1.2, Level A) or an unreachable/invisible-focus control blocks a whole class of keyboard-only users outright rather than degrading appearance.
+- **Suite coverage:** `045-accessibility-tests.csv` A11Y-KB-001…005.
+- **Promoted:** 2026-08-06 (auto-applied, triangulated — BL-AUDIT-2026-08-06; source + live CONFIRM, docs N/A).
+
+### BL-A11Y-002: Accessible naming and label association `[P1-data]`
+- **Rule:** Every interactive control MUST expose a non-empty, contextual accessible name to assistive technology (WCAG 4.1.2), distinct from a generic element-type label. Every visible field label MUST be programmatically associated with its input via `<label for>`/`aria-labelledby`/`aria-label` (WCAG 1.3.1). Every informative image's `alt` describes its content/purpose; a purely decorative image carries `alt=""` (WCAG 1.1.1).
+- **Verify:** Capture the accessibility tree for the surface and confirm every button/link/input exposes a non-generic accessible name; confirm each visible label's `for`/`id` pairing or `aria-labelledby` resolves correctly; confirm `<img alt>` is present and non-generic (or explicitly empty for decorative images). Corroborate with an axe-core scan (`button-name`, `link-name`, `label`, `image-alt`) — zero violations required.
+- **Violation signal:** An icon-only control announced as bare "button"/"link"; an input with no associated label; a product image missing `alt`; `aria-labelledby` referencing a non-existent id.
+- **Agents:** ui-ux-expert (component/Storybook audits), qa-frontend-expert (storefront revenue flows)
+- **Docs:** N/A — project-specific: a QA-authored accessibility-methodology invariant grounded in the external WCAG 2.1/2.2 success criteria rather than in Virto documentation, which states no storefront conformance target (bl-audit-criteria §1a class 2; same basis as BL-UI-006/BL-UI-007).
+- **Source:** `client-app/shared/cart/components/coupon-card.vue` — Apply/Remove buttons receive a dynamic, contextual `aria-label` from i18n keys via the `VcButton` `ariaLabel` prop, rather than a static generic label; `client-app/shared/wishlists/components/wishlist-card.vue` similarly attaches a contextual `aria-label` to its date block rather than relying on the bare visible date text.
+- **Severity rationale:** P1 — a missing accessible name silently excludes assistive-technology users from a control with no visible symptom to a sighted tester, the same risk class as BL-UI-006/007.
+- **Suite coverage:** `045-accessibility-tests.csv` A11Y-SR-001,002,003,005; A11Y-ARIA-001,002; A11Y-IMG-001; A11Y-FORM-001; A11Y-VCP-001; A11Y-CPN-002.
+- **Promoted:** 2026-08-06 (auto-applied, triangulated — BL-AUDIT-2026-08-06; source + live CONFIRM, docs N/A).
+
+### BL-A11Y-003: Color contrast and non-color status differentiation `[P1-data]`
+- **Rule:** On the accessibility-gated storefront themes, body/paragraph text MUST meet contrast ≥ 4.5:1 against its background, and large text (≥18px, or ≥14px bold) ≥ 3:1 (WCAG 1.4.3). UI-component boundaries and meaning-bearing graphical/icon affordances MUST meet ≥ 3:1 against their adjacent background (WCAG 1.4.11). Status/meaning (error, success, warning) MUST NOT be conveyed by color alone (WCAG 1.4.1).
+- **Verify:** Run an axe-core `color-contrast` scan against the surface on an accessibility-gated theme; zero violations required. For a color-conveyed status, confirm an accompanying icon/text label independent of color, and recheck under a colorblind-vision emulation.
+- **Violation signal:** A foreground/background pair below the 4.5:1/3:1 threshold; an axe `color-contrast` violation; a status relying on red/green alone with no icon or text.
+- **Agents:** ui-ux-expert (component/Storybook contrast audits), qa-frontend-expert (storefront pages)
+- **Docs:** N/A — project-specific: a QA-authored accessibility-methodology invariant grounded in the external WCAG 2.1/2.2 success criteria rather than in Virto documentation, which states no storefront conformance target (bl-audit-criteria §1a class 2; same basis as BL-UI-006/BL-UI-007).
+- **Source:** `client-app/shared/wishlists/components/wishlist-card.vue` — the card's icon foreground is styled via a semantic design token rather than a raw hex value, routing contrast through the design-token system that governs compliance.
+- **Severity rationale:** P1 — sub-threshold contrast makes a control or its state unreadable for low-vision users outright, the same risk class as BL-UI-006/007.
+- **Suite coverage:** `045-accessibility-tests.csv` A11Y-CC-001,002,003.
+- **Promoted:** 2026-08-06 (auto-applied, triangulated — BL-AUDIT-2026-08-06; source + live CONFIRM, docs N/A).
+
+### BL-A11Y-004: Programmatic status, state, and role correctness (axe-clean) `[P1-data]`
+- **Rule:** Every ARIA role/state/property a component sets MUST be valid, complete, and reflect the control's actual state (WCAG 4.1.2). A message appearing asynchronously in response to a user action MUST be exposed to assistive technology at the moment it appears — via `role="alert"`/`aria-live`, or an explicit focus shift plus `aria-describedby` linkage to the field it concerns — not by visual styling alone (WCAG 4.1.3; WCAG 3.3.1 for field-level errors). A surface MUST be free of axe-core Critical/Serious violations.
+- **Verify:** Trigger the async state (invalid submit, coupon apply, menu/tab toggle) and confirm the resulting node carries `role="alert"`/a live region or receives focus, with a field-level error additionally carrying a matching `aria-describedby`. Run a full axe-core scan; zero Critical/Serious violations required.
+- **Violation signal:** An error/status message with no `role="alert"`/`aria-live` and no focus shift; `aria-expanded`/`aria-selected` not toggling with visible state; an axe Critical or Serious violation.
+- **Agents:** ui-ux-expert (automated axe-core audits), qa-frontend-expert (storefront forms/cart flows)
+- **Docs:** N/A — project-specific: a QA-authored accessibility-methodology invariant grounded in the external WCAG 2.1/2.2 success criteria rather than in Virto documentation, which states no storefront conformance target (bl-audit-criteria §1a class 2; same basis as BL-UI-006/BL-UI-007).
+- **Source:** `client-app/shared/cart/components/coupon-card.vue` — the coupon-apply error paragraph is conditionally mounted with `role="alert"` only when an error exists, so its appearance in the DOM itself triggers the assistive-technology alert announcement.
+- **Severity rationale:** P1 — a silent async failure leaves an assistive-technology user with no indication anything happened, the "stuck in a silent failure loop" risk ECL-15.1 names explicitly.
+- **Suite coverage:** `045-accessibility-tests.csv` A11Y-SR-004; A11Y-ARIA-003; A11Y-AXE-001,002; A11Y-FORM-002; A11Y-CPN-001. (`A11Y-TOUCH-001` also currently cites this id, but its subject — 44×44px touch-target geometry — belongs to BL-UI-006; not counted as landed coverage here, remap pending.)
+- **Promoted:** 2026-08-06 (auto-applied, triangulated — BL-AUDIT-2026-08-06; source + live CONFIRM, docs N/A).
+
+---
+
 ## Invariant Coverage Summary
 
 P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-data]` + `[P1-ux]`.

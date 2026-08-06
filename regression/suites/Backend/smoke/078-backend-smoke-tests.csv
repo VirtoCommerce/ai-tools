@@ -389,14 +389,14 @@ BSM-045,Admin SPA — Notification Logs (Sent History) Accessible,Backend Smoke 
 [WAIT] notification log list renders","[BLADE] Notification Log section visible
 [GRID] list renders with columns: Notification Type, Sent Date, Recipient, Status (Success/Error)
 [DOM] 'Retry' button or action available for failed notifications (if any failed entries)","[API] GET {{BACK_URL}}/api/notification/journal?take=10 → 200 with 'totalCount' >= 0 and 'notifications' array","Notification log section absent, API returns 500 on journal endpoint, log grid throws Angular error, failed entries show no retry option",none,"Suite 057 (Notifications Templates), Suite 058 (Notifications Triggers)",Automated
-BSM-046,Admin SPA — CMS Pages Blade Opens and Lists Pages,Backend Smoke > CMS Admin,High,BL-CROSS-011,ECL-10.4,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/cms
+BSM-046,Admin SPA — CMS Pages Blade Opens and Lists Pages,Backend Smoke > CMS Admin,High,BL-CROSS-011,ECL-10.3,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/cms
 [WAIT] CMS module blade loads
 [ACT] click 'Pages' section or tab
 [WAIT] pages list renders","[BLADE] CMS blade visible with 'Pages' section accessible
 [GRID] pages list grid renders with columns: Title, URL, Status (Published/Draft)
 [GRID] at least 1 page entry visible
 [DOM] 'Add Page' and 'Delete' toolbar buttons present","[API] GET {{BACK_URL}}/api/cms/pages/search?storeId={{STORE_ID}}&take=5 → 200 with 'totalCount' >= 0 and results array","CMS module fails to open (404 or Angular crash), pages blade not accessible from CMS navigation, API returns 404 (CMS module not installed), grid shows Angular error",none,"Suite 059 (CMS Page Management)",Automated
-BSM-047,Admin SPA — CMS Menus Blade Opens,Backend Smoke > CMS Admin,Medium,BL-CROSS-011,ECL-10.4,"Admin logged in, CMS accessible (BSM-046 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/cms
+BSM-047,Admin SPA — CMS Menus Blade Opens,Backend Smoke > CMS Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in, CMS accessible (BSM-046 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/cms
 [WAIT] CMS module blade loads
 [ACT] click 'Menus' or 'Navigation Menus' section
 [WAIT] menus list renders","[BLADE] Menus section visible
@@ -472,14 +472,14 @@ BSM-052,Admin SPA — Export Job from Catalog Accessible,Backend Smoke > Import-
 [WAIT] Import/Export module blade loads","[BLADE] Import/Export blade visible with tabs or sections (e.g., 'Import', 'Export', 'Job History')
 [DOM] export job types visible (e.g., catalog product export, customer export)
 [DOM] 'Create Export Job' or 'New Export' button present","[API] GET {{BACK_URL}}/api/import/runs?take=5 → 200 with 'totalCount' >= 0","Import/Export blade fails to open, no job type options visible, API returns 500, blade shows Angular error on open",none,"Suite 073 (Import-Export)",Automated
-BSM-053,Admin SPA — Assets Module Blade Opens,Backend Smoke > Assets Admin,High,BL-CROSS-011,ECL-10.5,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/assets
+BSM-053,Admin SPA — Assets Module Blade Opens,Backend Smoke > Assets Admin,High,BL-CROSS-011,ECL-10.3,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/assets
 [WAIT] Assets blade loads
 [ASSERT] assets list or folder tree visible","[BLADE] Assets blade title visible (e.g., 'Assets' or 'File Manager')
 [DOM] folder tree or root folders visible in left panel
 [DOM] file/asset listing in right panel (may be empty for root)
 [DOM] 'Upload', 'New Folder', 'Delete' toolbar controls present","[API] GET {{BACK_URL}}/api/assets?folderUrl=/ → 200 with items array (may be empty for root)
 [BODY] no 500 or 403 errors on root assets endpoint","Assets blade returns 404 (module not installed), blade opens but file list throws Angular error, Upload button absent, API returns 403 on root folder",none,"Suite 064 (Assets)",Automated
-BSM-054,Admin SPA — Asset Upload and List Verification,Backend Smoke > Assets Admin,Medium,BL-CROSS-011,ECL-10.5,"Admin logged in, Assets blade accessible (BSM-053 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/assets
+BSM-054,Admin SPA — Asset Upload and List Verification,Backend Smoke > Assets Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in, Assets blade accessible (BSM-053 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/assets
 [WAIT] Assets blade loaded
 [ACT] click 'New Folder' button
 [WAIT] folder name input appears
@@ -492,7 +492,7 @@ BSM-054,Admin SPA — Asset Upload and List Verification,Backend Smoke > Assets 
 [DOM] 'bsm-smoke-test' folder visible in assets tree
 [TOAST] upload success notification
 [DOM] uploaded file appears in the folder listing with file name and size","[API] GET {{BACK_URL}}/api/assets?folderUrl=/bsm-smoke-test/ → 200 with uploaded file in items array","Folder creation fails, upload returns 500, file not visible in list after upload, folder absent from tree after creation","DELETE folder and file after test via Assets API.","Suite 064 (Assets)",Automated
-BSM-055,Admin SPA — Shipping Methods Blade Opens,Backend Smoke > Shipping Admin,High,BL-CHK-005,ECL-8.3,"Admin logged in, store accessible (BSM-015 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/stores
+BSM-055,Admin SPA — Shipping Methods Blade Opens,Backend Smoke > Shipping Admin,High,BL-CHK-005,ECL-10.3,"Admin logged in, store accessible (BSM-015 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/stores
 [WAIT] Stores blade loaded
 [ACT] click first store row
 [WAIT] store detail blade opens
@@ -502,14 +502,14 @@ BSM-055,Admin SPA — Shipping Methods Blade Opens,Backend Smoke > Shipping Admi
 [GRID] columns include: Method Name, Priority, Is Active
 [DOM] 'Add', 'Edit' controls present on rows","[API] GET {{BACK_URL}}/api/stores/<store_id>/shippingmethods → 200 with non-empty array
 [BODY] each method has 'code', 'name', 'priority', 'isActive' fields","Shipping Methods section absent from store detail, API returns 500, grid empty when methods configured, blade crashes when clicking Shipping Methods tab",none,"Suite 034 (Store Management), Suite 068 (Shipping)",Automated
-BSM-056,Platform REST API — Shipping Method Rate Calculation,Backend Smoke > Shipping Admin,Medium,BL-CHK-005,ECL-8.3,"Admin Bearer token obtained (BSM-002), valid shipping method configured",back_url={{BACK_URL}}; bearer_token=<from BSM-002>; store_id={{STORE_ID}},"[HTTP] POST {{BACK_URL}}/api/cart/evaluate/shippingmethods
+BSM-056,Platform REST API — Shipping Method Rate Calculation,Backend Smoke > Shipping Admin,Medium,BL-CHK-005,ECL-10.3,"Admin Bearer token obtained (BSM-002), valid shipping method configured",back_url={{BACK_URL}}; bearer_token=<from BSM-002>; store_id={{STORE_ID}},"[HTTP] POST {{BACK_URL}}/api/cart/evaluate/shippingmethods
 [SETUP] Authorization: Bearer {{bearer_token}}
 [SETUP] Content-Type: application/json
 [SETUP] body: {""storeId"": ""{{STORE_ID}}"", ""cultureName"": ""en-US"", ""currencyCode"": ""USD""}","[STATUS] HTTP 200 OK
 [BODY] response is array of shipping method rates (may be empty if no methods configured)
 [BODY] if non-empty: each entry has 'shippingMethodCode', 'rate', 'currency' fields
 [BODY] no method entry shows rate < 0 (negative shipping rate is invalid)","[STOREFRONT] available shipping methods on checkout page match API response for same store","HTTP 500 on evaluate endpoint, shipping rate = null for active methods, negative rate returned, API returns 403",none,"Suite 068 (Shipping), Suite 049 (Platform API)",Automated
-BSM-057,Admin SPA — SEO URL Slugs Visible on Product Detail,Backend Smoke > SEO Admin,Medium,BL-CROSS-011,ECL-10.6,"Admin logged in, product detail accessible",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/catalog
+BSM-057,Admin SPA — SEO URL Slugs Visible on Product Detail,Backend Smoke > SEO Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in, product detail accessible",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/catalog
 [WAIT] Catalog blade loaded
 [ACT] click first catalog, then first product row
 [WAIT] product detail blade opens
@@ -518,7 +518,7 @@ BSM-057,Admin SPA — SEO URL Slugs Visible on Product Detail,Backend Smoke > SE
 [DOM] URL slug field visible and non-empty for the product
 [DOM] SEO title, meta description, and image alt text fields present
 [DOM] per-language SEO entries visible if multi-language store configured","[API] GET {{BACK_URL}}/api/catalog/products/<product_id> → 200 with 'seoInfos' array containing at least 1 entry with 'semanticUrl' field","SEO tab absent from product detail, seoInfos array empty for existing products, slug field empty causing storefront 404, API does not return seoInfos field",none,"Suite 066 (SEO)",Automated
-BSM-058,Platform REST API — Sitemap Schema Endpoint,Backend Smoke > SEO Admin,Medium,BL-CROSS-011,ECL-10.6,"Admin Bearer token obtained (BSM-002), SEO module installed",back_url={{BACK_URL}}; bearer_token=<from BSM-002>; store_id={{STORE_ID}},"[HTTP] GET {{BACK_URL}}/api/sitemaps/schema?storeId={{STORE_ID}}
+BSM-058,Platform REST API — Sitemap Schema Endpoint,Backend Smoke > SEO Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin Bearer token obtained (BSM-002), SEO module installed",back_url={{BACK_URL}}; bearer_token=<from BSM-002>; store_id={{STORE_ID}},"[HTTP] GET {{BACK_URL}}/api/sitemaps/schema?storeId={{STORE_ID}}
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK (or 404 if SEO module not installed — SKIP)
 [BODY] response contains sitemap configuration entries
 [BODY] at least 1 sitemap location defined (products, categories, or custom pages)","[STOREFRONT] GET {{FRONT_URL}}/sitemap.xml returns 200 with valid XML containing <loc> entries","HTTP 500 (module installed but broken), empty schema when store has products, storefront sitemap.xml returns 404 or malformed XML",none,"Suite 066 (SEO)",Automated
@@ -529,26 +529,26 @@ BSM-059,Admin SPA — Configurable Products Admin Blade Accessible,Backend Smoke
 [BODY] if items present: each has 'productType' = 'Configurable'
 [BLADE] if opened in Admin: 'Configuration' or 'Sections' tab visible in product detail
 [DOM] if Sections tab opened: at least 1 section entry with Name and Required flag visible","[ADMIN] product type field in Admin blade matches 'productType' field from API for the same product","API returns 500, productType filter not supported (returns non-configurable products), Sections tab absent on configurable product, API returns 403",none,"Suite 052 (Configurable Products Admin), Suite 072 (Configurable Products UI)",Automated
-BSM-060,Admin SPA — White Labeling Settings Blade Opens,Backend Smoke > White Labeling Admin,High,"BL-B2B-006, BL-CROSS-011",ECL-10.7,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/white-labeling
+BSM-060,Admin SPA — White Labeling Settings Blade Opens,Backend Smoke > White Labeling Admin,High,"BL-B2B-006, BL-CROSS-011",ECL-10.3,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/white-labeling
 [WAIT] White Labeling blade loads
 [ASSERT] white labeling settings visible","[BLADE] White Labeling blade title visible
 [DOM] settings sections visible: Logo URL, Theme Preset, Primary Color (or similar branding fields)
 [DOM] 'Organization Overrides' section or tab accessible
 [DOM] 'Save Changes' button present","[API] GET {{BACK_URL}}/api/whitelabeling/settings → 200 with settings object containing branding fields
 [BODY] object has at least 'logoUrl' or 'themePreset' fields","White Labeling blade returns 404 (module not installed), blade opens but settings section throws Angular error, API returns 500, 'Save Changes' button absent",none,"Suite 067 (White Labeling Admin), Suite 070 (White Labeling Storefront)",Automated
-BSM-061,Admin SPA — White Labeling Organization Override Section,Backend Smoke > White Labeling Admin,Medium,"BL-B2B-006, BL-CROSS-006",ECL-10.7,"Admin logged in, White Labeling accessible (BSM-060 passed), at least 1 organization exists",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/white-labeling
+BSM-061,Admin SPA — White Labeling Organization Override Section,Backend Smoke > White Labeling Admin,Medium,"BL-B2B-006, BL-CROSS-006",ECL-10.3,"Admin logged in, White Labeling accessible (BSM-060 passed), at least 1 organization exists",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/white-labeling
 [WAIT] White Labeling blade loaded
 [ACT] click 'Organization Overrides' tab or section
 [WAIT] organization overrides list renders
 [ASSERT] ability to add or view per-org overrides visible","[DOM] Organization Overrides section renders without Angular error
 [DOM] list shows any existing org overrides (may be empty)
 [DOM] 'Add Override' or 'Assign Organization' button present","[API] GET {{BACK_URL}}/api/whitelabeling/organizations → 200 with array (may be empty)","Organization Overrides section absent, API returns 500, Angular error on section load, 'Add Override' button absent when white labeling is enabled",none,"Suite 067 (White Labeling Admin)",Automated
-BSM-062,Admin SPA — Push Messages Module Health Check,Backend Smoke > Push Messages,Medium,BL-CROSS-011,ECL-10.8,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/push-messages/messages?take=5
+BSM-062,Admin SPA — Push Messages Module Health Check,Backend Smoke > Push Messages,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/push-messages/messages?take=5
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK with valid response structure (or 404 — SKIP if module not installed)
 [BODY] if 200: response has 'totalCount' >= 0 and 'results' array (may be empty)
 [BODY] no 'exception' or internal error fields in 200 response
 [DOM] if 200: Push Messages or Push Notifications item visible in Admin left nav",,"HTTP 500 (module installed but broken), 403 (permissions misconfigured), blade opens but throws Angular error immediately",none,"Suite 075 (Push Messages)",Automated
-BSM-063,Platform REST API — Loyalty Programs Endpoint,Backend Smoke > Loyalty,Medium,BL-CROSS-011,ECL-10.8,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/loyalty/programs?take=5
+BSM-063,Platform REST API — Loyalty Programs Endpoint,Backend Smoke > Loyalty,Medium,BL-CROSS-011,ECL-10.3,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/loyalty/programs?take=5
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK with programs array and totalCount (or 404 — SKIP if not installed)
 [BODY] if 200: totalCount >= 0; no 'error' fields in response
 [BODY] if items present: each has 'id', 'name' fields","[ADMIN] if 200: 'Loyalty' navigation item visible in Admin SPA and blade opens without Angular error","HTTP 500 (module installed but failing), 403 Forbidden, programs response null instead of empty array when no programs exist",none,"Suite 076 (Loyalty)",Automated
@@ -646,7 +646,7 @@ query {
 [DATA] categories.totalCount > 0
 [DATA] items array non-empty with id, name, slug fields
 [DATA] for nested categories: parent object present with non-null id","[ADMIN] category count from GraphQL totalCount aligns with Admin Catalog blade categories count (within ±5%)","errors[] present, totalCount = 0 when categories exist, slug field null for published categories (SEO regression), HTTP 500 on GraphQL endpoint",none,"Suite 050 (GraphQL xAPI), Suite 053 (Catalog Admin Categories)",Automated
-BSM-075,Platform REST API — Returns Module Health Check,Backend Smoke > Returns Admin,Medium,BL-ORD-004,ECL-8.4,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/returns?take=5
+BSM-075,Platform REST API — Returns Module Health Check,Backend Smoke > Returns Admin,Medium,BL-ORD-004,ECL-10.3,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/returns?take=5
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK with 'results' or 'items' array and 'totalCount' field (or 404 if module not installed — SKIP)
 [BODY] if 200: totalCount >= 0; no 'error' or 'exception' fields in response
 [BODY] if items present: each has 'id', 'orderId', 'status' fields","[ADMIN] if 200: 'Returns' section visible in left nav and blade opens without Angular error on click","HTTP 500 (module installed but failing), 403 Forbidden, returns array null instead of empty when no returns exist, Admin blade throws Angular error on open",none,"Suite 074 (Returns)",Automated
@@ -736,7 +736,7 @@ BSM-082,Admin SPA — Edit Notification Template Subject and Verify,Backend Smok
 [WAIT] success toast appears","[TOAST] success notification after save
 [DOM] Subject field in template detail blade shows {{test_subject}} after save
 [STATE] blade remains open after save without Angular error","[API] GET {{BACK_URL}}/api/notification/templates/<type> → 200 with 'subject' field = {{test_subject}}","Save returns 400 on valid subject text, subject reverts on blade refresh, API still returns old subject, Angular error on save, toast absent","Restore original subject via API: PUT {{BACK_URL}}/api/notification/templates with original subject value.","Suite 057 (Notifications Templates)",Automated
-BSM-083,Admin SPA — Edit CMS Page Content and Verify,Backend Smoke > Edit Workflows,Medium,"BL-CROSS-011",ECL-10.4,"Admin logged in, at least 1 CMS page exists (BSM-046 passed)","back_url={{BACK_URL}}; store_id={{STORE_ID}}; test_content_marker=BSM-{{TIMESTAMP}}","[NAV] {{BACK_URL}}/ui#/cms
+BSM-083,Admin SPA — Edit CMS Page Content and Verify,Backend Smoke > Edit Workflows,Medium,"BL-CROSS-011",ECL-10.3,"Admin logged in, at least 1 CMS page exists (BSM-046 passed)","back_url={{BACK_URL}}; store_id={{STORE_ID}}; test_content_marker=BSM-{{TIMESTAMP}}","[NAV] {{BACK_URL}}/ui#/cms
 [WAIT] CMS blade loaded
 [ACT] click 'Pages' section
 [WAIT] pages list renders
@@ -800,7 +800,7 @@ BSM-087,Admin SPA — Delete Price List with Confirmation Dialog,Backend Smoke >
 [GRID] deleted price list row no longer visible after confirmation","[API] before confirm: GET {{BACK_URL}}/api/pricing/pricelists/<pricelist_id> → 200
 [API] after confirm + 2s: same GET → 404 (deleted successfully)
 [BODY] 404 body is a proper error object, not a 500","Delete triggers immediately without dialog, dialog absent, price list still returns 200 after confirm and 2s wait, API returns 500 instead of 404 after delete, Angular error on delete action",none,"Suite 054 (Pricing Logic), Suite 055 (Pricing Management)",Automated
-BSM-088,Admin SPA — Delete Asset with Confirmation Dialog,Backend Smoke > Delete Workflows,Medium,"BL-CROSS-007, BL-CROSS-011",ECL-10.5,"Admin logged in, Assets blade accessible (BSM-053 passed), a disposable test asset/folder exists","back_url={{BACK_URL}}; test_folder=bsm-del-{{TIMESTAMP}}","[SETUP] Create test folder via Assets API: POST {{BACK_URL}}/api/assets?folderUrl={{test_folder}}
+BSM-088,Admin SPA — Delete Asset with Confirmation Dialog,Backend Smoke > Delete Workflows,Medium,"BL-CROSS-007, BL-CROSS-011",ECL-10.3,"Admin logged in, Assets blade accessible (BSM-053 passed), a disposable test asset/folder exists","back_url={{BACK_URL}}; test_folder=bsm-del-{{TIMESTAMP}}","[SETUP] Create test folder via Assets API: POST {{BACK_URL}}/api/assets?folderUrl={{test_folder}}
 [NAV] {{BACK_URL}}/ui#/assets
 [WAIT] Assets blade loaded
 [ACT] navigate to or locate the {{test_folder}} folder in the assets tree
@@ -958,7 +958,7 @@ BSM-105,Admin SPA — Promotions Blade Search by Name,Backend Smoke > Search and
 [ACT] enter at least 3 characters of a known promotion name into the search input
 [WAIT] grid refreshes","[GRID] only promotions matching the search term visible
 [GRID] all visible rows contain the search term in Name column","[API] GET {{BACK_URL}}/api/marketing/promotions?keyword=<search_term>&take=10 → 200; all returned promotions contain search term in 'name' field","Search non-functional, non-matching promotions remain, API ignores keyword, Angular error on search",none,"Suite 023 (Marketing Promotions)",Automated
-BSM-106,Admin SPA — CMS Pages Blade Search by Title,Backend Smoke > Search and Filter,Medium,"BL-CROSS-011",ECL-10.4,"Admin logged in, CMS pages blade accessible with at least 1 page (BSM-046 passed)","back_url={{BACK_URL}}; store_id={{STORE_ID}}","[NAV] {{BACK_URL}}/ui#/cms
+BSM-106,Admin SPA — CMS Pages Blade Search by Title,Backend Smoke > Search and Filter,Medium,"BL-CROSS-011",ECL-10.3,"Admin logged in, CMS pages blade accessible with at least 1 page (BSM-046 passed)","back_url={{BACK_URL}}; store_id={{STORE_ID}}","[NAV] {{BACK_URL}}/ui#/cms
 [WAIT] CMS blade loaded; navigate to Pages
 [ASSERT] note baseline page row count
 [ACT] enter at least 3 characters of a known page title into the search input

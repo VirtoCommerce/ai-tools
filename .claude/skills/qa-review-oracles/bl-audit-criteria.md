@@ -1,7 +1,9 @@
 # BL Audit Criteria — the evidence bar, source map, and verdict table
 
-Reference for `/qa-review-bl`. The skill's SKILL.md holds the flow; this file holds
-the judgment rules the triangulation runs against.
+Reference for `/qa-review-oracles bl` (alias `/qa-review-bl`). The skill's SKILL.md holds
+the flow; this file holds the judgment rules the triangulation runs against. Direct sibling
+of `ecl-audit-criteria.md` — same three axes, same bar, same waiver; that file adapts them
+to the ECL library's pattern-row shape.
 
 ## 1. The evidence bar (what "confirmed" requires)
 

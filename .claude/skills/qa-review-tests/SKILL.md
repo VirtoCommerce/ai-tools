@@ -64,6 +64,25 @@ Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 re
 > remain the reference for those judgment rules and as a fallback if the linter can't parse the file (it
 > reports S-007 in that case).
 
+> **Dimension 6 has a second deterministic core: `npm run ecl:lint`** (`scripts/knowledge/lint-ecl.ts`),
+> the ECL twin of `bl:lint`. It parses the section headings of
+> `knowledge/oracles/e-commerce-edge-cases-library.md` and cross-references every `Edge_Case_Refs` cell in
+> `regression/suites/**.csv`: **ECLC-001** a case cites an ECL section that does not exist (dangling —
+> false traceability) · **ECLC-002** a section no case cites · **ECLC-003** an unparsable suite (whose
+> citations are therefore ABSENT from the report, invalidating the other two in both directions) ·
+> **ECLL-001** duplicate section number · **ECLL-002/003** Appendix D ↔ body coherence · **ECLL-004**
+> zero-padded spelling (`ECL-05.1`). Run it before judging Dim-6 coverage; a dangling ref is a mechanical
+> fact, not a judgment call.
+>
+> **What it deliberately cannot catch — and why Dim 6 still needs you.** A citation that resolves to a
+> REAL BUT SEMANTICALLY WRONG section passes every check above. Nine loyalty cases cited `ECL-13.2`
+> ("Subscription & Recurring Billing") when they meant `ECL-13.3` ("Loyalty & Points"); the ref existed,
+> so no gate could object. Only reading the section text against the case's subject decides it. This is
+> the same split as **GRD-001 vs Dimension 11** on the assertion-provenance side: the linter proves a
+> reference is *present*, the reviewer proves it is *true*. Introduced 2026-08-06 after the gate's first
+> run found 20 dangling ECL ids across ~65 cases in 7 suites that had accumulated unnoticed, because the
+> ECL library had no declared write owner and no gate of any kind.
+
 ## Execution
 
 ### Step 0: Load References
