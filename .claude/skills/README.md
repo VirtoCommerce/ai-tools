@@ -1,11 +1,13 @@
 # skills/ — Skill Directory
 
-> **36 skills**, each a `skills/<name>/SKILL.md` with YAML frontmatter and optional supporting
+> **39 skills**, each a `skills/<name>/SKILL.md` with YAML frontmatter and optional supporting
 > reference files. Discovery is **one level, flat — there are no category subfolders**; the four
 > categories below (VC Knowledge · Testing · QA Methodology · Development) are `[Category]` **tags in
 > each skill's `description`**, not directories. Breakdown: **1 VC Knowledge + 12 Testing +
-> 14 QA Methodology + 6 Development + 3 root-level** (uncategorized: `project-init`,
-> `run-vc-mcp-testing-module`, `vc-self-check`).
+> 17 QA Methodology + 6 Development + 3 root-level** (uncategorized: `project-init`,
+> `run-vc-mcp-testing-module`, `vc-self-check`; `qa-local-env` is grouped under Testing but carries no
+> tag of its own). Note both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they are
+> the same category.
 
 ## Directory Layout (flat)
 
@@ -35,6 +37,7 @@ skills/
 ├── qa-metrics/                      # [QA Methodology]  Quality metrics & gates
 ├── qa-sbtm/                         # [QA Methodology]  Session-based exploratory testing
 ├── qa-monitoring/                   # [QA Methodology]  Online bug monitoring (App Insights)
+├── qa-perf-measure/                 # [QA Method]  Deployed-env backend-work measurement (dependency counts, N+1)
 ├── qa-test-cases-generator/         # [QA Methodology]  Generate agent-native CSV test cases
 ├── qa-triage-results/               # [QA Methodology]  Triage a completed regression run's FAILs
 ├── qa-hotfix/                       # [QA Methodology]  Release a hotfix into stable bundles
@@ -117,6 +120,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/qa-monitoring` | Online bug monitoring from App Insights: query → dedup → triage → live repro → report (detect-and-report only; twin of `ci/run-monitor.ts`) | SKILL.md (KQL probes + triage taxonomy + dedup) |
+| `/qa-perf-measure` | Measure backend work per request on a **deployed** env and prove whether a change moved it: dependency calls by type via the App Insights `operation_Id` join, N+1 detection by input-size scaling, paired positive/negative controls so a null result is trustworthy. Counts transfer cross-env; latency does not. Measure-and-report only | SKILL.md + `knowledge/execution/es-call-ab-method.md` (KQL + gotchas, fixture filter, confounds, control pairing, worked examples) |
 | `/qa-test-cases-generator` | Generate agent-native CSV test cases from JIRA tickets, features, checklists, or legacy suites | test-case-template.md, test-case-examples.md |
 
 ### Hotfix / Release

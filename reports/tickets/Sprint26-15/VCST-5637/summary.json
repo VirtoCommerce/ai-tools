@@ -320,6 +320,59 @@
       ]
     }
   },
+  "browsing_measurement": {
+    "_scope": "Second measurement pass, 2026-08-06 ~11:38-11:52Z. Extends the x-cart scope-for-test to x-catalog BROWSING at the user's request: number of ES calls AND total time, same cross-env A/B method (.claude/knowledge/execution/es-call-ab-method.md).",
+    "verdict": "PASS — the seam behaves exactly as specified; no browsing arm shows a reduction, which is the correct outcome rather than a defect",
+    "report": "reports/tickets/Sprint26-15/VCST-5637/browsing-measurement-report.md",
+    "design": "Verbatim vc-theme-b2b-vue query text captured from a live browse session (theme 2.55.0-pr-2417), byte-identical across both arms, only [GQL-VARS] differ; sent straight to each BACKEND (never through each storefront, whose theme builds differ); 1 VU, 0% overlap; every repetition uses a DISTINCT target so each observation is cache-cold.",
+    "harnesses": ["PERF-5637-BRW2-* (8 arms x 2 envs)", "PERF-5637-BRW3-* (VARPLP / PLAINPLP / CTRL)"],
+    "es_product_search_per_request": {
+      "ctrl_4_identical_aliases_POSITIVE_CONTROL": { "before": 4, "n_before": 5, "after": 1, "n_after": 12, "reduction_pct": 75 },
+      "ctrl_4_distinct_aliases_NEGATIVE_CONTROL": { "before": 4, "n_before": 3, "after": 4, "n_after": 1, "note": "unchanged — consistent with a complete key and no over-collapse, but PROVISIONAL at n=1 on the after arm; re-run to n>=5 to establish it. Nothing else in this pass depends on it: over-collapse would have shown as browsing counts FALLING, and none did." },
+      "plp_zero_variation": { "before": 1, "n_before": 2, "after": 1, "n_after": 7, "note": "at the floor on both" },
+      "plp_variation_rich": { "before": [5,5,6,6,7], "before_median": 6, "after": [6,6,7,8,7,7,8,6,7,7,8], "after_median": 7, "note": "NO REDUCTION — medians 6 vs 7 across different catalogs. The +1 is cross-catalog page composition (4523 vs 2537 products), not a regression: a dedup that declines to collapse distinct searches cannot add a search. Reported as 'no reduction', not 'unchanged'." },
+      "pdp_non_variation": { "before": 2, "n_before": 9, "after": 2, "n_after": 13 },
+      "pdp_variation": { "before": [2,2,1], "n_before": 3, "after": 2, "n_after": 5 },
+      "keyword_search_with_facets": { "before": [2,1,2,1,2,1], "after_median": 1, "n_after": 11 },
+      "category_navigation": { "before": 1, "after": 1, "note": "declared NON-GOAL of the ticket — correctly untouched" }
+    },
+    "_why_the_null_result_is_trustworthy": "The POSITIVE control carries this claim on its own: it drops 4->1 (n=12 after) in the SAME telemetry windows the browsing numbers come from, so 'browsing unchanged' means no redundancy was present rather than the instrument being blind. The negative control staying at 4 is consistent with a complete key but is PROVISIONAL at n=1 after — see its note.",
+    "mechanism_established_WITHIN_each_env": {
+      "_design": "Immune to cross-catalog confounds: same build, same query text, same page size (first:16); only the variation profile differs.",
+      "after_vcst": { "zero_variation_plp": 1, "variation_rich_plp": 7, "variation_products_in_page": 5 },
+      "before_vcptcore": { "zero_variation_plp": 1, "variation_rich_plp": 6, "variation_products_in_page": 6 },
+      "law": "NO FORMULA CLAIMED. The extras come from the variations resolver, one per master product — DISTINCT requests, hence not dedupable by a whole-SearchRequest key. `1 + variation-bearing products` fits NEITHER observed cell (after: 7 searches at 5 such products; before: 6 at 6) and was withdrawn as an over-read of two rows; searches are counted from telemetry and variation-bearing products from the page's rendered items, so the +/-1 is most likely a counting-basis difference, untested.",
+      "established": "Direction and class only: 0 variation-bearing products -> 1 search, 5-6 -> 6-8, so the count follows the variation-bearing count.",
+      "residual_class": "N+1 (count scales with collection size) -> lever is batching into one by-ids call, NOT a request-scoped cache (method doc section 6). Rests on the class, not on arithmetic.",
+      "_to_pin_the_constant": "Needs a third cell at fixed page size; prerequisite for predicting the saving of a batching fix."
+    },
+    "total_time": {
+      "ctrl_4_identical": { "before_req_ms": 8, "after_req_ms": 9, "before_es_ms": 18, "after_es_ms": 5 },
+      "plp_variation_rich": { "before_req_ms": 66, "after_req_ms": 101, "before_es_ms": "26-35", "after_es_ms": "70-116" },
+      "keyword_search": { "before_req_ms": 92, "after_req_ms": 171, "before_es_ms": 32, "after_es_ms": 104 },
+      "claim": "NO browsing time saving is claimed, because no browsing calls were removed. ES time falls only on the CTRL arm, tracking its 4->1 drop.",
+      "_cross_env_latency_not_comparable": "Method section 5. AFTER is SLOWER on several arms, driven by catalog size (4523 vs 2537 products) and a different ES cluster / DB tier, not by this change. Reported for completeness only."
+    },
+    "new_finding_pre_existing_out_of_scope": {
+      "finding": "A PLP issues one extra ES product search per variation-bearing product — up to 7-8 searches for a 16-item page.",
+      "provenance": "PRE-EXISTING / OUT-OF-SCOPE for VCST-5637 (not introduced by it, not claimed by it)",
+      "recommendation": "Follow-up to batch the variations resolver into a single by-ids load; sibling in spirit to VCST-5640",
+      "filed": false
+    },
+    "delivered": {
+      "jira_comment_id": "105085",
+      "jira_comment_title": "QA Report Part 2 — x-catalog browsing · Verdict: PASS",
+      "posted_utc": "2026-08-06T12:10:56Z",
+      "artifact": "https://claude.ai/code/artifact/a613a624-a097-4d94-9873-1f01dda6daf3",
+      "status_transition": "none — ticket already at Tested and this pass is PASS, so no transition was required",
+      "bugs_filed": "none — the variations N+1 is pre-existing and out of scope; reported in the comment for the team's call, not filed"
+    },
+    "caveats": [
+      "Adaptive sampling is ASYMMETRIC: vcst-qa carries live traffic (itemCount 2-8) while vcptcore-qa is idle (mostly 1), so the AFTER side needed 3-4x the request volume for comparable n.",
+      "Repeat passes over already-used offsets warm the platform catalog cache and produced some esProduct=0 rows on the BEFORE side; excluded from the cold medians.",
+      "SUPERSEDED PRELIMINARY READ: an initial pass (11:38-11:39Z) measured 1 search/request and looked like 'browsing is already at the floor'. That was wrong — thin n plus targets pre-warmed by the discovery queries. Recorded because the naive version of this measurement reports the opposite conclusion."
+    ]
+  },
   "total_cases": 7,
   "passed": 7,
   "failed": 0,

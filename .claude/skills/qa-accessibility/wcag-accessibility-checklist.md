@@ -176,7 +176,7 @@ Initial-DOM-only scanning misses most SPA bugs. Re-run axe-core after each of th
 - Toast / snackbar shown (aria-live, dismissibility)
 - Async route load complete (Vue chunk arrived, skeletons replaced)
 - Cart updated (line item added, quantity changed)
-- Theme toggled (contrast must hold across themes — but assert only on Coffee theme)
+- Theme toggled (contrast must hold across themes — but assert only on the Coffee and Red presets)
 - Sticky header pinned (re-check 2.4.11 with a focused form below)
 
 ## What Automation Cannot Catch
@@ -274,7 +274,7 @@ const rect = el.getBoundingClientRect();
 4. **"0 axe violations = WCAG compliant" fallacy.** Automation floor, not ceiling.
 5. **Scanning before app is ready** — Vue async chunks cause false negatives. Wait on a sentinel selector.
 6. **Reporting 4.1.1 Parsing failures** — removed in WCAG 2.2.
-7. **Cross-theme leakage** — only Coffee is A11y-compliant in this project; don't gate on other themes.
+7. **Cross-theme leakage** — only **Coffee** and **Red** are A11y-gated in this project; don't gate on the other presets (`purple-pink` and `watermelon` still fail AA on solid-accent).
 8. **APCA as a gate** — APCA is exploratory and not enforced by any 2026 scanner. Use WCAG 2.x ratios for pass/fail; surface APCA Lc only as designer-advisory.
 
 ## Reporting

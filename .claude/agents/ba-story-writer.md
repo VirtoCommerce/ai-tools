@@ -154,7 +154,7 @@ Standard DoD that every story must meet — customize per project:
 - [ ] Integration/E2E test added for primary happy path; GraphQL operations covered by runner-native test in `regression/suites/Backend/graphql/`
 - [ ] Code reviewed and approved by 1+ team member
 - [ ] No new console errors or warnings introduced
-- [ ] Accessibility: keyboard navigable, ARIA labels present (Coffee theme is the only WCAG-compliant theme — see memory `feedback_a11y_coffee_only.md`)
+- [ ] Accessibility: keyboard navigable, ARIA labels present (Coffee and Red are the WCAG-gated themes — see memory `feedback_a11y_gated_themes.md`)
 - [ ] Localization: all strings use i18n keys, no hardcoded text
 - [ ] Documentation updated (if user-facing feature)
 - [ ] BA sign-off on acceptance criteria; BL-* mapping recorded in story header

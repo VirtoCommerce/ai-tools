@@ -4,7 +4,7 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**. Tests are 
 natural language prompts via MCP servers (Playwright, Chrome DevTools, Atlassian, …) — LLM-powered
 browser automation with AI agents, **not** traditional `.spec.js` files.
 
-> **Authoritative counts** (verified 2026-08-05): 19 agents · 38 skills · 29 commands ·
+> **Authoritative counts** (verified 2026-08-06): 19 agents · 39 skills · 30 commands ·
 > 31 knowledge files · 120 regression suites (~3,980 cases). Single sources of truth:
 > [`config/test-suites.json`](config/test-suites.json) for suites, [`.claude/rules/`](.claude/rules/) for everything else.
 
@@ -39,8 +39,8 @@ vc-mcp-testing-module/
 ├── .claude/
 │   ├── agents/                     # 19 agents — qa/ (11) + ba/ (4) + developers/ (4), each w/ shared-instructions.md
 │   │   └── knowledge/              # 31 shared reference files (business-logic, graphql-schema, sitemap, …)
-│   ├── skills/                     # 38 skills (1 vc-knowledge, 12 testing, 16 qa-methodology, 6 development, 3 root-level)
-│   ├── commands/                   # 29 slash commands
+│   ├── skills/                     # 39 skills (1 vc-knowledge, 12 testing, 17 qa-methodology, 6 development, 3 root-level)
+│   ├── commands/                   # 30 slash commands
 │   └── rules/                      # agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports
 │
 ├── config/                         # MCP browser configs + test-suites.json manifest
@@ -124,8 +124,8 @@ developer + one reviewer per repo kind. Gate ladder: [.claude/rules/quality-gate
 
 ## Commands & Skills
 
-- **29 slash commands** — [commands/](.claude/commands), reference in [.claude/rules/skills-commands.md](.claude/rules/skills-commands.md).
-- **38 skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md).
+- **30 slash commands** — [commands/](.claude/commands), reference in [.claude/rules/skills-commands.md](.claude/rules/skills-commands.md).
+- **39 skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md).
 
 ## MCP Servers
 

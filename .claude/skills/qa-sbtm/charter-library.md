@@ -234,7 +234,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Persona: Screen-Reader User
 - Time Box: 30 minutes
 - Risk Level: Medium-High (legal/regulatory exposure)
-- Environment: {{FRONT_URL}}, theme=Coffee (only theme that passes WCAG per `feedback_a11y_coffee_only`)
+- Environment: {{FRONT_URL}}, theme=Coffee or Red (the two WCAG-gated themes per `feedback_a11y_gated_themes`)
 ```
 
 **Test ideas:**

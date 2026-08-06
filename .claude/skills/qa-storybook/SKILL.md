@@ -57,7 +57,7 @@ Test Storybook components for visual regression, responsive behavior, and state 
 - Baselines are captured on-demand — no persistent `storybook/` directory needed
 - If no baseline exists, the first capture becomes the baseline
 - Hosted Storybook is a **production build** — `import.meta.env.DEV === false`. Don't verify DEV-only warnings here (see `tooling-stack.md`).
-- A11y assertions: only on the **Coffee** theme (other themes aren't WCAG-compliant); visual diff still covers all themes.
+- A11y assertions: on the **Coffee** and **Red** presets (the two WCAG-gated themes — `feedback_a11y_gated_themes`); visual diff still covers all themes. Select via `?globals=themePreset:red;darkMode:light` and confirm the preset applied (async import) before asserting.
 
 ## Boundary with `/qa-accessibility`
 - `/qa-storybook` — a11y addon **inside stories** (component-isolated, axe rules per component).

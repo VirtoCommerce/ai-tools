@@ -198,10 +198,11 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 
 ## VC-UI — Storefront UI & Theme
 
-### VC-UI-001 — Coffee is the only WCAG-compliant theme
-- **Pattern:** Accessibility test pass requires the Coffee theme. Other themes are NOT WCAG-compliant.
-- **Detection probe:** Run a11y tests only against the Coffee theme
-- **Cross-ref:** `feedback_a11y_coffee_only` in MEMORY
+### VC-UI-001 — Only Coffee and Red are WCAG-gated themes
+- **Pattern:** Accessibility gating applies to the **Coffee** and **Red** presets only. The remaining presets are NOT WCAG-compliant — measured 2026-08-06, `purple-pink` (3.58:1) and `watermelon` (3.14:1) still fail AA on `--color-vc-background-solid-accent` against white text, so a11y failures there are known-unsupported, not bugs.
+- **Detection probe:** Run a11y tests against Coffee and Red. In Storybook use `?globals=themePreset:<name>;darkMode:light` and confirm the preset applied (async import) before asserting — Red resolves `--color-primary-500: #e52121`.
+- **History:** Red joined the gated set with the Red Theme 4 release (VCST-4226) after VCST-5555 cleared 6 axe rules across 28 UI-kit stories (vc-frontend PR #2423).
+- **Cross-ref:** `feedback_a11y_gated_themes` in MEMORY
 
 ### VC-UI-002 — Mobile hamburger panel re-mounts header controls
 - **Pattern:** At ≤500 px, the vc-frontend mobile hamburger re-mounts header controls into the panel. Claiming a control is unreachable without first enumerating the hamburger is incorrect.

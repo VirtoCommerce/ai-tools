@@ -15,7 +15,7 @@
 | 7 | BL audit report | `reports/knowledge/BL-AUDIT-<date>.md` | One audit-trail report per `/qa-review-bl` triangulation run |
 | 8 | Exploratory session report | `reports/exploratory/SBTM-*.md` | One report per `/qa-sbtm` / `/qa-exploratory` charter — read back by later sessions for the 24h duplicate-charter check |
 | 9 | Coverage generation report | `reports/coverage/COV-*/` | One consolidated `coverage-generation-report.md` per `/qa-coverage-generation` / `/qa-coverage-gap` run (the run's own intermediate `gap-inventory.json`/`batch-*-results.json` are pipeline working data, not narrative report bloat — §2's cap applies to the markdown digest, not those) |
-| 10 | Performance investigation report | `reports/performance/{topic}-investigation-<date>.md` | A standalone performance investigation with findings worth keeping past the session that produced them |
+| 10 | Performance investigation report | `reports/performance/{topic}-investigation-<date>.md` | A standalone performance investigation with findings worth keeping past the session that produced them. Written by **`/qa-perf-measure`** (deployed-env dependency-count / N+1 measurement); ticket-scoped runs may land as a category-6 per-ticket report instead |
 
 **Per-ticket folders may hold more than one file** (e.g. a storybook/a11y/bundle-size audit alongside `/qa-verify-fix`'s own report) because each covers a distinct check run against the same ticket — that is not the same failure as splitting one report across files. Each individual file still obeys its own cap below; don't open a new file for a check that fits inside an existing one in the same folder.
 
