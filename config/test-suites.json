@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-08-05",
-    "totalSuites": 120,
+    "generated": "2026-08-06",
+    "totalSuites": 121,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1168,6 +1168,28 @@
         "ui-ux",
         "non-functional",
         "runner-native"
+      ],
+      "customerApplicability": "universal"
+    },
+    {
+      "id": "048d",
+      "name": "Structured Data & SEO (storefront)",
+      "file": "regression/suites/Frontend/cross-cutting/048d-structured-data-seo.csv",
+      "domain": "cross-cutting",
+      "layer": "frontend",
+      "concern": "non-functional",
+      "priority": "P2",
+      "testCount": 7,
+      "estimatedMinutes": 12,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "seo",
+        "structured-data",
+        "json-ld",
+        "opengraph",
+        "brand-profile",
+        "homepage",
+        "cross-cutting"
       ],
       "customerApplicability": "universal"
     },
