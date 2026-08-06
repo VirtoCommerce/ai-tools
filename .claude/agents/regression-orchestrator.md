@@ -147,6 +147,8 @@ Write `reports/regression/regression-YYYY-MM-DD.md`:
 
 Update `test-run-status.json` to `status: "completed"` (set `finishedAt`). The background watcher launched in Step 1 detects this, writes the final static HTML (auto-refresh removed), and exits on its own.
 
+**You are the only writer of that flip — nothing deterministic does it for you.** If you end the run without it (crash, abort, hand-off), the file stays `in_progress`: the watcher never settles and `/qa-regression` Step 0's duplicate check blocks every future run. So flip it on EVERY exit path, including an aborted or partially-failed run (`completed` with the failures recorded — the run finished, the tests didn't). The backstop for the case where you can't is `npm run regression:reap` / `:apply`, which marks a provably-silent run `stalled` — that is a reclaimed orphan, not a clean close-out, and it leaves a `stalledReason` in the record.
+
 **Guarantee the HTML report** regardless of the watcher: run `npm run report:regression -- --run-id {RUN_ID}` once. It writes `reports/regression/{RUN_ID}/regression-report.html` from the `suite-*-results.json` files and is idempotent with the watcher.
 
 ### Step 6.5: Teardown (only if `--teardown` provided)
@@ -184,7 +186,7 @@ Run ID: `SMOKE-YYYY-MM-DD-HHMM`. Report: `reports/regression/{RUN_ID}/smoke-repo
 2. Never assign two agents to the same browser server simultaneously
 3. Never use WebKit (not supported on Windows)
 4. Always capture HAR (enforced in test-runner template)
-5. Always write test-run-status.json after every state change
+5. Always write test-run-status.json after every state change — and always close it out (`status: "completed"`, `finishedAt`) on every exit path, including aborted runs. An abandoned `in_progress` blocks all future runs until someone reaps it
 6. Priority order: P0 > P1 > P2
 7. Read environment URLs from .env via `config.js`, never hardcode
 8. Quality gates are non-negotiable — BLOCKED means no deployment

@@ -29,10 +29,10 @@
     "gap_acs_added": 0,
     "impl_coverage": { "satisfied": 0, "drift": 0, "contradicts": 0, "not_found": 0 },
     "conditions_total": 44,
-    "conditions_with_evidence": 13
+    "conditions_with_evidence": 24
   },
   "total_cases": 44,
-  "passed": 10,
+  "passed": 21,
   "failed": 1,
   "blocked": 0,
   "iterations": {
@@ -54,7 +54,7 @@
     "pass_rate": null,
     "skipped_reason": "vc-shell / Vendor Portal is a separate product from this repo's storefront+platform surface — no regression suite in config/test-suites.json covers it. Test plan came from the ticket's own dev-authored comment (44 cases: SC-01..SC-44)."
   },
-  "bugs_filed": ["VCST-5673"],
+  "bugs_filed": ["VCST-5673", "VCST-5679", "VCST-5680"],
   "business_rules_verified": [],
   "appinsights": {
     "checked": false,

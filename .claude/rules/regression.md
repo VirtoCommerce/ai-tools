@@ -18,7 +18,9 @@ Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser t
 5. Each sub-agent gets an isolated browser context, executes all test cases from its CSV, writes JSON results
 6. Orchestrator collects results, handles retries with browser fallback chain, produces consolidated report
 
-**Live progress + auto-report (interactive mode):** at run start the **persistent top-level session** (the one running `/qa-regression`) launches a background watcher (`npm run report:regression:watch -- --run-id {RUN_ID}`) that opens a self-refreshing `reports/regression/{RUN_ID}/regression-report.html`. **Watcher ownership is load-bearing:** it MUST run in the persistent session's own background — **never inside a Task-dispatched sub-agent** (`regression-orchestrator`/`test-runner`), whose child processes are killed when its turn ends while the run keeps going, freezing the HTML mid-run. The owner **self-heals**: while the run is `in_progress`, if `regression-report.html` mtime is >~60s stale it relaunches the watcher (or runs one-shot `report:regression`). See `commands/qa-regression.md` Step 3. It reads `test-run-status.json` (suites flip `pending → running → done` as the orchestrator updates it) plus the per-suite `suite-*-results.json` as they land, and `<meta refresh>`-reloads until the run is `completed`, then renders the final static report and exits. **Live per-case status:** because the runner (`agents/test-runner-agent.md` / `autonomous-test-runner.md`) pre-seeds every case as `PENDING` at suite start and **rewrites its `suite-*-results.json` after each case**, a suite flagged `running` renders **pre-expanded with its cases flipping PASS/FAIL/BLOCKED/PENDING live** — you no longer wait for the whole suite to finish. The dashboard shows a run-level live banner (suites + cases evaluated, live pass/fail/blocked tally, animated in-progress bars). The HTML report is generated **automatically** — no manual `npm run report:regression` step. `scripts/regression/generate-regression-html-report.ts` also supports one-shot (`report:regression`), portable/embedded (`report:regression:portable`), and `--open`. **Consolidated cross-run dashboard:** `npm run report:regression:overview` (`--overview [--since-days N]`, default 14) scans every `REG-*/SMOKE-*` run in the window and writes `reports/regression/overview.html` — aggregate cards, a pass-rate trend bar per run, and a table linking each run's own report, with an **in-page date-range + text filter** that recomputes the aggregate tiles live. The in-progress run is flagged `● LIVE`. **Auto-updates:** the per-case watcher (`report:regression:watch`) also rewrites `overview.html` on every tick and auto-opens it when the run finishes, and `report:regression:overview:watch` keeps a standalone overview self-refreshing (injects `<meta refresh>`) while any run is in progress — so an open overview tab updates itself, no re-run needed.
+**Live progress + auto-report (interactive mode):** at run start the **persistent top-level session** (the one running `/qa-regression`) launches a background watcher (`npm run report:regression:watch -- --run-id {RUN_ID}`) that opens a self-refreshing `reports/regression/{RUN_ID}/regression-report.html`. **Watcher ownership is load-bearing:** it MUST run in the persistent session's own background — **never inside a Task-dispatched sub-agent** (`regression-orchestrator`/`test-runner`), whose child processes are killed when its turn ends while the run keeps going, freezing the HTML mid-run. The owner **self-heals**: while the run is `in_progress`, if `regression-report.html` mtime is >~60s stale it relaunches the watcher (or runs one-shot `report:regression`). See `commands/qa-regression.md` Step 3. It reads `test-run-status.json` (suites flip `pending → running → done` as the orchestrator updates it) plus the per-suite `suite-*-results.json` as they land, and `<meta refresh>`-reloads until the run is `completed`, then renders the final static report and exits. **Live per-case status:** because the runner (`agents/test-runner-agent.md` / `autonomous-test-runner.md`) pre-seeds every case as `PENDING` at suite start and **rewrites its `suite-*-results.json` after each case**, a suite flagged `running` renders **pre-expanded with its cases flipping PASS/FAIL/BLOCKED/PENDING live** — you no longer wait for the whole suite to finish. The dashboard shows a run-level live banner (suites + cases evaluated, live pass/fail/blocked tally, animated in-progress bars). The HTML report is generated **automatically** — no manual `npm run report:regression` step. `scripts/regression/generate-regression-html-report.ts` also supports one-shot (`report:regression`), portable/embedded (`report:regression:portable`), and `--open`.
+
+**Who closes a run out — and the orphan backstop.** `test-run-status.json` is written *only* by the owning orchestrator (`/qa-regression` Step 6 / `regression-orchestrator` Step 6): it creates the file `in_progress`, flips each suite `pending → running → done`, and flips the run `completed`. Runner sub-agents write only their own `suite-*-results.json`; the watcher and the reporting scripts are read-only consumers. That made a crashed orchestrator unrecoverable — the file stayed `in_progress` forever, so the watcher never reached its settle branch and Step 0's duplicate check blocked every future run. **`scripts/regression/reap-stalled-run.ts`** (`npm run regression:reap`, `regression:reap:apply`) is the deterministic backstop: it classifies a run from **file evidence** — newest mtime across the run's own results/screenshots, deliberately ignoring the watcher-written `regression-report.html`, which would otherwise make a dead run look busy forever — and marks a provably-silent one `stalled`. **`stalled` is an observation, never `completed`**: the run did not finish, and recording it as finished would put a phantom run into `history.json`. Absence of evidence never reaps (a false reap frees the interlock and lets two runs fight over the same three browser lanes), and the write re-checks the file first, so a still-alive orchestrator's own `completed` always wins. The live watcher applies the same mark when its own 45-minute idle valve trips — and that valve's stall signature folds in **per-case** counts (`watchProgressSignature`), because a single-suite run's suite count goes constant the moment the runner pre-seeds its results file.
 
 ### 3. Autonomous Interactive Regression (Agent Teams)
 `autonomous-regression-orchestrator` creates a team of child agents using Agent Teams API (TeamCreate, SendMessage). Each child gets an isolated browser context, fresh authentication, and exponential backoff (30s→60s→120s). The orchestrator manages a 3+1 token bucket (3 browser + 1 reporting agent), tracks failures in `results/{RUN_ID}/failures.json`, retries failed suites with browser fallback chain (max 3 attempts), and produces a consolidated report with quality gate evaluation and optional JIRA ticket creation via Atlassian MCP.
@@ -46,51 +48,13 @@ Central configuration for regression orchestration. Defines:
 
 120 suites in `regression/suites/` organized by module (48 directories) under `Frontend/` and `Backend/`. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,980 test cases** (per manifest `testCount`; the source of truth is `config/test-suites.json`).
 
-### Frontend Suites (54 suites, ~1,810 tests — user-facing features & flows)
+### Suite inventory
 
-| Directory | Suites | Tests | Description |
-|-----------|--------|-------|-------------|
-| `Frontend/auth/` | 031-033, 082 | 118 | Login, registration, session, RBAC, company menu |
-| `Frontend/catalog/` | 001-003 | 87 | Navigation, product detail, filters |
-| `Frontend/search/` | 004-005 | 82 | Core search, filters & advanced |
-| `Frontend/cart/` | 028-030 | 104 | Core, validation/persistence, merge |
-| `Frontend/checkout/` | 011-013, 081 | 116 | Flow, guest, B2B |
-| `Frontend/orders/` | 014-015 | 130 | Orders frontend, quotes |
-| `Frontend/payment/` | 039, 040a-040c, 041 | 86 | CyberSource, Skyflow, Authorize.Net, Datatrans, cross-cutting |
-| `Frontend/bopis/` | 036-038 | 109 | Store selector, cart, checkout |
-| `Frontend/b2b/` | 006-010, 011b | 217 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
-| `Frontend/configurable-products/` | 072, 072b-072d | 245 | UI, E2E scenarios, cross-cutting |
-| `Frontend/whitelabeling/` | 070-071 | 68 | Storefront, branding |
-| `Frontend/marketing/` | 077, 077b | 73 | Coupons & promotions storefront |
-| `Frontend/loyalty/` | 083, 083b | 33 | Loyalty storefront (earn/redeem, balance) |
-| `Frontend/cross-cutting/` | 043-048, 048c | 196 | GA4, security, a11y, i18n, performance, browser compat |
-| `Frontend/customer-reviews/` | 088 | 11 | Customer reviews storefront |
-| `Frontend/sales-rep/` | 089-091 | 103 | Sales-rep storefront (impersonation, orders, dashboard) |
-| `Frontend/smoke/` | 042 | 34 | Storefront smoke (P0) |
-
-### Backend Suites (65 suites, ~2,050 tests — admin UI, modules & APIs)
-
-| Directory | Suites | Tests | Description |
-|-----------|--------|-------|-------------|
-| `Backend/platform/` | 020-021, 063 | 107 | Users/roles, dynamic properties, core settings |
-| `Backend/store/` | 034-035 | 69 | Management, rounding/email |
-| `Backend/catalog/` | 051, 053 | 71 | Products admin, categories admin |
-| `Backend/customer/` | 026, 027, 027b | 122 | Contacts, orgs & invites |
-| `Backend/pricing/` | 054-055 | 62 | Logic, management |
-| `Backend/inventory/` | 056 | 43 | Fulfillment centers, stock |
-| `Backend/marketing/` | 023-025 | 89 | Promotions, content, coupons/API |
-| `Backend/notifications/` | 057-058 | 81 | Templates, triggers |
-| `Backend/page-builder/` | 059-060 | 151 | Page Builder — page management, design/content |
-| `Backend/orders/` | 017-019 | 103 | Management, payments, shipments admin |
-| `Backend/api/` | 049 | 46 | Platform REST API |
-| `Backend/graphql/` | 050a, 050b1-050b5, 050c-050n | 479 | GraphQL xAPI (18 suites) |
-| `Backend/search/` | 061 | 47 | Search indexing admin |
-| `Backend/configurable-products/` | 052 | 31 | Configurable products admin |
-| `Backend/whitelabeling/` | 067 | 40 | White labeling admin |
-| `Backend/customer-reviews/` | 086-087 | 31 | Customer reviews admin & API |
-| `Backend/sales-rep/` | 092, 092b | 40 | Sales-rep admin (092) + embedded app (092b) — routed in `module-suite-map.md` |
-| `Backend/smoke/` | 078 | 115 | Backend/API smoke (P0) |
-| Other modules | 15 suites | ~320 | assets (062), channels (076), contracts (074), image-tools (069), import-export (064), loyalty (075/075b/075c), news (084), push-messages (068), returns (073), seo (066), shipping (065), task-management (085), xmarketing (079) |
+**Derived, not documented here.** `config/test-suites.json` is the source of truth for every suite’s id,
+name, file, domain, layer, priority, `testCount`, agent and tags (120 suites, 38 selections). To see the
+current split: `npm run suites:lint` prints the totals, or read the manifest directly. A table copied into
+this file goes stale the first time a suite is added — which is how the retired `080` release suite below
+came to be documented for weeks after its CSV was deleted.
 
 - **Release suite**: none. The master release suite `080` (`_release/080-full-regression-release.csv`) was **retired on 2026-07-31** — its CSV was deleted in commit `9dd9f3e3` and the manifest entry plus the `release` selection were removed once it was found that `release` had been resolving to a missing file (running zero cases while reporting a valid selection). For a major release, use `full` (all 120 suites) or a plan-driven `sprint` selection. `npm run suites:lint` now hard-fails on any declared-but-absent suite CSV, so this cannot recur silently.
 - **P0 suites**: 042 (Smoke), 078 (Backend/API Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)

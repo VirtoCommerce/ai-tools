@@ -3,8 +3,8 @@
   "ticket_type": "Task",
   "flow": "feature-test",
   "path": "full",
-  "verdict": "PASS_WITH_NOTES",
-  "date": "2026-08-05",
+  "verdict": "PASS",
+  "date": "2026-08-06",
   "environment": "https://vcst-qa-storefront.govirto.com",
   "build": {
     "platform": "3.1057.0-pr-3095-3abb-vcst-5637-json-hash-extensions-3abbc5bb",
@@ -13,10 +13,19 @@
       "VirtoCommerce.XCatalog": "3.1016.0-pr-106-3559"
     }
   },
-  "agents_dispatched": ["ba-system-analyzer", "test-management-specialist", "regression-orchestrator", "qa-frontend-expert"],
+  "agents_dispatched": [
+    "ba-system-analyzer",
+    "test-management-specialist",
+    "regression-orchestrator",
+    "qa-frontend-expert"
+  ],
   "epic": {
     "parent": null,
-    "siblings": { "done": [], "in_progress": [], "blocked_dependency": [] },
+    "siblings": {
+      "done": [],
+      "in_progress": [],
+      "blocked_dependency": []
+    },
     "roll_up": {
       "is_epic_run": false,
       "stories_tested_in_order": [],
@@ -29,9 +38,287 @@
     "story_acs": 0,
     "weak_acs": 0,
     "gap_acs_added": 8,
-    "impl_coverage": { "satisfied": 7, "drift": 0, "contradicts": 0, "not_found": 1 },
+    "impl_coverage": {
+      "satisfied": 8,
+      "partial": 0,
+      "drift": 0,
+      "contradicts": 0,
+      "not_found": 0
+    },
     "conditions_total": 8,
-    "conditions_with_evidence": 7
+    "conditions_with_evidence": 8
+  },
+  "ac_dod_estimate": {
+    "ac_coverage_pct": 100,
+    "dod_completion_pct": null,
+    "dod_note": "ticket declares no DoD"
+  },
+  "scope_for_test": {
+    "source": "Oleg Zhuk comment 2026-08-04 — compare before/after: dependency count for x-cart ops + total durations",
+    "status": "EXECUTED 2026-08-06 — both criteria measured with controlled cross-env A/B. Was NOT executed at all in the 2026-08-05 run (appinsights.checked=false).",
+    "design": "cross-env structural A/B (before=vcptcore-qa XCatalog 3.1014.0, after=vcst-qa 3.1016.0-pr-106) for counts; same-env temporal for durations, per the ticket's own stated validity boundary",
+    "structural_ab": {
+      "identical_4_aliases_per_request": {
+        "before": [
+          4,
+          4,
+          4
+        ],
+        "after": [
+          1,
+          1,
+          1
+        ],
+        "reduction_pct": 75
+      },
+      "single_call_control": {
+        "before": [
+          1,
+          1,
+          1
+        ],
+        "after": [
+          1,
+          1,
+          1
+        ]
+      },
+      "distinct_4_aliases_key_completeness": {
+        "before": [
+          4,
+          4,
+          4
+        ],
+        "after": [
+          4,
+          4
+        ],
+        "_decisive_control": "if a warm platform cache rather than this fix were serving vcst-qa, the distinct arm would have collapsed there too; it did not, which is what licenses attributing the identical-arm drop to the dedup",
+        "_precision_note": "only TWO distinct-arm records were observed directly on vcst-qa; sampling folded the third (itemCount is an estimate — the 9 requests resolved as 7-with-1-search + 2-with-4 rather than the expected 6+3). Reported as [4,4], not [4,4,4]."
+      }
+    },
+    "xcart_same_env": {
+      "_correction": "Recomputed 2026-08-06. First pass mis-dated the deploy to 08:36Z by reading GitHub merged_at 2026-08-05T11:36:21Z as +03:00; 10:00-11:36Z of old-build traffic had been bucketed as 'after', understating every delta. Windows now before=08-04T15:15Z..08-05T11:30Z, after=08-05T12:15Z..08-06T08:30Z (~20h each).",
+      "_attribution_limit": "vcst-qa is continuously redeployed — the after window also contains vc-frontend/theme updates (08-05 12:26Z, 22:16-22:21Z) and the before window contains VCST-5657 (cart line-item rule) + an XFrontend bump. A theme change alters the storefront query text and hence the resolution graph, so this table shows improvement but does NOT isolate VCST-5637. structural_ab is the attribution-grade evidence.",
+      "AddOrUpdateCartPayment": {
+        "before_per_req": 12.6,
+        "after_per_req": 1.11,
+        "n_before": 10,
+        "n_after": 18,
+        "max_before": 18,
+        "max_after": 4,
+        "median_ms_before": 303,
+        "median_ms_after": 147
+      },
+      "AddOrUpdateCartShipment": {
+        "before_per_req": 12,
+        "after_per_req": 1.41,
+        "n_before": 13,
+        "n_after": 29,
+        "max_before": 18,
+        "max_after": 4,
+        "median_ms_before": 784,
+        "median_ms_after": 576
+      },
+      "AddCoupon": {
+        "before_per_req": 10,
+        "after_per_req": 3.33,
+        "n_before": 7,
+        "n_after": 9,
+        "median_ms_before": 421,
+        "median_ms_after": 555
+      },
+      "RemoveCoupon": {
+        "before_per_req": 10,
+        "after_per_req": 3.57,
+        "n_before": 5,
+        "n_after": 7
+      },
+      "RemoveCartItems": {
+        "before_per_req": 8,
+        "after_per_req": 2.54,
+        "n_before": 5,
+        "n_after": 13
+      },
+      "GetFullCart": {
+        "before_per_req": 7.52,
+        "after_per_req": 2,
+        "n_before": 33,
+        "n_after": 79,
+        "max_before": 24,
+        "max_after": 4,
+        "median_ms_before": 597,
+        "median_ms_after": 129
+      },
+      "GetSavedForLater": {
+        "before_per_req": 1.26,
+        "after_per_req": 0.51,
+        "n_before": 27,
+        "n_after": 57
+      },
+      "ValidateCoupon": {
+        "before_per_req": 0.77,
+        "after_per_req": 0.32,
+        "n_before": 13,
+        "n_after": 34
+      },
+      "GetShortCart": {
+        "before_per_req": 0.37,
+        "after_per_req": 0.3,
+        "n_before": 265,
+        "n_after": 390
+      },
+      "UpdateShortCartItemQuantity": {
+        "before_per_req": 2.45,
+        "after_per_req": 2.51,
+        "n_before": 20,
+        "n_after": 57,
+        "note": "flat"
+      },
+      "ClearCart": {
+        "before_per_req": 1.8,
+        "after_per_req": 2,
+        "n_before": 5,
+        "n_after": 12,
+        "note": "flat"
+      },
+      "_superseded": "Superseded by controlled_xcart_ab. Retained for DIRECTION only — magnitudes unusable: SQL per GetFullCart also fell 78% (50.18 -> 10.99), which this fix cannot cause, indicating different workloads between the windows; and vcst-qa is continuously redeployed."
+    },
+    "no_before_sample_not_comparable": [
+      "ChangeCartCurrency",
+      "MergeCart",
+      "MoveToSavedForLater",
+      "MoveFromSavedForLater",
+      "UnselectCartItems",
+      "ChangeShortCartItemQuantity"
+    ],
+    "low_confidence_not_claimed": [
+      "ChangeFullCartItemsQuantity (n=2)",
+      "SelectCartItems (n=1)",
+      "CreateConfiguredLineItem (n=1)",
+      "InitializeCartPayment (n=2)"
+    ],
+    "total_dependency_count": {
+      "_note": "Literal reading of Oleg's criterion 1 — ALL dependencies per request, not just product _search. Same corrected windows.",
+      "GetFullCart": {
+        "total_before": 57.7,
+        "total_after": 12.99,
+        "sql_before": 50.18,
+        "sql_after": 10.99,
+        "es_product_before": 7.52,
+        "es_product_after": 2
+      },
+      "AddOrUpdateCartShipment": {
+        "total_before": 52.62,
+        "total_after": 32.1,
+        "sql_before": 40.62,
+        "sql_after": 30.69
+      },
+      "AddOrUpdateCartPayment": {
+        "total_before": 46.9,
+        "total_after": 23.33,
+        "sql_before": 34.3,
+        "sql_after": 22.22
+      },
+      "ClearCart": {
+        "total_before": 17.2,
+        "total_after": 18.75,
+        "note": "went UP"
+      },
+      "UpdateShortCartItemQuantity": {
+        "total_before": 21.65,
+        "total_after": 23.25,
+        "note": "went UP"
+      },
+      "_invalidating_finding": "SQL deps per GetFullCart fell 78% (50.18 -> 10.99). VCST-5637 dedups Elasticsearch product searches and touches NO SQL — each caller still gets a clone and still runs its own downstream pricing/inventory work. A 78% SQL drop cannot be caused by this fix. Most likely the before and after populations are different workloads (cart size drives both SQL and ES counts ~linearly; before n=33 dominated by a large-cart regression run, after n=79 mostly small carts). CONCLUSION: Measurement 2 magnitudes are NOT trustworthy and GetFullCart's 597->129ms is better explained by 39 fewer SQL round-trips than by 5.5 fewer ES searches."
+    },
+    "criterion_1_status": {
+      "verdict": "EXECUTED",
+      "evidence": "controlled_xcart_ab (10 -> 3-4 per cart request) for x-cart, plus structural_ab (4 -> 1) for the mechanism in isolation"
+    },
+    "harness": "scratchpad measure-5637-catalog.csv (PERF-5637-CAT) — no auth, no fixtures, portable across envs",
+    "controlled_xcart_ab": {
+      "_design": "identical cart (3 line items x qty 2) + byte-identical query text on both envs, 1 VU, 0% overlap. before=vcptcore-qa XCatalog 3.1014.0, after=vcst-qa 3.1016.0-pr-106.",
+      "es_product_search_per_cart_request": {
+        "replication_1_0855Z": {
+          "before": [
+            10,
+            10
+          ],
+          "after": [
+            4,
+            3
+          ]
+        },
+        "replication_2_0907Z": {
+          "before": [
+            10,
+            8,
+            6
+          ],
+          "after": [
+            3,
+            4,
+            4,
+            3
+          ]
+        },
+        "combined": {
+          "before": [
+            6,
+            8,
+            10,
+            10
+          ],
+          "before_median": 9,
+          "after": [
+            3,
+            3,
+            3,
+            4,
+            4,
+            4
+          ],
+          "after_median": 3.5,
+          "reduction_pct": 61
+        },
+        "note": "after side tight at 3-4 across 6 observations (all unsampled in replication 2); before side wider at 6-10, reflecting cache state and read-vs-write mix"
+      },
+      "lighter_request_same_run": {
+        "before": 4,
+        "after": 0
+      },
+      "total_deps_same_requests": {
+        "before_range": [
+          21,
+          47
+        ],
+        "after_range": [
+          33,
+          37
+        ],
+        "note": "in-band — SQL side unchanged, the correct signature for an Elasticsearch-only change and the check that rules out crediting this fix with an unrelated improvement"
+      },
+      "product_caveat": "products necessarily differ between catalogs — vcptcore-qa has ZERO tracked inventory so only isTrackInventory=false products are addable there; cart SHAPE is identical, which is what the count comparison requires",
+      "harnesses": [
+        "m5637-cart-vcptcore.csv / m5637-cart-vcst.csv (PERF-5637-CART)",
+        "m5637-read.csv (PERF-5637-READ)"
+      ],
+      "cache_confound": "vcptcore-qa is idle (cold platform caches) where vcst-qa carries continuous traffic, so warm caches could in principle explain part of the gap. In replication 2 vcptcore-qa's caches were already warm from the preceding runs and it still measured 6-10 vs 3-4 — this weakens the alternative explanation but does not eliminate it. The catalog distinct-criteria arm carries the decisive control."
+    },
+    "methodological_findings": [
+      "Repeated identical requests are NOT independent samples: 8 identical cart reads collapsed from 6 searches/317ms to 1 search/10ms within seconds ON THE PRE-FIX BUILD — the platform's own catalog caches warming, not this fix. Only the cold request discriminates; a naive repeat-and-average would have reported the fix as doing nothing.",
+      "App Insights adaptive sampling retained 3 of 11 requests per arm (itemCount 2-4). Each retained record is one real request with real dependency counts and shares its multiplier with its dependencies, so per-request integrity holds; both arms sampled alike."
+    ],
+    "criterion_2_durations": "NOT CLAIMED — cross-env latency is out of scope by the ticket's own stated boundary, and the same-env duration data is workload-confounded (AddCoupon median rose 421->555ms). Only dependency COUNTS are claimed.",
+    "self_check": {
+      "performed": "2026-08-06 — every figure re-traced to its App Insights query output; controlled x-cart A/B re-run as an independent second replication.",
+      "defects_found_in_own_report": [
+        "Over-precision: vcst-qa distinct arm reported as 4,4,4 when only two records were observed (third folded by sampling). Corrected to 4,4.",
+        "Internal contradiction: AC-4 read 'no op slower' while the notes recorded AddCoupon's median rising 421->555ms. AC-4 now claims dependency count only and explicitly does not claim duration.",
+        "Earlier in the run: deploy boundary mis-dated by reading GitHub merged_at Z as +03:00, which invalidated three published claims (peak 18-34, ChangeCartCurrency -81%, SelectCartItems ticked up). All withdrawn."
+      ]
+    }
   },
   "total_cases": 7,
   "passed": 7,
@@ -45,13 +332,31 @@
   },
   "new_cases_authored": 7,
   "promotion": {
-    "automated": ["CAT-GQL-133", "CAT-GQL-134", "CAT-GQL-135", "CAT-GQL-136", "CAT-GQL-137", "CAT-GQL-138", "CAT-GQL-139"],
+    "automated": [
+      "CAT-GQL-133",
+      "CAT-GQL-134",
+      "CAT-GQL-135",
+      "CAT-GQL-136",
+      "CAT-GQL-137",
+      "CAT-GQL-138",
+      "CAT-GQL-139"
+    ],
     "reviewed": [],
     "blocked": [],
     "reverted": []
   },
   "regression": {
-    "suites": ["050a", "050b1", "050b2", "001", "002", "003", "028", "029", "030"],
+    "suites": [
+      "050a",
+      "050b1",
+      "050b2",
+      "001",
+      "002",
+      "003",
+      "028",
+      "029",
+      "030"
+    ],
     "run_id": "REG-2026-08-05-1416",
     "pass_rate": 0.9435,
     "skipped_reason": "suite 002 excluded from the pass-rate/triage scope — hit failed_max_retries (Firefox lane defect + 2 external Anthropic API 529 overloads), 18/31 resolved; needs an out-of-band re-run"
@@ -59,12 +364,29 @@
   "bugs_filed": [
     "reports/bugs/open/BUG-xapi-seoinfo-id-objecttype-invalid-operation-nulls-product.md"
   ],
-  "business_rules_verified": ["BL-GQL-002", "BL-GQL-003"],
+  "business_rules_verified": [
+    "BL-GQL-002",
+    "BL-GQL-003"
+  ],
   "appinsights": {
-    "checked": false,
-    "layers": [],
-    "window_minutes": 0,
-    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "checked": true,
+    "layers": [
+      "backend/vcst-qa",
+      "backend/vcptcore-qa"
+    ],
+    "window_minutes": 5760,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 1,
+      "dismissed": 0
+    },
+    "needs_review": [
+      "System.ArgumentNullException at VirtoCommerce.XCart.Data.Commands.UpdateCartQuantityCommandHandler.Handle — 2026-08-05 12:24Z, sole occurrence in 20 days, unnamed GraphQL operation (ad-hoc client, not storefront), different module (XCart); insufficient evidence to file"
+    ],
+    "object_disposed_exception_check": {
+      "expected_risk_from_pr": "IRequestScopedCacheAccessor on a non-awaited continuation",
+      "occurrences_post_deploy": 0
+    },
     "correlated_failures": []
   },
   "screenshots": "reports/tickets/Sprint26-15/VCST-5637/screenshots/"

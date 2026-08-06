@@ -69,9 +69,24 @@ rows fire only when the trigger applies.
 | 12 | **Deployed versions** (platform + modules + theme) | always (header + P1 + §8C) | **`vc-deploy-dev` `backend/packages.json` + `theme/artifact.json`** via GitHub MCP (branch = `TEST_ENV`: `vcst-qa`/`vcptcore`/`virtostart`) — authoritative; `{BACK_URL}/#!/workspace/systeminfo` is a live cross-check | manifest header | **M** |
 | 13 | **Source evidence** (file path + line + quote) | browser/logs don't explain it | GitHub MCP `search_code` / `get_file_contents` (flow §8) | `source/findings.md` | C |
 | 14 | **Reproduction rate** (X/10) | intermittent | note in manifest | `evidence-index.md` | C |
+| 15 | **Authoritative config / data read** — the record that decides whether the behaviour is even wrong | symptom depends on tenant data or configuration (see below) | **Admin back-office UI** (`{BACK_URL}` blade for the entity) or the Admin/Platform REST API — never the storefront | `source/config-<entity>.md` or `network/admin-<entity>.json` | **M\*\*** |
 
 > **M\*** — mandatory *whenever a server-side layer is involved*. A storefront-only CSS bug needs no trace
 > ID or App Insights; anything touching REST/xAPI/Admin/jobs does. When in doubt, capture it.
+>
+> **M\*\*** — mandatory whenever the symptom is **data- or config-dependent**: prices/currency, stock and
+> availability, catalog/category assignment, store settings and feature flags, roles/permissions/org
+> membership, notification or promotion setup. For this whole class **the storefront cannot tell you whether
+> the behaviour is a defect** — the same rendering is correct under one configuration and wrong under
+> another. Read the owning record from the **back-office**, and quote the field values you found. Absent this
+> row, the only honest verdict is `LOW` confidence (see the confidence bar), never a filed bug.
+>
+> *Worked failure (2026-08-06):* keyword search returned "0 results" in EUR while USD returned 123, and
+> browse showed real EUR prices. Filed P1 "search broken in EUR" on that storefront-only evidence. The
+> back-office check that was skipped: the store has **15 EUR price lists**, and the xAPI returns
+> `totalCount=149` in *both* currencies with EUR rows at `price.list.amount = 0` — the matched products
+> simply have no EUR price, and the storefront hiding unpriced products is **BL-PRICE-005 working as
+> designed**. The bug was withdrawn to `reports/bugs/rejected/`. One back-office read would have prevented it.
 
 ### Capture rules that prevent the usual misses
 
@@ -120,7 +135,7 @@ Decided by: <which captured artifact proved the layer — cite row # from Part A
 ### 5. Alternatives ruled out (MANDATORY — at least the obvious 2)
 | Alternative hypothesis | How it was ruled out |
 |------------------------|----------------------|
-| By-design / config-gated | <checked source / setting / VirtoOZ doc — cite> |
+| **By-design / config-gated** — for a data/config-dependent symptom this is ruled out ONLY by a **back-office read** (Part A row 15), never by storefront behaviour | <back-office blade or Admin API + the field values found — cite row 15> |
 | Env data drift (stale index, missing fixture, orphaned org) | <checked Admin / @td fixture / org exists> |
 | Flaky / timing (race, ES lag, cache) | <repro rate X/10; passes-on-retry? §10> |
 | Version skew (P1) | <compared systeminfo across good/bad env> |
@@ -145,6 +160,9 @@ owning layer · repoKind · exact repo · file:line (if known) · revert-safe vs
 Name a `repoKind`/repo in the Fix Routing block **only at MEDIUM+**, and only when:
 - the **lowest failing layer** is proven by a captured artifact (Part A row #), not assumed; and
 - at least the two obvious **alternatives are ruled out** (by-design, data drift); and
+- for a **data- or config-dependent symptom**, the **back-office read (row 15) is present and quoted** — the
+  data that decides whether the behaviour is wrong has actually been checked. Storefront-only evidence caps
+  such an investigation at `LOW`, no matter how cleanly it reproduces; and
 - for a server-side bug, the **trace ID + App Insights exception** corroborate the browser symptom; and
 - for a regression, the introducing diff **explains** the symptom *and* sits in the window (§8C).
 

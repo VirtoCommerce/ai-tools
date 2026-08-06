@@ -23,6 +23,7 @@ import { join, resolve, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { parse as parseCsv } from "csv-parse/sync";
+import { markRunStalled, DEFAULT_IDLE_LIMIT_MS } from "./reap-stalled-run.ts";
 
 type Verdict = "PASS" | "FAIL" | "SKIPPED" | "BLOCKED" | "PENDING" | "EMPTY" | "UNKNOWN";
 
@@ -84,7 +85,9 @@ interface RunStatus {
   finishedAt?: string | null;
   env?: string;
   build?: Record<string, string>;
-  status?: string; // in_progress | running | completed
+  // in_progress | running | completed | stalled (reclaimed by reap-stalled-run.ts —
+  // an orphaned run the orchestrator never closed out; NOT a completed run)
+  status?: string;
   mode?: string;
   outputDir?: string;
   suites?: RunStatusSuite[];
@@ -108,8 +111,6 @@ interface Args {
   embedImages: boolean;
   watch: boolean;
   intervalSec: number;
-  overview: boolean;
-  sinceDays: number;
 }
 
 /** parseInt with a fallback that only kicks in on an actual parse failure — a
@@ -126,8 +127,6 @@ function parseArgs(argv: string[]): Args {
     embedImages: false,
     watch: false,
     intervalSec: 10,
-    overview: false,
-    sinceDays: 14,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -137,9 +136,6 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--open") args.openInBrowser = true;
     else if (a === "--embed-images") args.embedImages = true;
     else if (a === "--watch") args.watch = true;
-    else if (a === "--overview") args.overview = true;
-    else if (a === "--since-days") args.sinceDays = Math.max(1, parseIntArg(argv[++i], 14));
-    else if (a.startsWith("--since-days=")) args.sinceDays = Math.max(1, parseIntArg(a.slice("--since-days=".length), 14));
     else if (a === "--interval") args.intervalSec = Math.max(2, parseIntArg(argv[++i], 10));
     else if (a.startsWith("--interval=")) args.intervalSec = Math.max(2, parseIntArg(a.slice("--interval=".length), 10));
     else if (a === "--help" || a === "-h") {
@@ -147,13 +143,11 @@ function parseArgs(argv: string[]): Args {
         [
           "Usage: npx tsx scripts/generate-regression-html-report.ts [options]",
           "  --run-id <ID>        Specific run (default: latest REG-*/SMOKE-* or the in-progress run)",
-          "  --out <path>         Output file (default: <run>/regression-report.html, or <root>/overview.html)",
+          "  --out <path>         Output file (default: <run>/regression-report.html)",
           "  --reports-root <p>   Reports root (default: reports/regression)",
           "  --embed-images       Inline screenshots as base64 (single-file portable)",
           "  --watch              Live mode: regenerate on an interval until the run completes",
           "  --interval <sec>     Watch refresh interval in seconds (default: 10)",
-          "  --overview           Consolidated cross-run dashboard (all runs in the window) + date filter",
-          "  --since-days <N>     Overview window in days (default: 14)",
           "  --open               Open generated file in default browser",
         ].join("\n")
       );
@@ -1422,296 +1416,6 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
 </html>`;
 }
 
-// --- Consolidated cross-run overview ----------------------------------------
-
-interface RunSummary {
-  runId: string;
-  dateMs: number;
-  dateLabel: string;
-  env: string;
-  selection: string;
-  live: boolean;
-  suites: number;
-  cases: number;
-  pass: number;
-  fail: number;
-  blocked: number;
-  skip: number;
-  pending: number;
-  bugs: number;
-  passRate: number;
-  gate: "PASSED" | "BLOCKED" | "N/A";
-  hasReport: boolean;
-}
-
-/** Parse the run start time from the dir name (REG-YYYY-MM-DD-HHMM); fall back to mtime. */
-function parseRunDate(runId: string, runDir: string): number {
-  const m = runId.match(/(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})/);
-  if (m) {
-    const [, y, mo, d, hh, mm] = m;
-    const t = Date.parse(`${y}-${mo}-${d}T${hh}:${mm}:00Z`);
-    if (Number.isFinite(t)) return t;
-  }
-  try {
-    return statSync(runDir).mtimeMs;
-  } catch {
-    return 0;
-  }
-}
-
-function collectRuns(root: string, sinceDays: number, sharedStatus: RunStatus | null): RunSummary[] {
-  if (!existsSync(root)) return [];
-  const cutoff = Date.now() - sinceDays * 24 * 60 * 60 * 1000;
-  const dirs = readdirSync(root).filter(
-    (d) => (d.startsWith("REG-") || d.startsWith("SMOKE-")) && statSync(join(root, d)).isDirectory()
-  );
-  const runs: RunSummary[] = [];
-  for (const runId of dirs) {
-    const runDir = join(root, runId);
-    const dateMs = parseRunDate(runId, runDir);
-    if (dateMs < cutoff) continue;
-    const suites = loadAllSuites(runDir);
-    const t = suites.reduce(
-      (a, s) => ({
-        cases: a.cases + s.totalCases,
-        pass: a.pass + s.passed,
-        fail: a.fail + s.failed,
-        blocked: a.blocked + s.blocked,
-        skip: a.skip + s.skipped,
-        pending: a.pending + s.pending,
-        bugs: a.bugs + s.bugs.length,
-      }),
-      { cases: 0, pass: 0, fail: 0, blocked: 0, skip: 0, pending: 0, bugs: 0 }
-    );
-    const decided = t.pass + t.fail;
-    const passRate = decided > 0 ? (t.pass / decided) * 100 : 0;
-    const gate: RunSummary["gate"] = decided === 0 ? "N/A" : passRate >= 95 ? "PASSED" : "BLOCKED";
-    const statusMatches = sharedStatus?.runId === runId;
-    const live = statusMatches && statusIsInProgress(sharedStatus);
-    const env = suites[0]?.environment || (statusMatches ? sharedStatus?.env ?? "" : "") || "unknown";
-    const selection = statusMatches ? String(sharedStatus?.selection ?? "") : "";
-    runs.push({
-      runId,
-      dateMs,
-      dateLabel: new Date(dateMs).toISOString().replace("T", " ").slice(0, 16) + "Z",
-      env,
-      selection,
-      live,
-      suites: suites.length,
-      cases: t.cases,
-      pass: t.pass,
-      fail: t.fail,
-      blocked: t.blocked,
-      skip: t.skip,
-      pending: t.pending,
-      bugs: t.bugs,
-      passRate,
-      gate,
-      hasReport: existsSync(join(runDir, "regression-report.html")),
-    });
-  }
-  return runs.sort((a, b) => b.dateMs - a.dateMs); // newest first
-}
-
-function renderOverviewHtml(runs: RunSummary[], sinceDays: number, opts?: { live?: boolean; intervalSec?: number }): string {
-  const anyLive = runs.some((r) => r.live);
-  const refreshMeta = opts?.live && anyLive ? `\n<meta http-equiv="refresh" content="${opts.intervalSec ?? 10}">` : "";
-  const liveNote = anyLive
-    ? `<span class="badge live-running">● LIVE run in progress${opts?.live ? ` · auto-refresh ${opts.intervalSec ?? 10}s` : ""}</span>`
-    : "";
-  const cutoffMs = Date.now() - sinceDays * 24 * 60 * 60 * 1000;
-  const fromDate = new Date(cutoffMs).toISOString().slice(0, 10);
-  const toDate = new Date().toISOString().slice(0, 10);
-  const agg = runs.reduce(
-    (a, r) => ({
-      cases: a.cases + r.cases,
-      pass: a.pass + r.pass,
-      fail: a.fail + r.fail,
-      blocked: a.blocked + r.blocked,
-      skip: a.skip + r.skip,
-      bugs: a.bugs + r.bugs,
-    }),
-    { cases: 0, pass: 0, fail: 0, blocked: 0, skip: 0, bugs: 0 }
-  );
-  const aggDecided = agg.pass + agg.fail;
-  const aggRate = aggDecided > 0 ? ((agg.pass / aggDecided) * 100).toFixed(1) : "0.0";
-
-  // Trend: chronological (oldest → newest) mini bar per run, height = pass rate.
-  const chrono = [...runs].sort((a, b) => a.dateMs - b.dateMs);
-  const barW = 100 / Math.max(1, chrono.length);
-  const trendBars = chrono
-    .map((r, i) => {
-      const h = Math.max(2, r.passRate);
-      const color = r.gate === "PASSED" ? "var(--pass)" : r.gate === "BLOCKED" ? "var(--fail)" : "var(--pending)";
-      return `<div class="tb" data-datems="${r.dateMs}" title="${escapeHtml(r.runId)} — ${r.passRate.toFixed(1)}% (${r.pass}P/${r.fail}F/${r.blocked}B)"
-        style="left:${(i * barW).toFixed(3)}%;width:${(barW * 0.8).toFixed(3)}%;height:${h.toFixed(1)}%;background:${color}"></div>`;
-    })
-    .join("");
-
-  const rows = runs
-    .map((r) => {
-      const gateCls = r.gate === "PASSED" ? "rate-good" : r.gate === "BLOCKED" ? "rate-bad" : "muted";
-      const reportLink = r.hasReport
-        ? `<a href="${escapeHtml(r.runId)}/regression-report.html" target="_blank">${escapeHtml(r.runId)}</a>`
-        : `<span class="mono">${escapeHtml(r.runId)}</span>`;
-      const livePill = r.live ? ` <span class="badge live-running">● LIVE</span>` : "";
-      return `<tr data-datems="${r.dateMs}" data-env="${escapeHtml(r.env)}" data-text="${escapeHtml((r.runId + " " + r.env + " " + r.selection).toLowerCase())}"
-        data-cases="${r.cases}" data-pass="${r.pass}" data-fail="${r.fail}" data-blocked="${r.blocked}" data-skip="${r.skip}" data-bugs="${r.bugs}">
-        <td class="mono small">${reportLink}${livePill}</td>
-        <td class="small nowrap">${escapeHtml(r.dateLabel)}</td>
-        <td class="small">${escapeHtml(r.env)}</td>
-        <td class="small">${escapeHtml(r.selection || "—")}</td>
-        <td class="num">${r.suites}</td>
-        <td class="num">${r.cases}</td>
-        <td class="num pass">${r.pass}</td>
-        <td class="num fail">${r.fail || ""}</td>
-        <td class="num blocked">${r.blocked || ""}</td>
-        <td class="num skip">${r.skip || ""}</td>
-        <td class="num"><strong class="${gateCls}">${r.passRate.toFixed(1)}%</strong></td>
-        <td><span class="badge ${r.gate === "PASSED" ? "b-pass" : r.gate === "BLOCKED" ? "b-fail" : "b-unknown"}">${r.gate}</span></td>
-      </tr>`;
-    })
-    .join("\n");
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">${refreshMeta}
-<title>Regression Overview — last ${sinceDays} days</title>
-<style>
-  :root { --bg:#f6f8fa; --surface:#fff; --surface-2:#eef1f5; --border:#d8dee6; --text:#1b2733; --text-dim:#5e6c7c;
-    --muted:#94a3b8; --pass:#16a34a; --fail:#dc2626; --skip:#d97706; --blocked:#9333ea; --pending:#64748b; --accent:#0284c7;
-    --shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06); }
-  * { box-sizing:border-box; }
-  html,body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; font-size:14px; line-height:1.5; }
-  .container { max-width:1440px; margin:0 auto; padding:32px 24px; }
-  header { border-bottom:1px solid var(--border); padding-bottom:16px; margin-bottom:24px; }
-  h1 { margin:0; font-size:24px; font-weight:600; letter-spacing:-.02em; }
-  h2 { font-size:16px; margin:28px 0 10px; font-weight:600; }
-  .subtitle { color:var(--text-dim); font-size:13px; margin-top:4px; }
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; box-shadow:var(--shadow); }
-  .card-label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); margin-bottom:6px; }
-  .card-value { font-size:24px; font-weight:700; letter-spacing:-.02em; }
-  .card.pass .card-value { color:var(--pass); } .card.fail .card-value { color:var(--fail); }
-  .card-sub { font-size:11px; color:var(--text-dim); margin-top:4px; }
-  .trend { position:relative; height:120px; background:var(--surface); border:1px solid var(--border); border-radius:8px;
-    box-shadow:var(--shadow); margin-bottom:8px; padding:8px 8px 0; }
-  .trend-inner { position:relative; height:100%; }
-  .tb { position:absolute; bottom:0; border-radius:2px 2px 0 0; transition:opacity .15s; }
-  .tb:hover { opacity:.75; }
-  .trend-axis { display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); margin-bottom:16px; }
-  .controls { display:flex; gap:12px; margin-bottom:14px; align-items:center; flex-wrap:wrap; }
-  .controls input, .controls select { background:var(--surface); border:1px solid var(--border); color:var(--text);
-    padding:7px 10px; border-radius:6px; font-size:13px; font-family:inherit; }
-  .controls label { font-size:12px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
-  .controls button { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:7px 12px;
-    border-radius:6px; cursor:pointer; font-size:13px; }
-  .controls button:hover { background:var(--surface-2); }
-  .showing { font-size:12px; color:var(--text-dim); margin-left:auto; }
-  table { width:100%; border-collapse:collapse; background:var(--surface); border-radius:8px; overflow:hidden;
-    border:1px solid var(--border); box-shadow:var(--shadow); }
-  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid var(--border); }
-  th { background:var(--surface-2); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); }
-  tr:last-child td { border-bottom:none; }
-  td.num { text-align:right; font-variant-numeric:tabular-nums; }
-  td.pass { color:var(--pass); } td.fail { color:var(--fail); font-weight:600; }
-  td.blocked { color:var(--blocked); } td.skip { color:var(--skip); }
-  .mono { font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:13px; }
-  .small { font-size:12px; } .nowrap { white-space:nowrap; } .muted { color:var(--muted); }
-  .rate-good { color:var(--pass); } .rate-bad { color:var(--fail); }
-  .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; letter-spacing:.03em; }
-  .b-pass { background:rgba(22,163,74,.12); color:var(--pass); }
-  .b-fail { background:rgba(220,38,38,.10); color:var(--fail); }
-  .b-unknown { background:var(--surface-2); color:var(--text-dim); }
-  .live-running { background:rgba(2,132,199,.14); color:var(--accent); }
-  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
-  footer { margin-top:28px; padding-top:14px; border-top:1px solid var(--border); color:var(--text-dim); font-size:12px; text-align:center; }
-  .empty { background:var(--surface); border:1px dashed var(--border); border-radius:8px; padding:32px; text-align:center; color:var(--text-dim); }
-</style>
-</head>
-<body>
-<div class="container">
-  <header>
-    <h1>Regression Overview ${liveNote}</h1>
-    <div class="subtitle">${runs.length} run(s) in the last ${sinceDays} days &middot; updated ${new Date().toISOString().replace("T", " ").slice(0, 19)}Z</div>
-  </header>
-
-  ${runs.length === 0 ? `<div class="empty">No regression runs found in the last ${sinceDays} days.</div>` : `
-  <div class="cards" id="cards">
-    <div class="card"><div class="card-label">Runs</div><div class="card-value" id="c-runs">${runs.length}</div></div>
-    <div class="card"><div class="card-label">Test Cases</div><div class="card-value" id="c-cases">${agg.cases}</div></div>
-    <div class="card pass"><div class="card-label">Passed</div><div class="card-value" id="c-pass">${agg.pass}</div><div class="card-sub" id="c-rate">${aggRate}% of decided</div></div>
-    <div class="card fail"><div class="card-label">Failed</div><div class="card-value" id="c-fail">${agg.fail}</div><div class="card-sub" id="c-bugs">${agg.bugs} bugs</div></div>
-    <div class="card"><div class="card-label">Blocked</div><div class="card-value" id="c-blocked">${agg.blocked}</div><div class="card-sub" id="c-skip">${agg.skip} skipped</div></div>
-  </div>
-
-  <h2>Pass-rate trend <span class="subtitle">(oldest → newest; bar height = pass rate, colour = gate)</span></h2>
-  <div class="trend"><div class="trend-inner" id="trend">${trendBars}</div></div>
-  <div class="trend-axis"><span>${chrono[0] ? escapeHtml(chrono[0].dateLabel) : ""}</span><span>${chrono[chrono.length - 1] ? escapeHtml(chrono[chrono.length - 1].dateLabel) : ""}</span></div>
-
-  <h2>Runs</h2>
-  <div class="controls">
-    <label>From <input type="date" id="from" value="${fromDate}"></label>
-    <label>To <input type="date" id="to" value="${toDate}"></label>
-    <input type="text" id="q" placeholder="Filter by run ID / env / selection…" style="min-width:220px">
-    <button id="reset">Reset</button>
-    <span class="showing" id="showing"></span>
-  </div>
-  <table>
-    <thead><tr>
-      <th>Run</th><th>Started</th><th>Env</th><th>Selection</th>
-      <th class="num">Suites</th><th class="num">Cases</th><th class="num">Pass</th>
-      <th class="num">Fail</th><th class="num">Blocked</th><th class="num">Skip</th>
-      <th class="num">Rate</th><th>Gate</th>
-    </tr></thead>
-    <tbody id="rows">${rows}</tbody>
-  </table>
-  `}
-
-  <footer>Generated ${new Date().toISOString()} &middot; Source: <span class="mono">reports/regression/</span></footer>
-</div>
-
-<script>
-  const fromEl = document.getElementById('from');
-  const toEl = document.getElementById('to');
-  const qEl = document.getElementById('q');
-  const rows = [...document.querySelectorAll('#rows tr')];
-  const bars = [...document.querySelectorAll('#trend .tb')];
-  const fmt = n => n.toLocaleString();
-  function apply() {
-    if (!fromEl) return;
-    const from = fromEl.value ? Date.parse(fromEl.value + 'T00:00:00Z') : -Infinity;
-    const to = toEl.value ? Date.parse(toEl.value + 'T23:59:59Z') : Infinity;
-    const q = qEl.value.toLowerCase();
-    const agg = { runs:0, cases:0, pass:0, fail:0, blocked:0, skip:0, bugs:0 };
-    rows.forEach(r => {
-      const d = +r.dataset.datems;
-      const show = d >= from && d <= to && (!q || r.dataset.text.includes(q));
-      r.style.display = show ? '' : 'none';
-      if (show) {
-        agg.runs++; agg.cases += +r.dataset.cases; agg.pass += +r.dataset.pass;
-        agg.fail += +r.dataset.fail; agg.blocked += +r.dataset.blocked; agg.skip += +r.dataset.skip; agg.bugs += +r.dataset.bugs;
-      }
-    });
-    bars.forEach(b => { const d = +b.dataset.datems; b.style.display = (d >= from && d <= to) ? '' : 'none'; });
-    const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-    setTxt('c-runs', agg.runs); setTxt('c-cases', fmt(agg.cases)); setTxt('c-pass', fmt(agg.pass));
-    setTxt('c-fail', fmt(agg.fail)); setTxt('c-blocked', fmt(agg.blocked));
-    const dec = agg.pass + agg.fail;
-    setTxt('c-rate', (dec > 0 ? (agg.pass / dec * 100).toFixed(1) : '0.0') + '% of decided');
-    setTxt('c-bugs', agg.bugs + ' bugs'); setTxt('c-skip', agg.skip + ' skipped');
-    const sh = document.getElementById('showing'); if (sh) sh.textContent = 'Showing ' + agg.runs + ' of ' + rows.length + ' runs';
-  }
-  [fromEl, toEl, qEl].forEach(el => el && el.addEventListener('input', apply));
-  const rst = document.getElementById('reset');
-  if (rst) rst.addEventListener('click', () => { fromEl.value='${fromDate}'; toEl.value='${toDate}'; qEl.value=''; apply(); });
-  apply();
-</script>
-</body>
-</html>`;
-}
-
 function openInBrowser(path: string): void {
   const cmd = process.platform === "win32" ? "cmd" : process.platform === "darwin" ? "open" : "xdg-open";
   const args = process.platform === "win32" ? ["/c", "start", "", path] : [path];
@@ -1795,11 +1499,57 @@ function reconcileLooseScreenshots(runDir: string, reportsRoot: string): void {
   if (stillMissing.length) console.warn(`  ⚠ ${stillMissing.length} referenced screenshot(s) not found anywhere (never captured): ${stillMissing.slice(0, 8).join(", ")}${stillMissing.length > 8 ? " …" : ""}`);
 }
 
+/** What the --watch loop measures "progress" against between ticks. */
+export interface WatchProgress {
+  runId: string;
+  /** Run-level status string from test-run-status.json ("in_progress"/"completed"/…). */
+  statusLabel: string;
+  /** Suites that have written a results file. */
+  suitesWithResults: number;
+  /** Case rows present across those results files (pre-seeded PENDING rows included). */
+  casesRecorded: number;
+  /** Case rows that have reached a verdict (PASS/FAIL/BLOCKED/SKIPPED). */
+  evaluatedCases: number;
+}
+
+/**
+ * Stall-detection signature for the --watch loop: the watcher stops when this
+ * string has not changed for `idleLimitMs`.
+ *
+ * Progress on a live run is per-CASE, not per-suite. The runner pre-seeds every
+ * case as PENDING when a suite starts and rewrites its results file after each
+ * case, so `suitesWithResults` goes constant on the very first tick of a
+ * single-suite run — a signature built from run/status/suite-count alone then
+ * reports "no progress" and kills a perfectly healthy watcher after 45 min.
+ * (Multi-suite runs masked it: the suite count kept incrementing.) Folding the
+ * case counts in is what makes the signature track actual work.
+ */
+export function watchProgressSignature(p: WatchProgress): string {
+  return [p.runId, p.statusLabel || "?", p.suitesWithResults, p.casesRecorded, p.evaluatedCases].join(":");
+}
+
+/** The subset of a suite's counters that describes how far it has actually got. */
+type SuiteCaseCounters = Pick<NormSuite, "casesRecorded" | "passed" | "failed" | "blocked" | "skipped">;
+
+/** Sum the per-case progress counters across the suites that wrote results. */
+export function tallyCaseProgress(suites: SuiteCaseCounters[]): { casesRecorded: number; evaluatedCases: number } {
+  return suites.reduce(
+    (a, s) => ({
+      casesRecorded: a.casesRecorded + s.casesRecorded,
+      evaluatedCases: a.evaluatedCases + s.passed + s.failed + s.blocked + s.skipped,
+    }),
+    { casesRecorded: 0, evaluatedCases: 0 }
+  );
+}
+
 /**
  * Render one snapshot. Returns the run-level status ("in_progress"/"completed"/absent)
  * so the watch loop knows when to stop. Never exits the process itself.
  */
-function renderOnce(args: Args, reportsRoot: string): { status: RunStatus | null; runId: string; outPath: string; suitesWithResults: number } {
+function renderOnce(
+  args: Args,
+  reportsRoot: string
+): { status: RunStatus | null; runId: string; outPath: string; suitesWithResults: number; casesRecorded: number; evaluatedCases: number } {
   const status = loadRunStatus(reportsRoot);
   const runId = resolveRunId(reportsRoot, args.runId, status);
   const runDir = join(reportsRoot, runId);
@@ -1814,7 +1564,7 @@ function renderOnce(args: Args, reportsRoot: string): { status: RunStatus | null
   if (suites.length === 0) {
     if (args.watch) {
       console.log(`[watch] ${runId}: no suite results yet — waiting…`);
-      return { status, runId, outPath: "", suitesWithResults: 0 };
+      return { status, runId, outPath: "", suitesWithResults: 0, casesRecorded: 0, evaluatedCases: 0 };
     }
     if (!dirExists) throw new Error(`Run directory not found: ${runDir}`);
     console.error(`No suite results (suite-*-results.json) found in ${runDir}`);
@@ -1830,54 +1580,12 @@ function renderOnce(args: Args, reportsRoot: string): { status: RunStatus | null
   });
   writeFileSync(outPath, html, "utf-8");
 
-  return { status, runId, outPath, suitesWithResults: resultSuites.length };
+  return { status, runId, outPath, suitesWithResults: resultSuites.length, ...tallyCaseProgress(resultSuites) };
 }
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const reportsRoot = resolve(args.reportsRoot);
-
-  if (args.overview) {
-    const outPath = args.out ? resolve(args.out) : join(reportsRoot, "overview.html");
-    const writeOverview = (): boolean => {
-      const sharedStatus = loadRunStatus(reportsRoot);
-      const runs = collectRuns(reportsRoot, args.sinceDays, sharedStatus);
-      const live = statusIsInProgress(sharedStatus);
-      writeFileSync(outPath, renderOverviewHtml(runs, args.sinceDays, { live: live && args.watch, intervalSec: args.intervalSec }), "utf-8");
-      const agg = runs.reduce((a, r) => ({ cases: a.cases + r.cases, pass: a.pass + r.pass, fail: a.fail + r.fail }), { cases: 0, pass: 0, fail: 0 });
-      console.log(`Regression overview written: ${outPath} — Runs: ${runs.length} (last ${args.sinceDays}d)  Cases: ${agg.cases}  Pass: ${agg.pass}  Fail: ${agg.fail}`);
-      return live;
-    };
-
-    if (!args.watch) {
-      writeOverview();
-      if (args.openInBrowser) openInBrowser(outPath);
-      return;
-    }
-
-    // Watch mode: keep the overview current while a run is in progress, then
-    // render one final static version and exit.
-    console.log(`[overview watch] refresh ${args.intervalSec}s — Ctrl+C to stop`);
-    let opened = false;
-    for (;;) {
-      let live: boolean;
-      try {
-        live = writeOverview();
-      } catch (e) {
-        // A suite-*-results.json can be mid-write (runner agents now rewrite it
-        // after every case) — skip this tick rather than killing the watcher.
-        console.error(`[overview watch] ${(e as Error).message}`);
-        await sleep(args.intervalSec * 1000);
-        continue;
-      }
-      if (args.openInBrowser && !opened) { openInBrowser(outPath); opened = true; }
-      if (!live) {
-        console.log(`[overview watch] no run in progress — final overview written, exiting.`);
-        return;
-      }
-      await sleep(args.intervalSec * 1000);
-    }
-  }
 
   if (!args.watch) {
     const { runId, outPath } = renderOnce(args, reportsRoot);
@@ -1896,7 +1604,8 @@ async function main(): Promise<void> {
 
   // Watch mode: regenerate on an interval until the run completes.
   // Safety valve: stop after a long idle with no status/results so a stray watcher can't run forever.
-  const idleLimitMs = 45 * 60 * 1000;
+  // Shared with the reaper CLI so the two can't drift on what "stalled" means.
+  const idleLimitMs = DEFAULT_IDLE_LIMIT_MS;
   let opened = false;
   let lastProgressAt = Date.now();
   let lastSignature = "";
@@ -1918,46 +1627,43 @@ async function main(): Promise<void> {
     }
 
     const inProgress = statusIsInProgress(result.status) && result.status?.runId === result.runId;
-    const signature = `${result.runId}:${result.status?.status ?? "?"}:${result.suitesWithResults}`;
+    const signature = watchProgressSignature({
+      runId: result.runId,
+      statusLabel: result.status?.status ?? "?",
+      suitesWithResults: result.suitesWithResults,
+      casesRecorded: result.casesRecorded,
+      evaluatedCases: result.evaluatedCases,
+    });
     if (signature !== lastSignature) {
       lastSignature = signature;
       lastProgressAt = Date.now();
-    }
-
-    // Keep the consolidated overview fresh every tick too, so an open overview
-    // tab (which self-refreshes while a run is live) updates alongside the
-    // per-case dashboard — not only once the run finishes.
-    try {
-      const runs = collectRuns(reportsRoot, args.sinceDays, result.status);
-      writeFileSync(
-        join(reportsRoot, "overview.html"),
-        renderOverviewHtml(runs, args.sinceDays, { live: inProgress, intervalSec: args.intervalSec }),
-        "utf-8"
-      );
-    } catch {
-      /* overview refresh is best-effort; never break the per-case watch loop */
     }
 
     if (result.suitesWithResults > 0 && !inProgress) {
       // Not in progress + results present → nothing left to watch. renderOnce already
       // emitted the final static render (live=false → no refresh meta).
       console.log(`[watch] ${result.runId} settled — final report: ${result.outPath}`);
-      // Auto-generate the consolidated overview so the flow is: live per-case
-      // while running → overview across all recent runs the moment it finishes.
-      try {
-        const runs = collectRuns(reportsRoot, args.sinceDays, result.status);
-        const overviewPath = join(reportsRoot, "overview.html");
-        writeFileSync(overviewPath, renderOverviewHtml(runs, args.sinceDays), "utf-8");
-        console.log(`[watch] overview updated: ${overviewPath}`);
-        if (args.openInBrowser) openInBrowser(overviewPath);
-      } catch (e) {
-        console.error(`[watch] overview generation skipped: ${(e as Error).message}`);
-      }
       return;
     }
 
     if (Date.now() - lastProgressAt > idleLimitMs) {
-      console.log(`[watch] no progress for ${idleLimitMs / 60000} min — stopping.`);
+      const reason = `no progress for ${idleLimitMs / 60000} min (${signature})`;
+      console.log(`[watch] ${reason} — stopping.`);
+      // The orchestrator writes `completed`; nothing else does. If it died mid-run
+      // the status file would stay `in_progress` forever — the watcher could never
+      // settle and Step 0's duplicate check would block every future run. This
+      // watcher has just proven the silence, so it closes the run out as `stalled`
+      // (an observation, never `completed`) rather than leaving the orphan behind.
+      if (inProgress) {
+        try {
+          if (markRunStalled(reportsRoot, result.runId, reason, new Date().toISOString())) {
+            console.log(`[watch] ${result.runId} marked "stalled" — a new run is no longer blocked.`);
+            renderOnce(args, reportsRoot); // one final static render, refresh meta dropped
+          }
+        } catch (e) {
+          console.error(`[watch] could not mark ${result.runId} stalled: ${(e as Error).message}`);
+        }
+      }
       return;
     }
 
@@ -1965,7 +1671,18 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// Only run as a CLI — importing this module (unit tests) must not start a render.
+const isCli = (() => {
+  try {
+    return !!process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+  } catch {
+    return false;
+  }
+})();
+
+if (isCli) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
