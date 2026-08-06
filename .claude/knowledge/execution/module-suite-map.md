@@ -45,7 +45,7 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 | **Channels** | — | 076 | Catalog → Publishing, Data Quality | `/api/channels/` | — |
 | **xMarketing** | — | 079 | Marketing → xAPI Dynamic Content | — | xMarketing |
 | **Task Management** | — | 085 | Tasks app (`/apps/tasks`); Settings → Task management | `/api/task-management/` | — |
-| **Sales Rep** | 089, 090, 091 | 050m, 092 | Embedded App (`vc-sales-rep`) → Sales Reps, Blocked Sales Reps, Not assigned Sales Reps, Organizations, Not assigned Organizations; store setting `SalesRep.Enabled` | — | salesRep (scoped `/graphql/sales-rep`) |
+| **Sales Rep** | 089-091, 093 | 050m, 092, 092b | Embedded App (`vc-sales-rep`) → Sales Reps, Blocked Sales Reps, Not assigned Sales Reps, Organizations, Not assigned Organizations; store setting `SalesRep.Enabled` | — | salesRep (scoped `/graphql/sales-rep`) |
 | **Cross-cutting** | 042-048 | — | — | — | — |
 
 ## Selection Groups (module-based)
@@ -68,7 +68,7 @@ Use these in `/qa-regression <group>` or CI `SUITE_SELECTION`:
 | `payment` | 039, 040a, 040b, 040c, 041 | Payment processors |
 | `configurable-products` | 052, 072, 072b, 072c | Config products admin + storefront |
 | `whitelabeling` | 067, 070-071 | White labeling admin + storefront |
-| `sales-rep` | 050m, 089, 090, 091, 092 | Sales Rep hub — My Customers, My Sales Reps, Customer Profile, Admin embedded app + scoped GraphQL |
+| `sales-rep` | 050m, 089-091, 092, 092b, 093 | Sales Rep hub — My Customers, My Sales Reps, Customer Profile, Admin embedded app, Hub dashboard + scoped GraphQL |
 | `frontend` | All Frontend/ suites | Frontend-only regression |
 | `backend` | All Backend/ suites | Backend-only regression |
 | `sprint` | All P0 + P1 suites | Before sprint release |
@@ -100,4 +100,4 @@ When a module changes, test these suites:
 | Authentication | 031-033, 044 | 042, 049 |
 | Marketing | 023-025, 077 | 042, 028, 079 |
 | Configurable Products | 052, 072, 072b, 072c | 042, 001-003, 051 |
-| Sales Rep | 050m, 089, 090, 091, 092 | 042, 026-027, 017-019, 006-010 |
+| Sales Rep | 050m, 089-091, 092, 092b, 093 | 042, 026-027, 017-019, 006-010 |

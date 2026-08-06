@@ -668,7 +668,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [WAIT] wait for the mutation to complete and UI to update
 [ACT] type 'BOGUS123'
 [ACT] click arrow-right apply button
-[WAIT] wait for card response","[DOM] Custom code card shows error state: dashed border, red receipt-tax icon visible, error text 'This code is not valid' displayed below input (maps to t('common.messages.invalid_coupon'))
+[WAIT] wait for card response — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)","[DOM] Custom code card shows error state: dashed border, red receipt-tax icon visible, error text 'This code is not valid' displayed below input (maps to t('common.messages.invalid_coupon'))
 [DOM] arrow-right apply button becomes disabled in error state
 [DOM] no discount line item in OrderSummary — element absent from DOM
 [STATE] cart total unchanged from before apply attempt
@@ -768,7 +768,16 @@ coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [WAIT] card in applied state (green border, check icon)
 [ASSERT] discount line visible in OrderSummary
 [ACT] click 'Checkout' or 'Proceed to Checkout'
-[WAIT] checkout page loads and progresses to review step","[DOM] checkout review step shows a disabled (read-only) VcActionInput displaying '@td(COUPON_10PCT.code)' — the applied coupon code is visible but non-editable on the review page (per checkout/review.vue: appliedCouponCode)
+[WAIT] checkout shipping-address step loads
+[ACT] select a saved shipping address (or complete the new-address form)
+[ACT] click 'Continue' to proceed
+[WAIT] checkout shipping-method step loads
+[ACT] select a shipping method
+[ACT] click 'Continue' to proceed
+[WAIT] checkout payment step loads
+[ACT] select a payment method
+[ACT] click 'Continue' to proceed
+[WAIT] checkout review step loads","[DOM] checkout review step shows a disabled (read-only) VcActionInput displaying '@td(COUPON_10PCT.code)' — the applied coupon code is visible but non-editable on the review page (per checkout/review.vue: appliedCouponCode)
 [DOM] coupon discount line is present in the checkout order summary (discount carried through from /cart)
 [STATE] coupon applied on /cart carries through to checkout review without being reset
 [STATE] on review step, locate the applied coupon display","[API] cart query at checkout review: cart.coupons[0].isAppliedSuccessfully=true; discount matches /cart value
@@ -955,7 +964,7 @@ coupon_code=@td(COUPON_THRESH50.code)","[NAV] navigate to {{FRONT_URL}}
 [NAV] navigate to {{FRONT_URL}}/cart
 [ACT] enter @td(COUPON_THRESH50.code) in the Custom code card's 'Enter custom code' input
 [ACT] click the 'Apply coupon @td(COUPON_THRESH50.code)' button on the Custom code card (dynamic name — reads just 'Apply coupon' while the input is empty)
-[WAIT] wait for the coupon mutation to settle and card/error state to update
+[WAIT] wait for the coupon mutation to settle and card/error state to update — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)
 [ASSERT] verify the below-threshold apply attempt is rejected
 [ACT] increase quantity (or add another unit) so the subtotal reaches or exceeds $50
 [WAIT] wait for totals to recalculate

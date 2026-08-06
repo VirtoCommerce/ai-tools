@@ -153,7 +153,10 @@
     "td:validate:rbac": "node scripts/seed-data/platform/validate-backoffice-rbac-data.mjs",
     "seed:cms-pages": "node scripts/seed-data/cms/seed-pagebuilder-pages.mjs",
     "seed:cms-pages:teardown": "node scripts/seed-data/cms/seed-pagebuilder-pages.mjs --teardown",
-    "td:validate:cms-pages": "node scripts/seed-data/cms/validate-pagebuilder-pages-data.mjs"
+    "td:validate:cms-pages": "node scripts/seed-data/cms/validate-pagebuilder-pages-data.mjs",
+    "seed:loyalty:zero-user": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs",
+    "seed:loyalty:zero-user:probe": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs --probe",
+    "seed:loyalty:zero-user:teardown": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs --teardown"
   },
   "repository": {
     "type": "git",

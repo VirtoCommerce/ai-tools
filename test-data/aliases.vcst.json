@@ -840,5 +840,10 @@
     "id": "fcf45a2e-ab76-4ec1-a052-6a942abbe0b6",
     "userId": "7bf5e44b-7fbd-4e12-9234-fc921098abbc",
     "techflow_membership_id": "0016c3c6-a927-4fbe-98f0-978b7033425a"
+  },
+  "LOYALTY_ZERO_USER": {
+    "memberId": "",
+    "securityAccountId": "",
+    "email": ""
   }
 }

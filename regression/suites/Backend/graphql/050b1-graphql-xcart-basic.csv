@@ -502,7 +502,7 @@ GQL-MC-001,"Mixed Cart — addItem with itemCurrencyCode=PTS Creates a Separate 
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount items { productId currencyCode } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 itemCurrencyCode: ""USD"" }) { id itemsCount items { productId currencyCode } } }
 [GQL-EXEC add_usd_item]
 [GQL-OP add_pts_item]
   mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id itemsCount items { id productId currencyCode quantity } } }
@@ -517,7 +517,7 @@ GQL-MC-001,"Mixed Cart — addItem with itemCurrencyCode=PTS Creates a Separate 
 [ERRORS label=add_pts_item] errors[] empty
 [COUNT label=verify_cart] data.cart.itemsCount = 2
 [DATA label=verify_cart] data.cart.items[?currencyCode=USD].productId is non-null
-[DATA label=verify_cart] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].productId is non-null","[EVIDENCE] Two separate line items in cart: one with currencyCode=USD, one with currencyCode=PTS. BL-CART-007 currency-scope rule: same productId in different currency → separate line, not quantity merge.","itemsCount=1 (PTS item merged into USD line — BL-CART-007 currency-scope violation); add_pts_item errors[] non-empty (itemCurrencyCode rejected); discover_pts_product returns 0 items (loyalty catalog not indexed or user not VIP)",cleanup_post inline,"VCST-5101; BL-CART-007 (currency-scoped); xAPI addItem.itemCurrencyCode; Mixed Cart",Reviewed
+[DATA label=verify_cart] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].productId is non-null","[EVIDENCE] Two separate line items in cart: one with currencyCode=USD, one with currencyCode=PTS. BL-CART-007 currency-scope rule: same productId in different currency → separate line, not quantity merge.","itemsCount=1 (PTS item merged into USD line — BL-CART-007 currency-scope violation); add_pts_item errors[] non-empty (itemCurrencyCode rejected); discover_pts_product returns 0 items (loyalty catalog not indexed or user not VIP)",cleanup_post inline,"VCST-5101; BL-CART-007 (currency-scoped); xAPI addItem.itemCurrencyCode; Mixed Cart; Corrected: add_usd_item now passes itemCurrencyCode:USD explicitly to match verify_cart's explicit currencyCode:USD (was omitted, causing a currency-scoped cart-identity mismatch) (TCA-2026-08-05)",Reviewed
 GQL-MC-004,"Mixed Cart — Single-Currency Cart Yields cartTotals With Exactly One Element","GraphQL > xCart > Mixed Cart",High,"BL-LOY-003; BL-GQL-001","ECL-7.3","Runner-native. ORG_USER (standard USD-only user). Add one USD item to a freshly-cleared cart. Query cartTotals. Assert: exactly one element with isDefaultTotalCurrency=true. No PTS or other foreign-currency element should be present in a single-currency cart.","storeId={{STORE_ID}}; USD_product=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }

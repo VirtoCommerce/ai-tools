@@ -313,7 +313,7 @@ MCO-GQL-007,"NEGATIVE — LOYALTY_POINT_PRODUCTS_NOT_ALLOWED: PTS product in car
 [REST-OP flip_mode]
 PUT {{BACK_URL}}/api/loyalty-setting
 Content-Type: application/json
-Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Loyalty Store"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}
+Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyEnabled"": true, ""loyaltyMode"": ""Loyalty Store"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}
 [REST-EXEC flip_mode]
 [GQL-OP read_validation]
   query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id validationErrors { errorCode errorMessage } } }
@@ -321,7 +321,7 @@ Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Loyalty Store"", ""loya
 [REST-OP restore_mode]
 PUT {{BACK_URL}}/api/loyalty-setting
 Content-Type: application/json
-Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Mixed Cart"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}
+Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyEnabled"": true, ""loyaltyMode"": ""Mixed Cart"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}
 [REST-EXEC restore_mode]
 [GQL-OP cleanup_post]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
@@ -331,7 +331,7 @@ Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Mixed Cart"", ""loyalty
 [EVIDENCE] BL-proposal candidate: no BL-LOY-* currently covers the mode-gating rule — see return report for proposed ID and rule text.
 [EVIDENCE] REST-OP flip_mode and restore_mode use the loyalty-setting API endpoint. If the endpoint path or payload shape has changed, Phase 5 schema verification should confirm the correct API contract ({{BACK_URL}}/api/loyalty-setting shape was documented in LOYALTY_SETTINGS._notes as the seeding endpoint).","validationErrors empty after mode flip (store-mode settings not reloaded by validator — caching issue); LOYALTY_POINT_PRODUCTS_NOT_ALLOWED absent (wrong code or rule not firing); flip_mode REST call fails (wrong endpoint or payload — verify against loyalty-setting API contract); restore_mode fails mid-test leaving vcst-qa in Loyalty Store mode (cleanup column will attempt restore); errors[] non-empty on read_validation (infrastructure error, not validator error)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT {{BACK_URL}}/api/loyalty-setting]
-{""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Mixed Cart"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}","VCST-5103; vc-module-loyalty#10 (LoyaltyCartValidator rule 1 — LOYALTY_POINT_PRODUCTS_NOT_ALLOWED); vc-module-x-cart#125 (ICartValidatorRegistry chain)",Semi-Automated
+{""storeId"": ""{{STORE_ID}}"", ""loyaltyEnabled"": true, ""loyaltyMode"": ""Mixed Cart"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}","VCST-5103; vc-module-loyalty#10 (LoyaltyCartValidator rule 1 — LOYALTY_POINT_PRODUCTS_NOT_ALLOWED); vc-module-x-cart#125 (ICartValidatorRegistry chain)",Semi-Automated
 "MCO-GQL-011","NEGATIVE — LOYALTY_PAYMENT_METHOD_NOT_ALLOWED: loyalty payment gateway used while store mode is not Payment Method emits typed error","GraphQL > xCart > Validator > Payment Method Gating","High","BL-LOY-012","ECL-13.2","Runner-native. Store in Mixed Cart mode (the seeded vcst-qa default — a non-Payment-Method mode). Auth as LOYALTY_VIP_USER. Add a cash line, then add a payment via the LoyaltyPaymentMethod gateway (ModuleConstants.LoyaltyPaymentMethodGatewayCode), then read cart.validationErrors and assert LOYALTY_PAYMENT_METHOD_NOT_ALLOWED is present. Gateway code ""LoyaltyPaymentMethod"" is the constant from vc-module-loyalty PR #10. LIVE-VERIFIED PASS 3/3 on vcst-qa 2026-06-24: addOrUpdateCartPayment accepts the gateway code (no registered-method requirement) and the validator emits LOYALTY_PAYMENT_METHOD_NOT_ALLOWED — fully automated, no mode flip or gateway provisioning needed.","store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","[AUTH role=LOYALTY_VIP_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -362,41 +362,42 @@ MCO-GQL-012,NEGATIVE — LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED must fire when 
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP find_pts]
   query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
 [GQL-EXEC find_pts]
 [GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_pts]
-  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts]
 [GQL-OP add_cash]
-  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_cash]
 [GQL-OP read_mixed_baseline]
   query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"") { id items { id currencyCode selectedForCheckout } cartTotals { isDefaultTotalCurrency total { amount } } validationErrors { errorCode } } }
 [GQL-EXEC read_mixed_baseline]
 [GQL-CAPTURE read_mixed_baseline.data.cart.items[?currencyCode={{CURRENCY_CODE}}].id → CASH_LINE_ID]
+[GQL-CAPTURE read_mixed_baseline.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].id → PTS_LINE_ID]
 [GQL-OP unselect_cash]
-  mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" lineItemIds: [""{{CASH_LINE_ID}}""] }) { id items { id selectedForCheckout } } }
+  mutation { unSelectCartItems(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"" lineItemIds: [""{{CASH_LINE_ID}}""] }) { id items { id selectedForCheckout } } }
 [GQL-EXEC unselect_cash]
 [GQL-OP read_after_unselect]
   query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"") { id items { id currencyCode selectedForCheckout } cartTotals { isDefaultTotalCurrency total { amount } } validationErrors { errorCode errorMessage } } }
 [GQL-EXEC read_after_unselect]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=read_mixed_baseline] errors[] empty
-[DATA label=read_mixed_baseline] data.cart.items[?currencyCode={{CURRENCY_CODE}}].selectedForCheckout = true
+[DATA label=read_mixed_baseline] data.cart.items[?id={{CASH_LINE_ID}}].selectedForCheckout = true
 [COUNT label=read_mixed_baseline] data.cart.validationErrors = 0
 [ERRORS label=unselect_cash] errors[] empty
 [ERRORS label=read_after_unselect] errors[] empty
-[DATA label=read_after_unselect] data.cart.items[?currencyCode={{CURRENCY_CODE}}].selectedForCheckout = false
-[DATA label=read_after_unselect] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].selectedForCheckout = true
+[DATA label=read_after_unselect] data.cart.items[?id={{CASH_LINE_ID}}].selectedForCheckout = false
+[DATA label=read_after_unselect] data.cart.items[?id={{PTS_LINE_ID}}].selectedForCheckout = true
 [DATA label=read_after_unselect] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount = 0
 [COUNT label=read_after_unselect] data.cart.validationErrors >= 1
 [DATA label=read_after_unselect] data.cart.validationErrors[?errorCode=LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED].errorCode = LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED","[EVIDENCE] The baseline read proves the mixed cart is valid (0 validation errors) BEFORE the unselect, so a failure on read_after_unselect isolates the selection path rather than a pre-existing invalid cart.
 [EVIDENCE] cartTotals default-currency total = 0 after the unselect proves cart.CartTotals IS selection-aware (DefaultShoppingCartTotalsCalculator filters on SelectedForCheckout) — which is exactly what makes the validator's use of the unfiltered cart.Items for hasCashProducts asymmetric.
 [EVIDENCE] Storefront twin: MCO-E2E-008 (083b) asserts the rendered warning + disabled PLACE ORDER for the same state.","LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED absent from validationErrors after the unselect (VCST-5657 — the open defect this case guards); validationErrors non-empty on read_mixed_baseline (cart invalid before the unselect — fixture problem, not this rule); unselect_cash errors[] non-empty (lineItemIds capture failed or mutation shape drifted); default-currency cartTotals total non-zero after the unselect (totals calculator stopped honouring SelectedForCheckout — would invalidate the premise of this case)","[GQL-OP cleanup_post_safe]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post_safe]","VCST-5657; BL-LOY-010; vc-module-loyalty LoyaltyCartValidator.cs:28 (hasCashProducts reads cart.Items, selection-blind); vc-module-cart DefaultShoppingCartTotalsCalculator.cs:81 (CartTotals selection-scoped); selection-scoped sibling of MCO-GQL-006; Authored: 2026-08-04",Draft

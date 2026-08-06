@@ -1,0 +1,56 @@
+{
+  "ticket": "VCST-5657",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-08-05",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1057.0-pr-3095-3abb",
+    "theme": "2.55.0-pr-2422-1c98",
+    "relevant_modules": {
+      "VirtoCommerce.Loyalty": "3.1005.0-pr-15-838b"
+    },
+    "pr_build": "VirtoCommerce.Loyalty_3.1005.0-pr-15-838b.zip (AzureBlob prerelease pinned on vc-deploy-dev@vcst-qa)"
+  },
+  "agent_used": "qa-frontend-expert (storefront) + graphql-runner (backend)",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-LOY-010", "BL-LOY-008"],
+  "backend_case": {
+    "id": "MCO-GQL-012",
+    "suite": "regression/suites/Backend/loyalty/075b-loyalty-mixed-cart-order.csv",
+    "assertions_total": 10,
+    "assertions_passed": 10,
+    "verdict": "PASS"
+  },
+  "storefront_case": {
+    "id": "MCO-E2E-008",
+    "suite": "regression/suites/Frontend/loyalty/083b-loyalty-mixed-cart-order.csv",
+    "runs": 3,
+    "runs_passed": 3,
+    "verdict": "PASS"
+  },
+  "pr": {
+    "url": "https://github.com/VirtoCommerce/vc-module-loyalty/pull/15",
+    "state": "OPEN",
+    "merged": false
+  },
+  "jira_transition": "TESTED",
+  "held_at_tested_reason": "PR #15 is open and unmerged; vcst-qa runs a temporary AzureBlob prerelease pin. Re-verify against a released artifact after merge before closing.",
+  "notes": [
+    "Pre-existing a11y (Medium): all line-item checkboxes labelled 'Toggle vendor select', indistinguishable from the vendor select-all (WCAG 1.3.1 / 2.4.6).",
+    "Pre-existing UX (Low): ALL_LINE_ITEMS_UNSELECTED renders no message; PLACE ORDER is disabled with no explanation.",
+    "MCO-E2E-008 Steps order the untick before delivery/payment, so the row never establishes PLACE ORDER was enabled first; this run used the corrected ordering.",
+    "MCO-GQL-012 and MCO-E2E-008 both pass and are eligible to leave Automation_Status = Draft and drop their EXPECTED-RED notes.",
+    "Carried-over fixture drift: LOYALTY_NOBAL_USER holds ~1,044 PTS, so insufficient-balance cases silently test nothing; needs a re-seed.",
+    "Storefront loyalty validation is now pre-emptive on /cart rather than a toast at placement; older loyalty cases will false-FAIL against the toast expectation."
+  ],
+  "evidence": "reports/tickets/VCST-5657/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/VCST-5657/"
+}

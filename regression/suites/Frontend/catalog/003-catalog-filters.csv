@@ -167,7 +167,7 @@ Category page with multiple filters available","url={{FRONT_URL}}","[NAV] Naviga
 [STATE] 'Reset filters' button clears all remaining filters in one action","[NETWORK] no 4xx/5xx on each filter removal
 [CONSOLE] no TypeError or JS errors","Closing one chip removes multiple filters; product count not updating after individual close; Reset not clearing all remaining; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
 "CAT-023","Filters - Browser Back/Forward Navigation","Catalog > Filters > Navigation","Medium","BL-CAT-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Category page with filters","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+Category page with filters. NOTE (triage 2026-08-05, TC-001785932...): the BACK half is agent-automatable and passes (chips/URL converge after a ~2-3s Apollo refetch settle — fold into the [WAIT] before asserting). The FORWARD half has no automatable primitive today: no browser_navigate_forward in the Playwright MCP surface, Alt+ArrowRight isn't delivered via browser_press_key, and history.forward() via browser_evaluate would violate the real-user-interaction rule. Case remains Automation_Status=Manual for a human tester; an agent run should execute BACK only and report FORWARD as blocked-by-tooling, not as a case failure.","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply any filter value A (note the chip label)
 [WAIT] Wait for chip and URL param
 [ACT] Apply any different filter value B (note the chip label)

@@ -3,6 +3,7 @@
 **Env:** vcst-qa @ Platform 3.1051.0 · Customer 3.1021.0-pr-312-2257 · ProfileExperienceApi 3.1015.0-pr-141-d7d8
 **Found by:** `/qa-regression` REG-2026-07-30-1040, suite 027 (CUST-090) · triaged `REAL_BUG`
 **BL:** BL-B2B-009
+**Status**: Rejected
 
 ## Summary
 

@@ -1,0 +1,67 @@
+{
+  "ticket": "VCST-5530",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "fast",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-08-05",
+  "environment": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+  "build": {
+    "platform": "n/a",
+    "theme": "n/a",
+    "relevant_modules": { "@vc-shell/framework": "2.4.0 (deployed on vcmp-dev, confirmed live via console banner)" }
+  },
+  "agents_dispatched": ["ui-ux-expert"],
+  "epic": {
+    "parent": null,
+    "siblings": { "done": [], "in_progress": [], "blocked_dependency": [] },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 0,
+    "impl_coverage": { "satisfied": 0, "drift": 0, "contradicts": 0, "not_found": 0 },
+    "conditions_total": 44,
+    "conditions_with_evidence": 13
+  },
+  "total_cases": 44,
+  "passed": 10,
+  "failed": 1,
+  "blocked": 0,
+  "iterations": {
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "passed"
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "regression": {
+    "suites": [],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": "vc-shell / Vendor Portal is a separate product from this repo's storefront+platform surface — no regression suite in config/test-suites.json covers it. Test plan came from the ticket's own dev-authored comment (44 cases: SC-01..SC-44)."
+  },
+  "bugs_filed": ["VCST-5673"],
+  "business_rules_verified": [],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": []
+  },
+  "screenshots": "reports/tickets/Sprint26-15/VCST-5530/screenshots/"
+}

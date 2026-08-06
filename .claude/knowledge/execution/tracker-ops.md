@@ -128,6 +128,23 @@ guessing custom-field ids.
 - The on-disk `reports/bugs/*.md` file stays plain Markdown regardless — this rule is only about
   what you push into a **tracker field**.
 
+## 5b. Bug-filing relationship — Sub-task vs Link vs Standalone
+
+`/qa-test` Step 5d files a confirmed bug with one of three relationships to the ticket under test, set by
+that finding's **provenance** (5a). This is the contract `/qa-bug` follows when invoked with a relationship
+context (`sub-task-of:<ticket-key>` / `link-only:<existing-bug-key>`); a standalone `/qa-bug` call
+(no relationship context) is unaffected and keeps creating an ordinary Bug as today.
+
+| Relationship | Jira | Azure Boards |
+|---|---|---|
+| **IN-SCOPE → Sub-task of `<ticket-key>`** | `createJiraIssue` with `fields.issuetype.name = "Sub-task"` + `fields.parent = {key: <ticket-key>}`. **Probe first** via `getJiraIssueTypeMetaWithFields` on the project — some projects rename or disable the Sub-task type, and a parent whose own type is an Epic may not support one. On a miss, **fall back** to a standalone Bug + a "Relates" link and say so in the filing output — never silently drop the relationship. | Create the Bug work item normally, then `PATCH` its `relations` to add a link of type `System.LinkTypes.Hierarchy-Reverse` pointing at the parent. Azure Boards has no distinct "sub-task" issue type — the hierarchy link *is* the parent-child relationship. |
+| **PRE-EXISTING → link only, no new ticket** | `createIssueLink` between the existing bug's key and `<ticket-key>` — resolve the link type id via `getIssueLinkTypes` first (use "Relates"/whatever that project calls it), never hardcode a link-type id. Nothing is filed. | `PATCH` the existing work item's `relations` to add a link of type `System.LinkTypes.Related` to `<ticket-key>`. Nothing is filed. |
+| **OUT-OF-SCOPE incidental → standalone + related link** *(unchanged from today)* | `createJiraIssue` (Bug) + `createIssueLink` "Relates" back to `<ticket-key>`. | Create the Bug work item + a `System.LinkTypes.Related` relation to `<ticket-key>`. |
+
+An incidental bug is never a sub-task — it wasn't caused by this ticket's change, so a parent-child
+relationship would misrepresent it; it gets its own standalone ticket with a plain "related" link, same as
+the in-scope case's fallback path.
+
 ### Comment & body style — clear, brief, understandable
 
 Format is not enough — the content must be **easy to read fast**. Every comment or field body you

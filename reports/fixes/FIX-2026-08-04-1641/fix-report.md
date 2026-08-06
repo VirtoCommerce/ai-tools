@@ -32,7 +32,7 @@ A *deselected* cash line stays in `cart.Items`, so `hasCashProducts` never went 
 | G2 reproduction | PASS | RED: `Assert.Contains() Failure … Collection: []` — matches live `validationErrors: []` |
 | G3 fix | PASS | 4/4 tests; build 0 warnings / 0 errors |
 | G4 review | APPROVE | 1 revision round (REQUEST_CHANGES → APPROVE) |
-| G5 CI | **RED — not code-related** | Build ✅, Unit Tests ✅, SonarCloud QG ✅, license/cla ✅. Sole failure of 37 steps: **"Push Build Info to Jira"** (see below) |
+| G5 CI | **PASS (all checks green)** | `ci` ✅, SonarCloud + Code Analysis ✅, auto-tests mysql/postgres/sqlserver ✅, swagger-validation ✅, license/cla ✅. `mergeable=MERGEABLE`. Two transient reds resolved — see below |
 | G6 E2E | **NOT RUN** | Static-only by design; PR flagged needs deploy verification |
 | G7 human review | STOP | PR open, never merged |
 
@@ -60,8 +60,14 @@ A *deselected* cash line stays in `cart.Items`, so `hasCashProducts` never went 
 - **`TestCartAggregate` pins 12 base-ctor args** matching `XCart 3.1023.0`; x-cart `dev` already has 13 (`ICartItemBuilder`). Breaks loudly as a compile error on the next bump — commented in-file.
 - **Adjacent bug, NOT filed and NOT verified live:** a rejected gift may return to the cart selected when the `EqualsReward` identity match fails (`CartAggregate.cs:476-489`, `AddGiftItemsAsync:544-546`), with suspect `&&`/`||` grouping in `RewardExtensions.EqualsReward`. Against `vc-module-x-cart`. Reproduce before filing.
 
+- **Second transient red: `auto-tests` sqlserver — confirmed FLAKE, passed on rerun.**
+  `tests/e2e/test_page_about_store.py::test_page_about_store_accessible` failed the first attempt
+  (`/about-store` returned OK and the URL matched, but the CMS text *"Welcome to ACME Store"* never
+  rendered) while mysql and postgres passed the identical test on identical code. Re-run once per the
+  gate ladder → **pass in 7m54s** (vs 14m50s). Content-seeding timing on that lane, unrelated to loyalty.
+
 ## Follow-ups
 
-1. Human review + merge PR #15; confirm `ci` and SonarCloud QG green first.
+1. Human review + merge PR #15 — **all checks are green**, nothing left to confirm on CI.
 2. Post-deploy: `/qa-verify-fix VCST-5657` — re-run the original STR, **payment method pinned to `Manual`** (*Pay with points* is blocked by a different rule and masks this one).
 3. Regression cases `MCO-GQL-012` (075b) + `MCO-E2E-008` (083b) are expected-RED until this deploys.

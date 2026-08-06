@@ -39,7 +39,7 @@ deployment.
 bug list for the feature, and the change-scoped regression result (the Artifact-C suite selection from the
 `/qa-test` run). **Owner:** `qa-lead-orchestrator` (this is its go/no-go call).
 
-**Independently ratified at `/qa-test` Step 5h.** This gate is not self-certified by the run that produced
+**Independently ratified at `/qa-test` Step 5e.** This gate is not self-certified by the run that produced
 the inputs: a **fresh `qa-lead-orchestrator` verifier instance** (§Verifier Mode) re-evaluates the criteria
 below from the raw inputs and may **downgrade** the GO/NO-GO. The pass-rate + bug-count math has a
 deterministic core:
@@ -66,8 +66,8 @@ and are combined with that math by the verifier.
 
 | Criterion | Threshold | Source |
 |-----------|-----------|--------|
-| `/qa-test` verdict | **PASS** or **PASS WITH NOTES** | `/qa-test` Step 5e |
-| Acceptance criteria | 100% verified — every atomic condition (story ACs + gap-ACs) carries PASS evidence, all reconciled SATISFIED-live | `/qa-test` Step 5b/5c |
+| `/qa-test` verdict | **PASS** or **PASS WITH NOTES** | `/qa-test` Step 5c |
+| Acceptance criteria + DoD | 100% verified — every atomic condition (story ACs + gap-ACs) carries PASS evidence, all reconciled SATISFIED-live, every DoD item MET/N-A, with the quantified AC-coverage/DoD estimate | `/qa-test` Step 5b |
 | `BL-*` invariants for the domain | Verified, none violated | `business-logic.md` |
 | Open P0 bugs in the feature | 0 | `reports/bugs/` |
 | Open P1 bugs in the feature | 0, or deferred with documented workaround + risk acceptance | `reports/bugs/` |
@@ -127,11 +127,11 @@ Evaluated before sprint release to staging or production. Covers sprint-scoped t
 
 ## 3. Full Release Gate
 
-Evaluated before production release. Covers all 119 regression suites (54 frontend + 65 backend).
+Evaluated before production release. Covers all 120 regression suites (55 frontend + 65 backend).
 
 | Criterion | Threshold | Measurement |
 |-----------|-----------|-------------|
-| Overall pass rate | >=98% | Combined pass rate across all 119 suites |
+| Overall pass rate | >=98% | Combined pass rate across all 120 suites |
 | Open P0 bugs | 0 | No unresolved critical bugs across entire platform |
 | Open P1 bugs | <3 | Each with documented workaround and target fix date |
 | Performance baselines | Within 10% of baseline | Core Web Vitals (LCP, FID, CLS) measured via Suite 11 |
@@ -146,7 +146,7 @@ Evaluated before production release. Covers all 119 regression suites (54 fronte
 - **BLOCKED** — Pass rate below 96% OR any P0 bug open OR 3+ P1 bugs without workarounds OR any critical security finding OR data integrity issue.
 
 **Notes:**
-- Full release gate requires execution of all 119 suites. Partial execution does not satisfy the gate.
+- Full release gate requires execution of all 120 suites. Partial execution does not satisfy the gate.
 - Cross-browser failures in a single browser may qualify for CONDITIONS if the other two browsers pass and the failing browser has a known platform issue.
 - Exploratory testing sessions must cover at least: checkout flow, payment processing, and catalog search.
 
@@ -168,7 +168,7 @@ Evaluated before emergency hotfix deployments. Scoped to the hotfix area only.
 - **BLOCKED** — Any criterion not met. Hotfix must be revised.
 
 **Notes:**
-- Hotfix gate does not require full regression (119 suites). Only the affected area plus smoke.
+- Hotfix gate does not require full regression (120 suites). Only the affected area plus smoke.
 - If the hotfix touches payment (Suites 04, 06), checkout, or security (Suite 08), those suites must also pass.
 - Hotfix deployments still require smoke gate (Section 1) to pass after the fix is applied.
 

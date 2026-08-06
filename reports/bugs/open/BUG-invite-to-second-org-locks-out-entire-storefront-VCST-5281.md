@@ -58,3 +58,38 @@ Related but distinct symptom family: `BUG-multiorg-no-self-recovery-when-pinned-
 (no working self-recovery via the switcher once pinned to a blocked org) and the parent ticket VCST-5281.
 This report's specific contribution is the **trigger** — a routine invite to an unrelated org — which is a
 new way to reach the same defect and was not previously documented.
+
+## Verification 2026-08-05 — root cause FIXED; the invite-flow permutation is still unverified
+
+**Env:** vcst-qa @ Platform **3.1055.0** · Customer **3.1021.0-pr-312-3aa7** · Theme
+**2.55.0-pr-2412-7bfd** (contains `#2399`; `vc-module-customer#312` merged 2026-08-04 12:02Z).
+
+**The named root cause is fixed.** This report's mechanism is that the resolved active org is pinned
+*without* validating it against `BlockingStatuses`, so an org the invite just set to `Invited` becomes the
+session's org. `#312`'s `OrganizationAccessResolver` now resolves over *accessible* orgs only
+(`NOT IsCurrentlyLocked AND ResolveEffectiveStatus(...) ∉ {Invited, Rejected, Deleted}`).
+
+Probed with `MULTI_ORG_TF_BR`, its currently-pinned org (TechFlow) set to `Invited`, BuildRight healthy:
+a password grant with **no** `organization_id` returns **200 scoped to BuildRight** — the blocked org is
+skipped, not pinned. Storefront control (both orgs healthy): sign-in lands on **`/` (200)** with the
+**`/account/dashboard` link present** — the page this report identified as unreachable, and the only host
+of the pending-invites widget.
+
+**What is NOT verified, stated plainly:**
+
+1. **The exact STR was not executed.** The blocking status was set **directly** on an existing membership
+   rather than produced by a real invite from Org B. The invite path additionally *appends* the new org to
+   `contact.organizations` (the report's `organizations[0]` ordering) and may set
+   `currentOrganizationId`, so that ordering permutation remains untested. The shared root cause is
+   demonstrably fixed; this specific sequence is inference, not observation.
+2. **Invite acceptance was not confirmed end-to-end.** The report's sharpest consequence is that the
+   invite *"can never be accepted through any UI path"*. The dashboard is now reachable, but accepting a
+   pending invite from the widget was not exercised — UI clicks on this storefront repeatedly failed the
+   MCP's 5 s element-stability check (keyboard submit worked).
+
+**Recommended closing step:** run this report's STR verbatim — invite a healthy active Org-A member from
+Org B, re-sign-in, and accept the invite from `/account/dashboard`. Suite `011b` `COMP-E2E-026` is the
+covering case. Until then this stays in `open/`.
+
+Fixture `MULTI_ORG_TF_BR` was restored to its captured baseline (`Approved`, `isLocked=false`,
+`lockoutEnd=null`) and re-read to confirm.
