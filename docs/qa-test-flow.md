@@ -41,7 +41,7 @@ sequenceDiagram
     participant AI as App Insights
 
     User->>Orch: /qa-test VCST-XXXX
-    note over Orch,V: FULL path only: GATE at Step 3 + Step 5 (fresh qa-lead, re-derives from source). 1 round: REJECT to reason+fix, re-verify once, then STOP. Other steps + the whole FAST path self-check inline
+    note over Orch,V: FULL path only: 3 hard-STOP GATES — Step 3, Step 5b, Step 5g (fresh qa-lead, re-derives from source). 1 round: REJECT to reason+fix, re-verify once, then STOP. Other steps + the whole FAST path self-check inline
 
     note over Orch,BA1: Step 1 · sub-parts 1a-1e (each consumes the prior)
     note over Orch: 1a · Fetch, classify TYPE×STATUS, ROUTE flow then fast/full

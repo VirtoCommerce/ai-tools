@@ -1,7 +1,7 @@
 ---
 description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a JIRA ticket."
-argument-hint: "bug description | VCST-XXXX | screenshot path"
-disable-model-invocation: true
+argument-hint: "bug description | <ticket-key> | screenshot path"
+
 ---
 
 # /qa-bug — File a Bug Report
@@ -11,7 +11,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 ## Usage
 ```
 /qa-bug Cart total shows $0 after adding item     # Bug from description
-/qa-bug VCST-1234                                   # Bug from a JIRA ticket (adds QA evidence)
+/qa-bug <ticket-key>                                   # Bug from a JIRA ticket (adds QA evidence)
 /qa-bug screenshot path/to/screenshot.png           # Bug from a screenshot
 ```
 
@@ -248,7 +248,7 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 ## Step 5 — Create JIRA Ticket (optional)
 
-> **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
+> **Skills:** Use `/qa-defect triage <ticket-key>` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:

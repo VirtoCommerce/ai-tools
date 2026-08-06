@@ -309,7 +309,7 @@ received the new Draft cases.** Derive from the `E2E-*` → suite mappings, the 
 domains/modules, **the suites covering the Done Epic siblings this story integrates with** (their behavior
 must not regress as this slice lands), and `config/test-suites.json` selection groups. Output the concrete suite ID list (e.g.
 `028,029,030` or a group like `cart`) with a one-line rationale each; scope it to the change — never the
-full 119-suite set. Step 4 runs it as its own `/qa-regression <ids>` run; **never fold suite IDs into a
+full suite set (`config/test-suites.json` is the count's source of truth; don't restate it). Step 4 runs it as its own `/qa-regression <ids>` run; **never fold suite IDs into a
 ticket agent's prompt** (`feedback_long_runner_sessions_unreliable`).
 
 **Review & auto-fix.** Any **newly authored** case runs through `/qa-review-tests file <target-suite> --fix`

@@ -1,29 +1,41 @@
 {
-  "runId": "REG-2026-08-06-0937",
+  "runId": "REG-2026-08-06-1956",
   "status": "completed",
-  "selection": "002 (clean re-run on a Chromium lane — supersedes REG-2026-08-05-1942, which was abandoned mid-attempt-2 after Firefox burned attempt 1 to the lane-wide pointer_actions_unusable defect)",
-  "environment": "vcst-qa @ Platform 3.1057.0-pr-3095-3abb + XCatalog 3.1016.0-pr-106-3559 + Theme 2.55.0-pr-2417-144d",
-  "startedAt": "2026-08-06T07:37:00Z",
-  "supersedes": "REG-2026-08-05-1942",
+  "environment": "https://vcst-qa.govirto.com",
+  "selection": "VCST-5486 resume: 020+031 pending cases, then 078",
+  "startedAt": "2026-08-06T17:56:42.544Z",
+  "finishedAt": "2026-08-06T19:57:23.349Z",
+  "resumeNote": "Resume of REG-2026-08-06-1803 (marked stalled after an individual spend-limit abort killed the orchestrator and the 031 runner). 042 already COMPLETE (34/34) and is NOT re-run. Scoped to the 8 pending cases of 020 and the 21 pending of 031; 078 (115, never started) queued last as it is the least ticket-relevant per case.",
+  "context": {
+    "ticket": "VCST-5486",
+    "build": "3.1058.0-pr-3077-8295",
+    "priorRun": "REG-2026-08-06-1803"
+  },
   "suites": [
     {
-      "id": "002",
-      "name": "Product Detail",
-      "file": "regression/suites/Frontend/catalog/002-product-detail.csv",
+      "id": "020",
+      "name": "Platform Users Roles & Settings (pending 8)",
       "status": "done",
-      "testCount": 31,
-      "pass": 27,
-      "fail": 4,
-      "blocked": 0,
+      "browser": "playwright-edge",
+      "testCount": 8
+    },
+    {
+      "id": "031",
+      "name": "Auth Login & Register (pending 21)",
+      "status": "done",
       "browser": "playwright-chrome",
-      "lane": "browser",
-      "agent": "qa-frontend-expert",
-      "attempts": 1,
-      "note": "Completed on playwright-chrome, attempt 1, no retries. ZERO blocked - confirms the 24 BLOCKED in REG-2026-08-05-1942 were pure @playwright/mcp firefox infra, not product state. 4 real FAILs: CAT-054 (Critical, EUR 0.00 placeholder price), CAT-051+CAT-057 (High, one defect - OOS PDP has no explicit unavailability text; independently reproduced on chromium), CAT-055 (Low, Recently Viewed absent - likely stale test expectation).",
-      "skipped": 0,
-      "passRate": "87.1%"
+      "testCount": 21
+    },
+    {
+      "id": "078",
+      "name": "Backend Smoke Tests",
+      "status": "deferred",
+      "browser": null,
+      "testCount": 115,
+      "deferReason": "Operator decision (VCST-5486): 115 cases of broad backend smoke, minority touching CustomUserManager; skipped for budget after a spend-limit abort killed the prior run. Gap disclosed in the tracker comment."
     }
   ],
-  "completedAt": "2026-08-06T08:26:00Z",
-  "finishedAt": "2026-08-06T08:26:00Z"
+  "stalledAt": "2026-08-06T19:39:06.767Z",
+  "stalledReason": "no progress for 45 min (REG-2026-08-06-1956:in_progress:2:29:29)",
+  "coverageNote": "125 of the 240-case selection evaluated. 042 (34/34) + 020 (54/54) + 031 (37/37) complete; 078 (115) DEFERRED, never run. Pass rate 94.6% on executed cases is therefore PARTIAL."
 }

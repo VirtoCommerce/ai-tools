@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "version": 1,
+    "purpose": "Test cases that fail for a reason that is NOT a product defect — a case asserting a surface that does not exist, or gated behind config that is off by design. Consumed by scripts/regression/generate-regression-html-report.ts to GROUP AND LABEL such rows, and by triage to pre-classify them.",
+    "policy": [
+      "NEVER a way to silence a real failure. An entry does not delete or hide a row — the report still counts it and prints an explicit 'N excluded as known false positives' disclosure. Pass rates are reported both ways.",
+      "Every entry MUST carry `reason` (why it can never pass) and `source` (the memory, ticket, or doc that establishes it). An entry without a verifiable source is not admissible.",
+      "The correct long-term fix is to repair or retire the CASE (via /qa-review-tests --fix or a deprecation), not to leave it here. Treat this file as a ledger of known debt, and re-check entries when the underlying surface changes.",
+      "Keyed by globally-unique case ID (see .claude/rules/regression.md — case IDs are unique across the whole corpus, enforced by suites:lint), so a caseId is an unambiguous key."
+    ]
+  },
+  "entries": [
+    {
+      "caseId": "CART-070",
+      "suiteId": "028",
+      "reason": "Asserts that a configurable product's configuration survives a Save-for-Later save/restore round-trip. That display behaviour is not implemented in the storefront, so the case is a permanent false red rather than a regression signal.",
+      "source": "memory:project_saved_for_later_config_display_not_implemented",
+      "addedOn": "2026-08-06",
+      "recheckWhen": "Saved-for-later configurable display ships (VCST-4205 follow-up)"
+    }
+  ]
+}

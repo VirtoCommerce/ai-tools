@@ -101,6 +101,28 @@ interface BugLike {
   stepsToReproduce: string;
   expected: string;
   actual: string;
+  /**
+   * Triage state as the RUNNER recorded it. Optional because minimal rows omit it —
+   * absent means "not triaged yet", which the report shows as UNTRIAGED rather than
+   * quietly implying the bug is real.
+   */
+  confirmed?: boolean;
+  /** Set when the runner matched this against an already-filed ticket. */
+  duplicateOf?: string;
+  /** Set when the runner linked (rather than deduped) an existing ticket. */
+  relatedTicket?: string;
+  /** True for a defect found opportunistically, outside the case's own assertion. */
+  incidental?: boolean;
+}
+
+/** A case that cannot pass for a non-product reason — see config/known-false-positives.json. */
+interface KnownFalsePositive {
+  caseId: string;
+  suiteId?: string;
+  reason: string;
+  source: string;
+  addedOn?: string;
+  recheckWhen?: string;
 }
 
 interface Args {
@@ -508,6 +530,13 @@ function normalizeSuite(raw: any, allShots: string[], runId: string, runDir: str
         stepsToReproduce: String(b.stepsToReproduce ?? ""),
         expected: String(b.expected ?? ""),
         actual: String(b.actual ?? ""),
+        // Triage state must survive normalization: bugStatus() reads these four, so
+        // dropping them here made every row render UNTRIAGED regardless of what the
+        // runner recorded — silently defeating the Status column.
+        confirmed: typeof b.confirmed === "boolean" ? b.confirmed : undefined,
+        duplicateOf: b.duplicateOf ? String(b.duplicateOf) : undefined,
+        relatedTicket: b.relatedTicket ? String(b.relatedTicket) : undefined,
+        incidental: typeof b.incidental === "boolean" ? b.incidental : undefined,
       }))
     : [];
 
@@ -925,6 +954,182 @@ interface RenderOpts {
   intervalSec: number;
 }
 
+let _knownFps: Map<string, KnownFalsePositive> | null = null;
+/**
+ * Known false positives, keyed by case ID. Read from config/known-false-positives.json;
+ * a missing or malformed file yields an EMPTY map — the report must degrade to showing
+ * everything rather than silently trusting a file it could not parse.
+ *
+ * Entries missing `reason` or `source` are dropped: the policy is that an exclusion
+ * without a verifiable justification is not admissible, and enforcing that here means a
+ * hand-edited file cannot weaken the report by omission.
+ */
+function knownFalsePositives(): Map<string, KnownFalsePositive> {
+  if (_knownFps) return _knownFps;
+  const map = new Map<string, KnownFalsePositive>();
+  const candidates = [
+    resolve(process.cwd(), "config/known-false-positives.json"),
+    resolve(dirname(fileURLToPath(import.meta.url)), "../../config/known-false-positives.json"),
+  ];
+  for (const p of candidates) {
+    if (!existsSync(p)) continue;
+    try {
+      const raw = JSON.parse(readFileSync(p, "utf8")) as { entries?: KnownFalsePositive[] };
+      for (const e of raw.entries ?? []) {
+        if (!e?.caseId || !e?.reason || !e?.source) continue;
+        map.set(e.caseId.trim().toUpperCase(), e);
+      }
+    } catch {
+      // Unparsable registry → behave as if it were empty (fail loud by showing more, not less).
+    }
+    break;
+  }
+  _knownFps = map;
+  return map;
+}
+
+type BugStatus = { label: string; cls: string; title: string; excluded: boolean };
+
+/**
+ * Derive a bug's triage status from what the runner actually recorded — never invented.
+ * `excluded: true` marks a row as non-actionable (a known false positive or a duplicate of
+ * an already-filed ticket); such rows are grouped and counted separately, never removed.
+ */
+function bugStatus(b: BugLike & { suiteId: string }): BugStatus {
+  const fp = knownFalsePositives().get(String(b.testCaseId ?? "").trim().toUpperCase());
+  if (fp) {
+    return {
+      label: "KNOWN FP",
+      cls: "bs-fp",
+      title: `Known false positive — ${fp.reason} (source: ${fp.source}${fp.recheckWhen ? `; recheck when: ${fp.recheckWhen}` : ""})`,
+      excluded: true,
+    };
+  }
+  if (b.duplicateOf) {
+    return { label: `DUPLICATE`, cls: "bs-dup", title: `Already filed as ${b.duplicateOf} — linked, not re-filed`, excluded: true };
+  }
+  const incidental = b.incidental ? " · incidental" : "";
+  if (b.relatedTicket) {
+    return { label: `LINKED${incidental}`, cls: "bs-linked", title: `Related to ${b.relatedTicket}`, excluded: false };
+  }
+  if (b.confirmed === true) {
+    return { label: `CONFIRMED${incidental}`, cls: "bs-confirmed", title: "Reproduced by the runner", excluded: false };
+  }
+  if (b.confirmed === false) {
+    return { label: `UNCONFIRMED${incidental}`, cls: "bs-unconfirmed", title: "Recorded but not reproduced — needs live verification before filing", excluded: false };
+  }
+  return { label: `UNTRIAGED${incidental}`, cls: "bs-untriaged", title: "No triage state recorded by the runner", excluded: false };
+}
+
+type EtaEstimate = {
+  /** Aggregate observed throughput across the running suites, cases/minute. */
+  ratePerMin: number | null;
+  /** Projected time to decide the IN-FLIGHT undecided cases, in ms. Excludes queued suites. */
+  runRemainingMs: number | null;
+  /** Per-suite projection (running suites only), keyed by suiteId. */
+  perSuiteMs: Map<string, number>;
+  /** Running suites that contributed a measurable rate. */
+  lanes: number;
+  /** Running suites in total — `lanes < runningTotal` means the projection is on partial evidence. */
+  runningTotal: number;
+  /** Cases in suites that have not started at all; deliberately NOT in `runRemainingMs`. */
+  queuedCases: number;
+  /** Set when a running suite had an unusable `startedAt` (clock skew / future timestamp). */
+  skewWarning: boolean;
+};
+
+/**
+ * Live ETA for a run still in flight.
+ *
+ * **Measured, never assumed.** Throughput comes from the suites that are ACTUALLY
+ * running — each one's own `startedAt` against the cases it has already decided — so a
+ * slow lane (a batched 115-case backend suite, or edge vs chrome) is reflected instead
+ * of being averaged away by a run-level guess. A run-level rate would also be wrong
+ * whenever `test-run-status.json` is missing or its `startedAt` predates the first
+ * suite by a wide margin.
+ *
+ * The run projection divides every still-undecided case — running AND queued — by the
+ * observed aggregate throughput. That implicitly assumes queued suites inherit the
+ * lanes the running ones occupy, which is how this harness behaves (a fixed browser
+ * pool hands a freed lane to the next suite). It is an approximation, hence the "~",
+ * and it will read long while lanes sit idle and short if a queued suite is cheaper
+ * than the ones currently measured.
+ *
+ * Returns `null` rather than a number whenever the evidence is insufficient: a
+ * fabricated ETA is worse than none, because an operator plans around it.
+ */
+function estimateEta(allSuites: NormSuite[], nowMs: number): EtaEstimate {
+  const perSuiteMs = new Map<string, number>();
+  const undecidedOf = (s: NormSuite) =>
+    Math.max(0, s.totalCases - (s.passed + s.failed + s.blocked + s.skipped));
+
+  // Queued work is counted SEPARATELY, never folded into the projection: a suite that has
+  // not started has no measured rate of its own, and pricing its cases at a running suite's
+  // rate produced a 685-minute "ETA" from a single 8-case admin suite on 2026-08-06.
+  const started = allSuites.filter((s) => s.liveStatus === "running" || s.liveStatus === "done");
+  const queuedCases = allSuites
+    .filter((s) => !started.includes(s))
+    .reduce((a, s) => a + s.totalCases, 0);
+
+  const running = allSuites.filter((s) => s.liveStatus === "running");
+  const none: EtaEstimate = {
+    ratePerMin: null, runRemainingMs: null, perSuiteMs, lanes: 0,
+    runningTotal: running.length, queuedCases, skewWarning: false,
+  };
+
+  let ratePerMin = 0;
+  let lanes = 0;
+  let skewWarning = false;
+
+  for (const s of running) {
+    const startMs = s.startedAt ? Date.parse(s.startedAt) : NaN;
+    if (!Number.isFinite(startMs)) continue;
+    const elapsedMin = (nowMs - startMs) / 60000;
+    // A negative or absurd window means the writer's clock disagrees with ours — a runner
+    // stamping LOCAL time with a `Z` suffix yields a future `startedAt` (observed
+    // 2026-08-06: -92 min at UTC+2). Flag it: dropping the lane silently makes the
+    // projection worse while looking equally confident.
+    if (elapsedMin < 0) { skewWarning = true; continue; }
+    const decided = s.passed + s.failed + s.blocked + s.skipped;
+    // Require a real sample: with <1 decided case or a sub-minute window the first case's
+    // own setup latency dominates and the projection swings by hours.
+    if (decided < 1 || elapsedMin < 1) continue;
+    const rate = decided / elapsedMin;
+    if (!Number.isFinite(rate) || rate <= 0) continue;
+    lanes += 1;
+    ratePerMin += rate;
+    perSuiteMs.set(s.suiteId, (Math.max(0, s.totalCases - decided) / rate) * 60000);
+  }
+
+  if (lanes === 0 || ratePerMin <= 0) return { ...none, skewWarning };
+
+  // Only in-flight work is projected. When fewer lanes are measurable than are actually
+  // running, scale the observed throughput up to the real lane count — otherwise the
+  // unmeasured lanes' work is charged to the measured ones and the ETA reads long.
+  const inflightUndecided = started.reduce((a, s) => a + undecidedOf(s), 0);
+  const effectiveRate = running.length > lanes ? ratePerMin * (running.length / lanes) : ratePerMin;
+  return {
+    ratePerMin: effectiveRate,
+    runRemainingMs: (inflightUndecided / effectiveRate) * 60000,
+    perSuiteMs, lanes, runningTotal: running.length, queuedCases, skewWarning,
+  };
+}
+
+/** Coarse human duration for a projection — minutes below an hour, `1h 45m` above. */
+function formatEta(ms: number): string {
+  const mins = Math.max(0, Math.round(ms / 60000));
+  if (mins < 1) return "<1m";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+}
+
+/** Local wall-clock label for a projected finish, so the operator can plan against a clock. */
+function formatFinishClock(nowMs: number, remainingMs: number): string {
+  const d = new Date(nowMs + remainingMs);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed: boolean, opts: RenderOpts): string {
   // Numeric aggregates come from suites that actually produced results;
   // placeholders (pending/running) only appear as live rows in the table.
@@ -976,7 +1181,15 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
     ? formatDuration(opts.status?.startedAt ?? "", opts.status?.finishedAt || new Date().toISOString())
     : "";
   const donePct = liveCases.total > 0 ? ((casesDecided / liveCases.total) * 100).toFixed(0) : "0";
-  const nowLabel = new Date().toISOString().replace("T", " ").slice(0, 19) + "Z";
+  const nowMs = Date.now();
+  const nowLabel = new Date(nowMs).toISOString().replace("T", " ").slice(0, 19) + "Z";
+  // ETA is only meaningful while the run is live; a finished run has an elapsed time.
+  const eta = inProgress ? estimateEta(allSuites, nowMs) : null;
+  const etaLabel = !inProgress
+    ? ""
+    : eta && eta.runRemainingMs !== null && eta.ratePerMin !== null
+      ? `<span class="live-eta" title="Covers IN-FLIGHT suites only, at ${eta.ratePerMin.toFixed(2)} cases/min measured from ${eta.lanes} of ${eta.runningTotal} running suite${eta.runningTotal === 1 ? "" : "s"}${eta.lanes < eta.runningTotal ? " (throughput scaled to the real lane count)" : ""}.${eta.queuedCases ? ` ${eta.queuedCases} case${eta.queuedCases === 1 ? "" : "s"} in not-yet-started suites are EXCLUDED — they have no measured rate.` : ""}${eta.skewWarning ? " ⚠ A running suite reported a future startedAt (clock skew in the runner) and was excluded from the measurement." : ""}">ETA ~${formatEta(eta.runRemainingMs)} left · done ~${formatFinishClock(nowMs, eta.runRemainingMs)} · ${eta.ratePerMin.toFixed(2)} c/min × ${eta.lanes}${eta.lanes < eta.runningTotal ? `/${eta.runningTotal}` : ""} lane${eta.runningTotal === 1 ? "" : "s"}${eta.queuedCases ? ` · +${eta.queuedCases} queued` : ""}${eta.skewWarning ? " ⚠" : ""}</span>`
+      : `<span class="live-eta dim" title="No suite has yet produced a measurable rate (needs at least one decided case and a 1-minute window). Deliberately blank rather than guessed.">ETA —</span>`;
   const liveBanner = statusMatches
     ? `<div class="live-banner ${inProgress ? "running" : "done"}">
         <span class="live-state">${inProgress ? "● RUNNING" : "✓ COMPLETED"}</span>
@@ -989,6 +1202,7 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
           ${liveCases.skip ? `<div class="bar-skip" style="width:${((liveCases.skip / Math.max(1, liveCases.total)) * 100).toFixed(1)}%"></div>` : ""}
         </div>
         <span class="live-cases">${casesDecided}/${liveCases.total} cases · <span class="lc-pass">${liveCases.pass}✓</span>${liveCases.fail ? ` <span class="lc-fail">${liveCases.fail}✗</span>` : ""}${liveCases.blocked ? ` <span class="lc-blocked">${liveCases.blocked}⊘</span>` : ""}</span>
+        ${etaLabel}
         <span class="live-elapsed">${elapsed}${inProgress ? ` · updated ${nowLabel} · auto-refresh ${opts.intervalSec}s` : ""}</span>
       </div>`
     : "";
@@ -1017,17 +1231,30 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
     .map((s) => renderSuiteRow(s, runDir, embed))
     .join("\n");
 
-  const bugRows = allBugs
+  // Status is derived per bug; excluded rows (known false positives, duplicates of an
+  // already-filed ticket) are sorted last and visually de-emphasised, but STILL RENDERED
+  // and counted — a hidden failure is how a red run reads green.
+  const bugsWithStatus = allBugs.map((b) => ({ bug: b, st: bugStatus(b) }));
+  const actionableBugs = bugsWithStatus.filter((x) => !x.st.excluded);
+  const excludedBugs = bugsWithStatus.filter((x) => x.st.excluded);
+  const bugRows = [...actionableBugs, ...excludedBugs]
     .map(
-      (b) => `<tr>
+      ({ bug: b, st }) => `<tr class="${st.excluded ? "bug-excluded" : ""}">
         <td class="mono small">${escapeHtml(b.id)}</td>
         <td class="mono small">${escapeHtml(b.suiteId)}</td>
         <td>${severityBadge(b.severity)}</td>
+        <td><span class="bug-status ${st.cls}" title="${escapeHtml(st.title)}">${escapeHtml(st.label)}</span></td>
         <td class="mono small">${escapeHtml(b.testCaseId)}</td>
         <td>${escapeHtml(b.title)}</td>
       </tr>`
     )
     .join("\n");
+  const bugDisclosure = excludedBugs.length
+    ? `<p class="bug-disclosure">${actionableBugs.length} actionable · <strong>${excludedBugs.length} excluded as non-actionable</strong>
+       (${excludedBugs.filter((x) => x.st.cls === "bs-fp").length} known false positive${excludedBugs.filter((x) => x.st.cls === "bs-fp").length === 1 ? "" : "s"},
+        ${excludedBugs.filter((x) => x.st.cls === "bs-dup").length} duplicate of an already-filed ticket) —
+       listed below, greyed, never removed. Hover a status for its justification.</p>`
+    : `<p class="bug-disclosure">${actionableBugs.length} actionable · 0 excluded.</p>`;
 
   const catBars = catCounts
     .filter((c) => c.count > 0)
@@ -1168,6 +1395,20 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
   .live-progress { font-size: 13px; color: var(--text-dim); }
   .live-bar { flex: 1; min-width: 160px; height: 10px; }
   .live-elapsed { font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .live-eta { font-size: 12px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums;
+    white-space: nowrap; cursor: help; }
+  .live-eta.dim { color: var(--text-dim); font-weight: 400; }
+  .bug-status { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px;
+    font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; cursor: help; }
+  .bs-confirmed { background: rgba(220, 38, 38, 0.12); color: var(--fail); }
+  .bs-unconfirmed { background: rgba(217, 119, 6, 0.14); color: var(--skip); }
+  .bs-untriaged { background: rgba(100, 116, 139, 0.14); color: var(--text-dim); }
+  .bs-linked { background: rgba(37, 99, 235, 0.12); color: var(--info); }
+  .bs-dup { background: rgba(100, 116, 139, 0.12); color: var(--text-dim); }
+  .bs-fp { background: rgba(120, 113, 108, 0.16); color: var(--text-dim); }
+  tr.bug-excluded { opacity: 0.55; }
+  tr.bug-excluded td:last-child { text-decoration: line-through; text-decoration-thickness: 1px; }
+  .bug-disclosure { font-size: 12px; color: var(--text-dim); margin: 8px 0 0; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
   .sev-critical { background: rgba(185, 28, 28, 0.14); color: #b91c1c; }
   .sev-high { background: rgba(220, 38, 38, 0.10); color: var(--fail); }
@@ -1337,9 +1578,10 @@ function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed
     allBugs.length > 0
       ? `<h2>Bugs (${allBugs.length})</h2>
   <table>
-    <thead><tr><th>Bug ID</th><th>Suite</th><th>Severity</th><th>Test Case</th><th>Title</th></tr></thead>
+    <thead><tr><th>Bug ID</th><th>Suite</th><th>Severity</th><th>Status</th><th>Test Case</th><th>Title</th></tr></thead>
     <tbody>${bugRows}</tbody>
-  </table>`
+  </table>
+  ${bugDisclosure}`
       : ""
   }
 
