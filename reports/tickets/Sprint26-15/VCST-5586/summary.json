@@ -1,0 +1,108 @@
+{
+  "ticket": "VCST-5586",
+  "ticket_type": "Bug",
+  "path": "full",
+  "verdict": "PASS_WITH_NOTES",
+  "verdict_note": "Ratified by an independent qa-lead verifier and applied to the tracker: VCST-5586 transitioned Testing -> Tested (transition 'Finish test', discovered live). The reporter's em-dash observation on the My Customers 'My last order' column was raised, considered, and recorded in the QA comment as an unresolved product-scope question rather than a defect against this ticket.",
+  "date": "2026-08-05",
+  "environment": "https://vcptcore-qa-storefront.govirto.com",
+  "build": {
+    "platform": "vcptcore-qa",
+    "theme": "2.55.0-pr-2408-0cc5-0cc5e717",
+    "relevant_modules": {
+      "vc-frontend-pr": "2408"
+    }
+  },
+  "agents_dispatched": [
+    "ba-system-analyzer",
+    "ba-story-writer",
+    "test-management-specialist",
+    "qa-lead-orchestrator (verifier, Step 3 gate)",
+    "qa-frontend-expert",
+    "qa-testing-expert",
+    "qa-lead-orchestrator (verifier, Step 5 gate)"
+  ],
+  "epic": {
+    "parent": "VCST-5142",
+    "siblings": {
+      "done": ["VCST-5485", "VCST-5469", "VCST-5409", "VCST-5368", "VCST-5362", "VCST-5331", "VCST-5310", "VCST-5309", "VCST-5308", "VCST-5304", "VCST-5293", "VCST-5281", "VCST-4907", "VCST-5558"],
+      "in_progress": ["VCST-5159"],
+      "blocked_dependency": []
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 4,
+    "weak_acs": 4,
+    "gap_acs_added": 10,
+    "impl_coverage": { "satisfied": 2, "drift": 1, "contradicts": 0, "not_found": 1 },
+    "conditions_total": 15,
+    "conditions_with_evidence": 14
+  },
+  "total_cases": 15,
+  "passed": 13,
+  "failed": 1,
+  "blocked": 1,
+  "iterations": {
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "passed"
+  },
+  "new_cases_authored": 15,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [
+      { "case": "ALL-15", "reason": "user elected to keep every new case at Draft — the change-scoped regression was deferred, so no case ran under the automated runner and none is eligible for Automated" },
+      { "case": "SR-FE-052", "reason": "unresolved {HYPOTHESIS} — no fixture on this env reaches a count of 1000, so count thousands-grouping is unexercisable; observed ceiling is 6. Money grouping WAS observed working ($1,280.00)" },
+      { "case": "SR-CP-055", "reason": "failed on a real defect that is pre-existing, not in scope — VCST-5647 (tiles discard the period-over-period change the query already returned)" },
+      { "case": "SR-FE-051", "reason": "asserts the em dash in the 'My last order' column is CORRECT; the reporter contests that scope call, so the expectation is unsettled pending an author/PO decision" }
+    ],
+    "reverted": []
+  },
+  "regression": {
+    "suites": ["089", "091", "093"],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": "Deferred by the user before execution. The Feature Release Gate cannot be evaluated on a null pass rate."
+  },
+  "bugs_filed": [
+    { "key": "VCST-5681", "priority": "Medium", "report": "reports/bugs/open/BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md", "link": "relates to VCST-5586" },
+    { "key": "VCST-5682", "priority": "Low", "report": "reports/bugs/open/BUG-SalesRep-global-error-toast-on-single-widget-failure.md", "link": "relates to VCST-5586" },
+    { "key": "VCST-5683", "priority": "Low", "report": "reports/bugs/open/BUG-SalesRep-my-customers-orders-count-no-pluralization.md", "link": "relates to VCST-5586" },
+    { "key": "VCST-5684", "priority": "Low", "report": "reports/bugs/open/BUG-SalesRep-de-avg-order-value-subtitle-ytd-untranslated.md", "link": "relates to VCST-5586" }
+  ],
+  "bugs_filed_note": "All four are OUT-OF-SCOPE incidental / pre-existing — none is caused by PR #2408. Filed as Jira Bugs and linked 'Relates' to VCST-5586.",
+  "bugs_linked_not_filed": [
+    { "key": "VCST-5647", "reason": "pre-existing, independently live-reproduced on this build; SR-CP-055's failing assertion belongs to it" }
+  ],
+  "business_rules_verified": [
+    "BL-SR-002",
+    "BL-SR-003",
+    "BL-SR-004",
+    "BL-SR-008",
+    "BL-SR-013",
+    "BL-UI-003"
+  ],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": [],
+    "skipped_reason": "APPINSIGHTS_API_KEY_* not configured and no Azure MCP bound in this session; APPINSIGHTS_APP_ID_* alone is insufficient."
+  },
+  "open_questions": [
+    "AC1 as written ('any empty numeric metric renders 0') contradicts the implementation for *ChangePercent, which is deliberately hidden when the previous baseline is 0 — correct per BL-SR-003. The AC text needs the carve-out, or the behaviour needs to change.",
+    "Reporter contests the em dash in the My Customers 'My last order' column. The PR scopes it out as a non-numeric date field; the ticket's Actual-result section lists a dash as a symptom. Needs an author/PO ruling.",
+    "Test-data contamination: currency toggles during execution minted 2 extra carts on agent-test-sr-primary (Active carts 2 -> 4, $37.00 -> $49.00). Reset before the next run of these rows."
+  ],
+  "screenshots": "reports/tickets/Sprint26-15/VCST-5586/screenshots/"
+}

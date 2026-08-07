@@ -1,0 +1,73 @@
+{
+  "ticket": "VCST-5332",
+  "title": "[BFE] [Sales Rep] [Lists] Publish list to customer",
+  "type": "Story",
+  "priority": "Medium",
+  "path": "FAST",
+  "date": "2026-08-06T16:50:00Z",
+  "environment": "vcptcore-qa",
+  "build": {
+    "pinned": {
+      "theme": "2.55.0-pr-2405-c9c7",
+      "platform": "3.1053.0",
+      "modules": {
+        "VirtoCommerce.SalesRep": "3.1001.0-pr-8-a07e",
+        "VirtoCommerce.XCart": "3.1029.0-alpha.270-vcst-5332-customer-wishlist-sharing-scope"
+      }
+    },
+    "live": {
+      "theme": "2.55.0-pr-2400-c6ca-c6ca8840",
+      "modules": {
+        "VirtoCommerce.SalesRep": "3.1001.0-pr-6-4f32",
+        "VirtoCommerce.XCart": "3.1029.0-alpha.270-vcst-5332-customer-wishlist-sharing-scope"
+      }
+    },
+    "pin_vs_live_mismatch": true,
+    "cause": "vc-deploy-dev@vcptcore-qa 'Cloud theme deployment' (run 31120158160) cancelled and 'Cloud platform deployment' (run 31120197041) FAILED at the 'Set up job' step, 2026-08-06 16:31-16:32 UTC. The manifest pin landed; the deploy did not."
+  },
+  "verdict": "BLOCKED",
+  "verdict_reason": "The storefront half of VCST-5332 is not deployed. Theme pr-2400 has no Share action, no customer dropdown, no Message field and no Email/Push checkboxes, so none of the reopened findings could be re-tested.",
+  "seed": {
+    "command": "TEST_ENV=vcptcore npm run seed:sales-rep",
+    "result": "OK — 10 reps present/created, SR_REP_LAYOUT preferences reset, runtime GUIDs written to aliases.vcptcore.json"
+  },
+  "counts": { "planned": 10, "passed": 1, "failed": 1, "blocked": 8 },
+  "steps": [
+    { "id": "S1", "result": "PASS", "note": "Rep agent-test-vcst5293-182326@example.com signs in; /company/dashboard + /company/my-customers render; 10 served customers." },
+    { "id": "S2", "result": "FAIL", "note": "List action wheel offers only Edit and Delete — no 'Share' action (theme pr-2400)." },
+    { "id": "S3", "result": "BLOCKED", "note": "Edit opens the legacy 'List settings' dialog: name, description, Private/Anyone(readonly)/Organization, read-only link. No customer dropdown / Message / channel checkboxes." },
+    { "id": "S4", "result": "BLOCKED", "note": "Both-channels-unchecked validation (finding #5) — no channel checkboxes exist on this build." },
+    { "id": "S5", "result": "BLOCKED", "note": "Cannot publish a list to a customer." },
+    { "id": "S6", "result": "BLOCKED", "note": "Findings #4/#6 (Message + checkboxes hidden on re-edit) unreachable." },
+    { "id": "S7", "result": "BLOCKED", "note": "No shared list for belovedushka@gmail.com to open." },
+    { "id": "S8", "result": "BLOCKED", "note": "Finding #2 (multi-org 403) — highest priority, not re-testable." },
+    { "id": "S9", "result": "BLOCKED", "note": "Access-control negative control unreachable." },
+    { "id": "S10", "result": "BLOCKED", "note": "Finding #3 (no list-level bulk actions) unreachable." }
+  ],
+  "reopen_findings_reverification": {
+    "1_multi_customer_overwrite": "NOT-VERIFIABLE",
+    "2_multi_org_403": "NOT-VERIFIABLE",
+    "3_no_bulk_actions": "NOT-VERIFIABLE",
+    "4_message_hidden_on_edit": "NOT-VERIFIABLE",
+    "5_both_channels_unchecked": "NOT-VERIFIABLE",
+    "6_channel_checkboxes_hidden_on_edit": "NOT-VERIFIABLE"
+  },
+  "backend_evidence": {
+    "graphql_introspection": "InputCreateWishlistType and InputChangeWishlistType both carry sharedWithId on vcptcore-qa (absent on vcst-qa baseline). WishlistScopeType = Private, AnyoneAnonymous, AnyoneAuthorized, Organization, User.",
+    "conclusion": "Backend contract for VCST-5332 (scope=User + sharedWithId) IS live; only the UI is missing."
+  },
+  "incidental_observations": [
+    "All five rep lists render a 'Shared' badge, including lists with 0 items (bel 26/28/29) — badge does not distinguish scope. Pre-existing on theme pr-2400, unrelated to 5332.",
+    "Scope-enum drift: backend exposes 5 wishlist scopes, theme dropdown exposes 3 (AnyoneAnonymous/AnyoneAuthorized collapsed into 'Anyone (readonly)'; 'User' not surfaced)."
+  ],
+  "console_network": "11 POST /graphql on the lists surface, all HTTP 200, no errors[]. Only known env noise: App Insights dc.services.visualstudio.com/v2/track 400s and catalog image 404s.",
+  "regression": { "run_id": null, "pass_rate": null, "note": "Change-scoped regression not run — feature surface absent; a suite run would produce meaningless BLOCKEDs." },
+  "promotion": { "automated": 0, "reviewed": 0, "blocked": 0, "reverted": 0, "note": "No new cases authored — BLOCKED before authoring would be grounded." },
+  "jira": { "transitioned": false, "commented": false, "note": "Ticket left at Reopen; no transition on a BLOCKED verdict." },
+  "evidence": "reports/tickets/Sprint26-15/VCST-5332/screenshots/",
+  "next_steps": [
+    "Re-run the vc-deploy-dev@vcptcore-qa 'Cloud theme deployment' + 'Cloud platform deployment' Actions (both failed at 'Set up job' — infrastructure, not a manifest error).",
+    "Confirm live theme = 2.55.0-pr-2405 and SalesRep = 3.1001.0-pr-8 before re-testing.",
+    "Then re-run /qa-test VCST-5332 — S8 (belovedushka multi-org 403) first."
+  ]
+}

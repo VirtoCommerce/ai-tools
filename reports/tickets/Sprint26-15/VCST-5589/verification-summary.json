@@ -1,0 +1,174 @@
+{
+  "ticket": "VCST-5589",
+  "verdict": "FIX_OK_AC_NOT_MET — reopened",
+  "verdict_note": "The three ops the ticket scoped are verified working (see decisive_evidence). The ticket was reopened because F1 leaves the AC 'values match the corresponding lists/details without a page reload' unmet: the sibling list op salesRepOrders stayed cache-first. Operator chose to fix it in the same PR rather than split it out.",
+  "date": "2026-08-03",
+  "environment": "https://vcptcore-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1053.0-pr-3092-cc76",
+    "theme": "2.55.0-pr-2412-f845-f845476f",
+    "relevant_modules": { "VirtoCommerce.SalesRep": "3.1000.0" },
+    "pr_build": "vc-theme-b2b-vue-2.55.0-pr-2412-f845-f845476f.zip",
+    "deploy_pin": "vc-deploy-dev@vcptcore-qa theme/artifact.json, commit 2026-08-03T10:42:11Z",
+    "live_confirmation": "served bundle decompiled — all three composables pass {fetchPolicy:Y}, Y=\"cache-and-network\" (index-E3SWh-AJ.js KYe, exported c0)"
+  },
+  "fix": {
+    "repo": "VirtoCommerce/vc-frontend",
+    "pr": 2412,
+    "pr_state": "open, mergeable, awaiting human review (4 reviewers requested)",
+    "head_sha": "f845476f",
+    "files_changed": 5,
+    "additions": 186,
+    "deletions": 5,
+    "root_cause": "Three sales-rep statistics ops inherited Apollo default cache-first while buildStatisticsWindows makes their variables day-stable, so every remount was a guaranteed cache hit and only a full page reload refetched.",
+    "change": "STATISTICS_FETCH_POLICY = \"cache-and-network\" in modules/sales-rep/constants.ts, passed to useQuery of useSalesRepOrderStatistics / useSalesRepCartStatistics / useSalesRepCustomerCounts"
+  },
+  "agents_used": ["qa-frontend-expert (playwright-chrome, vcptcore-qa)", "qa-testing-expert (playwright-edge, vcst-qa baseline)"],
+  "str_result": "PASS — 4/4 dashboard navigation cycles, 3/3 customer-profile cycles (≥3 consecutive required)",
+  "decisive_evidence": "Requests fired with variables byte-identical to the previous request (verified: req142 vs req245 variables compare equal) yet returned an updated payload (newOrders.count 1 -> 0) — impossible under cache-first.",
+  "baseline_reproduction": "cited, not measured — live RED BLOCKED. Sources: (1) pre-fix shipped bundle on vcst-qa theme 2.55.0-pr-2399 has no fetchPolicy argument on the three call sites (machine-checked); (2) reporter's STR in the ticket; (3) PR #2412's 4 specs. Live capture failed: Playwright MCP --secrets not loaded at server start, so the literal var name was sent as the password and locked out agent-test-sr-primary@example.com on vcst-qa.",
+  "checklist_total": 18,
+  "checklist_passed": 13,
+  "checklist_partial": 2,
+  "checklist_blocked": 3,
+  "checklist_failed": 0,
+  "regression": {
+    "scope": "blast radius of the diff — statistics widgets on both surfaces + neighbours",
+    "suites": [
+      "regression/suites/Frontend/sales-rep/093-sales-rep-hub-dashboard-storefront.csv",
+      "regression/suites/Frontend/sales-rep/091-sales-rep-customer-profile-storefront.csv"
+    ],
+    "cases_run": ["SR-HD-001", "SR-HD-004", "SR-HD-005", "SR-HD-006", "SR-HD-007", "SR-HD-008", "SR-HD-012", "SR-HD-014", "SR-HD-016", "SR-HD-017", "SR-CP-015", "SR-CP-020", "SR-CP-028", "SR-CP-029", "SR-CP-030", "SR-CP-033", "SR-CP-035"],
+    "passed": ["SR-HD-001", "SR-HD-006", "SR-HD-007", "SR-HD-008", "SR-HD-016", "SR-HD-017", "SR-CP-015", "SR-CP-020", "SR-CP-028", "SR-CP-029", "SR-CP-035"],
+    "partial_or_design_confirm": ["SR-HD-004", "SR-HD-005", "SR-CP-030"],
+    "blocked": ["SR-HD-014"],
+    "not_implemented": ["SR-HD-012", "SR-CP-033"],
+    "not_implemented_basis": "Source-confirmed, not an env limitation: useSalesRepPeriodFilter exists (lifetime/month/year) but both consumers destructure only from/to and never expose the mutable period ref — top-sellers.vue pins \"year\", sales-rep-orders.vue defaults to \"lifetime\", and neither template renders a control. These cases are ahead of the build. The AC's 'refetch on filter change' was instead proven on two other axes: customer switch (organizationId) and category chip (filter) both refetch.",
+    "blocked_basis": "SR-HD-014 needs one widget's op to fail while siblings succeed. No admin lever produces that — all four sales-rep ops share one scoped endpoint and auth scope, so revoking permission fails all of them and route-guards the hub (a different assertion), while removing membership only changes data (200s, no error path). Deliberately did NOT mutate a shared env. Zero-risk partial obtained: an unserved-org profile URL renders a graceful localized 'Customer not found or not in your customers.' with the rail interactive, no crash. Recommend re-homing as a vitest test with a mocked erroring Apollo link.",
+    "failed": [],
+    "post_seed_reverification": {
+      "date": "2026-08-03",
+      "why": "The original seed (1 order, 0 carts, 1 product) left assertions unevaluable and confounded F2, since BL-SR-003 makes a null *ChangePercent correct when the previous baseline is 0.",
+      "seeded": "9 orders / $1,937.00 / AOV $215.22, 2 active carts ($37.00), 5 ranked products, a second served org (orderingCustomers 0 -> 4)",
+      "method_upgrade": "Cross-checked against the UI's own live GraphQL request documents — what it asks for vs what it renders — not only against the probe values.",
+      "newly_passing": ["SR-HD-006", "SR-HD-008", "SR-HD-009", "SR-HD-011", "SR-HD-016", "SR-HD-017", "SR-CP-029", "SR-CP-031", "SR-CP-032", "SR-CP-035"],
+      "still_partial": ["SR-HD-004", "SR-HD-007", "SR-CP-028"],
+      "planned_discriminator_that_failed": "The intended lever — a real +100% week-over-week on the carts tile — cannot reach the UI: SalesRepCustomerCartStatistics does not select comparison at all, and the UI's own prevWeek window is a single day (Jul 27, matching elapsed week-to-date since Aug 3 is a Monday) while the prior cart is dated Jul 28. The probe's +100% came from its wider 7-day window. The order tiles settled the question instead.",
+      "permanent_constraint_discovered": "Order createdDate is server-assigned and unwritable (verified live: POST with a backdated createdDate read back as now; PUT ignored). Previous-week / previous-month / last-year baselines therefore cannot be seeded at all. Zero-cost future path: prevMonth is the same day-span in the previous month, so the pre-existing 2026-07-16 order enters it from 2026-08-17 onward.",
+      "sanity_check": "One SPA cycle still fired exactly 3 requests (207/208/209) with byte-identical variables; SalesRepTopSellers still does not refire. Fix holds with the richer data."
+    },
+    "negative_control": "SR-HD-008 / salesRepTopSellers (untouched op) — 0 refetches on remount, unchanged",
+    "cache_specific_risks": {
+      "request_storm_or_polling": "PASS — 0 requests during 35s idle",
+      "loading_flicker": "PASS — cached value shown immediately, never an empty flash",
+      "values_vs_backend": "PASS — exact on SR-HD-016 / SR-HD-017 / SR-CP-035",
+      "console_network_clean": "PASS — all 58 /graphql POSTs 200, errors[] empty",
+      "non_sales_rep_surfaces": "PASS — buyer /account/dashboard and /account/orders unaffected"
+    }
+  },
+  "regression_issues": [],
+  "side_effects": [],
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "Medium",
+      "in_blast_radius": true,
+      "summary": "The widget-vs-list contradiction survives with polarity inverted: the KPI correctly reads 'New orders 0' while the Recent orders table below still shows the order as 'New en1', because the sibling op salesRepOrders stayed cache-first and did not refire on remount.",
+      "not_a_failure_of": "VCST-5589's own scope — all three ops the ticket named are correct; and not the acknowledged out-of-scope already-on-screen case, since this is a genuine remount.",
+      "conflicts_with_ac": "\"Values match the corresponding lists/details without a page reload\"",
+      "recommendation": "Follow-up ticket: extend STATISTICS_FETCH_POLICY (or equivalent) to salesRepOrders, and consider salesRepTopSellers / salesRepCustomer.",
+      "evidence": "screenshots/VCST-5589-datachange-kpi-fresh-list-stale.png; network trace shows only requests 245/246/247"
+    },
+    {
+      "id": "F2",
+      "severity": "Info",
+      "status": "CONFIRMED for the dashboard, CORRECTED for the profile (post-seed re-verification)",
+      "summary": "Dashboard tiles discard data the API returns: no AOV (mtd.average $215.22 / ytd.average $207.02 fetched, never rendered) and no period-over-period indicator even though non-null signed totalChange ($1,937.00 / $1,937.00 / $2,070.20) and countChange (9/9/10) are fetched. SalesRepCustomerCounts never selects comparison at all, so SR-HD-007's MoM indicator cannot render by construction. Profile MTD tile shows a share-of-YTD ratio (79%, correct math) and neither count nor MTD AOV.",
+      "correction": "The original finding implied the profile too. It does NOT: the profile has a dedicated 'Avg order value $105.03 / Average per order (YTD)' tile matching ytd.average exactly. F2 is re-scoped to dashboard-only.",
+      "no_longer_confounded_because": "BL-SR-003 only excuses a NULL *ChangePercent when the previous baseline is 0. The signed totalChange/countChange are non-null and still unrendered, so the null-percent defence does not apply.",
+      "recommendation": "Either render average / totalChange, or correct the {SPEC} assertions in SR-HD-004/005/007 and SR-CP-028/030 to the implemented design. Graceful degradation holds — no NaN / Infinity / raw null anywhere."
+    },
+    {
+      "id": "F2b",
+      "severity": "Info",
+      "status": "UNRESOLVED — not observable in either direction",
+      "summary": "No loading indication observable during the in-flight window across 5 attempts including a cold hard load. Two causes cannot be separated with real-user tooling: the round trip finishes inside a tool tick, and an overlay with no role/aria-busy would be invisible to the a11y tree even if present. The ticket's expected result #4 ('a loading indicator is shown during the refetch') therefore stays unconfirmed both ways.",
+      "recommendation": "Check at component level or via a trace/video. Note that a loading state carrying no aria-busy would itself be an accessibility gap."
+    },
+    {
+      "id": "F3",
+      "severity": "Info",
+      "outside_blast_radius": true,
+      "status": "RESOLVED — NOT a defect (reclassified from 'possible arithmetic issue' to a specification question)",
+      "summary": "The order line item reads Price per item $233.00 x Qty 1, line total $186.40 with $233.00 struck through, and the summary reconciles as 233.00 - 149.80 discount + 50.00 shipping = $133.20. So salesRepTopSellers.revenue is the extended LIST price, gross of discount — the arithmetic is correct. Confirmed by the ACME aggregate: line revenue $730.00 vs order totals $630.20, a $99.80 gap that is exactly 149.80 - 50.00.",
+      "recommendation": "Clarify BL-SR-008, which says only that revenue is Money and never states gross vs net. A column labelled 'Revenue' reporting gross list price overstates revenue whenever a promotion applies."
+    },
+    {
+      "id": "F4",
+      "severity": "Info",
+      "routed_to": "backend / xAPI contract question, not a storefront defect",
+      "summary": "Empty carts appear to be counted as active in DATED windows: ytd count 4 / total $37.00 and prevWeek count 1 / total $0.00 — four carts, only two carrying value. Matches BL-SR-006's violation signal ('empty carts counted as active'), first observed at API level during seeding (count 1 -> 2 after creating an empty org-scoped cart, back to 1 after deletion).",
+      "no_ui_violation": "The tile's displayed 2 is consistent with the two genuinely non-empty carts ($25.00 + $12.00 = $37.00); the tile is fed by the undated activeCarts period.",
+      "alternative_explanation_not_excluded": "A currency-scoped total (a non-USD cart counting while contributing $0.00 to a USD total) cannot be ruled out from the storefront — needs an API-level probe of the two zero-value YTD carts."
+    },
+    {
+      "id": "F5",
+      "severity": "Info — incidental, low confidence",
+      "summary": "After selecting a category chip, the Revenue header lost its active-sort marker although the request still carried sort:\"by-revenue\" — possible sort-state display mismatch. Not asserted by any case."
+    }
+  ],
+  "confirmed_by_design": [
+    "No post-mutation cache eviction and no polling — a widget already on screen does not live-update until the rep navigates back. Deferred pending the TTL / auto-refresh decision requested in the ticket's Notes.",
+    "AC 'cache is invalidated after every mutation' not implemented literally; mount-time revalidation covers the reported repro steps."
+  ],
+  "author_flagged_risk_result": "NOT REPRODUCED — the backend statistics cache did not serve stale values; the fresh request returned the updated figure immediately in both directions.",
+  "business_rules_verified": ["BL-SR-001", "BL-SR-002", "BL-SR-006", "BL-SREP-002"],
+  "ci_status": {
+    "green": ["ci", "SonarCloud", "SonarCloud Code Analysis", "CodeQL", "Semgrep (SAST)", "Semgrep OSS", "osv-scanner", "OSV-Scanner (SCA)", "deploy-cloud", "auto-tests (mysql)", "auto-tests (sqlserver)", "license/cla"],
+    "failed": ["auto-tests (postgres)"],
+    "failed_assessment": "Infrastructure, not attributable to the diff — failed after ~3 min with 'allure-results is empty' and a missing report path; no tests were collected. Same set passed on mysql and sqlserver. Worth one re-run."
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-5647",
+      "finding": "F2",
+      "priority": "Low",
+      "status": "REFINEMENT",
+      "parent_epic": "VCST-5142",
+      "linked_to": "VCST-5589 (Relates)",
+      "summary": "Sales Rep dashboard tiles discard AOV and the period-over-period change the statistics query already fetches"
+    },
+    {
+      "key": "VCST-5648",
+      "finding": "F4",
+      "priority": "Medium",
+      "status": "REFINEMENT",
+      "parent_epic": "VCST-5142",
+      "linked_to": "VCST-5589 (Relates)",
+      "summary": "salesRepCustomerCartStatistics appears to count empty carts toward active-carts in dated windows (BL-SR-006)"
+    }
+  ],
+  "f1_handling": "NOT filed as a separate ticket — F1 is the stated reason VCST-5589 was reopened, so a separate bug would duplicate it. Documented in the reopen comment (id 104590) with the requested change: extend STATISTICS_FETCH_POLICY to salesRepOrders.",
+  "jira_transition": "Testing -> Reopen (transition id 7, 'Need fixes')",
+  "jira_transition_status": "APPLIED 2026-08-03 by operator decision. Status confirmed = Reopen (10285); assignee unchanged (Ivan Kalachikov). Verdict comment id 104590 posted before the transition.",
+  "operator_decisions": {
+    "jira": "Reopen — add salesRepOrders to the same PR rather than open a separate ticket for F1",
+    "follow_ups_filed": ["VCST-5647 (F2)", "VCST-5648 (F4)"],
+    "seeded_data": "KEEP on vcptcore-qa — improves future sales-rep regression (real ranking, non-zero carts, second org with orders). Teardown when needed: TEST_ENV=vcptcore npm run seed:sales-rep-stats:teardown"
+  },
+  "not_filed_deliberately": [
+    "F3 — resolved as NOT a defect; only a BL-SR-008 gross-vs-net wording clarification is warranted.",
+    "F5 — incidental sort-marker mismatch, low confidence, not asserted by any case.",
+    "Test-case corrections (SR-HD-012 / SR-CP-033 NOT-IMPLEMENTED marking, SR-HD-014 re-homing to vitest) — offered but not selected by the operator; the CSVs are unchanged."
+  ],
+  "data_hygiene": "Only mutation was order CO260716-00001 status, restored to 'New en1' and re-verified from the storefront. No accounts created. No Authorization headers or tokens in any evidence file.",
+  "known_limitations": [
+    "No live pre-fix RED capture (see baseline_reproduction).",
+    "Period/filter-change AC unverifiable — no period control exists on either surface on this build.",
+    "Error-resilience case needs request interception, unavailable in the playwright-chrome MCP surface.",
+    "Thin seed: 1 order (Jul 17, $133.20), 0 carts, 1 product, 1 of 4 served orgs with orders — comparison windows all zero, multi-value ranking unexercised."
+  ],
+  "evidence": "reports/tickets/Sprint26-15/VCST-5589/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-15/VCST-5589/"
+}

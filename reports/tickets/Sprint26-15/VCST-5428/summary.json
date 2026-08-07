@@ -1,0 +1,41 @@
+{
+  "ticket": "VCST-5428",
+  "verdict": "PASS",
+  "verdict_note": "Fix (PR #901) confirmed on vcptcore-qa with VirtoCommerce.Catalog 3.1040.0-pr-901-9a41 deployed. Facets save no longer throws parentBlade.refresh / unhandled rejection (2/2 clean saves, PUT 204). Earlier attempt on vcptcore-qa1 was BLOCKED because the build had not deployed there.",
+  "date": "2026-07-28",
+  "environment": "https://vcptcore-qa.govirto.com",
+  "build": {
+    "platform": "3.1051.0",
+    "catalog_module_live": "3.1040.0-pr-901-9a41",
+    "deploy_manifest": "vc-deploy-dev@vcptcore-qa backend/packages.json -> AzureBlob VirtoCommerce.Catalog_3.1040.0-pr-901-9a41.zip",
+    "pr_state": "open-unmerged"
+  },
+  "fix_under_test": {
+    "pr": "VirtoCommerce/vc-module-catalog#901",
+    "change": "adds guarded blade.refresh to Scripts/blades/search-configuration.js"
+  },
+  "agents_dispatched": [],
+  "execution_mode": "inline (single-surface Admin SPA console verification)",
+  "reproduction_after_fix": {
+    "str_followed": true,
+    "bug_present": false,
+    "clean_saves": "2/2",
+    "save_result": "PUT /api/catalog/aggregationproperties/B2B-store/properties -> 204",
+    "console_after_save": "only 3 pre-existing benign logo.svg 404s; no parentBlade.refresh error, no unhandled rejection"
+  },
+  "prior_attempt": {
+    "env": "vcptcore-qa1",
+    "verdict": "BLOCKED",
+    "reason": "PR #901 build not deployed there (live Catalog 3.1038.0); bug still reproduced"
+  },
+  "total_cases": 1,
+  "passed": 1,
+  "failed": 0,
+  "blocked": 0,
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "exploratory": { "run": false, "reason": "targeted cosmetic-fix verification" },
+  "appinsights": { "checked": false, "reason": "APPINSIGHTS_* unconfigured for vcptcore" },
+  "jira_transition": "Ready for test -> On QA (Testing) -> Finish test -> TESTED (done 2026-07-28). Comment id 104063 (as Aleksandra Mitricheva) + 2 screenshots attached.",
+  "artifacts": "reports/tickets/Sprint26-15/VCST-5428/"
+}
