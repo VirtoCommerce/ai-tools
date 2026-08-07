@@ -1,0 +1,821 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprint 26-15 Demo — Agentic QA</title>
+<style>
+  :root {
+    --ink:#0d141f; --ink-2:#131c2b; --surface:#f7f9fb; --surface-2:#ffffff; --card:#ffffff;
+    --line:#dbe3ec; --text:#16202e; --text-soft:#4d5c70; --text-faint:#7c8aa0;
+    --accent:#0f9d8f; --accent-ink:#0a6e64; --accent-soft:#e2f4f1;
+    --agent:#5566e0; --agent-soft:#e8eafb;
+    --pass:#1f9d57; --warn:#c98a1a; --crit:#d1495b;
+    --shadow:0 1px 2px rgba(13,20,31,.05), 0 12px 32px -14px rgba(13,20,31,.22);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  /* Deck is committed to a light visual world by request. */
+  :root[data-theme="dark"] {
+    --ink:#05090f; --ink-2:#0a1119; --surface:#0b111a; --surface-2:#0f1824; --card:#111c2a;
+    --line:#243447; --text:#e7edf5; --text-soft:#9fb0c4; --text-faint:#6a7c92;
+    --accent:#3fd0bf; --accent-ink:#7fe6da; --accent-soft:#0f2b2a;
+    --agent:#8b98f2; --agent-soft:#181f3a;
+    --pass:#43c47e; --warn:#e0ab53; --crit:#f0788a;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 40px -18px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; }
+  body {
+    font-family: var(--sans);
+    background: var(--surface);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .deck { height:100vh; width:100vw; position:relative; }
+
+  .slide {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; justify-content:center;
+    padding: clamp(28px, 6vw, 96px);
+    padding-bottom: 92px;
+    opacity:0; visibility:hidden;
+    transform: translateY(14px);
+    transition: opacity .45s ease, transform .45s ease, visibility .45s;
+    overflow-y:auto;
+  }
+  .slide.active { opacity:1; visibility:visible; transform:none; }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition:none; transform:none; }
+  }
+  .wrap { width:100%; max-width:1080px; margin:0 auto; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px; letter-spacing:.22em; text-transform:uppercase;
+    color: var(--accent-ink); font-weight:600;
+    display:flex; align-items:center; gap:10px; margin:0 0 22px;
+  }
+  .eyebrow::before { content:""; width:26px; height:2px; background:var(--accent); display:inline-block; }
+  .eyebrow.j { color:var(--agent); }
+  .eyebrow.j::before { background:var(--agent); }
+
+  h1 { font-size: clamp(34px, 6.2vw, 72px); line-height:1.03; letter-spacing:-.03em;
+       font-weight:800; margin:0 0 20px; text-wrap:balance; }
+  h2 { font-size: clamp(26px, 4vw, 46px); line-height:1.06; letter-spacing:-.025em;
+       font-weight:780; margin:0 0 14px; text-wrap:balance; }
+  .lead { font-size: clamp(16px, 2.1vw, 22px); line-height:1.5; color:var(--text-soft);
+          max-width:64ch; margin:0; }
+  p { line-height:1.55; }
+  .mono { font-family: var(--mono); }
+  .cmd {
+    font-family: var(--mono); font-size:.88em; font-weight:600;
+    color: var(--accent-ink); background: var(--accent-soft);
+    padding: 2px 8px; border-radius:6px; white-space:nowrap;
+    border:1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+  .cmd.j { color:var(--agent); background:var(--agent-soft);
+    border-color:color-mix(in srgb, var(--agent) 30%, transparent); }
+
+  /* ---- title slide ---- */
+  .title-grid { display:flex; flex-direction:column; gap:34px; }
+  .thesis { display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; }
+  .thesis .chip {
+    font-family:var(--mono); font-size:13px; font-weight:600; padding:9px 14px; border-radius:999px;
+    border:1px solid var(--line); background:var(--card); color:var(--text);
+  }
+  .thesis .chip b { color:var(--accent-ink); }
+  .kicker { font-family:var(--mono); font-size:13.5px; color:var(--text-soft); letter-spacing:.02em; }
+  .kicker b { color:var(--text); font-weight:700; }
+
+  .metrics { display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line); }
+  .metrics div { padding:14px 26px 14px 0; margin-right:26px; border-right:1px solid var(--line); }
+  .metrics div:last-child { border-right:0; margin-right:0; }
+  .metrics .n { font-family:var(--mono); font-size:24px; font-weight:700; letter-spacing:-.02em;
+    display:block; font-variant-numeric:tabular-nums; }
+  .metrics .k { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--text-faint); margin-top:4px; display:block; }
+
+  /* ---- section divider ---- */
+  .divider { background:
+      radial-gradient(120% 90% at 100% 0%, var(--accent-soft), transparent 55%),
+      var(--surface); }
+  .divider.j { background:
+      radial-gradient(120% 90% at 100% 0%, var(--agent-soft), transparent 55%),
+      var(--surface); }
+  .divider .part { font-family:var(--mono); font-size:13px; letter-spacing:.24em; text-transform:uppercase;
+     color:var(--text-faint); font-weight:600; margin:0 0 16px; }
+  .divider h1 { max-width:15ch; }
+  .divider .sub { font-size:clamp(16px,2vw,21px); color:var(--text-soft); max-width:58ch; margin:18px 0 0; line-height:1.5; }
+  .rail { display:flex; gap:10px; flex-wrap:wrap; margin-top:30px; }
+  .rail span { font-family:var(--mono); font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:8px;
+     background:var(--card); border:1px solid var(--line); color:var(--text-soft); }
+
+  /* ---- pillar cards ---- */
+  .pillars { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:10px; }
+  .pillar { background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 24px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+    display:flex; flex-direction:column; }
+  .pillar::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent); }
+  .pillar.jx::before { background:var(--agent); }
+  .pillar.gx::before { background:var(--pass); }
+  .pillar .pk { font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; }
+  .pillar h3 { font-size:20px; letter-spacing:-.02em; margin:8px 0 10px; line-height:1.14; }
+  .pillar p { margin:0; font-size:14.5px; color:var(--text-soft); line-height:1.5; }
+  /* margin-top:auto pins this block to the card floor, so the dashed rules line up
+     across the three cards regardless of how long each paragraph runs. Don't add a
+     margin-top override below this — it would cancel the auto and break the alignment. */
+  .pillar .blind { margin-top:auto; padding-top:12px; border-top:1px dashed var(--line);
+    font-family:var(--mono); font-size:12.5px; color:var(--crit); line-height:1.45; }
+  .pillar .blind b { color:var(--text-faint); font-weight:600; display:block; letter-spacing:.12em;
+    text-transform:uppercase; font-size:10.5px; margin-bottom:4px; }
+
+  /* ---- feature slide layout ---- */
+  .feat { display:grid; grid-template-columns: 1.05fr .95fr; gap:clamp(24px,4vw,56px); align-items:center; }
+  .feat .body ul { margin:18px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:14px; }
+  .feat .body li { position:relative; padding-left:30px; font-size:15.5px; line-height:1.5; color:var(--text); }
+  .feat .body li::before {
+    content:"✓"; position:absolute; left:0; top:-1px; color:var(--accent);
+    font-weight:800; font-family:var(--mono); font-size:15px;
+  }
+  .feat.j .body li::before { color:var(--agent); }
+  .feat .body li b { font-weight:700; }
+  .feat .body li span { color:var(--text-soft); }
+
+  /* terminal panel */
+  .term { background:var(--ink); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    box-shadow:var(--shadow); font-family:var(--mono); font-size:13.5px; line-height:1.7; }
+  .term .bar { background:var(--ink-2); padding:11px 15px; display:flex; align-items:center; gap:7px;
+    border-bottom:1px solid rgba(255,255,255,.07); }
+  .term .bar i { width:11px; height:11px; border-radius:50%; display:inline-block; }
+  .term .bar i:nth-child(1){ background:#e0788a; }
+  .term .bar i:nth-child(2){ background:#e0ab53; }
+  .term .bar i:nth-child(3){ background:#43c47e; }
+  .term .bar .t { margin-left:8px; color:#7c8aa0; font-size:12px; letter-spacing:.03em; }
+  .term .body2 { padding:18px 18px; color:#c5d2e2; white-space:pre-wrap; }
+  .term .body2 .p { color:#3fd0bf; }
+  .term .body2 .c { color:#e7edf5; font-weight:600; }
+  .term .body2 .g { color:#43c47e; }
+  .term .body2 .w { color:#e0ab53; }
+  .term .body2 .d { color:#6a7c92; }
+  .term .body2 .a { color:#8b98f2; }
+  .term .body2 .r { color:#f0788a; }
+  .term.wide { font-size:13px; }
+
+  .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+  .tag { font-family:var(--mono); font-size:12px; font-weight:600; padding:5px 11px; border-radius:7px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--text-soft); }
+  .tag.j { color:var(--agent); border-color:color-mix(in srgb,var(--agent) 34%,var(--line)); background:var(--agent-soft); }
+
+  /* proud / grid of 4 */
+  .proud { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:6px; }
+  .proud .p { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+    box-shadow:var(--shadow); }
+  .proud .p .h { display:flex; align-items:center; gap:11px; font-weight:750; font-size:16.5px; letter-spacing:-.01em; }
+  .proud .p .h .m { font-family:var(--mono); color:var(--accent-ink); font-size:13.5px; font-weight:800;
+     background:var(--accent-soft); border-radius:7px; padding:3px 9px; white-space:nowrap; }
+  .proud .p .h .m.j { color:var(--agent); background:var(--agent-soft); }
+  .proud .p p { margin:10px 0 0; font-size:14px; color:var(--text-soft); line-height:1.5; }
+
+  /* ---- pipeline schema: 5 steps × owner / goal / gate, then the outputs ---- */
+  .schema { display:grid; grid-template-columns:4.4rem repeat(5,1fr); gap:9px 10px; margin-top:4px; align-items:stretch; }
+  .schema .rl { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; display:flex; align-items:center; justify-content:flex-end;
+    padding-right:4px; text-align:right; }
+
+  .schema .st { background:var(--card); border:1px solid var(--line); border-radius:11px;
+    padding:11px 12px 12px; box-shadow:var(--shadow); position:relative; text-align:center; }
+  .schema .st .n { font-family:var(--mono); font-size:12px; font-weight:800; color:#fff;
+    background:var(--agent); width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+    margin:0 auto 7px; }
+  .schema .st .nm { font-size:14px; font-weight:750; letter-spacing:-.01em; line-height:1.2; }
+  /* connector between step heads */
+  .schema .st::after { content:""; position:absolute; top:22px; right:-10px; width:10px; height:1.5px;
+    background:var(--line); }
+  /* the 6th grid child is the LAST step card (row 1 = row-label + 5 steps). `:last-child`
+     would never match here — the grid's last child is a gate cell, not a step. */
+  .schema .st:nth-child(6)::after { display:none; }
+
+  .schema .cell { background:var(--surface-2); border:1px solid var(--line); border-radius:9px;
+    padding:10px 11px; font-size:12.5px; line-height:1.38; color:var(--text-soft); display:flex;
+    align-items:center; justify-content:center; text-align:center; }
+  .schema .cell.owner { font-family:var(--mono); font-size:11.5px; color:var(--text); font-weight:600; }
+  .schema .cell.goal { color:var(--text); }
+
+  .schema .gate { border-radius:9px; padding:9px 8px; font-family:var(--mono); font-size:11px;
+    font-weight:700; text-align:center; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:3px; letter-spacing:.04em; }
+  .schema .gate.soft { background:var(--surface-2); border:1px dashed var(--line); color:var(--text-faint); }
+  .schema .gate.hard { background:var(--agent); border:1px solid var(--agent); color:#fff; }
+  .schema .gate small { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:0;
+    opacity:.9; text-transform:none; }
+
+  .ends { margin-top:20px; border:1px solid var(--line); border-left:4px solid var(--pass);
+    border-radius:12px; background:var(--card); box-shadow:var(--shadow); padding:15px 20px;
+    display:grid; grid-template-columns:8.2rem 1fr; gap:16px; align-items:center; }
+  .ends .lb { font-family:var(--mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--pass); font-weight:700; line-height:1.4; }
+  .ends .items { display:flex; flex-wrap:wrap; gap:8px; }
+  .ends .items span { font-size:12.5px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:7px; padding:6px 11px; color:var(--text); }
+  .ends .items span b { color:var(--pass); font-weight:700; }
+  .ends .items span.human { border-color:color-mix(in srgb,var(--warn) 50%,var(--line)); background:#fdf7ea; }
+  :root[data-theme="dark"] .ends .items span.human { background:#2a2113; }
+  .ends .items span.human b { color:var(--warn); }
+  @media (max-width:1000px){ .schema { grid-template-columns:3.4rem repeat(5,1fr); gap:6px; }
+    .schema .st .nm { font-size:12px; } .schema .cell { font-size:11px; } }
+
+  /* value rows — the "before / after" of a pipeline change */
+  .value { display:flex; flex-direction:column; gap:0; margin-top:6px;
+    border-top:1px solid var(--line); }
+  .value .row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);
+    gap:10px 30px; padding:17px 0; border-bottom:1px solid var(--line); align-items:baseline; }
+  .value .was { font-size:14.5px; color:var(--text-faint); }
+  .value .was b { display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--text-faint); font-weight:600; margin-bottom:5px; }
+  .value .now { font-size:15.5px; color:var(--text); line-height:1.5; }
+  .value .now b { display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--agent); font-weight:600; margin-bottom:5px; }
+  .value .now em { font-style:normal; font-weight:700; }
+  @media (max-width:860px){ .value .row { grid-template-columns:1fr; gap:4px; } }
+
+  /* gates — two columns of different gate kinds */
+  .gatecols { display:grid; grid-template-columns:1.1fr .9fr; gap:clamp(20px,3.5vw,44px); margin-top:8px; }
+  .gatecol h3 { font-size:17px; letter-spacing:-.01em; margin:0 0 4px; }
+  .gatecol .ch { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; margin-bottom:12px; display:block; }
+  .gatecol ol, .gatecol ul { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px; }
+  .gatecol li { background:var(--card); border:1px solid var(--line); border-radius:11px;
+    padding:13px 16px; font-size:14.5px; line-height:1.5; box-shadow:var(--shadow); }
+  .gatecol li .gk { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--agent);
+    margin-right:9px; }
+  .gatecol.det li .gk { color:var(--accent-ink); }
+  .gatecol li span { color:var(--text-soft); }
+  @media (max-width:860px){ .gatecols { grid-template-columns:1fr; } }
+
+  .callout { margin-top:26px; padding:18px 22px; border-radius:12px; border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line));
+     background:var(--accent-soft); color:var(--accent-ink); font-size:15.5px; line-height:1.5; }
+  .callout b { color:var(--accent-ink); }
+  .callout.j { border-color:color-mix(in srgb,var(--agent) 45%,var(--line)); background:var(--agent-soft); color:var(--agent); }
+  .callout.j b { color:var(--agent); }
+
+  /* chrome */
+  .progress { position:fixed; top:0; left:0; height:3px; background:var(--accent); z-index:40; transition:width .45s ease; }
+  .hud { position:fixed; bottom:20px; left:0; right:0; z-index:40; display:flex; justify-content:center;
+    align-items:center; gap:18px; pointer-events:none; }
+  .hud .grp { pointer-events:auto; display:flex; align-items:center; gap:14px;
+    background:color-mix(in srgb,var(--card) 88%, transparent); backdrop-filter:blur(8px);
+    border:1px solid var(--line); border-radius:999px; padding:7px 10px 7px 16px; box-shadow:var(--shadow); }
+  .counter { font-family:var(--mono); font-size:13px; color:var(--text-soft); font-variant-numeric:tabular-nums; }
+  .counter b { color:var(--text); }
+  .dots { display:flex; gap:7px; }
+  .dots button { width:8px; height:8px; border-radius:50%; border:none; background:var(--line); cursor:pointer; padding:0;
+    transition:background .2s, transform .2s; }
+  .dots button.on { background:var(--accent); transform:scale(1.35); }
+  .dots button.sec { background:color-mix(in srgb,var(--agent) 50%, var(--line)); }
+  .dots button.on.sec { background:var(--agent); }
+  .navbtn { width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--surface-2);
+    color:var(--text); cursor:pointer; font-size:15px; display:grid; place-items:center; transition:background .15s,border-color .15s; }
+  .navbtn:hover { border-color:var(--accent); color:var(--accent-ink); }
+  .navbtn:focus-visible, .dots button:focus-visible, .toggle button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toggle { position:fixed; top:16px; right:16px; z-index:40; display:flex; gap:8px; }
+  .toggle button { font-family:var(--mono); font-size:12px; font-weight:600; padding:7px 12px; border-radius:8px;
+    border:1px solid var(--line); background:color-mix(in srgb,var(--card) 88%, transparent); color:var(--text-soft);
+    cursor:pointer; backdrop-filter:blur(8px); }
+  .toggle button:hover { color:var(--accent-ink); border-color:var(--accent); }
+
+  .notes { position:fixed; left:0; right:0; bottom:0; z-index:50; transform:translateY(102%);
+    transition:transform .3s ease; background:var(--ink); color:#c5d2e2; border-top:2px solid var(--accent);
+    padding:20px clamp(28px,6vw,96px) 24px; max-height:44vh; overflow-y:auto; box-shadow:0 -18px 40px -18px rgba(0,0,0,.5); }
+  .notes.open { transform:none; }
+  .notes .nh { font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:#3fd0bf;
+    font-weight:700; margin-bottom:10px; }
+  .notes .nb { font-size:14.5px; line-height:1.6; max-width:82ch; }
+  .notes .nb strong { color:#e7edf5; }
+
+  @media (max-width: 860px) {
+    .pillars { grid-template-columns:1fr; }
+    .feat { grid-template-columns:1fr; }
+    .proud { grid-template-columns:1fr; }
+    .slide { padding-bottom:96px; }
+  }
+</style>
+
+<div class="progress" id="progress"></div>
+
+<div class="toggle">
+  <button id="themeBtn" title="Toggle light / dark">◐ theme</button>
+  <button id="notesBtn" title="Presenter notes (N)">▤ notes</button>
+</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 · TITLE -->
+  <section class="slide active">
+    <div class="wrap title-grid">
+      <p class="eyebrow">Sprint 26-15 · Agentic QA</p>
+      <div>
+        <h1>Two plugins to ship, one pipeline to run.</h1>
+        <p class="lead">The <b>vc-tools marketplace</b> gained a second plugin this sprint, and the
+        internal <b>QA pipeline</b> learned to spend effort in proportion to risk — and to prove
+        its own knowledge is still true.</p>
+      </div>
+      <div class="metrics">
+        <div><span class="n">2</span><span class="k">plugins</span></div>
+        <div><span class="n">3</span><span class="k">new commands</span></div>
+        <div><span class="n">121</span><span class="k">suites</span></div>
+        <div><span class="n">3,985</span><span class="k">test cases</span></div>
+      </div>
+      <p class="kicker">Running order: <b>vc-fix + vc-perf</b> → <b>/qa-test, gates, oracle review</b> → questions.</p>
+    </div>
+  </section>
+
+  <!-- 2 · SECTION A DIVIDER -->
+  <section class="slide divider">
+    <div class="wrap">
+      <p class="part">Section one</p>
+      <h1>The vc-tools marketplace</h1>
+      <p class="sub">What a customer installs. <b>vc-fix</b> got more trustworthy and more portable;
+      <b>vc-perf</b> is brand new — the piece we'll actually demo.</p>
+      <div class="rail">
+        <span>vc-fix 0.8.3</span>
+        <span>vc-perf 0.2.6 — new</span>
+        <span>L1 benchmark</span>
+        <span>L2 load</span>
+        <span>L3 attribution</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · vc-fix -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">vc-tools marketplace · vc-fix 0.8.3</p>
+      <h2>The plugin a customer installs got more honest.</h2>
+      <p class="lead" style="margin-bottom:26px">Four changes, all of which make the difference between
+      a plugin we'd demo and a plugin we'd leave running on someone else's stack.</p>
+      <div class="proud">
+        <div class="p">
+          <div class="h"><span class="m">self-check</span> Trustworthy by construction</div>
+          <p>Capture, judgement and surfacing are now three separate layers. The collector records every
+          anomaly and is <em>forbidden</em> to decide whether it matters — so a signal the classifier
+          doesn't recognise can no longer disappear before anyone analyses it.</p>
+        </div>
+        <div class="p">
+          <div class="h"><span class="m">deliver</span> Contribution that contributes</div>
+          <p>Routes cut to <b>issue</b> or <b>local</b>. Previously a token with <em>more</em> rights
+          delivered <em>less</em> — it printed a hand-off and sent nothing, while a weaker token filed
+          automatically. A transient failure now retries once before falling back.</p>
+        </div>
+        <div class="p">
+          <div class="h"><span class="m">/project-init</span> Writes where it should</div>
+          <p>Output root and plugin root are now separate concepts, so an installed plugin writes the
+          project's profile and env into the <em>project</em> — never into its own versioned
+          marketplace cache.</p>
+        </div>
+        <div class="p">
+          <div class="h"><span class="m">containment</span> Guaranteed on both surfaces</div>
+          <p>The upstream report is a closed schema of enums and counts — zero free-text fields, so
+          client code can't leak by <b>type</b> rather than by scrubbing. Plugin and in-repo mirror
+          are byte-identical, CI-enforced.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · vc-perf — what it is -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">vc-tools marketplace · New plugin</p>
+      <h2><span class="cmd" style="font-size:.8em">vc-perf</span> — three instruments, because one is never enough.</h2>
+      <p class="lead" style="margin-bottom:24px">Each layer answers a different question, and each is
+      blind to something the next one sees. Picking the wrong one is how performance work produces
+      confident nonsense.</p>
+      <div class="pillars">
+        <div class="pillar">
+          <div class="pk">L1 · BenchmarkDotNet</div>
+          <h3>Did this code get slower?</h3>
+          <p>Code-level A/B across two revisions, our override against the stock path, or an upstream
+          before/after. Allocations and time, repeatable.</p>
+          <div class="blind"><b>Blind to</b>a round-trip you removed — it never left the process</div>
+        </div>
+        <div class="pillar jx">
+          <div class="pk">L2 · k6 load harness</div>
+          <h3>How does it hold up?</h3>
+          <p>The live system under real concurrency — throughput, p95 latency, GC pressure, with
+          optional counters captured alongside.</p>
+          <div class="blind"><b>Blind to</b><em>who</em> is responsible for what it just measured</div>
+        </div>
+        <div class="pillar gx">
+          <div class="pk">L3 · dotnet-trace</div>
+          <h3>Who caused it?</h3>
+          <p>Attribution: allocation churn, on-CPU time, and DB command shape, parsed back to the
+          call sites that produced them.</p>
+          <div class="blind"><b>Blind to</b>anything the load didn't actually exercise</div>
+        </div>
+      </div>
+      <div class="callout">Reuses <b>vc-fix</b> wholesale — onboarding, repo routing, the backend developer
+      and reviewer agents — and ships only the measurement delta. <b>Advisory only, never a CI gate.</b></div>
+    </div>
+  </section>
+
+  <!-- 5 · vc-perf — the demo path -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">vc-tools marketplace · Live demo</p>
+      <div class="feat">
+        <div class="body">
+          <h2>What running it looks like.</h2>
+          <p class="lead">One entry point routes to the right layer, then hands back a <em>ranked</em>
+          list rather than a wall of trace output.</p>
+          <ul>
+            <li><b><span class="cmd">/perf-init</span></b> <span>— one-time: points the plugin at the local Aspire-hosted backend and the module's own benchmark targets.</span></li>
+            <li><b><span class="cmd">/perf-loop</span></b> <span>— the diagnose entry point. Name an operation; it decides whether the question is L2, L3, or both, and runs them.</span></li>
+            <li><b>Ranked candidates</b> <span>— each one carries its evidence share, the shape of the fix, where the fix lands, and how to verify it. That's the artifact a developer picks up.</span></li>
+            <li><b><span class="cmd">/perf-fix</span> → <span class="cmd">/perf-verify</span></b> <span>— hand a candidate to the existing backend dev + reviewer agents, then re-measure to confirm the number actually moved.</span></li>
+          </ul>
+        </div>
+        <div class="term" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span class="t">/perf-loop — diagnose</span></div>
+          <div class="body2"><span class="p">➜</span> <span class="c">/perf-loop getFullCart</span>
+<span class="d">routing … L2 (load) + L3 (attribution)</span>
+
+  <span class="a">L2</span> throughput  <span class="d">rps · p95 · GC</span>
+  <span class="a">L3</span> attribution <span class="d">alloc · cpu · db</span>
+
+<span class="g">ranked candidates</span>
+  <span class="w">1</span> allocation churn in a hot mapper
+     <span class="d">evidence share · fix shape · lands in</span>
+     <span class="d">verify: re-run L1 + L3 on the seam</span>
+  <span class="w">2</span> repeated DB command shape
+  <span class="w">3</span> …
+
+<span class="p">➜</span> <span class="c">/perf-fix 1</span>  <span class="d">→ backend dev + reviewer</span>
+<span class="p">➜</span> <span class="c">/perf-verify</span> <span class="d">→ did the number move?</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · perf evidence — the N+1 -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">vc-tools marketplace · Why it earns its place</p>
+      <div class="feat">
+        <div class="body">
+          <h2>The same discipline already found a real N+1.</h2>
+          <p class="lead">From <span class="cmd">/qa-perf-measure</span>, vc-perf's sibling for
+          <em>deployed</em> environments — it counts dependency calls instead of timing them, because
+          counts transfer across environments and latency does not.</p>
+          <ul>
+            <li><b>Paired controls, same window</b> <span>— a positive and a negative control fire alongside the real measurement. That is what makes a <em>null</em> result mean "no change" instead of "dead instrument".</span></li>
+            <li><b>The fix worked; browsing was untouched</b> <span>— four identical searches collapsed to one, and catalog browsing did not move, because its redundancy is a different shape.</span></li>
+            <li><b>The residual scales</b> <span>— one Elasticsearch search per variation-bearing product on the page. Slope ≈ 1.0, and every measured value landed inside its independently predicted set across all ten cells.</span></li>
+            <li><b>The lever is batching</b> <span>— not deduplication. Filed as its own ticket with the measurement attached.</span></li>
+          </ul>
+        </div>
+        <div class="term" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span class="t">dependency calls per request</span></div>
+          <div class="body2"><span class="d">A/B across the dedup seam · same windows</span>
+
+  <span class="g">positive control</span>  4 → <span class="g">1</span>  <span class="d">−75% · fix works</span>
+  <span class="d">negative control</span>  4 → 4  <span class="d">untouched, by design</span>
+  <span class="d">PLP · PDP · search</span>  <span class="d">unchanged — a real null</span>
+
+<span class="d">vary page size, hold all else fixed</span>
+  first:  4   8  12  16  20
+  calls:  1   2   4   6   8   <span class="w">slope ≈ 1.0</span>
+
+<span class="r">N+1</span> <span class="d">one ES search per variation product</span>
+  <span class="a">→ batch it, don't dedup it</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · SECTION B DIVIDER -->
+  <section class="slide divider j">
+    <div class="wrap">
+      <p class="part">Section two</p>
+      <h1>The agentic QA project</h1>
+      <p class="sub">The pipeline we run against the live product. This sprint it learned to spend effort
+      in proportion to risk, to verify itself at the moments that matter, and to keep its own oracles true.</p>
+      <div class="rail">
+        <span>/qa-test — reworked</span>
+        <span>two-axis routing</span>
+        <span>three hard-STOP gates</span>
+        <span>/qa-review-oracles</span>
+        <span>BL + ECL</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · /qa-test — how it routes -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow j">Agentic project · The pipeline</p>
+      <div class="feat j">
+        <div class="body">
+          <h2><span class="cmd j" style="font-size:.8em">/qa-test</span> decides twice before it does anything.</h2>
+          <p class="lead">One ticket in, and the first step answers two separate questions — which
+          <em>flow</em> this even is, and how much <em>depth</em> it deserves.</p>
+          <ul>
+            <li><b>Axis 1 — the flow</b> <span>— by ticket type × status. A fix-ready Bug is a <em>verification</em>, not a feature test, so it runs RED→GREEN inline instead of going through authoring and promotion machinery it doesn't need.</span></li>
+            <li><b>Axis 2 — the path</b> <span>— FAST for a P2–P3 single-layer change; FULL for a Story, a P0–P1, anything cross-layer or revenue-critical.</span></li>
+            <li><b>The tie-break is written down</b> <span>— <em>when in doubt, FULL.</em> The cost of over-testing a small ticket is hours; the cost of under-testing a checkout change is a release.</span></li>
+            <li><b>Epic-aware</b> <span>— a story resolves its parent Epic and picks up integration coverage against Done siblings; <span class="cmd j">--epic</span> runs the children in series with a cross-story E2E and an Epic-level go/no-go.</span></li>
+          </ul>
+        </div>
+        <div class="term" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span class="t">Step 1a — routing</span></div>
+          <div class="body2"><span class="c">TICKET</span>
+  │
+  ├─ <span class="a">axis 1 · FLOW</span>  <span class="d">type × status</span>
+  │    fix-ready Bug  → <span class="g">/qa-verify-fix</span> <span class="d">inline</span>
+  │    hotfix Bug     → <span class="g">/qa-hotfix-check</span>
+  │    Sub-task       → <span class="d">inherit parent</span>
+  │    everything else→ <span class="c">feature-test</span>
+  │
+  └─ <span class="a">axis 2 · PATH</span>  <span class="d">feature-test only</span>
+       <span class="w">FAST</span>  P2–P3 · 1 layer · 1 domain
+       <span class="g">FULL</span>  Story · P0–P1 · cross-layer
+
+       <span class="d">when in doubt →</span> <span class="g">FULL</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · /qa-test — the schema -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow j">Agentic project · The flow</p>
+      <h2>Five steps, five owners, one verdict.</h2>
+      <div class="schema">
+        <div class="rl"></div>
+        <div class="st"><span class="n">1</span><span class="nm">Context</span></div>
+        <div class="st"><span class="n">2</span><span class="nm">Plan</span></div>
+        <div class="st"><span class="n">3</span><span class="nm">Author</span></div>
+        <div class="st"><span class="n">4</span><span class="nm">Execute</span></div>
+        <div class="st"><span class="n">5</span><span class="nm">Report</span></div>
+
+        <div class="rl">Owner</div>
+        <div class="cell owner">orchestrator<br>+ BA agents</div>
+        <div class="cell owner">orchestrator</div>
+        <div class="cell owner">test-management<br>specialist</div>
+        <div class="cell owner">qa-frontend /<br>qa-backend</div>
+        <div class="cell owner">orchestrator<br>+ specialists</div>
+
+        <div class="rl">Goal</div>
+        <div class="cell goal">Know what we're testing, and how deep</div>
+        <div class="cell goal">Decide who tests what</div>
+        <div class="cell goal">Cases exist, data is seeded</div>
+        <div class="cell goal">Evidence for every condition</div>
+        <div class="cell goal">Verdict, and what happens next</div>
+
+        <div class="rl">Gate</div>
+        <div class="gate soft">INLINE</div>
+        <div class="gate soft">INLINE</div>
+        <div class="gate hard">HARD STOP<small>fresh verifier</small></div>
+        <div class="gate soft">INLINE</div>
+        <div class="gate hard">HARD STOP ×2<small>verdict · promotion</small></div>
+      </div>
+
+      <div class="ends">
+        <div class="lb">Ends with</div>
+        <div class="items">
+          <span><b>Verdict</b> — pass / fail / blocked</span>
+          <span><b>GO / NO-GO</b> recommendation</span>
+          <span>Bugs filed as <b>sub-tasks</b></span>
+          <span>Cases promoted <b>in the suites</b></span>
+          <span>Ticket status moved</span>
+          <span class="human"><b>Human</b> merges &amp; releases</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · /qa-test — the value -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow j">Agentic project · What it's worth</p>
+      <h2>What actually changed for whoever runs it.</h2>
+      <p class="lead" style="margin-bottom:20px">Five things that used to cost a person time, a hand-off,
+      or a judgement call they shouldn't have had to make.</p>
+      <div class="value">
+        <div class="row">
+          <div class="was"><b>Before</b>Every ticket got the same heavyweight treatment — a copy tweak cost what a checkout feature cost.</div>
+          <div class="now"><b>Now</b><em>Effort tracks risk.</em> FAST skips the BA-context and story-review agents, authors minimally, runs one execution agent, self-checks inline.</div>
+        </div>
+        <div class="row">
+          <div class="was"><b>Before</b>A fix-ready Bug was re-tested as though it were a new feature, authoring cases nobody needed.</div>
+          <div class="now"><b>Now</b><em>A bug fix is a verification.</em> Routed straight to RED→GREEN inline — the right job, at a fraction of the work.</div>
+        </div>
+        <div class="row">
+          <div class="was"><b>Before</b>New cases landed in a run-scoped CSV and waited for a separate promotion pass to reach the real suites.</div>
+          <div class="now"><b>Now</b><em>One pipeline, one promoter.</em> Cases go straight into the suites as <span class="mono">Draft</span>, are executed by the run that wrote them, and promote in-run only if green — non-promotable rows reverted.</div>
+        </div>
+        <div class="row">
+          <div class="was"><b>Before</b>A red run was a list of failures somebody had to interpret from scratch.</div>
+          <div class="now"><b>Now</b><em>A red run is an action list.</em> Step 5a triages its own FAILs through <span class="cmd j">/qa-triage-results --fix</span> — real bug vs test defect vs flake, with the taxonomy already defined.</div>
+        </div>
+        <div class="row">
+          <div class="was"><b>Before</b>Test → fix → re-test was three manual invocations with a deploy wedged in the middle.</div>
+          <div class="now"><b>Now</b><em><span class="cmd j">--iterate</span> closes the loop</em> — bounded at 2 rounds, confirming every prerelease deploy. Merge and release stay human; the loop never touches them.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · the new gates -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow j">Agentic project · The new gates</p>
+      <h2>Two kinds of gate, and the difference is the point.</h2>
+      <p class="lead" style="margin-bottom:22px">One kind needs judgement, so we buy independence.
+      The other needs none, so we make it deterministic and unarguable.</p>
+      <div class="gatecols">
+        <div class="gatecol">
+          <span class="ch">Judgement · three hard STOPs · FULL path</span>
+          <h3>A fresh verifier, never the doer</h3>
+          <ol>
+            <li><span class="gk">Step 3</span>Artifacts reviewed &amp; data seeded — <span>before a single test runs.</span></li>
+            <li><span class="gk">Step 5b</span>Triage + AC/DoD vs implementation — <span>with a quantified coverage estimate, before any verdict is filed.</span></li>
+            <li><span class="gk">Step 5g</span>Promotion sound — <span>runs last and non-blocking, after the verdict and the close-out.</span></li>
+          </ol>
+          <div class="callout j" style="margin-top:16px">A <b>fresh</b> orchestrator instance re-derives the evidence
+          from source — re-runs the lints, re-opens the artifacts, and delegates a live re-check on a
+          <b>different browser lane</b> than the doer used. REJECT → reason + fix → re-verify <b>once</b>, then STOP.</div>
+        </div>
+        <div class="gatecol det">
+          <span class="ch">Deterministic · no judgement required</span>
+          <h3>Lints that simply refuse</h3>
+          <ul>
+            <li><span class="gk">ECL</span>Citation gate — <span>every edge-case reference in every suite must resolve.</span></li>
+            <li><span class="gk">IDs</span>Globally unique case IDs — <span>hard-fails on a collision, across every CSV on disk.</span></li>
+            <li><span class="gk">CSV</span>Declared-but-missing suite — <span>hard-fails, so a selection can never silently run zero cases.</span></li>
+            <li><span class="gk">TRI</span>Stamp staleness — <span>flags assertions whose last audit has aged out.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · BL + ECL review -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow j">Agentic project · Oracle review</p>
+      <div class="feat j">
+        <div class="body">
+          <h2>Our oracles now prove themselves against reality.</h2>
+          <p class="lead"><span class="cmd j">/qa-review-oracles</span> — one skill, two axes. The
+          business-rules audit and the edge-case library shared their entire mechanism, so they became
+          one thing with two entry points.</p>
+          <ul>
+            <li><b>Three independent axes</b> <span>— documentation, live behaviour, and platform source, gathered per entry and compared.</span></li>
+            <li><b>Auto-apply on evidence, not approval</b> <span>— a confirmed correction is written straight to the oracle; contradictory or ungrounded ones become a proposal a human reads.</span></li>
+            <li><b>IDs are a citation contract</b> <span>— never renumber a surviving entry, never reuse a retired one. Renumbering silently repoints every correct citation, and no gate could detect it.</span></li>
+            <li><b>Parallel, but a single writer</b> <span>— fans out across up to three analysts each with their own browser lane, then applies serially. It never edits a test CSV; remaps go to the review skill.</span></li>
+          </ul>
+          <div class="callout j">The <b>ECL</b> axis had never had a gate at all. Its first run found
+          <b>20 dangling references cited by ~65 cases across 7 suites</b> — including one id that had
+          never existed in any version of the library.</div>
+        </div>
+        <div class="term" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span class="t">/qa-review-oracles all</span></div>
+          <div class="body2"><span class="p">➜</span> <span class="c">/qa-review-oracles all cart</span>
+<span class="d">axes: docs · live · source</span>
+
+  entry  <span class="g">CONFIRMED</span>  <span class="d">all three agree</span>
+  entry  <span class="w">DRIFT</span> → <span class="g">auto-applied</span>
+     <span class="d">docs + source moved the rule</span>
+  entry  <span class="a">MISSING</span> → added
+  entry  <span class="w">CONTRADICTORY</span>
+     <span class="d">→ proposal, a human decides</span>
+
+<span class="d">oracle updated · audit trail written</span> <span class="g">✓</span>
+<span class="d">citation remap → /qa-review-tests --fix</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · CLOSE -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Where that leaves us</p>
+      <h2>A plugin we can hand over, and a pipeline that spends effort where it matters.</h2>
+      <p class="lead" style="margin-bottom:8px">Three things to take away:</p>
+      <div class="pillars" style="margin-top:22px">
+        <div class="pillar">
+          <div class="pk">The marketplace</div>
+          <h3>Two products, not one</h3>
+          <p>vc-fix is trustworthy enough to leave running on someone else's stack, and vc-perf gives
+          performance work an instrument instead of an opinion.</p>
+        </div>
+        <div class="pillar jx">
+          <div class="pk">The pipeline</div>
+          <h3>Proportionate by default</h3>
+          <p>Effort tracks risk, a bug fix is verified rather than re-tested, and new cases reach the
+          real suites in the same run that wrote them.</p>
+        </div>
+        <div class="pillar gx">
+          <div class="pk">The principle</div>
+          <h3>Independent where it counts</h3>
+          <p>Judgement gates buy a second opinion from someone who wasn't involved; everything else is
+          deterministic. Merge and release stay human.</p>
+        </div>
+      </div>
+      <p class="kicker" style="margin-top:34px; text-align:center">Thank you · questions &amp; live demo · press <b>N</b> for talking points</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <div class="grp">
+    <button class="navbtn" id="prev" aria-label="Previous slide">‹</button>
+    <span class="counter"><b id="cur">1</b> / <span id="total">12</span></span>
+    <div class="dots" id="dots"></div>
+    <button class="navbtn" id="next" aria-label="Next slide">›</button>
+  </div>
+</div>
+
+<div class="notes" id="notes" aria-live="polite">
+  <div class="nh" id="notesHead">Presenter notes</div>
+  <div class="nb" id="notesBody"></div>
+</div>
+
+<script>
+  // Committed to light by request; the toggle still lets you flip to dark if a room needs it.
+  document.documentElement.setAttribute('data-theme', 'light');
+
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const cur = document.getElementById('cur');
+  const progress = document.getElementById('progress');
+  document.getElementById('total').textContent = slides.length;
+  // dot indices 6 (0-based) onward belong to section two (agentic project)
+  const SECTION_TWO_START = 6;
+  let i = 0;
+
+  const notes = [
+    "Open here. Frame the two halves in one line: 'the marketplace we ship to customers now has two plugins, and the pipeline we run internally got smarter about where it spends effort.' Read the four numbers, give the running order, move on — this slide is 30 seconds.",
+    "Section-one divider — the MARKETPLACE, the part a customer installs. Pause so the room resets context. Flag that vc-perf is the thing you'll actually drive live in two slides' time, so they know to pay attention.",
+    "vc-fix. Don't read all four cards — pick two for the room. For leadership: containment (closed schema, client code can't leak by type) and the delivery fix. For engineers: the self-check three-layer split. The delivery one is the most concrete story — a token with MORE rights delivered LESS, because it printed a hand-off and sent nothing.",
+    "NEW PLUGIN. The whole slide hangs on the 'blind to' row at the bottom of each card — that's WHY there are three layers rather than one. L1 can't see a round-trip you removed, L2 can't tell you who caused what it measured, L3 can't see what the load never exercised. Then the callout: it borrows vc-fix's machinery and ships only the measurement delta. Say 'advisory only, never a gate' out loud — nobody wants a flaky perf check blocking merges.",
+    "THE DEMO SLIDE — drive this live if the environment is up. The point to land is the OUTPUT: not a wall of trace data, but a ranked list where each candidate carries its evidence share, the shape of the fix, where the fix lands, and how to verify it. That's what a developer picks up. If the env isn't up, walk the terminal panel instead — it's the same sequence.",
+    "Why the perf work earns its place — real numbers, this sprint. Be precise about attribution: this came from /qa-perf-measure, the sibling skill for DEPLOYED environments, not from the plugin itself; same discipline, different instrument. Two things to land: paired controls in the same window are what make a null result trustworthy, and the residual scaling at slope 1.0 is what proves it's an N+1 rather than a guess. If asked how confident: every measured value fell inside its predicted set across all ten cells.",
+    "Section-two divider — the internal pipeline. Reset context: 'this is how WE test, day to day.' The colour shifts to indigo. Read the rail as the menu for the rest of the deck.",
+    "The mechanism. Keep it tight — the value slide is next and that's the one that matters. The single best line: 'a fix-ready bug is a VERIFICATION, not a feature test' — we were doing authoring and promotion work for tickets that needed neither. Point at the terminal panel rather than reading the bullets. End on the tie-break: when in doubt, FULL.",
+    "THE SCHEMA — read it as a table, don't narrate every cell. Three passes, in this order: across the top, five steps; down the OWNER row, note that every step has exactly one accountable owner and only Step 1 pulls in the BA agents; down the GATE row, note that three of the five are cheap inline checks and only two buy an independent verifier. The 'ends with' strip is what a stakeholder actually receives — and the amber chip is the boundary: the pipeline stops at a recommendation, a human merges and releases. If someone asks why Step 5 has two hard stops: one guards the verdict before it's filed, the other guards promotion after the close-out.",
+    "THE VALUE SLIDE — the most important one in section two. Work down the before/after rows; each is a real cost that went away. If you only have time for two: 'effort tracks risk' and 'one pipeline, one promoter' (cases now reach the real suites in the same run that authored them, and get reverted if they don't earn promotion). Close on --iterate, and stress that merge and release are still human.",
+    "The gates. The framing IS the content: judgement gates buy independence, deterministic gates buy certainty — don't mix them up. Left column: the verifier is a FRESH instance, never the step's own doer, and it re-checks live on a DIFFERENT browser lane. One re-verify round, then stop — it can't loop forever. Right column: four lints that simply refuse. The 'declared-but-missing suite' one is worth a sentence — that's how a selection could silently run zero cases.",
+    "Oracle review. Lead with the merge rationale (two audits, one mechanism) then the evidence in the callout: the ECL axis had no gate at ALL, and its first run found 20 dangling references across ~65 cases. The citation-contract rule is the subtle one — renumbering a surviving entry silently repoints every previously-correct citation, and no gate can detect that, which is why it's forbidden rather than checked. If someone asks whether it can be wrong: yes — the gate proves a reference EXISTS, not that it's the RIGHT one; that call stays with the review skill.",
+    "Close on the three cards, mapped to the two sections. Marketplace: two products now, one of them handable to a customer. Pipeline: proportionate by default. Principle: independent where it counts, deterministic everywhere else, and merge stays human. Then open for questions and offer the live vc-perf demo."
+  ];
+
+  slides.forEach((_, n) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to slide ' + (n+1));
+    if (n >= SECTION_TWO_START) b.classList.add('sec');
+    b.addEventListener('click', () => go(n));
+    dotsWrap.appendChild(b);
+  });
+  const dotBtns = Array.from(dotsWrap.children);
+
+  function go(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    dotBtns.forEach((d, k) => d.classList.toggle('on', k === i));
+    cur.textContent = i + 1;
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    document.getElementById('notesBody').innerHTML = notes[i] || '';
+    document.getElementById('notesHead').textContent = 'Presenter notes · slide ' + (i+1);
+  }
+  const nextS = () => go(i + 1);
+  const prevS = () => go(i - 1);
+
+  document.getElementById('next').addEventListener('click', nextS);
+  document.getElementById('prev').addEventListener('click', prevS);
+
+  const notesEl = document.getElementById('notes');
+  document.getElementById('notesBtn').addEventListener('click', () => notesEl.classList.toggle('open'));
+
+  const root = document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextS(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevS(); }
+    else if (e.key === 'Home') { go(0); }
+    else if (e.key === 'End') { go(slides.length - 1); }
+    else if (e.key.toLowerCase() === 'n') { notesEl.classList.toggle('open'); }
+  });
+
+  go(0);
+</script>

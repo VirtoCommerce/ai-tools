@@ -299,6 +299,13 @@ customer names, or claims**: only state benefits the feature actually delivers (
 5. **Respect `.claude/rules/reports.md`** — size caps, screenshot budgets, the four allowed report
    categories. Docs live in `reports/ba/`.
 6. **Schema-validate developer examples** against `graphql-schema.md` / live introspection before publish.
+7. **Verify every image path resolves from the doc's own directory** before shipping. A doc in
+   `reports/ba/<domain>/` reaching evidence in `reports/tickets/<Sprint>/<TICKET>/screenshots/` needs
+   `../../tickets/…`. Two docs already in the repo ship broken images because the prefix was copied
+   from an exemplar without checking — a `[ -f ]` loop over the extracted paths takes seconds.
+8. **Pushing a doc to a tracker ticket is a separate job with its own rules** — the artifact goes in
+   the comment *in full*, and screenshots need an attach-then-wiki-markup step or they render as
+   nothing. Follow `.claude/knowledge/execution/tracker-ops.md` §5c–§5d; do not improvise it.
 
 ---
 

@@ -1100,7 +1100,7 @@ Browser in clean anonymous session (no auth cookie — use private/incognito mod
 [CONSOLE] no JS errors during anonymous add-to-cart, sign-in transition, popup interaction, or sign-out
 [NETWORK] no 4xx/5xx on any /graphql request; no 401 errors in authenticated cart context after sign-in","inline address form absent for anonymous user (popup CTA shown to guest — BL-CHK-001 violation); cart loses {{TEST_SKU}} after sign-in (BL-CART-008 merge failure — cart badge shows 0); popup CTA absent after sign-in despite saved addresses (feature toggle off or composable regression); popup opens blank or spinner >5s; currentCustomerAddresses fired while still anonymous (data scope leak); 4xx/5xx on any post-auth /graphql call","Sign out if not already signed out; remove any remaining test items from cart; no addresses were created so no address cleanup needed","Promoted from VCST-4710-SF-022 / real-user-behavior feedback 2026-04-23; VCST-4710 / PR #129; BL-AUTH-001; BL-CART-008; BL-B2B-001; BL-CHK-001","Manual"
 
-"CHK-109","Address Popup — Keyword Search by Name Filters Address List","Checkout > Shipping > Address Popup > Search","High","BL-CHK-008","ECL-05.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CHK-109","Address Popup — Keyword Search by Name Filters Address List","Checkout > Shipping > Address Popup > Search","High","BL-CHK-008","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Cart has at least 1 product added
 - User has >=3 saved addresses with different names
@@ -1118,7 +1118,7 @@ searchTerm=@td(ADDRESS_SEARCH.nameNeedle)","[NAV] Navigate to checkout shipping 
 [STATE] Search input retains the typed keyword (not cleared on debounce)
 [STATE] Empty state message shown if no addresses match the keyword","[NETWORK] currentCustomerAddresses (or currentOrganizationAddresses) GraphQL call contains keyword argument equal to the typed value; response count matches visible rows
 [CONSOLE] no JS errors during keyword input or list update","popup search input non-interactive (VCST-4710 regression); list not filtered after typing; all addresses still visible after keyword entry; 4xx/5xx on filtered GraphQL request","Close popup without selecting; navigate away from checkout","VCST-4710; PR #129; BL-CHK-008; ECL-05.1","Reviewed"
-"CHK-110","Address Popup — Keyword Search by City/ZIP Filters Address List","Checkout > Shipping > Address Popup > Search","High","BL-CHK-008","ECL-05.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CHK-110","Address Popup — Keyword Search by City/ZIP Filters Address List","Checkout > Shipping > Address Popup > Search","High","BL-CHK-008","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Cart has at least 1 product added
 - User has >=3 saved addresses across different cities or ZIP codes
@@ -1138,7 +1138,7 @@ cityNeedle=@td(ADDRESS_SEARCH.cityNeedle)","[NAV] Navigate to checkout shipping 
 [STATE] Clearing the search field restores the full unfiltered address list
 [STATE] Each search is independent -- no stale results from prior search","[NETWORK] GraphQL keyword argument reflects typed city/ZIP on each search; list count consistent with response
 [CONSOLE] no JS errors on input clear or re-type","city search returns wrong-city addresses; ZIP search returns no results even when matching address exists; clearing search does not restore full list; stale results from prior search term persist","Close popup without selecting; navigate away from checkout","VCST-4710; PR #129; BL-CHK-008","Reviewed"
-"CHK-111","Address Popup — Country Facet Filters Address List to Selected Country","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-008","ECL-06.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CHK-111","Address Popup — Country Facet Filters Address List to Selected Country","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-008","ECL-6.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Cart has at least 1 product added
 - User has saved addresses in >=2 different countries
@@ -1156,7 +1156,7 @@ targetCountry=USA","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} --
 [STATE] Addresses from other countries are hidden -- not just sorted to the bottom
 [STATE] Address count reflects filtered subset","[NETWORK] GraphQL countryCodes argument on currentCustomerAddresses / currentOrganizationAddresses contains the selected country code; response count matches visible rows
 [CONSOLE] no JS errors during facet selection","country facet dropdown non-interactive; selecting country has no effect on list; addresses from other countries remain visible after filter applied; 4xx/5xx on filtered GraphQL call","Clear country facet selection to restore full list; close popup without selecting address","VCST-4710; PR #129; BL-CHK-008; ECL-06.2","Reviewed"
-"CHK-112","Address Popup — State/Province Facet Appears for USA/CAN and Filters List","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-008","ECL-06.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CHK-112","Address Popup — State/Province Facet Appears for USA/CAN and Filters List","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-008","ECL-6.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Cart has at least 1 product added
 - User has saved US or Canadian addresses across >=2 states/provinces

@@ -43,7 +43,7 @@
 [ASSERT] Verify focus wraps to the last focusable element inside the modal","[STATE] Focus is trapped within the open modal (intentional containment — correct per WCAG 2.1 exception)
 [STATE] Tab cycles forward within modal only; cannot reach elements behind overlay
 [STATE] Shift+Tab cycles backward within modal only","[CONSOLE] no focus management errors","Tab exits modal and reaches background page elements; Shift+Tab escapes modal upward; focus not contained in modal","Close modal after test","WCAG 2.4.3","Manual"
-"A11Y-SR-001","Screen Reader - Modal Announcement","Screen Reader > Modals","High","BL-A11Y-002","ECL-11.2","- Screen reader active (NVDA on Windows or VoiceOver on macOS)
+"A11Y-SR-001","Screen Reader - Modal Announcement","Screen Reader > Modals","High","BL-A11Y-002","ECL-15.1","- Screen reader active (NVDA on Windows or VoiceOver on macOS)
 - BOPIS flow ready","store={{FRONT_URL}}","[NAV] Activate NVDA (Windows) or VoiceOver (macOS)
 [NAV] Navigate to {{FRONT_URL}} and find a BOPIS-enabled product
 [ACT] Trigger the pickup modal open
@@ -52,7 +52,7 @@
 [ASSERT] Verify modal title and purpose are stated by the screen reader","[STATE] Modal announced immediately on open
 [STATE] Screen reader announces dialog title and purpose
 [DOM] role=""dialog"" present on modal container; screen reader identifies it as Dialog","[CONSOLE] no ARIA errors on modal open; [API] no silent failures loading store availability data","screen reader does not announce modal; role not announced; modal title absent from announcement","Close modal; deactivate screen reader if needed","VCST-4499","Manual"
-"A11Y-SR-002","Screen Reader - List Items","Screen Reader > Lists","High","BL-A11Y-002","ECL-11.2","- Screen reader active
+"A11Y-SR-002","Screen Reader - List Items","Screen Reader > Lists","High","BL-A11Y-002","ECL-15.1","- Screen reader active
 - Store location list visible in BOPIS modal","store={{FRONT_URL}}","[NAV] Open BOPIS modal on {{FRONT_URL}} with screen reader active
 [NAV] Navigate to the store location list
 [ASSERT] Listen for list item announcements from screen reader
@@ -60,7 +60,7 @@
 [KEY] Tab / arrow-key through items and confirm each item's details are read aloud","[STATE] Screen reader announces list items with position (e.g., ""1 of 5"")
 [DOM] List uses semantic <ul>/<li> or role=""listbox""/role=""option"" with correct count
 [STATE] Each item's details (store name, distance, availability) are readable by screen reader","[CONSOLE] no ARIA list warnings","screen reader does not announce list; count not stated; position not announced; item details unreadable","—","VCST-4499","Manual"
-"A11Y-SR-003","Screen Reader - Form Fields","Screen Reader > Forms","High","BL-A11Y-002","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-SR-003","Screen Reader - Form Fields","Screen Reader > Forms","High","BL-A11Y-002","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Screen reader active
 - Form open (checkout, registration, or search)","store={{FRONT_URL}}","[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address form) with screen reader active
@@ -71,7 +71,7 @@
 [STATE] Required state announced (e.g., ""required"")
 [STATE] Error messages announced when triggered
 [DOM] <label for=""id""> association correct or aria-labelledby set","[CONSOLE] no missing-label warnings","field label not announced; required state silent; error message not announced after injection","—","WCAG 1.3.1","Manual"
-"A11Y-SR-004","Screen Reader - Error Messages","Screen Reader > Errors","High","BL-A11Y-004","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-SR-004","Screen Reader - Error Messages","Screen Reader > Errors","High","BL-A11Y-004","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Screen reader active
 - Form with client-side or server-side validation","store={{FRONT_URL}}","[NAV] Navigate to a form (e.g., checkout address or login) on {{FRONT_URL}} with screen reader active
@@ -81,7 +81,7 @@
 [STATE] Can navigate to each error and hear its specific description
 [STATE] Error text is clear and actionable
 [DOM] Error messages linked to fields via aria-describedby or aria-errormessage","[CONSOLE] no ARIA live-region errors","errors not announced; screen reader silent after form submission; error text vague or missing","—","WCAG 3.3.1","Manual"
-"A11Y-SR-005","Screen Reader - Buttons","Screen Reader > Controls","Medium","BL-A11Y-002","ECL-11.2","- Screen reader active","store={{FRONT_URL}}","[NAV] Navigate to any page on {{FRONT_URL}} with interactive buttons using screen reader active
+"A11Y-SR-005","Screen Reader - Buttons","Screen Reader > Controls","Medium","BL-A11Y-002","ECL-15.1","- Screen reader active","store={{FRONT_URL}}","[NAV] Navigate to any page on {{FRONT_URL}} with interactive buttons using screen reader active
 [KEY] Tab to each button
 [ASSERT] Verify button text or aria-label is announced
 [ASSERT] Verify ""button"" role is stated by screen reader","[STATE] Button accessible name (text or aria-label) announced on focus
@@ -103,7 +103,7 @@
 [ASSERT] Verify aria-labelledby references the id of the modal's visible title element","[DOM] role=""dialog"" set on modal container
 [DOM] aria-modal=""true"" present
 [DOM] aria-labelledby value matches the id of the modal's visible title","[CONSOLE] no ARIA role warnings","role=""dialog"" absent; aria-modal missing; aria-labelledby references wrong or missing id","Close modal","WCAG 4.1.2","Manual"
-"A11Y-ARIA-003","ARIA Live Regions","ARIA > Live","Medium","BL-A11Y-004","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-ARIA-003","ARIA Live Regions","ARIA > Live","Medium","BL-A11Y-004","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Dynamic content area visible (cart badge, notifications, search results)","store={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with a dynamic content area
 [ACT] Trigger a content update (e.g., add item to cart, submit search query)
@@ -169,7 +169,7 @@
 [ACT] Test with screen reader: Tab to each field and confirm label is announced","[DOM] All inputs have associated labels (for/id pairing or aria-labelledby)
 [STATE] Screen reader announces correct label on field focus
 [DOM] No orphaned inputs without accessible names","[CONSOLE] no axe label-missing violations","input has no associated label; for/id mismatch; aria-labelledby references missing id","—","WCAG 1.3.1","Manual"
-"A11Y-FORM-002","Error Identification","Forms > Errors","High","BL-A11Y-004","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-FORM-002","Error Identification","Forms > Errors","High","BL-A11Y-004","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Form with client-side validation","store={{FRONT_URL}}","[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address or login)
 [ACT] Submit the form with required fields left empty to trigger validation errors
@@ -237,7 +237,7 @@
 [DOM] All non-active sortable columns have aria-sort=""none"" explicitly
 [DOM] Non-sortable headers do not carry an aria-sort attribute
 [STATE] WCAG 4.1.2 compliance: each column sort state uniquely and correctly conveyed to assistive technologies","[CONSOLE] no axe aria-allowed-attr violations on column headers","multiple headers simultaneously show aria-sort=""ascending"" (single-active-indicator rule broken); unsorted columns have no aria-sort attribute when they should have aria-sort=""none""; aria-sort present on non-sortable header","Close address popup; no address changes were made","VCST-4992; WCAG 4.1.2 (Name, Role, Value); ARIA 1.2 §6.27 aria-sort","Reviewed"
-"A11Y-CPN-001","Coupon Sidebar — Invalid-Coupon Error Element Has role=""alert"" (WCAG 3.3.1 / 4.1.3)","Accessibility > Cart > Coupon Sidebar > Error Announcement","High","BL-A11Y-004","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-CPN-001","Coupon Sidebar — Invalid-Coupon Error Element Has role=""alert"" (WCAG 3.3.1 / 4.1.3)","Accessibility > Cart > Coupon Sidebar > Error Announcement","High","BL-A11Y-004","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product added to cart.
 - Coffee theme active (only Coffee theme is a11y-compliant per feedback_a11y_coffee_only).
@@ -254,7 +254,7 @@
 [DOM] the error element is not hidden by CSS (display is not none; visibility is not hidden)
 [STATE] error message text is non-empty — SR has meaningful content to announce","[CONSOLE] zero JS errors during coupon apply attempt; specifically no UnhandledPromiseRejection
 [NETWORK] addCoupon mutation response received (HTTP 200); errors[] is empty; isAppliedSuccessfully=false","role attribute absent from error <p> (VCST-5018 regression — SR silent on error); error <p> not rendered after invalid code (v-if gate failure); role is set to a non-live value (e.g. role=""paragraph"") instead of role=""alert"" or aria-live=""assertive""; console TypeError during apply","none — invalid coupon was not applied","VCST-5018; WCAG 3.3.1; WCAG 4.1.3","Draft"
-"A11Y-CPN-002","Coupon Sidebar — Apply and Trash Buttons Have Descriptive aria-label (WCAG 4.1.2)","Accessibility > Cart > Coupon Sidebar > Button Names","High","BL-A11Y-002","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-CPN-002","Coupon Sidebar — Apply and Trash Buttons Have Descriptive aria-label (WCAG 4.1.2)","Accessibility > Cart > Coupon Sidebar > Button Names","High","BL-A11Y-002","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product added to cart.
 - Coffee theme active.
@@ -275,7 +275,7 @@ couponCode=@td(COUPONS.percentageCode)","[NAV] {{FRONT_URL}}/cart
 [DOM] applied-state trash/remove button: aria-label is non-empty AND contains 'Remove coupon' (VCST-5017 fix — PR #2303)
 [STATE] zero buttons inside the coupon sidebar have an empty, null, or generic accessible name (no 'button' without context)","[CONSOLE] zero JS errors; no axe button-name violation if Lighthouse accessibility audit is run on /cart
 [NETWORK] no 5xx during page load or coupon apply","any apply/trash button returns aria-label=null or '' (VCST-5017 regression); aria-label attribute physically absent from button element; Lighthouse accessibility audit flags button-name violation on /cart; custom apply button aria-label does not update when user types a new code","Remove applied coupon via trash button","VCST-5017; WCAG 4.1.2","Draft"
-"A11Y-SR-006","Lists card — modified-date element has contextual screen-reader label (WCAG 1.3.1 regression for VCST-5067)","Screen Reader > Semantic Labels","High","BL-UI-002","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-SR-006","Lists card — modified-date element has contextual screen-reader label (WCAG 1.3.1 regression for VCST-5067)","Screen Reader > Semantic Labels","High","BL-UI-002","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Personal account (not B2B org user)
 - Account has ≥ 1 wishlist with a visible modified date on the card
 - Coffee theme only (only Coffee is a11y-compliant per project constraint)
@@ -290,7 +290,7 @@ couponCode=@td(COUPONS.percentageCode)","[NAV] {{FRONT_URL}}/cart
 [DOM] ariaLabel does NOT equal visibleText alone — it contains a contextual prefix (e.g. 'Last modified: <date>'; confirmed fix in PR #2292 adds i18n key last_modified_label across 15 locale files)
 [STATE] All visible .wishlist-card__date elements (not just first) have aria-label — evaluate querySelectorAll and verify every element","[CONSOLE] no JS errors; no axe 'label' or 'presentation-role-conflict' violation on .wishlist-card__date
 [NETWORK] en-US locale file (or active locale) loads successfully and contains last_modified_label key (no 404)","aria-label attribute absent (VCST-5067 regression re-introduced after merge); ariaLabel equals bare date string only (no prefix — regression to pre-fix state); some cards have label and others do not (partial fix); locale 404 causes fallback to key name displayed as label text","none","VCST-5067; WCAG 1.3.1","Draft"
-"A11Y-CC-004","Lists card — save-v2 icon contrast ratio ≥ 3:1 on white card background (WCAG 1.4.11, regression for VCST-5066)","Color Contrast > UI","High","BL-UI-002","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-CC-004","Lists card — save-v2 icon contrast ratio ≥ 3:1 on white card background (WCAG 1.4.11, regression for VCST-5066)","Color Contrast > UI","High","BL-UI-002","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Personal account with ≥ 1 wishlist so at least one list card renders with the save-v2 icon
 - Coffee theme only (only Coffee is a11y-compliant per project constraint)
 - Browser DevTools / getComputedStyle available via browser_evaluate","store={{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]

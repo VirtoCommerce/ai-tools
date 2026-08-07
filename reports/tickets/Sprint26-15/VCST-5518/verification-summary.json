@@ -1,0 +1,77 @@
+{
+  "ticket": "VCST-5518",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "verdict_detail": "The REPORTED defect is fixed and proven 3/3 (the working coupon survives an invalid apply; RemoveCoupon is absent from the wire). REOPENED because the interaction the fix produces ends in a bad state: the 'This code is not valid' error never clears. couponError is a MODULE-SCOPE ref outside the composable, reset only by clearError() at the top of applyCoupon/removeCoupon; clearError is exported but no component destructures or calls it. So the error survives typing, blur, cart updates, and route changes (module state outlives unmount) — it clears only on a subsequent apply/remove or a page reload. Byte-identical on dev and the fix branch, so PRE-EXISTING and not introduced by the fix — but newly load-bearing: pre-fix the invalid apply also mutated the cart, so the error accompanied a real state change; post-fix a stale error is the ONLY outcome. Operator decision 2026-08-05: in scope for this ticket, reopen rather than file separately. Established from source (dev + PR head + coupons-section.vue/coupon-card.vue); no live re-run — operator accepted source evidence.",
+  "date": "2026-08-05",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1055.0",
+    "theme": "2.55.0-pr-2422-1c98-1c9861e6",
+    "relevant_modules": {},
+    "pr_build": "2.55.0-pr-2422-1c98-1c9861e6 — CONFIRMED LIVE (footer version + entry bundle index-ByEnEQVD.js; 'Cloud theme deployment' Action success 2026-08-05T11:06:53Z)"
+  },
+  "fix_pr": {
+    "repo": "VirtoCommerce/vc-frontend",
+    "number": 2422,
+    "state": "OPEN — unmerged at verification time",
+    "files": [
+      "client-app/shared/cart/composables/useCoupon.ts",
+      "client-app/shared/cart/composables/useCoupon.test.ts"
+    ],
+    "approach": "validateCartCoupon moved BEFORE removeCartCoupon; an invalid code early-returns before any mutation",
+    "variant_observed": "no-remove-at-all (the strong variant) — RemoveCoupon is absent from the wire, not issued-and-undone",
+    "ci": "ci pass, SonarCloud pass; auto-tests(postgres) FAIL is unrelated (test_cart_shipment / test_checkout_shipment_cost; test_cart_coupon PASSED; same suite green on mysql + sqlserver)"
+  },
+  "deploy_pr": {
+    "repo": "VirtoCommerce/vc-deploy-dev",
+    "number": 6295,
+    "state": "MERGED 2026-08-05T11:06:51Z",
+    "note": "Was CONFLICTING (cut from pr-2407 while vcst-qa moved to pr-2412); repaired by merging vcst-qa in and resolving theme/artifact.json to pr-2422. TEMPORARY QA REPIN — revert once the fix ships in a normal build."
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live) — 4/4 deterministic on theme 2.55.0-pr-2412, captured before the deploy",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    {
+      "severity": "P3-ux",
+      "summary": "The 'This code is not valid' error never clears — permanent stale error on a healthy cart",
+      "anchor": "client-app/shared/cart/composables/useCoupon.ts (module-scope couponError ref); client-app/shared/cart/components/coupons-section.vue (does not destructure or call the exported clearError)",
+      "pre_existing": true,
+      "newly_prominent_because_of_fix": true,
+      "clears_only_on": "a subsequent applyCoupon/removeCoupon call, or a page reload",
+      "does_not_clear_on": "typing, blur, cart updates, navigating away from the cart and back",
+      "suggested_fix": "wire the already-exported clearError into the custom-code input's @input and clear on unmount, or move couponError/loadingCouponCode inside useCoupon() so they cannot outlive the component",
+      "in_scope_decision": "operator chose REOPEN on VCST-5518 rather than a separate bug"
+    }
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-CART-009",
+    "BL-CHK-006"
+  ],
+  "red_green_pair": {
+    "invalid_apply_before": "RemoveCoupon(ZUR10) -> coupons:[] , discountTotal 0 -> ValidateCoupon(X) false -> no AddCoupon; total $2,397.60 (discount lost)",
+    "invalid_apply_after": "ValidateCoupon(X) false ONLY; no mutation on the wire; coupons:[{ZUR10,isAppliedSuccessfully:true}], discountTotal $50.00, total $2,337.60 (discount preserved)",
+    "valid_replacement_order_after": "ValidateCoupon -> RemoveCoupon -> AddCoupon (validate now leads); final slot = new coupon only, no stacking",
+    "server_confirmation": "independent GetFullCart after page reload; BL-CHK-006 verified 1998.00 - 50.00 + 389.60 + 0 == 2337.60"
+  },
+  "follow_ups": [
+    "REVERT THE DEPLOY PIN: vcst-qa theme is temporarily pinned to the pr-2422 prerelease. Revert once vc-frontend#2422 merges and a normal build carries the fix.",
+    "BL-CART-009 Claim B (call order) is CONTRADICTORY/build-skew and staged in reports/ba/bl-proposals-2026-08-05.md — dev HEAD still orders remove->validate->add while the tested build orders validate->remove->add. Re-audit trigger: when vc-frontend#2422 merges to dev.",
+    "BL-CART-009 Claim C (custom-input read-only) was RESOLVED as oracle DRIFT and corrected 2026-08-05 (BL-AUDIT-2026-08-05) — the editable input is by design, NOT a violation. The ticket's readonly note remains incorrect and is worth correcting on the ticket.",
+    "Ticket STR is unreproducible as written: it cites coupons QA/FriDAY, but all 4 rendered presets validate true for a >$1000 single-item cart, so an invalid code must be a nonexistent one.",
+    "CORRECTED: BL-CART-009 IS covered — CPN-060 (077) and CPN-SMK-060 (077b) both cite it in Business_Rule. The BLC-004 'uncovered' finding was a LINTER FALSE POSITIVE: buildCoverage() in scripts/knowledge/lint-bl.ts does try{parseSuite}catch{continue}, and parseSuite throws on a UTF-8 BOM — 12 of 120 suite CSVs carry one (checkout 011/012/013/081, orders 014/015/017, search 004/005, cfg-products 072, marketing 077/077b), so they are silently dropped from coverage. 3 of 6 reported BLC-004s are false (BL-CART-009, BL-SRCH-002 which has 16 citations, BL-SRCH-005 which has 4). Also suppresses BLC-002 in those files. Reported, not fixed. The genuine gap is narrower: no case cites BL-CART-009 for its read-only/input-provenance facet (Claim C).",
+    "The ticket's STR claims CART-015 is the 'equivalent typed-code repro (apply FIXED5, then FAKECODE)'. It is NOT: CART-015 carries [PRE:RESET_CART] and applies FAKECODE with no prior coupon — a first-time invalid-code negative, not a replacement. Nothing in the corpus covers the VCST-5518 replacement scenario. Worth correcting on the ticket.",
+    "Five existing cases now race the 7s error auto-dismiss and need a mechanical assert-immediately reorder before being trusted in CI: CPN-SMK-063 (077b, smoke), CPN-034, CPN-035 (077), CART-060, CART-095 (028). An intermittent FAIL there is most likely the race, not a regression. Do NOT encode 7000/7s into an assertion.",
+    "CPN-042 (077, exclusive-promotion rejection) is build-dependent and unresolved: whether validateCartCoupon evaluates exclusivity decides if RemoveCoupon still fires as the case asserts. Needs a live check on this PR build before either a PASS or a FAIL on it is trustworthy. Deliberately not rewritten (4a-bis build-skew).",
+    "Pre-existing, not filed: '[Vue apollo] useQuery() is called outside of an active effect scope' fires ~1 per coupon interaction on the same useCoupon surface, before and after the fix."
+  ],
+  "jira_transition": "Ready for test -> Testing (On QA) -> Tested (Finish test) on 2026-08-05, at operator instruction. Not moved to Done (fix PR vc-frontend#2422 still open).",
+  "evidence": "reports/tickets/Sprint26-15/VCST-5518/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-15/VCST-5518/"
+}

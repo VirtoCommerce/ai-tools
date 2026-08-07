@@ -1,7 +1,7 @@
 ---
 description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a JIRA ticket."
-argument-hint: "bug description | VCST-XXXX | screenshot path"
-disable-model-invocation: true
+argument-hint: "bug description | <ticket-key> | screenshot path"
+
 ---
 
 # /qa-bug — File a Bug Report
@@ -11,7 +11,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 ## Usage
 ```
 /qa-bug Cart total shows $0 after adding item     # Bug from description
-/qa-bug VCST-1234                                   # Bug from a JIRA ticket (adds QA evidence)
+/qa-bug <ticket-key>                                   # Bug from a JIRA ticket (adds QA evidence)
 /qa-bug screenshot path/to/screenshot.png           # Bug from a screenshot
 ```
 
@@ -248,7 +248,7 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 ## Step 5 — Create JIRA Ticket (optional)
 
-> **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
+> **Skills:** Use `/qa-defect triage <ticket-key>` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
@@ -264,7 +264,18 @@ If yes, file to the deployment's tracker. **Follow `knowledge/execution/tracker-
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low)
 - Follow `/qa-defect workflow` for correct JIRA Bug Workflow status transitions
 
-### Step 5a — Attach the evidence AND embed it inline (required when the bug has screenshots)
+**Relationship context (caller-supplied, additive — default behavior above is unchanged for a standalone
+call).** A caller (e.g. `/qa-test` Step 5d) may invoke this step with an explicit relationship instead of a
+bare description:
+- `sub-task-of:<ticket-key>` — file as a tracker **Sub-task** of `<ticket-key>` instead of a standalone Bug.
+- `link-only:<existing-bug-key>` — **file nothing**; just create the link between the existing bug and the
+  ticket this call is scoped to.
+
+Both follow `knowledge/execution/tracker-ops.md` §5b for the exact Jira/Azure mechanics (issue type + parent
+field, or the link-type + relation, including the Sub-task-unavailable fallback). Report back which
+relationship was actually used (a fallback downgrade must be stated, not silent).
+
+### Step 5a — Attach the evidence AND embed it inline (mandatory when the bug has screenshots, trace)
 
 A filename in the body is not evidence a reviewer will look at. Upload the screenshots **and** render
 them inline in the ticket body, so the defect is visible without opening the Attachments panel.

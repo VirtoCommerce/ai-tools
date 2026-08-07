@@ -1,51 +1,49 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 CART-001,Add to Cart - From Product Page,Cart > Add,Critical,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in, product available and in stock, on product detail page","url={{FRONT_URL}}/search?q={{TEST_SKU}}
+User logged in, product available and in stock, on product detail page","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU}}
-[ACT] click the matching product card for {{TEST_SKU}} to open its PDP
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] click the matching product card for @td(BUYABLE_NO_MIN_QTY.sku) to open its PDP
 [WAIT] wait for the PDP to load
 [ASSERT] verify quantity spinbutton visible on PDP
 [ACT] click '+' (Increase quantity) button to add product to cart
-[WAIT] wait for success notification to appear","[DOM] success notification message visible
+[WAIT] wait for the 'in Cart' indicator to update","[DOM] ""in Cart"" indicator visible adjacent to stepper showing ""1""
 [DOM] cart badge count incremented by ""1""
 [STATE] product appears in cart
 [STATE] verify cart badge count incremented","[API] addItem mutation response errors[] is empty
 [CONSOLE] no JS errors after add-to-cart click
-[NETWORK] no 4xx/5xx on cart API requests",cart badge stuck at 0; success notification never appears; '+' stepper button not visible or stays in loading state,Remove added item from cart,VCST-4499,Automated
+[NETWORK] no 4xx/5xx on cart API requests",cart badge stuck at 0; success notification never appears; '+' stepper button not visible or stays in loading state,Remove added item from cart,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (PDP stepper — no toast wired); Docs: N/A — implementation-detail,Automated
 CART-002,Add to Cart - From Category List,Cart > Add,High,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, category page with products visible, quick-add available on product cards","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to a category listing page on {{FRONT_URL}}
-[ACT] hover over a product card
-[WAIT] wait for quick-add button to appear on hover
-[ACT] click quick-add (Increase quantity) button on product card
+[ACT] locate a product card — its quantity stepper renders unconditionally (not hover-gated)
+[ACT] click the '+' (Increase quantity) stepper on the product card
 [WAIT] wait for cart badge to update","[DOM] cart badge incremented without page navigation — element absent from DOM
 [DOM] no redirect to product detail page — element absent from DOM
 [STATE] product appears in cart mini-cart","[API] addItem mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on cart update requests",page redirects to PDP unexpectedly; cart badge does not update; quick-add button not visible on hover,Remove added item from cart,VCST-4499,Automated
+[NETWORK] no 4xx/5xx on cart update requests",page redirects to PDP unexpectedly; cart badge does not update; quick-add button not visible on hover,Remove added item from cart,"VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components/add-to-cart-simple.vue + product-card (QuantityControl rendered unconditionally, not hover-gated); Docs: StorefrontDeveloperGuide - product_quantity_control global setting",Automated
 CART-003,Add to Cart - Multiple Quantities,Cart > Add,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in, product detail page loaded, quantity selector available","url={{FRONT_URL}}/search?q={{TEST_SKU}}
+User logged in, product detail page loaded, quantity selector available","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU}}
-[ACT] click the matching product card for {{TEST_SKU}} to open its PDP
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] click the matching product card for @td(BUYABLE_NO_MIN_QTY.sku) to open its PDP
 [WAIT] wait for the PDP to load
 [ACT] click quantity spinbutton field
 [WAIT] wait for quantity to update and totals to recalculate
 [ACT] clear field
-[ACT] type '5'
-[ACT] click '+' (Increase quantity) button to add to cart with qty=5
-[WAIT] wait for success notification
+[ACT] type '5' (direct input commits the add — no separate '+' click needed on a simple product)
+[WAIT] wait for the cart to update to qty=5
 [NAV] navigate to {{FRONT_URL}}/cart","[DOM] line item quantity = ""5""
 [MATH] line total = unit price × 5 (2 decimal places)
 [STATE] cart subtotal includes full line total
 [STATE] verify line item quantity shows 5","[API] addItem mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity reverts to 1 after add; line total shows unit price only; cart page shows wrong quantity,Remove added item from cart,VCST-4499,Automated
+[NETWORK] no 4xx/5xx",quantity reverts to 1 after add; line total shows unit price only; cart page shows wrong quantity,Remove added item from cart,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue:150-165 (direct-input commits the add); Docs: N/A — implementation-detail,Automated
 CART-004,Add to Cart - Product Variation,Cart > Add,High,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, configurable product with size and color variants available","url={{FRONT_URL}}/search?q={{TEST_SKU}}
@@ -63,7 +61,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU
 [DOM] price in cart matches variant price shown on PDP (visible)
 [STATE] verify variant attributes displayed","[API] addItem mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",wrong variant added to cart; parent SKU shown instead of variant; option selections reset after add,Remove added item from cart,VCST-4499; Relocated — inline variant picker not implemented on standard PDP; variant selection uses Configurable Products workflow; covered by Suite 072 (configurable products). RELOCATE verdict 2026-04-21.,Manual
+[NETWORK] no 4xx/5xx",wrong variant added to cart; parent SKU shown instead of variant; option selections reset after add,Remove added item from cart,"VCST-4499; Relocated — inline variant picker not implemented on standard PDP; variant selection uses Configurable Products workflow; covered by Suite 072 (configurable products). RELOCATE verdict 2026-04-21.; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components (configurable PDP renders variant radios + single submit, no inline stepper); Docs: N/A — implementation-detail: relocation to suite 072 still accurate",Manual
 CART-005,View Cart - Display Items,Cart > View,Critical,BL-CART-003,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Products added to cart, user logged in","url={{FRONT_URL}}
@@ -73,7 +71,7 @@ password={{USER_PASSWORD}}","[ACT] click the 'Cart' link in the site header
 [DOM] each '.vc-line-item' row is present with product image, product name, unit price, quantity input and line total {OBSERVED}
 [NAV] URL is {{FRONT_URL}}/cart after clicking the header 'Cart' link {OBSERVED}
 [FORMAT] prices formatted to 2 decimal places {OBSERVED}","[CONSOLE] no JS errors on cart page load
-[NETWORK] no 4xx/5xx on cart data fetch",header 'Cart' link does not navigate to /cart; items missing from the cart page; images broken; prices show $0.00 or NaN,none,VCST-4499,Automated
+[NETWORK] no 4xx/5xx on cart data fetch",header 'Cart' link does not navigate to /cart; items missing from the cart page; images broken; prices show $0.00 or NaN,none,"VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components (vc-line-item; header Cart link -> /cart, no mini-cart); Docs: N/A — implementation-detail: DOM class naming",Automated
 CART-006,Update Quantity - Increase,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty=1, user on cart page","url={{FRONT_URL}}/cart
@@ -85,7 +83,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [MATH] cart subtotal = sum of all updated line totals
 [STATE] verify quantity incremented to 2","[API] changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity does not increment; line total stays at unit price; subtotal not recalculated,Restore item quantity to 1 or remove item,VCST-4499,Automated
+[NETWORK] no 4xx/5xx",quantity does not increment; line total stays at unit price; subtotal not recalculated,Restore item quantity to 1 or remove item,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartItemQuantity (field changeCartItemQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
 CART-007,Update Quantity - Decrease,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty > 1 (e.g., qty=2), user on cart page","url={{FRONT_URL}}/cart
@@ -99,7 +97,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] verify quantity decremented to 1
 [STATE] verify '-' (Decrease quantity) is disabled when qty=1","[API] changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity goes below 1; '-' button active at qty=1; totals not recalculated,Restore or remove item,VCST-4499,Automated
+[NETWORK] no 4xx/5xx",quantity goes below 1; '-' button active at qty=1; totals not recalculated,Restore or remove item,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartItemQuantity (field changeCartItemQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
 CART-008,Update Quantity - Direct Input,Cart > Update,Medium,BL-CART-002,"ECL-3.1, ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart, user on cart page","url={{FRONT_URL}}/cart
@@ -117,7 +115,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] verify quantity shows 10
 [STATE] verify line total updated","[API] changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",input reverts to previous value; line total not updated; no API call triggered on Tab,Restore item quantity or remove item,VCST-4499,Automated
+[NETWORK] no 4xx/5xx",input reverts to previous value; line total not updated; no API call triggered on Tab,Restore item quantity or remove item,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartItemQuantity (field changeCartItemQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
 CART-009,Remove Item - Single Product,Cart > Remove,High,BL-CART-003,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart, user on cart page","url={{FRONT_URL}}/cart
@@ -129,9 +127,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [WAIT] wait for item to be removed","[DOM] removed item no longer listed on cart page — element absent from DOM
 [STATE] cart badge count decremented
 [MATH] cart totals updated to exclude removed item = subtotal + shipping + tax − discount (2 decimal places, per BL-CHK-006)
-[STATE] verify item no longer in cart","[API] removeCartItem mutation response errors[] is empty
+[STATE] verify item no longer in cart","[API] removeCartItems mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",item remains in cart after remove click; cart count does not decrement; totals unchanged,none (item removed),VCST-4499,Automated
+[NETWORK] no 4xx/5xx",item remains in cart after remove click; cart count does not decrement; totals unchanged,none (item removed),"VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/removeCartItems/removeCartItemsMutation.graphql (field removeCartItems, plural); Docs: N/A — implementation-detail",Automated
 CART-010,Remove Item - Last Item,Cart > Remove,Medium,BL-CART-003,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Only one item in cart, user on cart page","url={{FRONT_URL}}/cart
@@ -143,9 +141,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] cart badge shows 0
 [NAV] URL remains {{FRONT_URL}}/cart or redirects gracefully
 [STATE] verify empty cart state displayed
-[STATE] verify continue shopping link visible","[API] removeCartItem mutation response errors[] is empty
+[STATE] verify continue shopping link visible","[API] removeCartItems mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",page errors after last item removal; empty state not shown; cart badge still shows 1,none (cart empty),VCST-4499,Automated
+[NETWORK] no 4xx/5xx",page errors after last item removal; empty state not shown; cart badge still shows 1,none (cart empty),"VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/removeCartItems/removeCartItemsMutation.graphql (field removeCartItems, plural); Docs: N/A — implementation-detail",Automated
 CART-011,Clear Cart - All Items,Cart > Clear,Medium,BL-CART-003,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Multiple items in cart, user on cart page","url={{FRONT_URL}}/cart
@@ -158,9 +156,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [DOM] empty cart state shown after confirmation (visible)
 [STATE] cart badge shows 0
 [STATE] all line items removed
-[STATE] verify cart is empty","[API] each removeCartItem mutation response errors[] is empty
+[STATE] verify cart is empty","[API] clearCart mutation response errors[] is empty (one clearCart mutation empties the whole cart, not per-item removeCartItems calls)
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",confirmation dialog skipped; items remain after clear; cart badge not reset; GA4 clear_cart event not fired,none (cart empty),google-analytics,Automated
+[NETWORK] no 4xx/5xx",confirmation dialog skipped; items remain after clear; cart badge not reset; GA4 clear_cart event not fired,none (cart empty),"google-analytics; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/clearCart/clearCartMutation.graphql (field clearCart, single call) + useCart.ts (ClearCartModal); Docs: N/A — implementation-detail",Automated
 CART-016,Cart Calculations - Subtotal,Cart > Calculations,Critical,BL-CART-003,ECL-4.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Multiple items in cart with different quantities, user on cart page. All items must be in the default store currency ({{CURRENCY_CODE}} / USD) — this case tests single-currency subtotal math. For Mixed Cart (VCST-5101): USD subtotal covers USD-currency line items only; PTS loyalty items appear in a separate currency group with their own total.","url={{FRONT_URL}}/cart
@@ -176,7 +174,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [FORMAT] all amounts formatted as currency with 2 decimal places
 [STATE] subtotal recalculated to reflect the changed quantity (matches sum of updated line totals)","[CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx on cart recalculation requests
-[API] changeCartItemQuantity mutation response errors[] is empty",subtotal does not match sum of USD line totals; rounding error > $0.01; subtotal not updating after quantity change; PTS-currency line totals incorrectly included in USD subtotal (Mixed Cart boundary violation),Restore quantities or remove items,VCST-4499; Synced: VCST-5101 (2026-06-09),Automated
+[API] changeCartItemQuantity mutation response errors[] is empty",subtotal does not match sum of USD line totals; rounding error > $0.01; subtotal not updating after quantity change; PTS-currency line totals incorrectly included in USD subtotal (Mixed Cart boundary violation),Restore quantities or remove items,VCST-4499; Synced: VCST-5101 (2026-06-09); Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-module-cart/src/VirtoCommerce.CartModule.Data/Services/DefaultShoppingCartTotalsCalculator.cs (CalculateTotals — SubTotal = sum of selected line totals); Docs: StorefrontUserGuide - Checkout / Cart details,Automated
 CART-017,Cart Calculations - Tax,Cart > Calculations,High,BL-CART-003,ECL-4.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Taxable items in cart, tax configured for shipping address, user on cart page","url={{FRONT_URL}}/cart
@@ -188,7 +186,7 @@ password={{USER_PASSWORD}}",[NAV] navigate to {{FRONT_URL}}/cart,"[DOM] tax line
 [STATE] verify tax line item displayed in order summary
 [STATE] verify tax rate or amount shown
 [STATE] verify total = subtotal + tax (+ shipping)","[CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on tax calculation requests",tax line missing from order summary; tax = $0.00 for taxable items; total does not include tax,none,VCST-4499,Automated
+[NETWORK] no 4xx/5xx on tax calculation requests",tax line missing from order summary; tax = $0.00 for taxable items; total does not include tax,none,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-module-cart/.../DefaultShoppingCartTotalsCalculator.cs (Total = SubTotal + Shipping + Tax + Fee - Discount); Docs: StorefrontUserGuide - Checkout / Cart details,Automated
 CART-018,Cart Calculations - Shipping,Cart > Calculations,High,BL-CART-003,ECL-4.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Items in cart, shipping methods configured, user on cart page","url={{FRONT_URL}}/cart
@@ -200,7 +198,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] selected shipping method name displayed with cost
 [STATE] verify shipping cost matches selected method
 [STATE] verify shipping cost included in order total","[CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on shipping rate requests",shipping line missing; shipping cost $0.00 for paid methods; total does not include shipping,none,VCST-4499,Automated
+[NETWORK] no 4xx/5xx on shipping rate requests",shipping line missing; shipping cost $0.00 for paid methods; total does not include shipping,none,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-module-cart/.../DefaultShoppingCartTotalsCalculator.cs (Total = SubTotal + Shipping + Tax + Fee - Discount); Docs: StorefrontUserGuide - Checkout / Cart details,Automated
 CART-031,Quantity Stepper - PDP Increment Adds to Cart Immediately,Cart > Quantity Stepper,Critical,"BL-CART-007, BL-CART-002","ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, product available, product NOT currently in cart","url={{FRONT_URL}}/search?q={{TEST_SKU}}
@@ -219,7 +217,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU
 [STATE] verify Cart badge incremented by 1
 [STATE] verify 'Decrease quantity' button becomes enabled","[API] addItem mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on add-to-cart request",spinbutton does not increment; cart badge unchanged; 'in Cart' indicator not appearing; mutation returns error,Remove item from cart,QS-PDP-001,Manual
+[NETWORK] no 4xx/5xx on add-to-cart request",spinbutton does not increment; cart badge unchanged; 'in Cart' indicator not appearing; mutation returns error,Remove item from cart,QS-PDP-001; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue:150-165 (PDP stepper allowZero=true); Docs: N/A — implementation-detail: quantity-stepper mechanics,Manual
 CART-032,Quantity Stepper - PDP Decrement to Zero Removes from Cart,Cart > Quantity Stepper,Critical,"BL-CART-007, BL-CART-003","ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; product in cart with qty=1; on product detail page; spinbutton shows '1'","url={{FRONT_URL}}/search?q={{TEST_SKU}}
@@ -241,7 +239,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU
 [STATE] product not listed in cart page
 [STATE] confirm product is removed from cart","[API] removeCartItem mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",spinbutton stays at 1; 'in Cart' indicator persists; cart badge not decremented; product still in cart,none (item removed),QS-PDP-004,Manual
+[NETWORK] no 4xx/5xx",spinbutton stays at 1; 'in Cart' indicator persists; cart badge not decremented; product still in cart,none (item removed),QS-PDP-004; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue:150-165 (PDP stepper allowZero=true); Docs: N/A — implementation-detail: quantity-stepper mechanics,Manual
 CART-033,Quantity Stepper - Same SKU from Listing and PDP Creates Single Line Item (BL-CART-007 — same currency),Cart > Quantity Stepper,Critical,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, cart empty or product not in cart. Test product must be a standard USD-currency product (not a loyalty/PTS product). NOTE (VCST-5101 Mixed Cart): BL-CART-007 is now currency-scoped — same SKU in the SAME currency creates a single line (this case); same SKU added via itemCurrencyCode=PTS creates a SEPARATE line (covered by gap GQL-MC-001). This case covers same-currency coalescing only.","url={{FRONT_URL}}
@@ -249,8 +247,8 @@ user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to category listing page on {{FRONT_URL}}
 [ACT] click '+' (Increase quantity) on product card — qty becomes 1
 [WAIT] wait for cart badge to update
-[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU}}
-[ACT] click the matching product card for {{TEST_SKU}} (same product) to open its PDP
+[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] click the matching product card for @td(BUYABLE_NO_MIN_QTY.sku) (same product) to open its PDP
 [WAIT] wait for the PDP to load
 [ASSERT] verify spinbutton shows '1' (synced from listing add)
 [ACT] click '+' (Increase quantity) on PDP
@@ -260,7 +258,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to category listing page on {{FRONT_
 [STATE] PDP spinbutton reflected qty added from listing (server-side sync)
 [STATE] count line items for this product SKU","[API] addItem/changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",duplicate line items created for same SKU+same currency; PDP shows 0 instead of 1; total qty wrong; two line items in cart,Remove item from cart,QS-PDP-006; Synced: VCST-5101 (2026-06-09),Manual
+[NETWORK] no 4xx/5xx",duplicate line items created for same SKU+same currency; PDP shows 0 instead of 1; total qty wrong; two line items in cart,Remove item from cart,"QS-PDP-006; Synced: VCST-5101 (2026-06-09); Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (server-side qty sync, same-currency coalescing); Docs: N/A — implementation-detail",Manual
 CART-034,Quantity Stepper - Cart Page Minimum is 1,Cart > Quantity Stepper,High,BL-CART-001,ECL-3.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty=1; on {{FRONT_URL}}/cart page","url={{FRONT_URL}}/cart
@@ -272,7 +270,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [WAIT] wait for quantity to update and totals to recalculate","[DOM] spinbutton shows '1'
 [DOM] 'Decrease quantity' button is disabled at qty=1 on cart page
 [STATE] quantity cannot go below 1 via stepper on cart page (use 'Remove from cart' to delete)","[CONSOLE] no JS errors on disabled button interaction
-[NETWORK] no API call fired when disabled button clicked",'-' button enabled at qty=1; clicking '-' removes item instead of blocking; qty goes to 0 on cart page,none,QS-BVA-003,Manual
+[NETWORK] no API call fired when disabled button clicked",'-' button enabled at qty=1; clicking '-' removes item instead of blocking; qty goes to 0 on cart page,none,QS-BVA-003; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (allowZero=false on cart page — Decrease disabled at qty=1); Docs: N/A — implementation-detail,Manual
 CART-035,Quantity Stepper - Direct Input Updates Cart and Totals,Cart > Quantity Stepper,High,BL-CART-002,"ECL-3.1, ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty=1; on cart page or PDP","url={{FRONT_URL}}/cart
@@ -291,7 +289,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] verify line total updated
 [STATE] verify Order Summary totals updated","[API] changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",input reverts to 1 after Tab; line total not recalculated; API not called on Tab; duplicate line item created,Restore qty to 1 or remove item,QS-INPUT-001,Manual
+[NETWORK] no 4xx/5xx",input reverts to 1 after Tab; line total not recalculated; API not called on Tab; duplicate line item created,Restore qty to 1 or remove item,QS-INPUT-001; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue:150-165 (direct-input commit path); Docs: N/A — implementation-detail,Manual
 CART-036,Quantity Stepper - Negative Quantity Rejected (Keyboard Entry),Cart > Quantity Stepper,High,BL-CART-001,ECL-5.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product - minQuantity=1, maxQuantity=0/unlimited, no variation gate) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used here - it is a 6-variation product gated behind Color/Fabric/Size selection with no inline quantity stepper of its own, so it cannot host this test. Split from the former combined CART-036 into CART-036/CART-065/CART-066 (one invalid-input class each, per QS-INPUT-004) so a single FAIL isolates to one defect; this case is fully independent and does not depend on any sibling having run.","url={{FRONT_URL}}/cart
@@ -309,10 +307,10 @@ target_sku=@td(BUYABLE_NO_MIN_QTY.sku)","[NAV] navigate to a category/search lis
 [KEY] press Tab to commit the entered value and move focus off the spinbutton
 [WAIT] wait 2s for the quantity-change mutation attempt to settle","[STATE] displayed quantity is rejected or reverted to the last valid value 1, not -1 {BL} {OBSERVED} (per BL-CART-001; 2026-07-27 trace shows the changeCartItemsQuantity response carries validationErrors[PRODUCT_MIN_QTY] yet still echoes items[0].quantity=-1, and the storefront currently binds the spinbutton directly to that echoed value — this assertion is expected to legitimately FAIL until the echo is fixed)
 [MATH] line total = unit price × 1 and subtotal = sum of all line totals at quantity 1 (2 decimal places) — no mismatch between a rejected/reverted displayed quantity and the computed money fields {OBSERVED}
-[DOM] no cart error banner is rendered for the rejected -1 attempt - element absent from DOM {OBSERVED}
+[DOM] a generic transport-error banner/toast renders in the Order Summary after the rejected -1 attempt {OBSERVED} (2026-08-05) — the app's global server-error handler, not a cart-specific validation message; the echoed -1 defect itself is unchanged
 [STATE] no JavaScript console errors are thrown after the attempt {OBSERVED}","[API] the changeCartItemsQuantity mutation response top-level errors[] is empty — a negative quantity is expected to be rejected client-side before any mutation is sent; today's defect instead sends it and gets HTTP 200 with only a soft validationErrors[PRODUCT_MIN_QTY] entry, never a top-level errors[]
 [CONSOLE] no JS errors after the negative-quantity keyboard-entry attempt
-[NETWORK] the changeCartItemsQuantity call may return HTTP 200 with a soft validationErrors entry, but must not surface as an uncaught 4xx/5xx",negative qty (-1) echoed back into the spinbutton display instead of reverting to the last valid quantity; displayed quantity and computed subtotal/line total disagree after the rejected attempt; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004,Manual
+[NETWORK] the changeCartItemsQuantity call may return HTTP 200 with a soft validationErrors entry, but must not surface as an uncaught 4xx/5xx",negative qty (-1) echoed back into the spinbutton display instead of reverting to the last valid quantity; displayed quantity and computed subtotal/line total disagree after the rejected attempt; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue:150 + client-app/locales/en.json (global transport-error banner); Docs: N/A — implementation-detail,Manual
 CART-065,Quantity Stepper - Non-Numeric Input Blocked (Keyboard Entry),Cart > Quantity Stepper,High,BL-CART-001,ECL-5.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product - minQuantity=1, maxQuantity=0/unlimited, no variation gate) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used here - it is a 6-variation product gated behind Color/Fabric/Size selection with no inline quantity stepper of its own, so it cannot host this test. Split from the former combined CART-036 into CART-036/CART-065/CART-066 (one invalid-input class each, per QS-INPUT-004) so a single FAIL isolates to one defect; this case is fully independent and does not depend on any sibling having run.","url={{FRONT_URL}}/cart
@@ -333,7 +331,7 @@ target_sku=@td(BUYABLE_NO_MIN_QTY.sku)","[NAV] navigate to a category/search lis
 [DOM] no cart error banner is rendered for the blocked abc attempt - element absent from DOM {OBSERVED}
 [STATE] no JavaScript console errors are thrown after the attempt {OBSERVED}","[API] no changeCartItemsQuantity mutation is sent at all for this non-numeric input — the client-rejected value never reaches the server, so there is no GraphQL response to check for a top-level errors[] entry
 [CONSOLE] no JS errors after the non-numeric keyboard-entry attempt
-[NETWORK] no API call is triggered at all - the native input constraint blocks the character before any request is attempted {OBSERVED}",non-numeric input bypasses the native number-input constraint and reaches the API; displayed quantity changes away from 1; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004,Manual
+[NETWORK] no API call is triggered at all - the native input constraint blocks the character before any request is attempted {OBSERVED}",non-numeric input bypasses the native number-input constraint and reaches the API; displayed quantity changes away from 1; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/ui-kit/.../vc-quantity-stepper.vue:6 (native VcInput type=number blocks non-numeric); Docs: N/A — implementation-detail,Manual
 CART-066,Quantity Stepper - Decimal Quantity Rejected (Keyboard Entry),Cart > Quantity Stepper,High,BL-CART-001,ECL-5.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Cart is empty before Steps run; this case adds @td(BUYABLE_NO_MIN_QTY.sku) (an unconstrained simple B2B product - minQuantity=1, maxQuantity=0/unlimited, no variation gate) as the line item under test via an explicit add-to-cart sequence in Steps. {{TEST_SKU}} is NOT used here - it is a 6-variation product gated behind Color/Fabric/Size selection with no inline quantity stepper of its own, so it cannot host this test. Split from the former combined CART-036 into CART-036/CART-065/CART-066 (one invalid-input class each, per QS-INPUT-004) so a single FAIL isolates to one defect; this case is fully independent and does not depend on any sibling having run.","url={{FRONT_URL}}/cart
@@ -351,10 +349,10 @@ target_sku=@td(BUYABLE_NO_MIN_QTY.sku)","[NAV] navigate to a category/search lis
 [KEY] press Tab to commit the entered value and move focus off the spinbutton
 [WAIT] wait 2s for the quantity-change mutation attempt to settle","[STATE] quantity is rejected or rounded to an integer before being submitted, not sent to the API unrounded {BL} {OBSERVED} (per BL-CART-001; 2026-07-27 trace shows quantity 1.5 sent verbatim as a GraphQL Int variable, producing an HTTP 400 Unable-to-convert-to-Int error — this assertion is expected to legitimately FAIL until client-side rounding/validation is added)
 [STATE] the spinbutton does not remain stuck displaying the invalid unrounded value after a failed mutation attempt {OBSERVED} (2026-07-27 trace shows the spinbutton left showing 1.5 with a stale, unresolved cart state after the HTTP 400 — this assertion is expected to legitimately FAIL until fixed)
-[DOM] no cart error banner is rendered for the rejected 1.5 attempt - element absent from DOM {OBSERVED}
+[DOM] a generic transport-error banner/toast renders after the rejected 1.5 attempt {OBSERVED} (2026-08-05) — the app's global server-error handler fired on the HTTP 400, not a cart-specific validation message; the decimal-not-rounded defect itself is unchanged
 [STATE] no JavaScript console errors are thrown after the attempt {OBSERVED} (trace showed no console errors, UI did not crash)","[API] the decimal quantity is expected to be rejected or rounded client-side before any mutation is sent, so no GraphQL errors[] should come back; today's defect instead sends 1.5 verbatim and the failure surfaces as the transport-level HTTP 400 tracked by the [NETWORK] check below, not as a GraphQL errors[] entry
 [CONSOLE] no JS errors after the decimal-quantity keyboard-entry attempt
-[NETWORK] no failed (4xx/5xx) API calls are triggered by client-side-rejected input - the client must validate/round the value before submitting to changeCartItemsQuantity {OBSERVED: currently fails - 2026-07-27 trace shows quantity 1.5 sent verbatim, producing HTTP 400 Unable-to-convert-to-Int}",decimal qty (e.g. 1.5) submitted unrounded as a GraphQL Int variable producing an HTTP 400 instead of client-side rejection or rounding; spinbutton left displaying the invalid unrounded value in a stale/unresolved state; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004,Manual
+[NETWORK] no failed (4xx/5xx) API calls are triggered by client-side-rejected input - the client must validate/round the value before submitting to changeCartItemsQuantity {OBSERVED: currently fails - 2026-07-27 trace shows quantity 1.5 sent verbatim, producing HTTP 400 Unable-to-convert-to-Int}",decimal qty (e.g. 1.5) submitted unrounded as a GraphQL Int variable producing an HTTP 400 instead of client-side rejection or rounding; spinbutton left displaying the invalid unrounded value in a stale/unresolved state; console errors thrown on the attempt,Remove the @td(BUYABLE_NO_MIN_QTY.sku) line item added by this case (independent of any sibling case); no other state change,QS-INPUT-004; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue:150 + client-app/locales/en.json (global transport-error banner); Docs: N/A — implementation-detail,Manual
 CART-037,Quantity Stepper - Max Stock Enforcement,Cart > Quantity Stepper,High,BL-CART-001,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: Product with stock ≤ 10 must exist in catalog and virtual B2B catalog (@td(PROD_LOW_STOCK.sku)). Set LOW_STOCK_SKU env var. Run /qa-seed-data to provision. Product available; qty=0 in cart (not yet added).","url={{FRONT_URL}}@td(PROD_LOW_STOCK.url)
@@ -375,7 +373,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}@td(PROD_LOW_STOCK.u
 [STATE] cart quantity never exceeds available inventory
 [STATE] verify qty capped at max stock or error shown","[API] changeCartItemQuantity mutation response errors[] is empty (valid calls); stock constraint returned for over-max attempts
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",'+' button active beyond max stock; qty exceeds inventory in cart; 99999 accepted and submitted without cap,Remove item from cart,QS-BVA-002,Manual
+[NETWORK] no 4xx/5xx",'+' button active beyond max stock; qty exceeds inventory in cart; 99999 accepted and submitted without cap,Remove item from cart,QS-BVA-002; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/ui-kit/composables/useQuantityValidationSchema.ts (maxTest = availableQuantity); Docs: N/A — implementation-detail,Manual
 CART-038,Quantity Stepper - Cart Quantity Persists After Page Refresh,Cart > Quantity Stepper,High,BL-CART-006,ECL-7.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty=3; on {{FRONT_URL}}/cart page","url={{FRONT_URL}}/cart
@@ -389,13 +387,13 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [MATH] line total and subtotal consistent with qty=3
 [STATE] verify spinbutton still shows '3'
 [STATE] verify Cart badge count unchanged after refresh","[CONSOLE] no JS errors on page load after refresh
-[NETWORK] no 4xx/5xx on cart data fetch after refresh",qty resets to 1 after refresh; cart badge resets; subtotal recalculates to unit price only,none,QS-PERSIST-001,Manual
+[NETWORK] no 4xx/5xx on cart data fetch after refresh",qty resets to 1 after refresh; cart badge resets; subtotal recalculates to unit price only,none,QS-PERSIST-001; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (qty persisted server-side across reload); Docs: N/A — implementation-detail,Manual
 CART-039,Quantity Stepper - Rapid Double-Click Does Not Corrupt Cart (BL-CART-007 — same currency),Cart > Quantity Stepper,High,BL-CART-007,"ECL-1.2, ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Product in cart with qty=1; on PDP or cart page. Test product must be a standard USD-currency product. NOTE (VCST-5101 Mixed Cart): BL-CART-007 is now currency-scoped — 'exactly one line item' applies to the same-currency domain. Double-clicking a USD product must not create duplicates within USD lines. A PTS product is a separate entity and would have its own single PTS line.","url={{FRONT_URL}}/search?q={{TEST_SKU}}
+Product in cart with qty=1; on PDP or cart page. Test product must be a standard USD-currency product. NOTE (VCST-5101 Mixed Cart): BL-CART-007 is now currency-scoped — 'exactly one line item' applies to the same-currency domain. Double-clicking a USD product must not create duplicates within USD lines. A PTS product is a separate entity and would have its own single PTS line.","url={{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU}}
-[ACT] click the matching product card for {{TEST_SKU}} to open its PDP
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABLE_NO_MIN_QTY.sku)
+[ACT] click the matching product card for @td(BUYABLE_NO_MIN_QTY.sku) to open its PDP
 [WAIT] wait for the PDP to load
 [ACT] double-click '+' (Increase quantity) button rapidly
 [WAIT] wait 2 seconds for all API responses to settle
@@ -407,7 +405,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU
 [STATE] verify line item quantity and count for the USD-currency SKU
 [STATE] check browser console for errors","[API] all addItem/changeCartItemQuantity mutation responses errors[] are empty
 [CONSOLE] no JS race condition errors or duplicate mutation errors
-[NETWORK] no failed requests from race conditions",duplicate USD-currency line items from double-click; qty jumps to unexpected value; console errors from race; cart total mismatch,Remove item from cart,QS-ERR-001; Synced: VCST-5101 (2026-06-09),Manual
+[NETWORK] no failed requests from race conditions",duplicate USD-currency line items from double-click; qty jumps to unexpected value; console errors from race; cart total mismatch,Remove item from cart,"QS-ERR-001; Synced: VCST-5101 (2026-06-09); Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (debounced mutation, no race duplication); Docs: N/A — implementation-detail",Manual
 CART-049,Currency Switch - Cart Prices Recalculate Using New Price List,Cart > Currency,Critical,BL-CART-004,"ECL-4.1, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; products in cart with prices in multiple currencies; store supports at least two currencies (e.g., USD and EUR)","url={{FRONT_URL}}/cart
@@ -429,7 +427,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [STATE] verify subtotal, shipping, and tax all display in EUR","[API] getCart query returns prices in new currency after switch
 [NETWORK] no 4xx/5xx on currency switch request
 [CONSOLE] no JS errors during currency recalculation
-[API] changeCartCurrency mutation response errors[] is empty",prices still show old currency after switch; line totals not recalculated; subtotal mismatch; currency symbol not updated; shipping/tax still in old currency,Switch currency back to original; remove items from cart,Coverage Gap Analysis,Draft
+[API] changeCartCurrency mutation response errors[] is empty",prices still show old currency after switch; line totals not recalculated; subtotal mismatch; currency symbol not updated; shipping/tax still in old currency,Switch currency back to original; remove items from cart,Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartCurrency/changeCartCurrencyMutation.graphql; Docs: N/A — implementation-detail: currency-switch/price-list mechanics,Draft
 CART-050,Currency Switch - Product Without Price in New Currency Flagged,Cart > Currency,Critical,BL-CART-004,"ECL-4.1, ECL-7.3, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; cart contains at least one product that has no price defined in the target currency; store supports multiple currencies","url={{FRONT_URL}}/cart
@@ -441,7 +439,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ASSERT] verify all items display with valid prices in current currency
 [ACT] switch currency to target currency where one product has no price
 [WAIT] wait for cart to recalculate","[DOM] product without new-currency price shows warning message or is removed — element absent from DOM
-[STATE] cart does not display $0.00 or blank price for the missing-price product
+[STATE] cart flags the missing-price item with a ""no longer available for purchase"" warning and disables its quantity stepper; the item's price cell may still render a zero-value price (0.00 in the target currency) alongside the warning — a known PDP-only gap (reports/bugs/open/BUG-non-usd-price-zero-display.md), not a cart defect; the subtotal excludes the missing-price item
 [DOM] remaining items show correct new-currency prices (visible)
 [MATH] subtotal excludes flagged/removed item = sum of (unit price × quantity) for all included line items (2 decimal places)
 [STATE] checkout blocked if flagged item remains in cart
@@ -450,7 +448,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [STATE] verify cart totals only include valid items","[API] getCart query returns validation warning for product without price in new currency
 [CONSOLE] no JS errors during currency switch
 [NETWORK] no 4xx/5xx
-[API] addItem mutation response errors[] is empty",product shows $0.00 price instead of warning; no indication of missing price; cart totals include zero-price item; checkout proceeds with invalid pricing,Switch currency back to original; remove items from cart,Coverage Gap Analysis,Draft
+[API] addItem mutation response errors[] is empty",product shows $0.00 price instead of warning; no indication of missing price; cart totals include zero-price item; checkout proceeds with invalid pricing,Switch currency back to original; remove items from cart,Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components (missing-price guard) + client-app/locales/en.json; Docs: N/A — implementation-detail,Draft
 CART-051,Currency Switch - Subtotal Shipping Tax All in New Currency,Cart > Currency,High,BL-CART-004,"ECL-4.1, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; products in cart; shipping method selected; store supports multiple currencies","url={{FRONT_URL}}/cart
@@ -474,19 +472,21 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [STATE] verify all amounts use same currency symbol","[API] getCart query returns shipping, tax, and totals all in new currency
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
-[API] addItem mutation response errors[] is empty",mixed currency symbols in Order Summary; shipping still in old currency; tax not recalculated; grand total arithmetic mismatch,Switch currency back to original; remove items from cart,Coverage Gap Analysis,Draft
-CART-052,Cart Isolation - Org A Items Not Visible in Org B Cart,Cart > B2B > Org Isolation,Critical,BL-CART-005,ECL-14.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] addItem mutation response errors[] is empty",mixed currency symbols in Order Summary; shipping still in old currency; tax not recalculated; grand total arithmetic mismatch,Switch currency back to original; remove items from cart,Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartCurrency/changeCartCurrencyMutation.graphql; Docs: N/A — implementation-detail: currency-switch/price-list mechanics,Draft
+CART-052,Cart Isolation - Org A Items Not Visible in Org B Cart,Cart > B2B > Org Isolation,Critical,BL-CART-005,ECL-14.3,"[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
 [PRE:RESET_CART]
-SEED REQUIRED: User who is a member of TWO separate B2B organizations simultaneously (e.g., both TechFlow and BuildRight). Set @td(USER_MULTI_ORG.email) and @td(USER_MULTI_ORG.password). Standard {{ORG_USER_EMAIL}} belongs to only one org — this user is insufficient.","url={{FRONT_URL}}
-org_user=@td(USER_MULTI_ORG.email)
-org_password=@td(USER_MULTI_ORG.password)","[NAV] log in to {{FRONT_URL}} as {{ORG_USER_EMAIL}}
-[ASSERT] verify current organization context is Org A
+SEED PROVIDED (no manual seeding): @td(MULTI_ORG_TF_BR.email) is a seeded member of TWO B2B orgs with distinct per-org roles — Org A = @td(ORG_TECHFLOW.name) (org-maintainer), Org B = @td(ORG_BUILDRIGHT.name) (org-employee); both memberships Approved (VCST-5028). Refresh idempotently with `npm run seed:b2b:memberships`.","url={{FRONT_URL}}
+org_user=@td(MULTI_ORG_TF_BR.email)
+org_password=@td(MULTI_ORG_TF_BR.password)
+org_a=@td(ORG_TECHFLOW.name)
+org_b=@td(ORG_BUILDRIGHT.name)","[NAV] log in to {{FRONT_URL}} as {{org_user}} (password {{org_password}})
+[ASSERT] verify current organization context is Org A = {{org_a}}
 [ACT] add 2 products to cart (Product X qty 1, Product Y qty 2) in Org A context
 [WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ASSERT] verify cart badge shows 2 items (or 3 total qty)
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] note Org A cart contents
-[ACT] switch organization context to Org B (via org selector in header or account settings)
+[ACT] switch organization context to Org B = {{org_b}} (via org selector in header or account settings)
 [WAIT] wait for org switch to complete and cart to refresh
 [NAV] navigate to {{FRONT_URL}}/cart","[STATE] Org B cart does not contain Org A items (Product X and Product Y absent)
 [DOM] cart badge updated to reflect Org B cart count (""0"" or Org B-only items)
@@ -496,12 +496,14 @@ org_password=@td(USER_MULTI_ORG.password)","[NAV] log in to {{FRONT_URL}} as {{O
 [API] verify me.organization reflects Org B after switch
 [CONSOLE] no JS errors during org switch
 [NETWORK] no 4xx/5xx
-[API] addItem mutation response errors[] is empty",Org A items appear in Org B cart; cart badge shows Org A count after switch; Product X or Y visible in Org B,Switch back to Org A; remove test items from both carts,Coverage Gap Analysis,Manual
-CART-053,Cart Isolation - Org A Items Restored After Switching Back,Cart > B2B > Org Isolation,High,BL-CART-005,ECL-14.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] addItem mutation response errors[] is empty",Org A items appear in Org B cart; cart badge shows Org A count after switch; Product X or Y visible in Org B,Switch back to Org A; remove test items from both carts,"Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-module-x-cart/src/VirtoCommerce.XCart.Core/Queries/GetCartQuery.cs:37 (OrganizationId = GetCurrentOrganizationId); Docs: N/A — implementation-detail: cart-scoping; Fixed 2026-08-06: repointed from the unseeded USER_MULTI_ORG template (b2b/users.csv USR-014, seeded=false, blank platform_id) to the seeded 2-org fixture MULTI_ORG_TF_BR (VCST-5028; TechFlow org-maintainer + BuildRight org-employee, both Approved) — DV-022-safe here because these cases only switch org context, they never mutate a membership. CART-052 Step 1 was also signing in as the single-org {{ORG_USER_EMAIL}}, so the case could not exercise BL-CART-005 at all.",Manual
+CART-053,Cart Isolation - Org A Items Restored After Switching Back,Cart > B2B > Org Isolation,High,BL-CART-005,ECL-14.3,"[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
 [PRE:RESET_CART]
-SEED REQUIRED: multi-org user @td(USER_MULTI_ORG.email) is a member of Org A and Org B (companion scenario to CART-052, the org-isolation case). This case establishes its own Org A cart state in Steps below (adds Product X qty 1, Product Y qty 2) — it does not depend on another case having run first.","url={{FRONT_URL}}
-org_user=@td(USER_MULTI_ORG.email)
-org_password=@td(USER_MULTI_ORG.password)","[NAV] log in to {{FRONT_URL}} as @td(USER_MULTI_ORG.email) in Org A context
+SEED PROVIDED (no manual seeding): @td(MULTI_ORG_TF_BR.email) is a seeded member of TWO B2B orgs with distinct per-org roles — Org A = @td(ORG_TECHFLOW.name) (org-maintainer), Org B = @td(ORG_BUILDRIGHT.name) (org-employee); both memberships Approved (VCST-5028). Refresh idempotently with `npm run seed:b2b:memberships`. Companion scenario to CART-052, the org-isolation case. This case establishes its own Org A cart state in Steps below (adds Product X qty 1, Product Y qty 2) — it does not depend on another case having run first.","url={{FRONT_URL}}
+org_user=@td(MULTI_ORG_TF_BR.email)
+org_password=@td(MULTI_ORG_TF_BR.password)
+org_a=@td(ORG_TECHFLOW.name)
+org_b=@td(ORG_BUILDRIGHT.name)","[NAV] log in to {{FRONT_URL}} as {{org_user}} (password {{org_password}}) in Org A = {{org_a}} context
 [ACT] add Product X (qty 1) to cart in Org A context
 [WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] add Product Y (qty 2) to cart in Org A context
@@ -522,13 +524,13 @@ org_password=@td(USER_MULTI_ORG.password)","[NAV] log in to {{FRONT_URL}} as @td
 [API] verify me.organization reflects Org A
 [CONSOLE] no JS errors during org switch cycle
 [NETWORK] no 4xx/5xx
-[API] addItem mutation response errors[] is empty",Org A cart empty after round-trip switch; items lost; quantities changed; subtotal mismatch after switching back,Remove test items from both org carts,Coverage Gap Analysis,Manual
+[API] addItem mutation response errors[] is empty",Org A cart empty after round-trip switch; items lost; quantities changed; subtotal mismatch after switching back,Remove test items from both org carts,"Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-module-x-cart/src/VirtoCommerce.XCart.Core/Queries/GetCartQuery.cs:37 (OrganizationId = GetCurrentOrganizationId); Docs: N/A — implementation-detail: cart-scoping; Fixed 2026-08-06: repointed from the unseeded USER_MULTI_ORG template (b2b/users.csv USR-014, seeded=false, blank platform_id) to the seeded 2-org fixture MULTI_ORG_TF_BR (VCST-5028; TechFlow org-maintainer + BuildRight org-employee, both Approved) — DV-022-safe here because these cases only switch org context, they never mutate a membership. CART-052 Step 1 was also signing in as the single-org {{ORG_USER_EMAIL}}, so the case could not exercise BL-CART-005 at all.",Manual
 CART-054,Pack Size Enforcement - Quantity Stepper Increments by Pack Size,Cart > Pack Size,Medium,BL-CART-006,ECL-3.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: Product with pack size / MOQ configured (pack size = 6) must exist in catalog and B2B virtual catalog. Set @td(PROD_PACK_SIZE.sku) env var. Admin step: set product MinQuantity = 6, PackSize = 6 in product properties. User logged in.","url={{FRONT_URL}}@td(PROD_PACK_SIZE.url)
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}@td(PROD_PACK_SIZE.url)
-[ASSERT] verify product detail page loads with pack size information visible (e.g., 'Sold in packs of 6')
+[ASSERT] verify product detail page loads (pack size is conveyed by the stepper incrementing in pack multiples below, not a separate 'Sold in packs of N' PDP disclosure label)
 [ACT] click '+' (Increase quantity) button
 [WAIT] wait for quantity to update
 [ASSERT] verify spinbutton shows pack size value (e.g., 6) not 1
@@ -545,7 +547,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}@td(PROD_PACK_SIZE.u
 [MATH] line total = unit price x quantity (where qty is multiple of pack size)
 [STATE] verify cart line item quantity is a multiple of pack size","[API] addItem or changeCartItemQuantity mutation enforces pack size multiples
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",stepper increments by 1 instead of pack size; quantity not a multiple of pack size in cart; no pack size info on PDP,Remove item from cart,Coverage Gap Analysis,Manual
+[NETWORK] no 4xx/5xx",stepper increments by 1 instead of pack size; quantity not a multiple of pack size in cart; no pack size info on PDP,Remove item from cart,"Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/ui-kit/composables/useQuantityValidationSchema.ts:52 (packSize drives stepper mechanics only, no PDP disclosure component); Docs: N/A — implementation-detail",Manual
 CART-055,Pack Size Enforcement - Manual Non-Multiple Entry Rejected,Cart > Pack Size,Medium,BL-CART-006,"ECL-3.1, ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: pack-size product @td(PROD_PACK_SIZE.sku) exists in catalog and B2B virtual catalog (MOQ=6, pack size=6; companion scenario to CART-054, the stepper-increment case). This case adds the item to cart directly in Steps below — it does not depend on another case having run first. User logged in.","url={{FRONT_URL}}/cart
@@ -597,7 +599,7 @@ skus={{TEST_SKU}}, {{TEST_SKU_2}}, {{TEST_SKU_3}}","[NAV] log in to {{FRONT_URL}
 [STATE] cart badge unchanged (item is in cart, just unselected)
 [MATH] subtotal after re-check = original 3-item subtotal
 [STATE] verify subtotal returns to original 3-item value","[CONSOLE] no JS errors during selection/deselection
-[NETWORK] no 4xx/5xx on selection toggle",no checkbox controls visible; deselecting does not update subtotal; deselected item removed from cart instead of retained,none (all items remain in cart; reset selection state),Coverage Gap Analysis,Manual
+[NETWORK] no 4xx/5xx on selection toggle",no checkbox controls visible; deselecting does not update subtotal; deselected item removed from cart instead of retained,none (all items remain in cart; reset selection state),"Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/composables/useCart.ts (selectCartItems/unselectCartItems/selectedForCheckout); Docs: N/A — implementation-detail",Manual
 CART-057,Coupons Sidebar — Widget Renders Below OrderSummary on /cart,Cart > Coupons Sidebar,Critical,BL-CART-003,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in. At least 1 product in cart. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
@@ -615,10 +617,10 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] up to 4 preset coupon cards visible (or none if user has no available promotion coupons)
 [STATE] 'Custom code' card visible at the bottom of the widget
 [STATE] 'View all coupons & promotions' link visible in the widget","[CONSOLE] no JS errors on cart page load
-[NETWORK] no 4xx/5xx on any requests during widget render","widget heading absent, .coupons-section missing from DOM, 'Custom code' card not rendered, more than 4 preset cards visible (cap not applied), 'View all coupons & promotions' link missing",none,"VCST-4896, VCST-4590",Reviewed
+[NETWORK] no 4xx/5xx on any requests during widget render","widget heading absent, .coupons-section missing from DOM, 'Custom code' card not rendered, more than 4 preset cards visible (cap not applied), 'View all coupons & promotions' link missing",none,"VCST-4896, VCST-4590; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components/coupons-section.vue:41 (COUPONS_PER_PAGE=4) + shared/account/composables/usePromotionCoupons.ts:19 (Sort endDate Ascending); Docs: N/A — project-specific: coupon-slot UX, no VirtoOZ narration",Reviewed
 CART-058,Coupons Sidebar — Preset Coupon Apply Happy Path,Cart > Coupons Sidebar > Apply,Critical,BL-CART-003,"ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in. Cart has at least 1 item ({{TEST_SKU}}). At least one preset coupon card (@td(COUPON_10PCT.code) — promotion '@td(COUPON_10PCT.promo_name)') is visible in the 'Discount & coupons' widget. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
+User logged in. Cart has at least 1 item ({{TEST_SKU}}). At least one preset coupon card that is CURRENTLY VALID for the cart is visible in the 'Discount & coupons' widget (verify via live probe — @td(COUPON_10PCT.code) fails validateCoupon on this env as of 2026-08-06; substitute the account's actually-valid preset if so). Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
@@ -635,7 +637,7 @@ coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] Discount line item visible in OrderSummary with non-zero amount","[API] addCoupon mutation: HTTP 200, errors[] empty
 [API] cart.coupons[0].isAppliedSuccessfully = true after mutation
 [CONSOLE] no JS errors during apply
-[NETWORK] no 4xx/5xx on /graphql","card does not transition to applied state after click (green border missing), discount line absent from OrderSummary, errors[] non-empty, console TypeError, preset card apply button not found in .coupons-section",Click trash icon on applied card to remove coupon after test,"VCST-4896 AC#2, VCST-4590",Reviewed
+[NETWORK] no 4xx/5xx on /graphql","card does not transition to applied state after click (green border missing), discount line absent from OrderSummary, errors[] non-empty, console TypeError, preset card apply button not found in .coupons-section",Click trash icon on applied card to remove coupon after test,"VCST-4896 AC#2, VCST-4590; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/composables/useCoupon.ts (ValidateCoupon precheck before addCoupon); Docs: N/A — project-specific coupon UX",Reviewed
 CART-059,Coupons Sidebar — Custom Code Apply Valid Code,Cart > Coupons Sidebar > Custom Code,Critical,BL-CART-003,"ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in. Cart has at least 1 item. A valid coupon code (@td(COUPON_20PCT.code)) exists that is NOT pre-listed in the sidebar as a preset card (or any valid code). Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
@@ -656,7 +658,7 @@ coupon_code=@td(COUPON_20PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] Discount line item visible in OrderSummary","[API] addCoupon mutation: HTTP 200, errors[] empty
 [API] cart.coupons[0].isAppliedSuccessfully = true
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","Custom code card not found, applied state not reached, discount line absent, errors[] non-empty",Click trash icon to remove coupon after test,"VCST-4896 AC#4, VCST-4590",Reviewed
+[NETWORK] no 4xx/5xx","Custom code card not found, applied state not reached, discount line absent, errors[] non-empty",Click trash icon to remove coupon after test,"VCST-4896 AC#4, VCST-4590; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/composables/useCoupon.ts (addCoupon via custom-code path); Docs: N/A — implementation-detail",Reviewed
 CART-060,Coupons Sidebar — Custom Code Apply Invalid Code Shows Error State,Cart > Coupons Sidebar > Custom Code > Negative,Critical,BL-CART-003,"ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in. Cart has at least 1 item. Code 'BOGUS123' does not correspond to any promotion. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
@@ -668,15 +670,13 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [WAIT] wait for the mutation to complete and UI to update
 [ACT] type 'BOGUS123'
 [ACT] click arrow-right apply button
-[WAIT] wait for card response","[DOM] Custom code card shows error state: dashed border, red receipt-tax icon visible, error text 'This code is not valid' displayed below input (maps to t('common.messages.invalid_coupon'))
-[DOM] arrow-right apply button becomes disabled in error state
-[DOM] no discount line item in OrderSummary — element absent from DOM
+[WAIT] wait for card response — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)","[API] on an invalid/nonexistent code: validateCoupon returns false and NO addCoupon is sent; the discount stays $0.00 and the cart total is unchanged (always-true invariant — live-verified on theme 2.55.0-pr-2417, 2026-08-06)
+[DOM] no discount line item in OrderSummary — element absent from DOM
 [STATE] cart total unchanged from before apply attempt
-[STATE] card transitions to error state
-[STATE] error text visible on card","[API] addCoupon mutation: cart.coupons[].isAppliedSuccessfully=false OR errors[] non-empty with coupon error
+[DOM] error UI is BUILD-GATED (VCST-5518 / vc-frontend PR #2422): on theme >= 2.55.0-pr-2422 the Custom code card transitions to the error state (dashed border, red receipt-tax icon, 'This code is not valid' text below input mapping to t('common.messages.invalid_coupon'), apply button disabled) auto-clearing after COUPON_ERROR_TIMEOUT=7000ms; on the deployed pr-2417 build the invalid code fails SILENTLY with no error UI","[API] validateCoupon returns false for the invalid code and NO addCoupon mutation is sent (validate-before-add order per VCST-5518 / vc-frontend PR #2422); cart.coupons[] is unchanged
 [API] cart.totals.discountTotal.amount = 0
 [CONSOLE] no TypeError — error state rendered gracefully
-[NETWORK] no 5xx","error text not displayed (no feedback to user), wrong error message shown (not 'This code is not valid'), cart total changed after invalid code, console TypeError, 'BOGUS123' somehow applied",none — no coupon was applied,"VCST-4896 AC#4, AC#6, AC#8",Reviewed
+[NETWORK] no 5xx","error text not displayed (no feedback to user), wrong error message shown (not 'This code is not valid'), cart total changed after invalid code, console TypeError, 'BOGUS123' somehow applied",none — no coupon was applied,"VCST-4896 AC#4, AC#6, AC#8; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend PR #2422 (VCST-5518) useCoupon.ts (COUPON_ERROR_TIMEOUT=7000; setError on validateCartCoupon()===false) + coupons-section.vue:82. LIVE 2026-08-06 (theme 2.55.0-pr-2417, #2422 NOT deployed): invalid code = validateCoupon->false, NO addCoupon, discount unchanged; error message + 7s auto-clear are #2422-gated (silent on pr-2417); Docs: N/A — implementation-detail. Cross-ref: the VCST-5518 core invariant (an INVALID apply while a working coupon is applied leaves that coupon applied) is guarded by CPN-063 in suite 077 (regression/suites/Frontend/marketing/077-coupons-promotions-storefront.csv) — do not duplicate it in this suite.",Reviewed
 CART-061,Coupons Sidebar — Radio-Button Behavior: Applying B While A Is Active Auto-Removes A,Cart > Coupons Sidebar > Radio Behavior,Critical,BL-CART-003,"ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in. Cart has at least 1 item. Two valid coupon codes available: @td(COUPON_10PCT.code) and @td(COUPON_20PCT.code) (or any second valid code). Both are applicable to the cart. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: Decision Table (one coupon active + apply second).","url={{FRONT_URL}}/cart
@@ -689,7 +689,7 @@ coupon_b=@td(COUPON_20PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [ACT] apply @td(COUPON_10PCT.code) (via preset card or custom code card)
 [WAIT] @td(COUPON_10PCT.code) card shows applied state (green border, check icon)
 [ASSERT] verify network: only addCoupon mutation for @td(COUPON_10PCT.code) fired; no removeCoupon
-[ACT] now apply @td(COUPON_20PCT.code) (via its preset card apply button, or via Custom code card with typed code)
+[ACT] now apply @td(COUPON_20PCT.code) via its PRESET card apply button — the Custom code input is readonly while a coupon is applied, so a custom-to-custom replacement is not possible without first removing the applied coupon
 [WAIT] wait for all mutations to complete
 [ASSERT] @td(COUPON_20PCT.code) card shows applied state
 [ASSERT] @td(COUPON_10PCT.code) card returns to default state (not applied)
@@ -697,11 +697,11 @@ coupon_b=@td(COUPON_20PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [DOM] @td(COUPON_10PCT.code) card: default state (dashed border, arrow-right apply button — not applied) — element absent from DOM
 [STATE] only one coupon is applied at a time (radio-button behavior — VCST-4896 AC#3)
 [DOM] OrderSummary discount line reflects @td(COUPON_20PCT.code) discount only (not stacked) — element absent from DOM
-[STATE] only one discount line in OrderSummary (corresponding to @td(COUPON_20PCT.code))","[API] network sequence: removeCoupon for @td(COUPON_10PCT.code) fires BEFORE addCoupon for @td(COUPON_20PCT.code)
+[STATE] only one discount line in OrderSummary (corresponding to @td(COUPON_20PCT.code))","[API] network sequence (validate-before-remove, VCST-5518 / vc-frontend PR #2422): validateCoupon for @td(COUPON_20PCT.code) returns true, THEN removeCoupon for @td(COUPON_10PCT.code) fires BEFORE addCoupon for @td(COUPON_20PCT.code) — an INVALID second code would instead be rejected with the first coupon left intact
 [API] cart.coupons[] contains only @td(COUPON_20PCT.code) after the sequence (or only 1 entry with isAppliedSuccessfully=true)
 [API] errors[] empty on both mutations
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","both coupons shown as applied simultaneously (multi-coupon stacking — BL-CART-003 violation), @td(COUPON_10PCT.code) card remains in applied state after @td(COUPON_20PCT.code) applied, discount amount = sum of both coupons, removeCoupon mutation not fired for A",Click trash icon to remove active coupon after test,"VCST-4896 AC#3, BL-CART-009",Reviewed
+[NETWORK] no 4xx/5xx","both coupons shown as applied simultaneously (multi-coupon stacking — BL-CART-003 violation), @td(COUPON_10PCT.code) card remains in applied state after @td(COUPON_20PCT.code) applied, discount amount = sum of both coupons, removeCoupon mutation not fired for A",Click trash icon to remove active coupon after test,"VCST-4896 AC#3, BL-CART-009; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend PR #2422 (VCST-5518) useCoupon.ts applyCoupon — validate-before-remove: validate(new) -> remove(old) -> add(new); an invalid new code leaves the old coupon intact. LIVE-VERIFIED 2026-08-06 (theme 2.55.0-pr-2417): exact order ValidateCoupon(B)->RemoveCoupon(A)->AddCoupon(B), only B applied; Docs: N/A — implementation-detail. Cross-ref: the VCST-5518 core invariant (an INVALID apply while a working coupon is applied leaves that coupon applied) is guarded by CPN-063 in suite 077 (regression/suites/Frontend/marketing/077-coupons-promotions-storefront.csv) — do not duplicate it in this suite.",Reviewed
 CART-062,Coupons Sidebar — Cancel Applied Coupon via Trash Icon,Cart > Coupons Sidebar > Cancel,Critical,BL-CART-003,"ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in. Cart has at least 1 item. @td(COUPON_10PCT.code) is applied via the 'Discount & coupons' widget — card in applied state. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: State Transition (applied → default).","url={{FRONT_URL}}/cart
@@ -724,7 +724,7 @@ coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] verify JIRA AC#5: code/card presence retained (card is NOT cleared from DOM, input is NOT wiped)","[API] removeCoupon mutation: HTTP 200, errors[] empty
 [API] cart.coupons[] does not contain @td(COUPON_10PCT.code) with isAppliedSuccessfully=true after removal
 [CONSOLE] no TypeError during removal
-[NETWORK] no 4xx/5xx","trash icon absent on applied card (cannot remove), discount persists in OrderSummary after removal, card disappears from DOM entirely after removal (violates AC#5 — code display should be retained), cart total unchanged, removeCoupon errors[] non-empty",none — coupon removed by this test,"VCST-4896 AC#5, AC#6, VCST-4590",Reviewed
+[NETWORK] no 4xx/5xx","trash icon absent on applied card (cannot remove), discount persists in OrderSummary after removal, card disappears from DOM entirely after removal (violates AC#5 — code display should be retained), cart total unchanged, removeCoupon errors[] non-empty",none — coupon removed by this test,"VCST-4896 AC#5, AC#6, VCST-4590; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/composables/useCoupon.ts (removeCoupon — card retained per AC#5); Docs: N/A — implementation-detail",Reviewed
 CART-063,Coupons Sidebar — OrderSummary Contains No Inline Coupon Input (Regression Guard),Cart > Coupons Sidebar > Regression,Critical,BL-CART-003,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in. At least 1 item in cart. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: Error Guessing (guard against regression re-introduction of removed inline coupon input).","url={{FRONT_URL}}/cart
@@ -739,7 +739,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] verify no textbox with label 'Enter a promo-coupon' or 'Promo code' exists inside .order-summary
 [STATE] verify no 'Deny' button or VcActionInput for coupon code exists inside .order-summary
 [STATE] 'Discount & coupons' widget (.coupons-section) exists BELOW the OrderSummary widget (not inside it)","[CONSOLE] no JS errors on cart page load
-[NETWORK] no 4xx/5xx","'Enter a promo-coupon' textbox found inside .order-summary (regression), 'Deny' button found inside .order-summary (regression), coupon input re-introduced into OrderSummary section",none,"VCST-4896 (behavior change), VCST-4590",Reviewed
+[NETWORK] no 4xx/5xx","'Enter a promo-coupon' textbox found inside .order-summary (regression), 'Deny' button found inside .order-summary (regression), coupon input re-introduced into OrderSummary section",none,"VCST-4896 (behavior change), VCST-4590; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/pages/cart.vue:126-137 (OrderSummary + CouponsSection are siblings; no coupon input inside order-summary); Docs: N/A — qa-methodology: regression guard",Reviewed
 CART-064,Coupons Sidebar — View All Coupons Link Opens New Tab,Cart > Coupons Sidebar > Navigation,High,BL-CART-003,ECL-4.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in. At least 1 item in cart. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
@@ -755,10 +755,10 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] original /cart tab remains open and cart content is unaffected after link click
 [STATE] new tab URL is {{FRONT_URL}}/account/coupons (or locale-prefixed equivalent)
 [STATE] new tab renders 'All coupons & promotions' page heading","[CONSOLE] no JS errors during link click
-[NETWORK] no 4xx/5xx on /account/coupons page load in new tab","link missing from widget, link navigates in same tab (target not _blank), /account/coupons returns 4xx, original cart tab navigated away from",Close the new tab opened to /account/coupons after test,"VCST-4896 AC#1, VCST-4590",Reviewed
+[NETWORK] no 4xx/5xx on /account/coupons page load in new tab","link missing from widget, link navigates in same tab (target not _blank), /account/coupons returns 4xx, original cart tab navigated away from",Close the new tab opened to /account/coupons after test,"VCST-4896 AC#1, VCST-4590; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components/coupons-section.vue:26-32 (router-link target=_blank rel=noopener to ROUTES.PROMOTION_COUPONS); Docs: N/A — implementation-detail",Reviewed
 CART-069,Coupons Sidebar — Applied Coupon Code Visible as Read-Only on Checkout Review Step,Cart > Coupons Sidebar > Checkout Integration,High,"BL-CART-003, BL-CHK-006","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in. Cart has at least 1 item. @td(COUPON_10PCT.code) is applicable to cart. Checkout flow accessible. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: State Transition (cart applied → checkout review step).","url={{FRONT_URL}}/cart
+User logged in. Cart has at least 1 item. @td(COUPON_10PCT.code) is applicable to cart. This storefront renders checkout as a single consolidated cart+checkout page (config-gated multistep is OFF in this environment) — no separate shipping-address/shipping-method/payment wizard steps exist. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: State Transition (cart applied → checkout review step).","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
@@ -767,13 +767,20 @@ coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [ACT] apply @td(COUPON_10PCT.code) via preset card or custom code card
 [WAIT] card in applied state (green border, check icon)
 [ASSERT] discount line visible in OrderSummary
-[ACT] click 'Checkout' or 'Proceed to Checkout'
-[WAIT] checkout page loads and progresses to review step","[DOM] checkout review step shows a disabled (read-only) VcActionInput displaying '@td(COUPON_10PCT.code)' — the applied coupon code is visible but non-editable on the review page (per checkout/review.vue: appliedCouponCode)
+[ACT] proceed to checkout — checkout renders inline on the same consolidated cart page (config-gated multistep OFF in this env)
+[WAIT] the inline checkout section renders
+[ACT] select a saved shipping address inline
+[WAIT] the selected address applies
+[ACT] select a delivery method inline
+[WAIT] the selected delivery method applies
+[ACT] select a payment method inline
+[WAIT] the selected payment method applies
+[WAIT] the inline checkout section settles with the coupon discount still shown, up to the point 'Place order' becomes enabled","[DOM] the applied coupon's discount line remains visible in the Order Summary through delivery-method and payment-method selection, up to the moment 'Place order' becomes enabled — the coupon carries through the inline checkout without being reset
 [DOM] coupon discount line is present in the checkout order summary (discount carried through from /cart)
 [STATE] coupon applied on /cart carries through to checkout review without being reset
-[STATE] on review step, locate the applied coupon display","[API] cart query at checkout review: cart.coupons[0].isAppliedSuccessfully=true; discount matches /cart value
+[STATE] locate the persisted coupon discount in the inline checkout Order Summary","[API] cart query at checkout review: cart.coupons[0].isAppliedSuccessfully=true; discount matches /cart value
 [CONSOLE] no JS errors during cart → checkout navigation
-[NETWORK] no 4xx/5xx","coupon code not visible on checkout review (appliedCouponCode missing from review.vue), discount disappears at checkout review, cart.coupons reset on checkout navigation, console TypeError on checkout page",Navigate away without placing order; remove coupon from cart if needed,"VCST-4896 AC#review-step, VCST-4590",Reviewed
+[NETWORK] no 4xx/5xx","coupon code not visible on checkout review (appliedCouponCode missing from review.vue), discount disappears at checkout review, cart.coupons reset on checkout navigation, console TypeError on checkout page",Navigate away without placing order; remove coupon from cart if needed,"VCST-4896 AC#review-step, VCST-4590; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/pages/cart.vue (single-page cart+checkout, config-gated multistep off); Docs: N/A — project-specific checkout UX",Reviewed
 CART-070,Save for Later — Configurable Product Configuration Survives Save/Restore Round-Trip (VCST-4205),Cart > Save for Later > Configurable,Critical,BL-CART-007; BL-CART-010,ECL-7.1; ECL-14.1,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ORG_USER]
 [PRE:RESET_CART]
@@ -803,7 +810,7 @@ Ring configurable product (CFG_RING) accessible at {{FRONT_URL}}@td(CFG_RING.url
 [API] getSavedForLater configurationItems non-empty for saved Ring item
 [API] moveFromSavedForLater mutation errors[] empty
 [CONSOLE] no JS errors during save + restore flow
-[NETWORK] no 4xx/5xx on cart API requests",Save for later click does nothing or shows error; Move to cart restores item with empty/default configuration; Spinner visible >10s; errors[] non-empty on moveToSavedForLater; cart badge stays at 1 after Save,Remove Ring item from cart or Saved for later if test leaves items behind,"VCST-4205; Re-scoped 2026-07-27 — rendering configurationItems on the Saved-for-later card is confirmed NOT IMPLEMENTED (withdrawn as a defect finding, previously misread as a VCST-4205 repro); that display assertion is deferred and will be restored when the card ships configuration rendering. This case's active, testable scope is the round-trip config-preservation invariant: configuration visible in the active cart before Save for later, and intact again in the active cart after Move to cart.",Draft
+[NETWORK] no 4xx/5xx on cart API requests",Save for later click does nothing or shows error; Move to cart restores item with empty/default configuration; Spinner visible >10s; errors[] non-empty on moveToSavedForLater; cart badge stays at 1 after Save,Remove Ring item from cart or Saved for later if test leaves items behind,"VCST-4205; Re-scoped 2026-07-27 — rendering configurationItems on the Saved-for-later card is confirmed NOT IMPLEMENTED (withdrawn as a defect finding, previously misread as a VCST-4205 repro); that display assertion is deferred and will be restored when the card ships configuration rendering. This case's active, testable scope is the round-trip config-preservation invariant: configuration visible in the active cart before Save for later, and intact again in the active cart after Move to cart.; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart (Save-for-later round trip; configurationItems card display not-implemented, re-verified absent); Docs: StorefrontUserGuide - Save for later",Draft
 CART-071,Mixed Cart — Adding Loyalty PTS Product Shows 'Products in PTS' Group on Cart Page,Cart > Mixed Cart,Critical,BL-B2B-005; BL-CART-007,ECL-7.3,"[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
 [PRE:RESET_CART]
 Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.currency_code). Theme vc-theme-b2b-vue-2.51.0-pr-2310+. User is in VIP group. Requires at least 1 product with PTS price in the loyalty catalog.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); loyalty_user=@td(LOYALTY_VIP_USER.email),"[NAV] {{FRONT_URL}}/loyalty-catalog
@@ -822,7 +829,7 @@ Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.
 [STATE] verify loyalty line item is inside that section","[API] cart query returns items[].currencyCode = @td(LOYALTY_SETTINGS.currency_code) for the loyalty item
 [API] cartTotals has >= 2 elements after adding PTS item to a cart that also has USD items
 [CONSOLE] no unhandled JS errors on cart page
-[NETWORK] no 4xx/5xx on addItem or cart page load",PTS product shown in the USD section without a separate PTS heading; 'Products in PTS' heading absent (vc-frontend PR #2310 not deployed or i18n key missing); cart-other-currency-totals block absent from order summary; PTS line item price displayed in USD (currency bleed),Remove loyalty item from cart; sign out,VCST-5101; BL-B2B-005,Reviewed
+[NETWORK] no 4xx/5xx on addItem or cart page load",PTS product shown in the USD section without a separate PTS heading; 'Products in PTS' heading absent (vc-frontend PR #2310 not deployed or i18n key missing); cart-other-currency-totals block absent from order summary; PTS line item price displayed in USD (currency bleed),Remove loyalty item from cart; sign out,VCST-5101; BL-B2B-005; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/config/links/utils.ts (Mixed-Cart currency grouping) + i18n Products-in-PTS key; Docs: N/A — project-specific: Mixed Cart (VCST-5101),Reviewed
 CART-072,Mixed Cart — Same Product in Different Currencies Creates Independent Cart Counts,Cart > Mixed Cart,High,BL-CART-007,ECL-2.1; ECL-7.3,"[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
 [PRE:RESET_CART]
 Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.currency_code). A product must exist with both a USD price (standard catalog) and a PTS price (loyalty catalog). If such a product exists, adding it as USD then as PTS should show 2 separate lines. If only one currency is available, this test verifies the add-to-cart badge and line counts per currency independently.",front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); loyalty_user=@td(LOYALTY_VIP_USER.email),"[NAV] {{FRONT_URL}}/loyalty-catalog
@@ -840,10 +847,10 @@ Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.
 [DOM] PTS section shows the loyalty product (PTS price) (visible)
 [DOM] PTS product add-to-cart on loyalty catalog page does NOT merge into or modify the USD line count — element absent from DOM","[API] cart query returns itemsCount = 2 with two distinct currencyCode values (USD and @td(LOYALTY_SETTINGS.currency_code))
 [CONSOLE] no unhandled JS errors
-[NETWORK] no 4xx/5xx",Two items show as ONE line (BL-CART-007 currency-scope violated — different-currency items incorrectly merged); badge shows 1 when 2 items expected; PTS item missing from cart after navigating away from loyalty catalog,Remove all items from cart; sign out,VCST-5101; BL-CART-007 (currency-scoped),Reviewed
+[NETWORK] no 4xx/5xx",Two items show as ONE line (BL-CART-007 currency-scope violated — different-currency items incorrectly merged); badge shows 1 when 2 items expected; PTS item missing from cart after navigating away from loyalty catalog,Remove all items from cart; sign out,VCST-5101; BL-CART-007 (currency-scoped); Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/config/links/utils.ts (Mixed-Cart currency grouping); Docs: N/A — project-specific: Mixed Cart (VCST-5101),Reviewed
 CART-073,"No Apollo cache ""Missing field currencyCode"" error in console on cart mutations (Mixed Cart)",Cart > Mixed Cart,Low,BL-CART-007,ECL-7.3,"[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
 [PRE:RESET_CART]
-Theme vc-theme-b2b-vue-2.51.0-pr-2310+. Client-side regression guard for the VCST-5101 cache-write finding. RED until vc-frontend includes currencyCode in the cart mutation cache write.",front_url={{FRONT_URL}}; loyalty_user=@td(LOYALTY_VIP_USER.email),"[NAV] {{FRONT_URL}}/catalog
+Theme vc-theme-b2b-vue-2.51.0-pr-2310+. Client-side regression guard for the VCST-5101 cache-write finding. The VCST-5238 Apollo cache-write fix has landed (vc-frontend PR #2333, verified 2026-06-16); this is now a green regression guard, re-confirmed clean on 2026-08-06.",front_url={{FRONT_URL}}; loyalty_user=@td(LOYALTY_VIP_USER.email),"[NAV] {{FRONT_URL}}/catalog
 [WAIT] product grid loaded
 [ACT] add a standard USD product to cart (product-card Add to Cart)
 [WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
@@ -853,7 +860,7 @@ Theme vc-theme-b2b-vue-2.51.0-pr-2310+. Client-side regression guard for the VCS
 [ACT] open browser devtools console","[CONSOLE] no Apollo error containing ""Missing field 'currencyCode' while writing result"" (Apollo invariant 13) after any add-to-cart mutation
 [NETWORK] the cart mutation response includes items[].currencyCode populated (non-null) for both the USD and PTS add-to-cart requests","[NETWORK] cart mutation 200 with items[].currencyCode populated (backend confirmed clean)
 [CONSOLE] capture the exact Apollo invariant message if present
-[API] addItem mutation response errors[] is empty","Console logs ""Invariant Violation: Missing field 'currencyCode' while writing result"" (Apollo error 13) on add-to-cart; fires on every cart mutation incl. USD-only adds.",Clear cart; sign out,VCST-5101 (client-side finding); reports/bugs/BUG-mixed-cart-currencyCode-apollo-cache-write.md. Definitive coverage = vc-frontend vitest unit test on the cart mutation cache write; this browser guard is the regression backstop.,Draft
+[API] addItem mutation response errors[] is empty","Console logs ""Invariant Violation: Missing field 'currencyCode' while writing result"" (Apollo error 13) on add-to-cart; fires on every cart mutation incl. USD-only adds.",Clear cart; sign out,"VCST-5101 (client-side finding); reports/bugs/BUG-mixed-cart-currencyCode-apollo-cache-write.md. Definitive coverage = vc-frontend vitest unit test on the cart mutation cache write; this browser guard is the regression backstop.; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/config/links/utils.ts (handleOptimisticResponseUpdateCartQuantity, fixed PR #2333); Docs: N/A — project-specific: Mixed Cart (VCST-5101)",Draft
 CART-090,Add to Cart - Out-of-Stock Product Is Blocked (Negative),Cart > Add,High,"BL-CART-001, BL-CART-002",ECL-2.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: permanent out-of-stock fixture @td(PROD_OOS.sku) (inventory=0) exists in catalog and B2B virtual catalog. KNOWN TEST-DATA GAP: the alias's recorded product GUID/route 404s — use the live-confirmed fixture path {{FRONT_URL}}/seed-test-fixtures/agent-test-oos-fixture instead (see test-data findings). User logged in. NOTE (live-observed): the OOS PDP replaces the quantity stepper entirely with a 'Stock alert' button and shows no 'Out of stock' text anywhere; a listing/search card for this SKU retains a stepper but with '+' disabled — the 'Show in stock' filter ships CHECKED and will hide this fixture from listings unless cleared.","url={{FRONT_URL}}/seed-test-fixtures/agent-test-oos-fixture
@@ -864,15 +871,14 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/seed-test-fixtures/
 [NAV] navigate to a category/search listing that surfaces this SKU
 [ACT] if the 'Show in stock' filter is checked, uncheck it so the OOS fixture is not hidden from the listing
 [WAIT] wait for the listing to refresh with the filter cleared
-[ASSERT] verify the quantity stepper IS present on the listing card for this SKU, with its '+' (Increase quantity) control disabled
-[ACT] attempt to click the disabled '+' (Increase quantity) control on the listing card
-[WAIT] wait 2s for any mutation attempt to settle","[DOM] 'Stock alert' button is present on the PDP in place of the quantity stepper for the out-of-stock product {OBSERVED}
+[ASSERT] verify the listing/search card for this SKU shows the same 'Stock alert' button as the PDP (no enabled '+' control exists to click)
+[WAIT] wait 2s to confirm no add-to-cart mutation can be triggered from the card","[DOM] 'Stock alert' button is present on the PDP in place of the quantity stepper for the out-of-stock product {OBSERVED}
 [DOM] no 'Out of stock' text is rendered anywhere on the OOS PDP {OBSERVED}
-[DOM] on a listing/search card for this SKU, the quantity stepper is present with its '+' (Increase quantity) control disabled {OBSERVED}
+[DOM] on a listing/search card for this SKU, the same 'Stock alert' button as the PDP is shown in place of the quantity stepper (shared QuantityControl keyed on is-in-stock=false) — no enabled '+' control exists {OBSERVED} (2026-08-05)
 [STATE] cart badge count unchanged after the attempted add from the listing card {BL}
 [STATE] no line item for @td(PROD_OOS.sku) exists in cart after the attempt {BL}","[API] if an addItem mutation somehow fires from the disabled listing-card control, response errors[] is non-empty with a stock/availability error — per BL-CART-001 reject-only, no auto-cap
 [CONSOLE] no unhandled JS errors on the blocked-add attempt
-[NETWORK] no 4xx/5xx (a validation rejection is an in-band GraphQL error, not an HTTP failure)",quantity stepper (rather than 'Stock alert' button) shown on the OOS PDP; 'Out of stock' text rendered on the PDP; listing-card '+' control enabled and clickable for an out-of-stock SKU; cart badge increments; a line item for the OOS SKU appears in cart; addItem mutation returns errors[] empty (silent success) for an out-of-stock product,none (no state change expected),Coverage Gap Analysis,Draft
+[NETWORK] no 4xx/5xx (a validation rejection is an in-band GraphQL error, not an HTTP failure)",quantity stepper (rather than 'Stock alert' button) shown on the OOS PDP; 'Out of stock' text rendered on the PDP; listing-card '+' control enabled and clickable for an out-of-stock SKU; cart badge increments; a line item for the OOS SKU appears in cart; addItem mutation returns errors[] empty (silent success) for an out-of-stock product,none (no state change expected),"Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart/components/add-to-cart.vue + product-card-recently-browsed.vue (shared QuantityControl, is-in-stock) + VirtoCommerce/vc-module-x-cart CartLineItemValidator (ProductAvailableQuantityError, reject-only); Docs: StorefrontUserGuide - Shopping / back-in-stock notifications",Draft
 CART-091,Cart Calculations - Subtotal Rounding Consistent Across Multiple Fractional-Cent Lines (Boundary),Cart > Calculations,High,"BL-PRICE-003, BL-CART-003",ECL-4.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Design Technique: Boundary Value Analysis (subtotal = sum of line totals across 3+ distinct line items, guarding against a per-line-vs-aggregate summation error). KNOWN TEST-DATA GAP: every available fixture is priced at exact whole/half cents, so unit×qty never invokes true sub-cent rounding — per-line-vs-aggregate ROUNDING DRIFT (BL-PRICE-008) is structurally 0 here, not observably exercised; a genuine rounding-drift boundary needs a fixture priced to 3+ decimals or a %-based promotion yielding a sub-cent result (test-data gap, not covered by this case). {{TEST_SKU}} is a variation SKU of a 6-variation flannel shirt — it requires an explicit Color + Fabric + Size selection before it can be added; it cannot be added directly by SKU alone.","url={{FRONT_URL}}/cart
@@ -896,41 +902,41 @@ primary_sku={{TEST_SKU}}","[NAV] navigate to {{FRONT_URL}}
 [FORMAT] every monetary value (unit price, line total, subtotal) displays exactly 2 decimal places {OBSERVED}","[API] getCart query subTotal.amount equals the sum of items[].listPrice.amount × quantity (rounded per line) to 2 decimal places
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx on cart fetch/recalculation
-[API] addItem mutation response errors[] is empty (all three adds)",displayed subtotal differs from the sum of rounded line totals by ≥$0.01; a line total is rounded differently in the cart vs the PDP price shown before add; more than 2 decimal places rendered anywhere,Remove all added items from cart,Coverage Gap Analysis,Draft
+[API] addItem mutation response errors[] is empty (all three adds)",displayed subtotal differs from the sum of rounded line totals by ≥$0.01; a line total is rounded differently in the cart vs the PDP price shown before add; more than 2 decimal places rendered anywhere,Remove all added items from cart,Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-module-cart/.../DefaultShoppingCartTotalsCalculator.cs (CalculateLineItemTotals — aggregate rounds once); Docs: N/A — implementation-detail,Draft
 CART-092,Cart Calculations - Fixed-Amount Coupon Cannot Drive Cart Total Below Zero (Negative),Cart > Calculations,High,"BL-CART-003, BL-PRICE-008","ECL-4.1, ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in. Fixed-amount coupon @td(COUPON_FIXED5.code) is active and applicable. Design Technique: Error Guessing. KNOWN TEST-DATA GAP: the cheapest available AGENT-TEST/{{TEST_SKU}} fixture is ~$9.99, so a $5 fixed discount can never actually drive the subtotal below zero with current fixtures — the true 'total floors at zero' boundary is UNREACHABLE and is not exercised here (see test-data findings; needs a sub-$5 fixture). This case instead verifies the reachable invariant: the discount never exceeds the subtotal.","url={{FRONT_URL}}/cart
+User logged in. Fixed-amount coupon @td(COUPON_FIXED5.code) is active and applicable. Design Technique: Error Guessing. The zero-floor boundary IS reachable via @td(PROD_SUB_FIVE.sku) ($3.49, below the $5 fixed coupon): the discount caps at the subtotal so the total floors at exactly $0.00 and never goes negative (live-confirmed 2026-08-06).","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 coupon_code=@td(COUPON_FIXED5.code)","[NAV] navigate to {{FRONT_URL}}
-[ACT] add a single low-quantity (qty=1) unit of {{TEST_SKU}} to cart
+[ACT] add a single low-quantity (qty=1) unit of @td(PROD_SUB_FIVE.sku) to cart
 [WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [NAV] navigate to {{FRONT_URL}}/cart
 [ACT] enter @td(COUPON_FIXED5.code) in the Custom code card's 'Enter custom code' input
 [ACT] click the 'Apply coupon @td(COUPON_FIXED5.code)' button (dynamic name — reads just 'Apply coupon' while the input is empty)
 [WAIT] wait for the coupon mutation to settle and card/discount state to update","[MATH] cart total after discount = subtotal − discountTotal, and discountTotal <= subtotal (the discount is never allowed to exceed the subtotal it is applied against) {BL}
-[STATE] cart total after discount is >= $0.00 for every reachable combination of current fixtures — the true below-subtotal-exceeding-discount boundary is UNREACHABLE with existing test data and is not verified by this case {HYPOTHESIS}","[API] addCoupon mutation response errors[] is empty
+[STATE] cart total after discount floors at exactly $0.00 for @td(PROD_SUB_FIVE.sku) + @td(COUPON_FIXED5.code) — discountTotal caps at the subtotal and never exceeds it {OBSERVED}","[API] addCoupon mutation response errors[] is empty
 [API] cart.totals.discountTotal.amount <= cart.subTotal.amount (never applies more discount than the subtotal available)
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",discountTotal exceeds subTotal; console error/NaN rendered for the total; cart total displayed as negative on any reachable fixture combination,Click trash icon to remove the coupon; remove item from cart,Coverage Gap Analysis,Draft
+[NETWORK] no 4xx/5xx",discountTotal exceeds subTotal; console error/NaN rendered for the total; cart total displayed as negative on any reachable fixture combination,Click trash icon to remove the coupon; remove item from cart,Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-module-marketing/src/VirtoCommerce.MarketingModule.Core/PromotionRewards/AmountBasedReward.cs (GetTotalAmount workMaxLimit); Docs: N/A — implementation-detail,Draft
 CART-093,Currency Switch - Applied Coupon Discount Recalculates or Is Cleanly Invalidated (Negative),Cart > Currency,High,"BL-CART-004, BL-CART-003","ECL-4.1, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-BLOCKED — KNOWN TEST-DATA GAP: store supports at least two currencies (e.g., USD and EUR), but every AGENT-TEST/{{TEST_SKU}} fixture is USD-only — switching to EUR collapses their lines to €0.00 with a disabled stepper, which would invalidate any coupon for the wrong reason (no EUR price, not a coupon/currency-recalc defect). This case requires a genuinely multi-currency-priced catalog product (live-discover one with a confirmed non-zero price in BOTH currencies — do NOT substitute an AGENT-TEST fixture). Coupon @td(COUPON_10PCT.code) is applicable in the primary (USD) currency.","url={{FRONT_URL}}/cart
+Store supports at least two currencies (USD and EUR). Use @td(PROD_MULTI_CURRENCY.sku), a catalog product with confirmed non-zero prices in both USD and EUR (do NOT use a USD-only AGENT-TEST fixture — those collapse to a zero price on switch). Coupon @td(COUPON_10PCT.code) is applicable in the primary (USD) currency.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}
-[ACT] live-discover a catalog product with a confirmed non-zero price in both the primary currency (USD) and the second supported currency (EUR); add it to cart — do NOT use {{TEST_SKU}} or any AGENT-TEST-prefixed fixture
+[ACT] add @td(PROD_MULTI_CURRENCY.sku) to cart
 [WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [NAV] navigate to {{FRONT_URL}}/cart
 [ACT] apply @td(COUPON_10PCT.code) via the 'Discount & coupons' widget
 [WAIT] wait for the coupon mutation to settle and card/discount state to update
 [ACT] switch currency to the second supported currency
-[WAIT] wait for cart page to reload/recalculate","[STATE] after the currency switch, the coupon is EITHER still applied with the discount recalculated in the new currency, OR cleanly removed with the applied-coupon card returning to its default (not-applied) state — never left showing a stale USD discount amount alongside new-currency prices {HYPOTHESIS}
+[WAIT] wait for cart page to reload/recalculate","[STATE] after the currency switch, the coupon is EITHER still applied with the discount recalculated in the new currency, OR cleanly removed with the applied-coupon card returning to its default (not-applied) state — never left showing a stale USD discount amount alongside new-currency prices {OBSERVED}
 [DOM] no line in order summary shows a discount amount in a different currency symbol than the rest of the summary — all symbols visible and consistent {BL}","[API] getCart query after currency switch: cart.coupons[] state is internally consistent with the discount amount shown (either both reflect the new currency, or coupons[] is empty)
 [CONSOLE] no unexpected JS errors during currency recalculation (a transient 'ApolloError: NetworkError when attempting to fetch resource' on the currency-switch request is a known intermittent platform issue, not a case failure, if the retry recovers)
 [NETWORK] no persistent 4xx/5xx (a single transient network fetch failure that self-recovers on retry is not a failure)
 [API] addCoupon mutation response errors[] is empty
-[API] changeCartCurrency mutation response errors[] is empty","discount amount still shown in the OLD currency's numeric value after switch (stale, un-recalculated); mixed currency symbols between the discount line and other order-summary lines; a PERSISTENT (non-recovering) console/network error during the switch; case run against an AGENT-TEST fixture instead of a genuinely multi-currency-priced product (invalidates the result)",Switch currency back to original; remove coupon and items from cart,Coverage Gap Analysis,Draft
+[API] changeCartCurrency mutation response errors[] is empty","discount amount still shown in the OLD currency's numeric value after switch (stale, un-recalculated); mixed currency symbols between the discount line and other order-summary lines; a PERSISTENT (non-recovering) console/network error during the switch; case run against an AGENT-TEST fixture instead of a genuinely multi-currency-priced product (invalidates the result)",Switch currency back to original; remove coupon and items from cart,Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartCurrency/changeCartCurrencyMutation.graphql (coupon cleanly reverts on switch); Docs: N/A — implementation-detail,Draft
 CART-094,Currency Switch - Empty Cart Switch Does Not Error (Boundary),Cart > Currency,Medium,BL-CART-004,"ECL-4.1, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; cart is empty (guaranteed by [PRE:RESET_CART]); store supports at least two currencies. Design Technique: Boundary Value Analysis (zero-item edge of the currency-switch recalculation).","url={{FRONT_URL}}/cart
@@ -943,7 +949,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [DOM] no error banner or console-visible failure appears from switching currency on an empty cart {OBSERVED}
 [STATE] the new currency selection (""Currency: EUR"") persists for the next add-to-cart {OBSERVED}; whether subsequent adds actually price in EUR is NOT verified here — every AGENT-TEST/{{TEST_SKU}} fixture is USD-only and has no EUR price list, so this sub-claim remains {HYPOTHESIS} pending a multi-currency-priced fixture (see test-data findings)","[API] getCart (or cart-creation) query for the empty cart in the new currency returns errors[] empty
 [CONSOLE] no unexpected JS errors during the switch (a transient 'ApolloError: NetworkError when attempting to fetch resource' that self-recovers on retry is a known intermittent platform issue, not a case failure)
-[NETWORK] no 4xx/5xx",switching currency on an empty cart throws a JS error or blank/broken page; empty-cart message disappears without a proper empty state; currency selection reverts after the switch,Switch currency back to original,Coverage Gap Analysis,Draft
+[NETWORK] no 4xx/5xx",switching currency on an empty cart throws a JS error or blank/broken page; empty-cart message disappears without a proper empty state; currency selection reverts after the switch,Switch currency back to original,Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartCurrency/changeCartCurrencyMutation.graphql (empty-cart switch); Docs: N/A — implementation-detail,Draft
 CART-095,"Coupons Sidebar - Minimum-Order Threshold Coupon Rejected Below Threshold, Applies At/Above It (Boundary)",Cart > Coupons Sidebar,Critical,BL-CART-003,"ECL-4.1, ECL-14.1, ECL-2.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in. Threshold coupon @td(COUPON_THRESH50.code) exists and is active — 10% off cart when subtotal >= $50 (test-data/promotions/coupons.csv COU-021). Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: Boundary Value Analysis (subtotal at, just below, and above the $50 threshold).","url={{FRONT_URL}}/cart
@@ -955,7 +961,7 @@ coupon_code=@td(COUPON_THRESH50.code)","[NAV] navigate to {{FRONT_URL}}
 [NAV] navigate to {{FRONT_URL}}/cart
 [ACT] enter @td(COUPON_THRESH50.code) in the Custom code card's 'Enter custom code' input
 [ACT] click the 'Apply coupon @td(COUPON_THRESH50.code)' button on the Custom code card (dynamic name — reads just 'Apply coupon' while the input is empty)
-[WAIT] wait for the coupon mutation to settle and card/error state to update
+[WAIT] wait for the coupon mutation to settle and card/error state to update — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)
 [ASSERT] verify the below-threshold apply attempt is rejected
 [ACT] increase quantity (or add another unit) so the subtotal reaches or exceeds $50
 [WAIT] wait for totals to recalculate
@@ -963,10 +969,11 @@ coupon_code=@td(COUPON_THRESH50.code)","[NAV] navigate to {{FRONT_URL}}
 [WAIT] wait for the cart page to reload
 [ACT] enter @td(COUPON_THRESH50.code) in the Custom code card's 'Enter custom code' input again
 [ACT] click the 'Apply coupon @td(COUPON_THRESH50.code)' button on the Custom code card
-[WAIT] wait for the coupon mutation to settle and card/discount state to update","[DOM] below $50: the Custom code card shows a red icon and the error text ""This code is not valid"" — the card border stays dashed (the DEFAULT state, not an error signal) {OBSERVED}
+[WAIT] wait for the coupon mutation to settle and card/discount state to update","[API] below $50: validateCoupon returns false and NO addCoupon is sent — the discount stays $0.00 and the cart total is unchanged (live-verified on theme 2.55.0-pr-2417, 2026-08-06) {OBSERVED}
+[DOM] below $50 error UI is BUILD-GATED (VCST-5518 / vc-frontend PR #2422): on theme >= 2.55.0-pr-2422 the Custom code card shows the ""This code is not valid"" error (red icon + text) auto-clearing after COUPON_ERROR_TIMEOUT=7000ms — capture it immediately; on the deployed pr-2417 build the invalid code fails SILENTLY with no error UI; the card border stays dashed (DEFAULT state, not an error signal) {SPEC}
 [DOM] below $50: the Discount row in order summary remains at $0.00 — it is always rendered, it is not absent {OBSERVED}
 [DOM] at/above $50: the Custom code card transitions to a solid green border, green check icon, and 'Remove coupon' trash icon {OBSERVED}
 [MATH] at/above $50: discount = 10% of the subtotal (e.g. subtotal $59.96 → discount −$6.00); order total = subtotal − discount + shipping + tax, tax computed on the discounted base (e.g. 59.96 − 6.00 + 0.00 + 10.79 = 64.75), per BL-CHK-006 {OBSERVED}","[API] addCoupon mutation below threshold: cart.coupons[].isAppliedSuccessfully = false OR errors[] non-empty with a threshold-not-met reason
 [API] addCoupon mutation at/above threshold: errors[] empty and cart.coupons[0].isAppliedSuccessfully = true
 [CONSOLE] no JS errors
-[NETWORK] no 5xx",coupon applies below the $50 threshold (min-order rule not enforced); Discount row disappears entirely instead of showing $0.00 below threshold; dashed border relied on as an error signal (it is also the default state); coupon still rejected once subtotal reaches/exceeds $50; discount calculated against list price instead of already-discounted price; order total does not match subtotal − discount + tax (tax on discounted base),Click trash icon to remove the coupon after test; restore cart quantity,Coverage Gap Analysis,Draft
+[NETWORK] no 5xx",coupon applies below the $50 threshold (min-order rule not enforced); Discount row disappears entirely instead of showing $0.00 below threshold; dashed border relied on as an error signal (it is also the default state); coupon still rejected once subtotal reaches/exceeds $50; discount calculated against list price instead of already-discounted price; order total does not match subtotal − discount + tax (tax on discounted base),Click trash icon to remove the coupon after test; restore cart quantity,"Coverage Gap Analysis; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend PR #2422 (VCST-5518) useCoupon.ts applyCoupon — validate-before-remove + COUPON_ERROR_TIMEOUT=7000. LIVE 2026-08-06 (theme 2.55.0-pr-2417, #2422 NOT deployed): below-threshold sends validateCoupon->false with NO addCoupon and fails SILENTLY (no error UI); at/above threshold applies 10% with tax-on-discounted-base. Error message + 7s auto-clear are #2422-gated (re-verify once >=pr-2422 deploys); Docs: N/A — implementation-detail",Draft

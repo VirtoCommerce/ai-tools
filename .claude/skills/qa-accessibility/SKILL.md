@@ -33,7 +33,7 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
    - Component name → delegate to `/qa-storybook` instead
    - Full audit → P0 routes: `/`, `/sign-in`, `/search`, PDP, `/cart`, `/checkout`, `/account/orders`. Skip-link and consent banner must be tested first (they affect every page).
 
-2. **Theme scope:** Run a11y assertions only on the **Coffee** theme — it's the only WCAG-compliant theme in this project (memory: `feedback_a11y_coffee_only`). Capture other themes for visual diff, not a11y gating.
+2. **Theme scope:** Run a11y assertions on the **Coffee** *and* **Red** presets — those are this project's two WCAG-gated themes (memory: `feedback_a11y_gated_themes`). Red joined the set with the Red Theme 4 release (VCST-4226) once VCST-5555 cleared the UI-kit violations; verify it under `themePreset:red`. Capture the remaining presets for visual diff only, not a11y gating — `purple-pink` and `watermelon` still fail AA on the solid-accent token and would produce known-unsupported failures.
 
 3. **Delegate to ui-ux-expert** via Task tool (`subagent_type: ui-ux-expert`):
    - Pass scope, URL(s), and reference to `wcag-accessibility-checklist.md`

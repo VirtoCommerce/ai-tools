@@ -3,9 +3,13 @@
 Reference for **Dimension 11** of `/qa-review-tests` (the `--triangulate` flag). The skill's
 SKILL.md holds the flow; this file holds the judgment rules the triangulation runs against.
 
-Direct sibling of `.claude/skills/qa-review-bl/bl-audit-criteria.md` — same three axes, same
-evidence bar, same waiver logic. The difference is the **subject**: `/qa-review-bl` triangulates a
-`BL-*` invariant in the oracle; this triangulates **an assertion in a regression test case**.
+Direct sibling of `.claude/skills/qa-review-oracles/bl-audit-criteria.md` and
+`ecl-audit-criteria.md` — same three axes, same evidence bar, same waiver logic. The difference is
+the **subject**: `/qa-review-oracles` triangulates an entry in an *oracle* (a `BL-*` invariant or an
+`ECL-<n>.<m>` section); this triangulates **an assertion in a regression test case**. That is why
+Dimension 11 was deliberately NOT folded into the merged oracles skill: its write target is a CSV,
+not an oracle, and the two write disciplines are opposites (this one edits suites and never touches
+an oracle; that one edits oracles and never touches a suite).
 
 ## 0. Why this dimension exists
 

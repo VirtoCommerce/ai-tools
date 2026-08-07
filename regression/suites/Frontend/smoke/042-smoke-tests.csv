@@ -275,6 +275,7 @@ SMK-017,Account — Address Management (VCST-4802 Regression),Smoke > Addresses,
 [ACT] click 'Add address' or '+ New address'
 [WAIT] address form opens (regression: form must open without blank page or error — VCST-4802)
 [ACT] fill address fields: @td(ADDR_NY.first_name), @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.state), @td(ADDR_NY.zip), @td(ADDR_NY.country)
+[NOTE] use the @td(ADDR_NY.*) values verbatim — never substitute an improvised or run-scoped name; first/last name must be letters only, since the server name pattern rejects digits (VCST-5690)
 [ACT] click 'Save' or 'Add address'
 [WAIT] success toast or address appears in list","[DOM] 'Addresses' link visible in dashboard sidebar
 [DOM] address list page renders visible content (not a blank screen) and no JS error thrown (VCST-4802)
@@ -418,6 +419,7 @@ Personal account user logged in as {{USER_EMAIL}}. Regression checks: VCST-4803 
 [WAIT] profile page loads
 [ACT] fill 'First name': 'SmokeTest'
 [ACT] fill 'Last name': 'Runner'
+[NOTE] use exactly 'SmokeTest' / 'Runner' — do not append a digit or run id; the server name pattern rejects digits, which fails the save for a non-XSS reason (VCST-5690)
 [ACT] click 'Save'
 [WAIT] success toast or page updates
 [ASSERT] saved values show 'SmokeTest Runner' in profile (no XSS execution — VCST-4803)

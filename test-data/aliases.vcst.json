@@ -856,5 +856,10 @@
   "SR_STATS_CART_WEST": {
     "id": "f9e5b334-e495-446e-a6b7-4e6c4ae575fc",
     "name": "AGENT-TEST-SR-CART-WEST"
+  },
+  "LOYALTY_ZERO_USER": {
+    "memberId": "",
+    "securityAccountId": "",
+    "email": ""
   }
 }

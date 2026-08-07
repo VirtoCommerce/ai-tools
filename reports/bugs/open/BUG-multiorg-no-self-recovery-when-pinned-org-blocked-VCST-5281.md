@@ -61,3 +61,45 @@ so no session is ever created.
   blocked, fall through to another non-blocking org or surface the switcher rather than a hard refusal.
 - **Routing confidence:** HIGH — reproduced via UI + cross-checked at the API layer for both cases.
 - Do NOT auto-merge — human review required.
+
+## Verification 2026-08-05 — DOES NOT REPRODUCE (ready to move to `fixed/`)
+
+**Env:** vcst-qa @ Platform **3.1055.0** · Customer **3.1021.0-pr-312-3aa7** · Theme
+**2.55.0-pr-2412-7bfd** (contains `#2399`; `vc-module-customer#312` merged 2026-08-04 12:02Z).
+
+**The premise no longer occurs: a multi-org user is never pinned to a blocked org, so there is nothing
+to recover from.** `#312`'s `OrganizationAccessResolver` resolves the active org over *accessible* orgs
+only — `NOT IsCurrentlyLocked AND ResolveEffectiveStatus(...) ∉ {Invited, Rejected, Deleted}`.
+
+Probed with `MULTI_ORG_TF_BR`, its **currently-pinned** org (TechFlow) set to `Invited` and BuildRight
+left Approved — i.e. the §1 shape, blocked-org-first with a healthy fallback:
+
+| `/connect/token` password grant | HTTP | resolved `organization_id` |
+|---|---|---|
+| no `organization_id` (server resolves) | **200** | **BuildRight** — the healthy org |
+| `organization_id` = TechFlow (blocked) | **200** | **BuildRight** (silently substituted) |
+| `organization_id` = BuildRight | 200 | BuildRight |
+
+Storefront control (both orgs healthy): sign-in lands on **`/` (200)** with the active org rendered in the
+header and the **`/account/dashboard` link present** — the page §1 reported as unreachable.
+
+**Axis coverage:** the *status* axis is verified above. The *lock* axis (§1's original condition, TechFlow
+`isLocked`) was separately observed on this same build during the VCST-5281 BL audit: a multi-org grant
+naming a **locked** org likewise returns 200 on a fallback org. Both axes are filtered by the same
+`accessible` predicate.
+
+**Consequence for the oracle:** the refusal fires **only when no accessible org remains** — which is why
+`BL-AUTH-012`'s `Verify` step was corrected on 2026-08-05; asserting an unconditional HTTP 400 for a
+locked org was a false FAIL for every multi-org fixture. New invariants `BL-AUTH-015` / `BL-AUTH-016`
+record the resolution chain and the single-code, lock-first refusal.
+
+**Not closed here** — moving a P0 to `fixed/` is left to a human. Nothing in this verification contradicts
+the original finding *as recorded against `pr-312-2257`*; the behaviour changed with the merged fix.
+
+**Side finding (not this bug):** an explicit request for a blocked org returns **200 with a substituted
+org**, not a refusal — no `user_invitation_pending_in_organization`. Tracked as VCST-5281 comment item 8
+and `PROPOSED-BL-AUTH-017` in `reports/ba/bl-proposals-2026-08-04.md`; it is the deliberate fallback path,
+and whether silent substitution is intended is the open question there.
+
+Fixture `MULTI_ORG_TF_BR` was restored to its captured baseline (`Approved`, `isLocked=false`,
+`lockoutEnd=null`) and re-read to confirm.

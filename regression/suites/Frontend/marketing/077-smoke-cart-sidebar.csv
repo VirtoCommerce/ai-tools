@@ -52,7 +52,7 @@ couponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to cart page at {{FRONT_
 [STATE] Applied coupon indicator/badge cleared from sidebar
 [DOM] Preset coupon card for the removed coupon reappears or re-enables in the sidebar","[NETWORK] removeCoupon GraphQL mutation fires with couponCode, storeId, userId; mutation returns updated cart with discountTotal=0 for that coupon
 [CONSOLE] no JS errors during coupon removal","coupon remove button not visible or not clickable; cart total unchanged after removal; discount persists after removal (removeCoupon mutation not fired); cart shows 0 total after removal (over-correction); coupon card does not reappear in sidebar after removal","Navigate away from cart; ensure cart is empty or reset for next test","VCST-4896; VCST-4776; BL-CART-003. Live-validated 2026-07-21: applied ZUR10 (Discount -$50), removed via 'Remove coupon' -> RemoveCoupon errors:null, discountTotal $0, coupons:[], preset card re-enabled. Reviewed->Automated.","Automated"
-"CPN-SMK-057","Cart Page — Expired Coupon Not Shown in Sidebar Preset Cards","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-PRICE-002","ECL-09.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-SMK-057","Cart Page — Expired Coupon Not Shown in Sidebar Preset Cards","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-PRICE-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product added to cart
 - At least 1 EXPIRED coupon exists (endDate in the past)
@@ -75,7 +75,7 @@ activeCouponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to cart page at {{
 [STATE] If coupon input is shown, it is a manual code entry field, not preset cards from promotionCoupons
 [STATE] No data scope leak: authenticated promotionCoupons results not exposed to anonymous session","[NETWORK] promotionCoupons not called with a real userId for anonymous user; if called, userId parameter is absent or null
 [CONSOLE] no JS errors or auth-related GraphQL errors during anonymous cart view","preset coupon cards visible for anonymous user (data scope leak); promotionCoupons called with hardcoded or leaked userId for anonymous session; page shows 401/403 error instead of graceful no-cards state","No cleanup needed for anonymous session","VCST-4896; VCST-4776; BL-CART-003. Live-validated 2026-07-21: anonymous cart shows only the Custom-code manual field, no preset cards; GetPromotionCoupons never fired for the anonymous session; no 401/403; no scope leak. Reviewed->Automated.","Automated"
-"CPN-SMK-059","Cart Sidebar — Percentage Coupon Applied to Sale Price, Not List Price (BL-CART-003)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-003, BL-CHK-006","ECL-03.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-SMK-059","Cart Sidebar — Percentage Coupon Applied to Sale Price, Not List Price (BL-CART-003)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-003, BL-CHK-006","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Sale-price product PROD_SALE_SIMPLE seeded (SKU @td(PROD_SALE_SIMPLE.sku)=SALE-001, list @td(PROD_SALE_SIMPLE.listPrice)=29.99, sale @td(PROD_SALE_SIMPLE.salePrice)=19.99), linked into the B2B virtual catalog and in stock (npm run seed:products)
 - Genuine percentage coupon @td(COUPONS.percentageCode)=QA10OFF (@td(COUPONS.percentagePct)=10, i.e. 10% of cart subtotal) active + public. NOTE: QA10OFF is usually NOT among promotionCoupons(first:4) preset cards (late endDate) — apply it via the sidebar 'Custom code' entry field, NOT a preset card. Do NOT use ZUR10 (labelled 10% but applies a flat $50).","store={{FRONT_URL}}
@@ -97,7 +97,7 @@ pct=@td(COUPONS.percentagePct)","[NAV] {{FRONT_URL}}/search?q={{product_sku}} (o
 [STATE] AddCoupon response coupons[] contains {{couponCode}} with isAppliedSuccessfully=true; the discount base is the sale price, never the list price","[NETWORK] AddCoupon mutation fires with couponCode={{couponCode}}, storeId, userId; errors[]=[] (errors:null)
 [API] cart line actual/placed price == sale_price (19.99), listPrice == 29.99
 [CONSOLE] no JS errors during coupon application","coupon discount delta approx 3.00 (10% of list 29.99) instead of ~2.00 (10% of sale 19.99) — BL-CART-003 violation; cart line shows list price not sale; AddCoupon errors[] or isAppliedSuccessfully=false; 'Enter custom code' input not found in .coupons-section","Remove the applied coupon via 'Remove coupon'; empty the cart","VCST-4896; VCST-4776; BL-CART-003; ECL-03.1. 2026-07-21: unblocked — old PROD_VARIATION_PARENT_SALE (STD-002 EKJ-76373636) was deleted from vcst-qa; reseeded PROD_SALE_SIMPLE=SALE-001 (19.99/29.99) + genuine 10% QA10OFF (distinct from misconfigured flat-$50 ZUR10); apply via Custom-code field. Live-validated 2026-07-21 (Theme 2.54.0-pr-2386): SALE-001 line 19.99 (list 29.99); QA10OFF via Custom-code -> coupon discount ~2.00 (10% of SALE, not 3.00 of list), aggregate discountTotal 10->12, total 21.59, BL-CHK-006 ties out. Sale is modeled as list-subtotal + line discount, so assert the coupon's discounts[] delta not the aggregate. Reviewed->Automated.","Automated"
-"CPN-SMK-060","Cart Sidebar — Only Best Coupon Discount Applied When Multiple Applied (BL-CART-009 Radio Policy)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-009","ECL-03.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-SMK-060","Cart Sidebar — Only Best Coupon Discount Applied When Multiple Applied (BL-CART-009 Radio Policy)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-009","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product in cart
 - At least 2 different public coupon codes available in sidebar preset cards
@@ -135,7 +135,7 @@ coupon2=@td(COUPONS.fixedAmountCode)","[NAV] Navigate to cart page at {{FRONT_UR
 [ACT] fill coupon code input field with an invalid code: 'BOGUS-XYZ-REGRESSION-TEST'
 [WAIT] coupon code input reflects the typed value
 [ACT] click the 'Apply' button (custom coupon card apply button)
-[WAIT] coupon sidebar updates — error message appears below the input
+[WAIT] coupon sidebar updates — error message appears below the input — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)
 [ASSERT] browser_snapshot — capture the error state of the coupon card","[DOM] error message element <p class=""coupon-card__error""> is visible with text 'This code is not valid' or equivalent
 [DOM] the error <p> element has attribute role=""alert"" (WCAG 4.1.3 Status Messages — verified fix in PR #2303: '<p role=""alert"" class=""coupon-card__error"">{{error}}</p>')
 [STATE] the error element is not hidden (v-if renders the <p> when view === 'error' AND error is non-empty)","[CONSOLE] zero console errors during coupon apply attempt

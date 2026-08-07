@@ -1,0 +1,82 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"SD-001","Backend - BrandProfile Settings Exist, Are Public, and Round-Trip via Platform API","Structured Data > Backend","Medium","VCST-5536",,"Store {{STORE_ID}} exists; valid Platform API OAuth2 token available","url={{BACK_URL}}/api/stores/{{STORE_ID}}; settings group=Virto Commerce Frontend|Store Information","[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}} with a valid Authorization Bearer token
+[ASSERT] Locate the 'Virto Commerce Frontend|Store Information' settings group in the response Settings array
+[ASSERT] Confirm all 7 XFrontend.BrandProfile.* settings are present: Description, Tagline, LogoUrl, ShareImageUrl, SameAs, ContactPhone, FoundingDate
+[HTTP] PUT {{BACK_URL}}/api/stores with each of the 7 BrandProfile settings set to a valid test value (Description=a short brand description string; Tagline=a short slogan string; LogoUrl=a valid absolute https image URL; ShareImageUrl=a valid absolute https image URL; SameAs=two valid absolute https company-profile URLs separated by a newline; ContactPhone=a phone number including country code, e.g. +1-800-555-0100; FoundingDate=a valid ISO calendar date, e.g. 2010-05-14)
+[HTTP] Re-GET {{BACK_URL}}/api/stores/{{STORE_ID}}","[STATUS] Initial GET /api/stores/{id} returns HTTP 200
+[STATUS] PUT /api/stores returns HTTP 204
+[STATUS] Re-GET /api/stores/{id} returns HTTP 200
+[BODY] All 7 BrandProfile settings are present in the settings group, each nullable and flagged public (IsPublic/equivalent)
+[BODY] Re-GET response values for all 7 settings exactly match what was written in the PUT (SameAs preserved as the newline-separated string)","none - pure backend case","One or more of the 7 BrandProfile settings missing from the store settings group; setting not flagged public; PUT does not return 204; re-GET values differ from what was written","PUT the 7 BrandProfile settings back to their prior values (blank/null if none were configured before this test)","VCST-5536; Verified live localhost pr-2415/XFrontend#10 2026-08-05","Draft"
+"SD-002","Homepage Renders Exactly One JSON-LD OnlineStore Node With Correctly Mapped Fields","Structured Data > JSON-LD","High","VCST-5536",,"All 7 XFrontend.BrandProfile.* settings on {{STORE_ID}} are configured with valid values: Description, Tagline, LogoUrl, ShareImageUrl, SameAs (>=1 valid absolute http(s) URL), ContactPhone (with country code), FoundingDate (valid ISO date)","url={{FRONT_URL}}/","[NAV] Navigate to {{FRONT_URL}}/ (homepage)
+[WAIT] Wait for the page to fully render
+[ACT] Open browser DevTools
+[ACT] Locate the script[type='application/ld+json'] node(s) on the page
+[ASSERT] Count the application/ld+json script nodes present
+[ASSERT] Parse the JSON-LD content as JSON
+[ASSERT] Inspect @context, @type, @id, name, url, logo, description, slogan, sameAs, contactPoint, foundingDate fields","[DOM] Exactly one script[type='application/ld+json'] node is present on the homepage
+[FORMAT] The JSON-LD content parses as valid JSON with no errors
+[DOM] parsed JSON-LD @context equals 'https://schema.org' and @type equals 'OnlineStore'
+[DOM] parsed JSON-LD @id equals '<page origin>/#organization'
+[DOM] parsed JSON-LD name and url fields are present and non-empty
+[DOM] parsed JSON-LD logo field present and equal to the configured LogoUrl value
+[DOM] parsed JSON-LD description field present and equal to the configured Description value
+[DOM] parsed JSON-LD slogan field present and equal to the configured Tagline value
+[DOM] parsed JSON-LD sameAs array present and containing the configured SameAs URL(s)
+[DOM] parsed JSON-LD contactPoint present with @type 'ContactPoint', telephone equal to the configured ContactPhone, and contactType 'Customer Service'
+[DOM] parsed JSON-LD foundingDate field present and equal to the configured FoundingDate value","[NETWORK] GET {{FRONT_URL}}/ returns HTTP 200
+[CONSOLE] no JSON parse errors from structured data / no TypeError","JSON-LD script node absent from the homepage; more than one JSON-LD OnlineStore node present; any mapped field (logo/description/slogan/sameAs/contactPoint/foundingDate) missing or not matching the configured BrandProfile setting; JSON parse error on the ld+json content","none - read-only verification against settings configured in SD-001","VCST-5536; Verified live localhost pr-2415/XFrontend#10 2026-08-05","Draft"
+"SD-003","Site-Wide OpenGraph Tags Present on Homepage With og:image Sourced From ShareImageUrl","Structured Data > OpenGraph","Medium","VCST-5536",,"XFrontend.BrandProfile.ShareImageUrl (and the other BrandProfile settings) on {{STORE_ID}} configured with valid values, as in SD-002","url={{FRONT_URL}}/","[NAV] Navigate to {{FRONT_URL}}/ (homepage)
+[WAIT] Wait for the page to fully render
+[ACT] Open browser DevTools Elements panel
+[ACT] Inspect the <head> section
+[ASSERT] Locate og:site_name, og:type, og:url, og:image meta tags
+[ASSERT] Locate og:title and og:description meta tags (page/CMS-owned, not asserted against BrandProfile values)","[DOM] meta[property=og:site_name] is present and non-empty
+[DOM] meta[property=og:type] is present with content=website
+[DOM] meta[property=og:url] is present and matches the current page URL/origin
+[DOM] meta[property=og:image] is present with content equal to the configured ShareImageUrl value
+[DOM] meta[property=og:title] and meta[property=og:description] are present (values are page-owned and may legitimately differ from BrandProfile Tagline/Description - do not assert equality, that override is by design)","[NETWORK] GET {{FRONT_URL}}/ returns HTTP 200
+[CONSOLE] no console errors related to meta tag rendering","og:image missing or not sourced from ShareImageUrl; og:type not equal to website; og:site_name or og:url missing; test incorrectly flags og:title/og:description not matching brand Tagline/Description (that mismatch is by design, not a defect)","none","VCST-5536; Verified live localhost pr-2415/XFrontend#10 2026-08-05","Draft"
+"SD-004","JSON-LD sameAs Validation - Relative Path, Non-HTTP(S) Scheme, and Duplicates Dropped","Structured Data > Validation","Medium","VCST-5536",,"Other 6 BrandProfile settings on {{STORE_ID}} remain valid (as in SD-002); this case temporarily overrides only SameAs","SameAs input list (5 entries, one per line): a valid absolute https company-profile URL; the SAME URL repeated (duplicate); a relative path /about-us; a non-http(s) scheme URL ftp://example.com/profile; a second, different valid absolute https company-profile URL","[SETUP] PUT {{BACK_URL}}/api/stores with XFrontend.BrandProfile.SameAs on {{STORE_ID}} set to the 5-entry bad list described in Test_Data
+[NAV] Navigate to {{FRONT_URL}}/ (homepage)
+[WAIT] Wait for the page to fully render
+[ACT] Open browser DevTools
+[ACT] Locate the script[type='application/ld+json'] node
+[ASSERT] Parse the sameAs array from the JSON-LD content","[DOM] parsed JSON-LD sameAs array present and containing exactly the 2 distinct valid absolute http(s) URLs from the input, deduplicated
+[DOM] parsed JSON-LD sameAs array does not contain the relative path '/about-us'
+[DOM] parsed JSON-LD sameAs array does not contain the 'ftp://example.com/profile' URL
+[DOM] parsed JSON-LD sameAs array present with no duplicate entries
+[FORMAT] The JSON-LD content remains valid JSON despite the bad input","[NETWORK] GET {{FRONT_URL}}/ returns HTTP 200
+[CONSOLE] no JSON parse errors from structured data / no TypeError","sameAs includes the relative path or the ftp:// URL; duplicate entries not collapsed; the JSON-LD node is missing entirely or malformed; sameAs array is empty even though valid URLs were present in the input","PUT XFrontend.BrandProfile.SameAs on {{STORE_ID}} back to its valid pre-test value (the value configured in SD-002)","VCST-5536; Verified live localhost pr-2415/XFrontend#10 2026-08-05","Draft"
+"SD-005","JSON-LD contactPoint Omitted When ContactPhone Lacks Country Code or Has an Extension","Structured Data > Validation","Medium","VCST-5536",,"Other 6 BrandProfile settings on {{STORE_ID}} remain valid (as in SD-002); this case temporarily overrides only ContactPhone","ContactPhone=(800) 555-1234 ext. 200 (no country code, includes an extension)","[SETUP] PUT {{BACK_URL}}/api/stores with XFrontend.BrandProfile.ContactPhone on {{STORE_ID}} set to (800) 555-1234 ext. 200
+[NAV] Navigate to {{FRONT_URL}}/ (homepage)
+[WAIT] Wait for the page to fully render
+[ACT] Open browser DevTools
+[ACT] Locate the script[type='application/ld+json'] node
+[ASSERT] Parse the JSON-LD content and check for the contactPoint key","[DOM] parsed JSON-LD contactPoint key is absent from the object (not present as null or empty - omitted)
+[DOM] parsed JSON-LD all other fields (name, url, logo, description, slogan, sameAs, foundingDate) remain present and unaffected
+[FORMAT] The JSON-LD content remains valid JSON","[NETWORK] GET {{FRONT_URL}}/ returns HTTP 200
+[CONSOLE] no JSON parse errors from structured data / no TypeError","contactPoint is present in the JSON-LD despite the invalid phone value (as null, an empty object, or the raw invalid value); unrelated fields are dropped as a side effect of the invalid ContactPhone","PUT XFrontend.BrandProfile.ContactPhone on {{STORE_ID}} back to its valid pre-test value (the value configured in SD-002, e.g. +1-800-555-0100)","VCST-5536; Verified live localhost pr-2415/XFrontend#10 2026-08-05","Draft"
+"SD-006","JSON-LD foundingDate Omitted When Value Is Not a Valid Calendar Date","Structured Data > Validation","Medium","VCST-5536",,"Other 6 BrandProfile settings on {{STORE_ID}} remain valid (as in SD-002); this case temporarily overrides only FoundingDate","FoundingDate=2026-02-30 (February 30th does not exist on any calendar)","[SETUP] PUT {{BACK_URL}}/api/stores with XFrontend.BrandProfile.FoundingDate on {{STORE_ID}} set to 2026-02-30
+[NAV] Navigate to {{FRONT_URL}}/ (homepage)
+[WAIT] Wait for the page to fully render
+[ACT] Open browser DevTools
+[ACT] Locate the script[type='application/ld+json'] node
+[ASSERT] Parse the JSON-LD content and check for the foundingDate key","[DOM] parsed JSON-LD foundingDate key is absent from the object
+[DOM] parsed JSON-LD all other fields remain present and unaffected
+[FORMAT] The JSON-LD content remains valid JSON","[NETWORK] GET {{FRONT_URL}}/ returns HTTP 200
+[CONSOLE] no JSON parse errors from structured data / no TypeError","foundingDate is present in the JSON-LD despite the invalid calendar date; unrelated fields are dropped as a side effect of the invalid FoundingDate","PUT XFrontend.BrandProfile.FoundingDate on {{STORE_ID}} back to its valid pre-test value (the value configured in SD-002, e.g. 2010-05-14)","VCST-5536; Verified live localhost pr-2415/XFrontend#10 2026-08-05","Draft"
+"SD-007","Structured Data Page Gating - JSON-LD Present Only on the Homepage (Default and Localized), Absent Elsewhere","Structured Data > Page Gating","High","VCST-5536",,"All 7 BrandProfile settings on {{STORE_ID}} configured with valid values (as in SD-002); storefront has at least one non-default locale configured alongside the default (e.g. de) and at least one non-homepage catalog page reachable","urls: {{FRONT_URL}}/ ; {{FRONT_URL}}/de/ (or the storefront's actual configured secondary locale code if 'de' is not configured); {{FRONT_URL}}/catalog ; {{FRONT_URL}}/agent-test-nonexistent-route-sd007 (a route that does not exist)","[NAV] Navigate to {{FRONT_URL}}/ (default homepage)
+[ASSERT] Count application/ld+json nodes and capture the @id value
+[NAV] Navigate to {{FRONT_URL}}/de/ (localized homepage, or the store's actual secondary locale)
+[ASSERT] Count application/ld+json nodes and capture the @id value
+[NAV] Navigate to {{FRONT_URL}}/catalog (a non-homepage page)
+[ASSERT] Count application/ld+json nodes
+[ASSERT] Verify site-wide OpenGraph tags (og:site_name, og:image) are still present
+[NAV] Navigate to {{FRONT_URL}}/agent-test-nonexistent-route-sd007 (non-existent route)
+[ASSERT] Count application/ld+json nodes","[DOM] homepage {{FRONT_URL}}/ has exactly 1 script[type='application/ld+json'] OnlineStore node present
+[DOM] localized homepage {{FRONT_URL}}/de/ (or the store's secondary locale) has exactly 1 script[type='application/ld+json'] OnlineStore node present, whose @id is identical to the default homepage's @id
+[DOM] {{FRONT_URL}}/catalog has script[type='application/ld+json'] nodes absent (0 nodes)
+[DOM] meta[property=og:site_name] and meta[property=og:image] are still present on /catalog (site-wide OG fallback is unaffected by JSON-LD gating)
+[DOM] the non-existent route (404 page) has script[type='application/ld+json'] nodes absent (0 nodes)","[NETWORK] GET / and /de/ return HTTP 200; GET /catalog returns HTTP 200; the non-existent route's response status is not asserted (SPA soft-404 vs true 404 both acceptable) - assert only on JSON-LD absence
+[CONSOLE] no JSON parse errors from structured data","JSON-LD node present on /catalog or on the non-existent route; localized homepage missing the JSON-LD node or its @id differs from the default homepage's @id; default homepage has 0 or more than 1 JSON-LD nodes","none - read-only verification","VCST-5536; Verified live localhost pr-2415/XFrontend#10 2026-08-05","Draft"

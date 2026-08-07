@@ -470,7 +470,7 @@ User is authenticated. Cart has at least one item. Coupon code 'INVALID-DOES-NOT
 [ACT] click into 'Enter custom code' input on the Custom code card
 [ACT] type 'INVALID-DOES-NOT-EXIST'
 [ACT] click the arrow-right apply button on the Custom code card
-[WAIT] card responds to apply action (either transitions to error state or shows feedback)","[DOM] Custom code card transitions to error state: dashed border, red receipt-tax icon, error text 'This code is not valid' displayed below input
+[WAIT] card responds to apply action (either transitions to error state or shows feedback) — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)","[DOM] Custom code card transitions to error state: dashed border, red receipt-tax icon, error text 'This code is not valid' displayed below input
 [DOM] apply button on the error-state card is disabled
 [DOM] no discount line item appears in OrderSummary
 [STATE] cart total remains unchanged from pre-coupon value
@@ -488,7 +488,7 @@ A promotion exists with IsPublic=false and coupon code '@td(COUPON_PRIVATE.code)
 [ACT] type '@td(COUPON_PRIVATE.code)'
 [ACT] click the arrow-right apply button
 [WAIT] page responds
-[WAIT] response received","[DOM] Custom code card transitions to error state: dashed border, red receipt-tax icon, error text 'This code is not valid' (type: invalid) OR apply button becomes disabled without discount
+[WAIT] response received — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)","[DOM] Custom code card transitions to error state: dashed border, red receipt-tax icon, error text 'This code is not valid' (type: invalid) OR apply button becomes disabled without discount
 [STATE] cart total unchanged — no discount applied
 [STATE] '@td(COUPON_PRIVATE.code)' coupon NOT shown as applied in cart (card remains in error or default state, not applied state)
 [DOM] no green border on the custom card for this private code","[API] addCoupon mutation response: cart.coupons[].isAppliedSuccessfully = false for code '@td(COUPON_PRIVATE.code)' OR coupon entry absent from cart.coupons[]
@@ -841,7 +841,7 @@ couponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to cart page at {{FRONT_
 [STATE] Applied coupon indicator/badge cleared from sidebar
 [DOM] Preset coupon card for the removed coupon reappears or re-enables in the sidebar","[NETWORK] removeCoupon GraphQL mutation fires with couponCode, storeId, userId; mutation returns updated cart with discountTotal=0 for that coupon
 [CONSOLE] no JS errors during coupon removal","coupon remove button not visible or not clickable; cart total unchanged after removal; discount persists after removal (removeCoupon mutation not fired); cart shows 0 total after removal (over-correction); coupon card does not reappear in sidebar after removal","Navigate away from cart; ensure cart is empty or reset for next test","VCST-4896; VCST-4776; BL-CART-003. Live-validated 2026-07-21: applied ZUR10 (Discount -$50), removed via 'Remove coupon' -> RemoveCoupon errors:null, discountTotal $0, coupons:[], preset card re-enabled. Reviewed->Automated.","Automated"
-"CPN-057","Cart Page — Expired Coupon Not Shown in Sidebar Preset Cards","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-PRICE-002","ECL-09.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-057","Cart Page — Expired Coupon Not Shown in Sidebar Preset Cards","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-PRICE-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product added to cart
 - At least 1 EXPIRED coupon exists (endDate in the past)
@@ -864,7 +864,7 @@ activeCouponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to cart page at {{
 [STATE] If coupon input is shown, it is a manual code entry field, not preset cards from promotionCoupons
 [STATE] No data scope leak: authenticated promotionCoupons results not exposed to anonymous session","[NETWORK] promotionCoupons not called with a real userId for anonymous user; if called, userId parameter is absent or null
 [CONSOLE] no JS errors or auth-related GraphQL errors during anonymous cart view","preset coupon cards visible for anonymous user (data scope leak); promotionCoupons called with hardcoded or leaked userId for anonymous session; page shows 401/403 error instead of graceful no-cards state","No cleanup needed for anonymous session","VCST-4896; VCST-4776; BL-CART-003. Live-validated 2026-07-21: anonymous cart shows only the Custom-code manual field, no preset cards; GetPromotionCoupons never fired for the anonymous session; no 401/403; no scope leak. Reviewed->Automated.","Automated"
-"CPN-059","Cart Sidebar — Percentage Coupon Applied to Sale Price, Not List Price (BL-CART-003)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-003, BL-CHK-006","ECL-03.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-059","Cart Sidebar — Percentage Coupon Applied to Sale Price, Not List Price (BL-CART-003)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-003, BL-CHK-006","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Sale-price product PROD_SALE_SIMPLE seeded (SKU @td(PROD_SALE_SIMPLE.sku)=SALE-001, list @td(PROD_SALE_SIMPLE.listPrice)=29.99, sale @td(PROD_SALE_SIMPLE.salePrice)=19.99), linked into the B2B virtual catalog and in stock (npm run seed:products)
 - Genuine percentage coupon @td(COUPONS.percentageCode)=QA10OFF (@td(COUPONS.percentagePct)=10, i.e. 10% of cart subtotal) active + public. NOTE: QA10OFF is usually NOT among promotionCoupons(first:4) preset cards (late endDate) — apply it via the sidebar 'Custom code' entry field, NOT a preset card. Do NOT use ZUR10 (labelled 10% but applies a flat $50).","store={{FRONT_URL}}
@@ -886,7 +886,7 @@ pct=@td(COUPONS.percentagePct)","[NAV] {{FRONT_URL}}/search?q={{product_sku}} (o
 [STATE] AddCoupon response coupons[] contains {{couponCode}} with isAppliedSuccessfully=true; the discount base is the sale price, never the list price","[NETWORK] AddCoupon mutation fires with couponCode={{couponCode}}, storeId, userId; errors[]=[] (errors:null)
 [API] cart line actual/placed price == sale_price (19.99), listPrice == 29.99
 [CONSOLE] no JS errors during coupon application","coupon discount delta approx 3.00 (10% of list 29.99) instead of ~2.00 (10% of sale 19.99) — BL-CART-003 violation; cart line shows list price not sale; AddCoupon errors[] or isAppliedSuccessfully=false; 'Enter custom code' input not found in .coupons-section","Remove the applied coupon via 'Remove coupon'; empty the cart","VCST-4896; VCST-4776; BL-CART-003; ECL-03.1. 2026-07-21: unblocked — old PROD_VARIATION_PARENT_SALE (STD-002 EKJ-76373636) was deleted from vcst-qa; reseeded PROD_SALE_SIMPLE=SALE-001 (19.99/29.99) + genuine 10% QA10OFF (distinct from misconfigured flat-$50 ZUR10); apply via Custom-code field. Live-validated 2026-07-21 (Theme 2.54.0-pr-2386): SALE-001 line 19.99 (list 29.99); QA10OFF via Custom-code -> coupon discount ~2.00 (10% of SALE, not 3.00 of list), aggregate discountTotal 10->12, total 21.59, BL-CHK-006 ties out. Sale is modeled as list-subtotal + line discount, so assert the coupon's discounts[] delta not the aggregate. Reviewed->Automated.","Automated"
-"CPN-060","Cart Sidebar — Only Best Coupon Discount Applied When Multiple Applied (BL-CART-009 Radio Policy)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-009","ECL-03.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-060","Cart Sidebar — Only Best Coupon Discount Applied When Multiple Applied (BL-CART-009 Radio Policy)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-009","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product in cart
 - At least 2 different public coupon codes available in sidebar preset cards
@@ -941,3 +941,48 @@ User is authenticated. Coupon '@td(COUPON_LC_CASEFIDELITY.code)'=agenttestlc062 
 [API] POST /graphql (AddCoupon) returns HTTP 200, errors[] empty, cart.coupons contains 'agenttestlc062' with isAppliedSuccessfully=true; discounts[].coupon == 'agenttestlc062'
 [CONSOLE] no TypeError or clipboard API errors
 [NETWORK] no 4xx/5xx on /graphql during copy and apply flow","VCST-5233 presentation bug (EXPECTED to fail this guard while unfixed): displayed code on /account/coupons is 'AGENTTESTLC062', and/or the copied/pasted value is 'AGENTTESTLC062', instead of the stored lowercase 'agenttestlc062' (coupon-item.vue force-uppercases display + clipboard). COLLISION/regression signal: the applied coupon is a DIFFERENT code than 'agenttestlc062' (wrong-coupon match), or AddCoupon errors[]/isAppliedSuccessfully=false, or the discount != 5% of subtotal.","Click the 'Remove coupon'/trash control to remove the applied coupon. Cart reset handled by [PRE:RESET_CART] on next run.","VCST-5233; VCST-4776 (presentation-layer regression guard — currently FAILS pending fix, confirmed live on pr-2386 2026-07-21). Root cause: coupon-item.vue force-uppercases the code in the /account/coupons display ({{ coupon.couponCode?.toUpperCase() }} + CSS uppercase) AND the clipboard copy (@click copyCoupon(...toUpperCase())); fix: preserve stored case in both. MECHANISM CORRECTION 2026-07-21: xAPI ValidateCoupon/AddCoupon are case-INSENSITIVE, so the uppercased code still applies the correct coupon — VCST-5233 is display/clipboard only, functionally harmless for a collision-free code. The old 'super' harm was a case-INSENSITIVE collision (super vs a distinct 'SUPER' 20%-off coupon, BestReward picked the bigger), not a validation failure; repointed to the collision-free 'agenttestlc062' to remove that confound), BL-PRICE-001, ECL-1.3","Draft"
+CPN-063,Cart Sidebar — Invalid Replacement Code Leaves Working Coupon Applied (VCST-5518),Coupons & Promotions > Cart Sidebar > Regression,Critical,"BL-CART-009, BL-CHK-006","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product in cart.
+- At least one active public preset coupon card is visible in the 'Discount & coupons' sidebar. Do not pin a specific code — discover it at runtime (env-resilience rule).
+- The working coupon must remain applied for the whole run — never use its 'Remove coupon' control.
+- Build under test includes the VCST-5518 fix (vc-frontend PR #2422 prerelease or its merge to dev). A pre-fix build is EXPECTED to fail this case by design — that is not a false positive.
+Design Technique: State Transition + Error Guessing (regression guard for VCST-5518).","front_url={{FRONT_URL}}
+invalid_code=INVALID-DOES-NOT-EXIST-5518","[NAV] {{FRONT_URL}}/cart
+[ACT] scroll to the 'Discount & coupons' widget
+[WAIT] at least one preset coupon card is rendered in the sidebar
+[ACT] read the coupon code shown on the first preset card
+[ACT] store that code as {{workingCode}}
+[ACT] click 'Apply coupon {{workingCode}}' on that preset card
+[WAIT] AddCoupon completes, the {{workingCode}} card shows 'Remove coupon', a Discount line is rendered in the order summary
+[ACT] note the grand total as {{preAttemptTotal}}
+[ACT] type {{invalid_code}} into the 'Enter custom code' input while {{workingCode}} is still in its applied state
+[ACT] click the 'Apply' control on the Custom code card
+[WAIT] the invalid-code response settles — read the sidebar state IMMEDIATELY within this same wait, before any further step (the error display auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in useCoupon.ts; do not add waits before observing it)","[STATE] the {{workingCode}} preset card is still in the applied state ('Remove coupon') after the invalid attempt — it never reverts to 'Apply coupon' {SPEC}
+[DOM] the Custom code card renders <p class=""coupon-card__error"" role=""alert""> containing 'This code is not valid' {DOC}
+[MATH] grandTotal_after_invalid_attempt = {{preAttemptTotal}} — the working discount is neither removed, doubled, nor recalculated {SPEC}
+[STATE] cart.coupons[] holds exactly one entry, {{workingCode}}, with isAppliedSuccessfully=true; {{invalid_code}} never appears in coupons[] {SPEC}","[NETWORK] the invalid attempt fires a ValidateCoupon-equivalent request reporting the code does not resolve; NO RemoveCoupon, NO AddCoupon follows it — that absence is the proof of the early-return; a pre-fix build fires RemoveCoupon here instead {DOC}
+[API] no cart mutation is recorded for the invalid attempt {DOC}
+[CONSOLE] no JS errors during the invalid-code attempt",{{workingCode}} card reverts to 'Apply coupon' after the invalid attempt (VCST-5518 regression — the working coupon was silently dropped); a RemoveCoupon mutation is observed for the invalid attempt; the grand total changes while the working coupon still shows as applied; cart.coupons[] is empty after the invalid attempt,"Remove the active coupon via its 'Remove coupon' control, navigate away from cart",VCST-5518; BL-CART-009. Build-dependent — requires vc-frontend PR #2422 or its merge to dev; a build predating the fix is EXPECTED to FAIL. Added: /qa-test-lifecycle Phase 3 (2026-08-05).,Draft
+CPN-065,Cart Sidebar — Custom-Code Input Is Read-Only Only When It Holds the Applied Code (BL-CART-009 Claim C),Coupons & Promotions > Cart Sidebar > BL-CART-009,High,BL-CART-009,ECL-1.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product in cart.
+- At least one active public preset coupon card is visible in the sidebar.
+- A second valid coupon code exists that is not the preset used.
+Design Technique: State Transition (custom input editable vs read-only, by coupon provenance).","front_url={{FRONT_URL}}
+second_code=@td(COUPON_20PCT.code)","[NAV] {{FRONT_URL}}/cart
+[ACT] scroll to the 'Discount & coupons' widget
+[WAIT] at least one preset coupon card is rendered in the sidebar
+[ACT] read the coupon code shown on the first preset card
+[ACT] store that code as {{presetCode}}
+[ACT] click 'Apply coupon {{presetCode}}' on that preset card
+[WAIT] the {{presetCode}} card shows 'Remove coupon'
+[WAIT] the Custom code input is rendered empty with its control enabled
+[ACT] type {{second_code}} into the Custom code input
+[ACT] click the 'Apply' control on the Custom code card
+[WAIT] AddCoupon completes, {{second_code}} is shown in the applied state, the {{presetCode}} card reverts to 'Apply coupon'
+[ACT] note whether the Custom code input is now read-only","[STATE] while the applied coupon IS a visible preset card, the Custom code input is empty and editable — it does not mirror the preset's code, it is not read-only {BL}
+[STATE] once a coupon is applied THROUGH the custom-code input itself, that input is read-only, mirrors the applied code, offers only 'Remove coupon' {BL}
+[DOM] a preset card's own <input> carries the readonly attribute in both states (regression guard, not the primary probe) {BL}","[NETWORK] AddCoupon fires for {{second_code}}; errors[] is empty {SPEC}
+[API] cart.coupons[] holds exactly {{second_code}} after the sequence — the single slot is preserved {BL}
+[CONSOLE] no JS errors",Custom code input is read-only immediately after a PRESET coupon is applied (Claim C regression — it should be empty and editable); the input stays editable after a coupon was applied THROUGH it (it should lock); the input shows a stale or mismatched code,"Remove the active coupon via its 'Remove coupon' control, navigate away from cart","VCST-5518; VCST-4776. BL-CART-009 Claim C, corrected 2026-08-05 — see reports/knowledge/BL-AUDIT-2026-08-05.md. First case to cite BL-CART-009's read-only/input-provenance facet; CPN-060 and CPN-SMK-060 cite the ID for last-applied-wins anti-stacking instead. Added: /qa-test-lifecycle Phase 3 (2026-08-05).",Draft

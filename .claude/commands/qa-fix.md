@@ -183,6 +183,17 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   key in the scope slot; see
   `developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
   human review"; backend adds "needs deploy verification"), label, link the tracker.
+- **Tracker-key hygiene in the PR/issue body — a malformed key-shaped token turns the whole `ci` job RED.**
+  VirtoCommerce's `module-ci.yml` runs *Parse Jira Keys from All Commits*
+  (`vc-github-actions/get-jira-keys`) over the **PR body**, extracting with `/(([A-Z]+)-\d+)/g`, and
+  *Push Build Info to Jira* then **fails the job** if any extracted string breaks Jira's key pattern —
+  which requires **at least 2 characters before the hyphen**. Before writing the body, scan it: any
+  `UPPER-<digits>` token must have a ≥2-char prefix. The trap is a multi-hyphen identifier whose middle
+  segment mixes letters and digits — a regression case id like `MCO-E2E-008` cannot match `E2E`
+  (it contains a digit), so the regex backtracks to **`E-008`**, a 1-char prefix, and CI dies with
+  `Issue Keys must match the pattern …` **while build, tests and Sonar are all green** (observed:
+  VCST-5657, PR #15). Reword such references (`MCO-E2E` case 008), or drop the id and name the suite.
+  Same rule for a Gate-0 upstream **issue** body and any tracker comment that a CI step may parse.
 - **If Gate 1b resolved the route to `upstream-contribution`** (a byte-identical **platform** bug in the
   storefront): the branch + PR go to the **VirtoCommerce upstream**, not the client fork — fork `vc-frontend`,
   apply the fix, open a **fork-PR** (`--head <forkOwner>:<branch>`), **scrubbed of any client source / paths /

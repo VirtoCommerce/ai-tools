@@ -66,7 +66,7 @@ Cannot see the screen. Navigates with Tab, Shift+Tab, Arrow keys, Enter, Space. 
 - Run axe-core via `mcp__Chrome_DevTools__lighthouse_audit` or the `/qa-accessibility` skill against the same page
 
 ### What this persona typically finds
-Missing aria-labels on icon buttons, focus traps, missing focus rings (esp. in Coffee theme — only Coffee passes WCAG per `feedback_a11y_coffee_only`), inaccessible custom dropdowns, modals without focus management, missing live regions, color-only state indicators.
+Missing aria-labels on icon buttons, focus traps, missing focus rings (charter the Coffee and Red presets — those are the two WCAG-gated themes per `feedback_a11y_gated_themes`), inaccessible custom dropdowns, modals without focus management, missing live regions, color-only state indicators.
 
 ---
 

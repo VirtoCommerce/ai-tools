@@ -126,7 +126,7 @@ Quick decision tree for commands, skills, and agents. New here? Start with `/qa-
 - **`automation/`** — `browser-quirks.md`, `storefront-selectors.md`, `storefront-config-flags.md`
 - **`ba/`** — `virto-doc-style.md`
 - **`domain/`** — `catalog.md`, `products.md`, `store-settings.md`, `white-labeling.md`, `sitemap.md`
-- **`execution/`** — `debugging-signals.md`, `performance-thresholds.md`, `module-suite-map.md`, `live-discovery.md`, `test-execution-preflight.md`, `test-runner-tags.md`
+- **`execution/`** — `debugging-signals.md`, `performance-thresholds.md`, `es-call-ab-method.md`, `module-suite-map.md`, `live-discovery.md`, `test-execution-preflight.md`, `test-runner-tags.md`
 - **`oracles/`** — `business-logic.md` (BL-*), `e-commerce-edge-cases-library.md` (ECL-*), `vc-bug-catalog.md` (VC-* patterns), `critical-ui-scope.md`
 
 ## Cross-References

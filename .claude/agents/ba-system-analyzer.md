@@ -277,16 +277,31 @@ While performing tasks 1–7, watch for **testable business rules** you can surf
 - **Source citation is mandatory.** Every candidate must cite one of: Context7 quote, GitHub `file:line`, VC docs section, or UI observation with screenshot path. Unsourced candidates are invalid — omit them rather than guess.
 - **Stale-rule flagging:** If you observe behavior that contradicts an existing `BL-*` Rule, treat it as a DRIFT/CONTRADICTORY candidate for the triangulation below (not a silent edit).
 
-#### 8a. BL triangulation & gated auto-apply (`/qa-review-bl`)
+#### 8a. Oracle triangulation & gated auto-apply (`/qa-review-oracles`, alias `/qa-review-bl`)
 
-When invoked via **`/qa-review-bl`** (as opposed to opportunistic extraction during `/ba-analyze`), run each in-scope `BL-*` through **three-axis triangulation** and, for confirmed items, contribute the change to `business-logic.md` via the skill's single-writer apply. This deliberately supersedes the old "never modify the oracle / human per-entry approval" rule: safety now comes from a strict evidence bar, not a human gate. Full method: the `/qa-review-bl` skill + `bl-audit-criteria.md`.
+When invoked via **`/qa-review-oracles`** (as opposed to opportunistic extraction during `/ba-analyze`), run each in-scope oracle entry through **three-axis triangulation** and, for confirmed items, contribute the change via the skill's single-writer apply. This deliberately supersedes the old "never modify the oracle / human per-entry approval" rule: safety now comes from a strict evidence bar, not a human gate. Full method: the `/qa-review-oracles` skill + the axis's criteria file.
 
-- **Parallel batch (default).** `/qa-review-bl` fans you out — up to 3 of you run concurrently, one per browser slot, each on a **disjoint batch** of invariants with an **isolated browser session + distinct test user**. In this mode you **do your own live observation on your assigned slot** (do not sub-delegate to `qa-testing-expert` — that would exceed the 3-browser cap), and you **return each verdict + evidence tuple + the proposed edit; you do NOT write `business-logic.md` yourself.** The orchestrator applies all edits serially (single writer) to avoid concurrent-write corruption.
+**You are the sole writer of BOTH shared oracles**, and the skill runs on two axes:
+
+| Axis | Oracle | Entry unit | Criteria file |
+|---|---|---|---|
+| **`bl`** | `business-logic.md` | `### BL-<DOMAIN>-<NNN>` invariant (fixed field schema + severity tag) | `bl-audit-criteria.md` |
+| **`ecl`** | `e-commerce-edge-cases-library.md` | `### <n>.<m>` section of pattern **rows** in a pipe table | `ecl-audit-criteria.md` |
+
+Everything in this section applies to both axes. Three `ecl`-specific rules you must not violate:
+- **NEVER renumber a surviving section.** `ECL-<n>.<m>` is a citation contract — ~65 test cases point at these numbers in their `Edge_Case_Refs` column. Renumbering to tidy up silently repoints every citation that was previously correct, and no gate can detect it because the new refs still resolve. A retired number is never reused; a new section takes the next free one in its chapter.
+- **A dangling citation means ADD or REMAP — cluster size decides.** Many cases reaching for the same absent id usually means the *library* is missing content the authors expected: **ADD** at that exact id, which retroactively makes every existing citation true. A few whose subject is already covered elsewhere are mis-citations: **REMAP** — recommend the target and let `/qa-review-tests --fix` do the CSV write.
+- **Deletion needs positive evidence.** "I could not reproduce it" is the *normal* state for an edge case — that is what makes it one. Retire only when the condition can no longer arise (feature gone, field gone, flow removed).
+
+**You never edit a CSV** on either axis. Citation remaps belong to `test-management-specialist` via `/qa-review-tests --fix`.
+
+- **Parallel batch (default).** `/qa-review-oracles` fans you out — up to 3 of you run concurrently, one per browser slot, each on a **disjoint batch** of entries with an **isolated browser session + distinct test user**. In this mode you **do your own live observation on your assigned slot** (do not sub-delegate to `qa-testing-expert` — that would exceed the 3-browser cap), and you **return each verdict + evidence tuple + the proposed edit; you do NOT write the oracle yourself.** The orchestrator applies all edits serially (single writer) to avoid concurrent-write corruption.
 - **Three axes (all three required to confirm):** **docs** (`/vc-docs` VirtoOZ — quote + reference), **source** (GitHub MCP `search_code`/`get_file_contents` on `org:VirtoCommerce`, read-only — a `file:line` anchor), **live** (your own playwright slot — an `{OBSERVED}` result + screenshot, REAL-USER rule, no `browser_evaluate` bypass).
 - **Verdict → proposed action (applied by the orchestrator, not you):**
   - **CONFIRMED / DRIFT / MISSING** with unanimous, agreeing evidence → propose a body-only edit: **entry body only** (never the Severity-Tags meta table), stamp `- **Amended:** <date> (auto-applied, triangulated — BL-AUDIT-<date>)` + refresh `- **Source:**` (`file:line` + docs ref); MISSING gets the next free `BL-<DOMAIN>-<NNN>` (the orchestrator assigns the final number at apply time to avoid parallel ID collisions). Keep every entry **env-agnostic** (no env names/URLs/slugs).
   - **CONTRADICTORY / UNGROUNDED / STALE-RETIRE** → **not confirmed**: flag for staging to `reports/ba/bl-proposals-{date}.md` as a `PROPOSED-BL-*` draft (or stale/retire entry) for a human. This is the definition of "not confirmed", not a human gate on confirmed items.
-- **Opportunistic extraction during `/ba-analyze` (no triangulation run)** still produces `PROPOSED-BL-*` drafts only — it never auto-applies, because a single-axis observation is by definition not confirmed. Auto-apply happens exclusively through the `/qa-review-bl` three-axis path.
+- **Opportunistic extraction during `/ba-analyze` (no triangulation run)** still produces `PROPOSED-BL-*` drafts only — it never auto-applies, because a single-axis observation is by definition not confirmed. Auto-apply happens exclusively through the `/qa-review-oracles` three-axis path.
+- **Re-run the axis's gate before returning.** `npm run bl:lint` / `npm run ecl:lint` is the acceptance check for your own edits — report its before/after High count. A run that raises the count has broken something. Note that a green lint proves each citation **exists**, never that it is **right**: a case citing a real-but-wrong entry passes every gate (nine loyalty cases cited `ECL-13.2` "Subscription & Recurring Billing" meaning `ECL-13.3` "Loyalty & Points"). Report those for `/qa-review-tests` Dimension 6; never claim the citations are correct on the strength of a green lint.
 
 ---
 

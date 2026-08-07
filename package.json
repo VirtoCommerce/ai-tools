@@ -117,8 +117,8 @@
     "report:regression:open": "npx tsx scripts/regression/generate-regression-html-report.ts --open",
     "report:regression:portable": "npx tsx scripts/regression/generate-regression-html-report.ts --embed-images",
     "report:regression:watch": "npx tsx scripts/regression/generate-regression-html-report.ts --watch --open",
-    "report:regression:overview": "npx tsx scripts/regression/generate-regression-html-report.ts --overview --open",
-    "report:regression:overview:watch": "npx tsx scripts/regression/generate-regression-html-report.ts --overview --watch --open",
+    "regression:reap": "npx tsx scripts/regression/reap-stalled-run.ts",
+    "regression:reap:apply": "npx tsx scripts/regression/reap-stalled-run.ts --apply",
     "suites:sync": "npx tsx scripts/test-cases/sync-test-suites.ts",
     "suites:lint": "npx tsx scripts/test-cases/sync-test-suites.ts --check",
     "suites:append": "npx tsx scripts/test-cases/append-test-cases-to-suite.ts",
@@ -130,6 +130,8 @@
     "tc:audit:source": "npx tsx scripts/test-cases/suite-source-map.ts",
     "bl:lint": "npx tsx scripts/knowledge/lint-bl.ts",
     "bl:audit:collect": "npx tsx scripts/knowledge/lint-bl.ts --json",
+    "ecl:lint": "npx tsx scripts/knowledge/lint-ecl.ts",
+    "ecl:audit:collect": "npx tsx scripts/knowledge/lint-ecl.ts --json",
     "metrics:compute": "npx tsx scripts/regression/compute-metrics.ts",
     "triage:collect": "npx tsx scripts/lib/regression-triage.ts collect",
     "triage:history": "npx tsx scripts/lib/regression-triage.ts history",
@@ -158,7 +160,10 @@
     "td:validate:rbac": "node scripts/seed-data/platform/validate-backoffice-rbac-data.mjs",
     "seed:cms-pages": "node scripts/seed-data/cms/seed-pagebuilder-pages.mjs",
     "seed:cms-pages:teardown": "node scripts/seed-data/cms/seed-pagebuilder-pages.mjs --teardown",
-    "td:validate:cms-pages": "node scripts/seed-data/cms/validate-pagebuilder-pages-data.mjs"
+    "td:validate:cms-pages": "node scripts/seed-data/cms/validate-pagebuilder-pages-data.mjs",
+    "seed:loyalty:zero-user": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs",
+    "seed:loyalty:zero-user:probe": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs --probe",
+    "seed:loyalty:zero-user:teardown": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs --teardown"
   },
   "repository": {
     "type": "git",

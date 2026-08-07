@@ -73,7 +73,7 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
    - Record: platform version, theme version, and all module versions
    - Include full deploy state in the regression report header (Step 6)
    - Save to `reports/deploy-state-cache.json` for cross-reference
-3. **Duplicate check** — check `reports/regression/test-run-status.json` for an active run with the same suite selection. If found, block — wait for current run to complete.
+3. **Duplicate check** — check `reports/regression/test-run-status.json` for an active run with the same suite selection. If found, block — wait for current run to complete. **First rule out an orphan:** that file is flipped to `completed` only by Step 6 of the owning orchestrator, so an orchestrator that died mid-run leaves it `in_progress` forever and blocks every future run. Run `npm run regression:reap` (read-only) — it classifies the run from file evidence (newest mtime across the run's own results/screenshots, ignoring the watcher-written `regression-report.html`). `ACTIVE` → block as above. `STALLED` → reclaim it with `npm run regression:reap:apply` (marks `status: "stalled"`, never `completed`) and proceed. `SETTLED`/`NO-STATUS` → nothing is running; proceed.
 4. **Context7 query** (for `sprint` and `full` selections) — resolve `/virtocommerce/vc-docs`, query `"platform release notes recent changes"` with `tokens: 8000`. Flag any API contract changes that may cause false failures in existing test cases. Consider running `/qa-test-lifecycle diff` (or `changelog <version>`) first if breaking changes detected.
 
 ### Step 0.5 — Seed Data (only if `--seed=<profile>` provided)

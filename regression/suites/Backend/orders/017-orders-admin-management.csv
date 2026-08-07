@@ -341,7 +341,7 @@ refund_modification: change amount to a value the gateway will reject","[BLADE] 
 [BLADE] RejectReasonMessage/error note shows the rejection reason from gateway
 [STATE] Underlying refund state at gateway is unchanged","[API] GET /api/order/orders/{id} shows refund status = 'Pending'
 [CONSOLE] No JS errors","Status incorrectly changes to 'Rejected'; status changes to another invalid value; error message not shown","none","VCST-4983","Reviewed"
-"ORDA-093","Cancel Document Button Disabled for Submitted Refund","Orders Admin > Refund > UI Guards","High","BL-ORD-004","ECL-12.3","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+"ORDA-093","Cancel Document Button Disabled for Submitted Refund","Orders Admin > Refund > UI Guards","High","BL-ORD-004","ECL-14.10","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 - An order with a Refund that has outerId set (submitted to gateway) or status = 'Processed'","order_id: order with a submitted (outerId populated) refund","[BLADE] Navigate to Admin → Orders → open order → open Refund blade for the submitted refund
 [ASSERT] Verify the refund has outerId populated or status = 'Processed'
 [BLADE] Check the toolbar for the 'Cancel Document' button
@@ -350,7 +350,7 @@ refund_modification: change amount to a value the gateway will reject","[BLADE] 
 [ASSERT] Verify the Status dropdown is read-only/disabled when refund is submitted","[BLADE] 'Cancel Document' button is disabled/hidden for submitted refund (outerId set or status = Processed)
 [BLADE] Status dropdown is read-only/disabled for submitted refund
 [STATE] No local status change possible without gateway call","[CONSOLE] No JS errors in Admin SPA","Cancel Document button is enabled for submitted refund; Status dropdown allows manual edits on submitted refund","none","VCST-4983","Reviewed"
-"ORDA-094","Order Edit: Line Item Statuses Preserved After Adding Product","Orders Admin > Order Edit > Status Preservation","High","BL-ORD-003","ECL-12.4","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+"ORDA-094","Order Edit: Line Item Statuses Preserved After Adding Product","Orders Admin > Order Edit > Status Preservation","High","BL-ORD-003","ECL-14.10","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 - An order in editable state exists with multiple line items
 - Some line items have custom statuses set (non-default)
 - Module version: vc-module-order-management 3.1001.0+ deployed (fix for VCST-4477)","order_id: order with >=2 line items having custom statuses","[BLADE] Navigate to Admin → Orders → open order with custom line item statuses
@@ -364,7 +364,7 @@ refund_modification: change amount to a value the gateway will reject","[BLADE] 
 [BLADE] Custom statuses are not reset to default after add-product
 [STATE] Order line item status data is preserved through edit operation","[API] GET /api/order/orders/{id} shows correct statuses for all original line items
 [CONSOLE] No JS errors in Admin SPA","Any original line item status resets to default after add-product; statuses change from custom value to empty/null","none","VCST-4477","Reviewed"
-"ORDA-095","Order Edit: Multiple Concurrent Custom Statuses Preserved After Adding Product","Orders Admin > Order Edit > Status Preservation","Medium","BL-ORD-003","ECL-12.4","[PRE:CLEAR_SESSION]
+"ORDA-095","Order Edit: Multiple Concurrent Custom Statuses Preserved After Adding Product","Orders Admin > Order Edit > Status Preservation","Medium","BL-ORD-003","ECL-14.10","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 - An order in editable state exists with >=3 line items each having different distinct custom statuses (non-default)
 - Module version: vc-module-order-management 3.1001.0+ deployed (fix for VCST-4477)","order_id: order with 3+ line items each having different custom statuses","[BLADE] Navigate to Admin → Orders → open order with >=3 line items each having distinct custom statuses

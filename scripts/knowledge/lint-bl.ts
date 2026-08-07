@@ -21,6 +21,10 @@
  *   BLC-002 [High]     a suite's Business_Rule cites a BL-* ID absent from the oracle (false traceability).
  *                      `PROPOSED-BL-*` forward-references (awaiting promotion) are exempt — not flagged.
  *   BLC-004 [Medium]   a P0/P1 invariant referenced by NO test case (uncovered) — P2 downgraded to Informational
+ *   BLC-005 [High]     a suite CSV the coverage scan could not parse, so it is ABSENT from the coverage map.
+ *                      Invalidates BLC-004 and BLC-002 for every invariant that file cites, in both
+ *                      directions (false "uncovered", missed dangling ref). Reported so an unreadable
+ *                      input can never be mistaken for a clean one.
  *
  * NOT here (need docs/live/source or knowledge judgment → the skill):
  *   the triangulation verdict, Rule-text staleness (DRIFT), MISSING invariants,
@@ -190,16 +194,33 @@ export function extractReferencedBlIds(cell: string): string[] {
   return out;
 }
 
-/** Map BL-* ID → list of case IDs whose Business_Rule column references it. */
-function buildCoverage(suitesRoot: string): { byBl: Map<string, string[]>; referenced: Set<string> } {
+/**
+ * Map BL-* ID → list of case IDs whose Business_Rule column references it.
+ *
+ * `unparsed` is returned, not swallowed. A suite this function cannot parse is
+ * absent from the coverage map, so every invariant cited ONLY there reads as
+ * BLC-004 "uncovered" and every dangling reference in it escapes BLC-002 — a
+ * false clean, in both directions, reported with total confidence. That is
+ * exactly what happened before `parseSuite` learned `bom: true`: 12 BOM-carrying
+ * suites were dropped, and 3 of 6 BLC-004 findings were false. Coverage is a
+ * completeness claim, so an unreadable input has to be surfaced rather than
+ * quietly reducing the denominator.
+ */
+function buildCoverage(suitesRoot: string): {
+  byBl: Map<string, string[]>;
+  referenced: Set<string>;
+  unparsed: string[];
+} {
   const byBl = new Map<string, string[]>();
   const referenced = new Set<string>();
+  const unparsed: string[] = [];
   for (const csv of walkCsv(suitesRoot)) {
     let rows: Row[];
     try {
       rows = parseSuite(readFileSync(csv, "utf-8")).rows;
     } catch {
-      continue; // a malformed suite is lint-test-cases' problem, not ours
+      unparsed.push(csv); // surfaced as BLC-005 — never silently skipped
+      continue;
     }
     for (const r of rows) {
       const cell = r["Business_Rule"] ?? "";
@@ -211,10 +232,13 @@ function buildCoverage(suitesRoot: string): { byBl: Map<string, string[]>; refer
       }
     }
   }
-  return { byBl, referenced };
+  return { byBl, referenced, unparsed };
 }
 
-export function lint(invariants: Invariant[], coverage: { byBl: Map<string, string[]>; referenced: Set<string> }): Finding[] {
+export function lint(
+  invariants: Invariant[],
+  coverage: { byBl: Map<string, string[]>; referenced: Set<string>; unparsed?: string[] },
+): Finding[] {
   const f: Finding[] = [];
   const seen = new Map<string, number>();
   const byDomainSeqs = new Map<string, number[]>();
@@ -262,6 +286,23 @@ export function lint(invariants: Invariant[], coverage: { byBl: Map<string, stri
     const gaps: number[] = [];
     for (let n = 1; n < sorted[sorted.length - 1]; n++) if (!sorted.includes(n)) gaps.push(n);
     if (gaps.length) f.push(find("BLL-005", "Informational", prefix, `non-contiguous sequence — missing ${prefix}-${gaps.map((g) => String(g).padStart(3, "0")).join(", " + prefix + "-")}`));
+  }
+
+  // BLC-005 a suite CSV the coverage scan could not read. High, because it silently
+  // invalidates BOTH coverage directions for that file: its invariants look uncovered
+  // (false BLC-004) and its dangling references look absent (missed BLC-002). Never
+  // downgrade this to Informational — the whole point is that an unreadable input must
+  // not be mistakable for a clean one.
+  const unparsed = coverage.unparsed ?? [];
+  if (unparsed.length) {
+    f.push(
+      find(
+        "BLC-005",
+        "High",
+        "coverage-scan",
+        `${unparsed.length} suite CSV(s) could not be parsed and are ABSENT from the coverage map — BLC-004/BLC-002 are unreliable for the invariants they cite: ${truncate(unparsed.map((p: string) => p.split(/[\\/]/).pop()).join(", "), 160)}`,
+      ),
+    );
   }
 
   // BLC-002 suite references a non-existent BL ID (Medium — matches the canonical

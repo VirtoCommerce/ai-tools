@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-08-05",
-    "totalSuites": 120,
+    "generated": "2026-08-06",
+    "totalSuites": 121,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -33,9 +33,10 @@
     "preferredBrowser": "playwright-chrome",
     "fallbackChain": [
       "playwright-chrome",
-      "playwright-firefox",
-      "playwright-edge"
+      "playwright-edge",
+      "playwright-firefox"
     ],
+    "_comment_fallbackChain": "Chromium-family FIRST (chrome -> edge), firefox LAST. playwright-firefox cannot reliably click on this storefront or the AngularJS Admin SPA: browser_click hangs on Playwright's 'visible, enabled and stable' actionability gate and times out on fully-visible, non-moving elements (verified NOT a layout/CLS bug). Confirmed independently 5x: 2026-06-01 (SBTM-orders), 2026-06-24 (REG-2026-06-24-2108, whole Admin SPA), 2026-07-25, 2026-07-27 x2, and again 2026-08-05 (REG-2026-08-05-1942 attempt 1, suite 002). Firefox was previously SECOND here, so any suite whose first attempt failed fell straight onto the one lane that cannot click - burning a full retry before reaching edge. Root cause is in the @playwright/mcp layer, not Firefox/Playwright itself: raw playwright-core + firefox clicks the same reproducer fine headed AND headless, with and without the MCP's recordHar/viewport/locale context options (probed 2026-08-05). Firefox stays in the pool for read-only/navigation-light passes; see .claude/rules/agents.md and the feedback_firefox_cart_dropdown_quirk memory.",
     "maxRetries": 2,
     "retryDelayMs": 30000,
     "rateLimitDelayMs": 60000,
@@ -56,7 +57,8 @@
       "serverName": "playwright-firefox",
       "browserName": "firefox",
       "channel": null,
-      "status": "available"
+      "status": "available",
+      "constraint": "READ-ONLY / NAVIGATION-LIGHT PASSES ONLY — do NOT schedule click-driven suites here (cart, checkout, merge, PDP interaction, sign-in, any Admin SPA suite). browser_click times out on the actionability 'stable' gate; browser_type and navigation work fine. If both Chromium slots are busy, QUEUE the suite for the next free chrome/edge slot rather than placing it on firefox — a firefox placement costs a full wasted attempt, not a degraded one."
     },
     {
       "slot": 3,
@@ -1172,6 +1174,28 @@
       "customerApplicability": "universal"
     },
     {
+      "id": "048d",
+      "name": "Structured Data & SEO (storefront)",
+      "file": "regression/suites/Frontend/cross-cutting/048d-structured-data-seo.csv",
+      "domain": "cross-cutting",
+      "layer": "frontend",
+      "concern": "non-functional",
+      "priority": "P2",
+      "testCount": 7,
+      "estimatedMinutes": 12,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "seo",
+        "structured-data",
+        "json-ld",
+        "opengraph",
+        "brand-profile",
+        "homepage",
+        "cross-cutting"
+      ],
+      "customerApplicability": "universal"
+    },
+    {
       "id": "049",
       "name": "Platform API",
       "file": "regression/suites/Backend/api/049-platform-api.csv",
@@ -1199,7 +1223,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 47,
+      "testCount": 54,
       "estimatedMinutes": 32,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2200,7 +2224,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 12,
+      "testCount": 13,
       "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2271,7 +2295,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 63,
+      "testCount": 65,
       "estimatedMinutes": 37,
       "agent": "qa-frontend-expert",
       "tags": [

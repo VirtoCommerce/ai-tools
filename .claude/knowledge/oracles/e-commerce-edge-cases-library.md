@@ -1,12 +1,12 @@
 ---
 applicability: reference
-applicability_rationale: "13 generic ECL (universal) + 7 VC-specific (reference). File-level classification is reference because the VC-specific ones are intermixed; future refactor: split into universal + VC-specific files."
+applicability_rationale: "14 generic ECL chapters (1-13, 15; universal) + 1 VC-specific chapter (14, 10 subsections). File-level classification is reference because the VC-specific chapter is intermixed with the generic ones in document order; future refactor: split into universal + VC-specific files."
 ---
 
 # E-Commerce QA Edge Cases & Strange User Behavior Library
 
-**Version:** 1.0  
-**Last Updated:** March 2026  
+**Version:** 1.1  
+**Last Updated:** August 2026 (oracle audit — deletions, drift fixes, and new sections; see audit history for the verdict trail)  
 **Status:** Living document—add real patterns from your platform
 
 ---
@@ -42,7 +42,8 @@ This is a structured reference for:
 | **International card edge case** | 3D Secure/SCA challenges user in non-English, user abandons | Low | Conversion loss | [THEORETICAL] |
 | **Split payment across cards** | User adds multiple cards, attempts to split total across them | Low | UX confusion, unclear billing | [THEORETICAL] |
 | **Declined then accepted** | Card declined on first attempt, accepted on retry without user action | Low | Confusion about charge status | [OBSERVED] |
-| **Rapid card testing** | User tests low-value transaction, then immediately high-value (potential fraud testing pattern) | Low-Medium | False positive fraud flag | [OBSERVED] |
+
+*(Low-value-then-high-value card-testing behavior is covered once, at §5.1, to avoid duplicating the same signal under two chapters.)*
 
 ### 1.2 Session & Timeout Issues
 
@@ -65,6 +66,50 @@ This is a structured reference for:
 | **Coupon case sensitivity** | System requires exact case but user enters lowercase | Low | Coupon rejected unnecessarily | [OBSERVED] |
 | **Coupon for product no longer in cart** | User applies coupon, then removes the coupon-eligible product | Low-Medium | Coupon error or unexpected discount | [THEORETICAL] |
 | **First-time buyer coupon on second cart** | User has multiple sessions; second session still applies first-time discount | Low | Revenue loss | [OBSERVED] |
+
+### 1.4 Layout Shift & Hover-Induced Displacement
+
+*(Cross-cutting layout-stability pattern — filed in this chapter's number range to match established test-suite citations rather than under "Checkout & Payment." Governed by `BL-UI-003` in `business-logic.md`.)*
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Hover triggers layout shift** | Hovering a card/button changes its border/padding using a layout-affecting property (border width, margin) instead of `outline` or a pre-reserved transparent border, pushing neighboring elements | Medium | Visual jank, perceived instability, CLS penalty | [OBSERVED] |
+| **State change reflows siblings** | A component's error/active/expanded state adds height without reserving space in the collapsed state, so appearing/disappearing content shifts everything below it | Medium | Misclicks on the shifted target, poor UX | [OBSERVED] |
+
+### 1.5 Spacing & Design-Token Compliance
+
+*(Governed by `BL-UI-002`. The reference scale is the DERIVED design-system spacing grid, kept in sync via `npm run tokens:sync` — never a hardcoded 4px/8px multiple assumption.)*
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Off-grid spacing** | A component uses a padding/margin/gap value that isn't one of the design system's declared spacing steps | Low | Visual inconsistency across the storefront | [OBSERVED] |
+| **Audit tool hardcodes a stale grid** | A layout-audit script embeds its own copy of the spacing scale instead of deriving it from the live token source, flagging conforming components as violations after a design refresh | Low | False-positive test failures, eroded trust in the check | [OBSERVED] |
+
+### 1.6 Overflow & Viewport Scroll
+
+*(Governed by `BL-UI-004`. Applies at both fixed breakpoints and the fluid bands between them.)*
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Horizontal scroll at narrow viewports** | A fixed-width element or unwrapped content forces `documentElement.scrollWidth` beyond the viewport at mobile widths | Medium | Broken mobile layout, content clipped or requiring sideways scroll | [OBSERVED] |
+| **Overflow only in the fluid band between fixed breakpoints** | A layout that passes at common fixed widths (375/768/1024/1280/1920) overflows only in an untested intermediate width, because a content block's own breakpoint doesn't align with the test's sampled widths | Low-Medium | Real users on in-between viewport widths see a bug the standard breakpoint sweep misses | [OBSERVED] |
+
+### 1.7 Alignment in Horizontal Groups
+
+*(Governed by `BL-UI-005`.)*
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Row height parity broken** | Cards or controls in the same visual row don't share height within a small tolerance, because one contains more content than its siblings and the container doesn't equalize | Low-Medium | Ragged grid, unprofessional appearance | [OBSERVED] |
+
+### 1.8 Touch Target Sizing
+
+*(Governed by `BL-UI-006`. Two tiers apply: below 24×24px fails WCAG 2.2 SC 2.5.8 (AA); 24-44px is a WARN under SC 2.5.5 (AAA) where the design system intentionally ships compact controls.)*
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Touch target below the AA floor on mobile** | An interactive control (icon button, chip, checkbox) renders smaller than 24×24px at mobile viewport widths | Medium | Missed taps, accessibility violation | [OBSERVED] |
+| **Adjacent small targets have no spacing buffer** | Two small controls sit close enough that a touch can't reliably distinguish them, even if each individually clears the size floor | Low | Accidental wrong-control activation | [OBSERVED] |
 
 ---
 
@@ -161,7 +206,8 @@ This is a structured reference for:
 | **Session fixation** | Attacker forces user to use attacker's session ID | Low | Account access | [THEORETICAL] |
 | **Weak recovery questions** | "What's your favorite color?" used as password reset verification | Low | Easy account takeover | [THEORETICAL] |
 | **Same OTP reused multiple times** | User doesn't clear OTP; it remains valid indefinitely | Low-Medium | Multi-use vulnerability | [OBSERVED] |
-| **Geographic impossible travel** | User logs in UK at 10 AM, then US at 10:05 AM (physically impossible) | Low | Should flag as fraud | [OBSERVED] |
+
+*(Impossible-travel-velocity login patterns are covered once, at §5.2, to avoid duplicating the same signal under two chapters.)*
 
 ### 4.4 Guest vs. Registered Checkout
 
@@ -242,6 +288,15 @@ This is a structured reference for:
 | **Zip code mismatch with city** | User enters real address but zip code doesn't match city; validation fails | Low | Checkout blocked | [OBSERVED] |
 | **International address breaks system** | Address format for Japan/UK doesn't fit US form fields | Low-Medium | Can't ship internationally | [THEORETICAL] |
 
+### 6.4 File Upload & Import Validation Errors
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Empty file accepted or crashes silently** | A 0-byte upload (content import, CSV catalog import, asset upload) is submitted; the importer either proceeds with an empty dataset with no warning, or throws an unhandled error instead of a validation message | Low-Medium | Confusing failure, no actionable feedback | [OBSERVED] |
+| **Malformed content passes the extension check** | A file renamed to match the expected extension (e.g. plain text renamed to `.json`) is accepted by an extension-only check, then fails deep in parsing with a raw/technical error | Low-Medium | Stack-trace-like error surfaced to an admin user | [OBSERVED] |
+| **Oversized file has no pre-upload guard** | A file well beyond the practical import size is accepted by the picker and only rejected (or times out) after a full upload round-trip | Low | Wasted upload time, unclear size limit | [OBSERVED] |
+| **Partial import on validation failure** | One invalid record/row in an otherwise-valid import file aborts the whole import instead of skipping the bad record and importing the rest, or the reverse — a partial import commits with no indication which records failed | Low-Medium | Data loss or unclear import state | [THEORETICAL] |
+
 ---
 
 ## 7. Frontend & UI Edge Cases
@@ -272,6 +327,16 @@ This is a structured reference for:
 | **Double-click checkout button** | User sees slow load, clicks "Place Order" twice | Medium | Duplicate order | [OBSERVED] |
 | **Loading spinner doesn't disable button** | User clicks button during loading; multiple requests sent | Low-Medium | Duplicate order/payment | [OBSERVED] |
 | **Modal doesn't prevent interaction** | User clicks element behind loading modal; unexpected action triggered | Low | Confusing behavior | [OBSERVED] |
+
+### 7.4 Mobile & Responsive Layout Edge Cases
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Above-the-fold element hidden at narrow widths** | A logo, CTA, or nav control that renders correctly on desktop is clipped, overlapped, or pushed off-screen at common mobile widths (e.g. 375px) | Medium | Branding/functional element invisible to mobile users | [OBSERVED] |
+| **Hamburger menu content not fully enumerated by testing** | The mobile nav collapses into a hamburger menu whose contents differ from the desktop mega-menu (fewer/reordered items), and a test pass that only checks the desktop nav misses regressions in the collapsed version | Medium | Broken/incomplete mobile navigation ships undetected | [OBSERVED] |
+| **Cross-browser rendering divergence on mobile** | The same responsive layout renders correctly in one mobile browser engine (e.g. Safari iOS) but breaks in another (e.g. Chrome Android) — vendor-prefixed CSS, viewport unit handling, or safe-area-inset differences | Low-Medium | Browser-specific mobile bugs missed by a single-engine test pass | [OBSERVED] |
+| **Orientation change loses in-progress state** | Rotating the device between portrait and landscape mid-flow (e.g. mid-checkout form fill) resets scroll position, collapses an expanded section, or drops unsaved input | Low | Frustration, potential data loss on a long form | [THEORETICAL] |
+| **Touch/hover-only interaction has no mobile equivalent** | A desktop interaction that depends on `:hover` (a tooltip, a reveal-on-hover swatch) has no tap-triggered equivalent on touch devices, making the information or control unreachable on mobile | Low-Medium | Feature effectively missing on mobile despite existing in the DOM | [OBSERVED] |
 
 ---
 
@@ -334,6 +399,16 @@ This is a structured reference for:
 | **Vague error message on payment failure** | Error says "Transaction Declined" without reason (declined by processor vs. fraud block) | Medium | User confused, might retry same card | [OBSERVED] |
 | **Silent failure on form submission** | Form submits, nothing happens, no error displayed | Low-Medium | User resubmits, duplicate created | [OBSERVED] |
 | **Stack trace exposed in error page** | System error reveals internal code/database names to user | Low | Security issue | [THEORETICAL] |
+
+### 10.3 Admin SPA Module/Blade Availability & Degradation
+
+*(Governed by `BL-CROSS-003` "Module disable → API 404, Admin section removal, dependent degradation" and `BL-CROSS-011` "Graceful degradation when dependent service is down.")*
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Blade fails to open silently instead of a clear error** | An Admin SPA module blade (Notifications, CMS, Assets, SEO, White Labeling, Push Messages, Loyalty, Returns, …) throws an unhandled error or shows a blank panel when its data source is unavailable, instead of a labeled "unavailable" state | Medium | Operator sees a broken screen with no actionable message; hard to distinguish "not installed" from "genuinely broken" | [OBSERVED] |
+| **Underlying REST endpoint returns 500 instead of a documented empty/degraded response** | A module's backing API returns an unhandled 500 (rather than an empty result set or a typed error) when its module is disabled, misconfigured, or has zero records | Medium | Blade/grid throws instead of showing an empty state; masks the real cause | [OBSERVED] |
+| **Grid shows stale/cached content with no "data may be out of date" signal when its source is degraded** | A list blade continues rendering a previous successful response when the live call is failing, giving no indication the displayed data may not be current | Low | Operator acts on stale information without warning | [THEORETICAL] |
 
 ---
 
@@ -497,19 +572,19 @@ VC-specific patterns observed on the platform. Each entry maps to a business log
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
-| **Silent errors[] array** | xAPI mutations (addItem, createOrderFromCart) return HTTP 200 but include non-empty `errors[]` array — agent sees 200 and misses the failure | High | Test false-positive, missed bugs | BL-CART-001, BL-ORD-001 | ECL-10.2 | [OBSERVED] |
+| **Failure hidden in the response body, not in `errors[]`** | xAPI mutations (`addItem`, `createOrderFromCart`, `addBulkItems`) return HTTP 200 **and an EMPTY top-level GraphQL `errors[]`**, with the failure surfaced only inside the payload — a populated `validationErrors` on `CartType`/line items, or `Errors` on a bulk-add result. Checking HTTP status *or* the protocol-level `errors[]` misses it; the two are independent signals and a case must assert both. A genuine unhandled backend exception is the opposite shape — non-empty `errors[]` **plus a null data object** (see ECL-14.9) | High | Test false-positive, missed bugs | BL-CART-001, BL-ORD-001 | ECL-10.2 | [OBSERVED] |
 | **Partial cart update** | `changeCartItemQuantity` returns 200 but qty not actually changed in `cart` response — stale response body | Medium | Wrong quantity in order | BL-CART-002 | ECL-2.1 | [OBSERVED] |
 | **Missing storeId/cultureName** | xAPI query without required context params returns empty result or wrong catalog — agent reads wrong prices | Medium | Wrong product data in test | BL-PRICE-005 | ECL-12.1 | [OBSERVED] |
-| **addItem with parent SKU** | Agent adds parent product SKU instead of variant SKU — API accepts it silently, cart shows configurable parent without variation | Low-Medium | Wrong item ordered | BL-CAT-002 | ECL-8.2 | [OBSERVED] |
+| **addItem with parent SKU** | Agent adds parent product SKU instead of variant SKU — API accepts it silently, cart shows configurable parent without variation | Low-Medium | Wrong item ordered | BL-CAT-006 | ECL-8.2 | [OBSERVED] |
 
 ### 14.2 Search Index Lag (Elasticsearch)
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
-| **Price change not reflected** | Admin updates price → storefront still shows old price for 30-60s until re-index completes | High | Price test fails spuriously | BL-PRICE-001 | ECL-2.3 | [OBSERVED] |
-| **New product invisible** | Product published in admin, agent searches immediately — product not in results because index job queued | Medium | Product not found in test | BL-SEARCH-001 | ECL-3.3 | [OBSERVED] |
-| **Out-of-stock item still shown** | Inventory depleted, but search results still show item as available for 30-60s | Medium | Add-to-cart fails unexpectedly | BL-CART-001 | ECL-2.1 | [OBSERVED] |
-| **Facet count stale** | Filter shows "Color: Blue (12)" but actual result count differs after price/stock changes | Low-Medium | Misleading filter, zero results on click | BL-SEARCH-001 | ECL-3.2 | [OBSERVED] |
+| **Price change not reflected** | Admin updates price → storefront still shows old price for 30-60s until re-index completes | High | Price test fails spuriously | BL-CROSS-002 | ECL-2.3 | [OBSERVED] |
+| **New product invisible** | Product published in admin, agent searches immediately — product not in results because index job queued | Medium | Product not found in test | BL-SRCH-003 | ECL-3.3 | [OBSERVED] |
+| **Out-of-stock item still shown** | Inventory depleted, but search results still show item as available for 30-60s | Medium | Add-to-cart fails unexpectedly | BL-CROSS-002 | ECL-2.1 | [OBSERVED] |
+| **Facet count stale** | Filter shows "Color: Blue (12)" but actual result count differs after price/stock changes | Low-Medium | Misleading filter, zero results on click | BL-SRCH-001 | ECL-3.2 | [OBSERVED] |
 
 **Agent rule:** After any catalog/price/inventory change in admin, wait 60s before asserting storefront reflects the change.
 
@@ -517,11 +592,11 @@ VC-specific patterns observed on the platform. Each entry maps to a business log
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
-| **Cart isolation loss** | Agent switches org via account selector — previous org's cart persists or bleeds into new org cart | Medium | Wrong cart in checkout | BL-ORG-002 | ECL-5.3 | [OBSERVED] |
-| **Org context missing after login** | User logs in, `me.organization` is null in first GraphQL request — populated after second call or page refresh | Medium | B2B features absent on first load | BL-ORG-002 | ECL-4.2 | [OBSERVED] |
-| **Company member role not applied** | New org member invited, but role permissions (Buyer vs Manager vs Admin) not enforced immediately — role applied after session refresh | Low-Medium | Feature access test incorrect | BL-ORG-003 | ECL-4.3 | [OBSERVED] |
-| **Multi-org ship-to conflict** | User with 2 orgs — ship-to addresses from Org A visible when acting as Org B | Low | Wrong address options shown | BL-ORG-002 | ECL-6.3 | [OBSERVED] |
-| **Addresses link visible for org user** | `Addresses` link in account sidebar hidden for org users — expected behavior, not a bug | High (false bug) | False-positive bug reports | BL-ORG-001 | — | [OBSERVED] |
+| **Cart isolation loss** | Agent switches org via account selector — previous org's cart persists or bleeds into new org cart | Medium | Wrong cart in checkout | BL-B2B-001 | ECL-5.3 | [OBSERVED] |
+| **Org context missing after login** | User logs in, `me.organization` is null in first GraphQL request — populated after second call or page refresh | Medium | B2B features absent on first load | BL-B2B-001 | ECL-4.2 | [OBSERVED] |
+| **Company member role not applied** | New org member invited, but role permissions (Buyer vs Manager vs Admin) not enforced immediately — role applied after session refresh | Low-Medium | Feature access test incorrect | BL-B2B-005 | ECL-4.3 | [OBSERVED] |
+| **Multi-org ship-to conflict** | User with 2 orgs — ship-to addresses from Org A visible when acting as Org B | Low | Wrong address options shown | BL-B2B-001 | ECL-6.3 | [OBSERVED] |
+| **Addresses link visible for org user** | `Addresses` link in account sidebar hidden for org users — expected behavior, not a bug | High (false bug) | False-positive bug reports | BL-B2B-001 | — | [OBSERVED] |
 
 ### 14.4 Price List & Currency Edge Cases
 
@@ -529,34 +604,89 @@ VC-specific patterns observed on the platform. Each entry maps to a business log
 |---------|-------------|-----------|--------|-------------|---------|--------|
 | **Currency switch shows "unavailable"** | No price list for selected currency → product shows as unavailable — correct behavior but confusing | Medium | Test confusion (pass vs fail) | BL-PRICE-005 | ECL-12.1 | [OBSERVED] |
 | **Tier price boundary off-by-one** | Price tier at qty=10 doesn't activate at exactly 10 — activates at 11 | Low | Revenue loss at boundary | BL-PRICE-004 | ECL-2.3 | [OBSERVED] |
-| **Stale price in mini-cart** | Price updated in admin → user's open mini-cart still shows old price even after addItem | Medium | Overcharge/undercharge | BL-PRICE-001 | ECL-1.3 | [OBSERVED] |
+| **Stale price in mini-cart** | Price updated in admin → user's open mini-cart still shows old price even after addItem | Medium | Overcharge/undercharge | BL-CROSS-002 | ECL-1.3 | [OBSERVED] |
 | **Tax recalculated at wrong step** | Tax shown in cart, recalculated at checkout when shipping address added — user sees different total | Medium | User surprise, cart abandonment | BL-PRICE-002 | ECL-6.2 | [OBSERVED] |
 
 ### 14.5 Configurable Product & Variation Edge Cases
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
-| **Add to Cart enabled before selection** | B2C variation product: 'Add to Cart' clickable before user selects any option — adds parent SKU | Medium | Wrong item in cart | BL-CAT-002 | ECL-8.2 | [OBSERVED] |
-| **VirtoFrontend_UI_Layout property absent** | B2C layout not shown because property missing from product — shows B2B table instead | Low-Medium | Wrong layout in test | BL-CAT-002 | ECL-8.1 | [OBSERVED] |
-| **Image not switching on variant select** | Variant image URL present in API response but main PDP image doesn't update on option click | Low | Visual confusion, wrong variant ordered | BL-CAT-002 | ECL-8.2 | [OBSERVED] |
-| **Unavailable combo not blocked** | Two options selected forming an out-of-stock combination — 'Add to Cart' stays enabled, error only at API | Low-Medium | Order for unavailable variant | BL-CAT-002 | ECL-2.1 | [OBSERVED] |
+| **Add to Cart enabled before selection** | B2C variation product: 'Add to Cart' clickable before user selects any option — adds parent SKU | Medium | Wrong item in cart | BL-CAT-006 | ECL-8.2 | [OBSERVED] |
+| **VirtoFrontend_UI_Layout property absent** | B2C layout not shown because property missing from product — shows B2B table instead | Low-Medium | Wrong layout in test | BL-CAT-006 | ECL-8.1 | [OBSERVED] |
+| **Image not switching on variant select** | Variant image URL present in API response but main PDP image doesn't update on option click | Low | Visual confusion, wrong variant ordered | BL-CAT-006 | ECL-8.2 | [OBSERVED] |
+| **Unavailable combo not blocked** | Two options selected forming an out-of-stock combination — 'Add to Cart' stays enabled, error only at API | Low-Medium | Order for unavailable variant | BL-CAT-006 | ECL-2.1 | [OBSERVED] |
+| **Required configuration section omitted at the API layer** | A direct GraphQL `addItem` call submits only some of a configurable product's sections, omitting a required one — the mutation must reject it (non-empty `errors[]` or zero items added), not silently accept a partially-configured line, even though the storefront UI already blocks this via the disabled Add-to-Cart button | Low | Incomplete configuration reaches an order via a non-UI client | BL-CAT-006 | ECL-2.1 | [OBSERVED] |
+| **Saved-for-Later loses configuration on a bulk, mixed-type move** | Moving several configurable line items (of different configuration shapes) to Saved-for-Later in one bulk call must preserve each item's own `configurationItems` count and type identity — not average, drop, or cross-contaminate them | Low | Configuration silently lost on an item a user expects to restore later | BL-CART-015 | ECL-2.1 | [OBSERVED] |
 
 ### 14.6 Payment Processor Differences (VC-specific)
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
-| **CyberSource on cart page** | CyberSource payment form renders directly on `/cart` — NOT on `/checkout/payment`. Agent that navigates to `/checkout/payment` first will miss the form | High | Test never reaches payment | BL-PAY-001 | ECL-1.1 | [OBSERVED] |
-| **Skyflow/AuthorizeNet after Place Order** | Skyflow, Authorize.Net, DataTrance require clicking 'Place Order' first — redirects to `/checkout/payment` | High | Agent tries wrong page | BL-PAY-001 | ECL-1.1 | [OBSERVED] |
+| **CyberSource on cart page** | CyberSource payment form renders directly on `/cart` — NOT on `/checkout/payment`. Agent that navigates to `/checkout/payment` first will miss the form | High | Test never reaches payment | BL-PAY-004 | ECL-1.1 | [OBSERVED] |
+| **Datatrans is the only redirect processor** | Datatrans has no inline cart-payment component (`allowCartPayment=false`) — selecting it and clicking 'Place Order' redirects to `/checkout/payment` for card entry. CyberSource, Skyflow **and** Authorize.Net all render inline on `/cart` (as the row above), so an agent that still expects Skyflow or Authorize.Net to redirect will navigate away from the form it needs | High | Agent tries wrong page / misses the inline form | BL-PAY-004 | ECL-1.1 | [OBSERVED] |
 | **Payment iframe blocked by ad-blocker** | Payment script (CyberSource/Skyflow) blocked silently — form appears blank, no error shown | Low-Medium | Silent payment failure | BL-PAY-001 | ECL-7.1 | [OBSERVED] |
-| **Double-click Place Order** | Slow connection: user/agent clicks 'Place Order' twice — two orders created | Medium | Duplicate order | BL-ORD-001 | ECL-7.3 | [OBSERVED] |
+| **Double-click Place Order** | Slow connection: user/agent clicks 'Place Order' twice — two orders created | Medium | Duplicate order | BL-CHK-002 | ECL-7.3 | [OBSERVED] |
+
+**Amended:** 2026-08-06 (auto-applied, triangulated — ECL-AUDIT-2026-08-06). Row 2 was **DRIFT**: it claimed Skyflow, Authorize.Net and "DataTrance" all redirect after Place Order. Skyflow and Authorize.Net have since moved to `allowCartPayment=true` and render inline on the cart like CyberSource, leaving Datatrans as the only redirect processor — the row was steering agents to the wrong page for two of the three processors it named. **Source:** the storefront's shared payment component renders the CyberSource, Skyflow and Authorize.Net processors inline, keyed on the payment type, with an explicit `TODO` noting Datatrans cart payments are not yet supported; the checkout composable's `canPayFromCart` gates on the payment method's `allowCartPayment` flag generically, not on a processor allowlist. **Live:** selecting Authorize.Net on the cart kept the page on `/cart` with no redirect.
 
 ### 14.7 Background Job Timing (Hangfire)
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
-| **Order confirmation email delay** | Email sent via Hangfire — may arrive 5-30s after order confirmation page shown | High | Email assertion fails if checked immediately | BL-ORD-002 | ECL-10.1 | [OBSERVED] |
-| **Search reindex job queued** | Reindex triggered by catalog change but job queued behind other jobs — lag exceeds 60s under load | Low-Medium | Price/product not visible longer than expected | BL-SEARCH-001 | ECL-2.3 | [OBSERVED] |
-| **Inventory sync job** | Inventory decrement happens via background job — brief window where item shows as in-stock post-purchase | Low | Oversell window | BL-CART-001 | ECL-2.1 | [OBSERVED] |
+| **Order confirmation email delay** | Email sent via Hangfire — may arrive 5-30s after order confirmation page shown | High | Email assertion fails if checked immediately | BL-NOTIF-001 | ECL-10.1 | [OBSERVED] |
+| **Search reindex job queued** | Reindex triggered by catalog change but job queued behind other jobs — lag exceeds 60s under load | Low-Medium | Price/product not visible longer than expected | BL-SRCH-003 | ECL-2.3 | [OBSERVED] |
+| **Inventory sync job** | Inventory decrement happens via background job — brief window where item shows as in-stock post-purchase | Low | Oversell window | BL-CROSS-009 | ECL-2.1 | [OBSERVED] |
+
+### 14.8 Environment / Module Version-Schema Drift
+
+Triggered by VCST-5651: a "Loyalty missions" pre-release build (vc-module-loyalty PR #14 — `LoyaltyProgramOperationLog.LoyaltyProgramId` renamed to `SourceType`/`SourceId`) was installed on a shared non-prod environment, ran its forward EF Core migration, and was then reverted to the released build **without** a corresponding down-migration. The released build's `LoyaltyRepository.GetLoyaltyProgramOperationLogsByIdsAsync` (queried via `LoyaltyLogicService.GetUserBalanceAsync`) still selects the old column name, which no longer exists → `SqlException: Invalid column name 'LoyaltyProgramId'` surfaces as an unhandled GraphQL error and `data.cart: null`. No `BL-*` invariant governs environment/schema integrity today — this whole subsection is a coverage gap, not a violation of an existing rule.
+
+| Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
+|---------|-------------|-----------|--------|---------------|---------|--------|
+| **Module downgraded after a forward schema migration** | A newer build's migration renames/drops a column that an older, already-released module build still queries by its old name. The module binary is reverted to the older release without a matching down-migration, so the running code queries a column the live schema no longer has (`Invalid column name`) — the query throws instead of returning data, for every user who exercises that code path, not just one row | Low (non-prod/QA envs where pre-release builds get installed then reverted) | Whole query fails; entire parent object (e.g. `cart`) resolves to `null` rather than a scoped error | — (gap) | — | [OBSERVED] |
+| **Module upgraded before its migration has actually run** | The inverse direction: the module binary is bumped to a newer release (or a pre-release that adds/renames columns) but the target database's migration was never applied — the newer code queries/writes a column or table that does not exist yet. Same `Invalid column/object name` signature as the row above, opposite cause | Low | Same as above | — (gap) | — | [THEORETICAL] |
+| **Dependent modules rolled back independently** | Two modules share a data contract (e.g. an evaluation-context field, a cross-module event payload). One module is reverted to an older release while a dependent module stays on the newer build that assumes the new shape — reads/writes between them desync even though each module individually reports healthy on its own health check | Low | Silent cross-module data corruption or intermittent query failures, hard to attribute to either module in isolation | — (gap) | — | [THEORETICAL] |
+| **Pre-release install pollutes a shared non-prod schema for unrelated test runs** | A pre-release artifact is installed on a shared QA/dev environment to validate one ticket, then the module is reverted to the released version once that ticket is closed — but the migration it ran is never rolled back. A later, functionally unrelated regression run against the same environment can hit the identical schema/code mismatch with zero connection to the feature it is actually testing, and reads as a flaky/unrelated failure | Low | Wastes triage time; a real environment-integrity defect masquerades as test flakiness in an unrelated suite | — (gap) | — | [OBSERVED] |
+
+**Agent rule:** After any admin-driven module version change (install a pre-release build, then revert it) on a shared environment, treat every suite touching that module's data as suspect until a schema sanity check (e.g. a query that reads the affected entity) is re-run — do not assume "downgraded" means "back to the previous behavior."
+
+### 14.9 Cart Validator Extension-Point Fault Isolation
+
+`ICartValidator` implementations (module-contributed — Loyalty, Promotions, Shipping, …) run through `CartValidatorRegistry.ValidateAsync` in a single unguarded loop (vc-module-x-cart `src/VirtoCommerce.XCart.Data/Validators/CartValidatorRegistry.cs`, `foreach (var validator in validators) { ... await validator.ValidateAsync(...) ... }`, no try/catch per validator). An unhandled exception thrown while evaluating ONE validator's rule propagates uncaught through `CartAggregate.ValidateAsync` into the `cart.validationErrors` GraphQL resolver, and the entire top-level `cart` object resolves to `null` — not a scoped error on that one rule.
+
+| Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
+|---------|-------------|-----------|--------|---------------|---------|--------|
+| **One validator's exception nulls the entire parent object** | A single `ICartValidator`'s unhandled exception (e.g. a loyalty-balance lookup hitting a broken query) is not caught per-validator; the whole `cart` response is lost along with every OTHER validator's result and the rest of the cart payload — a design gap in the shared validation pipeline, not specific to Loyalty | Low | Cart becomes completely unreadable for any user who trips the failing validator, cross-module blast radius | — (gap; contrast BL-LOY-008, which only covers the *designed* `LOYALTY_INSUFFICIENT_BALANCE` typed-error path) | ECL-10.2 | [OBSERVED] |
+| **Trigger condition is "any loyalty-priced line", not "mixed cart" specifically** | The balance-check branch fires whenever the cart contains at least one loyalty-currency line item (`hasPointProducts`), independent of whether a cash line is also present (`LoyaltyCartValidator.cs` rule 4). A cart holding ONLY a loyalty-priced item hits the identical code path — "add regular items first" is incidental to the repro, not a precondition | Low | Same crash, wider trigger surface than the reported steps suggest | BL-LOY-008 (rule 4; exception path uncovered) | — | [THEORETICAL] |
+| **A cart made unreadable by a validator crash has no self-service recovery** | Once `cart` resolves to `null`, the storefront has no path to fetch the cart and let the user remove the offending line item — there is no "remove item without first reading validationErrors" flow. The user is stuck with an unusable cart until an operator intervenes, not merely a degraded checkout step | Low | User-facing dead end with no workaround; support escalation required | — (gap) | — | [THEORETICAL] |
+
+**Agent rule:** When a cart/order query returns `data.<aggregate>: null` with a GraphQL `errors[]` entry that looks like an unhandled backend exception (not a typed `errorCode`), suspect a validator/extension-point crash rather than a plain "field failed to resolve" — check whether removing the most recently added line item (via a fresh cart, not the broken one) isolates which contributed rule is throwing.
+
+### 14.10 Admin Order-Edit UI Guards & Status Preservation
+
+Admin SPA order-detail patterns where an editing action must not disturb state it doesn't own. Generic analog: chapter 13.1 (Order Fulfillment Issues).
+
+| Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
+|---------|-------------|-----------|--------|---------------|---------|--------|
+| **Cancel-document control stays enabled during an in-flight refund** | The order-detail "Cancel document" action must be disabled while a refund on that document is submitted/pending — leaving it enabled lets an operator cancel a document a payment operation is currently acting on | Low | Race between cancel and refund, inconsistent payment state | BL-ORD-004 | ECL-13.1 | [OBSERVED] |
+| **Line-item statuses reset when a product is added to an existing order** | Editing an order to add a new line item must not reset the fulfillment/shipment status already recorded on the order's other line items | Low | Loses fulfillment progress, requires manual re-entry | BL-ORD-003 | ECL-13.1 | [OBSERVED] |
+| **Multiple concurrent custom order statuses collapse to one after an edit** | An order carrying more than one custom status value (from different shipments/line items) must preserve all of them after an unrelated edit (e.g. adding a product) — not silently collapse to a single status | Low | Loses operationally meaningful status detail | BL-ORD-003 | ECL-13.1 | [OBSERVED] |
+
+---
+
+## 15. Accessibility Edge Cases
+
+Screen-reader and assistive-technology interaction patterns surfaced by manual/automated WCAG 2.2 AA audits. **Note:** `business-logic.md` does not currently carry a `BL-A11Y` domain; this chapter's `Status` column stands on its own [OBSERVED]/[THEORETICAL] evidence rather than a BL citation (proposed as a BL gap in this audit's cover report).
+
+### 15.1 Screen Reader Interaction Patterns
+
+| Pattern | Description | Frequency | Impact | Status |
+|---------|-------------|-----------|--------|--------|
+| **Modal open/close not announced** | A modal dialog gains focus visually but a screen reader user gets no announcement that a dialog opened, what it contains, or that closing it returned focus to the triggering control | Medium | Screen-reader users lose context, may not know a modal is present | [OBSERVED] |
+| **List semantics not exposed** | A visually list-like structure (product grid, filter options) is not marked up with list/listitem roles, so a screen reader announces it as an undifferentiated block of text | Medium | Screen-reader users can't navigate item-by-item or get a count | [OBSERVED] |
+| **Form field lacks a programmatically associated label** | An input is visually adjacent to its label text but the two aren't associated via `<label for>`/`aria-labelledby`, so a screen reader announces the field with no name | High | Screen-reader users can't tell what a field is for | [OBSERVED] |
+| **Validation error not announced at the point of failure** | A field-level validation error appears visually (red text/border) but isn't associated to the field via `aria-describedby` or announced via a live region, so a screen-reader user submits again with no idea what's wrong | High | Screen-reader users are stuck in a silent failure loop | [OBSERVED] |
+| **Interactive control has no accessible name** | An icon-only button (cart, search, close) has no `aria-label`/visible text, so a screen reader announces only "button" | Medium | Screen-reader users can't identify the control's purpose | [OBSERVED] |
 
 ---
 
@@ -567,23 +697,58 @@ Quick lookup: which ECL sections map to which BL-* invariants in `business-logic
 | ECL Section | Description | BL Invariants |
 |-------------|-------------|---------------|
 | ECL-1.1 Payment Methods | Payment form location, processor differences | BL-PAY-001 |
-| ECL-1.2 Session & Timeout | Session expiry during checkout | BL-CHK-001 |
+| ECL-1.2 Session & Timeout | Session expiry during checkout | BL-AUTH-001 |
 | ECL-1.3 Coupon & Discount | Stacking, expiry, case sensitivity | BL-PRICE-001, BL-PRICE-006 |
+| ECL-1.4 Layout Shift & Hover Displacement | Hover/state-change layout shift | BL-UI-003 |
+| ECL-1.5 Spacing & Design-Token Compliance | Off-grid spacing, stale audit grid | BL-UI-002 |
+| ECL-1.6 Overflow & Viewport Scroll | Horizontal scroll, fluid-band overflow | BL-UI-004 |
+| ECL-1.7 Alignment in Horizontal Groups | Row height parity | BL-UI-005 |
+| ECL-1.8 Touch Target Sizing | Sub-AA touch targets, no spacing buffer | BL-UI-006 |
 | ECL-2.1 Race Conditions | Overselling, last-item conflict | BL-CART-001 |
+| ECL-2.2 Stock Depletion Notifications | "Only 1 left" nagware, stale inventory cache | BL-CART-001 |
 | ECL-2.3 Pricing Timing | Stale cart totals, flash sale conflict | BL-PRICE-001, BL-PRICE-004 |
-| ECL-3.1 No Results | Dead-end search, zero results | BL-SEARCH-001 |
-| ECL-3.2 Filter & Sort | Sort reset, filter persistence | BL-SEARCH-001 |
-| ECL-4.1 Email & Identity | Email variations, typos | BL-AUTH-001 |
-| ECL-4.2 Password & Auth | Brute force, spaces, lockout | BL-AUTH-001, BL-AUTH-002 |
-| ECL-4.3 Account Takeover | Session fixation, OTP reuse | BL-AUTH-002 |
-| ECL-4.4 Guest vs Registered | Conflict on same email | BL-AUTH-001 |
-| ECL-5.3 Cart & Browsing | Quantity manipulation (negative/huge) | BL-CART-003 |
+| ECL-3.1 No Results | Dead-end search, zero results | BL-SRCH-002 |
+| ECL-3.2 Filter & Sort | Sort reset, filter persistence | BL-SRCH-001 |
+| ECL-3.3 Search Quality Issues | Synonym failure, deleted product in results | BL-SRCH-003 |
+| ECL-4.1 Email & Identity | Email variations, typos | — (no BL invariant governs consumer email/identity normalization) |
+| ECL-4.2 Password & Auth | Brute force, spaces, lockout | BL-AUTH-003 |
+| ECL-4.3 Account Takeover | Session fixation, OTP reuse, email-change bypass | BL-AUTH-002 |
+| ECL-4.4 Guest vs Registered | Conflict on same email | BL-CHK-001 |
+| ECL-5.1 Rapid & Repetitive Actions | Bulk add-to-cart, card testing pattern | — (fraud-detection heuristic, not a testable platform invariant) |
+| ECL-5.2 Geographic & Temporal Anomalies | Impossible travel, VPN/proxy | — (fraud-detection heuristic, not a testable platform invariant) |
+| ECL-5.3 Cart & Browsing | Quantity manipulation (negative/huge) | BL-CART-001 |
+| ECL-5.4 Return & Refund Abuse | Wardrobing, serial returner | BL-ORD-004 |
+| ECL-6.1 Stock Sync Problems | Warehouse lag, off-by-one count | BL-CAT-007 |
 | ECL-6.2 Tax & Shipping | Threshold edge case, recalculation | BL-PRICE-002 |
-| ECL-6.3 Address Validation | Autocomplete, special chars | BL-CHK-001 |
-| ECL-7.3 Loading States | Double-click checkout, spinner | BL-ORD-001 |
-| ECL-8.2 Variant & SKU | Hidden variants, price caching | BL-CAT-002 |
+| ECL-6.3 Address Validation | Autocomplete, special chars, country format | BL-CHK-003 |
+| ECL-6.4 File Upload & Import Validation | Empty/malformed/oversized import files | — (gap; see `bl_proposals` in the audit that added this section) |
+| ECL-7.1 Browser & Device Issues | JS disabled, ad-blocker, stale cache | — (no single BL invariant; overlaps BL-CROSS-011) |
+| ECL-7.2 Form Input Edge Cases | Special chars, off-screen validation | — (no single BL invariant; overlaps BL-CHK-003) |
+| ECL-7.3 Loading States | Double-click checkout, spinner | BL-CHK-002 |
+| ECL-7.4 Mobile & Responsive Layout | Hidden above-fold element, hamburger content, orientation loss | — (gap; see `bl_proposals` in the audit that added this section) |
+| ECL-8.1 Product Information Problems | Misleading images, missing size chart | — (no single BL invariant) |
+| ECL-8.2 Variant & SKU | Hidden variants, price caching | BL-CAT-006 |
+| ECL-9.1 Fake & Manipulated Reviews | Coordinated reviews, revenge reviews | — (not modeled by a platform business-logic invariant) |
+| ECL-9.2 Review Display Issues | Sort bias, vote manipulation | — (not modeled by a platform business-logic invariant) |
+| ECL-10.1 Timeout & Slow Load | Checkout API timeout, stale API cache | BL-CROSS-009 |
 | ECL-10.2 Error Handling | Silent failure, vague messages | BL-ORD-001 |
-| ECL-11.1 Conversion Tracking | Duplicate pixel fire on refresh | BL-ORD-001 |
+| ECL-10.3 Admin SPA Module/Blade Availability | Blade fails silently, 500 instead of degraded response | BL-CROSS-003, BL-CROSS-011 |
+| ECL-11.1 Conversion Tracking | Duplicate pixel fire on refresh | BL-CROSS-005 |
 | ECL-12.1 Currency | No price list → unavailable | BL-PRICE-005 |
+| ECL-12.2 International Shipping & Taxes | VAT/GST error, undisclosed customs duty | BL-PRICE-002 |
+| ECL-13.1 Order Fulfillment Issues | Partial fulfillment, backorder, cancel-after-ship | BL-ORD-002, BL-ORD-003 |
+| ECL-13.2 Subscription & Recurring Billing | Silent renewal failure, proration | — (no native VC subscription/recurring-billing module; applies only to deployments with a custom extension) |
+| ECL-13.3 Loyalty & Points | Points not credited, double-counting | BL-LOY-007, BL-LOY-008 |
+| ECL-14.1 GraphQL xAPI Error Patterns | Silent `errors[]`, missing context params | BL-CART-001, BL-ORD-001, BL-PRICE-005, BL-CAT-006 |
+| ECL-14.2 Search Index Lag | Price/product/facet staleness after admin change | BL-CROSS-002, BL-SRCH-001, BL-SRCH-003 |
+| ECL-14.3 B2B Organization Context | Cart isolation loss, role not applied | BL-B2B-001, BL-B2B-005 |
+| ECL-14.4 Price List & Currency Edge Cases | Currency unavailable, tier boundary, stale mini-cart price | BL-PRICE-002, BL-PRICE-004, BL-PRICE-005, BL-CROSS-002 |
+| ECL-14.5 Configurable Product & Variation Edge Cases | Add-to-cart before selection, required-section omission, bulk SFL | BL-CAT-006, BL-CART-015 |
+| ECL-14.6 Payment Processor Differences | Form-location differences, double-click Place Order | BL-PAY-001, BL-PAY-004, BL-CHK-002 |
+| ECL-14.7 Background Job Timing | Email delay, reindex lag, inventory sync window | BL-NOTIF-001, BL-SRCH-003, BL-CROSS-009 |
+| ECL-14.8 Environment/Schema Drift | Module downgrade without DB rollback; upgrade before migration runs | — (gap; VCST-5651) |
+| ECL-14.9 Validator Fault Isolation | Unhandled validator exception nulls the whole cart/order object | BL-LOY-008 (partial); ECL-10.2 |
+| ECL-14.10 Admin Order-Edit UI Guards | Cancel-during-refund guard, status preservation on edit | BL-ORD-003, BL-ORD-004 |
+| ECL-15.1 Screen Reader Interaction Patterns | Unannounced modals/errors, unlabeled controls | — (gap; no `BL-A11Y` domain yet — see `bl_proposals`) |
 
 **End of Library**

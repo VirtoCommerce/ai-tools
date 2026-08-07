@@ -72,6 +72,6 @@ Without these, you'll fight flake instead of finding regressions:
 - **Animations/transitions** — set `parameters.chromatic.pauseAnimationAtEnd: true` per story, or inject CSS to disable transitions in the test preview.
 - **Time/random** — mock `Date.now()`, `Math.random()`, timers (`vi.useFakeTimers()` in setup).
 - **Network** — MSW addon (`msw-storybook-addon`). Stories must not call live backends.
-- **Theme scope** — Coffee is the only A11y-compliant theme (memory: `feedback_a11y_coffee_only`); capture all themes for visual diff, but assert a11y only on Coffee.
+- **Theme scope** — **Coffee** and **Red** are the A11y-gated themes (memory: `feedback_a11y_gated_themes`); capture all themes for visual diff, but assert a11y only on those two.
 
 See `tooling-stack.md` for the full package map and CI gating rules.

@@ -78,6 +78,65 @@ The repo convention (see `compute-metrics.ts`, `lint-test-cases.ts`): **mechanic
 - Triage FAIL + BLOCKED + SKIPPED (only PASS and PENDING excluded). BLOCKED → why (env / precondition / data / real bug); SKIPPED → removed feature (stale) vs intentional gate.
 - Ambiguous → `REAL_BUG` / `CONFIDENCE: LOW` → human review; never relabel uncertainty as a test-defect.
 
+## Live (incremental) triage — DESIGN, not yet implemented
+
+Today triage starts only after the run completes, so on a ~240-case run the whole classification
+cost lands as a serial tail. Overlapping it with execution is a real wall-clock win — the evidence
+is already on disk the moment a case fails (`traces/{TC-ID}-FAIL-trace.json`, screenshots, the
+lane HAR). **The win is only safe for the stages that need neither a browser nor a write.**
+
+**Split at the browser boundary:**
+
+| Stage | Browser? | Writes? | When |
+|---|---|---|---|
+| `triage:collect` (deterministic evidence bundle) | No | No | **Live**, per failure |
+| Classify (`regression-triage-agent`) | No | No | **Live**, batched (~5 failures/agent) |
+| Cross-suite correlation + fingerprint dedup | No | No | **Live**, cheap |
+| Live-verify a `REAL_BUG` | **Yes** | No | **After** the run |
+| `--fix` test-case edits | No | **Yes** | After that suite is `done` |
+| `/qa-bug` drafting (needs repro) | **Yes** | Yes | **After** the run |
+
+**Mechanism.** A `Monitor` tails `reports/regression/{RUN_ID}/suite-*-results.json` for newly-added
+`FAIL` rows → batches them → spawns a **browserless** classifier per batch → accumulates
+`reports/regression/{RUN_ID}/triage-provisional.json`. On run completion, **reconcile** and only
+then run the browser stages.
+
+**Four hazards that make the naive "triage everything live" version worse than serial — each is why
+a stage sits where it does above:**
+
+1. **Lane contention.** Max 3 concurrent browser agents and firefox cannot click this storefront or
+   the Admin SPA (`.claude/rules/agents.md`), so a full run already owns both usable lanes. A
+   live-verifying agent either steals a lane from the run it is accelerating or lands on firefox and
+   fails spuriously. Anything needing a browser therefore waits.
+2. **Retries have not settled.** The orchestrator retries a failed suite once via the fallback chain,
+   so a FAIL at T can be a PASS at T+20m. Every live verdict is **provisional** until the suite is
+   `done`; the reconcile step drops failures that later passed. Skipping it drafts bugs for flakes.
+3. **Cross-case correlation is lost per-case.** One root cause typically produces failures across
+   several suites (a platform `TypeLoadException` surfaced as failures across 042/078/031 on
+   2026-08-06). Classify in **batches with the accumulated ledger in context**, never one case in
+   isolation, or you file N bugs for one cause.
+4. **Write/state hazards.** `--fix` edits suite CSVs while a runner may be executing that suite (the
+   runner snapshots to `suite-*-resolved.csv`, but a later `suites:sync` would disagree), and a
+   `/qa-bug` repro mutates env state under the live suites. Both are gated behind suite completion.
+
+**Acceptance criteria for the implementation:** a provisional verdict is never presented as final; the
+reconcile step is mandatory and logged (how many provisional verdicts were dropped on retry); zero
+browser agents are spawned while any suite is `running`; and the ledger records, per finding, the
+suite state at classification time so a reader can tell what was still in flight.
+
+## Excluding known false positives
+
+`config/known-false-positives.json` declares cases that **cannot** pass for a non-product reason (a
+case asserting a surface that does not exist, or one gated behind config that is off by design).
+Consumed by `scripts/regression/generate-regression-html-report.ts` to label and group such rows.
+
+**It is not a mute button.** An entry never deletes or hides a row: the report still renders it,
+still counts it, and prints an explicit `N excluded as non-actionable` disclosure. Every entry MUST
+carry `reason` **and** `source` (the memory, ticket, or doc establishing it) — entries missing either
+are dropped at load, so the registry cannot weaken a report by omission. The correct long-term fix is
+to repair or retire the case via `/qa-review-tests --fix`; treat the file as a ledger of known debt
+with a `recheckWhen` trigger, not a destination.
+
 ## Related
 
 | Skill/command | Relationship |

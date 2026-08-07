@@ -381,7 +381,7 @@ CRI-GQL-092,changeCartConfigurationItemSelected — TRUE→FALSE→TRUE Round-Tr
   query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type options { product { id } } } } }
 [GQL-EXEC get_def]
 [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
-[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_BASE_ID]
 [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
 [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
 [GQL-OP add_item]
@@ -421,7 +421,7 @@ CRI-GQL-092,changeCartConfigurationItemSelected — TRUE→FALSE→TRUE Round-Tr
 [ERRORS label=flip_true] errors[] empty
 [DATA label=flip_true] data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = true
 [DATA label=flip_true] data.changeCartConfigurationItemSelected.items.0.listPrice.amount > {{DEFLATED_LIST_PRICE}}
-[DATA label=flip_true] data.changeCartConfigurationItemSelected.items.0.listPrice.amount = {{BASE_LIST_PRICE}}",[EVIDENCE] Pre-fix VCST-4961: flip_false returned selectedForCheckout=true (write ignored); DEFLATED_LIST_PRICE = BASE_LIST_PRICE (reprice not triggered). Post-fix: both flag write + reprice verified.,flip_false: selectedForCheckout=true (write path still broken — VCST-4961 fix incomplete); DEFLATED_LIST_PRICE = BASE_LIST_PRICE (reprice not triggered); errors[] non-empty; flip_true listPrice != BASE_LIST_PRICE,cleanup_post inline,VCST-4961,Draft
+[DATA label=flip_true] data.changeCartConfigurationItemSelected.items.0.listPrice.amount = {{BASE_LIST_PRICE}}",[EVIDENCE] Pre-fix VCST-4961: flip_false returned selectedForCheckout=true (write ignored); DEFLATED_LIST_PRICE = BASE_LIST_PRICE (reprice not triggered). Post-fix: both flag write + reprice verified.,flip_false: selectedForCheckout=true (write path still broken — VCST-4961 fix incomplete); DEFLATED_LIST_PRICE = BASE_LIST_PRICE (reprice not triggered); errors[] non-empty; flip_true listPrice != BASE_LIST_PRICE,cleanup_post inline,"VCST-4961; Corrected: capture uses options.1 (priced RAM option) instead of blind options.0 ($0-priced by seed spec, making the price-delta assertions unsatisfiable) (TCA-2026-08-05)",Draft
 CRI-GQL-093,unSelectAllCartConfigurationItems + selectAllCartConfigurationItems — Batch Round-Trip With Reprice (VCST-4961),GraphQL > xCart > configurationItems > selectedForCheckout,Critical,BL-GQL-001; BL-CART-010; BL-CART-011; BL-CART-012,ECL-2.1; ECL-14.1,"Runner-native. ORG_USER. Batch write-path for VCST-4961: unSelectAllCartConfigurationItems sets all configItems of a single lineItem to false + triggers reprice down (BL-CART-012 scoping), then selectAllCartConfigurationItems re-enables all and restores listPrice to baseline. Boundary: 2 sections in both directions. BL-CART-012: scoped to one lineItemId.",configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
