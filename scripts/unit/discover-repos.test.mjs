@@ -7,12 +7,19 @@ import assert from "node:assert/strict";
 import {
   moduleToRepo,
   classify,
+  flagUnverifiedModules,
   pickFrontendRepos,
   deriveClientOrg,
   stripRef,
   frontendProvenanceFromPackage,
   vcFrontendRef,
 } from "../../.claude/skills/project-init/discover-repos.mjs";
+// The client-shipped copy of the same pure helpers — asserted to agree with the .claude mirror
+// (per CLAUDE.md the two are deliberately duplicated, so a same-PR edit must land in both).
+import {
+  moduleToRepo as moduleToRepoPlugin,
+  flagUnverifiedModules as flagUnverifiedModulesPlugin,
+} from "../../plugins/vc-fix/skills/project-init/discover-repos.mjs";
 
 test("moduleToRepo: parses a GitHub ProjectUrl", () => {
   const r = moduleToRepo({ Id: "VirtoCommerce.Cart", ProjectUrl: "https://github.com/VirtoCommerce/vc-module-cart" });
@@ -125,4 +132,48 @@ test("classify (#216): a guessed client module carries nameFromId; a URL-derived
   const urlDerived = client.find((c) => c.name === "Lakeshirt-LEO/leo-main-module");
   assert.equal(guessed.nameFromId, true);
   assert.equal(urlDerived.nameFromId, undefined); // omitted, not carried
+});
+
+// #216 — the actual DECISION the fix makes (extracted from main() so it is testable without
+// a network repo listing): confirm a guess that matches the live listing, flag one that doesn't.
+test("flagUnverifiedModules (#216): a guessed name matching the live listing is confirmed", () => {
+  const repos = [{ name: "vc-module-acme-orders", kind: "module", nameFromId: true }];
+  const unverified = flagUnverifiedModules(repos, ["vc-module-acme-orders", "some-other-repo"]);
+  assert.deepEqual(unverified, []);
+  assert.equal(repos[0].nameUnverified, undefined); // not flagged
+  assert.equal(repos[0].nameFromId, undefined); // internal flag cleared once the decision is made
+});
+
+test("flagUnverifiedModules (#216): a guessed name matching NOTHING is flagged nameUnverified", () => {
+  const repos = [{ name: "vc-module-ghost", kind: "module", nameFromId: true }];
+  const unverified = flagUnverifiedModules(repos, ["vc-module-real"]);
+  assert.deepEqual(unverified, ["vc-module-ghost"]);
+  assert.equal(repos[0].nameUnverified, true);
+  assert.equal(repos[0].nameFromId, undefined);
+});
+
+test("flagUnverifiedModules (#216): a URL-derived name (no nameFromId) is never flagged, even if absent", () => {
+  const repos = [{ name: "Lakeshirt-LEO/leo-main-module", kind: "module", host: "azure-repos" }];
+  const unverified = flagUnverifiedModules(repos, []); // not in the (empty) listing
+  assert.deepEqual(unverified, []);
+  assert.equal(repos[0].nameUnverified, undefined);
+});
+
+test("flagUnverifiedModules (#216): match is case-insensitive (guess is lowercased, listing original-case)", () => {
+  const repos = [{ name: "vc-module-custom-checkout", kind: "module", nameFromId: true }];
+  const unverified = flagUnverifiedModules(repos, ["VC-Module-Custom-Checkout"]);
+  assert.deepEqual(unverified, []); // confirmed despite case difference — no false UNVERIFIED
+  assert.equal(repos[0].nameUnverified, undefined);
+});
+
+// #216 — the client-shipped (plugins/vc-fix) copy of the helpers must behave identically.
+test("both surfaces (#216): .claude and plugins/vc-fix exports agree", () => {
+  const mod = { Id: "Acme.CustomOrders" };
+  assert.equal(moduleToRepoPlugin(mod).nameFromId, true);
+  assert.equal(moduleToRepo(mod).nameFromId, moduleToRepoPlugin(mod).nameFromId);
+  const a = [{ name: "vc-module-ghost", kind: "module", nameFromId: true }];
+  const b = [{ name: "vc-module-ghost", kind: "module", nameFromId: true }];
+  assert.deepEqual(flagUnverifiedModules(a, ["x"]), flagUnverifiedModulesPlugin(b, ["x"]));
+  assert.equal(a[0].nameUnverified, true);
+  assert.equal(b[0].nameUnverified, true);
 });

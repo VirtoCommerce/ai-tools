@@ -406,6 +406,7 @@ async function main() {
             const why =
               res.status === 404 ? `repo '${name}' not found in ${org}/${project} — check repos.client name / project`
               : res.status === 401 || res.status === 403 ? `${ado.via} not accepted — check ADO PAT Code (Read) scope or az tenant`
+              : res.status < 400 ? `${ado.via} not accepted (non-JSON response, likely an ADO sign-in page — a 203 or a followed redirect) — check ADO PAT Code (Read) scope or az tenant`
               : `unexpected response — ${ado.via} probe to ${org}/${project}`;
             add(label, "FAIL", `→ ${res.status} (${why})`);
             continue;

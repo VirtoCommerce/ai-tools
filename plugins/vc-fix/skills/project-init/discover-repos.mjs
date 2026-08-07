@@ -114,6 +114,29 @@ export function classify(modules, clientOrg) {
   return { client, platform };
 }
 
+/**
+ * #216 — reconcile id-GUESSED client-module names (moduleToRepo `nameFromId`) against the
+ * client's LIVE repo listing. Pure (unit-testable — the network fetch that OBTAINS the names
+ * stays in main()). Case-insensitive, because moduleToRepo lowercases the derived name while
+ * the live listing carries original case. For each guessed client MODULE: a match CONFIRMS it
+ * (clear the internal `nameFromId` flag, decision made); a miss marks it `nameUnverified` so the
+ * operator confirms/corrects repos.client instead of /qa-fix routing a bug to a repo that isn't
+ * there. Returns the names left unverified (for the caller to log). Mutates the entries.
+ */
+export function flagUnverifiedModules(clientRepos, liveRepoNames) {
+  const live = new Set((liveRepoNames || []).map((n) => String(n).toLowerCase()));
+  const unverified = [];
+  for (const c of clientRepos || []) {
+    if (c.kind !== "module" || !c.nameFromId) continue;
+    const bare = String(c.name).split("/").pop().toLowerCase();
+    delete c.nameFromId; // decision made — the internal provenance flag never persists
+    if (live.has(bare)) continue; // guess confirmed against the live listing
+    c.nameUnverified = true;
+    unverified.push(c.name);
+  }
+  return unverified;
+}
+
 /** Heuristic: pick storefront/theme/frontend repo names from a client repo list. Pure. */
 export function pickFrontendRepos(names) {
   // Broadened (H6): the storefront repo is frequently named without the vc- prefix
@@ -602,18 +625,12 @@ async function main() {
         if (info?.defaultBranch && !c.defaultBranch) c.defaultBranch = info.defaultBranch;
       }
 
-      // #216 — a client MODULE whose name was GUESSED from the module id (the module had no
-      // ProjectUrl to parse) is a heuristic, not a fact. Cross-check each guess against the
-      // client's live repo listing: a name that matches a real repo is confirmed; one that
-      // matches nothing is flagged `nameUnverified` + surfaced, so the operator confirms or
-      // corrects repos.client instead of /qa-fix later routing a bug to a repo that isn't there.
-      for (const c of result.client) {
-        if (c.kind !== "module" || !c.nameFromId) continue;
-        const bare = c.name.split("/").pop();
-        if (byName.has(bare)) continue; // guess confirmed against the live listing
-        c.nameUnverified = true;
+      // #216 — cross-check id-GUESSED client-module names against the live listing (pure,
+      // case-insensitive helper). A confirmed guess drops its provenance flag; a miss is
+      // marked `nameUnverified`. Surface each name left unverified for the operator.
+      for (const nm of flagUnverifiedModules(result.client, all.map((r) => r.name))) {
         console.error(
-          `[discover-repos] UNVERIFIED client module repo '${c.name}' — the name was derived from the module id (no ProjectUrl) and matches no repo in ${clientOrg}'s listing. ASK the operator to confirm or correct repos.client (it may be named differently, or live in another org/project).`,
+          `[discover-repos] UNVERIFIED client module repo '${nm}' — the name was derived from the module id (no ProjectUrl) and matches no repo in ${clientOrg}'s listing. ASK the operator to confirm or correct repos.client (it may be named differently, or live in another org/project).`,
         );
       }
 
@@ -708,9 +725,16 @@ async function main() {
   // VC is always on GitHub), or a clientOrg resolved; else platform (the native default).
   const projectType =
     result.client.length || host === "azure-repos" || clientOrg ? "client" : "platform";
-  // `nameFromId` is an internal provenance flag (see #216) — the actionable signal that
-  // survives to the profile is `nameUnverified`. Strip the internal flag before serialising.
-  for (const c of result.client) delete c.nameFromId;
+  // #216 — any id-guessed name that was never cross-checked (no clientOrg resolved, or
+  // --modules-json mode, so flagUnverifiedModules never ran for it) is NOT "confirmed":
+  // mark it unverified before the internal `nameFromId` provenance flag is stripped, so an
+  // unchecked guess never looks trusted in the profile. (A cross-checked guess already had
+  // its flag cleared by the helper.) `nameUnverified` is advisory — surfaced to the operator
+  // via stderr and persisted in the profile; it has no programmatic consumer today.
+  for (const c of result.client) {
+    if (c.nameFromId && c.nameUnverified === undefined) c.nameUnverified = true;
+    delete c.nameFromId;
+  }
   const out = { projectType, clientOrg, ...result };
   console.error(`[discover-repos] derived projectType=${projectType}`);
   if (projectType === "client" && !clientOrg && host === "github") {
