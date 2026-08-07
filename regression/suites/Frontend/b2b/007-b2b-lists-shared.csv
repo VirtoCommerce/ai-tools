@@ -1,94 +1,90 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "B2C-LIST-001","Create Wishlist/List","B2C Features > Lists","Critical","BL-B2B-002",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in, no lists created","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to Lists or Wishlist page
-2. [ACT] Click 'Create New List' button
-3. [ACT] Enter list name: 'Summer Essentials'
-4. [ACT] Optionally set privacy: Private or Shared
-5. [ACT] Click 'Create'
-6. [ASSERT] Verify list created
-7. [ASSERT] Verify list appears in My Lists","[DOM] 'Create New List' button is visible
-[DOM] Form displays: Name (required), Description (optional), Privacy (Private/Shared)
-[DOM] Success message shown: 'List created' or equivalent
-[DOM] List appears in My Lists section
-[DOM] Can create multiple lists","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Create button missing; form missing required fields; list not appearing in My Lists after creation; success message not shown","delete created list","VCST-3928","Manual"
+User logged in, no lists created","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'CREATE LIST' (`[data-test-id=""create-wishlist-button""]`)
+3. [ACT] fill the list-name field (`[data-test-id=""wishlist-name-input""]`, placeholder 'Enter name') with 'Summer Essentials'
+4. [ACT] click 'Save' (`[data-test-id=""wishlist-settings-save-button""]`)
+5. [ASSERT] verify list created
+6. [ASSERT] verify list appears in My Lists","[DOM] 'CREATE LIST' button (`[data-test-id=""create-wishlist-button""]`) visible on /account/lists
+[DOM] create dialog shows the name field (`[data-test-id=""wishlist-name-input""]`, placeholder 'Enter name') and a description field with a 0/250 character counter
+[DOM] 'Save' button (`[data-test-id=""wishlist-settings-save-button""]`) creates the list and returns to /account/lists
+[DOM] created list appears as a list card (name link + item-count badge + 'Last modified' date) on /account/lists
+[STATE] repeating the flow creates a second, independent list card","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Create button missing; form missing required fields; list not appearing in My Lists after creation; success message not shown","delete created list","VCST-3928; Blocked: live selector pass on a customer account (USER_DEFAULT) found no Privacy/Shared control in the create dialog (Name + Description + 0/250 counter only) — not observed on a customer account, needs confirmation (possibly org-gated), not treated as refuted (2026-08-05)","Manual"
 "B2C-LIST-002","Add Product to List from Product Page","B2C Features > Lists","Critical","BL-B2B-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in, list exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to product detail page
-2. [ACT] Locate and click 'Add to List' or heart icon
-3. [ASSERT] Verify list selector modal or dropdown opens
-4. [ACT] Select list: 'Summer Essentials'
-5. [ACT] Click 'Add'
-6. [ASSERT] Verify success notification","[DOM] 'Add to List' button or heart icon visible on PDP
-[DOM] List selector shows all user lists
-[DOM] Option to create new list inline visible
-[DOM] Success message: 'Added to Summer Essentials'
-[STATE] Heart icon fills or changes color after add","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Add to List button missing; list selector does not open; success notification not shown; heart icon not updating state","none","VCST-3928","Automated"
+2. [ACT] click 'Add to list' (`[data-test-id=""add-to-list-button""]`)
+3. [ASSERT] verify the 'Please select list' modal opens
+4. [ACT] check the checkbox for 'Summer Essentials' (`[data-test-id=""wishlist-modal-list-checkbox-{guid}""]`)
+5. [ACT] click 'Save' (`[data-test-id=""wishlist-modal-save-button""]`)
+6. [ASSERT] verify the PDP control reflects the add","[DOM] 'Add to list' button (`[data-test-id=""add-to-list-button""]`) visible on PDP
+[DOM] modal heading reads 'Please select list' with sections 'Already in the lists' / 'Add to other lists', one checkbox per list (`[data-test-id=""wishlist-modal-list-checkbox-{guid}""]`)
+[DOM] 'Add new list' quick-create option visible inside the modal
+[DOM] 'Save' button (`[data-test-id=""wishlist-modal-save-button""]`) commits the selection and closes the modal
+[STATE] PDP control (`[data-test-id=""add-to-list-button""]`) switches to pressed state labeled 'In the list' after add","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Add to List button missing; list selector does not open; success notification not shown; heart icon not updating state","none","VCST-3928; Verified: live selector pass (2026-08-05)","Automated"
 "B2C-LIST-003","Add Product to List from Category Page","B2C Features > Lists","High","BL-B2B-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 User on category page, list exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to category page
-2. [ACT] Hover over product card
-3. [ACT] Click heart or 'Add to List' icon on card
-4. [ACT] Select list from selector
-5. [ASSERT] Verify product added without leaving category page","[DOM] Add to List icon visible on product card (on hover or always)
-[DOM] List selector appears inline
-[DOM] Product added successfully (notification shown)
-[STATE] Icon indicates product already in list after add","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Icon not visible on hover; list selector does not appear; page navigates away unexpectedly; icon state not updated","none","VCST-3928","Automated"
+2. [ACT] locate 'Add to list' control (`[data-test-id=""add-to-list-button""]`) on a product card
+3. [ACT] click 'Add to list' on the card
+4. [ASSERT] verify the 'Please select list' modal opens
+5. [ACT] check the checkbox for a list (`[data-test-id=""wishlist-modal-list-checkbox-{guid}""]`) and click 'Save' (`[data-test-id=""wishlist-modal-save-button""]`)
+6. [ASSERT] verify product added without leaving the category page","[DOM] 'Add to list' control (`[data-test-id=""add-to-list-button""]`) visible on the product card
+[DOM] clicking it opens the same 'Please select list' modal used from PDP (no separate inline selector)
+[DOM] modal closes and the category page remains in place after Save (no navigation)
+[STATE] card's 'Add to list' control switches to pressed 'In the list' state after add","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Icon not visible on hover; list selector does not appear; page navigates away unexpectedly; icon state not updated","none","VCST-3928; Verified: live selector pass (2026-08-05) — corrected mechanism: modal, not an inline selector","Automated"
 "B2C-LIST-004","View List Contents","B2C Features > Lists","Critical","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in, list has products","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists
-2. [ACT] Click on list 'Summer Essentials'
-3. [ASSERT] Verify list page opens
-4. [ASSERT] Verify products display with all details","[DOM] List page shows all products
-[DOM] Each product shows: Image, Name, Price, In Stock status
-[DOM] Each product has: View Product link, Add to Cart button, Remove from List button
-[DOM] List metadata shown: Name, Item count, Created date","[CONSOLE] no uncaught JS errors","List page not loading; products missing image or price; action buttons (Add to Cart, Remove) missing","none","VCST-3928","Automated"
+User logged in, list has products","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click on a list card
+3. [ASSERT] verify the list-detail page opens with the list name as heading
+4. [ASSERT] verify products display in the Product/Properties/Price-per-item table","[DOM] list-detail table shows columns 'Product' / 'Properties' / 'Price per item' for each row
+[DOM] each row has a remove control (`[data-test-id=""remove-item-button""]`, glyph '×') and an add-to-cart control beside a quantity spinner
+[DOM] header area shows 'Add all to cart', 'Buy now', 'List settings' actions and a 'Save changes' button (disabled until the list is edited)
+[DOM] page heading is the list's name","[CONSOLE] no uncaught JS errors","List page not loading; products missing image or price; action buttons (Add to Cart, Remove) missing","none","VCST-3928; Verified: live selector pass (2026-08-05); list-detail item-count/created-date display not directly confirmed (list card confirms 'Last modified' at /account/lists) — still open","Automated"
 "B2C-LIST-005","Add to Cart from List","B2C Features > Lists","High","BL-B2B-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User viewing list with products","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list page
-2. [ACT] Click 'Add to Cart' on a product in the list
-3. [ASSERT] Verify success notification
-4. [ACT] Click 'Add All to Cart' button (if available)
-5. [ASSERT] Verify all list items added to cart","[DOM] Each product has Add to Cart button
-[DOM] 'Add All to Cart' button present
-[DOM] Success notification per product or bulk add
-[STATE] Cart count updates after add
-[DOM] Products remain in list after adding to cart
+User viewing list with products","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/lists and open a list
+2. [ACT] click the per-line add-to-cart control beside the quantity spinner for a product
+3. [ASSERT] verify the control label flips from 'Add to cart' to 'Update cart'
+4. [ACT] click 'Add all to cart' in the list-detail header
+5. [ASSERT] verify all list items added to cart","[DOM] each list row has an add-to-cart control beside its quantity spinner, labeled 'Add to cart'
+[DOM] 'Add all to cart' button present in the list-detail header
+[STATE] per-line control flips to 'Update cart' once that SKU is already in the cart
+[STATE] cart badge count updates after add
+[DOM] products remain in the list-detail table after adding to cart (no row removed)
 [DOM] Out of stock items show warning or are skipped","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Add to Cart button missing on list items; products removed from list after add; Add All to Cart fails silently","remove item from cart","VCST-3928","Automated"
+[CONSOLE] no uncaught JS errors","Add to Cart button missing on list items; products removed from list after add; Add All to Cart fails silently","remove item from cart","VCST-3928; Verified: live selector pass (2026-08-05); OOS-skip notification copy for bulk add not yet confirmed (see B2C-LIST-033) — still open","Automated"
 "B2C-LIST-006","Remove Product from List","B2C Features > Lists","High","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Product in list","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list page
-2. [ACT] Click Remove or X icon on a product
-3. [ASSERT] Verify confirmation prompt (if applicable)
-4. [ACT] Confirm removal
-5. [ASSERT] Verify product removed from list
-6. [ASSERT] Verify list count decrements","[DOM] Remove button or X icon visible per product
-[DOM] Confirmation prompt shown: 'Remove from Summer Essentials?'
-[DOM] Product no longer shown in list after removal
-[DOM] Success message: 'Removed from list'
-[DOM] List item count decrements by 1","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Remove button missing; product still visible after removal; no confirmation prompt; list count not updated","none","VCST-3928","Automated"
+Product in list","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] open a list-detail page with a product in it
+2. [ACT] click the remove control (`[data-test-id=""remove-item-button""]`, glyph '×') on a row
+3. [ASSERT] verify the row is removed from the table
+4. [ASSERT] verify the list's displayed item count decrements by 1","[DOM] each row has a remove control (`[data-test-id=""remove-item-button""]`, glyph '×')
+[DOM] product row no longer present in the list-detail table after removal
+[STATE] list item count decrements by 1 after removal","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Remove button missing; product still visible after removal; no confirmation prompt; list count not updated","none","VCST-3928; Verified: live selector pass (2026-08-05); removal confirmation-dialog copy and success-toast text not yet confirmed — still open","Automated"
 "B2C-LIST-007","Rename/Edit List","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists
-2. [ACT] Click Edit or Settings on list 'Summer Essentials'
-3. [ACT] Change name to 'Summer 2026'
-4. [ACT] Change description or privacy (optional)
-5. [ACT] Click Save
-6. [ASSERT] Verify list updated with new name everywhere","[DOM] Edit option available (pencil icon or menu)
-[DOM] Form fields editable: Name, Description, Privacy
-[DOM] List name 'Summer 2026' updated in My Lists and list header
-[DOM] Products in list unaffected by rename","[CONSOLE] no uncaught JS errors","Edit option missing; name change not persisting; list name not updated in all locations","none","VCST-3928","Manual"
+List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+3. [ACT] click 'Edit'
+4. [ACT] change the name field (`[data-test-id=""wishlist-name-input""]`) to 'Summer 2026'
+5. [ACT] click 'Save' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [ASSERT] verify the list name updated on /account/lists and on the list-detail heading","[DOM] kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) opens exactly 'Edit' / 'Delete' — no Share entry
+[DOM] Edit dialog reuses the create dialog's Name (`[data-test-id=""wishlist-name-input""]`) and Description fields
+[DOM] list name 'Summer 2026' updates on both the /account/lists card and the list-detail heading
+[STATE] products in the list are unaffected by the rename (same row count, same items)","[CONSOLE] no uncaught JS errors","Edit option missing; name change not persisting; list name not updated in all locations","none","VCST-3928; Verified: live selector pass (2026-08-05)","Manual"
 "B2C-LIST-008","Delete List","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-List exists with products","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to list page
-2. [ACT] Click Delete or menu > Delete
-3. [ASSERT] Verify confirmation prompt warns about item count
-4. [ACT] Confirm deletion
-5. [ASSERT] Verify list removed from My Lists
-6. [ASSERT] Verify products still in catalog","[DOM] Delete option available
-[DOM] Confirmation prompt shows item count: 'Delete Summer 2026? (X items will be removed)'
-[DOM] List no longer appears in My Lists after deletion
-[DOM] Success message: 'List deleted'
-[DOM] Products remain available in catalog","[CONSOLE] no uncaught JS errors","Delete option missing; no confirmation prompt; list remains in My Lists after deletion; catalog products incorrectly removed","none","VCST-3928","Manual"
+List exists with products","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] open /account/lists
+2. [ACT] click the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+3. [ACT] click 'Delete'
+4. [ASSERT] verify a confirmation prompt appears
+5. [ACT] confirm deletion
+6. [ASSERT] verify the list card no longer appears on /account/lists
+7. [ASSERT] verify a list product's PDP still resolves (catalog untouched)","[DOM] kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) exposes 'Delete'
+[DOM] confirmation prompt appears before deletion completes
+[DOM] list card no longer present on /account/lists after confirming
+[STATE] a product that was in the deleted list still resolves on its own PDP (catalog untouched)","[CONSOLE] no uncaught JS errors","Delete option missing; no confirmation prompt; list remains in My Lists after deletion; catalog products incorrectly removed","none","VCST-3928; Verified: live selector pass (2026-08-05); confirmation-dialog exact copy + success-toast text not yet confirmed — still open","Manual"
 "B2C-LIST-009","Share List (Public Link)","B2C Features > Lists","High","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 List exists, sharing enabled","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list page
 2. [ACT] Click Share button
@@ -100,7 +96,7 @@ List exists, sharing enabled","url={{FRONT_URL}},user={{USER_EMAIL}},password={{
 [DOM] Share modal shows Public Link and Email options
 [DOM] Public link generated as shareable URL
 [DOM] Opening link shows list in read-only mode
-[STATE] Share modal shows list as 'Shared'","[CONSOLE] no uncaught JS errors","Share button missing; public link not generated; shared list not accessible without login; shared link editable by external users","none","VCST-3928","Manual"
+[STATE] Share modal shows list as 'Shared'","[CONSOLE] no uncaught JS errors","Share button missing; public link not generated; shared list not accessible without login; shared link editable by external users","none","VCST-3928; Blocked: live selector pass on a customer account (USER_DEFAULT) found no Share control anywhere in the list UI (kebab menu = Edit/Delete only) — not observed on a customer account, needs confirmation (possibly org-gated or a store-setting toggle), not treated as refuted (2026-08-05)","Manual"
 "B2C-LIST-010","Share List via Email","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list page
 2. [ACT] Click Share
@@ -112,7 +108,7 @@ List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}",
 [DOM] Form shows: Recipient email field, optional message field
 [EMAIL] Recipient receives invitation email
 [EMAIL] Email contains: List name, sender name, item count, view link
-[DOM] Clicking link in email opens the list","[CONSOLE] no uncaught JS errors","Email share option missing; email not delivered; email missing list details or view link","none","VCST-3928","Manual"
+[DOM] Clicking link in email opens the list","[CONSOLE] no uncaught JS errors","Email share option missing; email not delivered; email missing list details or view link","none","VCST-3928; Blocked: live selector pass on a customer account (USER_DEFAULT) found no Email-share option anywhere in the list UI (kebab menu = Edit/Delete only, no Share entry) — not observed on a customer account, needs confirmation, not treated as refuted (2026-08-05)","Manual"
 "B2C-LIST-011","Mark List as Private/Shared","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list settings via Edit
 2. [ACT] Toggle privacy: Private → Shared
@@ -122,19 +118,18 @@ List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}",
 6. [ASSERT] Verify shared links are now disabled","[STATE] Privacy toggle in list settings
 [DOM] Changing to Shared shows 'Shared' badge on list
 [DOM] Changing back to Private disables existing share links
-[STATE] Badge reflects current privacy status (Private/Shared)","[CONSOLE] no uncaught JS errors","Privacy toggle missing; status badge not updating; old share links remain active after reverting to Private","none","VCST-3928","Manual"
+[STATE] Badge reflects current privacy status (Private/Shared)","[CONSOLE] no uncaught JS errors","Privacy toggle missing; status badge not updating; old share links remain active after reverting to Private","none","VCST-3928; Blocked: live selector pass on a customer account (USER_DEFAULT) found no Privacy/Shared toggle in the create/edit dialog (Name + Description + 0/250 counter only) — not observed on a customer account, needs confirmation, not treated as refuted (2026-08-05)","Manual"
 "B2C-LIST-012","Product Already in List Indicator","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Product already added to list","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Add product to a list
-2. [NAV] Navigate back to product PDP
-3. [ASSERT] Verify heart icon is filled or indicator is shown
-4. [ACT] Hover over heart icon
-5. [ASSERT] Verify tooltip shows 'In Summer Essentials' or similar
-6. [ACT] Click filled heart icon
-7. [ASSERT] Verify options: Remove from list or Add to different list","[STATE] Heart icon filled or highlighted if product is in any list
-[DOM] Tooltip shows which list(s) the product is in
-[DOM] Clicking filled heart shows: Remove from list / Add to another list
-[DOM] Duplicate add to same list is prevented","[CONSOLE] no uncaught JS errors","Heart icon not filled for product already in list; tooltip missing; no options shown on clicking filled heart","none","VCST-3928","Manual"
-"B2C-LIST-013","Move Product Between Lists","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product already added to list","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] add a product to a list via the modal
+2. [NAV] return to the product's PDP
+3. [ASSERT] verify the PDP control (`[data-test-id=""add-to-list-button""]`) shows pressed state labeled 'In the list'
+4. [ACT] click the pressed 'In the list' control
+5. [ASSERT] verify the 'Please select list' modal reopens with the product's list(s) shown
+6. [ASSERT] verify the product's row is under 'Already in the lists' with its checkbox pre-checked","[STATE] PDP control (`[data-test-id=""add-to-list-button""]`) is in the pressed `[pressed]` state, labeled 'In the list', when the product is in any list
+[DOM] clicking it reopens the 'Please select list' modal (not a separate tooltip) showing which list(s) hold the product under 'Already in the lists'
+[DOM] the modal offers unchecking the pre-checked list, or checking another list under 'Add to other lists' — no separate 'remove from list' menu exists outside the modal
+[STATE] the pre-checked 'Already in the lists' checkbox with no re-add action means duplicate-add to the same list is structurally prevented","[CONSOLE] no uncaught JS errors","Heart icon not filled for product already in list; tooltip missing; no options shown on clicking filled heart","none","VCST-3928; Audited: 2026-08-05 (live selector pass, playwright-edge, vcst-qa Platform 3.1055.0/theme 2.55.0-pr-2412); Source: OBSERVED — duplicate-add-to-same-list confirmed prevented structurally (pre-checked, no re-add action)","Manual"
+"B2C-LIST-013","Move Product Between Lists","B2C Features > Lists","Medium","BL-B2B-002","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 Product in list A, list B exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list A
 2. [ACT] Click menu on product
 3. [ACT] Select 'Move to...'
@@ -144,8 +139,8 @@ Product in list A, list B exists","url={{FRONT_URL}},user={{USER_EMAIL}},passwor
 [DOM] List selector shows all available lists
 [DOM] Product removed from list A
 [DOM] Product added to list B (no duplicate in A)
-[DOM] Success message shown","[CONSOLE] no uncaught JS errors","Move option missing; product duplicated in both lists after move; product disappears from both lists","none","VCST-3928","Manual"
-"B2C-LIST-014","List - Out of Stock Product Handling","B2C Features > Lists","High","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[DOM] Success message shown","[CONSOLE] no uncaught JS errors","Move option missing; product duplicated in both lists after move; product disappears from both lists","none","VCST-3928; Synced: lifecycle lists/SFL (2026-08-05); Verified: live selector pass attempted (2026-08-05) — no per-row 'move between lists' selector observed on the list-detail table (only remove-item-button + add-to-cart control per row); the add-to-list modal's checkbox add/remove may serve this purpose but was not confirmed as a row-level move affordance — still unblocked, needs targeted verification","Manual"
+"B2C-LIST-014","List - Out of Stock Product Handling","B2C Features > Lists","High","BL-B2B-002","ECL-2.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 List contains out of stock product","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Add product to list while in stock
 2. [ADMIN] Mark product out of stock via Admin SPA
@@ -156,8 +151,8 @@ List contains out of stock product","url={{FRONT_URL}},user={{USER_EMAIL}},passw
 [DOM] Badge shows 'Out of Stock' on affected product
 [STATE] Add to Cart button disabled or shows out-of-stock message
 [DOM] Option to remove product from list still available","[ADMIN] Product marked out of stock visible in Admin SPA
-[CONSOLE] no uncaught JS errors","Out of stock product disappears from list; Add to Cart not disabled for OOS product; no OOS badge shown","none","VCST-3928","Manual"
-"B2C-LIST-015","List Analytics - GA4 add_to_wishlist Event","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] no uncaught JS errors","Out of stock product disappears from list; Add to Cart not disabled for OOS product; no OOS badge shown","none","VCST-3928; Synced: lifecycle lists/SFL (2026-08-05)","Manual"
+"B2C-LIST-015","List Analytics - GA4 add_to_wishlist Event","B2C Features > Lists","Medium","BL-B2B-002","ECL-11.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 GA4 configured, list exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Navigate to product page
 2. [ACT] Click Add to List and select list
 3. [WAIT] Wait for confirmation
@@ -166,7 +161,7 @@ GA4 configured, list exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{U
 6. [ASSERT] Inspect event parameters","[NETWORK] GA4 add_to_wishlist event fired on add action
 [NETWORK] Event parameters: currency (USD), value (product price), items array (item_id, item_name, price)
 [DOM] Event visible in GA DebugView","[NETWORK] GA4 event request present in network log
-[CONSOLE] no uncaught JS errors","add_to_wishlist event not firing; event parameters missing currency, value, or items array","none","VCST-3928","Manual"
+[CONSOLE] no uncaught JS errors","add_to_wishlist event not firing; event parameters missing currency, value, or items array","none","VCST-3928; Synced: lifecycle lists/SFL (2026-08-05)","Manual"
 "B2C-LIST-016","Create Shared List","B2C Features > Shared Lists","High","BL-B2B-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 Logged in user who is a member of a B2B organization, on My Lists page","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists (/account/lists)
 2. [ACT] Click 'Create New List'
@@ -178,14 +173,14 @@ Logged in user who is a member of a B2B organization, on My Lists page","url={{F
 [DOM] List created with 'Shared' badge or indicator
 [DOM] List appears in My Lists with Shared status
 [DOM] Other org members can see this list (validated in B2C-LIST-017)","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","Shared visibility option missing; list created without Shared badge; Shared list not visible to other org members","delete created list","Coverage Gap Analysis","Draft"
-"B2C-LIST-017","Org Member Sees Shared List","B2C Features > Shared Lists","High","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] no uncaught JS errors","Shared visibility option missing; list created without Shared badge; Shared list not visible to other org members","delete created list","Coverage Gap Analysis; Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05)","Draft"
+"B2C-LIST-017","Org Member Sees Shared List","B2C Features > Shared Lists","High","BL-B2B-002","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 Shared list 'Team Supplies' created by User A; User B is a member of the same organization","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Log in as User B (different org member from User A)
 2. [NAV] Navigate to My Lists (/account/lists)
 3. [ASSERT] Look for list 'Team Supplies' created by User A","[DOM] 'Team Supplies' list visible to User B in lists section
 [DOM] Shared lists from other org members displayed (e.g., 'Shared with me' or 'Team Lists' section)
 [DOM] List shows creator attribution (User A's name)
-[DOM] User B can view contents of the shared list","[CONSOLE] no uncaught JS errors","Shared list not visible to org member; list not showing creator name; org member cannot open shared list contents","none","Coverage Gap Analysis","Draft"
+[DOM] User B can view contents of the shared list","[CONSOLE] no uncaught JS errors","Shared list not visible to org member; list not showing creator name; org member cannot open shared list contents","none","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05)","Draft"
 "B2C-LIST-018","Add to Shared List","B2C Features > Shared Lists","High","BL-B2B-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 Shared list 'Team Supplies' visible to User B (org member)","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as User B
 2. [NAV] Navigate to the shared list 'Team Supplies'
@@ -197,44 +192,39 @@ Shared list 'Team Supplies' visible to User B (org member)","url={{FRONT_URL}},u
 [DOM] Product added by User B appears in the shared list immediately
 [DOM] When User A views the list, item added by User B is present
 [DOM] Added item shows who added it (if attribution is supported)","[API] mutation errors[] is empty
-[CONSOLE] no uncaught JS errors","User B cannot add to shared list owned by another user; product added by User B not visible to User A; attribution missing","none","Coverage Gap Analysis","Draft"
-"B2C-LIST-019","Private List Not Visible to Org Members","B2C Features > Shared Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] no uncaught JS errors","User B cannot add to shared list owned by another user; product added by User B not visible to User A; attribution missing","none","Coverage Gap Analysis; Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05)","Draft"
+"B2C-LIST-019","Private List Not Visible to Org Members","B2C Features > Shared Lists","Medium","BL-B2B-002","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 User A has created a Private list; User B is a member of the same org","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [ASSERT] Verify User A has a list set to 'Private'
 2. [NAV] Log in as User B (different org member)
 3. [NAV] Navigate to My Lists
 4. [ASSERT] Verify User A's private list is NOT visible to User B","[DOM] User A's Private list does not appear in User B's My Lists view
 [DOM] No mechanism allows User B to discover or access User A's private list
-[DOM] User B only sees their own lists and explicitly shared org lists","[CONSOLE] no uncaught JS errors","Private list visible to other org members; private list accessible via guessed URL","none","Coverage Gap Analysis","Draft"
-"B2C-LIST-020","Saved for Later Page - View and Move Items Back to Cart","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[DOM] User B only sees their own lists and explicitly shared org lists","[CONSOLE] no uncaught JS errors","Private list visible to other org members; private list accessible via guessed URL","none","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05)","Draft"
+"B2C-LIST-020","Saved for Later Page - View and Move Items Back to Cart","B2C Features > Lists","Medium","BL-B2B-002","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in; at least one product has been saved for later from the cart (appears in /account/saved-for-later)","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
-2. [ASSERT] Verify page loads with heading 'Saved for Later' or equivalent
-3. [ASSERT] Verify saved product is listed with: product image, name, price, and 'Move to Cart' action
-4. [ACT] Click 'Move to Cart' on a saved item
-5. [ASSERT] Verify item removed from Saved for Later list
-6. [ASSERT] Verify success toast or inline confirmation: e.g., 'Item moved to cart'
-7. [NAV] Navigate to {{FRONT_URL}}/cart
-8. [ASSERT] Verify item now appears in cart","[DOM] /account/saved-for-later page loads without errors
-[DOM] Saved item shows product image, name, and price
-[DOM] 'Move to Cart' button or action visible per item
-[STATE] After Move to Cart: item removed from Saved for Later list immediately
-[DOM] Toast or confirmation: 'Item moved to cart' (or equivalent)
-[DOM] Moved item appears in /cart with correct product details
-[STATE] Cart item count in header increments by 1 after move","[API] mutation errors[] is empty
+User logged in; at least one product has been saved for later from the cart (appears in /account/saved-for-later)","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/saved-for-later
+2. [ASSERT] verify the page renders the same table shape as list-detail (Product/Properties/Price per item)
+3. [ASSERT] verify a saved item shows product name, price, and quantity, with an 'Add to cart' control per row
+4. [ACT] click 'Add to cart' on a saved item's row
+5. [ASSERT] verify the item's row no longer appears on /account/saved-for-later
+6. [NAV] {{FRONT_URL}}/cart
+7. [ASSERT] verify the item now appears in the cart with matching quantity and price","[DOM] /account/saved-for-later renders the Product/Properties/Price-per-item table (same shape as list-detail)
+[DOM] each saved row has an 'Add to cart' control (not a 'Move to cart' label — that label exists only in the /cart page's mini Saved-for-later widget) beside its quantity
+[STATE] after clicking 'Add to cart', the row is removed from /account/saved-for-later
+[STATE] the item appears in /cart afterward
+[MATH] cart line quantity after the move = the saved item's quantity (confirmed live: qty 4 preserved end-to-end)
+[FORMAT] cart line price after the move equals the saved item's price (confirmed live: $16.00 preserved end-to-end)","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors
-[NETWORK] no 4xx on saved-for-later page load or move-to-cart action","Page returns 404 or 500; saved items not listed; Move to Cart button missing; item not removed from saved-for-later after action; item not appearing in cart after move","remove item from cart","Coverage Gap Analysis","Manual"
-"B2C-LIST-021","Saved for Later Page - Remove Item and Empty State","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in; at least one item in Saved for Later; empty state to be triggered","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
-2. [ASSERT] Verify at least one saved item is displayed
-3. [ACT] Click the remove or delete action on the saved item
-4. [ACT] Confirm removal if a confirmation dialog appears
-5. [ASSERT] Verify item removed from list
-6. [ASSERT] If list is now empty: verify empty state message is shown (e.g., 'No items saved for later' or similar call to action)","[DOM] Remove action (trash icon or 'Remove' link) visible per saved item
-[STATE] After removal: item no longer shown in list
-[DOM] List updates without full page reload
-[DOM] When all items removed: empty state shown with descriptive message (not a blank page)
-[DOM] Empty state may include a CTA such as 'Continue Shopping' or 'Browse Catalog'","[CONSOLE] no uncaught JS errors
-[NETWORK] no 4xx on remove action","Remove action missing; item persisting after removal; blank page shown instead of empty state message; page reload required after removal","none","Coverage Gap Analysis","Manual"
+[NETWORK] no 4xx on saved-for-later page load or move-to-cart action","Page returns 404 or 500; saved items not listed; Move to Cart button missing; item not removed from saved-for-later after action; item not appearing in cart after move","remove item from cart","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Audited: 2026-08-05 (live selector pass, playwright-edge); Source: OBSERVED — SFL round-trip preserves quantity AND price end-to-end (qty 4/$16.00 out and back, cart badge 7→3→7); corrected mechanism: the per-row control on /account/saved-for-later reads 'Add to cart', not 'Move to Cart' (that label is the /cart page's mini widget only)","Manual"
+"B2C-LIST-021","Saved for Later Page - Remove Item and Empty State","B2C Features > Lists","Medium","BL-B2B-002","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in; at least one item in Saved for Later; empty state to be triggered","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/saved-for-later
+2. [ASSERT] verify at least one saved item row is displayed
+3. [ACT] click the remove control (`[data-test-id=""remove-item-button""]`, glyph '×') on the saved item's row
+4. [ASSERT] verify the row is removed
+5. [ASSERT] if now empty: verify an empty-state message is shown (not a blank page)","[DOM] remove control (`[data-test-id=""remove-item-button""]`, glyph '×') visible per saved item
+[STATE] row no longer present after removal, no full page reload
+[DOM] when all items removed: an empty-state message + CTA is shown (not a blank page) — exact copy for this page not yet confirmed (list-detail's empty state reads 'Your list is empty' + 'Continue browsing' → /catalog; saved-for-later's own wording unconfirmed)","[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx on remove action","Remove action missing; item persisting after removal; blank page shown instead of empty state message; page reload required after removal","none","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Verified: live selector pass (2026-08-05); saved-for-later empty-state exact copy not directly confirmed (list-detail's own empty state: 'Your list is empty' / 'Continue browsing' → /catalog) — still open","Manual"
 "B2C-LIST-022","List View - Pagination or Load More for Large Lists","B2C Features > Lists","Medium","BL-B2B-002","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in; a list exists containing more than 10 products (trigger pagination or load-more)","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/lists
 2. [ACT] Open a list that contains 11 or more products
@@ -249,8 +239,8 @@ User logged in; a list exists containing more than 10 products (trigger paginati
 [DOM] If Load More: button text changes or disappears after all items loaded (e.g., 'No more items')
 [FORMAT] Product count badge on list matches total items across all pages","[CONSOLE] no uncaught JS errors
 [NETWORK] pagination/load-more request returns 200 with non-empty data
-[API] errors[] empty on list products query","List truncated at 10 items with no way to see more; duplicate products after loading more; Load More button not appearing when more items exist; item count badge not matching visible items","none","Coverage Gap Analysis","Manual"
-"B2C-LIST-023","Shared List - Team Member Can View Shared Items","B2C Features > Shared Lists","High","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] errors[] empty on list products query","List truncated at 10 items with no way to see more; duplicate products after loading more; Load More button not appearing when more items exist; item count badge not matching visible items","none","Coverage Gap Analysis; Verified: live selector pass attempted (2026-08-05) — pagination/Load-More markup not captured in this pass (no >=11-item list available/tested); still unblocked, needs targeted verification with a large list","Manual"
+"B2C-LIST-023","Shared List - Team Member Can View Shared Items","B2C Features > Shared Lists","High","BL-B2B-002","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 Shared list created by User A with products; User B is a member of the same organization","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Log in as User B (different org member from list creator)
 2. [NAV] Navigate to /account/lists
 3. [ASSERT] Verify shared list is visible in User B's lists
@@ -259,8 +249,8 @@ Shared list created by User A with products; User B is a member of the same orga
 [DOM] Shared list shows shared indicator (icon or label)
 [DOM] Products in shared list visible with name and price and image
 [STATE] User B can view all items added by User A","[API] shared list query returns items for User B
-[CONSOLE] no uncaught JS errors","Shared list not visible to team member; products missing from shared list; shared indicator absent","none","Coverage Gap Analysis","Draft"
-"B2C-LIST-024","Shared List - Edit Items Visible to Other Members","B2C Features > Shared Lists","High","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] no uncaught JS errors","Shared list not visible to team member; products missing from shared list; shared indicator absent","none","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05)","Draft"
+"B2C-LIST-024","Shared List - Edit Items Visible to Other Members","B2C Features > Shared Lists","High","BL-B2B-002","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 Shared list accessible to both User A and User B","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as User A (list owner)
 2. [NAV] Open the shared list
 3. [ACT] Add a new product to the shared list
@@ -270,8 +260,8 @@ Shared list accessible to both User A and User B","url={{FRONT_URL}},user={{USER
 7. [NAV] Open the same shared list
 8. [ASSERT] Verify newly added product is visible to User B","[DOM] Product added by User A appears in shared list for User B
 [STATE] Changes to shared list are visible to other members on refresh
-[DOM] Product details (name and price) match across both users","[CONSOLE] no uncaught JS errors","New product not visible to User B; changes not syncing between users; shared list showing stale data","none","Coverage Gap Analysis","Draft"
-"B2C-LIST-025","Shared List - Remove Shared Access","B2C Features > Shared Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[DOM] Product details (name and price) match across both users","[CONSOLE] no uncaught JS errors","New product not visible to User B; changes not syncing between users; shared list showing stale data","none","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05)","Draft"
+"B2C-LIST-025","Shared List - Remove Shared Access","B2C Features > Shared Lists","Medium","BL-B2B-002","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 Shared list with User B having access; User A is list owner","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Log in as User A (list owner)
 2. [NAV] Open the shared list settings
 3. [ACT] Change list visibility from Shared to Private
@@ -281,28 +271,28 @@ Shared list with User B having access; User A is list owner","url={{FRONT_URL}},
 7. [NAV] Navigate to /account/lists
 8. [ASSERT] Verify the list is NO longer visible to User B","[STATE] After changing to Private: list removed from User B's view
 [DOM] User B's lists page does not show the now-private list
-[STATE] List still accessible to User A (owner)","[CONSOLE] no uncaught JS errors","List still visible to User B after making private; access revocation not taking effect; list disappearing for owner too","none","Coverage Gap Analysis","Draft"
+[STATE] List still accessible to User A (owner)","[CONSOLE] no uncaught JS errors","List still visible to User B after making private; access revocation not taking effect; list disappearing for owner too","none","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05)","Draft"
 "B2C-LIST-026","Shared List - Shared Indicator Displayed","B2C Features > Shared Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 User has both shared and private lists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Log in and navigate to /account/lists
 2. [ASSERT] Verify shared lists have a shared indicator (icon or badge or label)
 3. [ASSERT] Verify private lists do NOT have the shared indicator
 4. [ASSERT] Verify indicator styling is distinct and readable","[DOM] Shared lists display shared icon or Shared label
-[DOM] Private lists have no shared indicator or show Private label
-[FORMAT] Indicators are visually distinct between shared and private","[CONSOLE] no uncaught JS errors","No visual distinction between shared and private lists; shared indicator missing; wrong indicator on private list","none","Coverage Gap Analysis","Draft"
+[DOM] a private (personal-account) list card shows only its name link, item-count badge, and 'Last modified: <date>' — no shared-badge/icon element is present
+[FORMAT] Indicators are visually distinct between shared and private","[CONSOLE] no uncaught JS errors","No visual distinction between shared and private lists; shared indicator missing; wrong indicator on private list","none","Coverage Gap Analysis; Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — the shared-list-indicator half of this case is unverified on a customer account (2026-08-05); private-list half (no indicator shown) confirmed live","Draft"
 "B2C-LIST-032","Add Entire List to Cart - All Items Added","B2C Features > Lists","High","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in; list exists with 3+ products all in stock","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
-2. [ACT] Open a list with 3+ products
-3. [ACT] Click Add All to Cart button
-4. [WAIT] Wait for cart update
-5. [ASSERT] Verify all products from list added to cart
-6. [NAV] Navigate to cart
-7. [ASSERT] Verify all list items present in cart","[DOM] Add All to Cart button visible on list page
-[STATE] All 3+ products added to cart after clicking
-[DOM] Cart page shows all items from the list
-[MATH] Cart item count matches list item count","[API] addToCart mutations succeed for all items
-[CONSOLE] no uncaught JS errors","Not all items added; some items missing from cart; Add All button missing; partial add without notification","clear cart after test","Coverage Gap Analysis","Draft"
-"B2C-LIST-033","Add List to Cart - Out of Stock Item Partial Add","B2C Features > Lists","High","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in; list exists with 3+ products all in stock","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open a list with 3+ products
+3. [ACT] click 'Add all to cart' in the list-detail header
+4. [WAIT] cart badge updates
+5. [ASSERT] verify all products from the list added to cart
+6. [NAV] {{FRONT_URL}}/cart
+7. [ASSERT] verify all list items present in cart","[DOM] 'Add all to cart' button visible in the list-detail header
+[STATE] all 3+ products added to cart after clicking
+[DOM] cart page shows all items from the list
+[MATH] cart item count after add = pre-existing cart item count + list item count","[API] addToCart mutations succeed for all items
+[CONSOLE] no uncaught JS errors","Not all items added; some items missing from cart; Add All button missing; partial add without notification","clear cart after test","Coverage Gap Analysis; Verified: live selector pass (2026-08-05)","Draft"
+"B2C-LIST-033","Add List to Cart - Out of Stock Item Partial Add","B2C Features > Lists","High","BL-B2B-002","ECL-2.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; list contains mix of in-stock and out-of-stock products","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
 2. [ACT] Open a list that has both in-stock and out-of-stock items
@@ -314,17 +304,16 @@ User logged in; list contains mix of in-stock and out-of-stock products","url={{
 [DOM] Notification or warning about out-of-stock items shown
 [DOM] Cart contains only in-stock items from the list
 [STATE] Out-of-stock items NOT in cart","[API] cart contains only in-stock items
-[CONSOLE] no uncaught JS errors","Out-of-stock items added to cart; no notification about skipped items; all items blocked due to one OOS item","clear cart after test","Coverage Gap Analysis","Draft"
+[CONSOLE] no uncaught JS errors","Out-of-stock items added to cart; no notification about skipped items; all items blocked due to one OOS item","clear cart after test","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05)","Draft"
 "B2C-LIST-034","Add List to Cart - Preserves Quantities","B2C Features > Lists","Medium","BL-B2B-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in; list with products that have set quantities","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
-2. [ACT] Open a list with products
-3. [ACT] Note quantity for each item (default is 1 unless list supports qty)
-4. [ACT] Click Add All to Cart
-5. [NAV] Navigate to cart
-6. [ASSERT] Verify quantities in cart match list quantities","[MATH] Cart quantities match list quantities for each item
-[DOM] Each cart line item quantity correct
-[STATE] No quantity duplication or loss during transfer","[CONSOLE] no uncaught JS errors","Quantities changed during add-to-cart; all items added with qty 1 regardless of list qty; quantity data lost","clear cart after test","Coverage Gap Analysis","Draft"
+User logged in; list with products that have set quantities","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open a list with products; note each row's quantity in the list-detail table
+3. [ACT] click 'Add all to cart' in the list-detail header
+4. [NAV] {{FRONT_URL}}/cart
+5. [ASSERT] verify cart quantities match the list's per-row quantities","[MATH] cart line quantity for each product = the list-detail row's quantity at time of add
+[DOM] each cart line item quantity is correct (no rounding/truncation)
+[STATE] no quantity duplication or loss during the transfer","[CONSOLE] no uncaught JS errors","Quantities changed during add-to-cart; all items added with qty 1 regardless of list qty; quantity data lost","clear cart after test","Coverage Gap Analysis; Audited: 2026-08-05 (live selector pass, playwright-edge); Source: OBSERVED — list quantity carries into the cart end-to-end (qty 4 → cart badge 3→7, cart line qty 4)","Draft"
 "B2C-LIST-035","Lists layout — off-grid spacing values absent at md+ breakpoints (regression for VCST-5111)","B2C Features > Lists > Layout","High","BL-UI-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - Personal account (not B2B org user — Addresses link and Lists surface differ by account type per memory)
 - Account has ≥ 2 wishlists to ensure list-card separator and sidebar sub-list are both present
@@ -355,3 +344,46 @@ User logged in; list with products that have set quantities","url={{FRONT_URL}},
 [DOM] ariaLabel includes the same date value present in visibleText
 [STATE] Screen reader would announce the date WITH semantic context, not just the bare date string (was 'May 6, 2026' with no label before fix; fixed form: 'Last modified: May 6, 2026')","[CONSOLE] no JS errors; no axe missing-label violation for .wishlist-card__date
 [NETWORK] no failed i18n locale file requests","ariaLabel is null or empty string (VCST-5067 regression re-introduced); ariaLabel present but equals visibleText only (bare date, no contextual prefix); i18n key last_modified_label missing from en-US locale (would render as key name fallback)","none","VCST-5067; WCAG 1.3.1","Draft"
+"B2C-LIST-037","Shared List — Non-Member Cannot Access via Direct URL (Negative)","B2C Features > Shared Lists","High","BL-B2B-002","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+Shared list created by an org member (User A) with at least 1 product; a second user (User C) exists who is NOT a member of User A's organization","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/lists
+[ACT] open the Shared list
+[WAIT] list page loaded
+[ACT] copy the browser address-bar URL of the open list
+[ACT] click user name in top header
+[WAIT] account-menu popup visible
+[ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[WAIT] signed out
+[NAV] log in as USER2 (a personal account, not a member of User A's organization)
+[NAV] paste the copied shared-list URL directly into the browser
+[ASSERT] verify the list is not rendered for USER2","[DOM] USER2 sees an access-denied state or a not-found page instead of the list contents {BL}
+[STATE] the foreign-org shared list's products are NOT rendered to USER2 {BL}
+[NAV] the URL does not silently resolve into a readable copy of the list for USER2 {SPEC}","[CONSOLE] no uncaught JS errors
+[NETWORK] no 200 response body containing the foreign-org list's item data for USER2's request","Shared list content renders for a non-member; page returns 200 with list items visible to USER2; no access-denied or not-found indicator shown; list items leak via a background GraphQL call even if the page itself blocks","Sign out USER2","Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05)","Draft"
+"B2C-LIST-038","Saved for Later Page - Decoupled From Wishlists (no GetWishlist query on load)","B2C Features > Lists","Medium","BL-CART-015","ECL-7.3","[PRE:SIGNIN_AS:ORG_USER]
+User logged in; at least one product saved for later from the cart so /account/saved-for-later is non-empty","url={{FRONT_URL}},user={{ORG_USER_EMAIL}},password={{ORG_USER_PASSWORD}}","1. [ACT] Start capturing network requests (clear the request log)
+2. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
+3. [WAIT] Wait for the saved-for-later items list to render
+4. [ASSERT] Inspect every POST to /graphql in the capture and collect the operationName values
+5. [ASSERT] Verify GetSavedForLater is present exactly once
+6. [ASSERT] Verify NO request carries operationName GetWishlist or GetWishlists
+7. [ASSERT] Verify the rendered items show product name, price and quantity controls
+8. [NAV] Navigate to {{FRONT_URL}}/account/lists and open an existing wishlist
+9. [ASSERT] Verify the wishlist details page still issues GetWishlist and renders its items and action buttons","[NETWORK] POST /graphql with operationName=GetSavedForLater occurs exactly once on saved-for-later page load {SPEC}
+[NETWORK] no POST /graphql with operationName=GetWishlist or GetWishlists on saved-for-later page load {SPEC}
+[DOM] each saved-for-later line item shows a non-empty product name link, a price and a quantity input — all visible {SPEC}
+[NETWORK] wishlist details page still issues GetWishlist - the decoupling did not remove the wishlist page's own query {SPEC}
+[DOM] wishlist details page line items and its 'Add all to cart' action button are visible {SPEC}","[API] GraphQL response errors[] empty on GetSavedForLater
+[CONSOLE] no uncaught JS errors on either page
+[NETWORK] no 4xx/5xx on saved-for-later or wishlist page load","GetWishlist still fires on the saved-for-later page (duplicate coupled request not removed); GetSavedForLater fires more than once; saved-for-later page renders empty or errors while the list is non-empty; wishlist details page stops issuing GetWishlist or fails to render","none - read-only navigation","VCST-4855; vc-frontend PR #2418","Draft"
+B2C-LIST-039,"Create List — Name Length Boundary (25 chars accepted, 26 rejected)",B2C Features > Lists,Medium,BL-B2B-002,ECL-7.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in, no precondition on existing lists. Discovered live 2026-08-05 (playwright-edge, vcst-qa Platform 3.1055.0/theme 2.55.0-pr-2412): the name field (`[data-test-id=""wishlist-name-input""]`) enforces a hard 25-character cap client-side, with error 'This field must not contain more than 25 characters'.","name_25='AAAAAAAAAAAAAAAAAAAAAAAAA' (25 chars), name_26='AAAAAAAAAAAAAAAAAAAAAAAAAA' (26 chars)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'CREATE LIST' (`[data-test-id=""create-wishlist-button""]`)
+3. [ACT] fill the name field (`[data-test-id=""wishlist-name-input""]`) with a 25-character name
+4. [ACT] click 'Save' (`[data-test-id=""wishlist-settings-save-button""]`)
+5. [ASSERT] verify the list is created with the full 25-character name
+6. [ACT] open 'CREATE LIST' again and fill the name field with a 26-character name
+7. [ASSERT] verify the field rejects the 26th character or shows a length-validation error","[DOM] a 25-character name is accepted and the list is created with the name intact (no truncation) {OBSERVED}
+[DOM] a 26-character name triggers the validation error 'This field must not contain more than 25 characters' {OBSERVED}
+[STATE] the 26-character attempt does not create a list (Save is blocked while the validation error is showing) {OBSERVED}","[CONSOLE] no uncaught JS errors on either attempt
+[NETWORK] no createWishlist mutation is sent while the 26-char validation error is showing (client-side gate)",25-character name is truncated or rejected (boundary enforced on the wrong side); 26-character name is silently accepted or silently truncated instead of showing the validation error; error text differs from 'This field must not contain more than 25 characters',delete the created 25-character-name list,"Coverage Gap Analysis; Verified: live selector pass (2026-08-05) — boundary discovered live, not from spec/docs",Draft

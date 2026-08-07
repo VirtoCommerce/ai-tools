@@ -203,7 +203,23 @@ WISH-008,"wishlists Query — List with Pagination","GraphQL > Wishlist > Querie
 [DATA label=list_wl] data.wishlists is non-null
 [COUNT label=list_wl] data.wishlists.totalCount >= 0
 [DATA label=list_wl] data.wishlists.items is non-null","[ROUNDTRIP label=list_wl] query is deterministic — re-execution returns same totalCount (runner-manual)","errors[] non-empty; totalCount negative or missing; items array null",none — read-only,xAPI; graphql-schema.md — Query.wishlists,Automated
-WISH-009,"sharedWishlist Query — Public Access via Platform-Generated Key","GraphQL > Wishlist > Queries",High,BL-GQL-001; BL-GQL-004,ECL-10.2,"Not runner-automatable — requires navigating storefront UI ({{FRONT_URL}}/account/lists) to obtain platform-generated <SHARING_KEY> UUID. sharingKey is NOT user-settable via API (custom strings silently ignored — only scope=AnyoneAnonymous triggers platform generation). Kept as Manual until runner gains UI-step primitive.","—","Manual-only. See legacy suite 050h for storefront steps: (1) create wishlist with scope=AnyoneAnonymous, (2) navigate to /account/lists, (3) extract sharing UUID from shared-list card URL, (4) sharedWishlist(sharingKey: <UUID>) query — public (no auth needed).","[MANUAL] All assertions verified by tester in GraphiQL after extracting sharing key from storefront UI","[EVIDENCE] Manual case only","sharedWishlist returns null for platform key; scope not Organization; auth required on shared query",Manual — executed via storefront UI + GraphiQL,xAPI; legacy suite 050h-graphql-wishlist.csv WISH-009,Manual
+WISH-009,"sharedWishlist Query — Public Access via Platform-Generated Key","GraphQL > Wishlist > Queries",High,BL-GQL-001; BL-GQL-004,ECL-10.2,"Not runner-automatable — requires navigating storefront UI ({{FRONT_URL}}/account/lists) to obtain platform-generated <SHARING_KEY> UUID. sharingKey is NOT user-settable via API (custom strings silently ignored — only scope=AnyoneAnonymous triggers platform generation). Kept as Manual until runner gains UI-step primitive.","—","[NAV] {{FRONT_URL}}/account/lists
+[ACT] click 'Create New List'
+[WAIT] create-list form visible
+[ACT] enter a list name
+[ACT] set visibility to 'Shared' / 'Public' (the storefront option that triggers platform scope=AnyoneAnonymous)
+[ACT] click 'Create'
+[WAIT] list created and appears in My Lists
+[ACT] open the new list's Share option
+[WAIT] share dialog visible with a public link
+[ASSERT] public link contains a platform-generated UUID segment
+[ACT] copy the UUID segment from the 'Public Link' shown in the share dialog
+[NAV] {{BACK_URL}}/ui/graphiql
+[GQL] execute query { sharedWishlist(sharingKey: ""<copied UUID>"") { id name items { productId } } } — no Authorization header set
+[READ] response payload","[DOM] share dialog exposes a public link containing a UUID segment {DOC}
+[DATA] sharedWishlist(sharingKey: <copied UUID>) resolves to the created list's id/name/items with no Authorization header required {DOC}
+[ERRORS] errors[] is empty on the anonymous sharedWishlist query {BL}","[API] sharedWishlist query response errors[] is empty
+[CONSOLE] no uncaught JS errors during storefront share flow","sharedWishlist returns null for the platform-generated key; errors[] non-empty on the anonymous query; scope resolves to Organization instead of AnyoneAnonymous; authentication required on a query that should be public","Delete the created wishlist via storefront UI (or removeWishlist mutation once authenticated); discard the copied sharing key — none persisted beyond the session","xAPI; graphql-schema.md — Query.sharedWishlist; Synced: lifecycle lists/SFL (2026-08-05)",Manual
 WISH-010,"addWishlistItem — Single Item","GraphQL > Wishlist > Items",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Captures a real product GUID from products query (B2B virtual catalog fc596540...), creates wishlist, adds one item, verifies itemsCount increments and product matches.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -646,3 +662,53 @@ WISH-027,"addWishlistBulkItem — Add To Single List (Bulk-Mutation Shape)","Gra
 [DATA label=bulk_add] data.addWishlistBulkItem.wishlists is non-null
 [COUNT label=bulk_add] data.addWishlistBulkItem.wishlists.length = 1
 [COUNT label=bulk_add] data.addWishlistBulkItem.wishlists.0.itemsCount = 1","[ROUNDTRIP label=bulk_add] items[0].productId matches @td(PROD_HEADPHONES.sku) — verify in evidence","errors[] non-empty; wishlists[] empty; itemsCount = 0; schema drift on InputAddWishlistBulkItemType",none — inline cleanup,xAPI; graphql-schema.md — Mutation.addWishlistBulkItem,Automated
+WISH-028,wishlists Query — Pagination Boundary (first=1) + Sort,GraphQL > Wishlist > Queries,Medium,BL-GQL-001; BL-GQL-004,ECL-10.2,"Runner-native. ORG_USER authenticated. Creates 2 wishlists then queries with first=1 (boundary) and a sort argument to verify pagination truncates correctly while totalCount still reflects the full set. Closes the TC-001 technique-coverage gap for the GraphQL > Wishlist group (no boundary case existed) and exercises the wishlists(sort) argument, which no prior case covered.",first_boundary=1,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP create_a]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" listName: ""AGENT-TEST-WL-028-A"" }) { id } }
+[GQL-EXEC create_a]
+[GQL-CAPTURE create_a.data.createWishlist.id → LIST_A_ID]
+[GQL-OP create_b]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" listName: ""AGENT-TEST-WL-028-B"" }) { id } }
+[GQL-EXEC create_b]
+[GQL-CAPTURE create_b.data.createWishlist.id → LIST_B_ID]
+[GQL-OP page_boundary]
+  query { wishlists(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 1 sort: ""createdDate:desc"") { totalCount items { id name } } }
+[GQL-EXEC page_boundary]
+[GQL-OP cleanup_a]
+  mutation { removeWishlist(command: { listId: ""{{LIST_A_ID}}"" }) }
+[GQL-EXEC cleanup_a]
+[GQL-OP cleanup_b]
+  mutation { removeWishlist(command: { listId: ""{{LIST_B_ID}}"" }) }
+[GQL-EXEC cleanup_b]","[ERRORS label=page_boundary] errors[] empty {BL}
+[COUNT label=page_boundary] data.wishlists.items.length <= 1 {DOC}
+[COUNT label=page_boundary] data.wishlists.totalCount >= 2 {DOC}
+[DATA label=page_boundary] data.wishlists.items is non-null {DOC}","[ROUNDTRIP label=page_boundary] re-query with first: 100 → same totalCount, items.length reflects both created lists (runner-manual)",errors[] non-empty; items.length > first (boundary not enforced); totalCount does not reflect both created lists; sort argument rejected as an invalid value,none — inline cleanup,"xAPI; graphql-schema.md — Query.wishlists(first, sort); Synced: lifecycle lists/SFL (2026-08-05)",Draft
+WISH-029,addWishlistItem — Duplicate Product Add Behavior (Discovery Probe),GraphQL > Wishlist > Items,Medium,BL-GQL-001,ECL-10.2,"Runner-native. ORG_USER authenticated. Adds the same product to a wishlist twice via two separate addWishlistItem calls. The server-side duplicate-add contract is UNDOCUMENTED for wishlists — unlike BL-CART-007 (cart merges same-SKU adds into one line), no equivalent invariant exists for wishlists yet. This case is a discovery probe (PROPOSED-BL-LIST-DUP candidate) rather than a settled invariant; see BL audit handoff.",—,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" listName: ""AGENT-TEST-WL-029"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP add_first]
+  mutation { addWishlistItem(command: { listId: ""{{LIST_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id itemsCount items { id productId quantity } } }
+[GQL-EXEC add_first]
+[GQL-OP add_duplicate]
+  mutation { addWishlistItem(command: { listId: ""{{LIST_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id itemsCount items { id productId quantity } } }
+[GQL-EXEC add_duplicate]
+[GQL-OP cleanup_remove]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup_remove]","[ERRORS label=add_first] errors[] empty {BL}
+[COUNT label=add_first] data.addWishlistItem.itemsCount = 1 {BL}
+[ERRORS label=add_duplicate] errors[] empty {BL}
+[DATA label=add_duplicate] verify whether the second add increments the existing line's quantity to 2 (cart-like dedupe, BL-CART-007 analogue) OR creates a second distinct line (itemsCount = 2) — no confirmed wishlist contract exists {HYPOTHESIS}",[ROUNDTRIP label=add_duplicate] wishlist(listId) → items[] shape matches whichever contract add_duplicate observed,errors[] non-empty on either add; itemsCount grows unboundedly on repeated identical adds (neither dedupe nor a clean second line); duplicate lineItemId collision between the two adds,none — inline cleanup,xAPI; graphql-schema.md — Mutation.addWishlistItem; Synced: lifecycle lists/SFL (2026-08-05),Draft
