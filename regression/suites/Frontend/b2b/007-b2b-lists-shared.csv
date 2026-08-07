@@ -387,3 +387,140 @@ User logged in, no precondition on existing lists. Discovered live 2026-08-05 (p
 [DOM] a 26-character name triggers the validation error 'This field must not contain more than 25 characters' {OBSERVED}
 [STATE] the 26-character attempt does not create a list (Save is blocked while the validation error is showing) {OBSERVED}","[CONSOLE] no uncaught JS errors on either attempt
 [NETWORK] no createWishlist mutation is sent while the 26-char validation error is showing (client-side gate)",25-character name is truncated or rejected (boundary enforced on the wrong side); 26-character name is silently accepted or silently truncated instead of showing the validation error; error text differs from 'This field must not contain more than 25 characters',delete the created 25-character-name list,"Coverage Gap Analysis; Verified: live selector pass (2026-08-05) — boundary discovered live, not from spec/docs",Draft
+B2C-LIST-040,Publish List to a Customer — rep shares a list with scope Customer,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+Signed in as a sales rep that serves at least one customer organization, with at least one own list holding >=1 in-stock item. Requires VirtoCommerce.SalesRep >= 3.1001.0-pr-8 and the XCart customer-wishlist-sharing-scope build.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = the FIRST organization returned by the share dialog's customer picker (live-discover — never hardcode an org name, the picker contains duplicates); list = any own list with >=1 in-stock item","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Edit'
+3. [ACT] in the 'List settings' dialog set 'Sharing options' to 'Customer'
+4. [ASSERT] verify a searchable customer picker, a 'Link' field, a 'Message' field and a 'Send via' group appear
+5. [ACT] select customer_a, type a distinctive message, leave both channels checked
+6. [ACT] click Save
+7. [ASSERT] verify the list card shows a 'Shared with customer' scope badge","[DOM] the 'Sharing options' dropdown offers exactly Private / Anyone (readonly) / Organization / Customer {OBSERVED}
+[DOM] selecting 'Customer' reveals the Link field and a searchable customer combobox that filters as you type {OBSERVED}
+[DOM] selecting a customer reveals the Message field and the 'Send via' group with Email and Push both checked by default {OBSERVED}
+[NETWORK] the save issues ChangeWishlist with scope='Customer' and a non-empty sharedWithId {OBSERVED}
+[DOM] the list card scope badge reads 'Shared with customer' after save {OBSERVED}","[CONSOLE] no uncaught JS errors
+[NETWORK] all /graphql calls return 200 with an empty errors[]",'Customer' is absent from the scope dropdown (feature not deployed); the customer picker does not filter; ChangeWishlist omits sharedWithId or sends scope!='Customer'; the badge does not change after save,set the list's sharing scope back to Private,"VCST-5332; verified live vcptcore-qa 2026-08-07, theme 2.55.0-pr-2405-c9c7, SalesRep 3.1001.0-pr-8-a07e",Draft
+B2C-LIST-041,Publish List to a Customer — at least one notification channel is required,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+Same as B2C-LIST-040. Behaviour NOT yet implemented as of 2026-08-07 — carved out of the VCST-5332 review into its own story; this case is expected to FAIL until that story ships.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = first organization in the share dialog's customer picker,"1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open the list's 'Edit' dialog and set 'Sharing options' to 'Customer'
+3. [ACT] select customer_a and type a message
+4. [ACT] uncheck BOTH the Email and the Push notification checkboxes
+5. [ASSERT] verify Save is blocked and a validation message requires at least one channel
+6. [ASSERT] verify no share is committed while both channels are unchecked","[DOM] with both channels unchecked the Save control is disabled or blocked, and a validation message names the at-least-one-channel requirement
+[NETWORK] no ChangeWishlist mutation is sent while both channels are unchecked
+[STATE] the list's sharing scope is unchanged after the blocked attempt","[CONSOLE] no uncaught JS errors
+[NETWORK] no /graphql 4xx/5xx","Save stays enabled with zero channels selected and the share commits anyway; ChangeWishlist fires while SendCustomerCommunication never does, so the customer silently gains access with no notification and the typed message is discarded (observed on vcptcore-qa 2026-08-07)","if the share committed despite the defect, set the list's sharing scope back to Private","VCST-5332 review finding #5 -> follow-up story; observed FAILING live vcptcore-qa 2026-08-07 — stays Draft (advance coverage for the follow-up story, not a 5332 regression)",Draft
+B2C-LIST-042,Publish List to a Customer — Message and channel checkboxes persist when the share is reopened,B2C Features > Lists > Sales Rep sharing,Medium,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+A list already shared with a customer via B2C-LIST-040, with a known message text. Behaviour NOT yet implemented as of 2026-08-07 — carved out of the VCST-5332 review into its own story; expected to FAIL until that story ships.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; the message text used when the list was shared,"1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open the already-shared list's 'Edit' dialog
+3. [ASSERT] verify 'Sharing options' still reads 'Customer' and the previously selected customer is shown
+4. [ASSERT] verify the previously entered Message is visible and editable
+5. [ASSERT] verify the 'Send via' Email and Push checkboxes are visible and reflect what was originally sent","[DOM] the reopened 'List settings' dialog keeps 'Sharing options' on 'Customer' and renders the customer combobox holding the previously selected organization name as its value, not an empty placeholder
+[DOM] the reopened dialog renders the 'Message' textarea containing the exact text submitted at share time, and its character counter reads that text's length rather than '0/907'
+[DOM] the reopened dialog shows the 'Send via' Email and Push checkboxes","[CONSOLE] no uncaught JS errors
+[NETWORK] the wishlist read returns the persisted sharing state","Message and the whole 'Send via' group are absent on reopen and only reappear after the rep changes the customer — they are bound to a dirty-customer-selection state instead of to scope==='Customer'; the message is not persisted on the wishlist at all (ChangeWishlist carries no message field), so there is nothing to re-render (observed on vcptcore-qa 2026-08-07)",none — read-only inspection of an existing share,"VCST-5332 review findings #4 + #6 -> follow-up story; observed FAILING live vcptcore-qa 2026-08-07 — stays Draft (advance coverage for the follow-up story, not a 5332 regression)",Draft
+B2C-LIST-043,Publish List to a Customer — re-sharing to a second customer discloses that the first loses access,B2C Features > Lists > Sales Rep sharing,Medium,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+A list already shared with customer_a, and the rep serves at least two distinct customer organizations. The data model is one list to one customer (sharedWithId is a scalar), so re-sharing revokes the previous recipient.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a and customer_b = two DISTINCT organizations from the rep's customer picker (verify they are distinct orgs, not two identically-named entries)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open the already-shared list's 'Edit' dialog
+3. [ACT] change the selected customer from customer_a to customer_b
+4. [ASSERT] verify an inline warning states that the previously selected customer will lose access
+5. [ACT] click Save
+6. [ACT] reopen the dialog
+7. [ASSERT] verify only customer_b is retained","[DOM] the customer control under 'Sharing options: Customer' is a single-value combobox — selecting a second organization replaces the value in place; no chip/tag list and no second customer row is rendered {OBSERVED}
+[DOM] changing the customer surfaces the warning 'The previously selected customer will lose access to this list.' BEFORE save {OBSERVED}
+[STATE] after save and reopen, only customer_b is retained {OBSERVED}
+[NETWORK] ChangeWishlist sends the single new sharedWithId {OBSERVED}","[CONSOLE] no uncaught JS errors
+[NETWORK] /graphql 200 with empty errors[]",the customer is swapped with NO warning (silent revocation — the originally reported VCST-5332 finding #1 behaviour); customer_a retains access after the swap; both customers are shown as retained while only one is persisted,set the list's sharing scope back to Private,VCST-5332 review finding #1 (multi-customer support -> follow-up story; silent revocation already mitigated by the disclosure warning); verified live vcptcore-qa 2026-08-07,Draft
+B2C-LIST-044,Shared list — customer sees the rep-recommendation banner and can add an item to cart,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+A list shared with a customer organization the signed-in account belongs to, holding at least one in-stock item. Covers VCST-5332 AC2 and AC3.",the shared-list URL captured from the share dialog's Link field; an in-stock item on the list (live-discover — never hardcode a SKU),"1. [NAV] the shared-list URL
+2. [ASSERT] verify the list renders with its name and items
+3. [ASSERT] verify the rep-recommendation banner is shown
+4. [ACT] click 'Add to cart' on an in-stock item
+5. [ASSERT] verify the cart line count increments","[DOM] the banner 'Recommended by your sales representative' renders above the item table {OBSERVED}
+[DOM] each in-stock row exposes a quantity input and an 'Add to cart' control; an out-of-stock row is disabled with 'The product is no longer available for purchase' {OBSERVED}
+[NETWORK] the add issues the cart addItem mutation and the returned itemsQuantity increases by one {OBSERVED}
+[STATE] the header cart badge reflects the new quantity {OBSERVED}","[CONSOLE] no uncaught JS errors
+[NETWORK] /graphql 200 with empty errors[]
+[ANALYTICS] GA4 add_to_cart fires with ep.source_route='SharedList' {OBSERVED}",the recommendation banner is missing; 'Add to cart' is inert or errors; the cart quantity does not change; an out-of-stock row offers an enabled Add to cart,remove the added line from the cart,VCST-5332 AC2 + AC3; verified live vcptcore-qa 2026-08-07,Draft
+B2C-LIST-045,Shared list — the order-summary panel exposes a list-level purchase action,B2C Features > Lists > Sales Rep sharing,Medium,BL-B2B-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+Same shared list as B2C-LIST-044. Behaviour NOT yet implemented as of 2026-08-07 — carved out of the VCST-5332 review into its own story; expected to FAIL until that story ships.",the shared-list URL; the list's item subtotal as rendered in the order-summary card,"1. [NAV] the shared-list URL
+2. [ASSERT] verify the order-summary card renders a subtotal
+3. [ASSERT] verify the order-summary card exposes at least one list-level action (for example 'Add all to cart' or 'Checkout now')
+4. [ACT] trigger the list-level action
+5. [ASSERT] verify every purchasable item from the list lands in the cart in one operation","[DOM] the order-summary card renders a subtotal AND at least one enabled call-to-action beneath it
+[STATE] the list-level action adds all purchasable items in a single operation
+[DOM] a row whose stock control reads 0 / 'The product is no longer available for purchase' is skipped by the bulk action, which still completes for the remaining rows","[CONSOLE] no uncaught JS errors
+[NETWORK] /graphql 200 with empty errors[]","the order-summary card renders a subtotal with NO buttons underneath at all — a summary panel with a total and zero actions, so the only purchase path is item by item (observed on vcptcore-qa 2026-08-07)",empty the cart if the bulk action succeeded,"VCST-5332 review finding #3 -> follow-up story; observed FAILING live vcptcore-qa 2026-08-07 — stays Draft (advance coverage for the follow-up story, not a 5332 regression)",Draft
+B2C-LIST-046,Shared list — a non-recipient organization is denied access (negative control),B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+A list shared with organization A. Signed in as an account that is neither the list owner nor a member of organization A. This is the P0-security negative control for customer-scoped list sharing.",the shared-list URL for a list scoped to an organization the signed-in account does NOT belong to,"1. [ACT] sign in as an account that is neither the list owner nor a member of the recipient organization
+2. [NAV] the shared-list URL
+3. [ASSERT] verify access is denied and no list content is rendered","[DOM] the storefront lands on the /403 route rendering the heading 'Access denied', and the document contains no list name, no product row and no Subtotal element {OBSERVED}
+[STATE] no part of the shared list leaks to a non-recipient organization (BL-SR-002) {OBSERVED}","[CONSOLE] no uncaught JS errors
+[NETWORK] no /graphql response returns the wishlist payload to the unauthorized caller","any list content renders for a non-recipient (name, items, subtotal or even the item count) — a BL-SR-002 cross-org leak; the page renders a blank shell instead of an explicit access-denied state",none — read-only,VCST-5332; BL-SR-002 negative control; verified live vcptcore-qa 2026-08-07,Draft
+B2C-LIST-047,Publish List to a Customer — a failed notification is surfaced to the rep,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+A customer organization with no reachable notification recipient (for example an org whose only member is the sending rep). Behaviour NOT yet implemented as of 2026-08-07 — carved out of the VCST-5332 review into its own story; expected to FAIL until that story ships.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; a served organization with zero effective recipients (see the SR_REP_ONLY_ORG fixture concept in test-data/aliases.json),"1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] share a list with the zero-recipient organization, message filled, both channels checked
+3. [ACT] click Save
+4. [ASSERT] verify the rep is told the notification did not reach anyone","[DOM] a visible warning or error tells the rep that no recipient was notified — the dialog does not close as a plain success
+[NETWORK] sendCustomerCommunication returns succeeded:false with warnings[] and the UI renders that warnings[] content
+[STATE] the share itself may still commit, but its notification outcome is never reported as success","[CONSOLE] no uncaught JS errors
+[NETWORK] the mutation returns HTTP 200 with an empty GraphQL errors[] — failure is signalled IN-BAND via succeeded:false, so generic error handling will not catch it","sendCustomerCommunication returns {succeeded:false, pushSent:false, emailSent:false, warnings:['NoRecipients']} and the UI shows no toast, no warning and nothing at all — the dialog closes as a success and the rep believes the customer was emailed and pushed (observed on vcptcore-qa 2026-08-07)",set the list's sharing scope back to Private,"VCST-5332 review incidental finding (silent notification failure) -> follow-up story; observed FAILING live vcptcore-qa 2026-08-07 — stays Draft (advance coverage for the follow-up story, not a 5332 regression)",Draft
+B2C-LIST-048,"Publish List to a Customer — Email channel only, Push must NOT be sent",B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+Signed in as a sales rep with at least one served customer organization that has a reachable, email-capable member (NOT a rep-only org — a zero-recipient org yields warnings:['NoRecipients'] and masks the per-channel result; see B2C-LIST-047). Third partition of the channel-selection set {both, email-only, push-only, none} — B2C-LIST-040 covers both, B2C-LIST-041 covers none.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = an organization from the share dialog's customer picker that has >=1 emailable member besides the rep (live-discover — never hardcode an org name, the picker contains duplicates)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open the list's 'Edit' dialog and set 'Sharing options' to 'Customer'
+3. [ACT] select customer_a and type a distinctive message
+4. [ACT] in the 'Send via' group leave 'Email' CHECKED and UNCHECK 'Push notification'
+5. [ASSERT] verify Save is enabled (one channel satisfies the at-least-one-channel rule)
+6. [ACT] click Save
+7. [ASSERT] verify the sendCustomerCommunication response reports the email sent and the push NOT sent
+8. [ASSERT] verify the share itself committed","[NETWORK] with exactly one channel selected the Save control is enabled and no at-least-one-channel validation fires {OBSERVED}
+[NETWORK] the sendCustomerCommunication REQUEST carries sendEmail:true AND sendPush:false — the dialog's channel selection reaches the backend verbatim {OBSERVED}
+[NETWORK] the response reports pushSent:false — the unchecked channel is NOT silently sent anyway {OBSERVED}
+[NETWORK] the response reports emailSent:true with an empty warnings[] {SPEC}. NOTE: on vcptcore-qa 2026-08-07 this returned succeeded:false / warnings:['EmailSendFailed'] while push worked on the SAME org — an env SMTP gap, not a routing defect; re-assert this line where outbound mail is configured. A NoRecipients warning instead means the fixture org has no reachable member — fix the data, do not pass the case
+[NETWORK] ChangeWishlist commits scope='Customer' with the selected sharedWithId {OBSERVED}
+[STATE] no push notification appears in the recipient in-app inbox for this send {OBSERVED}","[CONSOLE] no uncaught JS errors
+[NETWORK] /graphql 200 with an empty errors[] — note that this mutation signals failure IN-BAND via succeeded:false, so a 200 alone proves nothing; assert on the payload",pushSent:true while Push was unchecked (the channel selection is ignored and both are sent); emailSent:false while Email was checked (the selected channel is dropped); succeeded:false; the dialog closes as a success while the payload reports a failure,set the list's sharing scope back to Private,"VCST-5332 AC1 per-channel routing; sibling receipt story VCST-5331 (Done); mutation response shape {succeeded,pushSent,emailSent,warnings[]} observed live vcptcore-qa 2026-08-07, the email-only combination itself NOT yet exercised",Draft
+B2C-LIST-049,"Publish List to a Customer — Push channel only, Email must NOT be sent",B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+Same fixture as B2C-LIST-048. Fourth partition of the channel-selection set {both, email-only, push-only, none}.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = an organization from the share dialog's customer picker with >=1 reachable member besides the rep,"1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open the list's 'Edit' dialog and set 'Sharing options' to 'Customer'
+3. [ACT] select customer_a and type a distinctive message
+4. [ACT] in the 'Send via' group leave 'Push notification' CHECKED and UNCHECK 'Email'
+5. [ASSERT] verify Save is enabled
+6. [ACT] click Save
+7. [ASSERT] verify the sendCustomerCommunication response reports the push sent and the email NOT sent
+8. [ASSERT] verify the share itself committed","[NETWORK] with exactly one channel selected the Save control is enabled and no at-least-one-channel validation fires {OBSERVED}
+[NETWORK] sendCustomerCommunication returns succeeded:true with pushSent:true AND emailSent:false — the unchecked channel is honoured, not silently sent anyway {OBSERVED}
+[NETWORK] warnings[] is empty {OBSERVED}
+[NETWORK] ChangeWishlist commits scope='Customer' with the selected sharedWithId {OBSERVED}
+[STATE] the recipient in-app inbox entry carries the rep typed message VERBATIM, not the default template used when Message is left blank; no email is delivered {OBSERVED}","[CONSOLE] no uncaught JS errors
+[NETWORK] /graphql 200 with an empty errors[] — failure is signalled IN-BAND via succeeded:false, so assert on the payload",emailSent:true while Email was unchecked; pushSent:false while Push was checked; the push carries the default template text instead of the rep's typed message; succeeded:false with no UI feedback,set the list's sharing scope back to Private,VCST-5332 AC1 per-channel routing; sibling receipt story VCST-5331 (Done); the push-only combination NOT yet exercised live,Draft
+B2C-LIST-050,Publish List to a Customer — no channel selected: the Link still grants the recipient org access (silent grant),B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+Requires a member of the recipient organization who is NOT the sales rep and NOT the list owner, able to sign in to the storefront. Runs the SAME share as B2C-LIST-041 (both channels unchecked) but asserts the OTHER half and does not duplicate it: 041 asserts the share should be BLOCKED by validation; 050 asserts that IF it commits, the access grant itself is sound and the Link is a working, correctly-scoped entry point. Keep both — if 041's validation lands, 050 is re-pointed at a one-channel share, since the Link is issued for every customer-scoped share regardless of channels.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = an organization from the share dialog's customer picker (live-discover — never hardcode an org name, the picker contains duplicates); recipient = a member of customer_a who is neither the rep nor the list owner; the shared-list URL copied from the dialog's 'Link' field","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] open the list's 'Edit' dialog, set 'Sharing options' to 'Customer' and select customer_a
+3. [ACT] UNCHECK both 'Email' and 'Push notification'
+4. [ASSERT] verify the 'Link' field is populated and copy its URL
+5. [ACT] click Save
+6. [ASSERT] verify no notification was dispatched for this save
+7. [ACT] sign out and sign in as recipient, confirming the active organization is customer_a
+8. [NAV] the copied shared-list URL
+9. [ASSERT] verify the wishlist opens and renders its items
+10. [ASSERT] verify the recipient reached it ONLY via the link — the list is not surfaced anywhere in the recipient's own account navigation","[DOM] the 'Link' field is populated for a customer-scoped share even with zero notification channels selected — the URL is issued by the scope change, not by the notification {OBSERVED}
+[NETWORK] the save issues ChangeWishlist with scope='Customer' and the selected sharedWithId, and issues NO sendCustomerCommunication mutation {OBSERVED}
+[DOM] opening the link as recipient renders the shared list: its name, its product rows and the 'Recommended by your sales representative' banner {OBSERVED}
+[STATE] access is granted by the sharedWithId scope, not by the notification — the recipient reaches the list despite never having been notified {OBSERVED}
+[DOM] the shared list does not appear under the recipient's own /account/lists — the link is the only entry point {OBSERVED}","[CONSOLE] no uncaught JS errors on either side
+[NETWORK] the recipient's /graphql wishlist read returns 200 with an empty errors[] and a populated wishlist payload {OBSERVED}
+[NETWORK] no 403 for a member of the organization the list was actually shared with","the recipient gets a 403 or an empty state even though their active organization IS the one the list was shared with (the grant did not take effect, or access is gated on the notification instead of on sharedWithId); the Link field is empty for a zero-channel share; the link resolves for a member of a DIFFERENT organization (BL-SR-002 cross-org leak — see B2C-LIST-046); the list unexpectedly appears in the recipient's own list index",set the list's sharing scope back to Private,"VCST-5332 — the silent-grant half of review finding #5: the customer gains working access with no notification at all. CONFIRMED live vcptcore-qa 2026-08-07 with a genuine non-owner recipient: both channels off, no sendCustomerCommunication, and the recipient still opened the list via the Link",Draft
+B2C-LIST-051,Shared list — a multi-org recipient is 403'd while signed in under a different one of THEIR OWN organizations,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+Requires a recipient who is a member of at least TWO organizations the rep can select, is NOT the list owner and NOT the rep. The owner bypass is the trap this case exists to avoid: the list OWNER opens the link successfully under ANY active org, so running this as the rep proves nothing — it must be a genuine non-owner. Distinct from B2C-LIST-046, which denies a user with NO membership in the recipient org at all; here the user DOES have access, just under a different active organization.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; recipient = a non-owner member of >=2 rep-selectable organizations (the working vcptcore-qa account is recorded in reports/tickets/Sprint26-15/VCST-5332/summary.json — never hardcode a personal email or password in this suite); org_X = the organization the list is shared with; org_Y = another organization the SAME recipient belongs to. Match org_X by GUID, not by name — the customer picker contains genuinely distinct organizations with identical display names","1. [ACT] as the rep, share a list with org_X and copy the Link; record the sharedWithId the ChangeWishlist mutation sent
+2. [ACT] sign in as recipient and read the active organization id from GetMe / pageContext; confirm it equals the recorded sharedWithId when org_X is active
+3. [ACT] switch the active organization to org_Y
+4. [NAV] the shared-list URL
+5. [ASSERT] record the outcome under org_Y
+6. [ACT] switch the active organization back to org_X
+7. [NAV] the same shared-list URL
+8. [ASSERT] record the outcome under org_X","[DOM] under org_Y the storefront hard-redirects to /403 'Access denied' and renders no list content {OBSERVED}
+[DOM] under org_X the same URL renders the list in full — name, product rows, subtotal and the 'Recommended by your sales representative' banner {OBSERVED}
+[STATE] access is therefore gated on the ACTIVE organization, not on the recipient's membership set — the identical user and identical URL flip on the org switch alone {OBSERVED}
+[DOM] the /403 'Access denied' page names the cause — that the list belongs to a different organization — and offers an organization switcher or a direct link to switch, instead of only a 'Home page' button {SPEC}","[CONSOLE] no uncaught JS errors on either attempt
+[NETWORK] the org_X attempt returns the wishlist payload; the org_Y attempt returns no wishlist payload {OBSERVED}","the 403 page offers only a 'Home page' link with no explanation and no org switcher, so a legitimate recipient who happens to be signed in under another of their own organizations reads a working share as a broken link (observed on vcptcore-qa 2026-08-07); the list renders under org_Y too (the scope grant is not enforced at all — a BL-SR-002 leak); the recipient's active org silently changes on navigation",set the list's sharing scope back to Private,"VCST-5332 review finding #2 — CONFIRMED live vcptcore-qa 2026-08-07 with a genuine non-owner recipient, after an earlier attempt was invalidated by the list-owner bypass. The access-gating behaviour is observed; the 403-page UX assertion is the follow-up story's scope",Draft
