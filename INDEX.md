@@ -4,8 +4,8 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**. Tests are 
 natural language prompts via MCP servers (Playwright, Chrome DevTools, Atlassian, …) — LLM-powered
 browser automation with AI agents, **not** traditional `.spec.js` files.
 
-> **Authoritative counts** (verified 2026-08-06): 19 agents · 39 skills · 30 commands ·
-> 31 knowledge files · 120 regression suites (~3,980 cases). Single sources of truth:
+> **Authoritative counts** (verified 2026-08-07): 19 agents · 40 skills · 31 commands ·
+> 32 knowledge files · 121 regression suites (~3,985 cases). Single sources of truth:
 > [`config/test-suites.json`](config/test-suites.json) for suites, [`.claude/rules/`](.claude/rules/) for everything else.
 
 ## Quick Navigation
@@ -16,7 +16,7 @@ browser automation with AI agents, **not** traditional `.spec.js` files.
 | [CLAUDE.md](CLAUDE.md) | Project instructions for Claude Code (overrides defaults) |
 | [.claude/](.claude/) | Agents, skills, commands, rules, knowledge |
 | [config/](config/) | MCP browser configs + `test-suites.json` manifest |
-| [regression/suites/](regression/suites/) | 120 module-aligned CSV suites (Frontend/ + Backend/) |
+| [regression/suites/](regression/suites/) | 121 module-aligned CSV suites (Frontend/ + Backend/) |
 | [test-data/](test-data/) | `@td()` alias registry + CSV fixtures |
 | [reports/](reports/) | Bug reports + regression / monitoring summaries |
 | [tests/](tests/) | Active per-sprint / per-ticket evidence (root = current) |
@@ -38,17 +38,17 @@ vc-mcp-testing-module/
 │
 ├── .claude/
 │   ├── agents/                     # 19 agents — qa/ (11) + ba/ (4) + developers/ (4), each w/ shared-instructions.md
-│   │   └── knowledge/              # 31 shared reference files (business-logic, graphql-schema, sitemap, …)
-│   ├── skills/                     # 39 skills (1 vc-knowledge, 12 testing, 17 qa-methodology, 6 development, 3 root-level)
-│   ├── commands/                   # 30 slash commands
+│   │   └── knowledge/              # 32 shared reference files (business-logic, graphql-schema, sitemap, …)
+│   ├── skills/                     # 40 skills (1 vc-knowledge, 12 testing, 18 qa-methodology, 6 development, 3 root-level)
+│   ├── commands/                   # 31 slash commands
 │   └── rules/                      # agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports
 │
 ├── config/                         # MCP browser configs + test-suites.json manifest
 │   ├── mcp-playwright-{chrome,firefox,edge}.config.json
-│   └── test-suites.json            # Regression orchestration manifest (_meta.totalSuites: 120)
+│   └── test-suites.json            # Regression orchestration manifest (_meta.totalSuites: 121)
 │
 ├── regression/suites/
-│   ├── Frontend/                   # 55 CSVs in 17 module dirs
+│   ├── Frontend/                   # 56 CSVs in 17 module dirs
 │   └── Backend/                    # 65 CSVs in 31 module dirs
 │
 ├── test-data/                      # aliases.json registry + CSV fixtures (orgs, addresses, users, products, payment, …)
@@ -83,13 +83,13 @@ Theme preset: **Coffee**. Communication: **Microsoft Teams**.
 
 ## Regression Suites
 
-120 suites (~3,980 cases) in enriched agent-native CSV format, organized into module-aligned
+121 suites (~3,985 cases, 37 selections) in enriched agent-native CSV format, organized into module-aligned
 subdirectories under `Frontend/` and `Backend/`. Per-module breakdown:
 [regression/suites/README.md](regression/suites/README.md). Authoritative definitions and selection
 groups: [config/test-suites.json](config/test-suites.json).
 
 **Selection groups:** `smoke` (042, 078) · `critical` (042, 078, 039, 044, 049) ·
-`frontend` · `backend` · `sprint` (plan-driven) · `full` (120) · plus module/feature groups
+`frontend` · `backend` · `sprint` (plan-driven) · `full` (121) · plus module/feature groups
 (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`,
 `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`).
 
@@ -124,8 +124,8 @@ developer + one reviewer per repo kind. Gate ladder: [.claude/rules/quality-gate
 
 ## Commands & Skills
 
-- **30 slash commands** — [commands/](.claude/commands), reference in [.claude/rules/skills-commands.md](.claude/rules/skills-commands.md).
-- **39 skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md).
+- **31 slash commands** — [commands/](.claude/commands), reference in [.claude/rules/skills-commands.md](.claude/rules/skills-commands.md).
+- **40 skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md).
 
 ## MCP Servers
 
@@ -143,7 +143,7 @@ npm run ci:smoke         # Smoke selection (042, 078)
 npm run ci:critical      # P0 selection (042, 078, 039, 044, 049)
 npm run ci:frontend      # All Frontend/ suites
 npm run ci:backend       # All Backend/ suites
-npm run ci:full          # Full regression (all 120 suites)
+npm run ci:full          # Full regression (all 121 suites)
 npm run ci:cycle         # Full cycle: sync → review → regression
 npm run ci:monitor       # Online bug monitoring from App Insights
 npm run ci:notify        # Teams notification

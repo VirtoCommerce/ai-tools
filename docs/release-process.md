@@ -2,9 +2,11 @@
 
 How to cut a release of the `vc-qa` plugin. Companion to [`versioning.md`](versioning.md) (the *what*) — this doc is the *how*.
 
-> **Note:** `vc-qa` is not currently listed in `.claude-plugin/marketplace.json` — only `vc-fix` is (see
-> `plugins/vc-fix/`). This process still applies to cutting a `vc-fix` release; substitute `vc-fix`
-> wherever this doc says `vc-qa`, until/unless `vc-qa` is re-listed.
+> **Note:** `.claude-plugin/marketplace.json` lists **two** plugins — `vc-fix` (`plugins/vc-fix/`) and
+> `vc-perf` (`plugins/vc-perf/`). `vc-qa` is **not** listed: its full surface now lives under `.claude/`
+> as project-scoped components, auto-discovered in this repo with no plugin manifest. This process
+> applies per plugin — substitute the plugin being released wherever this doc says `vc-qa`, and note
+> that each plugin versions and tags independently (Step 1, Step 5a).
 
 > **Audience:** Maintainers cutting releases. Not customers (customers read [`onboarding.md`](onboarding.md) and pin to a tagged version per [`versioning.md` § Customer Upgrade Path](versioning.md#customer-upgrade-path)).
 
@@ -49,12 +51,17 @@ These are deterministic — no judgment calls. Anyone with maintainer rights can
 
 ### Step 1 — Bump version numbers
 
-Update **both** to the new version:
+**Bump the released plugin's own manifest:**
 
-- `.claude-plugin/plugin.json` `"version": "x.y.z"`
-- `.claude-plugin/marketplace.json` `"version": "x.y.z"`
+- `plugins/<name>/.claude-plugin/plugin.json` `"version": "x.y.z"` — the single source of truth for that plugin. Claude Code's plugin loader reads this file, and Step 5a derives the `{name}--v{version}` tag from it.
 
-These two MUST match — Claude Code's plugin loader reads `plugin.json`, the marketplace listing reads `marketplace.json`. Drift = customers see one version and run another.
+**`.claude-plugin/marketplace.json` `"version"` is the CATALOG's version, not a plugin's.** Bump it only when the listing itself changes — a plugin added or removed, a description, source path, or owner edited. It does **not** have to equal any plugin's version.
+
+> **This rule changed when the catalog grew a second plugin.** It used to read "`plugin.json` and `marketplace.json` MUST match", which was true while `vc-fix` was the only listing and the repo *was* the plugin. With `vc-fix` and `vc-perf` versioning independently, one shared number cannot track both — the catalog now versions itself. Current state: catalog `0.9.4`, `vc-fix` `0.8.3`, `vc-perf` `0.2.6`. **That is not drift; do not "fix" it by forcing them equal.**
+
+**Also update the plugin's own component counts** in its `marketplace.json` description and `plugin.json`, if agents/skills/commands were added or removed — a stale count there is what customers read before installing.
+
+`package.json` `"version"` is the repo/toolset line (the whole-repo `vX.Y.Z` tags from Step 5). Nothing reads it programmatically and it does **not** mirror a plugin version.
 
 ### Step 2 — Finalize the changelog entry
 
@@ -196,7 +203,7 @@ A hotfix is a patch release against an already-tagged version (e.g. `v0.3.0` shi
 | 1 | Open the issue with a `Bug` label + cite the affected version |
 | 2 | Branch from the **tagged commit**, not from `main`. `git checkout -b hotfix/v0.3.1 v0.3.0` |
 | 3 | Fix the bug. Add a `[Fixed]` entry to `CHANGELOG.md` under a new `[0.3.1]` section |
-| 4 | Bump `plugin.json` and `marketplace.json` to `0.3.1` |
+| 4 | Bump the plugin's own `plugin.json` to `0.3.1` (catalog `marketplace.json` only if the listing itself changed) |
 | 5 | Run the same Step 3 verification battery |
 | 6 | Open PR `hotfix/v0.3.1 → main`. Get approval. Merge. |
 | 7 | Tag `v0.3.1` per Step 5 |
@@ -227,7 +234,8 @@ Tracks: plugin version × Claude Code version × required VC platform version. C
 
 | Don't | Why |
 |-------|-----|
-| Tag without bumping `plugin.json` + `marketplace.json` | Customers see the new tag but the manifest still shows the old version. Confusing + breaks Claude Code's version pin behavior. |
+| Tag without bumping the plugin's own `plugin.json` | Customers see the new tag but the manifest still shows the old version. Confusing + breaks Claude Code's version pin behavior. |
+| Force the catalog `marketplace.json` `version` to equal a plugin's version | They are different things — the catalog versions the *listing*, each plugin versions itself. With two plugins listed, one number cannot track both, and "correcting" the catalog to match one plugin silently misreports the other. |
 | Bump a plugin's version without pushing its `{plugin-name}--v{version}` tag (Step 5a), when another plugin depends on it | Silently strands every dependent plugin's installer on the last tagged content — `plugin.json` claims the new version but nothing resolvable backs it. |
 | Skip the verification battery "because the change was small" | Small changes are how `@td()` refs and manifest schemas silently break. Every release runs the full battery. |
 | Amend a published tag | Once `git push origin vX.Y.Z` lands, the tag is immutable in customer lockfiles. To fix a bad release, cut a new patch — never re-tag. |

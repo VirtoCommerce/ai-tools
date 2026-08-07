@@ -127,11 +127,11 @@ Evaluated before sprint release to staging or production. Covers sprint-scoped t
 
 ## 3. Full Release Gate
 
-Evaluated before production release. Covers all 120 regression suites (55 frontend + 65 backend).
+Evaluated before production release. Covers all 121 regression suites (56 frontend + 65 backend).
 
 | Criterion | Threshold | Measurement |
 |-----------|-----------|-------------|
-| Overall pass rate | >=98% | Combined pass rate across all 120 suites |
+| Overall pass rate | >=98% | Combined pass rate across all 121 suites |
 | Open P0 bugs | 0 | No unresolved critical bugs across entire platform |
 | Open P1 bugs | <3 | Each with documented workaround and target fix date |
 | Performance baselines | Within 10% of baseline | Core Web Vitals (LCP, FID, CLS) measured via Suite 11 |
@@ -146,7 +146,7 @@ Evaluated before production release. Covers all 120 regression suites (55 fronte
 - **BLOCKED** — Pass rate below 96% OR any P0 bug open OR 3+ P1 bugs without workarounds OR any critical security finding OR data integrity issue.
 
 **Notes:**
-- Full release gate requires execution of all 120 suites. Partial execution does not satisfy the gate.
+- Full release gate requires execution of all 121 suites. Partial execution does not satisfy the gate.
 - Cross-browser failures in a single browser may qualify for CONDITIONS if the other two browsers pass and the failing browser has a known platform issue.
 - Exploratory testing sessions must cover at least: checkout flow, payment processing, and catalog search.
 
@@ -168,7 +168,7 @@ Evaluated before emergency hotfix deployments. Scoped to the hotfix area only.
 - **BLOCKED** — Any criterion not met. Hotfix must be revised.
 
 **Notes:**
-- Hotfix gate does not require full regression (120 suites). Only the affected area plus smoke.
+- Hotfix gate does not require full regression (121 suites). Only the affected area plus smoke.
 - If the hotfix touches payment (Suites 04, 06), checkout, or security (Suite 08), those suites must also pass.
 - Hotfix deployments still require smoke gate (Section 1) to pass after the fix is applied.
 
