@@ -275,7 +275,7 @@ Both follow `knowledge/execution/tracker-ops.md` §5b for the exact Jira/Azure m
 field, or the link-type + relation, including the Sub-task-unavailable fallback). Report back which
 relationship was actually used (a fallback downgrade must be stated, not silent).
 
-### Step 5a — Attach the evidence AND embed it inline (required when the bug has screenshots)
+### Step 5a — Attach the evidence AND embed it inline (mandatory when the bug has screenshots, trace)
 
 A filename in the body is not evidence a reviewer will look at. Upload the screenshots **and** render
 them inline in the ticket body, so the defect is visible without opening the Attachments panel.

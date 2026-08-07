@@ -127,6 +127,8 @@ guessing custom-field ids.
   before the `PATCH`.
 - The on-disk `reports/bugs/*.md` file stays plain Markdown regardless — this rule is only about
   what you push into a **tracker field**.
+- **One carve-out, and only one:** a comment that must **display screenshots** cannot be Markdown —
+  see §5c. Prose stays Markdown everywhere else.
 
 ## 5b. Bug-filing relationship — Sub-task vs Link vs Standalone
 
@@ -157,9 +159,68 @@ note) MUST be:
   matters. No investigation logs, no step-by-step narration, no restating the whole ticket.
 - **Understandable to a human skimming on a deadline.** Reference evidence (PR link, screenshot,
   `@td` alias, BL-* id), don't inline it. Obey the size discipline in `.claude/rules/reports.md`.
-- **Rendered Markdown, not raw markup.** Verify the comment renders (bold/lists/code actually
-  format) — a literal `**` / `| … |` wall means you sent the wrong dialect (Jira wiki instead of
-  Markdown, or Markdown into an Azure HTML field). Fix and re-post.
+- **Rendered, not raw markup.** Verify the comment renders (bold/lists/code actually format) — a
+  literal `**` / `| … |` wall means you sent the wrong dialect (Jira wiki instead of Markdown, or
+  Markdown into an Azure HTML field). Fix and re-post. The inverse holds for the §5c
+  screenshot carve-out: there the body is wiki markup on purpose, and a literal `h2.` / `||` wall
+  means you sent *Markdown* into the v2 endpoint. Whichever dialect you chose, read the posted
+  comment back before calling it done.
+
+## 5c. Screenshots in a Jira comment — attach first, then wiki markup (2026-08-07)
+
+A Markdown image reference in a Jira comment **silently renders as nothing**. `![alt](path)` pointing
+at a repo path, or at a bare filename, is dropped by the Markdown→ADF conversion with no error and no
+warning — the comment posts `200 OK` and simply has no image. Naming the file in prose ("Screenshot:
+`foo.png`") is not a substitute: the reader still cannot see it. This cost a full round trip on
+VCST-5281, where two complete guides were posted with twelve invisible screenshots.
+
+Images live in a Jira comment only if **both** steps happen:
+
+1. **Attach the file to the issue.** The Atlassian MCP has **no attachment tool** — use the REST
+   endpoint directly with `JIRA_EMAIL` + `JIRA_API_TOKEN` from `.env.local`:
+   ```bash
+   curl -sk -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -H "X-Atlassian-Token: no-check" \
+     -F "file=@path/to/shot.png" [-F "file=@path/to/second.png" ...] \
+     "https://<site>.atlassian.net/rest/api/3/issue/<KEY>/attachments"
+   ```
+   Multiple `-F file=@…` in one request is fine. **Check what already landed before retrying** — a
+   failed output pipe does not mean the upload failed, and a blind retry duplicates every attachment
+   (`GET /rest/api/3/issue/<KEY>?fields=attachment`).
+2. **Reference it as wiki markup, via the v2 comment API.** `POST`/`PUT`
+   `/rest/api/2/issue/<KEY>/comment[/<id>]` with a plain-string `body` containing
+   `!filename.png|width=700!`. Jira resolves the filename against the issue's attachments and
+   converts it to a real ADF media node. The whole comment body must then be wiki markup —
+   `h2.` headings, `*bold*`, `_italic_`, `{{mono}}`, `||header||` / `|cell|` tables, `#` numbered and
+   `*` bulleted lists, `[text|url]` links, `{panel:title=…}…{panel}` for admonitions.
+
+**Do not** hand-build an ADF `media` node with the numeric attachment id — Jira rejects it with
+`400 ATTACHMENT_VALIDATION_ERROR`. The `media.attrs.id` must be a media-service **UUID**, which the
+attachment REST API does not expose; the wiki-markup path is what resolves it for you.
+
+**Verify, don't assume.** Re-read the comment through the **v3** API and confirm each `media` node's
+`attrs.id` is a 36-char UUID:
+```bash
+curl -sk -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+  "https://<site>.atlassian.net/rest/api/3/issue/<KEY>/comment/<id>"
+```
+Zero media nodes means the images are invisible, whatever the POST returned.
+
+Azure Boards is unaffected — its fields are HTML, so `<img src="…">` against an uploaded attachment
+URL works normally.
+
+## 5d. Publishing a deliverable to a ticket means the deliverable
+
+When asked to push a report, guide, analysis, or test model **to a ticket**, post the **artifact
+itself**, in full, in the comment body. A summary plus a repo path is not a delivery:
+
+- **Repo paths are not readable by ticket readers.** A path is only resolvable by someone with that
+  checkout, at that commit — and if the file is uncommitted, by literally no one but the author.
+  Never cite a working-tree path as if it were a link.
+- **Summarize only when explicitly asked to.** "Push it to the ticket" means the content. If the
+  artifact is genuinely too large for one comment, split it across comments (one per logical
+  document) rather than shrinking it to an abstract.
+- **A pointer is legitimate only when the target is reachable** — a merged-and-pushed GitHub URL, a
+  PR link, an attachment on that same ticket.
 
 ## 5. Build-version verification is platform-only
 
