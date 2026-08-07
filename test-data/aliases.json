@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.44",
+    "version": "1.5.47",
     "updated": "GENERATED",
     "changelog_1_5_43": "VCST-5281 follow-up — membership_status is now DECLARED, never inherited: every membership-CREATING fixture row carries a CONCRETE OrganizationMembership.Status and `td:validate:b2b` [9] hard-FAILS a blank one. Previously the column existed but every row left it blank, so the seeded outcome was status=null on all of them and the per-org status a case asserted was really a property of the CONTACT (ResolveEffectiveStatus falls through to member status) — invisible from the fixture row, and liable to change meaning if the contact were ever edited. WHAT CHANGED, per source: organization-memberships.csv MOM-001..006 → Approved (effective status UNCHANGED — null + contact-Approved already resolved to Approved — only its provenance is now declared, so no existing consumer moves: MULTI_ORG_TF_BR is read by 9 suite CSVs and stays able to sign in); b2b/users.csv 19 membership-creating rows → Approved, while USR-022 (invitation-pending) and USR-025 (ORG_ASSOC_ONLY_NO_GLOBAL) keep a BLANK cell because their empty `roles` cell means the seeder creates NO membership row at all and a status there would be inert; white-labeling/users.csv all 6 → Approved. THREE NEW BLOCKING-STATUS FIXTURES on dedicated single-org accounts, because Invited/Rejected/Deleted BLOCK org sign-in and must never be a repurposed happy-path account: ORG_TF_MBR_INVITED (MOM-007), ORG_TF_MBR_REJECTED (MOM-008), ORG_TF_MBR_DELETED (MOM-009) — TechFlow / org-employee / unlocked, with the CONTACT at Approved so a refusal is provably the per-org override winning rather than a global block, and SINGLE-org so a healthy second org cannot mask the refusal via the fall-through path (which is why neither MULTI_ORG_TF_BR nor _ALT can serve these). They are AT-REST representatives, complementing ORG_TF_ONLY_STATUS which MUTATES itself through the same values mid-run. All four legal values now have a seeded representative, so no branch of MembershipStatuses.IsBlocking lacks a fixture. VOCABULARY GROUNDED IN TWO INDEPENDENT SOURCES (not memory), both re-verified 2026-08-03 and agreeing: SOURCE vc-module-customer@2605501d984ab747b839b0aec16595c7674a967e (PR #312) ModuleConstants.MembershipStatuses — note it is NOT on `dev`, where the class does not exist at all, so the commit pin is load-bearing — and LIVE `GET /api/platform/settings/Customer.OrganizationMembershipStatuses` on vcst @ VirtoCommerce.Customer 3.1021.0-pr-312-2605 → allowedValues [Invited, Approved, Rejected, Deleted] with defaultValue \"Approved\", which is WHY Approved is the happy-path default rather than an arbitrary pick. Deliberately NOT the Customer.ContactStatuses vocabulary, which allows SIX values on the same env (Deleted, New, Locked, Invited, Rejected, Approved) — a contact status is not a membership status, and copying across the two is exactly how \"Locked\"/\"New\" end up silently non-blocking (absent from BlockingStatuses). GATE: findStatusProblems() now also fails a blank status on a membership-creating row and a status declared on a row that creates none (inert, and it reads as coverage that does not exist); it still fails an illegal value and a `;`-form arity mismatch, and WARNS on a blocking value. New side-effect-free predicates rowCreatesMembership()/statusCoverage() — `roleCol` gates them, because the seeder drops any org/role pair without a role, which is precisely how a no-membership fixture is built. The no-per-org-override cell is NOT lost by requiring a status: the VCST-5281 test model reduces membership-row-EXISTENCE out as a dependent axis (\"subsumed by which side of ?? supplied the value\") and covers it at D14 through ORG_ASSOC_ONLY_NO_GLOBAL, which has no membership row whatsoever. The WIRE behaviour of blank is unchanged (⇒ null, key omitted) so a re-seed can still HEAL a row back to no-override; what is now forbidden is a COMMITTED row DECLARING blank. Unit tests: scripts/unit/membership-status.test.mjs + the new membership-status-required.test.mjs (which reads the real CSVs, so the fixture set itself is gated, not just the predicates). Seeded and verified live on vcst 2026-08-03.",
     "changelog_1_5_42": "VCST-5281 / B2C-MBR-040: added ORG_ASSOC_ONLY_NO_GLOBAL — the LEGACY-ASSOCIATION fixture (seeded on vcst 2026-08-03). An AGENT-TEST contact, Contact.Status=Approved, associated with BOTH TechFlow and BuildRight via contact.organizations ONLY, with ZERO OrganizationMembership rows AND EMPTY global ApplicationUser.Roles — the shape 104 of the 105 at-risk accounts on this env have, and the only shape in which the BL-B2B-007 org-level permission term is observable (the membership and global terms must BOTH be empty). No existing fixture qualified: every b2b/users.csv account with a role gets a membership row by construction, and {{MULTI_ORG_USER_EMAIL}} carries a global org-maintainer role that masks the org-level term (invariant 11 perms across five org claims). NO NEW SEEDER was needed — the shape is expressible through the existing path: contacts.csv CON-025 (org_id=ORG-002;ORG-003; contactBody forces status=Approved and writes both associations) + users.csv USR-025 with an EMPTY roles cell, because provisionContactLogins pairs each org with its index-parallel role and filters out any org lacking one, so no role => no membership; stripSeededGlobalRoles plus a role-free account create leave global roles empty. Two small enablers: users.csv gained an optional trailing \"alias\" column so a row can name an INLINE alias and have the seeder write its runtime userId/contactId to aliases.<env>.json (syncEnvAliases only serves CSV-backed aliases, so these would otherwise be hand-captured), and \"--only\" now scopes the b2b ORG-GRAPH step (contacts/users, narrowing orgs to just those needed) so adding one fixture no longer re-provisions all 25 users.csv memberships — it ABORTS rather than falling back to seeding everything when the token matches nothing. Guard: td:validate:b2b check [4] recognises the ASSOCIATION-ONLY marker in test_purpose — no-role is OK for such a row, and declaring ASSOCIATION-ONLY *with* a role is now a hard failure (a role silently creates the membership that destroys the fixture). td:reconcile [11] now probes \"contactId\" too. LIVE MEASUREMENT for the case's armed regression guard: TechFlow (Organization.Roles=[purchasing-agent, org-employee]) -> 2 permission claims (storefront:organization:view, storefront:user:view); BuildRight (Organization.Roles=[]) -> 0 (the permission claim is absent entirely); unscoped -> 0. Counts DIFFER, so the org-level term IS flowing into the org-scoped JWT: NO BL-B2B-007 / VCST-5239 regression on this build. The 11->12 figure in BL-B2B-007 is a DIFFERENT account's global-role baseline and is NOT the oracle here; the oracle is \"TechFlow > BuildRight, and BuildRight == 0\".",
@@ -48,7 +48,8 @@
     "changelog_1_5_27": "VCST-5406: reseeded vcst-qa via the unified scripts/seed-data/seed-company-users.mjs (all kinds) on 2026-07-01 after teardown; refreshed org + contact platform_id caches in b2b/organizations.csv (19) + b2b/contacts.csv (14) from the fresh seed. Impersonation re-seed hints now point to `npm run seed:impersonation`. B2B graph reconciles clean (org-scoped roles only, VCST-5028). Note: b2b/users.csv user platform_id caches remain informational (resolved live by email); a handful of orgs (child AcmeWest + ORG-005..008) exist in DB but lag the Member search index.",
     "changelog_1_5_28": "VCST-5406 follow-up: swept the last password literals into the {{VAR}} pattern. 4 alias password fields (AGENT_TEST_IMP_CUSTOMER, MULTI_ORG_TF_BR[/_EMPLOYEE/_MAINTAINER]) → {{DEFAULT_TEST_PASSWORD}}; 15 real-credential Password1! literals in create-account bodies of suites 027/027b/050d → {{DEFAULT_TEST_PASSWORD}}. Left intentional test inputs alone (031/082 Test/Any/WrongPassword1! are registration/negative inputs, not stored secrets).",
     "changelog_1_5_29": "VCST-5089 (Per-store Asset Public URL rewrite in XAPI) regression authoring: added STORE_ASSET_TEST_URL inline alias (stable placeholder CDN host for setting/resetting Store.assetPublicUrl in tests — value is intentionally non-resolving DNS, same pattern as the live QA verification's cdn-test-vcst5089.govirto.com; only the HOST is asserted, 404/ERR_NAME_NOT_RESOLVED on the image itself is expected and acceptable). Added EXTERNAL_HOST_IMAGE_PRODUCT inline alias pinning the one concrete external-image product captured live during QA verification (product name + external host) for the BUG-1 regression guard (external URLs must NOT be rewritten when VirtoCommerce:StoreAssets:KnownAssetHosts is configured) — captured on vcptcore-qa 2026-07-14, see tests/Sprint-current/VCST-5089/test-execution-report.md; flagged env-portable-with-caveat since catalog composition diverges per env (per feedback reference_per_env_aliases_overlay) — the consuming case is marked Automation_Status=Draft pending per-env confirmation that the pinned product name resolves.",
-    "changelog_1_5_39": "Cart-suite test-data gaps (TLC-2026-07-25): (1) NEW PROD_MULTI_CURRENCY (test-products.csv PROD-106 / SKU QA-MULTICUR-001, 24.99 USD + 22.49 EUR) — the first genuinely multi-currency AGENT-TEST fixture. Root cause it fixes: seed-standard-products.mjs created only a USD pricelist and hardcoded currency:'USD' on every price row, so switching the storefront to EUR collapsed every AGENT-TEST line to 0.00 with a disabled qty stepper and blocked the currency-switch-with-coupon case (CART-093). The seeder now creates ONE PRICELIST PER CURRENCY (SEED-<date>-Standards-<CUR>) driven by the new `price_eur` CSV column via standard-specs.mjs buildCurrencyPriceSets(), registers the currencies first (ensureCurrencies), and tears down every currency's pricelist. (2) NEW PROD_SUB_FIVE (PROD-107 / QA-SUBFIVE-001, $3.49) — makes the fixed-amount-discount-exceeds-subtotal boundary reachable; COUPON_FIXED5 is $5 off and the cheapest fixture was $9.99, so the 'total floors at zero' assertion passed vacuously. (3) PROD_OOS / PROD_LOW_STOCK / PROD_PACK_SIZE / PROD_TIER_PRICED gained `slug` + `url` fields, backed by new env-invariant `product_slug` / `storefront_url` columns, so cases navigate {{FRONT_URL}}@td(ALIAS.url) instead of hand-composing /product/<sku> — which renders a client-side 404 (HTTP 200 SPA soft-404). The only live-working path is /seed-test-fixtures/<product-slug>, which is DERIVABLE from the seeder's own slug rules (standard-specs.mjs productSlug / storefrontPathForAdHoc) and is drift-guarded, not hand-maintained. (4) Stale GUIDs + the pre-seeding 'Template only — NOT seeded' recipe removed from these four aliases' notes and from the test-products.csv notes column (they have been live-seeded since 2026-05-19; ids belong in aliases.<env>.json). (5) .env.vcst OOS_SKU / PACK_SIZE_SKU / TIER_PRICED_SKU pointed at OOS-PRODUCT-001 / BULK-PAPER-001 / CISCO-SW24-001, which do NOT EXIST on the env (verified 2026-07-25) and disagreed with these aliases — repointed to the canonical QA-* business keys; td:validate:standard now fails any .env.* whose non-empty *_SKU disagrees with the CSV row. @td(PROD_*.sku) is the single source of truth; the env vars are a legacy convenience mirror. PROD-106/107 are AUTHORED, NOT YET SEEDED — run `TEST_ENV=<env> npm run seed:products`."
+    "changelog_1_5_39": "Cart-suite test-data gaps (TLC-2026-07-25): (1) NEW PROD_MULTI_CURRENCY (test-products.csv PROD-106 / SKU QA-MULTICUR-001, 24.99 USD + 22.49 EUR) — the first genuinely multi-currency AGENT-TEST fixture. Root cause it fixes: seed-standard-products.mjs created only a USD pricelist and hardcoded currency:'USD' on every price row, so switching the storefront to EUR collapsed every AGENT-TEST line to 0.00 with a disabled qty stepper and blocked the currency-switch-with-coupon case (CART-093). The seeder now creates ONE PRICELIST PER CURRENCY (SEED-<date>-Standards-<CUR>) driven by the new `price_eur` CSV column via standard-specs.mjs buildCurrencyPriceSets(), registers the currencies first (ensureCurrencies), and tears down every currency's pricelist. (2) NEW PROD_SUB_FIVE (PROD-107 / QA-SUBFIVE-001, $3.49) — makes the fixed-amount-discount-exceeds-subtotal boundary reachable; COUPON_FIXED5 is $5 off and the cheapest fixture was $9.99, so the 'total floors at zero' assertion passed vacuously. (3) PROD_OOS / PROD_LOW_STOCK / PROD_PACK_SIZE / PROD_TIER_PRICED gained `slug` + `url` fields, backed by new env-invariant `product_slug` / `storefront_url` columns, so cases navigate {{FRONT_URL}}@td(ALIAS.url) instead of hand-composing /product/<sku> — which renders a client-side 404 (HTTP 200 SPA soft-404). The only live-working path is /seed-test-fixtures/<product-slug>, which is DERIVABLE from the seeder's own slug rules (standard-specs.mjs productSlug / storefrontPathForAdHoc) and is drift-guarded, not hand-maintained. (4) Stale GUIDs + the pre-seeding 'Template only — NOT seeded' recipe removed from these four aliases' notes and from the test-products.csv notes column (they have been live-seeded since 2026-05-19; ids belong in aliases.<env>.json). (5) .env.vcst OOS_SKU / PACK_SIZE_SKU / TIER_PRICED_SKU pointed at OOS-PRODUCT-001 / BULK-PAPER-001 / CISCO-SW24-001, which do NOT EXIST on the env (verified 2026-07-25) and disagreed with these aliases — repointed to the canonical QA-* business keys; td:validate:standard now fails any .env.* whose non-empty *_SKU disagrees with the CSV row. @td(PROD_*.sku) is the single source of truth; the env vars are a legacy convenience mirror. PROD-106/107 are AUTHORED, NOT YET SEEDED — run `TEST_ENV=<env> npm run seed:products`.",
+    "changelog_1_5_45": "VCST-5487 — added 4 new inline product aliases (REV_PROD_5IMAGES, REV_PROD_RATING38, REV_PROD_RATING35, REV_PROD_IMAGES30) for the customer-reviews-storefront (088) suite additions covering the product-reviews design update (vc-frontend PR #2417: one-decimal rating + review count, vc-rating.vue continuous partial star fill, review-images-modal). All four are stable catalog slugs verified live on vcst-qa — no runtime GUID, no seeder/writeback needed."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -4249,5 +4250,115 @@
     "email": "",
     "memberId": "",
     "securityAccountId": ""
+  },
+  "REV_PROD_5IMAGES": {
+    "_inline": true,
+    "slug": "drinks-and-food/soft-drinks/soda/coca-cola-regular-6x330ml",
+    "rating": "5.0",
+    "review_count": "1",
+    "image_count": "5",
+    "reviewer_name": "Aleksandra12 Mitricheva12",
+    "review_date": "2025-02-10",
+    "notes": "VCST-5487 fixture — one approved 5.0 review carrying 5 images, for the review-images-modal cases (nav buttons, arrow keys, pagination dots, single-vs-multi-image branching against a sibling fixture). Verified live on vcst-qa 2026-08. Stable catalog slug, not a runtime GUID — no seeder/writeback needed.",
+    "fields": {
+      "slug": "slug",
+      "rating": "rating",
+      "review_count": "review_count",
+      "image_count": "image_count",
+      "reviewer_name": "reviewer_name",
+      "review_date": "review_date"
+    }
+  },
+  "REV_PROD_RATING38": {
+    "_inline": true,
+    "slug": "consumer-electronics/televisions/lg/lg-eg9600-series-65-class-4k-smart-curved-ole",
+    "rating": "3.8",
+    "review_count": "5",
+    "notes": "VCST-5487 fixture — 3.8/5 approved reviews, used to measure vc-rating.vue continuous partial-fill (4th star at 80% = (rating-3)*100%). Verified live on vcst-qa 2026-08. Stable catalog slug.",
+    "fields": {
+      "slug": "slug",
+      "rating": "rating",
+      "review_count": "review_count"
+    }
+  },
+  "REV_PROD_RATING35": {
+    "_inline": true,
+    "slug": "alcoholic-drinks/efes-beer/heineken-24x33cl-bottle",
+    "rating": "3.5",
+    "review_count": "2",
+    "notes": "VCST-5487 fixture — 3.5/2 approved reviews, used to measure vc-rating.vue continuous partial-fill (4th star at 50%). Verified live on vcst-qa 2026-08. Stable catalog slug.",
+    "fields": {
+      "slug": "slug",
+      "rating": "rating",
+      "review_count": "review_count"
+    }
+  },
+  "REV_PROD_IMAGES30": {
+    "_inline": true,
+    "slug": "alcoholic-drinks/wine/yalumba-y-series-chardonnay-unwooded-075l",
+    "rating": "3.0",
+    "review_count": "1",
+    "notes": "VCST-5487 fixture — 3.0/1 approved review WITH images, used as the single-image-review branch for review-images-modal (no nav buttons/dots expected). Verified live on vcst-qa 2026-08. Stable catalog slug.",
+    "fields": {
+      "slug": "slug",
+      "rating": "rating",
+      "review_count": "review_count"
+    }
+  },
+  "REV_VAR_MATRIX": {
+    "_inline": true,
+    "id": "",
+    "name": "",
+    "slug": "printers/multifunction-printers/laser-monochrome/canon-imageclass-wifi-mf232w-monochrome-laser-printerscannercopier-color-black",
+    "approved_count": "8",
+    "max_image_count": "4",
+    "notes": "VCST-5487 render-variant matrix host — 8 approved reviews covering text-only / long-text / empty-body / 1-2-3-4 images; aggregate 3.375 renders as \"3.4\"; 8 > PAGE_SIZE(5) so the list paginates. Seeded by npm run seed:review-variants; runtime id/name in aliases.<env>.json, empty on an unseeded env.",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "slug": "slug",
+      "approved_count": "approved_count",
+      "max_image_count": "max_image_count"
+    }
+  },
+  "REV_VAR_ONE_STAR": {
+    "_inline": true,
+    "id": "",
+    "name": "",
+    "slug": "printers/multifunction-printers/laser-monochrome/xerox-workcentre-3335dni-mono-laser-multifunction-printercopierscannerfax-machine-color-blue-gray",
+    "approved_count": "1",
+    "max_image_count": "0",
+    "notes": "VCST-5487 — single 1-star text-only review => aggregate 1.0 (lowest non-zero rating render: star 1 full, stars 2-5 empty). Seeded by npm run seed:review-variants.",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "slug": "slug",
+      "approved_count": "approved_count",
+      "max_image_count": "max_image_count"
+    }
+  },
+  "REV_VAR_FIVE_STAR": {
+    "_inline": true,
+    "id": "",
+    "name": "",
+    "slug": "printers/all-in-one/paper-crafts/epson-expression-premium-xp-830-all-in-one-wireless-printer-color-black",
+    "approved_count": "1",
+    "max_image_count": "1",
+    "notes": "VCST-5487 — single 5-star review with exactly ONE image => aggregate 5.0 AND the images.length===1 modal branch (\"1 / 1\", no nav buttons, no dots), which has no other fixture on any env. Seeded by npm run seed:review-variants.",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "slug": "slug",
+      "approved_count": "approved_count",
+      "max_image_count": "max_image_count"
+    }
+  },
+  "REV_PROD_NO_REVIEWS": {
+    "_inline": true,
+    "slug": "soft-drinks/soda/pepsi-cola-regular-crate-28x020l",
+    "notes": "VCST-5487 fixture — store-visible product with ZERO approved reviews (xAPI rating resolves to null), for the N=0 boundary: no rating row on the PDP header and no FEEDBACK stars. Stable catalog slug, no runtime GUID, nothing to seed. NOTE: reference it as {{FRONT_URL}}/@td(REV_PROD_NO_REVIEWS.slug) — /product/<sku> renders an SPA soft-404 (HTTP 200 with no product), which would make this case pass vacuously.",
+    "fields": {
+      "slug": "slug"
+    }
   }
 }

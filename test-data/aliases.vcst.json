@@ -861,5 +861,23 @@
     "memberId": "",
     "securityAccountId": "",
     "email": ""
+  },
+  "REV_VAR_MATRIX": {
+    "id": "08c33cfc9f664426a52fac8882da2df0",
+    "name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+    "slug": "printers/multifunction-printers/laser-monochrome/canon-imageclass-wifi-mf232w-monochrome-laser-printerscannercopier-color-black",
+    "approved_count": 8
+  },
+  "REV_VAR_ONE_STAR": {
+    "id": "4b729fae613046448aaba7c265bb4f2d",
+    "name": "Xerox WorkCentre 3335DNI Mono Laser Multifunction Printer/Copier/Scanner/Fax Machine",
+    "slug": "printers/multifunction-printers/laser-monochrome/xerox-workcentre-3335dni-mono-laser-multifunction-printercopierscannerfax-machine-color-blue-gray",
+    "approved_count": 1
+  },
+  "REV_VAR_FIVE_STAR": {
+    "id": "ca255c81f8254865956c1d714f2ef457",
+    "name": "Epson Expression Premium XP-830 All-In-One Wireless Printer",
+    "slug": "printers/all-in-one/paper-crafts/epson-expression-premium-xp-830-all-in-one-wireless-printer-color-black",
+    "approved_count": 1
   }
 }

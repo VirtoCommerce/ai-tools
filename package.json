@@ -163,7 +163,10 @@
     "td:validate:cms-pages": "node scripts/seed-data/cms/validate-pagebuilder-pages-data.mjs",
     "seed:loyalty:zero-user": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs",
     "seed:loyalty:zero-user:probe": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs --probe",
-    "seed:loyalty:zero-user:teardown": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs --teardown"
+    "seed:loyalty:zero-user:teardown": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs --teardown",
+    "seed:review-variants": "node scripts/seed-data/products/seed-review-variants.mjs",
+    "seed:review-variants:teardown": "node scripts/seed-data/products/seed-review-variants.mjs --teardown",
+    "td:validate:review-variants": "node scripts/seed-data/products/validate-review-variants-data.mjs"
   },
   "repository": {
     "type": "git",
