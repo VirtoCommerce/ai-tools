@@ -53,30 +53,61 @@ function detectOs(flag) {
   return "linux";
 }
 
-// #220 — every stdio MCP server launches through `npx`, so each start performs an npm
-// registry lookup inside the host's ~30s MCP startup budget. On a host that falls back
-// slowly from a broken/unrouted IPv6 address to IPv4, that lookup has hung ~150s (vs ~4s
-// with an IPv4-first hint), blowing the budget so ALL stdio servers fail to start and the
-// browser/evidence capability is gone. Give every stdio server a NODE_OPTIONS that (a) turns
-// off Happy-Eyeballs network-family autoselection and (b) makes DNS return IPv4 first, so the
-// npx fetch never sits on a dead IPv6 socket. (Package versions are also pinned in the template
-// so a cached package needs no registry round-trip at all.)
-const IPV4_NODE_OPTIONS = "--no-network-family-autoselection --dns-result-order=ipv4first";
+// #220 — every stdio MCP server launches through `npx`, so each start performs an npm registry
+// lookup inside the host's ~30s MCP startup budget. On a host that falls back slowly from a
+// broken/unrouted IPv6 address to IPv4, that lookup has hung ~150s (vs ~4s with an IPv4-first
+// hint), blowing the budget so ALL stdio servers fail to start and the browser/evidence
+// capability is gone. So on every stdio server we (a) set NODE_OPTIONS to make DNS return IPv4
+// first — the npx fetch never sits on a dead IPv6 socket — and (b) set npm_config_prefer_offline
+// so a pinned+cached package resolves WITHOUT a registry round-trip at all.
+//
+// We use ONLY `--dns-result-order=ipv4first` (NODE_OPTIONS-allowed since Node 16.4). We do NOT add
+// `--no-network-family-autoselection`: that form is newer (absent on the Node-18 floor this plugin
+// supports), and an UNKNOWN flag in NODE_OPTIONS is FATAL — Node exits `bad option` before running,
+// which would make every stdio server refuse to start, i.e. INVERT this very fix. IPv4-first
+// ordering alone fixes the reported broken-IPv6 case: Node connects to the working IPv4 address
+// first instead of stalling on the dead IPv6 one.
+const IPV4_NODE_OPTIONS = "--dns-result-order=ipv4first";
 /**
- * Ensure a stdio (Node-launched) server carries the IPv4-first NODE_OPTIONS. Pure + idempotent:
- * an http/sse server (no local process) is untouched, an existing NODE_OPTIONS is preserved and
- * the flags are appended only if not already present, and any other env is kept. Both flags are
- * on Node's NODE_OPTIONS allow-list, so this never makes a server refuse to start.
+ * Ensure a stdio (Node-launched) server carries the IPv4-first NODE_OPTIONS + prefer-offline npm
+ * config. Pure. An http/sse server (no local process) is untouched; any other env is kept. Our
+ * `--dns-result-order=ipv4first` is appended LAST (the last occurrence of a repeated NODE_OPTIONS
+ * flag wins) so a conflicting host-set DNS order is overridden rather than silently honoured, and
+ * it is not double-appended on a re-run. The flag is NODE_OPTIONS-allowed since Node 16.4, so this
+ * never makes a server refuse to start.
  */
 export function ensureNodeOptions(server) {
   if (server?.type && server.type !== "stdio") return server; // http/sse: no Node process to hint
   const args = Array.isArray(server?.args) ? server.args : [];
   const isNodeLaunch = server?.command === "npx" || (server?.command === "cmd" && args.includes("npx"));
   if (!isNodeLaunch) return server;
-  const prev = server.env?.NODE_OPTIONS || "";
-  if (prev.includes("--dns-result-order")) return server; // already hinted — don't double-append
-  const NODE_OPTIONS = prev ? `${prev} ${IPV4_NODE_OPTIONS}` : IPV4_NODE_OPTIONS;
-  return { ...server, env: { ...(server.env || {}), NODE_OPTIONS } };
+  const prevEnv = server.env || {};
+  const prev = prevEnv.NODE_OPTIONS || "";
+  const NODE_OPTIONS = prev.includes(IPV4_NODE_OPTIONS) ? prev : prev ? `${prev} ${IPV4_NODE_OPTIONS}` : IPV4_NODE_OPTIONS;
+  return { ...server, env: { ...prevEnv, NODE_OPTIONS, npm_config_prefer_offline: "true" } };
+}
+
+/** Drop `//` doc-comment keys from a server def so template comments don't leak into runtime .mcp.json. Pure. */
+function stripComments(server) {
+  if (!server || typeof server !== "object" || Array.isArray(server)) return server;
+  const out = {};
+  for (const [k, v] of Object.entries(server)) if (!k.startsWith("//")) out[k] = v;
+  return out;
+}
+
+/**
+ * The official REMOTE github MCP supports interactive OAuth exactly like atlassian/figma (which
+ * ship header-less). If no PAT resolved, injectTokens leaves a literal `Bearer <PLACEHOLDER>` —
+ * a broken header that 401s with NO path to OAuth. So when the Authorization header is still an
+ * unresolved placeholder, DROP it: the server then falls back to the OAuth flow (the behaviour the
+ * template comment promises). Pure. #220 item 4.
+ */
+export function enableOAuthIfNoPat(server) {
+  const auth = server?.headers?.Authorization;
+  if (typeof auth !== "string" || !/<[A-Z0-9_]+>/.test(auth)) return server;
+  const headers = { ...server.headers };
+  delete headers.Authorization;
+  return { ...server, headers };
 }
 
 /**
@@ -104,16 +135,24 @@ export function extractNpxSpecs(servers) {
   return [...specs];
 }
 
+// A safe npm package-spec charset (scoped names, versions, dist-tags) — NO shell metacharacters.
+// warmNpxCache interpolates the spec into a shell `npm cache add`; specs come from the trusted
+// pinned template today, but validating here keeps that exec safe by construction.
+const NPX_SPEC_RE = /^[@a-zA-Z0-9._/+-]+$/;
+
 /**
- * Best-effort: pre-populate the npm cache for each pinned npx spec so the first real MCP start
- * needs no registry round-trip (#220 item 5). The fetch runs with the SAME IPv4-first NODE_OPTIONS
- * so warming itself can't hang on a broken IPv6 route. Timeboxed + fully swallowed per spec —
- * warming NEVER blocks or fails onboarding. Returns [{ spec, ok, ms }].
+ * Best-effort: pre-populate the npm cache for each pinned npx spec so a prefer-offline start
+ * resolves it WITHOUT a registry round-trip (#220 item 5). The fetch runs with the SAME IPv4-first
+ * NODE_OPTIONS so warming itself can't hang on a broken IPv6 route. The per-spec timeout is aligned
+ * to the ~30s MCP startup budget — a fetch that can't beat the budget isn't worth waiting longer
+ * for. A spec with unsafe characters is skipped (never shelled out). Fully swallowed per spec —
+ * warming NEVER blocks or fails onboarding. Returns [{ spec, ok, ms, skipped? }].
  */
-function warmNpxCache(specs, { perSpecTimeoutMs = 90000 } = {}) {
+function warmNpxCache(specs, { perSpecTimeoutMs = 30000 } = {}) {
   const env = { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ? process.env.NODE_OPTIONS + " " : ""}${IPV4_NODE_OPTIONS}` };
   const out = [];
   for (const spec of specs) {
+    if (!NPX_SPEC_RE.test(spec)) { out.push({ spec, ok: false, ms: 0, skipped: true }); continue; }
     const t0 = process.hrtime.bigint();
     let ok = true;
     try {
@@ -124,6 +163,22 @@ function warmNpxCache(specs, { perSpecTimeoutMs = 90000 } = {}) {
     out.push({ spec, ok, ms: Math.round(Number(process.hrtime.bigint() - t0) / 1e6) });
   }
   return out;
+}
+
+/**
+ * Pure: map warm results → self-diagnostics observations. A warm that FAILED (or was skipped for
+ * an unsafe spec) means the generated .mcp.json ships without a warmed cache for that server, so
+ * its first start will hit the registry — a `degraded_artifact` on `mcp_config`. A successful warm
+ * produces nothing. Kept pure + exported so this telemetry mapping is unit-tested without network.
+ */
+export function classifyWarmResults(results) {
+  return (results || [])
+    .filter((r) => !r.ok)
+    .map((r) => ({
+      class: "degraded_artifact",
+      subject: "mcp_config",
+      evidence: { snippet: r.skipped ? `npx spec skipped (unsafe): ${r.spec}` : `npx cache warm failed: ${r.spec}` },
+    }));
 }
 
 /** Windows template uses command:"cmd", args:["/c","npx",...]. On *nix call npx directly. */
@@ -290,8 +345,12 @@ function main() {
   const mcpServers = {};
   for (const [name, def] of Object.entries(srcServers)) {
     // normalizeForOs first (so a *nix `npx` command is detectable), then inject the IPv4-first
-    // NODE_OPTIONS (#220), tokens, and the absolute evidence dir.
-    mcpServers[name] = absolutizeOutputDir(injectTokens(ensureNodeOptions(normalizeForOs(def, os))), projectRoot);
+    // NODE_OPTIONS + prefer-offline (#220), tokens, and the absolute evidence dir; for github,
+    // fall back to OAuth if no PAT resolved; finally strip the template's `//` doc-comment keys
+    // so they don't leak into the runtime .mcp.json.
+    let built = absolutizeOutputDir(injectTokens(ensureNodeOptions(normalizeForOs(def, os))), projectRoot);
+    if (name === "github") built = enableOAuthIfNoPat(built);
+    mcpServers[name] = stripComments(built);
   }
 
   // Which servers to ENABLE (the rest stay defined but dormant). Only playwright-chrome
@@ -363,18 +422,12 @@ function main() {
   if (args["warm-cache"]) {
     const specs = extractNpxSpecs(mcpServers);
     console.log(`[gen-mcp] warming npm cache for ${specs.length} npx package(s): ${specs.join(", ") || "(none)"}`);
-    const BUDGET_MS = 25000; // under the ~30s MCP startup budget — a slower fetch would threaten it
-    const warmObs = [];
-    for (const { spec, ok, ms } of warmNpxCache(specs)) {
-      if (!ok) {
-        console.warn(`[gen-mcp] ⚠ could not warm ${spec} (${ms}ms) — its first MCP start will hit the registry; check network/proxy.`);
-        warmObs.push({ class: "degraded_artifact", subject: "mcp_config", evidence: { snippet: `npx cache warm failed: ${spec}` } });
-      } else {
-        const slow = ms > BUDGET_MS;
-        console.log(`[gen-mcp] warmed ${spec} in ${ms}ms${slow ? " ⚠ slower than the startup budget — verify the registry route" : ""}`);
-        if (slow) warmObs.push({ class: "degraded_artifact", subject: "mcp_config", evidence: { snippet: `npx fetch slow (>${BUDGET_MS}ms): ${spec}` } });
-      }
+    const results = warmNpxCache(specs);
+    for (const r of results) {
+      if (r.ok) console.log(`[gen-mcp] warmed ${r.spec} in ${r.ms}ms`);
+      else console.warn(`[gen-mcp] ⚠ could not warm ${r.spec}${r.skipped ? " (unsafe spec — skipped)" : ` (${r.ms}ms)`} — its first MCP start will hit the registry; check network/proxy.`);
     }
+    const warmObs = classifyWarmResults(results);
     if (warmObs.length) emitObservations(warmObs, { skill: "project-init" });
   }
 
