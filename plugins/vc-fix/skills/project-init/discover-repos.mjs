@@ -51,13 +51,17 @@ function parseArgs(argv) {
   return a;
 }
 
-/** Map a module descriptor → { id, owner, name, host, kind, url }. Pure (unit-testable). */
+/** Map a module descriptor → { id, owner, name, host, kind, url, nameFromId }. Pure (unit-testable).
+ *  `nameFromId` is true when the name is a HEURISTIC derived from the module id (there was no
+ *  ProjectUrl to parse) rather than an authoritative repo URL — main() cross-checks such guesses
+ *  against the client's live repo listing before trusting them (#216). */
 export function moduleToRepo(mod) {
   const id = mod.Id || mod.id || "";
   const url = mod.ProjectUrl || mod.projectUrl || "";
   let owner = null;
   let name = null;
   let host = null;
+  let nameFromId = false;
   const gh = /github\.com\/([^/]+)\/([^/#?]+?)(?:\.git)?\/?$/i.exec(url || "");
   // Azure Repos: https://[org@]dev.azure.com/<org>/<project>/_git/<repo>
   const az = /dev\.azure\.com\/([^/@]+)\/(?:[^/]+\/)*_git\/([^/#?]+?)(?:\.git)?\/?$/i.exec(url || "");
@@ -67,13 +71,15 @@ export function moduleToRepo(mod) {
     owner = az[1]; name = az[2]; host = "azure-repos";
   } else if (id) {
     // No resolvable repo URL → derive a name from the id (owner stays null; classify
-    // then decides client-vs-platform by the id namespace).
+    // then decides client-vs-platform by the id namespace). This name is a GUESS — main()
+    // validates it against the live repo listing before it is trusted (#216).
     const short = id.replace(/^VirtoCommerce\./, "");
     name =
       "vc-module-" +
       short.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/\./g, "-").toLowerCase();
+    nameFromId = true;
   }
-  return { id, owner, name, host, kind: "module", url };
+  return { id, owner, name, host, kind: "module", url, nameFromId };
 }
 
 /**
@@ -101,7 +107,8 @@ export function classify(modules, clientOrg) {
       platform.push({ name: full, kind: r.kind });
     } else {
       // host from the URL when known; else omit so profile.vcs.clientHost governs.
-      client.push({ name: full, kind: r.kind, ...(r.host ? { host: r.host } : {}) });
+      // nameFromId is carried through so main() can validate a guessed name (#216).
+      client.push({ name: full, kind: r.kind, ...(r.host ? { host: r.host } : {}), ...(r.nameFromId ? { nameFromId: true } : {}) });
     }
   }
   return { client, platform };
@@ -595,6 +602,21 @@ async function main() {
         if (info?.defaultBranch && !c.defaultBranch) c.defaultBranch = info.defaultBranch;
       }
 
+      // #216 — a client MODULE whose name was GUESSED from the module id (the module had no
+      // ProjectUrl to parse) is a heuristic, not a fact. Cross-check each guess against the
+      // client's live repo listing: a name that matches a real repo is confirmed; one that
+      // matches nothing is flagged `nameUnverified` + surfaced, so the operator confirms or
+      // corrects repos.client instead of /qa-fix later routing a bug to a repo that isn't there.
+      for (const c of result.client) {
+        if (c.kind !== "module" || !c.nameFromId) continue;
+        const bare = c.name.split("/").pop();
+        if (byName.has(bare)) continue; // guess confirmed against the live listing
+        c.nameUnverified = true;
+        console.error(
+          `[discover-repos] UNVERIFIED client module repo '${c.name}' — the name was derived from the module id (no ProjectUrl) and matches no repo in ${clientOrg}'s listing. ASK the operator to confirm or correct repos.client (it may be named differently, or live in another org/project).`,
+        );
+      }
+
       for (const n of fe) {
         if (have.has(n)) continue;
         const info = byName.get(n) || {};
@@ -686,6 +708,9 @@ async function main() {
   // VC is always on GitHub), or a clientOrg resolved; else platform (the native default).
   const projectType =
     result.client.length || host === "azure-repos" || clientOrg ? "client" : "platform";
+  // `nameFromId` is an internal provenance flag (see #216) — the actionable signal that
+  // survives to the profile is `nameUnverified`. Strip the internal flag before serialising.
+  for (const c of result.client) delete c.nameFromId;
   const out = { projectType, clientOrg, ...result };
   console.error(`[discover-repos] derived projectType=${projectType}`);
   if (projectType === "client" && !clientOrg && host === "github") {

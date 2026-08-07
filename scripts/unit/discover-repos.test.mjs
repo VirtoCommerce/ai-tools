@@ -95,3 +95,34 @@ test("frontendProvenanceFromPackage: conservative — no vc signal ⇒ null (fal
 test("deriveClientOrg: prefers ADO_ORG for an azure host", () => {
   assert.equal(deriveClientOrg([], { host: "azure-repos", adoOrg: "Lakeshirt-LEO" }), "Lakeshirt-LEO");
 });
+
+// #216 — a name derived from the module id (no ProjectUrl) is a GUESS; moduleToRepo marks it
+// `nameFromId` so main() can cross-check it against the client's live repo listing.
+test("moduleToRepo (#216): id-fallback name is flagged nameFromId:true", () => {
+  const r = moduleToRepo({ Id: "Acme.CustomOrders" }); // no ProjectUrl → name guessed from id
+  assert.equal(r.name, "vc-module-acme-custom-orders");
+  assert.equal(r.owner, null);
+  assert.equal(r.host, null);
+  assert.equal(r.nameFromId, true);
+});
+
+test("moduleToRepo (#216): a URL-derived name is authoritative → nameFromId:false", () => {
+  const gh = moduleToRepo({ Id: "VirtoCommerce.Cart", ProjectUrl: "https://github.com/VirtoCommerce/vc-module-cart" });
+  assert.equal(gh.nameFromId, false);
+  const az = moduleToRepo({ Id: "Leo.Main", ProjectUrl: "https://dev.azure.com/Lakeshirt-LEO/LEO/_git/leo-main-module" });
+  assert.equal(az.nameFromId, false);
+});
+
+test("classify (#216): a guessed client module carries nameFromId; a URL-derived one does not", () => {
+  const { client } = classify(
+    [
+      { Id: "Acme.CustomOrders" }, // no URL → client (non-VirtoCommerce id), guessed name
+      { Id: "Leo.Main", ProjectUrl: "https://dev.azure.com/Lakeshirt-LEO/LEO/_git/leo-main-module" },
+    ],
+    "",
+  );
+  const guessed = client.find((c) => c.name === "vc-module-acme-custom-orders");
+  const urlDerived = client.find((c) => c.name === "Lakeshirt-LEO/leo-main-module");
+  assert.equal(guessed.nameFromId, true);
+  assert.equal(urlDerived.nameFromId, undefined); // omitted, not carried
+});
