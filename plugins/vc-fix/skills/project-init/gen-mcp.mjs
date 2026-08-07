@@ -53,6 +53,32 @@ function detectOs(flag) {
   return "linux";
 }
 
+// #220 — every stdio MCP server launches through `npx`, so each start performs an npm
+// registry lookup inside the host's ~30s MCP startup budget. On a host that falls back
+// slowly from a broken/unrouted IPv6 address to IPv4, that lookup has hung ~150s (vs ~4s
+// with an IPv4-first hint), blowing the budget so ALL stdio servers fail to start and the
+// browser/evidence capability is gone. Give every stdio server a NODE_OPTIONS that (a) turns
+// off Happy-Eyeballs network-family autoselection and (b) makes DNS return IPv4 first, so the
+// npx fetch never sits on a dead IPv6 socket. (Package versions are also pinned in the template
+// so a cached package needs no registry round-trip at all.)
+const IPV4_NODE_OPTIONS = "--no-network-family-autoselection --dns-result-order=ipv4first";
+/**
+ * Ensure a stdio (Node-launched) server carries the IPv4-first NODE_OPTIONS. Pure + idempotent:
+ * an http/sse server (no local process) is untouched, an existing NODE_OPTIONS is preserved and
+ * the flags are appended only if not already present, and any other env is kept. Both flags are
+ * on Node's NODE_OPTIONS allow-list, so this never makes a server refuse to start.
+ */
+export function ensureNodeOptions(server) {
+  if (server?.type && server.type !== "stdio") return server; // http/sse: no Node process to hint
+  const args = Array.isArray(server?.args) ? server.args : [];
+  const isNodeLaunch = server?.command === "npx" || (server?.command === "cmd" && args.includes("npx"));
+  if (!isNodeLaunch) return server;
+  const prev = server.env?.NODE_OPTIONS || "";
+  if (prev.includes("--dns-result-order")) return server; // already hinted — don't double-append
+  const NODE_OPTIONS = prev ? `${prev} ${IPV4_NODE_OPTIONS}` : IPV4_NODE_OPTIONS;
+  return { ...server, env: { ...(server.env || {}), NODE_OPTIONS } };
+}
+
 /** Windows template uses command:"cmd", args:["/c","npx",...]. On *nix call npx directly. */
 function normalizeForOs(server, os) {
   if (os === "windows") return server;
@@ -215,7 +241,9 @@ function main() {
   const projectRoot = outputRoot();
   const mcpServers = {};
   for (const [name, def] of Object.entries(srcServers)) {
-    mcpServers[name] = absolutizeOutputDir(injectTokens(normalizeForOs(def, os)), projectRoot);
+    // normalizeForOs first (so a *nix `npx` command is detectable), then inject the IPv4-first
+    // NODE_OPTIONS (#220), tokens, and the absolute evidence dir.
+    mcpServers[name] = absolutizeOutputDir(injectTokens(ensureNodeOptions(normalizeForOs(def, os))), projectRoot);
   }
 
   // Which servers to ENABLE (the rest stay defined but dormant). Only playwright-chrome

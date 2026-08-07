@@ -1,6 +1,9 @@
 {
   "//": "TEMPLATE — copy to .mcp.json (gitignored) and replace every <PLACEHOLDER>. Restart the MCP servers after editing. Windows uses `cmd /c npx`; on Linux/macOS drop the `cmd` + `/c` and call `npx` directly (gen-mcp.mjs does this automatically).",
 
+  "//network": "stdio servers launch via npx (an npm registry lookup inside the ~30s MCP startup budget). Package versions are PINNED (not @latest) so npx serves from cache without a round-trip, and gen-mcp.mjs injects NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' on every stdio server so a broken/slow IPv6 route can't hang that lookup past the budget (#220).",
+
+
   "mcpServers": {
     "playwright-chrome": {
       "type": "stdio",
@@ -56,7 +59,7 @@
       "args": [
         "/c",
         "npx",
-        "chrome-devtools-mcp@latest"
+        "chrome-devtools-mcp@1.6.0"
       ],
       "env": {}
     },
@@ -94,7 +97,7 @@
         "/c",
         "npx",
         "-y",
-        "@azure/mcp@latest",
+        "@azure/mcp@3.0.0-beta.32",
         "server",
         "start"
       ]

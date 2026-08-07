@@ -15,7 +15,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { join, resolve, isAbsolute, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
-import { ensureGitignoreEntries, absolutizeOutputDir } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SCRIPT = join(ROOT, "plugins/vc-fix/skills/project-init/gen-mcp.mjs");
@@ -60,7 +60,57 @@ test("template: every Playwright server points --output-dir at the evidence land
   }
 });
 
+// ─── #220 — IPv4-first NODE_OPTIONS + pinned versions (npx-fetch never hangs on IPv6) ──
+const IPV4_FLAGS = "--no-network-family-autoselection --dns-result-order=ipv4first";
+
+test("template (#220): no stdio server pins a package to @latest (a cached exact version needs no registry round-trip)", () => {
+  // Inspect the server ARGS (a package spec like `chrome-devtools-mcp@latest`), not the whole
+  // file — the `//network` doc comment mentions the word "@latest" on purpose.
+  const tpl = JSON.parse(readFileSync(TEMPLATE, "utf8"));
+  const offenders = [];
+  for (const [name, def] of Object.entries(tpl.mcpServers)) {
+    for (const a of def.args || []) if (typeof a === "string" && a.includes("@latest")) offenders.push(`${name}: ${a}`);
+  }
+  assert.deepEqual(offenders, [], `every npx package must be pinned to an exact version — offenders: ${offenders.join(", ")}`);
+});
+
+test("ensureNodeOptions (#220): a stdio npx server gets the IPv4-first NODE_OPTIONS", () => {
+  const win = ensureNodeOptions({ type: "stdio", command: "cmd", args: ["/c", "npx", "chrome-devtools-mcp@1.6.0"], env: {} });
+  assert.equal(win.env.NODE_OPTIONS, IPV4_FLAGS);
+  const nix = ensureNodeOptions({ type: "stdio", command: "npx", args: ["chrome-devtools-mcp@1.6.0"] });
+  assert.equal(nix.env.NODE_OPTIONS, IPV4_FLAGS);
+});
+
+test("ensureNodeOptions (#220): an http/sse server (no local process) is untouched", () => {
+  const http = { type: "http", url: "https://mcp.postman.com/minimal", headers: { Authorization: "Bearer x" } };
+  assert.deepEqual(ensureNodeOptions(http), http);
+});
+
+test("ensureNodeOptions (#220): idempotent + preserves an existing NODE_OPTIONS", () => {
+  const once = ensureNodeOptions({ type: "stdio", command: "npx", args: ["x"], env: { NODE_OPTIONS: "--max-old-space-size=256" } });
+  assert.equal(once.env.NODE_OPTIONS, `--max-old-space-size=256 ${IPV4_FLAGS}`);
+  assert.deepEqual(ensureNodeOptions(once), once, "a second pass adds nothing");
+  const other = ensureNodeOptions({ type: "stdio", command: "npx", args: ["x"], env: { FOO: "bar" } });
+  assert.equal(other.env.FOO, "bar", "unrelated env is kept");
+});
+
 // ─── the generated .mcp.json (what actually runs) ─────────────────────────────────
+test("gen-mcp (#220): every stdio server in the generated config carries the IPv4-first NODE_OPTIONS", () => withTempDir((dir) => {
+  runGenMcp(dir, ["--with", "postman,context7,devtools,azure"]);
+  const cfg = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+  let stdioSeen = 0;
+  for (const [name, def] of Object.entries(cfg.mcpServers)) {
+    if (def.type && def.type !== "stdio") {
+      assert.ok(!def.env?.NODE_OPTIONS, `${name} is not stdio and must not get NODE_OPTIONS`);
+      continue;
+    }
+    stdioSeen++;
+    assert.equal(def.env?.NODE_OPTIONS, IPV4_FLAGS, `${name} must carry the IPv4-first NODE_OPTIONS`);
+  }
+  assert.ok(stdioSeen >= 3, `expected several stdio servers, saw ${stdioSeen}`);
+}));
+
+
 test("gen-mcp: --output-dir is rewritten to an ABSOLUTE project path (cwd can never make it the root)", () => withTempDir((dir) => {
   runGenMcp(dir);
   const cfg = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
