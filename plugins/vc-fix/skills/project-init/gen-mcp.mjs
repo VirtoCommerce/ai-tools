@@ -79,6 +79,53 @@ export function ensureNodeOptions(server) {
   return { ...server, env: { ...(server.env || {}), NODE_OPTIONS } };
 }
 
+/**
+ * Extract the npx PACKAGE SPECS from the generated servers (e.g. `chrome-devtools-mcp@1.6.0`,
+ * `@azure/mcp@3.0.0-beta.32`, `@playwright/mcp@0.0.77`). Pure. The first non-flag token after
+ * `npx` is the spec; `-y`/`--yes`/`--…` are skipped and non-stdio servers (no npx) are ignored.
+ * Used by --warm-cache so the first real MCP start resolves a PINNED spec from cache instead of
+ * a registry round-trip (#220 item 5).
+ */
+export function extractNpxSpecs(servers) {
+  const specs = new Set();
+  for (const def of Object.values(servers || {})) {
+    if (def?.type && def.type !== "stdio") continue;
+    const args = Array.isArray(def?.args) ? def.args : [];
+    const npxIdx = def?.command === "npx" ? -1 : args.indexOf("npx");
+    if (def?.command !== "npx" && npxIdx < 0) continue;
+    for (let i = def?.command === "npx" ? 0 : npxIdx + 1; i < args.length; i++) {
+      const a = args[i];
+      if (typeof a !== "string") continue;
+      if (a === "-y" || a === "--yes" || a.startsWith("--")) continue;
+      specs.add(a); // first non-flag token after npx is the package spec
+      break;
+    }
+  }
+  return [...specs];
+}
+
+/**
+ * Best-effort: pre-populate the npm cache for each pinned npx spec so the first real MCP start
+ * needs no registry round-trip (#220 item 5). The fetch runs with the SAME IPv4-first NODE_OPTIONS
+ * so warming itself can't hang on a broken IPv6 route. Timeboxed + fully swallowed per spec —
+ * warming NEVER blocks or fails onboarding. Returns [{ spec, ok, ms }].
+ */
+function warmNpxCache(specs, { perSpecTimeoutMs = 90000 } = {}) {
+  const env = { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ? process.env.NODE_OPTIONS + " " : ""}${IPV4_NODE_OPTIONS}` };
+  const out = [];
+  for (const spec of specs) {
+    const t0 = process.hrtime.bigint();
+    let ok = true;
+    try {
+      execSync(`npm cache add ${spec}`, { stdio: "ignore", timeout: perSpecTimeoutMs, env });
+    } catch {
+      ok = false;
+    }
+    out.push({ spec, ok, ms: Math.round(Number(process.hrtime.bigint() - t0) / 1e6) });
+  }
+  return out;
+}
+
 /** Windows template uses command:"cmd", args:["/c","npx",...]. On *nix call npx directly. */
 function normalizeForOs(server, os) {
   if (os === "windows") return server;
@@ -107,8 +154,9 @@ function injectTokens(server) {
       process.env.GITHUB_TOKEN ||
       ghAuthToken(),
     "<POSTMAN_API_KEY>": process.env.POSTMAN_API_KEY || "",
-    "<FIGMA_API_KEY>": process.env.FIGMA_API_KEY || "",
     "<CONTEXT7_API_KEY>": process.env.CONTEXT7_API_KEY || "",
+    // NB: no <FIGMA_API_KEY> — the remote Figma MCP is OAuth-only, so the template carries no
+    // figma key placeholder to inject (#220 item 3).
   };
   const replace = (v) => {
     if (typeof v !== "string") return v;
@@ -308,6 +356,27 @@ function main() {
     }
   }
   if (obs.length) emitObservations(obs, { skill: "project-init" });
+
+  // #220 item 5 — opt-in (--warm-cache): pre-fetch the pinned npx packages into the npm cache so
+  // the first MCP start doesn't pay a registry round-trip. Opt-in because it does N network fetches;
+  // it runs with the IPv4-first hint so it can't hang on a broken IPv6 route, and is best-effort.
+  if (args["warm-cache"]) {
+    const specs = extractNpxSpecs(mcpServers);
+    console.log(`[gen-mcp] warming npm cache for ${specs.length} npx package(s): ${specs.join(", ") || "(none)"}`);
+    const BUDGET_MS = 25000; // under the ~30s MCP startup budget — a slower fetch would threaten it
+    const warmObs = [];
+    for (const { spec, ok, ms } of warmNpxCache(specs)) {
+      if (!ok) {
+        console.warn(`[gen-mcp] ⚠ could not warm ${spec} (${ms}ms) — its first MCP start will hit the registry; check network/proxy.`);
+        warmObs.push({ class: "degraded_artifact", subject: "mcp_config", evidence: { snippet: `npx cache warm failed: ${spec}` } });
+      } else {
+        const slow = ms > BUDGET_MS;
+        console.log(`[gen-mcp] warmed ${spec} in ${ms}ms${slow ? " ⚠ slower than the startup budget — verify the registry route" : ""}`);
+        if (slow) warmObs.push({ class: "degraded_artifact", subject: "mcp_config", evidence: { snippet: `npx fetch slow (>${BUDGET_MS}ms): ${spec}` } });
+      }
+    }
+    if (warmObs.length) emitObservations(warmObs, { skill: "project-init" });
+  }
 
   console.log("[gen-mcp] ⚠ Restart the MCP servers (reload the IDE / Claude Code) for changes to take effect.");
   if (args.print) console.log(JSON.stringify({ mcpServers }, null, 2));

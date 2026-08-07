@@ -71,22 +71,18 @@
       }
     },
     "github": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-github"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<GITHUB_PERSONAL_ACCESS_TOKEN>"
+      "//": "Official REMOTE GitHub MCP (github/github-mcp-server). The npx `@modelcontextprotocol/server-github` package is ARCHIVED (moved to github/github-mcp-server, which ships no npm package); the replacement is the hosted server + a PAT `Authorization: Bearer` header (omit the header to use OAuth instead). http-type ⇒ no npx ⇒ no npm-registry round-trip at startup.",
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>"
       }
     },
     "context7": {
+      "//": "http server ⇒ the API key must be a HEADER, not env (an http MCP ignores env).",
       "type": "http",
       "url": "https://mcp.context7.com/mcp",
-      "env": {
+      "headers": {
         "CONTEXT7_API_KEY": "<CONTEXT7_API_KEY>"
       }
     },
@@ -103,11 +99,9 @@
       ]
     },
     "figma-remote-mcp": {
+      "//": "Remote Figma MCP is OAuth-ONLY — a PAT / API-key header has no effect (Figma does not support token auth on the remote server). Authenticate via the client's MCP OAuth flow on first use, like atlassian below. FIGMA_API_KEY is NOT used here.",
       "type": "http",
-      "url": "https://mcp.figma.com/mcp",
-      "env": {
-        "FIGMA_API_KEY": "<FIGMA_API_KEY>"
-      }
+      "url": "https://mcp.figma.com/mcp"
     },
     "atlassian": {
       "type": "http",

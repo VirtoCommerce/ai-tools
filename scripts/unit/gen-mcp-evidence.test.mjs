@@ -15,7 +15,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { join, resolve, isAbsolute, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
-import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SCRIPT = join(ROOT, "plugins/vc-fix/skills/project-init/gen-mcp.mjs");
@@ -92,6 +92,54 @@ test("ensureNodeOptions (#220): idempotent + preserves an existing NODE_OPTIONS"
   assert.deepEqual(ensureNodeOptions(once), once, "a second pass adds nothing");
   const other = ensureNodeOptions({ type: "stdio", command: "npx", args: ["x"], env: { FOO: "bar" } });
   assert.equal(other.env.FOO, "bar", "unrelated env is kept");
+});
+
+// ─── #220 items 3/4 — auth contracts (http servers ignore env; archived github package) ──
+test("template (#220 item 3): context7 passes its key as a HEADER, not env (an http MCP ignores env)", () => {
+  const c7 = JSON.parse(readFileSync(TEMPLATE, "utf8")).mcpServers.context7;
+  assert.equal(c7.type, "http");
+  assert.equal(c7.headers?.CONTEXT7_API_KEY, "<CONTEXT7_API_KEY>");
+  assert.ok(!c7.env, "context7 must not carry an inert env block");
+});
+
+test("template (#220 item 3): figma is OAuth-only — no inert FIGMA_API_KEY (env or header)", () => {
+  // Check the STRUCTURE, not the raw text — the `//` doc comment names FIGMA_API_KEY on purpose.
+  const fig = JSON.parse(readFileSync(TEMPLATE, "utf8")).mcpServers["figma-remote-mcp"];
+  assert.equal(fig.type, "http");
+  assert.ok(!fig.env, "figma must carry no inert env block");
+  assert.ok(!fig.headers, "figma takes no key header (OAuth only)");
+});
+
+test("template (#220 item 4): github is the official REMOTE server, not the archived npx package", () => {
+  const cfg = JSON.parse(readFileSync(TEMPLATE, "utf8"));
+  // No SERVER runs the archived package (a `//` doc comment naming it is fine).
+  for (const [name, def] of Object.entries(cfg.mcpServers)) {
+    for (const a of def.args || []) assert.doesNotMatch(String(a), /@modelcontextprotocol\/server-github/, `${name} still runs the archived package`);
+  }
+  const gh = cfg.mcpServers.github;
+  assert.equal(gh.type, "http");
+  assert.match(gh.url, /api\.githubcopilot\.com\/mcp/);
+  assert.match(gh.headers?.Authorization || "", /^Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>$/);
+});
+
+test("gen-mcp (#220 item 4): the generated github server injects the PAT into the Bearer header", () => withTempDir((dir) => {
+  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_itemfour" });
+  const gh = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.github;
+  assert.equal(gh.headers.Authorization, "Bearer ghp_itemfour");
+}));
+
+// ─── #220 item 5 — npx-spec extraction for cache warming (pure; warming itself is opt-in + network) ──
+test("extractNpxSpecs (#220 item 5): picks the pinned package spec after npx, skips flags + http servers", () => {
+  const servers = {
+    "playwright-chrome": { type: "stdio", command: "cmd", args: ["/c", "npx", "@playwright/mcp@0.0.77", "--browser", "chrome"] },
+    "azure-mcp": { type: "stdio", command: "cmd", args: ["/c", "npx", "-y", "@azure/mcp@3.0.0-beta.32", "server", "start"] },
+    devtools: { type: "stdio", command: "npx", args: ["chrome-devtools-mcp@1.6.0"] }, // *nix-normalized shape
+    github: { type: "http", url: "https://api.githubcopilot.com/mcp/" }, // http ⇒ no npx spec
+  };
+  assert.deepEqual(
+    extractNpxSpecs(servers).sort(),
+    ["@azure/mcp@3.0.0-beta.32", "@playwright/mcp@0.0.77", "chrome-devtools-mcp@1.6.0"],
+  );
 });
 
 // ─── the generated .mcp.json (what actually runs) ─────────────────────────────────

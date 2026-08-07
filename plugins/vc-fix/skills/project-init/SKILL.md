@@ -678,8 +678,11 @@ resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude p
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker jira --client-vcs github \
-  --with context7            # add postman,figma,devtools as needed
+  --with context7 --warm-cache   # add postman,figma,devtools as needed
 ```
+`--warm-cache` pre-fetches the pinned npx packages into the npm cache (with an IPv4-first
+DNS hint) so the first MCP start doesn't pay a registry round-trip — the #220 startup-timeout
+guard. Best-effort + timeboxed; drop it to skip the network step.
 Enables playwright×3 + github + the tracker's MCP (atlassian for Jira; azure-mcp
 for Azure). **Remind the operator to restart the MCP servers** (reload the IDE)
 for the new config to take effect.
