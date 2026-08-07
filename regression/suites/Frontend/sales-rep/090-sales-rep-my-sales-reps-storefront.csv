@@ -145,3 +145,35 @@ Complements 050m SR-GQL-001 (which validates the backend contract/scoping for th
 --- API ---
 [GQL] issue customerSalesReps { totalCount items { fullName } } as ACME_BUYER and read the response","[DOM] the set of rep names rendered in the storefront table equals the set of items[].fullName from the API response (same members, no extra/missing rows) {OBSERVED}
 [COUNT] storefront row count equals the API's totalCount (assuming a single unpaginated page) {OBSERVED}","[API] customerSalesReps(first:0-equivalent full list) totalCount and items[] match the rendered table exactly (no stale cache, no off-by-one)","storefront table and API response diverge (stale cache-first query not invalidated); storefront shows a cached value from a prior session","none (read-only)","VCST-5409, VCST-5293","Draft"
+SR-FE-MSR-021,Sales Reps List Refetch On Remount With Byte-Identical Variables (State Transition),Storefront > Sales Rep > My Sales Reps > Cache Freshness,High,PROPOSED-BL-SR-FRESHNESS-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+1. @td(ORG_ACME.id) has >=1 active sales rep serving it.
+2. Sales Reps page has already been visited once this session.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded
+[WAIT] observe API calls via browser_network_requests tool (filter by /graphql); record the customerSalesReps request's variables
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click 'Sales reps' in the left rail (SPA client-side navigation, no full reload)
+[WAIT] table rows loaded again
+[WAIT] observe API calls via browser_network_requests tool (filter by /graphql) for this second mount","[NETWORK] a fresh customerSalesReps request fires again on the second mount {OBSERVED}
+[MATH] second-mount request variables == first-mount request variables (byte-identical) {OBSERVED}
+[DOM] rep rows visible on the second mount match that mount's own response {SPEC}",[API] both responses have errors[] empty,no second request fires (silent revert to cache-first); variables differ between mounts; errors[] non-empty,none (read-only),"VCST-5589, vc-frontend PR #2412; Promoted: VCST-5589 (2026-08-05)",Automated
+SR-FE-MSR-022,Rep Contact Detail Changed in Admin Reflected On Remount Without Reload (Error Guessing),Storefront > Sales Rep > My Sales Reps > Cache Freshness,High,PROPOSED-BL-SR-FRESHNESS-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+1. @td(ORG_ACME.id)'s Sales Reps table has already been visited once this session and shows @td(SR_REP_PRIMARY.fullName) (or an equivalent served rep) with an EMPTY phone cell.
+2. Admin SPA reachable in a second browser tab/session for the same rep contact.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] table rows loaded; record the rendered phone cell for the target rep (expected empty)
+--- ADMIN ---
+[NAV] {{BACK_URL}} (separate tab/session)
+[ACT] open the rep's contact record in the Customers/Contacts module
+[WAIT] contact edit blade loaded
+[ACT] set its phone field to a new value
+[WAIT] phone field updated in the form
+[SAVE] click Save and wait for confirmation
+[WAIT] success notification visible
+--- STOREFRONT ---
+[ACT] click 'My customers' in the left rail
+[WAIT] my-customers page rendered
+[ACT] click 'Sales reps' in the left rail (SPA client-side navigation, no full reload)
+[WAIT] table rows loaded again","[DOM] the rep's row now shows the NEW phone value visible, not the empty cell recorded before the Admin change {OBSERVED}
+[NETWORK] a fresh customerSalesReps request fired on this remount, not served from a stale cache {OBSERVED}","[ADMIN] the contact's phone value is confirmed changed in Admin before the storefront check
+[NETWORK] no full-page reload occurred on the storefront tab between the two observations",the rep row still shows the empty phone cell after the SPA remount (would require an explicit reload to update); no fresh customerSalesReps request fires on remount,[ACT] clear the rep contact's phone field in Admin SPA back to empty; confirm reverted on a subsequent storefront remount,"VCST-5589, vc-frontend PR #2412; Promoted: VCST-5589 (2026-08-05)",Reviewed

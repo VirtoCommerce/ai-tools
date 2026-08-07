@@ -396,3 +396,59 @@ LAYOUT API GATE (see SR-CP-036). State from SR-CP-042 (rep signed in, profile op
 [WAIT] save network request captured","[NETWORK] the SaveSalesRepLayout mutation's command variable is inspected directly {OBSERVED}
 [STATE] the command payload contains no organizationId field and no customer/org-scoping argument anywhere in its structure -- only scope:""customerProfile"" plus the three regions (statistics, mainLeft, mainRight) {OBSERVED}
 [STATE] all three regions are present in the payload in fixed order statistics, mainLeft, mainRight, with hidden blocks (if any) included after visible ones, id===type, settings:[], schemaVersion:1 on every block {OBSERVED}","[API] saveSalesRepLayout errors[] empty; the subsequent salesRepLayout(scope:""customerProfile"") read on a DIFFERENT served customer reflects the same saved document (cross-reference SR-CP-042's storefront-level proof)","the payload includes an organizationId or any customer-scoping field (would mean the layout is wrongly per-customer, contradicting BL-SR-023); the three regions are not all present or not in fixed order","[ACT] Edit layout, then Reset, then Save layout to restore registry defaults","VCST-5367, PR vc-frontend#2400, BL-SR-023; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32)",Reviewed
+SR-CP-051,Customer Profile Statistics Refetch On Remount With Byte-Identical organizationId (State Transition),Storefront > Sales Rep > Customer Profile > Cache Freshness,High,PROPOSED-BL-SR-FRESHNESS-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+1. @td(ORG_ACME.id) has >=1 order (statistics tiles show a non-zero value).
+2. Customer profile for @td(ORG_ACME.id) has already been visited once this session.","front_url={{FRONT_URL}}, org_id=@td(ORG_ACME.id)","[NAV] {{FRONT_URL}}/company/my-customers/{{org_id}}
+[WAIT] profile page rendered, all tiles show a value
+[WAIT] observe API calls via browser_network_requests tool (filter by /graphql); record the organizationId variable on the SalesRepCustomerOrderStatistics, SalesRepCustomerCartStatistics, and SalesRepOrders requests
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click back into the same customer's row (SPA client-side navigation, no full reload)
+[WAIT] profile page rendered again
+[WAIT] observe API calls via browser_network_requests tool (filter by /graphql) for this second mount","[NETWORK] a fresh SalesRepCustomerOrderStatistics, SalesRepCustomerCartStatistics, and SalesRepOrders request each fires again on the second mount {OBSERVED}
+[MATH] second-mount organizationId == first-mount organizationId == {{org_id}} {OBSERVED}
+[DOM] tile and order-list values visible on the second mount match that mount's own response {SPEC}",[API] all responses have errors[] empty on both mounts,no second request fires for one or more of the three ops; organizationId differs between mounts; errors[] non-empty,none (read-only),"VCST-5589, vc-frontend PR #2412; Promoted: VCST-5589 (2026-08-05)",Automated
+SR-CP-052,No Cross-Customer Bleed Across Three Consecutive Customer Switches (Equivalence Partitioning),Storefront > Sales Rep > Customer Profile > Cache Freshness,Critical,"PROPOSED-BL-SR-FRESHNESS-001, BL-SR-002",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+1. SR_REP_PRIMARY serves >=3 distinct orgs with differing statistics: @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id).","front_url={{FRONT_URL}}, org_a=@td(ORG_ACME.id), org_b=@td(ORG_TECHFLOW.id), org_c=@td(ORG_BUILDRIGHT.id)","[NAV] {{FRONT_URL}}/company/my-customers/{{org_a}}
+[WAIT] profile rendered; record tile values and the organizationId on this mount's requests
+[NAV] {{FRONT_URL}}/company/my-customers/{{org_b}}
+[WAIT] profile rendered; record tile values and the organizationId on this mount's requests
+[NAV] {{FRONT_URL}}/company/my-customers/{{org_c}}
+[WAIT] profile rendered; record tile values and the organizationId on this mount's requests
+[NAV] {{FRONT_URL}}/company/my-customers/{{org_a}}
+[WAIT] profile rendered again for org_a","[MATH] request.organizationId == the currently-open profile's org id, for each of the 4 mounts in order (org_a, org_b, org_c, org_a) {SPEC}
+[STATE] org_a's re-visit at the end shows the SAME values recorded on the first org_a visit (or a legitimately updated value) — never org_b's or org_c's data {OBSERVED}
+[DOM] no tile ever displays a value belonging to the PREVIOUSLY viewed org while the URL/heading already shows the new org's name visible {OBSERVED}","[API] every request in the sequence carries exactly one organizationId, matching the currently open profile; errors[] empty throughout",a tile briefly or persistently shows a different org's total/count after switching; a request fires with a stale organizationId from the previous profile; errors[] non-empty on any of the four mounts,none (read-only),"VCST-5589, vc-frontend PR #2412, BL-SR-002; Promoted: VCST-5589 (2026-08-05)",Automated
+SR-CP-053,"salesRepCustomer Apollo Dedup — Three Consumers, One Network Request Per Mount (Error Guessing)",Storefront > Sales Rep > Customer Profile > Cache Freshness,Medium,PROPOSED-BL-SR-FRESHNESS-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+1. @td(ORG_ACME.id) profile renders the page heading, the Customer-information card, and the mainRight actions/info block — 3 known consumers of useSalesRepCustomer.","front_url={{FRONT_URL}}, org_id=@td(ORG_ACME.id)","[NAV] {{FRONT_URL}}/company/my-customers/{{org_id}}
+[WAIT] profile page rendered — page heading, Customer-information card, and mainRight block all visible
+[WAIT] observe API calls via browser_network_requests tool (filter by /graphql); count how many SalesRepCustomer requests fired on this single mount","[COUNT] exactly ONE SalesRepCustomer request fired on this mount, despite 3 independent components consuming the same composable {OBSERVED}
+[DOM] all 3 consumers (heading, Customer-information card, mainRight block) are visible and render values consistent with that single response {SPEC}",[NETWORK] Apollo's normalized cache + query dedup collapses same-key concurrent queries into one network request,2 or 3 separate SalesRepCustomer requests fire on the same mount (dedup broken — e.g. a consumer bypassing the shared composable); any consumer renders a value inconsistent with the others,none (read-only),"VCST-5589, vc-frontend PR #2412; Promoted: VCST-5589 (2026-08-05)",Automated
+SR-CP-054,"Customer Profile of a Zero-Order Org Renders Zero Metrics Including AOV, Never Blank",Storefront > Sales Rep > Customer Profile > Stat Widgets,Critical,"BL-SR-002, BL-SR-004",ECL-3.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PAGING]
+SR_REP_PAGING serves orgs with zero orders — a zero-order org's customer profile is the AC1 contract case for this page, including AOV (average order value), which is a DIVISION and must not render NaN/Infinity when order count is 0 (VCST-5586 fixture, live-grounded on vcptcore-qa).",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] my customers table rendered
+[ACT] click the first row's 'Customer' column name link in the my customers table
+[WAIT] customer profile page rendered, no loading spinners remain","[COUNT] every statistics widget on the profile (order count, order total, AOV, cart stats) renders 0 or its zero-money equivalent — never blank, em dash, 'null', 'NaN', or 'Infinity' {SPEC}
+[MATH] AOV = order total / order count; with order count = 0 the widget renders $0.00 for AOV rather than evaluating the division (not NaN/Infinity) {SPEC}
+[FORMAT] every money metric uses currency formatting even at zero (e.g. '$0.00', never bare '0') {SPEC}","[API] the profile's backing statistics query for this org returns HTTP 200, errors[] empty, count=0/total.amount=0 {OBSERVED}
+[CONSOLE] no console errors on page load",any widget renders blank/dash/null instead of 0; AOV renders NaN or Infinity; a money field renders a bare '0',none (read-only),VCST-5586,Draft
+SR-CP-055,Percent Delta Absent When Previous-Period Baseline Is Zero; Absolute Delta Still Rendered,Storefront > Sales Rep > Customer Profile > Stat Widgets,High,BL-SR-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY's served orgs all have current-period order activity but a zero previous-period baseline (live-grounded on vcptcore-qa: comparison.*ChangePercent = null while comparison.*Change/count/total are real non-null values). @td(ORG_ACME.id) has 6 orders/$630.20 this period.","front_url={{FRONT_URL}}, org=@td(ORG_ACME.name)","[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] my customers table rendered
+[ACT] click the 'Customer' column link whose visible text matches @td(ORG_ACME.name) in the my customers table
+[WAIT] customer profile page rendered","[STATE] the absolute count/money change (comparison change) is visibly rendered on the profile {SPEC}
+[STATE] the percent-change indicator is ABSENT for this metric — not rendered as '0%', not 'NaN%', not 'Infinity%' {BL}
+[DOM] no percent symbol renders next to a suppressed percent delta (an absent delta does not leave a stray '%' or a broken layout gap) {SPEC}","[API] salesRepCustomer's comparison.*ChangePercent is null while comparison.*Change/period values are non-null for @td(ORG_ACME.id), errors[] empty {OBSERVED}","percent delta renders as '0%' instead of being suppressed; percent delta renders 'NaN%' or 'Infinity%'; the absolute change is also missing (would mean the whole comparison block was hidden, not just percent)",none (read-only),"VCST-5586, BL-SR-003",Draft
+SR-CP-056,"Localized Load-Failed Message Renders Under a Non-English Culture, Never a Raw i18n Key",Storefront > Sales Rep > Customer Profile > Error Handling,Medium,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+PR #2408 adds 4 new i18n keys (hub.dashboard.stats.load_failed, orders.load_failed, top_sellers.load_failed, my_customers.table.load_failed) across all 13 locale files. This case forces the customer-profile statistics query to fail under a non-English culture and asserts the rendered message is localized prose, not the raw key. Confirm live which non-English locale is configured/selectable on this store before executing.",front_url={{FRONT_URL}},"[SETUP] switch the storefront culture/locale to a non-English locale supported by the store
+[SETUP] force the customer profile's statistics GraphQL request to fail (network interception)
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the first row's 'Customer' column name link in the my customers table
+[WAIT] customer profile page settles after the failed request","[DOM] the error state's message text is localized prose in the selected non-English locale, not the raw i18n key string (e.g. not literally 'hub.dashboard.stats.load_failed') {BL}
+[DOM] the error message element's text content contains no dot-delimited i18n-key-shaped token (e.g. no substring matching 'hub.dashboard.stats.load_failed' or 'my_customers.table.load_failed') and is not identical to the raw key string itself {DOC}",[CONSOLE] no missing-translation-key warning is logged for this string,the raw i18n key renders instead of translated text; the message falls back to English despite the non-English locale being active,"[SETUP] remove the network interception
+[SETUP] restore the default locale",VCST-5586,Draft
