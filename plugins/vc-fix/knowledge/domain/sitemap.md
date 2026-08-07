@@ -5,10 +5,11 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** July 20, 2026 (rev 5)
+**Generated:** August 7, 2026 (rev 6 — deterministic axis; body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
-**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = 3.1039.0; 86 modules loaded)
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = 3.1057.0; 87 modules loaded) *(rev 6, 2026-08-07 deterministic re-crawl: was 3.1039.0 / 86 modules)*
+**Store total products:** 4,523 *(was 4,519 at rev 5)* · nav categories 49 · `/products-with-options` subcategories 7
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
@@ -543,7 +544,7 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 
 ## Notes
 
-1. **Catalog content is unstable** — 2026-05-15 wipe + restore replaced thousands of products and categories. Treat any hardcoded IDs/slugs/SKUs as drift candidates — resolve entities by querying the live system instead.
+1. **Catalog content is unstable** — 2026-05-15 wipe + restore replaced thousands of products and categories. Treat any IDs/slugs/SKUs in test data as drift candidates; resolve via `@td()` or `live-discover` (see `.claude/rules/test-data.md`).
 2. **Dynamic content:** Many pages contain content loaded via GraphQL / WebSocket
 3. **Authentication required** for all `/account/*` and `/company/*` pages
 4. **Product variations** may have additional sub-pages
@@ -553,6 +554,16 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 8. **`/catalog` grid ≠ "All products" nav dropdown** — the CMS-managed dropdown carries legacy entries not present in the grid; treat the grid (§3) as authoritative
 9. **Footer Popular Categories link** says "Allbiz" but resolves to Medical goods (label-vs-link drift)
 10. **Storefront is an SPA** — every path returns the 200 shell and renders 404s client-side, so HTTP status can't confirm a category/product exists; judge existence from the `/catalog` grid or live discovery
+
+---
+
+## Changelog (vs. July 20, 2026 rev 5)
+
+| Change | Details |
+|--------|---------|
+| Platform assembly line | max module-required `platformVersion` 3.1039.0 → **3.1057.0**; modules loaded 86 → **87** (Sprint 26-15 deploys) |
+| Store total products | 4,519 → **4,523** (nav categories unchanged at 49) |
+| Scope of this rev | **Deterministic xAPI crawl only** (`npm run sitemap:refresh`, 2026-08-07, `/qa-test-plan` Step 0). Storefront theme "Ver." is SPA-rendered and was **not** resolved this pass — the rev-5 value stands. §§2–9 body content carried forward, not re-verified. |
 
 ---
 
@@ -597,6 +608,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** July 20, 2026 (rev 5)
+**Last Updated:** August 7, 2026 (rev 6)
 **Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
 **Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Carried forward from rev 4 (not re-verified):** §2 Account pages, §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.
