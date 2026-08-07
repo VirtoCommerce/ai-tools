@@ -1,6 +1,6 @@
 # skills/ — Skill Directory
 
-> **39 skills**, each a `skills/<name>/SKILL.md` with YAML frontmatter and optional supporting
+> **40 skills**, each a `skills/<name>/SKILL.md` with YAML frontmatter and optional supporting
 > reference files. Discovery is **one level, flat — there are no category subfolders**; the four
 > categories below (VC Knowledge · Testing · QA Methodology · Development) are `[Category]` **tags in
 > each skill's `description`**, not directories. Breakdown: **1 VC Knowledge + 12 Testing +

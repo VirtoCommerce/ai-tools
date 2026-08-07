@@ -40,25 +40,25 @@ Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser t
 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: 120 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Suite definitions**: 121 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
 - **Selection groups**: 37 groups — `smoke`, `critical`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, …)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
 
-120 suites in `regression/suites/` organized by module (48 directories) under `Frontend/` and `Backend/`. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,980 test cases** (per manifest `testCount`; the source of truth is `config/test-suites.json`).
+121 suites in `regression/suites/` organized by module (48 directories) under `Frontend/` and `Backend/`. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,985 test cases** (per manifest `testCount`; the source of truth is `config/test-suites.json`).
 
 ### Suite inventory
 
 **Derived, not documented here.** `config/test-suites.json` is the source of truth for every suite’s id,
-name, file, domain, layer, priority, `testCount`, agent and tags (120 suites, 38 selections). To see the
+name, file, domain, layer, priority, `testCount`, agent and tags (121 suites, 37 selections — the manifest's `selections` block also carries a `_doc` key that is documentation, not a group). To see the
 current split: `npm run suites:lint` prints the totals, or read the manifest directly. A table copied into
 this file goes stale the first time a suite is added — which is how the retired `080` release suite below
 came to be documented for weeks after its CSV was deleted.
 
-- **Release suite**: none. The master release suite `080` (`_release/080-full-regression-release.csv`) was **retired on 2026-07-31** — its CSV was deleted in commit `9dd9f3e3` and the manifest entry plus the `release` selection were removed once it was found that `release` had been resolving to a missing file (running zero cases while reporting a valid selection). For a major release, use `full` (all 120 suites) or a plan-driven `sprint` selection. `npm run suites:lint` now hard-fails on any declared-but-absent suite CSV, so this cannot recur silently.
+- **Release suite**: none. The master release suite `080` (`_release/080-full-regression-release.csv`) was **retired on 2026-07-31** — its CSV was deleted in commit `9dd9f3e3` and the manifest entry plus the `release` selection were removed once it was found that `release` had been resolving to a missing file (running zero cases while reporting a valid selection). For a major release, use `full` (all 121 suites) or a plan-driven `sprint` selection. `npm run suites:lint` now hard-fails on any declared-but-absent suite CSV, so this cannot recur silently.
 - **P0 suites**: 042 (Smoke), 078 (Backend/API Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)
-- **RESOLVED — the two `sales-rep` manifest defects flagged below are fixed** (verified 2026-08-05): the embedded-app suite was renumbered to a free id (`Backend/sales-rep/092b-sales-rep-admin-embedded-app.csv`, alongside `092-sales-rep-admin.csv`), and `Frontend/sales-rep/093-sales-rep-hub-dashboard-storefront.csv` now has a manifest entry (`id: "093"`). `config/test-suites.json` carries 120 unique ids with zero duplicates. Left here as the worked example the naming-convention rules below still reference (`092b`, `SR-EMB-*`).
+- **RESOLVED — the two `sales-rep` manifest defects flagged below are fixed** (verified 2026-08-05): the embedded-app suite was renumbered to a free id (`Backend/sales-rep/092b-sales-rep-admin-embedded-app.csv`, alongside `092-sales-rep-admin.csv`), and `Frontend/sales-rep/093-sales-rep-hub-dashboard-storefront.csv` now has a manifest entry (`id: "093"`). `config/test-suites.json` carries 121 unique ids with zero duplicates. Left here as the worked example the naming-convention rules below still reference (`092b`, `SR-EMB-*`).
 - **Case IDs are globally unique across the whole corpus** — not merely unique within a suite. The runner keys per-case results and failure evidence by **bare case ID** (`suite-*-results.json` rows, `traces/{TC-ID}-FAIL-trace.json`, and `scripts/lib/regression-triage.ts` fingerprints), so two suites both declaring `CAT-001` let one run's evidence silently overwrite the other's — a real failure can read as someone else's pass. Enforced by **`npm run suites:lint`** (`findDuplicateCaseIds` in `scripts/test-cases/sync-test-suites.ts`, unit tests `scripts/unit/suite-global-case-ids.test.ts`); it scans **every CSV on disk**, orphans included, and **hard-fails** — unlike `CSV_LINT_BASELINE` there is no burn-down set, because the corpus was cleaned to zero collisions on 2026-08-03 (223 of them). IDs are harvested by the line-start scan (`extractExistingIds`), not a field parse, so the suites that aren't strictly CSV-parsable are still covered.
   **Naming convention when two suites want the same prefix** — two cases, and they are different:
   - **Re-prefix** when the suites are different *layers or domains* that merely collided on a shared prefix. The **storefront keeps the bare prefix** and the admin/back-office side takes an `…A` suffix: `CAT-*` (Frontend/catalog) vs **`CATA-*`** (051/053 admin), `ORD-*` (014 storefront) vs **`ORDA-*`** (017/018/019 admin), `SRCH-*` (004/005) vs **`SRCHA-*`** (061 admin). Where a prefix meant two unrelated things, the **documented owner keeps it**: suite 067 keeps `WL-*` (white labeling, per `knowledge/domain/white-labeling.md`) and the wishlist suite 050h became **`WISH-*`**; suite 050i keeps `CFG-GQL-*` (the gold-standard GraphQL suite) and the 9 interlopers in 072/072c became **`CFG-XAPI-*`**. Otherwise the more specific suite is qualified: 077b → **`CPN-SMK-*`**, the embedded-app half of `092` → **`SR-EMB-*`**. Re-prefixing is applied to the **whole prefix in that file**, not just the colliding rows, so each file keeps one coherent namespace and cannot collide again.
@@ -83,7 +83,7 @@ came to be documented for weeks after its CSV was deleted.
 | `backend` | All Backend/ suites (59) | Backend-only regression |
 | `sprint` | **Plan-driven** — `/qa-regression sprint` reads `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set. | Before sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan in `vc/shared/docs/Sprint plans/` | Re-run a past sprint's regression scope |
-| `full` | All 120 suites | Before production release |
+| `full` | All 121 suites | Before production release |
 
 ## CI Regression Testing
 
@@ -105,7 +105,7 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 **Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
 - **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 042 ($5 budget)
-- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 120 suites ($80 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 121 suites ($80 budget)
 - **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.
@@ -128,9 +128,9 @@ Suites rot silently. `lint-test-cases.ts` GRD-001 verifies an assertion **carrie
 
 Each run audits **one** suite and opens **one draft PR** — the unit of work is the unit of review, and that PR is the human gate replacing `--fix`'s interactive confirmation. Each assertion is triangulated against **docs** (VirtoOZ) + **live** (playwright) + **source** (GitHub MCP); only **CONFIRMED** (refresh the `Audited:` stamp) and **DRIFT** (rewrite the drifted assertion) are written. MISSING / CONTRADICTORY / UNGROUNDED / RETIRE are PR-body proposals that never touch a CSV — deprecation and authoring stay human. Never auto-merges.
 
-**Rotation** (`npm run tc:audit:queue`, `scripts/test-cases/audit-queue.ts`): risk tier (P0/revenue-critical first) → unresolvable-source last → oldest `Audited:` stamp → testCount. **The stamp is the state** — it lives in the `References` cell of the row it describes, so there is no ledger to desync and a skipped day leaves that suite at the head of the queue. The queue is keyed by **file**, not id (a defensive convention retained from when manifest id `092` was briefly carried by two suites — see the resolved note above). Weekdays only ⇒ the ~14 P0/revenue-critical suites are covered in ~3 weeks; the full 120-suite cycle is ≈24 weeks, then rolls.
+**Rotation** (`npm run tc:audit:queue`, `scripts/test-cases/audit-queue.ts`): risk tier (P0/revenue-critical first) → unresolvable-source last → oldest `Audited:` stamp → testCount. **The stamp is the state** — it lives in the `References` cell of the row it describes, so there is no ledger to desync and a skipped day leaves that suite at the head of the queue. The queue is keyed by **file**, not id (a defensive convention retained from when manifest id `092` was briefly carried by two suites — see the resolved note above). Weekdays only ⇒ the ~14 P0/revenue-critical suites are covered in ~3 weeks; the full 121-suite cycle is ≈24 weeks, then rolls.
 
-**Source axis** (`npm run tc:audit:source`, `scripts/test-cases/suite-source-map.ts`): suite → module → repo, derived from `config/test-suites.json` `requiresModules` → `.claude/knowledge/execution/module-suite-map.md` → `ci/config/fix-repos.json` `routing[]`. It resolves 113/120 suites and **never invents a repo name** — an unresolvable suite scores UNGROUNDED, because a wrong repo yields a confident `file:line` for unrelated code and manufactures a false CONFIRMED.
+**Source axis** (`npm run tc:audit:source`, `scripts/test-cases/suite-source-map.ts`): suite → module → repo, derived from `config/test-suites.json` `requiresModules` → `.claude/knowledge/execution/module-suite-map.md` → `ci/config/fix-repos.json` `routing[]`. It resolves 115/121 suites and **never invents a repo name** — an unresolvable suite scores UNGROUNDED, because a wrong repo yields a confident `file:line` for unrelated code and manufactures a false CONFIRMED.
 
 The audit's own run artifacts (`reports/suite-audit/TCA-*/`) are gitignored pipeline working data — `.claude/rules/reports.md` has no report category for a test-case review, so the narrative ships in the PR body and the only durable artifact is the CSV diff.
 

@@ -1,10 +1,10 @@
 # Skills & Commands Reference
 
-## Slash Commands (30) — `commands/`
+## Slash Commands (31) — `commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
-**29 live commands = 29 `commands/*.md` files.** The table below has 30 rows: the extra one is the struck-through `/qa-sync-tests` **tombstone**, kept deliberately so an old reference resolves to its replacement — it has no command file and invoking it does nothing.
+**31 live commands = 31 `commands/*.md` files.** The table below has 31 rows, which is a coincidence of two offsetting exceptions: it carries the struck-through `/qa-sync-tests` **tombstone** (no command file — kept deliberately so an old reference resolves to its replacement; invoking it does nothing), and it omits a row for `/qa-review-bl`, which *does* have a file but is documented as an alias inside the `/qa-review-oracles` row.
 
 | Command | Arguments | Auto-invoke | Purpose |
 |---------|-----------|-------------|---------|
@@ -40,9 +40,9 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/project-init` | `(no args — interactive) \| --check` | No | **Onboard this plugin onto a deployment.** Install deps; choose native-platform vs CLIENT project; pick bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos); capture test-env URL + browser-login/token auth (never passwords); discover the client/platform repo split; write `project-profile.json` + `.mcp.json`; verify access. The profile is what makes `/qa-fix` route each bug to the **right repo** (client custom code vs native VirtoCommerce platform) and the **right tracker**. Backed by the `/project-init` skill. |
 | `/vc-self-check` | `[latest \| <session-id>] \| deliver` | No | **Self-diagnose the plugin** from this session's telemetry. Tier B of the self-diagnostics subsystem: reads the passive collector's jsonl (`hooks/session-telemetry.mjs` → `<outputRoot>/.vc-fix/diagnostics/<session_id>.jsonl`) + the transcript + the oracle `knowledge/diagnostics/skill-expectations.md`, and emits a per-skill verdict (OK/DEGRADED/BROKEN) + severity (S0–S3) + evidence + root-cause hypothesis + proposed fix, into a LOCAL `DIAG-*.md`. Never modifies the install, never files a ticket, never sends anything (the `deliver` sub-step does a scrubbed, consent-gated PR/issue to VirtoCommerce). Model-invocable: the `Stop` hook auto-runs it **silently via a tail-trigger** (`{decision:"block"}`, no Yes/No modal) when the Tier-1 classifier flagged ≥1 span (`failed`/`degraded`/`silent_suspect`) or a `/vc-feedback` 👎 was recorded (opt out `VC_FIX_DIAG_CONSENT=off`); recursion/re-nag is blocked by the `selfCheckSeen` guard + per-signature span dedup (not by `disable-model-invocation`). Backed by the `/vc-self-check` skill. |
 
-## Skills (39) — `skills/` (grouped by category)
+## Skills (40) — `skills/` (grouped by category)
 
-**39 skills = 39 `skills/<name>/SKILL.md` files**, grouped below as 1 VC-knowledge + 12 testing + 17 QA-methodology + 6 development + 3 root-level. The grouping is **documentation-only** — the directories are flat (`skills/<name>/`, one level, no category subfolders), and a skill's category comes from the `[Category]` tag in its `SKILL.md` description. `qa-local-env` is listed under Testing here but carries no tag in its own file.
+**40 skills = 40 `skills/<name>/SKILL.md` files**, grouped below as 1 VC-knowledge + 12 testing + 18 QA-methodology + 6 development + 3 root-level. The grouping is **documentation-only** — the directories are flat (`skills/<name>/`, one level, no category subfolders), and a skill's category comes from the `[Category]` tag in its `SKILL.md` description. `qa-local-env` is listed under Testing here but carries no tag in its own file.
 
 Skills are slash commands with supporting reference files. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `skills/README.md` for full reference. (A separate top-level `run-vc-mcp-testing-module` skill builds/smoke-tests this repo's own tooling and is not part of the categorized QA set.)
 
@@ -69,7 +69,7 @@ Skills are slash commands with supporting reference files. Each skill has a `SKI
 | `/qa-review-tests` | `suite <ID> \| file <path> \| diff \| all \| domain <name> \| stale \| --verify \| --triangulate \| --fix \| --ci` | Review test cases: 11-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification, technique coverage, assertion grounding, **behavioral triangulation**). **Dim 11 (`--triangulate`)** is the staleness mechanism — it triangulates each assertion against **docs + live + source** and assigns CONFIRMED/DRIFT/MISSING/CONTRADICTORY/UNGROUNDED/RETIRE (TRI-001…006), auto-applying only CONFIRMED (stamp refresh) + DRIFT (evidence-backed assertion rewrite). Dim 10 checks a provenance tag *exists*; Dim 11 checks it is *true*. Live verification → qa-testing-expert; triangulation → ba-system-analyzer (≤3 parallel). Deterministic cores: `suites:review` (incl. TRI-000 stamp staleness), `tc:audit:queue`, `tc:audit:source` | `review-criteria.md`, `triangulation-criteria.md` |
 | `/qa-local-env` | `[VCST-XXXX] [postgres\|mysql\|sqlserver]` | Bring up a local VC stack (start-local + Docker) pinned to the actual deployed `vcptcore-demo` manifest; with a task arg, augment it with the modules/PR pre-release builds the task needs. Rebuild-iff-changed; **fresh DB every run** (data volumes always wiped); admin→`Password1!`. resolve-task (JIRA+GitHub REST) → gen-manifest → provision (PowerShell) → init-admin → healthcheck. Theme channels (`latest`/`alpha`/`pr`) via `resolve-theme.mjs` → `-FrontendUrl`. | `resolve-task.mjs`, `resolve-theme.mjs`, `gen-manifest.mjs`, `provision.ps1`, `healthcheck.mjs`, `init-admin.mjs` |
 
-**`qa-methodology/` — QA Methodology (17) — manual invocation (except `/qa-evidence` + `/qa-sbtm`, which are auto-invocable reference-only skills):**
+**`qa-methodology/` — QA Methodology (18) — manual invocation (except `/qa-evidence` + `/qa-sbtm`, which are auto-invocable reference-only skills):**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
