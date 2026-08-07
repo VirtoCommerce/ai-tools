@@ -2,72 +2,138 @@
   "ticket": "VCST-5332",
   "title": "[BFE] [Sales Rep] [Lists] Publish list to customer",
   "type": "Story",
+  "flow": "feature-test",
   "priority": "Medium",
   "path": "FAST",
-  "date": "2026-08-06T16:50:00Z",
+  "date": "2026-08-07T14:10:00Z",
   "environment": "vcptcore-qa",
+  "epic": {
+    "key": "VCST-5142",
+    "summary": "Sales Rep Hub",
+    "status": "In progress",
+    "blockers_done": ["VCST-5331", "VCST-5310"]
+  },
   "build": {
-    "pinned": {
-      "theme": "2.55.0-pr-2405-c9c7",
-      "platform": "3.1053.0",
-      "modules": {
-        "VirtoCommerce.SalesRep": "3.1001.0-pr-8-a07e",
-        "VirtoCommerce.XCart": "3.1029.0-alpha.270-vcst-5332-customer-wishlist-sharing-scope"
-      }
+    "theme_live": "2.55.0-pr-2405-c9c7-c9c77832",
+    "theme_pinned": "2.55.0-pr-2405-c9c7",
+    "modules_live": {
+      "VirtoCommerce.SalesRep": "3.1001.0-pr-8-a07e",
+      "VirtoCommerce.XCart": "3.1029.0-alpha.270-vcst-5332-customer-wishlist-sharing-scope",
+      "VirtoCommerce.Cart": "3.1008.0-alpha.803-vcst-5332-customer-wishlist-sharing-scope"
     },
-    "live": {
-      "theme": "2.55.0-pr-2400-c6ca-c6ca8840",
-      "modules": {
-        "VirtoCommerce.SalesRep": "3.1001.0-pr-6-4f32",
-        "VirtoCommerce.XCart": "3.1029.0-alpha.270-vcst-5332-customer-wishlist-sharing-scope"
-      }
-    },
-    "pin_vs_live_mismatch": true,
-    "cause": "vc-deploy-dev@vcptcore-qa 'Cloud theme deployment' (run 31120158160) cancelled and 'Cloud platform deployment' (run 31120197041) FAILED at the 'Set up job' step, 2026-08-06 16:31-16:32 UTC. The manifest pin landed; the deploy did not."
+    "pin_vs_live_mismatch": false,
+    "note": "The 2026-08-06 BLOCKED run's failed platform+theme deploys have since landed; the feature surface is live. Also confirmed: SalesRep.Enabled=true, PushMessages.Enable=true, PushMessages.FCM.Enable=true.",
+    "supersedes": "The 2026-08-06 BLOCKED summary for this ticket (feature surface absent on theme pr-2400)."
   },
-  "verdict": "BLOCKED",
-  "verdict_reason": "The storefront half of VCST-5332 is not deployed. Theme pr-2400 has no Share action, no customer dropdown, no Message field and no Email/Push checkboxes, so none of the reopened findings could be re-tested.",
-  "seed": {
-    "command": "TEST_ENV=vcptcore npm run seed:sales-rep",
-    "result": "OK — 10 reps present/created, SR_REP_LAYOUT preferences reset, runtime GUIDs written to aliases.vcptcore.json"
+  "verdict": "FAIL",
+  "verdict_reason": "AC1 (the customer is notified via email/push with the rep's custom message) is not met. Both channels can be unchecked and the share still commits with sendCustomerCommunication never firing; when it does fire, a succeeded:false / warnings[] response is silently swallowed by the UI. AC2 and AC3 pass and BL-SR-002 holds.",
+  "verdict_note_operator": "Operator decision 2026-08-07: every failing finding is being carved out into its own STORY, not filed as a VCST-5332 defect. Under that framing VCST-5332 delivers its shipped scope (AC2 + AC3 + BL-SR-002) and the gaps are forward scope; the FAIL verdict reflects AC1 as originally written on this ticket.",
+  "ac_dod_estimate": {
+    "ac_conditions_total": 6,
+    "ac_conditions_with_evidence": 6,
+    "ac_coverage_pct": 100,
+    "ac_satisfied": 3,
+    "ac_failed": 3,
+    "ac_not_verifiable": 0,
+    "dod_total": 0,
+    "dod_met": 0,
+    "dod_completion_pct": null,
+    "dod_note": "Ticket declares no Definition of Done section."
   },
-  "counts": { "planned": 10, "passed": 1, "failed": 1, "blocked": 8 },
+  "ac_reconciliation": [
+    { "ac": "AC1 - customer is notified via email/push with the rep's custom message", "verdict": "CONTRADICTS-live", "evidence": "S3/S10 - the share commits with zero channels and no mutation fires at all; S12 - when it does fire the UI ignores succeeded/warnings[]. Push delivery itself works (S12)." },
+    { "ac": "AC2 - customer sees the list as 'Recommended by Rep'", "verdict": "SATISFIED-live", "evidence": "S8/S10 - 'Recommended by your sales representative' banner renders for the recipient." },
+    { "ac": "AC3 - customer can add to cart any item from the list", "verdict": "SATISFIED-live", "evidence": "S8 - addItem succeeded, itemsQuantity 5, SKU GC952105." },
+    { "ac": "SPEC - 'Share' shall be in the action wheel (UI re-visit)", "verdict": "NOT-MET", "evidence": "S0/S2 - the kebab menu offers only Edit / Delete; sharing still lives inside the heavy 'List settings' dialog the ticket asked to move away from." },
+    { "ac": "SPEC open question - support sharing with MULTIPLE customers", "verdict": "NOT-MET (mitigated)", "evidence": "S6 - sharedWithId is scalar and the picker is single-select; a new inline warning now discloses the revocation before save." },
+    { "ac": "BL-SR-002 - no cross-org leak of a shared list", "verdict": "SATISFIED-live", "evidence": "S9 - a non-member org is redirected to /403 Access denied." }
+  ],
+  "counts": { "planned": 13, "passed": 6, "failed": 5, "partial": 1, "blocked": 0 },
   "steps": [
-    { "id": "S1", "result": "PASS", "note": "Rep agent-test-vcst5293-182326@example.com signs in; /company/dashboard + /company/my-customers render; 10 served customers." },
-    { "id": "S2", "result": "FAIL", "note": "List action wheel offers only Edit and Delete — no 'Share' action (theme pr-2400)." },
-    { "id": "S3", "result": "BLOCKED", "note": "Edit opens the legacy 'List settings' dialog: name, description, Private/Anyone(readonly)/Organization, read-only link. No customer dropdown / Message / channel checkboxes." },
-    { "id": "S4", "result": "BLOCKED", "note": "Both-channels-unchecked validation (finding #5) — no channel checkboxes exist on this build." },
-    { "id": "S5", "result": "BLOCKED", "note": "Cannot publish a list to a customer." },
-    { "id": "S6", "result": "BLOCKED", "note": "Findings #4/#6 (Message + checkboxes hidden on re-edit) unreachable." },
-    { "id": "S7", "result": "BLOCKED", "note": "No shared list for belovedushka@gmail.com to open." },
-    { "id": "S8", "result": "BLOCKED", "note": "Finding #2 (multi-org 403) — highest priority, not re-testable." },
-    { "id": "S9", "result": "BLOCKED", "note": "Access-control negative control unreachable." },
-    { "id": "S10", "result": "BLOCKED", "note": "Finding #3 (no list-level bulk actions) unreachable." }
+    { "id": "S0", "result": "PASS", "note": "Deployment gate: 'Customer' scope present in List settings; theme 2.55.0-pr-2405." },
+    { "id": "S1", "result": "PASS", "note": "Rep signs in, 10 served customers, 3 lists, scope badges render." },
+    { "id": "S2", "result": "PASS", "note": "Dialog: 4-option scope dropdown, searchable customer combobox, Link+copy, Message (0/907), Email+Push checked by default." },
+    { "id": "S3", "result": "FAIL", "note": "Both channels unchecked -> Save stays enabled, no validation, share persists, sendCustomerCommunication never fires. Finding #5." },
+    { "id": "S4", "result": "PASS", "note": "ChangeWishlist scope=Customer + sharedWithId; badge flips to 'Shared with customer'." },
+    { "id": "S5", "result": "FAIL", "note": "Reopen: customer persists but Message and the whole 'Send via' group are absent. Findings #4 + #6." },
+    { "id": "S6", "result": "FAIL", "note": "Single-select; picking B retains only B. A new inline warning discloses it pre-save. Finding #1, partially mitigated." },
+    { "id": "S7", "result": "PASS", "note": "Superseded by S11 - the buyer account works; the earlier invalid_grant was a wrong password recorded in memory." },
+    { "id": "S8", "result": "PARTIAL", "note": "Banner renders, per-item Add to cart works; NO list-level actions and the Order summary card shows a subtotal with zero buttons. Finding #3." },
+    { "id": "S9", "result": "PASS", "note": "Non-member org -> /403 Access denied. BL-SR-002 upheld." },
+    { "id": "S10", "result": "FAIL", "note": "Silent grant CONFIRMED (B2C-LIST-050): both channels off -> ChangeWishlist only, no sendCustomerCommunication, yet the recipient opens the list via the Link. The list is absent from the recipient's /account/lists and from their inbox - the link is the ONLY entry point, so a zero-channel share is unreachable in practice." },
+    { "id": "S11", "result": "FAIL", "note": "Finding #2 CONFIRMED with a genuine non-owner recipient (B2C-LIST-051): same user, same URL - 403 under Watermelon123 (org Y), renders under Purple Pink123 (org X). Access is gated on the ACTIVE org, not the membership set. The earlier inconclusive result was the list-owner bypass." },
+    { "id": "S12", "result": "PASS", "note": "Per-channel routing honoured both ways (B2C-LIST-048/049). Push-only: succeeded:true, pushSent:true, emailSent:false, warnings[] empty, push received carrying the rep's typed message verbatim. Email-only: pushSent:false (unchecked channel correctly suppressed), emailSent:false warnings:[EmailSendFailed] - env SMTP gap, not a routing defect." }
   ],
   "reopen_findings_reverification": {
-    "1_multi_customer_overwrite": "NOT-VERIFIABLE",
-    "2_multi_org_403": "NOT-VERIFIABLE",
-    "3_no_bulk_actions": "NOT-VERIFIABLE",
-    "4_message_hidden_on_edit": "NOT-VERIFIABLE",
-    "5_both_channels_unchecked": "NOT-VERIFIABLE",
-    "6_channel_checkboxes_hidden_on_edit": "NOT-VERIFIABLE"
+    "1_multi_customer_overwrite": "STILL-PRESENT (mitigated - now warned pre-save)",
+    "2_multi_org_403": "STILL-PRESENT - CONFIRMED as reported, owner-bypass confound eliminated",
+    "3_no_bulk_actions": "STILL-PRESENT (worse - the Order summary card renders a subtotal with no CTA at all)",
+    "4_message_hidden_on_edit": "STILL-PRESENT",
+    "5_both_channels_unchecked": "STILL-PRESENT (and the silent-grant half is now proven end to end)",
+    "6_channel_checkboxes_hidden_on_edit": "STILL-PRESENT"
   },
-  "backend_evidence": {
-    "graphql_introspection": "InputCreateWishlistType and InputChangeWishlistType both carry sharedWithId on vcptcore-qa (absent on vcst-qa baseline). WishlistScopeType = Private, AnyoneAnonymous, AnyoneAuthorized, Organization, User.",
-    "conclusion": "Backend contract for VCST-5332 (scope=User + sharedWithId) IS live; only the UI is missing."
-  },
-  "incidental_observations": [
-    "All five rep lists render a 'Shared' badge, including lists with 0 items (bel 26/28/29) — badge does not distinguish scope. Pre-existing on theme pr-2400, unrelated to 5332.",
-    "Scope-enum drift: backend exposes 5 wishlist scopes, theme dropdown exposes 3 (AnyoneAnonymous/AnyoneAuthorized collapsed into 'Anyone (readonly)'; 'User' not surfaced)."
+  "root_cause_note": "Findings #4/#5/#6 collapse into one dialog defect: the Message + 'Send via' block is bound to a pending-new-customer-selection state instead of to scope === 'Customer', and no validation requires >=1 channel. The message is never persisted on the wishlist (ChangeWishlist carries only listId/listName/description/scope/sharingKey/sharedWithId/cultureName) - it travels only in the fire-and-forget sendCustomerCommunication mutation.",
+  "new_findings": [
+    { "id": "NEW-1", "severity": "P1", "provenance": "IN-SCOPE", "title": "sendCustomerCommunication failures are silently swallowed by the UI", "note": "Two of three sends this pass returned succeeded:false (EmailSendFailed, and earlier NoRecipients) and in every case the dialog closed as a clean success - no toast, no inline error. The response already carries succeeded / emailSent / pushSent / warnings[]; the frontend ignores all four. The rep is told the customer was notified when they demonstrably were not. Cheapest fix in the ticket." },
+    { "id": "NEW-2", "severity": "P3", "provenance": "IN-SCOPE", "title": "Customer picker lists indistinguishable duplicate org names", "note": "The BARE variants ('Purple Pink' x2, 'Watermelon' x2) are genuinely distinct orgs with no id/code disambiguator; choosing wrong silently revokes the other. Partly seed-data driven, but the UI should disambiguate." },
+    { "id": "NEW-3", "severity": "P2", "provenance": "IN-SCOPE", "title": "The /403 page is a dead end for a legitimate recipient", "note": "Offers only a 'Home page' link - no explanation that the list belongs to another organization, no org switcher. The correct org is one click away in the account menu, so a recoverable state is presented as terminal. The UX half of finding #2." },
+    { "id": "NEW-4", "severity": "INFO", "provenance": "ENV", "title": "EmailSendFailed on vcptcore-qa", "note": "The email channel returns warnings:[EmailSendFailed] while push works on the same org - outbound SMTP is not configured on this env. Not a product defect, but it means the email half of AC1 cannot be proven here." }
   ],
-  "console_network": "11 POST /graphql on the lists surface, all HTTP 200, no errors[]. Only known env noise: App Insights dc.services.visualstudio.com/v2/track 400s and catalog image 404s.",
-  "regression": { "run_id": null, "pass_rate": null, "note": "Change-scoped regression not run — feature surface absent; a suite run would produce meaningless BLOCKEDs." },
-  "promotion": { "automated": 0, "reviewed": 0, "blocked": 0, "reverted": 0, "note": "No new cases authored — BLOCKED before authoring would be grounded." },
-  "jira": { "transitioned": false, "commented": false, "note": "Ticket left at Reopen; no transition on a BLOCKED verdict." },
+  "fixture_resolution": {
+    "account": "belovedushka@gmail.com / Password1! (SINGLE trailing '!'). The earlier invalid_grant was a wrong password recorded in memory (Password1!!), not a dead account. Verified via POST {BACK_URL}/connect/token + storeId=B2B-store -> 200, memberId 3bd3f19c-a54a-4b71-b664-753a77e1b612. Both memory files corrected 2026-08-07.",
+    "orgs": "Member of the 123-SUFFIXED orgs: Purple Pink123 (e941220a-289d-46b3-a212-bd66f0b9f4c3, default active), Mercury123 (e4168e7c-dd16-40ef-a671-98a2d6c50ab9), Watermelon123 (cb7ed54a-9b3e-4235-b4d6-28be7e7fceb1), plus 3 orgs the rep cannot select.",
+    "duplicate_name_trap": "The duplicate names in the customer picker are the BARE variants - genuinely distinct orgs. The 123-suffixed ones are unique. Identity proven by GUID: GetMe contact.organization.id == the sharedWithId the ChangeWishlist mutation sent. The bare 'Purple Pink' has no emailable member, which retro-explains the earlier NoRecipients warning as correct backend behaviour on an empty org, not a bug."
+  },
+  "business_rules_verified": ["BL-SR-002 (PASS - S9 non-member denied, S11 scope enforced on the active org)", "BL-SR-011 (PASS - rep routes gated correctly)"],
+  "console_network": "No JS exceptions, no Vue warnings, no unhandled rejections, no 5xx. All /graphql 200 with an empty errors[] - including sendCustomerCommunication, which signals failure IN-BAND via succeeded:false + warnings[], which is precisely why the UI misses it. Known env noise only: App Insights dc.services.visualstudio.com/v2/track 400s and catalog image 404s.",
+  "new_test_cases": {
+    "suite": "regression/suites/Frontend/b2b/007-b2b-lists-shared.csv",
+    "ids": ["B2C-LIST-040", "B2C-LIST-041", "B2C-LIST-042", "B2C-LIST-043", "B2C-LIST-044", "B2C-LIST-045", "B2C-LIST-046", "B2C-LIST-047", "B2C-LIST-048", "B2C-LIST-049", "B2C-LIST-050", "B2C-LIST-051"],
+    "grounded_observed": ["B2C-LIST-040", "B2C-LIST-043", "B2C-LIST-044", "B2C-LIST-046", "B2C-LIST-049", "B2C-LIST-050", "B2C-LIST-051"],
+    "partially_grounded": ["B2C-LIST-048 - the channel-honoured half is {OBSERVED}; the emailSent:true half is tagged {SPEC}, unprovable while this env has no outbound SMTP"],
+    "advance_coverage_awaiting_followup_story": ["B2C-LIST-041", "B2C-LIST-042", "B2C-LIST-045", "B2C-LIST-047"],
+    "channel_partition_note": "The channel-selection set is covered as 4 equivalence partitions: both = B2C-LIST-040 (PASS), none = B2C-LIST-041 (FAIL, no validation) + B2C-LIST-050 (the silent-grant half), email-only = B2C-LIST-048, push-only = B2C-LIST-049."
+  },
+  "coverage_gaps_acknowledged": [
+    "Email DELIVERY (the email half of AC1) cannot be proven on vcptcore-qa - outbound SMTP is unconfigured (EmailSendFailed). Push delivery WAS proven end to end. B2C-LIST-048 carries the email assertion as {SPEC} pending an env with mail."
+  ],
+  "bugs_filed": [],
+  "bugs_pending_confirmation": {
+    "note": "Nothing filed. The reporter's 2026-08-07 comment states separate STORIES will be created for the findings; a JQL scan of VCST issues created since 2026-08-06 found none yet. No tracker write was performed without confirmation."
+  },
+  "regression": {
+    "run_id": null,
+    "pass_rate": null,
+    "suites_selected": ["007", "050h"],
+    "note": "Change-scoped regression DEFERRED at the operator's 'fast' request - not run. The Feature Release Gate cannot be evaluated on a null pass rate."
+  },
+  "release_gate": {
+    "recommendation": "NO-GO",
+    "reason": "A FAIL verdict is an automatic NO-GO; additionally the change-scoped regression pass rate is null."
+  },
+  "promotion": {
+    "automated": 0,
+    "reviewed": 0,
+    "blocked": 0,
+    "reverted": 0,
+    "draft": 12,
+    "note": "12 new cases appended to regression/suites/Frontend/b2b/007-b2b-lists-shared.csv (B2C-LIST-040..051) as Draft. suites:sync 34->46, suites:lint OK, suites:review clean on all 12 new rows, td:validate green. NOT promoted: executed manually rather than under the automated runner, and four assert behaviour that is not yet built (follow-up stories)."
+  },
+  "jira": {
+    "transitioned": false,
+    "commented": false,
+    "note": "The ticket was already moved to Tested by the reporter on 2026-08-07 with a stated plan to file separate stories. No transition or comment performed without confirmation."
+  },
+  "test_data_left_on_env": [
+    "Lists '2nd' and '3rd' restored to Private after the run.",
+    "List '1st' left as 'Shared with customer' - its pre-existing state, never touched.",
+    "The Apple Gift Card line was removed from the Mercury123 cart; the 4 pre-existing lines were left untouched."
+  ],
   "evidence": "reports/tickets/Sprint26-15/VCST-5332/screenshots/",
   "next_steps": [
-    "Re-run the vc-deploy-dev@vcptcore-qa 'Cloud theme deployment' + 'Cloud platform deployment' Actions (both failed at 'Set up job' — infrastructure, not a manifest error).",
-    "Confirm live theme = 2.55.0-pr-2405 and SalesRep = 3.1001.0-pr-8 before re-testing.",
-    "Then re-run /qa-test VCST-5332 — S8 (belovedushka multi-org 403) first."
+    "File the P1 pair first: finding #5 (share commits with zero channels, silently unreachable) and NEW-1 (failed notification swallowed by the UI). They share the feature's core promise and one fix surface.",
+    "Findings #4/#5/#6 are one dialog defect - consider one story with the root-cause note above.",
+    "Finding #2 is now settled: gate the shared-list route on the recipient's MEMBERSHIP, or make the 403 explain itself and offer the org switch (NEW-3).",
+    "Configure outbound SMTP on vcptcore-qa (or nominate another env) so the email half of AC1 becomes provable."
   ]
 }
