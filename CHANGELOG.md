@@ -10,7 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Ships as **plugin `vc-fix` `0.8.3`** + **`vc-perf` `0.2.6`** (marketplace `0.9.4`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `vc-fix` `0.8.4`** + **`vc-perf` `0.2.6`** (marketplace `0.9.4`). Pin to a tagged release for stability; this branch tip is unstable.
+
+### Fixed — `/project-init` onboarding hardening from client-deployment self-check findings (#216, #217, #220)
+
+Three merged PRs (#223, #224, #226) closing the `project-init` self-check findings auto-raised on a client Azure Boards deployment. All localized, single-subsystem fixes; full unit suite green.
+
+- **#216 `repo_discovery` (#223).** `moduleToRepo`'s id-fallback derived `vc-module-<slug>` for a module with no `ProjectUrl` and **never cross-checked it against a real repo**, so `/qa-fix` Gate 1 could route a bug to a repo that does not exist. The derived name is now marked `nameFromId` (a heuristic guess); `main()` reconciles each guess against the client's live repo listing (pure `flagUnverifiedModules`, case-insensitive) — a match confirms it, a miss is flagged `nameUnverified` and surfaced to the operator; any guess never cross-checked (no `clientOrg`, `--modules-json` mode) fails safe to `nameUnverified`. `assert-profile` reads the flag (`client_repo_unverified` violation). Applied to both the `plugins/vc-fix/` copy and the `.claude/` mirror.
+- **#217 `access_verification` (#223).** The Azure Repos client-repo probe reported **every** non-OK response as `PAT not accepted — check PAT Code R/W or az tenant`, including a 404. The FAIL message now branches on `res.status`: 404 (repo not found / misnamed) vs 401/403 (auth) vs a non-JSON sign-in page vs unexpected — different remedies, different messages. Both surfaces.
+- **#220 `mcp_config` startup + auth (#224, plugin surface).** Every stdio MCP server launches via `npx`; on a host with a broken/slow IPv6 route the registry lookup hung ~150s and blew the ~30s startup budget, so **all** stdio servers failed to start. `gen-mcp.mjs` now injects `NODE_OPTIONS=--dns-result-order=ipv4first` (the only NODE_OPTIONS-safe form — `--no-network-family-autoselection` is deliberately omitted, being fatal in `NODE_OPTIONS` on the Node-18 floor) + `npm_config_prefer_offline=true` on every stdio server (pure/idempotent `ensureNodeOptions`; http/sse untouched). Plus: pin `chrome-devtools-mcp@1.6.0` / `@azure/mcp@3.0.0-beta.32` (no `@latest`); move the context7 key to `headers`; drop the inert figma `FIGMA_API_KEY` (remote Figma MCP is OAuth-only); switch github to the official remote HTTP server with a Bearer PAT that falls back to OAuth when unresolved; and an opt-in `--warm-cache` that pre-fetches the pinned npx specs (shell-injection-guarded, best-effort, timeboxed).
+- **#220 port to the vc-qa (`.claude`) surface (#226).** The coupling-free half of #220 ported to the structurally-different root `gen-mcp.mjs`: the same `ensureNodeOptions` (ipv4first + prefer-offline) and template version pins, plus a `main()` import-guard so importing the module has no side effect. The auth-contract changes were deliberately deferred (they couple to an embedded-placeholder `injectTokens` fix this older copy lacks).
 
 ### Added — `/qa-review-oracles`: BL + ECL merged into one oracle-audit skill, plus an ECL citation gate (#221)
 
