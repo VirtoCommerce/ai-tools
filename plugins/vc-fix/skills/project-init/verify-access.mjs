@@ -400,7 +400,17 @@ async function main() {
           const url = `${apiBase}/_apis/git/repositories/${encodeURIComponent(name)}?api-version=7.1`;
           const res = await fetch(url, { headers: { Authorization: ado.header, Accept: "application/json" } });
           const okJson = res.ok && (res.headers.get("content-type") || "").includes("application/json");
-          if (!okJson) { add(label, "FAIL", `→ ${res.status} (${ado.via} not accepted — check PAT Code R/W or az tenant)`); continue; }
+          if (!okJson) {
+            // #217 — distinguish a missing/misnamed repo (404) from an auth failure (401/403):
+            // they have different remedies, so don't report every non-OK as a PAT/tenant problem.
+            const why =
+              res.status === 404 ? `repo '${name}' not found in ${org}/${project} — check repos.client name / project`
+              : res.status === 401 || res.status === 403 ? `${ado.via} not accepted — check ADO PAT Code (Read) scope or az tenant`
+              : res.status < 400 ? `${ado.via} not accepted (non-JSON response, likely an ADO sign-in page — a 203 or a followed redirect) — check ADO PAT Code (Read) scope or az tenant`
+              : `unexpected response — ${ado.via} probe to ${org}/${project}`;
+            add(label, "FAIL", `→ ${res.status} (${why})`);
+            continue;
+          }
           // Reachable — now confirm PUSH scope (the /qa-fix operation), not just read. This is
           // the LEO gap: get-repo 200 but push 401. Non-mutating: empty push body → 400 when
           // authorized, 401/403 when Code-write scope is absent.

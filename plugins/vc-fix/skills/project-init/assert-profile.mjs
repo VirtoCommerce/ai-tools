@@ -105,6 +105,15 @@ export function profileViolations(profile) {
     add("client_repos_empty", "projectType:client but repos.client is empty — /qa-fix Gate 1 has no client repo to route a bug to");
   }
 
+  // ─── client MODULE with an UNVERIFIED name (#216) ────────────────────────────
+  // discover-repos guessed this name from the module id (no ProjectUrl) and it matched NO repo
+  // in the client's live listing — so /qa-fix Gate 1 may route a bug to a repo that isn't there.
+  for (const r of clientRepos) {
+    if (r?.nameUnverified) {
+      add("client_repo_unverified", `client repo '${r.name}' has an UNVERIFIED name (derived from the module id, matched no repo in the client's live listing) — confirm or correct repos.client before /qa-fix routes a bug to it`);
+    }
+  }
+
   // ─── frontend fork: the Gate-1b provenance anchor ────────────────────────────
   for (const r of clientRepos) {
     if (r?.kind !== "frontend" || !r?.upstream) continue;
