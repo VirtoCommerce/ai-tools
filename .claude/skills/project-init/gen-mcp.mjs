@@ -175,4 +175,7 @@ function main() {
   if (args.print) console.log(JSON.stringify({ mcpServers }, null, 2));
 }
 
-main();
+// CLI only — importing this module (e.g. a unit test importing `ensureNodeOptions`) must NOT run
+// main(), which would regenerate .mcp.json / settings.local.json as an import side effect. Mirrors
+// the plugin copy's main-guard; the old bare `main();` here lacked it.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
