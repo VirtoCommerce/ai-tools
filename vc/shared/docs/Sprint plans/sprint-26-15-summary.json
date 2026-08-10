@@ -1,0 +1,35 @@
+{
+  "sprint": "Sprint26-15",
+  "startDate": "2026-07-27",
+  "endDate": "2026-08-10",
+  "doneCounts": {"stories": 23, "bugs": 21, "tasks": 17, "techDebt": 1, "reviewTask": 4, "spikes": 0, "total": 66},
+  "sprintIssueTotal": 166,
+  "testRelevantCount": 45,
+  "mergedFrontendPRs": 19,
+  "mergedModulePRs": 54,
+  "domains": [
+    {"name": "Platform Security & Auth", "score": 20, "level": "Critical"},
+    {"name": "Platform perf & request-scoped caching", "score": 20, "level": "Critical"},
+    {"name": "Sales Rep — Hub / Profile / Layout / Statistics / Messaging", "score": 20, "level": "Critical"},
+    {"name": "Cart & Checkout", "score": 20, "level": "Critical"},
+    {"name": "Admin SPA / vc-shell framework + A11y", "score": 15, "level": "High"},
+    {"name": "Notifications editor", "score": 12, "level": "High"},
+    {"name": "B2B Organizations & Membership", "score": 12, "level": "High"},
+    {"name": "Page Builder / CMS + Pages indexing", "score": 12, "level": "High"},
+    {"name": "Pricing / Price Lists", "score": 10, "level": "High"},
+    {"name": "Lists & Saved for Later", "score": 9, "level": "Medium"},
+    {"name": "Orders Admin dashboard", "score": 6, "level": "Medium"},
+    {"name": "Theming — dark presets & UI Kit icons", "score": 6, "level": "Medium"},
+    {"name": "Catalog Admin", "score": 6, "level": "Medium"},
+    {"name": "AI Powered Demo / Builder.io homepage", "score": 4, "level": "Low"}
+  ],
+  "suitesActivated": [
+    "002", "003", "004", "006", "007", "008", "011", "011b", "014", "028", "029", "031", "032", "033", "042", "044", "045", "048c", "071", "077", "077b", "083", "083b", "089", "090", "091", "093",
+    "017", "020", "021", "026", "027", "027b", "049", "050a", "050b1", "050b3", "050c", "050d", "050e", "050f", "050g", "050h", "050l", "050m", "051", "053", "054", "055", "057", "058", "059", "060", "061", "063", "064", "068", "075", "075b", "078", "086", "092", "092b"
+  ],
+  "newCasesEstimate": "150-185",
+  "criticalTickets": ["VCST-5532", "VCST-5618", "VCST-5468", "VCST-5558", "VCST-5657", "VCST-5518", "VCST-5417", "VCST-5615"],
+  "outOfScopeCount": 100,
+  "artifacts": "vc/shared/docs/Sprint plans/",
+  "_derivedFrom": "sprint-26-15-test-plan.md (§1 counts, §3 risk domains, §5.1.1+§5.1.2 suites); summary sidecar reconstructed 2026-08-10 because /qa-test-plan did not emit one while the sprint was still open"
+}
