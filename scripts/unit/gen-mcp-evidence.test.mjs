@@ -15,7 +15,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { join, resolve, isAbsolute, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
-import { ensureGitignoreEntries, absolutizeOutputDir } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs, classifyWarmResults, enableOAuthIfNoPat } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SCRIPT = join(ROOT, "plugins/vc-fix/skills/project-init/gen-mcp.mjs");
@@ -32,7 +32,9 @@ function runGenMcp(dir, args = [], extraEnv = {}) {
     cwd: dir,
     encoding: "utf8",
     // VC_FIX_HOME is outputRoot() — without it the generator would write into the real checkout.
-    env: { ...process.env, VC_FIX_HOME: dir, ...extraEnv },
+    // Default a dummy PAT so github's Bearer resolves and no test shells out to the host `gh`
+    // (hermetic); individual tests override GITHUB_PERSONAL_ACCESS_TOKEN when they need to.
+    env: { ...process.env, VC_FIX_HOME: dir, GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_test", ...extraEnv },
   });
 }
 function readObsRecords(dir) {
@@ -60,7 +62,151 @@ test("template: every Playwright server points --output-dir at the evidence land
   }
 });
 
+// ─── #220 — IPv4-first NODE_OPTIONS + pinned versions (npx-fetch never hangs on IPv6) ──
+// ONLY --dns-result-order=ipv4first (NODE_OPTIONS-allowed since Node 16.4). NOT
+// --no-network-family-autoselection, which is fatal in NODE_OPTIONS on the Node-18 floor.
+const IPV4_FLAGS = "--dns-result-order=ipv4first";
+
+test("template (#220): no stdio server pins a package to @latest (a cached exact version needs no registry round-trip)", () => {
+  // Inspect the server ARGS (a package spec like `chrome-devtools-mcp@latest`), not the whole
+  // file — the `//network` doc comment mentions the word "@latest" on purpose.
+  const tpl = JSON.parse(readFileSync(TEMPLATE, "utf8"));
+  const offenders = [];
+  for (const [name, def] of Object.entries(tpl.mcpServers)) {
+    for (const a of def.args || []) if (typeof a === "string" && a.includes("@latest")) offenders.push(`${name}: ${a}`);
+  }
+  assert.deepEqual(offenders, [], `every npx package must be pinned to an exact version — offenders: ${offenders.join(", ")}`);
+});
+
+test("ensureNodeOptions (#220): a stdio npx server gets the IPv4-first NODE_OPTIONS + prefer-offline", () => {
+  const win = ensureNodeOptions({ type: "stdio", command: "cmd", args: ["/c", "npx", "chrome-devtools-mcp@1.6.0"], env: {} });
+  assert.equal(win.env.NODE_OPTIONS, IPV4_FLAGS);
+  assert.equal(win.env.npm_config_prefer_offline, "true");
+  const nix = ensureNodeOptions({ type: "stdio", command: "npx", args: ["chrome-devtools-mcp@1.6.0"] });
+  assert.equal(nix.env.NODE_OPTIONS, IPV4_FLAGS);
+  assert.equal(nix.env.npm_config_prefer_offline, "true");
+});
+
+test("ensureNodeOptions (#220): the flag set is actually launchable (proves NODE_OPTIONS won't refuse to start)", () => {
+  // The unit tests only assert the STRING; this proves the string Node will actually be handed
+  // starts a process cleanly (a Node-18-fatal flag would exit non-zero here). Guards the exact
+  // catastrophic mode #220 exists to prevent.
+  execFileSync(process.execPath, ["-e", "0"], { env: { ...process.env, NODE_OPTIONS: IPV4_FLAGS }, stdio: "ignore" });
+});
+
+test("ensureNodeOptions (#220): an http/sse server (no local process) is untouched", () => {
+  const http = { type: "http", url: "https://mcp.postman.com/minimal", headers: { Authorization: "Bearer x" } };
+  assert.deepEqual(ensureNodeOptions(http), http);
+});
+
+test("ensureNodeOptions (#220): idempotent, preserves other env, overrides a conflicting DNS order (last wins)", () => {
+  const once = ensureNodeOptions({ type: "stdio", command: "npx", args: ["x"], env: { NODE_OPTIONS: "--max-old-space-size=256" } });
+  assert.equal(once.env.NODE_OPTIONS, `--max-old-space-size=256 ${IPV4_FLAGS}`);
+  assert.deepEqual(ensureNodeOptions(once).env.NODE_OPTIONS, once.env.NODE_OPTIONS, "a second pass adds nothing");
+  const other = ensureNodeOptions({ type: "stdio", command: "npx", args: ["x"], env: { FOO: "bar" } });
+  assert.equal(other.env.FOO, "bar", "unrelated env is kept");
+  // a host that pre-set a conflicting DNS order: ours is appended LAST so it wins, not silently defeated
+  const conflict = ensureNodeOptions({ type: "stdio", command: "npx", args: ["x"], env: { NODE_OPTIONS: "--dns-result-order=verbatim" } });
+  assert.equal(conflict.env.NODE_OPTIONS, `--dns-result-order=verbatim ${IPV4_FLAGS}`);
+});
+
+// ─── #220 items 3/4 — auth contracts (http servers ignore env; archived github package) ──
+test("template (#220 item 3): context7 passes its key as a HEADER, not env (an http MCP ignores env)", () => {
+  const c7 = JSON.parse(readFileSync(TEMPLATE, "utf8")).mcpServers.context7;
+  assert.equal(c7.type, "http");
+  assert.equal(c7.headers?.CONTEXT7_API_KEY, "<CONTEXT7_API_KEY>");
+  assert.ok(!c7.env, "context7 must not carry an inert env block");
+});
+
+test("template (#220 item 3): figma is OAuth-only — no inert FIGMA_API_KEY (env or header)", () => {
+  // Check the STRUCTURE, not the raw text — the `//` doc comment names FIGMA_API_KEY on purpose.
+  const fig = JSON.parse(readFileSync(TEMPLATE, "utf8")).mcpServers["figma-remote-mcp"];
+  assert.equal(fig.type, "http");
+  assert.ok(!fig.env, "figma must carry no inert env block");
+  assert.ok(!fig.headers, "figma takes no key header (OAuth only)");
+});
+
+test("template (#220 item 4): github is the official REMOTE server, not the archived npx package", () => {
+  const cfg = JSON.parse(readFileSync(TEMPLATE, "utf8"));
+  // No SERVER runs the archived package (a `//` doc comment naming it is fine).
+  for (const [name, def] of Object.entries(cfg.mcpServers)) {
+    for (const a of def.args || []) assert.doesNotMatch(String(a), /@modelcontextprotocol\/server-github/, `${name} still runs the archived package`);
+  }
+  const gh = cfg.mcpServers.github;
+  assert.equal(gh.type, "http");
+  assert.match(gh.url, /api\.githubcopilot\.com\/mcp/);
+  assert.match(gh.headers?.Authorization || "", /^Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>$/);
+});
+
+test("gen-mcp (#220 item 4): the generated github server injects the PAT into the Bearer header", () => withTempDir((dir) => {
+  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_itemfour" });
+  const gh = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.github;
+  assert.equal(gh.headers.Authorization, "Bearer ghp_itemfour");
+}));
+
+test("enableOAuthIfNoPat (#220 item 4): an unresolved Bearer placeholder is DROPPED so the server can OAuth", () => {
+  // No PAT → injectTokens leaves the literal placeholder → drop the header (OAuth fallback).
+  const noPat = enableOAuthIfNoPat({ type: "http", url: "https://api.githubcopilot.com/mcp/", headers: { Authorization: "Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>" } });
+  assert.ok(!("Authorization" in noPat.headers), "the broken placeholder header must be removed");
+  // A resolved token → header kept verbatim.
+  const withPat = enableOAuthIfNoPat({ type: "http", headers: { Authorization: "Bearer ghp_real" } });
+  assert.equal(withPat.headers.Authorization, "Bearer ghp_real");
+});
+
+// ─── #220 item 5 — pure telemetry mapping for warm results (the load-bearing bit; no network) ──
+test("classifyWarmResults (#220 item 5): a failed or skipped warm emits a degraded_artifact obs; success emits none", () => {
+  const obs = classifyWarmResults([
+    { spec: "chrome-devtools-mcp@1.6.0", ok: true, ms: 1200 },
+    { spec: "@azure/mcp@3.0.0-beta.32", ok: false, ms: 30000 },
+    { spec: "evil; rm -rf", ok: false, ms: 0, skipped: true },
+  ]);
+  assert.equal(obs.length, 2, "only the two non-ok results produce observations");
+  assert.ok(obs.every((o) => o.class === "degraded_artifact" && o.subject === "mcp_config"));
+  assert.match(obs[0].evidence.snippet, /warm failed: @azure\/mcp/);
+  assert.match(obs[1].evidence.snippet, /skipped \(unsafe\): evil/);
+  assert.deepEqual(classifyWarmResults([{ spec: "x", ok: true, ms: 10 }]), [], "an all-ok run is clean");
+});
+
+// ─── #220 item 5 — npx-spec extraction for cache warming (pure; warming itself is opt-in + network) ──
+test("extractNpxSpecs (#220 item 5): picks the pinned package spec after npx, skips flags + http servers", () => {
+  const servers = {
+    "playwright-chrome": { type: "stdio", command: "cmd", args: ["/c", "npx", "@playwright/mcp@0.0.77", "--browser", "chrome"] },
+    "azure-mcp": { type: "stdio", command: "cmd", args: ["/c", "npx", "-y", "@azure/mcp@3.0.0-beta.32", "server", "start"] },
+    devtools: { type: "stdio", command: "npx", args: ["chrome-devtools-mcp@1.6.0"] }, // *nix-normalized shape
+    github: { type: "http", url: "https://api.githubcopilot.com/mcp/" }, // http ⇒ no npx spec
+  };
+  assert.deepEqual(
+    extractNpxSpecs(servers).sort(),
+    ["@azure/mcp@3.0.0-beta.32", "@playwright/mcp@0.0.77", "chrome-devtools-mcp@1.6.0"],
+  );
+});
+
 // ─── the generated .mcp.json (what actually runs) ─────────────────────────────────
+test("gen-mcp (#220): every stdio server in the generated config carries IPv4-first NODE_OPTIONS + prefer-offline", () => withTempDir((dir) => {
+  runGenMcp(dir, ["--with", "postman,context7,devtools,azure"]);
+  const cfg = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+  let stdioSeen = 0;
+  for (const [name, def] of Object.entries(cfg.mcpServers)) {
+    if (def.type && def.type !== "stdio") {
+      assert.ok(!def.env?.NODE_OPTIONS, `${name} is not stdio and must not get NODE_OPTIONS`);
+      continue;
+    }
+    stdioSeen++;
+    assert.equal(def.env?.NODE_OPTIONS, IPV4_FLAGS, `${name} must carry the IPv4-first NODE_OPTIONS`);
+    assert.equal(def.env?.npm_config_prefer_offline, "true", `${name} must carry prefer-offline`);
+  }
+  assert.ok(stdioSeen >= 3, `expected several stdio servers, saw ${stdioSeen}`);
+}));
+
+test("gen-mcp (#220): the `//` doc-comment keys do NOT leak into the generated runtime config", () => withTempDir((dir) => {
+  runGenMcp(dir, ["--with", "context7"]);
+  const cfg = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+  for (const [name, def] of Object.entries(cfg.mcpServers)) {
+    for (const k of Object.keys(def)) assert.ok(!k.startsWith("//"), `${name} leaked a doc-comment key "${k}"`);
+  }
+}));
+
+
 test("gen-mcp: --output-dir is rewritten to an ABSOLUTE project path (cwd can never make it the root)", () => withTempDir((dir) => {
   runGenMcp(dir);
   const cfg = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));

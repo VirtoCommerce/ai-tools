@@ -1,6 +1,9 @@
 {
   "//": "TEMPLATE — copy to .mcp.json (gitignored) and replace every <PLACEHOLDER>. Restart the MCP servers after editing. Windows uses `cmd /c npx`; on Linux/macOS drop the `cmd` + `/c` and call `npx` directly (gen-mcp.mjs does this automatically).",
 
+  "//network": "stdio servers launch via npx (an npm registry lookup inside the ~30s MCP startup budget). Package versions are PINNED (not @latest), and gen-mcp.mjs injects NODE_OPTIONS='--dns-result-order=ipv4first' + npm_config_prefer_offline=true on every stdio server — so a broken/slow IPv6 route can't hang that lookup and a cached package resolves with no round-trip (#220). ipv4first alone is used deliberately; --no-network-family-autoselection is a newer flag that would be FATAL in NODE_OPTIONS on the Node-18 floor.",
+
+
   "mcpServers": {
     "playwright-chrome": {
       "type": "stdio",
@@ -56,7 +59,7 @@
       "args": [
         "/c",
         "npx",
-        "chrome-devtools-mcp@latest"
+        "chrome-devtools-mcp@1.6.0"
       ],
       "env": {}
     },
@@ -68,22 +71,18 @@
       }
     },
     "github": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-github"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<GITHUB_PERSONAL_ACCESS_TOKEN>"
+      "//": "Official REMOTE GitHub MCP (github/github-mcp-server). The npx `@modelcontextprotocol/server-github` package is ARCHIVED (moved to github/github-mcp-server, which ships no npm package); the replacement is the hosted server + a PAT `Authorization: Bearer` header. If no PAT resolves, gen-mcp.mjs DROPS this header so the server uses interactive OAuth instead (like atlassian). http-type ⇒ no npx ⇒ no npm-registry round-trip at startup.",
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>"
       }
     },
     "context7": {
+      "//": "http server ⇒ the API key must be a HEADER, not env (an http MCP ignores env).",
       "type": "http",
       "url": "https://mcp.context7.com/mcp",
-      "env": {
+      "headers": {
         "CONTEXT7_API_KEY": "<CONTEXT7_API_KEY>"
       }
     },
@@ -94,17 +93,15 @@
         "/c",
         "npx",
         "-y",
-        "@azure/mcp@latest",
+        "@azure/mcp@3.0.0-beta.32",
         "server",
         "start"
       ]
     },
     "figma-remote-mcp": {
+      "//": "Remote Figma MCP is OAuth-ONLY — a PAT / API-key header has no effect (Figma does not support token auth on the remote server). Authenticate via the client's MCP OAuth flow on first use, like atlassian below. FIGMA_API_KEY is NOT used here.",
       "type": "http",
-      "url": "https://mcp.figma.com/mcp",
-      "env": {
-        "FIGMA_API_KEY": "<FIGMA_API_KEY>"
-      }
+      "url": "https://mcp.figma.com/mcp"
     },
     "atlassian": {
       "type": "http",
