@@ -44,6 +44,26 @@ function detectOs(flag) {
   return "linux";
 }
 
+// #220 — stdio MCP servers launch via npx (an npm registry lookup inside the ~30s startup budget).
+// On a host that falls back slowly from a broken IPv6 route to IPv4 that lookup can hang ~150s and
+// every stdio server misses the budget. Set NODE_OPTIONS to prefer IPv4 in DNS (the actual cure) +
+// npm prefer-offline so a package ALREADY in the npx cache resolves without a registry round-trip
+// (a cold first fetch still runs, now fast over IPv4 — this surface has no cache-warm step). ONLY
+// `--dns-result-order=ipv4first`
+// (NODE_OPTIONS-allowed since Node 16.4); NOT `--no-network-family-autoselection` (newer flag, fatal
+// in NODE_OPTIONS on the Node-18 floor). Mirrors the plugin copy (plugins/vc-fix). Pure + idempotent.
+const IPV4_NODE_OPTIONS = "--dns-result-order=ipv4first";
+export function ensureNodeOptions(server) {
+  if (server?.type && server.type !== "stdio") return server; // http/sse: no Node process to hint
+  const args = Array.isArray(server?.args) ? server.args : [];
+  const isNodeLaunch = server?.command === "npx" || (server?.command === "cmd" && args.includes("npx"));
+  if (!isNodeLaunch) return server;
+  const prevEnv = server.env || {};
+  const prev = prevEnv.NODE_OPTIONS || "";
+  const NODE_OPTIONS = prev.includes(IPV4_NODE_OPTIONS) ? prev : prev ? `${prev} ${IPV4_NODE_OPTIONS}` : IPV4_NODE_OPTIONS;
+  return { ...server, env: { ...prevEnv, NODE_OPTIONS, npm_config_prefer_offline: "true" } };
+}
+
 /** Windows template uses command:"cmd", args:["/c","npx",...]. On *nix call npx directly. */
 function normalizeForOs(server, os) {
   if (os === "windows") return server;
@@ -108,7 +128,7 @@ function main() {
   // Build the tailored mcpServers (OS-normalized + tokens injected), keeping all defs.
   const mcpServers = {};
   for (const [name, def] of Object.entries(srcServers)) {
-    mcpServers[name] = injectTokens(normalizeForOs(def, os));
+    mcpServers[name] = injectTokens(ensureNodeOptions(normalizeForOs(def, os)));
   }
 
   // Which servers to ENABLE (the rest stay defined but dormant).
@@ -157,4 +177,7 @@ function main() {
   if (args.print) console.log(JSON.stringify({ mcpServers }, null, 2));
 }
 
-main();
+// CLI only — importing this module (e.g. a unit test importing `ensureNodeOptions`) must NOT run
+// main(), which would regenerate .mcp.json / settings.local.json as an import side effect. Mirrors
+// the plugin copy's main-guard; the old bare `main();` here lacked it.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
