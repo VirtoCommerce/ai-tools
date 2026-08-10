@@ -49,7 +49,7 @@
       "args": [
         "/c",
         "npx",
-        "chrome-devtools-mcp@latest"
+        "chrome-devtools-mcp@1.6.0"
       ],
       "env": {}
     },
@@ -87,7 +87,7 @@
         "/c",
         "npx",
         "-y",
-        "@azure/mcp@latest",
+        "@azure/mcp@3.0.0-beta.32",
         "server",
         "start"
       ]
