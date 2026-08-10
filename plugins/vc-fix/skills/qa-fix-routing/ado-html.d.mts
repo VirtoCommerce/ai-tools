@@ -3,6 +3,8 @@ export function mdToHtml(md: string): string;
 export function ensureAzureHtml(text: string): string;
 export const HTML_FIELD_REFS: ReadonlySet<string>;
 export function isHtmlField(ref: string): boolean;
+export function countImages(html: string): number;
+export function countAttachmentImages(html: string): number;
 
 export interface BugFieldInput {
   title: string;
@@ -13,6 +15,12 @@ export interface BugFieldInput {
   /** Tag string ("a; b") or array; normalized to a "; "-joined string. */
   tags?: string | string[];
   systemInfo?: string;
+  /** Form-visible field ref the `body` slot resolves to (VCST-5702 ITEM 0). Default System.Description. */
+  bodyRef?: string;
+  /** Form-visible field ref the `repro` slot resolves to. Default Microsoft.VSTS.TCM.ReproSteps. */
+  reproRef?: string;
+  /** Form-visible field ref the `systemInfo` slot resolves to. Default Microsoft.VSTS.TCM.SystemInfo. */
+  systemInfoRef?: string;
   /** Custom field refs → value, e.g. { "Custom.Environment": "QA" }. */
   fields?: Record<string, string | number>;
   /** Attachment URLs — comma-separated string or array. */

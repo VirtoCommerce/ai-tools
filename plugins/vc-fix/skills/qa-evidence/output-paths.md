@@ -13,23 +13,33 @@ captures under `reports/bugs/screenshots/…`, scratch files in the session temp
 
 This used to be the gap: `--output-dir` and this file's destination policy both existed, but
 **nothing connected them**, so the path was guessed and captures showed up at the project root
-(VCST-5582 C). The chain is now explicit, and every link is deterministic:
+(VCST-5582 C). The chain below connects them — but it is **NOT fully deterministic on the pinned
+`@playwright/mcp` version**, so Stage 5 is a mandatory reconcile, not an after-the-fact tidy:
+
+> **Observed on `@playwright/mcp@0.0.77` (the pinned version — VCST-5702 ITEM 4):** a
+> `browser_take_screenshot` with a **bare filename** does NOT reliably resolve against the
+> configured absolute `--output-dir` — it resolves against the **MCP server's own cwd**, so 11
+> captures in one session landed at the project root despite a correct `--output-dir`. Treat Stage 1
+> as *best-effort placement*, and Stage 5 as the step that GUARANTEES the file ends up where the
+> report needs it. `gen-mcp.mjs` emits the pinned version at project-init so this mismatch is
+> visible; re-verify this behaviour when the pin changes.
 
 | # | Stage | Who | Where |
 |---|-------|-----|-------|
-| 1 | **Capture** — `browser_take_screenshot` with a **bare relative filename**, never a path | the QA agent | playwright-mcp resolves it against `--output-dir` |
+| 1 | **Capture** — `browser_take_screenshot` with a **bare relative filename**, never a path | the QA agent | playwright-mcp *tries* `--output-dir`, but on 0.0.77 may write to the server cwd |
 | 2 | **Landing zone** — `--output-dir` is pinned to an **ABSOLUTE** project path by `/project-init` (`gen-mcp.mjs`) | the MCP server | `reports/bugs/screenshots/_incoming/<browser>/` |
 | 3 | **ONE deterministic move** of the 1–5 captures the report keeps | `/qa-bug` Step 4a | `reports/bugs/screenshots/<bug-slug>/` |
 | 4 | **Reference** — the report cites the FINAL path only | the report | `reports/bugs/screenshots/<bug-slug>/<file>.png` |
-| 5 | **Sweep + REPORT** — anything still at the root is **named** in the run's output, then moved or deleted | `/qa-bug` final sweep | — |
+| 5 | **MANDATORY reconcile (before use)** — immediately after each capture, if the file is **not** under the configured `--output-dir`, locate it in the MCP server's cwd (the project root) and **move** it into `_incoming/<browser>/` before referencing it | `/qa-bug` Step 4a | `reports/bugs/screenshots/_incoming/<browser>/` |
 
 Why absolute at stage 2: playwright-mcp resolves a *relative* `--output-dir` against the MCP
 server's own cwd, which the plugin does not control — that is exactly how the project root became
 the effective target. Why relative at stage 1: playwright-mcp documents *"Prefer relative file
 names to stay within the output directory"*; absolute filenames are undocumented and must not be
-relied on. Why stage 5 **reports** rather than silently tidying: the OPUS session telemetry could
-not identify WHICH writer produced the root-level files, so naming them is the only way to find
-the culprit if the pattern survives.
+relied on. Why stage 5 is now a **reconcile, not just a report**: on 0.0.77 the file genuinely
+lands in the wrong place, so naming it is not enough — the step must FIND it (newest matching PNG in
+the server cwd) and MOVE it into `_incoming/<browser>/` before the report can cite it. A capture
+whose file cannot be located is reported as missing, never assumed present.
 
 `_incoming/` and `test-results/` are **gitignored landing zones**, added to the project's
 `.gitignore` by `gen-mcp.mjs`. Nothing in them is evidence of record — only what stage 3 moved out.

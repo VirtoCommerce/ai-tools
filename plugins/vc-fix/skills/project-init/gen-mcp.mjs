@@ -135,6 +135,21 @@ export function extractNpxSpecs(servers) {
   return [...specs];
 }
 
+/**
+ * The PINNED @playwright/mcp version from the generated servers (VCST-5702 ITEM 4). Emitted at
+ * project-init so a mismatch between the pinned spec and the version actually installed surfaces
+ * HERE: on @playwright/mcp 0.0.77 a bare screenshot filename resolves against the MCP server's OWN
+ * cwd, NOT the configured absolute --output-dir (VCST-5582 C), so the exact version is load-bearing.
+ * Pure. Returns "" when no playwright server is present, "unpinned" when the spec carries no @version.
+ */
+export function pinnedPlaywrightVersion(servers) {
+  for (const spec of extractNpxSpecs(servers)) {
+    const m = /^(@playwright\/mcp)(?:@(.+))?$/.exec(spec);
+    if (m) return m[2] || "unpinned";
+  }
+  return "";
+}
+
 // A safe npm package-spec charset (scoped names, versions, dist-tags) — NO shell metacharacters.
 // warmNpxCache interpolates the spec into a shell `npm cache add`; specs come from the trusted
 // pinned template today, but validating here keeps that exec safe by construction.
@@ -376,6 +391,13 @@ function main() {
   writeFileSync(outPath, JSON.stringify({ mcpServers }, null, 2) + "\n");
   console.log(`[gen-mcp] wrote ${outPath} (os=${os})`);
   console.log(`[gen-mcp] browser evidence lands in ${join(projectRoot, ...EVIDENCE_INCOMING)}\\<browser> (absolute — never the project root, whatever cwd the MCP server starts in)`);
+  // VCST-5702 ITEM 4 — emit the PINNED @playwright/mcp version so a version mismatch surfaces at
+  // project-init. On 0.0.77 a bare screenshot filename resolves against the server cwd, not the
+  // configured --output-dir, so Stage 5 (output-paths.md) MUST reconcile the file into _incoming/.
+  const pwVersion = pinnedPlaywrightVersion(mcpServers);
+  if (pwVersion) {
+    console.log(`[gen-mcp] @playwright/mcp pinned at ${pwVersion} — capture with a BARE filename; on 0.0.77 it lands in the server cwd, so /qa-bug reconciles it into _incoming/ (output-paths.md Stage 5).`);
+  }
 
   // The ignore entries this destination implies. `_incoming/` is a landing zone, not evidence
   // of record; `test-results/` is kept for the legacy/hand-copied lane and any HAR output.

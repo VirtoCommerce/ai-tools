@@ -240,6 +240,13 @@ function main() {
       // hardcoded Custom.* set of one org. `tracker.fieldMap` stays an OPERATOR-owned override
       // (never written from the scan) and is applied on top at create time.
       if (t.fields && Object.keys(t.fields).length) set("tracker.fields", t.fields);
+      // Per-type FORM LAYOUT (VCST-5702 ITEM 0): { <Type>: { htmlControls: [ref, …] } }. The create
+      // path binds the `body` slot to a form-visible html control instead of assuming
+      // System.Description (which may be off-form → an invisible body). Empty ⇒ legacy behaviour.
+      if (t.formLayout && Object.keys(t.formLayout).length) set("tracker.formLayout", t.formLayout);
+      // Per-type rule-filter accounting (VCST-5702 ITEM 0b) — scanned/kept/dropped/required, so a
+      // slim persisted contract is explained rather than looking lossy. Surfaced by create-workitem.
+      if (t.fieldsMeta && Object.keys(t.fieldsMeta).length) set("tracker.fieldsMeta", t.fieldsMeta);
       // A3 — a fieldDefaults carried by the scan is FILTERED: a time-varying sprint/area node id
       // (System.IterationId / System.AreaId) is never persisted (see ILLEGAL_FIELDDEFAULT_REF). The
       // guard mirrors reconcile-profile's `--set` guard so neither write path can plant the time bomb.

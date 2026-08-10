@@ -40,7 +40,7 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { emitObservations, httpStatusFrom, scrubUrls } from "./lib/diag-obs.mjs";
 // The contract PARSER lives with its consumers (the create path) so the scan and the payload
 // builder can never disagree about the shape. Pure — see that file's header.
-import { parseFieldContract, resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
+import { parseFieldContract, resolveSlots, parseFormLayout, filterContractForPersist, operatorQuestions } from "../qa-fix-routing/bug-contract.mjs";
 
 /** Write the result to --out (relative to the deployment project) and/or print it. */
 function emit(out, args) {
@@ -228,6 +228,12 @@ async function main() {
 
   const workItemTypes = {};
   const fields = {};
+  // Per-type form layout (VCST-5702 ITEM 0): the ORDERED html controls actually ON the form. A field
+  // can exist in the contract yet be off-form; a body written there is invisible. Persisted so the
+  // create path binds `body` to a form-visible control instead of assuming System.Description.
+  const formLayout = {};
+  // Per-type rule-filter accounting (VCST-5702 ITEM 0b) — how many fields the scan kept vs dropped.
+  const fieldsMeta = {};
   for (const t of scan) {
     try {
       const states = ((await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/states?api-version=7.1`, authHeader)).value || [])
@@ -237,6 +243,19 @@ async function main() {
     } catch (e) {
       console.error(`[discover-tracker] states for '${t}' failed: ${e.message}`);
       obsHttp("workitem_states", e);
+    }
+    // The FORM LAYOUT for this type (VCST-5702 ITEM 0). `$expand=layout` returns the page/section/
+    // group/control tree; parseFormLayout extracts the html controls in form order (falling back to
+    // the legacy `xmlForm` string). Best-effort: no layout ⇒ form-gating is inactive at create time
+    // and the body keeps its legacy System.Description target — the pre-5702 behaviour.
+    let formHtmlControls = [];
+    try {
+      const wit = await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}?$expand=layout&api-version=7.1`, authHeader);
+      formHtmlControls = parseFormLayout(wit);
+      if (formHtmlControls.length) formLayout[t] = { htmlControls: formHtmlControls };
+    } catch (e) {
+      console.error(`[discover-tracker] form layout for '${t}' failed (body binding falls back to System.Description): ${e.message}`);
+      obsHttp("workitem_form_layout", e);
     }
     // The FIELD CONTRACT for this type — what this organization's process actually requires
     // and allows. `$expand=all` returns allowedValues / defaultValue alongside alwaysRequired.
@@ -248,7 +267,21 @@ async function main() {
     try {
       const typeFields = (await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/fields?$expand=all&api-version=7.1`, authHeader)).value || [];
       const contract = parseFieldContract(typeFields, fieldTypes);
-      if (contract.length) fields[t] = contract;
+      if (contract.length) {
+        // Rule-filter for PERSISTENCE (VCST-5702 ITEM 0b): keep only fields that are required for
+        // creation, required for a state transition, or bound to a semantic slot — never a name
+        // whitelist. The scan still read EVERYTHING (`contract`); only the slim set is persisted.
+        // transitionRequiredRefs is best-effort empty until a process-rules collector lands: a field
+        // that is alwaysRequired OR slot-mappable already survives, which covers the common cases.
+        const filtered = filterContractForPersist(contract, { formHtmlControls, transitionRequiredRefs: [] });
+        fields[t] = filtered.fields;
+        fieldsMeta[t] = {
+          accounting: filtered.accounting,
+          scanned: filtered.scanned, kept: filtered.kept, dropped: filtered.dropped,
+          required: filtered.required, slotMapped: filtered.slotMapped, transitionRequired: filtered.transitionRequired,
+        };
+        console.error(`[discover-tracker] ${t} contract: ${filtered.accounting}`);
+      }
     } catch (e) {
       console.error(`[discover-tracker] field contract for '${t}' failed (create falls back to unverified defaults): ${e.message}`);
       // A genuine field-contract failure now (permissions, transport). This is NOT the old
@@ -293,13 +326,25 @@ async function main() {
   // one source of truth and lets an operator `tracker.fieldMap` override take effect without
   // a re-scan.
   const primaryContract = fields[primary] || [];
-  const slots = resolveSlots(primaryContract, {});
+  const primaryForm = (formLayout[primary] && formLayout[primary].htmlControls) || [];
+  const slots = resolveSlots(primaryContract, {}, primaryForm);
+  // The required fields the operator must ACTUALLY be asked at the first bug creation (VCST-5702
+  // ITEM 0b) — required fields minus the auto-satisfied ones (Title / State / Area / Iteration /
+  // any defaultValue). This is what makes "ask once" explicit rather than incidental.
+  const questions = operatorQuestions(primaryContract, {});
   const contractSummary = {
     type: primary,
     fieldCount: primaryContract.length,
     requiredCount: primaryContract.filter((f) => f.required).length,
+    accounting: fieldsMeta[primary] ? fieldsMeta[primary].accounting : "",
+    // The body field resolves to a FORM-VISIBLE control (ITEM 0) — reported so the readiness table
+    // shows WHERE the body lands (and on-form status) rather than assuming System.Description.
+    bodyField: slots.mapping.body || "",
+    bodyOnForm: primaryForm.length ? primaryForm.some((r) => r.toLowerCase() === String(slots.mapping.body || "").toLowerCase()) : null,
+    htmlControlsAvailable: slots.htmlControlsAvailable,
     unmappedRequired: slots.unmappedRequired.map((f) => ({ ref: f.ref, name: f.name, allowedValues: f.allowedValues || [] })),
     unmappedSlots: slots.unmapped,
+    operatorQuestions: questions.map((f) => ({ ref: f.ref, name: f.name, allowedValues: f.allowedValues || [] })),
   };
 
   const out = {
@@ -311,8 +356,14 @@ async function main() {
     workItemTypes,
     // Per-type BUG FIELD CONTRACT (VCST-5582 E-a): [{ ref, name, required, type,
     // allowedValues?, defaultValue? }]. Empty/absent ⇒ metadata was unreachable and the create
-    // path uses the legacy field set labelled "unverified defaults" (E-f).
+    // path uses the legacy field set labelled "unverified defaults" (E-f). Rule-filtered for
+    // persistence (VCST-5702 ITEM 0b) — see fieldsMeta for the accounting.
     fields,
+    // Per-type form layout (VCST-5702 ITEM 0): { <Type>: { htmlControls: [ref, …] } }, in form
+    // order. Consumed by the create path to bind `body` to a form-visible control.
+    formLayout,
+    // Per-type rule-filter accounting (VCST-5702 ITEM 0b).
+    fieldsMeta,
     contractSummary,
     roleStates,
     // Surfaced so gen-profile.mjs can require a COMPLETE map before enabling silent

@@ -35,9 +35,11 @@
  * Implemented for Azure Boards first. The SHAPE is tracker-agnostic by design — a Jira collector
  * (createmeta) is a follow-up; until then Jira keeps today's behaviour.
  *
- * Pure + side-effect-free: no network, no fs, no process.env. Unit-tested against recorded
+ * Pure + side-effect-free: no network, no fs, no process.env. Its only import is the sibling
+ * pure `ado-html.mjs` (inline-image counters, no side effects). Unit-tested against recorded
  * metadata fixtures from two DIFFERENT Azure Boards processes.
  */
+import { countImages, countAttachmentImages } from "./ado-html.mjs";
 
 // ─── semantic slots ──────────────────────────────────────────────────────────────────
 // The fixed vocabulary a bug report speaks. `parent` and `attachments` are deliberately
@@ -77,6 +79,13 @@ const SLOT_SPECS = {
 };
 
 const lc = (v) => String(v ?? "").toLowerCase();
+
+// The long-text slots whose field is an HtmlFieldControl on the Azure Boards form. Their target
+// must be a control that is actually ON THE FORM (VCST-5702 ITEM 0): a field can exist in the
+// contract yet be absent from the form's layout, and a body written there is INVISIBLE while a
+// presence-based check still passes. `body`/`systemInfo` are the two the create path writes; the
+// others fold into `body` when they have no distinct form control of their own.
+const FORM_GATED_HTML_SLOTS = new Set(["body", "repro", "expected", "actual", "systemInfo"]);
 
 // Required fields Azure DevOps SERVER-DEFAULTS on create, so they need no semantic slot and must
 // never appear in `unmappedRequired` (VCST-5582 E2). `System.AreaId` / `System.IterationId` default
@@ -172,14 +181,27 @@ export function isHtmlByContract(contract, ref) {
  *   `unmappedRequired` = contract fields that are `required` and that NO slot bound —
  *   exactly the set the operator must be asked about before the first POST.
  */
-export function resolveSlots(contract, fieldMap = {}) {
+export function resolveSlots(contract, fieldMap = {}, formHtmlControls = []) {
   const list = contract || [];
   const mapping = {};
   const source = {};
   const staleOverrides = [];
   const taken = new Set();
 
-  // (1) explicit overrides
+  // Form-visibility gate (VCST-5702 ITEM 0). When a form layout was scanned (a non-empty ordered
+  // list of html control refs), an html-typed field that is NOT on the form cannot auto-bind to a
+  // long-text slot — that is exactly how the body landed on the off-form System.Description. With
+  // no layout the gate is INACTIVE and resolution is byte-for-byte the pre-5702 behaviour.
+  const formRefs = (Array.isArray(formHtmlControls) ? formHtmlControls : []).map(String);
+  const formSet = new Set(formRefs.map(lc));
+  const formActive = formSet.size > 0;
+  const onForm = (ref) => !formActive || formSet.has(lc(ref));
+  // A candidate is form-eligible unless it is an html field the layout does not surface.
+  const formEligible = (f) => !formActive || f.type !== "html" || onForm(f.ref);
+
+  // (1) explicit overrides — the operator's LAST WORD, and deliberately NOT form-gated: an
+  // operator who names a field is trusted over the layout heuristic (a stale/off-form override is
+  // instead surfaced via `offFormSlots` below so the create path can refuse it, not silently send).
   for (const [slot, ref] of Object.entries(fieldMap || {})) {
     if (!BUG_SLOTS.includes(slot) || !ref) continue;
     const f = fieldOf(list, ref);
@@ -189,16 +211,27 @@ export function resolveSlots(contract, fieldMap = {}) {
     taken.add(lc(f.ref));
   }
 
-  // (2) auto-match — canonical refs first, then display names; both TYPE-gated. One field is
-  // bound to at most one slot (`taken`), so a name that could satisfy two slots goes to the
-  // one resolved first (BUG_SLOTS order = specificity order).
+  // (2) auto-match — canonical refs first, then display names; TYPE-gated AND form-gated. One field
+  // is bound to at most one slot (`taken`), so a name that could satisfy two slots goes to the one
+  // resolved first (BUG_SLOTS order = specificity order).
   for (const slot of BUG_SLOTS) {
     if (mapping[slot]) continue;
     const spec = SLOT_SPECS[slot];
     if (!spec) continue;
     const typeOk = (f) => !spec.types || spec.types.includes(f.type);
-    let hit = list.find((f) => !taken.has(lc(f.ref)) && spec.refs.some((r) => lc(r) === lc(f.ref)));
-    if (!hit) hit = list.find((f) => !taken.has(lc(f.ref)) && typeOk(f) && spec.names.some((rx) => rx.test(f.name)));
+    let hit = list.find((f) => !taken.has(lc(f.ref)) && formEligible(f) && spec.refs.some((r) => lc(r) === lc(f.ref)));
+    if (!hit) hit = list.find((f) => !taken.has(lc(f.ref)) && typeOk(f) && formEligible(f) && spec.names.some((rx) => rx.test(f.name)));
+    // body fallback (VCST-5702 ITEM 0): a process whose form does NOT surface System.Description
+    // (the OPUS Bug: ReproSteps + SystemInfo only) has no canonical body target. Bind `body` to the
+    // FIRST form-visible html control instead — in form order, so the operator's primary text area
+    // is chosen. repro/systemInfo, resolved later/earlier, then take what remains.
+    if (!hit && slot === "body" && formActive) {
+      const firstOnForm = formRefs.find((ref) => {
+        const f = fieldOf(list, ref);
+        return f && f.type === "html" && !taken.has(lc(ref));
+      });
+      if (firstOnForm) hit = fieldOf(list, firstOnForm);
+    }
     if (hit) { mapping[slot] = hit.ref; source[slot] = "auto"; taken.add(lc(hit.ref)); }
   }
 
@@ -211,7 +244,21 @@ export function resolveSlots(contract, fieldMap = {}) {
   const unmappedRequired = list.filter(
     (f) => f.required && !taken.has(lc(f.ref)) && !SERVER_DEFAULTED_REQUIRED.has(lc(f.ref)),
   );
-  return { mapping, source, unmapped, unmappedRequired, requiredRefs, staleOverrides };
+  // Form-gated slots whose bound field is NOT on the form — reachable only via an override (auto
+  // never binds off-form). The create path REFUSES to POST a body to an off-form target and names
+  // the available controls (ITEM 0.3). Empty when no layout was scanned.
+  const offFormSlots = formActive
+    ? Object.entries(mapping)
+        .filter(([slot, ref]) => FORM_GATED_HTML_SLOTS.has(slot) && !onForm(ref))
+        .map(([slot, ref]) => ({ slot, ref }))
+    : [];
+  // The html controls THIS form actually surfaces, in form order — the actionable list to show
+  // when a body target is off-form or missing.
+  const htmlControlsAvailable = formRefs.filter((ref) => {
+    const f = fieldOf(list, ref);
+    return !list.length || (f && f.type === "html");
+  });
+  return { mapping, source, unmapped, unmappedRequired, requiredRefs, staleOverrides, offFormSlots, htmlControlsAvailable, formActive };
 }
 
 // ─── payload build + validation (E-c) ────────────────────────────────────────────────
@@ -302,11 +349,21 @@ export function buildContractFields(contract, mapping, slotValues = {}, extraFie
  * @param {Object} itemFields the created item's `fields` object (from get-workitem)
  * @param {Object} [sent]     ref → value we intended to send (so a field we never sent is
  *                            reported as MISSING rather than silently passing)
+ * @param {Object} [opts]     { formHtmlControls?: string[], submittedImages?: Record<ref,number> }
+ *   formHtmlControls — the ordered html controls on THIS type's form. A form-gated long-text slot
+ *     whose field is off-form can never PASS, even non-empty (the OPUS false pass — VCST-5702 ITEM 0).
+ *   submittedImages — ref → count of `<img>` we SUBMITTED. The read-back must contain that many
+ *     `<img>` pointing at `_apis/wit/attachments/` or the field is IMAGES_MISSING (ITEM 1). A field
+ *     with zero submitted images keeps the plain non-empty semantics.
  * @returns {{ rows: Array, missing: Array, ok: boolean }}
- *   rows: [{ ref, name, slot, required, status: "PASS"|"MISSING"|"SKIP", value }]
+ *   rows: [{ ref, name, slot, required, status, value, onForm, imgSubmitted, imgReadback }]
+ *   status ∈ "PASS" | "MISSING" | "SKIP" | "OFF_FORM" | "IMAGES_MISSING"
  */
-export function verifyAgainstContract(contract, mapping, itemFields = {}, sent = {}) {
+export function verifyAgainstContract(contract, mapping, itemFields = {}, sent = {}, opts = {}) {
   const list = contract || [];
+  const formSet = new Set((Array.isArray(opts.formHtmlControls) ? opts.formHtmlControls : []).map(lc));
+  const formActive = formSet.size > 0;
+  const submittedImages = opts.submittedImages || {};
   const bySlot = new Map(Object.entries(mapping || {}).map(([s, r]) => [lc(r), s]));
   const check = new Map();
   for (const f of list) if (f.required) check.set(lc(f.ref), f);
@@ -321,26 +378,56 @@ export function verifyAgainstContract(contract, mapping, itemFields = {}, sent =
     // ADO returns identity fields as an object — non-empty is what matters, not the shape.
     const present = raw !== undefined && raw !== null && String(typeof raw === "object" ? (raw.displayName ?? JSON.stringify(raw)) : raw).trim() !== "";
     const intended = sent[f.ref] !== undefined && sent[f.ref] !== "";
-    // A non-required, unmapped-value field we never intended to send is not a failure.
-    const status = present ? "PASS" : (f.required || intended) ? "MISSING" : "SKIP";
+    const slot = bySlot.get(lc(f.ref)) || "";
+    // Form visibility of this field — null when no layout was scanned (the check is inert).
+    const onForm = formActive ? formSet.has(lc(f.ref)) : null;
+    // Image evidence: only assert when this field carried submitted images.
+    const imgSubmitted = Number(submittedImages[f.ref] || 0) || 0;
+    const imgReadback = imgSubmitted > 0 ? countAttachmentImages(typeof raw === "string" ? raw : "") : 0;
+    let status;
+    if (formActive && FORM_GATED_HTML_SLOTS.has(slot) && onForm === false) {
+      // A body written to an OFF-FORM field is never a PASS, even non-empty — the OPUS symptom
+      // (fieldsOk:true on an invisible body). ITEM 0.
+      status = "OFF_FORM";
+    } else if (!present) {
+      // A non-required, unmapped-value field we never intended to send is not a failure.
+      status = (f.required || intended) ? "MISSING" : "SKIP";
+    } else if (imgSubmitted > 0 && imgReadback < imgSubmitted) {
+      // Persisted but the screenshots didn't render — "persisted != rendered". ITEM 1.
+      status = "IMAGES_MISSING";
+    } else {
+      status = "PASS";
+    }
     rows.push({
       ref: f.ref,
       name: f.name,
-      slot: bySlot.get(lc(f.ref)) || "",
+      slot,
       required: !!f.required,
       status,
       value: present ? String(typeof raw === "object" ? (raw.displayName ?? "") : raw).slice(0, 60) : "",
+      onForm,
+      imgSubmitted,
+      imgReadback,
     });
   }
   rows.sort((a, b) => (Number(b.required) - Number(a.required)) || a.ref.localeCompare(b.ref));
-  const missing = rows.filter((r) => r.status === "MISSING");
+  const missing = rows.filter((r) => r.status === "MISSING" || r.status === "OFF_FORM" || r.status === "IMAGES_MISSING");
   return { rows, missing, ok: missing.length === 0 };
 }
 
-/** Render the read-back result as the operator-facing PASS/MISSING table (E-e). */
+/**
+ * Render the read-back result as the operator-facing table (E-e). Beyond PASS/MISSING it now shows
+ * the receiving field's ON-FORM status and the submitted-vs-readback image counts (VCST-5702
+ * ITEM 0 / ITEM 1), so an off-form body or a dropped screenshot is visible at a glance. The first
+ * five columns are unchanged for backward compatibility.
+ */
 export function renderVerifyTable(rows) {
-  const head = ["| Field | Ref | Slot | Required | Status |", "|---|---|---|---|---|"];
-  const body = (rows || []).map((r) => `| ${r.name} | \`${r.ref}\` | ${r.slot || "—"} | ${r.required ? "yes" : "no"} | ${r.status} |`);
+  const head = ["| Field | Ref | Slot | Required | Status | On form | Images |", "|---|---|---|---|---|---|---|"];
+  const body = (rows || []).map((r) => {
+    const onForm = r.onForm === true ? "yes" : r.onForm === false ? "NO" : "—";
+    const imgs = (r.imgSubmitted || r.imgReadback) ? `${r.imgReadback}/${r.imgSubmitted}` : "—";
+    return `| ${r.name} | \`${r.ref}\` | ${r.slot || "—"} | ${r.required ? "yes" : "no"} | ${r.status} | ${onForm} | ${imgs} |`;
+  });
   return [...head, ...body].join("\n");
 }
 
@@ -387,4 +474,114 @@ export function classifyFieldRejection(message, contract) {
     droppable: Boolean(ref) && !required && (reason === "not-a-field" || reason === "invalid-value"),
     reason,
   };
+}
+
+// ─── form layout (VCST-5702 ITEM 0) ────────────────────────────────────────────────────
+/**
+ * The ORDERED list of html field-control refs actually ON a work-item type's form, from
+ * `GET .../workitemtypes/{type}?$expand=layout`. A field can exist in the contract yet be absent
+ * from the form; a body written to such a field is INVISIBLE while a presence check still passes,
+ * which is the silent-failure this closes. Prefers the structured `layout`; falls back to parsing
+ * the legacy `xmlForm` string. Returns refs in form (document) order — the create path binds the
+ * `body` slot to the FIRST of these. Pure.
+ * @param {Object} workItemType  the type object (with `.layout` and/or `.xmlForm`)
+ * @returns {string[]} html control field refs, in form order (deduped, visible only)
+ */
+export function parseFormLayout(workItemType) {
+  const refs = [];
+  const seen = new Set();
+  const add = (ref) => { if (ref && !seen.has(lc(ref))) { seen.add(lc(ref)); refs.push(ref); } };
+  const layout = workItemType?.layout;
+  if (layout && Array.isArray(layout.pages)) {
+    for (const page of layout.pages) {
+      if (page?.visible === false) continue;
+      for (const section of page?.sections || []) {
+        for (const group of section?.groups || []) {
+          if (group?.visible === false) continue;
+          for (const ctrl of group?.controls || []) {
+            if (ctrl?.visible === false) continue;
+            if (String(ctrl?.controlType || "") === "HtmlFieldControl") add(ctrl.id);
+          }
+        }
+      }
+    }
+    return refs;
+  }
+  // Fallback: the older process definition exposes an `xmlForm` string. Scan its <Control> tags in
+  // document order for the HtmlFieldControl type; `FieldName` is the field ref.
+  const xml = typeof workItemType?.xmlForm === "string" ? workItemType.xmlForm : "";
+  if (xml) {
+    for (const tag of xml.match(/<Control\b[^>]*>/gi) || []) {
+      if (!/Type\s*=\s*"HtmlFieldControl"/i.test(tag)) continue;
+      const m = /FieldName\s*=\s*"([^"]+)"/i.exec(tag);
+      if (m) add(m[1]);
+    }
+  }
+  return refs;
+}
+
+// ─── persisted-contract slimming (VCST-5702 ITEM 0b) ───────────────────────────────────
+/**
+ * Reduce a scanned contract to the fields worth PERSISTING, BY RULE — never by a whitelist of
+ * "main" field names (that name-list hardcoding is the very defect this plugin already fixed). The
+ * scan still reads EVERYTHING once at project-init; only fields that earn their place survive:
+ *   (a) required for creation of the type; OR
+ *   (b) required for ANY state transition of the type (`transitionRequiredRefs` — /qa-fix and
+ *       /qa-verify-fix transition items, so a field that becomes required on e.g. `Resolved`
+ *       must survive); OR
+ *   (c) bound to a semantic slot (resolveSlots over the FULL contract).
+ * Everything else — system-maintained / read-only / unused — is dropped. `allowedValues` ride
+ * along on the kept picklists unchanged. Pure.
+ * @returns {{ fields, scanned, kept, dropped, required, slotMapped, transitionRequired, accounting }}
+ */
+export function filterContractForPersist(contract, opts = {}) {
+  const list = contract || [];
+  const transitionRequired = new Set((opts.transitionRequiredRefs || []).map(lc));
+  const { mapping } = resolveSlots(list, opts.fieldMap || {}, opts.formHtmlControls || []);
+  const slotRefs = new Set(Object.values(mapping).map(lc));
+  const kept = [];
+  let keptRequired = 0, keptSlotMapped = 0, keptTransition = 0;
+  for (const f of list) {
+    const r = lc(f.ref);
+    const isReq = f.required === true;
+    const isSlot = slotRefs.has(r);
+    const isTrans = transitionRequired.has(r);
+    if (!(isReq || isSlot || isTrans)) continue; // system/unused — dropped
+    kept.push(f);
+    if (isReq) keptRequired++;            // count each kept field under exactly ONE reason,
+    else if (isSlot) keptSlotMapped++;    // required first (a required+slot field is a "required"),
+    else keptTransition++;                // so the reasons sum to `kept` with no double-count.
+  }
+  const scanned = list.length;
+  const dropped = scanned - kept.length;
+  const accounting = `rule-filtered (${scanned} scanned, ${kept.length} kept, ${dropped} dropped as system/unused, ${keptRequired} required)`;
+  return { fields: kept, scanned, kept: kept.length, dropped, required: keptRequired, slotMapped: keptSlotMapped, transitionRequired: keptTransition, accounting };
+}
+
+/**
+ * The required fields the operator must actually be ASKED about at the first bug creation — made
+ * EXPLICIT rather than incidental (VCST-5702 ITEM 0b). A required field is NOT asked when it is
+ * already auto-satisfied:
+ *   - System.Title (always supplied via --title);
+ *   - System.State / System.AreaId / System.IterationId (server-defaulted, or set via
+ *     defaultValue / AreaPath / --iteration current — the SERVER_DEFAULTED_REQUIRED set);
+ *   - any field carrying a contract `defaultValue`;
+ *   - any field with a persisted `tracker.fieldDefaults` entry.
+ * On the omnia-opus/OPUS Bug that reduces 8 required fields to exactly 3 questions. Pure.
+ * @returns {Array} contract entries the operator must answer, in contract order.
+ */
+export function operatorQuestions(contract, opts = {}) {
+  const list = contract || [];
+  const fieldDefaults = new Set(Object.keys(opts.fieldDefaults || {}).map(lc));
+  const out = [];
+  for (const f of list) {
+    if (!f.required) continue;
+    const r = lc(f.ref);
+    if (r === "system.title") continue;
+    if (SERVER_DEFAULTED_REQUIRED.has(r)) continue;
+    if (f.defaultValue) continue;
+    if (fieldDefaults.has(r)) continue;
+    out.push(f);
+  }
+  return out;
 }

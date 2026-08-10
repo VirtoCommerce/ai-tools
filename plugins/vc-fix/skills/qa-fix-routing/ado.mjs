@@ -68,7 +68,7 @@ import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../project-init/p
 // Azure HTML conversion + the Bug JSON-Patch builder live in a shared module so the CLI here
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
-import { ensureAzureHtml, mdToHtml, buildBugFields } from "./ado-html.mjs";
+import { ensureAzureHtml, mdToHtml, buildBugFields, countImages, countAttachmentImages } from "./ado-html.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -331,29 +331,45 @@ function contractFor(type) {
   return [];
 }
 
+/**
+ * The scanned form layout (ordered html control refs ON the form) for a work-item type, or []
+ * when no layout was scanned (VCST-5702 ITEM 0). Empty ⇒ form-gating is INACTIVE and the create
+ * path keeps its pre-5702 body target (System.Description) — no behaviour change for a profile
+ * scanned before this feature, or a process whose form does surface System.Description.
+ */
+function formLayoutFor(type) {
+  const all = (PROFILE.tracker && PROFILE.tracker.formLayout) || {};
+  const want = String(type || "").toLowerCase();
+  for (const [k, v] of Object.entries(all)) {
+    if (k.toLowerCase() === want && v && Array.isArray(v.htmlControls)) return v.htmlControls;
+  }
+  return [];
+}
+
+/**
+ * The rule-filter accounting string for a type (VCST-5702 ITEM 0b), persisted by the tracker scan
+ * — e.g. "rule-filtered (73 scanned, 17 kept, 56 dropped as system/unused, 8 required)". Empty
+ * when the profile predates the accounting (the persisted contract is still authoritative).
+ */
+function contractAccountingFor(type) {
+  const all = (PROFILE.tracker && PROFILE.tracker.fieldsMeta) || {};
+  const want = String(type || "").toLowerCase();
+  for (const [k, v] of Object.entries(all)) {
+    if (k.toLowerCase() === want && v && typeof v.accounting === "string") return v.accounting;
+  }
+  return "";
+}
+
 
 // ---- commands -----------------------------------------------------------------------
 const COMMANDS = {
   async "get-workitem"(args) {
     if (!args.id) fail("--id required");
     const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?$expand=all&${V}`);
+    // --json returns the RAW item, html fields unstripped — the only way to eyeball inline
+    // rendering (VCST-5702 ITEM 2: qa-bug Step 5 verifies images via `get-workitem --json`).
     if (args.json) return d;
-    const f = d.fields || {};
-    const g = (k) => (f[k] && f[k].displayName ? f[k].displayName : f[k]);
-    return {
-      id: d.id,
-      type: g("System.WorkItemType"),
-      title: g("System.Title"),
-      state: g("System.State"),
-      tags: g("System.Tags"),
-      areaPath: g("System.AreaPath"),
-      severity: g("Microsoft.VSTS.Common.Severity"),
-      priority: g("Microsoft.VSTS.Common.Priority"),
-      assignedTo: g("System.AssignedTo"),
-      description: stripHtml(g("System.Description")),
-      reproSteps: stripHtml(g("Microsoft.VSTS.TCM.ReproSteps")),
-      relations: (d.relations || []).map((r) => ({ rel: r.rel, url: r.url })),
-    };
+    return shapeWorkItem(d);
   },
 
   async comment(args) {
@@ -529,19 +545,57 @@ const COMMANDS = {
     // unreachable / a Jira deployment / an un-scanned profile) this is a NO-OP and the legacy
     // field set is sent unchanged, labelled "unverified defaults" (the E-f ladder's last rung).
     const contract = contractFor(args.type);
+    // The ORDERED html controls actually ON this type's form (VCST-5702 ITEM 0). Empty ⇒ no layout
+    // scanned ⇒ form-gating inactive ⇒ the body keeps its legacy System.Description target.
+    const formHtmlControls = formLayoutFor(args.type);
     const fieldMap = (PROFILE.tracker && PROFILE.tracker.fieldMap) || {};
     const fieldDefaults = (PROFILE.tracker && PROFILE.tracker.fieldDefaults) || {};
     let contractNote = "unverified defaults (no field contract in the profile — run /project-init to scan it)";
     let mapping = {};
     let dropped = [];
+    // The concrete refs the long-text slots land in — resolved from the form layout below; default
+    // to the legacy canonical refs so a no-contract / no-layout deployment is byte-for-byte unchanged.
+    let bodyRef = "System.Description";
+    let reproRef = "Microsoft.VSTS.TCM.ReproSteps";
+    let systemInfoRef = "Microsoft.VSTS.TCM.SystemInfo";
+    // Body/repro content, possibly merged: on a process whose only html control is the body target
+    // (e.g. OPUS: ReproSteps is the body, no distinct repro field), repro folds INTO the body so the
+    // repro text is not silently dropped and no duplicate op is emitted.
+    let bodyContent = description;
+    let reproContent = repro;
     if (contract.length) {
-      const slots = resolveSlots(contract, fieldMap);
+      const slots = resolveSlots(contract, fieldMap, formHtmlControls);
       mapping = slots.mapping;
+      // Resolve the long-text targets from the mapping (form-visibility-gated). A slot with no
+      // form-visible field stays undefined and its content folds into the body.
+      bodyRef = mapping.body || bodyRef;
+      systemInfoRef = mapping.systemInfo || systemInfoRef;
+      reproRef = mapping.repro; // may be undefined — merged into the body below
+      if (reproContent && (!reproRef || reproRef === bodyRef)) {
+        bodyContent = [description, reproContent].filter(Boolean).join("\n\n");
+        reproContent = "";
+        reproRef = undefined;
+      }
+      // ── HARD PRE-FLIGHT: never POST a body to an off-form (invisible) field (ITEM 0.3) ──────
+      // The OPUS symptom: the whole body went to System.Description, which is NOT on the Bug form,
+      // so it rendered nowhere while create reported PASS. Refuse, and NAME the html controls that
+      // ARE on the form so the operator can fix tracker.fieldMap.
+      if (formHtmlControls.length && bodyContent) {
+        const bodyOnForm = bodyRef && formHtmlControls.some((r) => r.toLowerCase() === bodyRef.toLowerCase());
+        if (!bodyOnForm) {
+          fail(
+            `create-workitem: the resolved body field ${bodyRef ? `(${bodyRef}) ` : ""}is NOT on the ${args.type} form — a body written there would be INVISIBLE. NOTHING was created.\n` +
+              `      Html controls ON the form (any of these can receive the body): ${slots.htmlControlsAvailable.join(", ") || "(none — this type has no html control on its form)"}\n` +
+              `      Bind the body slot to one of them via tracker.fieldMap (e.g. { "body": "${slots.htmlControlsAvailable[0] || "<ref>"}" }) and re-run.`,
+            2,
+          );
+        }
+      }
       // The slots buildBugFields emits through its OWN dedicated ops — declared here so the
       // required sweep counts them as filled instead of blocking the POST on a field we are
       // very much sending (and so we don't emit a duplicate JSON-Patch op for it).
       const selfEmitted = {
-        title: str(args.title), body: description, repro, systemInfo,
+        title: str(args.title), body: bodyContent, repro: reproContent, systemInfo,
         tags: str(args.tags), assignee: assignedTo, sprint: iterationPath,
       };
       const satisfiedRefs = Object.entries(selfEmitted)
@@ -587,8 +641,8 @@ const COMMANDS = {
 
     const fields = buildBugFields({
       title: str(args.title),
-      description,
-      reproSteps: repro,
+      description: bodyContent,
+      reproSteps: reproContent,
       severity: useContract ? "" : str(args.severity),
       priority: useContract ? undefined : (args.priority !== undefined && args.priority !== true ? args.priority : undefined),
       tags: str(args.tags),
@@ -600,6 +654,12 @@ const COMMANDS = {
       parentId: str(args.parent),
       orgUrl: orgUrl(args),
       raw: !!args.raw,
+      // The concrete field each long-text slot lands in — resolved per work-item type from the form
+      // layout (VCST-5702 ITEM 0), so the body is written to a FORM-VISIBLE control, never an
+      // off-form field. Absent a contract these stay the legacy canonical refs.
+      bodyRef,
+      reproRef,
+      systemInfoRef,
       // The field TYPE makes the HTML decision DERIVED rather than asserted (E-a): `html` ⇒
       // HTML body, `plainText` ⇒ text. Absent contract ⇒ null ⇒ the legacy known-refs set.
       isHtmlRef: useContract ? (ref) => isHtmlByContract(contract, ref) : null,
@@ -653,20 +713,34 @@ const COMMANDS = {
       const m = /^\/fields\/(.+)$/.exec(op.path || "");
       if (m) sentByRef[m[1]] = op.value;
     }
+    // Inline-image evidence (VCST-5702 ITEM 1): how many <img> we SUBMITTED per field. The
+    // read-back must contain that many attachment-backed <img> or the field is IMAGES_MISSING —
+    // the "persisted != rendered" check a non-empty test can never make.
+    const submittedImages = {};
+    for (const [ref, value] of Object.entries(sentByRef)) {
+      if (typeof value === "string") {
+        const n = countImages(value);
+        if (n > 0) submittedImages[ref] = n;
+      }
+    }
+    // Form visibility + image evidence flow into the read-back so an off-form or image-less body
+    // can never report fieldsOk:true.
+    const verifyOpts = { formHtmlControls, submittedImages };
     let verify = null;
     let patched = [];
     if (!args["no-verify"]) {
       const read = await callSoft("GET", `${apiUrl}/_apis/wit/workitems/${d.id}?$expand=all&${V}`);
       if (read.ok) {
-        verify = verifyAgainstContract(contract, mapping, read.data.fields || {}, sentByRef);
-        // ONE repair pass: re-send only the values we HAD for the fields that came back empty.
-        const repairable = verify.missing.filter((r) => sentByRef[r.ref] !== undefined && sentByRef[r.ref] !== "");
+        verify = verifyAgainstContract(contract, mapping, read.data.fields || {}, sentByRef, verifyOpts);
+        // ONE repair pass: re-send only the values we HAD for the fields that came back empty (a
+        // MISSING we can refill — never an OFF_FORM/IMAGES_MISSING, which a re-PATCH can't fix).
+        const repairable = verify.missing.filter((r) => r.status === "MISSING" && sentByRef[r.ref] !== undefined && sentByRef[r.ref] !== "");
         if (repairable.length) {
           const patch = repairable.map((r) => ({ op: "add", path: `/fields/${r.ref}`, value: sentByRef[r.ref] }));
           const p = await callSoft("PATCH", `${apiUrl}/_apis/wit/workitems/${d.id}?${V}`, { body: patch, contentType: "application/json-patch+json" });
           patched = repairable.map((r) => r.ref);
           const re = p.ok ? p : await callSoft("GET", `${apiUrl}/_apis/wit/workitems/${d.id}?$expand=all&${V}`);
-          if (re.ok) verify = verifyAgainstContract(contract, mapping, re.data.fields || {}, sentByRef);
+          if (re.ok) verify = verifyAgainstContract(contract, mapping, re.data.fields || {}, sentByRef, verifyOpts);
         }
       }
     }
@@ -680,6 +754,11 @@ const COMMANDS = {
       // Everything below is the E-c/E-e/E-f evidence the caller MUST show the operator —
       // the ticket key alone was never proof the bug is filled in.
       contract: contractNote,
+      // Transparency for the rule-filtered contract (VCST-5702 ITEM 0b) — how many fields the scan
+      // kept vs dropped, so a slim profile is explained rather than looking lossy.
+      ...(contractAccountingFor(args.type) ? { contractAccounting: contractAccountingFor(args.type) } : {}),
+      // The form-visible field the body actually landed in — the receiving ref is now explicit.
+      ...(useContract ? { bodyField: bodyRef } : {}),
       ...(dropped.length ? { droppedFields: dropped } : {}),
       ...(healed ? { selfHealed: healed } : {}),
       ...(verify ? { fieldsOk: verify.ok, verifyTable: renderVerifyTable(verify.rows), stillMissing: verify.missing.map((r) => r.ref) } : {}),
@@ -843,6 +922,46 @@ const COMMANDS = {
   },
 };
 
+/**
+ * Shape a raw ADO work item into the stripped operator view, WITH non-destructive counters
+ * (VCST-5702 ITEM 2). The stripped text drops `<img>`, which made a correct ticket look empty and
+ * pushed the operator to a hand-rolled REST read; the counters + presence flags mean the default
+ * output can never IMPLY images / systemInfo / iterationPath are absent. Pure — no network. The
+ * raw item (with unstripped html) is what `get-workitem --json` returns instead.
+ */
+function shapeWorkItem(d) {
+  const f = (d && d.fields) || {};
+  const g = (k) => (f[k] && f[k].displayName ? f[k].displayName : f[k]);
+  const rawHtml = (k) => (typeof f[k] === "string" ? f[k] : "");
+  const descRaw = rawHtml("System.Description");
+  const reproRaw = rawHtml("Microsoft.VSTS.TCM.ReproSteps");
+  const sysInfoRaw = rawHtml("Microsoft.VSTS.TCM.SystemInfo");
+  return {
+    id: d.id,
+    type: g("System.WorkItemType"),
+    title: g("System.Title"),
+    state: g("System.State"),
+    tags: g("System.Tags"),
+    areaPath: g("System.AreaPath"),
+    iterationPath: g("System.IterationPath") || "",
+    severity: g("Microsoft.VSTS.Common.Severity"),
+    priority: g("Microsoft.VSTS.Common.Priority"),
+    assignedTo: g("System.AssignedTo"),
+    description: stripHtml(descRaw || g("System.Description")),
+    reproSteps: stripHtml(reproRaw || g("Microsoft.VSTS.TCM.ReproSteps")),
+    systemInfo: stripHtml(sysInfoRaw || g("Microsoft.VSTS.TCM.SystemInfo")),
+    // Counters so the stripped view never implies "no images / no systemInfo / no iteration".
+    images: {
+      description: countImages(descRaw),
+      reproSteps: countImages(reproRaw),
+      systemInfo: countImages(sysInfoRaw),
+    },
+    hasSystemInfo: !!(sysInfoRaw && sysInfoRaw.trim()),
+    hasIterationPath: !!g("System.IterationPath"),
+    relations: (d.relations || []).map((r) => ({ rel: r.rel, url: r.url })),
+  };
+}
+
 function stripHtml(s) {
   if (!s || typeof s !== "string") return s || "";
   return s
@@ -880,4 +999,4 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   main().catch((e) => fail(e?.message || String(e)));
 }
 
-export { ensureAzureHtml, mdToHtml };
+export { ensureAzureHtml, mdToHtml, shapeWorkItem };
