@@ -46,8 +46,10 @@ function detectOs(flag) {
 
 // #220 — stdio MCP servers launch via npx (an npm registry lookup inside the ~30s startup budget).
 // On a host that falls back slowly from a broken IPv6 route to IPv4 that lookup can hang ~150s and
-// every stdio server misses the budget. Set NODE_OPTIONS to prefer IPv4 in DNS + npm prefer-offline
-// so a pinned+cached package resolves with no round-trip. ONLY `--dns-result-order=ipv4first`
+// every stdio server misses the budget. Set NODE_OPTIONS to prefer IPv4 in DNS (the actual cure) +
+// npm prefer-offline so a package ALREADY in the npx cache resolves without a registry round-trip
+// (a cold first fetch still runs, now fast over IPv4 — this surface has no cache-warm step). ONLY
+// `--dns-result-order=ipv4first`
 // (NODE_OPTIONS-allowed since Node 16.4); NOT `--no-network-family-autoselection` (newer flag, fatal
 // in NODE_OPTIONS on the Node-18 floor). Mirrors the plugin copy (plugins/vc-fix). Pure + idempotent.
 const IPV4_NODE_OPTIONS = "--dns-result-order=ipv4first";
