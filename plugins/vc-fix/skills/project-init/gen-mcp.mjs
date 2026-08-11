@@ -248,6 +248,18 @@ function injectTokens(server) {
   return walk(server);
 }
 
+/** The `<PLACEHOLDER>` names injectTokens() could NOT resolve in a built server def (deduped).
+ *
+ * Single source of truth for "this server is missing a credential", used by BOTH the enable
+ * decision (an optional extra with a missing key stays dormant) and the degraded-artifact WARN
+ * below (which now only ever sees servers we actually enabled). Keeping one helper is what stops
+ * the two from drifting — the bug it replaced was exactly that divergence: the enable side checked
+ * nothing while the warn side checked for placeholders. */
+export function unresolvedPlaceholders(server) {
+  if (!server) return [];
+  return [...new Set(JSON.stringify(server).match(/<[A-Z0-9_]+>/g) || [])];
+}
+
 // ─── evidence destination (VCST-5582 C) ──────────────────────────────────────────────
 //
 // Screenshots taken during a /qa-bug run were landing at the PROJECT ROOT and being moved
@@ -383,7 +395,22 @@ function main() {
     context7: "context7",
     devtools: "Chrome DevTools",
   };
-  for (const e of extras) if (extraMap[e]) enabled.add(extraMap[e]);
+  // An OPTIONAL extra whose key never resolved is NOT enabled: scaffold-secrets emits
+  // POSTMAN_API_KEY / CONTEXT7_API_KEY as optional placeholders and documents "blank ⇒ that MCP
+  // server stays disabled", but this loop used to `enabled.add()` every `--with` extra
+  // unconditionally. Onboarding then shipped `.mcp.json` with e.g. context7 enabled and a literal
+  // `<CONTEXT7_API_KEY>` — a server that cannot start — and the warn loop below reported it as
+  // `degraded_artifact:mcp_config` against a key the operator deliberately left blank. The server
+  // stays DEFINED (dormant) exactly like playwright-firefox/-edge, so filling the key and re-running
+  // is all it takes to enable it.
+  const dormantExtras = [];
+  for (const e of extras) {
+    const name = extraMap[e];
+    if (!name) continue;
+    const missing = unresolvedPlaceholders(mcpServers[name]);
+    if (missing.length) dormantExtras.push({ name, missing });
+    else enabled.add(name);
+  }
   // Only enable servers that actually exist in the template.
   const enabledList = [...enabled].filter((n) => mcpServers[n]);
 
@@ -417,6 +444,11 @@ function main() {
   settings.enabledMcpjsonServers = enabledList;
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   console.log(`[gen-mcp] enabled servers: ${enabledList.join(", ")}`);
+  // Requested-but-dormant optional extras. This is the documented outcome of a blank optional key,
+  // NOT a degraded artifact — so it is an info line and emits no observation.
+  for (const { name, missing } of dormantExtras) {
+    console.log(`[gen-mcp] ${name}: defined but NOT enabled — ${missing.join(", ")} unset (optional; set it in .env.local and re-run to enable).`);
+  }
 
   // Warn about any enabled server whose token is still a placeholder — AND report it as an
   // observation (8a). `.mcp.json` is a REQUIRED output of /project-init, so shipping it with an
@@ -425,12 +457,12 @@ function main() {
   // fixed for the readiness table — self-diagnostics could not see the Postman 401 the shipped
   // `.mcp.json` guaranteed. Evidence carries the server name + placeholder NAME only (both
   // plugin-authored); the key VALUE is never in scope here (the placeholder is literally unresolved).
+  // NB: an optional extra with a blank key never reaches this loop — it was left dormant above, so
+  // the only servers checked here are ones we DID enable and therefore genuinely need a credential.
   const obs = [];
   for (const name of enabledList) {
-    const blob = JSON.stringify(mcpServers[name]);
-    const ph = blob.match(/<[A-Z0-9_]+>/g);
-    if (!ph) continue;
-    const names = [...new Set(ph)];
+    const names = unresolvedPlaceholders(mcpServers[name]);
+    if (!names.length) continue;
     console.warn(`[gen-mcp] ⚠ ${name}: unresolved ${names.join(", ")} — set the token in .env.local or via login, then re-run.`);
     for (const placeholder of names) {
       obs.push({ class: "degraded_artifact", subject: "mcp_config", evidence: { snippet: `${name}: unresolved ${placeholder}` } });

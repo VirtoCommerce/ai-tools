@@ -294,19 +294,24 @@ test("item 8b: an EMBEDDED placeholder (\"Bearer <POSTMAN_API_KEY>\") resolves w
   assert.doesNotMatch(auth, /<POSTMAN_API_KEY>/);
 }));
 
-test("item 8a: an UNRESOLVED placeholder emits a degraded_artifact / mcp_config observation", () => withTempDir((dir) => {
+// This test used to assert the OPPOSITE: `--with postman` + a blank POSTMAN_API_KEY had to emit a
+// degraded_artifact. That encoded the bug — scaffold-secrets.mjs emits POSTMAN_API_KEY /
+// CONTEXT7_API_KEY as OPTIONAL and documents "blank ⇒ that MCP server stays disabled", so a blank
+// optional key is the operator's choice, not a degraded artifact. gen-mcp now leaves such an extra
+// DEFINED but dormant, which removes the cause of the observation rather than reporting it. The
+// warn+observation path below is unchanged and still guards any server we DO enable (see the 8c
+// audit); with the current template only optional extras carry a key placeholder, github falling
+// back to OAuth, so it stands as the safety net for the next template addition.
+test("item 8a: an unresolved OPTIONAL extra is left dormant and emits NO mcp_config observation", () => withTempDir((dir) => {
   const sid = seedSession(dir);
-  // GITHUB token present (so github resolves), POSTMAN key ABSENT → the postman header stays a
-  // placeholder → a required output (.mcp.json) ships degraded → observation.
+  // GITHUB token present (so github resolves), POSTMAN key ABSENT → postman must not be enabled.
   runGenMcp(dir, ["--with", "postman"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_present", POSTMAN_API_KEY: "" });
+  const enabled = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8")).enabledMcpjsonServers;
+  assert.ok(!enabled.includes("postman"), `postman must stay dormant (enabled: ${enabled.join(", ")})`);
+  // dormant, not deleted — the def stays so filling the key and re-running enables it
+  assert.ok(JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.postman, "postman stays DEFINED");
   const obs = readObsRecords(dir).filter((o) => o.subject === "mcp_config");
-  assert.ok(obs.length >= 1, "an unresolved placeholder must produce an mcp_config observation");
-  assert.equal(obs[0].class, "degraded_artifact", "a required output shipping degraded is degraded_artifact, not a bare warn");
-  assert.equal(obs[0].skill, "project-init");
-  // the evidence carries the placeholder NAME (plugin-authored), never a key value
-  const ev = JSON.stringify(obs);
-  assert.match(ev, /POSTMAN_API_KEY/);
-  assert.doesNotMatch(ev, /PMAK-/, "no key value is ever in the evidence");
+  assert.deepEqual(obs, [], "a deliberately-blank optional key is not a degraded artifact");
   assert.equal(sid, "gen-mcp-sess-1");
 }));
 

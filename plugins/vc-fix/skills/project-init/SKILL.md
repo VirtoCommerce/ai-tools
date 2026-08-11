@@ -712,8 +712,12 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker jira --clie
 DNS hint) so the first MCP start doesn't pay a registry round-trip — the #220 startup-timeout
 guard. Best-effort + timeboxed; drop it to skip the network step.
 Enables playwright×3 + github + the tracker's MCP (atlassian for Jira; azure-mcp
-for Azure). **Remind the operator to restart the MCP servers** (reload the IDE)
-for the new config to take effect.
+for Azure). A `--with` extra whose API key is an OPTIONAL placeholder the operator left blank
+(`postman`, `context7`) is **defined but NOT enabled** — the same "blank ⇒ stays disabled"
+contract `scaffold-secrets.mjs` states, so passing `--with context7` unconditionally (as above) is
+safe: it enables the server only once the key exists. gen-mcp prints one info line per dormant
+extra; filling the key in `.env.local` and re-running enables it. **Remind the operator to restart
+the MCP servers** (reload the IDE) for the new config to take effect.
 
 ## 8. Verify access — full readiness checkup
 

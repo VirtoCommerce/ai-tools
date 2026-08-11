@@ -100,6 +100,13 @@ function injectTokens(server) {
   return walk(server);
 }
 
+/** The `<PLACEHOLDER>` names injectTokens() could NOT resolve in a built server def (deduped).
+ * Drives the enable decision: an optional extra still carrying one stays dormant. */
+export function unresolvedPlaceholders(server) {
+  if (!server) return [];
+  return [...new Set(JSON.stringify(server).match(/<[A-Z0-9_]+>/g) || [])];
+}
+
 let _ghToken;
 function ghAuthToken() {
   if (_ghToken !== undefined) return _ghToken;
@@ -146,7 +153,17 @@ function main() {
     context7: "context7",
     devtools: "Chrome DevTools",
   };
-  for (const e of extras) if (extraMap[e]) enabled.add(extraMap[e]);
+  // An OPTIONAL extra whose key never resolved stays DEFINED but dormant — a blank optional key
+  // means "leave that server disabled", not "ship a server that cannot start". Same fix as the
+  // plugins/vc-fix twin; coupling-free, so it ports as-is.
+  const dormantExtras = [];
+  for (const e of extras) {
+    const name = extraMap[e];
+    if (!name) continue;
+    const missing = unresolvedPlaceholders(mcpServers[name]);
+    if (missing.length) dormantExtras.push({ name, missing });
+    else enabled.add(name);
+  }
   // Only enable servers that actually exist in the template.
   const enabledList = [...enabled].filter((n) => mcpServers[n]);
 
@@ -165,6 +182,9 @@ function main() {
   settings.enabledMcpjsonServers = enabledList;
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   console.log(`[gen-mcp] enabled servers: ${enabledList.join(", ")}`);
+  for (const { name, missing } of dormantExtras) {
+    console.log(`[gen-mcp] ${name}: defined but NOT enabled — ${missing.join(", ")} unset (optional; set it in .env.local and re-run to enable).`);
+  }
 
   // Warn about any enabled server whose token is still a placeholder.
   for (const name of enabledList) {
