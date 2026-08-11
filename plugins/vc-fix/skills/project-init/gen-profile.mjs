@@ -217,6 +217,10 @@ function main() {
       if (t.crossLinkToken !== undefined) set("tracker.crossLinkToken", t.crossLinkToken);
       if (t.apiBase) set("tracker.azure.apiBase", t.apiBase);
       if (t.projectId) set("tracker.azure.projectId", t.projectId);
+      // The date-validated team whose current sprint /qa-bug stamps (VCST). Empty ⇒ the project
+      // default team; the runtime resolver (ado.mjs) re-validates and can still auto-select a team
+      // at create time, so an unset team is safe — just less specific.
+      if (t.team) set("tracker.azure.team", t.team);
       if (t.workItemTypes) set("tracker.azure.workItemTypes", t.workItemTypes);
       if (t.roleStates) set("tracker.azure.roleStates", t.roleStates);
       // Bake the fix-side completeness as a CANONICAL boolean under tracker.azure.* (the same

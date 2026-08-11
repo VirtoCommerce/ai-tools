@@ -41,6 +41,10 @@ import { emitObservations, httpStatusFrom, scrubUrls } from "./lib/diag-obs.mjs"
 // The contract PARSER lives with its consumers (the create path) so the scan and the payload
 // builder can never disagree about the shape. Pure — see that file's header.
 import { parseFieldContract, resolveSlots, parseFormLayout, filterContractForPersist, operatorQuestions } from "../qa-fix-routing/bug-contract.mjs";
+// SHARED date-range validation for a team iteration — the same predicate ado.mjs's runtime resolver
+// uses, so onboarding picks the team whose current sprint the create path will accept (VCST: the
+// default team's `timeFrame:"current"` flag pointed at a 3-year-dead sprint).
+import { isIterationCurrent, iterationRange, localTodayYMD } from "../qa-fix-routing/iteration-dates.mjs";
 
 /** Write the result to --out (relative to the deployment project) and/or print it. */
 function emit(out, args) {
@@ -141,6 +145,47 @@ export function deriveRoleStates(states) {
   if (reopen) out["reopen"] = reopen;
   if (done) out["done"] = done;
   return out;
+}
+
+/**
+ * Discover + persist the TEAM whose current sprint /qa-bug should stamp (`tracker.azure.team`). The
+ * project's DEFAULT team is often dormant — its `timeFrame:"current"` flag points at a long-dead
+ * sprint — so choose by DATE-VALIDITY: the team that owns a sprint whose dates bracket today.
+ * An explicit `--team` wins with no discovery (the operator's override / disambiguation lever).
+ * Best-effort: any HTTP failure leaves the team unset (the project default) with a note; the runtime
+ * resolver in ado.mjs re-validates and can still auto-select at create time.
+ * @returns {{ team:string, autoSelected:boolean, ambiguous?:string[], note:string }}
+ */
+async function discoverTeam({ apiBase, org, project, authHeader, explicitTeam }) {
+  const today = localTodayYMD();
+  if (explicitTeam) return { team: explicitTeam, autoSelected: false, note: "explicit --team" };
+  const teamCurrentSprint = async (team) => {
+    const seg = team ? `/${encodeURIComponent(team)}` : "";
+    try {
+      const d = await adoGet(`${apiBase}${seg}/_apis/work/teamsettings/iterations?api-version=7.1`, authHeader);
+      return (d.value || []).find((it) => isIterationCurrent(it, today)) || null;
+    } catch { return null; }
+  };
+  let teams = [];
+  try {
+    teams = ((await adoGet(`https://dev.azure.com/${org}/_apis/projects/${encodeURIComponent(project)}/teams?api-version=7.1&$top=500`, authHeader)).value || []).map((t) => t.name);
+  } catch (e) {
+    return { team: "", autoSelected: false, note: `team enumeration failed (${e.message}) — leaving team unset (project default)` };
+  }
+  const matches = [];
+  for (const t of teams) {
+    const hit = await teamCurrentSprint(t);
+    if (hit) matches.push({ team: t, iteration: hit });
+  }
+  // Dedupe by iteration PATH: several teams can SHARE one current sprint — no real ambiguity there.
+  const distinctPaths = [...new Set(matches.map((m) => m.iteration.path))];
+  if (matches.length >= 1 && distinctPaths.length === 1) {
+    return { team: matches[0].team, autoSelected: true, note: `auto-selected "${matches[0].team}" — owns current sprint ${matches[0].iteration.name} (${iterationRange(matches[0].iteration)})` };
+  }
+  if (distinctPaths.length > 1) {
+    return { team: "", autoSelected: false, ambiguous: matches.map((m) => m.team), note: `${distinctPaths.length} teams have DIFFERENT current sprints (${matches.map((m) => m.team).join(", ")}) — re-run with --team to pin one` };
+  }
+  return { team: "", autoSelected: false, note: teams.length ? `no team has a date-valid current sprint (scanned ${teams.length}) — leaving team unset (project default)` : "no teams enumerated — leaving team unset" };
 }
 
 async function main() {
@@ -322,6 +367,15 @@ async function main() {
   // `tested`/`reopen` must never silently ride along on the fix-side completeness signal.
   const qaRoleStatesComplete = missingQaRoles.length === 0;
 
+  // The TEAM whose current sprint /qa-bug stamps (VCST). Chosen by DATE-VALIDITY, not the project
+  // default team's stale `timeFrame:"current"` flag. `--team` overrides the discovery.
+  const explicitTeam = typeof args.team === "string" ? args.team : "";
+  const teamResult = await discoverTeam({ apiBase, org, project, authHeader, explicitTeam });
+  console.error(`[discover-tracker] team: ${teamResult.team ? `"${teamResult.team}"` : "(unset — project default)"} — ${teamResult.note}`);
+  if (teamResult.ambiguous) {
+    obs.push({ class: "degraded_artifact", subject: "tracker_team", code: "NONE", evidence: { snippet: `${teamResult.ambiguous.length} teams have a current sprint — tracker.azure.team left unset; /qa-bug --iteration current auto-selects at runtime, or re-run discover-tracker --team <name>` } });
+  }
+
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
 
@@ -359,6 +413,9 @@ async function main() {
     crossLinkToken: "AB#",
     apiBase,
     projectId,
+    // The team whose current sprint /qa-bug stamps (date-validated; "" ⇒ project default). Baked to
+    // tracker.azure.team by gen-profile so the runtime resolver starts from the right team.
+    team: teamResult.team,
     workItemTypes,
     // Per-type BUG FIELD CONTRACT (VCST-5582 E-a): [{ ref, name, required, type,
     // allowedValues?, defaultValue? }]. Empty/absent ⇒ metadata was unreachable and the create

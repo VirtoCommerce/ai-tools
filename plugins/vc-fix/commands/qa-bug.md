@@ -336,7 +336,29 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
     Ask at the FIRST bug creation, never at onboarding — the operator has context here that they do not have during the interview.
   - **Screenshots first:** upload each and capture the URL — `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" upload-attachment --file <png>` → `{ url }`. Embed inline in the relevant `<li>` via `<img src="{url}" width="700">`. `--attachments` takes **URLs**, never local paths (the pre-flight rejects a path).
   - **Assignee & sprint are automatic:** pass `--assign-self` (the token/session owner) and `--iteration current` (the team's active sprint, so the bug lands in the sprint and not the backlog).
-  - **Parent link — ASK the operator.** Before creating, ask via `AskUserQuestion` **which work item to link this bug under** (its parent). Offer **"No parent"** + **"Other (enter ID)"** (you may also list a few likely candidates, e.g. the sprint's User Stories, if you already have them). On a chosen id, pass `--parent <id>` (adds a Hierarchy-Reverse link); on "No parent", omit the flag.
+  - **Parent link — ALWAYS offer REAL candidates first (mandatory).** A blind "No parent" + free-text
+    "Other" prompt is exactly how a bug ends up unparented — the free text comes back empty. So FETCH
+    real candidates, THEN ask with them pre-filled:
+    1. **Fetch (mandatory, always run it):** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" list-parent-candidates --top 2`
+       → `{ candidates:[{id,type,title,state}], iterationPath, … }` — open User Story / Epic / Feature in
+       the resolved current sprint, newest-changed first. If it returns `candidates: []`, retry ONCE with
+       `--any-iteration` (the current sprint may have no open stories).
+    2. **Ask via `AskUserQuestion`** — the question text is EXACTLY
+       **"Choose a parent work item, or enter the ID manually in Other"** (so the operator knows the
+       auto-added **Other** takes a hand-typed number) — with EXACTLY these options. Do **NOT** add an
+       "Other" option yourself; `AskUserQuestion` appends it automatically:
+       - candidate 1 → label `"<id> - <title truncated to ~40 chars>"`, description `"<type> · <state>"`
+       - candidate 2 → same shape
+       - **"No parent"** → description `"file the bug with no parent link"`
+    3. **Act on the answer:**
+       - a chosen candidate, **or** a number typed into **Other** (any answer containing digits) → extract
+         the id and pass `--parent <id>` (adds the `System.LinkTypes.Hierarchy-Reverse` link);
+       - **"No parent"** → omit `--parent`;
+       - **Other selected but the answer carries NO digits** (empty / garbled free text) → do **NOT**
+         silently create-without-parent as if nothing happened, and do **NOT** re-ask the same question a
+         third time. Create the bug **without** `--parent`, then state plainly to the operator that the
+         parent is **unset** and can be added afterwards with a link-only relation PATCH on the created
+         work item (add `System.LinkTypes.Hierarchy-Reverse` → the parent id), no re-file needed.
   - **Create:** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <desc.html> --system-info-file <sysinfo.html> [--field "<Ref>=<value>" …from the contract] --severity <"2 - High"> --priority <N> --tags <...> --attachments "<url1>,<url2>" --assign-self --iteration current [--parent <id>]` (org/project default from the profile).
   - **What it does for you, before and after the POST:**
     - **Pre-flight (ONE message, nothing created):** resolves and stats every `--*-file` against `VC_FIX_HOME || cwd` (shown as an ABSOLUTE path when missing), resolves the `--assign-self` identity and `--iteration current`, checks the attachment URLs, and probes the Work-Items **write** scope non-mutatingly. Every problem is reported together with the exact PAT scope to grant.

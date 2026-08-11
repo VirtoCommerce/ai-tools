@@ -41,7 +41,14 @@
  *     --iteration current → stamp the team's active sprint (System.IterationPath); or pass a path.
  *     --parent <id> → link the bug under a parent work item (Hierarchy-Reverse relation).
  *   node ado.mjs whoami                                          # token owner { name, mail }
- *   node ado.mjs current-iteration [--team "<team>"]            # active sprint { id, name, path }
+ *   node ado.mjs current-iteration [--team "<team>"]            # DATE-VALIDATED active sprint
+ *       { id, name, path, team, autoSelectedTeam? }. Never trusts ADO's stale timeFrame:"current"
+ *       flag; if the configured/default team is dormant, auto-selects the team that owns a sprint
+ *       whose dates bracket today. Errors LOUDLY (exit 2) when nothing is date-valid or when several
+ *       teams match (pass --team to disambiguate) — never returns a stale iteration.
+ *   node ado.mjs list-parent-candidates [--top 2] [--any-iteration]  # open User Story/Epic/Feature
+ *       in the current sprint (newest-changed first) → { candidates:[{id,type,title,state}], … } —
+ *       the real choices /qa-bug offers for the bug's parent link.
  *   node ado.mjs list-refs      --repo frontend [--filter heads/]
  *   node ado.mjs get-file       --repo frontend --path client-app/x.vue --branch dev
  *   node ado.mjs create-pr      --repo frontend --source refs/heads/claude/qa-autofix/967 \
@@ -69,6 +76,11 @@ import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../project-init/p
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
 import { ensureAzureHtml, mdToHtml, buildBugFields, countImages } from "./ado-html.mjs";
+// Pure date-range validation for a team iteration, SHARED with discover-tracker.mjs so the runtime
+// "which sprint is current" resolve and the onboarding "which team owns the current sprint" scan can
+// never disagree. `$timeframe=current` alone is untrustworthy (Azure keeps the flag on a dormant
+// team's dead sprint) — an iteration counts as current only when its dates bracket today.
+import { isIterationCurrent, iterationRange, localTodayYMD } from "./iteration-dates.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -361,6 +373,118 @@ function contractAccountingFor(type) {
 }
 
 
+// ─── current-sprint resolution (date-validated, team-aware) ──────────────────────────
+// ONE shared resolver for BOTH `current-iteration` and `create-workitem --iteration current`, so
+// they can never drift (they were duplicated, and the duplicate inside create-workitem trusted
+// `$timeframe=current` blindly). It VALIDATES the date range (isIterationCurrent — date-only, finish
+// inclusive) instead of trusting Azure's `timeFrame:"current"` flag, and — when the configured/
+// default team has no date-valid sprint — enumerates the project's teams to find the one that does.
+// Never returns a stale iteration: a no-match is a LOUD, actionable failure.
+
+/** All of a team's iterations (no `$timeframe` filter) so we validate by DATE, not by ADO's flag. */
+async function teamIterations(apiBase, team) {
+  const seg = team ? `/${enc(team)}` : "";
+  const r = await callSoft("GET", `${apiBase}${seg}/_apis/work/teamsettings/iterations?${V}`);
+  return r.ok ? (r.data.value || []) : [];
+}
+
+/** What ADO WOULD have returned as `$timeframe=current` — captured only to NAME the rejected stale
+ *  candidate in the loud error (the whole point: never silently stamp it). */
+async function teamCurrentFlagged(apiBase, team) {
+  const seg = team ? `/${enc(team)}` : "";
+  const r = await callSoft("GET", `${apiBase}${seg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
+  return r.ok ? ((r.data.value || [])[0] || null) : null;
+}
+
+/** The project's teams (org-scoped endpoint), name + id. [] on any error (best-effort enumeration). */
+async function listProjectTeams(args) {
+  const project = args.project || trackerAZ().project;
+  if (!project) return [];
+  const r = await callSoft("GET", `${orgUrl(args)}/_apis/projects/${enc(project)}/teams?${V}&$top=500`);
+  return r.ok ? (r.data.value || []).map((t) => ({ id: t.id, name: t.name })) : [];
+}
+
+const iterShape = (it) => ({ id: it.id, name: it.name, path: it.path });
+
+/**
+ * Resolve THE current sprint for the deployment. Returns a discriminated result:
+ *   { ok:true,  iteration:{id,name,path}, team, autoSelected:boolean }
+ *   { ok:false, error:"<loud, operator-actionable message>", ambiguous?:boolean }
+ *
+ * Order:
+ *   1. Try the team to use = an explicit CLI `--team`, else the profile's `tracker.azure.team`,
+ *      else the project's default team. A date-valid iteration there wins immediately.
+ *   2. An EXPLICIT `--team` is authoritative — if it yields none, fail loudly (do NOT auto-pick a
+ *      different team; the operator named this one). This is also the disambiguation lever for (4).
+ *   3. Otherwise (team came from the profile/default and is dormant) enumerate the project's teams
+ *      and keep those with a date-valid current sprint.
+ *   4. Exactly one match ⇒ use it and report it was auto-selected. Several ⇒ ambiguous, require
+ *      `--team`. None ⇒ loud failure naming the stale candidate + its dates.
+ */
+async function resolveCurrentIteration(args) {
+  const today = localTodayYMD();
+  const apiBase = base(args, "tracker");
+  const cliTeam = typeof args.team === "string" ? args.team : "";
+  const firstTeam = cliTeam || TRACKER_AZ.team || ""; // "" ⇒ the project's default team
+  const label = (t) => t || "(project default)";
+
+  const valid = (list) => list.find((it) => isIterationCurrent(it, today)) || null;
+
+  // (1) the configured/default team
+  const primaryHit = valid(await teamIterations(apiBase, firstTeam));
+  if (primaryHit) return { ok: true, iteration: iterShape(primaryHit), team: firstTeam, autoSelected: false };
+
+  // capture the stale candidate the primary team reports as "current" (for the loud message)
+  const stale = await teamCurrentFlagged(apiBase, firstTeam);
+  const staleClause = stale
+    ? `Team "${label(firstTeam)}" reports "${stale.name}" (${iterationRange(stale)}) as current, but its dates do NOT bracket today (${today}) — rejected as stale.`
+    : `Team "${label(firstTeam)}" has no current-flagged sprint.`;
+
+  // (2) an explicit --team is authoritative — never silently auto-pick another team
+  if (cliTeam) {
+    return {
+      ok: false,
+      error:
+        `--iteration current: no date-valid sprint on the requested team "${cliTeam}". ${staleClause}\n` +
+        `      Pass an explicit --iteration <path>, or fix the sprint's dates in Azure Boards.`,
+    };
+  }
+
+  // (3) enumerate the project's teams; keep those with a date-valid current sprint
+  const teams = await listProjectTeams(args);
+  const matches = [];
+  for (const t of teams) {
+    if (firstTeam && t.name === firstTeam) continue; // already tried
+    const hit = valid(await teamIterations(apiBase, t.name));
+    if (hit) matches.push({ team: t.name, iteration: hit, raw: hit });
+  }
+
+  // (4) decide. Dedupe by iteration PATH first: several teams can SHARE one sprint, and if every
+  // match resolves to the same path there is no real ambiguity — the stamped System.IterationPath is
+  // identical either way. Only DISTINCT current sprints across teams are a genuine "pick one".
+  const distinctPaths = [...new Set(matches.map((m) => m.iteration.path))];
+  if (matches.length >= 1 && distinctPaths.length === 1) {
+    return { ok: true, iteration: iterShape(matches[0].iteration), team: matches[0].team, autoSelected: true };
+  }
+  if (distinctPaths.length > 1) {
+    return {
+      ok: false,
+      ambiguous: true,
+      error:
+        `--iteration current: ${distinctPaths.length} teams have DIFFERENT date-valid current sprints — cannot choose automatically: ` +
+        matches.map((m) => `"${m.team}" → ${m.iteration.name} (${iterationRange(m.raw)})`).join("; ") +
+        `.\n      Pass --team "<one of them>" to disambiguate.`,
+    };
+  }
+  return {
+    ok: false,
+    error:
+      `--iteration current: no team in project "${label(args.project || trackerAZ().project)}" has a sprint whose dates bracket today (${today}). ${staleClause}` +
+      (teams.length ? ` Scanned ${teams.length} team(s); none matched.` : ` Could not enumerate project teams.`) +
+      `\n      Pass an explicit --iteration <path>, or fix the active sprint's dates in Azure Boards.`,
+  };
+}
+
 // ---- commands -----------------------------------------------------------------------
 const COMMANDS = {
   async "get-workitem"(args) {
@@ -423,15 +547,67 @@ const COMMANDS = {
     return { id: u.id || null, name: u.providerDisplayName || null, uniqueName: mail || u.subjectDescriptor || null, mail };
   },
 
-  // The team's CURRENT sprint (iteration) — for stamping System.IterationPath on a new bug so
-  // it lands in the active sprint, not the backlog. Team from --team or tracker.azure.team;
-  // omitted ⇒ the project's default team.
+  // The deployment's CURRENT sprint (iteration) — for stamping System.IterationPath on a new bug so
+  // it lands in the active sprint, not the backlog. DATE-VALIDATED (never trusts ADO's stale
+  // `timeFrame:"current"` flag) and TEAM-AWARE: if the configured/default team is dormant, the
+  // right team is auto-selected by which one owns a sprint whose dates bracket today. Team from
+  // --team, else tracker.azure.team, else the project default. FAILS LOUDLY when nothing is
+  // date-valid — never returns a stale iteration.
   async "current-iteration"(args) {
-    const team = (typeof args.team === "string" ? args.team : "") || TRACKER_AZ.team || "";
-    const teamSeg = team ? `/${enc(team)}` : "";
-    const d = await call("GET", `${base(args, "tracker")}${teamSeg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
-    const it = (d.value || [])[0];
-    return it ? { id: it.id, name: it.name, path: it.path } : null;
+    const r = await resolveCurrentIteration(args);
+    if (!r.ok) fail(r.error, 2);
+    return {
+      id: r.iteration.id,
+      name: r.iteration.name,
+      path: r.iteration.path,
+      team: r.team || "(project default)",
+      ...(r.autoSelected ? { autoSelectedTeam: true } : {}),
+    };
+  },
+
+  // Candidate PARENT work items for a new bug's Hierarchy-Reverse link — so /qa-bug can OFFER real
+  // choices instead of only "No parent" + a blind free-text prompt (which came back empty and left
+  // the bug unparented). WIQL for open User Story / Epic / Feature in the resolved current sprint,
+  // newest-changed first, then a batch hydrate for the display fields.
+  //   node ado.mjs list-parent-candidates [--top 2] [--any-iteration]
+  async "list-parent-candidates"(args) {
+    const project = args.project || trackerAZ().project;
+    if (!project) fail("no project — pass --project or set tracker.azure in project-profile.json");
+    const top = Number(args.top) > 0 ? Math.floor(Number(args.top)) : 2;
+    const apiBase = base(args, "tracker");
+
+    // Scope to the current sprint unless --any-iteration. A current-iteration miss is NOT fatal here
+    // (the parent link is a convenience) — fall back to project-wide with a note, never error out.
+    let iterationPath = "";
+    let scopeNote = "";
+    if (!args["any-iteration"]) {
+      const r = await resolveCurrentIteration(args);
+      if (r.ok) iterationPath = r.iteration.path;
+      else scopeNote = "no current sprint resolved — scanned project-wide (pass --any-iteration to silence, or fix the sprint dates)";
+    } else {
+      scopeNote = "project-wide (--any-iteration)";
+    }
+
+    const esc = (s) => String(s).replace(/'/g, "''"); // WIQL string literals escape ' as ''
+    const where = [
+      "[System.TeamProject] = @project",
+      "[System.WorkItemType] IN ('User Story', 'Epic', 'Feature')",
+      "[System.State] NOT IN ('Closed', 'Removed')",
+      iterationPath ? `[System.IterationPath] = '${esc(iterationPath)}'` : "",
+    ].filter(Boolean).join(" AND ");
+    const wiql = `SELECT [System.Id] FROM WorkItems WHERE ${where} ORDER BY [System.ChangedDate] DESC`;
+    const q = await call("POST", `${apiBase}/_apis/wit/wiql?$top=${top}&${V}`, { body: { query: wiql } });
+    const ids = (q.workItems || []).map((w) => w.id).slice(0, top);
+    if (!ids.length) return { candidates: [], iterationPath: iterationPath || null, ...(scopeNote ? { note: scopeNote } : {}) };
+
+    const fields = "System.Id,System.WorkItemType,System.Title,System.State";
+    const d = await call("GET", `${apiBase}/_apis/wit/workitems?ids=${ids.join(",")}&fields=${enc(fields)}&${V}`);
+    const byId = new Map((d.value || []).map((w) => [w.id, w.fields || {}]));
+    const candidates = ids.map((id) => {
+      const f = byId.get(id) || {};
+      return { id, type: f["System.WorkItemType"] || "", title: f["System.Title"] || "", state: f["System.State"] || "" };
+    });
+    return { candidates, iterationPath: iterationPath || null, ...(scopeNote ? { note: scopeNote } : {}) };
   },
 
   // The Bug JSON-Patch body is built by the SHARED buildBugFields (ado-html.mjs), the same
@@ -503,12 +679,12 @@ const COMMANDS = {
     }
     let iterationPath = str(args.iteration);
     if (iterationPath && /^current$/i.test(iterationPath)) {
-      const team = (typeof args.team === "string" ? args.team : "") || TRACKER_AZ.team || "";
-      const teamSeg = team ? `/${enc(team)}` : "";
-      const r = await callSoft("GET", `${base(args, "tracker")}${teamSeg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
-      const it = r.ok ? (r.data.value || [])[0] : null;
-      if (!it?.path) problems.push(`--iteration current: no current sprint resolved for team "${team || "(project default)"}" — pass --team, set tracker.azure.team, or give an explicit --iteration <path>`);
-      else iterationPath = it.path;
+      // SAME date-validated, team-aware resolver as `current-iteration` — extracted so the two can
+      // never drift. A stale-only / ambiguous / no-team result becomes a pre-flight PROBLEM (the bug
+      // is never filed into a dead sprint), carrying the resolver's loud, actionable message.
+      const r = await resolveCurrentIteration(args);
+      if (!r.ok) problems.push(r.error);
+      else iterationPath = r.iteration.path;
     }
 
     // Write-scope probe — non-mutating (a deliberately invalid PATCH: ADO answers 401 when the
@@ -1007,3 +1183,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 }
 
 export { ensureAzureHtml, mdToHtml, shapeWorkItem };
+// Re-exported for the unit tests (the pure date-validation the current-sprint resolver is built on).
+export { isIterationCurrent, iterationRange, localTodayYMD } from "./iteration-dates.mjs";

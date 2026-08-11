@@ -19,6 +19,11 @@
  *   - REMOVE every profile field no longer in the schema (obsolete), pruning fixed-shape
  *            objects key-by-key. OPEN MAPS ({} default — stateMap/workItemTypes/roleStates)
  *            and ARRAYS (repos.*) are kept wholesale: their contents are data, not schema.
+ *            EXCEPTION: an unknown OBJECT/ARRAY subtree directly under `tracker` (e.g. the
+ *            scan-written `tracker.formLayout` / `tracker.fieldsMeta`, which PROFILE_DEFAULTS does
+ *            not enumerate) is PRESERVED, not dropped — it is discovered data, and losing
+ *            `tracker.formLayout` sends the bug body to an off-form field (VCST-5702). Reported
+ *            under `preserved`. An unknown SCALAR is still removed.
  *   - RESCAN report the fields that should be re-derived live (repos, tracker role model),
  *            so the /project-init skill can re-run discover-*.mjs + gen-profile --merge.
  *   - ASK    surface each pending decision's question + options so the skill can drive
@@ -172,7 +177,7 @@ function setDeep(obj, dotted, value) {
  * pending (unresolved ask/rescan) field, so it is always safe to write.
  */
 function reconcile(schema, existing, decisions, unsets = []) {
-  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [] };
+  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [], preserved: [] };
   // A conditional sub-object is "disabled" (not in schema for this profile) when its
   // discriminator predicate is false against the existing profile.
   const conditionalDisabled = (path) => {
@@ -249,10 +254,21 @@ function reconcile(schema, existing, decisions, unsets = []) {
           out[k] = walk(schemaNode[k], ex[k], path);
         }
       }
-      // Report + drop OBSOLETE keys (present in the profile, gone from the schema).
+      // Report + drop OBSOLETE keys (present in the profile, gone from the schema) — EXCEPT a
+      // discovered subtree under `tracker`. `tracker.formLayout` / `tracker.fieldsMeta` (and any
+      // future scan-written open map) are DATA the discover-tracker scan writes, not a stale schema
+      // field: PROFILE_DEFAULTS.tracker does not enumerate them, so the plain prune below silently
+      // DROPPED them — and losing tracker.formLayout sends the bug body to an off-form (invisible)
+      // field (VCST-5702 ITEM 0). Preserve an unknown OBJECT/ARRAY subtree under tracker rather than
+      // prune it; an unknown SCALAR (a typo / a genuinely renamed field) is still reported + removed.
       for (const k of Object.keys(ex)) {
         if (!(k in schemaNode)) {
           const path = prefix ? `${prefix}.${k}` : k;
+          if (prefix === "tracker" && (isPlainObject(ex[k]) || Array.isArray(ex[k]))) {
+            out[k] = ex[k];
+            report.preserved.push({ path });
+            continue;
+          }
           report.removed.push({ path, value: ex[k] });
         }
       }
@@ -379,7 +395,7 @@ function main() {
   const meta = raw._meta;
   delete raw._meta;
 
-  const { migrated, added, removed, pending, rescan, unset, rejected } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
+  const { migrated, added, removed, pending, rescan, unset, rejected, preserved } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
   const hasStructuralChange = added.length > 0 || removed.length > 0 || unset.length > 0;
   // `rescan` (e.g. an Azure profile with an empty tracker.fields, VCST-5582 E5) also counts as
   // "changes" so the skill knows to re-run the live discover step — even when nothing structural
@@ -405,6 +421,7 @@ function main() {
           rejected,
           pending,
           rescan,
+          preserved,
         },
         null,
         2,
@@ -437,7 +454,7 @@ function main() {
 
   console.log(
     JSON.stringify(
-      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan },
+      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan, preserved },
       null,
       2,
     ),

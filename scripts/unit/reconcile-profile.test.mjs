@@ -324,3 +324,52 @@ test("A4 reconcile --unset: a path outside a writable open map is REJECTED, neve
     assert.equal(p.tracker.kind, "azure", "a fixed-shape schema field is never removed by --unset");
   } finally { rmSync(home, { recursive: true, force: true }); }
 });
+
+// ─── VCST — reconcile must PRESERVE discovered tracker.* subtrees (formLayout / fieldsMeta) ─────
+// The reported failure: `reconcile --write --set tracker.fieldDefaults.Custom.Environment=QA` silently
+// REMOVED tracker.formLayout and tracker.fieldsMeta (scan-written open maps that PROFILE_DEFAULTS does
+// not enumerate, so the fixed-struct prune dropped them). Losing tracker.formLayout is load-bearing —
+// it binds the bug body to a FORM-VISIBLE field; without it the body goes to an off-form, invisible
+// field (VCST-5702 ITEM 0). A --set touching tracker.* must leave those subtrees intact.
+test("VCST reconcile --set on tracker.*: preserves discovered tracker.formLayout / tracker.fieldsMeta", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-preserve-"));
+  try {
+    const formLayout = { Bug: { htmlControls: ["Microsoft.VSTS.TCM.ReproSteps", "Microsoft.VSTS.TCM.SystemInfo"] } };
+    const fieldsMeta = { Bug: { accounting: "rule-filtered (73 scanned, 17 kept, 56 dropped as system/unused, 8 required)" } };
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "azure", formLayout, fieldsMeta, azure: { organization: "acme", project: "Web" } },
+      vcs: { clientHost: "github", clientOrg: "acmecorp" },
+    }));
+    const rep = reconcileReport(home, ["--set", "tracker.fieldDefaults.Custom.Environment=QA"]);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    // the --set landed …
+    assert.equal(p.tracker.fieldDefaults["Custom.Environment"], "QA");
+    // … and the discovered subtrees SURVIVED (the bug this locks down)
+    assert.deepEqual(p.tracker.formLayout, formLayout, "tracker.formLayout must NOT be dropped — it binds the body to a form-visible field");
+    assert.deepEqual(p.tracker.fieldsMeta, fieldsMeta, "tracker.fieldsMeta must NOT be dropped");
+    assert.ok(!rep.removed.some((r) => r.path === "tracker.formLayout" || r.path === "tracker.fieldsMeta"), "neither is reported as removed");
+    assert.ok(rep.preserved.some((r) => r.path === "tracker.formLayout"), "formLayout is reported under 'preserved'");
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
+
+// The preservation is deliberately SCOPED: it saves a tracker.* SUBTREE (an object/array — real
+// discovered data), not an unknown scalar (a typo / renamed field), and not an unknown subtree
+// OUTSIDE tracker (which would mask genuine schema drift).
+test("VCST reconcile: preservation is scoped — an unknown tracker SCALAR and a non-tracker subtree are still pruned", () => {
+  const home = mkdtempSync(join(tmpdir(), "vc-fix-reconcile-scope-"));
+  try {
+    writeFileSync(join(home, "project-profile.json"), JSON.stringify({
+      projectType: "client",
+      tracker: { kind: "azure", formLayout: { Bug: { htmlControls: ["X"] } }, legacyScalar: "gone", azure: { organization: "acme", project: "Web" } },
+      someOtherUnknownBlock: { a: 1 }, // a non-tracker unknown subtree → still removed
+    }));
+    const rep = reconcileReport(home);
+    const p = JSON.parse(readFileSync(join(home, "project-profile.json"), "utf8"));
+    assert.deepEqual(p.tracker.formLayout, { Bug: { htmlControls: ["X"] } }, "the tracker subtree survives");
+    assert.equal(p.tracker.legacyScalar, undefined, "an unknown tracker SCALAR is still pruned");
+    assert.equal(p.someOtherUnknownBlock, undefined, "an unknown subtree OUTSIDE tracker is still pruned");
+    assert.ok(rep.removed.some((r) => r.path === "tracker.legacyScalar"));
+    assert.ok(rep.removed.some((r) => r.path === "someOtherUnknownBlock"));
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});

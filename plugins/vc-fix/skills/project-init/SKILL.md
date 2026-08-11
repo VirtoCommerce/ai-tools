@@ -542,10 +542,17 @@ for Jira (transitions are discovered live at runtime; the scan would add nothing
 # Azure Boards:
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" \
   --tracker azure --org "$ADO_ORG" --project "$ADO_PROJECT" \
-  --types "Bug,Task,User story" --out .local-env/tracker.json --print
+  --types "Bug,Task,User story" [--team "<team>"] --out .local-env/tracker.json --print
 # Jira (format facts only — no state scan needed):
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" --tracker jira --out .local-env/tracker.json
 ```
+
+The Azure scan also DISCOVERS the `team` whose current sprint `/qa-bug` will stamp (`tracker.azure.team`):
+it enumerates the project's teams and picks the one that owns a **date-valid** current sprint (the
+project's DEFAULT team is often dormant — its `timeFrame:"current"` flag points at a long-dead sprint).
+Pass **`--team "<name>"`** to override the discovery (or to disambiguate when several teams have a
+current sprint — the scan leaves the team unset and asks for one). An unset team is safe: the runtime
+resolver in `ado.mjs` re-validates and can still auto-select the right team at bug-create time.
 
 It writes `.local-env/tracker.json`: `{ kind, ticketKeyFormat, crossLinkToken, apiBase,
 projectId, workItemTypes:{<Type>:{states:[…]}}, roleStates:{in-progress,in-review,
