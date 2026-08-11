@@ -576,9 +576,19 @@ Correct a mismapped role by hand-editing `.local-env/tracker.json` (or the profi
 continuing.
 
 Also captured here: the **bug FIELD CONTRACT** per work-item type (VCST-5582 E-a) —
-`tracker.fields.<Type>[]`. Report it the same way: one line on the happy path
-(`Bug field contract: 13 fields, 5 required — all mapped`), a table + a question only when a
-required field has no semantic slot.
+`tracker.fields.<Type>[]` — plus the two lists that drive the FIRST bug creation:
+**`operatorQuestions`** (every required field the operator must supply a value for, whether or not it
+maps to a semantic slot) and **`unmappedRequired`** (only the subset that maps to no slot). **The
+happy-path one-liner MUST state the TOTAL number of first-run questions — `operatorQuestions.length`
+— and name them**, e.g. `Bug field contract: 16 fields, 8 required — /qa-bug's first run will ask 3
+values (Environment, Reported by, Type of bug), then persist them`. Do **NOT** report only
+`unmappedRequired`: on a live run it showed "1 question" (Value Area) while `operatorQuestions` held
+3 more that were never surfaced, so the operator was told to expect 1 and got 4. A field the board
+already answers — a `defaultValue` that is a member of a closed `allowedValues` set — is filled from
+that default and is **not** a question (D1); it appears in neither list. **Surface the
+`operatorQuestions` list to the operator now — never silently defer it to `/qa-bug`.** Show a table
+only when `unmappedRequired` is non-empty (a required field with no semantic slot — a genuine mapping
+gap to review).
 
 `--out` is optional (accepts `--out <path>`; the default flag set here writes it so step 6 can
 read it). If you omit `--out`, capture the printed JSON and pass its path to step 6 another way.

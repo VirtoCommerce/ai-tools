@@ -444,12 +444,20 @@ async function main() {
         ? ` — MISSING role(s): ${missingRoles.join(", ")} (no matching state found; confirm/hand-edit before relying on auto transitions)`
         : ""),
   );
+  // D3 — the summary must state the TOTAL first-run questions (operatorQuestions), not only the
+  // unmapped subset. operatorQuestions = every required field the operator must supply a value for
+  // (mapped or not); unmappedRequired = the subset with no semantic slot. Reporting only the latter
+  // hid 3 real questions (Environment/Reported by/Type of bug) on a live run.
+  const firstRunQ = contractSummary.operatorQuestions;
   console.error(
     primaryContract.length
       ? `[discover-tracker] ${primary} field contract: ${contractSummary.fieldCount} field(s), ${contractSummary.requiredCount} required` +
-        (contractSummary.unmappedRequired.length
-          ? ` — ${contractSummary.unmappedRequired.length} required field(s) no semantic slot maps: ${contractSummary.unmappedRequired.map((f) => f.name).join(", ")} (asked ONCE at the first bug creation, then persisted)`
-          : " — every required field is mapped")
+        (firstRunQ.length
+          ? ` — /qa-bug's first run asks ${firstRunQ.length} value(s), then persists them: ${firstRunQ.map((f) => f.name).join(", ")}` +
+            (contractSummary.unmappedRequired.length
+              ? ` [${contractSummary.unmappedRequired.length} of them map to no semantic slot: ${contractSummary.unmappedRequired.map((f) => f.name).join(", ")}]`
+              : "")
+          : " — every required field is auto-satisfied (default / server / persisted); no first-run questions")
       : `[discover-tracker] no ${primary} field contract discovered — /qa-bug will fall back to the legacy field set, labelled "unverified defaults".`,
   );
   if (missingQaRoles.length) {
