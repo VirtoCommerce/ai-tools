@@ -563,14 +563,25 @@ transition). Step 6 ingests it via `--tracker-json`.
 
 **Reporting — scale it to whether the operator has anything to decide:**
 
-- **`roleStatesComplete: true`** (every role mapped) → **ONE line, no table**:
-  `Board states mapped: Active → On Review → Ready for QA → … → Closed (custom process, 14 Bug
-  states). Transitions will be silent.` The full role→state grid is `/qa-fix` plumbing — correct
-  by construction, nothing to approve. State counts per work-item type, `apiBase`, `projectId`,
-  `ticketKeyFormat` and the cross-link token are internals: **do not print them.**
-- **A role is MISSING or looks wrong** → *then* show a table, of the affected roles only, and ask.
-  This is the case worth the operator's attention, and it stands out precisely because the happy
-  path was one line.
+- **`roleStatesComplete: true` (every role mapped) → render the role→state grid as a TABLE and
+  CONFIRM it** with `AskUserQuestion` (options: **"Accept as scanned"** / **"Correct a role"**) — the
+  same shape §4a already mandates for the repo map. `roleStatesComplete: true` only means every role
+  got *a* state, **not** that the picks match this team's workflow. Because step 6 flips
+  `transitionPolicy=auto`, a mis-picked role moves real customer work items **silently, with no
+  further prompt** — so a custom process's mapping is exactly the kind of fact the operator must be
+  able to see and approve (D4). Render one row per role → picked `System.State`, and add a context
+  line listing the **unused** states — the alternatives the operator is implicitly approving against,
+  e.g. `Unused: New, On Dev, On hold, HotFixed, Resolved, On UAT`. On **"Correct a role"**, ask which
+  role, offer that board's states, and persist with
+  `reconcile-profile.mjs --write --set 'tracker.azure.roleStates.<role>=<state>'`.
+  - **Exception — the one-liner is fine ONLY when the picks are unambiguous:** the board's state set
+    is the STOCK one (New/Active/Resolved/Closed) with **no unused candidate state** a role could
+    plausibly have taken instead. Then: `Board states mapped (stock process, no ambiguity).
+    Transitions will be silent.` State counts per work-item type, `apiBase`, `projectId`,
+    `ticketKeyFormat` and the cross-link token stay internals: **do not print them.**
+- **A role is MISSING or looks wrong** → show the table of the affected roles only and ask (as
+  above). A MISSING role is the one that must be resolved before `/qa-fix` can transition by it; a
+  complete-but-custom map is confirmed, not blocked.
 
 Correct a mismapped role by hand-editing `.local-env/tracker.json` (or the profile) before
 continuing.
