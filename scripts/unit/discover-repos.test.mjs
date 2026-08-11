@@ -8,6 +8,7 @@ import {
   moduleToRepo,
   classify,
   flagUnverifiedModules,
+  resolveModuleRepo,
   pickFrontendRepos,
   deriveClientOrg,
   stripRef,
@@ -103,13 +104,19 @@ test("deriveClientOrg: prefers ADO_ORG for an azure host", () => {
   assert.equal(deriveClientOrg([], { host: "azure-repos", adoOrg: "Lakeshirt-LEO" }), "Lakeshirt-LEO");
 });
 
-// #216 — a name derived from the module id (no ProjectUrl) is a GUESS; moduleToRepo marks it
-// `nameFromId` so main() can cross-check it against the client's live repo listing.
-test("moduleToRepo (#216): id-fallback name is flagged nameFromId:true", () => {
-  const r = moduleToRepo({ Id: "Acme.CustomOrders" }); // no ProjectUrl → name guessed from id
-  assert.equal(r.name, "vc-module-acme-custom-orders");
+// #216 / VCST-5702 — a CLIENT module id with no ProjectUrl is NEVER given an invented `vc-module-*`
+// name (that name 404s at fix time). It arrives name:null + nameFromId, to be resolved against the
+// live listing in main(). Only a genuine VirtoCommerce.* id keeps the safe upstream-convention guess.
+test("moduleToRepo (VCST-5702): a client id with no ProjectUrl gets name:null, NOT an invented vc-module-* name", () => {
+  const r = moduleToRepo({ Id: "Acme.CustomOrders" });
+  assert.equal(r.name, null, "no name is invented for a client module id");
   assert.equal(r.owner, null);
   assert.equal(r.host, null);
+  assert.equal(r.nameFromId, true, "still flagged id-derived so main() resolves it");
+});
+test("moduleToRepo (VCST-5702): a VirtoCommerce.* id with no ProjectUrl keeps the safe vc-module-* guess", () => {
+  const r = moduleToRepo({ Id: "VirtoCommerce.CatalogPersonalization" });
+  assert.equal(r.name, "vc-module-catalog-personalization", "the upstream convention is authoritative for a platform module");
   assert.equal(r.nameFromId, true);
 });
 
@@ -120,18 +127,66 @@ test("moduleToRepo (#216): a URL-derived name is authoritative → nameFromId:fa
   assert.equal(az.nameFromId, false);
 });
 
-test("classify (#216): a guessed client module carries nameFromId; a URL-derived one does not", () => {
+test("classify (VCST-5702): a client module with no URL carries name:null + moduleId; a URL-derived one is named", () => {
   const { client } = classify(
     [
-      { Id: "Acme.CustomOrders" }, // no URL → client (non-VirtoCommerce id), guessed name
+      { Id: "Acme.CustomOrders" }, // no URL → client (non-VirtoCommerce id): name:null, resolve later
       { Id: "Leo.Main", ProjectUrl: "https://dev.azure.com/Lakeshirt-LEO/LEO/_git/leo-main-module" },
     ],
     "",
   );
-  const guessed = client.find((c) => c.name === "vc-module-acme-custom-orders");
+  const guessed = client.find((c) => c.moduleId === "Acme.CustomOrders");
   const urlDerived = client.find((c) => c.name === "Lakeshirt-LEO/leo-main-module");
+  assert.ok(guessed, "the no-URL client module is emitted (not skipped) so it can be resolved");
+  assert.equal(guessed.name, null, "no name invented");
   assert.equal(guessed.nameFromId, true);
   assert.equal(urlDerived.nameFromId, undefined); // omitted, not carried
+  assert.equal(urlDerived.moduleId, undefined); // a named entry needs no resolution input
+});
+
+// ─── VCST-5702 — resolveModuleRepo: resolve against the live listing, never invent ─────────
+test("resolveModuleRepo: exact-token match (Opus.Main → opus-module-main)", () => {
+  assert.equal(resolveModuleRepo("Opus.Main", ["opus-module-main", "opus-module-supplierapi"], "omnia-opus"), "opus-module-main");
+});
+test("resolveModuleRepo: an org slug that is part of the id is kept, not stripped as noise", () => {
+  // clientOrg 'opus' overlaps the id token 'opus' — it must survive so the match still lands.
+  assert.equal(resolveModuleRepo("Opus.Main", ["opus-module-main", "opus-module-supplierapi"], "opus"), "opus-module-main");
+});
+test("resolveModuleRepo: an ambiguous tie resolves to null (never pick arbitrarily)", () => {
+  assert.equal(resolveModuleRepo("Opus.Main", ["opus-module-main", "opus-main"], "omnia-opus"), null);
+});
+test("resolveModuleRepo: no candidate → null", () => {
+  assert.equal(resolveModuleRepo("Opus.Main", ["opus-module-supplierapi", "some-other-repo"], "omnia-opus"), null);
+  assert.equal(resolveModuleRepo("Opus.Main", [], "omnia-opus"), null);
+});
+test("resolveModuleRepo: subset match prefers the fewest extra tokens", () => {
+  // id {opus, main}; candidate {opus, main, admin} is a superset (1 extra) — a unique subset match.
+  assert.equal(resolveModuleRepo("Opus.Main", ["opus-module-main-admin"], "omnia-opus"), "opus-module-main-admin");
+});
+
+// ─── VCST-5702 — the invariants the fix guarantees ─────────────────────────────────────────
+test("VCST-5702: NO output name is ever a vc-module-* for a NON-VirtoCommerce.* module id", () => {
+  const ids = ["Opus.Main", "Acme.CustomOrders", "Leo.Main", "Contoso.Widgets"];
+  for (const Id of ids) {
+    const r = moduleToRepo({ Id });
+    assert.ok(!/^vc-module-/.test(r.name || ""), `${Id} must not synthesize ${r.name}`);
+    const { client, platform } = classify([{ Id }], "");
+    for (const e of [...client, ...platform]) {
+      assert.ok(!/^vc-module-/.test(e.name || ""), `${Id} → ${e.name} must not be vc-module-*`);
+    }
+  }
+  // A VirtoCommerce.* id is unaffected — it still classifies as platform with the upstream name.
+  const { platform } = classify([{ Id: "VirtoCommerce.Cart" }], "");
+  assert.deepEqual(platform, [{ name: "vc-module-cart", kind: "module" }]);
+});
+test("VCST-5702: an unresolved client module carries NO contribution / clone URL", () => {
+  // classify emits name:null; the only place a contribution/cloneUrl is built keys off a truthy
+  // name (main() `if (!c.name) continue`), so a name:null entry is self-enforcingly URL-less.
+  const { client } = classify([{ Id: "Opus.Main" }], "");
+  const entry = client.find((c) => c.moduleId === "Opus.Main");
+  assert.equal(entry.name, null);
+  assert.equal(entry.contribution, undefined, "no contribution block");
+  assert.ok(!("cloneUrl" in entry), "no clone URL can be built from a null name");
 });
 
 // #216 — the actual DECISION the fix makes (extracted from main() so it is testable without
