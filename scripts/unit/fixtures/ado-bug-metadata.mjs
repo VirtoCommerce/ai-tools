@@ -100,9 +100,11 @@ export const OPUS_XMLFORM_WIT = {
 };
 
 // ── VCST-5702 ITEM 0b — the omnia-opus/OPUS Bug at full width (73 fields) ─────────────
-// Already-parsed contract entries. The rule-filter must keep exactly 17 (8 required + 9 slot-mapped)
-// and drop the other 56 as system/read-only or unused custom fields. Modelled to the verified OPUS
-// numbers (the real per-field metadata was not available in-session — see the PR body).
+// Already-parsed contract entries. The rule-filter keeps 18 (8 required + 10 slot-mapped) and drops
+// the other 55 as system/read-only or unused custom fields. Modelled to the verified OPUS numbers
+// (the real per-field metadata was not available in-session — see the PR body). NOTE: the 10th
+// slot-mapped field is Microsoft.VSTS.Common.ValueArea — a standard field that D1 gave a `valueArea`
+// slot, so it now maps instead of being dropped as a filler (was 17/9/56 before D1).
 const OPUS_KEPT = [
   // 8 required
   { ref: "System.Title", name: "Title", required: true, type: "string" },
@@ -113,7 +115,8 @@ const OPUS_KEPT = [
   { ref: "Custom.Environment", name: "Environment", required: true, type: "string", allowedValues: ["QA", "UAT", "PROD", "Dev", "Local"] },
   { ref: "Custom.Reportedby", name: "Reported by", required: true, type: "plaintext" },
   { ref: "Custom.Typeofbug", name: "Type of bug", required: true, type: "string", allowedValues: ["Functional", "Regression", "Performance", "Data", "Integration"] },
-  // 9 slot-mapped, none required
+  // 10 slot-mapped, none required (the 10th, Microsoft.VSTS.Common.ValueArea, is in OPUS_FILLERS —
+  // D1 gives it a `valueArea` slot, so it maps rather than being dropped as a filler)
   { ref: "System.Description", name: "Description", required: false, type: "html" },
   { ref: "Microsoft.VSTS.TCM.ReproSteps", name: "Repro Steps", required: false, type: "html" },
   { ref: "Microsoft.VSTS.TCM.SystemInfo", name: "System Info", required: false, type: "html" },

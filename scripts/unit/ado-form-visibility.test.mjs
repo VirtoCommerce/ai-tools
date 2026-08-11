@@ -152,21 +152,24 @@ test("ITEM 0 #3: the SAME field ON the form is a normal PASS (no false negative)
   assert.equal(v.rows.find((r) => r.ref === "System.Description").status, "PASS");
 });
 
-// ─── TEST 4 — ITEM 0b rule-filter: 73 → 17 (8 required + 9 slot-mapped) ───────────────
-test("ITEM 0b #4: the 73-field OPUS Bug rule-filters to exactly 17 (8 required + 9 slot-mapped)", () => {
+// ─── TEST 4 — ITEM 0b rule-filter: 73 → 18 (8 required + 10 slot-mapped) ───────────────
+// D1 added a `valueArea` slot for Microsoft.VSTS.Common.ValueArea (a standard field present as a
+// filler in this fixture), so it now slot-maps and is KEPT — the baseline is 18, not 17.
+test("ITEM 0b #4: the 73-field OPUS Bug rule-filters to exactly 18 (8 required + 10 slot-mapped)", () => {
   assert.equal(OPUS_BUG_73.length, 73, "fixture is the full-width contract");
   const r = filterContractForPersist(OPUS_BUG_73, { transitionRequiredRefs: [] });
-  assert.equal(r.kept, 17, "kept = required ∪ slot-mapped");
+  assert.equal(r.kept, 18, "kept = required ∪ slot-mapped");
   assert.equal(r.required, 8, "8 required");
-  assert.equal(r.slotMapped, 9, "9 slot-mapped, none required");
-  assert.equal(r.dropped, 56, "56 dropped as system/unused");
-  assert.equal(r.accounting, "rule-filtered (73 scanned, 17 kept, 56 dropped as system/unused, 8 required)");
+  assert.equal(r.slotMapped, 10, "10 slot-mapped, none required (incl. the D1 ValueArea slot)");
+  assert.equal(r.dropped, 55, "55 dropped as system/unused");
+  assert.equal(r.accounting, "rule-filtered (73 scanned, 18 kept, 55 dropped as system/unused, 8 required)");
   // A representative system/read-only field is dropped; a required and a slot-mapped field survive.
   const keptRefs = new Set(r.fields.map((f) => f.ref));
   assert.ok(!keptRefs.has("System.ChangedBy"), "a system/read-only field is dropped");
   assert.ok(!keptRefs.has("Custom.Unused55"), "an unused custom field is dropped");
   assert.ok(keptRefs.has("Custom.Environment"), "a required field survives");
   assert.ok(keptRefs.has("System.Description"), "a slot-mapped (body) field survives");
+  assert.ok(keptRefs.has("Microsoft.VSTS.Common.ValueArea"), "D1: Value Area now maps to the valueArea slot and survives");
 });
 test("ITEM 0b #4: a field required only on a `Resolved` transition survives (rule b)", () => {
   // Custom.ResolutionReason is a filler (dropped by default); as a transition-required ref it survives.
@@ -174,7 +177,7 @@ test("ITEM 0b #4: a field required only on a `Resolved` transition survives (rul
   assert.ok(!without.fields.some((f) => f.ref === "Custom.ResolutionReason"), "dropped when not required for any transition");
   const withTrans = filterContractForPersist(OPUS_BUG_73, { transitionRequiredRefs: ["Custom.ResolutionReason"] });
   assert.ok(withTrans.fields.some((f) => f.ref === "Custom.ResolutionReason"), "kept once a transition makes it required");
-  assert.equal(withTrans.kept, 18, "exactly one more than the 17 baseline");
+  assert.equal(withTrans.kept, 19, "exactly one more than the 18 baseline");
   assert.equal(withTrans.transitionRequired, 1);
 });
 

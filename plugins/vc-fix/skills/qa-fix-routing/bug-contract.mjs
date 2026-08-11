@@ -48,7 +48,7 @@ import { countAttachmentImages } from "./ado-html.mjs";
 export const BUG_SLOTS = [
   "title", "body", "repro", "expected", "actual",
   "severity", "priority", "environment", "bugType", "reportedBy",
-  "systemInfo", "foundIn", "sprint", "assignee", "tags",
+  "systemInfo", "foundIn", "sprint", "assignee", "tags", "valueArea",
 ];
 
 // Slot → how to recognise its field in a discovered contract.
@@ -76,6 +76,12 @@ const SLOT_SPECS = {
   sprint: { refs: ["System.IterationPath"], names: [/^iteration ?path$/i, /^sprint$/i], types: ["treepath"] },
   assignee: { refs: ["System.AssignedTo"], names: [/assigned ?to$/i], types: ["identity", "string"] },
   tags: { refs: ["System.Tags"], names: [/^tags$/i], types: ["string", "plaintext"] },
+  // Value Area is a STANDARD Azure Boards field (out-of-the-box on the Agile/Scrum/CMMI Bug types).
+  // Any process where an admin marked it REQUIRED otherwise surfaces it as an un-actionable
+  // unmapped-required degradation on an otherwise-clean onboarding (D1). It carries a closed picklist
+  // (Architectural/Business) and usually a defaultValue ("Business"), so the create path fills it from
+  // the default — no operator question needed (see the unmappedRequired default-value rule below).
+  valueArea: { refs: ["Microsoft.VSTS.Common.ValueArea"], names: [/value ?area/i], types: ["string", "plaintext", "pickliststring"] },
 };
 
 const lc = (v) => String(v ?? "").toLowerCase();
@@ -242,7 +248,12 @@ export function resolveSlots(contract, fieldMap = {}, formHtmlControls = []) {
   // `alwaysRequired` in the contract but need no semantic slot, so counting them would make every
   // healthy Azure onboarding report an un-actionable degradation (VCST-5582 E2).
   const unmappedRequired = list.filter(
-    (f) => f.required && !taken.has(lc(f.ref)) && !SERVER_DEFAULTED_REQUIRED.has(lc(f.ref)),
+    (f) => f.required && !taken.has(lc(f.ref)) && !SERVER_DEFAULTED_REQUIRED.has(lc(f.ref))
+        // D1 — a required field the BOARD already answers needs no operator question and is no
+        // degradation: a discovered `defaultValue` that is a member of a CLOSED `allowedValues` set
+        // fully satisfies it (the create path fills it from the default). General rule — applies to
+        // ANY such field (e.g. Microsoft.VSTS.Common.ValueArea = "Business"), not a special case.
+        && !(f.defaultValue && Array.isArray(f.allowedValues) && f.allowedValues.length > 0),
   );
   // Form-gated slots whose bound field is NOT on the form — reachable only via an override (auto
   // never binds off-form). The create path REFUSES to POST a body to an off-form target and names

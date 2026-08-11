@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import {
   parseFieldContract, resolveSlots, buildContractFields, verifyAgainstContract,
   renderVerifyTable, classifyFieldRejection, isHtmlByContract, fieldOf, BUG_SLOTS,
+  operatorQuestions,
 } from "../../plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs";
 import { FIELD_TYPES, LEO_OPUS_BUG_FIELDS, AGILE_BUG_FIELDS } from "./fixtures/ado-bug-metadata.mjs";
 
@@ -113,6 +114,43 @@ test("resolveSlots (stock Agile): PORTABILITY — no Custom.* exists, other fiel
   assert.equal(mapping.systemInfo, "Microsoft.VSTS.TCM.SystemInfo");
   // Its OWN required fields are surfaced — including one the LEO process doesn't have.
   assert.ok(unmappedRequired.some((f) => f.ref === "System.AreaPath"), "the Agile Bug's required Area Path is reported");
+});
+
+// ─── D1 — Value Area is a standard field with a slot; a board-answered required field isn't asked ──
+test("D1: a required Microsoft.VSTS.Common.ValueArea maps to the valueArea slot and is NOT asked (defaultValue)", () => {
+  const contract = parseFieldContract([
+    { referenceName: "System.Title", name: "Title", alwaysRequired: true },
+    { referenceName: "System.IterationPath", name: "Iteration Path", alwaysRequired: true },
+    { referenceName: "System.State", name: "State", alwaysRequired: true, defaultValue: "New" },
+    { referenceName: "Microsoft.VSTS.Common.ValueArea", name: "Value Area", alwaysRequired: true, allowedValues: ["Architectural", "Business"], defaultValue: "Business" },
+  ], [{ referenceName: "Microsoft.VSTS.Common.ValueArea", type: "string" }]);
+  const { mapping, unmappedRequired } = resolveSlots(contract, {});
+  assert.equal(mapping.valueArea, "Microsoft.VSTS.Common.ValueArea", "ValueArea binds to the new valueArea slot");
+  assert.ok(!unmappedRequired.some((f) => f.ref === "Microsoft.VSTS.Common.ValueArea"),
+    "a required standard field with a slot is not an unmapped-required degradation (the onboarding nag)");
+  assert.ok(!operatorQuestions(contract, {}).some((f) => f.ref === "Microsoft.VSTS.Common.ValueArea"),
+    "a discovered defaultValue means no operator question — the board already answered it");
+});
+
+test("D1: a board-answered required field (defaultValue ∈ closed allowedValues) is not unmappedRequired even with NO slot", () => {
+  // A CUSTOM required picklist that no slot binds — the general rule (not ValueArea-specific): a
+  // defaultValue that is a member of a closed allowedValues set fully satisfies it, so it is neither a
+  // degradation nor a first-run question.
+  const contract = parseFieldContract([
+    { referenceName: "System.Title", name: "Title", alwaysRequired: true },
+    { referenceName: "Custom.SecondaryPriority", name: "Secondary Priority", alwaysRequired: true, allowedValues: ["Low", "High"], defaultValue: "Low" },
+  ], []);
+  const { mapping, unmappedRequired } = resolveSlots(contract, {});
+  assert.equal(mapping.valueArea, undefined, "no valueArea field in this contract");
+  assert.ok(!unmappedRequired.some((f) => f.ref === "Custom.SecondaryPriority"), "board-answered ⇒ not a degradation");
+  assert.ok(!operatorQuestions(contract, {}).some((f) => f.ref === "Custom.SecondaryPriority"), "board-answered ⇒ not asked");
+  // …but a required custom field WITHOUT a default is still a real gap.
+  const noDefault = parseFieldContract([
+    { referenceName: "System.Title", name: "Title", alwaysRequired: true },
+    { referenceName: "Custom.SecondaryPriority", name: "Secondary Priority", alwaysRequired: true, allowedValues: ["Low", "High"] },
+  ], []);
+  assert.ok(resolveSlots(noDefault, {}).unmappedRequired.some((f) => f.ref === "Custom.SecondaryPriority"),
+    "no default ⇒ still an unmapped-required gap (rule is not over-broad)");
 });
 
 test("resolveSlots: an explicit tracker.fieldMap override is the operator's LAST WORD", () => {
