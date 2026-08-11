@@ -186,11 +186,12 @@ function main() {
     console.log(`[gen-mcp] ${name}: defined but NOT enabled — ${missing.join(", ")} unset (optional; set it in .env.local and re-run to enable).`);
   }
 
-  // Warn about any enabled server whose token is still a placeholder.
+  // Warn about any enabled server whose token is still a placeholder. Reuse the single
+  // `unresolvedPlaceholders` helper (same source the enable-vs-skip decision uses above) so the
+  // placeholder scan can never drift between the two call sites.
   for (const name of enabledList) {
-    const blob = JSON.stringify(mcpServers[name]);
-    const ph = blob.match(/<[A-Z0-9_]+>/g);
-    if (ph) console.warn(`[gen-mcp] ⚠ ${name}: unresolved ${[...new Set(ph)].join(", ")} — set the token in .env.local or via login, then re-run.`);
+    const ph = unresolvedPlaceholders(mcpServers[name]);
+    if (ph.length) console.warn(`[gen-mcp] ⚠ ${name}: unresolved ${ph.join(", ")} — set the token in .env.local or via login, then re-run.`);
   }
 
   console.log("[gen-mcp] ⚠ Restart the MCP servers (reload the IDE / Claude Code) for changes to take effect.");

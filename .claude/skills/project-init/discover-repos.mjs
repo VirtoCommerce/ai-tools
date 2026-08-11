@@ -139,6 +139,11 @@ export function classify(modules, clientOrg) {
  * (clear the internal `nameFromId` flag, decision made); a miss marks it `nameUnverified` so the
  * operator confirms/corrects repos.client instead of /qa-fix routing a bug to a repo that isn't
  * there. Returns the names left unverified (for the caller to log). Mutates the entries.
+ *
+ * NOTE: `main()` no longer calls this — it now resolves each guessed name inline via
+ * `resolveModuleRepo` (which also picks the exact live repo, not just confirm/deny). This is kept
+ * DELIBERATELY as a covered pure utility (its #216 unit tests pin the confirm/mark contract) and as
+ * the batch counterpart to the single-module `resolveModuleRepo`; it is not dead-by-accident.
  */
 export function flagUnverifiedModules(clientRepos, liveRepoNames) {
   const live = new Set((liveRepoNames || []).map((n) => String(n).toLowerCase()));

@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import {
   resolveSlots, verifyAgainstContract, renderVerifyTable, filterContractForPersist,
-  operatorQuestions, parseFormLayout,
+  operatorQuestions, parseFormLayout, rankFormBodyRef,
 } from "../../plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs";
 import { shapeWorkItem } from "../../plugins/vc-fix/skills/qa-fix-routing/ado.mjs";
 import { buildBugFields } from "../../plugins/vc-fix/skills/qa-fix-routing/ado-html.mjs";
@@ -298,5 +298,193 @@ test("ITEM 5 #9: a 161-op span keeps the EARLIEST ops visible (middle eviction, 
     assert.equal(span.ops.at(-1).tool, "genericTool", "the newest op is still at the tail");
   } finally {
     rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// ─── REVIEW FIXES (PR 228 code-review) ────────────────────────────────────────────────
+
+// MED-4 — the body fallback is RANKED, not positional: a description/repro/steps-named on-form html
+// control wins over a control that merely appears first, so the whole body never lands in an
+// unrelated field (e.g. Acceptance Criteria) that happens to be first on the form.
+test("review MED-4: rankFormBodyRef prefers a body-ish control over a positional first pick", () => {
+  const contract = [
+    { ref: "Custom.AcceptanceCriteria", name: "Acceptance Criteria", type: "html" },
+    { ref: "Microsoft.VSTS.TCM.ReproSteps", name: "Repro Steps", type: "html" },
+  ];
+  const forms = ["Custom.AcceptanceCriteria", "Microsoft.VSTS.TCM.ReproSteps"]; // AC is FIRST
+  assert.equal(rankFormBodyRef(forms, contract), "Microsoft.VSTS.TCM.ReproSteps",
+    "the repro-named control wins even though Acceptance Criteria is first in form order");
+});
+test("review MED-4: rankFormBodyRef falls back to positional when nothing looks body-ish", () => {
+  const forms = ["Custom.FieldA", "Custom.FieldB"];
+  assert.equal(rankFormBodyRef(forms, []), "Custom.FieldA", "no name matches ⇒ first in form order");
+  assert.equal(rankFormBodyRef([], []), null, "no controls ⇒ null");
+});
+test("review MED-4: resolveSlots does not greedily bind body to an unrelated first control", () => {
+  const contract = [
+    { ref: "System.Title", name: "Title", required: true, type: "string" },
+    { ref: "System.Description", name: "Description", required: false, type: "html" }, // OFF-form
+    { ref: "Custom.AcceptanceCriteria", name: "Acceptance Criteria", required: false, type: "html" },
+    { ref: "Microsoft.VSTS.TCM.ReproSteps", name: "Repro Steps", required: false, type: "html" },
+  ];
+  // Description is off-form; the form surfaces AcceptanceCriteria FIRST, then ReproSteps.
+  const { mapping } = resolveSlots(contract, {}, ["Custom.AcceptanceCriteria", "Microsoft.VSTS.TCM.ReproSteps"]);
+  assert.notEqual(mapping.body, "Custom.AcceptanceCriteria", "body must not greedily take the first control");
+  assert.equal(mapping.body, "Microsoft.VSTS.TCM.ReproSteps", "body binds the repro-named on-form control");
+});
+
+// HIGH-2 — the persisted contract keeps EVERY form-visible html control (a candidate override
+// target) and any ref the operator pinned, so the create path can name them and a fieldMap.body
+// override resolves. A dropped on-form control could be neither named nor targeted.
+test("review HIGH-2: filterContractForPersist keeps a form-visible html control that no slot bound", () => {
+  const contract = [
+    { ref: "System.Title", name: "Title", required: true, type: "string" },
+    { ref: "System.Description", name: "Description", required: false, type: "html" },
+    { ref: "Microsoft.VSTS.TCM.ReproSteps", name: "Repro Steps", required: false, type: "html" },
+    { ref: "Custom.Analysis", name: "Analysis", required: false, type: "html" }, // on-form, no slot
+    { ref: "System.Rev", name: "Rev", required: false, type: "integer" },        // system — dropped
+  ];
+  const form = ["System.Description", "Microsoft.VSTS.TCM.ReproSteps", "Custom.Analysis"];
+  const r = filterContractForPersist(contract, { formHtmlControls: form });
+  const keptRefs = r.fields.map((f) => f.ref);
+  assert.ok(keptRefs.includes("Custom.Analysis"), "an on-form html control survives even with no slot");
+  assert.ok(!keptRefs.includes("System.Rev"), "a genuine system field is still dropped");
+  assert.ok(r.formVisible >= 1, "the kept on-form control is accounted for");
+});
+test("review HIGH-2: a fieldMap/fieldDefaults-pinned ref survives persistence", () => {
+  const contract = [
+    { ref: "System.Title", name: "Title", required: true, type: "string" },
+    { ref: "Custom.RootCause", name: "Root Cause", required: false, type: "html" },
+    { ref: "Custom.Team", name: "Team", required: false, type: "string" },
+  ];
+  const r = filterContractForPersist(contract, {
+    fieldMap: { body: "Custom.RootCause" },
+    fieldDefaults: { "Custom.Team": "Platform" },
+  });
+  const keptRefs = r.fields.map((f) => f.ref);
+  assert.ok(keptRefs.includes("Custom.RootCause"), "a fieldMap-pinned ref survives");
+  assert.ok(keptRefs.includes("Custom.Team"), "a fieldDefaults-pinned ref survives");
+});
+
+// parseFormLayout must exclude hidden pages/groups/controls — a hidden html control is NOT on the
+// form, so it must never be offered as a body target (the visible:false filter closes the same
+// bug class: a control that renders nowhere).
+test("review: parseFormLayout excludes visible:false controls, groups, and pages", () => {
+  const wit = { layout: { pages: [
+    { visible: true, sections: [{ groups: [{ controls: [
+      { controlType: "HtmlFieldControl", id: "Microsoft.VSTS.TCM.ReproSteps" },
+      { controlType: "HtmlFieldControl", id: "Custom.HiddenControl", visible: false },
+    ] }] }] },
+    { visible: true, sections: [{ groups: [
+      { visible: false, controls: [{ controlType: "HtmlFieldControl", id: "Custom.InHiddenGroup" }] },
+    ] }] },
+    { visible: false, sections: [{ groups: [{ controls: [{ controlType: "HtmlFieldControl", id: "Custom.OnHiddenPage" }] }] }] },
+  ] } };
+  assert.deepEqual(parseFormLayout(wit), ["Microsoft.VSTS.TCM.ReproSteps"],
+    "only the one visible html control is returned");
+});
+
+// HIGH-1 — the off-form guard runs on the LAYOUT, independent of a field contract. A profile with a
+// scanned formLayout but an EMPTY `fields` (the contract call failed while the layout call
+// succeeded — separate best-effort scans) must NOT silently write the body to off-form
+// System.Description. Two sub-cases via the real CLI.
+test("review HIGH-1: no contract + layout — a forced off-form body is REFUSED (not silently sent)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "vc-fix-nocontract-offform-"));
+  try {
+    writeFileSync(join(dir, "body.md"), "# Repro\n1. thing\n");
+    writeFileSync(join(dir, "project-profile.json"), JSON.stringify({
+      tracker: {
+        kind: "azure",
+        azure: { organization: "acme", project: "Web", apiBase: "https://dev.azure.com/acme/Web" },
+        fieldMap: { body: "System.Description" }, // off-form override
+        // NOTE: NO `fields` — the contract scan failed; only the layout survived.
+        formLayout: { Bug: { htmlControls: ["Microsoft.VSTS.TCM.ReproSteps"] } },
+      },
+    }));
+    let stderr = "";
+    try {
+      execFileSync(process.execPath, [ADO, "create-workitem", "--type", "Bug", "--title", "x", "--description-file", "body.md", "--no-preflight"], {
+        cwd: dir, encoding: "utf8", env: { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "" },
+      });
+      assert.fail("should have refused the off-form body even with no field contract");
+    } catch (e) {
+      stderr = String(e.stderr || e.stdout || e.message);
+    }
+    assert.match(stderr, /NOT on the Bug form/i, "the layout-only path still refuses an off-form body");
+    assert.match(stderr, /Microsoft\.VSTS\.TCM\.ReproSteps/, "…and names the on-form control");
+    assert.doesNotMatch(stderr, /HTTP \d/, "nothing was POSTed — the refusal is pre-flight");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+test("review HIGH-1: no contract + layout — a default body is REBOUND to an on-form control, not refused", () => {
+  const dir = mkdtempSync(join(tmpdir(), "vc-fix-nocontract-rebind-"));
+  try {
+    writeFileSync(join(dir, "body.md"), "# Repro\n1. thing\n");
+    writeFileSync(join(dir, "project-profile.json"), JSON.stringify({
+      tracker: {
+        kind: "azure",
+        azure: { organization: "acme", project: "Web", apiBase: "https://dev.azure.com/acme/Web" },
+        // No fieldMap override, no fields — the default body target (System.Description) is off-form.
+        formLayout: { Bug: { htmlControls: ["Microsoft.VSTS.TCM.ReproSteps"] } },
+      },
+    }));
+    let stderr = "";
+    try {
+      // A dummy PAT + a closed-port api-base make the run get PAST the off-form gate and then fail
+      // fast+deterministically at the POST (ECONNREFUSED) — no live Azure call, no CLI-credential
+      // path. What matters is it does NOT stop at an off-form refusal.
+      execFileSync(process.execPath, [ADO, "create-workitem", "--type", "Bug", "--title", "x", "--description-file", "body.md",
+        "--api-base", "http://127.0.0.1:9", "--no-preflight"], {
+        cwd: dir, encoding: "utf8", env: { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy", ADO_AUTH: "pat" },
+      });
+    } catch (e) {
+      stderr = String(e.stderr || e.stdout || e.message);
+    }
+    // The body rebinds to ReproSteps and the run proceeds PAST the off-form gate. That proves the
+    // layout-only path binds to a form-visible control instead of silently writing to off-form
+    // System.Description (which would have passed the old contract-gated check untouched).
+    assert.doesNotMatch(stderr, /NOT on the Bug form/i, "the default body was rebound, not refused");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// MED-3 — systemInfo folds into the body when the form has no on-form SystemInfo control, instead
+// of aborting the whole create over an optional metadata sub-field.
+test("review MED-3: an off-form systemInfo folds into the body instead of failing the create", () => {
+  const dir = mkdtempSync(join(tmpdir(), "vc-fix-sysinfo-fold-"));
+  try {
+    writeFileSync(join(dir, "body.md"), "# Repro\n1. thing\n");
+    writeFileSync(join(dir, "sysinfo.md"), "Build 1.2.3 / Chrome 120\n");
+    writeFileSync(join(dir, "project-profile.json"), JSON.stringify({
+      tracker: {
+        kind: "azure",
+        azure: { organization: "acme", project: "Web", apiBase: "https://dev.azure.com/acme/Web" },
+        fields: {
+          Bug: [
+            { ref: "System.Title", name: "Title", required: true, type: "string" },
+            { ref: "Microsoft.VSTS.TCM.ReproSteps", name: "Repro Steps", required: false, type: "html" },
+            { ref: "Microsoft.VSTS.TCM.SystemInfo", name: "System Info", required: false, type: "html" },
+          ],
+        },
+        // Only ReproSteps is on the form — SystemInfo exists in the contract but is OFF the form.
+        formLayout: { Bug: { htmlControls: ["Microsoft.VSTS.TCM.ReproSteps"] } },
+      },
+    }));
+    let stderr = "";
+    try {
+      execFileSync(process.execPath, [ADO, "create-workitem", "--type", "Bug", "--title", "x",
+        "--description-file", "body.md", "--system-info-file", "sysinfo.md",
+        "--api-base", "http://127.0.0.1:9", "--no-preflight"], {
+        cwd: dir, encoding: "utf8", env: { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy", ADO_AUTH: "pat" },
+      });
+    } catch (e) {
+      stderr = String(e.stderr || e.stdout || e.message);
+    }
+    assert.doesNotMatch(stderr, /systemInfo field .* is NOT on the Bug form/i,
+      "an off-form systemInfo folds into the body — the create is not aborted over it");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

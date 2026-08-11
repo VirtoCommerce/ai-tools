@@ -151,6 +151,32 @@ export function fieldOf(contract, ref) {
 }
 
 /**
+ * Pick the best on-form html control to receive the BODY when the canonical body target is
+ * off-form. RANKED, not positional (review MED-4): a control whose contract name OR ref looks like
+ * the primary description/repro/steps area wins over a bare first-in-form-order pick, so the whole
+ * bug body never greedily lands in an unrelated on-form html control (e.g. Acceptance Criteria)
+ * that merely happens to appear first. Works with or without a field contract — with none, only the
+ * ref string is available to rank on (`parseFormLayout` already returns HtmlFieldControls only, so
+ * every form ref is a valid html target).
+ * @param {string[]} formRefs   html control refs, in form order
+ * @param {Array} [contract]    field contract (for names/types); may be empty
+ * @param {Set<string>} [taken] lowercased refs already claimed by another slot
+ * @returns {string|null}
+ */
+export function rankFormBodyRef(formRefs, contract = [], taken = new Set()) {
+  const list = contract || [];
+  const avail = (Array.isArray(formRefs) ? formRefs : [])
+    .filter((ref) => ref && !taken.has(lc(ref)))
+    // With a contract, only an html-typed control is a valid body target; with none, every form
+    // control qualifies (parseFormLayout emitted only HtmlFieldControls).
+    .filter((ref) => { const f = fieldOf(list, ref); return !list.length || (f && f.type === "html"); });
+  const BODYISH = /repro|description|steps|details/i;
+  const nameOf = (ref) => { const f = fieldOf(list, ref); return (f && f.name) || ""; };
+  const preferred = avail.find((ref) => BODYISH.test(nameOf(ref)) || BODYISH.test(String(ref)));
+  return preferred || avail[0] || null;
+}
+
+/**
  * Is this field stored as HTML? DERIVED from the contract's data type when we have one —
  * replacing the hardcoded assumption in azure-html-format.md / ado-html.mjs. With no
  * contract entry the caller falls back to `isHtmlField(ref)` (the legacy known-refs set).
@@ -232,11 +258,10 @@ export function resolveSlots(contract, fieldMap = {}, formHtmlControls = []) {
     // FIRST form-visible html control instead — in form order, so the operator's primary text area
     // is chosen. repro/systemInfo, resolved later/earlier, then take what remains.
     if (!hit && slot === "body" && formActive) {
-      const firstOnForm = formRefs.find((ref) => {
-        const f = fieldOf(list, ref);
-        return f && f.type === "html" && !taken.has(lc(ref));
-      });
-      if (firstOnForm) hit = fieldOf(list, firstOnForm);
+      // Ranked pick (review MED-4): prefer a description/repro/steps-named on-form html control
+      // over a bare positional one, so the body never greedily claims an unrelated first control.
+      const pickRef = rankFormBodyRef(formRefs, list, taken);
+      if (pickRef) hit = fieldOf(list, pickRef);
     }
     if (hit) { mapping[slot] = hit.ref; source[slot] = "auto"; taken.add(lc(hit.ref)); }
   }
@@ -556,23 +581,36 @@ export function filterContractForPersist(contract, opts = {}) {
   const transitionRequired = new Set((opts.transitionRequiredRefs || []).map(lc));
   const { mapping } = resolveSlots(list, opts.fieldMap || {}, opts.formHtmlControls || []);
   const slotRefs = new Set(Object.values(mapping).map(lc));
+  // (d) EVERY form-visible html control is a candidate body/repro/systemInfo override target — keep
+  //     them all, even ones no slot auto-bound, so the create path can NAME them when a body is
+  //     off-form and a `tracker.fieldMap` body override can RESOLVE against one. Dropping an on-form
+  //     control made the documented remediation unactionable (review HIGH-2).
+  // (e) any ref the operator already pinned via `tracker.fieldMap` / `tracker.fieldDefaults` must
+  //     survive, so its value is contract-validated (not silently dropped) at create time. Empty at
+  //     onboarding (the operator sets them at the first bug) — a no-op then, load-bearing after.
+  const formRefs = new Set((opts.formHtmlControls || []).map(lc));
+  const pinnedRefs = new Set(
+    [...Object.values(opts.fieldMap || {}), ...Object.keys(opts.fieldDefaults || {})].filter(Boolean).map(lc),
+  );
   const kept = [];
-  let keptRequired = 0, keptSlotMapped = 0, keptTransition = 0;
+  let keptRequired = 0, keptSlotMapped = 0, keptTransition = 0, keptForm = 0;
   for (const f of list) {
     const r = lc(f.ref);
     const isReq = f.required === true;
     const isSlot = slotRefs.has(r);
     const isTrans = transitionRequired.has(r);
-    if (!(isReq || isSlot || isTrans)) continue; // system/unused — dropped
+    const isForm = formRefs.has(r) || pinnedRefs.has(r);
+    if (!(isReq || isSlot || isTrans || isForm)) continue; // system/unused — dropped
     kept.push(f);
-    if (isReq) keptRequired++;            // count each kept field under exactly ONE reason,
-    else if (isSlot) keptSlotMapped++;    // required first (a required+slot field is a "required"),
-    else keptTransition++;                // so the reasons sum to `kept` with no double-count.
+    if (isReq) keptRequired++;            // count each kept field under exactly ONE reason, in
+    else if (isSlot) keptSlotMapped++;    // priority order (required → slot → transition → form),
+    else if (isTrans) keptTransition++;   // so the reasons sum to `kept` with no double-count.
+    else keptForm++;
   }
   const scanned = list.length;
   const dropped = scanned - kept.length;
   const accounting = `rule-filtered (${scanned} scanned, ${kept.length} kept, ${dropped} dropped as system/unused, ${keptRequired} required)`;
-  return { fields: kept, scanned, kept: kept.length, dropped, required: keptRequired, slotMapped: keptSlotMapped, transitionRequired: keptTransition, accounting };
+  return { fields: kept, scanned, kept: kept.length, dropped, required: keptRequired, slotMapped: keptSlotMapped, transitionRequired: keptTransition, formVisible: keptForm, accounting };
 }
 
 /**

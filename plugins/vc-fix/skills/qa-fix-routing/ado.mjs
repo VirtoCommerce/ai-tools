@@ -67,7 +67,7 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 // and the payload builder can never disagree. See bug-contract.mjs's header.
 import {
   resolveSlots, buildContractFields, verifyAgainstContract, renderVerifyTable,
-  classifyFieldRejection, isHtmlByContract,
+  classifyFieldRejection, isHtmlByContract, rankFormBodyRef,
 } from "./bug-contract.mjs";
 // Non-mutating ADO write-scope probe, reused from /project-init's readiness table so
 // "your PAT is read-only" is told ONCE, up front, in the same words on both surfaces.
@@ -104,6 +104,9 @@ try {
 function loadProfile() {
   const candidates = [];
   if (process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
+  // Honor VC_FIX_HOME (the write-root the readers use — see inputRoot()) so a tool launched from an
+  // unrelated cwd still finds the deployment's profile, matching where /project-init wrote it.
+  if (process.env.VC_FIX_HOME) candidates.push(join(resolve(process.env.VC_FIX_HOME), "project-profile.json"));
   let dir = process.cwd();
   for (let i = 0; i < 8; i++) {
     candidates.push(join(dir, "project-profile.json"));
@@ -200,10 +203,10 @@ async function authHeader() {
   try {
     ({ AzureCliCredential } = await import("@azure/identity"));
   } catch {
-    fail("Azure DevOps auth unavailable: set ADO_PAT (recommended) or install @azure/identity and run `az login`.");
+    fail(`Azure DevOps auth unavailable: set ADO_PAT (recommended) or install @azure/identity and run \`az login\`.\n      (ADO_PAT is read from .env.local under VC_FIX_HOME || cwd = ${inputRoot()} — confirm it is set there, not just exported in another shell.)`);
   }
   const tok = await new AzureCliCredential().getToken(ADO_RESOURCE);
-  if (!tok?.token) fail("Azure DevOps auth unavailable: set ADO_PAT, or run `az login` and set ADO_AUTH=az-login.");
+  if (!tok?.token) fail(`Azure DevOps auth unavailable: set ADO_PAT, or run \`az login\` and set ADO_AUTH=az-login.\n      (ADO_PAT is read from .env.local under VC_FIX_HOME || cwd = ${inputRoot()}.)`);
   _bearer = { token: tok.token, exp: tok.expiresOnTimestamp };
   return `Bearer ${tok.token}`;
 }
@@ -216,7 +219,7 @@ function base(args, axis = "vcs") {
   const org = args.org || AZ.organization;
   const project = args.project || AZ.project;
   if (AZ.apiBase && !args.org && !args.project) return String(AZ.apiBase).replace(/\/$/, "");
-  if (!org || !project) fail("no org/project — pass --org/--project or set tracker/vcs.azure in project-profile.json");
+  if (!org || !project) fail(`no org/project — pass --org/--project or set tracker/vcs.azure in project-profile.json.\n      (The profile was searched at PROJECT_PROFILE_PATH, then VC_FIX_HOME (${process.env.VC_FIX_HOME || "unset"}), then cwd and its parents from ${process.cwd()}. If it lives elsewhere, set PROJECT_PROFILE_PATH or run from the project root.)`);
   return `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
 }
 
@@ -734,46 +737,25 @@ const COMMANDS = {
     let bodyRef = "System.Description";
     let reproRef = "Microsoft.VSTS.TCM.ReproSteps";
     let systemInfoRef = "Microsoft.VSTS.TCM.SystemInfo";
-    // Body/repro content, possibly merged: on a process whose only html control is the body target
-    // (e.g. OPUS: ReproSteps is the body, no distinct repro field), repro folds INTO the body so the
-    // repro text is not silently dropped and no duplicate op is emitted.
+    // Body/repro/systemInfo content, possibly merged: on a process whose only html control is the
+    // body target (e.g. OPUS: ReproSteps is the body, no distinct repro/systemInfo field), the repro
+    // and systemInfo text fold INTO the body so nothing is silently dropped and no duplicate op is
+    // emitted. `systemInfoFolded` tells the buildBugFields call below not to ALSO emit it separately.
     let bodyContent = description;
     let reproContent = repro;
+    let systemInfoFolded = false;
+    // The html controls THIS form surfaces (contract-derived when present, else the raw layout) —
+    // the actionable list to NAME when a target is off-form.
+    let htmlControlsAvailable = [];
     if (contract.length) {
       const slots = resolveSlots(contract, fieldMap, formHtmlControls);
       mapping = slots.mapping;
+      htmlControlsAvailable = slots.htmlControlsAvailable;
       // Resolve the long-text targets from the mapping (form-visibility-gated). A slot with no
       // form-visible field stays undefined and its content folds into the body.
       bodyRef = mapping.body || bodyRef;
       systemInfoRef = mapping.systemInfo || systemInfoRef;
       reproRef = mapping.repro; // may be undefined — merged into the body below
-      if (reproContent && (!reproRef || reproRef === bodyRef)) {
-        bodyContent = [description, reproContent].filter(Boolean).join("\n\n");
-        reproContent = "";
-        reproRef = undefined;
-      }
-      // ── HARD PRE-FLIGHT: never POST long-text content to an off-form (invisible) field (ITEM 0.3) ──
-      // The OPUS symptom: the whole body went to System.Description, which is NOT on the Bug form,
-      // so it rendered nowhere while create reported PASS. Auto-binding can only pick on-form html
-      // controls, but an operator `tracker.fieldMap` override can force ANY of the long-text slots
-      // (body/repro/systemInfo) onto an off-form field — so check every content-carrying one, not
-      // just body. Refuse, and NAME the html controls that ARE on the form.
-      if (formHtmlControls.length) {
-        const onForm = (ref) => ref && formHtmlControls.some((r) => r.toLowerCase() === ref.toLowerCase());
-        const offForm = [
-          { label: "body", ref: bodyRef, content: bodyContent },
-          { label: "repro", ref: reproRef, content: reproContent },
-          { label: "systemInfo", ref: systemInfoRef, content: systemInfo },
-        ].find((c) => c.content && !onForm(c.ref));
-        if (offForm) {
-          fail(
-            `create-workitem: the resolved ${offForm.label} field ${offForm.ref ? `(${offForm.ref}) ` : ""}is NOT on the ${args.type} form — content written there would be INVISIBLE. NOTHING was created.\n` +
-              `      Html controls ON the form (any of these can receive it): ${slots.htmlControlsAvailable.join(", ") || "(none — this type has no html control on its form)"}\n` +
-              `      Bind the ${offForm.label} slot to one of them via tracker.fieldMap (e.g. { "${offForm.label}": "${slots.htmlControlsAvailable[0] || "<ref>"}" }) and re-run.`,
-            2,
-          );
-        }
-      }
       // The slots buildBugFields emits through its OWN dedicated ops — declared here so the
       // required sweep counts them as filled instead of blocking the POST on a field we are
       // very much sending (and so we don't emit a duplicate JSON-Patch op for it).
@@ -820,6 +802,54 @@ const COMMANDS = {
       // canonical refs, which would duplicate the op (and could target a ref this org lacks).
       contractNote = `contract-driven (${contract.length} field(s), ${contract.filter((f) => f.required).length} required)`;
     }
+
+    // ─── FORM-VISIBILITY BINDING + OFF-FORM REFUSAL (VCST-5702 ITEM 0.3; review HIGH-1/MED-3) ──
+    // Runs whenever a form layout was scanned, INDEPENDENT of whether a field contract is present.
+    // The OPUS silent failure — the whole body written to off-form System.Description, reported PASS —
+    // is reachable with NO contract too: discover-tracker's layout scan and field-contract scan are
+    // SEPARATE best-effort calls, so a profile can carry `formLayout` while `fields` is empty (the
+    // contract call failed, the layout call didn't). Gating this on the LAYOUT, not the contract,
+    // closes that second path — the layout alone answers "is this ref on the form?".
+    if (formHtmlControls.length) {
+      const onForm = (ref) => ref && formHtmlControls.some((r) => r.toLowerCase() === String(ref).toLowerCase());
+      const same = (a, b) => a && b && String(a).toLowerCase() === String(b).toLowerCase();
+      const controls = htmlControlsAvailable.length ? htmlControlsAvailable : formHtmlControls;
+      // A body target that is off-form and NOT an explicit operator override is rebound to the best
+      // on-form html control (RANKED — never a bare positional pick, so the body can't land in an
+      // unrelated first control like Acceptance Criteria). An explicit `fieldMap.body` override is
+      // trusted and instead refused below if off-form, never silently rebound.
+      if (!onForm(bodyRef) && !fieldMap.body) {
+        const rebound = rankFormBodyRef(controls, contract);
+        if (rebound) bodyRef = rebound;
+      }
+      // repro / systemInfo with no distinct on-form control (or one that collapsed onto the body ref)
+      // fold INTO the body — never dropped, and never a whole-create abort over an optional metadata
+      // sub-field (MED-3: systemInfo now folds like repro instead of failing the create). An explicit
+      // off-form override is left in place to be refused below.
+      if (reproContent && !fieldMap.repro && (!onForm(reproRef) || same(reproRef, bodyRef))) {
+        bodyContent = [bodyContent, reproContent].filter(Boolean).join("\n\n");
+        reproContent = ""; reproRef = undefined;
+      }
+      if (systemInfo && !fieldMap.systemInfo && (!onForm(systemInfoRef) || same(systemInfoRef, bodyRef))) {
+        bodyContent = [bodyContent, systemInfo].filter(Boolean).join("\n\n");
+        systemInfoFolded = true; systemInfoRef = undefined;
+      }
+      // Refuse ONLY if a content-carrying slot is STILL off-form: an explicit override onto an
+      // off-form field, or a type with no on-form html control at all. NAME the on-form controls.
+      const offForm = [
+        { label: "body", ref: bodyRef, content: bodyContent },
+        { label: "repro", ref: reproRef, content: reproContent },
+        { label: "systemInfo", ref: systemInfoRef, content: systemInfoFolded ? "" : systemInfo },
+      ].find((c) => c.content && !onForm(c.ref));
+      if (offForm) {
+        fail(
+          `create-workitem: the resolved ${offForm.label} field ${offForm.ref ? `(${offForm.ref}) ` : ""}is NOT on the ${args.type} form — content written there would be INVISIBLE. NOTHING was created.\n` +
+            `      Html controls ON the form (any of these can receive it): ${controls.join(", ") || "(none — this type has no html control on its form)"}\n` +
+            `      Bind the ${offForm.label} slot to one of them via tracker.fieldMap (e.g. { "${offForm.label}": "${controls[0] || "<ref>"}" }) and re-run.`,
+          2,
+        );
+      }
+    }
     const useContract = contract.length > 0;
 
     const fields = buildBugFields({
@@ -829,7 +859,7 @@ const COMMANDS = {
       severity: useContract ? "" : str(args.severity),
       priority: useContract ? undefined : (args.priority !== undefined && args.priority !== true ? args.priority : undefined),
       tags: str(args.tags),
-      systemInfo,
+      systemInfo: systemInfoFolded ? "" : systemInfo,
       fields: customFields,
       attachments: str(args.attachments),
       assignedTo,

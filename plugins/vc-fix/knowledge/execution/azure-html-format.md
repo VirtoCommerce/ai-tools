@@ -233,12 +233,18 @@ node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <ID> --json >
 # 2. JSON-Patch: write that html into the form-visible body control (from
 #    tracker.formLayout.<Type>.htmlControls) and clear the off-form field. Replace <FORM_VISIBLE_REF>
 #    (e.g. Microsoft.VSTS.TCM.ReproSteps) and <OFF_FORM_REF> (e.g. System.Description):
+# Keep the PAT OUT of argv and shell history: `-u ":$ADO_PAT"` puts the token on the command line,
+# where it is visible to `ps`/process listing and lands in shell history on a shared host. Instead
+# write it to a mode-600 curl config (printf is a shell builtin, so it never forks a process whose
+# argv carries the token) and delete it after.
+umask 077; printf 'user = ":%s"\n' "$ADO_PAT" > .curlauth.tmp
 curl -sS -X PATCH \
   "https://dev.azure.com/<org>/<project>/_apis/wit/workitems/<ID>?api-version=7.1" \
   -H "Content-Type: application/json-patch+json" \
-  -u ":$ADO_PAT" \
+  -K .curlauth.tmp \
   -d '[{"op":"add","path":"/fields/<FORM_VISIBLE_REF>","value":"<html-from-step-1>"},
        {"op":"add","path":"/fields/<OFF_FORM_REF>","value":""}]'
+rm -f .curlauth.tmp
 ```
 
 Then re-file (or re-run `/qa-bug`) on a re-scanned profile (`/project-init`) so future items bind the
