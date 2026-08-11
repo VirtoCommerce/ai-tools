@@ -39,7 +39,7 @@
  * pure `ado-html.mjs` (inline-image counters, no side effects). Unit-tested against recorded
  * metadata fixtures from two DIFFERENT Azure Boards processes.
  */
-import { countImages, countAttachmentImages } from "./ado-html.mjs";
+import { countAttachmentImages } from "./ado-html.mjs";
 
 // ─── semantic slots ──────────────────────────────────────────────────────────────────
 // The fixed vocabulary a bug report speaks. `parent` and `attachments` are deliberately
@@ -253,12 +253,14 @@ export function resolveSlots(contract, fieldMap = {}, formHtmlControls = []) {
         .map(([slot, ref]) => ({ slot, ref }))
     : [];
   // The html controls THIS form actually surfaces, in form order — the actionable list to show
-  // when a body target is off-form or missing.
+  // when a body target is off-form or missing. The `f.type === "html"` re-filter is a DEFENSIVE
+  // cross-check against the contract (parseFormLayout already returns only HtmlFieldControls); it
+  // drops a form control that the field-types list disagrees is html.
   const htmlControlsAvailable = formRefs.filter((ref) => {
     const f = fieldOf(list, ref);
     return !list.length || (f && f.type === "html");
   });
-  return { mapping, source, unmapped, unmappedRequired, requiredRefs, staleOverrides, offFormSlots, htmlControlsAvailable, formActive };
+  return { mapping, source, unmapped, unmappedRequired, requiredRefs, staleOverrides, offFormSlots, htmlControlsAvailable };
 }
 
 // ─── payload build + validation (E-c) ────────────────────────────────────────────────
@@ -381,7 +383,11 @@ export function verifyAgainstContract(contract, mapping, itemFields = {}, sent =
     const slot = bySlot.get(lc(f.ref)) || "";
     // Form visibility of this field — null when no layout was scanned (the check is inert).
     const onForm = formActive ? formSet.has(lc(f.ref)) : null;
-    // Image evidence: only assert when this field carried submitted images.
+    // Image evidence: only assert when this field carried submitted images. NOTE the asymmetry is
+    // deliberate — `submittedImages` counts EVERY submitted `<img>` (the caller's countImages),
+    // while the read-back counts only attachment-backed `<img>` (…/_apis/wit/attachments/…). An
+    // inline bug screenshot is meant to become an ADO attachment, so a submitted external/`data:`
+    // image that never became one is intentionally reported as not-yet-rendered (IMAGES_MISSING).
     const imgSubmitted = Number(submittedImages[f.ref] || 0) || 0;
     const imgReadback = imgSubmitted > 0 ? countAttachmentImages(typeof raw === "string" ? raw : "") : 0;
     let status;

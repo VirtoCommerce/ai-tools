@@ -778,9 +778,12 @@ function pushOp(span, op) {
   // tail, evicting from the MIDDLE. The old shift() dropped the earliest ops, so on a long span (a
   // 161-op single command, a /project-init run) every detector that walks `ops[]` — retry_storm,
   // reread_loop, recurring_error — saw only the tail and missed where trouble started. Memory is
-  // still bounded at OPS_CAP. (Trade-off: a middle gap can separate two otherwise-adjacent ops;
-  // the detectors count occurrences within a window, not strict whole-array adjacency, so this is
-  // safe.) Count the evictions so emitSpan can say so out loud.
+  // still bounded at OPS_CAP. (Trade-off: a middle gap forms at index OPS_HEAD_KEEP, joining the
+  // last head op to a tail op. The Map-aggregated detectors — retry_storm/reread_loop/
+  // recurring_error/fallback_loop — count occurrences, not adjacency, so they are unaffected; only
+  // `search_thrash`, which counts a CONSECUTIVE array run, can see the seam as one longer/shorter
+  // run. It is gated to no-progress read-only spans, so a rare false ±1 there is acceptable — a
+  // much smaller blind spot than losing the head entirely.) Count the evictions so emitSpan says so.
   if (span.ops.length > OPS_CAP) { span.ops.splice(OPS_HEAD_KEEP, 1); span.opsDropped = (span.opsDropped ?? 0) + 1; }
 }
 // Session-level buffers for ops/details that had NO parent span (parentId:null) — see freshState.

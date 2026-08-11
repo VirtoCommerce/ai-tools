@@ -278,11 +278,13 @@ export function buildBugFields(input = {}) {
   };
   if (input.description) pushField(bodyRef, body(bodyRef, input.description));
   if (input.reproSteps) pushField(reproRef, body(reproRef, input.reproSteps));
-  if (input.severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: input.severity });
+  // Severity/Priority/Tags go through pushField too, so their canonical refs enter `emitted` and a
+  // contract custom-field of the same ref can't emit a duplicate JSON-Patch op below.
+  if (input.severity) pushField("Microsoft.VSTS.Common.Severity", input.severity);
   if (input.priority !== undefined && input.priority !== null && input.priority !== true)
-    fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: Number(input.priority) });
+    pushField("Microsoft.VSTS.Common.Priority", Number(input.priority));
   const tags = normalizeTags(input.tags);
-  if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
+  if (tags) pushField("System.Tags", tags);
   if (input.systemInfo) pushField(systemInfoRef, body(systemInfoRef, input.systemInfo));
   // Arbitrary custom fields (the deployment's Bug picklists). HTML-normalize ONLY html-typed refs
   // (the contract resolver, else isHtmlField exact match) — a plaintext custom field is sent

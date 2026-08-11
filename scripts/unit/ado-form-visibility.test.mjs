@@ -18,6 +18,7 @@ import {
   operatorQuestions, parseFormLayout,
 } from "../../plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs";
 import { shapeWorkItem } from "../../plugins/vc-fix/skills/qa-fix-routing/ado.mjs";
+import { buildBugFields } from "../../plugins/vc-fix/skills/qa-fix-routing/ado-html.mjs";
 import { pinnedPlaywrightVersion } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
 import {
   OPUS_FORM_HTML_CONTROLS, DESCRIPTION_ON_FORM_CONTROLS, OPUS_LAYOUT_WIT, OPUS_XMLFORM_WIT,
@@ -45,6 +46,37 @@ test("ITEM 0 #1: body resolves to ReproSteps when System.Description is off-form
   assert.equal(mapping.body, "Microsoft.VSTS.TCM.ReproSteps", "the body must land on a control that is ON the form");
   assert.notEqual(mapping.body, "System.Description", "System.Description exists but is off-form — never the body target");
   assert.equal(mapping.systemInfo, "Microsoft.VSTS.TCM.SystemInfo");
+  // repro has NO distinct form control (ReproSteps was claimed by body) — it folds into the body.
+  // This is the precondition that triggers the create-path repro→body merge.
+  assert.equal(mapping.repro, undefined, "repro is unmapped when body took the only spare html control");
+});
+
+// ─── TEST 1b — the WRITE path actually targets the resolved ref (not just resolution) ─────
+// resolveSlots proving body=ReproSteps is not enough: buildBugFields must WRITE there. A regression
+// that ignored bodyRef and emitted to System.Description would pass every resolution test.
+test("ITEM 0 #1b: buildBugFields writes the body to the resolved ref, NOT System.Description", () => {
+  const ops = buildBugFields({ title: "t", description: "the whole report", bodyRef: "Microsoft.VSTS.TCM.ReproSteps", reproRef: undefined, reproSteps: "" });
+  const paths = ops.map((o) => o.path);
+  assert.ok(paths.includes("/fields/Microsoft.VSTS.TCM.ReproSteps"), "the body op targets the form-visible ref");
+  assert.ok(!paths.includes("/fields/System.Description"), "nothing is written to the off-form System.Description");
+  const bodyOp = ops.find((o) => o.path === "/fields/Microsoft.VSTS.TCM.ReproSteps");
+  assert.match(String(bodyOp.value), /the whole report/);
+});
+test("ITEM 0 #1b: a second op to the same ref is deduped (repro folded into body)", () => {
+  // When repro and body share a ref, only ONE JSON-Patch op may be emitted for it.
+  const ops = buildBugFields({ title: "t", description: "BODY", reproSteps: "REPRO", bodyRef: "Microsoft.VSTS.TCM.ReproSteps", reproRef: "Microsoft.VSTS.TCM.ReproSteps" });
+  const reproOps = ops.filter((o) => o.path === "/fields/Microsoft.VSTS.TCM.ReproSteps");
+  assert.equal(reproOps.length, 1, "exactly one op to the shared ref — never a duplicate");
+});
+test("ITEM 0 #1b: default (no bodyRef) still targets System.Description (backward compatible)", () => {
+  const ops = buildBugFields({ title: "t", description: "body" });
+  assert.ok(ops.some((o) => o.path === "/fields/System.Description"), "no contract ⇒ legacy canonical ref");
+});
+test("ITEM 0b #1b: a contract custom field on Severity/Tags does not duplicate the slot op", () => {
+  // Severity/Priority/Tags now go through the dedup set, so a same-ref custom field can't double-emit.
+  const ops = buildBugFields({ title: "t", severity: "2 - High", tags: "qa", fields: { "Microsoft.VSTS.Common.Severity": "1 - Critical", "System.Tags": "dupe" } });
+  assert.equal(ops.filter((o) => o.path === "/fields/Microsoft.VSTS.Common.Severity").length, 1, "one Severity op");
+  assert.equal(ops.filter((o) => o.path === "/fields/System.Tags").length, 1, "one Tags op");
 });
 
 test("ITEM 0 #1: forcing body=System.Description (off-form) is surfaced as an off-form slot", () => {
@@ -258,6 +290,9 @@ test("ITEM 5 #9: a 161-op span keeps the EARLIEST ops visible (middle eviction, 
     assert.equal(span.opsDropped, 41, "161 - 120 evicted");
     assert.equal(span.ops[0].tool, "FirstMarkerTool", "the EARLIEST op survived (head not dropped)");
     assert.ok(span.ops.some((o) => o.tool === "FirstMarkerTool"), "the marker is still visible to the struggle detectors");
+    // …and the most-recent tail is retained too — eviction is middle-only, so the last op (index 160)
+    // is still present. This pins the design (first N + recent tail), not merely "head survived".
+    assert.equal(span.ops.at(-1).tool, "genericTool", "the newest op is still at the tail");
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

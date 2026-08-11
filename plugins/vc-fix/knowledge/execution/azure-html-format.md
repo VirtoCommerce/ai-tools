@@ -224,18 +224,25 @@ was the defect: it is derived from the layout, per type.
 An item filed BEFORE this fix may carry its whole body on an off-form field (e.g. `System.Description`
 when the Bug form only surfaces `ReproSteps`/`SystemInfo`) — invisible on the form. To repair it, copy the
 html to the form-visible body control and clear the off-form field (this is exactly how work item 8452 was
-repaired manually, landing at rev 2):
+repaired manually, landing at rev 2). `ado.mjs` has **no generic field-update subcommand** (only
+`comment`/`transition`), so the field PATCH is a direct JSON-Patch REST call:
 
 ```bash
-# 1. Read the raw off-form html (‑‑json keeps it unstripped).
-node ado.mjs get-workitem --id <ID> --json > wi.json
-# 2. PATCH: write the html into the form-visible body control, then clear the off-form field.
-#    (Confirm the form-visible ref from tracker.formLayout.<Type>.htmlControls.)
-node ado.mjs comment --id <ID> --text "Body relocated to the form-visible field (was off-form)."
+# 1. Read the raw off-form html (--json keeps it unstripped) and note the value of the off-form field.
+node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <ID> --json > wi.json
+# 2. JSON-Patch: write that html into the form-visible body control (from
+#    tracker.formLayout.<Type>.htmlControls) and clear the off-form field. Replace <FORM_VISIBLE_REF>
+#    (e.g. Microsoft.VSTS.TCM.ReproSteps) and <OFF_FORM_REF> (e.g. System.Description):
+curl -sS -X PATCH \
+  "https://dev.azure.com/<org>/<project>/_apis/wit/workitems/<ID>?api-version=7.1" \
+  -H "Content-Type: application/json-patch+json" \
+  -u ":$ADO_PAT" \
+  -d '[{"op":"add","path":"/fields/<FORM_VISIBLE_REF>","value":"<html-from-step-1>"},
+       {"op":"add","path":"/fields/<OFF_FORM_REF>","value":""}]'
 ```
 
-Then re-file via `/qa-bug` on a re-scanned profile (`/project-init`) so future items bind the body
-correctly; the manual PATCH above is only for already-filed items.
+Then re-file (or re-run `/qa-bug`) on a re-scanned profile (`/project-init`) so future items bind the
+body correctly; the manual PATCH above is only for already-filed items.
 
 ## Comments (`/qa-fix`, `/qa-verify-fix`, `/qa-defect`)
 

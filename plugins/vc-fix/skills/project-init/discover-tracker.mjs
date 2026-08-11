@@ -271,8 +271,14 @@ async function main() {
         // Rule-filter for PERSISTENCE (VCST-5702 ITEM 0b): keep only fields that are required for
         // creation, required for a state transition, or bound to a semantic slot — never a name
         // whitelist. The scan still read EVERYTHING (`contract`); only the slim set is persisted.
-        // transitionRequiredRefs is best-effort empty until a process-rules collector lands: a field
-        // that is alwaysRequired OR slot-mappable already survives, which covers the common cases.
+        // TODO(VCST-5702 rule b): transitionRequiredRefs is empty here until a process-rules
+        // collector (GET .../workItemTypes/{wit}/rules or /states/{state} transition rules) lands.
+        // The pure filter + its unit test already SUPPORT rule (b); only the live population is
+        // pending. Until then the persisted contract is LOSSY for a field required ONLY on a
+        // transition (not alwaysRequired, not slot-mapped) — acceptable today because the only
+        // transition path (`ado.mjs transition`) PATCHes System.State alone and never fills a
+        // contract-required field, so no live consumer needs it; revisit when a transition writes
+        // more than State.
         const filtered = filterContractForPersist(contract, { formHtmlControls, transitionRequiredRefs: [] });
         fields[t] = filtered.fields;
         fieldsMeta[t] = {

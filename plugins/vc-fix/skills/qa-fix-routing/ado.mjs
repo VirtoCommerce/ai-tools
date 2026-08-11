@@ -68,7 +68,7 @@ import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../project-init/p
 // Azure HTML conversion + the Bug JSON-Patch builder live in a shared module so the CLI here
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
-import { ensureAzureHtml, mdToHtml, buildBugFields, countImages, countAttachmentImages } from "./ado-html.mjs";
+import { ensureAzureHtml, mdToHtml, buildBugFields, countImages } from "./ado-html.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -576,17 +576,24 @@ const COMMANDS = {
         reproContent = "";
         reproRef = undefined;
       }
-      // ── HARD PRE-FLIGHT: never POST a body to an off-form (invisible) field (ITEM 0.3) ──────
+      // ── HARD PRE-FLIGHT: never POST long-text content to an off-form (invisible) field (ITEM 0.3) ──
       // The OPUS symptom: the whole body went to System.Description, which is NOT on the Bug form,
-      // so it rendered nowhere while create reported PASS. Refuse, and NAME the html controls that
-      // ARE on the form so the operator can fix tracker.fieldMap.
-      if (formHtmlControls.length && bodyContent) {
-        const bodyOnForm = bodyRef && formHtmlControls.some((r) => r.toLowerCase() === bodyRef.toLowerCase());
-        if (!bodyOnForm) {
+      // so it rendered nowhere while create reported PASS. Auto-binding can only pick on-form html
+      // controls, but an operator `tracker.fieldMap` override can force ANY of the long-text slots
+      // (body/repro/systemInfo) onto an off-form field — so check every content-carrying one, not
+      // just body. Refuse, and NAME the html controls that ARE on the form.
+      if (formHtmlControls.length) {
+        const onForm = (ref) => ref && formHtmlControls.some((r) => r.toLowerCase() === ref.toLowerCase());
+        const offForm = [
+          { label: "body", ref: bodyRef, content: bodyContent },
+          { label: "repro", ref: reproRef, content: reproContent },
+          { label: "systemInfo", ref: systemInfoRef, content: systemInfo },
+        ].find((c) => c.content && !onForm(c.ref));
+        if (offForm) {
           fail(
-            `create-workitem: the resolved body field ${bodyRef ? `(${bodyRef}) ` : ""}is NOT on the ${args.type} form — a body written there would be INVISIBLE. NOTHING was created.\n` +
-              `      Html controls ON the form (any of these can receive the body): ${slots.htmlControlsAvailable.join(", ") || "(none — this type has no html control on its form)"}\n` +
-              `      Bind the body slot to one of them via tracker.fieldMap (e.g. { "body": "${slots.htmlControlsAvailable[0] || "<ref>"}" }) and re-run.`,
+            `create-workitem: the resolved ${offForm.label} field ${offForm.ref ? `(${offForm.ref}) ` : ""}is NOT on the ${args.type} form — content written there would be INVISIBLE. NOTHING was created.\n` +
+              `      Html controls ON the form (any of these can receive it): ${slots.htmlControlsAvailable.join(", ") || "(none — this type has no html control on its form)"}\n` +
+              `      Bind the ${offForm.label} slot to one of them via tracker.fieldMap (e.g. { "${offForm.label}": "${slots.htmlControlsAvailable[0] || "<ref>"}" }) and re-run.`,
             2,
           );
         }
