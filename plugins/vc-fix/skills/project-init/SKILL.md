@@ -711,7 +711,8 @@ Checks (PASS / FAIL / WARN / SKIP): deployment profile · **plugin root** (`clau
 resolves the active vc-fix install and `skills/qa-fix-routing/ado.mjs` is present under it;
 WARN if the `claude` CLI isn't on PATH) · core env vars · storefront
 URL · admin/platform URL · **admin login** (real `POST {BACK_URL}/connect/token`
-password grant) · storefront user login (soft WARN) · tracker token (Jira `GET /myself`
+password grant) · storefront user login (the REAL store-scoped OAuth grant → PASS/FAIL, not a
+"verify manually" WARN) · tracker token (Jira `GET /myself`
 or a **real ADO org probe**) · **GitHub fix token / gh session** (validates the token and
 its permission on the upstream — shared with the derive block via `probe-lib.mjs`, so
 what verify reports and what the profile stored can't drift) · **client repos** (for a
