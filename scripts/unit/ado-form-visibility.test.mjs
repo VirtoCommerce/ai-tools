@@ -8,14 +8,15 @@
 // off-form field. Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, execFile } from "node:child_process";
+import { createServer } from "node:http";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import {
   resolveSlots, verifyAgainstContract, renderVerifyTable, filterContractForPersist,
-  operatorQuestions, parseFormLayout, rankFormBodyRef,
+  operatorQuestions, parseFormLayout, rankFormBodyRef, bindFormVisibleLongText,
 } from "../../plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs";
 import { shapeWorkItem } from "../../plugins/vc-fix/skills/qa-fix-routing/ado.mjs";
 import { buildBugFields } from "../../plugins/vc-fix/skills/qa-fix-routing/ado-html.mjs";
@@ -485,6 +486,144 @@ test("review MED-3: an off-form systemInfo folds into the body instead of failin
     assert.doesNotMatch(stderr, /systemInfo field .* is NOT on the Bug form/i,
       "an off-form systemInfo folds into the body — the create is not aborted over it");
   } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ─── bindFormVisibleLongText — the PURE fold/rebind extraction (review MED-3/HIGH-1) ───────────
+// Positive assertions the CLI-level tests (which abort at a dead port before the POST) cannot make:
+// that the folded content actually LANDS in the merged body, not merely that the create wasn't
+// aborted. This is the pure function ado.mjs create-workitem now delegates to.
+test("bindFormVisibleLongText: repro folds INTO the rebound body, content preserved", () => {
+  const r = bindFormVisibleLongText({
+    formHtmlControls: OPUS_FORM_HTML_CONTROLS, // ReproSteps + SystemInfo, NO System.Description
+    bodyRef: "System.Description", reproRef: "Microsoft.VSTS.TCM.ReproSteps",
+    systemInfoRef: "Microsoft.VSTS.TCM.SystemInfo",
+    bodyContent: "THE-BODY", reproContent: "THE-REPRO", systemInfo: "",
+  });
+  assert.equal(r.bodyRef, "Microsoft.VSTS.TCM.ReproSteps", "body rebinds to the on-form ReproSteps");
+  assert.match(r.bodyContent, /THE-BODY/, "the body text survives");
+  assert.match(r.bodyContent, /THE-REPRO/, "the folded repro text is PRESENT in the merged body (not dropped)");
+  assert.equal(r.reproContent, "", "repro content is emptied once folded");
+  assert.equal(r.reproRef, undefined, "repro ref is cleared so no duplicate op is emitted");
+  assert.equal(r.offForm, null, "nothing is left off-form → the create is NOT refused");
+});
+test("bindFormVisibleLongText: an off-form systemInfo folds into the body, content preserved", () => {
+  const r = bindFormVisibleLongText({
+    formHtmlControls: ["Microsoft.VSTS.TCM.ReproSteps"], // only ReproSteps on the form
+    bodyRef: "System.Description", systemInfoRef: "Microsoft.VSTS.TCM.SystemInfo",
+    bodyContent: "THE-BODY", reproContent: "", systemInfo: "THE-SYSINFO",
+  });
+  assert.equal(r.bodyRef, "Microsoft.VSTS.TCM.ReproSteps");
+  assert.match(r.bodyContent, /THE-BODY/);
+  assert.match(r.bodyContent, /THE-SYSINFO/, "the folded systemInfo text is PRESENT in the merged body");
+  assert.equal(r.systemInfoFolded, true, "systemInfoFolded signals buildBugFields not to emit it separately");
+  assert.equal(r.offForm, null);
+});
+test("bindFormVisibleLongText: body ON the form is left as-is (no rebind, no fold)", () => {
+  const r = bindFormVisibleLongText({
+    formHtmlControls: DESCRIPTION_ON_FORM_CONTROLS, // includes System.Description
+    bodyRef: "System.Description", reproRef: "Microsoft.VSTS.TCM.ReproSteps",
+    systemInfoRef: "Microsoft.VSTS.TCM.SystemInfo",
+    bodyContent: "THE-BODY", reproContent: "THE-REPRO", systemInfo: "THE-SYSINFO",
+  });
+  assert.equal(r.bodyRef, "System.Description", "an on-form body target is unchanged");
+  assert.equal(r.bodyContent, "THE-BODY", "no fold — body content is untouched");
+  assert.equal(r.offForm, null);
+});
+test("bindFormVisibleLongText: an EXPLICIT off-form fieldMap.body override is REFUSED, never rebound", () => {
+  const r = bindFormVisibleLongText({
+    formHtmlControls: OPUS_FORM_HTML_CONTROLS, // no System.Description
+    fieldMap: { body: "System.Description" },
+    bodyRef: "System.Description", bodyContent: "THE-BODY",
+  });
+  assert.equal(r.bodyRef, "System.Description", "an explicit override is trusted, not silently rebound");
+  assert.ok(r.offForm, "…and instead surfaced as off-form so the create path can refuse it");
+  assert.equal(r.offForm.label, "body");
+  assert.equal(r.offForm.ref, "System.Description");
+});
+test("bindFormVisibleLongText: NO layout ⇒ pure pass-through (pre-5702 behaviour)", () => {
+  const r = bindFormVisibleLongText({
+    formHtmlControls: [],
+    bodyRef: "System.Description", reproRef: "Microsoft.VSTS.TCM.ReproSteps",
+    bodyContent: "THE-BODY", reproContent: "THE-REPRO",
+  });
+  assert.equal(r.bodyRef, "System.Description");
+  assert.equal(r.reproContent, "THE-REPRO", "no fold with no layout");
+  assert.equal(r.offForm, null);
+});
+
+// ─── --strict exit code (review MEDIUM — observability for a NON-interactive caller) ───────────
+// A create that returns 200 but whose read-back leaves the body EMPTY is `fieldsOk:false`. By
+// default that rides in the stdout payload only (exit 0) — an agent reads it, a `$?`-keyed script
+// misses it. `--strict` prints the same evidence, then exits 2. Uses a tiny mock ADO server: create
+// → 200, but every read-back returns the body field empty, so the one repair pass can't refill it.
+function startMockAdo() {
+  const server = createServer((req, res) => {
+    let body = "";
+    req.on("data", (c) => (body += c));
+    req.on("end", () => {
+      const ok = (obj) => { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(obj)); };
+      // Read-backs (GET/PATCH) always return an EMPTY System.Description — the "persisted but not
+      // rendered / still empty" state the strict check must catch.
+      const emptyItem = { id: 501, fields: { "System.Title": "x", "System.WorkItemType": "Bug", "System.State": "New", "System.Description": "" } };
+      if (req.method === "POST" && /\/_apis\/wit\/workitems\/\$/.test(req.url)) return ok(emptyItem);      // create
+      if (req.method === "GET" && /\/_apis\/wit\/workitems\/501/.test(req.url)) return ok(emptyItem);       // read-back
+      if (req.method === "PATCH" && /\/_apis\/wit\/workitems\/501/.test(req.url)) return ok(emptyItem);     // repair (still empty)
+      res.writeHead(404); res.end("{}");
+    });
+  });
+  return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ server, port: server.address().port })));
+}
+
+function strictProfile(apiBase) {
+  return JSON.stringify({
+    tracker: {
+      kind: "azure",
+      azure: { organization: "acme", project: "Web", apiBase },
+      fields: { Bug: [
+        { ref: "System.Title", name: "Title", required: true, type: "string" },
+        { ref: "System.Description", name: "Description", required: false, type: "html" },
+      ] },
+      formLayout: { Bug: { htmlControls: ["System.Description"] } }, // body target IS on the form
+    },
+  });
+}
+
+// The child MUST run async (execFile, not execFileSync): the mock server lives in THIS process, so a
+// blocking execFileSync would freeze the event loop and the server could never answer the child.
+const runAsync = (args, opts) =>
+  new Promise((res) => {
+    execFile(process.execPath, args, { ...opts, timeout: 20000 }, (err, stdout, stderr) =>
+      res({ code: err ? (err.code ?? 1) : 0, stdout: stdout || "", stderr: stderr || "" }));
+  });
+
+test("--strict: create-workitem exits 2 when the read-back verify fails (fieldsOk:false)", async () => {
+  const { server, port } = await startMockAdo();
+  const dir = mkdtempSync(join(tmpdir(), "vc-fix-strict-"));
+  try {
+    const apiBase = `http://127.0.0.1:${port}/acme/Web`;
+    writeFileSync(join(dir, "body.md"), "the whole bug report");
+    writeFileSync(join(dir, "project-profile.json"), strictProfile(apiBase));
+    const argsBase = [ADO, "create-workitem", "--type", "Bug", "--title", "x", "--description-file", "body.md",
+      "--api-base", apiBase, "--no-preflight"];
+    const env = { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy" };
+
+    // WITHOUT --strict: prints the payload, exits 0 (unchanged behaviour) — but fieldsOk is false.
+    const soft = await runAsync(argsBase, { cwd: dir, encoding: "utf8", env });
+    assert.equal(soft.code, 0, `soft run should exit 0 (stderr: ${soft.stderr})`);
+    const softJson = JSON.parse(soft.stdout);
+    assert.equal(softJson.fieldsOk, false, "the read-back genuinely failed");
+    assert.ok(!("strictFailed" in softJson), "no strictFailed flag without --strict");
+
+    // WITH --strict: same evidence payload, then a non-zero exit.
+    const strict = await runAsync([...argsBase, "--strict"], { cwd: dir, encoding: "utf8", env });
+    assert.equal(strict.code, 2, `--strict exits 2 on a failed read-back (stderr: ${strict.stderr})`);
+    const strictJson = JSON.parse(strict.stdout);
+    assert.equal(strictJson.strictFailed, true, "the strictFailed flag is set in the still-printed payload");
+    assert.equal(strictJson.fieldsOk, false, "and the evidence (fieldsOk:false) is still shown");
+  } finally {
+    server.close();
     rmSync(dir, { recursive: true, force: true });
   }
 });

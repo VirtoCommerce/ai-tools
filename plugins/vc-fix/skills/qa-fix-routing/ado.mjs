@@ -37,6 +37,9 @@
  *       `allowedValues` is refused BEFORE the POST.
  *     --no-preflight → skip only the non-mutating write-scope probe (file/contract checks stay).
  *     --no-verify    → skip the post-create read-back (not recommended; a 200 is not proof).
+ *     --strict       → after printing the evidence payload, EXIT 2 when the read-back verify FAILED
+ *                      (fieldsOk:false — OFF_FORM / IMAGES_MISSING / still-empty), so a NON-interactive
+ *                      caller keying on the exit code sees it; the interactive path reads fieldsOk.
  *     --assign-self → assign to the token/session owner (whoami); --assign-to <email> for explicit.
  *     --iteration current → stamp the team's active sprint (System.IterationPath); or pass a path.
  *     --parent <id> → link the bug under a parent work item (Hierarchy-Reverse relation).
@@ -67,7 +70,7 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 // and the payload builder can never disagree. See bug-contract.mjs's header.
 import {
   resolveSlots, buildContractFields, verifyAgainstContract, renderVerifyTable,
-  classifyFieldRejection, isHtmlByContract, rankFormBodyRef,
+  classifyFieldRejection, isHtmlByContract, bindFormVisibleLongText,
 } from "./bug-contract.mjs";
 // Non-mutating ADO write-scope probe, reused from /project-init's readiness table so
 // "your PAT is read-only" is told ONCE, up front, in the same words on both surfaces.
@@ -80,7 +83,7 @@ import { ensureAzureHtml, mdToHtml, buildBugFields, countImages } from "./ado-ht
 // "which sprint is current" resolve and the onboarding "which team owns the current sprint" scan can
 // never disagree. `$timeframe=current` alone is untrustworthy (Azure keeps the flag on a dormant
 // team's dead sprint) — an iteration counts as current only when its dates bracket today.
-import { isIterationCurrent, iterationRange, localTodayYMD } from "./iteration-dates.mjs";
+import { isIterationCurrent, iterationRange, localTodayYMD, selectTeamWithCurrentSprint } from "./iteration-dates.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -453,29 +456,30 @@ async function resolveCurrentIteration(args) {
     };
   }
 
-  // (3) enumerate the project's teams; keep those with a date-valid current sprint
-  const teams = await listProjectTeams(args);
-  const matches = [];
-  for (const t of teams) {
-    if (firstTeam && t.name === firstTeam) continue; // already tried
-    const hit = valid(await teamIterations(apiBase, t.name));
-    if (hit) matches.push({ team: t.name, iteration: hit, raw: hit });
-  }
+  // (3) enumerate the project's teams; keep those with a date-valid current sprint. The per-team
+  // iteration probes are INDEPENDENT (teamIterations returns [] on error), so fan them out
+  // concurrently instead of a serial await-in-loop — a large ADO project has many teams.
+  const teams = (await listProjectTeams(args)).filter((t) => !(firstTeam && t.name === firstTeam));
+  const probed = await Promise.all(
+    teams.map(async (t) => {
+      const hit = valid(await teamIterations(apiBase, t.name));
+      return hit ? { team: t.name, iteration: hit } : null;
+    }),
+  );
+  const matches = probed.filter(Boolean);
 
-  // (4) decide. Dedupe by iteration PATH first: several teams can SHARE one sprint, and if every
-  // match resolves to the same path there is no real ambiguity — the stamped System.IterationPath is
-  // identical either way. Only DISTINCT current sprints across teams are a genuine "pick one".
-  const distinctPaths = [...new Set(matches.map((m) => m.iteration.path))];
-  if (matches.length >= 1 && distinctPaths.length === 1) {
-    return { ok: true, iteration: iterShape(matches[0].iteration), team: matches[0].team, autoSelected: true };
+  // (4) decide via the SHARED selector (same ambiguity rule as onboarding's discoverTeam).
+  const sel = selectTeamWithCurrentSprint(matches);
+  if (sel.ok) {
+    return { ok: true, iteration: iterShape(sel.iteration), team: sel.team, autoSelected: true };
   }
-  if (distinctPaths.length > 1) {
+  if (sel.ambiguous) {
     return {
       ok: false,
       ambiguous: true,
       error:
-        `--iteration current: ${distinctPaths.length} teams have DIFFERENT date-valid current sprints — cannot choose automatically: ` +
-        matches.map((m) => `"${m.team}" → ${m.iteration.name} (${iterationRange(m.raw)})`).join("; ") +
+        `--iteration current: ${sel.distinctPaths.length} teams have DIFFERENT date-valid current sprints — cannot choose automatically: ` +
+        sel.matches.map((m) => `"${m.team}" → ${m.iteration.name} (${iterationRange(m.iteration)})`).join("; ") +
         `.\n      Pass --team "<one of them>" to disambiguate.`,
     };
   }
@@ -811,41 +815,26 @@ const COMMANDS = {
     // contract call failed, the layout call didn't). Gating this on the LAYOUT, not the contract,
     // closes that second path — the layout alone answers "is this ref on the form?".
     if (formHtmlControls.length) {
-      const onForm = (ref) => ref && formHtmlControls.some((r) => r.toLowerCase() === String(ref).toLowerCase());
-      const same = (a, b) => a && b && String(a).toLowerCase() === String(b).toLowerCase();
-      const controls = htmlControlsAvailable.length ? htmlControlsAvailable : formHtmlControls;
-      // A body target that is off-form and NOT an explicit operator override is rebound to the best
-      // on-form html control (RANKED — never a bare positional pick, so the body can't land in an
-      // unrelated first control like Acceptance Criteria). An explicit `fieldMap.body` override is
-      // trusted and instead refused below if off-form, never silently rebound.
-      if (!onForm(bodyRef) && !fieldMap.body) {
-        const rebound = rankFormBodyRef(controls, contract);
-        if (rebound) bodyRef = rebound;
-      }
-      // repro / systemInfo with no distinct on-form control (or one that collapsed onto the body ref)
-      // fold INTO the body — never dropped, and never a whole-create abort over an optional metadata
-      // sub-field (MED-3: systemInfo now folds like repro instead of failing the create). An explicit
-      // off-form override is left in place to be refused below.
-      if (reproContent && !fieldMap.repro && (!onForm(reproRef) || same(reproRef, bodyRef))) {
-        bodyContent = [bodyContent, reproContent].filter(Boolean).join("\n\n");
-        reproContent = ""; reproRef = undefined;
-      }
-      if (systemInfo && !fieldMap.systemInfo && (!onForm(systemInfoRef) || same(systemInfoRef, bodyRef))) {
-        bodyContent = [bodyContent, systemInfo].filter(Boolean).join("\n\n");
-        systemInfoFolded = true; systemInfoRef = undefined;
-      }
-      // Refuse ONLY if a content-carrying slot is STILL off-form: an explicit override onto an
-      // off-form field, or a type with no on-form html control at all. NAME the on-form controls.
-      const offForm = [
-        { label: "body", ref: bodyRef, content: bodyContent },
-        { label: "repro", ref: reproRef, content: reproContent },
-        { label: "systemInfo", ref: systemInfoRef, content: systemInfoFolded ? "" : systemInfo },
-      ].find((c) => c.content && !onForm(c.ref));
-      if (offForm) {
+      // Fold/rebind decision lives in the SHARED pure bindFormVisibleLongText (bug-contract.mjs), so
+      // the create path can't re-derive it slightly differently and it is unit-testable in isolation.
+      const bound = bindFormVisibleLongText({
+        formHtmlControls, contract, fieldMap, htmlControlsAvailable,
+        bodyRef, reproRef, systemInfoRef, bodyContent, reproContent, systemInfo,
+      });
+      bodyRef = bound.bodyRef;
+      reproRef = bound.reproRef;
+      systemInfoRef = bound.systemInfoRef;
+      bodyContent = bound.bodyContent;
+      reproContent = bound.reproContent;
+      systemInfoFolded = bound.systemInfoFolded;
+      // Refuse a content-carrying slot that is STILL off-form: an explicit override onto an off-form
+      // field, or a type with no on-form html control at all. NAME the on-form controls.
+      if (bound.offForm) {
+        const c = bound.offForm;
         fail(
-          `create-workitem: the resolved ${offForm.label} field ${offForm.ref ? `(${offForm.ref}) ` : ""}is NOT on the ${args.type} form — content written there would be INVISIBLE. NOTHING was created.\n` +
-            `      Html controls ON the form (any of these can receive it): ${controls.join(", ") || "(none — this type has no html control on its form)"}\n` +
-            `      Bind the ${offForm.label} slot to one of them via tracker.fieldMap (e.g. { "${offForm.label}": "${controls[0] || "<ref>"}" }) and re-run.`,
+          `create-workitem: the resolved ${c.label} field ${c.ref ? `(${c.ref}) ` : ""}is NOT on the ${args.type} form — content written there would be INVISIBLE. NOTHING was created.\n` +
+            `      Html controls ON the form (any of these can receive it): ${bound.controls.join(", ") || "(none — this type has no html control on its form)"}\n` +
+            `      Bind the ${c.label} slot to one of them via tracker.fieldMap (e.g. { "${c.label}": "${bound.controls[0] || "<ref>"}" }) and re-run.`,
           2,
         );
       }
@@ -971,11 +960,17 @@ const COMMANDS = {
       // kept vs dropped, so a slim profile is explained rather than looking lossy.
       ...(contractAccountingFor(args.type) ? { contractAccounting: contractAccountingFor(args.type) } : {}),
       // The form-visible field the body actually landed in — the receiving ref is now explicit.
-      ...(useContract ? { bodyField: bodyRef } : {}),
+      // Surfaced whenever a form layout was active (not only with a contract), so a no-contract
+      // rebind (review HIGH-1 path — layout present, contract empty) is never a SILENT misroute.
+      ...(useContract || formHtmlControls.length ? { bodyField: bodyRef } : {}),
       ...(dropped.length ? { droppedFields: dropped } : {}),
       ...(healed ? { selfHealed: healed } : {}),
       ...(verify ? { fieldsOk: verify.ok, verifyTable: renderVerifyTable(verify.rows), stillMissing: verify.missing.map((r) => r.ref) } : {}),
       ...(patched.length ? { patchedAfterCreate: patched } : {}),
+      // --strict makes the "persisted ≠ rendered" read-back failure observable to a NON-interactive
+      // caller: the full evidence payload is still printed, then main() exits 2. Without --strict the
+      // behaviour is unchanged (exit 0; the interactive /qa-bug reads fieldsOk from the payload).
+      ...(args.strict && verify && !verify.ok ? { strictFailed: true } : {}),
     };
   },
 
@@ -1204,6 +1199,10 @@ async function main() {
   const out = await COMMANDS[cmd](args);
   if (out && out._raw !== undefined) process.stdout.write(out._raw);
   else console.log(JSON.stringify(out, null, 2));
+  // --strict (create-workitem): the evidence payload is printed above, THEN a non-zero exit makes the
+  // read-back failure (`fieldsOk:false` — OFF_FORM / IMAGES_MISSING / still-empty) visible to a caller
+  // that keys on the exit code, not just to an agent parsing stdout.
+  if (out && out.strictFailed) process.exit(2);
 }
 
 // Run as CLI only when invoked directly (`node ado.mjs …`) — guarded so the module can be

@@ -56,3 +56,33 @@ export function iterationRange(iteration) {
   const a = (iteration && iteration.attributes) || {};
   return `${iterationDateOnly(a.startDate) || "?"}..${iterationDateOnly(a.finishDate) || "?"}`;
 }
+
+/**
+ * The SHARED team-selection decision, extracted so the runtime resolver (ado.mjs
+ * `resolveCurrentIteration`) and the onboarding scan (discover-tracker.mjs `discoverTeam`) apply the
+ * SAME ambiguity rule — the leaf date-predicate was already shared, but the selection control-flow
+ * around it used to be copy-pasted and could drift. Each caller does its own network fan-out to build
+ * `matches` (a team + its date-valid current iteration), then hands the list here.
+ *
+ * Dedupe by iteration PATH first: several teams can SHARE one current sprint, and if every match
+ * resolves to the same path there is no real ambiguity — the stamped System.IterationPath is
+ * identical either way. Only DISTINCT current sprints across teams are a genuine "pick one".
+ *
+ * @param {Array<{team:string, iteration:{id?:string,name?:string,path:string}}>} matches
+ * @returns {{ ok:boolean, ambiguous:boolean, team?:string, iteration?:Object,
+ *            matches:Array, distinctPaths:string[] }}
+ *   ok:true  → exactly one distinct sprint (team/iteration are the pick)
+ *   ambiguous:true → >1 distinct sprint (caller must ask for a --team)
+ *   ok:false & !ambiguous → no team had a date-valid current sprint
+ */
+export function selectTeamWithCurrentSprint(matches) {
+  const list = (Array.isArray(matches) ? matches : []).filter((m) => m && m.iteration && m.iteration.path);
+  const distinctPaths = [...new Set(list.map((m) => m.iteration.path))];
+  if (list.length >= 1 && distinctPaths.length === 1) {
+    return { ok: true, ambiguous: false, team: list[0].team, iteration: list[0].iteration, matches: list, distinctPaths };
+  }
+  if (distinctPaths.length > 1) {
+    return { ok: false, ambiguous: true, matches: list, distinctPaths };
+  }
+  return { ok: false, ambiguous: false, matches: [], distinctPaths: [] };
+}

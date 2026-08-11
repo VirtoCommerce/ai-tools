@@ -98,6 +98,32 @@ test("resolveSlots: server-defaulted required fields never surface as unmappedRe
   assert.deepEqual(unmappedRequired.map((f) => f.ref), [], "AreaId/IterationId/State are server-defaulted — not the operator's to map");
 });
 
+test("resolveSlots (D1): a required picklist whose defaultValue is a MEMBER of allowedValues is satisfied", () => {
+  // Microsoft.VSTS.Common.ValueArea default "Business" ∈ {Architectural, Business} → the board answers
+  // it, no operator question, not a degradation.
+  const contract = [
+    { ref: "System.Title", name: "Title", required: true, type: "string" },
+    { ref: "Microsoft.VSTS.Common.ValueArea", name: "Value Area", required: true, type: "string",
+      allowedValues: ["Architectural", "Business"], defaultValue: "Business" },
+  ];
+  const { unmappedRequired } = resolveSlots(contract, {});
+  assert.deepEqual(unmappedRequired.map((f) => f.ref), [], "a default that is a member of the picklist fully satisfies the field");
+});
+
+test("resolveSlots (D1): a required field whose defaultValue is NOT in allowedValues STILL asks", () => {
+  // Membership matters, not mere presence — a default outside its own picklist is a misconfiguration
+  // ADO would reject on create, so the operator must still be asked (review finding).
+  // A neutral custom field that binds to NO semantic slot (so it can only surface via unmappedRequired).
+  const contract = [
+    { ref: "System.Title", name: "Title", required: true, type: "string" },
+    { ref: "Custom.Region", name: "Region", required: true, type: "string",
+      allowedValues: ["EMEA", "APAC"], defaultValue: "GLOBAL" },
+  ];
+  const { mapping, unmappedRequired } = resolveSlots(contract, {});
+  assert.equal(mapping.region, undefined, "guard: the field is genuinely unmapped, not slot-bound");
+  assert.deepEqual(unmappedRequired.map((f) => f.ref), ["Custom.Region"], "a default outside its picklist does not satisfy the field");
+});
+
 test("resolveSlots: a name match with an INCOMPATIBLE type is rejected (the treePath trap)", () => {
   // Custom.EnvironmentTree is literally named "Environment" but is a treePath. A name-only
   // matcher would bind it; the type gate must keep the real picklist.

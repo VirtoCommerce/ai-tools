@@ -10,7 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  isIterationCurrent, iterationDateOnly, localTodayYMD, iterationRange,
+  isIterationCurrent, iterationDateOnly, localTodayYMD, iterationRange, selectTeamWithCurrentSprint,
 } from "../../plugins/vc-fix/skills/qa-fix-routing/iteration-dates.mjs";
 
 const it = (start, finish, timeFrame = "current") => ({ attributes: { startDate: start, finishDate: finish, timeFrame } });
@@ -59,4 +59,41 @@ test("localTodayYMD: formats a LOCAL date as YYYY-MM-DD (month is 0-indexed)", (
 test("iterationRange: renders the date-only range for loud errors / notes", () => {
   assert.equal(iterationRange(it("2026-07-29T00:00:00Z", "2026-08-11T00:00:00Z")), "2026-07-29..2026-08-11");
   assert.equal(iterationRange({}), "?..?");
+});
+
+// ─── selectTeamWithCurrentSprint — the SHARED team-selection decision ──────────────────────────
+// Extracted so the runtime resolver (ado.mjs resolveCurrentIteration) and the onboarding scan
+// (discover-tracker.mjs discoverTeam) apply the SAME ambiguity rule and can't drift.
+const m = (team, path, name = path) => ({ team, iteration: { id: path, name, path } });
+
+test("selectTeamWithCurrentSprint: exactly one team with a current sprint → ok, that team", () => {
+  const r = selectTeamWithCurrentSprint([m("Alpha", "Proj\Sprint 5")]);
+  assert.equal(r.ok, true);
+  assert.equal(r.ambiguous, false);
+  assert.equal(r.team, "Alpha");
+  assert.equal(r.iteration.path, "Proj\Sprint 5");
+});
+test("selectTeamWithCurrentSprint: several teams SHARING one sprint path → no ambiguity (dedup)", () => {
+  const r = selectTeamWithCurrentSprint([m("Alpha", "Proj\Sprint 5"), m("Beta", "Proj\Sprint 5")]);
+  assert.equal(r.ok, true, "one distinct path ⇒ the stamped IterationPath is identical either way");
+  assert.equal(r.distinctPaths.length, 1);
+  assert.equal(r.team, "Alpha", "the first match wins when the path is shared");
+});
+test("selectTeamWithCurrentSprint: DIFFERENT sprints across teams → ambiguous, pick one", () => {
+  const r = selectTeamWithCurrentSprint([m("Alpha", "Proj\Sprint 5"), m("Beta", "Proj\Sprint 6")]);
+  assert.equal(r.ok, false);
+  assert.equal(r.ambiguous, true);
+  assert.equal(r.distinctPaths.length, 2);
+  assert.deepEqual(r.matches.map((x) => x.team), ["Alpha", "Beta"]);
+});
+test("selectTeamWithCurrentSprint: no team with a current sprint → not ok, not ambiguous", () => {
+  const r = selectTeamWithCurrentSprint([]);
+  assert.equal(r.ok, false);
+  assert.equal(r.ambiguous, false);
+  assert.deepEqual(r.matches, []);
+});
+test("selectTeamWithCurrentSprint: malformed matches (no iteration path) are ignored", () => {
+  const r = selectTeamWithCurrentSprint([{ team: "X" }, { team: "Y", iteration: {} }, m("Z", "Proj\S1")]);
+  assert.equal(r.ok, true);
+  assert.equal(r.team, "Z", "only the well-formed match counts");
 });

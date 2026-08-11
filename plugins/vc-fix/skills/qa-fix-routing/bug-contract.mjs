@@ -177,6 +177,78 @@ export function rankFormBodyRef(formRefs, contract = [], taken = new Set()) {
 }
 
 /**
+ * Bind the long-text slots (body / repro / systemInfo) to FORM-VISIBLE html controls, folding a
+ * slot with no distinct on-form control INTO the body so nothing is dropped, and returning an
+ * `offForm` descriptor when a content-carrying slot is STILL off-form (the create path REFUSES to
+ * POST then). Extracted PURE from ado.mjs `create-workitem` (VCST-5702 ITEM 0.3; review HIGH-1/MED-3)
+ * so the fold/rebind decision is unit-testable and the create path can never re-derive it slightly
+ * differently. Runs only when a form layout was scanned (`formHtmlControls` non-empty); with none
+ * the caller keeps the legacy targets and this is a pass-through.
+ *
+ * @param {Object}   p
+ * @param {string[]} p.formHtmlControls        ordered html control refs on the form (gate — empty ⇒ inactive)
+ * @param {Array}    [p.contract]              field contract (name-ranking); may be empty
+ * @param {Object}   [p.fieldMap]              operator overrides — an explicitly-mapped slot is never rebound
+ * @param {string[]} [p.htmlControlsAvailable] contract-derived on-form controls; falls back to formHtmlControls
+ * @param {string}   [p.bodyRef]               incoming body target
+ * @param {string}   [p.reproRef]              incoming repro target (may be undefined)
+ * @param {string}   [p.systemInfoRef]         incoming systemInfo target
+ * @param {string}   [p.bodyContent]           body text
+ * @param {string}   [p.reproContent]          repro text
+ * @param {string}   [p.systemInfo]            systemInfo text
+ * @returns {{ bodyRef:string, reproRef:(string|undefined), systemInfoRef:(string|undefined),
+ *            bodyContent:string, reproContent:string, systemInfoFolded:boolean, controls:string[],
+ *            offForm:({label:string,ref:(string|undefined),content:string}|null) }}
+ */
+export function bindFormVisibleLongText(p = {}) {
+  const formHtmlControls = Array.isArray(p.formHtmlControls) ? p.formHtmlControls : [];
+  let bodyRef = p.bodyRef;
+  let reproRef = p.reproRef;
+  let systemInfoRef = p.systemInfoRef;
+  let bodyContent = p.bodyContent || "";
+  let reproContent = p.reproContent || "";
+  let systemInfoFolded = false;
+  const systemInfo = p.systemInfo || "";
+  const fieldMap = p.fieldMap || {};
+  const contract = p.contract || [];
+  const htmlControlsAvailable = Array.isArray(p.htmlControlsAvailable) ? p.htmlControlsAvailable : [];
+  const controls = htmlControlsAvailable.length ? htmlControlsAvailable : formHtmlControls;
+  if (!formHtmlControls.length) {
+    return { bodyRef, reproRef, systemInfoRef, bodyContent, reproContent, systemInfoFolded, controls, offForm: null };
+  }
+  const onForm = (ref) => !!ref && formHtmlControls.some((r) => lc(r) === lc(ref));
+  const same = (a, b) => !!a && !!b && lc(a) === lc(b);
+  // A body target off-form and NOT an explicit override is rebound to the best RANKED on-form html
+  // control (never a bare positional pick). An explicit `fieldMap.body` override is trusted and
+  // instead refused below if off-form, never silently rebound.
+  if (!onForm(bodyRef) && !fieldMap.body) {
+    const rebound = rankFormBodyRef(controls, contract);
+    if (rebound) bodyRef = rebound;
+  }
+  // repro / systemInfo with no distinct on-form control (or one that collapsed onto the body ref)
+  // fold INTO the body — never dropped, never a whole-create abort over an optional metadata field.
+  if (reproContent && !fieldMap.repro && (!onForm(reproRef) || same(reproRef, bodyRef))) {
+    bodyContent = [bodyContent, reproContent].filter(Boolean).join("\n\n");
+    reproContent = "";
+    reproRef = undefined;
+  }
+  if (systemInfo && !fieldMap.systemInfo && (!onForm(systemInfoRef) || same(systemInfoRef, bodyRef))) {
+    bodyContent = [bodyContent, systemInfo].filter(Boolean).join("\n\n");
+    systemInfoFolded = true;
+    systemInfoRef = undefined;
+  }
+  // Refuse ONLY if a content-carrying slot is STILL off-form: an explicit override onto an off-form
+  // field, or a type with no on-form html control at all.
+  const offForm =
+    [
+      { label: "body", ref: bodyRef, content: bodyContent },
+      { label: "repro", ref: reproRef, content: reproContent },
+      { label: "systemInfo", ref: systemInfoRef, content: systemInfoFolded ? "" : systemInfo },
+    ].find((c) => c.content && !onForm(c.ref)) || null;
+  return { bodyRef, reproRef, systemInfoRef, bodyContent, reproContent, systemInfoFolded, controls, offForm };
+}
+
+/**
  * Is this field stored as HTML? DERIVED from the contract's data type when we have one —
  * replacing the hardcoded assumption in azure-html-format.md / ado-html.mjs. With no
  * contract entry the caller falls back to `isHtmlField(ref)` (the legacy known-refs set).
@@ -278,7 +350,10 @@ export function resolveSlots(contract, fieldMap = {}, formHtmlControls = []) {
         // degradation: a discovered `defaultValue` that is a member of a CLOSED `allowedValues` set
         // fully satisfies it (the create path fills it from the default). General rule — applies to
         // ANY such field (e.g. Microsoft.VSTS.Common.ValueArea = "Business"), not a special case.
-        && !(f.defaultValue && Array.isArray(f.allowedValues) && f.allowedValues.length > 0),
+        // MEMBERSHIP is required, not mere presence: a defaultValue that is NOT one of its own
+        // allowedValues is a misconfiguration ADO would still reject on create, so keep asking.
+        && !(f.defaultValue && Array.isArray(f.allowedValues)
+             && f.allowedValues.some((v) => lc(v) === lc(f.defaultValue))),
   );
   // Form-gated slots whose bound field is NOT on the form — reachable only via an override (auto
   // never binds off-form). The create path REFUSES to POST a body to an off-form target and names
@@ -574,7 +649,7 @@ export function parseFormLayout(workItemType) {
  *   (c) bound to a semantic slot (resolveSlots over the FULL contract).
  * Everything else — system-maintained / read-only / unused — is dropped. `allowedValues` ride
  * along on the kept picklists unchanged. Pure.
- * @returns {{ fields, scanned, kept, dropped, required, slotMapped, transitionRequired, accounting }}
+ * @returns {{ fields, scanned, kept, dropped, required, slotMapped, transitionRequired, formVisible, accounting }}
  */
 export function filterContractForPersist(contract, opts = {}) {
   const list = contract || [];

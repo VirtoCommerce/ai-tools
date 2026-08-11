@@ -44,7 +44,7 @@ import { parseFieldContract, resolveSlots, parseFormLayout, filterContractForPer
 // SHARED date-range validation for a team iteration — the same predicate ado.mjs's runtime resolver
 // uses, so onboarding picks the team whose current sprint the create path will accept (VCST: the
 // default team's `timeFrame:"current"` flag pointed at a 3-year-dead sprint).
-import { isIterationCurrent, iterationRange, localTodayYMD } from "../qa-fix-routing/iteration-dates.mjs";
+import { isIterationCurrent, iterationRange, localTodayYMD, selectTeamWithCurrentSprint } from "../qa-fix-routing/iteration-dates.mjs";
 
 /** Write the result to --out (relative to the deployment project) and/or print it. */
 function emit(out, args) {
@@ -159,12 +159,15 @@ export function deriveRoleStates(states) {
 async function discoverTeam({ apiBase, org, project, authHeader, explicitTeam }) {
   const today = localTodayYMD();
   if (explicitTeam) return { team: explicitTeam, autoSelected: false, note: "explicit --team" };
+  // A per-team probe returns its current sprint, null on "no current sprint", or a sentinel error so
+  // a transient 403/timeout is NOT silently conflated with "dormant" (it feeds a probeErrors count the
+  // caller turns into an observation, rather than vanishing).
   const teamCurrentSprint = async (team) => {
     const seg = team ? `/${encodeURIComponent(team)}` : "";
     try {
       const d = await adoGet(`${apiBase}${seg}/_apis/work/teamsettings/iterations?api-version=7.1`, authHeader);
-      return (d.value || []).find((it) => isIterationCurrent(it, today)) || null;
-    } catch { return null; }
+      return { hit: (d.value || []).find((it) => isIterationCurrent(it, today)) || null, error: false };
+    } catch { return { hit: null, error: true }; }
   };
   let teams = [];
   try {
@@ -172,20 +175,21 @@ async function discoverTeam({ apiBase, org, project, authHeader, explicitTeam })
   } catch (e) {
     return { team: "", autoSelected: false, note: `team enumeration failed (${e.message}) — leaving team unset (project default)` };
   }
-  const matches = [];
-  for (const t of teams) {
-    const hit = await teamCurrentSprint(t);
-    if (hit) matches.push({ team: t, iteration: hit });
+  // Probe every team's iterations CONCURRENTLY — they are independent and this runs at every Azure
+  // onboarding (a large project has many teams; a serial await-in-loop was the dominant latency).
+  const probed = await Promise.all(teams.map(async (t) => ({ team: t, ...(await teamCurrentSprint(t)) })));
+  const matches = probed.filter((p) => p.hit).map((p) => ({ team: p.team, iteration: p.hit }));
+  const probeErrors = probed.filter((p) => p.error).length;
+  const errNote = probeErrors ? ` (${probeErrors} team(s) failed to probe — treated as no-sprint)` : "";
+  // Decide via the SHARED selector (same ambiguity rule as the runtime resolver in ado.mjs).
+  const sel = selectTeamWithCurrentSprint(matches);
+  if (sel.ok) {
+    return { team: sel.team, autoSelected: true, probeErrors, note: `auto-selected "${sel.team}" — owns current sprint ${sel.iteration.name} (${iterationRange(sel.iteration)})${errNote}` };
   }
-  // Dedupe by iteration PATH: several teams can SHARE one current sprint — no real ambiguity there.
-  const distinctPaths = [...new Set(matches.map((m) => m.iteration.path))];
-  if (matches.length >= 1 && distinctPaths.length === 1) {
-    return { team: matches[0].team, autoSelected: true, note: `auto-selected "${matches[0].team}" — owns current sprint ${matches[0].iteration.name} (${iterationRange(matches[0].iteration)})` };
+  if (sel.ambiguous) {
+    return { team: "", autoSelected: false, ambiguous: sel.matches.map((m) => m.team), probeErrors, note: `${sel.distinctPaths.length} teams have DIFFERENT current sprints (${sel.matches.map((m) => m.team).join(", ")}) — re-run with --team to pin one${errNote}` };
   }
-  if (distinctPaths.length > 1) {
-    return { team: "", autoSelected: false, ambiguous: matches.map((m) => m.team), note: `${distinctPaths.length} teams have DIFFERENT current sprints (${matches.map((m) => m.team).join(", ")}) — re-run with --team to pin one` };
-  }
-  return { team: "", autoSelected: false, note: teams.length ? `no team has a date-valid current sprint (scanned ${teams.length}) — leaving team unset (project default)` : "no teams enumerated — leaving team unset" };
+  return { team: "", autoSelected: false, probeErrors, note: teams.length ? `no team has a date-valid current sprint (scanned ${teams.length})${errNote} — leaving team unset (project default)` : "no teams enumerated — leaving team unset" };
 }
 
 async function main() {
@@ -374,6 +378,11 @@ async function main() {
   console.error(`[discover-tracker] team: ${teamResult.team ? `"${teamResult.team}"` : "(unset — project default)"} — ${teamResult.note}`);
   if (teamResult.ambiguous) {
     obs.push({ class: "degraded_artifact", subject: "tracker_team", code: "NONE", evidence: { snippet: `${teamResult.ambiguous.length} teams have a current sprint — tracker.azure.team left unset; /qa-bug --iteration current auto-selects at runtime, or re-run discover-tracker --team <name>` } });
+  }
+  // A team-iteration probe that transiently failed is not "dormant" — surface it so a partial scan
+  // (which could have skipped the real team) is visible rather than silently conflated (review LOW).
+  if (teamResult.probeErrors) {
+    obs.push({ class: "degraded_artifact", subject: "tracker_team", code: "NONE", evidence: { snippet: `${teamResult.probeErrors} team(s) failed to probe for a current sprint (403/timeout) — team selection saw an incomplete set; re-run, or pin with --team <name>` } });
   }
 
   // drop the helper _categories before emitting
