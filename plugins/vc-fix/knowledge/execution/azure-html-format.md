@@ -25,6 +25,14 @@ This matters because processes differ: on a stock Agile Bug there is no `System.
 all and `Microsoft.VSTS.TCM.ReproSteps` carries the body, while a custom single-line field like
 `Custom.Reportedby` is `plainText` and must NOT be wrapped in `<p>`.
 
+> **The body field is resolved per work-item TYPE from the scanned form layout — never assumed
+> (VCST-5702).** On the Agile process a Bug's body is `Microsoft.VSTS.TCM.ReproSteps` while a
+> User Story / Task use `System.Description`; a field can even exist in the contract yet be **off
+> the form**, where anything written is invisible. So the templates below speak in semantic
+> **slots** (`body`, `systemInfo`, …); the concrete ref each maps to is read from
+> `tracker.formLayout.<Type>` (persisted by `/project-init`). Never hardcode a field ref, and never
+> assume which field is or isn't on the form for a given type — read the layout.
+
 **Canonical fallback** — the three refs Azure ships as HTML on the out-of-the-box processes, used
 only when no contract was scanned (the "unverified defaults" rung of the fallback ladder):
 
@@ -43,7 +51,8 @@ not rely on the net.
 The gold-standard bug is **abstract and lean**. The description is one focused story a stranger can
 replay; everything machine- or deployment-specific lives in **dedicated fields**, not in the prose.
 
-1. **The four core blocks — Preconditions → Steps → Actual → Expected — are the whole `System.Description`.**
+1. **The four core blocks — Preconditions → Steps → Actual → Expected — are the whole `body` field**
+   (the form-visible html control the `body` slot resolves to for this type — see the callout above).
    Optionally lead with a short abstract **Summary** (1–3 sentences); the reference bug has none, so add one
    only when the title + steps don't already make the defect obvious. Nothing else competes with these blocks.
 2. **Environment is NOT a description section.** It goes to the Bug form's own fields:
@@ -144,10 +153,11 @@ and persisted to `tracker.fieldMap` / `tracker.fieldDefaults` — see `commands/
 <b>Reproduction rate:</b> Consistent
 ```
 
-## Description template (`System.Description`)
+## Body template (the `body` slot)
 
-Author the **whole** report here (the four core blocks; an optional Summary on top; a short Technical
-Details below). Leave `Microsoft.VSTS.TCM.ReproSteps` **empty** — see *ReproSteps* below.
+Author the **whole** report into the `body` slot (the four core blocks; an optional Summary on top; a
+short Technical Details below). The create path writes it to the form-visible html control the `body`
+slot resolves to for this type — do **not** hand-target a concrete field ref.
 
 ```html
 <!-- OPTIONAL — add only when the title + steps don't already make the defect obvious. No user-specific data. -->
@@ -196,13 +206,49 @@ Details below). Leave `Microsoft.VSTS.TCM.ReproSteps` **empty** — see *ReproSt
 > Reference, don't inline (the size caps in `.claude/rules/reports.md` still apply). The full markdown bug
 > report in `reports/bugs/` remains the detailed record; the work item is the lean, replayable version.
 
-## ReproSteps (`Microsoft.VSTS.TCM.ReproSteps`)
+## The `repro` slot
 
-**Leave it empty by default.** On the LEO Bug form the visible "Repro Steps" area is backed by
-`System.Description` (where the template above lands), and `Microsoft.VSTS.TCM.ReproSteps` is **not shown**
-— content written there is invisible to reviewers. So put the full report in `System.Description` and pass
-**no** `--repro-file`. Only target `ReproSteps` (via `--repro-file`) if you have positively confirmed the
-deployment's Bug form surfaces that specific field; otherwise you split the report into a field nobody sees.
+**Author the whole report into the `body` slot; pass `--repro-file` only when the type has a DISTINCT
+form-visible `repro` field.** The create path resolves both slots from `tracker.formLayout.<Type>`: when
+the body target is the only html control on the form (e.g. an Agile Bug whose body is
+`Microsoft.VSTS.TCM.ReproSteps`), a separate `--repro` is **folded into the body** automatically so no
+text is lost and no off-form field is written. Do not assume which field is or isn't on the form — that
+was the defect: it is derived from the layout, per type.
+
+> **Do NOT force a body/repro onto a specific ref.** The create path REFUSES to POST a body to a field
+> that is not on the form and names the html controls that ARE (VCST-5702 ITEM 0). If you must override,
+> set `tracker.fieldMap.body` to one of the on-form controls it lists — never to an off-form field.
+
+### Repairing a work item whose body landed off-form
+
+An item filed BEFORE this fix may carry its whole body on an off-form field (e.g. `System.Description`
+when the Bug form only surfaces `ReproSteps`/`SystemInfo`) — invisible on the form. To repair it, copy the
+html to the form-visible body control and clear the off-form field (this is exactly how work item 8452 was
+repaired manually, landing at rev 2). `ado.mjs` has **no generic field-update subcommand** (only
+`comment`/`transition`), so the field PATCH is a direct JSON-Patch REST call:
+
+```bash
+# 1. Read the raw off-form html (--json keeps it unstripped) and note the value of the off-form field.
+node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <ID> --json > wi.json
+# 2. JSON-Patch: write that html into the form-visible body control (from
+#    tracker.formLayout.<Type>.htmlControls) and clear the off-form field. Replace <FORM_VISIBLE_REF>
+#    (e.g. Microsoft.VSTS.TCM.ReproSteps) and <OFF_FORM_REF> (e.g. System.Description):
+# Keep the PAT OUT of argv and shell history: `-u ":$ADO_PAT"` puts the token on the command line,
+# where it is visible to `ps`/process listing and lands in shell history on a shared host. Instead
+# write it to a mode-600 curl config (printf is a shell builtin, so it never forks a process whose
+# argv carries the token) and delete it after.
+umask 077; printf 'user = ":%s"\n' "$ADO_PAT" > .curlauth.tmp
+curl -sS -X PATCH \
+  "https://dev.azure.com/<org>/<project>/_apis/wit/workitems/<ID>?api-version=7.1" \
+  -H "Content-Type: application/json-patch+json" \
+  -K .curlauth.tmp \
+  -d '[{"op":"add","path":"/fields/<FORM_VISIBLE_REF>","value":"<html-from-step-1>"},
+       {"op":"add","path":"/fields/<OFF_FORM_REF>","value":""}]'
+rm -f .curlauth.tmp
+```
+
+Then re-file (or re-run `/qa-bug`) on a re-scanned profile (`/project-init`) so future items bind the
+body correctly; the manual PATCH above is only for already-filed items.
 
 ## Comments (`/qa-fix`, `/qa-verify-fix`, `/qa-defect`)
 

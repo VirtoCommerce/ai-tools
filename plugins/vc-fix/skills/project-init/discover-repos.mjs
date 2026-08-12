@@ -70,13 +70,17 @@ export function moduleToRepo(mod) {
   } else if (az) {
     owner = az[1]; name = az[2]; host = "azure-repos";
   } else if (id) {
-    // No resolvable repo URL → derive a name from the id (owner stays null; classify
-    // then decides client-vs-platform by the id namespace). This name is a GUESS — main()
-    // validates it against the live repo listing before it is trusted (#216).
-    const short = id.replace(/^VirtoCommerce\./, "");
-    name =
-      "vc-module-" +
-      short.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/\./g, "-").toLowerCase();
+    // No resolvable repo URL. The upstream `vc-module-*` naming convention applies ONLY to a
+    // genuine `VirtoCommerce.*` PLATFORM module — for that it is a safe, authoritative guess. For a
+    // CLIENT module id it would INVENT a name that has no basis and 404s at fix time (the
+    // omnia-opus/OPUS `Opus.Main` → `vc-module-opus-main` bug). So synthesize ONLY for
+    // `VirtoCommerce.*`; for a client id leave `name` NULL and let main() RESOLVE it against the
+    // live repo listing (resolveModuleRepo) — never inventing a name. `nameFromId` marks either as
+    // id-derived (unauthoritative) in both cases.
+    if (/^VirtoCommerce\./i.test(id)) {
+      const short = id.replace(/^VirtoCommerce\./i, "");
+      name = "vc-module-" + short.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/\./g, "-").toLowerCase();
+    } // else: a client module id → name stays null; resolved from the live listing, never invented.
     nameFromId = true;
   }
   return { id, owner, name, host, kind: "module", url, nameFromId };
@@ -95,20 +99,34 @@ export function classify(modules, clientOrg) {
   const co = (clientOrg || "").toLowerCase();
   for (const mod of modules || []) {
     const r = moduleToRepo(mod);
-    if (!r.name) continue;
-    const full = r.owner ? `${r.owner}/${r.name}` : r.name;
-    if (seen.has(full)) continue;
-    seen.add(full);
     let isPlatform = r.owner
       ? r.owner.toLowerCase() === UPSTREAM_ORG.toLowerCase()
       : /^VirtoCommerce\./i.test(r.id); // owner unknown → decide by module-id namespace
     if (r.owner && co && r.owner.toLowerCase() === co) isPlatform = false; // explicit client org wins
     if (isPlatform) {
+      // A VirtoCommerce.* platform module always has a name (URL-derived or the safe vc-module-*
+      // guess); skip the impossible no-name case defensively.
+      if (!r.name) continue;
+      const full = r.owner ? `${r.owner}/${r.name}` : r.name;
+      if (seen.has(full)) continue;
+      seen.add(full);
       platform.push({ name: full, kind: r.kind });
     } else {
-      // host from the URL when known; else omit so profile.vcs.clientHost governs.
-      // nameFromId is carried through so main() can validate a guessed name (#216).
-      client.push({ name: full, kind: r.kind, ...(r.host ? { host: r.host } : {}), ...(r.nameFromId ? { nameFromId: true } : {}) });
+      // CLIENT. `r.name` is NULL for a client module with no ProjectUrl — the name is NEVER invented
+      // (see moduleToRepo); instead carry the module id so main() resolves it against the live repo
+      // listing. Dedup by the full name when we have one, else by the module id.
+      const full = r.name ? (r.owner ? `${r.owner}/${r.name}` : r.name) : null;
+      if (!full && !r.id) continue; // nothing to key on / route
+      const key = full ? full.toLowerCase() : `id:${String(r.id).toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      // host from the URL when known; else omit so profile.vcs.clientHost governs. nameFromId is
+      // carried so main() knows to resolve it; moduleId is the resolution INPUT when name is null.
+      const entry = { name: full, kind: r.kind };
+      if (r.host) entry.host = r.host;
+      if (r.nameFromId) entry.nameFromId = true;
+      if (!full && r.id) entry.moduleId = r.id;
+      client.push(entry);
     }
   }
   return { client, platform };
@@ -122,6 +140,11 @@ export function classify(modules, clientOrg) {
  * (clear the internal `nameFromId` flag, decision made); a miss marks it `nameUnverified` so the
  * operator confirms/corrects repos.client instead of /qa-fix routing a bug to a repo that isn't
  * there. Returns the names left unverified (for the caller to log). Mutates the entries.
+ *
+ * NOTE: `main()` no longer calls this — it now resolves each guessed name inline via
+ * `resolveModuleRepo` (which also picks the exact live repo, not just confirm/deny). This is kept
+ * DELIBERATELY as a covered pure utility (its #216 unit tests pin the confirm/mark contract) and as
+ * the batch counterpart to the single-module `resolveModuleRepo`; it is not dead-by-accident.
  */
 export function flagUnverifiedModules(clientRepos, liveRepoNames) {
   const live = new Set((liveRepoNames || []).map((n) => String(n).toLowerCase()));
@@ -135,6 +158,56 @@ export function flagUnverifiedModules(clientRepos, liveRepoNames) {
     unverified.push(c.name);
   }
   return unverified;
+}
+
+// Structural tokens that are NEVER part of a module's identity — the naming scaffolding both a
+// module id and a repo name wrap around the meaningful words. Dropped from BOTH sides before
+// matching (VCST-5702 client-module resolution).
+const REPO_NOISE_TOKENS = new Set(["vc", "module", "modules", "modul", "platform", "src"]);
+
+/** Tokenize a module id / repo name on `.`, `-`, `_`, and camelCase boundaries; lowercased. Pure. */
+function tokenizeRepoId(s) {
+  return String(s || "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2") // camelCase → boundary
+    .split(/[.\-_\s]+/)
+    .map((t) => t.toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * Resolve a client module id to a REAL repo from the live listing by token overlap — never by
+ * inventing a `vc-module-*` name (VCST-5702). `Opus.Main` + `["opus-module-main", ...]` →
+ * `opus-module-main`. Pure + unit-testable (the network fetch that obtains `liveRepoNames` stays
+ * in main()).
+ *
+ * Match: tokenize the id and each candidate, drop the structural noise tokens (REPO_NOISE_TOKENS)
+ * and — from candidates only — the clientOrg tokens that are NOT themselves part of the id (so an
+ * org slug that is genuinely part of the module identity, like `opus` in `Opus.Main`, is KEPT).
+ * A candidate matches when the id token set equals its stripped set or is a subset of it; prefer
+ * the equal match, then the fewest EXTRA candidate tokens. EXACTLY ONE best candidate → resolved;
+ * zero or a tie → null (never pick arbitrarily).
+ *
+ * @returns {string|null} the resolved repo name (original case), or null if unresolved/ambiguous.
+ */
+export function resolveModuleRepo(moduleId, liveRepoNames, clientOrg = "") {
+  const idTokens = new Set(tokenizeRepoId(moduleId).filter((t) => !REPO_NOISE_TOKENS.has(t)));
+  if (!idTokens.size) return null;
+  // An org token that is ALSO an id token is part of the identity, not noise — keep it.
+  const orgNoise = new Set(tokenizeRepoId(clientOrg).filter((t) => !idTokens.has(t)));
+  let best = null;
+  let bestExtra = Infinity;
+  let tie = false;
+  for (const name of liveRepoNames || []) {
+    const cand = new Set(tokenizeRepoId(name).filter((t) => !REPO_NOISE_TOKENS.has(t) && !orgNoise.has(t)));
+    if (!cand.size) continue;
+    let subset = true;
+    for (const t of idTokens) if (!cand.has(t)) { subset = false; break; }
+    if (!subset) continue;
+    const extra = cand.size - idTokens.size; // 0 = exact match
+    if (extra < bestExtra) { best = name; bestExtra = extra; tie = false; }
+    else if (extra === bestExtra) tie = true;
+  }
+  return best && !tie ? best : null;
 }
 
 /** Heuristic: pick storefront/theme/frontend repo names from a client repo list. Pure. */
@@ -614,24 +687,36 @@ async function main() {
       const project = process.env.ADO_PROJECT || "";
       const all = await listClientReposLive(host, { org, project });
       const byName = new Map(all.map((r) => [r.name, r]));
-      const fe = pickFrontendRepos(all.map((r) => r.name));
-      const have = new Set(result.client.map((c) => c.name.split("/").pop()));
+      const liveNames = all.map((r) => r.name);
+      const fe = pickFrontendRepos(liveNames);
+      const have = new Set(result.client.map((c) => c.name && c.name.split("/").pop()).filter(Boolean));
 
-      // Backfill defaultBranch onto client MODULE entries (from the modules API, which
-      // carries no branch info) by matching the live repo listing (H2).
+      // RESOLVE id-derived client MODULE names against the live listing (VCST-5702) — and backfill
+      // the default branch. A client module with no ProjectUrl arrives with `name: null` + a
+      // `moduleId`; match it to a REAL repo by token overlap instead of inventing a `vc-module-*`
+      // name that 404s. A miss stays `name: null` (no fabricated clone URL — self-enforcing) and is
+      // marked `nameUnverified`; the operator picks from the listing rather than typing from memory.
       for (const c of result.client) {
-        const bare = c.name.split("/").pop();
-        const info = byName.get(bare);
+        if (c.kind === "module" && c.name == null && c.moduleId) {
+          const resolved = resolveModuleRepo(c.moduleId, liveNames, clientOrg);
+          if (resolved) {
+            c.name = `${org}/${resolved}`;
+            c.host = host;
+            delete c.nameFromId;
+          } else {
+            delete c.nameFromId;
+            c.nameUnverified = true;
+            const sample = liveNames.slice(0, 12).join(", ");
+            console.error(
+              `[discover-repos] UNVERIFIED client module '${c.moduleId}' — no repo in ${clientOrg}'s listing token-matches it; leaving repos.client name:null with NO clone URL. ` +
+                `Confirm/correct repos.client (name + repoId from the listing). Candidates: ${sample}${liveNames.length > 12 ? ", …" : ""}.`,
+            );
+          }
+        }
+        // Backfill defaultBranch from the live listing (the modules API carries no branch info, H2).
+        const bare = c.name ? c.name.split("/").pop() : null;
+        const info = bare ? byName.get(bare) : null;
         if (info?.defaultBranch && !c.defaultBranch) c.defaultBranch = info.defaultBranch;
-      }
-
-      // #216 — cross-check id-GUESSED client-module names against the live listing (pure,
-      // case-insensitive helper). A confirmed guess drops its provenance flag; a miss is
-      // marked `nameUnverified`. Surface each name left unverified for the operator.
-      for (const nm of flagUnverifiedModules(result.client, all.map((r) => r.name))) {
-        console.error(
-          `[discover-repos] UNVERIFIED client module repo '${nm}' — the name was derived from the module id (no ProjectUrl) and matches no repo in ${clientOrg}'s listing. ASK the operator to confirm or correct repos.client (it may be named differently, or live in another org/project).`,
-        );
       }
 
       for (const n of fe) {
@@ -679,6 +764,10 @@ async function main() {
       // kind:"frontend" client repo (e.g. a storefront + a separate admin-theme repo),
       // and each may resolve a different store/backend.
       for (const c of result.client) {
+        // An UNRESOLVED client module (name:null, nameUnverified) gets NO repoId / branch /
+        // contribution — a fabricated clone URL is exactly the bug. It stays a name:null entry the
+        // operator must complete (assert-profile flags it; /qa-fix Gate 1 refuses to route to it).
+        if (!c.name) continue;
         const bare = c.name.split("/").pop();
         const info = byName.get(bare) || {};
         if (info.id && !c.repoId) c.repoId = info.id;
@@ -725,12 +814,13 @@ async function main() {
   // VC is always on GitHub), or a clientOrg resolved; else platform (the native default).
   const projectType =
     result.client.length || host === "azure-repos" || clientOrg ? "client" : "platform";
-  // #216 — any id-guessed name that was never cross-checked (no clientOrg resolved, or
-  // --modules-json mode, so flagUnverifiedModules never ran for it) is NOT "confirmed":
-  // mark it unverified before the internal `nameFromId` provenance flag is stripped, so an
-  // unchecked guess never looks trusted in the profile. (A cross-checked guess already had
-  // its flag cleared by the helper.) `nameUnverified` is advisory — surfaced to the operator
-  // via stderr and persisted in the profile; it has no programmatic consumer today.
+  // #216 / VCST-5702 — any id-derived client module that was never resolved against a live listing
+  // (no clientOrg, or --modules-json mode, so the resolution step above never ran) is NOT confirmed:
+  // mark it `nameUnverified` before the internal `nameFromId` flag is stripped, so an unchecked
+  // module never looks trusted. `nameUnverified` is now LOAD-BEARING, not merely advisory: such an
+  // entry has `name: null` (never an invented name) and therefore NO contribution/clone URL —
+  // /qa-fix Gate 1 cannot route to it, and assert-profile reports it as a shape defect
+  // (`client_repo_unverified`). It is still surfaced to the operator via stderr to prompt a fix.
   for (const c of result.client) {
     if (c.nameFromId && c.nameUnverified === undefined) c.nameUnverified = true;
     delete c.nameFromId;

@@ -19,6 +19,13 @@
  *   - REMOVE every profile field no longer in the schema (obsolete), pruning fixed-shape
  *            objects key-by-key. OPEN MAPS ({} default — stateMap/workItemTypes/roleStates)
  *            and ARRAYS (repos.*) are kept wholesale: their contents are data, not schema.
+ *            EXCEPTION: a scan-written open map under `tracker` on the explicit
+ *            TRACKER_PRESERVED_KEYS allowlist (`tracker.formLayout` / `tracker.fieldsMeta`, which
+ *            PROFILE_DEFAULTS does not enumerate) is PRESERVED, not dropped — it is discovered data,
+ *            and losing `tracker.formLayout` sends the bug body to an off-form field (VCST-5702).
+ *            Reported under `preserved`. Any OTHER unknown key under `tracker` — a renamed schema
+ *            object, or an unknown scalar — is still removed, so reconcile keeps pruning obsolete
+ *            fields.
  *   - RESCAN report the fields that should be re-derived live (repos, tracker role model),
  *            so the /project-init skill can re-run discover-*.mjs + gen-profile --merge.
  *   - ASK    surface each pending decision's question + options so the skill can drive
@@ -151,6 +158,12 @@ function parseDecisions(setFlags) {
 }
 
 const isPlainObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+
+// Scan-written open maps under `tracker` that PROFILE_DEFAULTS does not enumerate but the
+// discover-tracker scan legitimately writes — preserved through reconcile rather than pruned as
+// obsolete (VCST-5702). An EXPLICIT allowlist (not a blanket "any object under tracker") so a
+// genuinely-renamed schema object still prunes; a new scan-written map is added here by hand.
+const TRACKER_PRESERVED_KEYS = new Set(["formLayout", "fieldsMeta"]);
 const clone = (v) => (v === undefined ? v : JSON.parse(JSON.stringify(v)));
 
 /** Set a dotted sub-path (e.g. "mode") into `obj`, creating intermediate objects. */
@@ -172,7 +185,7 @@ function setDeep(obj, dotted, value) {
  * pending (unresolved ask/rescan) field, so it is always safe to write.
  */
 function reconcile(schema, existing, decisions, unsets = []) {
-  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [] };
+  const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [], preserved: [] };
   // A conditional sub-object is "disabled" (not in schema for this profile) when its
   // discriminator predicate is false against the existing profile.
   const conditionalDisabled = (path) => {
@@ -249,10 +262,24 @@ function reconcile(schema, existing, decisions, unsets = []) {
           out[k] = walk(schemaNode[k], ex[k], path);
         }
       }
-      // Report + drop OBSOLETE keys (present in the profile, gone from the schema).
+      // Report + drop OBSOLETE keys (present in the profile, gone from the schema) — EXCEPT a
+      // KNOWN scan-written subtree under `tracker`. `tracker.formLayout` / `tracker.fieldsMeta` are
+      // DATA the discover-tracker scan writes, not a stale schema field: PROFILE_DEFAULTS.tracker
+      // does not enumerate them, so the plain prune below silently DROPPED them — and losing
+      // tracker.formLayout sends the bug body to an off-form (invisible) field (VCST-5702 ITEM 0).
+      // Preserve them by an EXPLICIT ALLOWLIST, not a blanket "any object/array under tracker": a
+      // blanket rule would make a genuinely-renamed tracker object (e.g. a future
+      // `tracker.fields` → `tracker.fieldContract`) un-prunable forever, defeating the reconciler's
+      // whole job. A new scan-written map must be added to TRACKER_PRESERVED_KEYS. Everything else
+      // not in the schema — unknown scalar OR unknown object under a renamed key — is still removed.
       for (const k of Object.keys(ex)) {
         if (!(k in schemaNode)) {
           const path = prefix ? `${prefix}.${k}` : k;
+          if (prefix === "tracker" && TRACKER_PRESERVED_KEYS.has(k) && (isPlainObject(ex[k]) || Array.isArray(ex[k]))) {
+            out[k] = ex[k];
+            report.preserved.push({ path });
+            continue;
+          }
           report.removed.push({ path, value: ex[k] });
         }
       }
@@ -379,7 +406,7 @@ function main() {
   const meta = raw._meta;
   delete raw._meta;
 
-  const { migrated, added, removed, pending, rescan, unset, rejected } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
+  const { migrated, added, removed, pending, rescan, unset, rejected, preserved } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
   const hasStructuralChange = added.length > 0 || removed.length > 0 || unset.length > 0;
   // `rescan` (e.g. an Azure profile with an empty tracker.fields, VCST-5582 E5) also counts as
   // "changes" so the skill knows to re-run the live discover step — even when nothing structural
@@ -405,6 +432,7 @@ function main() {
           rejected,
           pending,
           rescan,
+          preserved,
         },
         null,
         2,
@@ -437,7 +465,7 @@ function main() {
 
   console.log(
     JSON.stringify(
-      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan },
+      { status, path: outPath, wrote, added, removed, unset, rejected, pending, rescan, preserved },
       null,
       2,
     ),

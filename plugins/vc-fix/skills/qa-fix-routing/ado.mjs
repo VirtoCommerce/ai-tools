@@ -37,11 +37,21 @@
  *       `allowedValues` is refused BEFORE the POST.
  *     --no-preflight → skip only the non-mutating write-scope probe (file/contract checks stay).
  *     --no-verify    → skip the post-create read-back (not recommended; a 200 is not proof).
+ *     --strict       → after printing the evidence payload, EXIT 2 when the read-back verify FAILED
+ *                      (fieldsOk:false — OFF_FORM / IMAGES_MISSING / still-empty), so a NON-interactive
+ *                      caller keying on the exit code sees it; the interactive path reads fieldsOk.
  *     --assign-self → assign to the token/session owner (whoami); --assign-to <email> for explicit.
  *     --iteration current → stamp the team's active sprint (System.IterationPath); or pass a path.
  *     --parent <id> → link the bug under a parent work item (Hierarchy-Reverse relation).
  *   node ado.mjs whoami                                          # token owner { name, mail }
- *   node ado.mjs current-iteration [--team "<team>"]            # active sprint { id, name, path }
+ *   node ado.mjs current-iteration [--team "<team>"]            # DATE-VALIDATED active sprint
+ *       { id, name, path, team, autoSelectedTeam? }. Never trusts ADO's stale timeFrame:"current"
+ *       flag; if the configured/default team is dormant, auto-selects the team that owns a sprint
+ *       whose dates bracket today. Errors LOUDLY (exit 2) when nothing is date-valid or when several
+ *       teams match (pass --team to disambiguate) — never returns a stale iteration.
+ *   node ado.mjs list-parent-candidates [--top 2] [--any-iteration]  # open User Story/Epic/Feature
+ *       in the current sprint (newest-changed first) → { candidates:[{id,type,title,state}], … } —
+ *       the real choices /qa-bug offers for the bug's parent link.
  *   node ado.mjs list-refs      --repo frontend [--filter heads/]
  *   node ado.mjs get-file       --repo frontend --path client-app/x.vue --branch dev
  *   node ado.mjs create-pr      --repo frontend --source refs/heads/claude/qa-autofix/967 \
@@ -60,7 +70,7 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 // and the payload builder can never disagree. See bug-contract.mjs's header.
 import {
   resolveSlots, buildContractFields, verifyAgainstContract, renderVerifyTable,
-  classifyFieldRejection, isHtmlByContract,
+  classifyFieldRejection, isHtmlByContract, bindFormVisibleLongText,
 } from "./bug-contract.mjs";
 // Non-mutating ADO write-scope probe, reused from /project-init's readiness table so
 // "your PAT is read-only" is told ONCE, up front, in the same words on both surfaces.
@@ -68,7 +78,12 @@ import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../project-init/p
 // Azure HTML conversion + the Bug JSON-Patch builder live in a shared module so the CLI here
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
-import { ensureAzureHtml, mdToHtml, buildBugFields } from "./ado-html.mjs";
+import { ensureAzureHtml, mdToHtml, buildBugFields, countImages } from "./ado-html.mjs";
+// Pure date-range validation for a team iteration, SHARED with discover-tracker.mjs so the runtime
+// "which sprint is current" resolve and the onboarding "which team owns the current sprint" scan can
+// never disagree. `$timeframe=current` alone is untrustworthy (Azure keeps the flag on a dormant
+// team's dead sprint) — an iteration counts as current only when its dates bracket today.
+import { isIterationCurrent, iterationRange, localTodayYMD, selectTeamWithCurrentSprint } from "./iteration-dates.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -92,6 +107,9 @@ try {
 function loadProfile() {
   const candidates = [];
   if (process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
+  // Honor VC_FIX_HOME (the write-root the readers use — see inputRoot()) so a tool launched from an
+  // unrelated cwd still finds the deployment's profile, matching where /project-init wrote it.
+  if (process.env.VC_FIX_HOME) candidates.push(join(resolve(process.env.VC_FIX_HOME), "project-profile.json"));
   let dir = process.cwd();
   for (let i = 0; i < 8; i++) {
     candidates.push(join(dir, "project-profile.json"));
@@ -188,10 +206,10 @@ async function authHeader() {
   try {
     ({ AzureCliCredential } = await import("@azure/identity"));
   } catch {
-    fail("Azure DevOps auth unavailable: set ADO_PAT (recommended) or install @azure/identity and run `az login`.");
+    fail(`Azure DevOps auth unavailable: set ADO_PAT (recommended) or install @azure/identity and run \`az login\`.\n      (ADO_PAT is read from .env.local under VC_FIX_HOME || cwd = ${inputRoot()} — confirm it is set there, not just exported in another shell.)`);
   }
   const tok = await new AzureCliCredential().getToken(ADO_RESOURCE);
-  if (!tok?.token) fail("Azure DevOps auth unavailable: set ADO_PAT, or run `az login` and set ADO_AUTH=az-login.");
+  if (!tok?.token) fail(`Azure DevOps auth unavailable: set ADO_PAT, or run \`az login\` and set ADO_AUTH=az-login.\n      (ADO_PAT is read from .env.local under VC_FIX_HOME || cwd = ${inputRoot()}.)`);
   _bearer = { token: tok.token, exp: tok.expiresOnTimestamp };
   return `Bearer ${tok.token}`;
 }
@@ -204,7 +222,7 @@ function base(args, axis = "vcs") {
   const org = args.org || AZ.organization;
   const project = args.project || AZ.project;
   if (AZ.apiBase && !args.org && !args.project) return String(AZ.apiBase).replace(/\/$/, "");
-  if (!org || !project) fail("no org/project — pass --org/--project or set tracker/vcs.azure in project-profile.json");
+  if (!org || !project) fail(`no org/project — pass --org/--project or set tracker/vcs.azure in project-profile.json.\n      (The profile was searched at PROJECT_PROFILE_PATH, then VC_FIX_HOME (${process.env.VC_FIX_HOME || "unset"}), then cwd and its parents from ${process.cwd()}. If it lives elsewhere, set PROJECT_PROFILE_PATH or run from the project root.)`);
   return `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
 }
 
@@ -331,29 +349,158 @@ function contractFor(type) {
   return [];
 }
 
+/**
+ * The scanned form layout (ordered html control refs ON the form) for a work-item type, or []
+ * when no layout was scanned (VCST-5702 ITEM 0). Empty ⇒ form-gating is INACTIVE and the create
+ * path keeps its pre-5702 body target (System.Description) — no behaviour change for a profile
+ * scanned before this feature, or a process whose form does surface System.Description.
+ */
+function formLayoutFor(type) {
+  const all = (PROFILE.tracker && PROFILE.tracker.formLayout) || {};
+  const want = String(type || "").toLowerCase();
+  for (const [k, v] of Object.entries(all)) {
+    if (k.toLowerCase() === want && v && Array.isArray(v.htmlControls)) return v.htmlControls;
+  }
+  return [];
+}
+
+/**
+ * The rule-filter accounting string for a type (VCST-5702 ITEM 0b), persisted by the tracker scan
+ * — e.g. "rule-filtered (73 scanned, 17 kept, 56 dropped as system/unused, 8 required)". Empty
+ * when the profile predates the accounting (the persisted contract is still authoritative).
+ */
+function contractAccountingFor(type) {
+  const all = (PROFILE.tracker && PROFILE.tracker.fieldsMeta) || {};
+  const want = String(type || "").toLowerCase();
+  for (const [k, v] of Object.entries(all)) {
+    if (k.toLowerCase() === want && v && typeof v.accounting === "string") return v.accounting;
+  }
+  return "";
+}
+
+
+// ─── current-sprint resolution (date-validated, team-aware) ──────────────────────────
+// ONE shared resolver for BOTH `current-iteration` and `create-workitem --iteration current`, so
+// they can never drift (they were duplicated, and the duplicate inside create-workitem trusted
+// `$timeframe=current` blindly). It VALIDATES the date range (isIterationCurrent — date-only, finish
+// inclusive) instead of trusting Azure's `timeFrame:"current"` flag, and — when the configured/
+// default team has no date-valid sprint — enumerates the project's teams to find the one that does.
+// Never returns a stale iteration: a no-match is a LOUD, actionable failure.
+
+/** All of a team's iterations (no `$timeframe` filter) so we validate by DATE, not by ADO's flag. */
+async function teamIterations(apiBase, team) {
+  const seg = team ? `/${enc(team)}` : "";
+  const r = await callSoft("GET", `${apiBase}${seg}/_apis/work/teamsettings/iterations?${V}`);
+  return r.ok ? (r.data.value || []) : [];
+}
+
+/** What ADO WOULD have returned as `$timeframe=current` — captured only to NAME the rejected stale
+ *  candidate in the loud error (the whole point: never silently stamp it). */
+async function teamCurrentFlagged(apiBase, team) {
+  const seg = team ? `/${enc(team)}` : "";
+  const r = await callSoft("GET", `${apiBase}${seg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
+  return r.ok ? ((r.data.value || [])[0] || null) : null;
+}
+
+/** The project's teams (org-scoped endpoint), name + id. [] on any error (best-effort enumeration). */
+async function listProjectTeams(args) {
+  const project = args.project || trackerAZ().project;
+  if (!project) return [];
+  const r = await callSoft("GET", `${orgUrl(args)}/_apis/projects/${enc(project)}/teams?${V}&$top=500`);
+  return r.ok ? (r.data.value || []).map((t) => ({ id: t.id, name: t.name })) : [];
+}
+
+const iterShape = (it) => ({ id: it.id, name: it.name, path: it.path });
+
+/**
+ * Resolve THE current sprint for the deployment. Returns a discriminated result:
+ *   { ok:true,  iteration:{id,name,path}, team, autoSelected:boolean }
+ *   { ok:false, error:"<loud, operator-actionable message>", ambiguous?:boolean }
+ *
+ * Order:
+ *   1. Try the team to use = an explicit CLI `--team`, else the profile's `tracker.azure.team`,
+ *      else the project's default team. A date-valid iteration there wins immediately.
+ *   2. An EXPLICIT `--team` is authoritative — if it yields none, fail loudly (do NOT auto-pick a
+ *      different team; the operator named this one). This is also the disambiguation lever for (4).
+ *   3. Otherwise (team came from the profile/default and is dormant) enumerate the project's teams
+ *      and keep those with a date-valid current sprint.
+ *   4. Exactly one match ⇒ use it and report it was auto-selected. Several ⇒ ambiguous, require
+ *      `--team`. None ⇒ loud failure naming the stale candidate + its dates.
+ */
+async function resolveCurrentIteration(args) {
+  const today = localTodayYMD();
+  const apiBase = base(args, "tracker");
+  const cliTeam = typeof args.team === "string" ? args.team : "";
+  const firstTeam = cliTeam || TRACKER_AZ.team || ""; // "" ⇒ the project's default team
+  const label = (t) => t || "(project default)";
+
+  const valid = (list) => list.find((it) => isIterationCurrent(it, today)) || null;
+
+  // (1) the configured/default team
+  const primaryHit = valid(await teamIterations(apiBase, firstTeam));
+  if (primaryHit) return { ok: true, iteration: iterShape(primaryHit), team: firstTeam, autoSelected: false };
+
+  // capture the stale candidate the primary team reports as "current" (for the loud message)
+  const stale = await teamCurrentFlagged(apiBase, firstTeam);
+  const staleClause = stale
+    ? `Team "${label(firstTeam)}" reports "${stale.name}" (${iterationRange(stale)}) as current, but its dates do NOT bracket today (${today}) — rejected as stale.`
+    : `Team "${label(firstTeam)}" has no current-flagged sprint.`;
+
+  // (2) an explicit --team is authoritative — never silently auto-pick another team
+  if (cliTeam) {
+    return {
+      ok: false,
+      error:
+        `--iteration current: no date-valid sprint on the requested team "${cliTeam}". ${staleClause}\n` +
+        `      Pass an explicit --iteration <path>, or fix the sprint's dates in Azure Boards.`,
+    };
+  }
+
+  // (3) enumerate the project's teams; keep those with a date-valid current sprint. The per-team
+  // iteration probes are INDEPENDENT (teamIterations returns [] on error), so fan them out
+  // concurrently instead of a serial await-in-loop — a large ADO project has many teams.
+  const teams = (await listProjectTeams(args)).filter((t) => !(firstTeam && t.name === firstTeam));
+  const probed = await Promise.all(
+    teams.map(async (t) => {
+      const hit = valid(await teamIterations(apiBase, t.name));
+      return hit ? { team: t.name, iteration: hit } : null;
+    }),
+  );
+  const matches = probed.filter(Boolean);
+
+  // (4) decide via the SHARED selector (same ambiguity rule as onboarding's discoverTeam).
+  const sel = selectTeamWithCurrentSprint(matches);
+  if (sel.ok) {
+    return { ok: true, iteration: iterShape(sel.iteration), team: sel.team, autoSelected: true };
+  }
+  if (sel.ambiguous) {
+    return {
+      ok: false,
+      ambiguous: true,
+      error:
+        `--iteration current: ${sel.distinctPaths.length} teams have DIFFERENT date-valid current sprints — cannot choose automatically: ` +
+        sel.matches.map((m) => `"${m.team}" → ${m.iteration.name} (${iterationRange(m.iteration)})`).join("; ") +
+        `.\n      Pass --team "<one of them>" to disambiguate.`,
+    };
+  }
+  return {
+    ok: false,
+    error:
+      `--iteration current: no team in project "${label(args.project || trackerAZ().project)}" has a sprint whose dates bracket today (${today}). ${staleClause}` +
+      (teams.length ? ` Scanned ${teams.length} team(s); none matched.` : ` Could not enumerate project teams.`) +
+      `\n      Pass an explicit --iteration <path>, or fix the active sprint's dates in Azure Boards.`,
+  };
+}
 
 // ---- commands -----------------------------------------------------------------------
 const COMMANDS = {
   async "get-workitem"(args) {
     if (!args.id) fail("--id required");
     const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?$expand=all&${V}`);
+    // --json returns the RAW item, html fields unstripped — the only way to eyeball inline
+    // rendering (VCST-5702 ITEM 2: qa-bug Step 5 verifies images via `get-workitem --json`).
     if (args.json) return d;
-    const f = d.fields || {};
-    const g = (k) => (f[k] && f[k].displayName ? f[k].displayName : f[k]);
-    return {
-      id: d.id,
-      type: g("System.WorkItemType"),
-      title: g("System.Title"),
-      state: g("System.State"),
-      tags: g("System.Tags"),
-      areaPath: g("System.AreaPath"),
-      severity: g("Microsoft.VSTS.Common.Severity"),
-      priority: g("Microsoft.VSTS.Common.Priority"),
-      assignedTo: g("System.AssignedTo"),
-      description: stripHtml(g("System.Description")),
-      reproSteps: stripHtml(g("Microsoft.VSTS.TCM.ReproSteps")),
-      relations: (d.relations || []).map((r) => ({ rel: r.rel, url: r.url })),
-    };
+    return shapeWorkItem(d);
   },
 
   async comment(args) {
@@ -407,15 +554,67 @@ const COMMANDS = {
     return { id: u.id || null, name: u.providerDisplayName || null, uniqueName: mail || u.subjectDescriptor || null, mail };
   },
 
-  // The team's CURRENT sprint (iteration) — for stamping System.IterationPath on a new bug so
-  // it lands in the active sprint, not the backlog. Team from --team or tracker.azure.team;
-  // omitted ⇒ the project's default team.
+  // The deployment's CURRENT sprint (iteration) — for stamping System.IterationPath on a new bug so
+  // it lands in the active sprint, not the backlog. DATE-VALIDATED (never trusts ADO's stale
+  // `timeFrame:"current"` flag) and TEAM-AWARE: if the configured/default team is dormant, the
+  // right team is auto-selected by which one owns a sprint whose dates bracket today. Team from
+  // --team, else tracker.azure.team, else the project default. FAILS LOUDLY when nothing is
+  // date-valid — never returns a stale iteration.
   async "current-iteration"(args) {
-    const team = (typeof args.team === "string" ? args.team : "") || TRACKER_AZ.team || "";
-    const teamSeg = team ? `/${enc(team)}` : "";
-    const d = await call("GET", `${base(args, "tracker")}${teamSeg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
-    const it = (d.value || [])[0];
-    return it ? { id: it.id, name: it.name, path: it.path } : null;
+    const r = await resolveCurrentIteration(args);
+    if (!r.ok) fail(r.error, 2);
+    return {
+      id: r.iteration.id,
+      name: r.iteration.name,
+      path: r.iteration.path,
+      team: r.team || "(project default)",
+      ...(r.autoSelected ? { autoSelectedTeam: true } : {}),
+    };
+  },
+
+  // Candidate PARENT work items for a new bug's Hierarchy-Reverse link — so /qa-bug can OFFER real
+  // choices instead of only "No parent" + a blind free-text prompt (which came back empty and left
+  // the bug unparented). WIQL for open User Story / Epic / Feature in the resolved current sprint,
+  // newest-changed first, then a batch hydrate for the display fields.
+  //   node ado.mjs list-parent-candidates [--top 2] [--any-iteration]
+  async "list-parent-candidates"(args) {
+    const project = args.project || trackerAZ().project;
+    if (!project) fail("no project — pass --project or set tracker.azure in project-profile.json");
+    const top = Number(args.top) > 0 ? Math.floor(Number(args.top)) : 2;
+    const apiBase = base(args, "tracker");
+
+    // Scope to the current sprint unless --any-iteration. A current-iteration miss is NOT fatal here
+    // (the parent link is a convenience) — fall back to project-wide with a note, never error out.
+    let iterationPath = "";
+    let scopeNote = "";
+    if (!args["any-iteration"]) {
+      const r = await resolveCurrentIteration(args);
+      if (r.ok) iterationPath = r.iteration.path;
+      else scopeNote = "no current sprint resolved — scanned project-wide (pass --any-iteration to silence, or fix the sprint dates)";
+    } else {
+      scopeNote = "project-wide (--any-iteration)";
+    }
+
+    const esc = (s) => String(s).replace(/'/g, "''"); // WIQL string literals escape ' as ''
+    const where = [
+      "[System.TeamProject] = @project",
+      "[System.WorkItemType] IN ('User Story', 'Epic', 'Feature')",
+      "[System.State] NOT IN ('Closed', 'Removed')",
+      iterationPath ? `[System.IterationPath] = '${esc(iterationPath)}'` : "",
+    ].filter(Boolean).join(" AND ");
+    const wiql = `SELECT [System.Id] FROM WorkItems WHERE ${where} ORDER BY [System.ChangedDate] DESC`;
+    const q = await call("POST", `${apiBase}/_apis/wit/wiql?$top=${top}&${V}`, { body: { query: wiql } });
+    const ids = (q.workItems || []).map((w) => w.id).slice(0, top);
+    if (!ids.length) return { candidates: [], iterationPath: iterationPath || null, ...(scopeNote ? { note: scopeNote } : {}) };
+
+    const fields = "System.Id,System.WorkItemType,System.Title,System.State";
+    const d = await call("GET", `${apiBase}/_apis/wit/workitems?ids=${ids.join(",")}&fields=${enc(fields)}&${V}`);
+    const byId = new Map((d.value || []).map((w) => [w.id, w.fields || {}]));
+    const candidates = ids.map((id) => {
+      const f = byId.get(id) || {};
+      return { id, type: f["System.WorkItemType"] || "", title: f["System.Title"] || "", state: f["System.State"] || "" };
+    });
+    return { candidates, iterationPath: iterationPath || null, ...(scopeNote ? { note: scopeNote } : {}) };
   },
 
   // The Bug JSON-Patch body is built by the SHARED buildBugFields (ado-html.mjs), the same
@@ -487,12 +686,12 @@ const COMMANDS = {
     }
     let iterationPath = str(args.iteration);
     if (iterationPath && /^current$/i.test(iterationPath)) {
-      const team = (typeof args.team === "string" ? args.team : "") || TRACKER_AZ.team || "";
-      const teamSeg = team ? `/${enc(team)}` : "";
-      const r = await callSoft("GET", `${base(args, "tracker")}${teamSeg}/_apis/work/teamsettings/iterations?$timeframe=current&${V}`);
-      const it = r.ok ? (r.data.value || [])[0] : null;
-      if (!it?.path) problems.push(`--iteration current: no current sprint resolved for team "${team || "(project default)"}" — pass --team, set tracker.azure.team, or give an explicit --iteration <path>`);
-      else iterationPath = it.path;
+      // SAME date-validated, team-aware resolver as `current-iteration` — extracted so the two can
+      // never drift. A stale-only / ambiguous / no-team result becomes a pre-flight PROBLEM (the bug
+      // is never filed into a dead sprint), carrying the resolver's loud, actionable message.
+      const r = await resolveCurrentIteration(args);
+      if (!r.ok) problems.push(r.error);
+      else iterationPath = r.iteration.path;
     }
 
     // Write-scope probe — non-mutating (a deliberately invalid PATCH: ADO answers 401 when the
@@ -529,19 +728,43 @@ const COMMANDS = {
     // unreachable / a Jira deployment / an un-scanned profile) this is a NO-OP and the legacy
     // field set is sent unchanged, labelled "unverified defaults" (the E-f ladder's last rung).
     const contract = contractFor(args.type);
+    // The ORDERED html controls actually ON this type's form (VCST-5702 ITEM 0). Empty ⇒ no layout
+    // scanned ⇒ form-gating inactive ⇒ the body keeps its legacy System.Description target.
+    const formHtmlControls = formLayoutFor(args.type);
     const fieldMap = (PROFILE.tracker && PROFILE.tracker.fieldMap) || {};
     const fieldDefaults = (PROFILE.tracker && PROFILE.tracker.fieldDefaults) || {};
     let contractNote = "unverified defaults (no field contract in the profile — run /project-init to scan it)";
     let mapping = {};
     let dropped = [];
+    // The concrete refs the long-text slots land in — resolved from the form layout below; default
+    // to the legacy canonical refs so a no-contract / no-layout deployment is byte-for-byte unchanged.
+    let bodyRef = "System.Description";
+    let reproRef = "Microsoft.VSTS.TCM.ReproSteps";
+    let systemInfoRef = "Microsoft.VSTS.TCM.SystemInfo";
+    // Body/repro/systemInfo content, possibly merged: on a process whose only html control is the
+    // body target (e.g. OPUS: ReproSteps is the body, no distinct repro/systemInfo field), the repro
+    // and systemInfo text fold INTO the body so nothing is silently dropped and no duplicate op is
+    // emitted. `systemInfoFolded` tells the buildBugFields call below not to ALSO emit it separately.
+    let bodyContent = description;
+    let reproContent = repro;
+    let systemInfoFolded = false;
+    // The html controls THIS form surfaces (contract-derived when present, else the raw layout) —
+    // the actionable list to NAME when a target is off-form.
+    let htmlControlsAvailable = [];
     if (contract.length) {
-      const slots = resolveSlots(contract, fieldMap);
+      const slots = resolveSlots(contract, fieldMap, formHtmlControls);
       mapping = slots.mapping;
+      htmlControlsAvailable = slots.htmlControlsAvailable;
+      // Resolve the long-text targets from the mapping (form-visibility-gated). A slot with no
+      // form-visible field stays undefined and its content folds into the body.
+      bodyRef = mapping.body || bodyRef;
+      systemInfoRef = mapping.systemInfo || systemInfoRef;
+      reproRef = mapping.repro; // may be undefined — merged into the body below
       // The slots buildBugFields emits through its OWN dedicated ops — declared here so the
       // required sweep counts them as filled instead of blocking the POST on a field we are
       // very much sending (and so we don't emit a duplicate JSON-Patch op for it).
       const selfEmitted = {
-        title: str(args.title), body: description, repro, systemInfo,
+        title: str(args.title), body: bodyContent, repro: reproContent, systemInfo,
         tags: str(args.tags), assignee: assignedTo, sprint: iterationPath,
       };
       const satisfiedRefs = Object.entries(selfEmitted)
@@ -583,16 +806,49 @@ const COMMANDS = {
       // canonical refs, which would duplicate the op (and could target a ref this org lacks).
       contractNote = `contract-driven (${contract.length} field(s), ${contract.filter((f) => f.required).length} required)`;
     }
+
+    // ─── FORM-VISIBILITY BINDING + OFF-FORM REFUSAL (VCST-5702 ITEM 0.3; review HIGH-1/MED-3) ──
+    // Runs whenever a form layout was scanned, INDEPENDENT of whether a field contract is present.
+    // The OPUS silent failure — the whole body written to off-form System.Description, reported PASS —
+    // is reachable with NO contract too: discover-tracker's layout scan and field-contract scan are
+    // SEPARATE best-effort calls, so a profile can carry `formLayout` while `fields` is empty (the
+    // contract call failed, the layout call didn't). Gating this on the LAYOUT, not the contract,
+    // closes that second path — the layout alone answers "is this ref on the form?".
+    if (formHtmlControls.length) {
+      // Fold/rebind decision lives in the SHARED pure bindFormVisibleLongText (bug-contract.mjs), so
+      // the create path can't re-derive it slightly differently and it is unit-testable in isolation.
+      const bound = bindFormVisibleLongText({
+        formHtmlControls, contract, fieldMap, htmlControlsAvailable,
+        bodyRef, reproRef, systemInfoRef, bodyContent, reproContent, systemInfo,
+      });
+      bodyRef = bound.bodyRef;
+      reproRef = bound.reproRef;
+      systemInfoRef = bound.systemInfoRef;
+      bodyContent = bound.bodyContent;
+      reproContent = bound.reproContent;
+      systemInfoFolded = bound.systemInfoFolded;
+      // Refuse a content-carrying slot that is STILL off-form: an explicit override onto an off-form
+      // field, or a type with no on-form html control at all. NAME the on-form controls.
+      if (bound.offForm) {
+        const c = bound.offForm;
+        fail(
+          `create-workitem: the resolved ${c.label} field ${c.ref ? `(${c.ref}) ` : ""}is NOT on the ${args.type} form — content written there would be INVISIBLE. NOTHING was created.\n` +
+            `      Html controls ON the form (any of these can receive it): ${bound.controls.join(", ") || "(none — this type has no html control on its form)"}\n` +
+            `      Bind the ${c.label} slot to one of them via tracker.fieldMap (e.g. { "${c.label}": "${bound.controls[0] || "<ref>"}" }) and re-run.`,
+          2,
+        );
+      }
+    }
     const useContract = contract.length > 0;
 
     const fields = buildBugFields({
       title: str(args.title),
-      description,
-      reproSteps: repro,
+      description: bodyContent,
+      reproSteps: reproContent,
       severity: useContract ? "" : str(args.severity),
       priority: useContract ? undefined : (args.priority !== undefined && args.priority !== true ? args.priority : undefined),
       tags: str(args.tags),
-      systemInfo,
+      systemInfo: systemInfoFolded ? "" : systemInfo,
       fields: customFields,
       attachments: str(args.attachments),
       assignedTo,
@@ -600,6 +856,12 @@ const COMMANDS = {
       parentId: str(args.parent),
       orgUrl: orgUrl(args),
       raw: !!args.raw,
+      // The concrete field each long-text slot lands in — resolved per work-item type from the form
+      // layout (VCST-5702 ITEM 0), so the body is written to a FORM-VISIBLE control, never an
+      // off-form field. Absent a contract these stay the legacy canonical refs.
+      bodyRef,
+      reproRef,
+      systemInfoRef,
       // The field TYPE makes the HTML decision DERIVED rather than asserted (E-a): `html` ⇒
       // HTML body, `plainText` ⇒ text. Absent contract ⇒ null ⇒ the legacy known-refs set.
       isHtmlRef: useContract ? (ref) => isHtmlByContract(contract, ref) : null,
@@ -653,20 +915,34 @@ const COMMANDS = {
       const m = /^\/fields\/(.+)$/.exec(op.path || "");
       if (m) sentByRef[m[1]] = op.value;
     }
+    // Inline-image evidence (VCST-5702 ITEM 1): how many <img> we SUBMITTED per field. The
+    // read-back must contain that many attachment-backed <img> or the field is IMAGES_MISSING —
+    // the "persisted != rendered" check a non-empty test can never make.
+    const submittedImages = {};
+    for (const [ref, value] of Object.entries(sentByRef)) {
+      if (typeof value === "string") {
+        const n = countImages(value);
+        if (n > 0) submittedImages[ref] = n;
+      }
+    }
+    // Form visibility + image evidence flow into the read-back so an off-form or image-less body
+    // can never report fieldsOk:true.
+    const verifyOpts = { formHtmlControls, submittedImages };
     let verify = null;
     let patched = [];
     if (!args["no-verify"]) {
       const read = await callSoft("GET", `${apiUrl}/_apis/wit/workitems/${d.id}?$expand=all&${V}`);
       if (read.ok) {
-        verify = verifyAgainstContract(contract, mapping, read.data.fields || {}, sentByRef);
-        // ONE repair pass: re-send only the values we HAD for the fields that came back empty.
-        const repairable = verify.missing.filter((r) => sentByRef[r.ref] !== undefined && sentByRef[r.ref] !== "");
+        verify = verifyAgainstContract(contract, mapping, read.data.fields || {}, sentByRef, verifyOpts);
+        // ONE repair pass: re-send only the values we HAD for the fields that came back empty (a
+        // MISSING we can refill — never an OFF_FORM/IMAGES_MISSING, which a re-PATCH can't fix).
+        const repairable = verify.missing.filter((r) => r.status === "MISSING" && sentByRef[r.ref] !== undefined && sentByRef[r.ref] !== "");
         if (repairable.length) {
           const patch = repairable.map((r) => ({ op: "add", path: `/fields/${r.ref}`, value: sentByRef[r.ref] }));
           const p = await callSoft("PATCH", `${apiUrl}/_apis/wit/workitems/${d.id}?${V}`, { body: patch, contentType: "application/json-patch+json" });
           patched = repairable.map((r) => r.ref);
           const re = p.ok ? p : await callSoft("GET", `${apiUrl}/_apis/wit/workitems/${d.id}?$expand=all&${V}`);
-          if (re.ok) verify = verifyAgainstContract(contract, mapping, re.data.fields || {}, sentByRef);
+          if (re.ok) verify = verifyAgainstContract(contract, mapping, re.data.fields || {}, sentByRef, verifyOpts);
         }
       }
     }
@@ -680,10 +956,21 @@ const COMMANDS = {
       // Everything below is the E-c/E-e/E-f evidence the caller MUST show the operator —
       // the ticket key alone was never proof the bug is filled in.
       contract: contractNote,
+      // Transparency for the rule-filtered contract (VCST-5702 ITEM 0b) — how many fields the scan
+      // kept vs dropped, so a slim profile is explained rather than looking lossy.
+      ...(contractAccountingFor(args.type) ? { contractAccounting: contractAccountingFor(args.type) } : {}),
+      // The form-visible field the body actually landed in — the receiving ref is now explicit.
+      // Surfaced whenever a form layout was active (not only with a contract), so a no-contract
+      // rebind (review HIGH-1 path — layout present, contract empty) is never a SILENT misroute.
+      ...(useContract || formHtmlControls.length ? { bodyField: bodyRef } : {}),
       ...(dropped.length ? { droppedFields: dropped } : {}),
       ...(healed ? { selfHealed: healed } : {}),
       ...(verify ? { fieldsOk: verify.ok, verifyTable: renderVerifyTable(verify.rows), stillMissing: verify.missing.map((r) => r.ref) } : {}),
       ...(patched.length ? { patchedAfterCreate: patched } : {}),
+      // --strict makes the "persisted ≠ rendered" read-back failure observable to a NON-interactive
+      // caller: the full evidence payload is still printed, then main() exits 2. Without --strict the
+      // behaviour is unchanged (exit 0; the interactive /qa-bug reads fieldsOk from the payload).
+      ...(args.strict && verify && !verify.ok ? { strictFailed: true } : {}),
     };
   },
 
@@ -843,6 +1130,46 @@ const COMMANDS = {
   },
 };
 
+/**
+ * Shape a raw ADO work item into the stripped operator view, WITH non-destructive counters
+ * (VCST-5702 ITEM 2). The stripped text drops `<img>`, which made a correct ticket look empty and
+ * pushed the operator to a hand-rolled REST read; the counters + presence flags mean the default
+ * output can never IMPLY images / systemInfo / iterationPath are absent. Pure — no network. The
+ * raw item (with unstripped html) is what `get-workitem --json` returns instead.
+ */
+function shapeWorkItem(d) {
+  const f = (d && d.fields) || {};
+  const g = (k) => (f[k] && f[k].displayName ? f[k].displayName : f[k]);
+  const rawHtml = (k) => (typeof f[k] === "string" ? f[k] : "");
+  const descRaw = rawHtml("System.Description");
+  const reproRaw = rawHtml("Microsoft.VSTS.TCM.ReproSteps");
+  const sysInfoRaw = rawHtml("Microsoft.VSTS.TCM.SystemInfo");
+  return {
+    id: d.id,
+    type: g("System.WorkItemType"),
+    title: g("System.Title"),
+    state: g("System.State"),
+    tags: g("System.Tags"),
+    areaPath: g("System.AreaPath"),
+    iterationPath: g("System.IterationPath") || "",
+    severity: g("Microsoft.VSTS.Common.Severity"),
+    priority: g("Microsoft.VSTS.Common.Priority"),
+    assignedTo: g("System.AssignedTo"),
+    description: stripHtml(descRaw || g("System.Description")),
+    reproSteps: stripHtml(reproRaw || g("Microsoft.VSTS.TCM.ReproSteps")),
+    systemInfo: stripHtml(sysInfoRaw || g("Microsoft.VSTS.TCM.SystemInfo")),
+    // Counters so the stripped view never implies "no images / no systemInfo / no iteration".
+    images: {
+      description: countImages(descRaw),
+      reproSteps: countImages(reproRaw),
+      systemInfo: countImages(sysInfoRaw),
+    },
+    hasSystemInfo: !!(sysInfoRaw && sysInfoRaw.trim()),
+    hasIterationPath: !!g("System.IterationPath"),
+    relations: (d.relations || []).map((r) => ({ rel: r.rel, url: r.url })),
+  };
+}
+
 function stripHtml(s) {
   if (!s || typeof s !== "string") return s || "";
   return s
@@ -872,6 +1199,10 @@ async function main() {
   const out = await COMMANDS[cmd](args);
   if (out && out._raw !== undefined) process.stdout.write(out._raw);
   else console.log(JSON.stringify(out, null, 2));
+  // --strict (create-workitem): the evidence payload is printed above, THEN a non-zero exit makes the
+  // read-back failure (`fieldsOk:false` — OFF_FORM / IMAGES_MISSING / still-empty) visible to a caller
+  // that keys on the exit code, not just to an agent parsing stdout.
+  if (out && out.strictFailed) process.exit(2);
 }
 
 // Run as CLI only when invoked directly (`node ado.mjs …`) — guarded so the module can be
@@ -880,4 +1211,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   main().catch((e) => fail(e?.message || String(e)));
 }
 
-export { ensureAzureHtml, mdToHtml };
+export { ensureAzureHtml, mdToHtml, shapeWorkItem };
+// Re-exported for the unit tests (the pure date-validation the current-sprint resolver is built on).
+export { isIterationCurrent, iterationRange, localTodayYMD } from "./iteration-dates.mjs";

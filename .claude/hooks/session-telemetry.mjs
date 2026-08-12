@@ -257,7 +257,13 @@ const T = {
 // Bound the per-span op history so a long-lived command span can't grow its
 // state.json without limit (the struggle detectors only need a recent window;
 // span.opCount / span.sawDecisive carry the whole-span aggregates they need).
+// Memory stays bounded at OPS_CAP entries; eviction happens from the MIDDLE, not the
+// head — the first OPS_HEAD_KEEP ops (a run's setup + FIRST error, where the root cause
+// usually is) are never dropped, and the most recent (OPS_CAP - OPS_HEAD_KEEP) tail is
+// retained too. A single-command run of 161 tool_calls used to lose its earliest ops to
+// a head-drop ring, blinding the struggle detectors to where trouble began (VCST-5702 ITEM 5).
 const OPS_CAP = 120;
+const OPS_HEAD_KEEP = 40;
 const FLAGGED_CAP = 200; // hard backstop on distinct flagged signatures (M2 — see emitSpan)
 
 // ─── signal counts ───────────────────────────────────────────────────────────
@@ -768,10 +774,17 @@ function pushOp(span, op) {
   span.opCount = (span.opCount ?? 0) + 1;
   if (DECISIVE_RE.test(op.tool)) span.sawDecisive = true;
   span.ops.push(op);
-  // The ring drops the EARLIEST ops, so on a long span (a /project-init run easily exceeds
-  // OPS_CAP) every detector that walks `ops[]` — retry_storm, reread_loop, recurring_error —
-  // sees only the tail. Count the evictions so emitSpan can say so out loud.
-  if (span.ops.length > OPS_CAP) { span.ops.shift(); span.opsDropped = (span.opsDropped ?? 0) + 1; }
+  // Head-preserving ring (VCST-5702 ITEM 5): keep the first OPS_HEAD_KEEP ops AND the most recent
+  // tail, evicting from the MIDDLE. The old shift() dropped the earliest ops, so on a long span (a
+  // 161-op single command, a /project-init run) every detector that walks `ops[]` — retry_storm,
+  // reread_loop, recurring_error — saw only the tail and missed where trouble started. Memory is
+  // still bounded at OPS_CAP. (Trade-off: a middle gap forms at index OPS_HEAD_KEEP, joining the
+  // last head op to a tail op. The Map-aggregated detectors — retry_storm/reread_loop/
+  // recurring_error/fallback_loop — count occurrences, not adjacency, so they are unaffected; only
+  // `search_thrash`, which counts a CONSECUTIVE array run, can see the seam as one longer/shorter
+  // run. It is gated to no-progress read-only spans, so a rare false ±1 there is acceptable — a
+  // much smaller blind spot than losing the head entirely.) Count the evictions so emitSpan says so.
+  if (span.ops.length > OPS_CAP) { span.ops.splice(OPS_HEAD_KEEP, 1); span.opsDropped = (span.opsDropped ?? 0) + 1; }
 }
 // Session-level buffers for ops/details that had NO parent span (parentId:null) — see freshState.
 // A synthesized command span (Fix 2) adopts these so classify()/allErrorsRecovered treat the
@@ -779,7 +792,9 @@ function pushOp(span, op) {
 function recordOrphanOp(state, op) {
   if (!state.orphanOps) state.orphanOps = [];
   state.orphanOps.push(op);
-  if (state.orphanOps.length > OPS_CAP) state.orphanOps.shift();
+  // Head-preserving ring, same rationale as pushOp (VCST-5702 ITEM 5): evict from the middle so the
+  // earliest orphan ops of a long parentId:null run survive into the synthesized command span.
+  if (state.orphanOps.length > OPS_CAP) state.orphanOps.splice(OPS_HEAD_KEEP, 1);
 }
 function recordOrphanDetail(state, cls, text) {
   if (!state.orphanDetails) state.orphanDetails = [];
@@ -1020,7 +1035,7 @@ function emitSpan(jsonlPath, state, span, endTs) {
     if (span.opsDropped > 0 || span.detailsDropped > 0) {
       obsFromSpan(jsonlPath, state, span, {
         class: "capture_truncated", subject: "span_ring", code: "NONE",
-        evidence: { snippet: `${span.opsDropped ?? 0} op(s) evicted past OPS_CAP=${OPS_CAP}, ${span.detailsDropped ?? 0} detail(s) past the 25-detail cap — struggle detection saw only the tail` },
+        evidence: { snippet: `${span.opsDropped ?? 0} op(s) evicted from the middle past OPS_CAP=${OPS_CAP} (first ${OPS_HEAD_KEEP} + recent tail kept), ${span.detailsDropped ?? 0} detail(s) past the 25-detail cap — struggle detection saw the head + tail, not the middle` },
       });
     }
     for (const s of rec.struggle || []) {

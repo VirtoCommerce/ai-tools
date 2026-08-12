@@ -45,6 +45,14 @@ Use whichever surface is available; prefer the MCP when connected, else the CLI/
 > tool's exit status, records nothing (VCST-5582 C3). If you must shorten the output, redirect to a
 > file and read the file (`node … ado.mjs … > out.json 2>&1; echo "exit=$?"`), or use the tool's own
 > `--json` and read the fields — never a pipe that swallows the status.
+>
+> **Windows / Git-Bash: a `--path` starting with `/` gets MSYS-mangled.** On Git-Bash, MSYS rewrites
+> a leading-slash argument into a Windows path (`/Web/config.js` → `C:/Program Files/Git/Web/config.js`)
+> **before** `ado.mjs` sees it, so `get-file --path /some/repo/path` resolves to the wrong file. `ado.mjs
+> get-file` detects the mangling and prints a hint, but you hit it first — so either prefix the command
+> with `MSYS_NO_PATHCONV=1` (`MSYS_NO_PATHCONV=1 node … ado.mjs get-file --path /src/App.cs`) **or** pass
+> `--path` **without** the leading slash (`--path src/App.cs`). This is a Git-Bash quirk, not an `ado.mjs`
+> bug — it affects any native tool taking a POSIX-looking path argument.
 
 | Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) — via `ado.mjs` |
 |---|---|---|

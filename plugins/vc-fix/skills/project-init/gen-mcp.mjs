@@ -135,6 +135,21 @@ export function extractNpxSpecs(servers) {
   return [...specs];
 }
 
+/**
+ * The PINNED @playwright/mcp version from the generated servers (VCST-5702 ITEM 4). Emitted at
+ * project-init so a mismatch between the pinned spec and the version actually installed surfaces
+ * HERE: on @playwright/mcp 0.0.77 a bare screenshot filename resolves against the MCP server's OWN
+ * cwd, NOT the configured absolute --output-dir (VCST-5582 C), so the exact version is load-bearing.
+ * Pure. Returns "" when no playwright server is present, "unpinned" when the spec carries no @version.
+ */
+export function pinnedPlaywrightVersion(servers) {
+  for (const spec of extractNpxSpecs(servers)) {
+    const m = /^(@playwright\/mcp)(?:@(.+))?$/.exec(spec);
+    if (m) return m[2] || "unpinned";
+  }
+  return "";
+}
+
 // A safe npm package-spec charset (scoped names, versions, dist-tags) — NO shell metacharacters.
 // warmNpxCache interpolates the spec into a shell `npm cache add`; specs come from the trusted
 // pinned template today, but validating here keeps that exec safe by construction.
@@ -231,6 +246,18 @@ function injectTokens(server) {
     return o;
   };
   return walk(server);
+}
+
+/** The `<PLACEHOLDER>` names injectTokens() could NOT resolve in a built server def (deduped).
+ *
+ * Single source of truth for "this server is missing a credential", used by BOTH the enable
+ * decision (an optional extra with a missing key stays dormant) and the degraded-artifact WARN
+ * below (which now only ever sees servers we actually enabled). Keeping one helper is what stops
+ * the two from drifting — the bug it replaced was exactly that divergence: the enable side checked
+ * nothing while the warn side checked for placeholders. */
+export function unresolvedPlaceholders(server) {
+  if (!server) return [];
+  return [...new Set(JSON.stringify(server).match(/<[A-Z0-9_]+>/g) || [])];
 }
 
 // ─── evidence destination (VCST-5582 C) ──────────────────────────────────────────────
@@ -368,7 +395,22 @@ function main() {
     context7: "context7",
     devtools: "Chrome DevTools",
   };
-  for (const e of extras) if (extraMap[e]) enabled.add(extraMap[e]);
+  // An OPTIONAL extra whose key never resolved is NOT enabled: scaffold-secrets emits
+  // POSTMAN_API_KEY / CONTEXT7_API_KEY as optional placeholders and documents "blank ⇒ that MCP
+  // server stays disabled", but this loop used to `enabled.add()` every `--with` extra
+  // unconditionally. Onboarding then shipped `.mcp.json` with e.g. context7 enabled and a literal
+  // `<CONTEXT7_API_KEY>` — a server that cannot start — and the warn loop below reported it as
+  // `degraded_artifact:mcp_config` against a key the operator deliberately left blank. The server
+  // stays DEFINED (dormant) exactly like playwright-firefox/-edge, so filling the key and re-running
+  // is all it takes to enable it.
+  const dormantExtras = [];
+  for (const e of extras) {
+    const name = extraMap[e];
+    if (!name) continue;
+    const missing = unresolvedPlaceholders(mcpServers[name]);
+    if (missing.length) dormantExtras.push({ name, missing });
+    else enabled.add(name);
+  }
   // Only enable servers that actually exist in the template.
   const enabledList = [...enabled].filter((n) => mcpServers[n]);
 
@@ -376,6 +418,13 @@ function main() {
   writeFileSync(outPath, JSON.stringify({ mcpServers }, null, 2) + "\n");
   console.log(`[gen-mcp] wrote ${outPath} (os=${os})`);
   console.log(`[gen-mcp] browser evidence lands in ${join(projectRoot, ...EVIDENCE_INCOMING)}\\<browser> (absolute — never the project root, whatever cwd the MCP server starts in)`);
+  // VCST-5702 ITEM 4 — emit the PINNED @playwright/mcp version so a version mismatch surfaces at
+  // project-init. On 0.0.77 a bare screenshot filename resolves against the server cwd, not the
+  // configured --output-dir, so Stage 5 (output-paths.md) MUST reconcile the file into _incoming/.
+  const pwVersion = pinnedPlaywrightVersion(mcpServers);
+  if (pwVersion) {
+    console.log(`[gen-mcp] @playwright/mcp pinned at ${pwVersion} — capture with a BARE filename; on 0.0.77 it lands in the server cwd, so /qa-bug reconciles it into _incoming/ (output-paths.md Stage 5).`);
+  }
 
   // The ignore entries this destination implies. `_incoming/` is a landing zone, not evidence
   // of record; `test-results/` is kept for the legacy/hand-copied lane and any HAR output.
@@ -395,6 +444,11 @@ function main() {
   settings.enabledMcpjsonServers = enabledList;
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   console.log(`[gen-mcp] enabled servers: ${enabledList.join(", ")}`);
+  // Requested-but-dormant optional extras. This is the documented outcome of a blank optional key,
+  // NOT a degraded artifact — so it is an info line and emits no observation.
+  for (const { name, missing } of dormantExtras) {
+    console.log(`[gen-mcp] ${name}: defined but NOT enabled — ${missing.join(", ")} unset (optional; set it in .env.local and re-run to enable).`);
+  }
 
   // Warn about any enabled server whose token is still a placeholder — AND report it as an
   // observation (8a). `.mcp.json` is a REQUIRED output of /project-init, so shipping it with an
@@ -403,12 +457,12 @@ function main() {
   // fixed for the readiness table — self-diagnostics could not see the Postman 401 the shipped
   // `.mcp.json` guaranteed. Evidence carries the server name + placeholder NAME only (both
   // plugin-authored); the key VALUE is never in scope here (the placeholder is literally unresolved).
+  // NB: an optional extra with a blank key never reaches this loop — it was left dormant above, so
+  // the only servers checked here are ones we DID enable and therefore genuinely need a credential.
   const obs = [];
   for (const name of enabledList) {
-    const blob = JSON.stringify(mcpServers[name]);
-    const ph = blob.match(/<[A-Z0-9_]+>/g);
-    if (!ph) continue;
-    const names = [...new Set(ph)];
+    const names = unresolvedPlaceholders(mcpServers[name]);
+    if (!names.length) continue;
     console.warn(`[gen-mcp] ⚠ ${name}: unresolved ${names.join(", ")} — set the token in .env.local or via login, then re-run.`);
     for (const placeholder of names) {
       obs.push({ class: "degraded_artifact", subject: "mcp_config", evidence: { snippet: `${name}: unresolved ${placeholder}` } });

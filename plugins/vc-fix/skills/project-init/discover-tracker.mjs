@@ -40,7 +40,11 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { emitObservations, httpStatusFrom, scrubUrls } from "./lib/diag-obs.mjs";
 // The contract PARSER lives with its consumers (the create path) so the scan and the payload
 // builder can never disagree about the shape. Pure — see that file's header.
-import { parseFieldContract, resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
+import { parseFieldContract, resolveSlots, parseFormLayout, filterContractForPersist, operatorQuestions } from "../qa-fix-routing/bug-contract.mjs";
+// SHARED date-range validation for a team iteration — the same predicate ado.mjs's runtime resolver
+// uses, so onboarding picks the team whose current sprint the create path will accept (VCST: the
+// default team's `timeFrame:"current"` flag pointed at a 3-year-dead sprint).
+import { isIterationCurrent, iterationRange, localTodayYMD, selectTeamWithCurrentSprint } from "../qa-fix-routing/iteration-dates.mjs";
 
 /** Write the result to --out (relative to the deployment project) and/or print it. */
 function emit(out, args) {
@@ -143,6 +147,51 @@ export function deriveRoleStates(states) {
   return out;
 }
 
+/**
+ * Discover + persist the TEAM whose current sprint /qa-bug should stamp (`tracker.azure.team`). The
+ * project's DEFAULT team is often dormant — its `timeFrame:"current"` flag points at a long-dead
+ * sprint — so choose by DATE-VALIDITY: the team that owns a sprint whose dates bracket today.
+ * An explicit `--team` wins with no discovery (the operator's override / disambiguation lever).
+ * Best-effort: any HTTP failure leaves the team unset (the project default) with a note; the runtime
+ * resolver in ado.mjs re-validates and can still auto-select at create time.
+ * @returns {{ team:string, autoSelected:boolean, ambiguous?:string[], note:string }}
+ */
+async function discoverTeam({ apiBase, org, project, authHeader, explicitTeam }) {
+  const today = localTodayYMD();
+  if (explicitTeam) return { team: explicitTeam, autoSelected: false, note: "explicit --team" };
+  // A per-team probe returns its current sprint, null on "no current sprint", or a sentinel error so
+  // a transient 403/timeout is NOT silently conflated with "dormant" (it feeds a probeErrors count the
+  // caller turns into an observation, rather than vanishing).
+  const teamCurrentSprint = async (team) => {
+    const seg = team ? `/${encodeURIComponent(team)}` : "";
+    try {
+      const d = await adoGet(`${apiBase}${seg}/_apis/work/teamsettings/iterations?api-version=7.1`, authHeader);
+      return { hit: (d.value || []).find((it) => isIterationCurrent(it, today)) || null, error: false };
+    } catch { return { hit: null, error: true }; }
+  };
+  let teams = [];
+  try {
+    teams = ((await adoGet(`https://dev.azure.com/${org}/_apis/projects/${encodeURIComponent(project)}/teams?api-version=7.1&$top=500`, authHeader)).value || []).map((t) => t.name);
+  } catch (e) {
+    return { team: "", autoSelected: false, note: `team enumeration failed (${e.message}) — leaving team unset (project default)` };
+  }
+  // Probe every team's iterations CONCURRENTLY — they are independent and this runs at every Azure
+  // onboarding (a large project has many teams; a serial await-in-loop was the dominant latency).
+  const probed = await Promise.all(teams.map(async (t) => ({ team: t, ...(await teamCurrentSprint(t)) })));
+  const matches = probed.filter((p) => p.hit).map((p) => ({ team: p.team, iteration: p.hit }));
+  const probeErrors = probed.filter((p) => p.error).length;
+  const errNote = probeErrors ? ` (${probeErrors} team(s) failed to probe — treated as no-sprint)` : "";
+  // Decide via the SHARED selector (same ambiguity rule as the runtime resolver in ado.mjs).
+  const sel = selectTeamWithCurrentSprint(matches);
+  if (sel.ok) {
+    return { team: sel.team, autoSelected: true, probeErrors, note: `auto-selected "${sel.team}" — owns current sprint ${sel.iteration.name} (${iterationRange(sel.iteration)})${errNote}` };
+  }
+  if (sel.ambiguous) {
+    return { team: "", autoSelected: false, ambiguous: sel.matches.map((m) => m.team), probeErrors, note: `${sel.distinctPaths.length} teams have DIFFERENT current sprints (${sel.matches.map((m) => m.team).join(", ")}) — re-run with --team to pin one${errNote}` };
+  }
+  return { team: "", autoSelected: false, probeErrors, note: teams.length ? `no team has a date-valid current sprint (scanned ${teams.length})${errNote} — leaving team unset (project default)` : "no teams enumerated — leaving team unset" };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const kind = args.tracker || "azure";
@@ -228,6 +277,12 @@ async function main() {
 
   const workItemTypes = {};
   const fields = {};
+  // Per-type form layout (VCST-5702 ITEM 0): the ORDERED html controls actually ON the form. A field
+  // can exist in the contract yet be off-form; a body written there is invisible. Persisted so the
+  // create path binds `body` to a form-visible control instead of assuming System.Description.
+  const formLayout = {};
+  // Per-type rule-filter accounting (VCST-5702 ITEM 0b) — how many fields the scan kept vs dropped.
+  const fieldsMeta = {};
   for (const t of scan) {
     try {
       const states = ((await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/states?api-version=7.1`, authHeader)).value || [])
@@ -237,6 +292,19 @@ async function main() {
     } catch (e) {
       console.error(`[discover-tracker] states for '${t}' failed: ${e.message}`);
       obsHttp("workitem_states", e);
+    }
+    // The FORM LAYOUT for this type (VCST-5702 ITEM 0). `$expand=layout` returns the page/section/
+    // group/control tree; parseFormLayout extracts the html controls in form order (falling back to
+    // the legacy `xmlForm` string). Best-effort: no layout ⇒ form-gating is inactive at create time
+    // and the body keeps its legacy System.Description target — the pre-5702 behaviour.
+    let formHtmlControls = [];
+    try {
+      const wit = await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}?$expand=layout&api-version=7.1`, authHeader);
+      formHtmlControls = parseFormLayout(wit);
+      if (formHtmlControls.length) formLayout[t] = { htmlControls: formHtmlControls };
+    } catch (e) {
+      console.error(`[discover-tracker] form layout for '${t}' failed (body binding falls back to System.Description): ${e.message}`);
+      obsHttp("workitem_form_layout", e);
     }
     // The FIELD CONTRACT for this type — what this organization's process actually requires
     // and allows. `$expand=all` returns allowedValues / defaultValue alongside alwaysRequired.
@@ -248,7 +316,27 @@ async function main() {
     try {
       const typeFields = (await adoGet(`${apiBase}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/fields?$expand=all&api-version=7.1`, authHeader)).value || [];
       const contract = parseFieldContract(typeFields, fieldTypes);
-      if (contract.length) fields[t] = contract;
+      if (contract.length) {
+        // Rule-filter for PERSISTENCE (VCST-5702 ITEM 0b): keep only fields that are required for
+        // creation, required for a state transition, or bound to a semantic slot — never a name
+        // whitelist. The scan still read EVERYTHING (`contract`); only the slim set is persisted.
+        // TODO(VCST-5702 rule b): transitionRequiredRefs is empty here until a process-rules
+        // collector (GET .../workItemTypes/{wit}/rules or /states/{state} transition rules) lands.
+        // The pure filter + its unit test already SUPPORT rule (b); only the live population is
+        // pending. Until then the persisted contract is LOSSY for a field required ONLY on a
+        // transition (not alwaysRequired, not slot-mapped) — acceptable today because the only
+        // transition path (`ado.mjs transition`) PATCHes System.State alone and never fills a
+        // contract-required field, so no live consumer needs it; revisit when a transition writes
+        // more than State.
+        const filtered = filterContractForPersist(contract, { formHtmlControls, transitionRequiredRefs: [] });
+        fields[t] = filtered.fields;
+        fieldsMeta[t] = {
+          accounting: filtered.accounting,
+          scanned: filtered.scanned, kept: filtered.kept, dropped: filtered.dropped,
+          required: filtered.required, slotMapped: filtered.slotMapped, transitionRequired: filtered.transitionRequired,
+        };
+        console.error(`[discover-tracker] ${t} contract: ${filtered.accounting}`);
+      }
     } catch (e) {
       console.error(`[discover-tracker] field contract for '${t}' failed (create falls back to unverified defaults): ${e.message}`);
       // A genuine field-contract failure now (permissions, transport). This is NOT the old
@@ -283,6 +371,20 @@ async function main() {
   // `tested`/`reopen` must never silently ride along on the fix-side completeness signal.
   const qaRoleStatesComplete = missingQaRoles.length === 0;
 
+  // The TEAM whose current sprint /qa-bug stamps (VCST). Chosen by DATE-VALIDITY, not the project
+  // default team's stale `timeFrame:"current"` flag. `--team` overrides the discovery.
+  const explicitTeam = typeof args.team === "string" ? args.team : "";
+  const teamResult = await discoverTeam({ apiBase, org, project, authHeader, explicitTeam });
+  console.error(`[discover-tracker] team: ${teamResult.team ? `"${teamResult.team}"` : "(unset — project default)"} — ${teamResult.note}`);
+  if (teamResult.ambiguous) {
+    obs.push({ class: "degraded_artifact", subject: "tracker_team", code: "NONE", evidence: { snippet: `${teamResult.ambiguous.length} teams have a current sprint — tracker.azure.team left unset; /qa-bug --iteration current auto-selects at runtime, or re-run discover-tracker --team <name>` } });
+  }
+  // A team-iteration probe that transiently failed is not "dormant" — surface it so a partial scan
+  // (which could have skipped the real team) is visible rather than silently conflated (review LOW).
+  if (teamResult.probeErrors) {
+    obs.push({ class: "degraded_artifact", subject: "tracker_team", code: "NONE", evidence: { snippet: `${teamResult.probeErrors} team(s) failed to probe for a current sprint (403/timeout) — team selection saw an incomplete set; re-run, or pin with --team <name>` } });
+  }
+
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
 
@@ -293,13 +395,25 @@ async function main() {
   // one source of truth and lets an operator `tracker.fieldMap` override take effect without
   // a re-scan.
   const primaryContract = fields[primary] || [];
-  const slots = resolveSlots(primaryContract, {});
+  const primaryForm = (formLayout[primary] && formLayout[primary].htmlControls) || [];
+  const slots = resolveSlots(primaryContract, {}, primaryForm);
+  // The required fields the operator must ACTUALLY be asked at the first bug creation (VCST-5702
+  // ITEM 0b) — required fields minus the auto-satisfied ones (Title / State / Area / Iteration /
+  // any defaultValue). This is what makes "ask once" explicit rather than incidental.
+  const questions = operatorQuestions(primaryContract, {});
   const contractSummary = {
     type: primary,
     fieldCount: primaryContract.length,
     requiredCount: primaryContract.filter((f) => f.required).length,
+    accounting: fieldsMeta[primary] ? fieldsMeta[primary].accounting : "",
+    // The body field resolves to a FORM-VISIBLE control (ITEM 0) — reported so the readiness table
+    // shows WHERE the body lands (and on-form status) rather than assuming System.Description.
+    bodyField: slots.mapping.body || "",
+    bodyOnForm: primaryForm.length ? primaryForm.some((r) => r.toLowerCase() === String(slots.mapping.body || "").toLowerCase()) : null,
+    htmlControlsAvailable: slots.htmlControlsAvailable,
     unmappedRequired: slots.unmappedRequired.map((f) => ({ ref: f.ref, name: f.name, allowedValues: f.allowedValues || [] })),
     unmappedSlots: slots.unmapped,
+    operatorQuestions: questions.map((f) => ({ ref: f.ref, name: f.name, allowedValues: f.allowedValues || [] })),
   };
 
   const out = {
@@ -308,11 +422,20 @@ async function main() {
     crossLinkToken: "AB#",
     apiBase,
     projectId,
+    // The team whose current sprint /qa-bug stamps (date-validated; "" ⇒ project default). Baked to
+    // tracker.azure.team by gen-profile so the runtime resolver starts from the right team.
+    team: teamResult.team,
     workItemTypes,
     // Per-type BUG FIELD CONTRACT (VCST-5582 E-a): [{ ref, name, required, type,
     // allowedValues?, defaultValue? }]. Empty/absent ⇒ metadata was unreachable and the create
-    // path uses the legacy field set labelled "unverified defaults" (E-f).
+    // path uses the legacy field set labelled "unverified defaults" (E-f). Rule-filtered for
+    // persistence (VCST-5702 ITEM 0b) — see fieldsMeta for the accounting.
     fields,
+    // Per-type form layout (VCST-5702 ITEM 0): { <Type>: { htmlControls: [ref, …] } }, in form
+    // order. Consumed by the create path to bind `body` to a form-visible control.
+    formLayout,
+    // Per-type rule-filter accounting (VCST-5702 ITEM 0b).
+    fieldsMeta,
     contractSummary,
     roleStates,
     // Surfaced so gen-profile.mjs can require a COMPLETE map before enabling silent
@@ -330,12 +453,20 @@ async function main() {
         ? ` — MISSING role(s): ${missingRoles.join(", ")} (no matching state found; confirm/hand-edit before relying on auto transitions)`
         : ""),
   );
+  // D3 — the summary must state the TOTAL first-run questions (operatorQuestions), not only the
+  // unmapped subset. operatorQuestions = every required field the operator must supply a value for
+  // (mapped or not); unmappedRequired = the subset with no semantic slot. Reporting only the latter
+  // hid 3 real questions (Environment/Reported by/Type of bug) on a live run.
+  const firstRunQ = contractSummary.operatorQuestions;
   console.error(
     primaryContract.length
       ? `[discover-tracker] ${primary} field contract: ${contractSummary.fieldCount} field(s), ${contractSummary.requiredCount} required` +
-        (contractSummary.unmappedRequired.length
-          ? ` — ${contractSummary.unmappedRequired.length} required field(s) no semantic slot maps: ${contractSummary.unmappedRequired.map((f) => f.name).join(", ")} (asked ONCE at the first bug creation, then persisted)`
-          : " — every required field is mapped")
+        (firstRunQ.length
+          ? ` — /qa-bug's first run asks ${firstRunQ.length} value(s), then persists them: ${firstRunQ.map((f) => f.name).join(", ")}` +
+            (contractSummary.unmappedRequired.length
+              ? ` [${contractSummary.unmappedRequired.length} of them map to no semantic slot: ${contractSummary.unmappedRequired.map((f) => f.name).join(", ")}]`
+              : "")
+          : " — every required field is auto-satisfied (default / server / persisted); no first-run questions")
       : `[discover-tracker] no ${primary} field contract discovered — /qa-bug will fall back to the legacy field set, labelled "unverified defaults".`,
   );
   if (missingQaRoles.length) {

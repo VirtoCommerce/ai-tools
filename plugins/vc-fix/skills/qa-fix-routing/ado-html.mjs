@@ -195,6 +195,26 @@ export function isHtmlField(ref) {
   return HTML_FIELD_REFS.has(String(ref));
 }
 
+// ── inline-image counting (VCST-5702 ITEM 1 / ITEM 2) ────────────────────────────────
+// A 200 + a non-empty HTML body still isn't proof the SCREENSHOTS rendered: an <img> whose
+// upload silently failed leaves the body non-empty with the image gone. These pure counters let
+// the post-create read-back assert "N submitted ⇒ N rendered" and let get-workitem's stripped
+// reader show an image count instead of implying zero. Both are exact-tag scans, never suffix.
+/** Count every inline <img> tag in an HTML value. */
+export function countImages(html) {
+  if (!html || typeof html !== "string") return 0;
+  return (html.match(/<img\b[^>]*>/gi) || []).length;
+}
+/**
+ * Count only <img> whose `src` points at an uploaded ADO attachment
+ * (`…/_apis/wit/attachments/…`). A submitted screenshot must come back as a real attachment
+ * ref — a dangling external/blob src is exactly the "persisted != rendered" gap.
+ */
+export function countAttachmentImages(html) {
+  if (!html || typeof html !== "string") return 0;
+  return (html.match(/<img\b[^>]*\bsrc\s*=\s*["'][^"']*_apis\/wit\/attachments\/[^"']*["'][^>]*>/gi) || []).length;
+}
+
 // ── Bug work-item JSON-Patch builder ──────────────────────────────────────────────────
 const norm = (v) => (typeof v === "string" ? v : "");
 
@@ -237,19 +257,42 @@ export function buildBugFields(input = {}) {
     return isHtmlField(ref);
   };
   const body = (ref, v) => (htmlRef(ref) ? html(v) : String(v));
+  // The concrete field ref each long-text slot lands in is RESOLVED per work-item type from the
+  // scanned form layout (VCST-5702 ITEM 0) — never assumed. On the Agile process a Bug's body is
+  // Microsoft.VSTS.TCM.ReproSteps while a User Story / Task use System.Description, and
+  // System.Description may not even be ON the Bug form — writing to it then yields an item whose
+  // body is INVISIBLE (the OPUS symptom: create reported PASS on an off-form field). The caller
+  // (create-workitem) passes the form-visible target it resolved via resolveSlots; absent a
+  // contract these fall back to the three canonical refs (the "unverified defaults" rung).
+  const bodyRef = input.bodyRef || "System.Description";
+  const reproRef = input.reproRef || "Microsoft.VSTS.TCM.ReproSteps";
+  const systemInfoRef = input.systemInfoRef || "Microsoft.VSTS.TCM.SystemInfo";
   const fields = [{ op: "add", path: "/fields/System.Title", value: input.title }];
-  if (input.description) fields.push({ op: "add", path: "/fields/System.Description", value: body("System.Description", input.description) });
-  if (input.reproSteps) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.ReproSteps", value: body("Microsoft.VSTS.TCM.ReproSteps", input.reproSteps) });
-  if (input.severity) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Severity", value: input.severity });
+  // Dedup by ref: on a process where body resolves to ReproSteps (no distinct repro field), the
+  // caller merges repro into the body content, so a second op to the same ref must never be emitted.
+  const emitted = new Set(["System.Title"]);
+  const pushField = (ref, value) => {
+    if (!ref || emitted.has(ref)) return;
+    fields.push({ op: "add", path: `/fields/${ref}`, value });
+    emitted.add(ref);
+  };
+  if (input.description) pushField(bodyRef, body(bodyRef, input.description));
+  if (input.reproSteps) pushField(reproRef, body(reproRef, input.reproSteps));
+  // Severity/Priority/Tags go through pushField too, so their canonical refs enter `emitted` and a
+  // contract custom-field of the same ref can't emit a duplicate JSON-Patch op below.
+  if (input.severity) pushField("Microsoft.VSTS.Common.Severity", input.severity);
   if (input.priority !== undefined && input.priority !== null && input.priority !== true)
-    fields.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: Number(input.priority) });
+    pushField("Microsoft.VSTS.Common.Priority", Number(input.priority));
   const tags = normalizeTags(input.tags);
-  if (tags) fields.push({ op: "add", path: "/fields/System.Tags", value: tags });
-  if (input.systemInfo) fields.push({ op: "add", path: "/fields/Microsoft.VSTS.TCM.SystemInfo", value: body("Microsoft.VSTS.TCM.SystemInfo", input.systemInfo) });
-  // Arbitrary custom fields (the deployment's Bug picklists). HTML-normalize ONLY the three
-  // real HTML fields (isHtmlField, exact match) — a plaintext custom field is sent verbatim.
+  if (tags) pushField("System.Tags", tags);
+  if (input.systemInfo) pushField(systemInfoRef, body(systemInfoRef, input.systemInfo));
+  // Arbitrary custom fields (the deployment's Bug picklists). HTML-normalize ONLY html-typed refs
+  // (the contract resolver, else isHtmlField exact match) — a plaintext custom field is sent
+  // verbatim. Skip any ref already emitted above so a contract field can't duplicate a slot op.
   for (const [path, value] of Object.entries(input.fields || {})) {
+    if (emitted.has(path)) continue;
     fields.push({ op: "add", path: `/fields/${path}`, value: htmlRef(path) ? html(value) : value });
+    emitted.add(path);
   }
   // Attachment relations (Attachments tab). Inline <img> in the HTML is independent.
   for (const url of normalizeList(input.attachments)) {

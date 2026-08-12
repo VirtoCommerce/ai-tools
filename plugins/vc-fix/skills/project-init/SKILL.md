@@ -542,10 +542,17 @@ for Jira (transitions are discovered live at runtime; the scan would add nothing
 # Azure Boards:
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" \
   --tracker azure --org "$ADO_ORG" --project "$ADO_PROJECT" \
-  --types "Bug,Task,User story" --out .local-env/tracker.json --print
+  --types "Bug,Task,User story" [--team "<team>"] --out .local-env/tracker.json --print
 # Jira (format facts only — no state scan needed):
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" --tracker jira --out .local-env/tracker.json
 ```
+
+The Azure scan also DISCOVERS the `team` whose current sprint `/qa-bug` will stamp (`tracker.azure.team`):
+it enumerates the project's teams and picks the one that owns a **date-valid** current sprint (the
+project's DEFAULT team is often dormant — its `timeFrame:"current"` flag points at a long-dead sprint).
+Pass **`--team "<name>"`** to override the discovery (or to disambiguate when several teams have a
+current sprint — the scan leaves the team unset and asks for one). An unset team is safe: the runtime
+resolver in `ado.mjs` re-validates and can still auto-select the right team at bug-create time.
 
 It writes `.local-env/tracker.json`: `{ kind, ticketKeyFormat, crossLinkToken, apiBase,
 projectId, workItemTypes:{<Type>:{states:[…]}}, roleStates:{in-progress,in-review,
@@ -556,22 +563,43 @@ transition). Step 6 ingests it via `--tracker-json`.
 
 **Reporting — scale it to whether the operator has anything to decide:**
 
-- **`roleStatesComplete: true`** (every role mapped) → **ONE line, no table**:
-  `Board states mapped: Active → On Review → Ready for QA → … → Closed (custom process, 14 Bug
-  states). Transitions will be silent.` The full role→state grid is `/qa-fix` plumbing — correct
-  by construction, nothing to approve. State counts per work-item type, `apiBase`, `projectId`,
-  `ticketKeyFormat` and the cross-link token are internals: **do not print them.**
-- **A role is MISSING or looks wrong** → *then* show a table, of the affected roles only, and ask.
-  This is the case worth the operator's attention, and it stands out precisely because the happy
-  path was one line.
+- **`roleStatesComplete: true` (every role mapped) → render the role→state grid as a TABLE and
+  CONFIRM it** with `AskUserQuestion` (options: **"Accept as scanned"** / **"Correct a role"**) — the
+  same shape §4a already mandates for the repo map. `roleStatesComplete: true` only means every role
+  got *a* state, **not** that the picks match this team's workflow. Because step 6 flips
+  `transitionPolicy=auto`, a mis-picked role moves real customer work items **silently, with no
+  further prompt** — so a custom process's mapping is exactly the kind of fact the operator must be
+  able to see and approve (D4). Render one row per role → picked `System.State`, and add a context
+  line listing the **unused** states — the alternatives the operator is implicitly approving against,
+  e.g. `Unused: New, On Dev, On hold, HotFixed, Resolved, On UAT`. On **"Correct a role"**, ask which
+  role, offer that board's states, and persist with
+  `reconcile-profile.mjs --write --set 'tracker.azure.roleStates.<role>=<state>'`.
+  - **Exception — the one-liner is fine ONLY when the picks are unambiguous:** the board's state set
+    is the STOCK one (New/Active/Resolved/Closed) with **no unused candidate state** a role could
+    plausibly have taken instead. Then: `Board states mapped (stock process, no ambiguity).
+    Transitions will be silent.` State counts per work-item type, `apiBase`, `projectId`,
+    `ticketKeyFormat` and the cross-link token stay internals: **do not print them.**
+- **A role is MISSING or looks wrong** → show the table of the affected roles only and ask (as
+  above). A MISSING role is the one that must be resolved before `/qa-fix` can transition by it; a
+  complete-but-custom map is confirmed, not blocked.
 
 Correct a mismapped role by hand-editing `.local-env/tracker.json` (or the profile) before
 continuing.
 
 Also captured here: the **bug FIELD CONTRACT** per work-item type (VCST-5582 E-a) —
-`tracker.fields.<Type>[]`. Report it the same way: one line on the happy path
-(`Bug field contract: 13 fields, 5 required — all mapped`), a table + a question only when a
-required field has no semantic slot.
+`tracker.fields.<Type>[]` — plus the two lists that drive the FIRST bug creation:
+**`operatorQuestions`** (every required field the operator must supply a value for, whether or not it
+maps to a semantic slot) and **`unmappedRequired`** (only the subset that maps to no slot). **The
+happy-path one-liner MUST state the TOTAL number of first-run questions — `operatorQuestions.length`
+— and name them**, e.g. `Bug field contract: 16 fields, 8 required — /qa-bug's first run will ask 3
+values (Environment, Reported by, Type of bug), then persist them`. Do **NOT** report only
+`unmappedRequired`: on a live run it showed "1 question" (Value Area) while `operatorQuestions` held
+3 more that were never surfaced, so the operator was told to expect 1 and got 4. A field the board
+already answers — a `defaultValue` that is a member of a closed `allowedValues` set — is filled from
+that default and is **not** a question (D1); it appears in neither list. **Surface the
+`operatorQuestions` list to the operator now — never silently defer it to `/qa-bug`.** Show a table
+only when `unmappedRequired` is non-empty (a required field with no semantic slot — a genuine mapping
+gap to review).
 
 `--out` is optional (accepts `--out <path>`; the default flag set here writes it so step 6 can
 read it). If you omit `--out`, capture the printed JSON and pass its path to step 6 another way.
@@ -684,8 +712,12 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker jira --clie
 DNS hint) so the first MCP start doesn't pay a registry round-trip — the #220 startup-timeout
 guard. Best-effort + timeboxed; drop it to skip the network step.
 Enables playwright×3 + github + the tracker's MCP (atlassian for Jira; azure-mcp
-for Azure). **Remind the operator to restart the MCP servers** (reload the IDE)
-for the new config to take effect.
+for Azure). A `--with` extra whose API key is an OPTIONAL placeholder the operator left blank
+(`postman`, `context7`) is **defined but NOT enabled** — the same "blank ⇒ stays disabled"
+contract `scaffold-secrets.mjs` states, so passing `--with context7` unconditionally (as above) is
+safe: it enables the server only once the key exists. gen-mcp prints one info line per dormant
+extra; filling the key in `.env.local` and re-running enables it. **Remind the operator to restart
+the MCP servers** (reload the IDE) for the new config to take effect.
 
 ## 8. Verify access — full readiness checkup
 
@@ -704,7 +736,8 @@ Checks (PASS / FAIL / WARN / SKIP): deployment profile · **plugin root** (`clau
 resolves the active vc-fix install and `skills/qa-fix-routing/ado.mjs` is present under it;
 WARN if the `claude` CLI isn't on PATH) · core env vars · storefront
 URL · admin/platform URL · **admin login** (real `POST {BACK_URL}/connect/token`
-password grant) · storefront user login (soft WARN) · tracker token (Jira `GET /myself`
+password grant) · storefront user login (the REAL store-scoped OAuth grant → PASS/FAIL, not a
+"verify manually" WARN) · tracker token (Jira `GET /myself`
 or a **real ADO org probe**) · **GitHub fix token / gh session** (validates the token and
 its permission on the upstream — shared with the derive block via `probe-lib.mjs`, so
 what verify reports and what the profile stored can't drift) · **client repos** (for a

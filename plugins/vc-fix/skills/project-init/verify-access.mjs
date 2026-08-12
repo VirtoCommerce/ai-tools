@@ -13,7 +13,9 @@
  *   - Storefront URL reachable (FRONT_URL)
  *   - Admin / platform URL reachable (BACK_URL)
  *   - Admin login — real OAuth password grant against {BACK_URL}/connect/token
- *   - Storefront user login — soft probe (WARN, not FAIL: storefront users may auth via xAPI)
+ *   - Storefront user login — the REAL storefront login: a STORE-SCOPED OAuth password grant
+ *     (grant_type=password + storeId), how the storefront/xAPI signs a shopper in. PASS/FAIL on
+ *     that; WARN only when genuinely inconclusive (no STORE_ID to scope to, or endpoint unreachable)
  *   - Jira API token — GET /rest/api/3/myself  (jira tracker; WARN not FAIL — the runtime
  *     path is the Atlassian MCP OAuth, the token is only an optional probe)  OR  Azure DevOps auth present
  *   - Azure Boards WRITE (transition) — non-mutating write-scope probe (PATCH a known item
@@ -53,6 +55,7 @@ import {
 // Slot resolution for the "tracker bug field contract" readiness row (VCST-5582 E-g) — the
 // SAME pure function the create path uses, so the row can't claim a mapping create won't make.
 import { resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
+import { fileURLToPath } from "url";
 
 let TEST_ENV;
 try {
@@ -64,6 +67,48 @@ try {
 
 const BACK = (process.env.BACK_URL || "").replace(/\/+$/, "");
 const FRONT = (process.env.FRONT_URL || "").replace(/\/+$/, "");
+
+/**
+ * The storefront-user login readiness check (D2). A storefront shopper is NOT a platform user, so the
+ * plain platform password grant (no storeId) 400s for them by construction — a right and a wrong
+ * password are then indistinguishable and the row degrades to a "verify manually" WARN, which
+ * resolves nothing (the /project-init §3 S2 anti-pattern). This probes the REAL storefront login: a
+ * STORE-SCOPED OAuth password grant (`grant_type=password` + `storeId`), exactly how the
+ * storefront / xAPI signs a shopper in (knowledge/api/api-auth.md), and reports PASS/FAIL on THAT.
+ * WARN is kept ONLY for the genuinely inconclusive cases: no store to scope to, or the endpoint is
+ * unreachable — never as the terminal state of a probed axis.
+ *
+ * Network is injected via `fetchImpl` so this is unit-testable without a live platform.
+ * @returns {{ status:"PASS"|"FAIL"|"WARN", detail:string }}
+ */
+export async function probeStorefrontLogin({ back, store, email, password, fetchImpl = fetch }) {
+  const grant = (params) => fetchImpl(`${back}/connect/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(params),
+  });
+  const creds = { grant_type: "password", username: email, password, scope: "offline_access" };
+  try {
+    // 1) the plain platform grant — a storefront user who is ALSO a platform user passes here.
+    const r = await grant(creds);
+    if (r.ok) return { status: "PASS", detail: `platform token acquired for '${email}'` };
+    // 2) the real storefront login: a STORE-SCOPED grant. Needs a store to scope to.
+    if (!store) {
+      return { status: "WARN", detail: `platform grant → ${r.status} and STORE_ID unset — set STORE_ID so the store-scoped storefront login check can resolve this axis` };
+    }
+    const rs = await grant({ ...creds, storeId: store });
+    if (rs.ok) return { status: "PASS", detail: `store-scoped token acquired for '${email}' (storeId=${store})` };
+    const body = await rs.text().catch(() => "");
+    const invalid = rs.status === 400 && /invalid_grant/i.test(body);
+    return {
+      status: "FAIL",
+      detail: `store-scoped grant (storeId=${store}) → ${rs.status}${invalid ? " invalid_grant — USER_EMAIL / USER_PASSWORD rejected for the storefront" : " — check USER_EMAIL / USER_PASSWORD / STORE_ID"}`,
+    };
+  } catch (e) {
+    // A transport failure IS the genuinely-inconclusive case — the only remaining WARN.
+    return { status: "WARN", detail: `login endpoint unreachable (${e.message}) — verify storefront login manually` };
+  }
+}
 
 const results = [];
 const add = (name, status, detail = "") => results.push({ name, status, detail });
@@ -206,16 +251,14 @@ async function main() {
     } catch (e) { add("Admin login (ADMIN_PASSWORD)", "FAIL", e.message); }
   } else add("Admin login (ADMIN_PASSWORD)", "SKIP", "BACK_URL / ADMIN / ADMIN_PASSWORD not all set");
 
-  // 6. Storefront user login — soft probe (platform grant may not apply to storefront users)
+  // 6. Storefront user login — the REAL storefront login (store-scoped OAuth), not a soft
+  //    "verify manually" WARN. See probeStorefrontLogin (D2).
   if (BACK && process.env.USER_EMAIL && process.env.USER_PASSWORD) {
-    try {
-      const r = await fetch(`${BACK}/connect/token`, {
-        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ grant_type: "password", username: process.env.USER_EMAIL, password: process.env.USER_PASSWORD, scope: "offline_access" }),
-      });
-      add("Storefront user login (USER_PASSWORD)", r.ok ? "PASS" : "WARN",
-        r.ok ? `token acquired for '${process.env.USER_EMAIL}'` : `platform grant → ${r.status}; storefront users may auth via xAPI — verify manually`);
-    } catch (e) { add("Storefront user login (USER_PASSWORD)", "WARN", e.message); }
+    const v = await probeStorefrontLogin({
+      back: BACK, store: process.env.STORE_ID || "",
+      email: process.env.USER_EMAIL, password: process.env.USER_PASSWORD,
+    });
+    add("Storefront user login (USER_PASSWORD)", v.status, v.detail);
   } else add("Storefront user login (USER_PASSWORD)", "SKIP", "USER_EMAIL / USER_PASSWORD not set");
 
   // 7. Tracker
@@ -614,7 +657,12 @@ function renderTable(rows) {
 // become an unhandled rejection. We do NOT fire the completion marker on a crash — a crash is not a
 // clean terminal step (the clean line stays withheld, the safe direction). A total-config-load
 // failure is already handled by the early `process.exit(1)` above.
-main().catch((err) => {
-  console.error(`[verify-access] ${err?.stack || err?.message || err}`);
-  process.exit(1);
-});
+// Run the readiness scan ONLY as a CLI (`node verify-access.mjs`) — guarded so the pure
+// probeStorefrontLogin export can be imported by a unit test without triggering the network scan +
+// process.exit (repo-standard main-guard, matching ado.mjs / discover-tracker.mjs).
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`[verify-access] ${err?.stack || err?.message || err}`);
+    process.exit(1);
+  });
+}

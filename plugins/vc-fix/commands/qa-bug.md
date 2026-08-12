@@ -77,13 +77,16 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 > **never** a path and **never** an absolute path. playwright-mcp documents *"Prefer relative file
 > names to stay within the output directory"*; absolute paths are undocumented, so nothing may be
 > built on them. `/project-init` pins each Playwright server's `--output-dir` to an **absolute**
-> path inside this project — `reports/bugs/screenshots/_incoming/<browser>/` — so a relative
-> filename lands there whatever cwd the MCP server started in, and the project root can never be
-> the target (VCST-5582 C).
+> path inside this project — `reports/bugs/screenshots/_incoming/<browser>/`. On the pinned
+> `@playwright/mcp@0.0.77`, a bare filename is **not guaranteed** to land there: 0.0.77 may resolve
+> it against the MCP server's own cwd — which can be the project root (VCST-5582 C). So a capture
+> may appear at the project root, and Step 4 MUST reconcile it (locate → move) rather than assume it
+> is already under `--output-dir`.
 >
 > Do **not** try to place a screenshot at its final location during capture, and do not guess where
-> it went. `_incoming/` is a landing zone; Step 4 performs ONE deterministic move. Mechanism +
-> the hard "no artifact at the project root" rule: [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md).
+> it went. `_incoming/` is a landing zone; Step 4 performs ONE deterministic move (including the
+> reconcile from the server cwd when 0.0.77 misplaced it). Mechanism + the mandatory reconcile step:
+> [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md).
 
 ### Layer 1 — Storefront Frontend (vc-frontend)
 - **Where:** `FRONT_URL` (storefront UI)
@@ -321,7 +324,7 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
     4. **Verify it renders** — persisted ≠ rendered. Read back `?fields=description&expand=renderedFields` and assert the HTML contains `<img src="…/rest/api/3/attachment/content/{attachmentId}" …>`. No `<img>` ⇒ the node is wrong; don't claim success.
     **Do not bother trying** (each fails): markdown `![alt](file.png)` → silently dropped (MD→ADF can't resolve a filename to an attachment); wiki `!file.png!` → renders literally (VCST-5212 class); `attrs.id` = attachment id → `400`. Embed the 1–3 images that show the defect (`.claude/rules/reports.md` §5); attach-only is fine for supporting shots.
 - **Azure Boards** (`tracker.kind = azure`) → the work item is the **lean, replayable** version of the bug, not a copy of the markdown report. Its field set is **DISCOVERED, never hardcoded** (VCST-5582 E): `project-profile.json` `tracker.fields.Bug[]` carries THIS organization's contract — `{ ref, name, required, type, allowedValues?, defaultValue? }` — scanned by `/project-init`. Body format follows [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) (the single source of truth for the SHAPE); whether a field is HTML is **derived from its contract `type`** (`html` ⇒ HTML, `plainText` ⇒ text), not assumed.
-  - **`System.Description` (or whatever the contract binds the `body` slot to) = abstract Summary → Preconditions → Steps → Actual → Expected**, and nothing else competes with them. The Summary is 1–3 sentences with **no user-specific data** (no emails, IDs, order numbers, GUIDs, names) — reproducible by anyone who meets the Preconditions. The VC extras (4-Layer Validation, Module Versions, Root Cause Analysis, Fix Routing) go into **one collapsed `🔧 Technical Details` block below**, trimmed to the essentials — never as top-level sections. Pass `--repro-file` only when the contract maps a `repro` slot **and** that field is visible in this process (on LEO/OPUS `ReproSteps` is hidden, so everything lives in the body field).
+  - **The `body` slot = abstract Summary → Preconditions → Steps → Actual → Expected**, and nothing else competes with them. The concrete field the `body` slot lands in is **resolved per work-item TYPE from the scanned form layout** (`tracker.formLayout.<Type>`), never assumed: on the Agile process a Bug's body is `Microsoft.VSTS.TCM.ReproSteps` while a User Story / Task use `System.Description` — and a field can exist in the contract yet be off the form, where the body would be invisible (VCST-5702 ITEM 0). The Summary is 1–3 sentences with **no user-specific data** (no emails, IDs, order numbers, GUIDs, names) — reproducible by anyone who meets the Preconditions. The VC extras (4-Layer Validation, Module Versions, Root Cause Analysis, Fix Routing) go into **one collapsed `🔧 Technical Details` block below**, trimmed to the essentials — never as top-level sections. Pass `--repro-file` only when the type has a **distinct form-visible** `repro` field; when the body target is the only html control on the form, a `--repro` is folded into the body automatically (create resolves this from the layout — never assume which field is hidden).
   - **Metadata → dedicated fields, never a description section.** Do **NOT** hardcode `Custom.Environment` / `Custom.Reportedby` / `Custom.Typeofbug` — those exist in ONE organization's process and are rejected or silently blank anywhere else. Instead read `tracker.fields.Bug[]` and fill the fields it lists, via the semantic slots in [`skills/qa-fix-routing/bug-contract.mjs`](../skills/qa-fix-routing/bug-contract.mjs) (`environment`, `bugType`, `reportedBy`, `systemInfo`, `foundIn`, `severity`, `priority`, …). Resolution order: an explicit `tracker.fieldMap` override → auto-match on name/ref + type → **ask once** (below). `tracker.fieldDefaults` supplies per-deployment constants (e.g. `Custom.Environment = QA`) — a stored default, never a per-bug guess. The build/theme/browser/repro-rate go to the `systemInfo` slot via `--system-info-file <sysinfo.html>`.
   - **First creation on a deployment — ONE question per unmapped REQUIRED field.** `create-workitem` refuses to POST while a contract-`required` field has no value and no default, and names each one with its `allowedValues`. Ask the operator via **`AskUserQuestion`**, offering those discovered values as the options, then **persist** the answer so it is asked exactly once per deployment:
     ```bash
@@ -336,13 +339,36 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
     Ask at the FIRST bug creation, never at onboarding — the operator has context here that they do not have during the interview.
   - **Screenshots first:** upload each and capture the URL — `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" upload-attachment --file <png>` → `{ url }`. Embed inline in the relevant `<li>` via `<img src="{url}" width="700">`. `--attachments` takes **URLs**, never local paths (the pre-flight rejects a path).
   - **Assignee & sprint are automatic:** pass `--assign-self` (the token/session owner) and `--iteration current` (the team's active sprint, so the bug lands in the sprint and not the backlog).
-  - **Parent link — ASK the operator.** Before creating, ask via `AskUserQuestion` **which work item to link this bug under** (its parent). Offer **"No parent"** + **"Other (enter ID)"** (you may also list a few likely candidates, e.g. the sprint's User Stories, if you already have them). On a chosen id, pass `--parent <id>` (adds a Hierarchy-Reverse link); on "No parent", omit the flag.
+  - **Parent link — ALWAYS offer REAL candidates first (mandatory).** A blind "No parent" + free-text
+    "Other" prompt is exactly how a bug ends up unparented — the free text comes back empty. So FETCH
+    real candidates, THEN ask with them pre-filled:
+    1. **Fetch (mandatory, always run it):** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" list-parent-candidates --top 2`
+       → `{ candidates:[{id,type,title,state}], iterationPath, … }` — open User Story / Epic / Feature in
+       the resolved current sprint, newest-changed first. If it returns `candidates: []`, retry ONCE with
+       `--any-iteration` (the current sprint may have no open stories).
+    2. **Ask via `AskUserQuestion`** — the question text is EXACTLY
+       **"Choose a parent work item, or enter the ID manually in Other"** (so the operator knows the
+       auto-added **Other** takes a hand-typed number) — with EXACTLY these options. Do **NOT** add an
+       "Other" option yourself; `AskUserQuestion` appends it automatically:
+       - candidate 1 → label `"<id> - <title truncated to ~40 chars>"`, description `"<type> · <state>"`
+       - candidate 2 → same shape
+       - **"No parent"** → description `"file the bug with no parent link"`
+    3. **Act on the answer:**
+       - a chosen candidate, **or** a number typed into **Other** (any answer containing digits) → extract
+         the id and pass `--parent <id>` (adds the `System.LinkTypes.Hierarchy-Reverse` link);
+       - **"No parent"** → omit `--parent`;
+       - **Other selected but the answer carries NO digits** (empty / garbled free text) → do **NOT**
+         silently create-without-parent as if nothing happened, and do **NOT** re-ask the same question a
+         third time. Create the bug **without** `--parent`, then state plainly to the operator that the
+         parent is **unset** and can be added afterwards with a link-only relation PATCH on the created
+         work item (add `System.LinkTypes.Hierarchy-Reverse` → the parent id), no re-file needed.
   - **Create:** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <desc.html> --system-info-file <sysinfo.html> [--field "<Ref>=<value>" …from the contract] --severity <"2 - High"> --priority <N> --tags <...> --attachments "<url1>,<url2>" --assign-self --iteration current [--parent <id>]` (org/project default from the profile).
   - **What it does for you, before and after the POST:**
     - **Pre-flight (ONE message, nothing created):** resolves and stats every `--*-file` against `VC_FIX_HOME || cwd` (shown as an ABSOLUTE path when missing), resolves the `--assign-self` identity and `--iteration current`, checks the attachment URLs, and probes the Work-Items **write** scope non-mutatingly. Every problem is reported together with the exact PAT scope to grant.
     - **Contract validation:** a picklist value outside `allowedValues` and a required-but-empty field both block the POST — a doomed request is never sent, and a field this organization lacks is dropped rather than rejected.
-    - **Read-back (E-e):** re-reads the created item and returns `fieldsOk` + a per-field **PASS/MISSING** table (`verifyTable`) + `stillMissing`. A 200 from ADO means "an item exists", not "the fields are populated". Gaps are PATCHed **once** and re-verified (`patchedAfterCreate`).
-    - Returns `{ id, type, title, state, url, contract, fieldsOk, verifyTable, … }`.
+    - **Read-back (E-e):** re-reads the created item and returns `fieldsOk` + a per-field **PASS/MISSING** table (`verifyTable`) with **Status / On form / Images** columns + `stillMissing`. A 200 from ADO means "an item exists", not "the fields are populated". Statuses: **PASS · MISSING** (empty), **OFF_FORM** (written to a field NOT on the form — an invisible body, never a PASS, VCST-5702 ITEM 0), **IMAGES_MISSING** (submitted N `<img>`, fewer than N came back as attachment-backed images — the "persisted ≠ rendered" gap, ITEM 1). A refillable MISSING is PATCHed **once** and re-verified (`patchedAfterCreate`); an OFF_FORM/IMAGES_MISSING is reported, not silently retried. The receiving body field is echoed as `bodyField`.
+    - **Verify inline rendering with `get-workitem --json`, never a raw curl.** The stripped default `get-workitem` output now also reports an image **count** per html field + `hasSystemInfo`/`hasIterationPath`, so it can't imply images are absent; to eyeball the actual `<img src="…/_apis/wit/attachments/…">` tags, read the raw item: `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <ID> --json` (ITEM 2).
+    - Returns `{ id, type, title, state, url, contract, contractAccounting, bodyField, fieldsOk, verifyTable, … }`.
   - **On a create failure: FIX THE INPUT — never retry with fields removed.** Dropping fields until the POST succeeds is exactly how the OPUS work item ended up with its fields unset. The one automatic exception is handled for you: an **optional** field the server itself rejected is dropped and the create retried **once** (reported as `selfHealed`). A **required** field is never dropped — STOP and ask the operator.
   - **Fallback ladder (E-f) — "universal" must not mean "fragile":** contract in the profile ⇒ use it · contract absent ⇒ re-run `/project-init`'s tracker scan, or proceed and let the create report `contract: "unverified defaults"` · metadata unreachable (read permission / offline) ⇒ the legacy field set is sent, **clearly labelled "unverified defaults"** in your report to the operator · a specific field rejected ⇒ the single self-heal above.
   - **Safety net:** `create-workitem` auto-converts Markdown→HTML for html-typed fields if any slips through, but author HTML directly for the clean, structured result — don't lean on the net.

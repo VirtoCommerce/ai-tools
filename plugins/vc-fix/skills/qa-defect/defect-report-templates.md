@@ -2,6 +2,8 @@
 
 > Consolidated bug report templates for frontend and backend defects.
 > **Verbosity rules:** See `evidence-capture-policy.md` in qa-evidence. Default: under 150 lines per report. Include only relevant sections — the templates below are maximum-detail; real reports should omit unused fields.
+>
+> **Mapping to a tracker work item — speak SLOTS, not field refs (VCST-5702).** When `/qa-bug` transcribes one of these reports to an Azure Boards work item, the sections map to semantic **slots** (`body` = Issue/Steps/Expected/Actual; `systemInfo` = Environment/Browser/Device; `environment`/`reportedBy`/`bugType`/`severity` = their own fields). The concrete field each slot resolves to is read from `tracker.formLayout.<Type>` / `tracker.fields.<Type>` per work-item type — **never a hardcoded ref**. On the Agile process a Bug's body is `Microsoft.VSTS.TCM.ReproSteps` while a User Story / Task use `System.Description`; never assume which field carries the body — read the scanned layout. See `knowledge/execution/azure-html-format.md`.
 
 ---
 
