@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-08-07",
-    "totalSuites": 121,
+    "generated": "2026-08-17",
+    "totalSuites": 122,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2712,6 +2712,33 @@
         "sales-rep"
       ],
       "customerApplicability": "reference"
+    },
+    {
+      "id": "094",
+      "name": "UCP Observability",
+      "file": "regression/suites/Backend/ucp/094-ucp-observability.csv",
+      "domain": "observability",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P2",
+      "testCount": 23,
+      "estimatedMinutes": 35,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "ucp",
+        "observability",
+        "telemetry",
+        "mcp",
+        "appinsights",
+        "opentelemetry"
+      ],
+      "customerApplicability": "universal",
+      "requiresModules": [
+        "VirtoCommerce.UCP",
+        "VirtoCommerce.OpenTelemetry",
+        "VirtoCommerce.ApplicationInsights"
+      ],
+      "notes": "VCST-5544. Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) — without it every telemetry assertion is unverifiable, not failing. Adaptive sampling on the AI resource (~1-in-8) means a single request may leave no telemetry: repeat >=14x or disable sampling before concluding a signal is absent. 4 cases are Manual (InputCaptureMode matrix + bridge-off + breaking-change communication) and need an ISOLATED stand: the settings bind through a cached IOptions and are read only at startup, so each change is an appsettings edit + platform restart. Excluded from the backend/full selections until /qa-test 5g promotion — 19 cases are still Draft and UCPO-005/014/018 intentionally document defects that are OPEN."
     }
   ],
   "selections": {
@@ -2840,7 +2867,8 @@
       "exclude": [
         "050m",
         "092",
-        "092b"
+        "092b",
+        "094"
       ]
     },
     "sprint": {
