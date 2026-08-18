@@ -46,7 +46,8 @@
  *                              the expected status. e.g. --probe='POST /api/platform/security/login'
  *   --probe-body=<raw>         Request body for --probe (sent as application/json).
  *   --probe-expect=<status>    HTTP status --probe must return once the fix is live (e.g. 400).
- *   --timeout=<sec>            Deploy + restart poll budget per env (default 1200).
+ *   --timeout=<sec>            SHARED per-env budget for the deploy wait + /health + the liveness gate
+ *                              (default 1200). Health takes at most a 300s slice of it.
  *   --json                     Machine-readable output.
  *
  * Exit codes:
@@ -71,6 +72,12 @@ const OWNER = 'VirtoCommerce';
 const MAX_PATCH_PROBE = 40;
 const MAX_RELEASES_SCAN = 30;
 const POLL_INTERVAL_MS = 15_000;
+/** Liveness polls (health / behavioural probe) tick faster than the GitHub Actions poll: they hit the
+ *  env directly (no API rate limit) and a rollover we're waiting on is short (~1-2 min). */
+const LIVENESS_POLL_MS = 10_000;
+/** Health may not consume the whole per-env budget — it is the cheap "is anything answering" gate, and
+ *  the behavioural probe after it needs budget left to actually prove the hotfix. */
+const HEALTH_SLICE_MS = 300_000;
 const DEFAULT_TIMEOUT_S = 1200; // deploy build + cloud rollout + platform restart ~ up to 20 min
 const PRODUCT_REPO_RE = /^vc-module(-x)?-[a-z0-9.-]+$/i;
 const isProductRepo = (n: string) => n === 'vc-platform' || n === 'vc-frontend' || PRODUCT_REPO_RE.test(n);
@@ -330,8 +337,7 @@ async function commitManifest(c: EnvCoords, newText: string, sha: string, messag
 
 // ── deploy Action poll (match by head_sha of our commit) ───────────────────────
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-async function waitDeploy(c: EnvCoords, commitSha: string, timeoutS: number): Promise<{ ok: boolean; url: string; note: string }> {
-  const deadline = Date.now() + timeoutS * 1000;
+async function waitDeploy(c: EnvCoords, commitSha: string, deadline: number): Promise<{ ok: boolean; url: string; note: string }> {
   let url = `https://github.com/${c.deployOwner}/${c.deployRepo}/actions?query=branch%3A${c.branch}`;
   while (Date.now() < deadline) {
     const runs = await ghJson(`https://api.github.com/repos/${c.deployOwner}/${c.deployRepo}/actions/runs?branch=${encodeURIComponent(c.branch)}&event=push&per_page=15`);
@@ -345,7 +351,7 @@ async function waitDeploy(c: EnvCoords, commitSha: string, timeoutS: number): Pr
     }
     await sleep(POLL_INTERVAL_MS);
   }
-  return { ok: false, url, note: `deploy Action did not complete within ${timeoutS}s` };
+  return { ok: false, url, note: `deploy Action did not complete within the per-env budget` };
 }
 
 // ── live module-version poll (/api/platform/modules) ───────────────────────────
@@ -383,12 +389,14 @@ async function healthOnce(c: EnvCoords): Promise<boolean> {
  * 1-2 minutes (observed on VCST-5623: the deploy finished 10:17:19Z and the pre-fix response was
  * still being served at ~10:18Z; stable rolled over ~50s after its own deploy). So health alone
  * can never distinguish "new build up" from "old build still serving". */
-async function pollHealthy(c: EnvCoords, timeoutS: number): Promise<boolean> {
-  const deadline = Date.now() + Math.min(timeoutS, 300) * 1000;
+async function pollHealthy(c: EnvCoords, deadline: number): Promise<boolean> {
+  // Bounded slice of the SHARED per-env deadline, never beyond it: health must not eat the budget the
+  // behavioural probe needs, and the three phases together must still respect --timeout.
+  const stop = Math.min(deadline, Date.now() + HEALTH_SLICE_MS);
   for (;;) {
     if (await healthOnce(c)) return true;
-    if (Date.now() >= deadline) return false;
-    await sleep(10_000);
+    if (Date.now() >= stop) return false;
+    await sleep(LIVENESS_POLL_MS);
   }
 }
 /** Poll a caller-supplied behavioural probe until it returns the expected status (or timeout).
@@ -401,8 +409,7 @@ async function pollHealthy(c: EnvCoords, timeoutS: number): Promise<boolean> {
  *
  * Deliberately anonymous: a liveness probe must not depend on an admin token, and the endpoints
  * worth probing for this are typically [AllowAnonymous]. Body is sent as JSON when given. */
-async function waitProbe(c: EnvCoords, probe: Probe, timeoutS: number): Promise<{ ok: boolean; last: number | null; note: string }> {
-  const deadline = Date.now() + timeoutS * 1000;
+async function waitProbe(c: EnvCoords, probe: Probe, deadline: number): Promise<{ ok: boolean; last: number | null; note: string }> {
   const url = `${c.backUrl}${probe.path.startsWith('/') ? '' : '/'}${probe.path}`;
   let last: number | null = null;
   for (;;) {
@@ -419,17 +426,19 @@ async function waitProbe(c: EnvCoords, probe: Probe, timeoutS: number): Promise<
       }
     } catch { last = 0; }
     if (Date.now() >= deadline) {
+      // Do NOT assert the cause: an unmet probe is equally consistent with a wrong --probe path /
+      // --probe-expect, a fix that does not change this signal, and a genuinely failed rollover.
+      // Naming only one of those sends the operator down the wrong path.
       return {
         ok: false, last,
-        note: `${probe.method} ${probe.path} still returns ${last ?? 'no response'} (expected ${probe.expect}) after ${timeoutS}s — the env did not roll onto the hotfix`,
+        note: `${probe.method} ${probe.path} returned ${last === 0 ? 'no response' : last} (expected ${probe.expect}) until the per-env budget ran out — either the env never rolled onto the hotfix, or the probe/expected status does not match what this fix changes`,
       };
     }
-    await sleep(10_000);
+    await sleep(LIVENESS_POLL_MS);
   }
 }
 /** Poll the live env until the module reports `target` (or timeout). */
-async function waitLiveVersion(c: EnvCoords, id: string, target: string, timeoutS: number): Promise<{ ok: boolean; version: string | null; note: string }> {
-  const deadline = Date.now() + timeoutS * 1000;
+async function waitLiveVersion(c: EnvCoords, id: string, target: string, deadline: number): Promise<{ ok: boolean; version: string | null; note: string }> {
   let token = await getAdminToken(c);
   if (!token) return { ok: false, version: null, note: `could not get an admin token at ${c.backUrl} — verify the version by hand` };
   let last: string | null = null;
@@ -445,7 +454,7 @@ async function waitLiveVersion(c: EnvCoords, id: string, target: string, timeout
   if (consecutiveAuthFailures > 0) {
     return { ok: false, version: last, note: `admin token was rejected (401/403) on the last ${consecutiveAuthFailures} check(s) at ${c.backUrl} — this may be an auth problem, not "still restarting"; verify credentials before assuming the version` };
   }
-  return { ok: false, version: last, note: `live module ${id} still ${last ?? 'unreachable'} (expected ${target}) after ${timeoutS}s` };
+  return { ok: false, version: last, note: `live module ${id} still ${last ?? 'unreachable'} (expected ${target}) when the per-env budget ran out` };
 }
 
 // controlled exit — never process.exit() with a fetch socket open (libuv assert on Windows).
@@ -478,13 +487,21 @@ async function main() {
     if (probeFlag === undefined || probeExpectFlag === undefined) {
       fail("--probe and --probe-expect must be given together, e.g. --probe='POST /api/platform/security/login' --probe-body='{}' --probe-expect=400");
     }
-    const parts = probeFlag!.trim().split(/\s+/);
+    // fail() returns `never`, so the checks above already narrowed both flags to string.
+    const parts = probeFlag.trim().split(/\s+/);
     const method = (parts.length > 1 ? parts[0] : 'GET').toUpperCase();
     const path = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
     const expect = Number(probeExpectFlag);
+    const body = flag('probe-body');
     if (!path || !path.startsWith('/')) fail(`--probe path must start with "/" (got: ${probeFlag})`);
     if (!Number.isInteger(expect) || expect < 100 || expect > 599) fail(`--probe-expect must be an HTTP status (got: ${probeExpectFlag})`);
-    probe = { method, path, body: flag('probe-body'), expect };
+    // Reject GET/HEAD + body HERE. fetch() throws TypeError on that combination, which the probe loop
+    // catches as "no response" — so an operator typo would otherwise burn the whole per-env budget and
+    // then be reported as if the environment had failed to roll over.
+    if (body !== undefined && (method === 'GET' || method === 'HEAD')) {
+      fail(`--probe-body cannot be used with ${method} (fetch rejects a body on GET/HEAD) — drop the body or use POST`);
+    }
+    probe = { method, path, body, expect };
   }
 
   if (!task || !/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(task)) fail('Usage: npx tsx scripts/hotfix-deliver.ts <TASK-KEY> [--envs=stable,regression] [--dry-run (default) | --apply] [--repo=] [--pr=] [--version=] [--json]');
@@ -607,9 +624,12 @@ async function main() {
       // label it distinctly so neither the exit code nor the printed badge reads as a clean pass.
       if (noWait) { results.push({ ...r, verdict: 'committed-unconfirmed', note: `committed (--no-wait: deploy + version not confirmed — verify out-of-band before treating this as delivered)` }); continue; }
 
-      // 6. wait for the deploy Action
+      // 6. wait for the deploy Action. ONE deadline for every polling phase below (deploy → health →
+      //    liveness): --timeout is documented as the per-env budget, so the phases must SHARE it.
+      //    Giving each phase its own full timeout silently multiplied the worst case by ~2-3x.
+      const envDeadline = Date.now() + timeoutS * 1000;
       if (!asJson) console.log(`[${c.env}] waiting for "Cloud platform deployment" …`);
-      const dep = await waitDeploy(c, commitSha, timeoutS);
+      const dep = await waitDeploy(c, commitSha, envDeadline);
       r.deployRunUrl = dep.url;
       if (!dep.ok) { results.push({ ...r, verdict: 'deploy-failed', note: dep.note }); continue; }
 
@@ -619,12 +639,12 @@ async function main() {
       //    With --probe we poll the fix's own behaviour, which IS proof. Without one we say so:
       //    'deployed-unverified', never 'delivered'.
       if (isPlatform) {
-        const healthy = await pollHealthy(c, timeoutS);
+        const healthy = await pollHealthy(c, envDeadline);
         if (!healthy) {
           results.push({ ...r, verdict: 'not-confirmed', note: `deploy Action succeeded but /health never returned 200 — verify Platform ${target} by hand` });
         } else if (probe) {
           if (!asJson) console.log(`[${c.env}] deploy OK, /health 200 — polling ${probe.method} ${probe.path} for ${probe.expect} (rollover lags the deploy) …`);
-          const pr = await waitProbe(c, probe, timeoutS);
+          const pr = await waitProbe(c, probe, envDeadline);
           results.push({ ...r, verdict: pr.ok ? 'delivered' : 'not-confirmed', note: `Platform ${target}: ${pr.note}` });
         } else {
           results.push({
@@ -634,9 +654,20 @@ async function main() {
         }
       } else {
         if (!asJson) console.log(`[${c.env}] deploy OK — polling /api/platform/modules for ${moduleId}=${target} …`);
-        const live = await waitLiveVersion(c, moduleId!, target, timeoutS);
+        const live = await waitLiveVersion(c, moduleId!, target, envDeadline);
         r.liveVersion = live.version ?? undefined;
-        results.push({ ...r, verdict: live.ok ? 'delivered' : 'not-confirmed', note: live.note });
+        if (!live.ok) {
+          results.push({ ...r, verdict: 'not-confirmed', note: live.note });
+        } else if (probe) {
+          // A module hotfix DOES have a version to assert, but a version match only proves the module
+          // reinstalled — not that the behaviour changed. When the operator supplied a probe, honour it
+          // as an additional gate rather than ignoring the flag they passed.
+          if (!asJson) console.log(`[${c.env}] version confirmed — polling ${probe.method} ${probe.path} for ${probe.expect} …`);
+          const pr = await waitProbe(c, probe, envDeadline);
+          results.push({ ...r, verdict: pr.ok ? 'delivered' : 'not-confirmed', note: `${live.note}; ${pr.note}` });
+        } else {
+          results.push({ ...r, verdict: 'delivered', note: live.note });
+        }
       }
     } catch (e: any) {
       results.push({ ...r, verdict: 'error', note: e.message });
@@ -690,7 +721,8 @@ async function main() {
 ⚠ A Platform hotfix deployed but is NOT confirmed live. A green deploy Action + /health 200`);
     console.log(`  are BOTH satisfied by the previous revision, which keeps serving for ~1-2 min after the deploy.`);
     console.log(`  Do not report this as verified on the strength of the table above — prove the fix's own behaviour,`);
-    console.log(`  e.g. re-run with:  --probe='POST /api/platform/security/login' --probe-body='{}' --probe-expect=400`);
+    console.log(`  e.g. re-run with:  --probe='<METHOD> /api/...' --probe-body='<json>' --probe-expect=<status>`);
+    console.log(`  Pick a signal that DIFFERS between the old and new build — one both return proves nothing.`);
   }
   if (results.some((x) => x.verdict === 'committed-unconfirmed')) {
     console.log(`\n⚠ Committed with --no-wait — confirm the deploy + live version out-of-band before treating`);

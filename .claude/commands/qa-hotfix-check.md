@@ -53,7 +53,9 @@ you to `/qa-hotfix`.
    **Platform: the env keeps serving the OLD revision for ~1-2 min after the deploy goes green, and
    `/health` 200 answers from it** — so `--probe` (polled until it returns `--probe-expect`) is the only
    liveness proof. Without one the verdict is `⚠ deployed, fix NOT confirmed live`, never `✅ delivered`;
-   Step 3 still owes the proof. Pick a signal that differs between the old and new build.
+   Step 3 still owes the proof. Pick a signal that differs between the old and new build. A **module**
+   hotfix accepts `--probe` too (version match = reinstalled, probe = behaviour changed; both must pass).
+   `--timeout` is a **shared** per-env budget across the deploy wait + `/health` + the liveness gate.
 3. **Verify the fix behaves live (the "и всё работает" step).** For each delivered env, reproduce the
    task's STR on that live environment (`/qa-verify-fix` methodology): backend/module/GraphQL/Admin →
    **qa-backend-expert**; storefront-visible → **qa-frontend-expert**. Cover the fixed cases **plus

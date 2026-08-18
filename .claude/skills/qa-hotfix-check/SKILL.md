@@ -130,6 +130,16 @@ what the fix changed:
 Pick a signal that **differs between the old and new build** (here: the payload that used to 500 and
 must now 400). A signal both builds return is worthless as a gate. `--probe` and `--probe-expect` must
 be given together; the probe is deliberately anonymous, so liveness never depends on an admin token.
+`--probe-body` with `GET`/`HEAD` is rejected up front (`fetch` refuses a body there, and the probe loop
+would otherwise read that as "no response" and blame the environment for a typo).
+
+A **module** hotfix may also take `--probe`: the version match proves the module reinstalled, the probe
+proves the behaviour changed, and both must pass. Passing it is optional there (the version match is
+already a sound liveness signal) but never ignored.
+
+`--timeout` is the **shared** per-env budget: deploy-Action wait, `/health` and the liveness gate all
+draw from the same deadline (health takes at most a 5-minute slice of it), so a stuck env cannot exceed
+what you asked for.
 
 **Without `--probe` a Platform delivery now reports `⚠ deployed, fix NOT confirmed live`
 (`deployed-unverified`) — never `✅ delivered`.** That is not a failure (the commit and deploy did
