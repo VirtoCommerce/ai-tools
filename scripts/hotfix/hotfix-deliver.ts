@@ -155,13 +155,30 @@ async function recentCommitMessages(repo: string, ref: string, n = 40): Promise<
   const arr = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/commits?sha=${encodeURIComponent(ref)}&per_page=${n}`);
   return Array.isArray(arr) ? arr.map((c: any) => c?.commit?.message ?? '') : [];
 }
-/** Does the release tag contain the fix — CHERRY-PICK AWARE (the hotfix commit has a new SHA, so we
- * also accept the `git cherry-pick -x` trailer on a commit reachable from the tag). */
-async function tagHasFix(repo: string, tag: string, fixSha: string): Promise<boolean> {
+/** Does the release tag contain the fix — CHERRY-PICK AWARE (the hotfix commit has a new SHA).
+ *
+ * Three signals, strongest first:
+ *   1. SHA ancestry — the fix commit itself is reachable from the tag.
+ *   2. The `git cherry-pick -x` trailer (`cherry picked from commit <sha>`).
+ *   3. The originating PR reference `(#N)` in a commit subject reachable from the tag.
+ *
+ * Signal 3 exists because (2) only fires when the picker passed `-x`, which is NOT the house
+ * convention here: VCST-5705's hotfixes were picked onto support/3.1000, support/3.1003 and
+ * support/3.1006 as plain `VCST-5705: Performance optimizations (#193)` commits with no trailer,
+ * so a signal-1+2-only check reported `no hotfix on line` for releases that demonstrably shipped
+ * the fix — a false STOP that blocks delivery of an already-released hotfix. `(#N)` is scoped to
+ * this repo's own history, so it identifies that repo's PR unambiguously. */
+async function tagHasFix(repo: string, tag: string, fixSha: string, prNumber?: number): Promise<boolean> {
   if (await refContains(repo, tag, fixSha)) return true;
   const short = fixSha.slice(0, 8);
   const msgs = await recentCommitMessages(repo, tag, 40);
-  return msgs.some((m) => /cherry picked from commit/i.test(m) && (m.includes(fixSha) || m.includes(short)));
+  if (msgs.some((m) => /cherry picked from commit/i.test(m) && (m.includes(fixSha) || m.includes(short)))) return true;
+  if (prNumber) {
+    // Subject line only — a `(#N)` buried in a body could be an unrelated mention.
+    const ref = `(#${prNumber})`;
+    return msgs.some((m) => (m.split('\n')[0] ?? '').includes(ref));
+  }
+  return false;
 }
 /** Released tag for a version, with a downloadable .zip asset? (the GithubReleases Pack gate). */
 async function releaseAssetOk(repo: string, id: string, version: string): Promise<{ ok: boolean; note: string }> {
@@ -473,13 +490,13 @@ async function main() {
         if (highest == null) { results.push({ ...r, verdict: 'error', note: `pinned tag ${pinnedVer} not found on ${repo} — cannot resolve the line` }); continue; }
         if (highest === sv.patch) {
           // nothing newer on the line — is the fix already in the pinned release?
-          const hasFix = await tagHasFix(repo, pinnedVer, fixSha);
+          const hasFix = await tagHasFix(repo, pinnedVer, fixSha, fix.number);
           results.push({ ...r, target: pinnedVer, verdict: hasFix ? 'already-delivered' : 'no-hotfix-on-line', note: hasFix ? `pinned ${pinnedVer} already contains the fix` : `no patch above ${pinnedVer} on line ${r.line} — run /qa-hotfix for this bundle first` });
           continue;
         }
         // walk down from the highest patch to the pinned; first one that contains the fix is the hotfix
         let chosen: string | null = null;
-        for (let n = highest; n > sv.patch; n--) { const t = tagOf(sv, n); if (await tagHasFix(repo, t, fixSha)) { chosen = t; break; } }
+        for (let n = highest; n > sv.patch; n--) { const t = tagOf(sv, n); if (await tagHasFix(repo, t, fixSha, fix.number)) { chosen = t; break; } }
         if (!chosen) { results.push({ ...r, verdict: 'no-hotfix-on-line', note: `patches exist above ${pinnedVer} on line ${r.line} but none contain the fix — run /qa-hotfix for this bundle first` }); continue; }
         target = chosen;
       }
