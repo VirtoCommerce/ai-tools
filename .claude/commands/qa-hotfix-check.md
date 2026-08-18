@@ -1,5 +1,5 @@
 ---
-description: "Deliver an ALREADY-RELEASED hotfix onto the deployed vcptcore-stable + vcptcore-regression environments, then confirm + verify it. Per env: bump the module/Platform version in vc-deploy-dev's backend/packages.json (commit 'VCST-XXXX: title' → triggers the Cloud platform deployment Action), wait for the Action to go green, poll /api/platform/modules until the env reports the new version, then verify the fix behaves live. Comments the result on the JIRA task, transitions the per-env subtasks (Check on regression/stable) + the parent to Done (live transition discovery, never Cancelled), bumps the frozen stable + `latest` bundles (auto-detect, then ASK), and self-diagnoses the run. Delivery-only — STOPs if the hotfix isn't released yet (run /qa-hotfix first). Gated writes, dry-run by default, never auto-merges."
+description: "Deliver an ALREADY-RELEASED hotfix onto the deployed vcptcore-stable + vcptcore-regression environments, then confirm + verify it. Per env: bump the module/Platform version in vc-deploy-dev's backend/packages.json (commit 'VCST-XXXX: title' → triggers the Cloud platform deployment Action), wait for the Action to go green, confirm the env is actually serving the hotfix (module version match, or a --probe behavioural gate for Platform, whose rollover trails the green deploy by ~1-2 min and whose /health 200 is answered by the old revision), then verify the fix behaves live. Comments the result on the JIRA task, transitions the per-env subtasks (Check on regression/stable) + the parent to Done (live transition discovery, never Cancelled), bumps the frozen stable + `latest` bundles (auto-detect, then ASK), and self-diagnoses the run. Delivery-only — STOPs if the hotfix isn't released yet (run /qa-hotfix first). Gated writes, dry-run by default, never auto-merges."
 argument-hint: "VCST-XXXX [--envs=stable,regression] [--bundles=v14,v15] [--dry-run]"
 disable-model-invocation: true
 ---
@@ -43,16 +43,24 @@ you to `/qa-hotfix`.
    confirms. Deliver **one env at a time** by default:
    ```bash
    npm run hotfix:deliver -- VCST-XXXX --envs=stable,regression --apply
+   # PLATFORM hotfix — add the fix's own behavioural signal (no version exists to assert):
+   #   --probe='POST /api/platform/security/login' --probe-body='{}' --probe-expect=400
    ```
    Per env it bumps `packages.json` → commits `VCST-XXXX: <title>` to the env branch (the push triggers
-   "Cloud platform deployment") → polls that Action to `success` → polls `/api/platform/modules` until
-   the module reports the target version. `⛔ deploy failed` → read the Action logs, fix root cause or
-   escalate. `⚠ version not confirmed` → investigate, don't claim a pass. (Platform confirms on the
-   Action + `/health`; the modules API has no Platform-core version.)
+   "Cloud platform deployment") → polls that Action to `success` → confirms the env is actually serving
+   the hotfix. `⛔ deploy failed` → read the Action logs, fix root cause or escalate. `⚠ version not
+   confirmed` → investigate, don't claim a pass.
+   **Platform: the env keeps serving the OLD revision for ~1-2 min after the deploy goes green, and
+   `/health` 200 answers from it** — so `--probe` (polled until it returns `--probe-expect`) is the only
+   liveness proof. Without one the verdict is `⚠ deployed, fix NOT confirmed live`, never `✅ delivered`;
+   Step 3 still owes the proof. Pick a signal that differs between the old and new build.
 3. **Verify the fix behaves live (the "и всё работает" step).** For each delivered env, reproduce the
    task's STR on that live environment (`/qa-verify-fix` methodology): backend/module/GraphQL/Admin →
-   **qa-backend-expert**; storefront-visible → **qa-frontend-expert**. One flaky rerun OK; a persistent
-   failure after a confirmed-delivered version is a **STOP** (don't comment "verified").
+   **qa-backend-expert**; storefront-visible → **qa-frontend-expert**. Cover the fixed cases **plus
+   paired controls** (payloads the fix must leave unchanged, and the normal happy path). **Never
+   conclude from one probe taken right after the deploy** — poll until the signal flips (bounded ~10
+   min); a FAIL measured before the rollover is an artefact, not a finding. One flaky rerun OK; a
+   persistent failure after the signal has flipped is a **STOP** (don't comment "verified").
 4. **Comment on the JIRA task (English).** Once every targeted env is delivered AND verified: comment
    the per-env table (env · branch · pinned→target · deploy link) + the verdict. If verification was
    provider-limited/inconclusive, say so — don't claim a clean pass. Markdown, not wiki.
@@ -85,8 +93,9 @@ you to `/qa-hotfix`.
 - **Dry-run by default; `--apply` only after the user confirms the plan.** Deliver one env at a time; a
   failure on the first pauses the second. `merge_pull_request` / `gh pr merge` stay denied.
 - **Asset gate before every commit** (no `.zip` asset ⇒ deploy rolls back ⇒ STOP).
-- **A green deploy Action is not enough** — require the live `/api/platform/modules` version match (or
-  `/health` for Platform) before "delivered".
+- **A green deploy Action is not enough** — require the live `/api/platform/modules` version match
+  (module) or the `--probe` behavioural gate (Platform) before "delivered". **`/health` 200 is not
+  proof**: the previous revision answers it for ~1-2 min after the deploy.
 - **Only close the tracker on a genuine pass**; resolve transitions by status name and **never pick
   `Cancelled`**. Always end with the Step 7 self-check and surface DEGRADED items as follow-ups.
 - **Don't guess bundles** — auto-detect, then ask. `GIT_TOKEN` (PAT with `contents:write` on

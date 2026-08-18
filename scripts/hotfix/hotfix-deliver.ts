@@ -41,12 +41,18 @@
  *   --dry-run                  Explicit no-op form of the default (read-only); wins over --apply if both given.
  *   --no-wait                  (with --apply) commit but skip the deploy Action + module polling.
  *   --password=<pw>            Admin password for the /api/platform/modules check (else env/Password1).
+ *   --probe=<METHOD /path>     Behavioural liveness probe — the ONLY trustworthy proof for a Platform
+ *                              hotfix (see --probe-expect). Anonymous request, polled until it returns
+ *                              the expected status. e.g. --probe='POST /api/platform/security/login'
+ *   --probe-body=<raw>         Request body for --probe (sent as application/json).
+ *   --probe-expect=<status>    HTTP status --probe must return once the fix is live (e.g. 400).
  *   --timeout=<sec>            Deploy + restart poll budget per env (default 1200).
  *   --json                     Machine-readable output.
  *
  * Exit codes:
  *   0  every targeted env delivered + confirmed (or dry-run plan clean / already-delivered)
- *   1  a gate blocked (no hotfix on the line / asset missing / deploy failed / version never appeared)
+ *   1  a gate blocked (no hotfix on the line / asset missing / deploy failed / version never appeared,
+ *      or --probe never returned --probe-expect within the timeout)
  *   2  tool error: task/repo unresolved, missing env coords, GitHub auth/rate-limit
  *
  * Auth: GIT_TOKEN with contents:write + actions:read on vc-deploy-dev, and repo read on the product
@@ -74,7 +80,8 @@ const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian
 interface SemVer { major: number; minor: number; patch: number; }
 interface PrInfo { repo: string; number: number; title: string; url: string; merged: boolean; mergeCommitSha: string | null; }
 interface EnvCoords { env: string; file: string; deployOwner: string; deployRepo: string; branch: string; path: string; backUrl: string; admin: string; password: string; }
-type EnvVerdict = 'delivered' | 'already-delivered' | 'no-hotfix-on-line' | 'asset-missing' | 'not-in-manifest' | 'deploy-failed' | 'not-confirmed' | 'committed-unconfirmed' | 'wrong-source' | 'version-line-mismatch' | 'skipped' | 'planned' | 'error';
+type EnvVerdict = 'delivered' | 'already-delivered' | 'no-hotfix-on-line' | 'asset-missing' | 'not-in-manifest' | 'deploy-failed' | 'not-confirmed' | 'deployed-unverified' | 'committed-unconfirmed' | 'wrong-source' | 'version-line-mismatch' | 'skipped' | 'planned' | 'error';
+interface Probe { method: string; path: string; body?: string; expect: number; }
 interface EnvResult {
   env: string; branch: string; moduleId: string | null;
   pinned: string | null; line: string | null; target: string | null;
@@ -363,9 +370,62 @@ async function liveModuleVersion(c: EnvCoords, token: string, id: string): Promi
     return { status: r.status, version: m?.version ?? null };
   } catch { return { status: 0, version: null }; }
 }
-/** Single /health probe (used to confirm a Platform delivery, which has no modules-API version). */
-async function platformHealthy(c: EnvCoords): Promise<boolean> {
+/** One /health probe — "is the app answering", NOT "is the fix live" (see pollHealthy/waitProbe). */
+async function healthOnce(c: EnvCoords): Promise<boolean> {
   try { const r = await fetch(`${c.backUrl}/health`, { redirect: 'manual' }); return r.status === 200; } catch { return false; }
+}
+/** Poll /health until 200 (or timeout).
+ *
+ * This was a SINGLE probe taken the moment the deploy Action went green, which is doubly wrong:
+ * the app may not have come back yet (transient false negative), and — the dangerous half — a
+ * 200 here is routinely answered by the STILL-RUNNING PREVIOUS REVISION. The vcptcore envs are
+ * Azure apps fed by an image the deploy builds, and the rollover trails the Action by roughly
+ * 1-2 minutes (observed on VCST-5623: the deploy finished 10:17:19Z and the pre-fix response was
+ * still being served at ~10:18Z; stable rolled over ~50s after its own deploy). So health alone
+ * can never distinguish "new build up" from "old build still serving". */
+async function pollHealthy(c: EnvCoords, timeoutS: number): Promise<boolean> {
+  const deadline = Date.now() + Math.min(timeoutS, 300) * 1000;
+  for (;;) {
+    if (await healthOnce(c)) return true;
+    if (Date.now() >= deadline) return false;
+    await sleep(10_000);
+  }
+}
+/** Poll a caller-supplied behavioural probe until it returns the expected status (or timeout).
+ *
+ * For a MODULE hotfix, /api/platform/modules reports the installed version, so version-match is a
+ * sound "it restarted on the hotfix" signal. A PLATFORM hotfix has no such signal — there is no
+ * Platform entry in the modules API and /api/platform/version is 404 — so the only trustworthy
+ * proof that the new build is actually serving is the FIX'S OWN OBSERVABLE BEHAVIOUR. The caller
+ * supplies it (`--probe` + `--probe-expect`), because only the caller knows what the fix changed.
+ *
+ * Deliberately anonymous: a liveness probe must not depend on an admin token, and the endpoints
+ * worth probing for this are typically [AllowAnonymous]. Body is sent as JSON when given. */
+async function waitProbe(c: EnvCoords, probe: Probe, timeoutS: number): Promise<{ ok: boolean; last: number | null; note: string }> {
+  const deadline = Date.now() + timeoutS * 1000;
+  const url = `${c.backUrl}${probe.path.startsWith('/') ? '' : '/'}${probe.path}`;
+  let last: number | null = null;
+  for (;;) {
+    try {
+      const r = await fetch(url, {
+        method: probe.method,
+        headers: probe.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+        body: probe.body,
+        redirect: 'manual',
+      });
+      last = r.status;
+      if (r.status === probe.expect) {
+        return { ok: true, last, note: `fix confirmed live: ${probe.method} ${probe.path} → ${r.status}` };
+      }
+    } catch { last = 0; }
+    if (Date.now() >= deadline) {
+      return {
+        ok: false, last,
+        note: `${probe.method} ${probe.path} still returns ${last ?? 'no response'} (expected ${probe.expect}) after ${timeoutS}s — the env did not roll onto the hotfix`,
+      };
+    }
+    await sleep(10_000);
+  }
 }
 /** Poll the live env until the module reports `target` (or timeout). */
 async function waitLiveVersion(c: EnvCoords, id: string, target: string, timeoutS: number): Promise<{ ok: boolean; version: string | null; note: string }> {
@@ -408,6 +468,24 @@ async function main() {
   const envs = (flag('envs') ?? 'stable,regression').split(',').map((s) => s.trim()).filter(Boolean);
   const versionOverride = flag('version');
   const passwordOverride = flag('password');
+  // Behavioural liveness probe (see waitProbe). Both --probe and --probe-expect are required
+  // together: a probe with no expected status cannot decide anything, and an expected status with
+  // no probe has nothing to ask.
+  const probeFlag = flag('probe');
+  const probeExpectFlag = flag('probe-expect');
+  let probe: Probe | undefined;
+  if (probeFlag !== undefined || probeExpectFlag !== undefined) {
+    if (probeFlag === undefined || probeExpectFlag === undefined) {
+      fail("--probe and --probe-expect must be given together, e.g. --probe='POST /api/platform/security/login' --probe-body='{}' --probe-expect=400");
+    }
+    const parts = probeFlag!.trim().split(/\s+/);
+    const method = (parts.length > 1 ? parts[0] : 'GET').toUpperCase();
+    const path = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+    const expect = Number(probeExpectFlag);
+    if (!path || !path.startsWith('/')) fail(`--probe path must start with "/" (got: ${probeFlag})`);
+    if (!Number.isInteger(expect) || expect < 100 || expect > 599) fail(`--probe-expect must be an HTTP status (got: ${probeExpectFlag})`);
+    probe = { method, path, body: flag('probe-body'), expect };
+  }
 
   if (!task || !/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(task)) fail('Usage: npx tsx scripts/hotfix-deliver.ts <TASK-KEY> [--envs=stable,regression] [--dry-run (default) | --apply] [--repo=] [--pr=] [--version=] [--json]');
 
@@ -536,10 +614,24 @@ async function main() {
       if (!dep.ok) { results.push({ ...r, verdict: 'deploy-failed', note: dep.note }); continue; }
 
       // 7. confirm the env is live. Module hotfix → poll /api/platform/modules for the version.
-      //    Platform → no modules-API version, so confirm the app came back up via /health.
+      //    Platform → there is NO live version to assert, so /health alone cannot prove the fix is
+      //    serving (the previous revision answers it 200 for ~1-2 min after the deploy goes green).
+      //    With --probe we poll the fix's own behaviour, which IS proof. Without one we say so:
+      //    'deployed-unverified', never 'delivered'.
       if (isPlatform) {
-        const healthy = await platformHealthy(c);
-        results.push({ ...r, verdict: healthy ? 'delivered' : 'not-confirmed', note: healthy ? `deploy succeeded; /health 200 (Platform ${target} — no modules-API version to assert)` : `deploy Action succeeded but /health is not 200 yet — verify Platform ${target} by hand` });
+        const healthy = await pollHealthy(c, timeoutS);
+        if (!healthy) {
+          results.push({ ...r, verdict: 'not-confirmed', note: `deploy Action succeeded but /health never returned 200 — verify Platform ${target} by hand` });
+        } else if (probe) {
+          if (!asJson) console.log(`[${c.env}] deploy OK, /health 200 — polling ${probe.method} ${probe.path} for ${probe.expect} (rollover lags the deploy) …`);
+          const pr = await waitProbe(c, probe, timeoutS);
+          results.push({ ...r, verdict: pr.ok ? 'delivered' : 'not-confirmed', note: `Platform ${target}: ${pr.note}` });
+        } else {
+          results.push({
+            ...r, verdict: 'deployed-unverified',
+            note: `deploy succeeded; /health 200 — but Platform ${target} is NOT confirmed live (no modules-API version to assert, and /health is also 200 from the old revision). Verify the fix behaviour yourself, or re-run with --probe/--probe-expect`,
+          });
+        }
       } else {
         if (!asJson) console.log(`[${c.env}] deploy OK — polling /api/platform/modules for ${moduleId}=${target} …`);
         const live = await waitLiveVersion(c, moduleId!, target, timeoutS);
@@ -554,6 +646,9 @@ async function main() {
     // failure, so it must NOT trip this guard — otherwise --no-wait across multiple envs would
     // pause after the first env every time, defeating its purpose.
     const last = results[results.length - 1];
+    // 'deployed-unverified' is deliberately NOT here: the commit + deploy genuinely succeeded, we
+    // simply cannot prove the fix is serving without a --probe. That is a reporting state, not a
+    // failure, so it must not abort the remaining envs (unlike a real deploy/version failure).
     const HARD_FAIL_AFTER_COMMIT: EnvVerdict[] = ['deploy-failed', 'not-confirmed'];
     if (apply && last.commitSha && HARD_FAIL_AFTER_COMMIT.includes(last.verdict)) aborted = true;
   }
@@ -568,6 +663,7 @@ async function main() {
     delivered: '✅ delivered', 'already-delivered': '◯ already delivered', planned: '📝 planned (dry-run)',
     'no-hotfix-on-line': '⛔ no hotfix on line', 'asset-missing': '⛔ asset missing', 'not-in-manifest': '— not in manifest',
     'deploy-failed': '⛔ deploy failed', 'not-confirmed': '⚠ deployed, version not confirmed',
+    'deployed-unverified': '⚠ deployed, fix NOT confirmed live',
     'committed-unconfirmed': '⚠ committed, deploy/version NOT confirmed (--no-wait)',
     'wrong-source': '⛔ prerelease source (hand off)', 'version-line-mismatch': '⛔ --version wrong line',
     skipped: '⏸ skipped (prior env failed)', error: '⚠ error',
@@ -588,6 +684,13 @@ async function main() {
   if (results.some((x) => x.verdict === 'delivered')) {
     console.log(`\nNext (owned by /qa-hotfix-check): verify the fix behaviour live on each delivered env,`);
     console.log(`then comment on ${task} (English) and bump the stable bundles.`);
+  }
+  if (results.some((x) => x.verdict === 'deployed-unverified')) {
+    console.log(`
+⚠ A Platform hotfix deployed but is NOT confirmed live. A green deploy Action + /health 200`);
+    console.log(`  are BOTH satisfied by the previous revision, which keeps serving for ~1-2 min after the deploy.`);
+    console.log(`  Do not report this as verified on the strength of the table above — prove the fix's own behaviour,`);
+    console.log(`  e.g. re-run with:  --probe='POST /api/platform/security/login' --probe-body='{}' --probe-expect=400`);
   }
   if (results.some((x) => x.verdict === 'committed-unconfirmed')) {
     console.log(`\n⚠ Committed with --no-wait — confirm the deploy + live version out-of-band before treating`);

@@ -89,13 +89,52 @@ Only for `planned` envs, and only after you've shown the user the per-env plan a
 triple-guarded no-auto-merge culture applies ([`.claude/rules/quality-gates.md`](../../rules/quality-gates.md)).
 
 ```bash
+# module hotfix
 npm run hotfix:deliver -- VCST-XXXX --envs=stable,regression --apply
+
+# PLATFORM hotfix — pass the fix's own behavioural signal (see the rollover gate below)
+npm run hotfix:deliver -- VCST-XXXX --envs=stable,regression --apply   --probe='POST /api/platform/security/login' --probe-body='{}' --probe-expect=400
 ```
 
 With `--apply` the script, **per env**: bumps the version in `packages.json` → commits
 `VCST-XXXX: <title>` to the env branch via the GitHub Contents API (this push is what triggers the
 deploy) → polls the **"Cloud platform deployment"** Action (matched by the commit's `head_sha`) to
-`success` → polls `<BACK_URL>/api/platform/modules` until the module reports the target version.
+`success` → confirms the env is actually serving the hotfix (module → version match; **Platform →
+the `--probe` behavioural gate**).
+
+### The rollover gate — a green deploy does NOT mean the fix is live (Platform)
+
+**Verified the hard way on VCST-5623, 2026-08-18.** The `vcptcore-*` envs are Azure apps fed by an
+image the deploy builds; **the app keeps serving the PREVIOUS revision for roughly 1-2 minutes after
+the deploy Action turns green.** A probe run ~1 min after a green regression deploy still returned the
+**pre-fix** `500`s; the same probe 3 min later returned the fixed `400`. On stable the rollover took
+**~50 s**.
+
+This is a trap specifically for **Platform** hotfixes, because there is nothing to assert a version
+against — no Platform entry in `/api/platform/modules`, and `/api/platform/version` is **404** — so the
+old confirmation was *deploy green + `/health` 200*, and **both are satisfied by the old container**.
+That combination reported `✅ delivered` while the fix was not yet serving. Two consequences, both bad:
+a verification run started immediately reads as a **behavioural FAIL on a correctly delivered hotfix**
+(inviting a pointless re-delivery or a suspicion of the release), and a run that *skips* verification
+reports a pass that was never proven.
+
+So for a Platform hotfix, **give the script the fix's own observable signal** — only the caller knows
+what the fix changed:
+
+| Flag | Meaning |
+|---|---|
+| `--probe='<METHOD> /path'` | anonymous request polled until it returns the expected status |
+| `--probe-body='<raw>'` | request body, sent as `application/json` |
+| `--probe-expect=<status>` | the status that proves the new build is serving (e.g. `400`) |
+
+Pick a signal that **differs between the old and new build** (here: the payload that used to 500 and
+must now 400). A signal both builds return is worthless as a gate. `--probe` and `--probe-expect` must
+be given together; the probe is deliberately anonymous, so liveness never depends on an admin token.
+
+**Without `--probe` a Platform delivery now reports `⚠ deployed, fix NOT confirmed live`
+(`deployed-unverified`) — never `✅ delivered`.** That is not a failure (the commit and deploy did
+succeed, so it doesn't abort the remaining envs or fail the exit code); it is the script refusing to
+claim something it cannot see. You still owe the behavioural proof in Step 3.
 
 - `--no-wait` commits but skips the polling (when you want to verify the deploy out-of-band). This
   reports `⚠ committed, deploy/version NOT confirmed` — never `✅ delivered` — since neither check ran;
@@ -104,14 +143,18 @@ deploy) → polls the **"Cloud platform deployment"** Action (matched by the com
 - Deliver envs **one at a time** unless the user explicitly wants both at once — a stable regression on
   the first env is a reason to pause before touching the second.
 
-Verdicts after `--apply`: `✅ delivered` (deploy green + live version confirmed) · `⚠ deployed, version
-not confirmed` (deploy green but the modules API never reported the version — investigate, don't assume)
-· `⚠ committed, deploy/version NOT confirmed` (`--no-wait` — confirm out-of-band before proceeding) ·
-`⛔ deploy failed` (read the Action logs, classify, fix root cause or escalate — never loop blindly).
+Verdicts after `--apply`: `✅ delivered` (deploy green **and** the hotfix proven live — module version
+match, or the `--probe` gate returned `--probe-expect`) · `⚠ deployed, fix NOT confirmed live`
+(Platform with no `--probe`: deployed, liveness unproven — Step 3 still owes the proof) · `⚠ deployed,
+version not confirmed` (the modules API never reported the version, or `--probe` never returned its
+expected status within the timeout — investigate, don't assume) · `⚠ committed, deploy/version NOT
+confirmed` (`--no-wait` — confirm out-of-band before proceeding) · `⛔ deploy failed` (read the Action
+logs, classify, fix root cause or escalate — never loop blindly).
 
 **Platform hotfixes:** `/api/platform/modules` carries no Platform-core version, so a Platform delivery
-confirms on the deploy Action + `/health` green; state that limitation explicitly rather than implying a
-version-confirmed pass.
+confirms on the **`--probe` behavioural gate** (deploy Action + `/health` are necessary but prove only
+that *an* app is answering — see the rollover gate above). Without a probe, say the limitation out loud
+rather than implying a confirmed pass.
 
 ## Step 3 — verify the fix behaves on the live env (the "и всё работает" step)
 
@@ -122,8 +165,21 @@ environment (the `/qa-verify-fix` methodology): reproduce the STR from the bug/P
 - backend / module / GraphQL / Admin SPA → **qa-backend-expert**
 - storefront-visible behaviour → **qa-frontend-expert**
 
-A single flaky rerun is fine; a persistent failure after a confirmed-delivered version is a **STOP** →
-report, do not comment "verified". (Optional deeper net: `/qa-regression <module-group>` for the
+**Never conclude from a single probe taken right after the deploy** — that is the rollover trap above,
+and it manufactures a false FAIL. Poll the fix's signal until it flips, with a bounded ceiling
+(~10 min); only a **timeout** is a real STOP:
+
+```bash
+until [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BACK_URL/api/platform/security/login"   -H 'Content-Type: application/json' -d '{}')" = 400 ]; do sleep 10; done
+```
+
+(When Step 2 ran with `--probe`, this gate already passed there — Step 3 then confirms the *full* case
+set rather than re-proving liveness.) Verify the fixed cases **and** paired controls: payloads that
+should be **unchanged** by the fix, plus the normal happy path (a valid login), so a "fix" that broke
+something adjacent cannot read as a pass.
+
+A single flaky rerun is fine; a persistent failure **after the signal has demonstrably flipped** is a
+**STOP** → report, do not comment "verified". (Optional deeper net: `/qa-regression <module-group>` for the
 affected module from `module-suite-map.md`.)
 
 ## Step 4 — record on the JIRA task (English)
@@ -200,8 +256,8 @@ silent degradation is surfaced instead of read as success. For each stage, emit 
 
 | Stage | OK means | DEGRADED / BROKEN signal |
 |-------|----------|--------------------------|
-| Deliver | every targeted env `✅ delivered` (version confirmed live) | `⚠ not-confirmed` (deploy green, version never reported) = DEGRADED; `⛔ deploy-failed` / `asset-missing` = BROKEN |
-| Verify | provider-appropriate behavioural proof obtained | `provider-limited / inconclusive` = DEGRADED (say why — e.g. ES-backed env can't prove an Azure bug); behavioural FAIL = BROKEN |
+| Deliver | every targeted env `✅ delivered` (version match, or the `--probe` gate passed) | `⚠ deployed-unverified` (Platform, no `--probe` — liveness never proven) = DEGRADED; `⚠ not-confirmed` (version/probe never reached its target) = DEGRADED; `⛔ deploy-failed` / `asset-missing` = BROKEN |
+| Verify | behavioural proof obtained **after** the rollover, fixed cases + controls + happy path | `provider-limited / inconclusive` = DEGRADED (say why — e.g. ES-backed env can't prove an Azure bug); behavioural FAIL = BROKEN. A FAIL measured before the rollover is **not** a finding — re-poll first |
 | JIRA comment | posted, honest about any provider limit | missing / overclaims a limited pass = DEGRADED |
 | Transition | subtasks + parent reached `Done` (not `Cancelled`) | stuck mid-workflow / closed on a non-pass = DEGRADED |
 | Bundles | PR opened for each confirmed bundle | candidate detected but not PR'd, or bundle skipped silently = DEGRADED |
@@ -219,7 +275,12 @@ the skill-expectations oracle, writes a local `DIAG-*.md`, sends nothing externa
   the per-env plan. `merge_pull_request` / `gh pr merge` stay denied.
 - **Asset gate before every commit.** No downloadable release asset ⇒ the deploy would roll back ⇒ STOP.
 - **Confirm the env actually restarted.** A green deploy Action is necessary but not sufficient — require
-  the `/api/platform/modules` version match (module hotfix) or `/health` (Platform) before "delivered".
+  the `/api/platform/modules` version match (module hotfix) or the **`--probe` behavioural gate**
+  (Platform) before "delivered". **`/health` 200 is NOT that proof**: it is answered by the previous
+  revision for ~1-2 min after the deploy, so it cannot distinguish the new build from the old one.
+- **Never report a Platform hotfix verified off a single post-deploy probe.** Poll until the fix's own
+  signal flips (bounded); a `⚠ deployed, fix NOT confirmed live` verdict is an honest state to report,
+  an unproven `✅` is not.
 - **One env at a time by default**; a failure on the first pauses the second.
 - **Don't guess bundles.** Auto-detect, then ask. The latest-stable set drifts.
 - **Only close the tracker on a genuine pass.** Transition subtasks + parent to Done only when the env was
