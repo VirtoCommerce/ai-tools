@@ -60,8 +60,8 @@
     "max_rounds": 2,
     "outcome": "blocked"
   },
-  "new_cases_authored": 21,
-  "new_cases_path": "regression/suites/Backend/import-export/096-catalog-backup-binary-sidecars.csv",
+  "new_cases_authored": 49,
+  "new_cases_path": "regression/suites/Backend/import-export/096-backup-restore.csv",
   "new_cases_manifest_registered": false,
   "new_cases_manifest_note": "Deliberately left an ORPHAN CSV (suites:lint WARNs, does not fail). Registering id 096 in config/test-suites.json would enrol 21 unexecuted Draft cases into the `full`/`backend` selections and mass-FAIL every other team member's run against an env that lacks the feature. Register at 5g, together with promotion, once the build is deployed and the cases have run.",
   "promotion": {
@@ -82,11 +82,13 @@
       "062",
       "064",
       "049",
-      "078"
+      "078",
+      "072c"
     ],
     "run_id": null,
     "pass_rate": null,
-    "skipped_reason": "Change-scoped regression not run — this session went into delivery + the feature-specific suite. Suite 095 (Background Jobs) matters most because of F1 and is still outstanding."
+    "skipped_reason": "Change-scoped regression not run — this session went into delivery + the feature-specific suite. Suite 095 (Background Jobs) matters most because of F1 and is still outstanding.",
+    "scope_note": "072c added after a content-level search of the corpus: its CFG-IMP-001 exercises platform export/import of catalog data (product-configuration isActive preservation), so it shares the touched CatalogExportImport path even though it is unrelated to binaries. It needs no edit."
   },
   "regression_triage": {
     "invoked": false,
@@ -238,6 +240,22 @@
       "summary": "The BackupRestore repo carries only 2 unit tests for the whole binary-sidecar feature (ExportAndImportAsync_BinaryDataModule_UsesReadableModuleEntryAndTopLevelAssets, ExportAsync_WithoutBinaryData_UsesLegacySingleStreamContract), both happy-path. Its negative branches are untested: the _failedEntries guard in BackupBinaryDataWriter (a reference that failed once must not be silently rewritten with different content) and BinaryDataEntryPath.Validate.",
       "note": "Path validation and dedup were confirmed live instead (BKRS-016, BKRS-006). The _failedEntries guard is the one branch confirmed neither by test nor by live run.",
       "recommend": "add a unit test asserting the second WriteAsync for a previously failed reference throws InvalidDataException"
+    },
+    {
+      "id": "F9",
+      "class": "coverage-gap",
+      "severity": "medium",
+      "provenance": "CORPUS GAP (not this ticket)",
+      "summary": "Platform backup/restore had no regression coverage at all before this suite. Verified by content: api/platform/export 0 suites, HandleBinaryData 0, \"Backup and restore\" 0, vc_backup 0, PlatformExport 0. Suite 064 is catalog CSV import/export, a different feature.",
+      "impact": "A disaster-recovery feature was only ever exercised manually, and only when someone actually needed to restore. Two defects surfaced during this single session (round-trip validation asymmetry, 0-byte artifact from a failed job), which suggests the area does drift unobserved."
+    },
+    {
+      "id": "F10",
+      "class": "doc-drift",
+      "severity": "low",
+      "provenance": "DOCUMENTATION",
+      "summary": "The public Backup and Restore user guide is behind the shipped module: it documents \"Start export\"/\"Start import\" while the UI ships \"Start backup\"/\"Start restore\", and it covers neither password protection, nor restoring from a backup already in storage, nor sample data installation.",
+      "covered_by": "BKRS-049, and the feature documentation added in this change"
     }
   ],
   "instrumentation": {
@@ -266,5 +284,19 @@
     "status_change": "Testing -> Tested via transition \"Finish test\" (id 8, target status id 10280) at 2026-08-19; transition discovered live and selected by TARGET status, not by transition name — the adjacent \"Cancelled\" transition (id 19) lands in the Done category and would have been the wrong pick",
     "related_filed": "VCST-5756 (0-byte artifact from a failed backup, assigned to Oleg Zhuk)",
     "deliberately_not_filed": "two pre-existing platform defects (round-trip validation asymmetry, NRE instead of validation on a missing exportManifest) — operator decision"
+  },
+  "existing_coverage_check": {
+    "question": "were there pre-existing backup/restore cases that needed updating?",
+    "answer": "No — none existed. Verified by CONTENT, not filename: api/platform/export 0 suites, HandleBinaryData 0, \"Backup and restore\" 0, vc_backup 0, PlatformExport 0, backups/ 0. api/platform/import returned exactly one hit, 072c CFG-IMP-001, which uses export/import as a vehicle for a configurable-product assertion rather than to test backup/restore.",
+    "note": "Suite 064 \"CSV Import Export\" is catalog CSV import/export — a different feature, zero backup matches, still in the legacy 11-column format.",
+    "method_correction": "The original conclusion (no coverage) was reached by a filename search only, which would have missed cases embedded in other suites. The content-level check was run afterwards and confirmed it."
+  },
+  "module_coverage": {
+    "scope": "Suite 096 was widened from the VCST-5387 slice to full VirtoCommerce.BackupRestore module coverage after the operator asked for it.",
+    "why": "A content-level search proved the corpus had ZERO backup/restore coverage — a disaster-recovery feature that regression had never exercised.",
+    "sources": "module.manifest + module source (controllers, ModuleConstants, BackupBlobUrl, PlatformImportExportRequest), the shipped en localization (real UI labels and the full error taxonomy), and the public user guide.",
+    "totals": "49 cases / 23 areas; 19 Reviewed (executed live), 30 Draft (28 newly authored + BKRS-017/021 which cannot be run).",
+    "new_areas": "module presence + Assets dependency; all six permissions and their independence; platform-entry flag matrix; module selection; AES-256 password protection incl. shown-once and wrong-password refusal; security-data warnings on both sides incl. admin-account exemption; live progress and job cancellation; shared storage listing and multi-instance readability; download path-traversal rejection; restore metadata; corrupt/foreign archive handling; upload-failure taxonomy; sample data discover/import/state; platform-entries round trip; documentation drift.",
+    "registration": "Still unregistered in config/test-suites.json. The VCST-5387 cases need the three open PR builds, so registering today would fail every run. A large part of the suite tests already-shipped behaviour and could be registered now if the suite is split — offered to the operator, undecided."
   }
 }
