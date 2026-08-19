@@ -51,7 +51,7 @@
     "notes": "The story declares NO formal acceptance criteria — only an 'As a / I want / so that' narrative. The de-facto acceptance spec is the assignee's 2026-08-11 comment (final architecture + a 10-step QA procedure), which supersedes the two earlier comments. All 21 atomic conditions are therefore gap-ACs derived from that comment plus the three PR diffs; none is a numbered story AC. Static AC-vs-implementation coverage was not computable because there are no ACs to map."
   },
   "total_cases": 21,
-  "passed": 22,
+  "passed": 27,
   "failed": 0,
   "blocked_cases": 0,
   "iterations": {
@@ -144,7 +144,7 @@
     ],
     "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
   },
-  "not_run": 52,
+  "not_run": 47,
   "results": {
     "passed": {
       "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
@@ -312,6 +312,10 @@
     {
       "id": "O4",
       "summary": "The all-module export is dominated by one part: VirtoCommerce.PageBuilderModule.json is 37 MB for only 5 pages, against 4.6 MB for 411 products in Catalog. Not a defect in scope here, but it means a full backup size is driven by Page Builder rather than by catalog volume, which matters for the 100 MB upload cap on restore."
+    },
+    {
+      "id": "O5",
+      "summary": "Bad input on the restore endpoints answers with HTTP 500 rather than 400: a traversal path, a truncated archive, a foreign ZIP and a non-ZIP all produce a 500 carrying an exception message. Nothing is served or imported, so containment holds, but user-supplied garbage should not read as a server fault — it pollutes error monitoring and hides real 500s. Same class as F4 (NRE instead of validation on a missing exportManifest)."
     }
   ],
   "tracker": {
@@ -337,5 +341,13 @@
     "new_areas": "module presence + Assets dependency; all six permissions and their independence; platform-entry flag matrix; module selection; AES-256 password protection incl. shown-once and wrong-password refusal; security-data warnings on both sides incl. admin-account exemption; live progress and job cancellation; shared storage listing and multi-instance readability; download path-traversal rejection; restore metadata; corrupt/foreign archive handling; upload-failure taxonomy; sample data discover/import/state; platform-entries round trip; documentation drift.",
     "registration": "Still unregistered in config/test-suites.json. The VCST-5387 cases need the three open PR builds, so registering today would fail every run. A large part of the suite tests already-shipped behaviour and could be registered now if the suite is split — offered to the operator, undecided.",
     "per_module": "One round-trip case per exportable module (25), entity collections observed from a real all-module export on 2026-08-19: Core Currencies; Seo BrokenLinks/RedirectRules; SqlQueries (empty); ImageTools Options/Tasks; Notifications Notifications; Store Stores; Catalog Properties/PropertyDictionaryItems/Catalogs/Categories/Products/ProductConfigurations/Measures; Content MenuLinkLists; Customer Members; Payment PaymentMethods; Shipping ShippingMethods/PickupLocations; Tax TaxProviders; CatalogPersonalization TaggedItems; Inventory FulfillmentCenters/Inventories; Pages Pages; Pricing Pricelists/Assignments/Prices; Sitemaps Sitemaps/SitemapItems; Contracts (empty); News NewsArticles; Orders CustomerOrders; PageBuilder PageBuilderPages; Marketing Promotions/DynamicContentFolders/Items/Places/Publications/Coupons/Usages; Subscription PaymentPlans/Subscriptions; DynamicAssociations DynamicAssociations."
+  },
+  "rerun_2026_08_20": {
+    "what": "Executed the non-destructive part of the previously unrun cases.",
+    "per_module_export_half": "All 25 per-module cases had their EXPORT half run: export selecting ONLY that module, then verify its part. 25/25 clean — errors=0, own part present, ZERO foreign parts (so module selection really does bound the archive), collections matching the earlier all-module probe. Rows stay Draft because the mutate-and-restore half was NOT run; recording a half-run case as Reviewed would misstate it.",
+    "fully_executed": "BKRS-029 (export manifest describes the platform: 25 modules listed, 0 listed-but-not-installed, all versions matching live), BKRS-037 (storage listing + deletion reflected), BKRS-038 (5 traversal forms refused on both endpoints, nothing served), BKRS-041 (truncated / foreign-zip / non-zip all refused, nothing imported), BKRS-044 (sample-data discover=1 package, state readable). All five -> Reviewed.",
+    "false_alarms_in_my_own_checks": "Three modules first came back REVIEW (Core, Seo, Customer). Cause was my comparison, not the platform: the baseline map recorded scalar *TotalCount fields alongside arrays while the per-module run collected arrays only. Re-verdict on a like-for-like basis: 25/25 PASS. Separately, Quote looked absent from the first probe — it was cut off by a head -80 on my own output.",
+    "not_run_and_why": "The mutate-and-restore half of the 25 per-module cases needs a DISPOSABLE environment: as written each one deletes or changes real records for its module. vcptcore-qa1 is shared. Also unrun: permission cases (create throwaway roles/users), sample-data install, the storage-deletion case, the oversized-upload case, BKRS-017 and BKRS-021.",
+    "cleanup": "27 backup artifacts (56 MiB) produced by this run were deleted; the backups folder was left empty."
   }
 }
