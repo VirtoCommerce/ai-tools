@@ -275,6 +275,15 @@
       "summary": "The DEFAULT backup path — passwordProtect on, AES-256 — was never executed. All 19 live runs deliberately set passwordProtect=false so the archive could be inspected, so the encrypted path (and the one-time password, and restore with/without/wrong password) was only ever authored from source, never observed.",
       "impact": "Encryption is on by default, so the untested path is the one real operators use. A defect there would be invisible to this run.",
       "status": "CLOSED. The default path was run: passwordProtect omitted -> a 32-char one-time password returned and isEncrypted=true; the payload entry is unreadable without it (System.IO.Compression refuses the AES entry as an unsupported compression method) while a passwordProtect:false control reads clean JSON; restore refused with no password and with a wrong password, and succeeded with the correct one. BKRS-030/031/032 are now Reviewed with {OBSERVED} values."
+    },
+    {
+      "id": "F13",
+      "class": "test-design-defect",
+      "severity": "medium",
+      "provenance": "FIXED (own work)",
+      "summary": "The 25 per-module cases originally told the runner to \"confirm the module is listed as exportable\" with no outcome defined for the case where it is not. On an environment with a trimmed module set that reads as 25 FAILs for a reason that is not a defect — the exact false-failure class that erodes trust in a regression corpus.",
+      "fix": "Added the repo established [PRECHECK] gate (suite 017 idiom) as step 1 of every per-module case: GET /api/platform/modules, and if the module is absent BLOCK the case as an environment gap rather than failing it. Step 2 now separately asserts the other half — a module that IS installed but missing from the export manifest has silently lost its export contract, and that IS a defect. Both outcomes are stated in Failure_Signals so the runner cannot conflate them.",
+      "note": "Relevant in practice: vcptcore_regression is recorded as running with many modules absent, so without this gate the suite would have produced false failures there on its first run."
     }
   ],
   "instrumentation": {
