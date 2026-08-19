@@ -144,7 +144,7 @@
     ],
     "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
   },
-  "not_run": 27,
+  "not_run": 52,
   "results": {
     "passed": {
       "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
@@ -170,7 +170,9 @@
     "not_run": {
       "BKRS-017": "Guard against silently re-writing a reference that failed earlier in the same export (BackupBinaryDataWriter._failedEntries). NOT reachable through the public API — a blob write cannot be broken mid-stream from outside — and NOT covered by unit tests either: BackupRestoreManagerBinaryDataTests.cs holds only 2 tests (new-contract happy path, legacy single-stream), neither touching the guard. Reported as finding F8, a test-coverage gap.",
       "BKRS-021": "deprioritised — the BackgroundJobs migration belongs to VCST-5490 (Done), not to this ticket, and its files are no longer in the #904 diff. Regression coverage for it is suite 095 under that ticket."
-    }
+    },
+    "not_run_composition": "52 rows are Draft: the 25 per-module round-trip cases, the 25 module-coverage cases authored from source/localization/docs, and BKRS-017 + BKRS-021 which cannot be executed at all. results.not_run below enumerates only the ticket-scoped ones; the rest are identifiable in the suite by the ABSENCE of a \"Verified:\" stamp in References.",
+    "executed_marker": "Every executed row carries \"Verified: VCST-5387 (2026-08-19, vcptcore-qa1)\" in References — 22 rows, and no Draft row carries it. That stamp, not the provenance tag, is what distinguishes an executed case: a Draft row may legitimately hold an {OBSERVED} assertion when part of its claim was measured (the archive part shape) while the rest was not (the round trip)."
   },
   "findings": [
     {

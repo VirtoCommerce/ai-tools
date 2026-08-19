@@ -3,7 +3,7 @@
 **Ticket:** [VCST-5387](https://virtocommerce.atlassian.net/browse/VCST-5387) — Stream catalog image/file binaries during Export/Import instead of embedding base64 in JSON
 **Type:** Story · **Verdict:** PASS WITH NOTES · **Date:** 2026-08-19
 **Env:** vcptcore-qa1 — Platform `3.1061.0-pr-3099-829a`, Catalog `3.1042.0-pr-904-2bfa`, BackupRestore `3.1004.0-pr-5-2048`, theme `2.55.0`
-**Result:** 19 of 21 cases executed, **0 failed**, 2 not executed (justified below)
+**Result:** 19 of the 21 cases written for this ticket executed, **0 failed**, 2 not executed (justified below)
 
 ## 1. What was being verified
 
@@ -99,7 +99,12 @@ decision. Both reproduce on a release build and neither is caused by this change
 
 ## 7. Reproducing this
 
-Test cases: `regression/suites/Backend/import-export/096-catalog-backup-binary-sidecars.csv` (21 cases, `Draft`,
+!!! note
+    The suite has since been widened beyond this ticket to cover the BackupRestore module as a
+    whole (74 cases), and renamed accordingly. The 21 cases described in this report are the
+    ticket-scoped subset. See the suite itself for the current scope.
+
+Test cases: `regression/suites/Backend/import-export/096-backup-restore.csv` (the 21 cases written for this ticket, `Draft` at the time of writing,
 deliberately unregistered in `config/test-suites.json` — registering unexecuted Draft cases would enrol them in
 `full`/`backend` selections and fail other runs against environments lacking the feature).
 
