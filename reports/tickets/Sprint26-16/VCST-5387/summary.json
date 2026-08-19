@@ -51,7 +51,7 @@
     "notes": "The story declares NO formal acceptance criteria — only an 'As a / I want / so that' narrative. The de-facto acceptance spec is the assignee's 2026-08-11 comment (final architecture + a 10-step QA procedure), which supersedes the two earlier comments. All 21 atomic conditions are therefore gap-ACs derived from that comment plus the three PR diffs; none is a numbered story AC. Static AC-vs-implementation coverage was not computable because there are no ACs to map."
   },
   "total_cases": 21,
-  "passed": 19,
+  "passed": 22,
   "failed": 0,
   "blocked_cases": 0,
   "iterations": {
@@ -144,7 +144,7 @@
     ],
     "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
   },
-  "not_run": 2,
+  "not_run": 27,
   "results": {
     "passed": {
       "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
@@ -256,6 +256,24 @@
       "provenance": "DOCUMENTATION",
       "summary": "The public Backup and Restore user guide is behind the shipped module: it documents \"Start export\"/\"Start import\" while the UI ships \"Start backup\"/\"Start restore\", and it covers neither password protection, nor restoring from a backup already in storage, nor sample data installation.",
       "covered_by": "BKRS-049, and the feature documentation added in this change"
+    },
+    {
+      "id": "F11",
+      "class": "coverage-gap",
+      "severity": "medium",
+      "provenance": "SUITE GAP (own work)",
+      "summary": "Suite 096 covers per-module backup/restore for only 2 of the 25 modules the platform declares exportable: Catalog (deeply, because the ticket changed it) and Pricing (only as a non-participating shape check). The other 23 have no round-trip coverage at all: Core, Seo, SqlQueries, ImageTools, Notifications, Store, Content, Customer, Payment, Shipping, Tax, CatalogPersonalization, Inventory, Pages, Sitemaps, Contracts, News, Orders, PageBuilderModule, Marketing, Subscription, DynamicAssociationsModule, Quote.",
+      "impact": "The module promises to package \"the data of all installed modules\". A per-module round trip is the core functional promise, and it is verified for one module out of 25. Entity coverage WITHIN Catalog is fine (category, product, variation, each with an image and a file asset).",
+      "recommend": "Add a per-module round-trip case (or a table-driven case over the manifest/new list) so each exportable module is exercised; failure isolation argues for one case per module."
+    },
+    {
+      "id": "F12",
+      "class": "coverage-gap",
+      "severity": "closed",
+      "provenance": "CLOSED — the encrypted path was executed",
+      "summary": "The DEFAULT backup path — passwordProtect on, AES-256 — was never executed. All 19 live runs deliberately set passwordProtect=false so the archive could be inspected, so the encrypted path (and the one-time password, and restore with/without/wrong password) was only ever authored from source, never observed.",
+      "impact": "Encryption is on by default, so the untested path is the one real operators use. A defect there would be invisible to this run.",
+      "status": "CLOSED. The default path was run: passwordProtect omitted -> a 32-char one-time password returned and isEncrypted=true; the payload entry is unreadable without it (System.IO.Compression refuses the AES entry as an unsupported compression method) while a passwordProtect:false control reads clean JSON; restore refused with no password and with a wrong password, and succeeded with the correct one. BKRS-030/031/032 are now Reviewed with {OBSERVED} values."
     }
   ],
   "instrumentation": {
@@ -274,6 +292,10 @@
     {
       "id": "O2",
       "summary": "The qa1 asset store is read-after-write / read-after-delete lagged: blobs verified present were reported 404 moments later and vice versa, and one restore pass needed a second attempt before all six read back. Lag produces false NEGATIVES, so it cannot inflate a positive result; absence-based assertions were therefore backed by package structure as well."
+    },
+    {
+      "id": "O3",
+      "summary": "An encrypted backup exposes its envelope on purpose: Manifest.json and all entry NAMES stay readable without the password, because the restore blade must show author, creation date, platform version and the module list before a password can be supplied. Only payload data is AES-protected. Worth knowing rather than filing: someone holding the file learns WHICH modules and WHO produced it, but not the data."
     }
   ],
   "tracker": {
