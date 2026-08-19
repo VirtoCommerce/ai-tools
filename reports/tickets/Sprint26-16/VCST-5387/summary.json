@@ -1,0 +1,270 @@
+{
+  "ticket": "VCST-5387",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-08-19",
+  "environment": "https://vcptcore-qa1.govirto.com (backend) / https://vcptcore-qa1-storefront.govirto.com",
+  "build": {
+    "platform": "3.1061.0 (image tag 3.1061.0-pr-3099-829a-vcst-5387-top-level-catalog-assets-829afe69, vc-platform#3099)",
+    "theme": "2.55.0 (release)",
+    "relevant_modules": {
+      "VirtoCommerce.Catalog": "3.1042.0-pr-904-2bfa (vc-module-catalog#904)",
+      "VirtoCommerce.BackupRestore": "3.1004.0-pr-5-2048 (vc-module-backup-restore#5)"
+    }
+  },
+  "agents_dispatched": [],
+  "epic": {
+    "parent": null,
+    "siblings": {
+      "done": [],
+      "in_progress": [],
+      "blocked_dependency": []
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 21,
+    "impl_coverage": {
+      "satisfied": 0,
+      "drift": 0,
+      "contradicts": 0,
+      "not_found": 0
+    },
+    "conditions_total": 21,
+    "conditions_with_evidence": 19,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 90,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "notes": "The story declares NO formal acceptance criteria — only an 'As a / I want / so that' narrative. The de-facto acceptance spec is the assignee's 2026-08-11 comment (final architecture + a 10-step QA procedure), which supersedes the two earlier comments. All 21 atomic conditions are therefore gap-ACs derived from that comment plus the three PR diffs; none is a numbered story AC. Static AC-vs-implementation coverage was not computable because there are no ACs to map."
+  },
+  "total_cases": 21,
+  "passed": 19,
+  "failed": 0,
+  "blocked_cases": 0,
+  "iterations": {
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "blocked"
+  },
+  "new_cases_authored": 21,
+  "new_cases_path": "regression/suites/Backend/import-export/096-catalog-backup-binary-sidecars.csv",
+  "new_cases_manifest_registered": false,
+  "new_cases_manifest_note": "Deliberately left an ORPHAN CSV (suites:lint WARNs, does not fail). Registering id 096 in config/test-suites.json would enrol 21 unexecuted Draft cases into the `full`/`backend` selections and mass-FAIL every other team member's run against an env that lacks the feature. Register at 5g, together with promotion, once the build is deployed and the cases have run.",
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [
+      {
+        "case": "BKRS-001..021",
+        "reason": "Executed by hand-written API scripts, not by the automated regression runner, so they cannot be promoted to Automated. The 10 passing cases now have live observations that should replace their {HYPOTHESIS} assertions with {OBSERVED}; the 11 not-run cases stay Draft."
+      }
+    ],
+    "reverted": [],
+    "next_step": "Ground the 10 executed cases ({HYPOTHESIS} -> {OBSERVED}) and register suite 096 in config/test-suites.json, then promote to Reviewed."
+  },
+  "regression": {
+    "suites": [
+      "095",
+      "062",
+      "064",
+      "049",
+      "078"
+    ],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": "Change-scoped regression not run — this session went into delivery + the feature-specific suite. Suite 095 (Background Jobs) matters most because of F1 and is still outstanding."
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_id": null,
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": [],
+    "skipped_reason": "APPINSIGHTS_APP_ID_* not configured for vcptcore_qa1 (config.js reports the /qa-monitoring feature gate as unmet)."
+  },
+  "screenshots": "reports/tickets/Sprint26-16/VCST-5387/screenshots/",
+  "delivery": {
+    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6389",
+    "merged_at": "2026-08-19T13:28:24Z",
+    "deploy_actions": "Cloud platform deployment + Cloud theme deployment — both success",
+    "landed_confirmed_by": "polled /api/platform/modules until both target versions were live; the deploy Action went green ~2 min before the new build actually served (known rollover lag)",
+    "superseded": "PR #6373 (vcst-qa) — stale pins, never merged; PR #6384 is the separate vcst-qa release baseline"
+  },
+  "fixture": {
+    "catalog": "AGENT-TEST-BKRS5387-Catalog (e7ff036a-d77c-4585-90d4-736caa73e515)",
+    "entities": "category + product + variation, each carrying one image and one file asset",
+    "shared_url": "catalog/AGENT-TEST-BKRS5387/shared-image.png — referenced by BOTH the category and the variation (dedup case); manual.pdf likewise",
+    "external_url": "https://upload.wikimedia.org/.../PNG_transparency_demonstration_1.png on the product",
+    "content": "REAL files (repo bug screenshots 78-224 KB + two real PDFs 611 B / 138 KB). An initial pass used synthetic 77-80 byte stubs; it was redone with real content before the restore test, and every packaging assertion was re-verified against the real sizes.",
+    "left_on_env": true,
+    "cleanup_note": "AGENT-TEST- prefixed, so /qa-seed-data teardown sweeps it. Also left: 4 backup ZIPs in the blobs backups/ folder (0 B, 504 KB, 63 MB, 64 MB).",
+    "largeAssets": [
+      {
+        "name": "large-asset-90mib.bin",
+        "size": 94371840,
+        "sha256": "207b3dd61a4e1be5d3904e7753c54ccd0dd84a51f24e1f3c2e8da20b7cabbe38",
+        "attachedTo": "fixture category (asset)"
+      },
+      {
+        "name": "large-asset-90mib-b.bin",
+        "size": 94371840,
+        "sha256": "ff7a148e9177d78b38599ba669544c95d1246731fcc9cceb0134ec12f0a3bd0f",
+        "attachedTo": "fixture product (asset)"
+      }
+    ],
+    "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
+  },
+  "not_run": 2,
+  "results": {
+    "passed": {
+      "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
+      "BKRS-002": "VirtoCommerce.Catalog.json is a top-level entry, first two bytes 7b22 ({\"), parses as JSON, top keys PropertyGroups/Properties/Catalogs/Categories/Products/... — NOT a nested ZIP. Manifest.json reports HandleBinaryData=true, PartUri=VirtoCommerce.Catalog.json, IsEncrypted=false.",
+      "BKRS-003": "1050 assets/ entries, all readable assets/<sourceUrl> paths preserving folder hierarchy, file names and real extensions. All 6 fixture files present with byte-exact sizes (130718 / 77720 / 611 / 138002 / 223548 / 138420).",
+      "BKRS-004": "ZERO entries match assets/<64-hex>.bin; zero assets/ entries lack a file extension.",
+      "BKRS-005": "1054 binaryDataReference occurrences over 1050 distinct values; ZERO non-null inline binaryData. Bidirectional consistency: 0 dangling refs, 0 orphan entries. JSON is 4.66 MB with binaries vs 4.58 MB without — binaries are not inlined.",
+      "BKRS-006": "shared-image.png -> exactly 1 ZIP entry, 2 references (category + variation). manual.pdf -> 1 entry, 2 references. The 1054-vs-1050 ref delta is exactly these two duplicates.",
+      "BKRS-007": "Structurally confirmed on the image object itself: url and relativeUrl both hold the external absolute URL byte-identical, binaryDataReference is ABSENT, and zero ZIP entries derive from it.",
+      "BKRS-008": "Recorded size+SHA256 of all 6 blobs -> deleted them (DELETE /api/assets -> 204) -> confirmed 6/6 returned HTTP 404 -> restored the backup with binary ON -> 6/6 restored with byte-exact size and SHA256 match. Associations intact: category 2 images + 1 asset, product 2 images (one external) + 1 asset, variation 2 images + 1 asset. EXTENDED: the same round trip was later re-proven on two 90 MiB assets (BKRS-019), so fidelity is confirmed for large binaries too, not only the 611 B - 224 KB fixture files.",
+      "BKRS-009": "After restore both the category and the variation reference the shared relativeUrl, and the single restored blob resolves HTTP 200 at 77720 bytes.",
+      "BKRS-012": "EXPORT half only: with HandleBinaryData=false the package holds exactly 3 entries (PlatformEntries.json, VirtoCommerce.Catalog.json, Manifest.json), 0 assets/ entries, 0 binaryDataReference, plain parseable JSON, 504 KB vs 63 MB. RESTORE HALF ALSO PASSED: with the flag off, restoring left 0/6 blobs recovered. Note this is an absence-based assertion and the env shows read-after-write lag, so it is additionally backed by structure rather than timing: the flag-off package contains exactly 3 entries and zero assets/, so there was physically nothing to restore.",
+      "BKRS-018": "EXPORT bounded memory — MEASURED. Two 90 MiB incompressible assets (deflate ratio 1.0003, compressed size exceeds raw) attached to the fixture category and product on vcptcore-qa1; 5 back-to-back binary exports 18:34:38Z-18:38:15Z pushed 900 MiB of asset bytes and ~1.2 GB of packages, all errors=0. Grafana workload vcptcore-qa1-platform, per-pod: t8h9j 559 MiB before -> 559 MiB after (peak ~563, i.e. +4 MiB); 8chxn 517 -> 516 MiB. No ratchet: buffering would have reached ~1.4-1.5 GiB by run 5. Detection threshold for a single buffered asset is 90 MiB; observed excursion <=5 MiB (~20x margin). The yellow series also fell back (563 -> 553 -> 559), showing the earlier plateau was retained GC heap + page cache, not a leak.",
+      "BKRS-019": "IMPORT bounded memory + large-asset round-trip fidelity — MEASURED. Fresh binary export, both 90 MiB blobs deleted (confirmed 404), then restore 18:43:45Z-18:45:21Z (96 s) streamed 180 MiB back: both blobs restored BYTE-IDENTICAL (2/2 SHA256 match). Grafana identified the executing replica by its footprint: green pod 8chxn rose ~511 -> 544 MiB (+33 MiB) while yellow t8h9j moved +3 MiB. The event is VISIBLE on the graph, so this is a measured magnitude, not an argument from silence. +33 MiB covers BOTH the 180 MiB of streamed assets AND the DB write of 594 entities (21 catalogs, 162 categories, 411 products); the detection threshold is 90 MiB for a single buffered asset and 180 MiB for the batch, so ~3x margin — and part of the 33 MiB is page cache from reading the 241 MiB backup rather than managed heap.",
+      "BKRS-010": "Missing physical asset degrades to a warning, not a module error. Deleted the datasheet.pdf blob while leaving the product asset record in place, then exported: errors=0, module NOT reported as errored, the asset row still exported but with binaryDataReference ABSENT, and no assets/ entry for it. The unobservable half is covered by the PR own unit test DoExportAsync_BlobReadFailure_ReportsErrorAndContinuesWithRemainingFiles, whose body asserts Progress errors EMPTY plus exactly ONE Warning log line naming the missing url and a null BinaryDataReference on that row — i.e. exactly what was observed live. Caveat resolved.",
+      "BKRS-011": "Asset-free catalog. Created AGENT-TEST-BKRS5387-EmptyCatalog + an asset-free category: both exported carrying 0 image/asset rows and contributing no assets/ entries of their own, export errors=0, and the package restored. Caveat: export is module-scoped so an asset-free catalog cannot be exported in isolation.",
+      "BKRS-020": "Outer format unchanged for a non-participating module. Exported VirtoCommerce.Catalog together with VirtoCommerce.Pricing: top level = PlatformEntries.json, VirtoCommerce.Catalog.json, VirtoCommerce.Pricing.json, Manifest.json; the manifest lists Pricing@3.1006.0 with its own PartUri; the Pricing part is plain JSON (UTF-8 BOM then {\", not a PK zip; parses to Pricelists/Assignments/Prices) and carries ZERO binaryDataReference. errors=0. NOTE: an initial REVIEW verdict here was a defect in the check itself — JSON.parse tripped on the BOM, not on the product.",
+      "BKRS-013": "Legacy plain-JSON backup with inline base64 imports. Crafted from qa1 OWN current backup (no cross-env data, no interim build redeployed): inlined base64 binaryData for the fixture rows, dropped binaryDataReference everywhere, emitted a 3-entry package with NO assets/ directory — exactly the pre-change shape. Deleted the fixture blobs, restored: 5 of the 5 blobs that existed came back BYTE-IDENTICAL from the inline base64. NOTE: an initial 5/6 FAIL reading was a defect in the check — datasheet.pdf had been deleted earlier as the premise of BKRS-010 and was never in the fixture at that point; the 6-asset expectation was stale, the product restored everything the backup carried.",
+      "BKRS-016": "Unsafe binaryDataReference values are rejected and nothing escapes the asset root. Seven hostile packages restored one by one; ALL SEVEN rejected with a message naming the offending reference: assets/../evil (invalid), assets/./evil (invalid), assetsevil backslash (invalid), evil-noprefix.txt (invalid), assets/ empty-relative (invalid), a control character (invalid), and the percent-encoded traversal assets/a%2F..%2F..%2F (caught by a SECOND guard — \"does not match destination URL\"). Probed the blob tree afterwards: ZERO stray files written outside the asset root.",
+      "BKRS-014": "Legacy NESTED package with SHA256 assets/<HEX>.bin references imports. Crafted from qa1 own backup: inner package = package.json + catalog.json + assets/<sha256-of-sourceUrl>.bin, wrapped as the VirtoCommerce.Catalog.json part. Deleted the 6 fixture blobs (confirmed 0/6), restored: 6/6 byte-identical, zero errors beyond the pre-existing NFC_ noise. Exercises CatalogPackageFormat.IsLegacyBinaryDataReference.",
+      "BKRS-015": "Legacy NESTED package with readable assets/<sourceUrl> references imports. Same construction with source-path references. 6/6 restored byte-identical, zero errors beyond the pre-existing NFC_ noise."
+    },
+    "not_run": {
+      "BKRS-017": "Guard against silently re-writing a reference that failed earlier in the same export (BackupBinaryDataWriter._failedEntries). NOT reachable through the public API — a blob write cannot be broken mid-stream from outside — and NOT covered by unit tests either: BackupRestoreManagerBinaryDataTests.cs holds only 2 tests (new-contract happy path, legacy single-stream), neither touching the guard. Reported as finding F8, a test-coverage gap.",
+      "BKRS-021": "deprioritised — the BackgroundJobs migration belongs to VCST-5490 (Done), not to this ticket, and its files are no longer in the #904 diff. Regression coverage for it is suite 095 under that ticket."
+    }
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "class": "withdrawn",
+      "severity": "trivial",
+      "provenance": "WITHDRAWN — resolved by an upstream merge",
+      "summary": "WITHDRAWN. Originally recorded as scope creep: commit f0f05112 (2026-08-11, titled \"feat(VCST-5387): use top-level backup assets\") carried VCST-5490 BackgroundJobs files, and at the time of measurement dev did not have them. Re-checked after PR vc-module-catalog#903 (VCST-5490, Task, Done) merged to dev on 2026-08-18 09:19Z: Jobs/*, AutomaticLinksJob.cs, both event handlers, module.ignore and BackgroundJobEnqueueTests.cs are now on BOTH sides and have left the #904 diff entirely. The author had simply pulled in a dependency his branch needed before it merged.",
+      "remaining": "Only CatalogModuleCategoriesController.cs still differs, and that diff is WHITESPACE-ONLY (+4/-4, identical text). A review nit at most — revert it to keep the diff clean. Not worth a tracker comment.",
+      "lesson": "The original claim rested on a dev snapshot taken before #903 merged. A cross-PR scope claim must be re-verified against dev at reporting time, not at analysis time."
+    },
+    {
+      "id": "F2",
+      "class": "deployability-risk",
+      "severity": "medium",
+      "provenance": "CLEARED",
+      "summary": "Catalog module.manifest declares platformVersion 3.1059.0-alpha.13363-vcst-5387-top-level-catalog-assets, a prerelease-specific string, while the deployed Platform reports 3.1061.0.",
+      "status": "CLEARED by BKRS-001 — both modules load with isInstalled=true and empty validationErrors against Platform 3.1061.0."
+    },
+    {
+      "id": "F3",
+      "class": "round-trip-asymmetry",
+      "severity": "medium",
+      "provenance": "PRE-EXISTING (out of scope)",
+      "summary": "The restore finished 'completed with errors': product 553fca2a3398488eba68f8138d865916 was SKIPPED because its property name 'NFC_' fails the platform's property-name validator (a trailing underscore). The export writes that product happily; the import refuses it. So this environment holds catalog data that cannot round-trip through its own backup.",
+      "impact": "Any full-catalog restore on this env reports 'Imported VirtoCommerce.Catalog with 1 error(s)' and silently drops that product. Root cause is invalid data that predates the validator, not VCST-5387 — the export path simply does not validate what the import path does.",
+      "recommend": "File separately against the Catalog module (export-side validation or import-side tolerance); fix the NFC_ property name on the env."
+    },
+    {
+      "id": "F4",
+      "class": "error-handling",
+      "severity": "low",
+      "provenance": "PRE-EXISTING (out of scope)",
+      "summary": "Omitting exportManifest from POST /api/platform/export makes the backup job fail with a bare 'Object reference not set to an instance of an object.' instead of a validation error naming the missing field.",
+      "verified": "Reproduced identically on the control environment vcst-qa, which runs RELEASE BackupRestore 3.1003.0 with none of the VCST-5387 builds — so it is not introduced by this ticket. Also reproduced for a different module (VirtoCommerce.Store), i.e. it is not Catalog-specific.",
+      "note": "This control pairing is what stopped a false P0 being filed against VCST-5387 when the first export attempts failed."
+    },
+    {
+      "id": "F5",
+      "class": "test-defect",
+      "severity": "low",
+      "provenance": "PRE-EXISTING (out of scope)",
+      "summary": "npm run td:validate exits 1 on the untouched baseline: regression/suites/Backend/ucp/094-ucp-observability.csv uses malformed @td(STORE_PRIMARY) and @td(PROD_DEFAULT) (the resolver needs ALIAS.field). Verified by removing suite 096 and re-running: still exit 1.",
+      "recommend": "/qa-review-tests file regression/suites/Backend/ucp/094-ucp-observability.csv --fix"
+    },
+    {
+      "id": "F6",
+      "class": "housekeeping",
+      "severity": "low",
+      "provenance": "PRE-EXISTING (out of scope)",
+      "summary": "A failed export leaves a 0-byte artifact in the blobs backups/ folder that nothing cleans up. Four such files (vc_backup_20260819133952/134054/134100/134130) were left by the missing-exportManifest failures of F4."
+    },
+    {
+      "id": "F7",
+      "class": "test-naming",
+      "severity": "trivial",
+      "provenance": "IN-SCOPE (review nit)",
+      "summary": "Unit test DoExportAsync_BlobReadFailure_ReportsErrorAndContinuesWithRemainingFiles asserts the OPPOSITE of its name: its body requires Progress errors to be EMPTY and exactly one Warning to be logged. The implemented behaviour (and the ticket contract) is warn-and-continue, not report-an-error.",
+      "impact": "A reader taking the contract from the test name would conclude a missing asset surfaces as an export error, which is not what the code does and not what the ticket promises.",
+      "recommend": "rename to something like DoExportAsync_BlobReadFailure_WarnsAndContinuesWithRemainingFiles"
+    },
+    {
+      "id": "F8",
+      "class": "test-coverage-gap",
+      "severity": "low",
+      "provenance": "IN-SCOPE (review nit)",
+      "summary": "The BackupRestore repo carries only 2 unit tests for the whole binary-sidecar feature (ExportAndImportAsync_BinaryDataModule_UsesReadableModuleEntryAndTopLevelAssets, ExportAsync_WithoutBinaryData_UsesLegacySingleStreamContract), both happy-path. Its negative branches are untested: the _failedEntries guard in BackupBinaryDataWriter (a reference that failed once must not be silently rewritten with different content) and BinaryDataEntryPath.Validate.",
+      "note": "Path validation and dedup were confirmed live instead (BKRS-016, BKRS-006). The _failedEntries guard is the one branch confirmed neither by test nor by live run.",
+      "recommend": "add a unit test asserting the second WriteAsync for a previously failed reference throws InvalidDataException"
+    }
+  ],
+  "instrumentation": {
+    "tool": "Grafana, Kubernetes workload vcptcore-qa1-platform, Memory Usage panel, per-pod series",
+    "why_per_pod": "two replicas — a deployment average would halve any spike and hide it",
+    "pod_limits": "4 GiB limit / 2 GiB requests at ~520-560 MiB usage, so ~3.5 GiB headroom: buffering 180-240 MB would NOT have caused an OOM. Container restart is therefore not a valid detector; only the graph delta is.",
+    "resolution_caveat": "A single export lasts only ~30 s, which at ~1 min sampling could fall between samples. That is why the decisive run was a 3.5-minute sustained series rather than one export — a flat series cannot be dismissed as a missed peak.",
+    "metric_caveat": "container working set, not managed heap. Sufficient for a negative result: a 90 MiB managed array cannot be allocated without raising RSS. A dotnet GC-heap metric would be sharper if the OpenTelemetry module exports one.",
+    "noise_floor": "~10-15 MiB, calibrated from two 90 MiB asset uploads which moved the pods by only +13 and +11 MiB."
+  },
+  "observations": [
+    {
+      "id": "O1",
+      "summary": "The nested-package reader enforces entry.CompressedLength == entry.Length and rejects anything else with \"uses unsupported compression\". Confirmed inadvertently on the live env: two crafted packages built with deflate-level-0 inner entries were refused before any catalog data was saved. Not a planned case — a by-product of getting the packaging wrong twice — but it does show the zip-bomb guard firing outside its unit test (DoImportAsync_CompressedInnerEntry_RejectsPackageBeforeSaving)."
+    },
+    {
+      "id": "O2",
+      "summary": "The qa1 asset store is read-after-write / read-after-delete lagged: blobs verified present were reported 404 moments later and vice versa, and one restore pass needed a second attempt before all six read back. Lag produces false NEGATIVES, so it cannot inflate a positive result; absence-based assertions were therefore backed by package structure as well."
+    }
+  ],
+  "tracker": {
+    "comment_posted": "2026-08-19T23:03Z",
+    "comment_id": "106767",
+    "comment_style": "documentation-first (what the feature does), verification folded into a closing section — rewritten from the original QA-report shape at the operator request",
+    "omitted_at_operator_request": "the not-executed list, the three review notes, and the test-case path were removed before posting; the case count was dropped with them so no unanswered \"which two?\" remained",
+    "status_change": "Testing -> Tested via transition \"Finish test\" (id 8, target status id 10280) at 2026-08-19; transition discovered live and selected by TARGET status, not by transition name — the adjacent \"Cancelled\" transition (id 19) lands in the Done category and would have been the wrong pick",
+    "related_filed": "VCST-5756 (0-byte artifact from a failed backup, assigned to Oleg Zhuk)",
+    "deliberately_not_filed": "two pre-existing platform defects (round-trip validation asymmetry, NRE instead of validation on a missing exportManifest) — operator decision"
+  }
+}
