@@ -60,7 +60,7 @@
     "max_rounds": 2,
     "outcome": "blocked"
   },
-  "new_cases_authored": 49,
+  "new_cases_authored": 74,
   "new_cases_path": "regression/suites/Backend/import-export/096-backup-restore.csv",
   "new_cases_manifest_registered": false,
   "new_cases_manifest_note": "Deliberately left an ORPHAN CSV (suites:lint WARNs, does not fail). Registering id 096 in config/test-suites.json would enrol 21 unexecuted Draft cases into the `full`/`backend` selections and mass-FAIL every other team member's run against an env that lacks the feature. Register at 5g, together with promotion, once the build is deployed and the cases have run.",
@@ -260,11 +260,12 @@
     {
       "id": "F11",
       "class": "coverage-gap",
-      "severity": "medium",
-      "provenance": "SUITE GAP (own work)",
+      "severity": "closed",
+      "provenance": "CLOSED — per-module cases added",
       "summary": "Suite 096 covers per-module backup/restore for only 2 of the 25 modules the platform declares exportable: Catalog (deeply, because the ticket changed it) and Pricing (only as a non-participating shape check). The other 23 have no round-trip coverage at all: Core, Seo, SqlQueries, ImageTools, Notifications, Store, Content, Customer, Payment, Shipping, Tax, CatalogPersonalization, Inventory, Pages, Sitemaps, Contracts, News, Orders, PageBuilderModule, Marketing, Subscription, DynamicAssociationsModule, Quote.",
       "impact": "The module promises to package \"the data of all installed modules\". A per-module round trip is the core functional promise, and it is verified for one module out of 25. Entity coverage WITHIN Catalog is fine (category, product, variation, each with an image and a file asset).",
-      "recommend": "Add a per-module round-trip case (or a table-driven case over the manifest/new list) so each exportable module is exercised; failure isolation argues for one case per module."
+      "recommend": "Add a per-module round-trip case (or a table-driven case over the manifest/new list) so each exportable module is exercised; failure isolation argues for one case per module.",
+      "status": "CLOSED. 25 per-module round-trip cases added, one per exportable module. Entity collections were taken from a REAL archive (all 25 modules exported, 29 MB, errors=0) rather than guessed, so each case names what its module actually carries — e.g. Pricing: Pricelists/Assignments/Prices; Marketing: Promotions/DynamicContent*/Coupons/Usages; Inventory: FulfillmentCenters/Inventories. Two modules hold no data on this environment (SqlQueries, Contracts) and their cases carry a precondition demanding seeded data instead of pretending to be self-sufficient."
     },
     {
       "id": "F12",
@@ -296,6 +297,10 @@
     {
       "id": "O3",
       "summary": "An encrypted backup exposes its envelope on purpose: Manifest.json and all entry NAMES stay readable without the password, because the restore blade must show author, creation date, platform version and the module list before a password can be supplied. Only payload data is AES-protected. Worth knowing rather than filing: someone holding the file learns WHICH modules and WHO produced it, but not the data."
+    },
+    {
+      "id": "O4",
+      "summary": "The all-module export is dominated by one part: VirtoCommerce.PageBuilderModule.json is 37 MB for only 5 pages, against 4.6 MB for 411 products in Catalog. Not a defect in scope here, but it means a full backup size is driven by Page Builder rather than by catalog volume, which matters for the 100 MB upload cap on restore."
     }
   ],
   "tracker": {
@@ -317,8 +322,9 @@
     "scope": "Suite 096 was widened from the VCST-5387 slice to full VirtoCommerce.BackupRestore module coverage after the operator asked for it.",
     "why": "A content-level search proved the corpus had ZERO backup/restore coverage — a disaster-recovery feature that regression had never exercised.",
     "sources": "module.manifest + module source (controllers, ModuleConstants, BackupBlobUrl, PlatformImportExportRequest), the shipped en localization (real UI labels and the full error taxonomy), and the public user guide.",
-    "totals": "49 cases / 23 areas; 19 Reviewed (executed live), 30 Draft (28 newly authored + BKRS-017/021 which cannot be run).",
+    "totals": "74 cases; 22 Reviewed (executed live), 52 Draft. 25 areas plus one per-module round-trip area.",
     "new_areas": "module presence + Assets dependency; all six permissions and their independence; platform-entry flag matrix; module selection; AES-256 password protection incl. shown-once and wrong-password refusal; security-data warnings on both sides incl. admin-account exemption; live progress and job cancellation; shared storage listing and multi-instance readability; download path-traversal rejection; restore metadata; corrupt/foreign archive handling; upload-failure taxonomy; sample data discover/import/state; platform-entries round trip; documentation drift.",
-    "registration": "Still unregistered in config/test-suites.json. The VCST-5387 cases need the three open PR builds, so registering today would fail every run. A large part of the suite tests already-shipped behaviour and could be registered now if the suite is split — offered to the operator, undecided."
+    "registration": "Still unregistered in config/test-suites.json. The VCST-5387 cases need the three open PR builds, so registering today would fail every run. A large part of the suite tests already-shipped behaviour and could be registered now if the suite is split — offered to the operator, undecided.",
+    "per_module": "One round-trip case per exportable module (25), entity collections observed from a real all-module export on 2026-08-19: Core Currencies; Seo BrokenLinks/RedirectRules; SqlQueries (empty); ImageTools Options/Tasks; Notifications Notifications; Store Stores; Catalog Properties/PropertyDictionaryItems/Catalogs/Categories/Products/ProductConfigurations/Measures; Content MenuLinkLists; Customer Members; Payment PaymentMethods; Shipping ShippingMethods/PickupLocations; Tax TaxProviders; CatalogPersonalization TaggedItems; Inventory FulfillmentCenters/Inventories; Pages Pages; Pricing Pricelists/Assignments/Prices; Sitemaps Sitemaps/SitemapItems; Contracts (empty); News NewsArticles; Orders CustomerOrders; PageBuilder PageBuilderPages; Marketing Promotions/DynamicContentFolders/Items/Places/Publications/Coupons/Usages; Subscription PaymentPlans/Subscriptions; DynamicAssociations DynamicAssociations."
   }
 }
