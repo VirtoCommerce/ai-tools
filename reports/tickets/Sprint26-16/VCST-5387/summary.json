@@ -51,7 +51,7 @@
     "notes": "The story declares NO formal acceptance criteria — only an 'As a / I want / so that' narrative. The de-facto acceptance spec is the assignee's 2026-08-11 comment (final architecture + a 10-step QA procedure), which supersedes the two earlier comments. All 21 atomic conditions are therefore gap-ACs derived from that comment plus the three PR diffs; none is a numbered story AC. Static AC-vs-implementation coverage was not computable because there are no ACs to map."
   },
   "total_cases": 21,
-  "passed": 34,
+  "passed": 43,
   "failed": 0,
   "blocked_cases": 0,
   "iterations": {
@@ -60,7 +60,7 @@
     "max_rounds": 2,
     "outcome": "blocked"
   },
-  "new_cases_authored": 75,
+  "new_cases_authored": 76,
   "new_cases_path": "regression/suites/Backend/import-export/096-backup-restore.csv",
   "new_cases_manifest_registered": false,
   "new_cases_manifest_note": "Deliberately left an ORPHAN CSV (suites:lint WARNs, does not fail). Registering id 096 in config/test-suites.json would enrol 21 unexecuted Draft cases into the `full`/`backend` selections and mass-FAIL every other team member's run against an env that lacks the feature. Register at 5g, together with promotion, once the build is deployed and the cases have run.",
@@ -144,7 +144,7 @@
     ],
     "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
   },
-  "not_run": 41,
+  "not_run": 33,
   "results": {
     "passed": {
       "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
@@ -286,6 +286,29 @@
       "summary": "The 25 per-module cases originally told the runner to \"confirm the module is listed as exportable\" with no outcome defined for the case where it is not. On an environment with a trimmed module set that reads as 25 FAILs for a reason that is not a defect — the exact false-failure class that erodes trust in a regression corpus.",
       "fix": "Added the repo established [PRECHECK] gate (suite 017 idiom) as step 1 of every per-module case: GET /api/platform/modules, and if the module is absent BLOCK the case as an environment gap rather than failing it. Step 2 now separately asserts the other half — a module that IS installed but missing from the export manifest has silently lost its export contract, and that IS a defect. Both outcomes are stated in Failure_Signals so the runner cannot conflate them.",
       "note": "Relevant in practice: vcptcore_regression is recorded as running with many modules absent, so without this gate the suite would have produced false failures there on its first run."
+    },
+    {
+      "id": "F14",
+      "severity": "S3",
+      "title": "A cancelled backup is presented as \"Backup finished\" and offers its partial archive for download",
+      "detail": "Cancelling a Select-all run produced the same header wording as a success, a Download backup link, and a real 93 MB archive holding 6 platform sections + 6 of 26 modules while 20 were error rows. Only the footer \"Completed with errors\" differs, and it reads as a failure rather than an operator cancel. The per-module errors do say \"The operation was canceled.\" but only after expanding a row.",
+      "covered_by": "BKRS-076",
+      "evidence": "screenshots/BKRS-036-cancel-reads-as-finished.png"
+    },
+    {
+      "id": "F15",
+      "severity": "S3",
+      "title": "Internal server path leaked to the admin UI and the API on a missing-backup error",
+      "detail": "Restoring a backup deleted out of band surfaces the raw .NET message \"Could not find file '/opt/virtocommerce/platform/wwwroot/cms-content/assets/backups/<name>.zip'.\" in the admin blade; export/manifest/load returns the same path in a 500 body. The refusal itself is correct — nothing is written.",
+      "covered_by": "BKRS-042",
+      "evidence": "screenshots/BKRS-042-raw-path-leak.png"
+    },
+    {
+      "id": "F16",
+      "severity": "S3",
+      "title": "Three untranslated localization keys in the module picker",
+      "detail": "The backup and restore module lists render raw resource keys instead of descriptions for module.VirtoCommerce.DynamicAssociationsModule.description, module.VirtoCommerce.News.description and module.VirtoCommerce.Seo.description.",
+      "covered_by": "BKRS-028"
     }
   ],
   "instrumentation": {
@@ -333,6 +356,19 @@
       "by_design": true,
       "why_it_matters": "A backup taken with Settings ticked but no modules selected carries no settings at all — easy to read as a defect, and easy to rely on by mistake.",
       "covered_by": "BKRS-027"
+    },
+    {
+      "id": "O8",
+      "title": "Encryption is on by default in the UI and the password is shown exactly once",
+      "evidence": "A backup started without touching the \"Encrypt with password\" row produced a generated one-time password displayed with a copy button, matching PasswordProtect defaulting to true in the request contract.",
+      "why_it_matters": "An operator who leaves the blade without copying it cannot open that archive.",
+      "covered_by": "BKRS-033"
+    },
+    {
+      "id": "O9",
+      "title": "\"Backup storage\" opens the generic Asset management blade",
+      "evidence": "The entry described as \"Review and clean up backup files in storage\" opens the standard asset manager scoped to backups/, so it also offers New folder and Upload; an upload made there bypasses the Restore blade validation.",
+      "covered_by": "BKRS-039"
     }
   ],
   "tracker": {
@@ -389,12 +425,32 @@
         "BKRS-042"
       ],
       "note": "BKRS-040/042/043 were initially mis-scoped as API cases; they are [ADMIN] and assert blade wording, so only their API half could be taken here. 043 was not run at all."
+    },
+    "browser_cases": {
+      "executed": [
+        "BKRS-023 PASS",
+        "BKRS-033 PASS",
+        "BKRS-034 PASS (warning half)",
+        "BKRS-035 PASS",
+        "BKRS-036 PASS",
+        "BKRS-039 PASS",
+        "BKRS-040 PASS"
+      ],
+      "corrected": [
+        "BKRS-042 — the specific \"no longer in storage\" message it asserted does not exist; authored from inference, now corrected to the observed generic Import error"
+      ],
+      "not_run": [
+        "BKRS-043 (needs a real >100 MB upload through the blade)",
+        "BKRS-049 (needs the published docs open beside the UI)"
+      ],
+      "lane": "Chromium admin SPA on vcptcore-qa1"
     }
   },
   "instrument_lessons": [
     "The archive Manifest.json and PlatformEntries.json use PascalCase; the platform API returns camelCase for the same fields. Reading camelCase off the archive made a complete manifest look empty and produced two false REVIEWs (BKRS-027, BKRS-028).",
     "DELETE /api/assets takes ?urls= as a query parameter. A JSON body returns 400, so a delete that looked done had not happened.",
     "POST /api/platform/settings with value:null returns 204 but does NOT clear an override — value:\"\" clears it. This nearly left a setting override behind on the environment.",
-    "The asset listing on this environment is read-after-write lagged: a file deleted with 204 can still appear in an immediate re-list."
+    "The asset listing on this environment is read-after-write lagged: a file deleted with 204 can still appear in an immediate re-list.",
+    "On the restore blade the Security checkbox is pre-ticked when the archive contains Security, so the first click UNTICKS it. Clicking once and reading an absent warning would have produced a false \"no warning shown\" finding — the state has to be re-checked after the click."
   ]
 }
