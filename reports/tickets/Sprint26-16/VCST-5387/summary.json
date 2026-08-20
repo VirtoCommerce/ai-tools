@@ -51,7 +51,7 @@
     "notes": "The story declares NO formal acceptance criteria — only an 'As a / I want / so that' narrative. The de-facto acceptance spec is the assignee's 2026-08-11 comment (final architecture + a 10-step QA procedure), which supersedes the two earlier comments. All 21 atomic conditions are therefore gap-ACs derived from that comment plus the three PR diffs; none is a numbered story AC. Static AC-vs-implementation coverage was not computable because there are no ACs to map."
   },
   "total_cases": 21,
-  "passed": 31,
+  "passed": 34,
   "failed": 0,
   "blocked_cases": 0,
   "iterations": {
@@ -144,7 +144,7 @@
     ],
     "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
   },
-  "not_run": 44,
+  "not_run": 41,
   "results": {
     "passed": {
       "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
@@ -325,6 +325,14 @@
       "source": "vc-module-backup-restore BackupRestoreController — guarded by if (pushNotification.Errors.Count == 0), with a comment stating the backup is kept on ANY error so the operator can retry without re-uploading",
       "residual_note": "The rationale in the code speaks of \"the uploaded backup\". The Restore blade also offers backups already sitting in storage, including export-produced retention copies — consuming one of those after a single clean restore is a different proposition from consuming a file the operator just uploaded for that restore. Worth documenting, or worth scoping the delete to uploads only. Not filed as a defect.",
       "covered_by": "BKRS-075"
+    },
+    {
+      "id": "O7",
+      "title": "The Settings export section is scoped to the module selection",
+      "evidence": "handleSettings=true with an empty module list yields PlatformEntries.Settings=0 even with 69 overridden settings present; the same flag with VirtoCommerce.Catalog selected yields Settings=11. Settings live in PlatformEntries.json, never inside the module part.",
+      "by_design": true,
+      "why_it_matters": "A backup taken with Settings ticked but no modules selected carries no settings at all — easy to read as a defect, and easy to rely on by mistake.",
+      "covered_by": "BKRS-027"
     }
   ],
   "tracker": {
@@ -369,6 +377,24 @@
       "marketing": "PASS (promotion)",
       "customer": "PASS — verified BY ID; /api/members/search is ElasticSearch-backed and did not return the restored contact, so the first search-based verdict was a false negative from index lag",
       "quirk": "a deleted member reads as HTTP 200 with a null body, not 404"
+    },
+    "api_cases": {
+      "executed": [
+        "BKRS-022 PASS",
+        "BKRS-027 PASS",
+        "BKRS-028 PASS"
+      ],
+      "api_half_only": [
+        "BKRS-040",
+        "BKRS-042"
+      ],
+      "note": "BKRS-040/042/043 were initially mis-scoped as API cases; they are [ADMIN] and assert blade wording, so only their API half could be taken here. 043 was not run at all."
     }
-  }
+  },
+  "instrument_lessons": [
+    "The archive Manifest.json and PlatformEntries.json use PascalCase; the platform API returns camelCase for the same fields. Reading camelCase off the archive made a complete manifest look empty and produced two false REVIEWs (BKRS-027, BKRS-028).",
+    "DELETE /api/assets takes ?urls= as a query parameter. A JSON body returns 400, so a delete that looked done had not happened.",
+    "POST /api/platform/settings with value:null returns 204 but does NOT clear an override — value:\"\" clears it. This nearly left a setting override behind on the environment.",
+    "The asset listing on this environment is read-after-write lagged: a file deleted with 204 can still appear in an immediate re-list."
+  ]
 }
