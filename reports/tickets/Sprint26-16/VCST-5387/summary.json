@@ -51,7 +51,7 @@
     "notes": "The story declares NO formal acceptance criteria — only an 'As a / I want / so that' narrative. The de-facto acceptance spec is the assignee's 2026-08-11 comment (final architecture + a 10-step QA procedure), which supersedes the two earlier comments. All 21 atomic conditions are therefore gap-ACs derived from that comment plus the three PR diffs; none is a numbered story AC. Static AC-vs-implementation coverage was not computable because there are no ACs to map."
   },
   "total_cases": 21,
-  "passed": 47,
+  "passed": 55,
   "failed": 0,
   "blocked_cases": 0,
   "iterations": {
@@ -144,7 +144,7 @@
     ],
     "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
   },
-  "not_run": 28,
+  "not_run": 20,
   "results": {
     "passed": {
       "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
@@ -318,6 +318,13 @@
       "detail": "Exporting VirtoCommerce.Notifications produces a part with a single collection, Notifications (29 records). A layout created via POST /api/notification-layouts — a real user-editable entity carrying name, template, isDefault and isPredefined, with a documented \"reset a customized layout back to its predefined\" operation, so customization is an expected workflow — does not appear anywhere in the part by id. A restore therefore cannot bring it back, and a customized layout is silently lost when a platform is rebuilt from a backup.",
       "verified": "Created a layout, exported the module alone, searched the part for its id: absent. Confirmed twice, on separate runs.",
       "covered_by": "BKRS-054 (records the gap; kept Draft because the notification round trip itself is still unexecuted)"
+    },
+    {
+      "id": "F18",
+      "severity": "S3",
+      "title": "Client input errors return HTTP 500 with a raw exception instead of 400",
+      "detail": "A create missing a required field returns 500 carrying a raw SqlException that names the database and table (vcptcore-qa1-platform_vcptcore.dbo.SqlQuery); a FluentValidation failure returns 500 with the validator dump; a malformed or missing backup returns 500 rather than 400/404. The validation text is present and useful, but the status code says server fault and the body leaks schema detail. Same disclosure class as F15, observed across /api/sql-queries, /api/seo/redirect-rules and export/manifest/load.",
+      "covered_by": "BKRS-052 (records the SqlQueries instance); BKRS-041 already noted the manifest/load instance"
     }
   ],
   "instrumentation": {
@@ -477,6 +484,31 @@
         "/api/notifications is a SEARCH endpoint, not a create — the creatable entity is /api/notification-layouts (that is why the first probe saw \"200 but no id\")",
         "Subscription has a simple standalone entity at /api/subscriptions/plans"
       ]
+    },
+    "round_trip_batch4": {
+      "method": "One full backup of all 25 modules was taken and READ first, and it became the map: it states each module exported collection names and the field names of a real record. That replaced the guess-probe-fail loop entirely.",
+      "executed_create_delete_restore": [
+        "BKRS-050 Core PASS",
+        "BKRS-052 SqlQueries PASS",
+        "BKRS-051 Seo PASS",
+        "BKRS-057 Content PASS",
+        "BKRS-060 Shipping PASS"
+      ],
+      "executed_mutate_restore": [
+        "BKRS-062 CatalogPersonalization PASS",
+        "BKRS-061 Tax PASS",
+        "BKRS-059 Payment PASS"
+      ],
+      "why_mutate": "Payment, Tax and CatalogPersonalization carry records in the backup but expose no create API — their providers/items are registered in code. Mutate-and-restore is the only shape available, and it proves restore FIDELITY (a changed field is put back), which create-delete-restore does not. Every mutated record was returned to its original value and re-read to confirm.",
+      "map_corrections": [
+        "Seo exports RedirectRules, not SeoRedirectRules",
+        "the SqlQuery model field is query, not sqlQuery, and connectionStringName is NOT NULL",
+        "Core currencies live at /api/currencies and delete by ?codes=",
+        "Content menus at /api/cms/{storeId}/menu, delete by ?listIds=",
+        "Shipping pickup locations delete at /{storeId}/{id}",
+        "VirtoCommerce.Pages.json is the only part using PascalCase field names (Id, StoreId, Permalink, Title) — every other part is camelCase",
+        "PageBuilderPages records carry no id field at all, only name/permalink/storeId"
+      ]
     }
   },
   "instrument_lessons": [
@@ -486,7 +518,8 @@
     "The asset listing on this environment is read-after-write lagged: a file deleted with 204 can still appear in an immediate re-list.",
     "On the restore blade the Security checkbox is pre-ticked when the archive contains Security, so the first click UNTICKS it. Clicking once and reading an absent warning would have produced a false \"no warning shown\" finding — the state has to be re-checked after the click.",
     "A subscription payment plan has NO name field (only interval, intervalCount, trialPeriodDays, audit fields, id). Filtering the export by name reported it absent and produced a false \"not exported\" verdict — the entity has to be verified by id.",
-    "Guessing REST create routes wasted a probe round: 6 of 15 modules answered 404/405 to invented paths. The per-module Swagger document (/docs/<ModuleId>/swagger.json) is authoritative and should be the first step, not the fallback."
+    "Guessing REST create routes wasted a probe round: 6 of 15 modules answered 404/405 to invented paths. The per-module Swagger document (/docs/<ModuleId>/swagger.json) is authoritative and should be the first step, not the fallback.",
+    "Take a backup and READ it before designing any round trip. The archive is the authoritative statement of what a module exports and what its fields are called; four false SCOPE verdicts came from guessing collection and field names instead."
   ],
   "corrections": [
     {
@@ -494,6 +527,11 @@
       "was": "\"Needs a disposable environment — the mutating half rewrites the whole module part on a shared environment.\"",
       "actually": "That reason applies to at most three cases (BKRS-047 platform entries, BKRS-048 second instance, the behavioural half of BKRS-034). For the per-module round trips the same risk was already accepted for Pricing, Marketing and Customer, so it cannot be the blocker. A wider probe of 15 modules found: 2 immediately seedable and now executed (Contracts, ImageTools); 6 returning 404/405 because the create ROUTE was guessed wrong; 2 returning 400/500 on validation because the PAYLOAD was incomplete (Orders wants CustomerName, News fails FluentValidation); 3 crashing with EF/NullReference on an incomplete payload (Store, Quote, Subscription); 2 creating successfully but echoing no id (Sitemaps, Notifications). Only Payment, Tax and Shipping genuinely have no record to create — their providers are registered in code.",
       "conclusion": "These were unexecuted because the routes and payloads had not been worked out, not because the environment forbids it. Ordinary remaining work, not a blocker."
+    },
+    {
+      "what": "Four SCOPE verdicts in this session were my own matching bugs, not export gaps",
+      "detail": "A subscription payment plan filtered by a name field it does not have; the Seo collection matched as SeoRedirectRules instead of RedirectRules; Payment and Tax targeted by an isActive heuristic that selected the one provider with no store binding and a null id, which cannot be in an export by definition. Each looked like the product failing to export something.",
+      "conclusion": "Reading the archive first removes the whole class: it names the collections and the fields, so there is nothing left to guess. This is now the documented first step."
     }
   ]
 }
