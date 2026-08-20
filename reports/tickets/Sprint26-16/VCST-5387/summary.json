@@ -51,7 +51,7 @@
     "notes": "The story declares NO formal acceptance criteria — only an 'As a / I want / so that' narrative. The de-facto acceptance spec is the assignee's 2026-08-11 comment (final architecture + a 10-step QA procedure), which supersedes the two earlier comments. All 21 atomic conditions are therefore gap-ACs derived from that comment plus the three PR diffs; none is a numbered story AC. Static AC-vs-implementation coverage was not computable because there are no ACs to map."
   },
   "total_cases": 21,
-  "passed": 42,
+  "passed": 44,
   "failed": 0,
   "blocked_cases": 0,
   "iterations": {
@@ -144,7 +144,7 @@
     ],
     "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
   },
-  "not_run": 33,
+  "not_run": 31,
   "results": {
     "passed": {
       "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
@@ -448,6 +448,13 @@
       "at_risk_same_class": [
         "BKRS-043 asserts per-cause upload-failure wording (\"no server response\", \"a stalled transfer\", \"a gateway timeout\"...) that was also inferred, not observed. It has never been run, so the invention has not been exposed. Either observe the real messages before running it or retire it too."
       ]
+    },
+    "round_trip_batch2": {
+      "executed": [
+        "BKRS-067 Contracts PASS",
+        "BKRS-053 ImageTools PASS"
+      ],
+      "note": "Same technique as the first three; nothing pre-existing deleted."
     }
   },
   "instrument_lessons": [
@@ -456,5 +463,13 @@
     "POST /api/platform/settings with value:null returns 204 but does NOT clear an override — value:\"\" clears it. This nearly left a setting override behind on the environment.",
     "The asset listing on this environment is read-after-write lagged: a file deleted with 204 can still appear in an immediate re-list.",
     "On the restore blade the Security checkbox is pre-ticked when the archive contains Security, so the first click UNTICKS it. Clicking once and reading an absent warning would have produced a false \"no warning shown\" finding — the state has to be re-checked after the click."
+  ],
+  "corrections": [
+    {
+      "what": "The reason recorded for the 22 unexecuted per-module round trips was wrong",
+      "was": "\"Needs a disposable environment — the mutating half rewrites the whole module part on a shared environment.\"",
+      "actually": "That reason applies to at most three cases (BKRS-047 platform entries, BKRS-048 second instance, the behavioural half of BKRS-034). For the per-module round trips the same risk was already accepted for Pricing, Marketing and Customer, so it cannot be the blocker. A wider probe of 15 modules found: 2 immediately seedable and now executed (Contracts, ImageTools); 6 returning 404/405 because the create ROUTE was guessed wrong; 2 returning 400/500 on validation because the PAYLOAD was incomplete (Orders wants CustomerName, News fails FluentValidation); 3 crashing with EF/NullReference on an incomplete payload (Store, Quote, Subscription); 2 creating successfully but echoing no id (Sitemaps, Notifications). Only Payment, Tax and Shipping genuinely have no record to create — their providers are registered in code.",
+      "conclusion": "These were unexecuted because the routes and payloads had not been worked out, not because the environment forbids it. Ordinary remaining work, not a blocker."
+    }
   ]
 }
