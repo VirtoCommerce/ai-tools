@@ -51,7 +51,7 @@
     "notes": "The story declares NO formal acceptance criteria — only an 'As a / I want / so that' narrative. The de-facto acceptance spec is the assignee's 2026-08-11 comment (final architecture + a 10-step QA procedure), which supersedes the two earlier comments. All 21 atomic conditions are therefore gap-ACs derived from that comment plus the three PR diffs; none is a numbered story AC. Static AC-vs-implementation coverage was not computable because there are no ACs to map."
   },
   "total_cases": 21,
-  "passed": 44,
+  "passed": 47,
   "failed": 0,
   "blocked_cases": 0,
   "iterations": {
@@ -144,7 +144,7 @@
     ],
     "largeAssetNote": "Deliberately split across two DIFFERENT entities, not stacked on one: that is what exercises the ticket's \"memory scaled with asset size AND batch size\" claim, i.e. whether memory is released between entities. Incompressible on purpose so the ZIP cannot shrink them. 200 MiB was prepared too but cannot be uploaded: Cloudflare caps the request body at 100 MB (413), and 90 MiB is the largest that passes — measured."
   },
-  "not_run": 31,
+  "not_run": 28,
   "results": {
     "passed": {
       "BKRS-001": "Catalog 3.1042.0-pr-904-2bfa + BackupRestore 3.1004.0-pr-5-2048 both isInstalled=true, errors=[] validationErrors=[]; 91 modules, none broken. Both declare platformVersion 3.1059.0-alpha.13363-vcst-5387-... yet load against deployed Platform 3.1061.0 — the F2 deployability risk is CLEARED.",
@@ -310,6 +310,14 @@
       "title": "Three untranslated localization keys in the module picker",
       "detail": "The backup and restore module lists render raw resource keys instead of descriptions for module.VirtoCommerce.DynamicAssociationsModule.description, module.VirtoCommerce.News.description and module.VirtoCommerce.Seo.description.",
       "covered_by": "BKRS-028"
+    },
+    {
+      "id": "F17",
+      "severity": "S2",
+      "title": "Notification layouts are not included in a backup",
+      "detail": "Exporting VirtoCommerce.Notifications produces a part with a single collection, Notifications (29 records). A layout created via POST /api/notification-layouts — a real user-editable entity carrying name, template, isDefault and isPredefined, with a documented \"reset a customized layout back to its predefined\" operation, so customization is an expected workflow — does not appear anywhere in the part by id. A restore therefore cannot bring it back, and a customized layout is silently lost when a platform is rebuilt from a backup.",
+      "verified": "Created a layout, exported the module alone, searched the part for its id: absent. Confirmed twice, on separate runs.",
+      "covered_by": "BKRS-054 (records the gap; kept Draft because the notification round trip itself is still unexecuted)"
     }
   ],
   "instrumentation": {
@@ -455,6 +463,20 @@
         "BKRS-053 ImageTools PASS"
       ],
       "note": "Same technique as the first three; nothing pre-existing deleted."
+    },
+    "round_trip_batch3": {
+      "method": "Create routes taken from the per-module Swagger documents (/docs/<ModuleId>/swagger.json) instead of guessed",
+      "executed": [
+        "BKRS-063 Inventory PASS",
+        "BKRS-066 Sitemaps PASS",
+        "BKRS-072 Subscription PASS (by id)"
+      ],
+      "finding": "BKRS-054 Notifications — export contents observed, layout gap found (F17); the notification round trip itself still not covered",
+      "swagger_corrections": [
+        "Inventory creates via /api/inventory/fulfillmentcenters/batch, not /fulfillmentcenters",
+        "/api/notifications is a SEARCH endpoint, not a create — the creatable entity is /api/notification-layouts (that is why the first probe saw \"200 but no id\")",
+        "Subscription has a simple standalone entity at /api/subscriptions/plans"
+      ]
     }
   },
   "instrument_lessons": [
@@ -462,7 +484,9 @@
     "DELETE /api/assets takes ?urls= as a query parameter. A JSON body returns 400, so a delete that looked done had not happened.",
     "POST /api/platform/settings with value:null returns 204 but does NOT clear an override — value:\"\" clears it. This nearly left a setting override behind on the environment.",
     "The asset listing on this environment is read-after-write lagged: a file deleted with 204 can still appear in an immediate re-list.",
-    "On the restore blade the Security checkbox is pre-ticked when the archive contains Security, so the first click UNTICKS it. Clicking once and reading an absent warning would have produced a false \"no warning shown\" finding — the state has to be re-checked after the click."
+    "On the restore blade the Security checkbox is pre-ticked when the archive contains Security, so the first click UNTICKS it. Clicking once and reading an absent warning would have produced a false \"no warning shown\" finding — the state has to be re-checked after the click.",
+    "A subscription payment plan has NO name field (only interval, intervalCount, trialPeriodDays, audit fields, id). Filtering the export by name reported it absent and produced a false \"not exported\" verdict — the entity has to be verified by id.",
+    "Guessing REST create routes wasted a probe round: 6 of 15 modules answered 404/405 to invented paths. The per-module Swagger document (/docs/<ModuleId>/swagger.json) is authoritative and should be the first step, not the fallback."
   ],
   "corrections": [
     {
