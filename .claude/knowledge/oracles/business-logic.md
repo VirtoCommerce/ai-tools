@@ -83,6 +83,15 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Subtotal differs from manual sum of line totals by $0.01+; penny discrepancy grows with more items; line total ≠ qty × unit price.
 - **Agents:** qa-frontend-expert (cart math), qa-backend-expert (xAPI cart response)
 
+### BL-PRICE-009: `discountPercent` is a 4-decimal fraction, rounded away-from-zero, independent of the money rounding policy `[P2-ux]`
+- **Rule:** The `discountPercent` field (backing model `ProductPrice.DiscountPercent`, exposed via GraphQL `PriceType.discountPercent`) is computed as `discountAmount / listPrice`, rounded to exactly **4 decimal places** using **away-from-zero** midpoint rounding — hardcoded, and NOT routed through the pluggable money-rounding-policy extension point (that policy governs currency `MoneyType` amounts only, not this raw decimal fraction). When `listPrice` is zero, the value is `0`. The field is a **fraction** (e.g. `0.1250`), never a whole-number percentage, and is never `null`.
+- **Verify:** Query a product's `price { discountPercent }` where a discount is active. Compute `round(discountAmount / listPrice, 4, AwayFromZero)` independently and assert equality. Confirm the value carries up to 4 decimal digits rather than being pre-multiplied by 100 or truncated to fewer decimals. A product with no discount returns `0`, not `null`.
+- **Violation signal:** `discountPercent` returned as a whole number instead of a fraction; precision truncated below 4 decimals; a midpoint value rounded to-even instead of away-from-zero; `null` on a no-discount product; or the value changing after a custom money-rounding policy is registered (it must not — this field bypasses that policy entirely).
+- **Agents:** qa-backend-expert
+- **Docs:** N/A — implementation-detail; no VirtoOZ guide narrates this field's precision or rounding mode (§1a).
+- **Source:** vc-module-x-api `src/VirtoCommerce.Xapi.Core/Models/ProductPrice.cs` — `private const int _discountPercentDecimalDigits = 4;` and `GetDiscountPercent() => ListPrice.Amount > 0 ? Math.Round(DiscountAmount.Amount / ListPrice.Amount, 4, MidpointRounding.AwayFromZero) : 0`; wired 1:1 in vc-module-x-catalog `src/VirtoCommerce.XCatalog.Core/Schemas/PriceType.cs` (`Field(d => d.DiscountPercent, nullable: false)`).
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs N/A per §1a; Source + Live agree. Note: the shipped implementation deliberately does NOT reuse `IMoneyRoundingPolicy` — a review comment established that cash-rounding intervals would corrupt a percentage ratio.)
+
 ---
 
 ## Domain 2: Cart (BL-CART)
@@ -135,6 +144,9 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** Add Product A (qty 1) → go back to listing → add Product A again → cart shows 1 line with qty 2, not 2 lines with qty 1.
 - **Violation signal:** Duplicate line items for the same SKU; quantity not incremented on re-add; line count increases on every add.
 - **Agents:** qa-frontend-expert (cart UI), qa-backend-expert (addToCart mutation)
+- **Docs:** N/A — implementation-detail (merge-vs-duplicate mechanics; VirtoOZ guides do not narrate this, per §1a).
+- **Source:** vc-module-x-cart `CartAggregate.InnerAddLineItemAsync` / `FindExistingLineItemBeforeAdd` — merges by incrementing the existing non-configured line's quantity; configured/variant items bypass the merge lookup entirely (`IsConfigured ? null : ...`), always creating a new line.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; CONFIRMED — Source anchor added, Rule unchanged. Live: same SKU added from PDP then from a listing produced one line at qty 2.)
 
 ### BL-CART-008: Cart persistence across sign-out / sign-in `[P1-data]`
 - **Rule:** A registered user's cart is persisted server-side. If the user signs out and signs back in, the cart must be restored with the same items and quantities. If the user had items as a guest (anonymous cart), upon sign-in those items should merge into the registered user's existing cart (merge strategy: add quantities, no duplicates). A coupon applied before the merge (on either side) persists through the merge — it is not silently dropped — and its discount **re-prices against the post-merge subtotal** rather than staying frozen at the pre-merge discount amount, because a merge always runs a full cart recalculation before saving.
@@ -160,7 +172,8 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** Obtain cart with configurable lineItem, all sections selected; record `lineItem.listPrice` as `price_all_selected`. Call `changeCartConfigurationItemSelected` to deselect one section → assert `lineItem.listPrice < price_all_selected`. Assert `cart.subTotal.amount` decreases by the same delta and `cart.taxTotal.amount` recalculates proportionally. Call `changeCartItemSelected` (lineItem-level) on an unrelated simple lineItem → assert its own `listPrice` is unchanged (asymmetry verification).
 - **Violation signal:** `lineItem.listPrice` remains equal to `price_all_selected` after deselecting a placement; cart subtotal does not change; tax total does not update; pricing frozen at pre-toggle value.
 - **Agents:** qa-backend-expert (xAPI mutation response, repricing path), qa-frontend-expert (cart UI price display after toggle)
-- **Source:** vc-module-x-cart PR #114 — `ConfiguredLineItemContainer.UpdatePrice` filters placements by `selectedForCheckout` when summing into `lineItem.ListPrice`.
+- **Source:** vc-module-x-cart `ConfiguredLineItemContainer.cs` `UpdatePrice(LineItem)` — `Items.Where(x => x.Item is { SelectedForCheckout: true })` before summing into `lineItem.ListPrice` / `PlacedPrice` / `ExtendedPrice`.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; CONFIRMED — citation upgraded from a PR reference to the concrete method, Rule unchanged.)
 
 ### BL-CART-011: Unmatched section key in batch selection is a silent no-op `[P1-data]`
 - **Rule:** When `selectCartConfigurationItems` or `unSelectCartConfigurationItems` receives a `configurationSections[]` list where one or more keys do not match any `ConfigurationItem` on the target lineItem, those unmatched keys MUST be silently skipped. The mutation MUST still process all matched keys, MUST return HTTP 200, and MUST return `errors[]` as empty. Unmatched keys leave no trace in the response.
@@ -509,6 +522,15 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Related:** BL-AUTH-012 (org lock ≠ global lock), BL-AUTH-013 (which code), BL-AUTH-015 (how the org is chosen), BL-B2B-013 (effective status).
 - **Source:** `vc-module-customer` `OrganizationIdRequestValidator.cs` `ValidateOrganizationAccessAsync` — `isLocked` and `statusError` are computed independently, the `allowFallback` branch returns `null` (no error) whenever a fallback org resolves, and the terminal `return isLocked ? UserIsLockedInOrganization(...) : statusError` yields a single response; `allowFallback` is set from `GrantType == password` only. Live-confirmed on the environment: the three-state lock/status probe returned exactly one code with the lock code winning and the status code restored on unlock; separately, a blocking-status single-org user with no explicit org signed in successfully with no organization context. Docs axis: N/A — no published guide covers the token endpoint's org fallback or error precedence (waived).
 - **Promoted:** 2026-08-04 (triangulated — BL-AUDIT-2026-08-04; source+live agree, docs waived).
+
+### BL-AUTH-017: A malformed REST request body yields 400, never 500 `[P1-data]`
+- **Rule:** A REST endpoint that accepts a request body MUST validate required fields **before** touching any downstream store or lookup; a missing, null, or unparseable body MUST return **400 Bad Request**, never an unhandled **500**. A well-formed body carrying a merely *wrong* value (an empty-string or unknown username) is a different outcome and MUST still resolve gracefully — typically `200` with a failure flag. No response body may leak a stack trace.
+- **Verify:** `POST /api/platform/security/login` with `{}`, `{"userName":null,"password":null}`, a missing `password` key, or an empty raw body → `400`. The same shape with a well-formed but unknown `userName` → `200` + `succeeded:false`. Assert no `stackTrace` in any response.
+- **Violation signal:** `500 Internal Server Error` on a malformed or empty request body; a parameter-name leak such as `Value cannot be null. (Parameter 'userName')` surfacing to the caller; or an over-correction that starts rejecting previously-valid payloads with `400`.
+- **Agents:** qa-backend-expert
+- **Docs:** PlatformDeveloperGuide states the platform-wide convention ("400 Bad Request: Invalid payload (e.g., malformed JSON, invalid JSON-Pointer syntax)") — supporting the general contract, though not specific to this endpoint.
+- **Source:** vc-platform `src/VirtoCommerce.Platform.Web/Controllers/Api/SecurityController.cs` — `Login([FromBody] LoginRequest request)` guards `if (request?.UserName == null || request.Password == null) { return BadRequest(); }` before any user lookup. The source evidence is this one endpoint; the Rule generalizes it on the strength of the documented platform-wide convention.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs (general convention) + Source (exact) + Live (`400` observed on an empty body via the platform's own API surface) agree.)
 
 ---
 
@@ -1397,20 +1419,24 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Source:** module README (Money "converted to `currencyCode` → store default → platform primary"); live probe 2026-07-23.
 - **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
 
-### BL-SR-005: Cancelled / prototype orders are excluded from the statistics baseline `[P1-data]`
-- **Rule:** The baseline statistics set (no filter) excludes soft-deleted / prototype and cancelled orders — the same "everything the rep may see minus soft-deleted/prototype" baseline the lists use. A named filter can re-include a status explicitly (e.g. `Cancelled`).
-- **Verify:** A customer with a cancelled order → baseline `count` excludes it; `filter:"Cancelled"` includes it.
-- **Violation signal:** Cancelled/prototype orders inflate the baseline totals/counts.
+### BL-SR-005: Statistics scope excludes flag-cancelled / prototype orders unconditionally `[P1-data]`
+- **Rule:** The statistics scope (`salesRepCustomerOrderStatistics` / `salesRepCustomerCartStatistics`) excludes orders and carts flagged prototype or cancelled **at the entity level** (`IsPrototype` / `IsCancelled`) — unconditionally, and this does NOT loosen under any named filter. This differs from the order-*list* scope, which deliberately includes cancelled orders so that `Cancelled` is a real list filter (BL-SR-009). An order whose `Status` field merely reads a cancelled-like value **without** the `IsCancelled` flag (e.g. written directly by an external/ERP integration bypassing the platform cancel workflow) is NOT excluded by this scope and correctly counts toward every statistics figure, including the baseline/all-status one.
+- **Verify:** A customer with a genuinely cancelled order (`IsCancelled=true`) → every statistics figure excludes it under any filter, including `filter:"Cancelled"`. A customer with a `Status`-only cancelled-looking order (`IsCancelled=false`) → the baseline/all-status figure INCLUDES it.
+- **Violation signal:** Flag-cancelled/prototype orders inflate the baseline totals/counts; OR a flag-less, status-only cancelled-looking order is wrongly excluded from the baseline (scope matching on the `Status` string instead of the `IsCancelled`/`IsPrototype` flags).
 - **Agents:** qa-backend-expert
-- **Source:** module README §Filter rules ("Omit `filter` for the baseline set… minus soft-deleted/prototype"); live probe 2026-07-23.
+- **Docs:** N/A — pre-GA module, no VirtoOZ coverage (§1a).
+- **Source:** vc-module-sales-rep `RepOrderScopeQueryExtensions.ApplyRepScope` (default `includeCancelled=false` → filters `!IsPrototype && !IsCancelled`); `CustomerOrderStatisticsService.BuildQuery` calls it with no `includeCancelled` argument, so the exclusion is unconditional regardless of any status filter. Contrast `SalesRepOrderStatusService.BuildQuery`, which passes `includeCancelled: true` for the list scope (BL-SR-009).
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; DRIFT — resolves the conflict between the prior text and the shipped statistics scope. Docs N/A per §1a; Source + Live agree. Live axis caveat: the field shape was observed this run, but the flag-vs-status distinction is corroborated from a captured payload rather than independently reproduced — the environment's fixtures cannot write a `Status`-only cancelled order.)
 - **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
 
-### BL-SR-006: Cart statistics default to non-empty, non-wishlist carts; `count` is the primary metric `[P1-data]`
-- **Rule:** `salesRepCustomerCartStatistics` uses a cart-*kind* filter whose built-in default `"active-carts"` = non-empty carts that are **not** wishlists. `count` is the primary metric (also `total` Money and `lastCartDate`). Same `period`/`comparison` shape as order statistics; same creator+membership scope (BL-SR-002).
-- **Verify:** Rep with 2 active carts across served orgs → `active-carts` period `count=2`, `lastCartDate` set. (Live-confirmed 2026-07-23 after seeding: count 0→2.)
-- **Violation signal:** Wishlists or empty carts counted as active; `count` omitted/secondary; another rep's carts included.
+### BL-SR-006: Cart statistics are currency-scoped; item quantity is the shipped primary metric `[P1-data]`
+- **Rule:** `salesRepCustomerCartStatistics` uses a cart-*kind* filter whose built-in default `"active-carts"` = non-empty carts that are **not** wishlists. `count` / `total` / `average` remain schema fields, but the shipped Active-carts widget surfaces **summed line-item quantity** (selected vs not-selected-for-checkout) as its primary figures, with `count` demoted to an internal denominator for `average`. Cart statistics are scoped to **exactly the requested `currencyCode`** — a customer's carts in other currencies are excluded outright, never folded or converted (unlike order-statistics Money, BL-SR-004). Gift line items are included in the item-quantity figures but excluded from the money total/count and from the storefront's own cart-page counter — a known, currently-unresolved inconsistency. Same `period`/`comparison` shape as order statistics; same creator+membership scope (BL-SR-002).
+- **Verify:** Rep with active carts across served orgs → the `active-carts` period returns selected/unselected item quantities. A customer's carts in a currency other than the requested `currencyCode` contribute nothing to the figures (not converted, not merged).
+- **Violation signal:** Wishlists or empty carts counted as active; carts in another currency folded into the requested-currency figures; another rep's carts included.
 - **Agents:** qa-backend-expert
-- **Source:** module README §Cart / project statistics; live probe 2026-07-23.
+- **Docs:** N/A — pre-GA module, no VirtoOZ coverage (§1a).
+- **Source:** vc-module-sales-rep `CustomerCartStatisticsService.BuildQuery` — `query.Where(x.Currency == currencyCode)` ("One cart per currency, mirrored on a switch, so folding every currency would report one cart as many"); `AddCartFiguresAsync` excludes `IsGift` from total/count while `AddItemQuantitiesAsync` does not.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; DRIFT — Active-carts widget redesign, per-currency scoping, and the gift-item inconsistency. Docs N/A per §1a; Source + Live agree.)
 - **Promoted:** 2026-07-23 (TLC-2026-07-23-1943); restored 2026-07-28.
 
 ### BL-SR-007: Customer counts — `assignedCustomers` is a period-independent scalar; period counts never exceed it `[P1-data]`
@@ -1680,6 +1706,141 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Severity rationale:** P1 — a silent async failure leaves an assistive-technology user with no indication anything happened, the "stuck in a silent failure loop" risk ECL-15.1 names explicitly.
 - **Suite coverage:** `045-accessibility-tests.csv` A11Y-SR-004; A11Y-ARIA-003; A11Y-AXE-001,002; A11Y-FORM-002; A11Y-CPN-001. (`A11Y-TOUCH-001` also currently cites this id, but its subject — 44×44px touch-target geometry — belongs to BL-UI-006; not counted as landed coverage here, remap pending.)
 - **Promoted:** 2026-08-06 (auto-applied, triangulated — BL-AUDIT-2026-08-06; source + live CONFIRM, docs N/A).
+
+---
+
+## Domain 22: Customer Reviews (BL-CR)
+
+> Added 2026-08-24 (BL-AUDIT-2026-08-24). 51 test cases across suites `086`/`087`/`088` were already citing `BL-CR-*` ids that did not exist — false traceability (BLC-002). The ids were confirmed free (never used, never retired), so each entry is added at the exact cited id, which makes every existing citation true. Nine of the eighteen cited ids are landed here; the other nine are evidenced on Source but were not live-exercised this run and are staged in `reports/ba/bl-proposals-2026-08-24.md` rather than guessed at.
+
+### BL-CR-001: New review defaults to unmoderated "New" status, never auto-approved `[P1-data]`
+- **Rule:** A review created by an eligible purchaser via the create-review mutation is persisted with review status "New" (never "Approved") and is returned with a non-empty id and no validation errors. The review is NOT immediately visible to other storefront visitors — it becomes visible only after an admin moderation action changes its status.
+- **Verify:** As an eligible buyer, submit a review for a purchased product → mutation returns a non-empty id with no validation errors → in Admin, the new review appears in the review list with Status = New → the review is absent from the public storefront review list until approved.
+- **Violation signal:** A submitted review appears already Approved in Admin without any moderation action; the review is immediately visible on the storefront before approval; the create call returns a null id with no validation errors on a genuinely eligible purchase.
+- **Agents:** qa-backend-expert (GraphQL mutation, Admin list), qa-frontend-expert (storefront visibility), qa-testing-expert (end-to-end submit→moderate→publish)
+- **Docs:** PlatformUserGuide "Manage Reviews > Moderate reviews" ("Approve review to publish the review and include it in the rating calculation") + "Overview > Key features" ("Moderation and validation of reviews").
+- **Source:** vc-module-customer-review `CustomerReviewStatus.cs` (`New = 0` — the C# default enum value) + `CreateReviewCommandHandler.cs` (persists the mapped review without setting a status, so it lands on the default) + `ReviewValidator.cs` (purchase-eligibility gate runs before persistence).
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry at a cited id. Docs + Source + Live agree.)
+
+### BL-CR-008: Anonymous visitors cannot access the review-submission control `[P1-data]`
+- **Rule:** The storefront never offers the "leave feedback" control (button or inline form) to an unauthenticated visitor — feedback eligibility is computed only after authentication, so it defaults to unavailable for anonymous sessions. This is reinforced server-side: a review requires a completed order tied to the requesting user's id, which an anonymous session structurally cannot have.
+- **Verify:** As an anonymous visitor, open a product page that has approved reviews → the reviews are readable, but no "leave feedback" button or review form is present anywhere in the widget.
+- **Violation signal:** An anonymous visitor sees a "leave feedback" button or an open review form; a review is created client-side without the user ever authenticating.
+- **Agents:** qa-frontend-expert (storefront gating)
+- **Docs:** N/A — client-side gating mechanic; no guide states this in these terms (§1a).
+- **Source:** vc-frontend `client-app/modules/customer-reviews/components/product-reviews.vue` — `feedbackAvailable` (ref, defaults `false`) is only assigned inside `onActivated`'s `if (isAuthenticated.value) { … }`; the "Leave feedback" button's `v-if` requires `isAuthenticated && feedbackAvailable`.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs N/A per §1a; Source + Live agree — an anonymous product-page visit rendered approved reviews with no leave-feedback control.)
+
+### BL-CR-009: Leave-feedback eligibility is a three-part AND `[P2-ux]`
+- **Rule:** The `canLeaveFeedback` query — and therefore the storefront's decision to show the leave-feedback control — is true only when ALL of: the target is a Product entity, the requesting user has a completed order for it, and the user has not already reviewed it. Any single failing condition suppresses the control.
+- **Verify:** As a logged-in user with a completed order and no prior review for a product, open its page → the leave-feedback control is shown. As a logged-in user with no completed order for a different product, open that page → the control is hidden. After leaving a review, reload → the control is hidden for that product.
+- **Violation signal:** The leave-feedback control appears for a user who never purchased the product, or reappears after the user has already reviewed it, allowing a second review attempt.
+- **Agents:** qa-backend-expert (GraphQL query), qa-frontend-expert (storefront gating)
+- **Docs:** N/A — composite eligibility mechanic (§1a).
+- **Source:** vc-module-customer-review `CanLeaveFeedbackQueryHandler.cs` (`IsProductReview(request) && await OrderExists(request) && !await ReviewExists(request)`) + vc-frontend `product-reviews.vue` (`feedbackAvailable = await canLeaveFeedback(...)`).
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs N/A per §1a; Source + Live agree. Live caveat: the unauthenticated branch was directly observed; the purchased / already-reviewed branches rest on the same source query but were not separately re-exercised as a signed-in user.)
+
+### BL-CR-010: The storefront review surface exposes only Approved reviews `[P1-data]`
+- **Rule:** Every storefront-facing review read (the reviews list and its total count) is scoped server-side to `ReviewStatus = Approved` — New and Rejected reviews are never included, regardless of any client-supplied filter. The surface supports pagination and sorting by creation date.
+- **Verify:** Seed a product with a mix of Approved, New, and Rejected reviews → the public query's total count and item list equal the Approved subset only. With more reviews than one page, navigate pages → each page returns the expected slice, total count stable across pages. Switch sort direction → item order reverses.
+- **Violation signal:** A New or Rejected review appears in the public review list or inflates its total count; pagination returns duplicate or missing items across pages; sort direction has no effect.
+- **Agents:** qa-backend-expert (GraphQL query), qa-frontend-expert (storefront widget)
+- **Docs:** PlatformUserGuide "Overview > Key features" ("You can use rating information for sorting and filtering review objects. Ratings and reviews can be displayed to users upon request.").
+- **Source:** vc-module-customer-review `CustomerReviewsQueryHandler.cs` `GetSearchCriteria` — `// XAPI only operates with approved reviews`, then `criteria.ReviewStatus = [CustomerReviewStatus.Approved];`, applied unconditionally before any client filter.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs + Source + Live agree — a product's review widget rendered exactly its approved-review count, paginated and sortable.)
+
+### BL-CR-012: Admin review search filters by status, entity type, rating range, and keyword `[P2-ux]`
+- **Rule:** The admin review search accepts an array of review statuses, an entity type, a rating range (start/end), and a keyword, narrowing the result set to exactly the matching rows; every visible column (Title, Rating, Created date, Status, Created by) is independently sortable.
+- **Verify:** In Admin, filter by Status = Approved → only Approved rows shown; filter by Status = New → only New rows shown. Filter by a rating window → each window returns only in-range rows. Sort by Created date or Rating → the list reorders accordingly.
+- **Violation signal:** A status/rating-range filter leaves out-of-scope rows in the result; sorting a column has no effect; the entity-type filter has no effect.
+- **Agents:** qa-backend-expert (REST search), qa-testing-expert (Admin UI)
+- **Docs:** PlatformUserGuide "Overview > Key features" ("use rating information for sorting and filtering review objects").
+- **Source:** vc-module-customer-review `CustomerReviewsModuleController.cs` (`SearchCustomerReviews`, `[Authorize(CustomerReviewRead)]`) + `Core/Models/CustomerReviewSearchCriteria.cs` (`ReviewStatus[]`, `StartRating`/`EndRating`) + `CustomerReviewsQueryHandler.cs` (maps a parsed rating range onto `StartRating`/`EndRating`).
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs + Source + Live agree.)
+
+### BL-CR-013: Moderation actions transition review status and take effect immediately `[P1-data]`
+- **Rule:** Admin moderation exposes three status-transition actions on a review — Approve (→ Approved), Reject (→ Rejected), Reset (→ New) — each of which updates the review's status and is reflected on the storefront within the same request cycle (approve makes it visible per BL-CR-010; reject/reset make it invisible).
+- **Verify:** Open a New review in Admin → Approve → status becomes Approved and the review appears in the storefront's public list. Reject an Approved review → status becomes Rejected and it disappears from the storefront. Reset an Approved/Rejected review → status returns to New and it is absent from the storefront.
+- **Violation signal:** A moderation action returns success but the status field is unchanged; the storefront still shows a rejected/reset review; approving does not make a review visible.
+- **Agents:** qa-backend-expert (REST endpoints), qa-testing-expert (Admin UI, end-to-end)
+- **Docs:** PlatformUserGuide "Manage Reviews > Moderate reviews" ("Approve review to publish the review and include it in the rating calculation. Reject Review to exclude it from the rating calculation. The review will remain in the list with the status Rejected. Reset Review Status to change your previous decision.").
+- **Source:** vc-module-customer-review `CustomerReviewsModuleController.cs` (`ApproveReview`/`RejectReview`/`ResetReviewStatus`, all `[Authorize(CustomerReviewUpdate)]`) → `CustomerReviewService.cs` (all three delegate to `ChangeReviewStatusAsync`, which persists the new status and publishes `ReviewStatusChangedEvent`).
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs + Source + Live agree.)
+
+### BL-CR-016: Product rating aggregates only Approved reviews and recomputes on status change `[P1-data]`
+- **Rule:** The entity rating (value + review count) exposed on the storefront and via the rating API is computed exclusively from Approved reviews — New and Rejected reviews never contribute to either the average value or the count. The aggregate is recomputed whenever a review transitions status, not only on create.
+- **Verify:** Read a product's rating → review count equals its Approved-review count, value is their average, both within the valid rating scale. Approve a New review for that product → rating recomputes to include it. Reject an Approved review → rating recomputes to exclude it.
+- **Violation signal:** The review count includes New/Rejected reviews; the rating value falls outside the valid scale; the rating does not change after a moderation action that should affect it.
+- **Agents:** qa-backend-expert (rating API), qa-frontend-expert (storefront rating display)
+- **Docs:** PlatformUserGuide "Manage Reviews > View average rating".
+- **Source:** vc-module-customer-review `RatingService.cs` `Calculate` (filters the review set to Approved before grouping) + `AverageRatingCalculator.cs` (arithmetic mean) + recomputation driven by the `ReviewStatusChangedEvent` published from `ChangeReviewStatusAsync`.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs + Source + Live agree — a product page's rating summary matched its approved-review count.)
+
+### BL-CR-017: Product reviews are a store-scoped, toggleable feature `[P1-data]`
+- **Rule:** Whether the review widget (display + submission) appears on a store's storefront is controlled by a single store-level setting. Enabling it exposes the review widget inline in the product page body; disabling it removes the widget and its submission form entirely for that store, without affecting other stores.
+- **Verify:** On a store with the setting enabled, open any product page → the review widget renders. On a store with the setting disabled, open a product page → no review widget or form renders anywhere on the page.
+- **Violation signal:** The widget renders on a store where the setting is disabled; toggling the setting off leaves the widget visible until a full redeploy; enabling it on one store leaks the widget onto a different store.
+- **Agents:** qa-frontend-expert (storefront rendering), qa-backend-expert (store settings)
+- **Docs:** StorefrontUserGuide "Product Page Layout" ("If a reviews option is enabled for the Frontend Application, the reviews are displayed below the product description") + PlatformUserGuide "Settings > Products reviews".
+- **Source:** vc-module-customer-review `ModuleConstants.cs` — `CustomerReviewsEnabled`, `GroupName = "Store|Product Reviews"`, Boolean, default false, `IsPublic = true`, store-scoped.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs + Source + Live agree.)
+
+### BL-CR-018: Every admin review-moderation action is gated by its own named permission `[P0-security]`
+- **Rule:** Each admin review-management REST action requires a distinct permission from the CustomerReviews permission group: search/list requires read; approve/reject/reset/create-or-update require update; delete requires delete; reading the aggregate rating requires the rating-read permission; triggering a store-wide rating recalculation requires the rating-recalculate permission. A caller lacking the specific permission for an action receives HTTP 403, regardless of whether they hold other CustomerReviews permissions.
+- **Verify:** With a token holding only the read permission, call search → succeeds; call approve/reject/reset/delete/recalculate → each returns 403. With a token holding no CustomerReviews permissions, every one of these endpoints returns 403.
+- **Violation signal:** An action succeeds for a caller who holds only a different CustomerReviews permission (e.g. a read-only token can approve); any of these endpoints is reachable with no permission at all.
+- **Agents:** qa-backend-expert (REST endpoints, RBAC)
+- **Docs:** N/A — the specific permission-to-endpoint mapping is an implementation detail (§1a); the general RBAC model is documented but not per-module.
+- **Source:** vc-module-customer-review `Core/ModuleConstants.cs` (the five `customerReviews:*` permission constants) + `CustomerReviewsModuleController.cs` and `CustomerReviewsModuleRatingController.cs` (`[Authorize(...)]` on every admin endpoint).
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs N/A per §1a; Source + Live agree — the Admin role-assignment panel lists exactly these five permissions.)
+
+---
+
+## Domain 23: Platform Administration (BL-PLAT)
+
+> Added 2026-08-24 (BL-AUDIT-2026-08-24). 92 test cases across suites `020`/`021` were citing `BL-PLAT-*` ids that did not exist (BLC-002 false traceability). The ids were confirmed free, so each entry is added at the exact cited id. **`BL-PLAT-003` is deliberately absent** — no case cites it, and the gap is real rather than an oversight.
+
+### BL-PLAT-001: Role and permission changes take effect immediately; deleting an assigned role is safe `[P1-data]`
+- **Rule:** Creating, updating (including adding or removing individual permissions), or deleting a role invalidates the platform's shared security-permission cache immediately — every subsequent request evaluates the current role/permission state, and a user does not need to sign out and back in to gain or lose access after an administrator changes a role. Deleting a role that is currently assigned to one or more users must succeed (not fail with a server error) and must leave those users' accounts and remaining role assignments intact; the deleted role is simply removed from their effective role set.
+- **Verify:** As an administrator, add or remove a permission on a role (or delete a role) → confirm the effect is visible on the very next request without requiring re-authentication. Separately: create a role, assign it to a user, then delete the role → deletion succeeds (no 5xx or constraint error), the user's detail view opens normally afterward, and the deleted role no longer appears in that user's role list while other assigned roles are unaffected.
+- **Violation signal:** A removed permission or a deleted role's effect is visible only after the affected user signs out and back in (stale cache); deleting a role currently assigned to a user returns a server error, or the user's role list is corrupted or blanked afterward.
+- **Agents:** qa-backend-expert (Admin SPA Security → Roles/Users, security cache), qa-testing-expert (role CRUD verification)
+- **Docs:** PlatformDeveloperGuide "Authorization in Virto Commerce" — a role is "a collection of permissions… You can redefine a role by changing its permissions".
+- **Source:** vc-platform `src/VirtoCommerce.Platform.Security/CustomRoleManager.cs` — `CreateAsync`, `UpdateInternalAsync` and `DeleteAsync` each call `SecurityCacheRegion.ExpireRegion()` on success, invalidating cached role/permission lookups platform-wide on every role mutation.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry at a cited id. Docs + Source + Live agree.)
+
+### BL-PLAT-002: Account lock or deletion is authoritative over every credential and session tied to it `[P1-data]`
+- **Rule:** A user's Locked or Deleted account state overrides every authentication surface bound to that account, regardless of that credential's own individual flag. An API key's own active flag is not sufficient to authenticate — the owning account must also exist, be allowed to sign in, and not be locked out; a locked or deleted owning account causes API-key authentication to fail even though the key itself is active. Locking (setting a non-empty lockout end) or deleting a user account immediately terminates every active session and token issued to that account — a currently-signed-in session does not survive an administrator locking or deleting the account.
+- **Verify:** Generate an active API key for a test user → confirm it authenticates. Lock the user's account → the same active key now fails authentication. Delete the account → the key fails authentication. Separately: sign in as a test user in one session, then as an administrator lock (or delete) that account from a second session → the first session's tokens are revoked and further requests are rejected.
+- **Violation signal:** An active API key still authenticates after its owning account is locked or deleted; a signed-in user's session or token remains valid after an administrator locks or deletes their account.
+- **Agents:** qa-backend-expert (Admin SPA Security → Users, API-key widget, REST auth), qa-testing-expert (lock/unlock + API-key interaction)
+- **Docs:** PlatformDeveloperGuide API Key Authentication — "each API key must be associated with a user account, as all requests with an API key will be authorized on behalf of the user"; Passwords Management — lockout duration is configurable.
+- **Source:** vc-platform `src/VirtoCommerce.Platform.Web/Security/Authentication/ApiKeyAuthenticationHandler.cs` `HandleAuthenticateAsync()` — after resolving an active key it still calls `FindByIdAsync`, `CanSignInAsync(user)` and `IsLockedOutAsync(user)`, failing authentication on any of those checks; `src/VirtoCommerce.Platform.Security/Handlers/RevokeTokenUserChangedEventHandler.cs` `Handle()` — on a `UserChangedEvent`, revokes all sessions via `TerminateAllUserSessions` whenever `LockoutEnd` becomes non-empty or the entry is Deleted.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs + Source agree and are dispositive; the live axis rests on a previously-captured lock/unlock verification of the same mechanism rather than a fresh run — re-exercise on the next pass.)
+
+### BL-PLAT-004: A dynamic property's value type governs which capabilities it may declare `[P2-ux]`
+- **Rule:** A dynamic property is defined against exactly one object type and becomes available, by that definition alone, on every entity instance of that type that implements the dynamic-properties contract — no separate per-instance registration step is required. Each property's declared value type (short text, long text, HTML, decimal, integer, boolean, date-time, measure, …) determines which structural capabilities it may legally combine: only value types whose registered capability allows it may be flagged as an array, a dictionary, or multilingual — boolean and date-time support none of the three, while short text supports all three.
+- **Verify:** Define a new dynamic property against a given entity type with a chosen value type → open any existing entity of that type → the property is present and editable without further setup. Attempt to combine an unsupported capability with a value type not registered to support it (e.g. mark a boolean property as a dictionary or multilingual) → the option is unavailable or rejected. Enter a value matching the declared value type → persists and round-trips; enter a value of the wrong shape → rejected.
+- **Violation signal:** A property defined for one object type fails to appear on an entity of that type without extra steps; an unsupported value-type/capability combination is accepted by the UI or the API; a value that does not match the declared value type is silently accepted.
+- **Agents:** qa-backend-expert (Admin SPA Dynamic Properties module, per-entity widgets, REST dynamic-property APIs)
+- **Docs:** PlatformDeveloperGuide "Manage Dynamic Properties" overview + value-type selection table + the `useDynamicProperties` composable (dictionary properties, multi-language support, multi-value properties, type safety).
+- **Source:** vc-platform `src/VirtoCommerce.Platform.Core/DynamicProperties/DynamicProperty.cs` (`ObjectType`, `ValueType`, `IsArray`, `IsDictionary`, `IsMultilingual`) + `DynamicPropertyValueTypeCapabilities.cs` — the static capability registry (boolean and date-time declare no array/dictionary/localization support; short text declares all three).
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs + Source + Live agree. **Scope note:** strongly grounded for the homogeneous value-type-validation citation cluster; a minority of citations in the users/roles suite (healthcheck, YAML override, login background, price validation) are a loose fit and warrant a `/qa-review-tests --fix` citation review rather than a broader rule.)
+
+---
+
+## Domain 24: Store Management (BL-STORE)
+
+> Added 2026-08-24 (BL-AUDIT-2026-08-24). 69 test cases across suites `034`/`035` were citing `BL-STORE-*` ids that did not exist (BLC-002). Only `BL-STORE-001` cleared the evidence bar. **`BL-STORE-002` was declined outright** — its sole citing case asserts plain CRUD, and the one plausible invariant behind it (a default language must remain within the store's available-languages list) is *refuted* by source: the store validator constrains only the store id and declares no cross-field rule. `BL-STORE-003` and `BL-STORE-004` are evidenced on docs alone and are staged in `reports/ba/bl-proposals-2026-08-24.md`.
+
+### BL-STORE-001: Store configuration is independent per store, keyed by store id `[P1-data]`
+- **Rule:** The platform supports any number of stores, and each store's configuration — languages, currencies, default language and currency, catalog assignment, storefront URLs, SEO link type, tax/rounding/anonymous-access/email-verification policy, feature toggles, aggregation properties and module settings — is stored against that store's own id and resolved independently of every other store. Changing a setting on one store does not alter another store's configuration or storefront behaviour, even when both stores share the same platform instance, module set, or catalog.
+- **Verify:** Open two different stores in the Admin store list → confirm each shows its own independent value for a shared-shape field (default language, SEO link type, or a feature toggle). Change a setting on the first store and save → reopen the second → its value for the same setting is unchanged. Query the storefront xAPI store query for two different store ids → each returns its own settings block.
+- **Violation signal:** A setting change on one store is visible on another store's storefront or Admin blade; the store query returns identical settings for two differently-configured store ids; a newly created store inherits a setting value from another store rather than a documented default.
+- **Agents:** qa-backend-expert (Admin SPA Stores module, xAPI store query), qa-frontend-expert (multi-store storefront behaviour)
+- **Docs:** PlatformUserGuide "Getting Started" — the platform "is multi-language, multi-currency, multi-theme, and multi-store… allows users to operate multiple stores seamlessly"; "General Guidelines" — store-specific (tenant) settings "must be configured within the settings of the corresponding store".
+- **Source:** vc-module-store `src/VirtoCommerce.StoreModule.Core/Model/Store.cs` — every store-level field (`Languages`, `Currencies`, `DefaultLanguage`, `DefaultCurrency`, `Catalog`, `Url`, `SecureUrl`, `Settings` via `IHasSettings`, `DynamicProperties`) is a property on the per-instance `Store` entity, not a shared or global record.
+- **Amended:** 2026-08-24 (auto-applied, triangulated — BL-AUDIT-2026-08-24; MISSING → new entry. Docs + Source + Live agree — multiple independently-configured stores coexist on one platform instance, each exposing its own settings.)
 
 ---
 

@@ -3,6 +3,7 @@
 ## Status: CONFIRMED
 
 **Env:** vcst-qa @ Platform `3.1053.0-pr-3093-e27a-vcst-5618-e27ac905`
+**Re-confirmed:** 2026-08-24 on Platform `3.1061.0` — still reproduces; not fixed by any Sprint 26-16 change. Not yet filed to the tracker.
 
 ## Summary
 

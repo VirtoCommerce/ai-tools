@@ -166,7 +166,13 @@
     "seed:loyalty:zero-user:teardown": "node scripts/seed-data/loyalty/seed-loyalty-ephemeral-user.mjs --teardown",
     "seed:review-variants": "node scripts/seed-data/products/seed-review-variants.mjs",
     "seed:review-variants:teardown": "node scripts/seed-data/products/seed-review-variants.mjs --teardown",
-    "td:validate:review-variants": "node scripts/seed-data/products/validate-review-variants-data.mjs"
+    "td:validate:review-variants": "node scripts/seed-data/products/validate-review-variants-data.mjs",
+    "seed:wishlists": "node scripts/seed-data/wishlists/seed-wishlists.mjs",
+    "seed:wishlists:teardown": "node scripts/seed-data/wishlists/seed-wishlists.mjs --teardown",
+    "td:validate:wishlists": "node scripts/seed-data/wishlists/validate-wishlist-data.mjs",
+    "seed:variation-stock": "node scripts/seed-data/inventory/seed-variation-stock.mjs",
+    "seed:variation-stock:teardown": "node scripts/seed-data/inventory/seed-variation-stock.mjs --teardown",
+    "td:validate:variation-stock": "node scripts/seed-data/inventory/validate-variation-stock-data.mjs"
   },
   "repository": {
     "type": "git",

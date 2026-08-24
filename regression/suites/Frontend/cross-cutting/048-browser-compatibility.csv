@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"BROWSER-CHROME-001","Chrome Desktop - Full Flow","Chrome > Desktop","Critical","BL-COMPAT-001,BL-COMPAT-002","","[PRE:CLEAR_SESSION]
+"BROWSER-CHROME-001","Chrome Desktop - Full Flow","Chrome > Desktop","Critical","","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Chrome latest version installed; desktop resolution (1920x1080); {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Latest;os=Windows 11","[NAV] {{FRONT_URL}}
@@ -16,8 +16,8 @@ Chrome latest version installed; desktop resolution (1920x1080); {{FRONT_URL}} a
 [DOM] checkout completes and order confirmation number visible
 [STATE] no visual layout breaks or overlapping elements","[CONSOLE] no TypeError, ReferenceError, or uncaught exceptions throughout flow
 [NETWORK] all XHR/fetch requests return 2xx; no 4xx or 5xx errors
-[API] GraphQL xAPI calls return valid data payloads","JS error in browser console; layout broken or overflow at any viewport; payment iframe unresponsive; spinner stuck >10s on any page","Remove test order and cart items via admin if environment requires cleanup","VCST-4499 TC-013","Manual"
-"BROWSER-CHROME-002","Chrome Desktop - Map Features","Chrome > Desktop","High","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] GraphQL xAPI calls return valid data payloads","JS error in browser console; layout broken or overflow at any viewport; payment iframe unresponsive; spinner stuck >10s on any page","Remove test order and cart items via admin if environment requires cleanup","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-CHROME-002","Chrome Desktop - Map Features","Chrome > Desktop","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Chrome latest version; BOPIS pickup locations configured in admin; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Latest;os=Windows 11","[NAV] {{FRONT_URL}}
 [ACT] add a BOPIS-eligible product to cart
@@ -35,8 +35,8 @@ Chrome latest version; BOPIS pickup locations configured in admin; {{FRONT_URL}}
 [STATE] after the pan/zoom interactions, the map's center coordinates and zoom level differ from their values before the interaction
 [STATE] smooth rendering with no visible tile loading delays","[CONSOLE] no Google Maps JS API errors
 [NETWORK] Maps API tile requests return 200; no blocked requests
-[API] store location data API returns correct coordinates and details","JS error in browser console; map blank or fails to load; markers not clickable; info window missing or showing wrong data","none","VCST-4499 TC-013","Manual"
-"BROWSER-CHROME-003","Chrome Android - Mobile Flow","Chrome > Mobile","Critical","BL-COMPAT-001,BL-COMPAT-002,BL-COMPAT-003","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] store location data API returns correct coordinates and details","JS error in browser console; map blank or fails to load; markers not clickable; info window missing or showing wrong data","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-CHROME-003","Chrome Android - Mobile Flow","Chrome > Mobile","Critical","","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Chrome on Android (physical device or BrowserStack emulator); mobile viewport active; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Android;os=Android 14","[NAV] {{FRONT_URL}}
 [WAIT] homepage loads in mobile layout (hamburger menu visible)
@@ -51,8 +51,8 @@ Chrome on Android (physical device or BrowserStack emulator); mobile viewport ac
 [DOM] store selection tappable and checkout proceeds
 [DOM] all touch targets are at least 44x44px
 [STATE] order confirmation visible","[CONSOLE] no JS errors during mobile navigation or checkout
-[NETWORK] all API calls 2xx on mobile network profile","JS error in browser console; layout broken or overflow at any viewport; touch gesture not recognized; checkout flow broken on mobile","Remove test order from admin if created","VCST-4499 TC-013","Manual"
-"BROWSER-CHROME-004","Chrome Android - Touch Events","Chrome > Mobile","High","BL-COMPAT-001,BL-COMPAT-003,BL-COMPAT-004","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] all API calls 2xx on mobile network profile","JS error in browser console; layout broken or overflow at any viewport; touch gesture not recognized; checkout flow broken on mobile","Remove test order from admin if created","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-CHROME-004","Chrome Android - Touch Events","Chrome > Mobile","High","","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 Chrome on Android device or BrowserStack; BOPIS modal accessible; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Android;os=Android 14","[NAV] {{FRONT_URL}}
 [ACT] open BOPIS pickup modal with map view
 [WAIT] map renders with store markers
@@ -68,8 +68,8 @@ Chrome on Android device or BrowserStack; BOPIS modal accessible; {{FRONT_URL}} 
 [STATE] pinch-zoom changes map zoom level visually
 [STATE] virtual keyboard appears on field tap; no layout shift breaks form
 [DOM] touch targets are at least 44x44px for all interactive elements","[CONSOLE] no touch event handler errors or JS exceptions
-[NETWORK] no failed requests triggered by touch interactions","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; keyboard does not appear on field tap","none","VCST-4499 TC-013","Manual"
-"BROWSER-SAFARI-001","Safari Desktop - Full Flow","Safari > Desktop","Critical","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no failed requests triggered by touch interactions","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; keyboard does not appear on field tap","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-SAFARI-001","Safari Desktop - Full Flow","Safari > Desktop","Critical","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Safari latest version on macOS (not Windows — WebKit not supported on Windows); {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Safari Latest;os=macOS Sequoia","[NAV] {{FRONT_URL}}
 [WAIT] homepage fully loaded
@@ -84,8 +84,8 @@ Safari latest version on macOS (not Windows — WebKit not supported on Windows)
 [DOM] no WebKit-specific rendering artifacts (missing borders, incorrect shadows)
 [STATE] no JavaScript errors in Safari Web Inspector console","[CONSOLE] no TypeError or Safari-specific errors (e.g., WebKit CSS property warnings)
 [NETWORK] all requests 2xx
-[API] xAPI GraphQL calls succeed","JS error in browser console; layout broken or overflow at any viewport; WebKit-specific CSS rendering defect; payment iframe unresponsive","Remove test order via admin if created","VCST-4499 TC-013","Manual"
-"BROWSER-SAFARI-002","Safari Desktop - Map Features","Safari > Desktop","High","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] xAPI GraphQL calls succeed","JS error in browser console; layout broken or overflow at any viewport; WebKit-specific CSS rendering defect; payment iframe unresponsive","Remove test order via admin if created","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-SAFARI-002","Safari Desktop - Map Features","Safari > Desktop","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Safari latest on macOS; Google Maps API key configured; BOPIS locations set up; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Safari Latest;os=macOS Sequoia","[NAV] {{FRONT_URL}}
 [ACT] add BOPIS-eligible product to cart and open pickup modal
@@ -100,8 +100,8 @@ Safari latest on macOS; Google Maps API key configured; BOPIS locations set up; 
 [DOM] the map info window shows the selected store's name and address text
 [STATE] pan and zoom work with Safari-specific event model
 [STATE] no Safari-specific map rendering bugs","[CONSOLE] no Google Maps JS errors specific to WebKit
-[NETWORK] Maps tile requests succeed","JS error in browser console; map blank or fails to load in Safari; markers not clickable","none","VCST-4499 TC-013","Manual"
-"BROWSER-FIREFOX-001","Firefox Desktop - Full Flow","Firefox > Desktop","High","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] Maps tile requests succeed","JS error in browser console; map blank or fails to load in Safari; markers not clickable","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-FIREFOX-001","Firefox Desktop - Full Flow","Firefox > Desktop","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Firefox latest version installed; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Firefox Latest;os=Windows 11","[NAV] {{FRONT_URL}}
 [WAIT] homepage fully loaded
@@ -116,8 +116,8 @@ Firefox latest version installed; {{FRONT_URL}} accessible","url={{FRONT_URL}};b
 [DOM] body and heading text render in the configured web font in Firefox — no tofu/missing-glyph boxes and no fallback to a generic serif/sans-serif font
 [STATE] no Firefox-specific JavaScript errors in browser console","[CONSOLE] no JS errors (especially no CSP violations or Firefox-specific exception types)
 [NETWORK] all requests 2xx
-[API] xAPI calls succeed","JS error in browser console; layout broken or overflow at any viewport; CSS flexbox/grid rendering defect specific to Firefox; payment iframe unresponsive","Remove test order via admin if created","VCST-4499 TC-013","Manual"
-"BROWSER-FIREFOX-002","Firefox Desktop - Form Handling","Firefox > Desktop","High","BL-COMPAT-001,BL-COMPAT-002","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] xAPI calls succeed","JS error in browser console; layout broken or overflow at any viewport; CSS flexbox/grid rendering defect specific to Firefox; payment iframe unresponsive","Remove test order via admin if created","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-FIREFOX-002","Firefox Desktop - Form Handling","Firefox > Desktop","High","","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Firefox latest version; {{FRONT_URL}} accessible; user account credentials available","url={{FRONT_URL}};browser=Firefox Latest;os=Windows 11;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] login form visible
@@ -137,8 +137,8 @@ Firefox latest version; {{FRONT_URL}} accessible; user account credentials avail
 [DOM] validation error messages appear in correct position
 [DOM] payment form accepts keyboard input without issues
 [STATE] password manager compatibility — no broken input states after autofill","[CONSOLE] no Firefox-specific JS errors on form interactions
-[NETWORK] form submit POST requests return expected 2xx","JS error in browser console; Firefox-specific form styling break; validation not triggering; payment iframe unresponsive; autocomplete dropdown overlapping critical UI","none","VCST-4499 TC-013","Manual"
-"BROWSER-EDGE-001","Edge Desktop - Full Flow","Edge > Desktop","High","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] form submit POST requests return expected 2xx","JS error in browser console; Firefox-specific form styling break; validation not triggering; payment iframe unresponsive; autocomplete dropdown overlapping critical UI","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-EDGE-001","Edge Desktop - Full Flow","Edge > Desktop","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Microsoft Edge latest (Chromium-based) installed; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Edge Latest;os=Windows 11","[NAV] {{FRONT_URL}}
 [WAIT] homepage fully loaded
@@ -152,8 +152,8 @@ Microsoft Edge latest (Chromium-based) installed; {{FRONT_URL}} accessible","url
 [DOM] no Edge-specific rendering defects
 [STATE] no Edge-specific JavaScript errors","[CONSOLE] no JS errors specific to Edge runtime
 [NETWORK] all requests 2xx
-[API] xAPI calls succeed","JS error in browser console; layout broken or overflow at any viewport; Edge-specific CSS issue not present in Chrome; payment iframe unresponsive","Remove test order via admin if created","VCST-4499 TC-013","Manual"
-"BROWSER-EDGE-002","Edge Desktop - PDF/Print","Edge > Desktop","Medium","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] xAPI calls succeed","JS error in browser console; layout broken or overflow at any viewport; Edge-specific CSS issue not present in Chrome; payment iframe unresponsive","Remove test order via admin if created","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-EDGE-002","Edge Desktop - PDF/Print","Edge > Desktop","Medium","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 Microsoft Edge latest; {{FRONT_URL}} accessible; an order confirmation page or invoice available to print","url={{FRONT_URL}};browser=Edge Latest;os=Windows 11","[NAV] {{FRONT_URL}} order confirmation page or invoice URL (if applicable)
 [WAIT] page fully loaded
 [ACT] open Edge print dialog via Ctrl+P or browser menu
@@ -165,8 +165,8 @@ Microsoft Edge latest; {{FRONT_URL}} accessible; an order confirmation page or i
 [DOM] no content clipped or cut off at page margins in print preview
 [DOM] the generated invoice PDF opens in the Edge PDF viewer with all header, line-item, and total text rendered and legible
 [STATE] Edge print dialog does not hang or crash","[CONSOLE] no JS errors triggered by print or PDF actions
-[NETWORK] PDF download request returns 200 with correct content-type if app-generated","layout broken or overflow at any viewport; print preview blank or clipped; PDF download fails or opens corrupt; JS error in browser console","none","VCST-4499 TC-013","Manual"
-"BROWSER-CROSS-001","Cross-Browser - Visual Consistency","Cross-Browser > Visual","High","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] PDF download request returns 200 with correct content-type if app-generated","layout broken or overflow at any viewport; print preview blank or clipped; PDF download fails or opens corrupt; JS error in browser console","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-CROSS-001","Cross-Browser - Visual Consistency","Cross-Browser > Visual","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 Chrome, Firefox, Safari (macOS), and Edge all installed and accessible; same test account credentials; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Latest,Firefox Latest,Safari Latest,Edge Latest;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}} homepage in Chrome — take reference screenshot
 [NAV] {{FRONT_URL}} homepage in Firefox — take screenshot
 [NAV] {{FRONT_URL}} homepage in Safari (macOS) — take screenshot
@@ -179,8 +179,8 @@ Chrome, Firefox, Safari (macOS), and Edge all installed and accessible; same tes
 [DOM] color values render identically (hex colors, not system defaults)
 [DOM] icon and image rendering consistent — no blurry images on Retina/HiDPI in Chrome/Edge
 [STATE] minor acceptable differences documented; no major layout or color breaks","[CONSOLE] no browser-specific CSS property warnings that indicate unprefixed property fallbacks failing
-[NETWORK] same assets loaded in all browsers (no browser-specific asset routing)","layout broken or overflow at any viewport; major color difference (not minor gamma); fonts falling back to system serif in any browser; JS error in browser console; missing UI sections in any browser","none","VCST-4499 TC-013","Manual"
-"BROWSER-CROSS-002","Cross-Browser - Animation","Cross-Browser > Animation","Medium","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] same assets loaded in all browsers (no browser-specific asset routing)","layout broken or overflow at any viewport; major color difference (not minor gamma); fonts falling back to system serif in any browser; JS error in browser console; missing UI sections in any browser","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-CROSS-002","Cross-Browser - Animation","Cross-Browser > Animation","Medium","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 Chrome, Firefox, Safari (macOS), and Edge available; BOPIS modal accessible; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Latest,Firefox Latest,Safari Latest,Edge Latest","[NAV] {{FRONT_URL}} in each browser
 [ACT] open BOPIS pickup modal in each browser
 [WAIT] observe modal open animation (slide-in, fade, or expand)
@@ -195,8 +195,8 @@ Chrome, Firefox, Safari (macOS), and Edge available; BOPIS modal accessible; {{F
 [STATE] modal open and close animations complete without hanging mid-frame
 [DOM] the BOPIS modal and page-transition elements reach their fully open/closed final state (final opacity and transform values) once the animation duration elapses — none remain at an intermediate opacity/transform value
 [DOM] no animation artifacts (ghost elements, flickering) in any browser","[CONSOLE] no CSS animation or Web Animations API errors in any browser
-[NETWORK] animation assets (if sprite-based or video-based) load successfully","layout broken or overflow at any viewport; animation freezes mid-play in any browser; JS error in browser console; animated element stuck in intermediate state after animation ends","none","VCST-4499 TC-013","Manual"
-"BROWSER-CROSS-003","Cross-Browser - Flexbox/Grid","Cross-Browser > Layout","High","BL-COMPAT-001,BL-COMPAT-002,BL-COMPAT-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] animation assets (if sprite-based or video-based) load successfully","layout broken or overflow at any viewport; animation freezes mid-play in any browser; JS error in browser console; animated element stuck in intermediate state after animation ends","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-CROSS-003","Cross-Browser - Flexbox/Grid","Cross-Browser > Layout","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 Chrome, Firefox, Safari (macOS), and Edge available; {{FRONT_URL}} accessible; multiple viewport widths testable","url={{FRONT_URL}};browser=Chrome Latest,Firefox Latest,Safari Latest,Edge Latest;breakpoints=320px,375px,414px,768px,1024px,1920px","[NAV] {{FRONT_URL}} in Chrome at 1920x1080
 [SCROLL] through homepage — observe catalog grid, hero section, and product card grid layouts
 [ASSERT] CSS grid and flexbox layouts render correctly in Chrome — document column counts and alignment
@@ -211,8 +211,8 @@ Chrome, Firefox, Safari (macOS), and Edge available; {{FRONT_URL}} accessible; m
 [DOM] grid gap/column-gap renders identically across browsers
 [DOM] no horizontal scroll at any tested viewport in any browser
 [STATE] responsive breakpoints trigger at consistent widths across browsers","[CONSOLE] no CSS grid or flexbox property deprecation warnings
-[NETWORK] layout assets (CSS) load with 200 status in all browsers","layout broken or overflow at any viewport; horizontal scroll present at mobile viewport in any browser; grid column count differs between browsers; flexbox wrapping breaks in Safari WebKit; JS error in browser console","none","VCST-4499 TC-013","Manual"
-"BROWSER-MOBILE-001","Mobile Matrix - iPhone Models","Mobile > iPhone","Critical","BL-COMPAT-001,BL-COMPAT-003,BL-COMPAT-004","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] layout assets (CSS) load with 200 status in all browsers","layout broken or overflow at any viewport; horizontal scroll present at mobile viewport in any browser; grid column count differs between browsers; flexbox wrapping breaks in Safari WebKit; JS error in browser console","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-MOBILE-001","Mobile Matrix - iPhone Models","Mobile > iPhone","Critical","","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 iPhone 16, 17, and 18 (or latest 3 models) with Safari iOS; physical devices preferred; BrowserStack acceptable; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Safari iOS;devices=iPhone 16,iPhone 17,iPhone 18;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}} on iPhone 16 — note safe area inset at top (notch/Dynamic Island) and bottom (home bar)
 [ASSERT] content does not render under notch or home bar
 [ACT] run mobile smoke tests SMK-001 through SMK-012 on iPhone 16
@@ -225,8 +225,8 @@ iPhone 16, 17, and 18 (or latest 3 models) with Safari iOS; physical devices pre
 [DOM] smoke tests pass on all three models
 [STATE] swipe gestures inside app modals/carousels are captured by the app and do not trigger the browser's native swipe-to-go-back navigation
 [DOM] no model-specific layout breaks (each iPhone model has slightly different viewport height)","[CONSOLE] no JS errors across any tested iPhone model
-[NETWORK] all API calls succeed on each device","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; safe area inset violated on any model; smoke test failure specific to one iPhone model","Remove any test cart items or orders created during smoke tests","VCST-4499 TC-013","Manual"
-"BROWSER-MOBILE-002","Mobile Matrix - Android Models","Mobile > Android","Critical","BL-COMPAT-001,BL-COMPAT-003,BL-COMPAT-004","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] all API calls succeed on each device","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; safe area inset violated on any model; smoke test failure specific to one iPhone model","Remove any test cart items or orders created during smoke tests","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-MOBILE-002","Mobile Matrix - Android Models","Mobile > Android","Critical","","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 Last 3 Android flagship models (e.g., Samsung Galaxy S24, Google Pixel 9, OnePlus 12) with Chrome Android; physical devices or BrowserStack; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Android;devices=Samsung Galaxy S24,Google Pixel 9,OnePlus 12;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}} on Samsung Galaxy S24 (Chrome Android)
 [ASSERT] homepage layout renders correctly for this screen size and density
 [ACT] run mobile smoke tests SMK-001 through SMK-012 on Galaxy S24
@@ -243,8 +243,8 @@ Last 3 Android flagship models (e.g., Samsung Galaxy S24, Google Pixel 9, OnePlu
 [DOM] smoke tests pass on all three devices
 [STATE] tap, scroll, and swipe touch events each produce their corresponding UI response (navigation, scroll, or selection) on all three Android models
 [DOM] content adapts to varying screen sizes (different aspect ratios between models)","[CONSOLE] no JS errors on any tested Android device
-[NETWORK] all API calls succeed on each device","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; smoke test failure specific to one Android model; Android OEM browser engine quirk breaking layout","Remove any test cart items or orders created during smoke tests","VCST-4499 TC-013","Manual"
-"BROWSER-MOBILE-003","Viewport Handling - All Devices","Mobile > Viewport","High","BL-COMPAT-001,BL-COMPAT-004","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] all API calls succeed on each device","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; smoke test failure specific to one Android model; Android OEM browser engine quirk breaking layout","Remove any test cart items or orders created during smoke tests","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-MOBILE-003","Viewport Handling - All Devices","Mobile > Viewport","High","","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 Browser DevTools or BrowserStack available for viewport simulation; {{FRONT_URL}} accessible","url={{FRONT_URL}};viewports=320px,375px,414px,768px,1024px,1920px","[NAV] {{FRONT_URL}} — resize browser to 320px width (minimum supported mobile)
 [ASSERT] no horizontal scroll; all content visible; text not clipped
 [ACT] resize to 375px (iPhone SE / standard mobile)
@@ -262,8 +262,8 @@ Browser DevTools or BrowserStack available for viewport simulation; {{FRONT_URL}
 [DOM] text remains readable and not clipped at narrowest viewport (320px)
 [DOM] product and hero images scale to fit their container width at every tested viewport with no overflow past the container edge and no visible cropping
 [STATE] interactive elements remain tappable/clickable at all viewport sizes","[CONSOLE] no JS errors triggered by viewport resize
-[NETWORK] no additional asset fetches that indicate incorrect responsive image handling","layout broken or overflow at any viewport; horizontal scroll present at any mobile viewport; content clipped or unreadable at 320px; breakpoints triggering at wrong widths; JS error in browser console","reset viewport","VCST-4499 TC-013","Manual"
-"BROWSER-RES-001","Resolution Matrix - Desktop","Resolution > Desktop","Medium","BL-COMPAT-001,BL-COMPAT-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no additional asset fetches that indicate incorrect responsive image handling","layout broken or overflow at any viewport; horizontal scroll present at any mobile viewport; content clipped or unreadable at 320px; breakpoints triggering at wrong widths; JS error in browser console","reset viewport","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-RES-001","Resolution Matrix - Desktop","Resolution > Desktop","Medium","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 Desktop browser (Chrome or Edge); ability to resize or set resolution; {{FRONT_URL}} accessible","url={{FRONT_URL}};resolutions=1366x768,1920x1080,2560x1440,3840x2160;browser=Chrome Latest","[NAV] {{FRONT_URL}} at 1366x768 (common laptop resolution)
 [ASSERT] layout renders without horizontal scroll; text readable; no overlapping elements
 [ACT] resize to 1920x1080 (Full HD)
@@ -278,8 +278,8 @@ Desktop browser (Chrome or Edge); ability to resize or set resolution; {{FRONT_U
 [DOM] images crisp at HiDPI resolutions — no upscaled blurry rasters at 4K
 [DOM] font sizes scale appropriately — not too small at 4K, not too large at 1366px
 [STATE] all interactive elements reachable and not obscured at any resolution","[CONSOLE] no JS errors triggered by high-resolution rendering
-[NETWORK] correct image variants served based on DPR (device pixel ratio) — check srcset requests","layout broken or overflow at any viewport; horizontal scroll at any resolution; blurry images at 4K (indicates missing HiDPI assets); JS error in browser console","reset viewport","VCST-4499 TC-013","Manual"
-"BROWSER-OS-001","Windows 10/11 - Chrome/Edge","OS > Windows","High","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] correct image variants served based on DPR (device pixel ratio) — check srcset requests","layout broken or overflow at any viewport; horizontal scroll at any resolution; blurry images at 4K (indicates missing HiDPI assets); JS error in browser console","reset viewport","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-OS-001","Windows 10/11 - Chrome/Edge","OS > Windows","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Windows 10 or Windows 11 machine; Chrome latest and Edge latest installed; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Chrome Latest,Edge Latest;os=Windows 11;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}} in Chrome on Windows 11
 [WAIT] homepage fully loaded
@@ -308,8 +308,8 @@ Windows 10 or Windows 11 machine; Chrome latest and Edge latest installed; {{FRO
 [DOM] no OS-specific rendering defects (Windows font smoothing, system scrollbar width differences)
 [STATE] abbreviated smoke flow passes in both Chrome and Edge on Windows
 [DOM] system scrollbar width (Windows default) does not break any layouts","[CONSOLE] no JS errors on either browser on Windows
-[NETWORK] all requests 2xx on Windows environment","layout broken or overflow at any viewport; OS-specific font rendering making text unreadable; system scrollbar breaking layout; JS error in browser console on Windows","none","VCST-4499 TC-013","Manual"
-"BROWSER-OS-002","macOS - Chrome/Safari","OS > macOS","High","BL-COMPAT-001,BL-COMPAT-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] all requests 2xx on Windows environment","layout broken or overflow at any viewport; OS-specific font rendering making text unreadable; system scrollbar breaking layout; JS error in browser console on Windows","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
+"BROWSER-OS-002","macOS - Chrome/Safari","OS > macOS","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 macOS latest (Sequoia); Chrome latest and Safari latest installed; Retina display preferred; {{FRONT_URL}} accessible","url={{FRONT_URL}};browser=Safari Latest,Chrome Latest;os=macOS Sequoia;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}} in Safari on macOS
 [WAIT] homepage fully loaded
@@ -341,4 +341,4 @@ macOS latest (Sequoia); Chrome latest and Safari latest installed; Retina displa
 [DOM] macOS font rendering — text remains readable
 [STATE] abbreviated smoke flow passes in both Safari and Chrome on macOS
 [STATE] trackpad gestures (scroll, pinch-zoom) do not break storefront layout or trigger unintended actions","[CONSOLE] no JS errors in Safari Web Inspector or Chrome DevTools on macOS
-[NETWORK] correct high-DPR image variants requested (check srcset/2x requests)","layout broken or overflow at any viewport; blurry images on Retina display; JS error in browser console on macOS; trackpad swipe causing unintended navigation","none","VCST-4499 TC-013","Manual"
+[NETWORK] correct high-DPR image variants requested (check srcset/2x requests)","layout broken or overflow at any viewport; blurry images on Retina display; JS error in browser console on macOS; trackpad swipe causing unintended navigation","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"

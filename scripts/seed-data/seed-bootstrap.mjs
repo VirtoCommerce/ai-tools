@@ -45,6 +45,8 @@ const passthrough = process.argv.slice(2).filter((a) => a === '--dry-run' || a =
  * block a full clean). Invoked with `npm run seed:bootstrap -- --teardown`.
  */
 const TEARDOWN_STEPS = [
+  // Wishlists are carts referencing products AND a security account, so they go before both.
+  { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
@@ -57,6 +59,8 @@ const TEARDOWN_STEPS = [
   { name: 'b2b-addresses', script: 'b2b/seed-b2b-addresses.mjs', args: ['--teardown'] },
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['--teardown'] },
   { name: 'bopis', script: 'bopis/seed-bopis.mjs', args: ['--teardown'] },
+  // Variation family + its per-FFC stock records — before the fulfillment centers they sit on.
+  { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', args: ['--teardown'] },
   { name: 'inventory', script: 'inventory/seed-inventory.mjs', args: ['--teardown'] },
   { name: 'pricing', script: 'pricing/seed-pricing.mjs', args: ['--teardown'] },
   { name: 'configurable', script: 'products/seed-configurable.mjs', args: ['--teardown'] },
@@ -130,6 +134,14 @@ const STEPS = [
   // products. Optional: quotes need the Quote module deployed + Stores.EnableQuotes on the store.
   { name: 'orders', script: 'orders/seed-order-states.mjs', required: false, priority: 140 },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
+  // VCST-5546 / INV-047 — a variation family stocked on the store's MAIN fulfillment center, so it
+  // runs after `inventory` (70) has ensured the fulfillment centers exist.
+  { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', required: false, priority: 72 },
+  // VCST-5705 / CAT-079 + CAT-080 + WISH-30 — two wishlists in two REAL stores. Runs last: it needs
+  // the catalog structure and a fulfillment center, and it creates its own products + customer.
+  // `required: false` because it hard-aborts on an env with no genuine second store
+  // (STORE_ID_SECONDARY), which is a legitimate deployment shape — see seed-wishlists.mjs.
+  { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', required: false, priority: 150 },
 ].sort((a, b) => a.priority - b.priority);
 
 function runStep(step) {

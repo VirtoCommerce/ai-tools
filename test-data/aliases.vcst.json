@@ -879,5 +879,24 @@
     "name": "Epson Expression Premium XP-830 All-In-One Wireless Printer",
     "slug": "printers/all-in-one/paper-crafts/epson-expression-premium-xp-830-all-in-one-wireless-printer-color-black",
     "approved_count": 1
+  },
+  "INV_VARIATION_STOCKED": {
+    "id": "010ff6d8-73ac-4269-b2f3-57d346fb33ae",
+    "masterId": "7539b47a-0670-41ab-8d5b-d35c7847cce1",
+    "ffcId": "8989f3a5-e25a-4a3e-afe0-473385734ed3"
+  },
+  "INV_VARIATION_MASTER": {
+    "id": "7539b47a-0670-41ab-8d5b-d35c7847cce1"
+  },
+  "FC_EAST": {
+    "id": "8989f3a5-e25a-4a3e-afe0-473385734ed3"
+  },
+  "WISH_TWO_STORE_CUSTOMER": {
+    "storeAId": "B2B-store",
+    "storeBId": "Electronics",
+    "storeAWishlistId": "6a733db1-ab9e-48da-924c-560c713aca05",
+    "storeBWishlistId": "bc3dd38c-0410-4e40-b7fe-f65bac860f61",
+    "customerId": "089afd9f-fefc-43cb-9219-8f42b45047c0",
+    "userId": "96029166-25f0-419b-8984-a7527188cb82"
   }
 }

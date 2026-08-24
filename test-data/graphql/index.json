@@ -376,12 +376,12 @@
       "requiredVars": ["ORGANIZATION_ID"],
       "usedBy": ["SR-GQL-022", "SR-GQL-031", "SR-GQL-037"]
     },
-    "salesRepOrderStatuses": {
-      "path": "queries/salesRepOrderStatuses.graphql",
+    "salesRepOrderFilterRules": {
+      "path": "queries/salesRepOrderFilterRules.graphql",
       "category": "sales-rep",
       "role": "SALES_REP",
       "requiredVars": [],
-      "usedBy": ["SR-GQL-033"]
+      "usedBy": ["SR-GQL-033", "SR-GQL-034", "SR-CP-009"]
     }
   },
   "mutations": {

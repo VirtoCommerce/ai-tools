@@ -61,6 +61,8 @@ test-data/
 │   ├── test-users.csv              # 50 personal user templates
 │   ├── agent-user-pool.csv         # 3 dedicated users for parallel agents (1 per browser slot)
 │   └── seed-agent-users.md         # REST API seeding scripts for agent pool users
+├── wishlists/                       # Two-store wishlist fixture (VCST-5705) — SEEDED
+│   └── two-store-wishlists.csv     # 1 customer x 2 stores x 2 products; ids in aliases.<env>.json
 ├── organizations/                   # B2B organizations (legacy, special chars)
 │   ├── sample-organizations.csv    # Special character testing
 │   ├── search-test-data.csv        # Organization search test cases
@@ -236,6 +238,12 @@ Organization-specific branding test data with GraphQL verification queries.
 ### 12. Promotions (promotions/)
 Marketing promotions and coupon codes for VCST-4590 testing. Covers 4 reward types (% off, $ off, free shipping, gift item), 3 condition types (category, cart threshold, shipping method), exclusivity modes, usage limits, coupon-level expiry, and 8 edge case scenarios. See `promotions/setup-guide.md` for REST API seeding scripts.
 
+
+### 13. Wishlists (wishlists/)
+`two-store-wishlists.csv` — ONE customer holding TWO wishlists in TWO DIFFERENT stores, each with a DIFFERENT product (VCST-5705). Store A is `{{STORE_ID}}`, store B is `{{STORE_ID_SECONDARY}}`; **both store ids are per-env and live in `aliases.<env>.json`, never in the CSV**, alongside the contact/user/wishlist GUIDs. The store-B product is created physically in store B's own catalog AND linked into store A's virtual catalog, because CAT-079 looks for its card on store A's `/catalog` page — that co-visibility is what lets the isolation assertion fail. Seed: `npm run seed:wishlists`; guard: `npm run td:validate:wishlists`. Alias: `WISH_TWO_STORE_CUSTOMER`.
+
+### 14. Variation stock (inventory/variation-stock.csv)
+A master product plus a genuine **variation** child (`mainProductId`), with **divergent** non-zero stock at the store's **main** fulfillment center (VCST-5546 / INV-047). Equal quantities would make "the variation row shows its own inventory, not the master's aggregate" unfalsifiable, so the guard requires them to differ. Seed: `npm run seed:variation-stock`; guard: `npm run td:validate:variation-stock`. Aliases: `INV_VARIATION_STOCKED`, `INV_VARIATION_MASTER`. This seeder also writes `FC_EAST`'s runtime GUID to the overlay — before it, `@td(FC_EAST.id)` resolved to the bare CSV business key `FFC-001`, which is not a platform id on any env.
 ---
 
 ## Usage Guidelines

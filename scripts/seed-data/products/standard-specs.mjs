@@ -174,6 +174,82 @@ export const SPEC_OVERLAYS = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// DISCOUNT-RATIO model (VCST-5691) — the exact fraction a price row must expose.
+// ---------------------------------------------------------------------------
+// xAPI `PriceType.discountPercent` is a FRACTION, not a whole percent, and the shipped VCST-5691 fix
+// (vc-module-x-api ProductPrice.GetDiscountPercent) is:
+//
+//     Math.Round((list - sale) / list, 4, MidpointRounding.AwayFromZero)
+//
+// It is NOT the `IMoneyRoundingPolicy` reuse the ticket originally proposed — a reviewer overrode that
+// during review (cash-rounding intervals like Rounding05/Rounding1 would corrupt a ratio). So there is
+// no rounding policy to configure, and a fixture that varies one proves nothing.
+//
+// Two properties make a price fixture able to DETECT a regression here, and neither is visible from the
+// CSV row alone — which is why they are declared here and drift-guarded rather than left to a reader:
+//   * FRACTIONAL   — the raw ratio needs a non-zero 3rd decimal, or a whole-percent implementation
+//                    (the pre-fix behaviour) passes. Every other sale/coupon fixture is an integer %.
+//   * MIDPOINT     — the raw ratio sits exactly on the 4-decimal rounding midpoint, so AwayFromZero
+//                    and banker's/ToEven DISAGREE. Off the midpoint the case is vacuous.
+//
+// `ratio` is the EXACT rational value of (list - sale) / list for the row's committed prices. It is
+// stated here as the intent; the guard re-derives it from the CSV in integer cents (never float
+// subtraction, which turns 200.00 - 175.31 into 24.689999999999998 and the ratio into 0.12344999…).
+export const DISCOUNT_RATIO_FIXTURES = {
+  'PROD-108': { ratio: 0.125,   requireMidpoint: false, purpose: 'fractional (12.5%) discount is not truncated to a whole percent — PRICE-065 / CAT-GQL-140' },
+  'PROD-109': { ratio: 0.12345, requireMidpoint: true,  purpose: 'raw ratio sits ON the 4-decimal midpoint, so AwayFromZero (0.1235) diverges from ToEven (0.1234) — PRICE-066' },
+};
+
+/** The precision `GetDiscountPercent` rounds the fraction to. Not a guess — read off the shipped fix. */
+export const DISCOUNT_PERCENT_DECIMALS = 4;
+
+/**
+ * EXACT (list - sale) / list for two 2-decimal money values, computed in integer cents so no float
+ * artifact can creep in, and returned scaled by 1e9 as an integer. Callers compare integers.
+ * Returns null when either price is not a usable 2-decimal money value.
+ */
+export function discountRatioScaled(list, sale, scale = 1e9) {
+  const cents = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    const c = Math.round(n * 100);
+    return Math.abs(n * 100 - c) < 1e-6 ? c : null;   // reject sub-cent precision
+  };
+  const l = cents(list), s = cents(sale);
+  if (l == null || s == null || s >= l) return null;
+  return ((l - s) * scale) / l;   // ints well under 2^53 → exact for any 2-decimal money pair
+}
+
+/** Round half AWAY FROM ZERO — what the shipped fix does. */
+export const roundAwayFromZero = (x, decimals = DISCOUNT_PERCENT_DECIMALS) => {
+  const f = 10 ** decimals;
+  return Math.sign(x) * Math.round((Math.abs(x) * f).toFixed(6) * 1) / f;
+};
+
+/** Round half to EVEN (banker's) — the pre-fix behaviour the midpoint fixture must distinguish from. */
+export function roundHalfToEven(x, decimals = DISCOUNT_PERCENT_DECIMALS) {
+  const f = 10 ** decimals;
+  const scaled = Number((Math.abs(x) * f).toFixed(6));
+  const floor = Math.floor(scaled);
+  const diff = scaled - floor;
+  let r;
+  if (diff > 0.5) r = floor + 1;
+  else if (diff < 0.5) r = floor;
+  else r = floor % 2 === 0 ? floor : floor + 1;
+  return Math.sign(x) * r / f;
+}
+
+/**
+ * True when `ratio` lands on the rounding midpoint at `decimals` — i.e. AwayFromZero and ToEven
+ * disagree. This is the property that makes PROD-109 a real boundary case rather than decoration.
+ */
+export const isRoundingMidpoint = (ratio, decimals = DISCOUNT_PERCENT_DECIMALS) =>
+  roundAwayFromZero(ratio, decimals) !== roundHalfToEven(ratio, decimals);
+
+/** The value xAPI must report for a ratio, per the shipped fix. */
+export const expectedDiscountPercent = (ratio) => roundAwayFromZero(ratio, DISCOUNT_PERCENT_DECIMALS);
+
 // Real, IMPORTED catalog products (NOT seedable) that suites reference by GUID. The seeder DISCOVERS
 // them by their stable `code` and captures the runtime id (+ hosting catalogId) to aliases.<env>.json
 // — never a committed cross-env GUID. Absent on an env → @td resolves "" (clear miss), not a

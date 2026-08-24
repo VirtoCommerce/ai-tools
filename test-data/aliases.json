@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.47",
+    "version": "1.5.48",
     "updated": "GENERATED",
     "changelog_1_5_43": "VCST-5281 follow-up — membership_status is now DECLARED, never inherited: every membership-CREATING fixture row carries a CONCRETE OrganizationMembership.Status and `td:validate:b2b` [9] hard-FAILS a blank one. Previously the column existed but every row left it blank, so the seeded outcome was status=null on all of them and the per-org status a case asserted was really a property of the CONTACT (ResolveEffectiveStatus falls through to member status) — invisible from the fixture row, and liable to change meaning if the contact were ever edited. WHAT CHANGED, per source: organization-memberships.csv MOM-001..006 → Approved (effective status UNCHANGED — null + contact-Approved already resolved to Approved — only its provenance is now declared, so no existing consumer moves: MULTI_ORG_TF_BR is read by 9 suite CSVs and stays able to sign in); b2b/users.csv 19 membership-creating rows → Approved, while USR-022 (invitation-pending) and USR-025 (ORG_ASSOC_ONLY_NO_GLOBAL) keep a BLANK cell because their empty `roles` cell means the seeder creates NO membership row at all and a status there would be inert; white-labeling/users.csv all 6 → Approved. THREE NEW BLOCKING-STATUS FIXTURES on dedicated single-org accounts, because Invited/Rejected/Deleted BLOCK org sign-in and must never be a repurposed happy-path account: ORG_TF_MBR_INVITED (MOM-007), ORG_TF_MBR_REJECTED (MOM-008), ORG_TF_MBR_DELETED (MOM-009) — TechFlow / org-employee / unlocked, with the CONTACT at Approved so a refusal is provably the per-org override winning rather than a global block, and SINGLE-org so a healthy second org cannot mask the refusal via the fall-through path (which is why neither MULTI_ORG_TF_BR nor _ALT can serve these). They are AT-REST representatives, complementing ORG_TF_ONLY_STATUS which MUTATES itself through the same values mid-run. All four legal values now have a seeded representative, so no branch of MembershipStatuses.IsBlocking lacks a fixture. VOCABULARY GROUNDED IN TWO INDEPENDENT SOURCES (not memory), both re-verified 2026-08-03 and agreeing: SOURCE vc-module-customer@2605501d984ab747b839b0aec16595c7674a967e (PR #312) ModuleConstants.MembershipStatuses — note it is NOT on `dev`, where the class does not exist at all, so the commit pin is load-bearing — and LIVE `GET /api/platform/settings/Customer.OrganizationMembershipStatuses` on vcst @ VirtoCommerce.Customer 3.1021.0-pr-312-2605 → allowedValues [Invited, Approved, Rejected, Deleted] with defaultValue \"Approved\", which is WHY Approved is the happy-path default rather than an arbitrary pick. Deliberately NOT the Customer.ContactStatuses vocabulary, which allows SIX values on the same env (Deleted, New, Locked, Invited, Rejected, Approved) — a contact status is not a membership status, and copying across the two is exactly how \"Locked\"/\"New\" end up silently non-blocking (absent from BlockingStatuses). GATE: findStatusProblems() now also fails a blank status on a membership-creating row and a status declared on a row that creates none (inert, and it reads as coverage that does not exist); it still fails an illegal value and a `;`-form arity mismatch, and WARNS on a blocking value. New side-effect-free predicates rowCreatesMembership()/statusCoverage() — `roleCol` gates them, because the seeder drops any org/role pair without a role, which is precisely how a no-membership fixture is built. The no-per-org-override cell is NOT lost by requiring a status: the VCST-5281 test model reduces membership-row-EXISTENCE out as a dependent axis (\"subsumed by which side of ?? supplied the value\") and covers it at D14 through ORG_ASSOC_ONLY_NO_GLOBAL, which has no membership row whatsoever. The WIRE behaviour of blank is unchanged (⇒ null, key omitted) so a re-seed can still HEAL a row back to no-override; what is now forbidden is a COMMITTED row DECLARING blank. Unit tests: scripts/unit/membership-status.test.mjs + the new membership-status-required.test.mjs (which reads the real CSVs, so the fixture set itself is gated, not just the predicates). Seeded and verified live on vcst 2026-08-03.",
     "changelog_1_5_42": "VCST-5281 / B2C-MBR-040: added ORG_ASSOC_ONLY_NO_GLOBAL — the LEGACY-ASSOCIATION fixture (seeded on vcst 2026-08-03). An AGENT-TEST contact, Contact.Status=Approved, associated with BOTH TechFlow and BuildRight via contact.organizations ONLY, with ZERO OrganizationMembership rows AND EMPTY global ApplicationUser.Roles — the shape 104 of the 105 at-risk accounts on this env have, and the only shape in which the BL-B2B-007 org-level permission term is observable (the membership and global terms must BOTH be empty). No existing fixture qualified: every b2b/users.csv account with a role gets a membership row by construction, and {{MULTI_ORG_USER_EMAIL}} carries a global org-maintainer role that masks the org-level term (invariant 11 perms across five org claims). NO NEW SEEDER was needed — the shape is expressible through the existing path: contacts.csv CON-025 (org_id=ORG-002;ORG-003; contactBody forces status=Approved and writes both associations) + users.csv USR-025 with an EMPTY roles cell, because provisionContactLogins pairs each org with its index-parallel role and filters out any org lacking one, so no role => no membership; stripSeededGlobalRoles plus a role-free account create leave global roles empty. Two small enablers: users.csv gained an optional trailing \"alias\" column so a row can name an INLINE alias and have the seeder write its runtime userId/contactId to aliases.<env>.json (syncEnvAliases only serves CSV-backed aliases, so these would otherwise be hand-captured), and \"--only\" now scopes the b2b ORG-GRAPH step (contacts/users, narrowing orgs to just those needed) so adding one fixture no longer re-provisions all 25 users.csv memberships — it ABORTS rather than falling back to seeding everything when the token matches nothing. Guard: td:validate:b2b check [4] recognises the ASSOCIATION-ONLY marker in test_purpose — no-role is OK for such a row, and declaring ASSOCIATION-ONLY *with* a role is now a hard failure (a role silently creates the membership that destroys the fixture). td:reconcile [11] now probes \"contactId\" too. LIVE MEASUREMENT for the case's armed regression guard: TechFlow (Organization.Roles=[purchasing-agent, org-employee]) -> 2 permission claims (storefront:organization:view, storefront:user:view); BuildRight (Organization.Roles=[]) -> 0 (the permission claim is absent entirely); unscoped -> 0. Counts DIFFER, so the org-level term IS flowing into the org-scoped JWT: NO BL-B2B-007 / VCST-5239 regression on this build. The 11->12 figure in BL-B2B-007 is a DIFFERENT account's global-role baseline and is NOT the oracle here; the oracle is \"TechFlow > BuildRight, and BuildRight == 0\".",
@@ -49,7 +49,8 @@
     "changelog_1_5_28": "VCST-5406 follow-up: swept the last password literals into the {{VAR}} pattern. 4 alias password fields (AGENT_TEST_IMP_CUSTOMER, MULTI_ORG_TF_BR[/_EMPLOYEE/_MAINTAINER]) → {{DEFAULT_TEST_PASSWORD}}; 15 real-credential Password1! literals in create-account bodies of suites 027/027b/050d → {{DEFAULT_TEST_PASSWORD}}. Left intentional test inputs alone (031/082 Test/Any/WrongPassword1! are registration/negative inputs, not stored secrets).",
     "changelog_1_5_29": "VCST-5089 (Per-store Asset Public URL rewrite in XAPI) regression authoring: added STORE_ASSET_TEST_URL inline alias (stable placeholder CDN host for setting/resetting Store.assetPublicUrl in tests — value is intentionally non-resolving DNS, same pattern as the live QA verification's cdn-test-vcst5089.govirto.com; only the HOST is asserted, 404/ERR_NAME_NOT_RESOLVED on the image itself is expected and acceptable). Added EXTERNAL_HOST_IMAGE_PRODUCT inline alias pinning the one concrete external-image product captured live during QA verification (product name + external host) for the BUG-1 regression guard (external URLs must NOT be rewritten when VirtoCommerce:StoreAssets:KnownAssetHosts is configured) — captured on vcptcore-qa 2026-07-14, see tests/Sprint-current/VCST-5089/test-execution-report.md; flagged env-portable-with-caveat since catalog composition diverges per env (per feedback reference_per_env_aliases_overlay) — the consuming case is marked Automation_Status=Draft pending per-env confirmation that the pinned product name resolves.",
     "changelog_1_5_39": "Cart-suite test-data gaps (TLC-2026-07-25): (1) NEW PROD_MULTI_CURRENCY (test-products.csv PROD-106 / SKU QA-MULTICUR-001, 24.99 USD + 22.49 EUR) — the first genuinely multi-currency AGENT-TEST fixture. Root cause it fixes: seed-standard-products.mjs created only a USD pricelist and hardcoded currency:'USD' on every price row, so switching the storefront to EUR collapsed every AGENT-TEST line to 0.00 with a disabled qty stepper and blocked the currency-switch-with-coupon case (CART-093). The seeder now creates ONE PRICELIST PER CURRENCY (SEED-<date>-Standards-<CUR>) driven by the new `price_eur` CSV column via standard-specs.mjs buildCurrencyPriceSets(), registers the currencies first (ensureCurrencies), and tears down every currency's pricelist. (2) NEW PROD_SUB_FIVE (PROD-107 / QA-SUBFIVE-001, $3.49) — makes the fixed-amount-discount-exceeds-subtotal boundary reachable; COUPON_FIXED5 is $5 off and the cheapest fixture was $9.99, so the 'total floors at zero' assertion passed vacuously. (3) PROD_OOS / PROD_LOW_STOCK / PROD_PACK_SIZE / PROD_TIER_PRICED gained `slug` + `url` fields, backed by new env-invariant `product_slug` / `storefront_url` columns, so cases navigate {{FRONT_URL}}@td(ALIAS.url) instead of hand-composing /product/<sku> — which renders a client-side 404 (HTTP 200 SPA soft-404). The only live-working path is /seed-test-fixtures/<product-slug>, which is DERIVABLE from the seeder's own slug rules (standard-specs.mjs productSlug / storefrontPathForAdHoc) and is drift-guarded, not hand-maintained. (4) Stale GUIDs + the pre-seeding 'Template only — NOT seeded' recipe removed from these four aliases' notes and from the test-products.csv notes column (they have been live-seeded since 2026-05-19; ids belong in aliases.<env>.json). (5) .env.vcst OOS_SKU / PACK_SIZE_SKU / TIER_PRICED_SKU pointed at OOS-PRODUCT-001 / BULK-PAPER-001 / CISCO-SW24-001, which do NOT EXIST on the env (verified 2026-07-25) and disagreed with these aliases — repointed to the canonical QA-* business keys; td:validate:standard now fails any .env.* whose non-empty *_SKU disagrees with the CSV row. @td(PROD_*.sku) is the single source of truth; the env vars are a legacy convenience mirror. PROD-106/107 are AUTHORED, NOT YET SEEDED — run `TEST_ENV=<env> npm run seed:products`.",
-    "changelog_1_5_45": "VCST-5487 — added 4 new inline product aliases (REV_PROD_5IMAGES, REV_PROD_RATING38, REV_PROD_RATING35, REV_PROD_IMAGES30) for the customer-reviews-storefront (088) suite additions covering the product-reviews design update (vc-frontend PR #2417: one-decimal rating + review count, vc-rating.vue continuous partial star fill, review-images-modal). All four are stable catalog slugs verified live on vcst-qa — no runtime GUID, no seeder/writeback needed."
+    "changelog_1_5_45": "VCST-5487 — added 4 new inline product aliases (REV_PROD_5IMAGES, REV_PROD_RATING38, REV_PROD_RATING35, REV_PROD_IMAGES30) for the customer-reviews-storefront (088) suite additions covering the product-reviews design update (vc-frontend PR #2417: one-decimal rating + review count, vc-rating.vue continuous partial star fill, review-images-modal). All four are stable catalog slugs verified live on vcst-qa — no runtime GUID, no seeder/writeback needed.",
+    "changelog_1_5_48": "Sprint 26-16 gap-closing fixtures. PROD_FRACTIONAL_DISCOUNT + PROD_MIDPOINT_DISCOUNT (VCST-5691 discountPercent): an exact 12.5% ratio and an exact 4-decimal rounding midpoint (0.12345, where AwayFromZero->0.1235 diverges from ToEven->0.1234) - the only two shapes that can detect the defect, since every pre-existing sale/coupon fixture is an integer percent. WISH_TWO_STORE_CUSTOMER (VCST-5705): one customer, two wishlists, two REAL stores, two distinct products; without it CAT-079/CAT-080 pass vacuously on a single-store env, which is the defect itself. INV_VARIATION_STOCKED / INV_VARIATION_MASTER (VCST-5546): a real mainProductId-linked variation with stock DIVERGENT from its master at the store MAIN fulfillment center. The variation seeder additionally writes FC_EAST.id to aliases.<env>.json - it previously resolved to the bare CSV business key 'FFC-001', which is not a platform id on any env, so every @td(FC_EAST.id) in suite 056 was unusable against the API."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -4360,5 +4361,114 @@
     "fields": {
       "slug": "slug"
     }
+  },
+  "PROD_FRACTIONAL_DISCOUNT": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-108"
+    },
+    "fields": {
+      "sku": "sku",
+      "code": "sku",
+      "name": "product_name",
+      "listPrice": "price",
+      "salePrice": "sale_price",
+      "currency": "currency",
+      "slug": "product_slug",
+      "url": "storefront_url"
+    },
+    "notes": "Fractional-percent sale fixture for VCST-5691 - list 100.00 / sale 87.50 = an EXACT 12.5% discount, so xAPI PriceType.discountPercent must report 0.1250. The shipped fix is Math.Round(fraction, 4, MidpointRounding.AwayFromZero) in vc-module-x-api ProductPrice.GetDiscountPercent - NOT the IMoneyRoundingPolicy the ticket proposed (a reviewer overrode that during review), so there is no rounding policy to configure. Every pre-existing sale/coupon fixture is an integer percent and therefore cannot detect a whole-percent truncation; do NOT substitute @td(PROD_SALE_SIMPLE.sku) (29.99/19.99 gives a non-round 0.3334). Seeded by scripts/seed-data/products/seed-standard-products.mjs from test-products.csv PROD-108; resolved by SKU (QA-DISC-125) - NO runtime GUID committed. NAVIGATE VIA @td(PROD_FRACTIONAL_DISCOUNT.url) composed as {{FRONT_URL}}@td(...); /product/<sku> renders a client-side 404. The exact ratio is drift-guarded by td:validate:standard check [12]. Unblocks PRICE-065 + CAT-GQL-140.",
+    "_status": "seeded-20260824"
+  },
+  "PROD_MIDPOINT_DISCOUNT": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-109"
+    },
+    "fields": {
+      "sku": "sku",
+      "code": "sku",
+      "name": "product_name",
+      "listPrice": "price",
+      "salePrice": "sale_price",
+      "currency": "currency",
+      "slug": "product_slug",
+      "url": "storefront_url"
+    },
+    "notes": "Rounding-midpoint discount fixture for VCST-5691 - list 200.00 / sale 175.31, i.e. 24.69 / 200.00 = a raw fraction of EXACTLY 0.12345. That value sits ON the 4-decimal rounding midpoint, so the shipped MidpointRounding.AwayFromZero yields 0.1235 while banker's/ToEven would yield 0.1234; the divergence IS the fixture, and a ratio off the midpoint proves nothing. Both prices are ordinary 2-decimal money, so the midpoint is genuinely expressible at platform price precision - no 10000-scale price is needed. Seeded by seed-standard-products.mjs from test-products.csv PROD-109; resolved by SKU (QA-DISC-MID) - NO runtime GUID committed. NAVIGATE VIA @td(PROD_MIDPOINT_DISCOUNT.url) composed as {{FRONT_URL}}@td(...). Ratio AND midpoint divergence are drift-guarded by td:validate:standard check [12]. Unblocks PRICE-066.",
+    "_status": "seeded-20260824"
+  },
+  "WISH_TWO_STORE_CUSTOMER": {
+    "file": "wishlists/two-store-wishlists",
+    "filter": {
+      "fixture_key": "WISH_TWO_STORE"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "storeAProductSku": "store_a_sku",
+      "storeAProductName": "store_a_product_name",
+      "storeAProductSlug": "store_a_slug",
+      "storeAProductUrl": "store_a_url",
+      "storeBProductSku": "store_b_sku",
+      "storeBProductName": "store_b_product_name",
+      "storeBProductSlug": "store_b_slug",
+      "storeBProductUrl": "store_b_url",
+      "storeAListName": "store_a_list_name",
+      "storeBListName": "store_b_list_name",
+      "storeAId": "store_a_id",
+      "storeBId": "store_b_id",
+      "storeAWishlistId": "store_a_wishlist_id",
+      "storeBWishlistId": "store_b_wishlist_id",
+      "customerId": "contact_id",
+      "userId": "user_id"
+    },
+    "notes": "ONE customer holding TWO wishlists in TWO DIFFERENT stores, each with a DIFFERENT product - the fixture VCST-5705 needs. FindWishlistsByProductsAsync accepted a storeId and never applied it, so the storefront in-wishlist marker returned wishlist ids from every store the customer had a list in; on a single-store environment the regression test PASSES WHILE TESTING NOTHING. Store A is {{STORE_ID}}, store B is {{STORE_ID_SECONDARY}} - both ids are per-env and land in aliases.<env>.json at seed time, never committed here. The store-B product is created physically in store B's own catalog AND linked into store A's virtual catalog, because CAT-079 looks for its card on store A's /catalog page - that co-visibility is what lets the isolation assertion fail. NAVIGATE VIA @td(WISH_TWO_STORE_CUSTOMER.storeAProductUrl / .storeBProductUrl) composed as {{FRONT_URL}}@td(...); both are store-A-relative. Password is a {{VAR}} token resolved from .env.local at seed time, never a literal. Seeded by scripts/seed-data/wishlists/seed-wishlists.mjs (npm run seed:wishlists); drift-guarded by npm run td:validate:wishlists. Unblocks CAT-079, CAT-080, WISH-30. LIVE-CONFIRMED on vcst-qa 2026-08-24: xAPI product(userId:) wants the CONTACT id — @td(WISH_TWO_STORE_CUSTOMER.customerId) — NOT the security-account id (.userId), which returns inWishlist=false for both products in both stores. With the contact id the matrix is: store A -> productA true/[storeAWishlistId], productB false/[]; store B -> productB true/[storeBWishlistId], productA false/[]. A pre-VCST-5705 build returns BOTH wishlist ids in BOTH stores, which is what makes the case falsifiable. Storefront sign-in needs a store context: /connect/token must carry storeId (verified working for both B2B-store and Electronics).",
+    "_status": "seeded-20260824"
+  },
+  "INV_VARIATION_STOCKED": {
+    "file": "inventory/variation-stock",
+    "filter": {
+      "fixture_key": "INV_VARIATION"
+    },
+    "fields": {
+      "sku": "variation_sku",
+      "name": "variation_name",
+      "id": "variation_id",
+      "stock": "variation_stock_qty",
+      "property": "variation_property",
+      "value": "variation_value",
+      "masterSku": "master_sku",
+      "masterName": "master_name",
+      "masterId": "master_id",
+      "masterUrl": "master_url",
+      "ffcId": "ffc_id",
+      "ffcCsvId": "ffc_csv_id",
+      "listPrice": "list_price",
+      "currency": "currency"
+    },
+    "notes": "A genuine VARIATION SKU (a child product carrying mainProductId = the master), NOT a standalone product, with non-zero stock at the STORE'S MAIN fulfillment center - what VCST-5546 / INV-047 needs to prove the stock-per-fulfillment-center blade lists variations and not only masters. Master stock (7) and variation stock (42) are deliberately DIFFERENT so 'the variation row shows its own inventory, not the master's aggregate' can actually fail. The FFC is resolved live via seed-common storeMainFulfillmentCenter() (fulfillment-centers.csv store_role=main -> FFC-001 -> FC_EAST), never ffcs[0]; the seeder also writes FC_EAST's runtime GUID to aliases.<env>.json so @td(FC_EAST.id) stops resolving to the bare business key. NO variation url is published - a variation has no independent PDP route on this storefront (it renders on the master's page); navigate @td(INV_VARIATION_MASTER.url) instead. Seeded by scripts/seed-data/inventory/seed-variation-stock.mjs (npm run seed:variation-stock); drift-guarded by npm run td:validate:variation-stock. LIVE-CONFIRMED in the Admin SPA on vcst-qa 2026-08-24 (Platform 3.1061.0): the variation renders as its OWN row in More > Inventory > AGENT-TEST-East Coast Warehouse > Products, showing name 'AGENT-TEST-Variation-Stock-Blue-XL', SKU QA-INVVAR-V-001, its own productId, and In stock quantity 42 against the master's 7 - no property (Color=Blue) and no image are needed for it to render; the mainProductId link alone is sufficient. NAVIGATION IS THE HARD PART: that blade has NO search or filter box - only an 'In stock only' checkbox (checked by default; both fixtures are qty>0 so both are visible), sortable In stock quantity / Reserved quantity columns, and ~94 pages x 20 rows. Image/Product/SKU are NOT sortable. So the divergent quantities are load-bearing TWICE: they make the 'own record, not the master's aggregate' assertion falsifiable AND they are the only handle for finding the rows at all - sort by In stock quantity, then page to 42 (around page 67) and 7 (around page 91). The two rows cannot be seen on one screen, so a case must assert them as two observations on two pages. Also note the FFC carries heavy pre-existing noise: most of its ~1,864 rows render 'There is no product item with this ID' with a blank SKU (orphaned inventory records for products deleted from the env, NOT caused by this seeder) - so never phrase an assertion here in terms of row COUNTS.",
+    "_status": "seeded-20260824"
+  },
+  "INV_VARIATION_MASTER": {
+    "file": "inventory/variation-stock",
+    "filter": {
+      "fixture_key": "INV_VARIATION"
+    },
+    "fields": {
+      "sku": "master_sku",
+      "name": "master_name",
+      "id": "master_id",
+      "slug": "master_slug",
+      "url": "master_url",
+      "stock": "master_stock_qty",
+      "listPrice": "list_price",
+      "currency": "currency"
+    },
+    "notes": "The MASTER/parent half of the INV_VARIATION_STOCKED family (VCST-5546 / INV-047) - the row a variation must appear as DISTINCT from in the per-FFC products grid. Carries the derivable store-relative storefront path (@td(INV_VARIATION_MASTER.url), composed as {{FRONT_URL}}@td(...)); the variation deliberately has none, because inventing a PDP route for it would publish a path that does not exist. Stock 7 at the store main FFC vs the variation's 42. Seeded by scripts/seed-data/inventory/seed-variation-stock.mjs; NO runtime GUID committed - master_id lives in aliases.<env>.json.",
+    "_status": "seeded-20260824"
   }
 }

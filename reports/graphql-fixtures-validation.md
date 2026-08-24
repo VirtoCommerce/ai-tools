@@ -1,20 +1,10 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-08-24T13:56:47.220Z
+**Validated at:** 2026-08-24T14:14:18.380Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 73 fixtures — 72 passed, 1 failed
+**Total:** 73 fixtures — 73 passed, 0 failed
 
-## ❌ Failed Fixtures (1)
-
-### salesRepOrderStatuses (query)
-
-- **Path:** `test-data/graphql/queries/salesRepOrderStatuses.graphql`
-- **Role:** SALES_REP
-- **Purpose:** Store's configured order statuses with localized labels, for the Orders section status-filter chips
-- **Errors:**
-  - `DV-006`: Cannot query field "salesRepOrderStatuses" on type "Query". Did you mean "salesRepOrderSortRules", "salesRepOrderFilterRules", "salesRepOrders", or "orderStatuses"?
-
-## ✅ Passed Fixtures (72)
+## ✅ Passed Fixtures (73)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
@@ -74,6 +64,7 @@
 | removeWishlist | mutation | ORG_USER (owner) | wishlist | LIST_ID (String) | 2026-07-13 | 1 noted |
 | salesRepCustomer | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-07-17 | 1 noted |
 | salesRepCustomers | query | SALES_REP | sales-rep | (none) | 2026-07-17 | 1 noted |
+| salesRepOrderFilterRules | query | SALES_REP | sales-rep | (none) | 2026-08-24 | 1 noted |
 | salesRepOrders | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-07-17 | 1 noted |
 | selectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 2 noted |
 | selectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
@@ -265,10 +256,10 @@
 **salesRepCustomers**:
 - (none)
 
-**salesRepOrders**:
+**salesRepOrderFilterRules**:
 - (none)
 
-**salesRepOrderStatuses**:
+**salesRepOrders**:
 - (none)
 
 **selectAllCartConfigurationItems**:

@@ -1327,3 +1327,49 @@ mutation SaveSalesRepLayout($command: InputSalesRepLayout!) { saveSalesRepLayout
 [ERRORS label=object_value] errors[] non-empty {OBSERVED}
 [DATA label=object_value] errors.0.extensions.code = INVALID_VALUE {OBSERVED}
 [DATA label=object_value] errors.0.message matches /Unable to convert.*object.*AnyValue/i {OBSERVED}","none","a list or object setting value is silently accepted instead of raising extensions.code=INVALID_VALUE (contract says only scalar string/number/boolean are valid); either probe returns a different error shape (e.g. HTTP 500, or a different extensions.code) instead of the confirmed INVALID_VALUE / 'Unable to convert' pair; a document is actually persisted despite one of the two invalid inputs","none (both probes are rejected at value-coercion time — no write ever reaches LayoutService for either)","VCST-5367; vc-module-sales-rep#6 change inventory (""Lists/objects are NOT valid values""); LIVE-CONFIRMED 2026-08-04 (vcptcore-qa, SalesRep 3.1001.0-pr-6-4f32) — both array and object rejected with extensions.code=INVALID_VALUE and the exact ""Unable to convert '(array|object)' to 'AnyValue'"" message; SOURCE be-LayoutSettingType.cs field description","Automated"
+"SR-GQL-118","salesRepCustomerOrderStatistics — New-Filtered Count Matches the Independent salesRepOrders List Ground Truth (VCST-5587)","GraphQL > Sales Rep > Query > salesRepCustomerOrderStatistics","Medium","PROPOSED-BL-SR-NEWORDERS; BL-SR-002","","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. VCST-5587 (QA-confirmed 2026-08-17) defines the ""New orders"" widget as period(filter:""New"") for stat-widget__value and an unfiltered period() for stat-widget__delta. This case proves the New-filtered count moves ONLY for New-status orders by cross-validating against the independent salesRepOrders(filter) list query (established SR-GQL-028/033 pattern) rather than mutating any order — @td(ORG_ACME.id) is confirmed (SR-GQL-028) to hold >=1 order in status ""Cancelled"" (SRO-ACME-CANCELLED) alongside New/Processing orders. A wide all-time window (2000-01-01..2099-12-31) is used so the assertion holds regardless of rolling-7-day drift. NOTE — a genuine tension was found this session between BL-SR-005 (""baseline excludes cancelled orders"", live-probed 2026-07-23) and VCST-5587's own 2026-08-17 QA comment (""Cancelled orders count toward the all-status figure, which is correct per the agreed definition""); this case does NOT take a side on that unresolved question (see the {HYPOTHESIS} line below) — flag for /qa-review-oracles bl reconciliation, since the more recent ticket may supersede the oracle. Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.id)).","org=@td(ORG_ACME.platform_id); store={{STORE_ID}}; wide_from=2000-01-01T00:00:00Z; wide_to=2099-12-31T23:59:59Z","[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP list_new]
+  query { salesRepOrders(organizationId: ""{{org}}"", filter: ""New"") { totalCount } }
+[GQL-EXEC list_new]
+[GQL-CAPTURE list_new.data.salesRepOrders.totalCount → NEW_LIST_COUNT]
+[GQL-OP stats_wide]
+  query {
+    salesRepCustomerOrderStatistics(storeId: ""{{store}}"", organizationId: ""{{org}}"") {
+      new_count: period(from: ""{{wide_from}}"", to: ""{{wide_to}}"", filter: ""New"") { count }
+      all_count: period(from: ""{{wide_from}}"", to: ""{{wide_to}}"") { count }
+      cancelled_count: period(from: ""{{wide_from}}"", to: ""{{wide_to}}"", filter: ""Cancelled"") { count }
+    }
+  }
+[GQL-EXEC stats_wide]","[ERRORS label=list_new] errors[] empty {SPEC}
+[ERRORS label=stats_wide] errors[] empty {SPEC}
+[DATA label=stats_wide] data.salesRepCustomerOrderStatistics.new_count.count = {{NEW_LIST_COUNT}} {SPEC}
+[COUNT label=stats_wide] data.salesRepCustomerOrderStatistics.cancelled_count.count >= 1 {DOC}
+[DATA label=stats_wide] data.salesRepCustomerOrderStatistics.all_count.count >= data.salesRepCustomerOrderStatistics.new_count.count {SPEC}
+[DATA label=stats_wide] verify whether all_count.count also equals new_count.count + cancelled_count.count + <other-status counts> — i.e. whether Cancelled-status orders are included in the unfiltered baseline (VCST-5587 says yes; BL-SR-005 says the baseline excludes cancelled) {HYPOTHESIS}","[EVIDENCE] cross-references BL-SR-005 (documented 2026-07-28) against VCST-5587's QA comment (2026-08-17) — the more recent ticket may supersede the oracle; route to /qa-review-oracles bl for reconciliation","new_count.count != salesRepOrders(filter:""New"").totalCount (the two ""New"" code paths disagree — the same class of defect VCST-5705 fixed for wishlists), cancelled_count.count = 0 despite the SRO-ACME-CANCELLED fixture existing (fixture missing or filter regressed), errors[] non-empty","none (read-only)","VCST-5587","Draft"
+"SR-GQL-119","salesRepCustomerCartStatistics — active-carts Shape Now Exposes selectedItemQuantity / unselectedItemQuantity Per the Redesigned Widget (VCST-5588)","GraphQL > Sales Rep > Query > salesRepCustomerCartStatistics","Medium","BL-SR-006; PROPOSED-BL-SR-ACTIVECART","","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. VCST-5588 (QA-confirmed 2026-08-19/20) redefines the ""Active cart"" widget as value=selectedItemQuantity (sum of SelectedForCheckout=true line quantities), sub=unselectedItemQuantity (the false set), both scoped per-currency after the currency-isolation fix (commit e12a9074). LIVE-CONFIRMED this session via introspection: CustomerCartStatisticsPeriod now exposes selectedItemQuantity/unselectedItemQuantity/count/total/average/warning — fields that do NOT exist on the pre-redesign shape SR-GQL-064 already covers (that case predates VCST-5588 and has no seeded-cart alias). NO SEEDED CART ALIAS EXISTS for a known selected/unselected quantity split on this restore (same lost-seeder caution as SR-GQL-064) — this case asserts SHAPE + per-currency echo, not a specific quantity. Do NOT assert the BL-SR-006/VCST-5648 cancelled-cart-in-dated-window question — that was raised and closed separately; this case sticks to the declared selected/unselected/currency-scoping rule only. Caller is SALES_REP (= SR_REP_PRIMARY, serves @td(ORG_ACME.id)).","org=@td(ORG_ACME.platform_id); store={{STORE_ID}}; currency_a={{CURRENCY_CODE}}; currency_b=EUR","[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP stats_currency_a]
+  query {
+    salesRepCustomerCartStatistics(storeId: ""{{store}}"", organizationId: ""{{org}}"", currencyCode: ""{{currency_a}}"") {
+      currencyCode
+      period(filter: ""active-carts"") { selectedItemQuantity unselectedItemQuantity count total { amount } warning }
+    }
+  }
+[GQL-EXEC stats_currency_a]
+[GQL-OP stats_currency_b]
+  query {
+    salesRepCustomerCartStatistics(storeId: ""{{store}}"", organizationId: ""{{org}}"", currencyCode: ""{{currency_b}}"") {
+      currencyCode
+      period(filter: ""active-carts"") { selectedItemQuantity unselectedItemQuantity count total { amount } warning }
+    }
+  }
+[GQL-EXEC stats_currency_b]","[ERRORS label=stats_currency_a] errors[] empty {SPEC}
+[ERRORS label=stats_currency_b] errors[] empty {SPEC}
+[DATA label=stats_currency_a] data.salesRepCustomerCartStatistics.currencyCode = {{currency_a}} {OBSERVED}
+[DATA label=stats_currency_b] data.salesRepCustomerCartStatistics.currencyCode = {{currency_b}} {OBSERVED}
+[DATA label=stats_currency_a] data.salesRepCustomerCartStatistics.period.selectedItemQuantity >= 0 {SPEC}
+[DATA label=stats_currency_a] data.salesRepCustomerCartStatistics.period.unselectedItemQuantity >= 0 {SPEC}
+[DATA label=stats_currency_b] data.salesRepCustomerCartStatistics.period.selectedItemQuantity >= 0 {SPEC}
+[DATA label=stats_currency_b] data.salesRepCustomerCartStatistics.period.unselectedItemQuantity >= 0 {SPEC}
+[DATA label=stats_currency_a] verify whether selectedItemQuantity differs between currency_a and currency_b when a cart exists in only one currency — the exact VCST-5588 pre-fix regression (currencies summed together) needs a seeded per-currency cart to prove directly; not seeded on this restore {HYPOTHESIS}","[EVIDENCE] gifts ARE counted per the ticket's final ruling (comment 106890) — if a future fixture adds a gift line, do not exclude it from selectedItemQuantity expectations","selectedItemQuantity/unselectedItemQuantity fields missing from the schema (VCST-5588 redesign not deployed — regression to the pre-fix shape SR-GQL-064 covers), negative quantities, currencyCode in the response does not echo the requested arg, errors[] non-empty","none (read-only)","VCST-5588","Draft"

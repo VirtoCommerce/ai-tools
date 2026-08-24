@@ -329,7 +329,7 @@ Personal (non-org) user account; same product as org pricing tests. PERSONAL_USE
 [STATE] No org-specific pricing applied for personal user
 [DOM] No contract price badge or label visible","[API] product query returns default price without org context
 [CONSOLE] no uncaught JS errors","Org contract price shown to non-org user; wrong price tier applied; pricing context leaking from previous session","none","Coverage Gap Analysis","Draft"
-"B2C-ORG-032","Ship-To Shows Only Current Org Addresses","B2C Features > Organization","High","BL-B2B-005; BL-B2C-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-ORG-032","Ship-To Shows Only Current Org Addresses","B2C Features > Organization","High","BL-B2B-005; BL-B2B-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multi-org user; Org A and Org B each have distinct shipping addresses","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to Account > Addresses or Ship To selector
 3. [ASSERT] Verify only Org A addresses are shown
@@ -337,7 +337,7 @@ Multi-org user; Org A and Org B each have distinct shipping addresses","url={{FR
 [STATE] Org B addresses are not visible in Org A context
 [DOM] Address count matches Org A address count","[API] addresses query returns only Org A scoped addresses
 [CONSOLE] no uncaught JS errors","Org B addresses visible in Org A context; mixed addresses from multiple orgs; address scope not filtered by current org","none","Coverage Gap Analysis","Draft"
-"B2C-ORG-033","Ship-To - Switching Org Updates Address List","B2C Features > Organization","High","BL-B2B-005; BL-B2C-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-ORG-033","Ship-To - Switching Org Updates Address List","B2C Features > Organization","High","BL-B2B-005; BL-B2B-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multi-org user; Org A and Org B have different addresses","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to Account > Addresses
 3. [ASSERT] Note Org A addresses
@@ -349,7 +349,7 @@ Multi-org user; Org A and Org B have different addresses","url={{FRONT_URL}},org
 [STATE] Org A addresses no longer visible
 [DOM] Address entries reflect Org B location data","[API] addresses query after org switch returns Org B addresses
 [CONSOLE] no uncaught JS errors","Org A addresses persisting after switch to Org B; address list not updating on org switch; stale address data","none","Coverage Gap Analysis","Draft"
-"B2C-ORG-034","Ship-To - New Address Scoped to Current Org","B2C Features > Organization","High","BL-B2B-005; BL-B2C-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-ORG-034","Ship-To - New Address Scoped to Current Org","B2C Features > Organization","High","BL-B2B-005; BL-B2B-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multi-org user; Org A active","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to Account > Addresses
 3. [ACT] Click Add New Address
@@ -363,7 +363,7 @@ Multi-org user; Org A active","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL
 [STATE] New address NOT visible in Org B context
 [STATE] Address is scoped to Org A only","[API] addresses query for Org B does not include newly created Org A address
 [CONSOLE] no uncaught JS errors","New address visible in both orgs; address not scoped to current org; address leaking across organizations","delete test address","Coverage Gap Analysis","Draft"
-"B2C-ORG-035","Ship-To - Default Address Per Org","B2C Features > Organization","Medium","BL-B2B-005; BL-B2C-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-ORG-035","Ship-To - Default Address Per Org","B2C Features > Organization","Medium","BL-B2B-005; BL-B2B-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multi-org user. NOTE: vcst-qa does not configure a distinct Default address per org, so a Default badge may be absent — that alone is NOT a failure. Assert that any Default badge shown is scoped to the active org's own address list and does not leak across the switch; the distinct-default-per-org assertion activates only when each org has a default configured.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to Account > Addresses
 3. [ASSERT] Note Org A's address list and whether any address carries a Default badge

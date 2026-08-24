@@ -56,14 +56,14 @@ BSM-007,Admin SPA — Categories Blade Opens,Backend Smoke > Catalog Admin,Criti
 [ACT] navigate to Categories view","[BLADE] categories list visible with at least 1 category
 [GRID] category grid renders with Name column
 [DOM] 'Add Category' button present in toolbar","[API] GET {{BACK_URL}}/api/catalog/categories?catalogId=<first_catalog_id> → 200 with non-empty categories array","Categories view shows empty grid when categories exist in catalog, API 404 or 500 for categories endpoint, blade fails to open",none,"Suite 053 (Catalog Admin Categories)",Automated
-BSM-008,Admin SPA — Orders Module Blade Opens,Backend Smoke > Orders Admin,Critical,"BL-ORDER-001, BL-CROSS-010",ECL-8.1,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/orders
+BSM-008,Admin SPA — Orders Module Blade Opens,Backend Smoke > Orders Admin,Critical,"",ECL-8.1,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/orders
 [WAIT] Orders blade loads
 [ASSERT] order list grid renders","[BLADE] Orders blade title visible (e.g., 'Customer Orders')
 [GRID] grid renders with columns: Number, Status, Customer Name, Created Date, Total
 [GRID] at least 1 order row visible (or empty state message if env has no orders)
 [DOM] search/filter controls present in toolbar","[API] GET {{BACK_URL}}/api/order/customerOrders?take=10 → 200 with customerOrders array
 [BODY] if grid shows orders, API order count matches grid count (±pagination)","Orders blade throws Angular error on open, grid fails to render columns, 500 on orders API, Total column shows $0.00 for all orders (pricing data missing)",none,"Suite 017 (Orders Management), Suite 018 (Orders Payments), Suite 019 (Orders Shipments)",Automated
-BSM-009,Admin SPA — Order Detail Blade Loads,Backend Smoke > Orders Admin,Critical,"BL-ORDER-001, BL-PRICE-001",ECL-8.1,"Orders blade accessible with at least 1 order (BSM-008 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/orders
+BSM-009,Admin SPA — Order Detail Blade Loads,Backend Smoke > Orders Admin,Critical,"",ECL-8.1,"Orders blade accessible with at least 1 order (BSM-008 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/orders
 [WAIT] Orders list loaded
 [ACT] click first order row in the grid
 [WAIT] Order detail blade opens (stacked to the right)","[BLADE] order detail blade shows order number in title
@@ -101,7 +101,7 @@ BSM-013,Admin SPA — Inventory Fulfillment Centers Blade Opens,Backend Smoke > 
 [GRID] columns include: Name, Code, Address (or similar)
 [DOM] 'Add', 'Delete' toolbar controls present","[API] GET {{BACK_URL}}/api/inventory/fulfillmentcenters → 200 with non-empty array
 [BODY] fulfillment center count in API matches grid row count","Inventory blade fails to open, grid empty when fulfillment centers exist, API returns 500, blade crashes with Angular error on open",none,"Suite 056 (Inventory)",Automated
-BSM-014,Admin SPA — Marketing Promotions Blade Opens,Backend Smoke > Marketing Admin,Critical,BL-PROMO-001,ECL-7.1,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/marketing
+BSM-014,Admin SPA — Marketing Promotions Blade Opens,Backend Smoke > Marketing Admin,Critical,,ECL-7.1,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/marketing
 [WAIT] Marketing module blade loads
 [ACT] click 'Promotions' in the navigation or tile
 [WAIT] Promotions list grid renders","[BLADE] Promotions blade title visible
@@ -131,7 +131,7 @@ BSM-017,Platform REST API — Catalog Search Products Endpoint,Backend Smoke > P
 [BODY] 'totalCount' field > 0
 [BODY] each item has 'id', 'code', 'name' fields
 [SCHEMA] response structure matches expected catalog search contract","[ADMIN] product count in API response aligns with Products blade row count in Admin","HTTP 500 or 403, empty items array when catalog has products, totalCount = 0, items missing required fields (id, code, name), response not JSON",none,"Suite 049 (Platform API), Suite 051 (Catalog Admin Products)",Automated
-BSM-018,Platform REST API — Orders Search Endpoint,Backend Smoke > Platform API,Critical,"BL-ORDER-001, BL-CROSS-010",ECL-8.1,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] POST {{BACK_URL}}/api/order/customerOrders/search
+BSM-018,Platform REST API — Orders Search Endpoint,Backend Smoke > Platform API,Critical,"",ECL-8.1,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] POST {{BACK_URL}}/api/order/customerOrders/search
 [SETUP] Authorization: Bearer {{bearer_token}}
 [SETUP] Content-Type: application/json
 [SETUP] body: {""take"": 5}","[STATUS] HTTP 200 OK
@@ -344,7 +344,7 @@ BSM-039,Platform REST API — Inventory Stock Update Round-Trip,Backend Smoke > 
 [HTTP] GET same endpoint again","[STATUS] initial GET returns 200 with inStockQuantity field
 [STATUS] POST returns 200 or 204
 [BODY] final GET shows inStockQuantity = baseline + 1","[ADMIN] open FFC detail blade in Admin → stock for {{test_sku}} matches API value","POST returns 400 or 403 on valid payload; final GET shows unchanged quantity; stock goes negative unexpectedly; Admin blade shows different value than API","Restore original quantity via POST with baseline value.","Suite 056 (Inventory), Suite 049 (Platform API)",Automated
-BSM-040,Admin SPA — Marketing Coupons Blade Opens,Backend Smoke > Marketing Admin,High,"BL-PROMO-001, BL-CART-003",ECL-7.2,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/marketing
+BSM-040,Admin SPA — Marketing Coupons Blade Opens,Backend Smoke > Marketing Admin,High,"",ECL-7.2,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/marketing
 [WAIT] Marketing module blade loads
 [ACT] click 'Coupons' section or tab if not already active
 [WAIT] Coupons blade or list renders","[BLADE] Coupons section or blade title visible
@@ -599,7 +599,7 @@ BSM-069,Platform REST API — Category Hierarchy Depth Check,Backend Smoke > Cat
 [BODY] response contains categories with 'id', 'name', 'parentCategoryId' (nullable) fields
 [BODY] at least 1 category has non-null 'parentCategoryId' (nested category exists)
 [BODY] no circular parentCategoryId references (parent ≠ self)","[ADMIN] verify category tree in Admin Catalog blade parent-child relationships are consistent with API data","API returns empty array when categories exist, circular reference in parentCategoryId chain, HTTP 500, parentCategoryId field absent from response",none,"Suite 053 (Catalog Admin Categories)",Automated
-BSM-070,Platform REST API — Promotion Evaluation (Empty Cart Edge Case),Backend Smoke > Marketing Admin,Medium,BL-PROMO-001,ECL-7.1,"Admin Bearer token obtained (BSM-002), at least 1 active promotion exists",back_url={{BACK_URL}}; bearer_token=<from BSM-002>; store_id={{STORE_ID}},"[HTTP] POST {{BACK_URL}}/api/marketing/promotions/evaluate
+BSM-070,Platform REST API — Promotion Evaluation (Empty Cart Edge Case),Backend Smoke > Marketing Admin,Medium,,ECL-7.1,"Admin Bearer token obtained (BSM-002), at least 1 active promotion exists",back_url={{BACK_URL}}; bearer_token=<from BSM-002>; store_id={{STORE_ID}},"[HTTP] POST {{BACK_URL}}/api/marketing/promotions/evaluate
 [SETUP] Authorization: Bearer {{bearer_token}}
 [SETUP] Content-Type: application/json
 [SETUP] body: {""storeId"": ""{{STORE_ID}}"", ""currency"": ""USD"", ""items"": []}","[STATUS] HTTP 200 OK
@@ -713,7 +713,7 @@ BSM-080,Admin SPA — Add Note to Order and Verify,Backend Smoke > Edit Workflow
 [WAIT] note appears in the comments list","[DOM] note text {{test_note}} visible in the comments/notes section
 [DOM] note shows timestamp and author (current admin user)
 [STATE] order status unchanged after adding note (note is non-destructive)","[API] GET {{BACK_URL}}/api/order/customerOrders/<order_id> → 200; 'comment' or notes array contains {{test_note}}","Comment section absent from order detail, note input non-interactive, save button absent, note not visible after save, order status changes unexpectedly after note save, Angular error on notes section",none,"Suite 017 (Orders Management)",Automated
-BSM-081,Admin SPA — Toggle Promotion Active State and Verify,Backend Smoke > Edit Workflows,High,"BL-PROMO-001, BL-CROSS-006",ECL-7.1,"Admin logged in, at least 1 promotion exists (BSM-014 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/marketing
+BSM-081,Admin SPA — Toggle Promotion Active State and Verify,Backend Smoke > Edit Workflows,High,"BL-CROSS-006",ECL-7.1,"Admin logged in, at least 1 promotion exists (BSM-014 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/marketing
 [WAIT] Marketing blade loaded
 [ACT] click 'Promotions' section
 [WAIT] promotions list renders
@@ -952,7 +952,7 @@ BSM-104,Admin SPA — Inventory Blade Search Fulfillment Center by Name,Backend 
 [ACT] enter at least 3 characters of the first FFC name into the search input
 [WAIT] grid refreshes","[GRID] only FFCs matching the search term visible
 [GRID] visible row contains the search term in Name column","[API] GET {{BACK_URL}}/api/inventory/fulfillmentcenters?searchPhrase=<search_term>&take=10 → 200; results contain FFCs matching the term","Search non-functional, unrelated FFCs remain, API ignores keyword parameter, Angular error on search",none,"Suite 056 (Inventory)",Automated
-BSM-105,Admin SPA — Promotions Blade Search by Name,Backend Smoke > Search and Filter,Medium,"BL-PROMO-001",ECL-7.1,"Admin logged in, promotions blade accessible with multiple promotions (BSM-014 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/marketing
+BSM-105,Admin SPA — Promotions Blade Search by Name,Backend Smoke > Search and Filter,Medium,"",ECL-7.1,"Admin logged in, promotions blade accessible with multiple promotions (BSM-014 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/marketing
 [WAIT] Marketing blade loaded; navigate to Promotions
 [ASSERT] note baseline promotion row count
 [ACT] enter at least 3 characters of a known promotion name into the search input

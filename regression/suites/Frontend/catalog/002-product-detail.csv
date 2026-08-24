@@ -342,3 +342,15 @@ A product with low inventory (at or below the configured low-stock warning thres
 [STATE] No products in compare list
 [DOM] Compare indicators removed from all product cards/PDPs","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors","Compare bar still shows products after clear; compare indicators persist on cards; clear button missing","none","Coverage Gap Analysis","Draft"
+CAT-080,In-Wishlist Marker Isolated to Current Store — Product Detail Page (Cross-Store Wishlist Regression),Catalog > Product Detail > Wishlist Marker,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WISH_TWO_STORE_CUSTOMER]
+state from CAT-79 (customer holds a wishlist in the current store containing @td(WISH_TWO_STORE_CUSTOMER.storeAProductSku), and a separate wishlist in a second store containing @td(WISH_TWO_STORE_CUSTOMER.storeBProductSku), which is NOT on the current store's wishlist). The WISH_TWO_STORE_CUSTOMER fixture does not exist yet — see the handoff report; it must be seeded before this case is runnable. VACUOUS ON A SINGLE-STORE DEPLOYMENT: record SKIPPED, not PASS, in that case. Regression target: VCST-5705.","front_url={{FRONT_URL}}, email=@td(WISH_TWO_STORE_CUSTOMER.email), password=@td(WISH_TWO_STORE_CUSTOMER.password), store_a_url=@td(WISH_TWO_STORE_CUSTOMER.storeAProductUrl), store_b_url=@td(WISH_TWO_STORE_CUSTOMER.storeBProductUrl)","1. [NAV] {{FRONT_URL}}@td(WISH_TWO_STORE_CUSTOMER.storeBProductUrl)
+2. [WAIT] PDP loads for the product that is on the OTHER store's wishlist only
+3. [ASSERT] record the state of the PDP wishlist button (`button.product-price-block__add-to-list`, aria-label 'Add to list')
+4. [NAV] {{FRONT_URL}}@td(WISH_TWO_STORE_CUSTOMER.storeAProductUrl)
+5. [WAIT] PDP loads for the product that IS on the current store's wishlist
+6. [ASSERT] record the state of the same wishlist button on this PDP","[DOM] on the storeB-only product's PDP, the wishlist button (`button.product-price-block__add-to-list`) renders its neutral 'Add to list' state, not an in-wishlist/remove state {SPEC}
+[DOM] on the storeA product's PDP, the same button renders its in-wishlist/remove-from-list state {SPEC}
+[STATE] the PDP wishlist marker is scoped to the current store's wishlist only, matching the catalog-grid behavior verified in CAT-79 {SPEC}","[API] the PDP's wishlist-membership lookup is scoped by storeId — the same FindWishlistsByProductsAsync fix exercised by the catalog grid {SPEC}
+[CONSOLE] no uncaught JS errors on PDP load
+[NETWORK] no 4xx/5xx on the wishlist-lookup request",wishlist button shows an in-wishlist state for the storeB-only product's PDP; wishlist button shows the neutral state for the storeA product's PDP; console TypeError on PDP load; test executed on a single-store deployment and reported PASS instead of SKIPPED,none — read-only browse; no state change,VCST-5705,Draft

@@ -32,6 +32,10 @@
  *      (a second-currency price with no base would price the product in EUR only).
  *  11. test-products.csv: no seeded=true row still carries a pre-seeding "Template only — NOT seeded"
  *      manual-provisioning recipe in `notes` (it contradicts the seeder + the alias _status).
+ *  12. test-products.csv: every DISCOUNT_RATIO_FIXTURES row still yields its EXACT raw discount ratio
+ *      (re-derived in integer cents), and a `requireMidpoint` row still sits on the 4-decimal rounding
+ *      midpoint. Guards the VCST-5691 fixtures (PROD-108 / PROD-109): a one-cent price edit silently
+ *      turns PRICE-065 / PRICE-066 into vacuous passes and nothing else would notice.
  *
  * Usage:  npm run td:validate:standard   (exit 1 on any hard problem)
  */
@@ -41,8 +45,9 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES,
+  CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES, DISCOUNT_RATIO_FIXTURES, DISCOUNT_PERCENT_DECIMALS,
   productSlug, storefrontPathForAdHoc, slugify,
+  discountRatioScaled, isRoundingMidpoint, expectedDiscountPercent, roundHalfToEven,
 } from './standard-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -259,6 +264,36 @@ for (const r of tp) {
   if (STALE_NOTE_RE.test(String(r.notes || ''))) { fail(`${CSV_SOURCE.file} row ${r[CSV_SOURCE.map.csvId]}: seeded=true but notes still say "Template only — NOT seeded" (stale pre-seeding recipe — describe the seeded reality instead)`); stale++; }
 }
 if (!stale) ok('no stale "Template only — NOT seeded" notes on seeded rows');
+
+// 12. Discount-ratio fixtures (VCST-5691). A price row is only able to DETECT a discountPercent
+// regression if its raw (list - sale) / list ratio has the property the case relies on. Both
+// properties are invisible in the CSV row, so an innocent-looking price edit (87.50 -> 87.00,
+// 175.31 -> 175.30) silently turns PRICE-065 / PRICE-066 into a vacuous pass. This check re-derives
+// the ratio in INTEGER CENTS — float subtraction makes 200.00 - 175.31 = 24.689999999999998 and the
+// ratio 0.12344999…, which would round the WRONG way and hide exactly the drift we are guarding.
+console.log(`\n[12] ${CSV_SOURCE.file}: discount-ratio fixtures still carry their exact ratio (VCST-5691)`);
+const SCALE = 1e9;
+let ratioOk = 0;
+for (const [csvId, spec] of Object.entries(DISCOUNT_RATIO_FIXTURES)) {
+  const r = tpById.get(csvId);
+  if (!r) { fail(`DISCOUNT_RATIO_FIXTURES["${csvId}"]: no ${CSV_SOURCE.file} row — the fixture the case names does not exist`); continue; }
+  if (!truthy(r[CSV_SOURCE.map.seeded])) { fail(`${csvId}: seeded=false — the seeder never creates it, so the case cannot run`); continue; }
+  const list = r[listCol], sale = r[saleCol];
+  const actual = discountRatioScaled(list, sale, SCALE);
+  if (actual == null) { fail(`${csvId}: list "${list}" / sale "${sale}" is not a usable 2-decimal money pair with sale < list`); continue; }
+  const want = Math.round(spec.ratio * SCALE);
+  if (actual !== want) {
+    fail(`${csvId}: raw discount ratio is ${actual / SCALE} but the spec requires EXACTLY ${spec.ratio} (list ${list} / sale ${sale}) — ${spec.purpose}`);
+    continue;
+  }
+  if (spec.requireMidpoint && !isRoundingMidpoint(spec.ratio)) {
+    fail(`${csvId}: ratio ${spec.ratio} does NOT sit on the ${DISCOUNT_PERCENT_DECIMALS}-decimal rounding midpoint — AwayFromZero and ToEven agree (${expectedDiscountPercent(spec.ratio)}), so the case proves nothing`);
+    continue;
+  }
+  ratioOk++;
+  ok(`${csvId} (${r[CSV_SOURCE.map.code]}): ${list}/${sale} → ratio ${spec.ratio} → discountPercent ${expectedDiscountPercent(spec.ratio)}${spec.requireMidpoint ? ` [midpoint: ToEven would give ${roundHalfToEven(spec.ratio)}]` : ''}`);
+}
+if (ratioOk === Object.keys(DISCOUNT_RATIO_FIXTURES).length) ok(`all ${ratioOk} discount-ratio fixture(s) coherent with standard-specs.mjs`);
 
 console.log('\n=== standard-products drift/leak check ===');
 console.log(`  standard.csv rows: ${std.length} | ${CSV_SOURCE.file} rows: ${tp.length} | seeded: ${seededIds.size} | discovered: ${DISCOVERED_FIXTURES.length}`);
