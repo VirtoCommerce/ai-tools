@@ -41,12 +41,19 @@
  *   --dry-run                  Explicit no-op form of the default (read-only); wins over --apply if both given.
  *   --no-wait                  (with --apply) commit but skip the deploy Action + module polling.
  *   --password=<pw>            Admin password for the /api/platform/modules check (else env/Password1).
- *   --timeout=<sec>            Deploy + restart poll budget per env (default 1200).
+ *   --probe=<METHOD /path>     Behavioural liveness probe — the ONLY trustworthy proof for a Platform
+ *                              hotfix (see --probe-expect). Anonymous request, polled until it returns
+ *                              the expected status. e.g. --probe='POST /api/platform/security/login'
+ *   --probe-body=<raw>         Request body for --probe (sent as application/json).
+ *   --probe-expect=<status>    HTTP status --probe must return once the fix is live (e.g. 400).
+ *   --timeout=<sec>            SHARED per-env budget for the deploy wait + /health + the liveness gate
+ *                              (default 1200). Health takes at most a 300s slice of it.
  *   --json                     Machine-readable output.
  *
  * Exit codes:
  *   0  every targeted env delivered + confirmed (or dry-run plan clean / already-delivered)
- *   1  a gate blocked (no hotfix on the line / asset missing / deploy failed / version never appeared)
+ *   1  a gate blocked (no hotfix on the line / asset missing / deploy failed / version never appeared,
+ *      or --probe never returned --probe-expect within the timeout)
  *   2  tool error: task/repo unresolved, missing env coords, GitHub auth/rate-limit
  *
  * Auth: GIT_TOKEN with contents:write + actions:read on vc-deploy-dev, and repo read on the product
@@ -65,6 +72,12 @@ const OWNER = 'VirtoCommerce';
 const MAX_PATCH_PROBE = 40;
 const MAX_RELEASES_SCAN = 30;
 const POLL_INTERVAL_MS = 15_000;
+/** Liveness polls (health / behavioural probe) tick faster than the GitHub Actions poll: they hit the
+ *  env directly (no API rate limit) and a rollover we're waiting on is short (~1-2 min). */
+const LIVENESS_POLL_MS = 10_000;
+/** Health may not consume the whole per-env budget — it is the cheap "is anything answering" gate, and
+ *  the behavioural probe after it needs budget left to actually prove the hotfix. */
+const HEALTH_SLICE_MS = 300_000;
 const DEFAULT_TIMEOUT_S = 1200; // deploy build + cloud rollout + platform restart ~ up to 20 min
 const PRODUCT_REPO_RE = /^vc-module(-x)?-[a-z0-9.-]+$/i;
 const isProductRepo = (n: string) => n === 'vc-platform' || n === 'vc-frontend' || PRODUCT_REPO_RE.test(n);
@@ -74,7 +87,8 @@ const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian
 interface SemVer { major: number; minor: number; patch: number; }
 interface PrInfo { repo: string; number: number; title: string; url: string; merged: boolean; mergeCommitSha: string | null; }
 interface EnvCoords { env: string; file: string; deployOwner: string; deployRepo: string; branch: string; path: string; backUrl: string; admin: string; password: string; }
-type EnvVerdict = 'delivered' | 'already-delivered' | 'no-hotfix-on-line' | 'asset-missing' | 'not-in-manifest' | 'deploy-failed' | 'not-confirmed' | 'committed-unconfirmed' | 'wrong-source' | 'version-line-mismatch' | 'skipped' | 'planned' | 'error';
+type EnvVerdict = 'delivered' | 'already-delivered' | 'no-hotfix-on-line' | 'asset-missing' | 'not-in-manifest' | 'deploy-failed' | 'not-confirmed' | 'deployed-unverified' | 'committed-unconfirmed' | 'wrong-source' | 'version-line-mismatch' | 'skipped' | 'planned' | 'error';
+interface Probe { method: string; path: string; body?: string; expect: number; }
 interface EnvResult {
   env: string; branch: string; moduleId: string | null;
   pinned: string | null; line: string | null; target: string | null;
@@ -155,13 +169,30 @@ async function recentCommitMessages(repo: string, ref: string, n = 40): Promise<
   const arr = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/commits?sha=${encodeURIComponent(ref)}&per_page=${n}`);
   return Array.isArray(arr) ? arr.map((c: any) => c?.commit?.message ?? '') : [];
 }
-/** Does the release tag contain the fix — CHERRY-PICK AWARE (the hotfix commit has a new SHA, so we
- * also accept the `git cherry-pick -x` trailer on a commit reachable from the tag). */
-async function tagHasFix(repo: string, tag: string, fixSha: string): Promise<boolean> {
+/** Does the release tag contain the fix — CHERRY-PICK AWARE (the hotfix commit has a new SHA).
+ *
+ * Three signals, strongest first:
+ *   1. SHA ancestry — the fix commit itself is reachable from the tag.
+ *   2. The `git cherry-pick -x` trailer (`cherry picked from commit <sha>`).
+ *   3. The originating PR reference `(#N)` in a commit subject reachable from the tag.
+ *
+ * Signal 3 exists because (2) only fires when the picker passed `-x`, which is NOT the house
+ * convention here: VCST-5705's hotfixes were picked onto support/3.1000, support/3.1003 and
+ * support/3.1006 as plain `VCST-5705: Performance optimizations (#193)` commits with no trailer,
+ * so a signal-1+2-only check reported `no hotfix on line` for releases that demonstrably shipped
+ * the fix — a false STOP that blocks delivery of an already-released hotfix. `(#N)` is scoped to
+ * this repo's own history, so it identifies that repo's PR unambiguously. */
+async function tagHasFix(repo: string, tag: string, fixSha: string, prNumber?: number): Promise<boolean> {
   if (await refContains(repo, tag, fixSha)) return true;
   const short = fixSha.slice(0, 8);
   const msgs = await recentCommitMessages(repo, tag, 40);
-  return msgs.some((m) => /cherry picked from commit/i.test(m) && (m.includes(fixSha) || m.includes(short)));
+  if (msgs.some((m) => /cherry picked from commit/i.test(m) && (m.includes(fixSha) || m.includes(short)))) return true;
+  if (prNumber) {
+    // Subject line only — a `(#N)` buried in a body could be an unrelated mention.
+    const ref = `(#${prNumber})`;
+    return msgs.some((m) => (m.split('\n')[0] ?? '').includes(ref));
+  }
+  return false;
 }
 /** Released tag for a version, with a downloadable .zip asset? (the GithubReleases Pack gate). */
 async function releaseAssetOk(repo: string, id: string, version: string): Promise<{ ok: boolean; note: string }> {
@@ -306,8 +337,7 @@ async function commitManifest(c: EnvCoords, newText: string, sha: string, messag
 
 // ── deploy Action poll (match by head_sha of our commit) ───────────────────────
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-async function waitDeploy(c: EnvCoords, commitSha: string, timeoutS: number): Promise<{ ok: boolean; url: string; note: string }> {
-  const deadline = Date.now() + timeoutS * 1000;
+async function waitDeploy(c: EnvCoords, commitSha: string, deadline: number): Promise<{ ok: boolean; url: string; note: string }> {
   let url = `https://github.com/${c.deployOwner}/${c.deployRepo}/actions?query=branch%3A${c.branch}`;
   while (Date.now() < deadline) {
     const runs = await ghJson(`https://api.github.com/repos/${c.deployOwner}/${c.deployRepo}/actions/runs?branch=${encodeURIComponent(c.branch)}&event=push&per_page=15`);
@@ -321,7 +351,7 @@ async function waitDeploy(c: EnvCoords, commitSha: string, timeoutS: number): Pr
     }
     await sleep(POLL_INTERVAL_MS);
   }
-  return { ok: false, url, note: `deploy Action did not complete within ${timeoutS}s` };
+  return { ok: false, url, note: `deploy Action did not complete within the per-env budget` };
 }
 
 // ── live module-version poll (/api/platform/modules) ───────────────────────────
@@ -346,13 +376,69 @@ async function liveModuleVersion(c: EnvCoords, token: string, id: string): Promi
     return { status: r.status, version: m?.version ?? null };
   } catch { return { status: 0, version: null }; }
 }
-/** Single /health probe (used to confirm a Platform delivery, which has no modules-API version). */
-async function platformHealthy(c: EnvCoords): Promise<boolean> {
+/** One /health probe — "is the app answering", NOT "is the fix live" (see pollHealthy/waitProbe). */
+async function healthOnce(c: EnvCoords): Promise<boolean> {
   try { const r = await fetch(`${c.backUrl}/health`, { redirect: 'manual' }); return r.status === 200; } catch { return false; }
 }
+/** Poll /health until 200 (or timeout).
+ *
+ * This was a SINGLE probe taken the moment the deploy Action went green, which is doubly wrong:
+ * the app may not have come back yet (transient false negative), and — the dangerous half — a
+ * 200 here is routinely answered by the STILL-RUNNING PREVIOUS REVISION. The vcptcore envs are
+ * Azure apps fed by an image the deploy builds, and the rollover trails the Action by roughly
+ * 1-2 minutes (observed on VCST-5623: the deploy finished 10:17:19Z and the pre-fix response was
+ * still being served at ~10:18Z; stable rolled over ~50s after its own deploy). So health alone
+ * can never distinguish "new build up" from "old build still serving". */
+async function pollHealthy(c: EnvCoords, deadline: number): Promise<boolean> {
+  // Bounded slice of the SHARED per-env deadline, never beyond it: health must not eat the budget the
+  // behavioural probe needs, and the three phases together must still respect --timeout.
+  const stop = Math.min(deadline, Date.now() + HEALTH_SLICE_MS);
+  for (;;) {
+    if (await healthOnce(c)) return true;
+    if (Date.now() >= stop) return false;
+    await sleep(LIVENESS_POLL_MS);
+  }
+}
+/** Poll a caller-supplied behavioural probe until it returns the expected status (or timeout).
+ *
+ * For a MODULE hotfix, /api/platform/modules reports the installed version, so version-match is a
+ * sound "it restarted on the hotfix" signal. A PLATFORM hotfix has no such signal — there is no
+ * Platform entry in the modules API and /api/platform/version is 404 — so the only trustworthy
+ * proof that the new build is actually serving is the FIX'S OWN OBSERVABLE BEHAVIOUR. The caller
+ * supplies it (`--probe` + `--probe-expect`), because only the caller knows what the fix changed.
+ *
+ * Deliberately anonymous: a liveness probe must not depend on an admin token, and the endpoints
+ * worth probing for this are typically [AllowAnonymous]. Body is sent as JSON when given. */
+async function waitProbe(c: EnvCoords, probe: Probe, deadline: number): Promise<{ ok: boolean; last: number | null; note: string }> {
+  const url = `${c.backUrl}${probe.path.startsWith('/') ? '' : '/'}${probe.path}`;
+  let last: number | null = null;
+  for (;;) {
+    try {
+      const r = await fetch(url, {
+        method: probe.method,
+        headers: probe.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+        body: probe.body,
+        redirect: 'manual',
+      });
+      last = r.status;
+      if (r.status === probe.expect) {
+        return { ok: true, last, note: `fix confirmed live: ${probe.method} ${probe.path} → ${r.status}` };
+      }
+    } catch { last = 0; }
+    if (Date.now() >= deadline) {
+      // Do NOT assert the cause: an unmet probe is equally consistent with a wrong --probe path /
+      // --probe-expect, a fix that does not change this signal, and a genuinely failed rollover.
+      // Naming only one of those sends the operator down the wrong path.
+      return {
+        ok: false, last,
+        note: `${probe.method} ${probe.path} returned ${last === 0 ? 'no response' : last} (expected ${probe.expect}) until the per-env budget ran out — either the env never rolled onto the hotfix, or the probe/expected status does not match what this fix changes`,
+      };
+    }
+    await sleep(LIVENESS_POLL_MS);
+  }
+}
 /** Poll the live env until the module reports `target` (or timeout). */
-async function waitLiveVersion(c: EnvCoords, id: string, target: string, timeoutS: number): Promise<{ ok: boolean; version: string | null; note: string }> {
-  const deadline = Date.now() + timeoutS * 1000;
+async function waitLiveVersion(c: EnvCoords, id: string, target: string, deadline: number): Promise<{ ok: boolean; version: string | null; note: string }> {
   let token = await getAdminToken(c);
   if (!token) return { ok: false, version: null, note: `could not get an admin token at ${c.backUrl} — verify the version by hand` };
   let last: string | null = null;
@@ -368,7 +454,7 @@ async function waitLiveVersion(c: EnvCoords, id: string, target: string, timeout
   if (consecutiveAuthFailures > 0) {
     return { ok: false, version: last, note: `admin token was rejected (401/403) on the last ${consecutiveAuthFailures} check(s) at ${c.backUrl} — this may be an auth problem, not "still restarting"; verify credentials before assuming the version` };
   }
-  return { ok: false, version: last, note: `live module ${id} still ${last ?? 'unreachable'} (expected ${target}) after ${timeoutS}s` };
+  return { ok: false, version: last, note: `live module ${id} still ${last ?? 'unreachable'} (expected ${target}) when the per-env budget ran out` };
 }
 
 // controlled exit — never process.exit() with a fetch socket open (libuv assert on Windows).
@@ -391,6 +477,32 @@ async function main() {
   const envs = (flag('envs') ?? 'stable,regression').split(',').map((s) => s.trim()).filter(Boolean);
   const versionOverride = flag('version');
   const passwordOverride = flag('password');
+  // Behavioural liveness probe (see waitProbe). Both --probe and --probe-expect are required
+  // together: a probe with no expected status cannot decide anything, and an expected status with
+  // no probe has nothing to ask.
+  const probeFlag = flag('probe');
+  const probeExpectFlag = flag('probe-expect');
+  let probe: Probe | undefined;
+  if (probeFlag !== undefined || probeExpectFlag !== undefined) {
+    if (probeFlag === undefined || probeExpectFlag === undefined) {
+      fail("--probe and --probe-expect must be given together, e.g. --probe='POST /api/platform/security/login' --probe-body='{}' --probe-expect=400");
+    }
+    // fail() returns `never`, so the checks above already narrowed both flags to string.
+    const parts = probeFlag.trim().split(/\s+/);
+    const method = (parts.length > 1 ? parts[0] : 'GET').toUpperCase();
+    const path = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+    const expect = Number(probeExpectFlag);
+    const body = flag('probe-body');
+    if (!path || !path.startsWith('/')) fail(`--probe path must start with "/" (got: ${probeFlag})`);
+    if (!Number.isInteger(expect) || expect < 100 || expect > 599) fail(`--probe-expect must be an HTTP status (got: ${probeExpectFlag})`);
+    // Reject GET/HEAD + body HERE. fetch() throws TypeError on that combination, which the probe loop
+    // catches as "no response" — so an operator typo would otherwise burn the whole per-env budget and
+    // then be reported as if the environment had failed to roll over.
+    if (body !== undefined && (method === 'GET' || method === 'HEAD')) {
+      fail(`--probe-body cannot be used with ${method} (fetch rejects a body on GET/HEAD) — drop the body or use POST`);
+    }
+    probe = { method, path, body, expect };
+  }
 
   if (!task || !/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(task)) fail('Usage: npx tsx scripts/hotfix-deliver.ts <TASK-KEY> [--envs=stable,regression] [--dry-run (default) | --apply] [--repo=] [--pr=] [--version=] [--json]');
 
@@ -473,13 +585,13 @@ async function main() {
         if (highest == null) { results.push({ ...r, verdict: 'error', note: `pinned tag ${pinnedVer} not found on ${repo} — cannot resolve the line` }); continue; }
         if (highest === sv.patch) {
           // nothing newer on the line — is the fix already in the pinned release?
-          const hasFix = await tagHasFix(repo, pinnedVer, fixSha);
+          const hasFix = await tagHasFix(repo, pinnedVer, fixSha, fix.number);
           results.push({ ...r, target: pinnedVer, verdict: hasFix ? 'already-delivered' : 'no-hotfix-on-line', note: hasFix ? `pinned ${pinnedVer} already contains the fix` : `no patch above ${pinnedVer} on line ${r.line} — run /qa-hotfix for this bundle first` });
           continue;
         }
         // walk down from the highest patch to the pinned; first one that contains the fix is the hotfix
         let chosen: string | null = null;
-        for (let n = highest; n > sv.patch; n--) { const t = tagOf(sv, n); if (await tagHasFix(repo, t, fixSha)) { chosen = t; break; } }
+        for (let n = highest; n > sv.patch; n--) { const t = tagOf(sv, n); if (await tagHasFix(repo, t, fixSha, fix.number)) { chosen = t; break; } }
         if (!chosen) { results.push({ ...r, verdict: 'no-hotfix-on-line', note: `patches exist above ${pinnedVer} on line ${r.line} but none contain the fix — run /qa-hotfix for this bundle first` }); continue; }
         target = chosen;
       }
@@ -512,22 +624,50 @@ async function main() {
       // label it distinctly so neither the exit code nor the printed badge reads as a clean pass.
       if (noWait) { results.push({ ...r, verdict: 'committed-unconfirmed', note: `committed (--no-wait: deploy + version not confirmed — verify out-of-band before treating this as delivered)` }); continue; }
 
-      // 6. wait for the deploy Action
+      // 6. wait for the deploy Action. ONE deadline for every polling phase below (deploy → health →
+      //    liveness): --timeout is documented as the per-env budget, so the phases must SHARE it.
+      //    Giving each phase its own full timeout silently multiplied the worst case by ~2-3x.
+      const envDeadline = Date.now() + timeoutS * 1000;
       if (!asJson) console.log(`[${c.env}] waiting for "Cloud platform deployment" …`);
-      const dep = await waitDeploy(c, commitSha, timeoutS);
+      const dep = await waitDeploy(c, commitSha, envDeadline);
       r.deployRunUrl = dep.url;
       if (!dep.ok) { results.push({ ...r, verdict: 'deploy-failed', note: dep.note }); continue; }
 
       // 7. confirm the env is live. Module hotfix → poll /api/platform/modules for the version.
-      //    Platform → no modules-API version, so confirm the app came back up via /health.
+      //    Platform → there is NO live version to assert, so /health alone cannot prove the fix is
+      //    serving (the previous revision answers it 200 for ~1-2 min after the deploy goes green).
+      //    With --probe we poll the fix's own behaviour, which IS proof. Without one we say so:
+      //    'deployed-unverified', never 'delivered'.
       if (isPlatform) {
-        const healthy = await platformHealthy(c);
-        results.push({ ...r, verdict: healthy ? 'delivered' : 'not-confirmed', note: healthy ? `deploy succeeded; /health 200 (Platform ${target} — no modules-API version to assert)` : `deploy Action succeeded but /health is not 200 yet — verify Platform ${target} by hand` });
+        const healthy = await pollHealthy(c, envDeadline);
+        if (!healthy) {
+          results.push({ ...r, verdict: 'not-confirmed', note: `deploy Action succeeded but /health never returned 200 — verify Platform ${target} by hand` });
+        } else if (probe) {
+          if (!asJson) console.log(`[${c.env}] deploy OK, /health 200 — polling ${probe.method} ${probe.path} for ${probe.expect} (rollover lags the deploy) …`);
+          const pr = await waitProbe(c, probe, envDeadline);
+          results.push({ ...r, verdict: pr.ok ? 'delivered' : 'not-confirmed', note: `Platform ${target}: ${pr.note}` });
+        } else {
+          results.push({
+            ...r, verdict: 'deployed-unverified',
+            note: `deploy succeeded; /health 200 — but Platform ${target} is NOT confirmed live (no modules-API version to assert, and /health is also 200 from the old revision). Verify the fix behaviour yourself, or re-run with --probe/--probe-expect`,
+          });
+        }
       } else {
         if (!asJson) console.log(`[${c.env}] deploy OK — polling /api/platform/modules for ${moduleId}=${target} …`);
-        const live = await waitLiveVersion(c, moduleId!, target, timeoutS);
+        const live = await waitLiveVersion(c, moduleId!, target, envDeadline);
         r.liveVersion = live.version ?? undefined;
-        results.push({ ...r, verdict: live.ok ? 'delivered' : 'not-confirmed', note: live.note });
+        if (!live.ok) {
+          results.push({ ...r, verdict: 'not-confirmed', note: live.note });
+        } else if (probe) {
+          // A module hotfix DOES have a version to assert, but a version match only proves the module
+          // reinstalled — not that the behaviour changed. When the operator supplied a probe, honour it
+          // as an additional gate rather than ignoring the flag they passed.
+          if (!asJson) console.log(`[${c.env}] version confirmed — polling ${probe.method} ${probe.path} for ${probe.expect} …`);
+          const pr = await waitProbe(c, probe, envDeadline);
+          results.push({ ...r, verdict: pr.ok ? 'delivered' : 'not-confirmed', note: `${live.note}; ${pr.note}` });
+        } else {
+          results.push({ ...r, verdict: 'delivered', note: live.note });
+        }
       }
     } catch (e: any) {
       results.push({ ...r, verdict: 'error', note: e.message });
@@ -537,6 +677,9 @@ async function main() {
     // failure, so it must NOT trip this guard — otherwise --no-wait across multiple envs would
     // pause after the first env every time, defeating its purpose.
     const last = results[results.length - 1];
+    // 'deployed-unverified' is deliberately NOT here: the commit + deploy genuinely succeeded, we
+    // simply cannot prove the fix is serving without a --probe. That is a reporting state, not a
+    // failure, so it must not abort the remaining envs (unlike a real deploy/version failure).
     const HARD_FAIL_AFTER_COMMIT: EnvVerdict[] = ['deploy-failed', 'not-confirmed'];
     if (apply && last.commitSha && HARD_FAIL_AFTER_COMMIT.includes(last.verdict)) aborted = true;
   }
@@ -551,6 +694,7 @@ async function main() {
     delivered: '✅ delivered', 'already-delivered': '◯ already delivered', planned: '📝 planned (dry-run)',
     'no-hotfix-on-line': '⛔ no hotfix on line', 'asset-missing': '⛔ asset missing', 'not-in-manifest': '— not in manifest',
     'deploy-failed': '⛔ deploy failed', 'not-confirmed': '⚠ deployed, version not confirmed',
+    'deployed-unverified': '⚠ deployed, fix NOT confirmed live',
     'committed-unconfirmed': '⚠ committed, deploy/version NOT confirmed (--no-wait)',
     'wrong-source': '⛔ prerelease source (hand off)', 'version-line-mismatch': '⛔ --version wrong line',
     skipped: '⏸ skipped (prior env failed)', error: '⚠ error',
@@ -571,6 +715,14 @@ async function main() {
   if (results.some((x) => x.verdict === 'delivered')) {
     console.log(`\nNext (owned by /qa-hotfix-check): verify the fix behaviour live on each delivered env,`);
     console.log(`then comment on ${task} (English) and bump the stable bundles.`);
+  }
+  if (results.some((x) => x.verdict === 'deployed-unverified')) {
+    console.log(`
+⚠ A Platform hotfix deployed but is NOT confirmed live. A green deploy Action + /health 200`);
+    console.log(`  are BOTH satisfied by the previous revision, which keeps serving for ~1-2 min after the deploy.`);
+    console.log(`  Do not report this as verified on the strength of the table above — prove the fix's own behaviour,`);
+    console.log(`  e.g. re-run with:  --probe='<METHOD> /api/...' --probe-body='<json>' --probe-expect=<status>`);
+    console.log(`  Pick a signal that DIFFERS between the old and new build — one both return proves nothing.`);
   }
   if (results.some((x) => x.verdict === 'committed-unconfirmed')) {
     console.log(`\n⚠ Committed with --no-wait — confirm the deploy + live version out-of-band before treating`);
