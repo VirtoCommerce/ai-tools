@@ -41,7 +41,11 @@ import { resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
-import { pluginRoot } from "./lib/paths.mjs";
+import { outputRoot, pluginRoot } from "./lib/paths.mjs";
+// The SAME distinctive-prefix matcher the telemetry redactor uses. Shared on purpose: this
+// audit used to keep its own shorter copy, so a token type redact.mjs already knew about
+// (glpat-/xoxb-/sk_live_/AKIA/JWT) passed the hygiene check clean.
+import { SECRET_PREFIX_RE } from "../../hooks/redact.mjs";
 // Self-diagnostics CAPTURE channel. This table is the plugin's own structured verdict on the
 // deployment; before VCST-5582 H it was rendered and then discarded (exit 0 unless a hard FAIL),
 // so a WARN the operator could plainly see — e.g. "no field contract scanned for Bug" — was
@@ -111,41 +115,126 @@ export async function probeStorefrontLogin({ back, store, email, password, fetch
 }
 
 /**
- * Audit the SHIPPED .mcp.json for a credential written as a literal (VCST-5774 — defect D1).
+ * Audit a SHIPPED generated file for a credential sitting in it (VCST-5774 — defect D1 / B4).
  *
  * WHY A CHECK AND NOT JUST A FIXED GENERATOR. gen-mcp.mjs now emits `${VAR}` indirections, but
  * this failure is silent-shaped: a literal token works perfectly, every day, right up until the
  * day someone commits it. The file on disk may predate the fix, have been hand-edited, or have
  * been produced with `--inline-secrets`. So verify the ARTIFACT; never trust the producer.
  *
- * Structural, not a regex over the raw text: a value is a literal when it sits under a
- * credential-shaped key (`Authorization`, or an env name containing TOKEN/KEY/PAT/SECRET/PASSWORD)
- * and is neither a `${VAR}` reference nor an unresolved `<PLACEHOLDER>`. That catches a credential
- * type nobody has thought of yet, which a prefix list (`ghp_`, `PMAK-`, …) cannot. Known prefixes
- * are still matched anywhere, as a second net for a literal parked under an innocuous key.
+ * Two independent nets, because either alone has a blind spot the other covers:
+ *   - STRUCTURAL — a value under a credential-shaped KEY that is neither a `${VAR}` reference nor
+ *     an unresolved `<PLACEHOLDER>`. Catches a credential type nobody has invented yet, which a
+ *     prefix list cannot. It also fires on a CLI-flag credential (`--api-key <value>`) by looking
+ *     at the PRECEDING array element, since an `args[]` entry has no key of its own.
+ *   - PREFIX — `SECRET_PREFIX_RE` (shared with hooks/redact.mjs) matched anywhere, for a literal
+ *     parked under an innocuous key. Shared deliberately: this audit previously carried its own
+ *     shorter copy, so a `glpat-`/`xoxb-`/`sk_live_`/`AKIA`/JWT literal the REDACTOR already knew
+ *     about sailed past the DETECTOR.
  *
- * Returns SERVER and KEY names only — both plugin-authored. A credential VALUE never reaches the
- * result, the readiness table, or the observation evidence.
+ * The walk is RECURSIVE over the whole server def, not just `headers`/`env`. The first version
+ * scanned those two bags only — while this same change taught the generator to substitute into
+ * `args[]` (`--api-key <X>`), so the producer wrote a shape the auditor could not read. `url`
+ * (userinfo + credential query params), `command`, and nested objects were blind too.
  *
- * @returns {{ hits: string[], unparsable: boolean }} `hits` empty + parsable ⇒ clean.
+ * Returns JSON PATHS (`github.headers.Authorization`, `srv.args[2]`) — key names only, all
+ * plugin- or operator-authored. A credential VALUE never reaches the result, the readiness table,
+ * or the observation evidence.
  */
+// A credential-shaped key. Anchored on purpose around KEY: a bare /KEY/i matched CACHE_KEY,
+// SSH_KEY_PATH and MONKEY_MODE, and this row can FAIL readiness — a check that cries wolf is how
+// a real finding gets ignored (the argument the no-false-positive test itself makes).
+const CRED_KEY = /^authorization$|TOKEN|(?:^|[_-])(?:API|ACCESS|PRIVATE|SECRET|AUTH)[_-]?KEY|PAT\b|SECRET|PASSWORD|PASSWD|CREDENTIAL/i;
+// A CLI flag that carries a credential in the NEXT argv element (`--api-key`, `-t`, `--token=`).
+const CRED_FLAG = /^--?[\w-]*(?:key|token|secret|pat|password|auth)[\w-]*=?$/i;
+// A URL carrying the credential inline: `scheme://user:pass@host`, or `?access_token=…`.
+// A `${VAR}` / `<PLACEHOLDER>` value is excluded so an unresolved template URL stays clean.
+const URL_CRED = /:\/\/[^/\s:@]+:[^/\s@]+@|[?&](?:access_?token|api[_-]?key|token|key|secret|password|sig)=(?!\$\{|<)[^&\s]+/i;
+const isIndirection = (s) => /^\$\{[A-Za-z0-9_]+\}$/.test(s) || /^<[A-Z0-9_]+>$/.test(s);
+
+/** Recursive leaf scan. `credKey` = the enclosing object key looked credential-shaped;
+ *  `prevArg` = the preceding array element, so a `--api-key` flag taints the value after it. */
+function scanLiterals(node, path, hits, credKey = false, prevArg = "") {
+  if (typeof node === "string") {
+    if (!node) return;
+    if (SECRET_PREFIX_RE.test(node) || URL_CRED.test(node)) { hits.add(path); return; }
+    // `Bearer ${VAR}` must read as an indirection; the prefix net above already saw the raw value.
+    const bare = node.replace(/^Bearer\s+/i, "").trim();
+    if ((credKey || CRED_FLAG.test(prevArg)) && !isIndirection(bare)) hits.add(path);
+    return;
+  }
+  if (Array.isArray(node)) {
+    node.forEach((v, i) => scanLiterals(v, `${path}[${i}]`, hits, false, i > 0 ? node[i - 1] : ""));
+    return;
+  }
+  if (node && typeof node === "object") {
+    for (const [k, v] of Object.entries(node)) scanLiterals(v, `${path}.${k}`, hits, CRED_KEY.test(k));
+  }
+}
+
+/** @returns {{ hits: string[], unparsable: boolean }} `hits` empty + parsable ⇒ clean. */
 export function findLiteralSecrets(mcpJsonText) {
-  const CRED_KEY = /^authorization$|TOKEN|KEY|PAT\b|SECRET|PASSWORD/i;
-  const KNOWN_PREFIX = /(gh[pousr]_|github_pat_|PMAK-)[A-Za-z0-9_-]{6,}/;
-  const isIndirection = (s) => /^\$\{[A-Za-z0-9_]+\}$/.test(s) || /^<[A-Z0-9_]+>$/.test(s);
   let doc;
   try { doc = JSON.parse(mcpJsonText); } catch { return { hits: [], unparsable: true }; }
   const hits = new Set();
-  for (const [name, def] of Object.entries(doc?.mcpServers ?? {})) {
-    for (const bag of [def?.headers, def?.env]) {
-      for (const [k, v] of Object.entries(bag ?? {})) {
-        if (typeof v !== "string" || !v) continue;
-        const bare = v.replace(/^Bearer\s+/i, "").trim();
-        if ((CRED_KEY.test(k) && !isIndirection(bare)) || KNOWN_PREFIX.test(v)) hits.add(`${name}.${k}`);
-      }
-    }
-  }
+  for (const [name, def] of Object.entries(doc?.mcpServers ?? {})) scanLiterals(def, name, hits);
   return { hits: [...hits], unparsable: false };
+}
+
+/** The same audit for `.claude/settings.local.json` — the file the credential VALUE now lives in.
+ *  Only its `env` block is scanned: that is what gen-mcp writes and what Claude Code exports to
+ *  every session and subprocess. The rest of that file is permissions/config, not secrets. */
+export function findSettingsSecrets(settingsJsonText) {
+  let doc;
+  try { doc = JSON.parse(settingsJsonText); } catch { return { hits: [], unparsable: true }; }
+  const hits = new Set();
+  scanLiterals(doc?.env ?? {}, "env", hits);
+  return { hits: [...hits], unparsable: false };
+}
+
+/**
+ * Grade one generated file's secret hygiene. PURE — the caller does all the I/O, so every branch
+ * is table-testable. The first version of this logic lived inline in main() and was therefore
+ * untestable; its "outside a git repo" branch was wrong (see `exposed` below).
+ *
+ * `exposed` is the only axis that matters, and it is NOT `!ignored`:
+ *   - outside a repo there is nothing to `git add`, so ignore-state is not a finding at all. The
+ *     old code graded a literal in a non-repo project as FAIL and explained it with "one
+ *     `git add -A` publishes it" — and 4 of the 5 leaking projects VCST-5774 found on disk were
+ *     exactly that shape, so the loudest, least accurate branch was also the most-hit one;
+ *   - a file git already TRACKS stays committable however many .gitignore rules match it —
+ *     `git check-ignore` returns 1 for a tracked path, so adding the rule is a no-op and
+ *     "re-run /project-init" is not a fix. That case gets its own remediation line.
+ *
+ * `kind` distinguishes what a hit MEANS:
+ *   "mcp"      — a credential here is a defect in itself; the file is meant to hold `${VAR}` refs.
+ *   "settings" — a credential here is BY DESIGN (this is the value's new home), so only EXPOSURE
+ *                is a finding. A secret at rest in an ignored, untracked file is the target state.
+ */
+export function gradeSecretHygiene({ kind, file, hits, unparsable, inRepo, ignored, tracked }) {
+  const exposed = inRepo && (tracked || !ignored);
+  const why = tracked ? "tracked by git" : "not gitignored";
+  const fix = tracked
+    ? `\`git rm --cached ${file}\` + commit (a .gitignore rule CANNOT untrack it), then rotate the credential`
+    : "re-run /project-init (writes the ignore entry), then rotate the credential";
+  const where = hits.join(", ");
+
+  if (unparsable) {
+    return { status: "WARN", detail: `${file} is not valid JSON — could not audit it for credentials${exposed ? ` (and it is ${why})` : ""}` };
+  }
+  if (hits.length && exposed) {
+    return { status: "FAIL", detail: `credential in ${where} AND ${file} is ${why} — one \`git add -A\` publishes it. Fix: ${fix}.` };
+  }
+  if (hits.length && kind === "mcp") {
+    return { status: "WARN", detail: `credential written as a literal in ${where} (${file} is not committable, so not exposed). Re-run /project-init to replace it with a \${VAR} reference, or keep it deliberately via --inline-secrets.` };
+  }
+  if (hits.length) {
+    return { status: "PASS", detail: `${where} held in ${file} (by design — this is where the value belongs) and the file is not committable` };
+  }
+  if (exposed) {
+    return { status: "WARN", detail: `${file} carries no credential but is ${why} — ${tracked ? `\`git rm --cached ${file}\`` : "add it to .gitignore"}, so a future hand-edit cannot be committed` };
+  }
+  return { status: "PASS", detail: `no exposed credential in ${file}${inRepo ? "" : " (not a git repo)"}` };
 }
 
 const results = [];
@@ -179,8 +268,8 @@ const statusWidth = (st) => `${MARKER[st] || " "} ${st}`.length;
 const MAXW = Number(process.env.COLUMNS) || process.stdout.columns || 100;
 const truncTo = (s, n) => (s.length > n ? s.slice(0, Math.max(1, n - 1)) + "…" : s);
 
-function tryCmd(cmd) {
-  try { execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }); return true; } catch { return false; }
+function tryCmd(cmd, opts = {}) {
+  try { execSync(cmd, { stdio: ["ignore", "pipe", "ignore"], ...opts }); return true; } catch { return false; }
 }
 async function httpStatus(url) {
   if (!url) return 0;
@@ -233,34 +322,32 @@ async function main() {
       ? `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`
       : `no project-profile.json at ${profilePath} — run /project-init to create it (falling back to platform/jira/github defaults meanwhile)`);
 
-  // 1a. MCP config secret hygiene (VCST-5774). Two independent things can go wrong and each is
-  //     invisible until it is too late: a credential written as a LITERAL (D1), and `.mcp.json`
-  //     not being ignored (D2). Graded by actual exposure — a literal in a git repo that does not
-  //     ignore the file is the one combination that is one `git add -A` from a published token.
-  const mcpPath = resolve(process.cwd(), ".mcp.json");
-  if (!existsSync(mcpPath)) {
-    add("MCP config secret hygiene", "SKIP", "no .mcp.json in this project — run /project-init to generate one");
-  } else {
-    const { hits, unparsable } = findLiteralSecrets(readFileSync(mcpPath, "utf-8"));
-    // `git check-ignore` exits 1 when NOT ignored and 128 outside a repo; tryCmd gives us "did it
-    // exit 0". Outside a repo there is nothing to commit to, so ignore-state is not a finding.
-    const inRepo = tryCmd("git rev-parse --is-inside-work-tree");
-    const ignored = inRepo && tryCmd("git check-ignore -q .mcp.json");
-    if (unparsable) {
-      add("MCP config secret hygiene", "WARN", ".mcp.json is not valid JSON — could not audit it for literal credentials");
-    } else if (hits.length && !ignored) {
-      add("MCP config secret hygiene", "FAIL",
-        `literal credential in ${hits.join(", ")} AND .mcp.json is not gitignored — one \`git add -A\` publishes it. Re-run /project-init (writes \${VAR} + the ignore entry), then rotate the exposed credential.`);
-    } else if (hits.length) {
-      add("MCP config secret hygiene", "WARN",
-        `literal credential in ${hits.join(", ")} (file is gitignored, so not exposed). Re-run /project-init to replace it with a \${VAR} reference, or keep it deliberately via --inline-secrets.`);
-    } else if (inRepo && !ignored) {
-      add("MCP config secret hygiene", "WARN",
-        ".mcp.json carries no literal credential but is not gitignored — add it, so a future hand-edit cannot be committed");
-    } else {
-      add("MCP config secret hygiene", "PASS",
-        `no literal credential in .mcp.json${inRepo ? " and the file is gitignored" : " (not a git repo)"}`);
+  // 1a. Secret hygiene of the files /project-init generates (VCST-5774). Two things can go wrong
+  //     and each is invisible until it is too late: a credential written where it does not belong
+  //     (D1), and the file holding it being committable (D2). BOTH generated files are audited —
+  //     `.mcp.json`, which must carry only `${VAR}` refs, and `.claude/settings.local.json`, which
+  //     is where the VALUE now lives. Auditing only the first would have left the fix's own new
+  //     secret location completely unguarded. Grading is the pure gradeSecretHygiene() above.
+  const projectRoot = outputRoot();
+  const inRepo = tryCmd("git rev-parse --is-inside-work-tree", { cwd: projectRoot });
+  for (const { kind, rel, scan } of [
+    { kind: "mcp", rel: ".mcp.json", scan: findLiteralSecrets },
+    { kind: "settings", rel: ".claude/settings.local.json", scan: findSettingsSecrets },
+  ]) {
+    const label = `Secret hygiene — ${rel}`;
+    const abs = resolve(projectRoot, rel);
+    if (!existsSync(abs)) {
+      add(label, "SKIP", `no ${rel} in this project — run /project-init to generate one`);
+      continue;
     }
+    const { hits, unparsable } = scan(readFileSync(abs, "utf-8"));
+    // Both probes run in the PROJECT root, not the process cwd, and both are needed:
+    // check-ignore answers "would a new file be ignored", ls-files answers "is it already
+    // committed" — and a tracked file reports NOT-ignored, so neither alone is sufficient.
+    const ignored = inRepo && tryCmd(`git check-ignore -q -- "${rel}"`, { cwd: projectRoot });
+    const tracked = inRepo && tryCmd(`git ls-files --error-unmatch -- "${rel}"`, { cwd: projectRoot });
+    const { status, detail } = gradeSecretHygiene({ kind, file: rel, hits, unparsable, inRepo, ignored, tracked });
+    add(label, status, detail);
   }
 
   // 1b. The ACTIVE plugin install resolves at runtime + the routing helper is present.

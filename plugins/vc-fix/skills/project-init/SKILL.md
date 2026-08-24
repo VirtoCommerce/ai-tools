@@ -719,6 +719,24 @@ safe: it enables the server only once the key exists. gen-mcp prints one info li
 extra; filling the key in `.env.local` and re-running enables it. **Remind the operator to restart
 the MCP servers** (reload the IDE) for the new config to take effect.
 
+**Secrets never land in `.mcp.json` (VCST-5774).** A resolved credential is written there as a
+`${VAR}` **indirection**; the VALUE goes into `.claude/settings.local.json` `env`, which Claude
+Code applies to every session and its subprocesses — and that is what feeds `${VAR}` expansion in
+`.mcp.json` `headers`/`env`. So `.mcp.json` is safe to read, diff and share. Before writing
+anything, gen-mcp adds `.mcp.json`, `.claude/settings.local.json`, `.env.local`, `.env.*.local`,
+`project-profile.json` and `.vc-fix/` to the project's `.gitignore` (creating it if absent), so
+the file never exists un-ignored even briefly. There is **no `gh auth token` fallback** — with no
+PAT the placeholder stays unresolved and the github server drops the header and uses interactive
+OAuth, rather than persisting the operator's CLI session to disk.
+
+Two consequences worth stating to the operator:
+- The value being in settings `env` means it is exported to **every** session subprocess, not just
+  the one MCP client. That is the mechanism, not an accident — treat `.claude/settings.local.json`
+  as a secret file.
+- **`--inline-secrets`** restores the legacy literal substitution into `.mcp.json` (and then writes
+  no second copy to settings). Opt-in only, for a host that cannot apply settings `env`. It makes
+  `.mcp.json` itself a secret; the §8 hygiene rows will say so.
+
 ## 8. Verify access — full readiness checkup
 
 Run with the env selected (so per-env creds resolve). **Pass `FORCE_COLOR=1`** —
@@ -768,9 +786,32 @@ too heavy — the WARN explains exactly what to grant, the operator grants it be
 `/qa-fix`, and `/qa-fix` Gate 1 re-checks the ACTUAL routed repo anyway. The `To resolve:` block
 names the exact scopes — **Azure: Work Items (Read & Write) + Code (Read & Write) + Pull Request
 (contribute); GitHub: repo/PR write** — and never prints the token. Only **fundamentals** FAIL →
-NOT READY (missing core env, unreachable `FRONT_URL`/`BACK_URL`, bad admin login, or a totally
-absent/rejected credential that can't even reach the resource); **WARN** is non-blocking; **SKIP**
-means a feature isn't configured.
+NOT READY (missing core env, unreachable `FRONT_URL`/`BACK_URL`, bad admin login, a totally
+absent/rejected credential that can't even reach the resource, or an **exposed credential** — see
+the hygiene rows below); **WARN** is non-blocking; **SKIP** means a feature isn't configured.
+
+**Secret-hygiene rows (VCST-5774).** Two rows — `Secret hygiene — .mcp.json` and
+`Secret hygiene — .claude/settings.local.json` — audit the files §7 generated. Both are checked,
+because the redesign MOVED the credential: guarding only `.mcp.json` would leave the value's new
+home unguarded. The audit is structural (a value under a credential-shaped key that is neither a
+`${VAR}` ref nor an unresolved `<PLACEHOLDER>`) plus the shared known-prefix matcher from
+`hooks/redact.mjs`, and it walks the whole server def — `headers`, `env`, `args[]`, `url`, nested
+bags. It reports KEY PATHS only; a credential value never reaches the table or the telemetry.
+
+Grading is by **actual exposure**, so the row cannot cry wolf:
+
+| Situation | Row |
+|---|---|
+| Credential present **and** the file is committable (not gitignored, **or already tracked**) | **FAIL** — blocks readiness, names the fix and says to rotate |
+| Literal in `.mcp.json`, file not committable | WARN — re-run `/project-init`, or keep it via `--inline-secrets` |
+| Credential in `settings.local.json`, file not committable | **PASS** — that is the target state |
+| Clean but committable, or unparsable JSON | WARN |
+| Outside a git repo | never FAIL on ignore-state — there is nothing to commit to |
+
+An **already-tracked** file is the case to read carefully: `git check-ignore` reports a tracked
+path as NOT ignored, and adding a `.gitignore` rule does not untrack it — so that FAIL tells the
+operator to `git rm --cached <file>` and commit, then rotate. Re-running `/project-init` would not
+fix it.
 
 **Session auth is really probed, not assumed.** For an `az-login` / `gh-cli` axis the
 check mints a real token and hits the org / upstream — an active session that is not a
@@ -1060,9 +1101,9 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
 | `reconcile-profile.mjs` | **`--check` migration**: diff an existing profile against the current `PROFILE_DEFAULTS` schema → JSON report of `added` (safe-default) / `removed` (obsolete, open-maps+arrays preserved) / `pending` (operator-decision fields with `question`+`options`, e.g. `selfDiagnostics`) / `rescan` (re-derive live). Deterministic, dry-run by default; `--write` applies structural changes + `--set path=value` decisions. Idempotent. Mirrors `gen-profile`'s `tracker.azure`/`vcs.azure` discriminated pruning |
-| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
+| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. **Credentials are written as `${VAR}` refs; the VALUE goes to `.claude/settings.local.json` `env`, and every generated file is gitignored BEFORE it is created (VCST-5774). `--inline-secrets` opts back into a literal.** Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see `knowledge/execution/plugin-root.md`.) |
-| `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
+| `verify-access.mjs` | full `/qa-fix` readiness table + verdict, incl. the two **secret-hygiene** rows that audit `.mcp.json` + `.claude/settings.local.json` for an exposed credential (graded by committability: tracked/not-ignored ⇒ FAIL); prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
 

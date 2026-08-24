@@ -15,6 +15,11 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 
 import { join, resolve, isAbsolute, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
+// The production auditor + the SHARED secret-prefix matcher. Imported rather than copied: the
+// test used to carry its own `SECRET_SHAPE` regex, so a change to what production considers a
+// credential would silently stop being what the test checks for.
+import { findLiteralSecrets } from "../../plugins/vc-fix/skills/project-init/verify-access.mjs";
+import { SECRET_PREFIX_RE } from "../../plugins/vc-fix/hooks/redact.mjs";
 import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs, classifyWarmResults, enableOAuthIfNoPat, resolveTokens, injectTokenRefs } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -27,6 +32,9 @@ function outputDirOf(server) {
   const i = server.args.indexOf("--output-dir");
   return i >= 0 ? server.args[i + 1] : null;
 }
+const readMcp = (dir) => JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+const readSettings = (dir) => JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
+
 function runGenMcp(dir, args = [], extraEnv = {}) {
   return execFileSync(process.execPath, [SCRIPT, ...args], {
     cwd: dir,
@@ -248,7 +256,6 @@ test("absolutizeOutputDir: a server with no --output-dir (github, postman, …) 
 // added to .gitignore (the header comment claimed otherwise), so on a client repo one `git add -A`
 // published a live token. D3: with no PAT env it copied `gh auth token` — the operator's CLI OAuth
 // session — into the file; two projects were found on disk carrying a `gho_…` that way.
-const SECRET_SHAPE = /(gh[pousr]_|github_pat_|PMAK-)[A-Za-z0-9_-]{6,}/;
 
 test("VCST-5774 D1: NO resolved credential value appears anywhere in the generated .mcp.json", () => withTempDir((dir) => {
   runGenMcp(dir, ["--with", "postman,context7"], {
@@ -257,7 +264,10 @@ test("VCST-5774 D1: NO resolved credential value appears anywhere in the generat
     CONTEXT7_API_KEY: "ctx7_leakcanary",
   });
   const raw = readFileSync(join(dir, ".mcp.json"), "utf8");
-  assert.doesNotMatch(raw, SECRET_SHAPE, "a secret-shaped literal reached .mcp.json");
+  assert.doesNotMatch(raw, SECRET_PREFIX_RE, "a secret-shaped literal reached .mcp.json");
+  for (const v of ["ghp_leakcanary1234567890", "PMAK-leakcanary-0987654321"]) {
+    assert.ok(!raw.includes(v), `${v} reached .mcp.json`);
+  }
   assert.ok(!raw.includes("ctx7_leakcanary"), "the context7 key value reached .mcp.json");
   // Each one is present as an indirection instead, and the values live in settings `env`.
   for (const v of ["GITHUB_PERSONAL_ACCESS_TOKEN", "POSTMAN_API_KEY", "CONTEXT7_API_KEY"]) {
@@ -337,6 +347,63 @@ test("VCST-5774: --inline-secrets restores the literal, and then writes NO secon
   assert.equal(gh.headers.Authorization, "Bearer ghp_deliberateinline12");
   const settings = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
   assert.ok(!settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, "the value must not be duplicated into settings");
+}));
+
+test("VCST-5774: a REVOKED credential is pruned from settings.local.json on the next run", () => withTempDir((dir) => {
+  // The value now lives in settings `env`, which Claude Code exports to every session AND
+  // subprocess — a strictly wider blast radius than the .mcp.json header it replaced. So a merge
+  // that never prunes leaves a revoked token ambient forever, while .mcp.json reads perfectly
+  // clean and the readiness row says PASS. That combination is undetectable by inspection.
+  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_firstrun1234567890" });
+  assert.equal(readSettings(dir).env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_firstrun1234567890");
+
+  const out = runGenMcp(dir, [], {
+    GITHUB_PERSONAL_ACCESS_TOKEN: "", GITHUB_FIX_BUGS_TOKEN: "", GIT_TOKEN: "", GITHUB_TOKEN: "",
+  });
+  const settings = readSettings(dir);
+  assert.equal(settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined, "the revoked value must be gone");
+  assert.match(out, /removed GITHUB_PERSONAL_ACCESS_TOKEN/, "the removal is reported, not silent");
+  // …and the config correctly falls back to OAuth, as it already did.
+  assert.ok(!("Authorization" in (readMcp(dir).mcpServers.github.headers ?? {})));
+}));
+
+test("VCST-5774: an operator's OWN settings env keys survive the prune", () => withTempDir((dir) => {
+  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_firstrun1234567890" });
+  const p = join(dir, ".claude", "settings.local.json");
+  const s = JSON.parse(readFileSync(p, "utf8"));
+  s.env.MY_OWN_SETTING = "keep-me";
+  writeFileSync(p, JSON.stringify(s, null, 2));
+
+  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "", GITHUB_FIX_BUGS_TOKEN: "", GIT_TOKEN: "", GITHUB_TOKEN: "" });
+  const after = readSettings(dir);
+  assert.equal(after.env.MY_OWN_SETTING, "keep-me", "only vars the generator OWNS may be pruned");
+  assert.equal(after.env.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
+}));
+
+test("VCST-5774: switching to --inline-secrets leaves exactly ONE copy of the credential", () => withTempDir((dir) => {
+  // The skip-writing-to-settings branch only ever prevented a NEW write. After a normal run the
+  // value was already there, so `--inline-secrets` produced a literal in .mcp.json AND kept the
+  // settings copy — two copies, which is what its own comment says it avoids.
+  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_bbbbbbbbbb1234567890" });
+  assert.equal(readSettings(dir).env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_bbbbbbbbbb1234567890");
+
+  runGenMcp(dir, ["--inline-secrets"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_bbbbbbbbbb1234567890" });
+  assert.equal(readMcp(dir).mcpServers.github.headers.Authorization, "Bearer ghp_bbbbbbbbbb1234567890");
+  assert.equal(readSettings(dir).env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined,
+    "the settings copy must be removed when the value moves into .mcp.json");
+}));
+
+test("VCST-5774: the generator's own output passes the auditor that guards it", () => withTempDir((dir) => {
+  // Producer and auditor are separate defences and drifted once already (the auditor read only
+  // headers/env while the producer had learned to substitute into args[]). Pin them together.
+  runGenMcp(dir, ["--with", "postman,context7"], {
+    GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_leakcanary1234567890",
+    POSTMAN_API_KEY: "PMAK-leakcanary-0987654321",
+    CONTEXT7_API_KEY: "ctx7_leakcanary",
+  });
+  const raw = readFileSync(join(dir, ".mcp.json"), "utf8");
+  assert.deepEqual(findLiteralSecrets(raw), { hits: [], unparsable: false },
+    "the shipped .mcp.json must be clean by the readiness check's own judgement");
 }));
 
 test("resolveTokens / injectTokenRefs: pure — precedence, ${VAR} refs, unresolved left alone", () => {

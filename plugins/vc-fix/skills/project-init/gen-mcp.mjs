@@ -37,7 +37,7 @@
  *     [--inline-secrets]
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { join, dirname, resolve, isAbsolute } from "path";
+import { join, dirname, resolve, isAbsolute, relative, sep } from "path";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { config as dotenv } from "dotenv";
@@ -115,7 +115,7 @@ function stripComments(server) {
 
 /**
  * The official REMOTE github MCP supports interactive OAuth exactly like atlassian/figma (which
- * ship header-less). If no PAT resolved, injectTokens leaves a literal `Bearer <PLACEHOLDER>` —
+ * ship header-less). If no PAT resolved, injectTokenRefs leaves the literal `Bearer <PLACEHOLDER>` —
  * a broken header that 401s with NO path to OAuth. So when the Authorization header is still an
  * unresolved placeholder, DROP it: the server then falls back to the OAuth flow (the behaviour the
  * template comment promises). Pure. #220 item 4.
@@ -286,7 +286,7 @@ export function injectTokenRefs(server, resolved, { inline = false } = {}) {
   return walk(server);
 }
 
-/** The `<PLACEHOLDER>` names injectTokens() could NOT resolve in a built server def (deduped).
+/** The `<PLACEHOLDER>` names injectTokenRefs() could NOT resolve in a built server def (deduped).
  *
  * Single source of truth for "this server is missing a credential", used by BOTH the enable
  * decision (an optional extra with a missing key stays dormant) and the degraded-artifact WARN
@@ -339,14 +339,20 @@ export function absolutizeOutputDir(server, root) {
  * profile, the telemetry dir, and the local settings file that now holds the token VALUE.
  *
  * These are written BEFORE .mcp.json (see main) so the file never exists un-ignored. */
-const SECRET_IGNORES = [
-  ".mcp.json",
+const SECRET_IGNORE_BASE = [
   ".env.local",
   ".env.*.local",
   "project-profile.json",
   ".vc-fix/",
-  ".claude/settings.local.json",
 ];
+/** A generated destination as a project-relative ignore entry, or null when it lands OUTSIDE the
+ *  project — where no .gitignore of ours can cover it, so the caller must say so out loud rather
+ *  than write a `.mcp.json` line that silently protects the wrong path. The literals used to be
+ *  hardcoded while `--out`/`--settings` were free to move the files. */
+function ignoreEntryFor(projectRoot, absPath) {
+  const rel = relative(projectRoot, absPath).split(sep).join("/");
+  return rel && !rel.startsWith("..") ? rel : null;
+}
 /** Where the Playwright MCP servers land raw captures — see the EVIDENCE_INCOMING note below. */
 const EVIDENCE_IGNORES = ["test-results/", "reports/bugs/screenshots/_incoming/"];
 
@@ -384,7 +390,7 @@ export function ensureGitignoreEntries(root, entries, opts = {}) {
 }
 
 /**
- * Layer the deployment's env files into process.env BEFORE injectTokens() reads them (VCST-5582 E4).
+ * Layer the deployment's env files into process.env BEFORE resolveTokens() reads them (VCST-5582 E4).
  *
  * gen-mcp used to read tokens straight from process.env, but /project-init's documented flow puts
  * them in `.env.local` (scaffold-secrets.mjs tells the operator to) — a file no one has SOURCED into
@@ -409,7 +415,7 @@ function loadDeploymentEnv(root = outputRoot()) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   // Load .env.defaults/.env.<env>/.env.local so a token the operator placed in .env.local (per the
-  // documented flow) is actually seen on the FIRST pass — before injectTokens() reads process.env.
+  // documented flow) is actually seen on the FIRST pass — before resolveTokens() reads process.env.
   loadDeploymentEnv();
   const os = detectOs(args.os);
   const tracker = args.tracker || "jira";
@@ -477,7 +483,18 @@ function main() {
   // un-ignored — not even for the duration of this function (VCST-5774 D2). Two labelled blocks:
   // the secret-adjacent local config, then the browser evidence landing zone. `_incoming/` is a
   // landing zone, not evidence of record; `test-results/` covers the legacy lane and HAR output.
-  const ignoredSecrets = ensureGitignoreEntries(projectRoot, SECRET_IGNORES, {
+  // Resolve both destinations FIRST: the ignore entries are derived from where the files will
+  // actually land, so `--out`/`--settings` cannot route a credential-bearing file past the block
+  // that is named after protecting it.
+  const outPath = resolveOutPath(args.out, ".mcp.json");
+  const settingsPath = args.settings
+    ? resolve(outputRoot(), args.settings)
+    : join(outputRoot(), ".claude", "settings.local.json");
+  const generatedEntries = [outPath, settingsPath].map((f) => ignoreEntryFor(projectRoot, f));
+  for (const [i, entry] of generatedEntries.entries()) {
+    if (!entry) console.warn(`[gen-mcp] ⚠ ${[outPath, settingsPath][i]} is OUTSIDE the project root — no .gitignore entry can cover it. Make sure it is not committed.`);
+  }
+  const ignoredSecrets = ensureGitignoreEntries(projectRoot, [...generatedEntries.filter(Boolean), ...SECRET_IGNORE_BASE], {
     title: "vc-fix (/project-init) — generated local config, never commit",
     notes: [
       "Per-machine onboarding output. .mcp.json references a credential via ${VAR}; the VALUE",
@@ -488,7 +505,6 @@ function main() {
   const ignored = [...ignoredSecrets, ...ignoredEvidence];
   if (ignored.length) console.log(`[gen-mcp] .gitignore += ${ignored.join(", ")}`);
 
-  const outPath = resolveOutPath(args.out, ".mcp.json");
   writeFileSync(outPath, JSON.stringify({ mcpServers }, null, 2) + "\n");
   console.log(`[gen-mcp] wrote ${outPath} (os=${os})`);
   console.log(`[gen-mcp] browser evidence lands in ${join(projectRoot, ...EVIDENCE_INCOMING)}\\<browser> (absolute — never the project root, whatever cwd the MCP server starts in)`);
@@ -502,9 +518,6 @@ function main() {
 
   // Sync settings.local.json enabledMcpjsonServers (gitignored) into the project's
   // .claude/ (created if the fresh project has none yet).
-  const settingsPath = args.settings
-    ? resolve(outputRoot(), args.settings)
-    : join(outputRoot(), ".claude", "settings.local.json");
   mkdirSync(dirname(settingsPath), { recursive: true });
   let settings = {};
   if (existsSync(settingsPath)) {
@@ -517,18 +530,33 @@ function main() {
   // vars the template ACTUALLY references are written, and other operator keys are preserved.
   // Skipped under --inline-secrets: there the value is already in .mcp.json, so a second copy
   // here would defeat the point.
-  const templateBlob = JSON.stringify(srcServers);
-  const secretEnv = {};
-  if (!inlineSecrets) {
-    for (const [ph, { varName, value }] of Object.entries(resolved)) {
-      if (templateBlob.includes(ph)) secretEnv[varName] = value;
-    }
-  }
+  // Derived from the SHIPPED config, not the template: only a var the generated file actually
+  // references needs a value. This also makes `--inline-secrets` self-enforcing — that mode emits
+  // no `${VAR}` at all, so secretEnv is empty by construction rather than by a parallel `if`.
+  const shipped = JSON.stringify(mcpServers);
+  const secretEnv = Object.fromEntries(
+    Object.values(resolved)
+      .filter(({ varName }) => shipped.includes("${" + varName + "}"))
+      .map(({ varName, value }) => [varName, value]),
+  );
+  // PRUNE before merging. Every var in TOKEN_SOURCES is one this generator OWNS, so a credential
+  // the operator has since revoked (or moved into .mcp.json via --inline-secrets) must not survive
+  // here: settings `env` is exported to every session AND subprocess, so a stale value is both
+  // wider-reaching than the header it replaced and invisible — the run would report a clean
+  // .mcp.json while the dead token sat in the file next to it. Only OUR keys are touched; an
+  // operator's own env entries are preserved.
+  const managedVars = Object.keys(TOKEN_SOURCES).map((ph) => ph.slice(1, -1));
+  const pruned = managedVars.filter((v) => settings.env?.[v] !== undefined && !(v in secretEnv));
+  for (const v of pruned) delete settings.env[v];
+  if (settings.env && !Object.keys(settings.env).length) delete settings.env;
   if (Object.keys(secretEnv).length) settings.env = { ...(settings.env ?? {}), ...secretEnv };
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   console.log(`[gen-mcp] enabled servers: ${enabledList.join(", ")}`);
   if (Object.keys(secretEnv).length) {
     console.log(`[gen-mcp] .mcp.json references \${${Object.keys(secretEnv).join("}, ${")}} — values written to ${settingsPath} (no secret in .mcp.json)`);
+  }
+  if (pruned.length) {
+    console.log(`[gen-mcp] removed ${pruned.join(", ")} from ${settingsPath} — no longer resolved (rotate/revoke it at the source too if that was not intentional)`);
   }
   if (inlineSecrets) {
     console.warn("[gen-mcp] ⚠ --inline-secrets: credential VALUES were written into .mcp.json. It is gitignored, but treat the file as a secret.");
