@@ -5,11 +5,11 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** August 7, 2026 (rev 6 — deterministic axis; body carried from rev 5, July 20 2026)
+**Generated:** August 24, 2026 (rev 7 — deterministic axis; body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
 **Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = 3.1057.0; 87 modules loaded) *(rev 6, 2026-08-07 deterministic re-crawl: was 3.1039.0 / 86 modules)*
-**Store total products:** 4,523 *(was 4,519 at rev 5)* · nav categories 49 · `/products-with-options` subcategories 7
+**Store total products:** 4,520 *(was 4,523 at rev 6)* · nav categories 49 · `/products-with-options` subcategories 7
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
@@ -557,6 +557,16 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 
 ---
 
+## Changelog (vs. August 7, 2026 rev 6)
+
+| Area | Change |
+|------|--------|
+| Store total products | 4,523 → **4,520** (−3; incremental re-seed drift) |
+| Nav categories | 49 → **49** (unchanged) |
+| `/products-with-options` subcategories | 7 → **7** (unchanged) |
+| Platform assembly line | 3.1057.0 / 87 modules — **unchanged** from rev 6 |
+| Scope of this rev | **Deterministic xAPI crawl only** (`npm run sitemap:refresh`, 2026-08-24, `/qa-test-plan Sprint26-16` Step 0). Storefront theme "Ver." is SPA-rendered and was **not** resolved this pass — the rev-5 value stands. §§2–9 body content carried forward, not re-verified. |
+
 ## Changelog (vs. July 20, 2026 rev 5)
 
 | Change | Details |
@@ -608,6 +618,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** August 7, 2026 (rev 6)
+**Last Updated:** August 24, 2026 (rev 7)
 **Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
 **Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Carried forward from rev 4 (not re-verified):** §2 Account pages, §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.

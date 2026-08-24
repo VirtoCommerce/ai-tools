@@ -79,7 +79,7 @@ Per the routing table in the skill (`routing-and-fix.md`):
 
 | CLASS | Action (`--fix`) | Action (report-only) |
 |---|---|---|
-| `REAL_BUG` (confirmed) | Draft `reports/bugs/BUG-*.md` via `/qa-bug` (repro + evidence + `## Fix Routing`). **STOP — do not file a tracker ticket, do not call `/qa-fix`.** | Recommend `/qa-bug` then `/qa-fix <ticket>` |
+| `REAL_BUG` (confirmed) | Draft `reports/bugs/open/BUG-*.md` via `/qa-bug` (repro + evidence + `## Fix Routing`). **STOP — do not file a tracker ticket, do not call `/qa-fix`.** | Recommend `/qa-bug` then `/qa-fix <ticket>` |
 | `TEST_STEPS_DEFECT` / `ASSERTION_DEFECT` / `TEST_DATA_DEFECT` | `/qa-review-tests <suite> --fix` (asks before each CSV write) | Recommend the same command + the `SUGGESTED_FIX` |
 | `STALE_TEST` | `/qa-review-tests <suite> --fix`, or `/qa-test-lifecycle <suite>` for a feature-change sync | Recommend the same |
 | `TEST_DATA_DEFECT` (unseeded env / drifted GUID) | Recommend `/qa-seed-data <profile>` + `npm run td:validate`; apply alias fix via `/qa-review-tests --fix` if it's a CSV token | Recommend the same |
@@ -87,7 +87,7 @@ Per the routing table in the skill (`routing-and-fix.md`):
 | `ENV` | No write; recommend re-run after env fix | Same |
 | `KNOWN_ISSUE` | Dismiss with the linked ticket | Same |
 
-**Confirmation protocol:** every CSV write goes through `/qa-review-tests --fix` (which shows a before/after diff and asks). Every bug draft is written to `reports/bugs/` only — **never** transitioned into a tracker here.
+**Confirmation protocol:** every CSV write goes through `/qa-review-tests --fix` (which shows a before/after diff and asks). Every bug draft is written to `reports/bugs/open` only — **never** transitioned into a tracker here.
 
 ## Phase 6 — Triage report + verdict
 > **Owner:** `qa-lead-orchestrator`

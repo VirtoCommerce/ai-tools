@@ -1,0 +1,37 @@
+{
+  "sprint": "Sprint26-16",
+  "startDate": "2026-08-10",
+  "endDate": "2026-08-24",
+  "doneCounts": {"stories": 10, "bugs": 11, "tasks": 16, "reviewTask": 5, "techDebt": 1, "spikes": 0, "total": 43},
+  "sprintIssueTotal": 125,
+  "testRelevantCount": 32,
+  "mergedFrontendPRs": 19,
+  "mergedModulePRs": 37,
+  "mergedVcShellPRs": 26,
+  "domains": [
+    {"name": "Sales Rep Hub & Customer Profile", "score": 20, "level": "Critical"},
+    {"name": "Pricing & discountPercent (xAPI)", "score": 20, "level": "Critical"},
+    {"name": "Catalog browse & variations resolver", "score": 20, "level": "Critical"},
+    {"name": "Background-jobs migration (Hangfire to RabbitMQ)", "score": 20, "level": "Critical"},
+    {"name": "Lists / Wishlist sharing", "score": 16, "level": "Critical"},
+    {"name": "White Labeling", "score": 15, "level": "High"},
+    {"name": "Platform Security / Auth API", "score": 15, "level": "High"},
+    {"name": "Cart - coupons sidebar (a11y)", "score": 15, "level": "High"},
+    {"name": "Catalog / Inventory Admin", "score": 12, "level": "High"},
+    {"name": "Storefront resilience (chunk loads)", "score": 12, "level": "High"},
+    {"name": "Payment - Skyflow schema endpoint", "score": 10, "level": "High"},
+    {"name": "Customer Reviews (PDP)", "score": 9, "level": "Medium"},
+    {"name": "SEO / structured data & agent discovery", "score": 9, "level": "Medium"},
+    {"name": "UCP / OpenTelemetry observability", "score": 4, "level": "Low"}
+  ],
+  "suitesActivated": [
+    "001", "002", "007", "028", "040a", "045", "048d", "070", "071", "077b", "088", "089", "091", "093",
+    "021", "049", "050a", "050c", "050d", "050e", "050g", "050h", "050k", "050l", "050m", "051", "054", "056", "064", "067", "086", "087", "094", "095"
+  ],
+  "newCasesEstimate": "85-100",
+  "criticalTickets": ["VCST-5592", "VCST-5647", "VCST-5682", "VCST-5683", "VCST-5684", "VCST-5587", "VCST-5588", "VCST-5590", "VCST-5691", "VCST-5689", "VCST-5659", "VCST-5660", "VCST-5490", "VCST-5335", "VCST-5724", "VCST-5705"],
+  "coverageGapCount": 13,
+  "outOfScopeCount": 93,
+  "artifacts": "vc/shared/docs/Sprint plans/",
+  "_notes": "JIRA sprint name is 'Sprint 26-16' (with a space) - sprint = \"Sprint26-16\" returns 0 issues. Sprint was still open at plan time (82 of 125 issues not Done); re-run after close to capture the delta. vc-shell / Vendor Portal (26 PRs) is a separate product and is excluded from suite mapping."
+}

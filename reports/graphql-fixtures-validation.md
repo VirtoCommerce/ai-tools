@@ -1,6 +1,6 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-08-03T16:24:16.964Z
+**Validated at:** 2026-08-24T13:56:47.220Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
 **Total:** 73 fixtures — 72 passed, 1 failed
 
@@ -39,7 +39,7 @@
 | changeCartItemQuantity | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String), QUANTITY via $qty variable (Int) | 2026-07-13 | 1 noted |
 | clearCart | mutation | ORG_USER (or PUBLIC anon cart) | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
 | configurationItems | query | ORG_USER | configurable-products | STORE_ID (String), CURRENCY_CODE (String, e.g. "USD"), LINE_ITEM_ID (String — capture from cart line item) | 2026-07-13 | 1 noted |
-| contact | query | ORG_USER | profile | CONTACT_ID (String — memberId from me query) | 2026-07-13 | 1 noted |
+| contact | query | ORG_USER | profile | CONTACT_ID (String — memberId from me query) | 2026-08-03 | 1 noted |
 | createCartFromWishlist | mutation | ORG_USER | wishlist | LIST_ID (String — capture from wishlists query) | 2026-07-13 | 1 noted |
 | createConfiguredLineItem | mutation | PUBLIC or ORG_USER | configurable-products | STORE_ID (String — passed inline in command), CONFIGURABLE_PRODUCT_ID (String) | 2026-07-13 | 1 noted |
 | createOrderFromCart | mutation | ORG_USER | order | CART_ID (String — capture from earlier cart query/mutation) | 2026-07-13 | 1 noted |
