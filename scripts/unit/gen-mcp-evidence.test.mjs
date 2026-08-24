@@ -11,11 +11,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { join, resolve, isAbsolute, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
-import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs, classifyWarmResults, enableOAuthIfNoPat } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs, classifyWarmResults, enableOAuthIfNoPat, resolveTokens, injectTokenRefs } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SCRIPT = join(ROOT, "plugins/vc-fix/skills/project-init/gen-mcp.mjs");
@@ -138,10 +138,13 @@ test("template (#220 item 4): github is the official REMOTE server, not the arch
   assert.match(gh.headers?.Authorization || "", /^Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>$/);
 });
 
-test("gen-mcp (#220 item 4): the generated github server injects the PAT into the Bearer header", () => withTempDir((dir) => {
+test("gen-mcp (#220 item 4 / VCST-5774): the github Bearer header carries a ${VAR} REF, never the PAT", () => withTempDir((dir) => {
   runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_itemfour" });
   const gh = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.github;
-  assert.equal(gh.headers.Authorization, "Bearer ghp_itemfour");
+  assert.equal(gh.headers.Authorization, "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}");
+  // …and the VALUE lands in settings.local.json `env`, which is what feeds the expansion.
+  const settings = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
+  assert.equal(settings.env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_itemfour");
 }));
 
 test("enableOAuthIfNoPat (#220 item 4): an unresolved Bearer placeholder is DROPPED so the server can OAuth", () => {
@@ -240,6 +243,118 @@ test("absolutizeOutputDir: a server with no --output-dir (github, postman, …) 
 });
 
 // ─── .gitignore entries ───────────────────────────────────────────────────────────
+// ─── VCST-5774 — no literal credential in .mcp.json, and .mcp.json is always ignored ──────
+// D1: gen-mcp used to substitute the literal PAT value into .mcp.json. D2: that file was never
+// added to .gitignore (the header comment claimed otherwise), so on a client repo one `git add -A`
+// published a live token. D3: with no PAT env it copied `gh auth token` — the operator's CLI OAuth
+// session — into the file; two projects were found on disk carrying a `gho_…` that way.
+const SECRET_SHAPE = /(gh[pousr]_|github_pat_|PMAK-)[A-Za-z0-9_-]{6,}/;
+
+test("VCST-5774 D1: NO resolved credential value appears anywhere in the generated .mcp.json", () => withTempDir((dir) => {
+  runGenMcp(dir, ["--with", "postman,context7"], {
+    GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_leakcanary1234567890",
+    POSTMAN_API_KEY: "PMAK-leakcanary-0987654321",
+    CONTEXT7_API_KEY: "ctx7_leakcanary",
+  });
+  const raw = readFileSync(join(dir, ".mcp.json"), "utf8");
+  assert.doesNotMatch(raw, SECRET_SHAPE, "a secret-shaped literal reached .mcp.json");
+  assert.ok(!raw.includes("ctx7_leakcanary"), "the context7 key value reached .mcp.json");
+  // Each one is present as an indirection instead, and the values live in settings `env`.
+  for (const v of ["GITHUB_PERSONAL_ACCESS_TOKEN", "POSTMAN_API_KEY", "CONTEXT7_API_KEY"]) {
+    assert.ok(raw.includes("${" + v + "}"), `${v} is not referenced as \${${v}}`);
+  }
+  const env = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8")).env;
+  assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_leakcanary1234567890");
+  assert.equal(env.POSTMAN_API_KEY, "PMAK-leakcanary-0987654321");
+  assert.equal(env.CONTEXT7_API_KEY, "ctx7_leakcanary");
+}));
+
+test("VCST-5774 D1: an ALIAS env var (GITHUB_FIX_BUGS_TOKEN) resolves under the canonical name", () => withTempDir((dir) => {
+  // .env.local documents GITHUB_FIX_BUGS_TOKEN; the reference must still read ${GITHUB_PERSONAL_ACCESS_TOKEN}
+  // so the indirection and the settings key agree whichever alias supplied the value.
+  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "", GITHUB_FIX_BUGS_TOKEN: "ghp_fromalias12345678" });
+  const gh = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.github;
+  assert.equal(gh.headers.Authorization, "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}");
+  const env = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8")).env;
+  assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_fromalias12345678");
+}));
+
+test("VCST-5774 D2: .mcp.json and the other generated local files are ALWAYS gitignored", () => withTempDir((dir) => {
+  runGenMcp(dir);
+  const gi = readFileSync(join(dir, ".gitignore"), "utf8");
+  for (const entry of [".mcp.json", ".env.local", ".env.*.local", "project-profile.json", ".vc-fix/", ".claude/settings.local.json"]) {
+    assert.match(gi, new RegExp(`^${entry.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "m"), `${entry} is not ignored`);
+  }
+}));
+
+test("VCST-5774 D2: the ignore entry is written BEFORE .mcp.json, and a project with no .gitignore gets one", () => withTempDir((dir) => {
+  assert.ok(!existsSync(join(dir, ".gitignore")), "precondition: the fresh project has no .gitignore");
+  const out = runGenMcp(dir);
+  assert.ok(existsSync(join(dir, ".gitignore")), "a project with no .gitignore gets one");
+  // Ordering is asserted on stdout, not on mtime: the generator writes .gitignore in one pass and
+  // both files can land inside the same filesystem clock tick, so mtime cannot witness the order.
+  const iGitignore = out.indexOf("[gen-mcp] .gitignore +=");
+  const iWrote = out.indexOf("[gen-mcp] wrote ");
+  assert.ok(iGitignore >= 0 && iWrote >= 0, `both log lines present:\n${out}`);
+  assert.ok(iGitignore < iWrote, ".gitignore must be updated BEFORE .mcp.json is written — the file must never exist un-ignored");
+}));
+
+test("VCST-5774 D2: an operator's existing .gitignore is appended to, never rewritten", () => withTempDir((dir) => {
+  const original = "node_modules/\ndist/\n";
+  writeFileSync(join(dir, ".gitignore"), original);
+  runGenMcp(dir);
+  const gi = readFileSync(join(dir, ".gitignore"), "utf8");
+  assert.ok(gi.startsWith(original), "the operator's entries are untouched, in order");
+  assert.match(gi, /^\.mcp\.json$/m);
+}));
+
+test("VCST-5774 D3: with no PAT env the generator does NOT shell out to `gh auth token`", () => withTempDir((dir) => {
+  // A fake `gh` earlier on PATH would be used by the removed fallback; it must never run. If it
+  // did, the file would carry `gho_…` — the operator's CLI OAuth session, persisted unasked.
+  const binDir = join(dir, "fakebin");
+  mkdirSync(binDir, { recursive: true });
+  const marker = join(dir, "gh-was-called");
+  const body = `#!/bin/sh\ntouch ${JSON.stringify(marker)}\necho gho_shouldNeverBeUsed\n`;
+  writeFileSync(join(binDir, "gh"), body, { mode: 0o755 });
+  writeFileSync(join(binDir, "gh.cmd"), `@echo off\r\ntype nul > "${marker}"\r\necho gho_shouldNeverBeUsed\r\n`);
+  runGenMcp(dir, [], {
+    GITHUB_PERSONAL_ACCESS_TOKEN: "", GITHUB_FIX_BUGS_TOKEN: "", GIT_TOKEN: "", GITHUB_TOKEN: "",
+    PATH: `${binDir}${process.platform === "win32" ? ";" : ":"}${process.env.PATH}`,
+  });
+  assert.ok(!existsSync(marker), "`gh auth token` was invoked — the D3 fallback is back");
+  const raw = readFileSync(join(dir, ".mcp.json"), "utf8");
+  assert.ok(!raw.includes("gho_"), "a gh CLI OAuth token reached .mcp.json");
+  // No PAT ⇒ the placeholder stays unresolved ⇒ enableOAuthIfNoPat drops the header ⇒ OAuth.
+  const gh = JSON.parse(raw).mcpServers.github;
+  assert.ok(!("Authorization" in (gh.headers ?? {})), "the header must be dropped so the server can OAuth");
+  const settings = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
+  assert.ok(!settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, "nothing to bridge when nothing resolved");
+}));
+
+test("VCST-5774: --inline-secrets restores the literal, and then writes NO second copy to settings", () => withTempDir((dir) => {
+  runGenMcp(dir, ["--inline-secrets"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_deliberateinline12" });
+  const gh = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.github;
+  assert.equal(gh.headers.Authorization, "Bearer ghp_deliberateinline12");
+  const settings = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
+  assert.ok(!settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, "the value must not be duplicated into settings");
+}));
+
+test("resolveTokens / injectTokenRefs: pure — precedence, ${VAR} refs, unresolved left alone", () => {
+  assert.deepEqual(resolveTokens({ GITHUB_FIX_BUGS_TOKEN: "b", GIT_TOKEN: "c" }),
+    { "<GITHUB_PERSONAL_ACCESS_TOKEN>": { varName: "GITHUB_PERSONAL_ACCESS_TOKEN", value: "b" } });
+  assert.deepEqual(resolveTokens({ GITHUB_PERSONAL_ACCESS_TOKEN: "a", GITHUB_FIX_BUGS_TOKEN: "b" }),
+    { "<GITHUB_PERSONAL_ACCESS_TOKEN>": { varName: "GITHUB_PERSONAL_ACCESS_TOKEN", value: "a" } });
+  assert.deepEqual(resolveTokens({}), {}, "an absent key resolves to nothing, so the placeholder survives");
+
+  const resolved = resolveTokens({ GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_x" });
+  const server = { headers: { Authorization: "Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>", Other: "<CONTEXT7_API_KEY>" }, args: ["--k", "<GITHUB_PERSONAL_ACCESS_TOKEN>"] };
+  const out = injectTokenRefs(server, resolved);
+  assert.equal(out.headers.Authorization, "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}", "embedded position is substituted");
+  assert.equal(out.args[1], "${GITHUB_PERSONAL_ACCESS_TOKEN}", "nested arrays are walked");
+  assert.equal(out.headers.Other, "<CONTEXT7_API_KEY>", "an UNRESOLVED placeholder is left intact for unresolvedPlaceholders()");
+  assert.equal(injectTokenRefs(server, resolved, { inline: true }).headers.Authorization, "Bearer ghp_x");
+});
+
 test("gen-mcp: adds the landing-zone ignore entries to the project's .gitignore", () => withTempDir((dir) => {
   runGenMcp(dir);
   const gi = readFileSync(join(dir, ".gitignore"), "utf8");
@@ -287,11 +402,14 @@ function seedSession(dir, sid = "gen-mcp-sess-1") {
 test("item 8b: an EMBEDDED placeholder (\"Bearer <POSTMAN_API_KEY>\") resolves when the key IS set", () => withTempDir((dir) => {
   // The old injectTokens replaced a value ONLY when the entire string equalled a placeholder, so
   // `"Authorization": "Bearer <POSTMAN_API_KEY>"` shipped unresolved even with the key set (→ 401).
+  // It now resolves to the ${VAR} indirection, in place — the embedded-position fix is unchanged.
   runGenMcp(dir, ["--with", "postman"], { POSTMAN_API_KEY: "PMAK-testkey-1234567890" });
   const cfg = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
   const auth = cfg.mcpServers.postman.headers.Authorization;
-  assert.equal(auth, "Bearer PMAK-testkey-1234567890", "the embedded placeholder is substituted in place");
+  assert.equal(auth, "Bearer ${POSTMAN_API_KEY}", "the embedded placeholder is substituted in place");
   assert.doesNotMatch(auth, /<POSTMAN_API_KEY>/);
+  const settings = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
+  assert.equal(settings.env.POSTMAN_API_KEY, "PMAK-testkey-1234567890");
 }));
 
 // This test used to assert the OPPOSITE: `--with postman` + a blank POSTMAN_API_KEY had to emit a
