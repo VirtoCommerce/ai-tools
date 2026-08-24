@@ -4,7 +4,7 @@
 > reference files. Discovery is **one level, flat — there are no category subfolders**; the four
 > categories below (VC Knowledge · Testing · QA Methodology · Development) are `[Category]` **tags in
 > each skill's `description`**, not directories. Breakdown: **1 VC Knowledge + 12 Testing +
-> 17 QA Methodology + 6 Development + 3 root-level** (uncategorized: `project-init`,
+> 18 QA Methodology + 6 Development + 3 root-level** (uncategorized: `project-init`,
 > `run-vc-mcp-testing-module`, `vc-self-check`; `qa-local-env` is grouped under Testing but carries no
 > tag of its own). Note both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they are
 > the same category.
@@ -43,6 +43,9 @@ skills/
 ├── qa-hotfix/                       # [QA Methodology]  Release a hotfix into stable bundles
 ├── qa-hotfix-check/                 # [QA Methodology]  Deliver a released hotfix onto deployed envs
 ├── qa-bundle-check/                 # [QA Methodology]  Audit a stable bundle for available hotfixes
+├── qa-deploy-pr/                    # [QA Methodology]  Deploy a change's CI prerelease artifacts to the test env
+├── qa-review-oracles/               # [QA Methodology]  Two-axis oracle triangulation (BL + ECL) & auto-apply
+├── qa-review-bl/                    # [QA Methodology]  Alias of qa-review-oracles bl
 │
 ├── dotnet-unit-test/                # [Development]  Reproduce a backend bug as a failing xUnit test
 ├── dotnet-fix/                      # [Development]  Minimal .NET 10 fix → green
@@ -87,7 +90,7 @@ Manual invocation, delegates to specialist agents.
 | `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |
 | `/qa-local-env` | (deterministic scripts) | resolve-task.mjs, resolve-theme.mjs, gen-manifest.mjs, provision.ps1, healthcheck.mjs, init-admin.mjs |
 
-## QA Methodology (14)
+## QA Methodology (18)
 
 Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocable reference-only), cross-team best practices.
 
@@ -130,6 +133,14 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | `/qa-bundle-check` | Audit a stable bundle for module/Platform/Theme hotfixes available on the same major.minor line | SKILL.md (bundle resolution + same-line hotfix detection + PR/JIRA tracing) |
 | `/qa-hotfix` | Release a hotfix of a merged+released fix into the current latest-stable bundles (gated writes, never auto-merges) | SKILL.md (ask-bundles step + hotfix mechanics + gate ladder) |
 | `/qa-hotfix-check` | Deliver an already-released hotfix onto the deployed stable + regression envs; verify live, transition tickets, bump bundles | SKILL.md (env wiring + deploy-poll + verification + transition) |
+| `/qa-deploy-pr` | Gather all fresh CI prerelease artifacts a change produced (modules + platform + vc-frontend) and deploy them together to the test env in one manifest update; dry-run by default, `--apply` opens a gated deploy PR, `--verify` polls live state. Never merges | SKILL.md |
+
+### Oracle Maintenance
+
+| Skill | Purpose | Supporting Files |
+|-------|---------|-----------------|
+| `/qa-review-oracles` | Triangulate an oracle (BL invariants or ECL edge-case sections) against docs + live + source code, auto-apply confirmed changes, and reconcile test-case citations | SKILL.md, bl-audit-criteria.md, ecl-audit-criteria.md |
+| `/qa-review-bl` | Alias of `/qa-review-oracles bl` — kept working because `/qa-test-lifecycle` Phase 4c auto-runs it by this name | alias stub → `qa-review-oracles/` |
 
 ## Development (6)
 

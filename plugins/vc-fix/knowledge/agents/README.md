@@ -3,7 +3,7 @@
 `vc-fix` ships a narrow slice of the full `vc-qa` agent crew, scoped to five workflows: project
 setup (`/project-init`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), bug
 verification (`/qa-verify-fix`), online bug monitoring (`/qa-monitoring`), and plugin
-self-diagnostics (`/vc-self-check`) + direct feedback (`/vc-feedback`). **8 agents, 8 commands, 16 skills** — no regression
+self-diagnostics (`/vc-self-check`) + direct feedback (`/vc-feedback`). **10 agents, 8 commands, 16 skills** — no regression
 orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live only in the full
 `vc-qa` plugin (not shipped here).
 
@@ -21,7 +21,7 @@ orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live o
 
 ---
 
-## Agent Inventory (8 agents)
+## Agent Inventory (10 agents)
 
 ### QA specialists (4) — read-only, no shared-instructions file
 
@@ -54,9 +54,16 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 `autonomous-regression-orchestrator`, `test-runner-agent`, `autonomous-test-runner`,
 `test-management-specialist`, and all 4 `ba-*` agents.
 
+### Self-diagnostics (2) — read-only, invoked by `/vc-self-check`
+
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| **self-check-diagnostician** | sonnet | Tier-2 diagnostician of the client→vendor feedback loop: given one session id, reads its telemetry jsonl + transcript + the `skill-expectations.md` oracle, and returns ONLY a validated finding STRUCT (verdict + severity + evidence + root-cause + proposed fix + vendor-provenance fields). Writes no files, sends nothing. |
+| **self-check-deliverer** | sonnet | Non-interactive deliverer: given the validated finding STRUCT and the operator's single consent, owns the whole delivery (dedup lookup, route selection, body composition, leak scan, sending, telemetry retention) by running `deliver.mjs`. Asks nothing further; the only thing it ever sends is a GitHub Issue/comment on `VirtoCommerce/vc-mcp-testing-module`. |
+
 ---
 
-## Slash Commands (7)
+## Slash Commands (8)
 
 | Command | Purpose |
 |---------|---------|
@@ -67,6 +74,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 | `/qa-monitoring [layer]` | Online bug monitoring from App Insights: query → dedup (fingerprint) → triage → live repro → report. Detect-and-report only — never files a ticket or auto-fixes |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers |
 | `/vc-self-check` | Self-diagnostics (Tier B): read this session's passive telemetry (`hooks/session-telemetry.mjs` → `.vc-fix/diagnostics/`) + transcript + the `knowledge/diagnostics/skill-expectations.md` oracle → per-skill verdict + severity + proposed fix → LOCAL `DIAG-*.md`. `deliver` sub-step contributes a scrubbed, consent-gated PR/issue to VirtoCommerce. Never modifies the install; model-invocable (no `disable-model-invocation`) so the end-of-turn tail-trigger can auto-run it silently; recursion blocked by span-drop + `selfCheckSeen` + per-signature dedup |
+| `/vc-feedback` | Attach an explicit 👍/👎 verdict (with optional note) to the current session's telemetry trace — the main detector of SILENT failures (a task done wrong with no error). Local + silent: recorded by the `UserPromptSubmit` hook; nothing is sent until the separate consent-gated `deliver` step |
 
 **Dropped from the full `vc-qa` crew:** `/qa-smoke`, `/qa-test`, `/qa-regression`,
 `/qa-coverage-generation`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-sync-tests`,

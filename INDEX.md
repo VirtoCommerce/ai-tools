@@ -4,8 +4,8 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**. Tests are 
 natural language prompts via MCP servers (Playwright, Chrome DevTools, Atlassian, …) — LLM-powered
 browser automation with AI agents, **not** traditional `.spec.js` files.
 
-> **Authoritative counts** (verified 2026-08-07): 19 agents · 40 skills · 31 commands ·
-> 32 knowledge files · 121 regression suites (~3,985 cases). Single sources of truth:
+> **Authoritative counts** (verified 2026-08-24): 19 agents · 40 skills · 31 commands ·
+> 32 knowledge files · 123 regression suites (4,123 cases). Single sources of truth:
 > [`config/test-suites.json`](config/test-suites.json) for suites, [`.claude/rules/`](.claude/rules/) for everything else.
 
 ## Quick Navigation
@@ -16,13 +16,12 @@ browser automation with AI agents, **not** traditional `.spec.js` files.
 | [CLAUDE.md](CLAUDE.md) | Project instructions for Claude Code (overrides defaults) |
 | [.claude/](.claude/) | Agents, skills, commands, rules, knowledge |
 | [config/](config/) | MCP browser configs + `test-suites.json` manifest |
-| [regression/suites/](regression/suites/) | 121 module-aligned CSV suites (Frontend/ + Backend/) |
+| [regression/suites/](regression/suites/) | 123 module-aligned CSV suites (Frontend/ + Backend/) |
 | [test-data/](test-data/) | `@td()` alias registry + CSV fixtures |
 | [reports/](reports/) | Bug reports + regression / monitoring summaries |
 | [tests/](tests/) | Active per-sprint / per-ticket evidence (root = current) |
 | [scripts/](scripts/) | Resolvers, GraphQL runner, sync/lint utilities, seeders |
 | [docs/](docs/) | Plugin distribution / onboarding / runbook docs |
-| [bootstrap/](bootstrap/) | Plugin installer (`install.ts`) |
 | [templates/](templates/) | Customer-facing config templates (`aliases.json.template`) |
 | [vc/](vc/) | **Layer 2** — VC's internal per-env data (`vcst-qa/`, `shared/`); customers ignore |
 | ci/ | CI regression / full-cycle / auto-fix / monitoring pipelines (**gitignored**) |
@@ -45,11 +44,11 @@ vc-mcp-testing-module/
 │
 ├── config/                         # MCP browser configs + test-suites.json manifest
 │   ├── mcp-playwright-{chrome,firefox,edge}.config.json
-│   └── test-suites.json            # Regression orchestration manifest (_meta.totalSuites: 121)
+│   └── test-suites.json            # Regression orchestration manifest (_meta.totalSuites: 123)
 │
 ├── regression/suites/
 │   ├── Frontend/                   # 56 CSVs in 17 module dirs
-│   └── Backend/                    # 65 CSVs in 31 module dirs
+│   └── Backend/                    # 67 CSVs in 33 module dirs
 │
 ├── test-data/                      # aliases.json registry + CSV fixtures (orgs, addresses, users, products, payment, …)
 ├── reports/                        # bugs/, regression/, monitoring/, ba/, tickets/, …
@@ -83,13 +82,13 @@ Theme preset: **Coffee**. Communication: **Microsoft Teams**.
 
 ## Regression Suites
 
-121 suites (~3,985 cases, 37 selections) in enriched agent-native CSV format, organized into module-aligned
+123 suites (4,123 cases, 37 selections) in enriched agent-native CSV format, organized into module-aligned
 subdirectories under `Frontend/` and `Backend/`. Per-module breakdown:
 [regression/suites/README.md](regression/suites/README.md). Authoritative definitions and selection
 groups: [config/test-suites.json](config/test-suites.json).
 
 **Selection groups:** `smoke` (042, 078) · `critical` (042, 078, 039, 044, 049) ·
-`frontend` · `backend` · `sprint` (plan-driven) · `full` (121) · plus module/feature groups
+`frontend` · `backend` · `sprint` (plan-driven) · `full` (123) · plus module/feature groups
 (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`,
 `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`).
 
@@ -143,7 +142,7 @@ npm run ci:smoke         # Smoke selection (042, 078)
 npm run ci:critical      # P0 selection (042, 078, 039, 044, 049)
 npm run ci:frontend      # All Frontend/ suites
 npm run ci:backend       # All Backend/ suites
-npm run ci:full          # Full regression (all 121 suites)
+npm run ci:full          # Full regression (all 123 suites)
 npm run ci:cycle         # Full cycle: sync → review → regression
 npm run ci:monitor       # Online bug monitoring from App Insights
 npm run ci:notify        # Teams notification
@@ -158,4 +157,3 @@ npm run ci:notify        # Teams notification
 - [knowledge/domain/sitemap.md](.claude/knowledge/domain/sitemap.md) — Storefront sitemap
 - [knowledge/domain/products.md](.claude/knowledge/domain/products.md) — Product types, xAPI fields, configurable sections
 - [test-data/README.md](test-data/README.md) — `@td()` resolver + fixture catalog
-- [vc/README.md](vc/README.md) — Layer 2 (VC internal per-env data) layout

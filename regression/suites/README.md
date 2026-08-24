@@ -1,68 +1,78 @@
 # Test Suite Files Index
 
 **Location:** `regression/suites/`
-**Updated:** 2026-06-12
+**Updated:** 2026-08-24
 **Format:** Enriched Agent-Native CSV (15-column)
-**Manifest:** [`config/test-suites.json`](../../config/test-suites.json) — single source of truth for orchestration (`_meta.totalSuites: 104`)
+**Manifest:** [`config/test-suites.json`](../../config/test-suites.json) — single source of truth for orchestration (`_meta.totalSuites: 123`)
 
 Suites are organized into **module-aligned subdirectories** under `Frontend/` and `Backend/`. IDs are
 zero-padded and may carry letter suffixes for split suites (e.g. `040a`, `050b1`, `072c`).
 
-**Totals:** 104 CSV suites · ~3,790 test cases · 48 Frontend (15 modules) + 56 Backend (29 modules).
+**Totals:** 123 CSV suites (registered in the manifest) · 4,123 test cases · 56 Frontend (17 modules) + 67 Backend (33 modules).
+
+> `Backend/import-export/096-backup-restore.csv` exists on disk but has **no manifest entry** — it is
+> not counted above, does not run under any selection, and is invisible to `suites:lint`. See the
+> `docs-audit` PR that last touched this file for the open proposal to register it.
 
 ---
 
-## Frontend (48 suites, 15 modules)
+## Frontend (56 suites, 17 modules)
 
 | Module | Suites |
 |--------|--------|
-| `auth/` | 031 Login & Register (P1) · 032 Session & RBAC (P1) · 033 Company & Account Menu (P1) · 082 Impersonation / Login-on-Behalf (P1) |
-| `b2b/` | 006 Organization (P1) · 007 Lists & Shared (P1) · 008 Members (P1) · 009 Variations & Configs (P1) · 010 Bulk / Ship / Dashboard (P1) |
-| `bopis/` | 036 Store Selector (P1) · 037 Cart (P1) · 038 Checkout (P1) |
-| `cart/` | 028 Core (P1) · 029 Validation & Persistence (P1) · 030 Merge (P1) |
-| `catalog/` | 001 Navigation (P1) · 002 Product Detail (P1) · 003 Filters (P1) |
-| `checkout/` | 011 Flow (P1) · 012 Guest (P1) · 013 B2B (P1) · 081 Select Shipping Address Popup (P1) |
-| `configurable-products/` | 072 UI (P1) · 072b E2E (P1) · 072c Cross-Cutting (P1) · 072d File & Text Sections (P1) |
-| `cross-cutting/` | 043 Google Analytics (P2) · 044 Security (P0) · 045 Accessibility (P2) · 046 Localization (P2) · 047 Performance (P2) · 048 Browser Compatibility (P1) |
-| `loyalty/` | 083 Loyalty Catalog Browsing (P1) |
+| `auth/` | 031 Auth Login & Register (P1) · 032 Auth Session & RBAC (P1) · 033 Auth Company & Account Menu (P1) · 082 Auth Impersonation / Login on Behalf (P1) |
+| `b2b/` | 006 B2B Organization (P1) · 007 B2B Lists & Shared (P1) · 008 B2B Members (P1) · 009 B2B Variations & Configs (P1) · 010 B2B Bulk Ship Dashboard (P1) · 011b B2B Company E2E (P1) |
+| `bopis/` | 036 BOPIS Store Selector (P1) · 037 BOPIS Cart (P1) · 038 BOPIS Checkout (P1) |
+| `cart/` | 028 Cart Core (P1) · 029 Cart Validation & Persistence (P1) · 030 Cart Merge (P1) |
+| `catalog/` | 001 Catalog Navigation (P1) · 002 Product Detail (P1) · 003 Catalog Filters (P1) |
+| `checkout/` | 011 Checkout Flow (P1) · 012 Checkout Guest (P1) · 013 Checkout B2B (P1) · 081 Select Shipping Address Popup (P1) |
+| `configurable-products/` | 072 Configurable Products UI (P1) · 072b Configurable Products E2E (P1) · 072c Configurable Products Cross-Cutting (P1) · 072d Configurable Products File & Text Sections (P1) |
+| `cross-cutting/` | 043 Google Analytics (P2) · 044 Security Tests (P0) · 045 Accessibility Tests (P2) · 046 Localization Tests (P2) · 047 Performance Tests (P2) · 048 Browser Compatibility (P1) · 048c Layout Stability (runner-native) (P1) · 048d Structured Data & SEO (storefront) (P2) |
+| `customer-reviews/` | 088 Customer Reviews Storefront (P2) |
+| `loyalty/` | 083 Loyalty Catalog Browsing (P1) · 083b Loyalty Mixed Cart Order (P1) |
 | `marketing/` | 077 Coupons & Promotions Storefront (P1) · 077b Coupons & Promotions — Cart Sidebar (P1) |
 | `orders/` | 014 Orders Frontend (P1) · 015 Quotes (P1) |
-| `payment/` | 039 CyberSource (P0) · 040a Skyflow (P0) · 040b Authorize.Net (P0) · 040c Datatrans (P0) · 041 Cross-Cutting (P0) |
-| `search/` | 004 Core (P1) · 005 Filters & Advanced (P1) |
+| `payment/` | 039 Payment CyberSource (P0) · 040a Payment Skyflow (P0) · 040b Payment Authorize.Net (P0) · 040c Payment Datatrans (P0) · 041 Payment Cross-Cutting (P0) |
+| `sales-rep/` | 089 Sales Rep — My Customers (storefront UI/E2E) (P1) · 090 Sales Rep — My Sales Reps (storefront, buyer-facing) (P1) · 091 Sales Rep — Customer Profile (storefront) (P1) · 093 Sales Rep — Hub Dashboard (storefront) (P1) |
+| `search/` | 004 Search Core (P1) · 005 Search Filters & Advanced (P1) |
 | `smoke/` | 042 Smoke Tests (P0) |
-| `whitelabeling/` | 070 Storefront (P1) · 071 Branding (P1) |
+| `whitelabeling/` | 070 Whitelabeling Storefront (P1) · 071 Whitelabeling Branding (P1) |
 
-## Backend (56 suites, 29 modules)
+## Backend (67 suites, 33 modules)
 
 | Module | Suites |
 |--------|--------|
-| `api/` | 049 Platform REST API (P0) |
+| `api/` | 049 Platform API (P0) |
 | `assets/` | 062 Assets (P1) |
-| `catalog/` | 051 Admin Products (P1) · 053 Admin Categories (P1) |
+| `background-jobs/` | 095 Background Jobs — Hangfire Migration (P1) |
+| `catalog/` | 051 Catalog Admin Products (P1) · 053 Catalog Admin Categories (P1) |
 | `channels/` | 076 Channels (P2) |
-| `cms/` | 059 Page Management (P1) · 060 Design & Content (P1) |
-| `configurable-products/` | 052 Admin (P1) |
+| `configurable-products/` | 052 Configurable Products Admin (P1) |
 | `contracts/` | 074 Contracts (P1) |
-| `customer/` | 026 Contacts (P1) · 027 Orgs & Invites (P1) |
-| `graphql/` | 050a xCatalog · 050b1–050b5 xCart · 050c xOrder · 050d xProfile · 050e xFrontend (pageContext) · 050f xCMS · 050g Cross-Cutting · 050h Wishlist · 050i Configurable Products · 050j xMarketing · 050k xPickup · 050l Push Messages (16 suites, mostly P1) |
+| `customer/` | 026 Customer Contacts (P1) · 027 Customer Orgs & Invites (P1) · 027b Customer Org-Scoped Roles (P1) |
+| `customer-reviews/` | 086 Customer Reviews GraphQL (xAPI) (P2) · 087 Customer Reviews Admin & Moderation (P2) |
+| `graphql/` | 050a xCatalog · 050b1–050b5 xCart · 050c xOrder · 050d xProfile · 050e xFrontend (pageContext) · 050f xCMS · 050g Cross-Cutting · 050h Wishlist · 050i Configurable Products · 050j xMarketing · 050k xPickup · 050l Push Messages · 050m Sales Rep · 050n Store Asset URL (18 suites, mostly P1) |
 | `image-tools/` | 069 Image Tools (P2) |
 | `import-export/` | 064 CSV Import / Export (P1) |
 | `inventory/` | 056 Inventory (P1) |
-| `loyalty/` | 075 Loyalty (P1) |
+| `loyalty/` | 075 Loyalty (P1) · 075b Loyalty Mixed Cart Order (P1) · 075c Loyalty Product Points Earning (P1) |
 | `marketing/` | 023 Promotions (P1) · 024 Content (P1) · 025 Coupons & API (P1) |
 | `news/` | 084 News Articles (P1) |
 | `notifications/` | 057 Templates (P1) · 058 Triggers (P1) |
 | `orders/` | 017 Management (P1) · 018 Payments (P1) · 019 Shipments (P1) |
+| `page-builder/` | 059 Page Builder (P1) · 060 Page Builder — Design & Content (P1) |
 | `platform/` | 020 Users / Roles / Settings (P1) · 021 Dynamic Properties (P1) · 063 Core Settings (P2) |
 | `pricing/` | 054 Logic (P1) · 055 Management (P1) |
 | `push-messages/` | 068 Push Messages (P2) |
 | `returns/` | 073 Returns (P1) |
+| `sales-rep/` | 092 Sales Rep — Admin / VC-Shell App (P1) · 092b Sales Rep — Admin Embedded App (back-office) (P1) |
 | `search/` | 061 Search Indexing Admin (P1) |
 | `seo/` | 066 SEO (P1) |
 | `shipping/` | 065 Shipping (P1) |
 | `smoke/` | 078 Backend Smoke Tests (P0) |
 | `store/` | 034 Management (P1) · 035 Rounding & Email (P1) |
 | `task-management/` | 085 Task Management (P2) |
+| `ucp/` | 094 UCP Observability (P2) |
 | `whitelabeling/` | 067 Admin (P1) |
 | `xmarketing/` | 079 xMarketing Admin & REST (P1) |
 
@@ -80,14 +90,14 @@ Authoritative definitions live in the manifest's `selections` block. Regenerate 
 | `smoke` | 042, 078 | `npm run ci:smoke` |
 | `critical` | 042, 078, 039, 044, 049 | `npm run ci:critical` |
 | `sprint` | Plan-driven via `vc/shared/docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1) | — |
-| `full` | All 104 | `npm run ci:full` |
+| `full` | All 123 | `npm run ci:full` |
 
 ### By Layer
 
 | Selection | Suites | CI Command |
 |-----------|--------|------------|
-| `frontend` | All `Frontend/` suites (48) | `npm run ci:frontend` |
-| `backend` | All `Backend/` suites (56) | `npm run ci:backend` |
+| `frontend` | All `Frontend/` suites (56) | `npm run ci:frontend` |
+| `backend` | All `Backend/` suites (67) | `npm run ci:backend` |
 
 ### Module / feature groups
 

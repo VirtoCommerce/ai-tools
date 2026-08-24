@@ -8,6 +8,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Docs Audit — 2026-08-24
+
+Biweekly freshness audit (Sprint26-16 boundary). Two new regression suites landed since the last
+audit without their doc-side counterparts catching up; three skills and a plugin agent/command pair
+were already shipped but never made it into their reference tables.
+
+- **Suite/test counts refreshed.** `config/test-suites.json` now carries **123 suites / 4,123 cases**
+  (up from 121 / ~3,985) — `Backend/ucp/094-ucp-observability.csv` and
+  `Backend/background-jobs/095-background-jobs-migration.csv` landed this sprint. Regenerated
+  `regression/suites/README.md` from the manifest and corrected the stale `121`/`~3,985`/`48
+  directories` figures in `CLAUDE.md`, `INDEX.md`, `.claude/rules/regression.md`, and
+  `.claude/skills/qa-metrics/quality-gates.md`.
+- **Undocumented skills backfilled** in `.claude/skills/README.md`: `/qa-deploy-pr`,
+  `/qa-review-oracles`, and its alias `/qa-review-bl` existed on disk and in
+  `.claude/rules/skills-commands.md` already, but were missing from the skills directory index
+  (its own header undercounted QA Methodology at 17/14 instead of 18).
+- **Undocumented `vc-fix` plugin components backfilled** in
+  `plugins/vc-fix/knowledge/agents/README.md`: the `self-check-diagnostician` and
+  `self-check-deliverer` agents (2 of the plugin's 10 agents, table said 8) and the `/vc-feedback`
+  command (table said "Slash Commands (7)" and omitted the row, though the header count and Quick
+  Start already knew about it).
+- **Open proposal, not auto-applied:** `Backend/import-export/096-backup-restore.csv` is a
+  substantial, actively-committed suite (VCST-5387) with no `config/test-suites.json` entry — it
+  doesn't count toward any total above and is invisible to `suites:lint`/`/qa-regression`. Needs a
+  human call on priority/tags/selection membership before registering it.
+
+---
+
 ## [Unreleased]
 
 Ships as **plugin `vc-fix` `0.8.4`** + **`vc-perf` `0.2.6`** (marketplace `0.9.4`). Pin to a tagged release for stability; this branch tip is unstable.
