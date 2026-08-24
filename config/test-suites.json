@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-08-17",
-    "totalSuites": 122,
+    "totalSuites": 123,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2739,6 +2739,32 @@
         "VirtoCommerce.ApplicationInsights"
       ],
       "notes": "VCST-5544. Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) — without it every telemetry assertion is unverifiable, not failing. Adaptive sampling on the AI resource (~1-in-8) means a single request may leave no telemetry: repeat >=14x or disable sampling before concluding a signal is absent. 4 cases are Manual (InputCaptureMode matrix + bridge-off + breaking-change communication) and need an ISOLATED stand: the settings bind through a cached IOptions and are read only at startup, so each change is an appsettings edit + platform restart. Excluded from the backend/full selections until /qa-test 5g promotion — 19 cases are still Draft and UCPO-005/014/018 intentionally document defects that are OPEN."
+    },
+    {
+      "id": "095",
+      "name": "Background Jobs — Hangfire Migration",
+      "file": "regression/suites/Backend/background-jobs/095-background-jobs-migration.csv",
+      "domain": "background-jobs",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 52,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "background-jobs",
+        "platform",
+        "migration",
+        "hangfire",
+        "api",
+        "security"
+      ],
+      "requiresModules": [
+        "background-jobs"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5490. _COVERAGE-GAP (2026-08-17): RefundChangedJobHandler and CancelPaymentJobHandler have REGISTRATION + SECURITY-GATE coverage only (BGJ-006 flags both triggerable=false; BGJ-009 enqueue-refused for CancelPaymentJobHandler; BGJ-010 enqueue-refused for RefundChangedJobHandler) — their BUSINESS OUTCOME is NOT covered on any environment. Two cases (former BGJ-030 CancelPaymentJobHandler trigger path, former BGJ-031 RefundChangedJobHandler via Return resolution) were authored, evidence-checked live, and REMOVED rather than left permanently BLOCKED. Why: (1) no void/cancel REST route exists at all — only capture/refund; (2) neither payment gateway on this env supports refund — DefaultManualPaymentMethod returns 200 {succeeded:false, errorCode:\"PAYMENT_FAILED\"} (a leaked EF DbUpdateException), SkyflowPaymentMethod returns 200 {succeeded:false, errorCode:\"INVALID_REQUEST_ERROR\", errorMessage:\"Payment method does not support refund\"}; (3) seeded fixtures carry 0 payment transactions (paymentStatus=Paid was set directly by the seeder, nothing to refund against); (4) the only other candidate trigger — VirtoCommerce.Return's resolution field — does NOT create a payment refund: `resolution` is a free-text nullable string (not an enum), all 4 pre-existing returns with resolution=\"refund\" have orders with refunds=0 (two still payment-status New), and neither Return creation nor Return approval (New->Approved) raises an order event (confirmed live: modifiedDate/changelog/all Hangfire queues unchanged). There is no reachable path to either handler's business outcome on any environment available to this suite. What a future environment would need to re-add these cases: a refund-capable payment gateway (neither DefaultManualPaymentMethod nor Skyflow qualifies) PLUS an order whose payment carries a real captured transaction (not a directly-seeded PaymentStatus=Paid with no transaction history) — that precondition should gate re-authoring, not just re-running. IDs BGJ-030/BGJ-031 are retired, not reused."
     }
   ],
   "selections": {
