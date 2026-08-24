@@ -110,6 +110,44 @@ export async function probeStorefrontLogin({ back, store, email, password, fetch
   }
 }
 
+/**
+ * Audit the SHIPPED .mcp.json for a credential written as a literal (VCST-5774 — defect D1).
+ *
+ * WHY A CHECK AND NOT JUST A FIXED GENERATOR. gen-mcp.mjs now emits `${VAR}` indirections, but
+ * this failure is silent-shaped: a literal token works perfectly, every day, right up until the
+ * day someone commits it. The file on disk may predate the fix, have been hand-edited, or have
+ * been produced with `--inline-secrets`. So verify the ARTIFACT; never trust the producer.
+ *
+ * Structural, not a regex over the raw text: a value is a literal when it sits under a
+ * credential-shaped key (`Authorization`, or an env name containing TOKEN/KEY/PAT/SECRET/PASSWORD)
+ * and is neither a `${VAR}` reference nor an unresolved `<PLACEHOLDER>`. That catches a credential
+ * type nobody has thought of yet, which a prefix list (`ghp_`, `PMAK-`, …) cannot. Known prefixes
+ * are still matched anywhere, as a second net for a literal parked under an innocuous key.
+ *
+ * Returns SERVER and KEY names only — both plugin-authored. A credential VALUE never reaches the
+ * result, the readiness table, or the observation evidence.
+ *
+ * @returns {{ hits: string[], unparsable: boolean }} `hits` empty + parsable ⇒ clean.
+ */
+export function findLiteralSecrets(mcpJsonText) {
+  const CRED_KEY = /^authorization$|TOKEN|KEY|PAT\b|SECRET|PASSWORD/i;
+  const KNOWN_PREFIX = /(gh[pousr]_|github_pat_|PMAK-)[A-Za-z0-9_-]{6,}/;
+  const isIndirection = (s) => /^\$\{[A-Za-z0-9_]+\}$/.test(s) || /^<[A-Z0-9_]+>$/.test(s);
+  let doc;
+  try { doc = JSON.parse(mcpJsonText); } catch { return { hits: [], unparsable: true }; }
+  const hits = new Set();
+  for (const [name, def] of Object.entries(doc?.mcpServers ?? {})) {
+    for (const bag of [def?.headers, def?.env]) {
+      for (const [k, v] of Object.entries(bag ?? {})) {
+        if (typeof v !== "string" || !v) continue;
+        const bare = v.replace(/^Bearer\s+/i, "").trim();
+        if ((CRED_KEY.test(k) && !isIndirection(bare)) || KNOWN_PREFIX.test(v)) hits.add(`${name}.${k}`);
+      }
+    }
+  }
+  return { hits: [...hits], unparsable: false };
+}
+
 const results = [];
 const add = (name, status, detail = "") => results.push({ name, status, detail });
 
@@ -194,6 +232,36 @@ async function main() {
     profileExists
       ? `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`
       : `no project-profile.json at ${profilePath} — run /project-init to create it (falling back to platform/jira/github defaults meanwhile)`);
+
+  // 1a. MCP config secret hygiene (VCST-5774). Two independent things can go wrong and each is
+  //     invisible until it is too late: a credential written as a LITERAL (D1), and `.mcp.json`
+  //     not being ignored (D2). Graded by actual exposure — a literal in a git repo that does not
+  //     ignore the file is the one combination that is one `git add -A` from a published token.
+  const mcpPath = resolve(process.cwd(), ".mcp.json");
+  if (!existsSync(mcpPath)) {
+    add("MCP config secret hygiene", "SKIP", "no .mcp.json in this project — run /project-init to generate one");
+  } else {
+    const { hits, unparsable } = findLiteralSecrets(readFileSync(mcpPath, "utf-8"));
+    // `git check-ignore` exits 1 when NOT ignored and 128 outside a repo; tryCmd gives us "did it
+    // exit 0". Outside a repo there is nothing to commit to, so ignore-state is not a finding.
+    const inRepo = tryCmd("git rev-parse --is-inside-work-tree");
+    const ignored = inRepo && tryCmd("git check-ignore -q .mcp.json");
+    if (unparsable) {
+      add("MCP config secret hygiene", "WARN", ".mcp.json is not valid JSON — could not audit it for literal credentials");
+    } else if (hits.length && !ignored) {
+      add("MCP config secret hygiene", "FAIL",
+        `literal credential in ${hits.join(", ")} AND .mcp.json is not gitignored — one \`git add -A\` publishes it. Re-run /project-init (writes \${VAR} + the ignore entry), then rotate the exposed credential.`);
+    } else if (hits.length) {
+      add("MCP config secret hygiene", "WARN",
+        `literal credential in ${hits.join(", ")} (file is gitignored, so not exposed). Re-run /project-init to replace it with a \${VAR} reference, or keep it deliberately via --inline-secrets.`);
+    } else if (inRepo && !ignored) {
+      add("MCP config secret hygiene", "WARN",
+        ".mcp.json carries no literal credential but is not gitignored — add it, so a future hand-edit cannot be committed");
+    } else {
+      add("MCP config secret hygiene", "PASS",
+        `no literal credential in .mcp.json${inRepo ? " and the file is gitignored" : " (not a git repo)"}`);
+    }
+  }
 
   // 1b. The ACTIVE plugin install resolves at runtime + the routing helper is present.
   //     /qa-fix / /qa-bug launch `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` where
