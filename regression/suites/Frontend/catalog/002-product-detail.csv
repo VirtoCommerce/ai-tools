@@ -204,22 +204,22 @@ A product exists that has a price in the default currency but no price defined i
 [STATE] Quantity stepper (+) is disabled or absent when no price is defined for the currency
 [DOM] Meaningful message or indicator communicates the product is not available in the selected currency","[NETWORK] no add-to-cart POST for zero-price product
 [CONSOLE] no TypeError or JS errors","Product showing zero price for a currency with no price list entry; quantity stepper (+) enabled for zero-price product; no indication to user that product is unavailable in selected currency; console TypeError","none","Coverage Gap Analysis; GAP-CS-16; ECL-3.1","Draft"
-"CAT-055","Recently Viewed Products Section Appears on PDP After Browsing Multiple Products","Catalog > Product","Medium",,,"User visits at least 2 different product PDPs in the same session; recently viewed feature enabled in storefront config","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"CAT-055","Recently Browsed Products Carousel Appears on Cart Page After Browsing Multiple Products","Catalog > Product","Medium",,,"User visits at least 2 different product PDPs in the same session; 'Recently Browsed' carousel enabled in storefront config. Retargeted from the PDP to /cart — live evidence shows the working carousel is hosted on the cart page, not the PDP; nothing indicates it was ever on the PDP.","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [NAV] Navigate to any first product detail page (Product A)
 [WAIT] Wait for PDP to load
-[SCROLL] Scroll down to check if 'Recently Viewed' section exists (may be empty for first product)
 [NAV] Navigate to a second different product detail page (Product B)
 [WAIT] Wait for PDP to load
-[SCROLL] Scroll down the PDP to find the 'Recently Viewed' section
-[ASSERT] Verify 'Recently Viewed' or equivalent section is now visible
-[ASSERT] Verify Product A appears in the recently viewed section
-[ACT] Click on Product A in the recently viewed section
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for cart page to load
+[SCROLL] Scroll down the cart page to find the 'RECENTLY BROWSED' carousel
+[ASSERT] Verify the 'RECENTLY BROWSED' carousel is visible on /cart
+[ASSERT] Verify Product A and Product B both appear in the RECENTLY BROWSED carousel
+[ACT] Click on Product A in the RECENTLY BROWSED carousel
 [WAIT] Wait for PDP of Product A to load
-[ASSERT] Verify navigation to Product A PDP was successful","[DOM] 'Recently Viewed' section appears on the PDP after visiting at least 2 products
-[DOM] Previously visited product listed in the recently viewed section with non-empty name and image
-[NAV] Clicking a recently viewed item navigates to that product PDP
-[STATE] Currently viewed product is NOT listed in its own recently viewed section","[NETWORK] no 4xx/5xx on recently viewed data request
-[CONSOLE] no TypeError or JS errors","Recently viewed section absent after visiting multiple products; visited products not appearing in section; clicking recently viewed item fails to navigate; current product appearing in its own recently viewed list; console TypeError","none","Coverage Gap Analysis; GAP-CS-17","Draft"
+[ASSERT] Verify navigation to Product A PDP was successful","[DOM] 'RECENTLY BROWSED' carousel appears on /cart after visiting at least 2 products
+[DOM] Previously visited products (A and B) are listed in the RECENTLY BROWSED carousel with non-empty name and image
+[NAV] Clicking a recently browsed item in the carousel navigates to that product's PDP","[NETWORK] no 4xx/5xx on recently browsed data request
+[CONSOLE] no TypeError or JS errors","RECENTLY BROWSED carousel absent from /cart after visiting multiple products; visited products not appearing in the carousel; clicking a recently browsed item fails to navigate; console TypeError","none","Coverage Gap Analysis; GAP-CS-17; Corrected: retargeted from PDP to /cart — live screenshot evidence shows a working 'RECENTLY BROWSED' carousel on the cart page, not the PDP (2026-08-25)","Draft"
 "CAT-057","Out-of-Stock PDP Display - Clear Unavailability Messaging","Catalog > Product","High","BL-CART-002, BL-CAT-006","ECL-2.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 An out-of-stock product with inventory = 0 exists and is accessible via PDP URL; fixture: {{OOS_SKU}} (see test-data/products/test-products.csv PROD-101)","url={{FRONT_URL}}; oos_sku={{OOS_SKU}}","[NAV] Resolve the out-of-stock product PDP URL at runtime using {{OOS_SKU}}; if {{OOS_SKU}} is not provisioned, skip this case (SEED REQUIRED: OOS product fixture)

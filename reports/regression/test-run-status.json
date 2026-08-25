@@ -1,41 +1,199 @@
 {
-  "runId": "REG-2026-08-06-1956",
-  "status": "completed",
+  "runId": "REG-2026-08-24-1806",
+  "status": "stalled",
   "environment": "https://vcst-qa.govirto.com",
-  "selection": "VCST-5486 resume: 020+031 pending cases, then 078",
-  "startedAt": "2026-08-06T17:56:42.544Z",
-  "finishedAt": "2026-08-06T19:57:23.349Z",
-  "resumeNote": "Resume of REG-2026-08-06-1803 (marked stalled after an individual spend-limit abort killed the orchestrator and the 031 runner). 042 already COMPLETE (34/34) and is NOT re-run. Scoped to the 8 pending cases of 020 and the 21 pending of 031; 078 (115, never started) queued last as it is the least ticket-relevant per case.",
-  "context": {
-    "ticket": "VCST-5486",
-    "build": "3.1058.0-pr-3077-8295",
-    "priorRun": "REG-2026-08-06-1803"
-  },
-  "suites": [
-    {
-      "id": "020",
-      "name": "Platform Users Roles & Settings (pending 8)",
-      "status": "done",
-      "browser": "playwright-edge",
-      "testCount": 8
-    },
-    {
-      "id": "031",
-      "name": "Auth Login & Register (pending 21)",
-      "status": "done",
+  "selection": "001,002,007,049,050a,050h,050l,050m,054,056,091,093",
+  "startedAt": "2026-08-24T18:06:00.000Z",
+  "finishedAt": "2026-08-24T17:30:58.574Z",
+  "notes": "Scoped run for 32 newly-authored Draft cases embedded across 12 suites. Promotion decisions deferred to a separate step after this report. PREMISE-ERROR CONFIRMED: none of the 32 new-case IDs listed in the run request exist in any of the 12 suites (verified by orchestrator directly against the resolved CSVs). Each claimed ID is exactly the next sequential number after each suites real current max. Suites are still being run for their real existing cases; the new-case promotion decision cannot be made this run and is escalated to the user.",
+  "suites": {
+    "001": {
+      "status": "running",
+      "name": "Catalog Navigation",
+      "agent": "qa-frontend-expert",
+      "lane": "browser",
       "browser": "playwright-chrome",
-      "testCount": 21
+      "testCount": 26,
+      "attempts": 0
     },
-    {
-      "id": "078",
-      "name": "Backend Smoke Tests",
-      "status": "deferred",
+    "002": {
+      "status": "running",
+      "name": "Product Detail",
+      "agent": "qa-frontend-expert",
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "testCount": 31,
+      "attempts": 0
+    },
+    "007": {
+      "status": "pending",
+      "name": "B2B Lists & Shared",
+      "agent": "qa-frontend-expert",
+      "lane": "browser",
       "browser": null,
-      "testCount": 115,
-      "deferReason": "Operator decision (VCST-5486): 115 cases of broad backend smoke, minority touching CustomUserManager; skipped for budget after a spend-limit abort killed the prior run. Gap disclosed in the tracker comment."
+      "testCount": 46,
+      "attempts": 0
+    },
+    "049": {
+      "status": "running",
+      "name": "Platform API",
+      "agent": "qa-backend-expert",
+      "lane": "browser",
+      "browser": "playwright-firefox",
+      "testCount": 46,
+      "attempts": 0,
+      "note": "REST/HTTP tags only, no clicking - safe on firefox"
+    },
+    "050a": {
+      "status": "done",
+      "name": "GraphQL xCatalog",
+      "agent": "qa-backend-expert",
+      "lane": "fast-path",
+      "browser": "none (fast-path)",
+      "testCount": 54,
+      "attempts": 1,
+      "resultsFile": "reports/regression/REG-2026-08-24-1806/suite-050a-results.json",
+      "note": "RE-RUN completed against TEST_ENV=vcst-corrected CSV. Superseded the broken first attempt (44/9/1) - CAT-GQL-019 and CAT-GQL-136 were false failures from the empty-token bug, now PASS. Remaining 9 FAILs: 1 real bug (CAT-GQL-113, BUG_050a_001), 7 test/authoring defects (CAT-GQL-124 + nonexistent withFacets arg in 126-131), 1 runner tooling defect (CAT-GQL-125, BUG_050a_002).",
+      "pass": 45,
+      "fail": 9,
+      "blocked": 0
+    },
+    "050h": {
+      "status": "pending",
+      "name": "GraphQL Wishlist",
+      "agent": "qa-backend-expert",
+      "lane": "browser",
+      "browser": null,
+      "testCount": 29,
+      "attempts": 0,
+      "note": "Mixed: 242 GQL-OP rows + 1 explicit Manual case (WISH-009)"
+    },
+    "050l": {
+      "status": "done",
+      "name": "GraphQL xAPI - Push Messages",
+      "agent": "qa-backend-expert",
+      "lane": "fast-path",
+      "browser": "none (fast-path)",
+      "testCount": 15,
+      "attempts": 0,
+      "pass": 13,
+      "fail": 1,
+      "blocked": 1,
+      "skipped": 3,
+      "note": "15 real cases (9 GQL-OP + 6 REST-OP): 13 PASS, 1 FAIL (PUSH-016, self-seeded push message never reaches recipient inbox, preliminary not-yet-confirmed), 1 BLOCKED (PUSH-028, runner exit 3 - unescaped multi-line shortMessage in GQL-VARS JSON, a runner tooling defect). PUSH-39/40/41 (claimed new Draft hypothesis probes) confirmed NOT AUTHORED - counted as 3 SKIPPED. Self-corrected the TEST_ENV resolution bug independently before I caught it.",
+      "resultsFile": "reports/regression/REG-2026-08-24-1806/suite-050l-results.json"
+    },
+    "050m": {
+      "status": "done",
+      "name": "GraphQL xAPI - Sales Rep",
+      "agent": "qa-backend-expert",
+      "lane": "fast-path",
+      "browser": "none (fast-path)",
+      "testCount": 117,
+      "attempts": 0,
+      "pass": 12,
+      "fail": 0,
+      "blocked": 105,
+      "note": "ENV/TEST-DATA ISSUE (not a product bug): all 4 sales-rep/b2b fixture accounts reject their configured passwords (HTTP 400 login_failed) - credential drift, needs re-seed. Control accounts + /health both 200 on the same store. SR-GQL-118/119 confirmed not authored (suite is exactly SR-GQL-001..117).",
+      "resultsFile": "reports/regression/REG-2026-08-24-1806/suite-050m-results.json"
+    },
+    "054": {
+      "status": "pending",
+      "name": "Pricing Logic",
+      "agent": "qa-backend-expert",
+      "lane": "browser",
+      "browser": null,
+      "testCount": 29,
+      "attempts": 0,
+      "note": "click-driven (Admin SPA + storefront) - no firefox"
+    },
+    "056": {
+      "status": "pending",
+      "name": "Inventory",
+      "agent": "qa-backend-expert",
+      "lane": "browser",
+      "browser": null,
+      "testCount": 43,
+      "attempts": 0,
+      "note": "click-driven Admin SPA - no firefox"
+    },
+    "091": {
+      "status": "pending",
+      "name": "Sales Rep - Customer Profile (storefront)",
+      "agent": "qa-frontend-expert",
+      "lane": "browser",
+      "browser": null,
+      "testCount": 56,
+      "attempts": 0
+    },
+    "093": {
+      "status": "pending",
+      "name": "Sales Rep - Hub Dashboard (storefront)",
+      "agent": "qa-frontend-expert",
+      "lane": "browser",
+      "browser": null,
+      "testCount": 60,
+      "attempts": 0
     }
-  ],
-  "stalledAt": "2026-08-06T19:39:06.767Z",
-  "stalledReason": "no progress for 45 min (REG-2026-08-06-1956:in_progress:2:29:29)",
-  "coverageNote": "125 of the 240-case selection evaluated. 042 (34/34) + 020 (54/54) + 031 (37/37) complete; 078 (115) DEFERRED, never run. Pass rate 94.6% on executed cases is therefore PARTIAL."
+  },
+  "newDraftCases": {
+    "001": [
+      "CAT-079"
+    ],
+    "002": [
+      "CAT-080"
+    ],
+    "007": [
+      "B2C-LIST-052",
+      "B2C-LIST-053",
+      "B2C-LIST-054"
+    ],
+    "049": [
+      "API-047",
+      "API-048"
+    ],
+    "050a": [
+      "CAT-GQL-140",
+      "CAT-GQL-141",
+      "CAT-GQL-142"
+    ],
+    "050h": [
+      "WISH-30",
+      "WISH-31",
+      "WISH-32",
+      "WISH-33",
+      "WISH-34"
+    ],
+    "050l": [
+      "PUSH-39",
+      "PUSH-40",
+      "PUSH-41"
+    ],
+    "050m": [
+      "SR-GQL-118",
+      "SR-GQL-119"
+    ],
+    "054": [
+      "PRICE-065",
+      "PRICE-066",
+      "PRICE-067"
+    ],
+    "056": [
+      "INV-044",
+      "INV-045",
+      "INV-046",
+      "INV-047",
+      "INV-048"
+    ],
+    "091": [
+      "SR-CP-057",
+      "SR-CP-058"
+    ],
+    "093": [
+      "SR-HD-061",
+      "SR-HD-062"
+    ]
+  },
+  "stalledAt": "2026-08-24T17:30:58.574Z",
+  "stalledReason": "no progress for 45 min (REG-2026-08-24-1806:in_progress:6:294:293)"
 }

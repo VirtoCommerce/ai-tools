@@ -306,7 +306,7 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [AUTH role=PUBLIC]
 [GQL-OP verify_sort_order]
   query VerifySortingsAfterReorder($storeId: String! $currencyCode: String $cultureName: String) {
-    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1 withFacets: true) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1) {
       sortings { id name isDefault selected }
     }
   }
@@ -336,7 +336,7 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [AUTH role=PUBLIC]
 [GQL-OP sortings_after_hide]
   query SortingsAfterHide($storeId: String! $currencyCode: String $cultureName: String) {
-    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1 withFacets: true) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1) {
       sortings { id name isDefault selected }
     }
   }
@@ -344,7 +344,7 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [GQL-EXEC sortings_after_hide]
 [GQL-OP hidden_code_still_resolves]
   query HiddenCodeResolves($storeId: String! $currencyCode: String $cultureName: String) {
-    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 3 sort: ""createddate-descending"" withFacets: true) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 3 sort: ""createddate-descending"") {
       totalCount
       items { id }
       sortings { id isDefault selected }
@@ -374,7 +374,7 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [AUTH role=PUBLIC]
 [GQL-OP sortings_custom]
   query SortingsCustom($storeId: String! $currencyCode: String $cultureName: String) {
-    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1 withFacets: true) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1) {
       sortings { id name isDefault selected }
     }
   }

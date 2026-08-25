@@ -10,11 +10,11 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resetSecurityPassword } from '../../scripts/lib/seed-common.mjs';
 import { resolveRole, roleByKey } from '../../scripts/lib/user-roles.mjs';
-import { roleUsers } from '../../scripts/lib/user-provision.mjs';
+import { roleUsers, hasStaleLockout } from '../../scripts/lib/user-provision.mjs';
 import {
   LAYOUT_REP, MIN_SERVED_ORGS_FOR_LAYOUT, DISPOSABLE_LAYOUT_REP_KEYS, isDisposableLayoutRep,
   LAYOUT_PREF_PREFIX, LAYOUT_SCOPES, layoutPreferenceName, isLayoutPreference,
-  parseServedOrgs, SALES_REPS_COLUMNS, RUNTIME_ID_COLUMNS, GUID_RE, REP_EMAIL_RE,
+  parseServedOrgs, SALES_REPS_COLUMNS, RUNTIME_ID_COLUMNS, GUID_RE, REP_EMAIL_RE, repFixtureStatus,
 } from '../../scripts/seed-data/sales-rep/sales-rep-layout-specs.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -169,4 +169,43 @@ test('SR_REP_LAYOUT is registered as a CSV-backed @td alias with id -> contact_i
   for (const [k, v] of Object.entries(def)) {
     if (typeof v === 'string') assert.ok(!GUID_RE.test(v.trim()), `${LAYOUT_REP.aliasName}.${k} must not pin a GUID in the committed base (DV-021)`);
   }
+});
+
+// --- Stale-lockout self-heal (REG-2026-08-24-1806) -------------------------------------------
+// A password reset does NOT clear LockoutEnd/accessFailedCount, so a rep repaired by a reseed can
+// still be unauthenticable. seed-sales-rep.mjs now clears it, delegating the "may I clear this?"
+// decision to repFixtureStatus() + user-provision's hasStaleLockout() — tested here in composition,
+// because the bug this prevents is a WRONG DECISION (clearing SR_REP_BLOCKED's deliberate lockout,
+// or skipping a real one), not a wrong HTTP call.
+
+test('repFixtureStatus: only is_locked=true declares Locked; loose CSV booleans match csvBool', () => {
+  assert.equal(repFixtureStatus({ is_locked: 'true' }), 'Locked');
+  for (const v of ['TRUE', 'Yes', 'y', '1']) assert.equal(repFixtureStatus({ is_locked: v }), 'Locked', `"${v}" is truthy for csvBool`);
+  for (const v of ['false', 'No', '', '0', undefined, null]) assert.equal(repFixtureStatus({ is_locked: v }), 'Approved', `"${v}" must not be read as Locked`);
+});
+
+test('repFixtureStatus: SR_REP_BLOCKED is the ONLY rep row declaring Locked', () => {
+  const locked = repRows.rows.filter((r) => repFixtureStatus(r) === 'Locked').map((r) => r.rep_key);
+  assert.deepEqual(locked, ['SR_REP_BLOCKED'],
+    'a second Locked rep would be silently un-authenticable; a zero-Locked set would mean the blocked fixture stopped being blocked');
+});
+
+test('stale-lockout decision: cleared for a normal rep, NEVER for the deliberately-blocked one', () => {
+  const blocked = repRows.rows.find((r) => r.rep_key === 'SR_REP_BLOCKED');
+  const primary = repRows.rows.find((r) => r.rep_key === 'SR_REP_PRIMARY');
+  const future = new Date(Date.now() + 3_600_000).toISOString();
+
+  // The exact live shapes observed on vcst before the repair.
+  assert.equal(hasStaleLockout({ lockoutEnd: future, accessFailedCount: 2 }, repFixtureStatus(primary)), true);
+  assert.equal(hasStaleLockout({ lockoutEnd: null, accessFailedCount: 1 }, repFixtureStatus(primary)), true,
+    'a failed-attempt counter with no lockout window still burns the account toward one');
+
+  // SR_REP_BLOCKED's 9999 lockout IS the fixture — clearing it would silently delete the
+  // "blocked rep is excluded from customerSalesReps" coverage (VCST-4907 #5).
+  assert.equal(hasStaleLockout({ lockoutEnd: '9999-12-31T23:59:59Z', accessFailedCount: 0 }, repFixtureStatus(blocked)), false);
+
+  // A clean account is a no-op, so the seeder stays idempotent.
+  assert.equal(hasStaleLockout({ lockoutEnd: null, accessFailedCount: 0 }, repFixtureStatus(primary)), false);
+  assert.equal(hasStaleLockout({ lockoutEnd: '2020-01-01T00:00:00Z', accessFailedCount: 0 }, repFixtureStatus(primary)), false,
+    'an EXPIRED lockout window is inert — rewriting it would be a pointless live write');
 });

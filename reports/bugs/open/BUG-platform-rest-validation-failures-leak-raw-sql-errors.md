@@ -32,6 +32,30 @@ Content-Type: application/json
 
 **Related manifestation** — `DELETE /api/carts?ids=` (empty) also leaks the parameterized SQL statement text itself: `"The parameterized query '(@p0 nvarchar(4000))UPDATE \"Cart\" SET \"IsDeleted\"='1' WHERE \"Id\"' expects the parameter '@p0', which was not supplied."` (see the companion soft-404 bug report for the DELETE-side finding — same information-disclosure class, different endpoint).
 
+### Additional manifestation (2026-08-25) — duplicate-key on `POST /api/catalog/products`
+
+Surfaced by regression case `API-044` (run `REG-2026-08-24-1806`) and re-verified by direct REST call on Platform `3.1061.0`. A **different trigger** from the null-column case above — a *duplicate* value rather than a missing one — on a different table, and it leaks one identifier more:
+
+```
+POST {{BACK_URL}}/api/catalog/products
+{ "code": "<an existing product code>", "catalogId": "<that product's catalogId>", "name": "...", "productType": "Physical" }
+```
+
+→ `500`:
+
+```
+Cannot insert duplicate key row in object 'dbo.Item' with unique index 'IX_Code_CatalogId'.
+The duplicate key value is (<code>, <catalogId>).
+The INSERT statement conflicted with the FOREIGN KEY constraint "FK_CatalogSeoInfo_Item_ItemId".
+The conflict occurred in database "vcst-q…
+```
+
+Leaks the **table** (`dbo.Item`), the **unique index** (`IX_Code_CatalogId`), the **foreign-key constraint name** (`FK_CatalogSeoInfo_Item_ItemId`) *and* the **database name** — four identifiers, versus three in the pricelist case. Correct response is **409 Conflict** (or 400), with no schema detail. No uniqueness pre-check runs before the insert.
+
+The probe creates nothing — the request fails before insert — so it is safe to re-run.
+
+**Re-confirmed 2026-08-25** on Platform `3.1061.0`: the pricelist null-column case, the empty-body FluentValidation case, and this duplicate-key case all still reproduce. Not yet filed to the tracker.
+
 **Related but distinct — do not merge:** `POST /api/catalog/products` with an empty body `{}` also returns `500`, but with FluentValidation detail (`"CatalogId: 'Catalog Id' must not be empty..."`), not a raw SQL/schema leak — this is a wrong-status-code bug only (should be `400`), no infrastructure disclosure. Worth fixing in the same pass (both stem from missing validation before the DB write), but keep the two symptom classes distinct in the fix.
 
 ## Expected Result

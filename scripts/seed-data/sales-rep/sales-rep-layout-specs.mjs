@@ -84,6 +84,28 @@ export function parseServedOrgs(raw) {
   return { orgKeys: value.split(';').map((s) => s.trim()).filter(Boolean), pagingCount: 0 };
 }
 
+/**
+ * The account status a rep row DECLARES, in the same vocabulary `user-provision.mjs`
+ * `hasStaleLockout()` / `statusFlags()` speak ('Locked' | 'Approved').
+ *
+ * Why this exists (REG-2026-08-24-1806): a rep account that collects failed logins is left with a
+ * non-empty `LockoutEnd` / `accessFailedCount`, and a password reset does NOT clear either — so a
+ * re-seed repaired the credential while the account stayed unauthenticable, and the next run failed
+ * identically. `ensureSecurityAccount()` already self-heals that for CSV-driven b2b users; the
+ * sales-rep seeder took a different code path (direct `resetSecurityPassword`) and had no
+ * equivalent, which is the asymmetry this closes.
+ *
+ * `is_locked=true` (SR_REP_BLOCKED) means the platform lockout IS the fixture under test and must
+ * NEVER be cleared — returning 'Locked' makes `hasStaleLockout()` itself refuse, so the exclusion
+ * lives in one place instead of being re-implemented as a call-site branch.
+ *
+ * Loose CSV-boolean semantics deliberately match `seed-common.mjs` `csvBool` ('true'/'yes'/'y'/'1');
+ * this module stays dependency-free so the validator and unit tests can import it.
+ */
+export function repFixtureStatus(row) {
+  return /^(true|yes|y|1)$/i.test(String(row?.is_locked ?? '').trim()) ? 'Locked' : 'Approved';
+}
+
 /** The exact committed column contract of test-data/sales-rep/sales-reps.csv (order matters). */
 export const SALES_REPS_COLUMNS = [
   'rep_key', 'email', 'first_name', 'last_name', 'full_name', 'store', 'served_orgs',

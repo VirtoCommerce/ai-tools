@@ -59,6 +59,14 @@ import {
   InfoAssertion,
   getByPath,
 } from "../lib/graphql-assertions.js";
+import {
+  substituteVars,
+  substituteEnv,
+  substituteIntoJson,
+  substituteIntoRestOp,
+  makeVarLookup,
+  withEnvFallback,
+} from "../lib/graphql-substitute.js";
 import { GraphQLSchema } from "graphql";
 
 // Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
@@ -362,15 +370,10 @@ function loadCase(caseRef: string): { csvPath: string; row: CaseRow } {
   return { csvPath: abs, row };
 }
 
-function substituteVars(s: string, vars: Record<string, string>): string {
-  return s.replace(/\{\{(\w+)\}\}/g, (_m, name) =>
-    Object.prototype.hasOwnProperty.call(vars, name) ? vars[name] : `{{${name}}}`
-  );
-}
-
-function substituteEnv(s: string): string {
-  return s.replace(/\{\{(\w+)\}\}/g, (_m, name) => process.env[name] ?? `{{${name}}}`);
-}
+// substituteVars / substituteEnv / substituteIntoJson / substituteIntoRestOp /
+// makeVarLookup / withEnvFallback now live in scripts/lib/graphql-substitute.ts
+// (imported above) so the JSON-context rules are unit-testable and there is one
+// definition of the resolution order rather than a copy per call site.
 
 interface OpEvidence {
   label: string;
@@ -522,10 +525,11 @@ async function executeRestOp(
   variables: Record<string, string>
 ): Promise<RestOpResponse> {
   // Resolve {{VAR}} → variables, @td() → aliases inside the body BEFORE parsing,
-  // so file paths and URLs work.
-  const resolvedBody = resolver.resolve(
-    substituteEnv(substituteVars(block.body, variables))
-  );
+  // so file paths and URLs work. The `Body: {…}` line is a JSON payload and gets
+  // the same JSON-context-aware escaping as [GQL-VARS] (a free-text capture such
+  // as `create_org.data.createOrganization.name → ORG_NAME` is re-posted here);
+  // the request line and headers keep the plain textual substitution.
+  const resolvedBody = resolver.resolve(substituteIntoRestOp(block.body, variables));
   const parsed = parseRestOp(resolvedBody);
 
   const url = parsed.url.startsWith("http")
@@ -693,10 +697,18 @@ async function runCase(
   }
 
   // 4. Evaluate Assertions
+  // The bag alone is not the documented resolution order — Steps resolve
+  // {{VAR}} then {{ENV}} (contract §6), but evaluateAssertion() only takes a
+  // bag, so an assertion RHS naming an env var (`= {{CURRENCY_CODE}}`) compared
+  // the LITERAL token against the response and could never pass — a false FAIL
+  // on a passing product. Merging env UNDER the bag gives the same precedence in
+  // one pass; `variables` itself stays untouched so evidence records the case's
+  // own bag, not all of process.env.
+  const assertionVars = withEnvFallback(variables);
   const resolvedAssertions = resolver.resolve(row.Assertions);
   const { assertions, info } = parseAssertions(resolvedAssertions);
   const results: AssertionResult[] = assertions.map((a) =>
-    evaluateAssertion(a, responses, variables)
+    evaluateAssertion(a, responses, assertionVars)
   );
 
   console.log(`\nAssertions (${results.length}):`);
@@ -720,7 +732,7 @@ async function runCase(
   if (crossInfo.length > 0) {
     console.log(`\nCross_Layer_Checks (${crossInfo.length}, runner-manual for now):`);
     for (const c of crossInfo) {
-      const substituted = substituteVars(c.note, variables);
+      const substituted = substituteVars(c.note, assertionVars);
       console.log(`  · [${c.layer}] ${substituted}`);
     }
   }
@@ -803,7 +815,7 @@ async function runCase(
     infoAssertions: info,
     crossLayerChecks: crossInfo.map((c) => ({
       ...c,
-      resolved: substituteVars(c.note, variables),
+      resolved: substituteVars(c.note, assertionVars),
     })),
     cleanup: {
       raw: cleanupRaw,
@@ -878,7 +890,18 @@ async function executeBlock(
     }
 
     case "GQL-VARS": {
-      const resolvedJson = substituteEnv(substituteVars(block.variablesJson, ctx.variables));
+      // JSON-CONTEXT-AWARE substitution. This block is a JSON document, so a
+      // {{VAR}} landing inside a string literal must be JSON-escaped: a capture
+      // is stored as a bare string and a live value carrying a newline / quote /
+      // backslash (a push-message body, an org or store name) otherwise splices
+      // in raw and makes the body unparsable — a runtime fatal that kills the
+      // whole case, not an assertion failure. A {{VAR}} in an UNQUOTED position
+      // is still spliced raw, which is what lets an object/array capture
+      // round-trip verbatim: `{"items": {{CAPTURED_ARRAY}}}`.
+      const resolvedJson = substituteIntoJson(
+        block.variablesJson,
+        makeVarLookup(ctx.variables)
+      );
       let parsed: Record<string, unknown> = {};
       try {
         parsed = JSON.parse(resolvedJson);
@@ -1198,7 +1221,15 @@ async function executeBlock(
         // Replace the stored response so downstream [GQL-CAPTURE]/[DATA] on this
         // label see the freshest (settled) value.
         ctx.responses.set(block.label!, response);
-        const r = evaluateAssertion(assertion, ctx.responses, ctx.variables);
+        // Same env fallback as the Assertions column — a [WAIT] condition is an
+        // assertion predicate, so `until=… data.x = {{STORE_ID}}` must resolve
+        // identically. Rebuilt per poll: an upstream [GQL-CAPTURE] can have
+        // changed the bag between polls.
+        const r = evaluateAssertion(
+          assertion,
+          ctx.responses,
+          withEnvFallback(ctx.variables)
+        );
         console.log(
           `  poll #${attempt}: ${response.status} ${response.ok ? "OK" : "ERR"} — condition ${r.passed ? "MET" : "not yet"} (${r.actual})`
         );

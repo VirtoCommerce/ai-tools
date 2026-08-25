@@ -35,7 +35,9 @@ import {
 } from '../../lib/seed-common.mjs';
 import {
   parseServedOrgs, isDisposableLayoutRep, isLayoutPreference, LAYOUT_PREF_PREFIX, LAYOUT_SCOPES,
+  repFixtureStatus,
 } from './sales-rep-layout-specs.mjs';
+import { hasStaleLockout } from '../../lib/user-provision.mjs';
 
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
 const OWNER_PHONE = '+1-206-555-0142';
@@ -102,6 +104,28 @@ async function confirmRepEmail(email) {
   u.emailConfirmed = true;
   await api('PUT', '/api/platform/security/users', u, { expectStatus: [200, 204] });
   verbose(`emailConfirmed=true for ${email}`);
+}
+
+/**
+ * Clear a STALE platform lockout on a rep account (idempotent, non-fatal).
+ *
+ * A password reset does NOT clear a non-empty `LockoutEnd` or reset `accessFailedCount`, so a rep
+ * that collected failed logins stays unauthenticable AFTER a credential-repairing reseed — the
+ * exact state REG-2026-08-24-1806 hit, where 104 cases in 050m were BLOCKED at
+ * `POST /connect/token`. Symmetrical with `ensureSecurityAccount()`'s stale-lockout branch, which
+ * already does this for the CSV-driven b2b users.
+ *
+ * `status` comes from `repFixtureStatus(row)`, so SR_REP_BLOCKED — whose lockout is the fixture —
+ * is excluded by `hasStaleLockout()` itself rather than by a branch here.
+ */
+async function clearRepStaleLockout(email, status) {
+  if (!email || DRY_RUN) return false;
+  const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
+  if (!u || !u.id || !hasStaleLockout(u, status)) return false;
+  u.lockoutEnd = null; u.lockoutEnabled = false; u.accessFailedCount = 0;
+  await api('PUT', '/api/platform/security/users', u, { expectStatus: [200, 204] });
+  log(`  ↻ cleared stale lockout on ${email}`);
+  return true;
 }
 
 /* ── VCST-5367 persisted layout (CustomerPreference SalesRepLayout.{scope}[.{storeId}]) ───────────
@@ -239,6 +263,9 @@ async function ensureRep(row, orgs, roleId) {
   }
   // Confirm the account email so the rep can sign in to the storefront UI (idempotent, all reps).
   await confirmRepEmail(row.email);
+  // Clear a lockout left by an earlier failed-login burst — a reset password alone does not, so
+  // without this a credential-repairing reseed still leaves the rep unauthenticable.
+  await clearRepStaleLockout(row.email, repFixtureStatus(row));
   // VCST-5367: only the DISPOSABLE-layout rep starts each seed never-saved (both scopes -> null).
   // SR_REP_PRIMARY is deliberately NOT on the allowlist — its null baseline is shared by ~40 cases.
   if (isDisposableLayoutRep(row.rep_key)) {
