@@ -1,0 +1,42 @@
+{
+  "ticket": "VCST-5664",
+  "verdict": "VERIFIED",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework (vc-shell — separate product, not the storefront)",
+  "environment": "source + published artifact + deployed Storybook (no browser run; library API contract)",
+  "build": {
+    "affected_version": "2.4.0",
+    "fixed_version": "2.5.0",
+    "source_verified_at": "VirtoCommerce/vc-shell main @ 324cd9b09 (release v2.5.0)",
+    "published_artifact": "npm @vc-shell/framework@2.5.0 (dist/framework.js)",
+    "deployed_surface": "vc-shell-storybook.govirto.com assets/iframe-1uXuqCDm.js, built 2026-08-19T10:28:21Z",
+    "fix_prs": ["VirtoCommerce/vc-shell#294 (9cf5548b8)", "VirtoCommerce/vc-shell#295 (57104c33f)"],
+    "fix_task": "VM-1745"
+  },
+  "agent_used": "inline (orchestrator) — no browser agent dispatched",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix source restored from tag v2.4.0, the affected version, run against the unmodified current test file)",
+  "red_result": "3 failed | 22 passed (25)",
+  "green_result": "25 passed (25), 3 consecutive runs",
+  "checklist_total": 13,
+  "checklist_passed": 13,
+  "checklist_failed": 0,
+  "acceptance_criteria": { "total": 5, "met": 5 },
+  "regression_issues": [],
+  "regression_detail": {
+    "framework_unit_suite": "4202/4203 passed",
+    "failing_files": 4,
+    "failing_files_cause": "harness artifacts — unbuilt @vc-shell/mf-config (installed with --mode=skip-build) and process.cwd()-relative paths escaping to the outer repo root; none pagination-related",
+    "typecheck": "clean (exit 0)"
+  },
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-*/BL-UI-* invariants, critical-ui-scope, storefront selectors and the 123 regression suites cover the storefront only; none cover vc-shell. Substituted: framework vitest suite + typecheck + published/deployed artifact marker greps.",
+  "consumer_note": "The concrete case named in the ticket (vc-module-pagebuilder page-builder-shell shared-components blade) is on PR #159, still OPEN; its initialize() already reads loadComponents({ skip: pagination.skip }). Nothing outstanding for VCST-5664.",
+  "jira_transition": "Ready for test -> Testing (done); TESTED pending user confirmation",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5664/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5664/"
+}

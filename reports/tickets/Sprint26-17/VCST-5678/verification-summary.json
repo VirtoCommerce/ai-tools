@@ -1,0 +1,55 @@
+{
+  "ticket": "VCST-5678",
+  "verdict": "VERIFIED",
+  "priority": "Low",
+  "title": "All-day event accessible name off by one day",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework (vc-shell — separate product, not the storefront)",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + hosted Storybook assets/iframe-1uXuqCDm.js built 2026-08-19T10:28:21Z",
+  "agent_used": "ui-ux-expert (Chrome DevTools MCP) for the live pass; unit RED→GREEN run inline",
+  "baseline_reproduction": "RED — fix sources reverted to their pre-fix parent commit, test files unchanged",
+  "affected_version": "2.4.0",
+  "fixed_version": "2.5.0",
+  "linked_fix_pr_on_ticket": false,
+  "linked_fix_pr_note": "No dev comment named a fix PR on any of the four; the PRs were located from main's history via 'Closes VCST-####'.",
+  "regression": {
+    "scheduler_popover_suite": "213 passed (213) across 31 files, 3 consecutive runs",
+    "typecheck": "clean"
+  },
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell. Substituted: the component vitest suites, live a11y tree, keyboard walk and computed-style/contrast measurement.",
+  "jira_transition": "Ready for test -> Testing -> Tested",
+  "evidence_artifact": null,
+  "fix_prs": [
+    "vc-shell#288 (a51c1356f)"
+  ],
+  "red_result": "3 failed | 18 passed (21)",
+  "green_result": "21 passed (21)",
+  "str_result": "3/3",
+  "live_checks": {
+    "total": 1,
+    "passed": 1
+  },
+  "observed": {
+    "chip_aria_label": "One Day AllDay: Jul 15, 2026",
+    "quick_info_popover": "July 15th, 2026"
+  },
+  "notes": [],
+  "out_of_scope_findings": [
+    "All-day event with End = Start saves but renders nowhere (no chip, absent from the a11y tree) — editor write path, a different defect from the aria-label format under test; filed separately."
+  ],
+  "coverage_limits": [
+    "Screen-reader announcement output not verified; claims rest on the measured aria-label and popover text."
+  ],
+  "bugs_filed": [
+    {
+      "key": "VCST-5803",
+      "title": "VcScheduler: all-day event with End = Start saves but renders nowhere and is unreachable",
+      "relationship": "standalone ticket, linked relates-to VCST-5678",
+      "provenance": "out-of-scope incidental"
+    }
+  ],
+  "evidence": "reports/tickets/Sprint26-17/VCST-5678/verification-report.md",
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5678/"
+}

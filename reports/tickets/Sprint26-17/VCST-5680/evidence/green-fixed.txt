@@ -1,0 +1,184 @@
+# GREEN — fixed source @ origin/main 324cd9b09 (= release v2.5.0), cwd=framework/ (the CI cwd)
+# scope: shell/_internal/blade-navigation + core/blade-navigation
+
+ ✓ |unit| core/blade-navigation/table-query-state/serialization.test.ts > encodeQueryState > namespaces keys and stringifies the page 1ms
+ ✓ |unit| core/blade-navigation/table-query-state/serialization.test.ts > encodeQueryState > only emits keys present in the patch 0ms
+ ✓ |unit| core/blade-navigation/table-query-state/serialization.test.ts > encodeQueryState > emits empty string for cleared values 0ms
+ ✓ |unit| core/blade-navigation/table-query-state/serialization.test.ts > decodeQueryState > reads namespaced values back 0ms
+ ✓ |unit| core/blade-navigation/table-query-state/serialization.test.ts > decodeQueryState > ignores invalid sort and non-positive / non-integer page 0ms
+ ✓ |unit| core/blade-navigation/table-query-state/serialization.test.ts > decodeQueryState > ignores empty search and array/null router values 0ms
+ ✓ |unit| core/blade-navigation/table-query-state/serialization.test.ts > decodeQueryState > returns empty object when no namespaced keys present 0ms
+ ✓ |unit| core/blade-navigation/bladeConfigRegistry.test.ts > bladeConfigRegistry > registers and retrieves a blade config 2ms
+ ✓ |unit| core/blade-navigation/bladeConfigRegistry.test.ts > bladeConfigRegistry > returns undefined for unregistered blade 0ms
+ ✓ |unit| core/blade-navigation/bladeConfigRegistry.test.ts > bladeConfigRegistry > getAllBladeConfigs returns all registered configs 0ms
+ ✓ |unit| core/blade-navigation/bladeConfigRegistry.test.ts > bladeConfigRegistry > warns on duplicate registration 2ms
+ ✓ |unit| core/blade-navigation/bladeConfigRegistry.test.ts > bladeConfigRegistry > clear removes all entries 0ms
+ ✓ |unit| core/blade-navigation/descriptorFactory.test.ts > descriptorFactory > createWorkspaceDescriptor > has no parentId, is visible, resolves url, drops param 2ms
+ ✓ |unit| core/blade-navigation/descriptorFactory.test.ts > descriptorFactory > createWorkspaceDescriptor > resolves undefined url when registry has none 0ms
+ ✓ |unit| core/blade-navigation/descriptorFactory.test.ts > descriptorFactory > createChildDescriptor > sets parentId to the opener, keeps param, is visible 0ms
+ ✓ |unit| core/blade-navigation/descriptorFactory.test.ts > descriptorFactory > createReplacementDescriptor > keeps the replaced blade's parent (same hierarchy position) 0ms
+ ✓ |unit| core/blade-navigation/descriptorFactory.test.ts > descriptorFactory > createReplacementDescriptor > keeps undefined parent when replacing a workspace-level blade 0ms
+ ✓ |unit| core/blade-navigation/descriptorFactory.test.ts > descriptorFactory > createCoveringDescriptor > sets parentId to the hidden blade so callParent reaches it 0ms
+ ✓ |unit| core/blade-navigation/descriptorFactory.test.ts > descriptorFactory > each factory mints a unique id via the context 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > returns root path for empty stack 1ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > returns tenant root for empty stack with tenant prefix 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > builds workspace-only URL 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > builds workspace-only URL with tenant 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > builds workspace + child blade URL 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > builds workspace + child blade URL with tenant 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > skips invisible child blades 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > uses last visible child blade 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > normalizes URLs with leading/trailing slashes 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > merges query params from visible blades 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildUrlFromStack > ignores query from invisible blades 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > parseBladeUrl > returns empty for root path 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > parseBladeUrl > returns empty for empty string 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > parseBladeUrl > parses workspace-only path 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > parseBladeUrl > parses workspace + blade path 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > parseBladeUrl > parses workspace + blade + param path 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > parseBladeUrl > strips tenant prefix 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > parseBladeUrl > handles missing tenant prefix gracefully 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > parseBladeUrl > handles path without leading slash 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildQueryString > returns empty string for empty object 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildQueryString > builds single-param string 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildQueryString > builds multi-param string 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildQueryString > encodes special characters 0ms
+ ✓ |unit| core/blade-navigation/utils/urlSync.test.ts > buildQueryString > skips empty string values 0ms
+ ✓ |unit| core/blade-navigation/table-query-state/useTableQueryState.test.ts > useTableQueryState > returns the restored patch from the injected service 9ms
+ ✓ |unit| core/blade-navigation/table-query-state/useTableQueryState.test.ts > useTableQueryState > forwards the stateKey to the service 1ms
+ ✓ |unit| core/blade-navigation/table-query-state/useTableQueryState.test.ts > useTableQueryState > returns an empty patch when no service is provided 1ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/focus-target.test.ts > resolveShortcutTargetBlade > targets the blade whose subtree holds the focused element 9ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/focus-target.test.ts > resolveShortcutTargetBlade > falls back to the topmost blade when focus is outside every blade 1ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/focus-target.test.ts > resolveShortcutTargetBlade > falls back when the focused element belongs to a blade that has left the stack 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/focus-target.test.ts > resolveShortcutTargetBlade > falls back when nothing is focused 1ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/focus-target.test.ts > resolveShortcutTargetBlade > ignores a blade that is in the stack but not visible 1ms
+ ✓ |unit| core/blade-navigation/table-query-state/createBladeQueryState.test.ts > createBladeQueryState > read() decodes namespaced values from the URL using blade.url 3ms
+ ✓ |unit| core/blade-navigation/table-query-state/createBladeQueryState.test.ts > createBladeQueryState > read() prefers an explicit tableKey over blade.url 1ms
+ ✓ |unit| core/blade-navigation/table-query-state/createBladeQueryState.test.ts > createBladeQueryState > write() debounces, calls updateBladeQuery with encoded patch, then syncUrlReplace 1ms
+ ✓ |unit| core/blade-navigation/table-query-state/createBladeQueryState.test.ts > createBladeQueryState > coalesces multiple field writes in one window into a single descriptor update 1ms
+ ✓ |unit| core/blade-navigation/table-query-state/createBladeQueryState.test.ts > createBladeQueryState > read() hydrates the descriptor from the URL (without replacing it) 0ms
+ ✓ |unit| core/blade-navigation/table-query-state/createBladeQueryState.test.ts > createBladeQueryState > read() leaves the descriptor untouched when the URL has no params 0ms
+ ✓ |unit| core/blade-navigation/table-query-state/createBladeQueryState.test.ts > createBladeQueryState > is a no-op when the blade has no url and no tableKey 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/_internal/vc-mobile-back-button.test.ts > vc-mobile-back-button.vue > renders the back button 15ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/_internal/vc-mobile-back-button.test.ts > vc-mobile-back-button.vue > calls onBack when button is clicked 4ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/_internal/vc-mobile-back-button.test.ts > vc-mobile-back-button.vue > renders breadcrumbs component with items 2ms
+ ✓ |unit| core/blade-navigation/useBladeStack.updateBladeQuery.test.ts > bladeStack.updateBladeQuery > merges patch into the descriptor query 3ms
+ ✓ |unit| core/blade-navigation/useBladeStack.updateBladeQuery.test.ts > bladeStack.updateBladeQuery > strips keys whose value is empty string 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.updateBladeQuery.test.ts > bladeStack.updateBladeQuery > is a no-op for an unknown blade id 1ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > exposeToChildren + callParent > child can call parent's exposed method 3ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > exposeToChildren + callParent > passes args to parent method 1ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > exposeToChildren + callParent > supports multiple methods 1ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > exposeToChildren + callParent > works across multiple levels 1ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > error handling > throws when caller blade not found 1ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > error handling > returns undefined when caller has no parent 1ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > error handling > returns undefined when parent has no exposed methods 0ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > error handling > returns undefined when method not found on parent 0ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > cleanup > removes exposed methods after cleanup 1ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > cleanup > cleanup for non-existent blade is a no-op 0ms
+ ✓ |unit| core/blade-navigation/useBladeMessaging.test.ts > createBladeMessaging > overwriting exposed methods > last exposeToChildren wins 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > initial state > starts with empty blade stack 2ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > initial state > has no workspace 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > initial state > has no active blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openWorkspace > opens a workspace blade 1ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openWorkspace > does not set param on workspace 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openWorkspace > replaces existing workspace 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openWorkspace > clears child blades when switching workspace 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openWorkspace > is a no-op when opening the same workspace 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openWorkspace > throws for unregistered blade 1ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openWorkspace > calls onOpen callback 1ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openWorkspace > passes options to descriptor 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openBlade > opens a child blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openBlade > replaces existing child when opening new child 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openBlade > throws when no parent exists 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openBlade > throws for unregistered blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openBlade > calls onOpen callback 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openBlade > passes options to child descriptor 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > openBlade > checks guards before closing existing children 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > closeBlade > closes a child blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > closeBlade > cannot close the workspace blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > closeBlade > returns false for non-existent blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > closeBlade > respects beforeClose guard 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > closeBlade > allows close when guard returns false 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > closeBlade > calls onClose callback 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > closeBlade > closes all descendants when closing a middle blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > replaceCurrentBlade > truly replaces the active blade at same index 1ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > replaceCurrentBlade > keeps the same parentId as the replaced blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > replaceCurrentBlade > throws with no active blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > coverCurrentBlade > hides the active blade and appends new one 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > coverCurrentBlade > sets parentId to hidden blade (for callParent routing) 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > coverCurrentBlade > throws with no active blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > activeBlade > returns last visible blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > activeBlade > returns workspace when no children 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > error management > sets error on blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > error management > clears error on blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > error management > ignores non-existent blade 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > _restoreStack > replaces entire stack 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > workspace permissions > blocks openWorkspace when hasAccess returns false 1ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > workspace permissions > allows openWorkspace when hasAccess returns true 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > workspace permissions > allows openWorkspace when blade has no permissions defined 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > workspace permissions > allows openWorkspace when hasAccess is not provided 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > maximized store > defaults to false and toggles 0ms
+ ✓ |unit| core/blade-navigation/useBladeStack.test.ts > createBladeStack > maximized store > returns the same ref instance for the same id 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/shortcut-dispatch.warn.test.ts > warnShortcutIssues > warns on an unknown key 3ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/shortcut-dispatch.warn.test.ts > warnShortcutIssues > warns on a duplicate combo 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/shortcut-dispatch.warn.test.ts > warnShortcutIssues > warns when a toolbar item overrides a built-in 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/shortcut-dispatch.warn.test.ts > warnShortcutIssues > stays silent for a clean, unique, non-builtin combo 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > fires a toolbar shortcut and preventDefaults 3ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > ignores repeat events 1ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > skips when defaultPrevented 1ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > does not fire disabled toolbar items 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > Esc closes a closable active blade 1ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > Esc does nothing for a non-closable (workspace) blade 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > mod+backslash toggles maximize when desktop + closable 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > mod+backslash does nothing on mobile 1ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > explicit toolbar shortcut wins over built-in Esc 2ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > bare key suppressed while a text input is focused 2ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > does not fire a toolbar shortcut when a modal is open 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > does not fire built-in Esc when a modal is open 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > still fires a toolbar shortcut when no modal is open 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > consumes the combo for a matched but disabled toolbar item (no browser default) 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > ignores shortcuts while an IME composition is in progress 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.dispatch.test.ts > createShortcutDispatcher > does not reject when a matched handler throws, but still consumes the combo 3ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > renders when blade component is resolved 12ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > marks the blade inert when another blade is maximized over it 7ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > does not set inert when no blade is maximized 3ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > stamps the blade id on the rendered blade so focus can be traced back to it 2ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > does not render blade when registry returns undefined 2ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > resolves blade from registry using descriptor.name 2ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > emits close with bladeId when blade emits close:blade 3ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > emits parentCall when blade emits parent:call 2ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > descriptor / rendering-state seam > provides the descriptor as the immutable data object (not enriched) 2ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > descriptor / rendering-state seam > exposes maximized + breadcrumbs via the rendering-state key, not the descriptor 3ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-slot/vc-blade-slot.test.ts > vc-blade-slot.vue > descriptor / rendering-state seam > rendering-state maximized reacts to expand/collapse without mutating the descriptor 3ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > routes outside root > does nothing for routes without meta.root 3ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > real child routes skip blade restoration > skips blade restoration for named child route (Platform) 0ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > real child routes skip blade restoration > clears existing blades when navigating to a real child route 1ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > real child routes skip blade restoration > cancels navigation when beforeClose guard prevents clearing blades on real route 1ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > real child routes skip blade restoration > skips blade restoration for Dashboard route 0ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > real child routes skip blade restoration > is a no-op when no blades are open and navigating to real route 0ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > blade catch-all routes trigger restoration > restores workspace from blade URL 0ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > blade catch-all routes trigger restoration > restores workspace + child blade from blade URL 0ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > blade catch-all routes trigger restoration > clears blade stack when catch-all matches root path with no segments 1ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > blade catch-all routes trigger restoration > cancels navigation when beforeClose guard prevents clearing stack for root catch-all 0ms
+ ✓ |unit| core/blade-navigation/utils/bladeRouterGuard.test.ts > bladeRouterGuard > tenant prefix handling > strips tenant prefix before parsing blade URL 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > no-op cases > returns false for empty parsed URL 3ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > no-op cases > returns false when workspaceUrl is undefined 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > workspace restoration > opens workspace from URL 1ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > workspace restoration > skips workspace open if already current 1ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > workspace restoration > returns false when workspace URL not found in registry 2ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > workspace restoration > returns false when matched blade is not a workspace 1ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > workspace + child blade > opens workspace and child blade with param 1ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > workspace + child blade > opens workspace and child blade without param 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > workspace + child blade > warns when child blade URL not found in registry 1ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > idempotency > skips child blade if already open with same name and param 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > idempotency > opens new child if param differs from existing 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > non-routable blade handling > returns true (needs cleanup) for non-routable blade 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > permission enforcement > blocks workspace when hasAccess returns false 2ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > permission enforcement > allows workspace when hasAccess returns true 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > permission enforcement > skips permission check when blade has no permissions 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > permission enforcement > works without hasAccess (backward compatible) 0ms
+ ✓ |unit| core/blade-navigation/utils/restoreFromUrl.test.ts > restoreFromUrl > permission enforcement > redirects to main route on denial 0ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.a11y.test.ts > VcBladeNavigation a11y > has no a11y violations 66ms
+ ✓ |unit| shell/_internal/blade-navigation/components/vc-blade-navigation/vc-blade-navigation.a11y.test.ts > VcBladeNavigation a11y > has role='region' with aria-label 19ms
+ Test Files  17 passed (17)
+      Tests  179 passed (179)

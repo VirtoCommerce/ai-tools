@@ -1,0 +1,215 @@
+# GREEN — fixed source @ origin/main 324cd9b09 (= release v2.5.0), cwd=framework/ (the CI cwd)
+# scope: ui/components/organisms/vc-app
+
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarState.test.ts > useAppBarState > returns fallback state when no provider exists 6ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarState.test.ts > useAppBarState > provideAppBarState creates fresh scoped state 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarState.test.ts > useAppBarState > different providers create independent state 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > returns invisible badge when no config provided 7ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > resolves direct badge config with content number 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > truncates numeric content > 99 to '99+' 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > truncates string numeric content > 99 to '99+' 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > handles shorthand config (just a value) 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > resolves function content 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > resolves ref content 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > isDot badge is visible even without content 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > content of 0 is not visible 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > empty string content is not visible 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > falls back to routeId lookup in registry 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > falls back to groupId lookup when routeId not found 0ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > direct config takes priority over registry 0ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useBadge.test.ts > useBadge > defaults variant to primary 0ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > returns the expected API shape 7ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > currentItem is null when no item is active 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > showItem sets the active item 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > toggleItem activates an inactive item 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > toggleItem deactivates an already-active item 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > hideAllItems resets activeId to null 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > closeItem resets activeId to null 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > currentItem returns null for non-existent id 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > handles null/undefined items getter gracefully 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useToggleableContent.test.ts > useToggleableContent > works with a computed/ref getter 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > stripTenantPrefix > strips tenant prefix from path 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > stripTenantPrefix > returns '/' when path is just the tenant 0ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > stripTenantPrefix > returns path unchanged when no tenant param 0ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > stripTenantPrefix > handles array params by using empty string as tenant 0ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > useMenuActiveState > returns isActive computed 6ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > useMenuActiveState > isActive is true for exact match 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > useMenuActiveState > isActive is true for prefix match 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > useMenuActiveState > isActive is false for non-matching path 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > useMenuActiveState > isActive is false when url is undefined 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/composables/useMenuActiveState.test.ts > useMenuActiveState > does not match partial segment names 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarMobileActions.test.ts > useAppBarMobileActions > returns the expected API shape 8ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarMobileActions.test.ts > useAppBarMobileActions > showAction activates a button 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarMobileActions.test.ts > useAppBarMobileActions > toggleAction toggles visibility 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarMobileActions.test.ts > useAppBarMobileActions > hideAllActions clears active state 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > returns the expected API shape 8ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > filteredApps returns all accessible apps when no query 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > filteredApps returns empty when showApplications is false 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > filteredApps filters by permission 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > filters apps by search query 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > filters widgets by search query 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > getWidgetTitle returns title if present 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > getWidgetTitle humanizes id when no title 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > filteredWidgets returns all when no query 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppHub.test.ts > useAppHub > filters widgets by searchTerms 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetContent.test.ts > AppBarWidgetContent > does not render when no widget is visible 8ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetContent.test.ts > AppBarWidgetContent > does not render when isAnyWidgetVisible is true but no component 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetContent.test.ts > AppBarWidgetContent > renders widget component when visible and component exists 10ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetContent.test.ts > AppBarWidgetContent > applies mobile class when mobile prop is true 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetContent.test.ts > AppBarWidgetContent > does not apply mobile class by default 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetContent.test.ts > AppBarWidgetContent > calls hideAllWidgets on close event from widget component 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetContent.test.ts > AppBarWidgetContent > passes widget props to the rendered component 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarOverlay.test.ts > AppBarOverlay > renders overlay via teleport when appRootEl is provided 14ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarOverlay.test.ts > AppBarOverlay > does not render when appRootEl is not injected 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarOverlay.test.ts > AppBarOverlay > applies desktop class 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarOverlay.test.ts > AppBarOverlay > applies mobile class 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarOverlay.test.ts > AppBarOverlay > applies sidebar class when isSidebarMode is true 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarOverlay.test.ts > AppBarOverlay > applies collapsed class when not expanded and not mobile 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarOverlay.test.ts > AppBarOverlay > does not apply collapsed class when expanded 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarOverlay.test.ts > AppBarOverlay > renders default slot content 1ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellLifecycle.test.ts > useShellLifecycle > returns the expected API shape 8ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellLifecycle.test.ts > useShellLifecycle > isAppReady tracks isReady prop 1ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellLifecycle.test.ts > useShellLifecycle > isAppReady becomes true when isReady is true 1ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellLifecycle.test.ts > useShellLifecycle > does not bootstrap when not authenticated 1ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellLifecycle.test.ts > useShellLifecycle > bootstraps when ready and authenticated 1ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellLifecycle.test.ts > useShellLifecycle > only bootstraps once per instance 2ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellLifecycle.test.ts > useShellLifecycle > resets state on unmount 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarWidgets.test.ts > useAppBarWidgets > returns the expected API shape 7ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarWidgets.test.ts > useAppBarWidgets > showWidget activates a widget 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarWidgets.test.ts > useAppBarWidgets > toggleWidget toggles visibility 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/composables/useAppBarWidgets.test.ts > useAppBarWidgets > hideAllWidgets clears active widget 1ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellNavigation.test.ts > useShellNavigation > returns the expected API shape 9ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellNavigation.test.ts > useShellNavigation > handleMenuItemClick opens blade by routeId 3ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellNavigation.test.ts > useShellNavigation > handleMenuItemClick navigates by url when no routeId 2ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellNavigation.test.ts > useShellNavigation > handleMenuItemClick matches tenant-prefixed routes by static segments 1ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellNavigation.test.ts > useShellNavigation > handleMenuItemClick falls back to openRoot for unknown url 2ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellNavigation.test.ts > useShellNavigation > openRoot calls navigateToMainRoute 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarCollapseButton.test.ts > SidebarCollapseButton > renders root element with correct class 23ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarCollapseButton.test.ts > SidebarCollapseButton > renders wrap container 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarCollapseButton.test.ts > SidebarCollapseButton > renders icon element 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarCollapseButton.test.ts > SidebarCollapseButton > shows chevron-right icon when collapsed 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarCollapseButton.test.ts > SidebarCollapseButton > shows chevron-left icon when not collapsed 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarCollapseButton.test.ts > SidebarCollapseButton > shows chevron-left icon by default (collapsed is undefined) 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarCollapseButton.test.ts > SidebarCollapseButton > emits click event when clicked 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > renders when isVisible is true (default) 24ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > does not render when isVisible is false 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > renders logo image with correct src 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > emits logo:click when logo image is clicked 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > applies collapsed class when expanded is false 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > does not apply collapsed class when expanded is true 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > applies mobile class when isMobile is true 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > shows toolbar with notification bell when expanded and not mobile 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > hides toolbar when collapsed 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > shows burger button when showBurger is true and expanded 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > hides burger when showBurger is false 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > localizes the burger label when the menu is closed 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > localizes the burger label when the menu is open 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > emits toggle-menu on burger click 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > emits toggle-notifications on notification bell click 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > shows X icon when isNotificationsOpen is true 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > shows bell icon when isNotificationsOpen is false 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > shows unread accent dot on logo when collapsed and hasUnread 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > hides unread accent dot when no unread 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > shows mobile title when isMobile and showMobileTitle are true 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarHeader.test.ts > SidebarHeader > renders actions slot on mobile 2ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > shows loading state when app is not ready 20ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > shows app shell when app is ready 16ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > renders app root ref element when ready 6ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > renders workspace with blade navigation when authenticated 8ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > moves focus to the workspace once it appears 8ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > leaves focus alone when something already holds it 8ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > renders the workspace as a <main> landmark when authenticated 9ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > does not render workspace when not authenticated 7ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > renders popup container when ready 8ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > makes the AI panel sibling inert while a blade is maximized 12ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > calls useShellBootstrap with correct options 6ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > renders desktop layout when ready 10ms
+ ✓ |unit| ui/components/organisms/vc-app/vc-app.test.ts > vc-app > adds mobile class when isMobile is true 12ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > renders wrapper element 30ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > shows header on desktop when not embedded 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > hides header when embedded 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > shows close button on desktop 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > applies desktop expanded class 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > applies desktop class on wrapper 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > renders app-hub slot on desktop 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > renders navmenu and user-dropdown slots on mobile 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > uses VcSidebar wrapper on mobile 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/MenuSidebar.test.ts > MenuSidebar > passes inert to the mobile VcSidebar root 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > renders root element with app-bar-button class 24ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > renders default icon when no trigger slot provided 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > applies mobile class when $isMobile is true 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > toggles widget on button click 5ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > emits toggle event on button click 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > does not toggle when beforeOpen returns false 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > computes isActive based on currentWidget id matching widgetId 7ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > icon is not active when widget ids do not match 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetItem.test.ts > AppBarWidgetItem > renders trigger slot when provided 5ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/menu/VcAppMenu.test.ts > VcAppMenu > renders item without explicit id using fallback key fields 32ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetsMenu.test.ts > AppBarWidgetsMenu > renders root element with correct class 13ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetsMenu.test.ts > AppBarWidgetsMenu > renders no items when items list is empty 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetsMenu.test.ts > AppBarWidgetsMenu > renders widget items for items with component 15ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetsMenu.test.ts > AppBarWidgetsMenu > renders items without component but with onClick 6ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetsMenu.test.ts > AppBarWidgetsMenu > shows badge accent when badge is truthy boolean 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetsMenu.test.ts > AppBarWidgetsMenu > hides badge accent when badge is false 6ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetsMenu.test.ts > AppBarWidgetsMenu > evaluates badge function for active state 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarWidgetsMenu.test.ts > AppBarWidgetsMenu > hides badge when badge is undefined 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarMobileActions.test.ts > AppBarMobileActions > renders root element only on mobile 21ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarMobileActions.test.ts > AppBarMobileActions > does not render when $isMobile is false 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarMobileActions.test.ts > AppBarMobileActions > renders buttons for each visible item 16ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarMobileActions.test.ts > AppBarMobileActions > hides button when isVisible is false 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarMobileActions.test.ts > AppBarMobileActions > shows badge when button badge is truthy 6ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarMobileActions.test.ts > AppBarMobileActions > hides badge when button badge is undefined 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarMobileActions.test.ts > AppBarMobileActions > applies active class when button matches currentAction 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppBarMobileActions.test.ts > AppBarMobileActions > calls toggleAction on button click 7ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/MobileLayout.test.ts > MobileLayout > renders menu only when hub tab is unavailable 25ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/MobileLayout.test.ts > MobileLayout > renders hub only when menu is disabled 5ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/MobileLayout.test.ts > MobileLayout > shows tabs when hub content exists and resets active tab when sidebar closes 17ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/MobileLayout.test.ts > MobileLayout > makes the slide-out MenuSidebar inert while a maximized blade covers mobile navigation 5ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppHubContent.test.ts > AppHubContent > filters applications and widgets by search query 64ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppHubContent.test.ts > AppHubContent > emits switch-app on application click 13ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppHubContent.test.ts > AppHubContent > opens widget flyout for component widgets 14ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppHubContent.test.ts > AppHubContent > falls back to a humanized widget id when title is missing 9ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppHubContent.test.ts > AppHubContent > always renders applications in tiles mode 9ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppHubContent.test.ts > AppHubContent > progressively renders large application lists 80ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/app-bar/components/AppHubContent.test.ts > AppHubContent > renders separate scroll containers for applications and widgets 12ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > renders root element with correct class 22ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > renders menu area by default 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > renders default VcAppMenu when no menu slot provided 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > hides menu when disableMenu is true 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > renders UserDropdownButton by default when not embedded 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > hides UserDropdownButton when embedded 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > applies no-header class when headerVisible is false 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > does not apply no-header class when headerVisible is true 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > renders footer area 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > renders custom menu slot 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > hides default UserDropdownButton when custom sidebar-footer slot is used 1ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/sidebar/SidebarContent.test.ts > SidebarContent > emits item:click when menu item is clicked 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > renders desktop layout root 32ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > renders the sidebar as a <nav> landmark with an aria-label 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > renders spacer element 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > applies expanded class to spacer when pinned 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > does not apply expanded class to spacer when not pinned 7ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > applies collapsed class when sidebar is not pinned 7ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > does not apply collapsed class when sidebar is pinned 3ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > renders SidebarHeader 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > renders SidebarContent 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > renders SidebarCollapseButton 4ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > renders wrap element with correct expansion classes 2ms
+ ✓ |unit| ui/components/organisms/vc-app/_internal/layouts/DesktopLayout.test.ts > DesktopLayout > renders wrap element with collapsed class when not pinned 9ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > default notifications mobile button > registers notifications to mobile-topbar when not embedded 3ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > default notifications mobile button > does NOT register mobile button when embedded 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > default settings menu items > registers 4 default settings items 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > default settings menu items > registers items with correct groups 1ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > indicator state (ShellIndicatorsKey) > provides false when no unread notifications 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > indicator state (ShellIndicatorsKey) > reacts to hasUnreadNotifications changes 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > ai-agent > does NOT provide AI agent service when no config 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > ai-agent > provides AI agent service when aiAgentConfig has url 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > ai-agent > defaults addGlobalToolbarButton to true 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > injection keys > provides EmbeddedModeKey 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > injection keys > provides DynamicModulesKey when dynamicModules is defined 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > injection keys > does not provide DynamicModulesKey when dynamicModules is undefined 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > injection keys > provides internalRoutes when specified 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > platform locale sync > invokes usePlatformLocaleSync when embedded 0ms
+ ✓ |unit| ui/components/organisms/vc-app/composables/useShellBootstrap.test.ts > useShellBootstrap > platform locale sync > does NOT invoke usePlatformLocaleSync when not embedded 0ms
+ Test Files  24 passed (24)
+      Tests  210 passed (210)

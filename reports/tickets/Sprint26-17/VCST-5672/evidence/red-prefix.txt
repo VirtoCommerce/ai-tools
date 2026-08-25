@@ -1,0 +1,7 @@
+# RED — vc-scheduler.stories.ts reverted to pre-fix (parent of PR #290 49492f8ef); test file UNCHANGED
+
+ × |unit| ui/components/organisms/vc-scheduler/vc-scheduler.stories.test.ts > VcScheduler stories > keeps TimelineView on the same stateful renderer as the interactive timeline stories 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected undefined to be type of 'function'
+ Test Files  1 failed (1)
+      Tests  1 failed (1)

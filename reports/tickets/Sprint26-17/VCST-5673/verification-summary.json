@@ -1,0 +1,83 @@
+{
+  "ticket": "VCST-5673",
+  "verdict": "VERIFIED",
+  "priority": "Medium",
+  "title": "Vendor Portal: AI panel cannot be closed by keyboard once it has focus",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework / Marketplace Vendor Portal (separate product, not the storefront)",
+  "two_halves_two_repos": {
+    "half_1_vc_shell": [
+      "PR #292 (46098e500) — adds the CLOSE_PANEL message to the chat->shell protocol; in v2.5.0, not v2.4.0",
+      "PR #305 (9aea3dee3) — validates event.source (the registered iframe's contentWindow), not just event.origin; in v2.5.0, not v2.4.0. A real security fix: previously ANY window at an allowed origin could close the panel."
+    ],
+    "half_2_virto_oz": "VirtoCommerce/virto-oz#17 — the chat app forwards its own Escape / Ctrl+I as window.parent.postMessage({type:'CLOSE_PANEL'}, <shell origin>). Created 2026-08-18, CLOSED stateReason=COMPLETED 2026-08-20.",
+    "why_testable_now": "On 2026-08-12 the fix author asked QA explicitly NOT to retest before half 2 shipped ('rather than retesting against the shell build and finding it unchanged'). That was correct then. virto-oz#17 closed COMPLETED 08-20, the deployed build is 08-24, and the panel is a SEPARATELY deployed app whose half does not depend on the vendor-portal build date. This run was on time, not premature.",
+    "structural_root_cause": "A keystroke is delivered to the document owning the focused element; the panel is a cross-origin iframe; a cross-origin parent cannot observe those events by any means. It needed a relay, not a better listener.",
+    "ticket_premise_corrected": "The ticket says 'the iframe capturing focus is correct for a11y', implying the shell focuses it. It does not — there is no focus() call anywhere in the ai-agent plugin. The CHAT autofocuses its own input on load."
+  },
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + deployed vendor-portal build 22260; console banner v2.5.0 · 2026-08-19T10:23:58Z · 2964ccbe3",
+  "agent_used": "qa-backend-expert (playwright-edge); unit probes and bundle checks run inline",
+  "unit": {
+    "green": "61 passed (61), 3 consecutive runs",
+    "red_a_pr305_reverted": "2 failed | 59 passed — the NEGATIVE path (#305's guard)",
+    "red_a_failures": [
+      "ignores CLOSE_PANEL from a window that is not the registered chatbot iframe",
+      "rejects forwarded messages from another window at the same origin"
+    ],
+    "red_b_pr292_reverted": "2 failed | 59 passed — the POSITIVE path (#292's capability)",
+    "red_b_failures": [
+      "closes the panel when an allowed origin asks it to",
+      "accepts forwarded messages from its parent window"
+    ],
+    "separation_note": "The failing sets DIFFER and each is exactly its own half. Logically consistent: with CLOSE_PANEL absent altogether (RED-b) the negative tests pass trivially, because nothing is honoured from any sender. #292 added the capability, #305 added the guard; both independently pinned."
+  },
+  "deploy_gate": {
+    "ancestry": "46098e500 and 9aea3dee3 both in v2.5.0, neither in v2.4.0",
+    "bundle": "vc-shell-vendors22260.js carries CLOSE_PANEL x1, NAVIGATE_TO_APP x1, allowedOrigins x6, vc-ai-agent-panel x3; the -framework facade chunk has 0 of each.",
+    "limitation": "The VirtoOz iframe origin is NOT in the bundle — it comes from runtime config, so the allowedOrigins set could not be read statically."
+  },
+  "live_checks": {
+    "check1_escape_from_inside_panel": {
+      "verdict": "PASS",
+      "focus_evidence": "host activeElement was the iframe ELEMENT itself; within the iframe document the textbox 'Chat message input' was active — precisely the state the bug describes",
+      "result": "Escape closed the panel immediately; .vc-ai-agent-panel REMOVED from the DOM (selector hard-errors), not hidden; blade behind survived (region 'Products' same ref, grid re-expanded, 1-20 of 466 pagination intact) — satisfies VCST-5530 SC-23/24; reproduced a second time on a fresh panel instance"
+    },
+    "check2_ctrl_i_toggles_closed": {
+      "verdict": "PASS",
+      "result": "reopened, re-confirmed iframe [active] with inner input active, Ctrl+I closed the panel, blade intact"
+    },
+    "check3_host_side_path_regression": {
+      "verdict": "PASS",
+      "method_note": "deliberately clicked a NEUTRAL non-input target (the '1-20 of 466' pagination label) rather than the blade's search box, so Escape could not be swallowed by an input and confound the result",
+      "result": "iframe confirmed to have lost [active] while the panel was still open; Escape closed it, blade survived"
+    },
+    "check4_shift_tab_workaround": {
+      "verdict": "PASS",
+      "result": "real Shift+Tab presses walked back from the auto-focused chat input through the suggestion buttons and 'Chat history' to 'New chat' (the chat's first focusable element); one further Shift+Tab LEFT the iframe and landed on button 'Close' [active], computed accessible name exactly 'Close'. Not merely reachable but ACTIONABLE — Enter on it closed the panel, blade intact."
+    },
+    "check5_console": {
+      "verdict": "clean (corroboration, not the diagnostic it would have been on a failure)",
+      "result": "0 errors, 2 warnings across the run, and NOT ONE console entry emitted by any Ctrl+I / Escape / Shift+Tab press — all messages were page-load lines. Closes were immediate, no polling or timeout smell."
+    }
+  },
+  "why_half_2_is_proven_live": "A cross-origin parent physically cannot observe keystrokes delivered to the iframe's document. Yet the panel closed on Escape AND on Ctrl+I while the host's activeElement was that iframe. The only mechanism that can produce that is the chat app's CLOSE_PANEL postMessage reaching the shell — so the deployed virto-oz app IS forwarding, and #305's event.source validation IS accepting it (the message arrives from the chat's top-level window, as #305 requires). Nothing was rejected as an unexpected sender.",
+  "notes": [
+    "The Shift+Tab workaround the author asked to have recorded does work — but the Close button's tooltip ALREADY ships an 'Esc' key badge, so the UI itself advertises Escape. Worth saying that when recording the workaround, rather than presenting Shift+Tab as the route of last resort.",
+    "Load-time warning, not a defect: '[@vc-shell/framework#ai-agent-context] Cannot set context data: no blade id available' fires at page load BEFORE the panel is opened, and the panel then worked correctly every time. Low signal; noted because it recurred across several runs today.",
+    "RESOLVED — the previously-reported environment 500s are STALE CONSOLE HISTORY, not live failures. Surfacing the full console showed 500s (security/seller/users/search, .../create, seller/offers, message/unreadcount, conversation/search, validatepasswordresettoken), SignalR 401s and a 'signIn failed: SessionExpiredError' ALL timestamped 12:34-12:36Z, predating this run's 14:52Z navigation — leftover history from an earlier session in the same browser profile. This settles a question that recurred across several tickets today: that 'known env noise' list was never a stable property of vcmp-dev, and console-derived findings on this lane must be timestamp-checked against the run window before being attributed. The one genuinely in-window error was 'WebSocket closed with status code: 1006' on pushNotificationHub at 14:56:18 — known SignalR noise, unrelated to the AI panel."
+  ],
+  "coverage_limits": [
+    "Cmd+I was NOT tested — Windows host, so only the Ctrl variant was exercised. The ticket's Expected names 'Ctrl/Cmd+I'; the macOS chord is unverified.",
+    "Screen-reader announcement output not verified — no NVDA/JAWS/VoiceOver in the toolkit; the Close button's accessible-name claim rests on the computed name from the accessibility tree.",
+    "The allowedOrigins set could not be read statically (runtime config), so the specific origin the shell accepts was not confirmed from the artifact — only that the mechanism works end to end."
+  ],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell or the Vendor Portal. Substituted: framework vitest suites, live keyboard interaction with focus-ownership inspection, bundle marker checks.",
+  "data_changes": "none — no entity created, edited or deleted; NO chat message sent (the input autofocuses on open but was never typed into and never submitted; Send stayed disabled). Interactions limited to opening a blade, clicking a pagination label, keyboard navigation, and activating the panel's own Close button.",
+  "bugs_filed": [],
+  "jira_transition": "Ready for test -> Testing (done); TESTED pending user confirmation",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5673/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5673/"
+}

@@ -1,0 +1,57 @@
+{
+  "ticket": "VCST-5665",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "priority": "Medium",
+  "labels": ["framework", "security", "vc-shell"],
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework (vc-shell — separate product, not the storefront)",
+  "fix_task": "VM-1746",
+  "fix_prs": ["vc-shell#299 (2e928761f)"],
+  "linked_fix_pr_on_ticket": false,
+  "linked_fix_pr_note": "No PR linked on the ticket; located from main's history via 'Closes VCST-5665 (VM-1746)'.",
+  "affected_version": "2.4.0",
+  "fixed_version": "2.5.0",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + published npm @vc-shell/framework@2.5.0 + deployed Vendor Portal vcmp-dev (built 2026-08-24)",
+  "agent_used": "qa-backend-expert (playwright-edge) for the live pass; unit RED→GREEN run inline",
+  "baseline_reproduction": "RED — PR #299's own hunks reverse-applied onto main (git apply --reverse --3way), test files unchanged, later commit #306 deliberately left intact",
+  "red_result": "3 failed | 69 passed (72)",
+  "green_result": "72 passed (72), 3 consecutive runs",
+  "str_result": "3/3 (unit)",
+  "deploy_gate": {
+    "ancestry": "in v2.5.0, not in v2.4.0",
+    "published_types_marker": "PopupMessageOptions: 0 hits in 2.4.0 -> 13 in 2.5.0; options? on all three helpers; reachable from package root",
+    "deployed_bundle": "vcmp-dev vendor-portal on framework >= 2.5.0, proven transitively via three 2.5.0-only markers in vc-shell-vendors22260.js (absent from the vc-shell-framework facade chunk)"
+  },
+  "acceptance_criteria": {
+    "total": 5,
+    "met": 4,
+    "partial": 1,
+    "partial_detail": "AC5 names '<h1> and <a href>'. <h1> is pinned twice (helper slot-type tests + container test asserting literal text and no h1 element). No test asserts the <a href> case; same escaping branch, so independent regression risk is negligible, but the anchor is the more security-relevant half."
+  },
+  "live_axis": {
+    "status": "BLOCKED — explicitly not recorded as a pass",
+    "reason_no_surface": "All 79 deployed JS chunks searched: every delete confirmation is static text or interpolates only {count}. Verified at the call sites — every showConfirmation passes a bare t(\"…\") with no data argument. No dialog in the app can show markup from an entity name.",
+    "reason_path_unreachable": "The one qualifying caller (showEmailExistsError) is gated behind an already-registered email; two candidates returned 200 [], UI email discovery failed (People list 500, Platform Admin SPA blank). Registering a user to collide with was declined — the Team module cannot list or delete users on this env, so it would have left an undeletable entity.",
+    "corroborating_only": "A real usePopup confirmation was exercised live (unsaved-changes guard); its message node has no child elements, consistent with the escaping path but non-discriminating since the message carries no markup.",
+    "how_to_close": "Supply a known-registered vcmp-dev email address; Check 2 then completes."
+  },
+  "notes": [
+    "usePopup.docs.md contradicts its own rule: states 'never for interpolated data', then the next example opts a user-entered {email} into HTML. P3, docs-only, propagates by being copied.",
+    "The fix's own known follow-up is untracked: vendor-portal showEmailExistsError wraps a user-entered email in <b>; VM-1746's comment says it needs a follow-up (gitignored /apps/ path). No such ticket exists. Confirmed live in the deployed bundle.",
+    "Shipped dist/test-mock-factories.d.ts still declares the pre-fix signatures (local copy of IUsePopup). Not in the exports map, so impact is internal-only. P3."
+  ],
+  "incidental_findings_other_product": [
+    "vc-module-marketplace-vendor: POST /api/vcmp/security/seller/users/search -> 500 NullReferenceException at SellerUserCrudService.GetByIdsAsync (SellerUserCrudService.cs:59). Pre-existing, blocks the Team People list.",
+    "vc-module-marketplace-vendor: POST /api/vcmp/security/seller/users/create -> 500 SqlException 547, FK_MemberRelation_Member_AncestorId via MemberService.SaveChangesAsync (MemberService.cs:183). Pre-existing."
+  ],
+  "regression": { "popup_suites": "72 passed (72) across 6 files, 3 consecutive runs" },
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell or the Vendor Portal. Substituted: framework vitest suites, published .d.ts, deployed-bundle marker greps.",
+  "data_changes": "none — no entity created or renamed; both create attempts were rejected by the backend (SQL rollback, no 2xx); draft blades discarded via the UI; temporary network dump removed",
+  "bugs_filed": [],
+  "jira_transition": "Ready for test -> Testing (done); TESTED pending user confirmation",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5665/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5665/"
+}

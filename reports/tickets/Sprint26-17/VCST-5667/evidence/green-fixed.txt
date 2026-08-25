@@ -1,0 +1,88 @@
+# GREEN — fixed source @ origin/main 324cd9b09 (= release v2.5.0), cwd=framework/ (the CI cwd)
+# scope: shell/auth + shell/components/change-password (the 4 components PR #296 touched)
+
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > returns '/' for null 1ms
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > returns '/' for empty string 0ms
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > returns '/' for whitespace-only string 0ms
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > returns valid internal path as-is 0ms
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > preserves query parameters on valid paths 0ms
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > rejects absolute URL (https) 0ms
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > rejects protocol-relative URL (//) 0ms
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > rejects absolute URL (http) 0ms
+ ✓ |unit| shell/auth/utils.test.ts > resolveSafeRedirectPath > trims whitespace from valid path 0ms
+ ✓ |unit| shell/auth/utils.test.ts > formatSignInError > returns invalid-credentials key for 401 status 0ms
+ ✓ |unit| shell/auth/utils.test.ts > formatSignInError > returns auth-with-code key and passes the status code for non-401 status 0ms
+ ✓ |unit| shell/auth/utils.test.ts > formatSignInError > returns auth-generic key and passes the error detail when no status is present 0ms
+ ✓ |unit| shell/auth/utils.test.ts > formatSignInError > returns invalid-credentials key for empty result 0ms
+ ✓ |unit| shell/auth/utils.test.ts > formatSignInError > prioritizes status over error text (401 wins) 0ms
+ ✓ |unit| shell/auth/utils.test.ts > validatePasswordChange > returns no errors when passwords match and differ from current 0ms
+ ✓ |unit| shell/auth/utils.test.ts > validatePasswordChange > returns Repeat-password error when confirmPassword differs from password 0ms
+ ✓ |unit| shell/auth/utils.test.ts > validatePasswordChange > returns Equal-passwords error when all three fields are identical 0ms
+ ✓ |unit| shell/auth/utils.test.ts > validatePasswordChange > returns both errors when confirmPassword differs and both equal current 0ms
+ ✓ |unit| shell/auth/utils.test.ts > validatePasswordChange > returns Equal-passwords error when all fields are empty strings 0ms
+ ✓ |unit| shell/auth/sign-in/external-providers.test.ts > external-providers.vue > renders the component 10ms
+ ✓ |unit| shell/auth/sign-in/external-providers.test.ts > external-providers.vue > renders nothing when providers list is empty 5ms
+ ✓ |unit| shell/auth/sign-in/external-providers.test.ts > external-providers.vue > renders one provider button per provider 10ms
+ ✓ |unit| shell/auth/sign-in/external-providers.test.ts > external-providers.vue > displays provider display names 2ms
+ ✓ |unit| shell/auth/sign-in/external-providers.test.ts > external-providers.vue > calls signIn with authenticationType when provider is clicked 4ms
+ ✓ |unit| shell/auth/sign-in/external-providers.test.ts > external-providers.vue > renders multiple providers and clicking calls correct type 2ms
+ ✓ |unit| shell/auth/sign-in/external-provider.test.ts > external-provider.vue > renders the component 21ms
+ ✓ |unit| shell/auth/sign-in/external-provider.test.ts > external-provider.vue > displays the provider name 3ms
+ ✓ |unit| shell/auth/sign-in/external-provider.test.ts > external-provider.vue > renders the logo image 6ms
+ ✓ |unit| shell/auth/sign-in/external-provider.test.ts > external-provider.vue > processes relative logo URLs to absolute URLs 2ms
+ ✓ |unit| shell/auth/sign-in/external-provider.test.ts > external-provider.vue > keeps data:image logos as-is 1ms
+ ✓ |unit| shell/auth/sign-in/external-provider.test.ts > external-provider.vue > keeps http logos as-is 1ms
+ ✓ |unit| shell/auth/sign-in/external-provider.test.ts > external-provider.vue > emits signIn event when clicked 2ms
+ ✓ |unit| shell/auth/sign-in/external-provider.test.ts > external-provider.vue > renders with undefined props gracefully 1ms
+ ✓ |unit| shell/components/change-password-button/change-password-button.test.ts > ChangePasswordButton > renders SettingsMenuItem 26ms
+ ✓ |unit| shell/components/change-password-button/change-password-button.test.ts > ChangePasswordButton > calls open popup on click 3ms
+ ✓ |unit| shell/components/change-password-button/change-password-button.test.ts > ChangePasswordButton > calls closeSettingsMenu before opening popup 2ms
+ ✓ |unit| shell/components/change-password-button/change-password-button.test.ts > ChangePasswordButton > works without closeSettingsMenu provided 1ms
+ ✓ |unit| shell/components/change-password/change-password.test.ts > ChangePassword > renders the popup 30ms
+ ✓ |unit| shell/components/change-password/change-password.test.ts > ChangePassword > renders three input fields 4ms
+ ✓ |unit| shell/components/change-password/change-password.test.ts > ChangePassword > renders cancel and save buttons 3ms
+ ✓ |unit| shell/components/change-password/change-password.test.ts > ChangePassword > shows forced info banner when forced prop is true 3ms
+ ✓ |unit| shell/components/change-password/change-password.test.ts > ChangePassword > does not show forced banner by default 2ms
+ ✓ |unit| shell/components/change-password/change-password.test.ts > ChangePassword > emits close on cancel when not forced 6ms
+ ✓ |unit| shell/components/change-password/change-password.test.ts > ChangePassword > navigates to login on cancel when forced 4ms
+ ✓ |unit| shell/components/change-password/change-password.test.ts > ChangePassword > tells the password manager which field is the current password and which are new 3ms
+ ✓ |unit| shell/auth/ForgotPasswordPage/components/forgot-password/ForgotPassword.test.ts > ForgotPassword.vue > renders the component 21ms
+ ✓ |unit| shell/auth/ForgotPasswordPage/components/forgot-password/ForgotPassword.test.ts > ForgotPassword.vue > renders email input field 8ms
+ ✓ |unit| shell/auth/ForgotPasswordPage/components/forgot-password/ForgotPassword.test.ts > ForgotPassword.vue > renders send button 2ms
+ ✓ |unit| shell/auth/ForgotPasswordPage/components/forgot-password/ForgotPassword.test.ts > ForgotPassword.vue > renders back to login button 2ms
+ ✓ |unit| shell/auth/ForgotPasswordPage/components/forgot-password/ForgotPassword.test.ts > ForgotPassword.vue > does not show error hint by default 2ms
+ ✓ |unit| shell/auth/ForgotPasswordPage/components/forgot-password/ForgotPassword.test.ts > ForgotPassword.vue > accepts logo and background props 1ms
+ ✓ |unit| shell/auth/ForgotPasswordPage/components/forgot-password/ForgotPassword.test.ts > ForgotPassword.vue > accepts custom composable prop 1ms
+ ✓ |unit| shell/auth/ResetPasswordPage/components/reset-password/ResetPassword.test.ts > ResetPassword.vue > renders the component 21ms
+ ✓ |unit| shell/auth/ResetPasswordPage/components/reset-password/ResetPassword.test.ts > ResetPassword.vue > renders password and confirm password fields 6ms
+ ✓ |unit| shell/auth/ResetPasswordPage/components/reset-password/ResetPassword.test.ts > ResetPassword.vue > renders save password button 2ms
+ ✓ |unit| shell/auth/ResetPasswordPage/components/reset-password/ResetPassword.test.ts > ResetPassword.vue > calls validateToken on mount 3ms
+ ✓ |unit| shell/auth/ResetPasswordPage/components/reset-password/ResetPassword.test.ts > ResetPassword.vue > shows invalid token error when token is invalid 3ms
+ ✓ |unit| shell/auth/ResetPasswordPage/components/reset-password/ResetPassword.test.ts > ResetPassword.vue > shows loading indicator when loading 8ms
+ ✓ |unit| shell/auth/ResetPasswordPage/components/reset-password/ResetPassword.test.ts > ResetPassword.vue > marks both password fields as new so a manager offers to generate one 3ms
+ ✓ |unit| shell/auth/ChangePasswordPage/components/change-password/ChangePassword.test.ts > ChangePassword.vue > renders the component 28ms
+ ✓ |unit| shell/auth/ChangePasswordPage/components/change-password/ChangePassword.test.ts > ChangePassword.vue > renders current, new, and confirm password fields 7ms
+ ✓ |unit| shell/auth/ChangePasswordPage/components/change-password/ChangePassword.test.ts > ChangePassword.vue > renders cancel and save buttons 2ms
+ ✓ |unit| shell/auth/ChangePasswordPage/components/change-password/ChangePassword.test.ts > ChangePassword.vue > shows forced password change banner when forced prop is true 2ms
+ ✓ |unit| shell/auth/ChangePasswordPage/components/change-password/ChangePassword.test.ts > ChangePassword.vue > does not show forced banner when forced prop is false 2ms
+ ✓ |unit| shell/auth/ChangePasswordPage/components/change-password/ChangePassword.test.ts > ChangePassword.vue > uses forced title when forced prop is true 2ms
+ ✓ |unit| shell/auth/ChangePasswordPage/components/change-password/ChangePassword.test.ts > ChangePassword.vue > does not show error hints when form.errors is empty 2ms
+ ✓ |unit| shell/auth/ChangePasswordPage/components/change-password/ChangePassword.test.ts > ChangePassword.vue > tells the password manager which field is the current password and which are new 2ms
+ ✓ |unit| shell/auth/InvitePage/components/invite/Invite.test.ts > Invite.vue > renders the component 29ms
+ ✓ |unit| shell/auth/InvitePage/components/invite/Invite.test.ts > Invite.vue > renders email, password, and confirm password fields 9ms
+ ✓ |unit| shell/auth/InvitePage/components/invite/Invite.test.ts > Invite.vue > renders accept invitation button 3ms
+ ✓ |unit| shell/auth/InvitePage/components/invite/Invite.test.ts > Invite.vue > calls validateToken on mount 3ms
+ ✓ |unit| shell/auth/InvitePage/components/invite/Invite.test.ts > Invite.vue > shows invalid token error when token is invalid 4ms
+ ✓ |unit| shell/auth/InvitePage/components/invite/Invite.test.ts > Invite.vue > displays the username in the disabled email field 3ms
+ ✓ |unit| shell/auth/InvitePage/components/invite/Invite.test.ts > Invite.vue > pairs the invited username with both new-password fields for autofill 3ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > renders the component 29ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > renders login form fields 8ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > renders login and forgot-password buttons 5ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > does not show error hint when signInResult.succeeded is true 3ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > hides form when ssoOnly prop is true 3ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > passes logo and background props 3ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > passes custom title and subtitle 2ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > redirects to safe internal path after successful login 4ms
+ ✓ |unit| shell/auth/LoginPage/components/login/Login.test.ts > Login.vue > falls back to root path for unsafe redirect after successful login 3ms
+ Test Files  10 passed (10)
+      Tests  83 passed (83)

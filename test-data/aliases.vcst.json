@@ -894,9 +894,32 @@
   "WISH_TWO_STORE_CUSTOMER": {
     "storeAId": "B2B-store",
     "storeBId": "Electronics",
-    "storeAWishlistId": "6a733db1-ab9e-48da-924c-560c713aca05",
-    "storeBWishlistId": "bc3dd38c-0410-4e40-b7fe-f65bac860f61",
-    "customerId": "089afd9f-fefc-43cb-9219-8f42b45047c0",
-    "userId": "96029166-25f0-419b-8984-a7527188cb82"
+    "storeAWishlistId": "2756d2b7-86ca-4737-a0e4-be03c2b371f0",
+    "storeBWishlistId": "cdab5b2b-1ecb-42a3-aa43-fb194f553d9c",
+    "customerId": "96029166-25f0-419b-8984-a7527188cb82",
+    "userId": "96029166-25f0-419b-8984-a7527188cb82",
+    "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
+  },
+  "SR_ORDER_ACME_WIN_NEW": {
+    "id": "b01333a5-cf93-461c-b709-7818f68a3332",
+    "createdDate": "2026-08-25T14:23:12.1625627Z"
+  },
+  "SR_ORDER_ACME_WIN_PROC": {
+    "id": "04d37a1b-1257-4d74-8002-bc3ce526b345",
+    "createdDate": "2026-08-25T14:23:29.8170837Z"
+  },
+  "CAT_EMPTY": {
+    "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
+    "catalogId": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "PROD_ORG_EXCLUDED": {
+    "id": "72814aed-3917-40bc-946a-e3bd63e2f066",
+    "catalogId": "8a55771b-16d6-41f9-8dcd-329099233c8f"
+  },
+  "PROD_SEO_CONFIGURED": {
+    "id": "07003400-b77c-4286-956c-6fe8bfa7d409",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "categoryId": "05db57be-7c71-4bc4-a8c7-acb3f214e8e9",
+    "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   }
 }

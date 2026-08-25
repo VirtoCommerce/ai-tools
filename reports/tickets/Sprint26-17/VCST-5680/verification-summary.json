@@ -1,0 +1,68 @@
+{
+  "ticket": "VCST-5680",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "priority": "Low",
+  "title": "Vendor Portal: Ctrl/Cmd+\\ always expands the topmost blade, ignoring which blade has focus",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework / Marketplace Vendor Portal (separate product, not the storefront)",
+  "fix_prs": [
+    "vc-shell#298 (bd938a138) — target keyboard shortcuts at the focused blade",
+    "vc-shell#310 (06cb54b4d) — AI panel claims mod+backslash only while focused (same chord)"
+  ],
+  "affected_version": "2.4.0",
+  "fixed_version": "2.5.0",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + live vcmp-dev vendor-portal; console banner reported framework v2.5.0 · 2026-08-19T10:23:58Z · 2964ccbe3",
+  "agent_used": "qa-backend-expert (playwright-edge) for the live pass; unit probes run inline",
+  "ticket_premise_corrected": "The description claims Ctrl/Cmd+S was already focus-aware and Ctrl/Cmd+\\ was not. Neither was: both resolved useBladeStack.activeBlade (last visible blade, no notion of focus). Verified against source — the dev's correction is accurate, and it meant focus targeting had to be built from scratch for all blade shortcuts.",
+  "unit_probes": {
+    "green": "179 passed (179), 3 consecutive runs",
+    "red_a_marker_reverted": "1 failed | 178 passed (179) — the data-blade-id marker IS guarded",
+    "red_b_seam_reverted": "179 passed (179) — the getActiveBlade seam that delivers the user-visible fix has NO test",
+    "red_c_full_pr_reverted": "173 passed / 16 files — PR #298 added 6 tests",
+    "method": "each probe reverse-applied only that hunk (git apply --reverse --3way), everything else left in place"
+  },
+  "deploy_gate": {
+    "ancestry": "bd938a138 and 06cb54b4d both in v2.5.0, neither in v2.4.0",
+    "deployed": "vcmp-dev vendor-portal rebuilt 2026-08-24, framework >= 2.5.0 — proven via three 2.5.0-only markers in vc-shell-vendors22260.js, absent from the vc-shell-framework facade chunk; corroborated by the live console banner"
+  },
+  "live_checks": {
+    "total": 6,
+    "passed": 6,
+    "blocked": 0,
+    "oracle_note": "vc-blade--maximized is the shortcut's effect; vc-blade--expanded is NOT (it means 'last blade fills remaining space' and is present at baseline on the topmost blade). Asserting on the wrong class would have produced a false PASS.",
+    "detail": {
+      "1_core_str": "PASS — focus confirmed in the middle blade (closest [data-blade-id] = blade_2_f9txl6) before pressing; after Ctrl+\\ blade_2 gained --maximized, 837 -> 1674px; topmost blade_3 untouched; second press toggled back",
+      "2_marker_on_every_blade": "PASS — 17 distinct blade pages verified live, zero missing; corroborated by the absence of any Vue extraneous-attribute warning (the console signature of a dropped fallthrough attribute)",
+      "3_ctrl_s_targets_focused_blade": "PASS — middle blade dirty, topmost has no Save button at all; Ctrl+S produced validate 200 + save 200 and cleared the middle blade's dirty indicator. Control: on another offer, Ctrl+S and that blade's own Save button produced the identical request and identical 500 — proving the shortcut dispatches the focused blade's own action",
+      "4_workspace_focus_noop": "PASS — .vc-blade--maximized empty afterwards, both blades byte-identical geometry (837/837), focus unchanged; corroborated by '[BladeMessaging] Blade … has no parent — callParent() ignored'",
+      "5_fallback_to_topmost": "PASS — verified twice, including with activeElement === document.body asserted true",
+      "6_ai_panel_chord_conflict": "PASS — panel open-but-unfocused: focused middle blade maximized (656 -> 1312px); panel focused: no blade acted on"
+    }
+  },
+  "notes": [
+    "PRIMARY: the fix's user-visible behaviour has no test guarding it. The pure resolver (5 tests) and the data-blade-id marker (1 test) are covered; the getActiveBlade seam in vc-blade-navigation-new.vue that wires them into the dispatcher is not. Reverting that one call reintroduces the defect with the suite still 179/179 green, so a future refactor can silently restore topmost-only targeting with no failing test and no reviewer signal.",
+    "Record inaccuracy (minor): the dev comment says '8 tests written first and observed failing'; PR #298 added 6 (5 + 1), confirmed by the full-PR reverse.",
+    "Intel for VCST-5670 (also Ready for test): it claims focus lands on <body> after 'sign-in, blade open, Maximize and Save'. Live, the header Maximize BUTTON left focus on the header button; it was the SHORTCUT-driven maximize that dropped focus to BODY. The hot path is real but reached by a different route than that ticket states."
+  ],
+  "coverage_limits": [
+    "Check 2 covered 17 blade pages live, not all. Not covered: quote details, marketplace-product details, import-profile details, review details, fulfillment-centre details, team-member details, add-new-entity blades, and modal/dialog blades. The author reviewed 23 in source; a page outside both sets could still be multi-root and would silently fall back to topmost-only with no error.",
+    "Check 6's mechanism is unproven: with focus inside the AI panel's iframe (a separate browsing context), 'the panel consumed the chord' cannot be distinguished from 'the keydown never reached the parent document's handler'. The observable outcome matches expectation either way.",
+    "Home/dashboard renders no blade at all (div.vc-blade count 0), so Ctrl+\\ there is a harmless no-op — but AI context cannot bind on the dashboard ('[ai-agent-context] Cannot set context data: no blade id available')."
+  ],
+  "incidental_findings_other_product": [
+    "Pre-existing backend 500 on offer save (vc-module-marketplace-vendor): POST /api/vcmp/seller/offers -> ArgumentNullException (Parameter 'source') at OfferDetails.FindTheSameProperty (OfferDetails.cs:197) <- OfferDetails.Update (:133) <- UpdateOfferCommandHandler.Handle (:50). Offer-specific (null properties collection).",
+    "An offer's name edit is silently discarded: payload sends the new name, response 200, dirty indicator clears, but a fresh GET returns the original. The UI presents Name as an editable REQUIRED field while the server appears to derive it from the product. May be by design; the silent discard behind a success signal is the reviewable part.",
+    "Environment 500s: /api/vcmp/message/unreadcount, /api/vcmp/conversation/search, /api/vcmp/security/seller/users/search (People blade renders empty).",
+    "Product-image 404s on .../apps/vendor-portal/catalog/<file>.jpg with '[vc-image] Invalid URL: catalog/…' — relative asset path not resolved.",
+    "Collapsed submenu items stay in the a11y tree and resolve, but clicks are intercepted by a sibling menu item until the parent group is expanded."
+  ],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell or the Vendor Portal. Substituted: framework vitest suites, live focus/geometry measurement, deployed-bundle version proof.",
+  "data_changes": "net zero — two offer Name fields edited to exercise Check 3; one rejected server-side (500) via both the shortcut and the Save button and reverted in the UI, the other returned 200 but a fresh GET showed the original value. No entities created or deleted.",
+  "bugs_filed": [],
+  "jira_transition": "Ready for test -> Testing (done); TESTED pending user confirmation",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5680/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5680/"
+}

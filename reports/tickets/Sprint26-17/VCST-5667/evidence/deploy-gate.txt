@@ -1,0 +1,64 @@
+# Deploy gate + completeness — VCST-5667 / vc-shell PR #296 (229f46832)
+
+## 1. Git ancestry (VirtoCommerce/vc-shell)
+229f46832  "fix(auth): add autocomplete tokens to every password field outside login (#296)"
+           committed 2026-08-13T17:22:14+03:00
+           ancestor of v2.5.0 ... YES
+           ancestor of v2.4.0 ... NO   (2.4.0 is the version the ticket was filed against)
+v2.4.0 released 2026-08-04 | v2.5.0 tagged 2026-08-19T10:25:04Z
+
+Files: 4 .vue + 4 .test.ts, 41 insertions, 0 deletions. No change to vc-input —
+the `autocomplete` prop already existed from PR #280 (VCST-5634, the login page).
+
+## 2. Completeness — INDEPENDENTLY RE-RUN against current origin/main
+The dev's claim: `grep -rl 'type="password"' framework --include='*.vue'` returns exactly 5
+files and all 5 now carry tokens. Re-run on current main — confirmed, same 5 files:
+
+  file                                                              autocomplete refs
+  shell/auth/ChangePasswordPage/.../ChangePassword.vue                    3
+  shell/auth/InvitePage/.../Invite.vue                                    3
+  shell/auth/LoginPage/.../Login.vue                                      2   (PR #280)
+  shell/auth/ResetPasswordPage/.../ResetPassword.vue                      2
+  shell/components/change-password/change-password.vue                    3   (the 4th file
+                                                                              the ticket's own
+                                                                              grep missed)
+Counts match the dev's table exactly. No password field anywhere in framework/ is untokenized.
+
+## 3. Token VALUES per field, read off origin/main (a wrong token is worse than none)
+  ChangePassword (auth)   name=current      -> current-password
+                          name=new_pass     -> new-password
+                          name=confirm_pass -> new-password
+  Invite                  name=username         -> username
+                          name=password         -> new-password
+                          name=confirm_password -> new-password
+  ResetPassword           name=password         -> new-password
+                          name=confirm_password -> new-password
+  change-password (menu)  name=current      -> current-password
+                          name=new_pass     -> new-password
+                          name=confirm_pass -> new-password
+11 fields, all correctly paired. Matches the ticket's Suggested fix and VM-1748's ACs.
+
+## 4. What the unit tests DO and DO NOT prove  (verified independently, not taken on trust)
+`VcInput` sets `inheritAttrs: false` and binds leftover attrs to its root <div>, so a plain
+attribute would land on the wrapper and be silently ignored by the browser. The fix therefore
+passes `autocomplete` as a PROP.
+
+But the suites stub VcInput as a bare input, e.g.
+  framework/shell/components/change-password/change-password.test.ts:40-41
+    VcInput: { template: '<input data-stub="VcInput" />' }
+In that stub, attributes fall through to the <input> automatically. The assertion
+  w.findAll("input").map(i => i.attributes("autocomplete"))
+therefore passes whether the token is correctly prop-bound OR stranded on the wrapper.
+
+=> The unit tests pin the token VALUES and their ORDER. They cannot prove the token reaches
+   the native <input> in a real render. Only a live DOM read can, which is why the live pass
+   (and the author's own live pass) is load-bearing here rather than decorative.
+
+## 5. Deployed surface
+https://vcmp-dev.govirto.com/apps/vendor-portal/ rebuilt 2026-08-24, running framework >= 2.5.0
+(established earlier the same day via three 2.5.0-only markers in vc-shell-vendors22260.js,
+absent from the vc-shell-framework facade chunk). PR #296 is therefore live.
+
+The author's own live pass used a LOCAL `yarn build:framework` + dev server, and covered only
+the three unauthenticated auth pages. The live pass for this verification targets the DEPLOYED
+artifact and adds the fourth file (the authenticated user-menu blade).

@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
   CSV_SOURCE, FIXTURE_KEY, RUNTIME_COLUMNS, SEED_PREFIX,
-  loadFixture, productSpecs, wishlistSpecs, validateFixtureShape,
+  loadFixture, productSpecs, wishlistSpecs, validateFixtureShape, validateOverlayOwnership,
   deriveSlug, deriveUrl, buildContactBody, buildProductBody, buildLineItem, buildWishlistBody,
 } from '../seed-data/wishlists/wishlist-specs.mjs';
 
@@ -153,4 +153,52 @@ test('buildLineItem prices from the fixture and never emits a NaN', () => {
 test('a missing fixture row is reported, not silently treated as empty', () => {
   assert.equal(loadFixture([]), null);
   assert.deepEqual(validateFixtureShape([]), [`no row with fixture_key="${FIXTURE_KEY}" in ${CSV_SOURCE.file}`]);
+});
+
+/* ── ownership (added 2026-08-25 after REG-2026-08-25-1128) ──────────────────────────────────────
+ * A Wishlist-type cart's customerId is the SECURITY ACCOUNT id, not the Contact member id. Seeded
+ * against the contact id the two lists exist, an admin-side /api/carts/search finds them, and the
+ * seeder exits 0 — while the storefront sees nothing: /account/lists renders "You have not created
+ * any lists yet" and every in-wishlist marker reads false. That asymmetry is why CAT-079/CAT-080 sat
+ * BLOCKED for a whole regression run behind a green seed, and why the rule is asserted on the ids
+ * the seeder writes back rather than left to the seeder's own control flow.
+ */
+test('validateOverlayOwnership: an overlay owned by the ACCOUNT id is clean', () => {
+  assert.deepEqual(validateOverlayOwnership({
+    customerId: 'acct-1', userId: 'acct-1', contactId: 'contact-1',
+    storeAId: 'B2B-store', storeBId: 'Electronics',
+    storeAWishlistId: 'wl-a', storeBWishlistId: 'wl-b',
+  }), []);
+});
+
+test('validateOverlayOwnership: wishlists owned by the CONTACT id are rejected', () => {
+  const problems = validateOverlayOwnership({ customerId: 'contact-1', userId: 'acct-1', contactId: 'contact-1' }, 'vcst');
+  assert.ok(problems.some((p) => /customerId === contactId/.test(p)), problems.join('\n'));
+  // The message must say what the operator would OBSERVE, not just that two ids matched — the
+  // symptom is invisible from the admin API, so "re-run the seeder" needs its reason attached.
+  assert.ok(problems.some((p) => /account\/lists empty/.test(p)));
+});
+
+test('validateOverlayOwnership: customerId drifting off userId is rejected', () => {
+  const problems = validateOverlayOwnership({ customerId: 'acct-1', userId: 'acct-2' });
+  assert.ok(problems.some((p) => /customerId .* !== userId/.test(p)), problems.join('\n'));
+});
+
+test('validateOverlayOwnership: a two-store fixture collapsed to one store is rejected', () => {
+  // Vacuity, not absence: both wishlists still exist, so nothing looks broken — but VCST-5705 was
+  // "storeId accepted and never applied", which a single-store fixture cannot possibly detect.
+  const problems = validateOverlayOwnership({ storeAId: 'B2B-store', storeBId: 'B2B-store' });
+  assert.ok(problems.some((p) => /single-store/.test(p)), problems.join('\n'));
+});
+
+test('validateOverlayOwnership: both roles pointing at one wishlist id is rejected', () => {
+  const problems = validateOverlayOwnership({ storeAWishlistId: 'wl-x', storeBWishlistId: 'wl-x' });
+  assert.ok(problems.some((p) => /one wishlist, not two/.test(p)), problems.join('\n'));
+});
+
+test('validateOverlayOwnership: an unseeded env (empty overlay) is not a failure', () => {
+  // Absent ids mean "this env has not been seeded", a legitimate state the per-env overlay model
+  // relies on. Only CONTRADICTORY ids are a defect.
+  assert.deepEqual(validateOverlayOwnership({}), []);
+  assert.deepEqual(validateOverlayOwnership(null), []);
 });

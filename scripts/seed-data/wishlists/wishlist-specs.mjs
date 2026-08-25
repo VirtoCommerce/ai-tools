@@ -209,6 +209,39 @@ export function buildWishlistBody({ listName, storeId, customerId, customerName,
 }
 
 /**
+ * OWNERSHIP assertions on the per-env overlay. Pure — takes the alias's overlay object.
+ *
+ * A Wishlist-type cart's `customerId` is the SECURITY ACCOUNT id, NOT the Contact member id. The
+ * storefront resolves the signed-in session to the account id and sends it as xAPI
+ * `products(userId:)`; a list hung off the contact id is therefore invisible to every storefront
+ * session — /account/lists renders "You have not created any lists yet" and every in-wishlist marker
+ * reads false — while an admin-side /api/carts/search by contact id still returns both lists. That
+ * asymmetry is why a seed could exit 0 with CAT-079/CAT-080 blocked for a whole regression run
+ * (REG-2026-08-25-1128). Nothing else in the static gate set can see it, so it is asserted here on
+ * the ids the seeder wrote back.
+ */
+export function validateOverlayOwnership(overlay, env = '<env>') {
+  const problems = [];
+  if (!overlay) return problems;
+  const { customerId, userId, contactId, storeAId, storeBId, storeAWishlistId, storeBWishlistId } = overlay;
+
+  if (customerId && contactId && customerId === contactId) {
+    problems.push(`aliases.${env}.json: customerId === contactId ("${contactId}") — the wishlists were seeded against the CONTACT id, so the storefront cannot see them (/account/lists empty, every marker false). Re-run \`TEST_ENV=${env} npm run seed:wishlists\` on the corrected seeder.`);
+  }
+  if (customerId && userId && customerId !== userId) {
+    problems.push(`aliases.${env}.json: customerId ("${customerId}") !== userId ("${userId}") — both must be the security ACCOUNT id; a wishlist's customerId IS the account id`);
+  }
+  // Non-vacuity: a two-store fixture that collapsed to one store, or one list, proves nothing.
+  if (storeAId && storeBId && storeAId === storeBId) {
+    problems.push(`aliases.${env}.json: storeAId and storeBId are BOTH "${storeAId}" — the seeded fixture is single-store and CAT-079/CAT-080 would pass vacuously`);
+  }
+  if (storeAWishlistId && storeAWishlistId === storeBWishlistId) {
+    problems.push(`aliases.${env}.json: both wishlist ids are "${storeAWishlistId}" — one wishlist, not two`);
+  }
+  return problems;
+}
+
+/**
  * Shape assertions shared by the drift guard and the unit tests. Returns a list of problem strings —
  * empty means the committed fixture can still do its job. Pure: takes the parsed CSV rows.
  */

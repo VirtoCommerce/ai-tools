@@ -1,0 +1,56 @@
+{
+  "ticket": "VCST-5677",
+  "verdict": "VERIFIED",
+  "priority": "Medium",
+  "title": "Dark theme leaves toolbar and weekday header illegible",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework (vc-shell — separate product, not the storefront)",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + hosted Storybook assets/iframe-1uXuqCDm.js built 2026-08-19T10:28:21Z",
+  "agent_used": "ui-ux-expert (Chrome DevTools MCP) for the live pass; unit RED→GREEN run inline",
+  "baseline_reproduction": "RED — fix sources reverted to their pre-fix parent commit, test files unchanged",
+  "affected_version": "2.4.0",
+  "fixed_version": "2.5.0",
+  "linked_fix_pr_on_ticket": false,
+  "linked_fix_pr_note": "No dev comment named a fix PR on any of the four; the PRs were located from main's history via 'Closes VCST-####'.",
+  "regression": {
+    "scheduler_popover_suite": "213 passed (213) across 31 files, 3 consecutive runs",
+    "typecheck": "clean"
+  },
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell. Substituted: the component vitest suites, live a11y tree, keyboard walk and computed-style/contrast measurement.",
+  "jira_transition": "Ready for test -> Testing -> Tested",
+  "evidence_artifact": null,
+  "fix_prs": [
+    "vc-shell#289 (30279bf52)"
+  ],
+  "red_result": "1 failed (1)",
+  "green_result": "1 passed (1)",
+  "str_result": "3/3",
+  "live_checks": {
+    "total": 2,
+    "passed": 2
+  },
+  "contrast_dark": {
+    "toolbar_title": "12.2:1",
+    "toolbar_buttons": "9.8:1",
+    "weekday_labels": "5.8:1",
+    "day_badge": "5.1:1"
+  },
+  "contrast_light": {
+    "toolbar_title": "21:1",
+    "toolbar_buttons": "10.4:1",
+    "weekday_labels": "7.8:1",
+    "day_badge": "4.54:1"
+  },
+  "notes": [
+    "Watch item, not a defect: the light-theme day badge at 4.54:1 passes AA by 0.04 and would fail on any further lightening of that colour."
+  ],
+  "out_of_scope_findings": [],
+  "coverage_limits": [
+    "Dark-theme contrast not swept across every sub-element — event chips and popovers were not measured, and the --more-overflow story was not checked in dark theme."
+  ],
+  "bugs_filed": [],
+  "evidence": "reports/tickets/Sprint26-17/VCST-5677/verification-report.md",
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5677/"
+}

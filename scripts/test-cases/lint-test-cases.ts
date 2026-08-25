@@ -9,7 +9,10 @@
  *   Dim 1 Structure      S-001..S-007
  *   Dim 2 Determinism    D-001..D-006
  *   Dim 3 Completeness   C-001..C-008
- *   Dim 4 Testability    T-001..T-003   (T-004 needs tool-availability judgment — skipped)
+ *   Dim 4 Testability    T-001..T-003 T-005   (T-004 needs tool-availability judgment — skipped)
+ *                        T-005 = unscoreable prose in an EVALUATED assertion
+ *                        (runner-native GraphQL cases only; grammar verdict
+ *                        delegated to lib/graphql-assertions.ts)
  *   Dim 5 Data Validity  DV-001 DV-002 DV-003 DV-013 DV-019
  *                        (DV-006..012/016/020 need schema/value judgment — skipped, noted)
  *   Dim 6 BL/ECL         BL-001 REQ-001 (BL-002/004/005 need knowledge-file cross-ref — skipped)
@@ -30,9 +33,11 @@
  * `parseAuditStamp` is exported so scripts/test-cases/audit-queue.ts reads the
  * stamp through the same parser instead of re-deriving the format.
  *
- * Reuses scripts/append-test-cases-to-suite.ts (parseSuite/COLUMNS) and
- * scripts/lib/graphql-case-parser.ts (parseSteps/validateStepBlocks) so the
- * schema and GraphQL step-structure rules stay single-sourced.
+ * Reuses scripts/append-test-cases-to-suite.ts (parseSuite/COLUMNS),
+ * scripts/lib/graphql-case-parser.ts (parseSteps/validateStepBlocks) and
+ * scripts/lib/graphql-assertions.ts (parseAssertions/classifyPredicateScoreability)
+ * so the schema, the GraphQL step-structure rules, and the assertion grammar all
+ * stay single-sourced with the runner that executes them.
  *
  * Usage:
  *   npx tsx scripts/lint-test-cases.ts <suite.csv> [--json] [--fail-on=Blocker|Critical|High|Medium]
@@ -44,6 +49,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { COLUMNS, parseSuite, type Row } from "./append-test-cases-to-suite.js";
 import { parseSteps, validateStepBlocks } from "../lib/graphql-case-parser.js";
+import { classifyPredicateScoreability, parseAssertions } from "../lib/graphql-assertions.js";
 
 type Severity = "Blocker" | "Critical" | "High" | "Medium" | "Informational";
 const SEVERITY_ORDER: Severity[] = ["Informational", "Medium", "High", "Critical", "Blocker"];
@@ -385,6 +391,50 @@ function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[]
       push("T-002", "High", `[DOM] assertion lacks element/text specifics: "${truncate(a)}"`);
     if (/^\[MATH\]/i.test(a) && !a.includes("="))
       push("T-003", "High", `[MATH] assertion has no formula (=): "${truncate(a)}"`);
+  }
+
+  // T-005: an English sentence in a column the GraphQL runner EVALUATES.
+  //
+  // Scope is deliberately narrow on three axes, because a wide version of this
+  // rule is a nuisance rather than a gate:
+  //   1. runner-native cases only (`[GQL-OP]` in Steps). A UI case's assertions
+  //      are read by an agent, which handles prose fine — flagging those raised
+  //      the corpus hit from 15 lines to 184.
+  //   2. VERDICT-AFFECTING tags only. parseAssertions() routes [EVIDENCE]/[MATH]/
+  //      [ROUNDTRIP]/[ADMIN]/[STOREFRONT]/[EVENT] to `info`, where prose is the
+  //      documented use (runner contract §4.7) — and Cross_Layer_Checks,
+  //      Failure_Signals, Preconditions and References are never read here at all.
+  //      Moving the line into one of those IS the fix.
+  //   3. the grammar verdict comes from graphql-assertions.ts, which is the
+  //      evaluator itself — see classifyPredicateScoreability's contract. This
+  //      rule adds no grammar of its own, so it cannot be stricter than the
+  //      runner and cannot drift from it.
+  //
+  // NOT a {HYPOTHESIS} rule. A tagged hypothesis is legitimate while authoring
+  // (that's GRD-001's business); what fails at run time is prose in an evaluated
+  // predicate, tagged or not — CAT-GQL-124 carries no {HYPOTHESIS} at all.
+  //
+  // Critical, not High: like D-001/D-004/DV-019 this is a defect the RUN cannot
+  // survive — the case reds regardless of the product, and (worse) the false red
+  // hides the real assertions in the same case that passed. It is not a Blocker:
+  // Blocker is reserved for identity/parse failures that stop row analysis
+  // (S-002/S-003/S-007) plus GRD-001's promoted-{HYPOTHESIS} gate.
+  if (isRunnerGraphql(row)) {
+    for (const a of parseAssertions(row.Assertions ?? "").assertions) {
+      const verdict = classifyPredicateScoreability(a);
+      if (verdict === "scoreable") continue;
+      const why =
+        verdict === "unparseable"
+          ? `the runner cannot parse it ("unrecognized ${a.kind} predicate") and FAILs the case`
+          : `an operand is prose, so the comparison degrades to "lhs=undefined rhs=undefined" and can never pass`;
+      push(
+        "T-005",
+        "Critical",
+        `[${a.kind}] assertion is not scoreable — ${why}. Rewrite it to a predicate ` +
+          `(knowledge/api/graphql-test-cases-runner.md §4) or move the prose to Cross_Layer_Checks: ` +
+          `"${truncate(a.raw.trim())}"`,
+      );
+    }
   }
 
   // --- Dimension 5: Data Validity (regex-based + delegated) ---

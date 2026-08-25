@@ -1,0 +1,84 @@
+# VCST-5668 — deploy gate, AC evidence, and the sweep the reporter invited
+
+## 1. Git ancestry (VirtoCommerce/vc-shell)
+9e2abc2de  "fix(vc-app): localize the sidebar menu toggle's aria-label (#297)"
+           committed 2026-08-13T17:22:22+03:00
+           ancestor of v2.5.0 ... YES
+           ancestor of v2.4.0 ... NO   (2.4.0 is the version the ticket was filed against)
+Files: framework/locales/{en,de}.json (+2 each), SidebarHeader.vue (+4/-1), SidebarHeader.test.ts (+16).
+
+The change:
+  -  :aria-label="isMenuOpen ? 'Close menu' : 'Open menu'"
+  +  :aria-label="isMenuOpen ? $t('COMPONENTS.ORGANISMS.VC_APP.CLOSE_MENU')
+  +                          : $t('COMPONENTS.ORGANISMS.VC_APP.OPEN_MENU')"
+
+The ticket offered two options — reuse VC_BLADE.CLOSE_MENU, or add a dedicated pair under
+VC_APP. The dev took the second, which is the better of the two the ticket itself proposed
+(the blade-scoped key reads wrong on an app-level control).
+
+## 2. AC evidence
+AC1 "Both states announce a localized string in en and de"
+  locale files (en.json, de.json are the only two locales present):
+    en:  OPEN_MENU = "Open menu"      CLOSE_MENU = "Close menu"
+    de:  OPEN_MENU = "Menü öffnen"    CLOSE_MENU = "Menü schließen"
+  unit: both states asserted to resolve through i18n (stubbed $t returns the key, so a raw
+        English string would fail) — see green-fixed.txt / red-prefix.txt
+  runtime resolution in en + de: delegated to the live pass.
+
+AC2 "yarn check:locales passes"
+  $ yarn check:locales -> "All localizations are in sync with en.json!"  exit 0
+
+AC3 "No remaining hardcoded English aria-label in SidebarHeader.vue"
+  Both aria-labels in the file are now $t(...) calls:
+    :38  :aria-label="$t('COMPONENTS.ORGANISMS.VC_APP.NOTIFICATIONS')"   (pre-existing)
+    :76  :aria-label="isMenuOpen ? $t('...CLOSE_MENU') : $t('...OPEN_MENU')"
+
+## 3. Deployed surface
+vcmp-dev vendor-portal (rebuilt 2026-08-24, framework >= 2.5.0). Served
+vc-shell-framework22260.js contains:
+    "Menü öffnen"    x1        "Open menu"   x1
+    "Menü schließen" x2        "Close menu"  x2
+    OPEN_MENU        x2 (framework chunk = the en+de entries) / x1 (vendors = the key reference)
+The x2/x1 split corroborates the key topology exactly: CLOSE_MENU already existed under
+VC_BLADE and was added under VC_APP (2 entries), while OPEN_MENU is new and therefore appears
+once — matching the ticket's own note that "there is no OPEN_MENU key yet".
+
+## 4. THE SWEEP THE REPORTER INVITED — and it does NOT come back clean
+The ticket's closing note: "A grep for quoted aria-label literals across framework/ui and
+framework/shell would show whether this is the last one — it was the only one I happened to
+see, not the result of a systematic search."
+
+Done systematically. IMPORTANT — the first detector I wrote was WRONG and its clean result was
+worthless: the original defect is a TERNARY of quoted literals
+(`isMenuOpen ? 'Close menu' : 'Open menu'`), which a `:aria-label="'` pattern cannot match.
+Validated the detector against the pre-fix tree before trusting it:
+    pre-fix  -> 16 findings   post-fix -> 15 findings   delta = 1 = SidebarHeader.vue
+i.e. the detector demonstrably catches the very defect this ticket fixed.
+
+Detector: parse every aria-label binding (static, bound, single- or multi-line) across
+framework/ui + framework/shell, excluding *.test.* / *.stories.*; strip $t()/t() calls; flag
+any surviving quoted string literal that looks like prose. 229 .vue files, 136 bindings.
+
+ANSWER: no, SidebarHeader was not the last one. 13 further code sites in 12 components still
+hold hardcoded English aria-labels:
+
+  vc-badge.vue:23, :68            'Notification'
+  vc-banner.vue:13                'Error' / 'Warning' / 'Information'
+  vc-environment-banner.vue:5     `Environment indicator: ${name}`
+  vc-status-icon.vue:5            'Active' / 'Inactive'
+  vc-color-input.vue:83           `Pick color...`
+  vc-editor.vue:85                'Exit fullscreen' / 'Fullscreen'
+  vc-file-upload.vue:27           'Upload files'
+  vc-rating.vue:36                `Rating: ${modelValue} out of ${max}` / 'No rating'
+  vc-select/SelectTrigger.vue:91  `Remove ${...}`
+  vc-slider.vue:16                'Content carousel'
+  vc-data-table/DataTableCellRenderer.vue:26  'Collapse row' / 'Expand row'
+  vc-data-table/TableGroupRow.vue:22          'Collapse group' / 'Expand group'
+
+Four of these are the SAME SHAPE as the defect just fixed — a ternary of two English strings:
+vc-status-icon, vc-editor, DataTableCellRenderer, TableGroupRow.
+
+Two sweep hits are FALSE POSITIVES, excluded from the count above:
+  vc-input.vue:200   leftover 'password' is a COMPARISON operand; both branches are $t(...)
+  SchedulerMonthView.vue:54  leftover 'p' is a date-format token; the template interpolates
+                             data only, no English prose

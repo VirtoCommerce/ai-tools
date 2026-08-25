@@ -172,7 +172,11 @@
     "td:validate:wishlists": "node scripts/seed-data/wishlists/validate-wishlist-data.mjs",
     "seed:variation-stock": "node scripts/seed-data/inventory/seed-variation-stock.mjs",
     "seed:variation-stock:teardown": "node scripts/seed-data/inventory/seed-variation-stock.mjs --teardown",
-    "td:validate:variation-stock": "node scripts/seed-data/inventory/validate-variation-stock-data.mjs"
+    "td:validate:variation-stock": "node scripts/seed-data/inventory/validate-variation-stock-data.mjs",
+    "td:validate:sr-orders": "node scripts/seed-data/sales-rep/validate-sales-rep-orders-data.mjs",
+    "seed:catalog-edge": "node scripts/seed-data/catalog/seed-catalog-edge-fixtures.mjs",
+    "seed:catalog-edge:teardown": "node scripts/seed-data/catalog/seed-catalog-edge-fixtures.mjs --teardown",
+    "td:validate:catalog-edge": "node scripts/seed-data/catalog/validate-catalog-edge-data.mjs"
   },
   "repository": {
     "type": "git",

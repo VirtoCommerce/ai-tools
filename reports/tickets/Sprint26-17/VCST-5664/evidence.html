@@ -1,0 +1,114 @@
+<title>VCST-5664 Verification</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1f1e1c;--mut:#6b6864;--line:#e3e0da;--card:#fff;--pass:#1a7f4b;--passbg:#e8f5ee;--fail:#b3261e;--code:#f4f2ee;--accent:#3b5bdb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#191817;--fg:#e9e6e1;--mut:#a09b94;--line:#332f2c;--card:#211f1e;--pass:#4ade80;--passbg:#12301f;--fail:#f87171;--code:#26231f;--accent:#8fa6ff}}
+:root[data-theme="dark"]{--bg:#191817;--fg:#e9e6e1;--mut:#a09b94;--line:#332f2c;--card:#211f1e;--pass:#4ade80;--passbg:#12301f;--fail:#f87171;--code:#26231f;--accent:#8fa6ff}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;margin:0;padding:2.5rem 1.25rem}
+.w{max-width:60rem;margin:0 auto}
+h1{font-size:1.5rem;margin:0 0 .35rem;letter-spacing:-.01em}
+h2{font-size:1rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);margin:2.4rem 0 .8rem;font-weight:600}
+.sub{color:var(--mut);margin:0 0 1.25rem}
+.badge{display:inline-block;background:var(--passbg);color:var(--pass);border:1px solid currentColor;border-radius:2rem;padding:.25rem .85rem;font-weight:700;font-size:.8rem;letter-spacing:.06em}
+.strip{display:flex;flex-wrap:wrap;gap:.5rem 1.75rem;background:var(--card);border:1px solid var(--line);border-radius:.5rem;padding:.85rem 1.1rem;margin:1.25rem 0;font-size:.85rem}
+.strip div{color:var(--mut)}.strip b{color:var(--fg);font-weight:600}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:34rem}
+th,td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:.76rem;text-transform:uppercase;letter-spacing:.05em}
+code{background:var(--code);padding:.1rem .35rem;border-radius:.25rem;font-size:.85em;font-family:ui-monospace,"Cascadia Code",Menlo,Consolas,monospace}
+pre{background:var(--code);border:1px solid var(--line);border-radius:.5rem;padding:.9rem 1.1rem;overflow-x:auto;font-size:.8rem;line-height:1.5;font-family:ui-monospace,"Cascadia Code",Menlo,Consolas,monospace}
+.p{color:var(--pass);font-weight:600}.f{color:var(--fail);font-weight:600}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1rem}
+.c{background:var(--card);border:1px solid var(--line);border-radius:.5rem;padding:1rem 1.1rem}
+.c h3{margin:0 0 .5rem;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase}
+.c.red h3{color:var(--fail)}.c.green h3{color:var(--pass)}
+.c.red{border-color:var(--fail)}.c.green{border-color:var(--pass)}
+footer{margin-top:2.5rem;padding-top:1.1rem;border-top:1px solid var(--line);color:var(--mut);font-size:.8rem}
+a{color:var(--accent)}
+</style>
+<div class="w">
+<span class="badge">VERIFIED</span>
+<h1>VCST-5664 &mdash; <code>useDataTablePagination</code> restores the page but not the data</h1>
+<p class="sub">Fix task VM-1745 &middot; vc-shell PR <a href="https://github.com/VirtoCommerce/vc-shell/pull/294">#294</a> <code>9cf5548b8</code> + <a href="https://github.com/VirtoCommerce/vc-shell/pull/295">#295</a> <code>57104c33f</code>, merged to <code>main</code> 2026-08-13</p>
+
+<div class="strip">
+<div>Product <b>@vc-shell/framework</b></div>
+<div>Affected <b>2.4.0</b></div>
+<div>Fixed in <b>2.5.0</b> (2026-08-19)</div>
+<div>Source <b>main @ 324cd9b09</b></div>
+<div>Verified <b>2026-08-25</b></div>
+</div>
+
+<h2>The defect</h2>
+<p>With <code>stateKey</code> set, the composable restored the page number via <code>setPage</code>, which by design does not fire <code>onPageChange</code> &mdash; correct, since a restore should not double-load. But the consumer was never told a restore happened, so an unconditional first load at <code>skip: 0</code> left the paginator on page N showing page 1&rsquo;s rows: no error, no warning, and clicking page N is a no-op because it is already active.</p>
+<p><b>Root cause addressed, not the symptom:</b> the composable now returns <code>restoredPage</code>, giving the consumer the signal it lacked. A missing <code>TableQueryState</code> provider now warns instead of silently disabling the feature, and assigning to <code>currentPage</code> is deprecated.</p>
+
+<h2>RED &rarr; GREEN</h2>
+<p>Same unmodified test file, two sources. RED is the real pre-fix code, restored from tag <code>v2.4.0</code> &mdash; the version the ticket was filed against &mdash; not a fabricated baseline.</p>
+<div class="cols">
+<div class="c red"><h3>RED &mdash; pre-fix (v2.4.0)</h3>
+<pre>&times; reports the restored page so the consumer
+    can seed its first load
+  AssertionError: expected undefined to be 3
+
+&times; warns when stateKey is set but no provider
+    is in scope
+  expected "vi.fn()" to be called once, got 0
+
+&times; warns, changes the page, and does not fire
+    onPageChange
+  expected "vi.fn()" to be called once, got 0
+
+Tests  3 failed | 22 passed (25)</pre></div>
+<div class="c green"><h3>GREEN &mdash; fixed (main = v2.5.0)</h3>
+<pre>&check; reports the restored page so the consumer
+    can seed its first load
+&check; leaves restoredPage undefined when the URL
+    carried no page
+&check; warns when stateKey is set but no provider
+    is in scope
+&check; does not warn on the internal seed from a
+    restore
+&check; warns, changes the page, and does not fire
+    onPageChange
+
+Tests  25 passed (25)   &mdash; 3 consecutive runs</pre></div>
+</div>
+
+<h2>Deploy gate</h2>
+<div class="tw"><table>
+<tr><th>Check</th><th>2.4.0 (affected)</th><th>2.5.0 / deployed</th></tr>
+<tr><td>Fix commits ancestor of the tag</td><td class="f">no</td><td class="p">yes (both)</td></tr>
+<tr><td>npm <code>dist/framework.js</code> &mdash; <code>restoredPage</code></td><td class="f">0 hits</td><td class="p">7 hits</td></tr>
+<tr><td>npm dist &mdash; &ldquo;no TableQueryState provider is in scope&rdquo;</td><td class="f">absent</td><td class="p">present</td></tr>
+<tr><td>npm dist &mdash; &ldquo;Assigning to pagination.currentPage is deprecated&rdquo;</td><td class="f">absent</td><td class="p">present</td></tr>
+<tr><td>Deployed Storybook <code>assets/iframe-1uXuqCDm.js</code> (built 2026-08-19 10:28 GMT)</td><td>&mdash;</td><td class="p">all 3 markers</td></tr>
+</table></div>
+<p class="sub">Markers are property keys and string literals, so they survive minification &mdash; unlike TS types or module-local function names, whose absence would prove nothing.</p>
+
+<h2>Acceptance criteria (VM-1745)</h2>
+<div class="tw"><table>
+<tr><th>AC</th><th></th><th>Evidence</th></tr>
+<tr><td>First load at the restored offset without reading private state</td><td class="p">PASS</td><td><code>restoredPage</code> returned; <code>skip === 40</code> asserted for page 3</td></tr>
+<tr><td>Restoring still does not trigger two loads</td><td class="p">PASS</td><td><code>onPageChange</code> not called on restore</td></tr>
+<tr><td>Warning when <code>stateKey</code> has no provider</td><td class="p">PASS</td><td>unit test + string in published &amp; deployed bundles</td></tr>
+<tr><td>Docs state what the consumer must do on first load</td><td class="p">PASS</td><td>docs.md: &ldquo;the first load MUST start at <code>pagination.skip</code>&rdquo;</td></tr>
+<tr><td>Unit test: restore page 3, restored page + <code>onPageChange</code> count</td><td class="p">PASS</td><td>covered across two tests rather than one</td></tr>
+</table></div>
+
+<h2>Regression</h2>
+<div class="tw"><table>
+<tr><th>Check</th><th>Result</th></tr>
+<tr><td>Full framework unit suite</td><td class="p">4202 / 4203 passed</td></tr>
+<tr><td>4 failing files</td><td>harness artifacts (unbuilt <code>@vc-shell/mf-config</code>; <code>process.cwd()</code> paths escaping to the outer repo) &mdash; none pagination-related</td></tr>
+<tr><td>Framework typecheck &mdash; the interface changed</td><td class="p">clean, exit 0</td></tr>
+<tr><td>Spurious deprecation warnings from the framework&rsquo;s own components</td><td class="p">none &mdash; no write to <code>pagination.currentPage</code> in <code>framework/</code>, <code>cli/</code>, <code>packages/</code>; <code>VcDataTable.vue</code> binds it one-way</td></tr>
+<tr><td>In-repo <code>stateKey</code> demo story</td><td class="p">unaffected &mdash; already derives rows from <code>pagination.skip</code></td></tr>
+</table></div>
+
+<footer>
+<p><b>Consumer note.</b> The concrete case the ticket names &mdash; vc-module-pagebuilder <code>page-builder-shell</code>, shared-components blade &mdash; sits on PR #159, still open. Its <code>initialize()</code> on that branch already reads <code>await loadComponents({ skip: pagination.skip })</code>, so the reported symptom closes there too once #159 merges. Nothing outstanding for VCST-5664.</p>
+<p><b>Storefront rules not applied.</b> vc-shell is a separate product: <code>BL-*</code>/<code>BL-UI-*</code> invariants, <code>critical-ui-scope</code>, storefront selectors and the 123 regression suites cover the storefront only. Substituted the framework&rsquo;s own vitest suite, typecheck, and artifact marker greps. No browser run and no screenshots &mdash; the defect is a library API contract.</p>
+<p>Evidence files: <code>evidence/red-prefix.txt</code> &middot; <code>evidence/green-fixed.txt</code> &middot; <code>evidence/deploy-gate.txt</code> &middot; report <code>verification-report.md</code></p>
+</footer>
+</div>

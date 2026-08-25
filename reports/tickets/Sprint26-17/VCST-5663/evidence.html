@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCST-5663 Fix Evidence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F6F7F9; --surface:#FFFFFF; --ink:#151A21; --muted:#5B6675;
+  --rule:#DDE2E8; --accent:#2C6BA8; --red:#A83226; --green:#1E7A50;
+  --red-bg:#FBEEEC; --green-bg:#EAF5EF; --code-bg:#F0F2F5;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#11151A; --surface:#171C23; --ink:#E4E8ED; --muted:#8B96A4;
+    --rule:#252C35; --accent:#74A9DA; --red:#E0705B; --green:#4EBE86;
+    --red-bg:#251A18; --green-bg:#15211B; --code-bg:#1C222A;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#11151A; --surface:#171C23; --ink:#E4E8ED; --muted:#8B96A4;
+  --rule:#252C35; --accent:#74A9DA; --red:#E0705B; --green:#4EBE86;
+  --red-bg:#251A18; --green-bg:#15211B; --code-bg:#1C222A;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased}
+.wrap{max-width:900px; margin:0 auto; padding:40px 24px 72px; display:flex; flex-direction:column; gap:34px}
+header{display:flex; flex-direction:column; gap:12px; border-bottom:2px solid var(--ink); padding-bottom:20px}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+h1{font-size:27px; font-weight:600; margin:0; line-height:1.25; text-wrap:balance; letter-spacing:-.01em}
+h2{font-size:17px; font-weight:600; margin:0 0 12px; text-wrap:balance; padding-bottom:7px; border-bottom:1px solid var(--rule)}
+p{margin:0 0 12px; max-width:66ch}
+section{display:flex; flex-direction:column}
+.badge{display:inline-flex; align-items:center; gap:8px; align-self:flex-start;
+  font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.05em;
+  padding:6px 12px; border-radius:3px; background:var(--green-bg); color:var(--green); border:1px solid currentColor}
+.badge::before{content:""; width:7px; height:7px; border-radius:50%; background:currentColor}
+.strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule); border-radius:4px; overflow:hidden}
+.strip div{background:var(--surface); padding:11px 14px; display:flex; flex-direction:column; gap:3px}
+.strip dt{font-family:var(--mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
+.strip dd{margin:0; font-size:13.5px; font-family:var(--mono); word-break:break-word}
+.scroll{overflow-x:auto; border:1px solid var(--rule); border-radius:4px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:560px}
+th,td{text-align:left; padding:9px 13px; border-bottom:1px solid var(--rule); vertical-align:top}
+thead th{font-family:var(--mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--muted); font-weight:500; background:var(--code-bg); white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tfoot td{font-weight:600; background:var(--code-bg); border-top:2px solid var(--rule); border-bottom:none}
+code,.mono{font-family:var(--mono); font-size:.92em}
+td code{background:var(--code-bg); padding:1px 5px; border-radius:3px; word-break:break-word}
+.fail{color:var(--red); font-weight:600}
+.pass{color:var(--green); font-weight:600}
+.col-red{background:var(--red-bg)}
+.col-green{background:var(--green-bg)}
+pre{margin:0; padding:14px 16px; background:var(--code-bg); border:1px solid var(--rule);
+  border-radius:4px; overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.55}
+figure{margin:0; display:flex; flex-direction:column; gap:7px}
+figure img{width:100%; height:auto; display:block; border:1px solid var(--rule); border-radius:4px; background:var(--surface)}
+figcaption{font-size:12.5px; color:var(--muted)}
+.shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:18px}
+ul{margin:0; padding-left:19px; display:flex; flex-direction:column; gap:9px; max-width:70ch}
+li::marker{color:var(--muted)}
+.note{border-left:3px solid var(--accent); padding:2px 0 2px 15px; color:var(--muted); font-size:14px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+footer{border-top:1px solid var(--rule); padding-top:16px; font-size:12.5px; color:var(--muted)}
+footer p{max-width:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Fix verification &middot; Sprint 26-17 &middot; 2026-08-25</div>
+  <h1>VCST-5663 &mdash; parseError put a non-JSON error body into DisplayableError.message</h1>
+  <span class="badge">VERIFIED WITH NOTES</span>
+</header>
+
+<section>
+  <h2>Build &amp; environment</h2>
+  <dl class="strip">
+    <div><dt>Framework</dt><dd>@vc-shell/framework v2.5.0</dd></div>
+    <div><dt>App</dt><dd>vendor-portal 2.1.1</dd></div>
+    <div><dt>Vendor Portal build</dt><dd>22260 &middot; 2026-08-24 09:58Z</dd></div>
+    <div><dt>Storybook build</dt><dd>iframe-1uXuqCDm &middot; 2026-08-19 10:27Z</dd></div>
+    <div><dt>Fix PR</dt><dd>vc-shell #293 (caf01504)</dd></div>
+    <div><dt>Shipped in</dt><dd>v2.5.0 &mdash; 19 ahead / 0 behind</dd></div>
+  </dl>
+  <p class="note" style="margin-top:14px">vc-shell and the Vendor Portal are a <strong>separate product</strong> &mdash; not the VC storefront and not the Platform Admin SPA. Storefront-calibrated rules (BL-UI invariants, storefront selectors, Coffee-theme a11y gating, the 123 regression suites) were consciously set aside; substitutions are listed in the verification report.</p>
+</section>
+
+<section>
+  <h2>The bug and its root cause</h2>
+  <p>NSwag-generated API clients throw <code>ApiException</code>, whose <code>response</code> is the raw body <strong>as a string</strong>. The old code's generic <code>if (e instanceof Error &amp;&amp; "response" in e &amp;&amp; e.response)</code> branch recursed into the string branch; when the body was not JSON, <code>JSON.parse</code> threw and the <strong>whole body</strong> became the short <code>message</code> &mdash; which modules and <code>useAsync</code> render straight to the user.</p>
+  <p>The fix matches the <code>ApiException</code> shape structurally, <em>before</em> the generic branch. A JSON body is still delegated unchanged, so the platform's own message keeps winning.</p>
+  <pre>function isApiExceptionWithStringBody(e) {
+  return e instanceof Error
+    &amp;&amp; typeof e.status   === "number"
+    &amp;&amp; typeof e.response === "string";
+}
+// matched -&gt; try JSON.parse(response), else:
+//   message = `&#36;{status}: &#36;{e.message || "Error"}`
+//   details = raw body</pre>
+  <p class="note" style="margin-top:14px">Diff scope is <code>error.ts</code> plus <code>error.test.ts</code> only. <code>useAsync/index.ts</code> is <strong>byte-identical</strong> pre- and post-fix &mdash; including <code>error.value = null</code> on every call and the dedup key <code>async-error-&#36;{parsed.message.slice(0,80)}</code> &mdash; so the dedup repair is a genuine consequence of the shortened message, not a consumer-side patch.</p>
+</section>
+
+<section>
+  <h2>Phase A &rarr; Phase B &mdash; pinned-build source reproduction</h2>
+  <p>The baseline is cited, not fabricated: <code>error.ts</code> was fetched at <code>caf01504^</code> (pre-fix, the 2.4.0 line) and at <code>v2.5.0</code>, then exercised by an uncommitted scratch harness.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Assertion</th><th class="col-red">Pre-fix &mdash; RED</th><th class="col-green">Post-fix &mdash; GREEN</th></tr></thead>
+    <tbody>
+      <tr><td>HTML body stays out of short message</td><td class="col-red"><span class="fail">FAIL</span> &mdash; message is the whole <code>&lt;html&gt;&hellip;&lt;/html&gt;</code></td><td class="col-green"><span class="pass">PASS</span> &mdash; <code>500: An unexpected server error occurred.</code></td></tr>
+      <tr><td>Short message is the status line</td><td class="col-red"><span class="fail">FAIL</span></td><td class="col-green"><span class="pass">PASS</span></td></tr>
+      <tr><td>Raw body preserved in <code>details</code></td><td class="col-red"><span class="pass">PASS</span></td><td class="col-green"><span class="pass">PASS</span></td></tr>
+      <tr><td>Dedup id differs across statuses</td><td class="col-red"><span class="fail">FAIL</span> &mdash; both <code>&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;Error&lt;</code></td><td class="col-green"><span class="pass">PASS</span> &mdash; <code>500: &hellip;</code> vs <code>502: Bad gateway</code></td></tr>
+      <tr><td>JSON body &rarr; platform message wins</td><td class="col-red"><span class="pass">PASS</span></td><td class="col-green"><span class="pass">PASS</span></td></tr>
+      <tr><td>Empty body &rarr; status fallback</td><td class="col-red"><span class="fail">FAIL</span></td><td class="col-green"><span class="pass">PASS</span></td></tr>
+      <tr><td>Three non-regression assertions</td><td class="col-red"><span class="pass">PASS</span></td><td class="col-green"><span class="pass">PASS</span></td></tr>
+    </tbody>
+    <tfoot><tr><td>Total</td><td class="col-red">5 passed / <span class="fail">4 failed</span></td><td class="col-green"><span class="pass">9 passed / 0 failed</span> &mdash; 3 consecutive runs</td></tr></tfoot>
+  </table></div>
+</section>
+<section>
+  <h2>Live verification &mdash; vcmp-dev fault injection</h2>
+  <p>Only the <strong>server reply</strong> was synthesized, via Playwright route fulfilment. The NSwag client, <code>parseError</code>, <code>useAsync</code>, the notification store, the toast and the blade banner all ran as genuine deployed code, and every trigger was a real user click.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Case</th><th>Injected</th><th>Observed on the fixed build</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>TC-A</td><td>500 <code>text/html</code> with a unique marker, three times</td><td><code>500: An unexpected server error occurred.</code> &mdash; identical on all three runs; no <code>&lt;html&gt;</code> and no marker as visible text</td><td><span class="pass">PASS 3/3</span></td></tr>
+      <tr><td>TC-B</td><td>500 and 502 sharing their first 83 characters</td><td>Two live toasts, ids <code>async-error-500: &hellip;</code> and <code>async-error-502: &hellip;</code></td><td><span class="pass">PASS</span></td></tr>
+      <tr><td>TC-C</td><td>400 <code>application/json</code> body <code>{"message":"Name is required"}</code></td><td><code>Name is required</code> &mdash; not <code>400: &hellip;</code></td><td><span class="pass">PASS</span></td></tr>
+      <tr><td>TC-D</td><td>routes removed, full reload</td><td>Blade loads 20 rows of 299 &middot; <strong>zero console errors</strong> &middot; 15 calls returning <code>200</code></td><td><span class="pass">PASS</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+<section>
+  <h2>Captured evidence</h2>
+  <p class="note">All six captures below are from the vcmp-dev run. The Storybook agent reported three captures of its own, but they did not survive its teardown and are absent from disk &mdash; the Storybook findings therefore rest on its live measurements and axe output, not on stored images.</p>
+  <div class="shots">
+    <figure><img src="screenshots/VCST-5663-vcmp-TC-A-banner-500-run1.png" alt="Blade error banner showing a single short line reading 500: An unexpected server error occurred"><figcaption><strong>TC-A</strong> &mdash; the previously-failing step. A single 34&nbsp;px line; the HTML document is gone.</figcaption></figure>
+    <figure><img src="screenshots/VCST-5663-vcmp-TC-A-raw-body-in-details-pane.png" alt="Expanded details pane showing the raw HTML body escaped as monospace text"><figcaption>The raw body is not discarded &mdash; it lands in <code>details</code>, collapsed by default and <strong>escaped as text</strong> behind a deliberate expand.</figcaption></figure>
+    <figure><img src="screenshots/VCST-5663-vcmp-TC-C-json-message-wins.png" alt="Toast and banner both showing the platform message Name is required"><figcaption><strong>TC-C</strong> &mdash; a JSON body still yields the platform&rsquo;s own message on both surfaces.</figcaption></figure>
+    <figure><img src="screenshots/VCST-5663-vcmp-TC-D-clean-after-teardown.png" alt="My Offers blade rendering 20 rows of 299 with no error banner"><figcaption><strong>TC-D</strong> &mdash; clean end state after teardown: no banner, no toast, zero console errors.</figcaption></figure>
+  </div>
+</section>
+<section>
+  <h2>Regression &mdash; Storybook collateral axis</h2>
+  <p><strong>Storybook does not exercise <code>parseError</code></strong> &mdash; every story passes a literal string to the toast &mdash; so it does not confirm the fix. What it confirms is that the v2.5.0 build broke nothing on the surface the bug used to flood.</p>
+  <ul>
+    <li><strong>16 of 16 stories rendered.</strong> No uncaught exceptions, no error overlays, no blank canvases, no horizontal scroll at 1280&times;800.</li>
+    <li><strong>Zero WCAG A/AA violations</strong> (axe-core 4.11.3) across the six <code>overlay-vctoast--*</code> stories on the Light theme. <code>role="alert"</code> on the error variant against <code>role="status"</code> elsewhere is the correct split.</li>
+    <li><strong>Defence in depth confirmed.</strong> <code>.vc-notification__content</code> is <code>max-height:100px; overflow:auto</code>, the box is capped at <code>max-width:600px</code> with <code>overflow-wrap:anywhere</code>, and the template uses plain interpolation &mdash; no <code>v-html</code> anywhere in the toast chain &mdash; so markup renders escaped.</li>
+  </ul>
+</section>
+<section>
+  <h2>Incidental defects &mdash; reported, not filed</h2>
+  <p>None of these is caused by this fix.</p>
+  <ul>
+    <li><strong>A stale error banner survives a later success</strong> (vcmp-dev, P2). After the TC-A 500s, a successful <code>200</code> refresh re-rendered all 299 rows while the <code>500: &hellip;</code> banner stayed on screen. Framework <code>useAsync</code> <em>does</em> reset <code>error.value = null</code> on every call and is byte-identical pre- and post-fix, so the retained state is app- or blade-level.</li>
+    <li><strong>A dashboard widget rejection escapes to the global handler</strong> (P3) &mdash; <code>global-error-handler/index.ts:56</code> logs an unhandled rejection alongside the expected <code>useAsync</code> pair.</li>
+    <li><strong>The status prefix is not universal</strong> (P3) &mdash; <code>global-error-handler</code> keys dedup off <code>errorKey(err)</code>, built from <code>err.name</code> and <code>err.message</code> rather than the parsed status line, so that path can still collapse a 500 and a 502 that share the generic <code>ApiException</code> message. Untouched by PR&nbsp;#293; the stated scope of the ticket is <code>useAsync/index.ts:65</code>, which is fixed.</li>
+    <li><strong>VcToast story Controls are inert</strong> (P3) &mdash; the 15 advertised args never bind to the component, so edge content cannot be exercised from Storybook.</li>
+  </ul>
+</section>
+<section>
+  <h2>Why VERIFIED WITH NOTES rather than REOPEN</h2>
+  <p>The clean-end-state rule asks whether the fix made a stale end state <strong>load-bearing</strong>: did the old path mask it, and does the new path no longer mask it? Here, no. PR&nbsp;#293 changes only the <em>content</em> of the return value of a pure function; the banner lifecycle is untouched, and under the old code the same banner would have persisted identically &mdash; merely containing the whole HTML document instead of one line. The staleness is orthogonal to the fix.</p>
+  <p class="note"><strong>This is the one judgement call worth a second pair of eyes.</strong> A reviewer who reads the error surface as &ldquo;the interaction this fix changes&rdquo; would land on REOPEN instead.</p>
+</section>
+
+<footer>
+  <p>The verdict is a recommendation; the ticket stops at TESTED, never Done. No bug was filed and no PR opened during this verification.</p>
+  <p>Limitations: <code>VirtoCommerce/vendor-portal</code> is private and unreachable with this token, so the framework caret pin of the app could not be read &mdash; the served bundle was grepped directly instead, which is the stronger evidence. Screen-reader output was not verified. The TC-B two-notifications finding rests on live DOM ids and an accessibility snapshot, because toast auto-dismiss outran the screenshot round-trip.</p>
+  <p>Artifacts: <code>verification-report.md</code> &middot; <code>verification-summary.json</code> &middot; <code>screenshots/</code></p>
+</footer>
+
+</div>
+</body>
+</html>

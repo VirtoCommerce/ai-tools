@@ -1,0 +1,5 @@
+# GREEN — fixed source @ origin/main 324cd9b09 (= release v2.5.0), cwd=framework/
+
+ ✓ |unit| ui/components/organisms/vc-scheduler/vc-scheduler.stories.test.ts > VcScheduler stories > keeps TimelineView on the same stateful renderer as the interactive timeline stories 1ms
+ Test Files  1 passed (1)
+      Tests  1 passed (1)

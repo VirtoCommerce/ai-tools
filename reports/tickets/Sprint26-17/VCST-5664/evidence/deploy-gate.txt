@@ -1,0 +1,24 @@
+# Deploy gate — VCST-5664 / vc-shell PR #294 (9cf5548b8) + #295 (57104c33f)
+
+## 1. Git ancestry (VirtoCommerce/vc-shell)
+9cf5548b8 (PR #294)  IS ancestor of tag v2.5.0    NOT ancestor of v2.4.0
+57104c33f (PR #295)  IS ancestor of tag v2.5.0
+v2.4.0 released 2026-08-04  <- the version VCST-5664 was filed against
+PRs merged to main 2026-08-13
+v2.5.0 released 2026-08-19  <- first release carrying the fix
+
+## 2. Published npm artifact (@vc-shell/framework, package/dist/framework.js)
+marker                                              2.4.0   2.5.0
+"restoredPage"                                        0       7
+"Assigning to pagination.currentPage is deprecated"   0       1 (file)
+"no TableQueryState provider is in scope"             0       1 (file)
+
+## 3. Deployed hosted Storybook (vc-shell-storybook.govirto.com, built from main)
+iframe preview bundle: assets/iframe-1uXuqCDm.js (6.5 MB)
+last-modified: Wed, 19 Aug 2026 10:28:21 GMT   (v2.5.0 released 10:25:08 GMT same day)
+"restoredPage"                                      1 hit
+"no TableQueryState provider is in scope"           1 hit
+"Assigning to pagination.currentPage is deprecated" 1 hit
+
+Markers are property keys / string literals -> survive minification (per the
+vc-shell greppable-marker rule; TS types and module-local fn names would not).

@@ -1,0 +1,47 @@
+# RED — interceptors/index.ts + utilities/sessionExpiration.ts reverted to the parent of
+# 9795955d2 (PR #291). Both revert together because the interceptor's throw needs the
+# SessionExpiredError class the same PR introduced — reverting only one would not compile.
+# interceptors.test.ts (the +84 lines PR #291 added) left UNCHANGED.
+# NOTE: useAsync/index.ts is NOT reverted — its !isSessionExpired() notify guard is
+# PRE-EXISTING (PR #291 touched only useAsync.docs.md), so it stays as shipped.
+
+ ✓ |unit| core/utilities/sessionExpiration.test.ts > sessionExpiration > is not expired by default 1ms
+ ✓ |unit| core/utilities/sessionExpiration.test.ts > sessionExpiration > becomes expired after markSessionExpired 0ms
+ ✓ |unit| core/utilities/sessionExpiration.test.ts > sessionExpiration > mark is idempotent 0ms
+ ✓ |unit| core/utilities/sessionExpiration.test.ts > sessionExpiration > resets back to not expired 0ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — 401 handling > marks the session expired on a 401 so data-load errors get suppressed 3ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — 401 handling > redirects and notifies even when signOut rejects 16ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — 401 handling > redirects and notifies on the signOut success path 15ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — 401 handling > handles concurrent 401s from the same dead session exactly once 15ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — 401 handling > does not flag the session when a 401 arrives while nobody is signed in 15ms
+ × |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > treats an API call answered with an HTML login page as an expired session 5ms
+ × |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > fails the request instead of handing the login page's HTML to the caller 1ms
+   → expected true to be false // Object.is equality
+ × |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > recognises the login page by its URL when the content type is absent 1ms
+ × |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > acts once for a burst of concurrent requests that all land on the login page 10ms
+   → expected [ 'fulfilled', 'fulfilled', …(1) ] to deeply equal [ 'rejected', 'rejected', 'rejected' ]
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > still returns a 401 response to the caller 15ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > leaves an ordinary JSON response alone 16ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > does not sign out on a 403 3ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > leaves an HTML response that was not redirected alone 13ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > does not act on a login page while nobody is signed in 16ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — session expiry without a 401 > does not fail the sign-in request itself 1ms
+ ✓ |unit| core/interceptors/interceptors.test.ts > registerInterceptors — idempotency > ignores a second install and returns the existing patched fetch 0ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should return error ref alongside loading and action 2ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should set error ref on failure 3ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should clear error on next successful invocation 1ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should schedule deferred notification by default 2ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should allow ErrorInterceptor to cancel deferred notification 1ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should cancel via DisplayableError.originalError (real ErrorInterceptor flow) 0ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should suppress deferred notification when the session has expired 1ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should notify again after a fresh sign-in clears the expired session 0ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should suppress notification when notify: false 1ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > should still re-throw (backward compat) 0ms
+ ✓ |unit| core/composables/useAsync/index.test.ts > useAsync > backward compat: destructuring without error works 0ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: promise resolved "{ status: 200, ok: true, …(3) }" instead of rejecting
+AssertionError: expected true to be false // Object.is equality
+AssertionError: promise resolved "{ status: 200, ok: true, …(3) }" instead of rejecting
+AssertionError: expected [ 'fulfilled', 'fulfilled', …(1) ] to deeply equal [ 'rejected', 'rejected', 'rejected' ]
+ Test Files  1 failed | 2 passed (3)
+      Tests  4 failed | 27 passed (31)

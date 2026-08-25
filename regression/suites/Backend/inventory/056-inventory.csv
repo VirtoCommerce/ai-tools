@@ -249,7 +249,7 @@ Test data: ffc_id=@td(FC_EAST.id); ffc_name=@td(FC_EAST.name)","[NAV] Navigate t
 Cross-layer: [API] The per-FFC products list is consistent with GET {{BACK_URL}}/api/inventory/fulfillmentcenters/@td(FC_EAST.id)/products (or the module's equivalent inventory-search endpoint) for the same FFC
 [CONSOLE] No JS errors in the Admin SPA console while the blade loads
 [NETWORK] No 4xx/5xx while opening the fulfillment center or Products blades
-Failure signals: Products tab/widget missing or unresponsive; blade opens but never leaves a loading spinner; blade throws a JS error instead of rendering a grid; blade title does not match the selected fulfillment center",VCST-5546 | BL: BL-CAT-007 | Cleanup: none — read-only navigation,Draft
+Failure signals: Products tab/widget missing or unresponsive; blade opens but never leaves a loading spinner; blade throws a JS error instead of rendering a grid; blade title does not match the selected fulfillment center",VCST-5546 | BL: BL-CAT-007 | Cleanup: none — read-only navigation,Automated
 INV-045,Stock per Fulfillment Center — Only Non-Zero-Quantity Items Are Listed,Inventory > Stock per Fulfillment Center,Functional,Critical,8min,"Admin logged in to Backend
 state from INV-44 (fulfillment center Products blade open for @td(FC_EAST.id), ""In stock only"" checked by default)
 The selected FFC has a mix of items with non-zero stock and at least one item/SKU that is NOT stocked at this FFC at all (zero effective quantity)
@@ -263,7 +263,7 @@ Test data: ffc_id=@td(FC_EAST.id)","[GRID] With ""In stock only"" checked (defau
 [STATE] Re-checking ""In stock only"" removes the zero-quantity row(s) again, confirming the filter — not the underlying data — controls visibility {SPEC}
 Cross-layer: [API] The filtered result set size is strictly less than or equal to the unfiltered result set size for the same FFC
 [NETWORK] No 4xx/5xx on the filter-toggle requests
-Failure signals: A zero-quantity item appears while ""In stock only"" is checked; unchecking the filter makes no difference to the row count; the total product count badge does not change between filtered/unfiltered views","VCST-5546 | BL: BL-CAT-007 | Cleanup: Restore ""In stock only"" to checked (default state) before leaving the blade",Draft
+Failure signals: A zero-quantity item appears while ""In stock only"" is checked; unchecking the filter makes no difference to the row count; the total product count badge does not change between filtered/unfiltered views","VCST-5546 | BL: BL-CAT-007 | Cleanup: Restore ""In stock only"" to checked (default state) before leaving the blade",Automated
 INV-046,Stock per Fulfillment Center — Quantity Agrees With the Product's Own Fulfillment Centers Widget,Inventory > Stock per Fulfillment Center,Functional,High,8min,"Admin logged in to Backend
 state from INV-44 (fulfillment center Products blade open for @td(FC_EAST.id))
 At least one product listed in that blade also has its own Catalog > Product > Fulfillment centers widget (the pre-existing per-product surface exercised by INV-040/INV-041)
@@ -274,19 +274,19 @@ Test data: ffc_id=@td(FC_EAST.id)","[GRID] In the per-FFC Products blade, note t
 [STATE] Both surfaces identify the same fulfillment center by the same name {SPEC}
 Cross-layer: [API] Both values ultimately resolve from the same inventory record for (productId, fulfillmentCenterId) — no divergent cache between the two Admin surfaces
 [CONSOLE] No JS errors while opening either widget
-Failure signals: The two surfaces disagree on quantity for the same product+FFC pair; one surface shows stale data after a change made via the other (would require a follow-up write case, out of scope here — flag as observed only)",VCST-5546 | BL: BL-CAT-007 | Cleanup: none — read-only comparison,Draft
+Failure signals: The two surfaces disagree on quantity for the same product+FFC pair; one surface shows stale data after a change made via the other (would require a follow-up write case, out of scope here — flag as observed only)",VCST-5546 | BL: BL-CAT-007 | Cleanup: none — read-only comparison,Automated
 INV-047,"Stock per Fulfillment Center — Variations Are Represented, Not Only Master Products",Inventory > Stock per Fulfillment Center,Functional,High,8min,"Admin logged in to Backend
 A product with variations (e.g. a size/config family) has at least one variation SKU (not the master/parent SKU) with non-zero stock at @td(FC_EAST.id) — a dedicated variation+stock fixture must be seeded for this case (none confirmed live at authoring time; see report)
 Test data: ffc_id=@td(FC_EAST.id)","[NAV] Navigate to More > Inventory module and open @td(FC_EAST.name)
 [ACT] Open the ""Products"" tab
 [GRID] This blade has no search or filter box. Sort by the ""In stock quantity"" column and page forward until the row whose SKU is @td(INV_VARIATION_STOCKED.sku) and whose In stock quantity equals @td(INV_VARIATION_STOCKED.stock) appears — this is Observation 1; record its Product Id
-[GRID] Continue sorting/paging by the ""In stock quantity"" column until the row whose SKU is @td(INV_VARIATION_MASTER.sku) and whose In stock quantity equals @td(INV_VARIATION_MASTER.stock) appears on a different page — this is Observation 2; record its Product Id","[GRID] Observation 1 (variation page): the row with SKU @td(INV_VARIATION_STOCKED.sku) shows In stock quantity @td(INV_VARIATION_STOCKED.stock) and its own Product Id — record all three {SPEC}
-[GRID] Observation 2 (master page, a different page from Observation 1): the row with SKU @td(INV_VARIATION_MASTER.sku) shows In stock quantity @td(INV_VARIATION_MASTER.stock) and its own Product Id — record all three {SPEC}
+[GRID] Continue sorting/paging by the ""In stock quantity"" column until the row whose SKU is @td(INV_VARIATION_MASTER.sku) and whose In stock quantity equals @td(INV_VARIATION_MASTER.stock) appears — this is Observation 2; record its Product Id. The two rows may or may not share a page; their relative position is not part of what this case proves","[GRID] Observation 1 (variation): the row with SKU @td(INV_VARIATION_STOCKED.sku) shows In stock quantity @td(INV_VARIATION_STOCKED.stock) and its own Product Id — record all three {SPEC}
+[GRID] Observation 2 (master): the row with SKU @td(INV_VARIATION_MASTER.sku) shows In stock quantity @td(INV_VARIATION_MASTER.stock) and its own Product Id — record all three {SPEC}
 [GRID] The two recorded Product Ids differ, confirming the variation is represented as its own distinct record and not folded into the master's row {SPEC}
 [DOM] Observation 1's row displays the variation's own product name @td(INV_VARIATION_STOCKED.name), not a generic master-product label {SPEC}
 Cross-layer: [API] The per-FFC products response includes the variation as its own list entry, keyed by Observation 1's recorded Product Id — not folded into the master product's entry
 Failure signals: Only master/parent products are listed and variations are silently omitted; a variation row is present but shows the master product's name/SKU instead of its own; variation quantity is merged into the master's total; the two recorded Product Ids are identical
-Guard note: this fulfillment center carries roughly 1,864 pre-existing orphaned inventory rows (""There is no product item with this ID"", blank SKU — unrelated products deleted from the environment, not caused by this fixture). No assertion in this case may be phrased in terms of row counts or total page counts — both are unstable and unrelated to what this case proves.",VCST-5546 | BL: BL-CAT-007 | Cleanup: none — read-only navigation,Draft
+Guard note: this fulfillment center carries roughly 1,864 pre-existing orphaned inventory rows (""There is no product item with this ID"", blank SKU — unrelated products deleted from the environment, not caused by this fixture). No assertion in this case may be phrased in terms of row counts or total page counts — both are unstable and unrelated to what this case proves.",VCST-5546 | BL: BL-CAT-007 | Cleanup: none — read-only navigation,Automated
 INV-048,"Stock per Fulfillment Center — Empty FFC Renders an Empty State, Not an Error",Inventory > Stock per Fulfillment Center,Functional,Medium,8min,"Admin logged in to Backend; a fulfillment center with zero stocked products exists — @td(FC_INACTIVE.id)
 Test data: ffc_id=@td(FC_INACTIVE.id); ffc_name=@td(FC_INACTIVE.name)","[NAV] Navigate to More > Inventory module
 [GRID] Locate and open @td(FC_INACTIVE.name)
@@ -297,4 +297,4 @@ Test data: ffc_id=@td(FC_INACTIVE.id); ffc_name=@td(FC_INACTIVE.name)","[NAV] Na
 [BLADE] The blade title still shows the fulfillment center's name (e.g. @td(FC_INACTIVE.name)) {OBSERVED}
 Cross-layer: [CONSOLE] No JS errors in the Admin SPA console for the zero-product FFC
 [NETWORK] The underlying products request returns HTTP 200 with an empty result set — not a 4xx/5xx
-Failure signals: Blank/white blade with no ""No data"" indicator; a JS error thrown instead of an empty state; the blade never finishes loading (infinite spinner); an error toast is shown for a legitimately empty FFC",VCST-5546 | BL: BL-CAT-007 | Cleanup: none — read-only navigation,Draft
+Failure signals: Blank/white blade with no ""No data"" indicator; a JS error thrown instead of an empty state; the blade never finishes loading (infinite spinner); an error toast is shown for a legitimately empty FFC",VCST-5546 | BL: BL-CAT-007 | Cleanup: none — read-only navigation,Automated

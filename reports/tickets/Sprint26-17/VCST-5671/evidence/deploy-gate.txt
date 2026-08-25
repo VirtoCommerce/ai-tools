@@ -1,0 +1,30 @@
+# Deploy gate — VcScheduler fix group (VCST-5671 / 5672 / 5677 / 5678)
+# Shared: all four ship in the SAME release and the SAME deployed Storybook build.
+
+## 1. Git ancestry (VirtoCommerce/vc-shell)
+ticket    PR     commit      committed             in v2.5.0
+5671      #287   6e512da01   2026-08-12T17:13:18   YES
+5671      #304   86def16e2   2026-08-18T17:40:01   YES
+5672      #290   49492f8ef   2026-08-12T17:23:00   YES
+5677      #289   30279bf52   2026-08-12T17:16:25   YES
+5678      #288   a51c1356f   2026-08-12T17:41:43   YES
+(tests)   #308   ee03d504c   2026-08-18T17:40:21   YES   "guard three shipped fixes that nothing was pinning"
+
+v2.4.0 released 2026-08-04  <- the version all four were filed against
+v2.5.0 tag       2026-08-19T10:25:04Z
+origin/main HEAD 324cd9b09 2026-08-19T10:25:04Z "release: v2.5.0"
+=> main HEAD IS the v2.5.0 release commit.
+
+## 2. Deployed surface — hosted Storybook (built from main)
+https://vc-shell-storybook.govirto.com/
+preview bundle: assets/iframe-1uXuqCDm.js (6.5 MB)
+last-modified:  Wed, 19 Aug 2026 10:28:21 GMT   (3 min after the v2.5.0 tag)
+Confirmed loaded (HTTP 200) in the network log during the live verification pass.
+=> The deployed Storybook is exactly v2.5.0 and therefore contains all four fixes.
+
+## 3. Test-command note (not a defect)
+The guard test VcScheduler.style.test.ts reads process.cwd()/assets/styles/theme/colors.scss,
+which resolves only when cwd = framework/. CI runs `yarn workspace @vc-shell/framework run test`
+(cwd = framework/), so CI is green. The repo-root convenience script `yarn test:unit`
+(`vitest --config framework/vitest.config.ts run`) uses the repo root as cwd and fails to collect
+that file. All runs in this verification used the CI cwd.

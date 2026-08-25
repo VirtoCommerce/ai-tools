@@ -1,0 +1,72 @@
+# RED-a — message-transport.ts reverted to the parent of 9aea3dee3 (PR #305).
+# PR #292's CLOSE_PANEL message is LEFT IN PLACE — this isolates the sender-window
+# validation, which is the half of VCST-5673 that vc-shell actually fixed.
+
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — incoming origin validation > rejects incoming messages when allowedOrigins is empty 2ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — incoming origin validation > rejects incoming messages when allowedOrigins contains a wildcard 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — incoming origin validation > rejects incoming messages from a non-listed origin 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — incoming origin validation > accepts incoming messages from an explicitly allowed origin 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — CLOSE_PANEL > closes the panel when an allowed origin asks it to 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — CLOSE_PANEL > ignores the request from an origin that is not allowed 0ms
+ × |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — CLOSE_PANEL > ignores CLOSE_PANEL from a window that is not the registered chatbot iframe 3ms
+   → expected "vi.fn()" to not be called at all, but actually been called 1 times
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — CLOSE_PANEL > still notifies generic message handlers so a host can react to it 1ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — embedded parent source > accepts forwarded messages from its parent window 1ms
+ × |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — embedded parent source > rejects forwarded messages from another window at the same origin 1ms
+   → expected "vi.fn()" to not be called at all, but actually been called 1 times
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — outbound sendToParent origin > drops outbound message when parentOrigin is missing 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — outbound sendToParent origin > drops outbound message when parentOrigin is "*" 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — outbound sendToParent origin > posts to the exact parentOrigin when set 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — outbound sendToIframe origin > drops outbound message when allowedOrigins is empty 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — outbound sendToIframe origin > drops outbound message when the first allowedOrigin is "*" 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — outbound sendToIframe origin > posts to the first explicit allowedOrigin 0ms
+ ✓ |unit| core/plugins/ai-agent/services/message-transport.test.ts > message-transport — outbound sendToIframe origin > does nothing when the iframe is not available 0ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgentContext.test.ts > useAiAgentContext > is a no-op when service is not provided 9ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgentContext.test.ts > useAiAgentContext > sets context data on mount via _setContextData 3ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgentContext.test.ts > useAiAgentContext > normalizes single object to array for context 2ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgentContext.test.ts > useAiAgentContext > detects array ref as list context type 1ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgentContext.test.ts > useAiAgentContext > clears context on unmount 2ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgentContext.test.ts > useAiAgentContext > passes suggestions to _setContextData 1ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > useAiAgent > returns undefined when service is not provided 8ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > useAiAgent > returns full API when service is provided 2ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > useAiAgent > delegates method calls to the service 2ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > useAiAgent > exposes reactive state from service 1ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > provideAiAgentService > registers global toolbar button by default and wires click handler 2ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > provideAiAgentService > skips toolbar registration when addGlobalToolbarButton is false 1ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > provideAiAgentService > passes mapped user and locale getters to the service factory 1ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > provideAiAgentService > provides navigate callback that uses blade APIs 1ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > provideAiAgentService > handles openBlade rejection in navigate callback without throwing 3ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > createAiAgentToolbarButton (deprecated) > returns a toolbar button descriptor 0ms
+ ✓ |unit| core/plugins/ai-agent/composables/useAiAgent.test.ts > createAiAgentToolbarButton (deprecated) > accepts custom icon and title 0ms
+ ✓ |unit| core/plugins/ai-agent/services/ai-agent-service.test.ts > createAiAgentService > sends INIT_CONTEXT on CHAT_READY 6ms
+ ✓ |unit| core/plugins/ai-agent/services/ai-agent-service.test.ts > createAiAgentService > sends UPDATE_CONTEXT when context data changes while panel is open 2ms
+ ✓ |unit| core/plugins/ai-agent/services/ai-agent-service.test.ts > createAiAgentService > does not send UPDATE_CONTEXT when panel is closed 1ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > renders title text 51ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > close control > has role=button, tabindex=0, non-empty aria-label, and aria-keyshortcuts=Escape 5ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > close control > emits close on click 6ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > close control > emits close on keydown.enter 3ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > close control > emits close on keydown.space 4ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > close control > keeps Close as the last header control before focus enters the iframe 4ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > maximize control (isExpanded=false) > has role=button, tabindex=0, non-empty aria-label, and aria-keyshortcuts matching +\ 3ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > maximize control (isExpanded=false) > emits expand on click 3ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > maximize control (isExpanded=false) > emits expand on keydown.enter 4ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > restore control (isExpanded=true) > has role=button, tabindex=0, non-empty aria-label, and aria-keyshortcuts matching +\ 4ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > restore control (isExpanded=true) > emits collapse on click 4ms
+ ✓ |unit| core/plugins/ai-agent/components/_internal/VcAiAgentHeader.test.ts > VcAiAgentHeader > restore control (isExpanded=true) > emits collapse on keydown.enter 6ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - Escape key handling > closes the panel and prevents default on Escape with focus inside 28ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - Escape key handling > closes the panel and prevents default on Escape with focus outside 9ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - Escape key handling > applies inert to the rendered panel when requested 7ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - Escape key handling > does not close the panel or prevent default on Escape when closed 2ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - Escape key handling > does not close the panel on a non-Escape key while open 7ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - Escape key handling > does not close the panel when a higher overlay already prevented default on Escape 6ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - Escape key handling > does not close the panel on Escape while an IME composition is in progress 5ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - mod+\ expand/collapse handling > expands the panel and prevents default on mod+\ when the iframe has focus 5ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - mod+\ expand/collapse handling > collapses the panel and prevents default on mod+\ when an inner control has focus 14ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - mod+\ expand/collapse handling > leaves mod+\ unclaimed when focus is outside the panel 8ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - mod+\ expand/collapse handling > does not expand/collapse or prevent default on mod+\ when closed 2ms
+ ✓ |unit| core/plugins/ai-agent/components/VcAiAgentPanel.test.ts > VcAiAgentPanel - mod+\ expand/collapse handling > applies inert to the rendered panel when requested 7ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+ Test Files  1 failed | 5 passed (6)
+      Tests  2 failed | 59 passed (61)

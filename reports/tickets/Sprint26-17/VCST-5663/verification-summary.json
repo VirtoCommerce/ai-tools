@@ -1,0 +1,145 @@
+{
+  "ticket": "VCST-5663",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-08-25",
+  "sprint": "Sprint26-17",
+  "product": "vc-shell / Marketplace Vendor Portal (SEPARATE PRODUCT — not the VC storefront)",
+  "environment": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+  "surfaces": [
+    {
+      "name": "vcmp-dev Vendor Portal",
+      "url": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+      "build": "22260",
+      "last_modified": "2026-08-24T09:58:00Z",
+      "fix_present_in_bundle": true
+    },
+    {
+      "name": "vc-shell Storybook",
+      "url": "https://vc-shell-storybook.govirto.com/",
+      "build": "iframe-1uXuqCDm.js",
+      "last_modified": "2026-08-19T10:27:30Z",
+      "fix_present_in_bundle": true
+    }
+  ],
+  "build": {
+    "framework": "@vc-shell/framework v2.5.0",
+    "app": "vendor-portal 2.1.1",
+    "pr_build": "vc-shell PR #293 (caf01504) — merged 2026-08-13, shipped in v2.5.0 (19 ahead / 0 behind)",
+    "pr_ci": "6/6 green (test, static-checks, storybook-build, storybook-tests, lint, pr-preview)"
+  },
+  "agent_used": [
+    "qa-backend-expert (playwright-edge)",
+    "ui-ux-expert (Chrome DevTools MCP)"
+  ],
+  "str_result": "3/3",
+  "baseline_reproduction": "pinned-build (framework/core/utilities/error.ts @ caf01504^ vs v2.5.0, uncommitted scratch harness)",
+  "phase_a_red": {
+    "passed": 5,
+    "failed": 4
+  },
+  "phase_b_green": {
+    "passed": 9,
+    "failed": 0,
+    "consecutive_runs": 3
+  },
+  "checklist_total": 4,
+  "checklist_passed": 4,
+  "checklist_failed": 0,
+  "live_cases": [
+    {
+      "id": "TC-A",
+      "desc": "HTML 500 body stays out of toast/banner",
+      "result": "PASS",
+      "runs": "3/3",
+      "observed": "500: An unexpected server error occurred."
+    },
+    {
+      "id": "TC-B",
+      "desc": "dedup no longer collapses distinct statuses",
+      "result": "PASS",
+      "observed": "ids async-error-500: … and async-error-502: … both live"
+    },
+    {
+      "id": "TC-C",
+      "desc": "JSON body still yields platform message",
+      "result": "PASS",
+      "observed": "Name is required"
+    },
+    {
+      "id": "TC-D",
+      "desc": "no collateral after teardown",
+      "result": "PASS",
+      "observed": "0 console errors, 15x 200"
+    }
+  ],
+  "regression_axis": {
+    "storybook": "PASS (collateral only — does NOT exercise parseError)",
+    "stories_rendered": "16/16",
+    "axe_wcag_a_aa_violations": 0
+  },
+  "regression_issues": [],
+  "side_effects": [
+    {
+      "id": "INC-1",
+      "severity": "P2",
+      "surface": "vcmp-dev blade",
+      "desc": "Stale error banner survives a later successful load; useAsync resets error on every call and is byte-identical pre/post-fix, so state is retained app/blade-side",
+      "caused_by_this_fix": false
+    },
+    {
+      "id": "INC-2",
+      "severity": "P3",
+      "surface": "vc-shell framework",
+      "desc": "Dashboard widget rejection escapes useAsync to global-error-handler/index.ts:56 as an unhandled rejection",
+      "caused_by_this_fix": false
+    },
+    {
+      "id": "INC-3",
+      "severity": "P3",
+      "surface": "vc-shell framework",
+      "desc": "global-error-handler dedup keys off errorKey(err)=`${err.name}:${err.message}`, not the parsed status line, so it can still collapse a 500 and 502 sharing the generic ApiException message. Outside the ticket's stated scope (useAsync/index.ts:65), untouched by PR #293",
+      "caused_by_this_fix": false
+    },
+    {
+      "id": "INC-4",
+      "severity": "P3",
+      "surface": "Storybook",
+      "desc": "VcToast story Controls are inert (args never bind to component)",
+      "caused_by_this_fix": false
+    },
+    {
+      "id": "INC-5",
+      "severity": "P3",
+      "surface": "vc-shell framework",
+      "desc": "VcToast component-bodied content branch loses max-height clamp and tabindex (WCAG 2.1.1 risk, latent). String branch parseError feeds is unaffected",
+      "caused_by_this_fix": false
+    }
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "N/A — BL-* / BL-UI-* are storefront-calibrated and inapplicable to vc-shell"
+  ],
+  "rules_set_aside": [
+    "storefront-selectors.md",
+    "BL-UI-* + critical-ui-scope.md",
+    "Coffee-theme a11y gating",
+    "config/test-suites.json (123 suites, none cover vc-shell)",
+    "storefront P0 routes / $cfg.* / sitemap.md"
+  ],
+  "limitations": [
+    "VirtoCommerce/vendor-portal is private and unreachable with this token — the app's @vc-shell/framework caret pin could not be read; the served bundle was grepped directly instead (stronger evidence than the pin)",
+    "Screen-reader output not verified (no NVDA/JAWS/VoiceOver in the MCP toolkit)",
+    "TC-B two-distinct-notifications rests on live DOM ids + a11y snapshot; toast auto-dismiss outran the screenshot round-trip",
+    "Storybook agent's three screenshots did not survive its teardown and are absent from disk; the Storybook findings rest on live measurements + axe output only. The four vcmp-dev captures are intact."
+  ],
+  "evidence": "reports/tickets/Sprint26-17/VCST-5663/",
+  "evidence_page": "reports/tickets/Sprint26-17/VCST-5663/evidence.html",
+  "evidence_artifact": null,
+  "jira_status_at_write": "Tested",
+  "jira_comment_posted": true,
+  "transition_pending_user_confirmation": false,
+  "screenshots_on_disk": 4,
+  "jira_comment_id": "107261",
+  "transition_applied": "Finish test -> Tested (terminal; never Done)",
+  "incidentals_disposition": "reported in the tracker comment only; no tickets filed (user decision)"
+}

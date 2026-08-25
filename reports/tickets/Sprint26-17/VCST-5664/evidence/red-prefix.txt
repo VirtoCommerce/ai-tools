@@ -1,0 +1,37 @@
+# RED — pre-fix source restored from tag v2.4.0 (the version VCST-5664 was filed against)
+# same test file, unmodified
+
+ × |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > deprecated currentPage assignment > warns, changes the page, and does not fire onPageChange 9ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > deprecated currentPage assignment > does not warn for goToPage or setPage 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > initialization > initializes with page 1, skip 0, default pageSize 20 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > initialization > computes pages from totalCount and pageSize 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > initialization > accepts custom pageSize 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > initialization > returns pages=0 when totalCount is 0 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > initialization > exposes totalCount as a reactive property 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > goToPage > updates currentPage and skip 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > goToPage > fires onPageChange with page and skip 2ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > goToPage > does not throw when onPageChange is not provided 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > setPage > updates currentPage and skip 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > setPage > does NOT fire onPageChange 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > reset > resets currentPage to 1 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > reset > does NOT fire onPageChange 2ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > direct VcDataTable binding > return object has plain numbers passable as :pagination prop 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > reactivity > pages and totalCount recompute when totalCount changes 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > reactivity > accepts pageSize as a reactive getter 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > reactivity > skip recomputes after goToPage and pageSize change 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > seeds currentPage from the restored URL slice without firing onPageChange 1ms
+ × |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > reports the restored page so the consumer can seed its first load 2ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > leaves restoredPage undefined when the URL carried no page 1ms
+ × |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > warns when stateKey is set but no provider is in scope 1ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > does not warn on the internal seed from a restore 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > does not warn when a provider is present 0ms
+ ✓ |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > writes the slice on page change (page 1 clears the param) 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > deprecated currentPage assignment > warns, changes the page, and does not fire onPageChange
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ FAIL  |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > reports the restored page so the consumer can seed its first load
+AssertionError: expected undefined to be 3 // Object.is equality
+ FAIL  |unit| framework/ui/composables/useDataTablePagination.test.ts > useDataTablePagination > stateKey URL sync > warns when stateKey is set but no provider is in scope
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ Test Files  1 failed (1)
+      Tests  3 failed | 22 passed (25)

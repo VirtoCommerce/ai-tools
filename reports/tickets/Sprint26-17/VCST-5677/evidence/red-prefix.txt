@@ -1,0 +1,7 @@
+# RED — VcScheduler.vue reverted to pre-fix (parent of PR #289 30279bf52); test file UNCHANGED
+
+ × |unit| ui/components/organisms/vc-scheduler/VcScheduler.style.test.ts > VcScheduler surface styles > paints the scheduler with the dark-theme additional-50 surface token 26ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected '' to be 'var(--additional-50, #fff)' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  1 failed (1)

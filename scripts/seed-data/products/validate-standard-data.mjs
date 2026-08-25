@@ -33,6 +33,9 @@
  *  11. test-products.csv: no seeded=true row still carries a pre-seeding "Template only — NOT seeded"
  *      manual-provisioning recipe in `notes` (it contradicts the seeder + the alias _status).
  *  12. test-products.csv: every DISCOUNT_RATIO_FIXTURES row still yields its EXACT raw discount ratio
+ *  13. test-products.csv: every STACKING_FIXTURES row can still ATTRIBUTE a coupon discount to a
+ *      pricing layer — layers strictly decreasing AND distinct discounted outcomes; a tiered row must
+ *      not also fill sale_price (buildPrices returns tierPrices verbatim and drops it silently).
  *      (re-derived in integer cents), and a `requireMidpoint` row still sits on the 4-decimal rounding
  *      midpoint. Guards the VCST-5691 fixtures (PROD-108 / PROD-109): a one-cent price edit silently
  *      turns PRICE-065 / PRICE-066 into vacuous passes and nothing else would notice.
@@ -46,6 +49,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
   CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES, DISCOUNT_RATIO_FIXTURES, DISCOUNT_PERCENT_DECIMALS,
+  STACKING_FIXTURES, stackingExpectation, validateStackingShape,
   productSlug, storefrontPathForAdHoc, slugify,
   discountRatioScaled, isRoundingMidpoint, expectedDiscountPercent, roundHalfToEven,
 } from './standard-specs.mjs';
@@ -295,6 +299,30 @@ for (const [csvId, spec] of Object.entries(DISCOUNT_RATIO_FIXTURES)) {
 }
 if (ratioOk === Object.keys(DISCOUNT_RATIO_FIXTURES).length) ok(`all ${ratioOk} discount-ratio fixture(s) coherent with standard-specs.mjs`);
 
+
+// 13. Discount-STACKING fixtures — can the case still ATTRIBUTE a coupon discount to a pricing layer?
+//
+// PRICE-059 / PRICE-061 assert WHICH pricing layer a percentage coupon is computed off. That is only
+// observable while the layers yield different numbers: collapse list onto sale, or sale onto tier, and
+// the assertion passes regardless of what the engine actually did. Presence is not the property —
+// DISTINCTNESS is, so this checks the discounted OUTCOMES, not merely the base prices.
+console.log(`
+[13] ${CSV_SOURCE.file}: discount-stacking fixtures can still attribute a coupon to a layer`);
+{
+  const byId = Object.fromEntries(tp.map((r) => [r[CSV_SOURCE.map.csvId], r]));
+  for (const id of Object.keys(STACKING_FIXTURES)) {
+    if (!byId[id]) fail(`${id}: STACKING_FIXTURES declares it but ${CSV_SOURCE.file} has no such row — PRICE-059 / PRICE-061 stay blocked`);
+  }
+  const stackProblems = validateStackingShape(byId);
+  for (const sp of stackProblems) fail(sp);
+  if (!stackProblems.length) {
+    for (const [id, fx] of Object.entries(STACKING_FIXTURES)) {
+      const eff = stackingExpectation(fx, 'effective');
+      const alts = Object.keys(fx.layers).map((n) => `${n} → ${stackingExpectation(fx, n).extendedPrice}`).join(', ');
+      ok(`${id} (${byId[id]?.[CSV_SOURCE.map.code] || '?'}): qty ${fx.qty} × ${fx.couponPct}% ${fx.couponAlias} → ${eff.discountPerUnit}/unit off ${eff.unit}, extendedPrice ${eff.extendedPrice} [per-layer: ${alts}]`);
+    }
+  }
+}
 console.log('\n=== standard-products drift/leak check ===');
 console.log(`  standard.csv rows: ${std.length} | ${CSV_SOURCE.file} rows: ${tp.length} | seeded: ${seededIds.size} | discovered: ${DISCOVERED_FIXTURES.length}`);
 console.log(`  hard problems: ${problems.length} | warnings: ${notes.length}`);

@@ -1,0 +1,42 @@
+VCST-5600 — DEPLOY GATE (the blocker that stopped the 2026-08-06 pass)
+=====================================================================
+Ticket is closed by THREE PRs, all in v2.5.0, none in v2.4.0:
+
+  #272  original keyboard move/resize        (v2.3.0-based, shipped in 2.4.0)
+  #283  c607552f6  2026-08-05 15:30 +0300 "fix(dashboard): make widget size
+        live state so keyboard resize accumulates"
+  #303  761e2ac35  2026-08-18 17:39 +0300 "fix(dashboard): let keyboard events
+        reach controls inside a widget"  -- "Closes VCST-5600 remainder"
+        (NOT mentioned in any ticket comment)
+
+git ancestry
+------------
+  c607552f6 in v2.5.0 : YES      c607552f6 in v2.4.0 : NO
+  761e2ac35 in v2.5.0 : YES      761e2ac35 in v2.4.0 : NO
+  v2.5.0 = 324cd9b09  2026-08-19 10:25:04 +0000
+
+Served bundle -- https://vcmp-dev.govirto.com/apps/vendor-portal/
+  index last-modified: Mon, 24 Aug 2026 09:58:00 GMT   build id 22260
+
+DISCRIMINATING STRING MARKER for #283 (announcement literal, non-manglable):
+  v2.4.0 source: "returned to its original position."
+  v2.5.0 source: "returned to its original position and size."
+
+  vc-shell-vendors22260.js   (771 KB)
+    [1] returned to its original position and size     <-- v2.5.0 form PRESENT
+    [0] returned to its original position.             <-- v2.4.0 form ABSENT
+    [1] resized to
+    [1] Picked up. Arrow keys move
+    [1] Widget positions updated
+    [1] dropped at column
+  vc-shell-framework22260.js (113 KB)  0 of all six  <-- re-export facade
+
+=> #283 is PROVEN present in the served build by a direct positive marker.
+   This is what the 2026-08-06 pass could NOT establish: it could only argue
+   from build/commit ordering plus sibling-PR #282 markers, because
+   recordPlacementFromNode is module-local (name-mangled) and
+   DashboardWidgetPlacement is a TS type (erased at build).
+
+   #303's change is a bare expression (`event.target !== event.currentTarget`)
+   with no string literal, so it has NO greppable marker; it is established by
+   ancestry in v2.5.0 and verified BEHAVIOURALLY live (checklist section B).

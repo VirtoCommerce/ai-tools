@@ -1,0 +1,29 @@
+# RED — MonthEventBar.vue / SchedulerTimelineView.vue / useTimelineTimeGrid.ts reverted to pre-fix (parent of PR #288 a51c1356f); test files UNCHANGED
+
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthEventBar.test.ts > MonthEventBar > renders title, role=button, aria-label with the title 16ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthEventBar.test.ts > MonthEventBar > announces a one-day all-day event as a single date 5ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthEventBar.test.ts > MonthEventBar > announces a multi-day all-day event up to its last inclusive day 3ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthEventBar.test.ts > MonthEventBar > emits select on click 2ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthEventBar.test.ts > MonthEventBar > hides resize handles when not editable 2ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthEventBar.test.ts > MonthEventBar > shows the recurrence marker for a recurring occurrence 1ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthEventBar.test.ts > MonthEventBar > hides the recurrence marker for a non-recurring event 1ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > day mode: renders 24 hour labels and one day header cell 38ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > day mode: renders only in-window events as timed blocks 5ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > week mode: renders 7 day header cells 9ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > week mode: shades weekend day columns (Sat+Sun) 12ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > day mode: does not shade the today column for a non-today focused date 5ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > trimmed window renders fewer hour labels 3ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > routes an all-day event to the all-day strip, not the time grid 5ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > announces a one-day all-day event as a single date, with no time 8ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView (vertical time grid) > keeps start and end times in a timed event's label 10ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView — create/edit intents > never emits event-create or event-edit 6ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView — create/edit intents > a lone click on an empty slot emits a single create-intent with a 1-hour timed range after the delay 3ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView — create/edit intents > two quick clicks on the same slot emit exactly one double create-intent, never a single 3ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView — create/edit intents > clicking an existing event block does not emit create-intent 3ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/views/SchedulerTimelineView.test.ts > SchedulerTimelineView — create/edit intents > forwards the quick-info popover "Edit" click as edit-intent 25ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected 'Summer Sale: Jul 15, 2026 – Jul 16, 2…' not to contain 'Jul 16, 2026'
+AssertionError: expected 'Summer Sale: Jul 15, 2026 – Jul 18, 2…' to be 'Summer Sale: Jul 15, 2026 – Jul 17, 2…' // Object.is equality
+AssertionError: expected 'Promo: Jan 13, 2021, 12:00 AM – Jan 1…' to be 'Promo: Jan 13, 2021' // Object.is equality
+ Test Files  2 failed (2)
+      Tests  3 failed | 18 passed (21)

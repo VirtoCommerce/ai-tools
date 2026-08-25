@@ -371,9 +371,15 @@ async function ensureOrder(row, orgs, customerId, products = []) {
     // but only when we actually have real products to swap in (never thrash on a bare/dry-run catalog).
     const itemsOk = products.length === 0
       || ((full?.items || []).length > 0 && !(full.items).some(isSyntheticItem));
-    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk && statusOk && itemsOk) { verbose(`order ${number} exists (attributed + enriched + total + org + status + items ok)`); return; }
+    // FRESHNESS — the extra idempotency term for a rolling-window row (rules: sales-rep-orders-specs).
+    // Content-based idempotency alone leaves a correct-but-STALE order in place, which is how
+    // SR-CP-057 / SR-HD-048 came to assert against an empty window a week after the seed. Since
+    // createdDate is server-assigned, the only way to move an order into the window is to recreate it.
+    const windowDays = windowDaysFor(row);
+    const freshOk = isFresh(full?.createdDate, windowDays);
+    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk && statusOk && itemsOk && freshOk) { verbose(`order ${number} exists (attributed + enriched + total + org + status + items${windowDays ? ' + fresh' : ''} ok)`); return; }
     await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
-    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, statusOk=${statusOk}, itemsOk=${itemsOk})`);
+    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, statusOk=${statusOk}, itemsOk=${itemsOk}${windowDays ? `, freshOk=${freshOk} (${windowDays}d window; createdDate=${full?.createdDate})` : ''})`);
   }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const total = parseFloat(row.total);
@@ -517,11 +523,19 @@ async function main() {
   const roleId = await resolveSalesRepRoleId();
   log(`Sales Rep role: ${roleId || '(service default)'}`);
   const repWriteback = {};
+  const orderWriteback = {};
   let primaryRepEmail = null;
   for (const row of reps) {
     const { contactId, userId, lockedMembershipId } = await ensureRep(row, orgs, roleId);
     repWriteback[row.rep_key] = { contact_id: contactId || '', user_id: userId || '', membership_locked_id: lockedMembershipId || '' };
     if (row.rep_key === 'SR_REP_PRIMARY') primaryRepEmail = row.email;
+  }
+  // `--only <order_key>` filters the REP list to empty, which left primaryRepEmail null and made the
+  // Phase-4 guard below skip order seeding entirely — so scoping to an order silently seeded nothing.
+  // The rep's email is a committed business key, so read it from the CSV rather than depending on
+  // this run having happened to process that rep.
+  if (!primaryRepEmail) {
+    primaryRepEmail = loadCsv('test-data/sales-rep/sales-reps.csv').find((r) => r.rep_key === 'SR_REP_PRIMARY')?.email || null;
   }
 
   // Phase 3b — restricted admin (Manager) users for suite 092 permission-negatives
@@ -549,10 +563,22 @@ async function main() {
     if (products.length) verbose(`line items use ${products.length} real catalog product(s): ${products.map((p) => p.sku).join(', ')}`);
     else if (!DRY_RUN) log('  WARN: no catalog products discovered — line items keep synthetic placeholders (seed catalog first for reorder/PDP-link cases).');
     for (const row of orders) await ensureOrder(row, orgs, primaryUserId, products);
+
+    // Rolling-window rows write back their server-assigned id AND createdDate. The date is runtime
+    // data, not decoration: it is the only way a later run — or td:validate:sr-orders — can tell that
+    // the fixture has aged out of the window SR-CP-057 / SR-HD-048 assert against.
+    for (const row of orders.filter((r) => windowDaysFor(r) !== null)) {
+      const number = `${ORDER_MARK}-${row.order_key}`;
+      const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
+      const o = (found?.results || [])[0];
+      if (o) orderWriteback[row.order_key] = { order_id: o.id, created_date: o.createdDate };
+      else log(`  WARN: rolling-window order ${number} not found after seeding — its @td alias will resolve empty`);
+    }
   }
 
   // Phase 5 — write-back runtime GUIDs
   syncEnvAliases('sales-rep/sales-reps', repWriteback);
+  syncEnvAliases(ORDERS_CSV_KEY, orderWriteback);
   if (ownerId) writeEnvAliasOverride({ SR_OWNER_ACME: { id: ownerId } });
 
   log(DRY_RUN ? 'DRY RUN complete (no writes).' : 'Seed complete. Runtime GUIDs written to aliases.<env>.json.');

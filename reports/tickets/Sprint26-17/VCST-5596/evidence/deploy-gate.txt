@@ -1,0 +1,73 @@
+# VCST-5596 — deploy gate. THIS IS THE GATE THAT BLOCKED THE 2026-08-06 ATTEMPT.
+
+## History of this verification
+PR #268  fixed vc-breadcrumbs-item.vue          -> QA 08-04: REOPEN (wrong component)
+PR #282  fixed vc-blade.vue's own #trigger      -> QA 08-06: BLOCKED (not deployed)
+                                                -> this run:  deploy gate GREEN
+
+## 1. Git ancestry
+f747a8d47  "fix(a11y): name the breadcrumbs overflow trigger in the blade header (#282)"
+           committed 2026-08-05T15:30:28+03:00
+           ancestor of v2.5.0 ... YES
+           ancestor of v2.4.0 ... NO    <- exactly matches the 08-06 BLOCKED finding
+                                          ("v2.4.0 is tagged at 43e3ea589, 2 commits behind #282/#283")
+
+## 2. The fix on main (framework/ui/components/organisms/vc-blade/vc-blade.vue)
+  :58   :aria-label="$t('COMPONENTS.MOLECULES.VC_BREADCRUMBS.SHOW_MORE')"
+  :384  min-width:  var(--blade-header-button-target-size);
+  :385  min-height: var(--blade-header-button-target-size);
+
+## 3. Deployed surface — the before/after on the SAME marker used to block it
+Deployed vendor-portal, build id 22260, last-modified Mon, 24 Aug 2026 09:58:00 GMT.
+(The 08-06 check saw build id 64804, last-modified 2026-08-04T10:25:50Z.)
+
+The 08-06 note recorded, from the served bundle: the vc-blade #trigger VcButton "still renders
+with props {text, icon, icon-size, class, onClick} and a patch-flag list of only
+["class","onClick"] — no aria-label".
+
+Re-running that exact method on build 22260's vc-shell-vendors22260.js:
+
+  "aria-label":w.$t("COMPONENTS.MOLECULES.VC_BREADCRUMBS.SHOW_MORE"),
+  class:Q(["vc-blade__breadcrumbs-button",{...}]),onClick:U},null,8,
+  ["aria-label","class","onClick"]
+
+  => patch flags are now ["aria-label","class","onClick"]. The aria-label is present.
+
+Locale values live in vc-shell-framework22260.js:
+  "Show more breadcrumbs"        x1
+  "Weitere Brotkrümel anzeigen"  x1
+  SHOW_MORE                      x4 (framework) / x3 (vendors)
+
+Target size — note the 08-06 check looked for --blade-header-button-target-size "in none of the
+79 deployed chunks", i.e. in the JS. It is a CSS custom property, so the JS chunks were the wrong
+place to look (that conclusion happened to be right anyway, because the aria-label — a render
+concern that IS in JS — was genuinely absent). Checked properly this time, in
+assets/index22260.css (693,632 bytes):
+  --blade-header-button-target-size : 5 hits, declared as 24px
+  .vc-blade__breadcrumbs-button     : 4 hits
+
+=> PR #282 is live in the deployed artifact. The 08-06 blocker is cleared.
+
+## 4. Unit RED -> GREEN, isolating PR #282
+Scope: ui/components/organisms/vc-blade + ui/components/molecules/vc-breadcrumbs, cwd=framework/.
+
+  GREEN (main)                                     191 passed (191)
+  RED   (vc-blade.vue @ parent of f747a8d47)       2 failed | 189 passed (191)
+
+The two failures are exactly the two halves of PR #282:
+  x vc-blade.a11y.test.ts       "names the breadcrumbs overflow trigger it supplies through the
+                                 #trigger slot"
+  x vc-blade.target-size.test.ts "computes a minimum 24 by 24 CSS-pixel target for the overflow
+                                 button"
+
+Deliberate scoping: PR #268's original fix to vc-breadcrumbs-item.vue was LEFT IN PLACE for the
+RED. Reverting both would conflate two separate fixes; this isolates #282, the one under test.
+
+Worth noting about the guard: the a11y test asserts through the **#trigger slot path** rather than
+on the component in isolation — which is precisely the failure mode that let PR #268 pass its own
+tests while the app kept the defect. vc-blade had NO test file at all before #282
+(the dev's own note: "vc-blade had no unit test file, and its stories cannot render breadcrumbs at
+all — renderingState is injected by VcBladeSlot, so standalone it is undefined and the whole
+breadcrumbs block is v-if-ed out. The story-level axe gate is structurally blind to this control.")
+The target-size half was guarded slightly later, by PR #308's vc-blade.target-size.test.ts.
+Both halves now fail on revert, so both are guarded.

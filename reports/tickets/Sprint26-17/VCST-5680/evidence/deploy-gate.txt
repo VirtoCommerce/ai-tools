@@ -1,0 +1,47 @@
+# Deploy gate — VCST-5680 / vc-shell PR #298 (bd938a138)
+
+## 1. Git ancestry (VirtoCommerce/vc-shell)
+bd938a138  PR #298 "fix(blade-navigation): target keyboard shortcuts at the focused blade"
+           committed 2026-08-13T17:22:30+03:00
+           ancestor of v2.5.0 ... YES
+           ancestor of v2.4.0 ... NO    (2.4.0 is the version the ticket was filed against)
+
+Related, SAME CHORD — must be considered together:
+06cb54b4d  PR #310 "fix(ai-agent): claim mod+backslash only while the panel holds focus"
+           committed 2026-08-19T10:54:46+03:00 (2 commits before the release)
+           ancestor of v2.5.0 ... YES ;  of v2.4.0 ... NO
+
+v2.4.0 released 2026-08-04 | v2.5.0 tagged 2026-08-19T10:25:04Z
+origin/main HEAD = 324cd9b09 "release: v2.5.0"
+
+## 2. Deployed surface — Marketplace Vendor Portal (vcmp-dev)
+https://vcmp-dev.govirto.com/apps/vendor-portal/
+  last-modified: Mon, 24 Aug 2026 09:58:00 GMT  (after the v2.5.0 release)
+  chunks: vc-shell-framework22260.js (0.1 MB)  <- FACADE, re-exports only
+          vc-shell-vendors22260.js   (0.8 MB)  <- real implementation
+
+Framework version proven transitively via markers that exist only in 2.5.0
+(validated the same day against the published 2.4.0 vs 2.5.0 npm tarballs):
+  "restoredPage" / "no TableQueryState provider is in scope" /
+  "Assigning to pagination.currentPage is deprecated"
+    -> 1 hit each in vc-shell-vendors22260.js, 0 in the framework facade chunk.
+=> vcmp-dev's vendor-portal runs framework >= 2.5.0, so BOTH PR #298 and PR #310 are live.
+
+Grepping only the -framework facade finds nothing and reads as "fix absent" — a known
+false-REOPEN trap on this product.
+
+## 3. What the unit suite does and does NOT guard  (see red-b-wiring-UNGUARDED.txt)
+The fix has three parts. Two are guarded, one is not:
+
+  part                                              file                          guarded?
+  resolveShortcutTargetBlade (pure resolver)        focus-target.ts               YES — 5 tests
+  data-blade-id marker on the blade root            vc-blade-slot.vue             YES — 1 test
+  getActiveBlade seam that WIRES them together      vc-blade-navigation-new.vue   ** NO TEST **
+
+Reverting only the seam (one call) leaves the whole suite green at 179/179 while
+reintroducing the reported defect. The unit suite therefore cannot detect a regression of
+the user-visible fix; the live check is the only evidence that it works end to end.
+
+Note on the record: VM/VCST comment states "8 tests written first and observed failing".
+The actual count added by PR #298 is 6 — 5 in focus-target.test.ts + 1 in
+vc-blade-slot.test.ts. Confirmed by the full-PR reverse: 173 tests / 16 files vs 179 / 17.

@@ -1,0 +1,59 @@
+VCST-5600 — SOURCE-SIDE FINDINGS (verified in vc-shell main @ 324cd9b09)
+=======================================================================
+
+[1] RESIZE IS GATED ON A PROP THAT DEFAULTS TO FALSE
+  GridstackDashboard.vue:192   resizable: false        (default)
+  DraggableDashboard.vue:39    resizable: false        (default)
+  GridstackDashboard.vue:370   if (props.resizable) resizeWidgetBy(widget, dx, dy);
+  The prop is set by the CONSUMING app (Vendor Portal), which is a DIFFERENT
+  repo -- so it cannot be established statically from vc-shell. Evidence it is
+  enabled on vcmp-dev: the ticket's own 2026-07-29 description observed "5
+  resize handles" live, and the 08-04 pass drove Shift+Right from w=6 to 7.
+  Consequence for this run: an inert Shift+arrow would be CORRECT behaviour
+  under resizable=false, not a defect -- so it must be reported BLOCKED, never
+  FAIL. The agent was instructed accordingly mid-run.
+
+[2] EVERY ANNOUNCEMENT AND LABEL IS HARDCODED ENGLISH -- NOT LOCALIZED
+  GridstackDashboard.vue imports NO i18n at all: no useI18n, no $t, no t(.
+  All of these are bare English string literals:
+    :193  "Dashboard widgets. Drag a widget, or focus one and press Enter to
+           rearrange with the arrow keys."
+    :239  "Widget positions updated"
+    :292  "... dropped at column X, row Y."
+    :310  "Move cancelled. ... returned to its original position and size."
+    :325  "... moved to column X, row Y."
+    :338  "... resized to W by H cells."
+    :381  "Picked up. Arrow keys move, Enter drops, Escape cancels."
+    :382  "Press Enter to pick up and rearrange with the arrow keys."
+  The framework ships locales/en.json AND locales/de.json (399 leaf keys) -- so
+  localization is genuinely expected here. And it is not house style: of the
+  shell/ components carrying an aria-label, vc-blade-navigation-new.vue DOES use
+  $t; the two dashboard files are the exception.
+  NOT already covered: the VCST-5668 hardcoded-aria-label sweep covers ui/
+  components (vc-badge, vc-input, vc-select, vc-editor, ...) plus
+  SchedulerMonthView and SidebarHeader. Neither GridstackDashboard.vue nor
+  DraggableDashboard.vue is in it. These are NEW sites, and worse than the
+  generic case: what is English-only here is the entire keyboard-instruction and
+  live-region announcement layer, i.e. the accessibility affordance itself.
+  Bears directly on ticket AC2 ("changes are announced to assistive
+  technology") -- announced, but not in the user's language.
+
+[3] THE RESIZE AFFORDANCE IS UNDISCOVERABLE
+  No user-facing string anywhere mentions Shift+arrow or resizing. Every
+  instruction string enumerates only move/drop/cancel:
+    "Picked up. Arrow keys move, Enter drops, Escape cancels."   <- no resize
+    "Press Enter to pick up and rearrange with the arrow keys."  <- no resize
+  Shift+arrow is documented ONLY in the developer file
+  draggable-dashboard.docs.md:152. So a keyboard-only or screen-reader user is
+  handed an explicit key list that OMITS the resize capability -- they can only
+  find it by guessing. The ticket's AC1 requires widgets be "reordered AND
+  resized without a pointer"; the capability exists but is unannounced.
+  Not a 2.5.7 failure (an alternative does exist); closer to 3.3.2 Labels or
+  Instructions, and plainly a usability gap. Low severity.
+
+[4] #303 REMOVED A TEST -- checked, and the removal is legitimate
+  The commit says a test asserting Escape restores displaced NEIGHBOURS "was
+  modelling its own one-way mock and has been removed". Diff inspected: the only
+  deletion is the mockUpdateWidgetPosition factory being refactored into a named
+  applyMockWidgetPosition helper and re-wrapped. No assertion coverage was
+  silently dropped; the change is additive (+89 lines of new tests).

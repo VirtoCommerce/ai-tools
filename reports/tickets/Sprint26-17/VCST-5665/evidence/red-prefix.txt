@@ -1,0 +1,80 @@
+# RED — PR #299's source hunks in usePopup/index.ts reverse-applied onto main.
+# Test files UNCHANGED. Only this fix removed — later commit #306 (a11y popup) left intact,
+# which a blanket checkout of 2e928761f^ would have reverted too.
+
+ ✓ |unit| shell/_internal/popup/components/vc-popup-container/vc-popup-container.test.ts > VcPopupContainer > renders nothing when there are no popups 7ms
+ ✓ |unit| shell/_internal/popup/components/vc-popup-container/vc-popup-container.test.ts > VcPopupContainer > renders a popup component when popups array has items 8ms
+ ✓ |unit| shell/_internal/popup/components/vc-popup-container/vc-popup-container.test.ts > VcPopupContainer > renders multiple popups 3ms
+ ✓ |unit| shell/_internal/popup/components/vc-popup-container/vc-popup-container.test.ts > VcPopupContainer > calls close callback when popup emits close 2ms
+ ✓ |unit| shell/_internal/popup/components/vc-popup-container/vc-popup-container.test.ts > VcPopupContainer > renders HTML string slots with sanitization 3ms
+ ✓ |unit| shell/_internal/popup/components/vc-popup-container/vc-popup-container.test.ts > VcPopupContainer > renders a render-function slot as text, leaving markup uninterpreted 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > returns all expected methods 9ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showConfirmation pushes a popup onto the stack 2ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showConfirmation resolves true on confirm 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showConfirmation resolves false on close 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showError pushes an error popup onto the stack 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showInfo pushes an info popup onto the stack 1ms
+ × |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showConfirmation keeps the message off the v-html path by default 4ms
+ × |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showError keeps the message off the v-html path by default 1ms
+ × |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showInfo keeps the message off the v-html path by default 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > built-in dialogs (no options) > showConfirmation still passes the raw string when html is opted into 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > open() pushes custom popup onto the stack 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > close() marks the popup as closing and keeps it mounted for its leave transition 0ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > close() unmounts the popup via the fallback timer when no transition reports back 2ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > reopens the same popup instance as visible and keeps it mounted past the close fallback 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > ignores a stale transition finalize after the popup reopens 2ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > does not let the first close fallback finish a later close early 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > returns focus to the opener when the popup finalizes after its transition 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > returns focus to the control that opened the popup 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > leaves focus alone when something else took it while the popup was open 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > custom popup component > close() is idempotent while a popup is already closing 1ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > multiple popups > stacks multiple popups 0ms
+ ✓ |unit| core/composables/usePopup/usePopup.test.ts > usePopup > multiple popups > opening a distinct popup does not evict earlier ones 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-error.test.ts > VcPopupError > renders the component 15ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-error.test.ts > VcPopupError > passes variant=error to VcPopupBase 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-error.test.ts > VcPopupError > passes mode=acknowledge to VcPopupBase 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-error.test.ts > VcPopupError > passes title prop through to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-error.test.ts > VcPopupError > passes translated action-label to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-error.test.ts > VcPopupError > emits close when VcPopupBase emits close 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-error.test.ts > VcPopupError > renders default slot content 3ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-error.test.ts > VcPopupError > renders header slot when provided 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-info.test.ts > VcPopupInfo > renders the component 16ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-info.test.ts > VcPopupInfo > passes variant=info to VcPopupBase 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-info.test.ts > VcPopupInfo > passes mode=acknowledge to VcPopupBase 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-info.test.ts > VcPopupInfo > passes title prop through to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-info.test.ts > VcPopupInfo > passes translated action-label to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-info.test.ts > VcPopupInfo > emits close when VcPopupBase emits close 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-info.test.ts > VcPopupInfo > renders default slot content 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-info.test.ts > VcPopupInfo > renders header slot when provided 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > renders the component 15ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > passes variant=warning to VcPopupBase 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > passes mode=confirm to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > passes confirmAsText to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > passes title prop through to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > passes translated confirm-label to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > passes translated cancel-label to VcPopupBase 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > emits close when VcPopupBase emits close 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > emits confirm when VcPopupBase emits confirm 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > renders default slot content 3ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-warning.test.ts > VcPopupWarning > renders header slot when provided 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > renders with default props 22ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > passes variant prop to VcPopup 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > passes title prop to VcPopup 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > passes closable prop to VcPopup (default true) 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > passes closable=false to VcPopup 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > passes isMobileFullscreen prop to VcPopup 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > emits close when VcPopup emits close 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > renders default slot content inside content slot 3ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > renders header slot when provided 3ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > shows single acknowledge button in acknowledge mode 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > shows confirm and cancel buttons in confirm mode 4ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > emits confirm when confirm button is clicked 2ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > calls close when cancel button is clicked in confirm mode 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > does not close on confirm when closeOnConfirm is false 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > closes on confirm when closeOnConfirm is true 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > applies confirm CSS class in confirm mode 1ms
+ ✓ |unit| shell/_internal/popup/common/vc-popup-base.test.ts > VcPopupBase > applies single CSS class in acknowledge mode 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected 'string' not to be 'string' // Object.is equality
+ Test Files  1 failed | 5 passed (6)
+      Tests  3 failed | 69 passed (72)

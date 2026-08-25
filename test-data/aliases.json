@@ -4423,11 +4423,12 @@
       "storeBId": "store_b_id",
       "storeAWishlistId": "store_a_wishlist_id",
       "storeBWishlistId": "store_b_wishlist_id",
-      "customerId": "contact_id",
-      "userId": "user_id"
+      "customerId": "user_id",
+      "userId": "user_id",
+      "contactId": "contact_id"
     },
-    "notes": "ONE customer holding TWO wishlists in TWO DIFFERENT stores, each with a DIFFERENT product - the fixture VCST-5705 needs. FindWishlistsByProductsAsync accepted a storeId and never applied it, so the storefront in-wishlist marker returned wishlist ids from every store the customer had a list in; on a single-store environment the regression test PASSES WHILE TESTING NOTHING. Store A is {{STORE_ID}}, store B is {{STORE_ID_SECONDARY}} - both ids are per-env and land in aliases.<env>.json at seed time, never committed here. The store-B product is created physically in store B's own catalog AND linked into store A's virtual catalog, because CAT-079 looks for its card on store A's /catalog page - that co-visibility is what lets the isolation assertion fail. NAVIGATE VIA @td(WISH_TWO_STORE_CUSTOMER.storeAProductUrl / .storeBProductUrl) composed as {{FRONT_URL}}@td(...); both are store-A-relative. Password is a {{VAR}} token resolved from .env.local at seed time, never a literal. Seeded by scripts/seed-data/wishlists/seed-wishlists.mjs (npm run seed:wishlists); drift-guarded by npm run td:validate:wishlists. Unblocks CAT-079, CAT-080, WISH-30. LIVE-CONFIRMED on vcst-qa 2026-08-24: xAPI product(userId:) wants the CONTACT id — @td(WISH_TWO_STORE_CUSTOMER.customerId) — NOT the security-account id (.userId), which returns inWishlist=false for both products in both stores. With the contact id the matrix is: store A -> productA true/[storeAWishlistId], productB false/[]; store B -> productB true/[storeBWishlistId], productA false/[]. A pre-VCST-5705 build returns BOTH wishlist ids in BOTH stores, which is what makes the case falsifiable. Storefront sign-in needs a store context: /connect/token must carry storeId (verified working for both B2B-store and Electronics).",
-    "_status": "seeded-20260824"
+    "notes": "ONE customer holding TWO wishlists in TWO DIFFERENT stores, each with a DIFFERENT product - the fixture VCST-5705 needs. FindWishlistsByProductsAsync accepted a storeId and never applied it, so the storefront in-wishlist marker returned wishlist ids from every store the customer had a list in; on a single-store environment the regression test PASSES WHILE TESTING NOTHING. Store A is {{STORE_ID}}, store B is {{STORE_ID_SECONDARY}} - both ids are per-env and land in aliases.<env>.json at seed time, never committed here. The store-B product is created physically in store B's own catalog AND linked into store A's virtual catalog, because CAT-079 looks for its card on store A's /catalog page - that co-visibility is what lets the isolation assertion fail. NAVIGATE VIA @td(WISH_TWO_STORE_CUSTOMER.storeAProductUrl / .storeBProductUrl) composed as {{FRONT_URL}}@td(...); both are store-A-relative. Password is a {{VAR}} token resolved from .env.local at seed time, never a literal. Seeded by scripts/seed-data/wishlists/seed-wishlists.mjs (npm run seed:wishlists); drift-guarded by npm run td:validate:wishlists. Unblocks CAT-079, CAT-080, WISH-30. OWNERSHIP - CORRECTED 2026-08-25 (REG-2026-08-25-1128 blocked CAT-079/CAT-080 on exactly this): a Wishlist-type cart's customerId is the SECURITY ACCOUNT id, NOT the Contact member id. The storefront resolves the signed-in session to the account id and sends THAT as xAPI products(userId:), so lists seeded against the contact id are invisible - /account/lists renders 'You have not created any lists yet' and every marker reads false, while an admin-side /api/carts/search by contact id still returns both lists (which is how a green seed hid it). Evidence: of 14 distinct customerIds sampled across the store's 937 wishlists, only this fixture's resolved via GET /api/members/{id}; mutykovaelena@gmail.com has account f194c370.../contact e1e83021... and its storefront list carries the ACCOUNT id. So .customerId and .userId BOTH map to user_id (they are the same id - the cart's customerId IS the account id); .contactId is the separate Contact member id, which xAPI products(userId:) does NOT accept. Live matrix, proven by a real /connect/token sign-in inside the seeder: store A -> productA true/[storeAWishlistId], productB false/[]; store B -> productB true/[storeBWishlistId], productA false/[]. A pre-VCST-5705 build returns BOTH wishlist ids in BOTH stores, which is what makes the case falsifiable. Storefront sign-in needs a store context: /connect/token must carry storeId (verified working for both B2B-store and Electronics).",
+    "_status": "seeded-20260825"
   },
   "INV_VARIATION_STOCKED": {
     "file": "inventory/variation-stock",
@@ -4470,5 +4471,109 @@
     },
     "notes": "The MASTER/parent half of the INV_VARIATION_STOCKED family (VCST-5546 / INV-047) - the row a variation must appear as DISTINCT from in the per-FFC products grid. Carries the derivable store-relative storefront path (@td(INV_VARIATION_MASTER.url), composed as {{FRONT_URL}}@td(...)); the variation deliberately has none, because inventing a PDP route for it would publish a path that does not exist. Stock 7 at the store main FFC vs the variation's 42. Seeded by scripts/seed-data/inventory/seed-variation-stock.mjs; NO runtime GUID committed - master_id lives in aliases.<env>.json.",
     "_status": "seeded-20260824"
+  },
+  "SR_ORDER_ACME_WIN_NEW": {
+    "file": "sales-rep/sales-rep-orders",
+    "filter": {
+      "order_key": "SRO-ACME-WIN-NEW"
+    },
+    "fields": {
+      "number": "order_key",
+      "org": "org",
+      "store": "store",
+      "status": "status",
+      "total": "total",
+      "windowDays": "rolling_window_days",
+      "id": "order_id",
+      "createdDate": "created_date"
+    },
+    "notes": "The NEW-status in-window order. ROLLING-WINDOW order on ORG_ACME (ORG-001), seeded by npm run seed:sales-rep and drift-guarded by npm run td:validate:sr-orders. CustomerOrder.createdDate is SERVER-ASSIGNED and silently ignored on POST/PUT, so a past-dated order is impossible - but the 7-day window INCLUDES NOW, so a freshly created order lands inside it by construction. That also means the order AGES OUT: the seeder adds FRESHNESS as an extra idempotency term (sales-rep-orders-specs.mjs isFresh) and rebuilds the order once it falls outside the window, because the base content-based idempotency happily leaves a correct-but-stale order in place - which is how these cases came to assert against an empty window. NEVER a fixed seed date; the instant comes from the server at seed time. .number resolves the order_key, NOT the platform order number - the seeder prefixes it with AGENT-TEST-, so the live number is 'AGENT-TEST-' + @td(...number). .id / .createdDate are runtime and live in aliases.<env>.json only. Unblocks SR-CP-057 (the 'New orders' stat card counts exactly this kind of order) and SR-HD-048 (flip it to Processing in Admin and the KPI must decrement by 1 and by its total, 131.00 - deliberately distinct from every other rolling row so the decrement is attributable). NOTE the third SR-CP-057 precondition - a New order OLDER than 7 days, proving the window boundary - is satisfied WITHOUT seeding by the pre-existing AGENT-TEST-SRO-ACME-NEW / -KEYWORD / -ELEC orders, which are date-agnostic and have long since aged out."
+  },
+  "SR_ORDER_ACME_WIN_PROC": {
+    "file": "sales-rep/sales-rep-orders",
+    "filter": {
+      "order_key": "SRO-ACME-WIN-PROC"
+    },
+    "fields": {
+      "number": "order_key",
+      "org": "org",
+      "store": "store",
+      "status": "status",
+      "total": "total",
+      "windowDays": "rolling_window_days",
+      "id": "order_id",
+      "createdDate": "created_date"
+    },
+    "notes": "The NON-New in-window order (Processing). ROLLING-WINDOW order on ORG_ACME (ORG-001), seeded by npm run seed:sales-rep and drift-guarded by npm run td:validate:sr-orders. CustomerOrder.createdDate is SERVER-ASSIGNED and silently ignored on POST/PUT, so a past-dated order is impossible - but the 7-day window INCLUDES NOW, so a freshly created order lands inside it by construction. That also means the order AGES OUT: the seeder adds FRESHNESS as an extra idempotency term (sales-rep-orders-specs.mjs isFresh) and rebuilds the order once it falls outside the window, because the base content-based idempotency happily leaves a correct-but-stale order in place - which is how these cases came to assert against an empty window. NEVER a fixed seed date; the instant comes from the server at seed time. .number resolves the order_key, NOT the platform order number - the seeder prefixes it with AGENT-TEST-, so the live number is 'AGENT-TEST-' + @td(...number). .id / .createdDate are runtime and live in aliases.<env>.json only. It exists so SR-CP-057 can DISCRIMINATE: the card's value counts New-status orders only, while its delta is the same window's ALL-status volume. With only New orders in the window the two figures coincide and the assertion cannot fail - the vacuity the td:validate:sr-orders shape check exists to catch."
+  },
+  "CAT_EMPTY": {
+    "_inline": true,
+    "_notes": "CAT-043 — a category with ZERO products, so the storefront's EMPTY-STATE branch ('No products found', no pagination, no filter panel) is reachable at all. Every live category on vcst-qa had products (five candidates checked in REG-2026-08-25-1128), so the case was asserting against a universe with no negative example and could not fail. Created inside the STORE's own catalog so the storefront routes to it, but deliberately OUTSIDE the ad-hoc seed category path other seeders drop products into — a single stray product makes the case vacuous again, which is why the seeder proves emptiness live (verifyEmptyCategoryIsEmpty) rather than trusting a green create. NAVIGATE VIA {{FRONT_URL}}@td(CAT_EMPTY.url) — store-relative. Seeded by npm run seed:catalog-edge; drift-guarded by npm run td:validate:catalog-edge. Runtime id/catalogId live in aliases.<env>.json only.",
+    "name": "AGENT-TEST-Empty-Category",
+    "code": "AGENT-TEST-EMPTY-CAT",
+    "slug": "agent-test-empty-category",
+    "url": "/agent-test-empty-category",
+    "id": "",
+    "catalogId": ""
+  },
+  "PROD_ORG_EXCLUDED": {
+    "_inline": true,
+    "_notes": "CAT-038 — a product that EXISTS in a physical catalog but is ABSENT from the store's virtual catalog, so an org user must not see it in browse or search. The positive half of CAT-038 already passed (3,506 org-scoped results); this is the discriminating half that was missing. The product is real, priced and in stock — only the listentry link into the store catalog is withheld, and THAT OMISSION IS THE FIXTURE: linking it in (or 'fixing' the seeder to link it) silently turns the case vacuous, so both the seeder (verifyExcludedFromStoreCatalog) and the guard assert it stays unlinked. Lives in the AGENT-TEST-Physical-Excluded catalog created by the same seeder. Seeded by npm run seed:catalog-edge; drift-guarded by npm run td:validate:catalog-edge. Runtime id/catalogId live in aliases.<env>.json only.",
+    "sku": "QA-EXCL-001",
+    "name": "AGENT-TEST-Org-Excluded-Product",
+    "slug": "agent-test-org-excluded-product",
+    "price": "77.77",
+    "currency": "USD",
+    "id": "",
+    "catalogId": ""
+  },
+  "PROD_SEO_CONFIGURED": {
+    "_inline": true,
+    "_notes": "CAT-040 — a product carrying a REAL meta title and meta description. xAPI returned seoInfo.pageTitle/metaDescription = null for 100 of 100 sampled products on vcst-qa, so 'empty tags' was the CORRECT render and the case had no positive example to discriminate against. This fixture supplies one: pageTitle and metaDescription are deliberately DIFFERENT strings (identical values would be non-empty yet prove nothing about the two tags being independently populated) and the description is a real sentence, not a placeholder. The seeder reconciles SEO onto an EXISTING product too, because a product created by an earlier run keeps its null SEO — and it verifies what the platform SERVES rather than what was written (verifySeoServed), since the case reads the served value. NAVIGATE VIA {{FRONT_URL}}@td(PROD_SEO_CONFIGURED.url) — store-relative, written per-env by the seeder. Seeded by npm run seed:catalog-edge; drift-guarded by npm run td:validate:catalog-edge.",
+    "sku": "QA-SEO-001",
+    "name": "AGENT-TEST-SEO-Configured-Product",
+    "slug": "agent-test-seo-configured-product",
+    "pageTitle": "AGENT-TEST SEO Configured Product | Virto QA Fixture",
+    "price": "129.50",
+    "currency": "USD",
+    "id": "",
+    "catalogId": "",
+    "categoryId": "",
+    "url": ""
+  },
+  "PROD_STACK_SALE": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-110"
+    },
+    "fields": {
+      "sku": "sku",
+      "code": "sku",
+      "name": "product_name",
+      "listPrice": "price",
+      "salePrice": "sale_price",
+      "currency": "currency",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "category": "category"
+    },
+    "notes": "PRICE-059 two-layer stacking fixture — list 100.00 / sale 70.00. The case asserts a percentage coupon is computed off the SALE price, not the list price, which is only observable while the two yield DIFFERENT numbers: 10% of 70 = 7.00 (extendedPrice 63.00) vs 10% of 100 = 10.00 (extendedPrice 90.00). Round numbers are deliberate. NO COUPON IS SEEDED FOR THIS FIXTURE — reuse @td(COUPON_10PCT.code) (QA10OFF, 10% off cart subtotal, confirmed live on vcst-qa 2026-08-25); on a SINGLE-LINE cart a cart-subtotal percentage and a line percentage are arithmetically identical, which is exactly what this case measures. The literal 'SAVE10' in the case Steps has NEVER existed on any env, so PRICE-059 additionally needs a Steps rewrite to @td() before it can run — seeding alone does not green it. NAVIGATE VIA {{FRONT_URL}}@td(PROD_STACK_SALE.url). Layer model + vacuity guard: standard-specs.mjs STACKING_FIXTURES / validateStackingShape, enforced by td:validate:standard check [13]. Seeded by npm run seed:standard-products."
+  },
+  "PROD_STACK_THREE_LAYER": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-111"
+    },
+    "fields": {
+      "sku": "sku",
+      "code": "sku",
+      "name": "product_name",
+      "listPrice": "price",
+      "currency": "currency",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "category": "category"
+    },
+    "notes": "PRICE-061 THREE-layer stacking fixture — list 200.00 / sale 150.00 (qty 1-9) / tier 120.00 (qty 10+). The first fixture carrying a sale AND a tier break on ONE product: QA-TIER-001 (@td(PROD_TIER_PRICED)) has tiers but no sale and the Sale Sample Widget (@td(PROD_SALE_SIMPLE)) has a sale but no tiers, so 'tier overrides sale at the threshold' was unobservable and the case could not discriminate. At qty 10 a 20% coupon yields 24.00/unit off the TIER price (extendedPrice 960.00), vs 30.00 off the sale (1200.00) or 40.00 off list (1600.00) — three DISTINCT outcomes, so the case can prove which layer the coupon applied to. NOTE there is no salePrice field here on purpose: buildPrices() returns SPEC_OVERLAYS tierPrices VERBATIM and silently ignores the sale_price column, so the sale layer lives as a `sale` on the qty-1 tier row (standard-specs.mjs SPEC_OVERLAYS PROD-111) and the CSV's sale_price stays BLANK; td:validate:standard check [13] rejects a tiered row that also fills it. NO COUPON IS SEEDED — reuse @td(COUPON_20PCT.code) (SUPER, 20% off cart subtotal, confirmed live 2026-08-25); the literal 'SAVE20' in the case Steps has never existed, so PRICE-061 also needs a Steps rewrite to @td() before it can run. NAVIGATE VIA {{FRONT_URL}}@td(PROD_STACK_THREE_LAYER.url). Seeded by npm run seed:standard-products."
   }
 }

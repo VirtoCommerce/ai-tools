@@ -1,0 +1,54 @@
+{
+  "ticket": "VCST-5671",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "priority": "High",
+  "title": "\"+N more\" overflow popover is not keyboard/AT accessible",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework (vc-shell — separate product, not the storefront)",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + hosted Storybook assets/iframe-1uXuqCDm.js built 2026-08-19T10:28:21Z",
+  "agent_used": "ui-ux-expert (Chrome DevTools MCP) for the live pass; unit RED→GREEN run inline",
+  "baseline_reproduction": "RED — fix sources reverted to their pre-fix parent commit, test files unchanged",
+  "affected_version": "2.4.0",
+  "fixed_version": "2.5.0",
+  "linked_fix_pr_on_ticket": false,
+  "linked_fix_pr_note": "No dev comment named a fix PR on any of the four; the PRs were located from main's history via 'Closes VCST-####'.",
+  "regression": {
+    "scheduler_popover_suite": "213 passed (213) across 31 files, 3 consecutive runs",
+    "typecheck": "clean"
+  },
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell. Substituted: the component vitest suites, live a11y tree, keyboard walk and computed-style/contrast measurement.",
+  "jira_transition": "Ready for test -> Testing -> Tested",
+  "evidence_artifact": null,
+  "fix_prs": [
+    "vc-shell#287 (6e512da01)",
+    "vc-shell#304 (86def16e2)"
+  ],
+  "red_result": "7 failed | 14 passed (21)",
+  "green_result": "21 passed (21)",
+  "str_result": "3/3",
+  "live_checks": {
+    "total": 6,
+    "passed": 6
+  },
+  "notes": [
+    "Docs contradict the code: PR #287 rewrote vc-scheduler.docs.md to say the overflow popover does NOT apply role=dialog; PR #304 then added role=dialog + aria-label and never updated the docs. P3, docs-only."
+  ],
+  "out_of_scope_findings": [
+    "Quick-info popover still has role=null / aria-label=null and no focus management — raised in this ticket's comment but outside its STR and Expected; filed separately."
+  ],
+  "coverage_limits": [
+    "Screen-reader announcement output not verified (no NVDA/JAWS/VoiceOver); AT claims rest on a11y-tree and attribute evidence."
+  ],
+  "bugs_filed": [
+    {
+      "key": "VCST-5802",
+      "title": "VcScheduler: event quick-info popover has no role and no accessible name",
+      "relationship": "standalone ticket, linked relates-to VCST-5671",
+      "provenance": "out-of-scope incidental"
+    }
+  ],
+  "evidence": "reports/tickets/Sprint26-17/VCST-5671/verification-report.md",
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5671/"
+}

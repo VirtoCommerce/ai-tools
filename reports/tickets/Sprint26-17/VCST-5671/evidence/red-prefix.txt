@@ -1,0 +1,33 @@
+# RED — sources reverted to pre-fix (before PR #287 6e512da01 and PR #304 86def16e2); tests UNCHANGED
+
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthWeekRow.test.ts > MonthWeekRow > renders 7 day cells and one event bar for the laid-out segment 18ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthWeekRow.test.ts > MonthWeekRow > shows +N more when overflow>0 and emits more-click 8ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthWeekRow.test.ts > MonthWeekRow > renders the overflow control as a button 5ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > lists the overflow events 15ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > renders each overflow event as a button so it is keyboard operable 5ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > emits event-click with the event and an anchor rect when a row is clicked 2ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > moves focus into the popover when it is initially mounted open 4ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > exposes the overflow panel as a named dialog 2ms
+ × |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > returns focus to the +N more trigger when Escape closes the initially-open popover 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > does not render content when show is false 14ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders content when show is true 4ms
+ × |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > applies opt-in dialog semantics to the floating panel 5ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders title in header when provided 3ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > does not render header when title is empty and no header slot 3ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders header slot content 5ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders default slot content 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders footer slot when provided 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > does not render footer when no footer slot 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > emits update:show false when close button is clicked 3ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > applies scrollable class to content when contentScrollable is true 1ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > does not apply scrollable class when contentScrollable is false 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected undefined to be 'dialog' // Object.is equality
+AssertionError: expected [] to have a length of 2 but got +0
+TypeError: Cannot read properties of undefined (reading 'trigger')
+Error: Cannot call element on an empty DOMWrapper.
+AssertionError: expected false to be true // Object.is equality
+Error: Cannot call element on an empty DOMWrapper.
+AssertionError: expected 'DIV' to be 'BUTTON' // Object.is equality
+ Test Files  3 failed (3)
+      Tests  7 failed | 14 passed (21)

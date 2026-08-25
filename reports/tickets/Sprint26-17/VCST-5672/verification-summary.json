@@ -1,0 +1,43 @@
+{
+  "ticket": "VCST-5672",
+  "verdict": "VERIFIED",
+  "priority": "Medium",
+  "title": "Timeline View story toolbar does not update the rendered grid",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework (vc-shell — separate product, not the storefront)",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + hosted Storybook assets/iframe-1uXuqCDm.js built 2026-08-19T10:28:21Z",
+  "agent_used": "ui-ux-expert (Chrome DevTools MCP) for the live pass; unit RED→GREEN run inline",
+  "baseline_reproduction": "RED — fix sources reverted to their pre-fix parent commit, test files unchanged",
+  "affected_version": "2.4.0",
+  "fixed_version": "2.5.0",
+  "linked_fix_pr_on_ticket": false,
+  "linked_fix_pr_note": "No dev comment named a fix PR on any of the four; the PRs were located from main's history via 'Closes VCST-####'.",
+  "regression": {
+    "scheduler_popover_suite": "213 passed (213) across 31 files, 3 consecutive runs",
+    "typecheck": "clean"
+  },
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell. Substituted: the component vitest suites, live a11y tree, keyboard walk and computed-style/contrast measurement.",
+  "jira_transition": "Ready for test -> Testing -> Tested",
+  "evidence_artifact": null,
+  "fix_prs": [
+    "vc-shell#290 (49492f8ef)"
+  ],
+  "red_result": "1 failed (1)",
+  "green_result": "1 passed (1)",
+  "str_result": "3/3",
+  "live_checks": {
+    "total": 3,
+    "passed": 3
+  },
+  "notes": [
+    "Fix is confined to vc-scheduler.stories.ts; stories are not shipped in the published package, so there is no component-behaviour risk.",
+    "Month view also verified wired, beyond the two controls the STR named."
+  ],
+  "out_of_scope_findings": [],
+  "coverage_limits": [],
+  "bugs_filed": [],
+  "evidence": "reports/tickets/Sprint26-17/VCST-5672/verification-report.md",
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5672/"
+}

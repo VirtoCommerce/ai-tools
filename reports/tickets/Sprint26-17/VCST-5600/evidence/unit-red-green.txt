@@ -1,0 +1,53 @@
+VCST-5600 — UNIT RED/GREEN + TEST-QUALITY PROBE
+===============================================
+cwd = .fix-workspace/vc-shell/framework   (the CI cwd; the repo-root script
+breaks on process.cwd()-relative paths)
+scope = shell/dashboard/draggable-dashboard
+
+GREEN (main @ 324cd9b09 = v2.5.0, worktree verified identical to origin/main)
+  Test Files  4 passed (4)
+       Tests  101 passed (101)
+
+RED PROBE -- is #303's one-line guard actually pinned?
+Reverted ONLY that line in GridstackDashboard.vue:342
+  -  if (event.target !== event.currentTarget) return;
+  +  // RED PROBE: guard removed
+Full-file run:
+       Tests  4 failed | 97 passed (101)
+  x does not grab the widget when button handles ".inner-button"
+  x does not grab the widget when input handles ".inner-input"
+  x does not grab the widget when tabindex handles ".inner-tabindex"
+  x does not hijack arrow keys from an inner control while the widget is grabbed
+  (failing assertion: expect(event.defaultPrevented).toBe(false) -- got true)
+
+=> The guard IS genuinely pinned. Contrast VCST-5664/5680/5667 this session,
+   where the guard/seam was NOT covered.
+
+PER-ROW DETECTION (probe applied, each of the 7 it.each rows run alone)
+  button          -> 1 failed    detects
+  input           -> 1 failed    detects
+  link            -> 1 failed    detects
+  select          -> 1 PASSED    VACUOUS  (ArrowDown)
+  textarea        -> 1 PASSED    VACUOUS  (ArrowLeft)
+  contenteditable -> 1 failed    detects
+  tabindex        -> 1 failed    detects
+
+FINDING 1 -- two rows are VACUOUS. select/ArrowDown and textarea/ArrowLeft pass
+with the fix reverted, because arrow keys are already inert while the widget is
+not grabbed. They assert nothing about the guard they appear to cover. Fix: grab
+the widget first (as the separate arrow-hijack test does), or use Enter/Space.
+
+FINDING 2 -- the block is GROUPING-DEPENDENT. Of the 5 rows that detect the bug
+in isolation, only 3 fail when run as a group, and WHICH 3 changes:
+  whole file       -> button, input, tabindex   (link, contenteditable pass)
+  the 7 rows only  -> button, input, link       (contenteditable, tabindex pass)
+So effective detection strength as CI runs it is 3 rows, not the 7 the table
+implies. It still catches the regression => test-quality issue, not a shipping
+risk. MECHANISM UNDETERMINED: the three inner-control mocks ARE mockClear()ed
+in beforeEach, so mock accumulation is ruled out; some other shared state (the
+never-unmounted wrappers, or the shared mockLayout) is implicated. Not
+over-claimed here.
+
+RESTORE
+  cp of the pristine file restored; `git diff --quiet origin/main -- framework/`
+  => framework/ identical to origin/main; re-run 101 passed (101).

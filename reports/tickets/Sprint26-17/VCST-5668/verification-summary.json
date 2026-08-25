@@ -1,0 +1,102 @@
+{
+  "ticket": "VCST-5668",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "priority": "Medium",
+  "title": "Sidebar menu toggle aria-label is hardcoded English",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework / Marketplace Vendor Portal (separate product, not the storefront)",
+  "fix_task": "VM-1749",
+  "fix_prs": [
+    "vc-shell#297 (9e2abc2de)"
+  ],
+  "linked_fix_pr_on_ticket": false,
+  "linked_fix_pr_note": "The ticket had NO comments at all — no dev note, no PR reference. The fix was located from main's history via the VCST-5668 mention in the commit body.",
+  "affected_version": "2.4.0",
+  "fixed_version": "2.5.0",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + deployed vcmp-dev vendor-portal; console banner reported framework v2.5.0 · 2026-08-19T10:23:58Z · 2964ccbe3",
+  "agent_used": "qa-backend-expert (playwright-edge) for the live pass; unit probes and the sweep run inline",
+  "design_choice_note": "The ticket offered two options — reuse VC_BLADE.CLOSE_MENU, or add a dedicated pair under VC_APP. The dev took the second, the better of the two: a blade-scoped key reads wrong on an app-level control.",
+  "unit": {
+    "green": "210 passed (210)",
+    "red": "2 failed | 208 passed (210) with SidebarHeader.vue reverted, its 2 added tests unchanged",
+    "red_failure": "expected 'Open menu' to be 'COMPONENTS.ORGANISMS.VC_APP.OPEN_MENU'",
+    "test_design_note": "the test stubs $t to return the key, so a raw English string is exactly what fails — it cannot pass by accident and it detects precisely this defect"
+  },
+  "deploy_gate": {
+    "ancestry": "9e2abc2de in v2.5.0, not in v2.4.0",
+    "bundle": "served vc-shell-framework22260.js contains 'Menü öffnen' x1, 'Menü schließen' x2, 'Open menu' x1, 'Close menu' x2 — the asymmetry corroborates the key topology exactly (CLOSE_MENU already existed under VC_BLADE and was added under VC_APP; OPEN_MENU is new), matching the ticket's own note that no OPEN_MENU key existed"
+  },
+  "acceptance_criteria": {
+    "total": 3,
+    "met": 2,
+    "partial": 1,
+    "detail": {
+      "localized_both_states_en_and_de": "PARTIAL — en confirmed live (Open menu / Close menu, no raw keys, a11y tree corroborated, clean toggle); de NOT exercisable, see notes[0]",
+      "check_locales_passes": "PASS — exit 0, 'All localizations are in sync with en.json!'",
+      "no_hardcoded_aria_label_in_sidebarheader": "PASS — both labels in the file are $t(...) calls (:38 notifications, :76 the burger)"
+    }
+  },
+  "live_checks": {
+    "check1_english_both_states": {
+      "verdict": "PASS",
+      "closed": "Open menu (aria-expanded=false)",
+      "open": "Close menu (aria-expanded=true)",
+      "note": "no raw key in either state; accessibility tree read as button \"Open menu\"; second click returned it cleanly"
+    },
+    "check2_german": {
+      "verdict": "BLOCKED — explicitly NOT counted as a pass",
+      "note": "A locale switcher exists (user menu -> Language) and was opened as a real user: exactly ONE option, 'English', marked active. localStorage VC_LANGUAGE_SETTINGS=en. The framework ships the de strings but the selectable-locale list is registered by the vendor-portal APP, not the framework, and vcmp-dev registers English only. No legitimate user-facing route to de exists; forcing it via storage/app state was deliberately not done because it would prove nothing about the shipped switcher."
+    },
+    "check3_bell_control": {
+      "verdict": "PASS",
+      "note": "notification bell reads 'Notifications' — resolved, not a key. Since the burger resolves too, i18n works generally AND specifically here; no burger-specific failure."
+    },
+    "render_conditions": "desktop layout only, sidebar expanded (pinned or hovered), not embedded — .sidebar-header__toolbar is v-if=\"expanded && !isMobile\" and the burger also needs showBurger. At 600x900 the header switches to the mobile variant and neither burger nor bell exists in the DOM.",
+    "console": "no vue-i18n missing-key or fallback warnings at any point"
+  },
+  "notes": [
+    "The German half of AC1 is unverifiable on this deployment: the Vendor Portal registers English as its only selectable locale. Nothing suggests de would fail (same $t() call, keys present in de.json, check:locales green) but it is unproven at runtime and not counted as passed. Closing it needs a deployed env whose app registers de, or a Storybook/framework-level check where the framework's own locale set is reachable.",
+    "Beyond this ticket: if no deployed environment offers a second locale, EVERY localization AC in this product is unverifiable at runtime and the shipped German translations are effectively untested. A process question for the team, not a defect in this fix.",
+    "The sweep the ticket invited shows this was NOT the last hardcoded aria-label — 13 further code sites in 12 components remain. Four are the identical shape to the defect just fixed (a ternary of two English strings): vc-status-icon, vc-editor, DataTableCellRenderer, TableGroupRow.",
+    "METHOD CAVEAT: my first detector came back clean and I nearly reported 'this was the last one'. Validating it against the pre-fix tree showed it failed to catch the very defect this ticket describes — the original is a TERNARY of quoted literals, which a ':aria-label=\"'' pattern cannot match. The rewritten detector scores 16 pre-fix -> 15 post-fix, delta exactly SidebarHeader.vue. Only with that validation is an empty result meaningful."
+  ],
+  "sweep": {
+    "scope": "framework/ui + framework/shell, 229 .vue files, 136 aria-label bindings, excluding *.test.* / *.stories.*",
+    "detector_validated": "16 findings pre-fix -> 15 post-fix, delta = 1 = SidebarHeader.vue",
+    "remaining_sites": 13,
+    "remaining_components": 12,
+    "list": [
+      "vc-badge.vue:23,:68 — 'Notification'",
+      "vc-banner.vue:13 — 'Error'/'Warning'/'Information'",
+      "vc-environment-banner.vue:5 — `Environment indicator: ${name}`",
+      "vc-status-icon.vue:5 — 'Active'/'Inactive'  [same shape as the fixed defect]",
+      "vc-color-input.vue:83 — `Pick color…`",
+      "vc-editor.vue:85 — 'Exit fullscreen'/'Fullscreen'  [same shape]",
+      "vc-file-upload.vue:27 — 'Upload files'",
+      "vc-rating.vue:36 — `Rating: ${modelValue} out of ${max}`/'No rating'",
+      "vc-select/_internal/SelectTrigger.vue:91 — `Remove ${…}`",
+      "vc-slider.vue:16 — 'Content carousel'",
+      "vc-data-table/components/DataTableCellRenderer.vue:26 — 'Collapse row'/'Expand row'  [same shape]",
+      "vc-data-table/components/TableGroupRow.vue:22 — 'Collapse group'/'Expand group'  [same shape]"
+    ],
+    "false_positives_excluded": [
+      "vc-input.vue:200 — leftover 'password' is a comparison operand; both branches are $t(...)",
+      "SchedulerMonthView.vue:54 — leftover 'p' is a date-format token; the template interpolates data only"
+    ]
+  },
+  "coverage_limits": [
+    "The collapsed-sidebar-hover render variant is source-derived only — not exercised live, to avoid persisting a sidebar-state change. The mobile-width negative case WAS verified live."
+  ],
+  "incidental_findings": [
+    "Three 404s on other apps' logo assets when the App Hub popover opens: /apps/app_search/logo.svg, /apps/builderio/logo.svg, /apps/page-builder-shell/assets/images/logo-only.svg. Pre-existing, unrelated."
+  ],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell or the Vendor Portal. Substituted: framework vitest suites, check:locales, live attribute + a11y-tree reads on the deployed artifact, and a validated source-wide sweep.",
+  "data_changes": "none — locale unchanged (no de option existed to select), burger returned to its initial state, viewport restored, no entity created or edited",
+  "bugs_filed": [],
+  "jira_transition": "Ready for test -> Testing (done); TESTED pending user confirmation",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5668/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5668/"
+}

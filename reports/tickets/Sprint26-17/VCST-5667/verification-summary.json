@@ -1,0 +1,75 @@
+{
+  "ticket": "VCST-5667",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "priority": "Medium",
+  "title": "Password fields outside the login page have no autocomplete tokens",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework / Marketplace Vendor Portal (separate product, not the storefront)",
+  "fix_task": "VM-1748",
+  "fix_prs": [
+    "vc-shell#296 (229f46832)"
+  ],
+  "linked_fix_pr_on_ticket": false,
+  "linked_fix_pr_note": "No PR linked on the ticket; located from main's history. The dev comments named PR #296 in prose.",
+  "affected_version": "2.4.0",
+  "fixed_version": "2.5.0",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + deployed vcmp-dev vendor-portal (bundle build id 22260, framework 2.5.0 confirmed independently)",
+  "agent_used": "qa-backend-expert (playwright-edge) for the live pass; unit probes run inline",
+  "baseline_reproduction": "RED — the four .vue files reverted to the parent of 229f46832; the four .test.ts files PR #296 added left unchanged",
+  "red_result": "4 failed | 79 passed (83) — one per file, each 'undefined' in place of every token",
+  "green_result": "83 passed (83) across 10 files, 3 consecutive runs",
+  "str_result": "3/3",
+  "completeness_recheck": {
+    "method": "independently re-ran the dev's grep -rl 'type=\"password\"' framework --include='*.vue' against current origin/main",
+    "result": "confirmed — exactly 5 .vue files, all 5 tokenized, per-file autocomplete counts matching the dev's table (3/3/2/3 plus 2 in Login.vue from PR #280)",
+    "dev_caught_a_file_the_ticket_missed": "framework/shell/components/change-password/change-password.vue — the user-menu form, the path users actually take (the auth-page version only serves a forced change at sign-in). 3 more untagged fields; without that catch the ticket would have shipped half-fixed.",
+    "token_values": "11 fields, all correctly paired (current-password / new-password / username)"
+  },
+  "live_checks": {
+    "check1_authenticated_user_menu": {
+      "verdict": "PASS",
+      "note": "renders as a .vc-popup, not a blade. 3 fields, all tokens on the native <input>, wrapper .vc-input null, stranding scan 0, broader non-field [autocomplete] scan 0, all inside a real <form>. No password submitted — Update stayed disabled, exited via Cancel, post-cancel state re-read."
+    },
+    "check2_auth_pages_and_login_on_deployed_build": {
+      "verdict": "PASS",
+      "note": "10 fields across #/changepassword, #/resetpassword, #/invite, #/login; every token on the native <input>, every wrapper null, stranding scan 0 on each of the four pages. ResetPassword/Invite render disabled with invalid test tokens (matching the author's local observation); disabled state does not affect where the attribute lands."
+    },
+    "check3_password_manager_behaviour": {
+      "verdict": "BLOCKED — explicitly NOT counted as a pass",
+      "note": "Mechanism confirmed (new-password on the native input, inside a form, secure context, deployed artifact). Not verifiable: Chromium/Edge renders 'Suggest strong password' as browser chrome outside the page, invisible to snapshots and screenshots; and the Playwright MCP context is isolated:true with no saved credentials, so the negative half ('does not prefill the current password into the new-password field') cannot be falsified. A value.length === 0 reading is a vacuous pass and is not counted."
+    },
+    "bundle_corroboration": "curl of the live vc-shell-framework22260.js found autocomplete:\"current-password\" x2, \"new-password\" x6, \"username\" x2 plus the version constant 2.5.0. 2/6 rather than 3/8 implies the auth ChangePassword page and the user-menu popup compile to a shared component; the per-surface live DOM read is authoritative and confirmed all five surfaces individually."
+  },
+  "acceptance_criteria": {
+    "total": 3,
+    "met": 2,
+    "not_verified": 1,
+    "detail": {
+      "every_field_correct_token": "PASS — 11 fields at source + all 5 surfaces live, stranding ruled out",
+      "password_manager_behaviour": "NOT VERIFIED — see live_checks.check3",
+      "coverage_mirroring_vc_input_test": "PASS by composition. The four page tests stub VcInput as a bare <input>, where attributes fall through automatically, so alone they pin token values/order rather than delivery. But the mechanism is guarded one level down on the REAL component: vc-input.test.ts:121-128 'sets autocomplete on the native input, not on the root wrapper' mounts the unstubbed VcInput and asserts both halves, including that .vc-input does NOT carry the attribute. Mechanism tested where it lives, values at each call site — AC intent met, and confirmed empirically by the live read."
+    }
+  },
+  "notes": [
+    "The password-manager AC is reported unverified rather than passed; closing it needs a persistent browser profile with a saved vcmp-dev credential, driven by hand.",
+    "AC3 initially looked unmet because the page tests cannot discriminate wrapper-stranding; it is in fact satisfied by composition via vc-input's own unstubbed test. Corrected before the verdict."
+  ],
+  "incidental_findings": [
+    "Both login inputs carry name=\"Field\" (duplicate, meaningless), as does the nav search box. Pre-existing, unrelated; autocomplete is the authoritative signal so the AC is unaffected, but a distinct name would be better.",
+    "The browser lane is not exclusively ours: the console buffer held entries timestamped ~1h before the run referencing authenticated screens the agent never visited, and the first sign-in failed with 'The session has expired' before a reload succeeded. Worth knowing before trusting a console-derived finding on this lane.",
+    "Pre-existing environment 500s with no password/autocomplete involvement: security/seller/users/search, seller/offers, message/unreadcount, conversation/search; repeating 401 on /pushNotificationHub/negotiate; 404s on catalog images and logo.svg."
+  ],
+  "tooling_note": "hooks/enforce-real-user.mjs blocked the first read-only browser_evaluate, so every DOM read used the /* @allow-eval */ opt-in — which is scoped to 'UI-FIX / DEBUG DOM experiment, NOT for test runs', so leaning on it for routine read-only measurement is a stretch. The allowlist already permits getBoundingClientRect/getComputedStyle; adding read-only attribute reads would make this class of verification first-class. Same shape as the previously-noted page.route fault-injection gap.",
+  "regression": {
+    "affected_component_suites": "83 passed (83) across 10 files, 3 consecutive runs"
+  },
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell or the Vendor Portal. Substituted: framework vitest suites, live DOM attribute measurement on the deployed artifact, bundle marker check.",
+  "data_changes": "none — no password submitted, no entity created or modified; the Change-password popup was cancelled and its closed state re-read",
+  "bugs_filed": [],
+  "jira_transition": "Ready for test -> Testing (done); TESTED pending user confirmation",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5667/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5667/"
+}

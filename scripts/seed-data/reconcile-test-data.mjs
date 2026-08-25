@@ -44,6 +44,8 @@ import {
 } from '../lib/seed-common.mjs';
 import { resolveAllRoles, roleByKey } from '../lib/user-roles.mjs';
 import { selectProbeTargets } from './overlay-specs.mjs';
+import { parse } from 'csv-parse/sync';
+import { REP_ONLY_ORG } from './sales-rep/rep-only-org-specs.mjs';
 
 const WARN_ONLY = process.argv.includes('--warn-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -567,6 +569,72 @@ async function checkOverlayGuidLiveness() {
   if (skipped.length) console.log(`     (${skipped.length} non-member GUID(s) not verified — see scripts/seed-data/overlay-specs.mjs for why)`);
 }
 
+/**
+ * [12] SALES-REP SERVED-ORG INTEGRITY — the relationship check [11] structurally cannot do.
+ *
+ * Check [11] asks "does this GUID still resolve to a live member?". That is a check on an ENTITY.
+ * What broke SR-GQL-052/056 in REG-2026-08-25-1128 was not an entity — ORG_REP_ONLY's org was alive
+ * the whole time, its overlay GUID was correct, and [11] passed — it was the RELATIONSHIP: the rep no
+ * longer served the org, so `sendCustomerCommunication` answered `Access denied.` per BL-SR-002 and
+ * two cases read a correct refusal as a failure. An entity probe can never see that, because there is
+ * no entity missing.
+ *
+ * So this check reads the declared serve-list from the two committed sources of truth — the
+ * `served_orgs` column of sales-rep/sales-reps.csv, plus the rep-only org from rep-only-org-specs.mjs
+ * — and asserts the LIVE rep record still carries each one. Silent membership loss is now loud.
+ */
+async function checkSalesRepServedOrgs() {
+  console.log('\n[12] Sales-rep served-org integrity (declared serve-list still live on the rep)');
+  const repsPath = join(ROOT, 'test-data/sales-rep/sales-reps.csv');
+  if (!existsSync(repsPath)) { warn('no sales-rep/sales-reps.csv — skipping'); return; }
+
+  const reps = parse(readFileSync(repsPath, 'utf8'), { columns: true, skip_empty_lines: true, trim: true, relax_quotes: true, relax_column_count: true })
+    .filter((r) => String(r.seeded ?? '').trim().toLowerCase() === 'true');
+  if (!reps.length) { warn('no seeded reps declared — skipping'); return; }
+
+  const orgs = parse(readFileSync(join(ROOT, 'test-data/b2b/organizations.csv'), 'utf8'), { columns: true, skip_empty_lines: true, trim: true, relax_quotes: true, relax_column_count: true });
+  const orgIdByKey = new Map(orgs.map((o) => [o.org_id, o.platform_id]));
+
+  // The rep-only org is not in organizations.csv (it is spec-declared + overlay-backed), so resolve
+  // its runtime id the same way a case would: from the per-env overlay.
+  const overlayPath = join(ROOT, `test-data/aliases.${TEST_ENV}.json`);
+  const overlay = existsSync(overlayPath) ? JSON.parse(readFileSync(overlayPath, 'utf8')) : {};
+  const repOnlyId = overlay?.[REP_ONLY_ORG.aliasName]?.id || null;
+
+  let checked = 0;
+  for (const row of reps) {
+    const declared = String(row.served_orgs || '').split(';').map((s) => s.trim()).filter(Boolean)
+      .map((key) => ({ key, id: orgIdByKey.get(key) }));
+    if (row.rep_key === REP_ONLY_ORG.repKey && repOnlyId) {
+      declared.push({ key: REP_ONLY_ORG.aliasName, id: repOnlyId });
+    }
+    if (!declared.length) continue;
+
+    const search = await api('POST', '/api/sales-rep/search', { keyword: row.full_name, take: 50, skip: 0 });
+    const hit = (search?.results || search?.salesReps || search?.items || [])
+      .find((r) => r.fullName === row.full_name || r.name === row.full_name);
+    if (!hit) { fail(`sales rep "${row.full_name}" (${row.rep_key}) not found live — every served-org assertion for this rep is unevaluable; run \`TEST_ENV=${TEST_ENV} npm run seed:sales-rep\``); continue; }
+    const rep = await api('GET', `/api/sales-rep/${hit.id}`);
+    const servedIds = new Set((rep?.organizations || []).map((o) => o.organizationId));
+
+    const missing = declared.filter((d) => d.id && !servedIds.has(d.id));
+    for (const m of missing) {
+      const how = m.key === REP_ONLY_ORG.aliasName
+        ? `TEST_ENV=${TEST_ENV} npm run seed:rep-only-org`
+        : `TEST_ENV=${TEST_ENV} npm run seed:sales-rep`;
+      fail(
+        `${row.rep_key} ("${row.full_name}") no longer serves ${m.key} (${m.id}) — the org is alive and its overlay GUID is correct, `
+        + `so check [11] cannot see this; every rep-scoped query/mutation on it now answers "Access denied." per BL-SR-002 and the case reads a correct refusal as a failure. Fix: \`${how}\``);
+    }
+    for (const d of declared.filter((x) => !x.id)) {
+      warn(`${row.rep_key}: served org "${d.key}" has no resolvable id (unpinned in b2b/organizations.csv, or the env is unseeded) — not verified`);
+    }
+    if (!missing.length) ok(`${row.rep_key}: serves all ${declared.filter((d) => d.id).length} declared org(s)`);
+    checked++;
+  }
+  if (!checked) warn('no rep had a resolvable declared serve-list to verify');
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -583,6 +651,7 @@ async function checkOverlayGuidLiveness() {
   await checkSeoComplete();
   await checkAuthDrift();
   await checkOverlayGuidLiveness();
+  await checkSalesRepServedOrgs();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);

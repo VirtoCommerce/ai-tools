@@ -1,0 +1,81 @@
+{
+  "ticket": "VCST-5688",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "priority": "Medium",
+  "title": "Session-expiry notification is buried under HTML parse-error toasts on a concurrent burst",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "product": "@vc-shell/framework / Marketplace Vendor Portal (separate product, not the storefront)",
+  "fix_prs": [
+    "vc-shell#291 (9795955d2)"
+  ],
+  "linked_fix_pr_on_ticket": false,
+  "linked_fix_pr_note": "The ticket had NO comments at all — no dev note, no PR reference. Located from main's history.",
+  "affected_version": "2.4.0 (build-id 64804)",
+  "fixed_version": "2.5.0",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + deployed vcmp-dev vendor-portal build 22260 (2026-08-24)",
+  "agent_used": "none — no browser agent dispatched, deliberately; see live_axis. Unit probes and source tracing run inline.",
+  "design_decisions_credited": [
+    "Gated on the expiry latch, so a login page seen while nobody is signed in stays an expected answer rather than a session death.",
+    "A 401 is deliberately returned unchanged, because its body is not a document so nothing tries to parse markup."
+  ],
+  "unit": {
+    "green": "31 passed (31), 3 consecutive runs",
+    "red": "4 failed | 27 passed (31)",
+    "red_failures": [
+      "treats an API call answered with an HTML login page as an expired session",
+      "fails the request instead of handing the login page's HTML to the caller  <- the core fix",
+      "recognises the login page by its URL when the content type is absent",
+      "acts once for a burst of concurrent requests that all land on the login page  <- the burst"
+    ],
+    "scoping_note": "Both source files (interceptors/index.ts + utilities/sessionExpiration.ts) revert together — the interceptor's throw needs the SessionExpiredError class the same PR introduced, so reverting one alone would not compile. useAsync/index.ts was NOT reverted: its notify guard is pre-existing (PR #291 touched only useAsync.docs.md).",
+    "coverage_note": "15 tests across both branches. Beyond the 4 above: 'still returns a 401 response to the caller', 'leaves an ordinary JSON response alone', 'does not sign out on a 403', 'leaves an HTML response that was not redirected alone', 'does not act on a login page while nobody is signed in', 'does not fail the sign-in request itself', plus 5 401-handling cases incl. 'handles concurrent 401s from the same dead session exactly once'. Every design decision and all five negative guards are pinned."
+  },
+  "deploy_gate": {
+    "ancestry": "9795955d2 in v2.5.0, NOT in v2.4.0",
+    "bundle": "vc-shell-vendors22260.js carries 'SessionExpiredError' x1 and the full message 'The session has expired, so this request was not completed' x1; the -framework facade chunk has 0 of both, as expected. looksLikeLoginPage / markSessionExpired absent — module-local names, minified; the class name and message survive as string literals.",
+    "independent_live_corroboration": "The VCST-5667 verification run earlier the same day hit, on a first sign-in attempt against vcmp-dev, 'Authentication error: The session has expired, so this request was not completed.' — verbatim this fix's SessionExpiredError default, observed by a different agent on an unrelated ticket. So the class is deployed and reaches a user-visible surface."
+  },
+  "notes": [
+    "RETRACTED (my error, not the fix's): my first pass claimed the notificationId de-duplication cited in useAsync.docs.md 'does not exist as described' and that the collapse rested on the !isSessionExpired() suppression alone. Both false. useAsync/index.ts:65 derives the id FROM THE ERROR MESSAGE (`async-error-${message.slice(0,80)}`), showNotification preserves a supplied id, and useContainer actions.add() de-duplicates on it (`if (!exists) push`, no else branch). So N identical-message errors produce exactly ONE toast and the interceptor's own comment is correct. How I got it wrong: I traced showNotification -> appendInstance (which only mounts the per-position container) and stopped, missing actions.add() — a sibling in the same file. Same shape of error as VCST-5667: concluding without checking the layer below.",
+    "Two further real mechanisms I also missed: (a) the latch has FOUR consumers — interceptors:166 sets it, :194 is this fix, useAsync:64 suppresses the toast, and shell/components/error-interceptor/interceptor.ts:56 suppresses the BLADE ERROR BANNER; (b) the toast is deferred via setTimeout(0) and registered through setPendingErrorNotification so ErrorInterceptor can cancelPendingErrorNotification when onErrorCaptured fires — a third de-duplication path.",
+    "SCOPE GAP IN THE FIX ITSELF (unchanged): the ticket's Actual described TWO things — four extra parse-error toasts AND the expiry toast being 'visible ~2.6s and not the topmost/most prominent message'. The fix addresses the first only. Toast ordering/prominence is untouched and not testable at unit level.",
+    "OBSERVATION TO RECONCILE (unchanged): the suite pins 'does not fail the sign-in request itself', yet the VCST-5667 run saw the SessionExpiredError message surface DURING sign-in prefixed 'Authentication error:'. Likely a stale latch from a prior session. One sighting, no repro, not called a defect."
+  ],
+  "live_axis": {
+    "status": "BLOCKED BY TOOLING — no browser agent dispatched, deliberately",
+    "reasons": [
+      "The ticket itself records that this platform cannot produce the 302->HTML trigger naturally (established during VCST-5598); the original repro was fault-injected.",
+      "Playwright MCP exposes NO route-interception tool — there is no browser_route. The only way to install a route handler is browser_run_code_unsafe, which hooks/enforce-real-user.mjs blocks, and the documented /* @allow-eval */ opt-in is scoped to 'UI-FIX / DEBUG DOM experiment, NOT for test runs'.",
+      "The naturally reachable expiry (clearing the HttpOnly cookies) yields a 401 — a DIFFERENT branch, which this fix deliberately leaves unchanged. It can neither confirm nor refute the defect."
+    ],
+    "rationale": "Dispatching an agent would have burned a session on a branch it structurally could not reach. Evidence relied on instead: the unit RED->GREEN incl. the burst case, the deployed-bundle markers, and the independent live sighting of the message.",
+    "how_to_close": "Extend hooks/enforce-real-user.mjs's allowlist for page.route / unrouteAll fault injection — the clean fix the hook's own guidance points at. THIRD time in this session that gap has bounded a verification."
+  },
+  "coverage_limits": [
+    "The live burst behaviour (1 expiry toast, 0 parse errors, on the dashboard's real 6-call widget load) is unverified — see live_axis.",
+    "The 401 branch was not exercised live, though it is unit-pinned.",
+    "No visual-ordering check of the toast stack — see notes[2]; the unit tests cannot speak to prominence at all."
+  ],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors and the 123 regression suites cover the storefront only; none cover vc-shell or the Vendor Portal. Substituted: framework vitest suites, source tracing of the collapse mechanism, deployed-bundle marker checks.",
+  "data_changes": "none — no live session was run for this ticket; the worktree was verified identical to origin/main after the RED probe",
+  "bugs_filed": [],
+  "jira_transition": "Ready for test -> Testing (done); TESTED pending user confirmation",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5688/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5688/",
+  "step_a_natural_half": {
+    "status": "EXECUTED",
+    "burst": "8 /api/ calls in TWO waves; the concurrent wave is exactly the six the ticket names (seller/products/search, orders/search, quote/search, seller/offers/search, rating, reviews/search), all 200 application/json. The extra two are a later re-fetch of the Orders and Offers widgets. The ticket's '6-call concurrent burst' rationale holds — refined, not contradicted.",
+    "concurrency_evidence": "Two independent lines, no scripting: response Date headers place a 1146ms and a 648ms request in the same one-second window (1794ms cannot complete sequentially); and requests 187-192 share a Cloudflare cf-ray tick prefix a30b58c198 that the two later calls do not. Caveat: proves in-flight overlap, not same-tick dispatch — Playwright's log has no per-request initiation timestamp.",
+    "healthy_path": "Zero toasts; role=status container present and empty; no Unexpected token '<' anywhere; 0 console errors.",
+    "fixed_code_present": "Confirmed by fetching the served asset (no page evaluation): vc-shell-vendors22260.js carries the SessionExpiredError class verbatim with the module-level latch and its guard adjacent.",
+    "four_oh_one_message": "The 401 branch is separately worded, in the OTHER chunk: 'Access Denied: Your session has expired or you do not have the necessary permissions.'",
+    "natural_session_death": "NOT OBSERVED — zero 401s across the session, so the 401 branch stays live-unverified (unit-pinned only).",
+    "env_noise_calibration": "The 500s recorded on earlier runs today did NOT reproduce: /pushNotificationHub/negotiate returned 200, seller/offers/search returned 200 twice. Those earlier failures look session-specific, not stable characteristics of vcmp-dev."
+  },
+  "corrections_issued": [
+    "A correction comment was posted to VCST-5688 retracting the original Note 1 and crediting the fix's documentation as accurate."
+  ]
+}

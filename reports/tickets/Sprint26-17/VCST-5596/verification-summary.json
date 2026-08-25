@@ -1,0 +1,81 @@
+{
+  "ticket": "VCST-5596",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "priority": "Medium",
+  "title": "Icon-only breadcrumb button has no accessible name",
+  "date": "2026-08-25",
+  "flow": "verify-fix",
+  "attempt": "3rd — prior attempts: REOPEN 2026-08-04 (wrong component), BLOCKED on deploy 2026-08-06",
+  "product": "@vc-shell/framework / Marketplace Vendor Portal (separate product, not the storefront)",
+  "fix_prs": [
+    "vc-shell#282 (f747a8d47) — the real fix, on vc-blade.vue's own #trigger slot",
+    "vc-shell#268 — superseded; fixed vc-breadcrumbs-item.vue, a component the app never renders here"
+  ],
+  "fixed_version": "2.5.0",
+  "environment": "vc-shell main @ 324cd9b09 (= v2.5.0) + deployed vendor-portal build id 22260, last-modified 2026-08-24 09:58 GMT",
+  "agent_used": "ui-ux-expert, run on playwright-chrome (lane substitution — see lane_note); unit probes and bundle checks run inline",
+  "lane_note": "Chrome DevTools MCP has no --secrets support, so logging in there would have required reading the plaintext password. The playwright lanes are wired to --secrets and the secret was typed BY NAME (process.env['ADMIN_PASSWORD_VCMP-DEV']), so the plaintext never entered the transcript. Correct substitution, recorded because it was not the lane specified.",
+  "root_cause_history": "PR #268 added the aria-label inside vc-breadcrumbs-item.vue. The button axe flags is the breadcrumbs overflow trigger that vc-blade.vue supplies via the #trigger slot, and a slot override REPLACES the labelled button VcBreadcrumbs provides. QA's 08-04 re-test diagnosed this; PR #282 moved the fix onto the blade's own trigger and raised its target size 22x36 -> 24x36.",
+  "deploy_gate": {
+    "ancestry": "f747a8d47 in v2.5.0, NOT in v2.4.0 — matches the 08-06 finding that v2.4.0 sat 2 commits behind #282",
+    "marker_before": "build 64804 (08-04): #trigger VcButton rendered with props {text, icon, icon-size, class, onClick}, patch flags [\"class\",\"onClick\"] — no aria-label",
+    "marker_after": "build 22260 (08-24): \"aria-label\":$t(\"COMPONENTS.MOLECULES.VC_BREADCRUMBS.SHOW_MORE\"), patch flags [\"aria-label\",\"class\",\"onClick\"]",
+    "locale_values": "Show more breadcrumbs x1, Weitere Brotkrümel anzeigen x1, SHOW_MORE x4 in vc-shell-framework22260.js",
+    "css_token": "--blade-header-button-target-size: 24px, 5 hits in assets/index22260.css",
+    "self_correction": "My own 08-06 check reported the token absent 'in none of the 79 deployed chunks' — but it grepped JS, and the token is a CSS custom property, so those chunks were the wrong place. The 08-06 conclusion was still right (the aria-label IS a JS render concern and was genuinely missing), but the target-size half of that check was not evidence."
+  },
+  "unit": {
+    "green": "191 passed (191)",
+    "red": "2 failed | 189 passed (191) with only vc-blade.vue reverted to f747a8d47^",
+    "red_failures": [
+      "vc-blade.a11y.test.ts — 'names the breadcrumbs overflow trigger it supplies through the #trigger slot'",
+      "vc-blade.target-size.test.ts — 'computes a minimum 24 by 24 CSS-pixel target for the overflow button'"
+    ],
+    "scoping_note": "PR #268's fix to vc-breadcrumbs-item.vue was deliberately LEFT IN PLACE for the RED; reverting both would conflate two separate fixes.",
+    "guard_note": "vc-blade had NO test file when #268 was written, and its stories cannot render breadcrumbs (renderingState is injected by VcBladeSlot, so standalone it is undefined and the block is v-if-ed out) — the story-level axe gate was structurally blind. #282's test provides BladeRenderingStateKey and asserts THROUGH THE SLOT PATH, precisely the failure mode that let #268 pass. The target-size half was guarded later by PR #308. Both halves fail on revert."
+  },
+  "live_checks": {
+    "axe_version": "axe-core 4.10.2, tags wcag2a wcag2aa wcag21a wcag21aa wcag22a wcag22aa",
+    "accessible_name": "PASS both blades — aria-label=\"Show more breadcrumbs\"; a11y tree confirms a non-empty computed NAME (navigation \"Breadcrumb\" > list > listitem > button \"Show more breadcrumbs\")",
+    "target_size": "PASS both blades — getBoundingClientRect = 24 x 36 (was 22x36); min-width 24px, token resolves to 24px",
+    "axe_button_name": "0 violations on product-details and quote-details",
+    "axe_target_size": "0 violations on product-details and quote-details",
+    "vacuous_pass_guard": "Re-ran axe with runOnly on just those two rules plus resultTypes including passes. Both rules landed in PASSES (product: button-name 32 nodes, target-size 61; quote: 7 and 15), with violations/incomplete/inapplicable all empty, AND querySelector(target[0]) === the measured trigger returned true in all four blade x rule combinations. So the rules ran and the exact element is in the passes set — not skipped, not absent. This is the node-identity check that caught the 08-04 wrong-component diagnosis.",
+    "both_blades": "DONE — the coverage gap the dev flagged and QA undertook in the ticket is closed; the quote list had 81 rows this run, no substitution needed",
+    "third_blade_opportunistic": "offers-list (3-deep): button-name 0, target-size 0",
+    "documented_exception": "color-contrast serious — 7 nodes product / 5 quote; the project's documented design exception, reported not counted"
+  },
+  "acceptance_criteria": {
+    "total": 3,
+    "met": 2,
+    "partial": 1,
+    "detail": {
+      "localized_accessible_name_en_and_de": "PARTIAL — en confirmed live on both blades; de not exercisable (see notes)",
+      "no_button_name_violation": "PASS — 0 on both blades, with the node-identity guard",
+      "titled_breadcrumbs_unchanged": "PASS with caveat — see notes[0]",
+      "target_size_folded_in_from_0804_report": "PASS — 24x36"
+    }
+  },
+  "notes": [
+    "STRUCTURAL FINDING: the breadcrumb trail collapses ENTIRELY on every item blade — nav[aria-label=Breadcrumb] > ol contains exactly ONE <li>, the overflow dropdown, and Maximize does not expand it (so the collapse is unconditional, not width-driven). Three consequences: it explains why the original violation hit every item blade; the inline vc-breadcrumbs-item path that PR #268 fixed is effectively NEVER exercised in this app (so #268 was not merely aimed at the wrong component — its target does not render here at all); and it constrains AC3, because titled crumbs could only be evidenced inside the expanded overflow menu (aria-label and title both null there, so the name comes from the crumb's own text — they did NOT acquire a generic label), while an inline-rendered titled crumb could not be tested because this build never produces one.",
+    "The German leg is BLOCKED — an environment limit, not a defect. Confirmed independently through the real UI: user menu > Language renders exactly one option, English, marked active; a DOM sweep for English/Deutsch/German/Français/Español/Русский/de-DE found only English. The framework ships 'Weitere Brotkrümel anzeigen' (proven in the bundle) but the selectable-locale list is registered by the APP, not the framework. No locale was forced via storage or app state. Same limitation independently hit on VCST-5668 today — if no deployed environment offers a second locale, every 'en + de' AC in this product is unverifiable at runtime."
+  ],
+  "incidental_findings": [
+    "label — axe CRITICAL, 3 nodes, quote-details: three unlabelled <input>s in the quote line-item pricing area, no placeholder, only a bare $ / % / $ glyph as adjacent text (213x34 / 207x34 / 213x34). Ids are render-counter based (#vc-field-v-219/220/221 this scan, ...108/109/110 earlier). A genuine WCAG 3.3.2 / 1.3.1 critical on a quote-editing surface — the strongest candidate of the three for its own ticket.",
+    "aria-input-field-name — serious, 1 node, quote-details: .vc-select__input, visible text only 'Click to select...'.",
+    "Untranslated blade identifiers leak into breadcrumbs — crumb titles render as raw blade names (QuotesList, ProductDetails) rather than localized labels. Cosmetic, but it IS the accessible name a screen-reader user hears, so it interacts with this ticket's own subject matter."
+  ],
+  "coverage_limits": [
+    "Inline-rendered titled crumbs could not be tested — this build never renders one (see notes[0]).",
+    "The German leg could not be exercised (see notes[1]).",
+    "Screen-reader announcement output not verified — no NVDA/JAWS/VoiceOver in the toolkit; claims rest on the accessibility tree and computed names."
+  ],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A — BL-UI-*/critical-ui-scope/storefront-selectors, the storefront P0 route list and the 123 regression suites cover the storefront only; none cover vc-shell or the Vendor Portal. The a11y-gated-themes rule (Coffee + Red) is likewise storefront-only. Substituted: framework vitest suites, live axe with a node-identity guard, geometry measurement, bundle/CSS marker checks.",
+  "data_changes": "none — no entity created, edited or deleted; the one non-read action was Maximize->Restore on the quote blade (transient layout state, returned)",
+  "bugs_filed": [],
+  "jira_transition": "Ready for test -> Testing (done); TESTED pending user confirmation",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5596/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5596/"
+}

@@ -172,7 +172,112 @@ export const SPEC_OVERLAYS = {
       { minQuantity: 20, list: 29.99, sale: 23.99 },
     ],
   },
+  // PROD-111 — the three-layer stacking fixture (PRICE-061). Sale AND tier on ONE product, which no
+  // pre-existing fixture had: QA-TIER-001 has tiers but no sale, the Sale Sample Widget has a sale but
+  // no tiers, so "tier overrides sale at the threshold" was unobservable.
+  //
+  // NOTE the shape: buildPrices() returns `tierPrices` VERBATIM when present and IGNORES the row's
+  // sale_price column, so the sale layer has to live INSIDE the tier rows — a qty-1 row carrying
+  // `sale` is the sale layer, and the qty-10 row's lower `sale` is the tier layer. Putting 150 in the
+  // CSV's sale_price column instead would be silently dropped. The drift guard rejects that
+  // combination outright so the trap cannot be re-entered.
+  'PROD-111': {
+    tierPrices: [
+      { minQuantity: 1,  list: 200.00, sale: 150.00 }, // sale layer  — 20% coupon → 30.00/unit
+      { minQuantity: 10, list: 200.00, sale: 120.00 }, // tier layer  — 20% coupon → 24.00/unit
+    ],
+  },
 };
+
+/**
+ * DISCOUNT-STACKING fixtures (PRICE-059 / PRICE-061) — the layer model, declared once.
+ *
+ * Both cases assert WHICH pricing layer a percentage coupon is applied to. That is only observable
+ * when the layers yield DIFFERENT numbers: if list and sale coincide, or sale and tier coincide, the
+ * assertion passes no matter which layer the engine actually used. Every value below therefore exists
+ * to be distinguishable, and `validateStackingShape()` enforces exactly that rather than merely
+ * checking the rows exist.
+ *
+ * `couponPct` is the discount the case applies. The coupons themselves are NOT seeded here — they
+ * already exist as cart-subtotal percentage promotions (`@td(COUPON_10PCT.code)` = QA10OFF,
+ * `@td(COUPON_20PCT.code)` = SUPER, both confirmed live on vcst-qa 2026-08-25). On a single-line cart
+ * a cart-subtotal percentage and a line percentage are arithmetically identical, which is what these
+ * cases measure; the literal `SAVE10` / `SAVE20` codes in the case Steps never existed on any env.
+ */
+export const STACKING_FIXTURES = {
+  'PROD-110': {
+    couponAlias: 'COUPON_10PCT', couponPct: 10, qty: 1,
+    layers: { list: 100.00, sale: 70.00 },
+    // 10% of sale = 7.00 vs 10% of list = 10.00 → extendedPrice 63.00 vs 90.00. Distinct either way.
+    purpose: 'PRICE-059 — a percentage coupon must be computed off the SALE price, not the list price',
+  },
+  'PROD-111': {
+    couponAlias: 'COUPON_20PCT', couponPct: 20, qty: 10,
+    layers: { list: 200.00, sale: 150.00, tier: 120.00 },
+    // 20% of tier = 24.00 → ext 960.00; of sale = 30.00 → 1200.00; of list = 40.00 → 1600.00.
+    purpose: 'PRICE-061 — sale → tier at threshold → coupon on the tier price, all three layers',
+  },
+};
+
+/** Expected per-unit discount + line extended price for a stacking fixture layer. Pure. */
+export function stackingExpectation(fixture, layer = 'effective') {
+  const { layers, couponPct, qty } = fixture;
+  const unit = layer === 'effective' ? (layers.tier ?? layers.sale ?? layers.list) : layers[layer];
+  if (!Number.isFinite(unit)) return null;
+  const discountPerUnit = Math.round(unit * couponPct) / 100;
+  return { unit, discountPerUnit, extendedPrice: Math.round((unit - discountPerUnit) * qty * 100) / 100 };
+}
+
+/**
+ * Shape assertions for the stacking fixtures — shared by the drift guard and the unit tests.
+ * VACUITY-oriented: every check names the way the fixture could still exist and prove nothing.
+ */
+export function validateStackingShape(rowsById = {}) {
+  const problems = [];
+  for (const [id, fx] of Object.entries(STACKING_FIXTURES)) {
+    const { list, sale, tier } = fx.layers;
+
+    // 1. The layers must be genuinely different, and strictly decreasing.
+    const named = Object.entries(fx.layers);
+    for (const [n, v] of named) {
+      if (!Number.isFinite(v) || v <= 0) problems.push(`${id}: layer "${n}" is not a positive number (${v})`);
+    }
+    if (sale != null && list != null && sale >= list) {
+      problems.push(`${id}: sale ${sale} is not below list ${list} — with no real markdown the case cannot tell a sale-price discount from a list-price one`);
+    }
+    if (tier != null && sale != null && tier >= sale) {
+      problems.push(`${id}: tier ${tier} is not below sale ${sale} — "tier overrides sale at the threshold" is then unobservable, which is exactly why no pre-existing fixture could serve PRICE-061`);
+    }
+
+    // 2. The DISCOUNTED outcomes must differ per layer, not just the base prices. Two different base
+    // prices can still round to the same discount, which would re-introduce the ambiguity silently.
+    const outcomes = new Map();
+    for (const [n] of named) {
+      const e = stackingExpectation(fx, n);
+      if (!e) continue;
+      const key = `${e.discountPerUnit}/${e.extendedPrice}`;
+      if (outcomes.has(key)) {
+        problems.push(`${id}: layers "${outcomes.get(key)}" and "${n}" both yield discount ${e.discountPerUnit}/unit and extendedPrice ${e.extendedPrice} — the case cannot attribute the discount to a layer`);
+      }
+      outcomes.set(key, n);
+    }
+
+    // 3. A tiered fixture must not ALSO carry a sale_price column: buildPrices() returns tierPrices
+    // verbatim and drops sale_price, so the column would look meaningful and do nothing.
+    const row = rowsById[id];
+    if (row && SPEC_OVERLAYS[id]?.tierPrices && String(row.sale_price ?? '').trim()) {
+      problems.push(`${id}: has tierPrices AND a sale_price="${row.sale_price}" column — buildPrices() returns tierPrices verbatim and IGNORES sale_price, so that column is silently dropped. Express the sale layer as a \`sale\` on the qty-1 tier row instead.`);
+    }
+
+    // 4. The threshold must be reachable by the quantity the case adds.
+    const tiers = SPEC_OVERLAYS[id]?.tierPrices;
+    if (tiers && tier != null) {
+      const threshold = Math.max(...tiers.map((t) => t.minQuantity));
+      if (fx.qty < threshold) problems.push(`${id}: the case adds qty ${fx.qty} but the tier threshold is ${threshold} — the tier layer would never engage`);
+    }
+  }
+  return problems;
+}
 
 // ---------------------------------------------------------------------------
 // DISCOUNT-RATIO model (VCST-5691) — the exact fraction a price row must expose.

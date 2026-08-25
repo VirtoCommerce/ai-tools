@@ -1,0 +1,5 @@
+# GREEN — fixed source @ origin/main 324cd9b09 (= release v2.5.0), cwd=framework/
+
+ ✓ |unit| ui/components/organisms/vc-scheduler/VcScheduler.style.test.ts > VcScheduler surface styles > paints the scheduler with the dark-theme additional-50 surface token 27ms
+ Test Files  1 passed (1)
+      Tests  1 passed (1)

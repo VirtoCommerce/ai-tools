@@ -1,0 +1,25 @@
+# GREEN — fixed source @ origin/main 324cd9b09 (= release v2.5.0), cwd=framework/ (the CI cwd)
+
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthWeekRow.test.ts > MonthWeekRow > renders 7 day cells and one event bar for the laid-out segment 17ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthWeekRow.test.ts > MonthWeekRow > shows +N more when overflow>0 and emits more-click 9ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthWeekRow.test.ts > MonthWeekRow > renders the overflow control as a button 4ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > lists the overflow events 17ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > renders each overflow event as a button so it is keyboard operable 3ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > emits event-click with the event and an anchor rect when a row is clicked 3ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > moves focus into the popover when it is initially mounted open 4ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > exposes the overflow panel as a named dialog 2ms
+ ✓ |unit| ui/components/organisms/vc-scheduler/_internal/month/MonthMorePopover.test.ts > MonthMorePopover > returns focus to the +N more trigger when Escape closes the initially-open popover 4ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > does not render content when show is false 15ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders content when show is true 4ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > applies opt-in dialog semantics to the floating panel 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders title in header when provided 3ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > does not render header when title is empty and no header slot 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders header slot content 7ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders default slot content 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > renders footer slot when provided 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > does not render footer when no footer slot 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > emits update:show false when close button is clicked 3ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > applies scrollable class to content when contentScrollable is true 2ms
+ ✓ |unit| ui/components/molecules/vc-popover/vc-popover.test.ts > VcPopover > does not apply scrollable class when contentScrollable is false 1ms
+ Test Files  3 passed (3)
+      Tests  21 passed (21)

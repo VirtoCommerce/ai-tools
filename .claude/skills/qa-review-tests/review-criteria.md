@@ -165,6 +165,17 @@ Ensures assertions can be objectively evaluated as PASS or FAIL with no human ju
 - **Bad:** `[STATE] email received by user` (no email checking tool)
 - **Acceptable:** `[EMAIL] order confirmation email received within 60s` (if email verification is available)
 
+### T-005: Unscoreable prose in an EVALUATED assertion `[Critical]`
+- **Scope:** runner-native GraphQL cases (`[GQL-OP]` in Steps) and only the **verdict-affecting** tags the runner evaluates — `[ERRORS] [DATA] [NULL] [COUNT] [VAR] [PERF]`. `[EVIDENCE]/[MATH]/[ROUNDTRIP]/[ADMIN]/[STOREFRONT]/[EVENT]`, and the `Cross_Layer_Checks` / `Failure_Signals` / `Preconditions` / `References` columns, are **meant** to hold English and are never flagged. A non-runner case's assertions are read by an agent, which handles prose — also never flagged.
+- **Detection:** the predicate is not scoreable against the grammar in [`knowledge/api/graphql-test-cases-runner.md` §4](../../knowledge/api/graphql-test-cases-runner.md). Two shapes, both guaranteed to fail on every build regardless of the product: *unparseable* (no branch matches → the runner emits `unrecognized <KIND> predicate`) and *prose-operand* (a comparison branch matches but an operand is English, so the runner reports `lhs=undefined rhs=undefined`). The verdict is delegated to `classifyPredicateScoreability()` in `scripts/lib/graphql-assertions.ts` — the evaluator's own module — so the gate can never be stricter than the runner.
+- **Why Critical:** the case reds for a reason unrelated to the product **and** the false red masks the real assertions in the same case that passed. In `REG-2026-08-25-1128`, 5 of 14 non-passing new cases failed this way (e.g. `SR-GQL-119` — 8 of 9 assertions passed).
+- **Not a `{HYPOTHESIS}` rule.** A tagged hypothesis is legitimate while authoring (that is GRD-001's business); the defect is prose in an evaluated predicate, tagged or not.
+- **Bad:** `[DATA label=q] verify whether data.pushMessages.totalCount increased after the share {HYPOTHESIS}`
+- **Bad:** `[DATA label=q] data.product.loyaltyPoints is present (…); WHEN a factor is configured: data.product.loyaltyPoints.amount >= 0 and …`
+- **Bad:** `[DATA label=q] data.org.myStatus = "Approved" (BL-B2B-009: …)` — the trailing parenthetical trips the arithmetic branch, which compares numbers and can never match a string.
+- **Good:** `[DATA label=q] data.pushMessages.totalCount > 0 {HYPOTHESIS}` (+ the prose rationale moved to `Cross_Layer_Checks`)
+- **Fine:** `[ERRORS label=q] errors[] empty — every Product field must resolve` (the evaluator is prefix-anchored; a trailing rationale is not read)
+
 ---
 
 ## Dimension 5: Data Validity

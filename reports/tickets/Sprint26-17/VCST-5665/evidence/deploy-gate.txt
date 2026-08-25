@@ -1,0 +1,46 @@
+# Deploy gate — VCST-5665 / vc-shell PR #299 (2e928761f)
+
+## 1. Git ancestry (VirtoCommerce/vc-shell)
+2e928761f committed 2026-08-13T17:22:37+03:00
+  ancestor of v2.5.0 ... YES
+  ancestor of v2.4.0 ... NO   (2.4.0 is the version the ticket was filed against)
+v2.4.0 released 2026-08-04 | v2.5.0 tagged 2026-08-19T10:25:04Z
+origin/main HEAD = 324cd9b09 "release: v2.5.0"
+
+## 2. Published npm artifact — type declarations (the runtime markers here are minifiable)
+The fix's runtime markers do not survive minification: PopupMessageOptions is a TS type
+(erased) and toMessageSlot is module-local (renamed). The published .d.ts IS shipped and
+unminified, so it is the reliable marker.
+
+@vc-shell/framework            2.4.0     2.5.0
+  "PopupMessageOptions"          0         13 hits
+  dist/core/composables/usePopup/index.d.ts:
+    2.4.0: showConfirmation(message: string | Ref<string>): Promise<boolean>
+    2.5.0: showConfirmation(message: string | Ref<string>, options?: PopupMessageOptions): Promise<boolean>
+           showError(message: string | Ref<string>, options?: PopupMessageOptions): void
+           showInfo(message: string | Ref<string>, options?: PopupMessageOptions): void
+  Reachable from the package root: dist/index.d.ts:64 `export { usePopup } from "./core/composables/usePopup";`
+  => the opt-in is usable by TypeScript consumers, not just at runtime.
+
+NOTE on a near-miss: a first grep of `dist/*.d.ts` (top level only) returned the OLD
+signature and no PopupMessageOptions. That hit was dist/test-mock-factories.d.ts, an
+internal test-mock helper that declares its own local copy of IUsePopup. The real
+declaration lives one level down. Reading only the top-level grep would have produced a
+false "the opt-in is not in the published types" finding.
+
+## 3. Deployed surface — Marketplace Vendor Portal (vcmp-dev)
+https://vcmp-dev.govirto.com/apps/vendor-portal/
+  last-modified: Mon, 24 Aug 2026 09:58:00 GMT  (after the v2.5.0 release on 08-19)
+  chunks: vc-shell-framework22260.js (0.1 MB)  <- FACADE, re-exports only
+          vc-shell-vendors22260.js   (0.8 MB)  <- real implementation
+
+Framework version proven TRANSITIVELY, via markers that exist only in 2.5.0 (validated
+earlier the same day against the published 2.4.0 vs 2.5.0 tarballs):
+                                                    vendors   framework(facade)
+  "restoredPage"                                       1              0
+  "no TableQueryState provider is in scope"             1              0
+  "Assigning to pagination.currentPage is deprecated"   1              0
+=> vendor-portal on vcmp-dev is built against @vc-shell/framework >= 2.5.0, so PR #299 is live.
+
+The facade/implementation split is why the framework chunk shows 0: grepping it alone
+reads as "fix absent" and manufactures a false REOPEN.

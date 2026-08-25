@@ -267,6 +267,178 @@ function splitTopLevelOp(
   return null;
 }
 
+/* ------------------------------------------------------------------------- *
+ * Static scoreability classifier (authoring-time twin of the evaluator below)
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Can this predicate produce a verdict that reflects the PRODUCT?
+ *
+ *   "scoreable"      — the evaluator will bind it to a real path/number.
+ *   "unparseable"    — no branch matches; the runner emits
+ *                      `unrecognized <KIND> predicate` and FAILS the case.
+ *   "prose-operand"  — a comparison branch DOES match, but an operand the
+ *                      branch will resolve as a path/number is English prose,
+ *                      so the comparison degrades to `lhs=undefined rhs=undefined`
+ *                      and can never pass, whatever the product does.
+ *
+ * Both non-scoreable verdicts are the same defect from the author's side: an
+ * English sentence landed in a column the runner evaluates as a predicate. It
+ * costs twice — a false red, AND it masks the real assertions in the same case
+ * that passed (REG-2026-08-25-1128: 5 of 14 non-passing new cases).
+ *
+ * This is a STATIC twin of `evaluateAssertion`, and deliberately lives beside it
+ * rather than in the linter: it mirrors the evaluator's dispatch order and reuses
+ * its own `PATH_TOKEN` / `splitTopLevelOp` / `PROVENANCE_SUFFIX_RE`, so the two
+ * cannot drift on what counts as a path. Transcribing the grammar into
+ * scripts/test-cases/lint-test-cases.ts would rot the moment a branch is added
+ * here (`.claude/rules/test-data.md` §GOLDEN RULE).
+ *
+ * It is deliberately NO STRICTER than the evaluator. The evaluator's branches
+ * are mostly PREFIX-anchored, so a trailing rationale after a well-formed
+ * predicate (`errors[] empty — every Product field must resolve`,
+ * `data.wishlist is null — private list not exposed`) is scored on the prefix and
+ * is NOT a defect. Anchoring those would have flagged ~90 correct lines.
+ */
+export type PredicateScoreability = "scoreable" | "unparseable" | "prose-operand";
+
+/**
+ * `{{VAR}}` is substituted from the capture bag and `@td(...)` is resolved from
+ * the test-data registry BEFORE the evaluator sees the predicate (see
+ * `evaluateAssertion` → `substituteVars`, and the runner's `resolvedAssertions`).
+ * Statically we don't know the value, only that a scalar will be there — so both
+ * collapse to a number. Without this, every `[COUNT] …length > {{BASELINE}}` and
+ * every `= @td(ALIAS.id)` reads as unparseable.
+ */
+function normalizeRuntimePlaceholders(s: string): string {
+  return s.replace(/@td\([^)]*\)/g, "0").replace(/\{\{\w+\}\}/g, "0");
+}
+
+/**
+ * An operand position — somewhere the evaluator will call `resolveByPath` or
+ * `evaluateNumericExpression`. Legal content is a path token, a number, or an
+ * arithmetic expression over them. A path token has NO top-level whitespace
+ * (that is `PATH_TOKEN`'s defining property), so internal whitespace in an
+ * operand is the tell that prose was spliced into a comparison.
+ */
+function isCleanOperand(s: string): boolean {
+  const neutralized = s.replace(/\[[^\]]*\]/g, "[]"); // filter bodies may hold spaces
+  const parts = neutralized
+    .split(/(?:\s[+\-]\s)|[*/()]/) // same arithmetic split the evaluator recognises
+    .map((x) => x.trim())
+    .filter(Boolean);
+  return parts.length > 0 && parts.every((p) => !/\s/.test(p));
+}
+
+/** Mirrors the evaluator's `lhsHasPath`/`rhsHasPath` guards. */
+function referencesDataPath(s: string): boolean {
+  return /(?:^|[^\w])data\.\w/.test(s.replace(/\[[^\]]*\]/g, ""));
+}
+
+/** `evaluateErrorsPredicate`: HTTP <code>, else any `empty` / `non-empty` token. */
+function classifyErrorsPredicate(predicate: string): PredicateScoreability {
+  if (/^HTTP\s+\d{3}\s*$/i.test(predicate)) return "scoreable";
+  return /\bempty\b/i.test(predicate) ? "scoreable" : "unparseable";
+}
+
+/** `evaluateDataPredicate`, branch for branch, in the same order. */
+function classifyDataPredicate(predicate: string): PredicateScoreability {
+  if (/\s+(OR|AND)\s+/.test(predicate)) {
+    const orParts = predicate.split(/\s+OR\s+/);
+    const andParts = predicate.split(/\s+AND\s+/);
+    const isOr = orParts.length > 1 && andParts.length === 1;
+    const isAnd = andParts.length > 1 && orParts.length === 1;
+    if (isOr || isAnd) {
+      const subs = (isOr ? orParts : andParts).map((s) => s.trim());
+      const verdicts = subs.map((sub) =>
+        /^errors\[\]/.test(sub) ? classifyErrorsPredicate(sub) : classifyDataPredicate(sub)
+      );
+      return verdicts.find((v) => v !== "scoreable") ?? "scoreable";
+    }
+    // Mixed OR+AND falls through to the single-predicate branches, exactly as
+    // the evaluator does.
+  }
+
+  if (/^data\s+is\s+null\b/i.test(predicate)) return "scoreable";
+  if (new RegExp(`^${PATH_TOKEN}\\s+is\\s+(?:null|non-null)\\b`, "i").test(predicate)) return "scoreable";
+  if (new RegExp(`^${PATH_TOKEN}\\s+is\\s+non-empty\\s+GUID\\b`, "i").test(predicate)) return "scoreable";
+  if (new RegExp(`^${PATH_TOKEN}\\s+matches\\s+/.+/[gimsu]*$`).test(predicate)) return "scoreable";
+
+  const crossOrder = splitTopLevelOp(predicate, [">=", "<=", ">", "<"]);
+  if (crossOrder && referencesDataPath(crossOrder.lhs) && referencesDataPath(crossOrder.rhs)) {
+    return isCleanOperand(crossOrder.lhs) && isCleanOperand(crossOrder.rhs)
+      ? "scoreable"
+      : "prose-operand";
+  }
+
+  if (new RegExp(`^${PATH_TOKEN}\\s*(?:>=|<=|>|<)\\s*-?\\d+(?:\\.\\d+)?\\s*$`).test(predicate)) return "scoreable";
+
+  const arith = splitTopLevelOp(predicate, ["≈", "~=", "="]);
+  if (arith) {
+    const stripBrackets = (s: string) => s.replace(/\[[^\]]*\]/g, "");
+    const combined = `${stripBrackets(arith.lhs)} ${stripBrackets(arith.rhs)}`;
+    const hasArith = /[*/()]/.test(combined) || /\s[+\-]\s/.test(combined);
+    const lhsHasPath = referencesDataPath(arith.lhs);
+    const rhsHasPath = referencesDataPath(arith.rhs);
+    const isApprox = arith.op === "≈" || arith.op === "~=";
+    if ((hasArith && (lhsHasPath || rhsHasPath)) || (lhsHasPath && rhsHasPath) || isApprox) {
+      // The arithmetic branch compares NUMBERS — a string operand can never
+      // pass it. `data.x.status = "Approved" (BL-B2B-009: …)` reads as a plain
+      // string equality but the trailing parenthetical trips `hasArith`, so the
+      // runner scores it numerically and it fails on every build.
+      return isCleanOperand(arith.lhs) && isCleanOperand(arith.rhs) ? "scoreable" : "prose-operand";
+    }
+  }
+
+  const equals = splitTopLevelOp(predicate, ["="]);
+  if (equals) {
+    // String equality: the RHS is an arbitrary literal by grammar, so only the
+    // LHS (which the evaluator hands to resolveByPath) has to be a path.
+    return new RegExp(`^${PATH_TOKEN}$`).test(equals.lhs) ? "scoreable" : "prose-operand";
+  }
+
+  return "unparseable";
+}
+
+/**
+ * Static verdict for one parsed assertion — the authoring-time answer to
+ * "will the runner be able to score this against the product?".
+ *
+ * Pass the `Assertion` that `parseAssertions()` produced, so the caller never
+ * re-implements the tag grammar either.
+ */
+export function classifyPredicateScoreability(assertion: Assertion): PredicateScoreability {
+  const withoutProvenance = stripProvenance(assertion.predicate);
+  const predicate = normalizeRuntimePlaceholders(withoutProvenance);
+  if (!predicate) return "unparseable";
+
+  switch (assertion.kind) {
+    case "VAR":
+      return /=/.test(predicate) ? "scoreable" : "unparseable";
+    case "PERF":
+      return /^elapsed_ms\s*(?:<=|>=|<|>|=|==)\s*\d+(?:\.\d+)?\s*(?:ms|s)?\s*$/i.test(predicate)
+        ? "scoreable"
+        : "unparseable";
+    case "NULL":
+      // evaluateNullPredicate is prefix-anchored on a path and ignores the rest.
+      return new RegExp(`^${PATH_TOKEN}`).test(predicate) ? "scoreable" : "unparseable";
+    case "ERRORS":
+      return classifyErrorsPredicate(predicate);
+    case "COUNT":
+      return new RegExp(`^${PATH_TOKEN}\\s*(?:=|==|>=|<=|>|<)\\s*\\d+`).test(predicate)
+        ? "scoreable"
+        : "unparseable";
+    default: {
+      // DATA: the evaluator strips a leading `<label>.` from path tokens first.
+      const unlabelled =
+        assertion.label && assertion.label !== "_default"
+          ? predicate.replace(new RegExp(`(^|[\\s(])${escapeRegex(assertion.label)}\\.`, "g"), "$1")
+          : predicate;
+      return classifyDataPredicate(unlabelled);
+    }
+  }
+}
+
 function evaluateDataPredicate(
   a: Assertion,
   r: GraphQLResponse,

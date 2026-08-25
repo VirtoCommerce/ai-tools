@@ -21,7 +21,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  CSV_SOURCE, FIXTURE_KEY, RUNTIME_COLUMNS, loadFixture, validateFixtureShape,
+  CSV_SOURCE, FIXTURE_KEY, RUNTIME_COLUMNS, loadFixture, validateFixtureShape, validateOverlayOwnership,
 } from './wishlist-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -35,7 +35,15 @@ const REQUIRED_ALIAS_FIELDS = [
   'storeAProductSku', 'storeAProductUrl',
   'storeBProductSku', 'storeBProductUrl',
   'storeAId', 'storeBId',
+  // The two ids a GraphQL case has to be able to tell apart. `customerId`/`userId` are the SECURITY
+  // ACCOUNT id — what the storefront session resolves to and what products(userId:) accepts —
+  // while `contactId` is the Contact member id, which products(userId:) does NOT accept. Losing
+  // `contactId` would leave no way to express the distinction the 2026-08-25 fix turned on.
+  'customerId', 'userId', 'contactId',
 ];
+// customerId and userId are deliberately the SAME column: a wishlist's customerId IS the account id.
+// contactId must be a different column, or the fixture has lost the distinction entirely.
+const ACCOUNT_ID_FIELDS = ['customerId', 'userId'];
 const GUID_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
 const PROSE_COLS = new Set(['test_purpose', 'notes']);
 
@@ -85,6 +93,17 @@ else {
   for (const [field, col] of Object.entries(def.fields || {})) {
     if (!csvCols.has(col)) fail(`${ALIAS_NAME}.fields.${field} points at CSV column "${col}", which does not exist in ${CSV_SOURCE.file}`);
   }
+  // The alias must keep pointing account-id fields at the account column and contactId at the
+  // contact column. A silent re-point is invisible to every other gate — @td() resolves happily to
+  // the wrong id, and the case fails as a product bug.
+  for (const f of ACCOUNT_ID_FIELDS) {
+    if (def.fields?.[f] && def.fields[f] !== 'user_id') {
+      fail(`${ALIAS_NAME}.fields.${f}="${def.fields[f]}" must be "user_id" — the storefront resolves the session to the SECURITY ACCOUNT id and sends it as products(userId:); pointing it at contact_id is what blocked CAT-079/CAT-080`);
+    }
+  }
+  if (def.fields?.contactId && def.fields.contactId !== 'contact_id') {
+    fail(`${ALIAS_NAME}.fields.contactId="${def.fields.contactId}" must be "contact_id"`);
+  }
   if (!missing.length) ok(`${declared.length} field(s) declared, all ${REQUIRED_ALIAS_FIELDS.length} required ones present and column-backed`);
 }
 
@@ -99,12 +118,9 @@ else {
   if (!have.length) warn(`${ALIAS_NAME} has no overlay on ${env} — @td(${ALIAS_NAME}.storeAId/.storeBId) resolves "" until \`TEST_ENV=${env} npm run seed:wishlists\` runs`);
   else {
     ok(`${have.length} runtime field(s) on ${env}: ${have.map(([k]) => k).join(', ')}`);
-    if (overlay.storeAId && overlay.storeBId && overlay.storeAId === overlay.storeBId) {
-      fail(`aliases.${env}.json: storeAId and storeBId are BOTH "${overlay.storeAId}" — the seeded fixture is single-store and CAT-079/CAT-080 would pass vacuously`);
-    }
-    if (overlay.storeAWishlistId && overlay.storeAWishlistId === overlay.storeBWishlistId) {
-      fail(`aliases.${env}.json: both wishlist ids are "${overlay.storeAWishlistId}" — one wishlist, not two`);
-    }
+    // Ownership + non-vacuity — the SHARED PURE rule (wishlist-specs.validateOverlayOwnership), so
+    // the unit tests exercise exactly what this gate enforces rather than a second copy of it.
+    for (const problem of validateOverlayOwnership(overlay, env)) fail(`${ALIAS_NAME}: ${problem}`);
   }
 }
 

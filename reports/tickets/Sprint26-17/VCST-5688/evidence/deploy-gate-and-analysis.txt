@@ -1,0 +1,116 @@
+# VCST-5688 — deploy gate + the collapse-mechanism analysis
+
+## 1. Git ancestry
+9795955d2  "fix(interceptors): stop handing the login page's HTML to API callers (#291)"
+           committed 2026-08-13T11:08:11+03:00
+           ancestor of v2.5.0 ... YES
+           ancestor of v2.4.0 ... NO   (2.4.0 build-id 64804 is what the ticket was filed against)
+Files: interceptors/index.ts (+22/-?), utilities/sessionExpiration.ts (+18),
+       interceptors.test.ts (+84), useAsync.docs.md (+1).
+
+## 2. The change
+  -  const sessionDied = response.status === 401 || (response.ok && looksLikeLoginPage(response));
+  +  const isLoginPageResponse = response.ok && looksLikeLoginPage(response);
+  +  const sessionDied = response.status === 401 || isLoginPageResponse;
+  ...
+  +  if (isLoginPageResponse && isSessionExpired()) {
+  +    throw new SessionExpiredError();
+  +  }
+
+Gated on the expiry latch, so a login page seen while nobody is signed in is still an expected
+answer rather than a session death. A 401 is deliberately returned unchanged — its body is not a
+document, so nothing tries to parse markup.
+
+## 3. Deployed surface
+vcmp-dev vendor-portal, build 22260 (2026-08-24), framework >= 2.5.0.
+  vc-shell-vendors22260.js:
+    "SessionExpiredError"                                          1 hit
+    "The session has expired, so this request was not completed"   1 hit
+  vc-shell-framework22260.js (the re-export facade): 0 hits for both — expected.
+  looksLikeLoginPage / markSessionExpired: 0 hits — module-local names, minified away. The class
+  name survives because this.name is a string literal, as is the message.
+
+INDEPENDENT LIVE CORROBORATION: the VCST-5667 verification run earlier the same day hit, on a
+first sign-in attempt against vcmp-dev, the message
+    "Authentication error: The session has expired, so this request was not completed."
+That is verbatim the SessionExpiredError default message from this fix, observed by a different
+agent pursuing an unrelated ticket. So the class is deployed and does reach a user-visible surface.
+
+## 4. Unit RED -> GREEN
+Scope: core/interceptors + core/utilities/sessionExpiration + core/composables/useAsync, cwd=framework/.
+  GREEN (main)                              31 passed (31)
+  RED   (index.ts + sessionExpiration.ts
+         @ parent of 9795955d2)             4 failed | 27 passed (31)
+
+RED failures:
+  x treats an API call answered with an HTML login page as an expired session
+  x fails the request instead of handing the login page's HTML to the caller     <- the core fix
+  x recognises the login page by its URL when the content type is absent
+  x acts once for a burst of concurrent requests that all land on the login page <- the burst
+
+Scoping note: both source files revert together because the interceptor's throw needs the
+SessionExpiredError class the same PR introduced — reverting one alone would not compile.
+useAsync/index.ts was NOT reverted: its !isSessionExpired() notify guard is PRE-EXISTING (PR #291
+touched only useAsync.docs.md), so it stays as shipped.
+
+Coverage is unusually complete — 15 tests across both branches:
+  401 handling (5): marks expired; notifies on signOut reject AND success; concurrent 401s once;
+                    does not flag when nobody is signed in
+  login-page branch (10): the 4 above, plus "still returns a 401 response to the caller",
+                    "leaves an ordinary JSON response alone", "does not sign out on a 403",
+                    "leaves an HTML response that was not redirected alone", "does not act on a
+                    login page while nobody is signed in", "does not fail the sign-in request itself"
+The 401-unchanged decision and all five negative guards are pinned by tests.
+
+## 5. WHY THE TOASTS ACTUALLY COLLAPSE — and where the fix's own reasoning is wrong
+The interceptor's code comment claims:
+   "All of them fail with the same error, so a consumer that does surface it shows one message,
+    not one per request."
+and useAsync.docs.md claims:
+   "...this suppression and the notificationId de-duplication both collapse them to a single
+    toast at most."
+
+Traced both mechanisms:
+
+  MECHANISM 1 — REAL, and it is the whole story.
+    framework/core/composables/useAsync/index.ts:64
+      if (shouldNotify && !isSessionExpired() && e && typeof e === "object") {
+    While the latch is engaged useAsync does not notify AT ALL. So the 4 parse-error toasts become
+    ZERO, not four identical ones — stronger than the docs' "a single toast at most".
+    This guard is PRE-EXISTING (not added by #291).
+
+  MECHANISM 2 — DOES NOT EXIST as described.
+    notifications/notification.ts showNotification() ALWAYS calls _backend.appendInstance(options),
+    and when no notificationId is supplied it GENERATES A FRESH ONE (:49-52). There is no add-time
+    dedup. hasNotification() exists but is never used to guard an add (only useContainer defines
+    and re-exports it). The container's appendInstance only mounts a per-position container — no
+    content or id dedup either.
+    => N calls without an explicit notificationId produce N toasts. "notificationId
+       de-duplication" only applies when a caller passes the SAME explicit id, which nothing on
+       this path does.
+
+Consequence: the fix WORKS, but not for the reason its own comment gives. The claimed safety net
+("same error -> one message") is absent. Any consumer that surfaces the rejection WITHOUT going
+through useAsync — calling notification.error(...) directly — would still get one toast per
+request. Behaviour is correct today because every burst caller goes through useAsync; the
+reasoning recorded in the code is not.
+
+## 6. Why the live axis is BLOCKED BY TOOLING, not merely skipped
+The defect's branch requires a 302 -> HTML response on an /api/ call. Three independent reasons a
+live run cannot reach it here:
+  a) The ticket itself records that this platform cannot produce the 302->HTML trigger naturally
+     (established during VCST-5598); the original repro was fault-injected.
+  b) Playwright MCP exposes NO route-interception tool — there is no browser_route. The only way to
+     install a route handler is browser_run_code_unsafe, which hooks/enforce-real-user.mjs blocks,
+     and the documented /* @allow-eval */ opt-in is scoped to "UI-FIX / DEBUG DOM experiment, NOT
+     for test runs".
+  c) The naturally reachable expiry (clearing the HttpOnly cookies) yields a 401 — a DIFFERENT
+     branch, which this fix deliberately leaves unchanged. It can neither confirm nor refute the
+     defect.
+No browser agent was dispatched: it would have been structurally unable to reach the branch.
+Evidence relied on instead: the unit RED->GREEN above (incl. the burst case), the deployed-bundle
+markers, and the independent live sighting of the message during the VCST-5667 run.
+
+To close the live axis properly, hooks/enforce-real-user.mjs would need its allowlist extended for
+page.route / unrouteAll fault injection — the clean fix the hook's own guidance points at. This is
+the third time in this session that gap has bounded a verification.

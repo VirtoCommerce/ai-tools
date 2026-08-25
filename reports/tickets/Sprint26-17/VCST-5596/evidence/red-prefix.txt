@@ -1,0 +1,204 @@
+# RED — vc-blade.vue reverted to the parent of f747a8d47 (PR #282).
+# All test files left UNCHANGED, including vc-blade.a11y.test.ts and
+# vc-blade.target-size.test.ts (the latter added later by PR #308).
+# NOTE: the ORIGINAL PR #268 fix to vc-breadcrumbs-item.vue is deliberately LEFT IN PLACE —
+# reverting it too would conflate two separate fixes. This isolates PR #282.
+
+ ✓ |unit| ui/components/organisms/vc-blade/useBladeSkeleton.test.ts > useBladeSkeleton > shows the skeleton while the blade has nothing to display yet 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/useBladeSkeleton.test.ts > useBladeSkeleton > hides the skeleton once loading finishes 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/useBladeSkeleton.test.ts > useBladeSkeleton > does not return to the skeleton when loading is raised again after content has shown 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/useBladeSkeleton.test.ts > useBladeSkeleton > never shows the skeleton for a blade that starts with its content ready 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/useBladeSkeleton.test.ts > useBladeSkeleton > resets the initial-load latch when the same blade instance switches entity context 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveVisibility > returns true when value is undefined 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveVisibility > returns the boolean value directly 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveVisibility > unwraps a Ref<boolean> 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveVisibility > unwraps a ComputedRef<boolean> 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveVisibility > calls a function with blade instance 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveVisibility > coerces function return to boolean 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveVisibility > coerces Ref<undefined> to false via Boolean() 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveReactiveBoolean > returns false when value is undefined 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveReactiveBoolean > returns the boolean value directly 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveReactiveBoolean > unwraps a Ref<boolean> 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveReactiveBoolean > unwraps a ComputedRef<boolean> 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/utils.test.ts > resolveReactiveBoolean > coerces Ref<undefined> to false via Boolean() 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > returns the expected API shape 7ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > hasError is false when no error 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > hasError is true when error is present 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > shortErrorMessage returns Error.message 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > shortErrorMessage stringifies non-Error values 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > errorDetails returns stack for Error 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > errorDetails returns .details if present 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > errorDetails stringifies non-Error values 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > copyError copies text to clipboard and returns true 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useBladeError.test.ts > useBladeError > copyError returns false when clipboard fails 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > returns the expected API shape 7ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveBadge > returns undefined when no headless config 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveBadge > returns static badge value 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveBadge > resolves ref badge 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveLoading > returns false when no headless config 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveLoading > returns boolean loading value 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveLoading > resolves ref loading 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveDisabled > returns false when no headless config 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveDisabled > returns static boolean 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveDisabled > resolves ref disabled 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveTitle > returns raw title when no headless config 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveTitle > returns translated title when headless config exists 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > resolveTitle > returns empty string when no title 0ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > handleHeadlessClick > calls onClick when defined 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > handleHeadlessClick > does not throw when no headless config 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/useHeadlessWidgetHelpers.test.ts > useHeadlessWidgetHelpers > handleHeadlessClick > does not throw when onClick is undefined 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ShortcutKbd.test.ts > ShortcutKbd > renders one kbd per part 15ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ShortcutKbd.test.ts > ShortcutKbd > shows + separators when separated 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ShortcutKbd.test.ts > ShortcutKbd > no separators when not separated (mac glyphs) 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeContentSkeleton.test.ts > BladeContentSkeleton.vue > renders the root element 16ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeContentSkeleton.test.ts > BladeContentSkeleton.vue > renders three sections 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeContentSkeleton.test.ts > BladeContentSkeleton.vue > renders skeleton placeholders 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeContentSkeleton.test.ts > BladeContentSkeleton.vue > renders input placeholders 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeContentSkeleton.test.ts > BladeContentSkeleton.vue > has one tall input for the textarea placeholder 2ms
+ × |unit| ui/components/organisms/vc-blade/vc-blade.target-size.test.ts > VcBlade breadcrumb target size > computes a minimum 24 by 24 CSS-pixel target for the overflow button 37ms
+   → expected '' to be 'var(--blade-header-button-target-size)' // Object.is equality
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useToolbarRegistration.test.ts > useToolbarRegistration > returns visibleItems computed 8ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useToolbarRegistration.test.ts > useToolbarRegistration > registers toolbar items on mount 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useToolbarRegistration.test.ts > useToolbarRegistration > unregisters items on unmount 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useToolbarRegistration.test.ts > useToolbarRegistration > updates existing items instead of re-registering 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useToolbarRegistration.test.ts > useToolbarRegistration > visibleItems filters and sorts by priority 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/composables/useToolbarRegistration.test.ts > useToolbarRegistration > generates an id when item has none 1ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > renders as a button when not current 14ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > renders as a span when current 2ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > displays the title text 2ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > sets aria-current='page' on current item 2ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > does not set aria-current on non-current item 2ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > emits click when button is clicked and no clickHandler 3ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > calls clickHandler with id when provided 3ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > applies light variant class 2ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > does not apply light class for default variant 2ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > renders icon when icon prop is provided 5ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > does not render icon when no icon prop 1ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > handles ref title (MaybeRef<string>) 1ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > sets title attribute on title span for tooltip 1ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > accessible name > labels an icon-only button 3ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > accessible name > labels a button whose title is an empty string 2ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > accessible name > leaves the name to the visible text when a title is present 2ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/_internal/vc-breadcrumbs-item/vc-breadcrumbs-item.test.ts > VcBreadcrumbsItem > accessible name > hides the decorative icon from assistive technology 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > renders nothing when no error and not modified 21ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > renders unsaved changes banner when modified=true 11ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > unsaved banner has role=alert 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > hides unsaved changes banner when modified=false 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > renders error banner when blade has an error 7ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > error banner has role=alert 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > shows error message text in the header 6ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > hides error banner when blade has no error 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > renders both banners simultaneously when both error and modified 5ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > renders error details section 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > renders copy button 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > danger banners render before warning banners 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > renders custom banners from BladeBannersKey 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > renders dismiss button for dismissible banners 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > does not render dismiss button for non-dismissible banners 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeStatusBanners.test.ts > BladeStatusBanners > dismissing error banner calls clearBladeError 6ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/vc-breadcrumbs.test.ts > VcBreadcrumbs > renders when items are provided 27ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/vc-breadcrumbs.test.ts > VcBreadcrumbs > does not render when items are empty 1ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/vc-breadcrumbs.test.ts > VcBreadcrumbs > does not render when items is undefined 1ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/vc-breadcrumbs.test.ts > VcBreadcrumbs > renders with separated variant 3ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/vc-breadcrumbs.test.ts > VcBreadcrumbs > has nav element with aria-label 3ms
+ ✓ |unit| ui/components/molecules/vc-breadcrumbs/vc-breadcrumbs.test.ts > VcBreadcrumbs > renders visible items in an ordered list 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarBaseButton.test.ts > ToolbarBaseButton > treats computed disabled as reactive and blocks click 18ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarBaseButton.test.ts > ToolbarBaseButton > locks repeated async clicks while handler is pending 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarBaseButton.test.ts > ToolbarBaseButton > renders reactive title values from Ref 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarBaseButton.test.ts > ToolbarBaseButton > sets aria-keyshortcuts when a shortcut is present 5ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarBaseButton.test.ts > ToolbarBaseButton > does not set aria-keyshortcuts without a shortcut 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > renders root element with correct class 23ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > applies main modifier class when isMain is true 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > does not apply main class by default 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > applies mobile modifier class when isMobile is true 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > applies expanded modifier class when isExpanded is true 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > sets contentDirection to row when mobile+main and not expanded 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > sets contentDirection to row-reverse by default 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > sets contentDirection to row-reverse when expanded 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > includes main icon class when isMain is true 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > includes expanded icon class when isExpanded is true 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarCircleButton.test.ts > ToolbarCircleButton > includes main title class when isMain is true 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarDesktop.test.ts > ToolbarDesktop > renders root element with correct class 29ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarDesktop.test.ts > ToolbarDesktop > renders content container 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarDesktop.test.ts > ToolbarDesktop > renders toolbar buttons for visible items 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarDesktop.test.ts > ToolbarDesktop > renders single item 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarDesktop.test.ts > ToolbarDesktop > renders no buttons when items is empty 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > renders with vc-blade-header class 16ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > renders title text 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > renders subtitle when provided 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > hides subtitle when not provided 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > applies title-no-subtitle class when no subtitle 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > renders icon when provided 6ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > hides icon when not provided 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > shows modified status dot when modified is true 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > shows not-edited status dot when modified is false 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > does not show edited/not-edited class when modified is not passed 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > shows close button when closable=true 6ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > hides close button when closable is not set 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > emits close when close button is clicked 5ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > shows expand button when blade is closable and not maximized 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > emits expand when expand button is clicked 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > shows collapse button when blade is closable and maximized 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > emits collapse when collapse button is clicked 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > accessibility / shortcuts > close control has role=button, tabindex=0, non-empty aria-label, and aria-keyshortcuts=Escape 14ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > accessibility / shortcuts > maximize control has role=button, tabindex=0, non-empty aria-label, and aria-keyshortcuts ending in +\ 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > accessibility / shortcuts > restore control (maximized state) has aria-keyshortcuts ending in +\ and a non-empty aria-label 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > accessibility / shortcuts > emits expand when expand control is activated via keydown.enter 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > accessibility / shortcuts > emits expand when expand control is activated via keydown.space 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > accessibility / shortcuts > emits close when close control is activated via keydown.enter 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > accessibility / shortcuts > emits close when close control is activated via keydown.space 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > accessibility / shortcuts > emits collapse when collapse control is activated via keydown.enter 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > renders prepend slot 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > renders actions slot 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > hides controls on mobile 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > applies titleId to the title element 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > loading state > hides title/subtitle text when loading=true 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > loading state > renders skeleton placeholders inside content when loading=true 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > loading state > keeps close button operational when loading=true 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > loading state > hides modified status dot when loading=true 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeHeader.test.ts > BladeHeader > loading state > hides actions slot when loading=true 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/WidgetContainer.test.ts > WidgetContainer > renders nothing when no widgets exist 10ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/WidgetContainer.test.ts > WidgetContainer > renders desktop widget container when widgets exist and not mobile 10ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/WidgetContainer.test.ts > WidgetContainer > renders mobile widget container when widgets exist and is mobile 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/WidgetContainer.test.ts > WidgetContainer > filters out widgets where isVisible is false 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/WidgetContainer.test.ts > WidgetContainer > normalizes bladeId to lowercase 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/WidgetContainer.test.ts > WidgetContainer > shows multiple visible widgets 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/widgets/WidgetContainer.test.ts > WidgetContainer > mixes visible and hidden widgets correctly 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > renders the toolbar container 18ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > renders ToolbarDesktop on desktop 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > renders ToolbarMobile on mobile 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > applies mobile class when on mobile 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > does not apply mobile class on desktop 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > renders widgets-container slot when provided 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > does not render widgets-container when slot is not provided 1ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > passes items prop through to child component 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > loading state > renders skeleton placeholders instead of toolbar buttons when loading=true 7ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > loading state > hides widgets-container slot when loading=true 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > loading state > applies loading class on toolbar root 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/BladeToolbar.test.ts > BladeToolbar > loading state > does not render toolbar at all on mobile when loading=true 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > renders root element with toolbar role 23ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > renders pill with primary action when collapsed 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > does not show more button when only one item 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > shows more button when multiple items 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > calls clickHandler on primary pill action click 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > expands menu on more button click 6ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > renders action buttons in expanded menu 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > shows close FAB when expanded 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > closes menu on close FAB click 7ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > calls clickHandler and closes menu on action click 5ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > shows backdrop when expanded 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > closes menu on backdrop click 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > disables action button when item is disabled 3ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > applies the unified action icon class to all items (no per-item primary modifier) 4ms
+ ✓ |unit| ui/components/organisms/vc-blade/_internal/toolbar/ToolbarMobile.test.ts > ToolbarMobile > resolves function-based icon 2ms
+ ✓ |unit| ui/components/organisms/vc-blade/vc-blade.a11y.test.ts > VcBlade a11y > has no a11y violations for a closable blade (has a parent) 90ms
+ ✓ |unit| ui/components/organisms/vc-blade/vc-blade.a11y.test.ts > VcBlade a11y > has no a11y violations for a non-closable workspace root (no parent) 17ms
+ ✓ |unit| ui/components/organisms/vc-blade/vc-blade.a11y.test.ts > VcBlade a11y > has role='region' with aria-labelledby when title is provided 5ms
+ × |unit| ui/components/organisms/vc-blade/vc-blade.a11y.test.ts > VcBlade a11y > names the breadcrumbs overflow trigger it supplies through the #trigger slot 8ms
+   → expected undefined to be 'COMPONENTS.MOLECULES.VC_BREADCRUMBS.S…' // Object.is equality
+ ✓ |unit| ui/components/organisms/vc-blade/vc-blade.a11y.test.ts > VcBlade a11y > falls back to aria-label when no title is provided 3ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected undefined to be 'COMPONENTS.MOLECULES.VC_BREADCRUMBS.S…' // Object.is equality
+AssertionError: expected '' to be 'var(--blade-header-button-target-size)' // Object.is equality
+ Test Files  2 failed | 17 passed (19)
+      Tests  2 failed | 189 passed (191)

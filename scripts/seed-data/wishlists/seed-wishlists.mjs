@@ -29,7 +29,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'csv-parse/sync';
 import {
-  ROOT, STORE_ID, DRY_RUN, VERBOSE, TEARDOWN,
+  ROOT, STORE_ID, BACK_URL, DRY_RUN, VERBOSE, TEARDOWN,
   log, verbose, assertSafeTarget, auth, api,
   ensureVirtualCatalog, ensureCategoryPath, ensureFulfillmentCenter, buildStoreSeo,
   syncEnvAliases, verifyRemoved, idsParam,
@@ -176,6 +176,21 @@ async function ensureCustomer() {
 
 /* ── wishlists ────────────────────────────────────────────────────────────────── */
 
+/**
+ * WHO OWNS A WISHLIST — the one thing this seeder got wrong until 2026-08-25.
+ *
+ * A Wishlist-type cart's `customerId` is the SECURITY ACCOUNT id (ApplicationUser.Id), NOT the
+ * Contact member id. The storefront resolves the signed-in session to that account id and sends it
+ * as xAPI `products(userId:)`, so a wishlist hung off the contact id is invisible to the storefront:
+ * /account/lists renders "You have not created any lists yet" and every in-wishlist marker reads
+ * false, while an admin-side /api/carts/search by contact id happily returns both lists. A seeder
+ * that exits 0 on that state is the exact vacuous-fixture failure this fixture exists to prevent.
+ *
+ * LIVE-CONFIRMED on vcst-qa 2026-08-25 — sampled 14 distinct customerIds across the store's 937
+ * wishlists: only this fixture's resolved via GET /api/members/{id}; every genuine storefront-created
+ * list's did not. Worked example: mutykovaelena@gmail.com has account f194c370… / contact e1e83021…,
+ * and its storefront list carries customerId=f194c370… — the ACCOUNT.
+ */
 async function findWishlist(storeId, customerId, listName) {
   const r = await api('POST', '/api/carts/search', { type: 'Wishlist', storeId, customerId, take: 100 });
   return (r?.results || []).find((c) => c.name === listName) || null;
@@ -205,6 +220,27 @@ async function ensureWishlist({ storeId, listName, product, customerId }) {
   return created;
 }
 
+/**
+ * One-time migration sweep: delete this fixture's lists that an earlier run created against the
+ * CONTACT id. They are unreachable orphans — no storefront session resolves to that id, and teardown
+ * (which searches by account id) would leave them behind forever. Name-guarded to this fixture's own
+ * AGENT-TEST- list names, so nothing else the contact owns is touched.
+ */
+async function dropMisownedWishlists(contactId, ownerId, stores) {
+  if (!contactId || contactId === ownerId) return;
+  const stale = [];
+  for (const role of ['A', 'B']) {
+    const found = await api('POST', '/api/carts/search', { type: 'Wishlist', storeId: stores[role].id, customerId: contactId, take: 100 });
+    for (const c of (found?.results || [])) {
+      if (wishlistSpecs(REC).some((w) => w.listName === c.name) && c.name?.startsWith(SEED_PREFIX)) stale.push(c.id);
+    }
+  }
+  if (!stale.length) return;
+  if (DRY_RUN) { log(`[DRY] would delete ${stale.length} contact-owned wishlist(s) left by an earlier run`); return; }
+  await api('DELETE', `/api/carts?${idsParam(stale)}`, null, { expectStatus: [200, 204, 404] }).catch((e) => log(`⚠ stale wishlist delete: ${e.message.slice(0, 120)}`));
+  log(`✗ removed ${stale.length} wishlist(s) owned by the CONTACT id (unreachable by any storefront session)`);
+}
+
 /* ── verification ─────────────────────────────────────────────────────────────── */
 
 /**
@@ -212,13 +248,21 @@ async function ensureWishlist({ storeId, listName, product, customerId }) {
  * DIFFERENT stores, holding two DIFFERENT products. A green seed that cannot show this is a vacuous
  * fixture, so this is a hard gate, not a log line.
  */
-async function verifyTwoStore(customerId, wishlists) {
+async function verifyTwoStore(ownerId, contactId, wishlists) {
   const seen = [];
   for (const role of ['A', 'B']) {
     const w = wishlists[role];
-    const found = await api('POST', '/api/carts/search', { type: 'Wishlist', storeId: w.storeId, customerId, take: 100 });
+    const found = await api('POST', '/api/carts/search', { type: 'Wishlist', storeId: w.storeId, customerId: ownerId, take: 100 });
     const hit = (found?.results || []).find((c) => c.id === w.id);
     if (!hit) throw new Error(`wishlist ${role} (${w.id}) is not returned by a store-scoped search on "${w.storeId}"`);
+    // Ownership is the failure mode that hid for a whole run: both lists existed, both were findable
+    // by contact id, and the storefront saw neither. Assert the OWNER, not merely the existence.
+    if (hit.customerId !== ownerId) {
+      throw new Error(`wishlist ${role} (${w.id}) is owned by "${hit.customerId}", not the security account "${ownerId}" — the storefront resolves the session to the ACCOUNT id, so it would not see this list`);
+    }
+    if (contactId && hit.customerId === contactId) {
+      throw new Error(`wishlist ${role} (${w.id}) is owned by the CONTACT id "${contactId}" — see the ownership note above; /account/lists would render empty`);
+    }
     seen.push({ role, id: hit.id, storeId: hit.storeId, skus: (hit.items || []).map((i) => i.sku) });
   }
   const [a, b] = seen;
@@ -230,6 +274,115 @@ async function verifyTwoStore(customerId, wishlists) {
   log('✓ two-store proof:');
   for (const s of seen) log(`    store ${s.role}: wishlist ${s.id} @ ${s.storeId} → [${s.skus.join(', ')}]`);
   return seen;
+}
+
+/**
+ * THE ACCEPTANCE PROOF — sign in as the fixture customer exactly the way the storefront does, and
+ * read the in-wishlist matrix back through xAPI with the id THAT SESSION resolves to.
+ *
+ * An admin-token probe cannot show this: it lets the caller choose the userId, so it proves the data
+ * exists for SOME id, not that the storefront's own id finds it. That gap is precisely how CAT-079 /
+ * CAT-080 came to be blocked against a seeder that exited 0. So this signs in for real, asserts the
+ * session resolves to the account id we seeded against, and then asserts the full 2×2 matrix:
+ *
+ *              store A            store B
+ *   product A  inWishlist=true    inWishlist=false
+ *   product B  inWishlist=false   inWishlist=true
+ *
+ * Both `false` cells are load-bearing: they are what a pre-VCST-5705 build (storeId accepted but
+ * never applied) gets wrong, so a fixture that cannot produce them cannot fail on the regression.
+ */
+async function verifyStorefrontMatrix(ownerId, products, stores) {
+  const password = resolvePassword(REC.password);
+
+  async function storefrontToken(storeId) {
+    const res = await fetch(`${BACK_URL}/connect/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'password', username: REC.email, password, scope: 'offline_access', storeId }),
+    });
+    if (!res.ok) {
+      const body = (await res.text().catch(() => '')).slice(0, 200);
+      throw new Error(`storefront sign-in failed for ${REC.email} @ store "${storeId}": ${res.status} ${body}`);
+    }
+    return (await res.json()).access_token;
+  }
+
+  async function gql(token, query, variables) {
+    const res = await fetch(`${BACK_URL}/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ query, variables }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (j.errors?.length) throw new Error(`graphql: ${j.errors.map((e) => e.message).join('; ').slice(0, 300)}`);
+    return j.data;
+  }
+
+  const ME = 'query { me { id userName contact { id } } }';
+  const PRODUCTS = `query($storeId:String!,$userId:String!,$q:String!){
+    products(storeId:$storeId,userId:$userId,filter:$q,first:10){ items { code inWishlist wishlistIds } }
+  }`;
+
+  log('');
+  log('✓ storefront acceptance proof (real sign-in, session-resolved id):');
+  const matrix = {};
+  for (const role of ['A', 'B']) {
+    const storeId = stores[role].id;
+    const token = await storefrontToken(storeId);
+
+    const me = (await gql(token, ME)).me;
+    // The whole bug in one assertion: if the session resolves to something other than the id the
+    // wishlists hang off, the storefront cannot see them no matter how green the seed looked.
+    if (me?.id !== ownerId) {
+      throw new Error(
+        `store ${role}: the storefront session for ${REC.email} resolves to me.id="${me?.id}" but the `
+        + `wishlists are owned by "${ownerId}" — /account/lists would render empty and every `
+        + `in-wishlist marker would read false. (me.contact.id="${me?.contact?.id}")`,
+      );
+    }
+
+    const codes = [products.A.code, products.B.code];
+    const items = (await gql(token, PRODUCTS, {
+      storeId, userId: me.id, q: codes.map((c) => `code:"${c}"`).join(' OR '),
+    }))?.products?.items || [];
+    const byCode = Object.fromEntries(items.map((i) => [i.code, i]));
+    matrix[role] = byCode;
+    log(`    store ${role} (${storeId}) as me.id=${me.id}: `
+      + codes.filter((c) => byCode[c])
+        .map((c) => `${c} inWishlist=${byCode[c].inWishlist} wishlistIds=[${(byCode[c].wishlistIds || []).join(',')}]`).join(' | ')
+      + codes.filter((c) => !byCode[c]).map((c) => ` | ${c} not in this store's catalog`).join(''));
+  }
+
+  /**
+   * VISIBILITY vs the MATRIX — two different requirements, and conflating them over-constrains the
+   * fixture. CAT-079/CAT-080 both run on STORE A, so store A must show BOTH cards (that co-visibility
+   * is what lets the isolation assertion fail rather than silently skip). Store B only has to prove
+   * its own list resolves; product A is deliberately not in store B's catalog, and demanding it there
+   * would mean linking a store-A fixture product into a second store for no case's benefit.
+   */
+  for (const code of [products.A.code, products.B.code]) {
+    if (!matrix.A[code]) throw new Error(`store A: product ${code} is not visible to the storefront — CAT-079 needs BOTH cards on store A's /catalog page, or the isolation assertion cannot fail`);
+  }
+  if (!matrix.B[products.B.code]) throw new Error(`store B: product ${products.B.code} is not visible in its own store — the store-B wishlist could not be exercised there`);
+
+  // `false` cells are as load-bearing as the `true` ones: a pre-VCST-5705 build (storeId accepted but
+  // never applied) gets exactly those wrong, so a fixture that cannot produce them cannot fail.
+  const expect = [
+    ['A', products.A.code, true], ['A', products.B.code, false],
+    ['B', products.B.code, true], ['B', products.A.code, false],
+  ].filter(([role, code]) => matrix[role][code]);
+  const wrong = expect.filter(([role, code, want]) => matrix[role][code].inWishlist !== want)
+    .map(([role, code, want]) => `store ${role} / ${code}: inWishlist=${matrix[role][code].inWishlist}, expected ${want}`);
+  if (wrong.length) throw new Error(`in-wishlist matrix is wrong — the fixture cannot support CAT-079/CAT-080:\n    ${wrong.join('\n    ')}`);
+
+  // A leak shows up as MORE than one wishlist id in a store context — the VCST-5705 signature.
+  for (const [role, code] of expect.map(([r, c]) => [r, c])) {
+    const ids = matrix[role][code].wishlistIds || [];
+    if (ids.length > 1) throw new Error(`store ${role} / ${code}: wishlistIds=[${ids.join(',')}] — more than one store's list leaked (the VCST-5705 signature)`);
+  }
+  log(`    matrix OK (${expect.length} cells): A=true/B=false in store A, B=true in store B`);
+  return matrix;
 }
 
 /* ── main ─────────────────────────────────────────────────────────────────────── */
@@ -267,10 +420,20 @@ async function main() {
 
   const { contactId, userId } = await ensureCustomer();
 
+  // OWNER = the security account id. See the ownership note above findWishlist(): the storefront
+  // resolves the signed-in session to this id and sends it as xAPI products(userId:); a wishlist hung
+  // off the contact id is invisible to it. Seeding against contactId is what blocked CAT-079/CAT-080.
+  const ownerId = userId;
+
+  // Sweep any list this seeder previously created against the WRONG owner. Left in place they are
+  // orphans no storefront session can reach, and teardown (which now searches by account id) would
+  // never find them either.
+  await dropMisownedWishlists(contactId, ownerId, stores);
+
   const wishlists = {};
   for (const w of wishlistSpecs(REC)) {
     const created = await ensureWishlist({
-      storeId: stores[w.role].id, listName: w.listName, product: products[w.role], customerId: contactId,
+      storeId: stores[w.role].id, listName: w.listName, product: products[w.role], customerId: ownerId,
     });
     wishlists[w.role] = { id: created?.id, storeId: stores[w.role].id };
   }
@@ -284,7 +447,7 @@ async function main() {
     syncEnvAliases(CSV_SOURCE.key, {
       [FIXTURE_KEY]: {
         contact_id: contactId,
-        user_id: userId,
+        user_id: ownerId,
         store_a_id: stores.A.id,
         store_b_id: stores.B.id,
         store_a_wishlist_id: wishlists.A.id,
@@ -293,7 +456,8 @@ async function main() {
     });
     log(`✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote ${FIXTURE_KEY} runtime ids`);
 
-    await verifyTwoStore(contactId, wishlists);
+    await verifyTwoStore(ownerId, contactId, wishlists);
+    await verifyStorefrontMatrix(ownerId, products, stores);
   }
 
   console.log(`\n✅ ${FIXTURE_KEY} ${DRY_RUN ? 'dry run complete' : 'seeded'} — customer ${REC.email}`);
@@ -310,17 +474,22 @@ async function teardown() {
 
   const contact = await findContactByEmail(REC.email);
   const contactId = contact?.id;
+  // Resolve the account id BEFORE anything is deleted — the security account is removed in step 4,
+  // and the step-5 zero-residue re-search needs this id to look the wishlists up.
+  const ownerId = (await findUserByEmail(REC.email))?.id;
 
-  // 1. Wishlists (children of the customer) — matched by store + AGENT-TEST- name.
+  // 1. Wishlists (children of the customer) — matched by store + AGENT-TEST- name. Searched under
+  // BOTH owner ids: the account id is the correct owner, the contact id catches lists left by a
+  // pre-2026-08-25 seed so teardown still reaches zero residue on an env seeded by the old code.
   const wishlistIds = [];
-  if (contactId) {
+  for (const ownerCandidate of [ownerId, contactId].filter(Boolean)) {
     for (const [role, storeId] of [['A', STORE_A], ['B', STORE_B]]) {
       if (!storeId) continue;
-      const found = await api('POST', '/api/carts/search', { type: 'Wishlist', storeId, customerId: contactId, take: 100 });
+      const found = await api('POST', '/api/carts/search', { type: 'Wishlist', storeId, customerId: ownerCandidate, take: 100 });
       for (const c of (found?.results || [])) {
-        if (c.name?.startsWith(SEED_PREFIX) && wishlistSpecs(REC).some((w) => w.listName === c.name)) {
+        if (c.name?.startsWith(SEED_PREFIX) && wishlistSpecs(REC).some((w) => w.listName === c.name) && !wishlistIds.includes(c.id)) {
           wishlistIds.push(c.id);
-          verbose(`store ${role}: wishlist ${c.name} (${c.id})`);
+          verbose(`store ${role}: wishlist ${c.name} (${c.id}) owner=${ownerCandidate}`);
         }
       }
     }
@@ -373,9 +542,9 @@ async function teardown() {
       const p = await findProductByCode(spec.sku);
       if (p?.id && p.name?.startsWith(SEED_PREFIX)) left.push(p.id);
     }
-    if (contactId) {
+    for (const ownerCandidate of [ownerId, contactId].filter(Boolean)) {
       for (const storeId of [STORE_A, STORE_B].filter(Boolean)) {
-        const found = await api('POST', '/api/carts/search', { type: 'Wishlist', storeId, customerId: contactId, take: 100 });
+        const found = await api('POST', '/api/carts/search', { type: 'Wishlist', storeId, customerId: ownerCandidate, take: 100 });
         for (const c of (found?.results || [])) if (wishlistSpecs(REC).some((w) => w.listName === c.name)) left.push(c.id);
       }
     }
