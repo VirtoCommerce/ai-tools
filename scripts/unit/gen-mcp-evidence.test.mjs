@@ -10,7 +10,7 @@
 // Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { join, resolve, isAbsolute, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,15 +35,33 @@ function outputDirOf(server) {
 const readMcp = (dir) => JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
 const readSettings = (dir) => JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
 
+// Every credential the generator can resolve, blanked. The child inherits process.env, so
+// WITHOUT this a developer's real POSTMAN_API_KEY / CONTEXT7_API_KEY leaks into ~15 temp
+// settings.local.json files and a test can pass locally for the wrong reason (or fail in CI).
+// Only the four GitHub aliases used to be blanked, so "hermetic" was half true.
+const BLANK_TOKENS = Object.fromEntries(
+  ["GITHUB_PERSONAL_ACCESS_TOKEN", "GITHUB_FIX_BUGS_TOKEN", "GIT_TOKEN", "GITHUB_TOKEN",
+    "POSTMAN_API_KEY", "CONTEXT7_API_KEY"].map((k) => [k, ""]),
+);
+// Long enough to match SECRET_PREFIX_RE. The old default `ghp_test` sat BELOW its 16-char floor,
+// so any future `assert.doesNotMatch(raw, SECRET_PREFIX_RE)` relying on the default would have
+// been vacuously green — a leak canary that cannot detect a leak.
+const DEFAULT_PAT = "ghp_test00000000000000000000";
+
 function runGenMcp(dir, args = [], extraEnv = {}) {
-  return execFileSync(process.execPath, [SCRIPT, ...args], {
+  // spawnSync, not execFileSync: the prune notice is a console.warn (it DELETES a credential), so
+  // a stdout-only capture could not see it. stdout is returned first so log-ordering assertions
+  // are unaffected.
+  const res = spawnSync(process.execPath, [SCRIPT, ...args], {
     cwd: dir,
     encoding: "utf8",
     // VC_FIX_HOME is outputRoot() — without it the generator would write into the real checkout.
-    // Default a dummy PAT so github's Bearer resolves and no test shells out to the host `gh`
-    // (hermetic); individual tests override GITHUB_PERSONAL_ACCESS_TOKEN when they need to.
-    env: { ...process.env, VC_FIX_HOME: dir, GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_test", ...extraEnv },
+    // The default PAT keeps github's Bearer resolvable so no test shells out to the host `gh`.
+    env: { ...process.env, ...BLANK_TOKENS, VC_FIX_HOME: dir, GITHUB_PERSONAL_ACCESS_TOKEN: DEFAULT_PAT, ...extraEnv },
   });
+  if (res.error) throw res.error;
+  if (res.status !== 0) throw new Error(`gen-mcp exited ${res.status}\n${res.stdout}\n${res.stderr}`);
+  return `${res.stdout}${res.stderr}`;
 }
 function readObsRecords(dir) {
   const d = join(dir, ".vc-fix", "diagnostics");
@@ -362,7 +380,8 @@ test("VCST-5774: a REVOKED credential is pruned from settings.local.json on the 
   });
   const settings = readSettings(dir);
   assert.equal(settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined, "the revoked value must be gone");
-  assert.match(out, /removed GITHUB_PERSONAL_ACCESS_TOKEN/, "the removal is reported, not silent");
+  assert.match(out, /\[gen-mcp\][^\n]*removed[^\n]*GITHUB_PERSONAL_ACCESS_TOKEN/, "the removal is reported, not silent");
+  assert.match(out, /\.env\.local/, "…and the notice names the durable source that would restore it");
   // …and the config correctly falls back to OAuth, as it already did.
   assert.ok(!("Authorization" in (readMcp(dir).mcpServers.github.headers ?? {})));
 }));
@@ -393,6 +412,19 @@ test("VCST-5774: switching to --inline-secrets leaves exactly ONE copy of the cr
     "the settings copy must be removed when the value moves into .mcp.json");
 }));
 
+test("VCST-5774: revoking ONE managed credential leaves the others in place", () => withTempDir((dir) => {
+  // Every other prune test uses a single credential, and the re-merge of still-resolved values
+  // masks an over-eager prune — so the multi-token case is the one that can actually catch it.
+  const live = { POSTMAN_API_KEY: "PMAK-keepme-1234567890", CONTEXT7_API_KEY: "ctx7_keepme_value" };
+  runGenMcp(dir, ["--with", "postman,context7"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_aaaa1234567890abcd", ...live });
+  const out = runGenMcp(dir, ["--with", "postman,context7"], { GITHUB_PERSONAL_ACCESS_TOKEN: "", ...live });
+  const env = readSettings(dir).env;
+  assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, undefined, "the revoked one goes");
+  assert.equal(env.POSTMAN_API_KEY, live.POSTMAN_API_KEY, "an unrelated LIVE credential must not be collateral");
+  assert.equal(env.CONTEXT7_API_KEY, live.CONTEXT7_API_KEY);
+  assert.doesNotMatch(out, /removed[^\n]*POSTMAN_API_KEY/);
+}));
+
 test("VCST-5774: the generator's own output passes the auditor that guards it", () => withTempDir((dir) => {
   // Producer and auditor are separate defences and drifted once already (the auditor read only
   // headers/env while the producer had learned to substitute into args[]). Pin them together.
@@ -401,9 +433,21 @@ test("VCST-5774: the generator's own output passes the auditor that guards it", 
     POSTMAN_API_KEY: "PMAK-leakcanary-0987654321",
     CONTEXT7_API_KEY: "ctx7_leakcanary",
   });
-  const raw = readFileSync(join(dir, ".mcp.json"), "utf8");
-  assert.deepEqual(findLiteralSecrets(raw), { hits: [], unparsable: false },
+  const doc = readMcp(dir);
+  const clean = findLiteralSecrets(JSON.stringify(doc));
+  assert.deepEqual({ hits: clean.hits, weak: clean.weak }, { hits: [], weak: [] },
     "the shipped .mcp.json must be clean by the readiness check's own judgement");
+
+  // …and the other direction, which an emptiness assertion can never witness: plant a leak in each
+  // position the generator is ABLE to substitute into and require the auditor to report every one.
+  // A detector blinded back to headers/env-only passes the assertion above unchanged.
+  doc.mcpServers.probeArgs = { command: "npx", args: ["m", "--api-key", "zzq-unknown-shape-value"] };
+  doc.mcpServers.probeUrl = { type: "http", url: "https://m/mcp?access_token=zzq-opaque-value" };
+  doc.mcpServers.probeNest = { type: "stdio", env: { CREDS: { TOKEN: "zzq-nested-value" } } };
+  doc.mcpServers.probeCertain = { type: "stdio", env: { HARMLESS: "ghp_plantedcanary1234567890" } };
+  const planted = findLiteralSecrets(JSON.stringify(doc));
+  assert.deepEqual(planted.hits, ["probeCertain.env.HARMLESS"]);
+  assert.deepEqual(planted.weak.sort(), ["probeArgs.args[2]", "probeNest.env.CREDS.TOKEN", "probeUrl.url"]);
 }));
 
 test("resolveTokens / injectTokenRefs: pure — precedence, ${VAR} refs, unresolved left alone", () => {

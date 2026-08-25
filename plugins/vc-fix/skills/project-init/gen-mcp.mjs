@@ -21,7 +21,8 @@
  *   - This file used to claim ".mcp.json and settings.local.json — Both files are
  *     gitignored." They were NOT: ensureGitignoreEntries() was called with the two
  *     evidence paths only, so a client project that IS a git repo was one `git add -A`
- *     away from publishing a live PAT. Both are now ignored explicitly (SECRET_IGNORES),
+ *     away from publishing a live PAT. Both are now ignored explicitly (SECRET_IGNORE_BASE
+ *     plus the resolved --out/--settings destinations),
  *     written BEFORE .mcp.json so the file never exists un-ignored, even briefly.
  *   - There is NO `gh auth token` fallback. Copying the operator's gh CLI OAuth session
  *     into a file is a credential they never agreed to persist — and it was observed on
@@ -350,8 +351,18 @@ const SECRET_IGNORE_BASE = [
  *  than write a `.mcp.json` line that silently protects the wrong path. The literals used to be
  *  hardcoded while `--out`/`--settings` were free to move the files. */
 function ignoreEntryFor(projectRoot, absPath) {
-  const rel = relative(projectRoot, absPath).split(sep).join("/");
-  return rel && !rel.startsWith("..") ? rel : null;
+  const rel = relative(projectRoot, absPath);
+  // Three ways `relative()` says "not under projectRoot", and only one of them looks like it:
+  //   - "" — the destination IS the root, so there is no file here to ignore;
+  //   - a ".." SEGMENT — above the root. Matched as a segment, not a prefix: a real directory
+  //     named "..hidden" is genuinely inside the project and must keep its entry;
+  //   - an ABSOLUTE path — Windows cross-drive, where no relative path can exist at all. This one
+  //     passed the old `!startsWith("..")` test, so `--settings D:\x\s.json` from a C: project
+  //     wrote the credential off-project, emitted NO warning, and added a "D:/x/s.json" line that
+  //     can only ever match a literal directory named "D:".
+  if (!rel || isAbsolute(rel)) return null;
+  const parts = rel.split(sep);
+  return parts.includes("..") ? null : parts.join("/");
 }
 /** Where the Playwright MCP servers land raw captures — see the EVIDENCE_INCOMING note below. */
 const EVIDENCE_IGNORES = ["test-results/", "reports/bugs/screenshots/_incoming/"];
@@ -556,7 +567,11 @@ function main() {
     console.log(`[gen-mcp] .mcp.json references \${${Object.keys(secretEnv).join("}, ${")}} — values written to ${settingsPath} (no secret in .mcp.json)`);
   }
   if (pruned.length) {
-    console.log(`[gen-mcp] removed ${pruned.join(", ")} from ${settingsPath} — no longer resolved (rotate/revoke it at the source too if that was not intentional)`);
+    // console.warn, not log: this is the one branch that DELETES a credential the operator may
+    // still want. Treating absence as withdrawal is deliberate — leaving behind a value we can no
+    // longer account for is the worse failure for a secret-hygiene tool — but the restore path has
+    // to be stated rather than inferred, because "absent" also describes a merely different shell.
+    console.warn(`[gen-mcp] ⚠ removed ${pruned.join(", ")} from ${settingsPath} — no longer resolvable from the environment or .env.local. If that was intentional, revoke it at the source too; if not, put it in .env.local (the durable source) and re-run.`);
   }
   if (inlineSecrets) {
     console.warn("[gen-mcp] ⚠ --inline-secrets: credential VALUES were written into .mcp.json. It is gitignored, but treat the file as a secret.");

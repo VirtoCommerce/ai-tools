@@ -793,18 +793,28 @@ the hygiene rows below); **WARN** is non-blocking; **SKIP** means a feature isn'
 **Secret-hygiene rows (VCST-5774).** Two rows — `Secret hygiene — .mcp.json` and
 `Secret hygiene — .claude/settings.local.json` — audit the files §7 generated. Both are checked,
 because the redesign MOVED the credential: guarding only `.mcp.json` would leave the value's new
-home unguarded. The audit is structural (a value under a credential-shaped key that is neither a
-`${VAR}` ref nor an unresolved `<PLACEHOLDER>`) plus the shared known-prefix matcher from
-`hooks/redact.mjs`, and it walks the whole server def — `headers`, `env`, `args[]`, `url`, nested
-bags. It reports KEY PATHS only; a credential value never reaches the table or the telemetry.
+home unguarded. The walk covers the whole server def — `headers`, `env`, `args[]`, `url`, nested
+bags — because the generator substitutes placeholders at every leaf. It reports KEY PATHS only; a
+credential value never reaches the table or the telemetry.
 
-Grading is by **actual exposure**, so the row cannot cry wolf:
+**Two nets, two confidence levels**, and that split is what keeps the row honest:
+
+- **CERTAIN** — the known-token-shape matcher shared with `hooks/redact.mjs` (`ghp_`, `glpat-`,
+  `AKIA`, JWT, …). A hit is a credential whatever key it hides under, so it may block readiness.
+- **SUSPECTED** — a credential-shaped key (or a `--api-key`-style flag, or a URL with inline
+  credentials) whose value is opaque. This is the net that catches a token type nobody has invented
+  yet, but it cannot tell a secret from a filename — so it **only ever WARNs**. That ceiling is
+  what lets the key vocabulary stay wide instead of being narrowed until real names fall out of it.
+  Obvious non-credentials (a path, a filename, a bare number, a short enum word) are filtered out.
+
+Grading is by **actual exposure**:
 
 | Situation | Row |
 |---|---|
-| Credential present **and** the file is committable (not gitignored, **or already tracked**) | **FAIL** — blocks readiness, names the fix and says to rotate |
-| Literal in `.mcp.json`, file not committable | WARN — re-run `/project-init`, or keep it via `--inline-secrets` |
-| Credential in `settings.local.json`, file not committable | **PASS** — that is the target state |
+| **Certain** credential **and** the file is committable (not gitignored, **or already tracked**) | **FAIL** — blocks readiness, names the fix and says to rotate |
+| **Suspected** credential, however exposed | **WARN** — never blocks; says it may equally be a filename or an id |
+| Certain literal in `.mcp.json`, file not committable | WARN — re-run `/project-init`, or keep it via `--inline-secrets` |
+| Certain credential in `settings.local.json`, file not committable | **PASS** — that is the target state |
 | Clean but committable, or unparsable JSON | WARN |
 | Outside a git repo | never FAIL on ignore-state — there is nothing to commit to |
 
