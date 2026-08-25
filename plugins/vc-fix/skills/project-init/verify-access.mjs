@@ -262,9 +262,15 @@ export function findSettingsSecrets(settingsJsonText) {
 export function gradeSecretHygiene({ kind, file, hits, weak = [], unparsable, inRepo, ignored, tracked }) {
   const exposed = inRepo && (tracked || !ignored);
   const why = tracked ? "tracked by git" : "not gitignored";
+  // NAME THE COMMAND, don't say "re-run /project-init" (VCST-5774 review #7). The documented path
+  // for an EXISTING install is `/project-init --check`, whose Step C runs normalize-env →
+  // verify-access → assert-profile and never calls gen-mcp.mjs — so the row an operator hits after
+  // upgrading pointed them at a flow that reports the problem and cannot fix it. The generator is
+  // what rewrites the file, so the remediation is the generator.
+  const REGEN = 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker <jira|azure> --client-vcs <github|azure-repos>';
   const fix = tracked
     ? `\`git rm --cached ${file}\` + commit (a .gitignore rule CANNOT untrack it), then rotate the credential`
-    : "re-run /project-init (writes the ignore entry), then rotate the credential";
+    : `run \`${REGEN}\` (rewrites the file with a \${VAR} reference and adds the ignore entry — \`--check\` alone will NOT do this), then rotate the credential`;
 
   if (unparsable) {
     return { status: "WARN", detail: `${file} is not valid JSON — could not audit it for credentials${exposed ? ` (and it is ${why})` : ""}` };
@@ -276,12 +282,12 @@ export function gradeSecretHygiene({ kind, file, hits, weak = [], unparsable, in
     return { status: "WARN", detail: `${file} is ${why} and ${weak.join(", ")} may hold a credential (a credential-shaped key with an opaque value — could equally be a filename or an id). Check it; if it is a secret, ${fix}.` };
   }
   if (hits.length && kind === "mcp") {
-    return { status: "WARN", detail: `credential written as a literal in ${hits.join(", ")} (${file} is not committable, so not exposed). Re-run /project-init to replace it with a \${VAR} reference, or keep it deliberately via --inline-secrets.` };
+    return { status: "WARN", detail: `credential written as a literal in ${hits.join(", ")} (${file} is not committable, so not exposed). Run \`${REGEN}\` to replace it with a \${VAR} reference, or keep it deliberately via --inline-secrets.` };
   }
   if (weak.length && kind === "mcp") {
     // Not exposed, and only suspected — but .mcp.json is gitignored in the normal case, so this is
     // where the structural net earns its keep: staying silent here would make it dead weight.
-    return { status: "WARN", detail: `${weak.join(", ")} may hold a credential literal in ${file} (a credential-shaped key with an opaque value — could equally be a filename or an id). The file is not committable. If it IS a secret, re-run /project-init to replace it with a \${VAR} reference.` };
+    return { status: "WARN", detail: `${weak.join(", ")} may hold a credential literal in ${file} (a credential-shaped key with an opaque value — could equally be a filename or an id). The file is not committable. If it IS a secret, run \`${REGEN}\` to replace it with a \${VAR} reference.` };
   }
   if (hits.length) {
     return { status: "PASS", detail: `${hits.join(", ")} held in ${file} (by design — this is where the value belongs) and the file is not committable` };

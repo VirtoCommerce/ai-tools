@@ -45,6 +45,11 @@ import { config as dotenv } from "dotenv";
 import { outputRoot, pluginRoot, resolveOutPath } from "./lib/paths.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { emitObservations } from "./lib/diag-obs.mjs";
+// The ignore rules + writer live in lib/ because FOUR scripts create secret-bearing files at
+// four different onboarding steps and each must protect its own before writing it (VCST-5774
+// review #4). Re-exported so the existing unit tests keep importing them from here.
+import { SECRET_IGNORES, EVIDENCE_IGNORES, ignoreEntryFor, ensureGitignoreEntries, ensureProjectIgnores } from "./lib/gitignore.mjs";
+export { ensureGitignoreEntries, ignoreEntryFor, SECRET_IGNORES, EVIDENCE_IGNORES };
 
 // Read the shipped template from the plugin's own dir (works from any cwd); write
 // .mcp.json / settings into the deployment project. The two roots are intentionally
@@ -63,6 +68,85 @@ function parseArgs(argv) {
     else { a[k] = n; i++; }
   }
   return a;
+}
+
+/**
+ * Read a BOOLEAN flag out of parseArgs' output (VCST-5774 review #2).
+ *
+ * `parseArgs` cannot know which flags are boolean, so it swallows the next token as a value:
+ * `--inline-secrets false` yields the STRING "false", and `Boolean("false")` is `true`. The most
+ * natural way to turn a flag off therefore turned it ON — and for `--inline-secrets` that means
+ * the safety default inverts and a credential literal lands in .mcp.json. A bare `--flag` is still
+ * true; an explicit false/0/no/off (any case) is false; anything else present is true.
+ *
+ * Applied to EVERY boolean flag, not just the one that was reported: the trap is in the parser,
+ * so a second boolean flag would inherit it the day someone adds one.
+ */
+export function asBool(v) {
+  if (v === undefined) return false;
+  if (typeof v === "boolean") return v;
+  return !/^(false|0|no|off)$/i.test(String(v).trim());
+}
+
+/** Is `absPath` a path git ALREADY TRACKS? `git ls-files --error-unmatch` exits 0 only for a
+ *  tracked path; 1 for untracked, 128 outside a work tree. Both non-zero answers mean "not
+ *  tracked here", which is the safe reading. Never throws. */
+export function gitTracked(projectRoot, absPath) {
+  try {
+    execSync(`git ls-files --error-unmatch -- "${absPath}"`, { cwd: projectRoot, stdio: ["ignore", "ignore", "ignore"] });
+    return true;
+  } catch { return false; }
+}
+
+/**
+ * Everything that must be TRUE before this run writes a single byte (VCST-5774 review #1 + #3).
+ * Pure except for the two reads; returns blockers instead of exiting, so it is testable.
+ *
+ * TWO WAYS THIS GENERATOR USED TO DESTROY OR EXPOSE SOMETHING, both silently:
+ *
+ * #1 — a settings.local.json that failed to parse was replaced WHOLESALE. The read was
+ * `try { JSON.parse(…) } catch { settings = {} }`, and the file was then rewritten from that
+ * empty object, so one stray comma cost the operator every other key in it — including
+ * `permissions.deny: ["Bash(gh pr merge:*)", …]`, which is guard #1 of the three-way
+ * never-auto-merge interlock (quality-gates.md §2). This PR makes that strictly worse by turning
+ * the same file into the credential's home: we would be writing a secret into a file we had just
+ * proven we cannot read. So an unparsable settings file now HALTS the run. Refusing to write is
+ * the only safe move — we cannot merge into a structure we cannot see, and we must not flatten it.
+ *
+ * #3 — a `.gitignore` rule CANNOT untrack a file git already tracks. Writing the credential into
+ * an ALREADY-TRACKED settings.local.json therefore stages it for the next commit, while the run
+ * printed a reassuring `.gitignore += …` line. That is the same false-reassurance shape as the
+ * original defect. verify-access's `gradeSecretHygiene` already knew about this trap and had a
+ * dedicated `git rm --cached` remediation for it; the producer did not. Now both do.
+ *
+ * `.mcp.json` being tracked is only a blocker under `--inline-secrets` (the sole mode that puts a
+ * credential in it); otherwise it holds `${VAR}` references and is merely untidy, so it WARNS.
+ *
+ * @returns {{ settings: object, blockers: string[], warnings: string[] }}
+ */
+export function preflightWriteTargets({ projectRoot, outPath, settingsPath, inlineSecrets = false, readFile = readFileSync, exists = existsSync, tracked = gitTracked }) {
+  const blockers = [];
+  const warnings = [];
+  let settings = {};
+  if (exists(settingsPath)) {
+    try {
+      const parsed = JSON.parse(readFile(settingsPath, "utf-8"));
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("not a JSON object");
+      settings = parsed;
+    } catch (e) {
+      blockers.push(`${settingsPath} is not valid JSON (${e.message}). Refusing to touch it: rewriting it would DELETE every key it holds — including any \`permissions.deny\` rules, which are part of the never-auto-merge interlock — and this run would then write a credential into a file it cannot read. Fix the JSON (or move the file aside) and re-run.`);
+    }
+  }
+  // The credential's destination must not already be under version control.
+  if (tracked(projectRoot, settingsPath)) {
+    blockers.push(`${settingsPath} is already tracked by git, so no .gitignore rule can protect it and this run would stage a credential for your next commit. Run \`git rm --cached "${settingsPath}"\` and commit that removal first, then re-run. If it was ever pushed, rotate the credential too.`);
+  }
+  if (tracked(projectRoot, outPath)) {
+    const msg = `${outPath} is already tracked by git — a .gitignore rule cannot untrack it. Run \`git rm --cached "${outPath}"\` and commit that removal.`;
+    if (inlineSecrets) blockers.push(`${msg} Refusing to write, because --inline-secrets would put a credential LITERAL into it.`);
+    else warnings.push(`${msg} Not blocking: without --inline-secrets the file carries only \${VAR} references, no credential.`);
+  }
+  return { settings, blockers, warnings };
 }
 
 function detectOs(flag) {
@@ -331,75 +415,6 @@ export function absolutizeOutputDir(server, root) {
   return { ...server, args: next };
 }
 
-/** Paths /project-init generates that MUST never be committed (VCST-5774 — defect D2).
- *
- * `.mcp.json` is the load-bearing one: it is a GENERATED file that references a credential, and
- * on a client deployment whose root is a git repo an un-ignored copy is one `git add -A` away
- * from the customer's remote — irreversibly, since git history retains it. The rest are the other
- * per-machine artifacts of onboarding: `.env.local` + `.env.*.local` (secrets), the deployment
- * profile, the telemetry dir, and the local settings file that now holds the token VALUE.
- *
- * These are written BEFORE .mcp.json (see main) so the file never exists un-ignored. */
-const SECRET_IGNORE_BASE = [
-  ".env.local",
-  ".env.*.local",
-  "project-profile.json",
-  ".vc-fix/",
-];
-/** A generated destination as a project-relative ignore entry, or null when it lands OUTSIDE the
- *  project — where no .gitignore of ours can cover it, so the caller must say so out loud rather
- *  than write a `.mcp.json` line that silently protects the wrong path. The literals used to be
- *  hardcoded while `--out`/`--settings` were free to move the files. */
-function ignoreEntryFor(projectRoot, absPath) {
-  const rel = relative(projectRoot, absPath);
-  // Three ways `relative()` says "not under projectRoot", and only one of them looks like it:
-  //   - "" — the destination IS the root, so there is no file here to ignore;
-  //   - a ".." SEGMENT — above the root. Matched as a segment, not a prefix: a real directory
-  //     named "..hidden" is genuinely inside the project and must keep its entry;
-  //   - an ABSOLUTE path — Windows cross-drive, where no relative path can exist at all. This one
-  //     passed the old `!startsWith("..")` test, so `--settings D:\x\s.json` from a C: project
-  //     wrote the credential off-project, emitted NO warning, and added a "D:/x/s.json" line that
-  //     can only ever match a literal directory named "D:".
-  if (!rel || isAbsolute(rel)) return null;
-  const parts = rel.split(sep);
-  return parts.includes("..") ? null : parts.join("/");
-}
-/** Where the Playwright MCP servers land raw captures — see the EVIDENCE_INCOMING note below. */
-const EVIDENCE_IGNORES = ["test-results/", "reports/bugs/screenshots/_incoming/"];
-
-/**
- * Append the ignore entries a destination implies, if missing. Idempotent, and it only ever
- * APPENDS a marked block — an existing .gitignore is never rewritten or reordered, and a
- * project with no .gitignore at all gets one. `title`/`notes` label the block so two calls
- * (secrets, evidence) stay legible instead of merging into one unexplained list.
- *
- * These live here rather than in a separate generator because they exist BECAUSE of the files
- * this script just wrote; keeping them together stops the two from drifting — which is exactly
- * how the header comment came to claim a `.mcp.json` ignore that was never added.
- */
-export function ensureGitignoreEntries(root, entries, opts = {}) {
-  const {
-    title = "vc-fix (/project-init) — browser evidence landing zone",
-    notes = [
-      "The Playwright MCP servers write raw captures here; /qa-bug moves the ones it keeps",
-      "into reports/bugs/screenshots/<bug-slug>/. Nothing here is evidence of record.",
-    ],
-  } = opts;
-  const path = join(root, ".gitignore");
-  const existing = existsSync(path) ? readFileSync(path, "utf-8") : "";
-  const lines = new Set(existing.split(/\r?\n/).map((l) => l.trim()));
-  const missing = entries.filter((e) => !lines.has(e));
-  if (!missing.length) return [];
-  const block = [
-    existing && !existing.endsWith("\n") ? "\n" : "",
-    `\n# === ${title} ===\n`,
-    ...notes.map((n) => `# ${n}\n`),
-    missing.map((e) => `${e}\n`).join(""),
-  ].join("");
-  writeFileSync(path, existing + block);
-  return missing;
-}
-
 /**
  * Layer the deployment's env files into process.env BEFORE resolveTokens() reads them (VCST-5582 E4).
  *
@@ -443,7 +458,7 @@ function main() {
   // Build the tailored mcpServers (OS-normalized + tokens injected + evidence dir pinned to
   // an absolute project path), keeping all defs.
   const projectRoot = outputRoot();
-  const inlineSecrets = Boolean(args["inline-secrets"]);
+  const inlineSecrets = asBool(args["inline-secrets"]);
   const resolved = resolveTokens();
   const mcpServers = {};
   for (const [name, def] of Object.entries(srcServers)) {
@@ -501,17 +516,27 @@ function main() {
   const settingsPath = args.settings
     ? resolve(outputRoot(), args.settings)
     : join(outputRoot(), ".claude", "settings.local.json");
+  // NOTHING has been written yet — this is the last point where refusing costs nothing. Validate
+  // both destinations before the first byte (review #1 + #3): an unparsable settings file would be
+  // flattened (taking `permissions.deny` with it), and an already-TRACKED one cannot be protected
+  // by any .gitignore rule we are about to add. Both used to proceed with a reassuring log line.
+  const { settings: existingSettings, blockers, warnings } = preflightWriteTargets({ projectRoot, outPath, settingsPath, inlineSecrets });
+  for (const w of warnings) console.warn(`[gen-mcp] ⚠ ${w}`);
+  if (blockers.length) {
+    for (const b of blockers) console.error(`[gen-mcp] ✗ ${b}`);
+    emitObservations(
+      blockers.map((b) => ({ class: "self_reported_fail", subject: "mcp_config", evidence: { snippet: b.slice(0, 300) } })),
+      { skill: "project-init" },
+    );
+    console.error("[gen-mcp] nothing was written.");
+    process.exit(1);
+  }
+
   const generatedEntries = [outPath, settingsPath].map((f) => ignoreEntryFor(projectRoot, f));
   for (const [i, entry] of generatedEntries.entries()) {
     if (!entry) console.warn(`[gen-mcp] ⚠ ${[outPath, settingsPath][i]} is OUTSIDE the project root — no .gitignore entry can cover it. Make sure it is not committed.`);
   }
-  const ignoredSecrets = ensureGitignoreEntries(projectRoot, [...generatedEntries.filter(Boolean), ...SECRET_IGNORE_BASE], {
-    title: "vc-fix (/project-init) — generated local config, never commit",
-    notes: [
-      "Per-machine onboarding output. .mcp.json references a credential via ${VAR}; the VALUE",
-      "lives in .claude/settings.local.json `env` and .env.local. None of this belongs in git.",
-    ],
-  });
+  const ignoredSecrets = ensureProjectIgnores(projectRoot, generatedEntries);
   const ignoredEvidence = ensureGitignoreEntries(projectRoot, EVIDENCE_IGNORES);
   const ignored = [...ignoredSecrets, ...ignoredEvidence];
   if (ignored.length) console.log(`[gen-mcp] .gitignore += ${ignored.join(", ")}`);
@@ -530,10 +555,9 @@ function main() {
   // Sync settings.local.json enabledMcpjsonServers (gitignored) into the project's
   // .claude/ (created if the fresh project has none yet).
   mkdirSync(dirname(settingsPath), { recursive: true });
-  let settings = {};
-  if (existsSync(settingsPath)) {
-    try { settings = JSON.parse(readFileSync(settingsPath, "utf-8")); } catch { settings = {}; }
-  }
+  // Already read + validated by the preflight above; an unparsable file halted the run there
+  // rather than being silently replaced with `{}` (review #1).
+  const settings = existingSettings;
   settings.enabledMcpjsonServers = enabledList;
   // The `${VAR}` indirections written into .mcp.json above need a value at session start.
   // A settings `env` block is applied "for every session and its subprocesses", which is what
@@ -605,7 +629,7 @@ function main() {
   // #220 item 5 — opt-in (--warm-cache): pre-fetch the pinned npx packages into the npm cache so
   // the first MCP start doesn't pay a registry round-trip. Opt-in because it does N network fetches;
   // it runs with the IPv4-first hint so it can't hang on a broken IPv6 route, and is best-effort.
-  if (args["warm-cache"]) {
+  if (asBool(args["warm-cache"])) {
     const specs = extractNpxSpecs(mcpServers);
     console.log(`[gen-mcp] warming npm cache for ${specs.length} npx package(s): ${specs.join(", ") || "(none)"}`);
     const results = warmNpxCache(specs);
@@ -618,7 +642,7 @@ function main() {
   }
 
   console.log("[gen-mcp] ⚠ Restart the MCP servers (reload the IDE / Claude Code) for changes to take effect.");
-  if (args.print) console.log(JSON.stringify({ mcpServers }, null, 2));
+  if (asBool(args.print)) console.log(JSON.stringify({ mcpServers }, null, 2));
 }
 
 // CLI only — `ensureGitignoreEntries` / `absolutizeOutputDir` are imported by the unit tests.

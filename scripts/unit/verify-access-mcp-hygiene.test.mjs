@@ -49,7 +49,11 @@ test("findLiteralSecrets: the prefix net is the SHARED one — glpat-/xoxb-/sk_l
     ["slack", "xoxb-1234567890-abcdefghij"],
     ["stripe", "sk_live_abcdefghij1234"],
     ["aws", "AKIAIOSFODNN7EXAMPLE"],
-    ["jwt", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"],
+    // A WHOLE JWT — header.payload.signature. The fixture used to be the header segment alone,
+    // which passed only because the pattern was `eyJ…` with no dots required, i.e. it matched any
+    // base64 of a JSON object. That over-match FAILed readiness on an ordinary APP_CONFIG_B64
+    // (review #5), so the pattern now requires the two dots and the fixture must be a real token.
+    ["jwt", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk"],
     ["fine-grained", "github_pat_abcdefghij1234567890"],
   ]) {
     const r = findLiteralSecrets(cfg({ [label]: { type: "stdio", env: { HARMLESS_NAME: value } } }));

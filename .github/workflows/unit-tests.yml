@@ -1,0 +1,50 @@
+# Runs the unit suite on every PR and every push to main.
+#
+# WHY THIS EXISTS (VCST-5774 review). Until now NO workflow ran `npm test` — the six existing ones
+# all drive QA pipelines (regression, monitoring, auto-fix, suite audit) against the product, never
+# this repo's own code. So every guarantee the repo documents as enforced was in fact enforced only
+# when a human remembered to run the suite locally:
+#
+#   - `scripts/unit/mirror-parity.test.mjs`, which CLAUDE.md calls "CI-enforced" byte-identity for
+#     the five self-diagnostics containment files. A drift on one surface would have shipped.
+#   - the secret-hygiene guards added by VCST-5774 — the checks that keep a credential literal out
+#     of a generated .mcp.json. A regression there is silent by construction.
+#
+# A guard nobody runs is a comment. This is the cheapest thing in that whole change and the one
+# that makes the rest of it hold.
+name: Unit tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push supersedes an in-flight run on the same ref; main is never cancelled.
+concurrency:
+  group: unit-tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      # `npm ci` needs the lockfile to match package.json; fall back so a lockfile drift reports as
+      # a test failure rather than masquerading as an install failure.
+      - name: Install
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+      - name: Unit suite
+        run: npm test
+      # Typecheck is a SEPARATE, narrower gate: ci/tsconfig.json covers ci/*.ts + ci/lib/ +
+      # scripts/**/*.ts only. Stated explicitly because a green "typecheck" on a change that is all
+      # .mjs proves nothing about that change — a claim made, and wrongly relied on, in this very PR.
+      - name: Typecheck (TypeScript sources only)
+        run: npx tsc --noEmit -p ci/tsconfig.json
