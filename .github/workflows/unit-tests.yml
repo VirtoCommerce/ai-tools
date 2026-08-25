@@ -44,7 +44,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # 22, NOT the 20 the other workflows pin. `npm test` is
+          # `tsx --test "scripts/unit/**/*.test.mjs"`, and glob expansion in Node's test runner
+          # landed in Node 21 — on 20 the pattern is taken as a literal path and the run dies with
+          # `Could not find '…/**/*.test.mjs'` before a single test executes. Copying '20' from the
+          # neighbouring workflows (which never run the suite) is exactly how this first run went
+          # red on both legs. Note the repo README/CLAUDE.md still claim a Node 18 floor; that is
+          # true for the plugin scripts but NOT for running the suite.
+          node-version: '22'
           cache: 'npm'
       # `npm ci` needs the lockfile to match package.json; fall back so a lockfile drift reports as
       # a test failure rather than masquerading as an install failure.
