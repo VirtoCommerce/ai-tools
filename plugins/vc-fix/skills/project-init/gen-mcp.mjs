@@ -21,9 +21,12 @@
  *   - This file used to claim ".mcp.json and settings.local.json — Both files are
  *     gitignored." They were NOT: ensureGitignoreEntries() was called with the two
  *     evidence paths only, so a client project that IS a git repo was one `git add -A`
- *     away from publishing a live PAT. Both are now ignored explicitly (SECRET_IGNORE_BASE
- *     plus the resolved --out/--settings destinations),
- *     written BEFORE .mcp.json so the file never exists un-ignored, even briefly.
+ *     away from publishing a live PAT. Both are now ignored explicitly (`lib/gitignore.mjs`
+ *     `SECRET_IGNORES` plus the resolved --out/--settings destinations), and the block is
+ *     written BEFORE the files it protects. That list lives in lib/ rather than here because
+ *     THREE other scripts create secret-bearing files EARLIER in the flow (scaffold-env §3a,
+ *     scaffold-secrets §3b, gen-profile §6) and each must protect its own — while only this
+ *     file wrote the block, the guarantee covered just the two files this file creates.
  *   - There is NO `gh auth token` fallback. Copying the operator's gh CLI OAuth session
  *     into a file is a credential they never agreed to persist — and it was observed on
  *     disk in two projects (`gho_…`). With no PAT the placeholder stays unresolved and
@@ -39,7 +42,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join, dirname, resolve, isAbsolute, relative, sep } from "path";
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import { fileURLToPath } from "url";
 import { config as dotenv } from "dotenv";
 import { outputRoot, pluginRoot, resolveOutPath } from "./lib/paths.mjs";
@@ -93,7 +96,12 @@ export function asBool(v) {
  *  tracked here", which is the safe reading. Never throws. */
 export function gitTracked(projectRoot, absPath) {
   try {
-    execSync(`git ls-files --error-unmatch -- "${absPath}"`, { cwd: projectRoot, stdio: ["ignore", "ignore", "ignore"] });
+    // execFileSync with an argv array — NO shell. `absPath` comes from `--out`/`--settings`, so
+    // interpolating it into a shell string (as this first did) makes a path containing a quote,
+    // `;`, `&` or `$(…)` execute as a command. Nobody would pass such a path on purpose, but a
+    // shell-quoting bug inside a security fix is not a thing to leave standing, and the argv form
+    // is also simply correct for paths with spaces.
+    execFileSync("git", ["ls-files", "--error-unmatch", "--", absPath], { cwd: projectRoot, stdio: ["ignore", "ignore", "ignore"] });
     return true;
   } catch { return false; }
 }

@@ -29,7 +29,16 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Two legs on purpose. The suite has only ever run on Windows — that is where the team develops
+    # and where it is known green — so `windows-latest` is the honest signal today. `ubuntu-latest`
+    # is added because a suite that only passes on one OS is a portability bug waiting to surface,
+    # and this is the first time it has ever run anywhere but a developer's machine: a red Linux leg
+    # on the first run would be a genuine finding, not a regression from this PR.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
