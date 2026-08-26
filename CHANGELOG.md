@@ -38,7 +38,67 @@ were already shipped but never made it into their reference tables.
 
 ## [Unreleased]
 
-Ships as **plugin `vc-fix` `0.8.4`** + **`vc-perf` `0.2.6`** (marketplace `0.9.4`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `vc-fix` `0.8.7`** + **`vc-perf` `0.2.6`** (marketplace `0.9.4`). Pin to a tagged release for stability; this branch tip is unstable.
+
+### Fixed — `vc-fix` `plugin.json` advertised 8 agents, ships 10 (#238)
+
+The count in the plugin manifest's own `description` was stale — `marketplace.json` and `CLAUDE.md`
+already said 10. `plugin.json` is what the plugin loader reads and what a customer sees before
+installing, so it was the one copy that mattered and the one that was wrong. All three now agree.
+
+### Fixed — a skill description that YAML could not parse, plus the guard that was missing (VCST-5807, #238)
+
+`plugins/vc-fix/skills/project-init/SKILL.md` carried a ~1020-character **unquoted** `description:`
+containing a colon-space (*…Day-2 modes skip the interview: `--add-env` adds…*). In YAML `: ` inside
+a plain scalar **is** the key/value separator, so the parser abandoned the whole block and
+`claude plugin validate` reported the skill loads with **empty metadata**. Introduced 2026-07-21 and
+unnoticed for a month, because nothing checked. `.claude/skills/vc-self-check/SKILL.md` carried the
+identical defect — there the symptom was directly visible, the skill listing by its H1 heading
+instead of its description. Both are now quoted.
+
+- **The guard is the point.** `scripts/lib/frontmatter-lint.mjs` (`ambiguousPlainScalars`) +
+  `scripts/unit/plugin-frontmatter.test.mjs` scan every markdown component **both** surfaces ship —
+  `plugins/` and `.claude/`, 326 files — for values a YAML parser mis-reads: a plain scalar with
+  `: ` / `:<TAB>`, a trailing `:`, a leading indicator, or a ` #` that silently truncates the value at
+  a comment; the same traps on a **wrapped continuation line**; and a **quoted** value that is
+  unterminated or closes early on an unescaped delimiter — so the guard can still see a regression in
+  its own remedy. Deliberately not a YAML parse: no YAML library is a dependency of this repo, and the
+  detector's header states plainly what it does and does not cover rather than implying completeness.
+- **A block scalar is valid YAML, not a finding.** `key: >` / `key: |` with an indent digit and a
+  chomp indicator **in either order** (`|2-`, `|-2`) is accepted. The first cut hardcoded
+  chomp-then-indent and so flagged `vc-perf`'s `perf-loop` — a false positive on green code, the same
+  over-match defect the VCST-5774 review caught in the base64 secret net. Fixed the same way: teach
+  the detector the legitimate shape, never weaken the check.
+- **It cannot pass vacuously.** The scan asserts a floor on the corpus, because a guard that silently
+  checks zero files is the failure mode it exists to prevent. Every rule is mutation-proven: reverting
+  any one of them turns the suite red.
+
+### Security — `/project-init` never writes a credential literal into `.mcp.json` (VCST-5774, #234)
+
+`gen-mcp.mjs` substituted the **literal value** of a GitHub PAT into the project's `.mcp.json` and **never added that file to `.gitignore`** — despite the file's own header claiming both were ignored. On a client deployment whose root is a git repo that is one `git add -A` from publishing a live token, irreversibly. A machine-wide scan found the literal in **five** generated projects; two carried the operator's `gh` CLI OAuth session (`gho_…`), persisted without their agreement. Nothing was committed only because none of those directories happened to be a git repo — containment by luck. All five were cleaned.
+
+- **D1 — no literal.** A resolved credential is written as a `${VAR}` indirection; the VALUE goes into `.claude/settings.local.json` `env`, which Claude Code applies to every session and its subprocesses and which is what feeds `${VAR}` expansion in `.mcp.json` `headers`/`env` (verified live on both transports). The placeholder's own name is the canonical variable, so an alias source (`GITHUB_FIX_BUGS_TOKEN`) still yields `${GITHUB_PERSONAL_ACCESS_TOKEN}` and both sides always agree. `--inline-secrets` restores the legacy literal for a host that cannot apply settings `env` — and then writes no second copy. **The value is exported to every session subprocess, which is a wider blast radius than the single MCP header it replaced: treat `.claude/settings.local.json` as a secret file.**
+- **D2 — always ignored, by every writer.** `.mcp.json`, `.claude/settings.local.json`, `.env.local`, `.env.*.local`, `project-profile.json` and `.vc-fix/` are written as a labelled `.gitignore` block **before** the file it protects is created. The list + writer moved to `skills/project-init/lib/gitignore.mjs` because onboarding creates such files in FOUR scripts at four steps: while only `gen-mcp` (§7) wrote the block, the guarantee held for the two files §7 creates — and **`.env.local` (§3b), the file the operator is told to paste `JIRA_API_TOKEN` / `ADO_PAT` / `GITHUB_FIX_BUGS_TOKEN` / passwords into during a PAUSE, was unprotected for that whole window** and in every run that aborted before §7. All four now call `ensureProjectIgnores()` first; it is idempotent, so the cost is one file read and there is still exactly one block. A project with no `.gitignore` gets one. The two generated entries are derived from the **resolved destinations**, so `--out`/`--settings` cannot route a credential-bearing file past the block; a destination outside the project root warns loudly instead.
+- **D3 — no `gh auth token` fallback.** With no PAT the placeholder stays unresolved and `enableOAuthIfNoPat` drops the header, so the server uses interactive OAuth.
+- **Stale credentials are pruned.** Settings `env` merging never removed anything, so a revoked token stayed ambient forever while `.mcp.json` read clean — and switching to `--inline-secrets` left two copies. Every var the generator owns is now dropped when it no longer resolves, and the removal is reported. Operator-authored keys are untouched.
+- **B4 — a regression guard on the ARTIFACT.** `verify-access.mjs` adds two readiness rows auditing `.mcp.json` **and** `.claude/settings.local.json` — guarding only the first would leave the value's new home unchecked. The walk covers the whole server def (`headers`, `env`, `args[]`, `url`, nested bags), because the producer substitutes placeholders at every leaf. Detection is split by confidence: a **CERTAIN** hit is the known-token-shape matcher now **shared with `hooks/redact.mjs`** (the audit's own shorter copy let `glpat-`/`xoxb-`/`sk_live_`/`AKIA`/JWT through) and may block readiness; a **SUSPECTED** hit — a credential-shaped key with an opaque value — **only ever WARNs**, because that net cannot tell a secret from a filename. Without the ceiling it graded this repo's own documented `--secrets .env.playwright.local` as a readiness-blocking FAIL on three servers; with it, the key vocabulary can stay wide instead of being narrowed until real names (`AccountKey`, `subscriptionKey`, `signingKey`, …) fall out of it. Grading is pure and table-tested, by **actual exposure**: FAIL only when a certain credential sits in a file git would commit — including one already **tracked**, which `git check-ignore` reports as not-ignored and which a `.gitignore` rule cannot fix (that row says `git rm --cached`). Outside a git repo, ignore-state is never a finding. Key paths only ever reach the table; a value never does.
+- **Latent bug found by the new tests.** `walk()` applied substitution only to object VALUES, so `o.map(walk)` handed each array element to a branch that returned it untouched — a placeholder inside `args[]` was never resolved and shipped literal. Substitution now happens at the leaf.
+
+**Review round 2** — five further must-fix findings, each reproduced against the previous head:
+
+- **An unparsable `.claude/settings.local.json` is no longer flattened.** The read was `try { JSON.parse(…) } catch { settings = {} }` followed by a full rewrite, so one stray comma deleted every other key — including `permissions.deny: ["Bash(gh pr merge:*)", …]`, guard #1 of the never-auto-merge interlock (`quality-gates.md` §2). This change had just made that same file the credential's home, i.e. it would have written a secret into a file it had proven it cannot read. The run now HALTS before writing anything.
+- **A safety flag no longer inverts.** `parseArgs` swallows the next token as a value, so `--inline-secrets false` produced the string `"false"` and `Boolean("false")` is `true` — the natural way to disable it enabled it. Every boolean flag now goes through `asBool`.
+- **An already-tracked destination blocks the write.** A `.gitignore` rule cannot untrack a tracked path, so writing the credential into a tracked `settings.local.json` staged it for the next commit while the run printed a reassuring `.gitignore += …` line — the same false-reassurance shape as the original defect. `verify-access` already knew this trap; the producer now does too, and says `git rm --cached`. A tracked `.mcp.json` only warns: without `--inline-secrets` it holds no credential.
+- **The CERTAIN net stopped firing on ordinary base64.** `eyJ[A-Za-z0-9._-]{16,}` matches any base64 of a JSON object (`{"` encodes to `eyJ`), so an `APP_CONFIG_B64` was graded a certain credential and **FAILed readiness** — precisely the block-on-a-harmless-value failure the confidence split exists to prevent. The pattern now requires a JWT's two dots; a negative table locks it in. (The old test fixture was a bare JWT *header*, which is why the over-match went unnoticed.)
+- **The remediation names the command.** The FAIL row said "re-run /project-init", but the documented path for an existing install is `--check`, whose Step C runs `normalize-env → verify-access → assert-profile` and never calls `gen-mcp.mjs` — so it reported a problem it could not fix. The row now prints the generator invocation and says `--check` alone will not do it.
+
+### Added — CI actually runs the unit suite (`.github/workflows/unit-tests.yml`)
+
+No workflow ran `npm test`: all six existing ones drive QA pipelines against the product, never this repo's own code. So every guarantee documented as enforced held only when a human remembered — including the `mirror-parity` byte-identity that CLAUDE.md calls "CI-enforced", and the secret-hygiene guards above, whose regressions are silent by construction. A guard nobody runs is a comment. The typecheck step is labelled for what it covers: `ci/tsconfig.json` sees `ci/*.ts` + `scripts/**/*.ts` only, so a green typecheck on an all-`.mjs` change (like this one) proves nothing about it — a claim made, and wrongly relied on, earlier in this PR.
+
+### Fixed — `.claude/` mirror: the `gh auth token` fallback removed there too
+
+The `.claude/` project surface is not maintained and its `gen-mcp.mjs` is an older generation, so the D1/D2 port was declined. D3 is different: the argument for leaving it rested on this repo's `.gitignore` already covering `.mcp.json`, but the harm of D3 — persisting the operator's `gh` CLI OAuth session to disk without their agreement — does not depend on `.gitignore` at all. The ~15 lines are deleted there; nothing else on that surface changed.
 
 ### Fixed — `/project-init` onboarding hardening from client-deployment self-check findings (#216, #217, #220)
 

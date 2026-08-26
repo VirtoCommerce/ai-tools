@@ -37,6 +37,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
+import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
 // System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
@@ -298,6 +299,10 @@ function main() {
     ...profile,
   };
 
+  // Protect BEFORE creating — the fourth and last writer of a generated local file. It is also the
+  // one that turns self-diagnostics ON, so `.vc-fix/` starts filling right after (VCST-5774 #4).
+  const ignored = ensureProjectIgnores(outputRoot());
+  if (ignored.length) console.log(`[gen-profile] .gitignore += ${ignored.join(", ")}`);
   writeFileSync(outPath, JSON.stringify(withMeta, null, 2) + "\n");
   console.log(`[gen-profile] wrote ${outPath}`);
   console.log(

@@ -57,7 +57,7 @@ These are deterministic — no judgment calls. Anyone with maintainer rights can
 
 **`.claude-plugin/marketplace.json` `"version"` is the CATALOG's version, not a plugin's.** Bump it only when the listing itself changes — a plugin added or removed, a description, source path, or owner edited. It does **not** have to equal any plugin's version.
 
-> **This rule changed when the catalog grew a second plugin.** It used to read "`plugin.json` and `marketplace.json` MUST match", which was true while `vc-fix` was the only listing and the repo *was* the plugin. With `vc-fix` and `vc-perf` versioning independently, one shared number cannot track both — the catalog now versions itself. Current state: catalog `0.9.4`, `vc-fix` `0.8.3`, `vc-perf` `0.2.6`. **That is not drift; do not "fix" it by forcing them equal.**
+> **This rule changed when the catalog grew a second plugin.** It used to read "`plugin.json` and `marketplace.json` MUST match", which was true while `vc-fix` was the only listing and the repo *was* the plugin. With `vc-fix` and `vc-perf` versioning independently, one shared number cannot track both — the catalog now versions itself. Current state: catalog `0.9.4`, `vc-fix` `0.8.6`, `vc-perf` `0.2.6`. **That is not drift; do not "fix" it by forcing them equal.**
 
 **Also update the plugin's own component counts** in its `marketplace.json` description and `plugin.json`, if agents/skills/commands were added or removed — a stale count there is what customers read before installing.
 
