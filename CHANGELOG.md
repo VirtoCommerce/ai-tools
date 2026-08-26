@@ -38,7 +38,40 @@ were already shipped but never made it into their reference tables.
 
 ## [Unreleased]
 
-Ships as **plugin `vc-fix` `0.8.6`** + **`vc-perf` `0.2.6`** (marketplace `0.9.4`). Pin to a tagged release for stability; this branch tip is unstable.
+Ships as **plugin `vc-fix` `0.8.7`** + **`vc-perf` `0.2.6`** (marketplace `0.9.4`). Pin to a tagged release for stability; this branch tip is unstable.
+
+### Fixed — `vc-fix` `plugin.json` advertised 8 agents, ships 10 (#238)
+
+The count in the plugin manifest's own `description` was stale — `marketplace.json` and `CLAUDE.md`
+already said 10. `plugin.json` is what the plugin loader reads and what a customer sees before
+installing, so it was the one copy that mattered and the one that was wrong. All three now agree.
+
+### Fixed — a skill description that YAML could not parse, plus the guard that was missing (VCST-5807, #238)
+
+`plugins/vc-fix/skills/project-init/SKILL.md` carried a ~1020-character **unquoted** `description:`
+containing a colon-space (*…Day-2 modes skip the interview: `--add-env` adds…*). In YAML `: ` inside
+a plain scalar **is** the key/value separator, so the parser abandoned the whole block and
+`claude plugin validate` reported the skill loads with **empty metadata**. Introduced 2026-07-21 and
+unnoticed for a month, because nothing checked. `.claude/skills/vc-self-check/SKILL.md` carried the
+identical defect — there the symptom was directly visible, the skill listing by its H1 heading
+instead of its description. Both are now quoted.
+
+- **The guard is the point.** `scripts/lib/frontmatter-lint.mjs` (`ambiguousPlainScalars`) +
+  `scripts/unit/plugin-frontmatter.test.mjs` scan every markdown component **both** surfaces ship —
+  `plugins/` and `.claude/`, 326 files — for values a YAML parser mis-reads: a plain scalar with
+  `: ` / `:<TAB>`, a trailing `:`, a leading indicator, or a ` #` that silently truncates the value at
+  a comment; the same traps on a **wrapped continuation line**; and a **quoted** value that is
+  unterminated or closes early on an unescaped delimiter — so the guard can still see a regression in
+  its own remedy. Deliberately not a YAML parse: no YAML library is a dependency of this repo, and the
+  detector's header states plainly what it does and does not cover rather than implying completeness.
+- **A block scalar is valid YAML, not a finding.** `key: >` / `key: |` with an indent digit and a
+  chomp indicator **in either order** (`|2-`, `|-2`) is accepted. The first cut hardcoded
+  chomp-then-indent and so flagged `vc-perf`'s `perf-loop` — a false positive on green code, the same
+  over-match defect the VCST-5774 review caught in the base64 secret net. Fixed the same way: teach
+  the detector the legitimate shape, never weaken the check.
+- **It cannot pass vacuously.** The scan asserts a floor on the corpus, because a guard that silently
+  checks zero files is the failure mode it exists to prevent. Every rule is mutation-proven: reverting
+  any one of them turns the suite red.
 
 ### Security — `/project-init` never writes a credential literal into `.mcp.json` (VCST-5774, #234)
 
