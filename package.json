@@ -143,6 +143,8 @@
     "bl:audit:collect": "npx tsx scripts/knowledge/lint-bl.ts --json",
     "ecl:lint": "npx tsx scripts/knowledge/lint-ecl.ts",
     "ecl:audit:collect": "npx tsx scripts/knowledge/lint-ecl.ts --json",
+    "oracles:rank": "npx tsx scripts/knowledge/rank-oracles.ts",
+    "oracles:rank:json": "npx tsx scripts/knowledge/rank-oracles.ts --json",
     "metrics:compute": "npx tsx scripts/regression/compute-metrics.ts",
     "triage:collect": "npx tsx scripts/lib/regression-triage.ts collect",
     "triage:history": "npx tsx scripts/lib/regression-triage.ts history",
