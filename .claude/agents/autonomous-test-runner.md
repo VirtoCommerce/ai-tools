@@ -146,7 +146,7 @@ SendMessage: to {{ORCHESTRATOR_NAME}}
      summary: "Suite {{SUITE_ID}}: running test N/TOTAL"
    ```
 2. **Preconditions**: Read the `Preconditions` column.
-   - If `[PRE:*]` tags are present: consult `knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED`.
+   - If `[PRE:*]` tags are present: consult `knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order. `[PRE:*]` failure → mark test `BLOCKED`. Two exceptions, pointing opposite ways: `[PRE:RESET_CART]`'s **UI emptying** steps are best-effort (warn and proceed), but its **competing-cart guard** (`npm run carts:check -- --email <login>`, exit 1) MUST `BLOCK` — an account holding two shopping carts resolves reads and writes to different carts, so any checkout verdict from it is untrustworthy.
    - Then verify plain-text preconditions; unmet → `BLOCKED`.
 3. **Arm Failure_Signals** + common signals. **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect surfaced while running this case is recorded even if the case itself PASSes (no timed discovery pass in bulk regression — just the always-on reflex).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = immediate-fail checkpoint.

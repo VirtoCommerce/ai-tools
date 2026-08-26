@@ -1,8 +1,8 @@
 # BUG — Users with more than one cart can never complete checkout (shipping address silently never binds) — **P0 / Critical**
 
-## Status: READY_TO_SUBMIT
+## Status: FILED
 
-**Not yet filed to a tracker.** **Env:** vcst-qa @ Platform 3.1061.0, Theme 2.56.0-pr-2451
+**Tracker:** VCST-5811 (P0/Highest, consolidated). **Env:** vcst-qa @ Platform 3.1061.0, Theme 2.56.0-pr-2451
 **Found by:** `REG-2026-08-26-0943` COMP-E2E-007 · live-verified in `/qa-triage-results` Phase 4
 **Route:** `vc-module-x-cart` (`VirtoCommerce.XCart`) — default-cart resolution
 
@@ -21,7 +21,8 @@
 `Query.cart` and the cart **command** handlers resolve the same identity tuple to **two different carts**, so every
 checkout write lands on a cart the customer is not looking at: the shipping address never binds and **Place order
 stays permanently disabled**. The failure is silent — `AddOrUpdateCartShipment` returns **HTTP 200, `errors: null`**
-and echoes the chosen address — survives reload and re-login, and has no UI workaround.
+and echoes the chosen address — survives reload and re-login, has no UI workaround, and degrades further on each
+cart visit. Who is actually affected: see Reach.
 
 ## Steps to reproduce
 
@@ -77,33 +78,32 @@ correct validation. (3) **Org-context asymmetry** — `GetCartCommand<T>` and `G
 
 ## Related defect (separate, lower priority)
 
-`addOrUpdateCartShipment` with `shipment.id` omitted **appends** instead of updating, so with the storefront's
-per-page-load `AddOrUpdateCartShipment(shipment: {})` bootstrap the invisible cart gains a blank shipment every visit
-(6 and 5 observed). "AddOrUpdate" silently means "Add" — own hardening ticket.
-
-## Impact
-
-Once the precondition holds: total, permanent, silent checkout block (HTTP 200, `errors: null`), surviving
-reload and re-login, no workaround, degrading further on each visit. Who holds it — see Reach.
+`addOrUpdateCartShipment` with `shipment.id` omitted **appends** instead of updating, so with the storefront's per-page-load `AddOrUpdateCartShipment(shipment: {})` bootstrap the invisible cart gains a blank shipment every visit (6 and 5 observed). "AddOrUpdate" silently means "Add" — own hardening ticket.
 
 ## Reach — who can actually create the competing cart
 
-A cart competes only if it is `type: null` **and** named something other than `default` (`GetCartAsync` post-filters `x.Type == null`; `CartType` is a closed set of `Wishlist`/`SavedForLater`).
+A cart competes only if it is `type: null` **and** shares one `(customerId, storeId, currency)` tuple with another
+(`GetCartAsync` post-filters `x.Type == null`; `CartType` is a closed `Wishlist`/`SavedForLater` set).
 
-**Current storefront code cannot create one**, verified three ways: a brand-new org user sending no `cartName`
-anywhere gets exactly one `default` cart and binds its address correctly (4/4 fresh-user cases PASS, including
-wishlist → cart, which yields `type: "CreatedFromWishlist"`), and `cartName` appears **0 times in `vc-frontend`**.
+**The customer-reachable path needs no `cartName` at all: the platform still mints duplicate `default` carts.**
+`npm run carts:check` over the account registry found **6 exposed groups across 2 accounts, 16 surplus carts** — and
+the dates rule out "legacy data": `agent-test-sr-primary` has `default` carts created **2026-08-19 + 2026-08-25**
+(EUR) and **2026-08-18 + 2026-08-25** (USD), `ricreyacrouyi-3425` another on **2026-07-27** — all *after* the sibling
+bug was verified fixed on 2026-07-15, all `createdBy` the account's own user. Its USD group is the worst shape: two
+`default` carts *plus* one named cart, so the name-unfiltered query and the `"default"`-pinned mutation are choosing
+from **different sets**. Non-idempotent default-cart creation is therefore the live upstream cause, and it is
+storefront-reachable — the `cartName` route I used to reproduce is merely the fastest trigger, not the only one.
 
-**But a legacy storefront path did.** Census of all **62,188** carts on vcst-qa: 60,939 named `default`, 1,146
-type-discriminated, leaving **96 named `type: null` carts — every one a test/probe artifact** (`AGENT-TEST-*`,
-`PROBE-*`, by `admin`/`http:anonymous`/QA accounts) *except* the save-for-later group. `SavedForLaterListService`
-sets `Type` **and** `Name` today (`:76-77`) and finds by `Type` (`:63`), but the three oldest `name="Saved for later"`
-carts (all 2026-05-19) carry **`type: null`** — an earlier build set the name only. **Their owners are exposed right
-now**, including two pure-storefront `http:anonymous` sessions holding exactly `"Saved for later"` + `default`.
-**Legacy duplicate-`default` carts persist too**: `ACME Store Maintainer One` holds **22** competing `type: null`
-carts, **three named `default`** (2025-09-17, 2026-03-24 ×2).
+**A second, historical path also existed.** Of 71 carts named `"Saved for later"`, the three oldest (2026-05-19) carry
+`type: null` — an earlier build set the name without the type (`SavedForLaterListService` sets both today, `:76-77`,
+and finds by `Type`, `:63`). Two belong to genuine anonymous storefront sessions. Fixed in current code; the stale
+rows remain.
 
-**Verdict:** the silent checkout block is real for any account carrying a legacy competing cart, but no *new* exposure arises from current code — so the fix needs **both** the resolver change **and** a data migration for pre-existing competing carts.
+**Census context:** of all **62,188** carts on vcst-qa, 60,939 are named `default`, 1,146 type-discriminated, and the 96 remaining named `type: null` carts are test/probe artifacts — some keyed to **synthetic** ids no real login resolves (e.g. `customerId: "user-acme-store-maintainer-1"`, 22 carts; the real ACME account holds one cart).
+
+**Verdict:** P0 stands. The precondition is reachable by ordinary storefront use, via a defect that is **still live**,
+so the fix must cover both the resolver asymmetry **and** idempotent default-cart resolution, plus a migration sweep
+for accounts already stuck.
 
 ## Root cause analysis
 

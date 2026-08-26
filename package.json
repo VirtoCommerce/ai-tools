@@ -176,7 +176,9 @@
     "td:validate:sr-orders": "node scripts/seed-data/sales-rep/validate-sales-rep-orders-data.mjs",
     "seed:catalog-edge": "node scripts/seed-data/catalog/seed-catalog-edge-fixtures.mjs",
     "seed:catalog-edge:teardown": "node scripts/seed-data/catalog/seed-catalog-edge-fixtures.mjs --teardown",
-    "td:validate:catalog-edge": "node scripts/seed-data/catalog/validate-catalog-edge-data.mjs"
+    "td:validate:catalog-edge": "node scripts/seed-data/catalog/validate-catalog-edge-data.mjs",
+    "carts:check": "node scripts/seed-data/carts/check-competing-carts.mjs",
+    "carts:sweep": "node scripts/seed-data/carts/check-competing-carts.mjs --apply"
   },
   "repository": {
     "type": "git",

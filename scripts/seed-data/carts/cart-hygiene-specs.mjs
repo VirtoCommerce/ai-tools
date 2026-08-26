@@ -12,7 +12,7 @@
  * (`GetCartQuery.CartName` has no default) while commands pin `cartName: "default"`
  * (`CartCommandBase.CartName = "default"`). The mutation then writes to a cart the storefront is not
  * rendering — the shipping address never binds, Place order stays disabled, and NOTHING errors
- * (HTTP 200, `errors: null`). See reports/bugs/open/BUG-multi-cart-users-cannot-set-checkout-shipping-address.md
+ * (HTTP 200, `errors: null`). See reports/bugs/open/BUG-multi-cart-users-cannot-set-checkout-shipping-address-VCST-5811.md
  *
  * For TESTING this matters because `[PRE:RESET_CART]` cannot see the problem: it empties the *rendered*
  * cart through the UI, so a competing cart is invisible to it, and under the bug above it may even empty
@@ -72,7 +72,7 @@ export function planGroup(carts) {
  * `risky` surplus carries line items — deleting it destroys cart contents, so the runnable requires
  * an explicit --force for those rather than silently discarding a customer's items.
  */
-export function findExposed(carts) {
+export function findExposed(carts, { refs } = {}) {
   const groups = new Map();
   for (const c of (carts || []).filter(isShoppingCart)) {
     const k = groupKey(c);
@@ -86,7 +86,37 @@ export function findExposed(carts) {
     exposed.push({
       key, carts: list, keep, surplus, keptBecause,
       risky: surplus.filter((c) => (c.items?.length ?? c.itemsCount ?? 0) > 0),
+      // Never auto-deletable, not even with --force: a fixture resolves this cart.
+      guarded: surplus.filter((c) => isProtected(c, refs)),
     });
   }
   return exposed;
+}
+
+/**
+ * Every string value in the alias registry, flattened. Used as a DERIVED protection list: a cart whose
+ * id or name is referenced by any fixture must never be auto-deleted, because deleting it silently
+ * breaks whatever suite resolves that alias.
+ *
+ * Deliberately conservative and deliberately NOT a hardcoded name list — cart fixtures are declared in
+ * test-data/aliases.json + aliases.<env>.json (e.g. SR_STATS_CART_ACME / SR_STATS_CART_WEST, seeded by
+ * sales-rep-stats-specs.mjs), and a hardcoded copy here would rot the first time one is added or renamed.
+ * Over-protecting costs a human decision; under-protecting costs a broken suite and a false regression.
+ */
+export function collectAliasRefs(...aliasObjects) {
+  const refs = new Set();
+  const walk = (v) => {
+    if (v == null) return;
+    if (typeof v === 'string') { const t = v.trim(); if (t) refs.add(t); return; }
+    if (Array.isArray(v)) { v.forEach(walk); return; }
+    if (typeof v === 'object') { Object.values(v).forEach(walk); }
+  };
+  aliasObjects.forEach(walk);
+  return refs;
+}
+
+/** True when a cart is referenced by a fixture (by runtime id or by business-key name). */
+export function isProtected(cart, refs) {
+  if (!refs || !refs.size) return false;
+  return refs.has(String(cart.id || '')) || refs.has(String(cart.name || ''));
 }

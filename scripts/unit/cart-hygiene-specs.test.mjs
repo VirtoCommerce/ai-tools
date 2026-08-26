@@ -84,3 +84,41 @@ test('carts in different tuples are not conflated', () => {
   ]);
   assert.deepEqual(exposed, []);
 });
+
+// --- fixture protection (derived from the alias registry, never hardcoded) ---
+import { collectAliasRefs, isProtected } from '../seed-data/carts/cart-hygiene-specs.mjs';
+
+test('collectAliasRefs flattens every string leaf of the alias registry', () => {
+  const refs = collectAliasRefs(
+    { SR_STATS_CART_ACME: { _inline: true, id: '', name: 'AGENT-TEST-SR-CART-ACME' } },
+    { SR_STATS_CART_ACME: { id: '463c6a87-feb8-4856-bc57-129ffc80cb42' } },
+  );
+  assert.ok(refs.has('AGENT-TEST-SR-CART-ACME'));
+  assert.ok(refs.has('463c6a87-feb8-4856-bc57-129ffc80cb42'));
+  assert.ok(!refs.has(''), 'empty strings must not become a wildcard protector');
+});
+
+test('isProtected matches on runtime id OR business-key name', () => {
+  const refs = collectAliasRefs({ A: { id: 'cart-guid-1', name: 'FIXTURE-CART' } });
+  assert.equal(isProtected(cart({ id: 'cart-guid-1', name: 'default' }), refs), true);
+  assert.equal(isProtected(cart({ id: 'other', name: 'FIXTURE-CART' }), refs), true);
+  assert.equal(isProtected(cart({ id: 'other', name: 'default' }), refs), false);
+  assert.equal(isProtected(cart({ id: 'x', name: 'y' }), new Set()), false);
+});
+
+test('a fixture-referenced surplus cart is guarded, not swept', () => {
+  const refs = collectAliasRefs({ A: { name: 'AGENT-TEST-SR-CART-ACME' } });
+  const exposed = findExposed([
+    cart({ id: 'def', name: DEFAULT_CART_NAME }),
+    cart({ id: 'fix', name: 'AGENT-TEST-SR-CART-ACME' }),
+    cart({ id: 'junk', name: 'probe' }),
+  ], { refs });
+  assert.deepEqual(exposed[0].guarded.map((c) => c.id), ['fix']);
+  // still reported as surplus so the exposure is visible; the runnable just refuses to delete it
+  assert.ok(exposed[0].surplus.some((c) => c.id === 'fix'));
+});
+
+test('guarded is empty when no refs are supplied (back-compat)', () => {
+  const exposed = findExposed([cart({ id: 'a', name: DEFAULT_CART_NAME }), cart({ id: 'b', name: 'x' })]);
+  assert.deepEqual(exposed[0].guarded, []);
+});

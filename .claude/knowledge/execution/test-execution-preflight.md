@@ -139,15 +139,34 @@ Each primitive is a UI-only sequence. No JS shortcuts unless explicitly noted.
 
 ### RESET_CART
 
-**Purpose:** start the case with an empty cart.
+**Purpose:** start the case with an empty cart — and with exactly ONE cart, which is not the same thing.
 
 **Steps:**
 1. Navigate to `/cart`.
-2. Detect: is the cart already empty? If yes → skip (idempotent).
+2. Detect: is the cart already empty? If yes → skip the emptying steps (idempotent).
 3. For each line item: click the remove/trash icon, wait for the row to disappear.
 4. Verify: empty-cart state is visible.
+5. **Competing-cart guard (API, not browser):** `npm run carts:check -- --email <the case's login>`.
+   Exit 0 = clean, exit 1 = the account holds >1 shopping cart for this store+currency. On exit 1 the
+   case is **BLOCKED, not FAIL** — clear it with `npm run carts:sweep -- --email <login>` (add `--force`
+   only if a surplus cart holds line items) and re-run the guard before proceeding.
 
-**Failure handling:** if a line item refuses to remove after one retry → log warning, proceed to the test. Cart reset is best-effort; do NOT block on it. The test itself will fail on its own assertions if the cart state is wrong for it.
+**Why step 5 is not optional.** Steps 1–4 act on the cart the storefront *renders*. When an account holds a
+second shopping cart (`type: null`, named anything but `default`), xAPI resolves **reads and writes to
+different carts**: `Query.cart` is name-unfiltered while every mutation pins `cartName: "default"`. So a
+competing cart is **invisible to a UI reset**, and the reset may even empty the cart the mutations are *not*
+writing to. Downstream the shipping address silently never binds and Place order stays disabled — HTTP 200,
+`errors: null`, no console error — which reads as a product defect in whatever case runs next. That is
+exactly how `COMP-E2E-007` failed in `REG-2026-08-26-0943`: a cart leaked from earlier agent activity on a
+shared account, not a storefront bug.
+See `reports/bugs/open/BUG-multi-cart-users-cannot-set-checkout-shipping-address-VCST-5811.md`; rules live in
+`scripts/seed-data/carts/cart-hygiene-specs.mjs`. **42 suites declare `[PRE:RESET_CART]`**, so any of them
+can inherit this.
+
+**Failure handling:** steps 1–4 are best-effort — if a line item refuses to remove after one retry → log a
+warning and proceed; the test's own assertions will catch a wrong cart state. **Step 5 is not best-effort:**
+an exposed account cannot produce a trustworthy checkout verdict, so report `BLOCKED` and stop rather than
+running the case and filing whatever it produces.
 
 ### CLEAR_SESSION
 

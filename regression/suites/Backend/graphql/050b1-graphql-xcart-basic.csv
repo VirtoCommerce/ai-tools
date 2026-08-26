@@ -550,3 +550,12 @@ GQL-MC-004,"Mixed Cart — Single-Currency Cart Yields cartTotals With Exactly O
 [DATA label=check_totals] data.cart.cartTotals.0.isDefaultTotalCurrency = true
 [DATA label=check_totals] data.cart.cartTotals.0.total is non-null
 [DATA label=check_totals] data.cart.cartTotals.0.total.currency.code is non-null","[EVIDENCE] Single-currency cart produces cartTotals with exactly 1 element — not 0, not 2+. isDefaultTotalCurrency=true on that element.","cartTotals is null or empty (field not available — schema regression); cartTotals has 2+ elements for a single-currency cart (ghost currency leak); isDefaultTotalCurrency=false on the only element",cleanup_post inline,"VCST-5101; BL-GQL-001; Mixed Cart cartTotals single-currency edge case",Reviewed
+"CRB-GQL-133","xCart — one identity tuple must resolve to ONE cart (read/write agreement) — DEPRECATED (VCST-5811 cancelled)","GraphQL > Cart > Resolution","Critical","","","DEPRECATED — retained for traceability only. Deliberately does NOT create a second cart any more: the original setup step did, and that is exactly what left the account holding competing carts.","","[AUTH role=ORG_USER]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.me.id → UID]
+[GQL-OP cart_read]
+query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{UID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id name } }
+[GQL-EXEC cart_read]","[ERRORS label=cart_read] errors[] empty
+[DATA label=cart_read] data.cart is null OR data.cart.id is non-null","","N/A — NOT EXECUTED as a divergence test. The read/write cart-resolution premise was accepted as not-a-bug when VCST-5811 was cancelled; the single cart read above is a placeholder, not a replacement scenario.","","VCST-5811 (CANCELLED); Deprecated: 2026-08-26 — consolidated cart read/write divergence bug cancelled, case retained for traceability. Prior analysis: reports/bugs/open/BUG-multi-cart-users-cannot-set-checkout-shipping-address-VCST-5811.md; proposed invariants in reports/ba/bl-proposals-2026-08-26.md (BL-CART-019/020) left unapplied.","Deprecated"

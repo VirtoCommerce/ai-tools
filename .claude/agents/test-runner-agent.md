@@ -115,7 +115,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 
 1. **Announce** (mandatory): `▶ Suite {{SUITE_ID}} | [N/TOTAL] <ID>: <Title> [<BL-*>] | Watching: <ECL-*>`
 2. **Preconditions**: Read the `Preconditions` column.
-   - If `[PRE:*]` tags are present: consult `knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED` immediately.
+   - If `[PRE:*]` tags are present: consult `knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure → mark test `BLOCKED` immediately. Two exceptions, and they point opposite ways: `[PRE:RESET_CART]`'s **UI emptying** steps are best-effort (warn and proceed), but its **competing-cart guard** (`npm run carts:check -- --email <login>`, exit 1) MUST `BLOCK` — an account holding two shopping carts resolves reads and writes to different carts, so any checkout verdict from it is untrustworthy.
    - Then verify plain-text preconditions; unmet → `BLOCKED`.
 3. **Arm Failure_Signals monitoring** + common signals (see knowledge file). **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen you touch — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect surfaced while running this case is recorded even if the case itself PASSes (no timed discovery pass in bulk regression — just the always-on reflex).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = checkpoint (fail immediately).
