@@ -8,7 +8,7 @@
  *   - the chosen tracker/VCS (enable only the relevant servers via
  *     .claude/settings.local.json `enabledMcpjsonServers`),
  *   - available tokens (inject placeholders that are present in the env; for the
- *     github MCP, fall back to `gh auth token` when no PAT env is set).
+ *     github MCP — NO `gh auth token` fallback: see VCST-5774 D3).
  *
  * .mcp.json keeps ALL server definitions (so they're available), but only the
  * enabled subset is listed in settings.local.json. Both files are gitignored.
@@ -21,7 +21,6 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
-import { execSync } from "child_process";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -81,7 +80,11 @@ function injectTokens(server) {
       process.env.GITHUB_FIX_BUGS_TOKEN ||
       process.env.GIT_TOKEN ||
       process.env.GITHUB_TOKEN ||
-      ghAuthToken(),
+      // NO `gh auth token` fallback (VCST-5774 D3). Copying the operator's gh CLI OAuth SESSION
+      // into a file persists a credential they never agreed to persist — observed on disk as
+      // `gho_…` in two generated projects. With nothing resolved the placeholder simply stays
+      // unresolved, which the caller already handles.
+      "",
     "<POSTMAN_API_KEY>": process.env.POSTMAN_API_KEY || "",
     "<FIGMA_API_KEY>": process.env.FIGMA_API_KEY || "",
     "<CONTEXT7_API_KEY>": process.env.CONTEXT7_API_KEY || "",
@@ -105,17 +108,6 @@ function injectTokens(server) {
 export function unresolvedPlaceholders(server) {
   if (!server) return [];
   return [...new Set(JSON.stringify(server).match(/<[A-Z0-9_]+>/g) || [])];
-}
-
-let _ghToken;
-function ghAuthToken() {
-  if (_ghToken !== undefined) return _ghToken;
-  try {
-    _ghToken = execSync("gh auth token", { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-  } catch {
-    _ghToken = "";
-  }
-  return _ghToken;
 }
 
 function main() {

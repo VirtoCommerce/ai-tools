@@ -49,7 +49,12 @@
  * Flags: --out <path> (default .env.local), --print (list the keys emitted).
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { resolveOutPath } from "./lib/paths.mjs";
+import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
+// Protect BEFORE creating — this is the file that matters most. `.env.local` is where the operator
+// is told to paste JIRA_API_TOKEN / ADO_PAT / GITHUB_FIX_BUGS_TOKEN / passwords, and the flow then
+// PAUSES while they do it. gen-mcp's .gitignore block only ran at §7, so that whole window — and
+// every onboarding that aborted before §7 — left the densest secret file unignored (review #4).
+import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -197,6 +202,8 @@ function main() {
           ``, ``,
         ].join("\n");
     const body = header + blocks.join("\n");
+    const ignored = ensureProjectIgnores(outputRoot());
+    if (ignored.length) console.log(`[scaffold-secrets] .gitignore += ${ignored.join(", ")}`);
     writeFileSync(outPath, existing + body);
   }
 

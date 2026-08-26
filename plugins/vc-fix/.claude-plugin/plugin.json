@@ -1,7 +1,7 @@
 {
   "name": "vc-fix",
   "description": "Agentic bug lifecycle for Virto Commerce — project setup, bug filing, autonomous bug fixing, fix verification, and online bug monitoring, plus a self-diagnostics subsystem (/vc-self-check) that passively observes whether the plugin's own skills ran correctly and can report quality issues back to VirtoCommerce (consent-gated, client-code-scrubbed, never touches the client install). Ships 8 agents, 16 skills, 8 commands. A focused subset of vc-qa's bug-lifecycle slice, packaged as a fully self-contained plugin (its own knowledge/, .claude/rules/, config.js, scripts/lib, package.json — not shared with the parent repo's vc-qa content, since a plugin install has no documented way to resolve its own install location for cross-file references). Its repo-routing logic in skills/qa-fix-routing/ is CWD-independent (resolves via import.meta.url); its monitoring dedup logic in skills/qa-monitoring/ is a self-contained extract too — no dependency on ci/.",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "displayName": "Virto Commerce Bug Lifecycle",
   "author": {
     "name": "Virto Commerce",

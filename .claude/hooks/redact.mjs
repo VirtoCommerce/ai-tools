@@ -82,6 +82,37 @@ export const REDACTIONS = [
   [/\bset-cookie\b\s*:\s*\S+/gi, "set-cookie: «redacted»"], // Set-Cookie header value (session hijack)
 ];
 
+/**
+ * Distinctive-prefix credential shapes as ONE non-global matcher, for callers that need to ASK
+ * "does this string contain a credential?" rather than rewrite it — /project-init's .mcp.json
+ * secret-hygiene audit (VCST-5774 B4) is the first.
+ *
+ * It lives here, beside REDACTIONS, because the alternative is what actually happened: the audit
+ * shipped its own shorter copy (`gh[pousr]_|github_pat_|PMAK-`), so a `glpat-`/`xoxb-`/`sk_live_`/
+ * `AKIA`/JWT literal the REDACTOR already knew about sailed past the DETECTOR. One list, one place.
+ *
+ * NON-global on purpose: `.test()` on a /g regex is stateful and alternates true/false across
+ * calls. Floors are deliberately a little looser than the REDACTIONS rules above — a detector
+ * that under-matches stays silent, whereas an over-matching redactor only costs a masked word.
+ */
+export const SECRET_PREFIX_RE = new RegExp([
+  /gh[pousr]_[A-Za-z0-9]{16,}/,          // GitHub classic (ghp_/gho_/ghu_/ghs_/ghr_)
+  /github_pat_[A-Za-z0-9_]{16,}/,        // GitHub fine-grained
+  /glpat-[A-Za-z0-9_-]{16,}/,            // GitLab
+  /xox[baprs]-[A-Za-z0-9-]{10,}/,        // Slack
+  /[rs]k_(?:live|test)_[A-Za-z0-9]{10,}/, // Stripe secret/restricted
+  /whsec_[A-Za-z0-9]{10,}/,              // Stripe webhook signing
+  /npm_[A-Za-z0-9]{36}/,                 // npm automation/publish
+  /AKIA[0-9A-Z]{16}/,                    // AWS access key id
+  // JWT — THREE base64url segments joined by dots. It used to be `eyJ[A-Za-z0-9._-]{16,}`, which
+  // matches any base64 of a JSON object (`{"` encodes to `eyJ`), so an ordinary
+  // `APP_CONFIG_B64: "eyJ0aGVtZSI6ImRhcmsi…"` was reported as a CERTAIN credential and FAILed
+  // readiness — the exact "blocks onboarding on a harmless value" failure the confidence split
+  // exists to prevent. Requiring the dots costs nothing: a JWT without them is not a JWT.
+  /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*/, // JWT (header.payload.signature)
+  /PMAK-[A-Za-z0-9-]{10,}/,              // Postman API key
+].map((r) => r.source).join("|"));
+
 /** Apply every redaction rule to `s`. Never throws; coerces null/undefined to "". */
 export function redact(s) {
   let out = String(s ?? "");

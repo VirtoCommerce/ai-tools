@@ -36,7 +36,11 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { fileURLToPath } from "url";
-import { resolveOutPath } from "./lib/paths.mjs";
+import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
+// Protect BEFORE creating. gen-mcp's .gitignore block only ran at §7, so every file created
+// earlier in the flow existed un-ignored until then (VCST-5774 review #4). Idempotent — the four
+// writers all call it, and only the first one actually appends.
+import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -139,6 +143,8 @@ function main() {
           `# ==============================================================================`,
           ``, ``,
         ].join("\n");
+    const ignored = ensureProjectIgnores(outputRoot());
+    if (ignored.length) console.log(`[scaffold-env] .gitignore += ${ignored.join(", ")}`);
     writeFileSync(outPath, existing + header + blocks.join("\n"));
   }
 
