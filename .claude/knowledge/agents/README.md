@@ -15,9 +15,9 @@ Three agent teams for the Virto Commerce platform: **QA** (quality assurance), *
 
 ---
 
-## Agent Inventory (19 agents + per-team shared instructions)
+## Agent Inventory (17 agents + per-team shared instructions)
 
-### QA Team (11 agents + shared-instructions)
+### QA Team (9 agents + shared-instructions)
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
@@ -29,8 +29,6 @@ Three agent teams for the Virto Commerce platform: **QA** (quality assurance), *
 | **test-management-specialist** | sonnet | purple | Test planning, case writing, coverage tracking |
 | **test-data-engineer** | opus | teal | Authors seeders / fixtures / `@td()` aliases / validators + unit tests (`/qa-generate-data` + `/qa-seed-data`); write-capable in this repo only, no browser |
 | **regression-orchestrator** | sonnet | orange | Parallel regression + smoke mode, retries, reports |
-| **autonomous-regression-orchestrator** | sonnet | orange | Agent Teams regression: token bucket, failure recovery, JIRA integration |
-| **autonomous-test-runner** | sonnet | orange | Standalone autonomous test execution agent |
 | **test-runner-agent** | sonnet | orange | Parameterized suite runner (used by regression orchestrator) |
 
 ### BA Team (4 agents + shared-instructions)
@@ -153,14 +151,18 @@ Splits into 2 parallel tracks: storefront (chrome) + admin (edge). Delivers GO/N
 Reads JIRA ticket, maps to affected components, dispatches specialists, reports with pass/fail per AC.
 
 ### 3. Regression (`/qa-regression [scope]`)
-Reads `config/test-suites.json`, dispatches sub-agents in batches of 3, retries with browser fallback chain.
+Gets its plan from `npm run regression:plan` (lane split, longest-first dispatch order, per-suite
+caps, browser constraints), then dispatches sub-agents with **continuous refill** — a freed slot
+takes the next eligible suite immediately rather than waiting for a batch. Retries climb a
+30s→60s ladder along `defaults.fallbackChain`, never onto a server the suite is denied.
 
-**Autonomous mode** (`/qa-regression [scope] --autonomous`): Uses `autonomous-regression-orchestrator` with Agent Teams for enhanced orchestration — 3+1 token bucket, exponential backoff (30s→60s→120s), persistent failure tracking, consolidated reporting via `scripts/regression/reporting.ts`, and auto-JIRA ticket creation. Results in `results/{RUN_ID}/`.
+There is one orchestrator. A second `--autonomous` (Agent Teams) mode was removed 2026-08-26 —
+see the tombstone in `.claude/rules/regression.md` §3 for why.
 
 | Selection | Suites | Use Case |
 |-----------|--------|----------|
-| `smoke` | 042, 078 | Daily pre-deploy |
-| `critical` | 042, 078, 039, 044, 049 | P0 gate |
+| `smoke` | 042, 078, 078b, 078c, 078d | Daily pre-deploy |
+| `critical` | 042, 078, 078b, 078c, 078d, 039, 044, 049 | P0 gate |
 | `sprint` | Plan-driven (sprint-*-summary.json) | Sprint release |
 | `full` | All 110 | Production release |
 | `frontend` | All Frontend/ suites | Frontend only |
@@ -210,7 +212,7 @@ Shared knowledge files in `knowledge/` (28 files) — full annotated list in `.c
 
 ## Customizing Agents
 
-All 19 agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is non-recursive — no team subfolders): 11 QA + 4 BA + 4 Developers. The three per-team `shared-instructions.md` files and this README live under `knowledge/agents/` (a plain reference dir, not scanned as components). Shared knowledge files are in `knowledge/` (28 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
+All 17 agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is non-recursive — no team subfolders): 11 QA + 4 BA + 4 Developers. The three per-team `shared-instructions.md` files and this README live under `knowledge/agents/` (a plain reference dir, not scanned as components). Shared knowledge files are in `knowledge/` (28 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
 
 ---
 

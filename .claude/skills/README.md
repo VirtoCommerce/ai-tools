@@ -185,7 +185,6 @@ Outside the four QA categories.
 | fullstack-backend | dotnet-unit-test, dotnet-fix, angular-admin |
 | fullstack-frontend | vue-unit-test, vue-fix, vc-shell-fix |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |
-| autonomous-regression-orchestrator | — (orchestration only) |
 
 ## Frontmatter Reference
 

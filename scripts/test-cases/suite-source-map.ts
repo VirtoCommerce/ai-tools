@@ -134,6 +134,40 @@ function loadRouting(): RoutingRule[] {
  * Run the real `fix-repos.json` routing rules over a probe string built from the
  * module row, so repo naming stays owned by the router rather than duplicated here.
  *
+ * THE MODULE NAME OUTRANKS THE CONTEXT CELLS. The routing regexes were written for
+ * free-text bug descriptions, where every keyword is a signal. A Module Map row is
+ * not free text: `adminSections` is an admin-menu PATH whose leading segment is the
+ * parent menu, and it also names the row's *dependencies* — so the context cells
+ * routinely mention other modules' vocabulary. Worked example: the **Sales Rep**
+ * row's `adminSections` ends `…; store setting \`SalesRep.Enabled\``, which matched
+ * `vc-module-store`'s `\bstore (setting|management|rounding)\b` and made all seven
+ * sales-rep suites (050m, 089-091, 092, 092b, 093) resolve to the Store module —
+ * a confident WRONG repo, the exact false-CONFIRMED failure §2 bans. (The real
+ * **Store** row resolved to nothing at all: its own cells say "Stores →
+ * Configuration, Rounding", which that rule does not match.)
+ *
+ * So the row's own NAME is tried first, and the context cells are consulted only
+ * when the name routes to nothing. The name is the row's ownership claim; the other
+ * cells are supporting context that can legitimately reference a neighbour.
+ *
+ * SECOND DEFENCE — A FOREIGN PARENT MENU IS A LOCATION, NOT AN OWNER. Name precedence
+ * only helps a row whose own name routes. The other half of the contamination sits at
+ * the FRONT of `adminSections`, which is written `Parent → Child, Child`: the parent is
+ * where the blade LIVES in the admin menu, and it is very often another module's name.
+ * That is how `Payment` ("Orders → Payments") resolved to `vc-module-order`, `SEO`
+ * ("Marketing → SEO, Redirects") to `vc-module-marketing`, `Returns` ("Orders →
+ * Returns, RMA") to `vc-module-order`, and `Channels` ("Catalog → Publishing, Data
+ * Quality") to `vc-module-catalog` — four more confident-wrong anchors.
+ *
+ * `stripForeignParentMenu` drops that leading segment when, and only when, it names a
+ * DIFFERENT row of this same map. The stop-list is therefore DERIVED from the map's own
+ * module names — never a hardcoded word list (`.claude/rules/test-data.md` GOLDEN RULE);
+ * a module renamed in the table changes this behaviour with no code edit. A parent that
+ * is the row's own name (`Store` → "Stores → Configuration, Rounding", `Orders` →
+ * "Orders → All Orders") or is not a module at all (`Settings` → "Settings → Security,
+ * OAuth", which is the ONLY thing that anchors Authentication to `vc-platform`) is
+ * KEPT — so the strip removes contamination without costing a single correct answer.
+ *
  * NO SLUG FALLBACK, deliberately. An earlier revision synthesised
  * `vc-module-<slugified module name>` whenever the router did not match, which
  * produced confident nonsense: "B2B Features" → `vc-module-b2b-features` and
@@ -144,17 +178,66 @@ function loadRouting(): RoutingRule[] {
  * which IS grounded (it came from the map), and resolves the repo by searching
  * `org:VirtoCommerce` for it.
  */
-export function reposForModule(row: ModuleMapRow, routing: RoutingRule[]): string[] {
-  const probe = [row.module, row.adminSections, row.restPath, row.xapiModule].join(" ").toLowerCase();
-  const hits = new Set<string>();
-  for (const r of routing) {
-    try {
-      if (new RegExp(r.match, "i").test(probe)) hits.add(r.name);
-    } catch {
-      // A malformed rule is fix-repos.json's problem, not ours — skip it.
+/** "Orders" / "orders" / "Order" all collapse to `order`, so a menu segment can be
+ *  compared with a row name without a hand-written synonym table. */
+function normalizeModuleName(s: string): string {
+  const bare = s.toLowerCase().replace(/[^a-z ]+/g, " ").trim();
+  return bare.replace(/s\b/g, "");
+}
+
+/**
+ * Drop the `Parent → …` prefix of an Admin UI cell when `Parent` names a DIFFERENT row
+ * of the map. Returns the cell unchanged when the parent is this row's own name, is not
+ * a module at all, or the cell has no `→` (e.g. "— (storefront-only)").
+ */
+export function stripForeignParentMenu(
+  row: ModuleMapRow,
+  allModuleNames: string[] = [],
+): string {
+  const arrow = row.adminSections.indexOf("→");
+  if (arrow < 0) return row.adminSections;
+
+  const parent = normalizeModuleName(row.adminSections.slice(0, arrow));
+  if (!parent || parent === normalizeModuleName(row.module)) return row.adminSections;
+
+  const isAnotherModule = allModuleNames.some(
+    (n) => normalizeModuleName(n) === parent && normalizeModuleName(n) !== normalizeModuleName(row.module),
+  );
+  return isAnotherModule ? row.adminSections.slice(arrow + 1) : row.adminSections;
+}
+
+export function reposForModule(
+  row: ModuleMapRow,
+  routing: RoutingRule[],
+  allModuleNames: string[] = [],
+): string[] {
+  const match = (probe: string): string[] => {
+    const hits = new Set<string>();
+    for (const r of routing) {
+      try {
+        if (new RegExp(r.match, "i").test(probe)) hits.add(r.name);
+      } catch {
+        // A malformed rule is fix-repos.json's problem, not ours — skip it.
+      }
     }
-  }
-  return [...hits].sort();
+    return [...hits].sort();
+  };
+
+  // Tier 1 — the row's own ownership claim.
+  const byName = match(row.module.toLowerCase());
+  if (byName.length) return byName;
+
+  // Tier 2 — the module's own API surface. `/api/order/` and `xOrder` describe what the
+  // module SERVES; unlike the admin cell they cannot name a parent menu or a dependency.
+  const byApi = match([row.module, row.restPath, row.xapiModule].join(" ").toLowerCase());
+  if (byApi.length) return byApi;
+
+  // Tier 3 — the admin-menu cell, last and with any foreign parent segment removed. This
+  // ordering is load-bearing: the Orders row's cell reads "Orders → All Orders, Payment
+  // Requests", so consulting it for a row that already resolved from `/api/order/` would
+  // add `vc-module-payment` to every orders suite — the same contamination, reversed.
+  const admin = stripForeignParentMenu(row, allModuleNames);
+  return match([row.module, admin, row.restPath, row.xapiModule].join(" ").toLowerCase());
 }
 
 export interface ResolveOptions {
@@ -176,12 +259,14 @@ export function resolveSuiteSource(
   const routing = opts.routing ?? loadRouting();
   const rows = parseModuleMap(mapText);
   const matched = rows.filter((r) => r.suiteTokens.some((t) => suiteMatchesToken(suiteId, t)));
+  // The map's own module names are the stop-list for a foreign parent menu.
+  const allModuleNames = rows.map((r) => r.module);
 
   const repos = new Set<string>();
   const restPaths = new Set<string>();
   const xapiModules = new Set<string>();
   for (const r of matched) {
-    for (const repo of reposForModule(r, routing)) repos.add(repo);
+    for (const repo of reposForModule(r, routing, allModuleNames)) repos.add(repo);
     const rest = r.restPath.replace(/`/g, "").trim();
     if (rest && rest !== "—") restPaths.add(rest);
     const x = r.xapiModule.replace(/`/g, "").trim();

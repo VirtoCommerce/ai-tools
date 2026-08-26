@@ -181,8 +181,8 @@ npm run ci:fix
 
 | Selection | Suites | Description |
 |-----------|--------|-------------|
-| `smoke` | 042, 078 | Daily pre-deploy validation |
-| `critical` | 042, 078, 039, 044, 049 | P0 revenue-critical suites |
+| `smoke` | 042, 078, 078b, 078c, 078d | Daily pre-deploy validation |
+| `critical` | 042, 078, 078b, 078c, 078d, 039, 044, 049 | P0 revenue-critical suites |
 | `sprint` | Plan-driven (`sprint-*-summary.json`) | Before sprint release |
 | `full` | All 110 suites | Before production release |
 | `frontend` | All `Frontend/` suites (50) | Frontend only |
@@ -195,8 +195,8 @@ Selection groups are defined in `config/test-suites.json` (`selections`) and loa
 
 ```bash
 npm run ci:regression          # Run regression (set SUITE_SELECTION env var)
-npm run ci:smoke               # Smoke tests (042, 078)
-npm run ci:critical            # P0 suites (042, 078, 039, 044, 049)
+npm run ci:smoke               # Smoke tests (042, 078, 078b-d)
+npm run ci:critical            # P0 suites (042, 078, 078b-d, 039, 044, 049)
 npm run ci:frontend            # Frontend suites
 npm run ci:backend             # Backend suites
 npm run ci:full                # All 110 suites ($80 budget)

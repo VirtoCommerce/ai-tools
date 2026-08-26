@@ -6,7 +6,7 @@
 >
 > | | **`vc-fix` plugin** | **Full `vc-qa` toolset** |
 > |---|---|---|
-> | What | The bug-lifecycle slice: setup, bug filing, autofix, verification, monitoring, self-diagnostics (10 agents / 16 skills / 8 commands). | The whole crew: regression, BA analysis, ~121 reference suites, test-data + authoring framework (19 agents / 40 skills / 31 commands). |
+> | What | The bug-lifecycle slice: setup, bug filing, autofix, verification, monitoring, self-diagnostics (10 agents / 16 skills / 8 commands). | The whole crew: regression, BA analysis, ~121 reference suites, test-data + authoring framework (17 agents / 40 skills / 31 commands). |
 > | How you get it | `/plugin install vc-fix@vc-tools` from the marketplace. | **Clone this repo** — `.claude/` components auto-load in the checkout. **Not** marketplace-installable. |
 > | This guide | **Install & Verify** below. | Everything **after Verify** (regression selections, module subsetting, suite authoring). |
 >

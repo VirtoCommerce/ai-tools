@@ -20,7 +20,7 @@
 [NAV] After successful payment user navigated to order confirmation page
 [STATE] Order confirmation displays order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order appears in admin with Authorize.Net payment method recorded
-[NETWORK] Payment request sent to Authorize.Net endpoint; no raw card data in storefront API requests","No redirect to /checkout/payment after clicking Place Order from cart; payment form does not load; order confirmation not reached; mutation returns errors[]","Cancel order via admin","google-analytics; STALE: VCST-5162 AllowCartPayment=true — redirects to /checkout/payment no longer expected; superseded by PAY-AN-010","deprecated"
+[NETWORK] Payment request sent to Authorize.Net endpoint; no raw card data in storefront API requests","No redirect to /checkout/payment after clicking Place Order from cart; payment form does not load; order confirmation not reached; mutation returns errors[]","Cancel order via admin","google-analytics; STALE: VCST-5162 AllowCartPayment=true — redirects to /checkout/payment no longer expected; superseded by PAY-AN-010","Deprecated"
 "PAY-AN-002","Authorize.Net - Invalid Card Number Validation [DEPRECATED — superseded by PAY-AN-012]","Authorize.Net","High","BL-PAY-003","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -35,7 +35,7 @@
 [ASSERT] Form does not submit with invalid card number","[DOM] 'Card Number' field shows validation error indicating invalid card
 [STATE] Payment submission blocked for Luhn-failing card number
 [NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired or mutation returns errors[]
-[CONSOLE] No unhandled JS exceptions","Invalid card number accepted without error; form submits and reaches payment processor with known-bad card; user navigated away from /checkout/payment unexpectedly","none — no order created","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path; superseded by PAY-AN-012","deprecated"
+[CONSOLE] No unhandled JS exceptions","Invalid card number accepted without error; form submits and reaches payment processor with known-bad card; user navigated away from /checkout/payment unexpectedly","none — no order created","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path; superseded by PAY-AN-012","Deprecated"
 "PAY-AN-003","Authorize.Net - Empty Fields Validation [DEPRECATED — superseded by PAY-AN-013]","Authorize.Net","High","BL-PAY-003","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -49,7 +49,7 @@
 [ASSERT] Form is not submitted until all required fields are filled","[DOM] Per-field validation errors appear for each empty required field
 [STATE] Form submission blocked until all fields are valid
 [NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No JS errors","Single generic error shown instead of per-field errors; form submits with empty fields; only some fields validated on empty submit","none — no order created","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path; superseded by PAY-AN-013","deprecated"
+[CONSOLE] No JS errors","Single generic error shown instead of per-field errors; form submits with empty fields; only some fields validated on empty submit","none — no order created","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path; superseded by PAY-AN-013","Deprecated"
 "PAY-AN-004","Authorize.Net - Transaction ID on Order Confirmation [DEPRECATED — superseded by PAY-AN-010 + 018 layer]","Authorize.Net","Medium","BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -63,7 +63,7 @@
 [ASSERT] Transaction ID or payment reference is visible in order details","[NAV] User reaches order confirmation page after payment
 [DOM] Order confirmation shows order number
 [DOM] Order details page or confirmation shows transaction ID / payment reference","[API] createOrderFromCart GraphQL mutation errors[] is empty
-[ADMIN] Order in admin shows Authorize.Net transaction ID in payment details","No transaction ID visible on confirmation or order details; order confirmation page not reached; order absent from account history","Cancel order via admin","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path + admin transaction shape changed; superseded by PAY-AN-010/018-suite","deprecated"
+[ADMIN] Order in admin shows Authorize.Net transaction ID in payment details","No transaction ID visible on confirmation or order details; order confirmation page not reached; order absent from account history","Cancel order via admin","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path + admin transaction shape changed; superseded by PAY-AN-010/018-suite","Deprecated"
 "PAY-AN-010","Authorize.Net - Cart Page Shows Inline Accept.js Form and allowCartPayment Cross-Layer Check","Authorize.Net > Cart Embedded Form","Critical","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user; fresh cart with ≥1 item

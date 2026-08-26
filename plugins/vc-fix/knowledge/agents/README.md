@@ -51,8 +51,7 @@ auto-merges.** No browser.
 **Dropped from the full `vc-qa` crew** (not shipped in `vc-fix`): `qa-lead-orchestrator` (its
 Gate-0/1 triage role is spelled out inline in `qa-fix.md`/`qa-bug.md`/`quality-gates.md` — the
 top-level session performs it directly), `ui-ux-expert`, `regression-orchestrator`,
-`autonomous-regression-orchestrator`, `test-runner-agent`, `autonomous-test-runner`,
-`test-management-specialist`, and all 4 `ba-*` agents.
+`test-runner-agent`, `test-management-specialist`, and all 4 `ba-*` agents.
 
 ### Self-diagnostics (2) — read-only, invoked by `/vc-self-check`
 

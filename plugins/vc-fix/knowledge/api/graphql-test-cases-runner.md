@@ -15,7 +15,7 @@ Canonical reference for writing **runner-native GraphQL test cases** in suite CS
 > API directly rather than through the runner, and treat `knowledge/api/graphql-schema.md` as the
 > primary schema reference.
 
-**Audience:** every QA agent that writes, reviews, or migrates GraphQL test cases. In `vc-fix`: `qa-backend-expert`, `qa-frontend-expert`, `qa-testing-expert`. (`test-management-specialist`, `test-runner-agent`, `autonomous-test-runner`, `qa-lead-orchestrator`, `/qa-test-cases-generator`, and `/qa-api` are full `vc-qa` plugin only, not shipped here.)
+**Audience:** every QA agent that writes, reviews, or migrates GraphQL test cases. In `vc-fix`: `qa-backend-expert`, `qa-frontend-expert`, `qa-testing-expert`. (`test-management-specialist`, `test-runner-agent`, `qa-lead-orchestrator`, `/qa-test-cases-generator`, and `/qa-api` are full `vc-qa` plugin only, not shipped here.)
 
 **Source of truth (read these if anything below seems ambiguous — code wins; not shipped in `vc-fix`, full `vc-qa` plugin only):**
 

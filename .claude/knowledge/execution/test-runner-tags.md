@@ -5,7 +5,7 @@ applicability_rationale: "CSV column / step / assertion tag reference. Format sp
 
 # Test Runner Tag & Column Reference
 
-Shared reference for `test-runner-agent.md` and `autonomous-test-runner.md`. Consulted on demand — do NOT pre-read at suite start.
+Shared reference for `test-runner-agent.md`. Consulted on demand — do NOT pre-read at suite start.
 
 ## CSV Columns (enriched agent-native format)
 

@@ -1,6 +1,6 @@
 # Agents Reference
 
-19 agents as flat `agents/*.md` files at the plugin root, across three teams (QA, BA, Developers). Plugin agent discovery is non-recursive, so agents are NOT nested in team subfolders; the per-team `shared-instructions.md` and the agents README live under `knowledge/agents/` (a plain reference dir, not scanned as components). See `knowledge/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints).
+17 agents as flat `agents/*.md` files at the plugin root, across three teams (QA, BA, Developers). Plugin agent discovery is non-recursive, so agents are NOT nested in team subfolders; the per-team `shared-instructions.md` and the agents README live under `knowledge/agents/` (a plain reference dir, not scanned as components). See `knowledge/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints).
 
 **Shared knowledge bases** — `ls .claude/knowledge/` for the current inventory; each file opens with its own scope. Grouped by directory: `api/` (api-auth, graphiql-interaction, graphql-schema, graphql-test-cases-runner, order-creation-matrix, platform-patterns) · `architecture/` (vc-frontend-architecture, vc-module-architecture) · `automation/` (browser-quirks, storefront-config-flags, storefront-selectors) · `ba/` (virto-doc-style) · `diagnostics/` (skill-expectations) · `domain/` (catalog, products, sitemap, store-settings, white-labeling) · `execution/` (debugging-signals, live-discovery, module-suite-map, performance-thresholds, test-data-authoring, test-execution-preflight, test-runner-tags, ticket-routing, tracker-ops) · `oracles/` (business-logic, critical-ui-scope, e-commerce-edge-cases-library, vc-bug-catalog).
 
@@ -12,7 +12,7 @@
 - `oracles/vc-bug-catalog.md` — the "Familiar Problems" oracle (HICCUPPS-F) for exploratory sessions + Bad Neighborhood Tours.
 - Note: `test-case-template.md` (enriched CSV column spec) lives in `skills/qa-test-cases-generator/`, NOT in `knowledge/`.
 
-## QA Team (11 agents + shared-instructions)
+## QA Team (9 agents + shared-instructions)
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
@@ -24,8 +24,6 @@
 | **test-data-engineer** | opus | Owns test-data end-to-end: designs cross-entity combinations, **authors** the seeders / fixtures / `@td()` aliases / drift-guard validators + their unit tests, **AND RUNS them live** — real seed/teardown against a non-prod env + `td:reconcile` (Node + Platform-API, no browser) (`/qa-generate-data` + `/qa-seed-data`). Write-capable in THIS repo only (`scripts/seed-data/`, `test-data/`); no external repos. Canonical owner — `test-management-specialist` delegates fixture authoring here; `qa-backend/frontend-expert` do only the **browser** confirmation (storefront/Admin-SPA render + suite run) the engineer can't. See `knowledge/execution/test-data-authoring.md`. |
 | **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.2 AA accessibility, design system, and the **`vs. DESIGN` axis** — diffing declared tokens / control geometry / icon name→glyph parity against a Claude Design project (`DesignSync` → `scripts/lib/verify-design-spec.ts`, methodology `skills/qa-design/claude-design-verification.md`). Runs by default against `DESIGN_SYSTEM_PROJECT_ID`; precedence `BL-UI invariant > design spec > UX heuristic`; reports `SKIPPED`, never PASS, where `/design-login` is unavailable (web sessions, CI), and `KNOWN_DIVERGENCE` — advisory, never filed — for a mismatch the spec itself declares unshipped |
 | **regression-orchestrator** | sonnet | Parallel regression + smoke mode, retries, browser fallback, consolidated reports |
-| **autonomous-regression-orchestrator** | sonnet | Agent Teams regression: token bucket, exponential backoff, failure recovery, JIRA integration |
-| **autonomous-test-runner** | sonnet | Parameterized template for Agent Teams mode suite execution (used by autonomous-regression-orchestrator) |
 | **test-runner-agent** | sonnet | Parameterized template for standard suite execution (used by regression-orchestrator) |
 
 ## BA Team (4 agents + shared-instructions)

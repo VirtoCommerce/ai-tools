@@ -120,7 +120,24 @@ reports/monitoring/.seen-fingerprints.json
 reports/monitoring/MONITOR-*/**/*.png
 reports/monitoring/MONITOR-*/**/*.har
 reports/monitoring/MONITOR-*/**/*.jpg
-reports/regression
+
+# Regression run artifacts are ephemeral local working state (screenshots, HARs, traces,
+# resolved CSVs, per-suite results) — they only ever exist on whoever ran them.
+# NOTE the trailing `/*`: git cannot re-include a file whose PARENT DIRECTORY is excluded, so
+# the bare `reports/regression` this replaced made the negations below dead lines.
+reports/regression/*
+# ...EXCEPT the two rolling history files. These are small, append-only, 90-day-windowed and
+# carry no evidence — and without them `scripts/regression/compute-metrics.ts` is starved:
+# `appendToHistory` / `npm run triage:history` DO write them, but the whole directory was
+# ignored and the CI container is ephemeral, so nothing ever survived a run. Its flaky rule
+# (n >= 4 && crossings >= 3) could therefore never fire. Un-ignoring them is half the fix; the
+# other half is the workflow restoring and committing them across runs.
+!reports/regression/history.json
+!reports/regression/history-ci-runs.json
+# test-run-status.json is deliberately tracked (the interactive run interlock + the
+# reap-stalled-run backstop read it), so name it explicitly rather than relying on the fact
+# that an already-tracked file ignores .gitignore.
+!reports/regression/test-run-status.json
 # Seed run results — disposable local working state. The modular seed-*.mjs seeders no longer
 # write these (runtime GUIDs now go to test-data/aliases.{env}.json); only seed-test-data.js's
 # teardown-recovery dump remains. Recursive so nested dumps never get committed again.

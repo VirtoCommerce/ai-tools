@@ -1,0 +1,279 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+BSM-005,Admin SPA — Catalog Module Blade Opens,Backend Smoke > Catalog Admin,Critical,BL-CROSS-001,ECL-1.1,"Admin logged in to {{BACK_URL}} as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loads (catalog list visible)
+[ASSERT] at least one catalog item visible in the grid","[BLADE] Catalog blade title shown (e.g., 'Catalogs')
+[GRID] catalog grid renders with columns (Name, Type, etc.)
+[GRID] at least 1 catalog row visible
+[DOM] toolbar buttons present: 'Add', 'Delete' (or equivalent)","[API] GET {{BACK_URL}}/api/catalog/catalogs → 200 with non-empty 'catalogs' array
+[BODY] API catalog count matches grid row count (±1 for pagination)","Catalog blade fails to open (404 route, spinner stuck >15s), grid empty when catalogs should exist, API returns 500, catalog count mismatch between API and UI",none,"Suite 051 (Catalog Admin Products), Suite 053 (Catalog Admin Categories)",Automated
+BSM-006,Admin SPA — Products Blade Opens and Lists Products,Backend Smoke > Catalog Admin,Critical,BL-CROSS-001,ECL-1.1,"Catalog blade accessible (BSM-005 passed), at least one catalog with products exists",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog in the list
+[WAIT] catalog detail blade opens
+[ACT] click 'Items' or 'Products' tab/section
+[WAIT] products grid loads","[BLADE] products list blade visible with product rows
+[GRID] grid renders columns (Name, SKU, Is Active, etc.)
+[GRID] at least 1 product row visible
+[DOM] toolbar shows 'Add Item', 'Delete', search input","[API] GET {{BACK_URL}}/api/catalog/search/products?catalogId=<first_catalog_id>&take=10 → 200 with items array
+[BODY] API items array non-empty; product count from API visible in UI pagination","Products blade spinner stuck >15s, grid renders with 0 rows when products exist in the catalog, API 500 on search, product blade crashes with Angular error",none,"Suite 051 (Catalog Admin Products)",Automated
+BSM-007,Admin SPA — Categories Blade Opens,Backend Smoke > Catalog Admin,Critical,BL-CROSS-001,ECL-1.1,"Catalog accessible (BSM-005 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog in the list
+[WAIT] catalog detail blade opens with 'Categories' section or tab
+[ACT] navigate to Categories view","[BLADE] categories list visible with at least 1 category
+[GRID] category grid renders with Name column
+[DOM] 'Add Category' button present in toolbar","[API] GET {{BACK_URL}}/api/catalog/categories?catalogId=<first_catalog_id> → 200 with non-empty categories array","Categories view shows empty grid when categories exist in catalog, API 404 or 500 for categories endpoint, blade fails to open",none,"Suite 053 (Catalog Admin Categories)",Automated
+BSM-012,Admin SPA — Pricing Price Lists Blade Opens,Backend Smoke > Pricing Admin,Critical,"BL-PRICE-001, BL-PRICE-007",ECL-5.1,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/pricing
+[WAIT] Pricing module blade loads
+[ASSERT] price lists grid renders","[BLADE] Pricing blade title visible (e.g., 'Price Lists')
+[GRID] grid renders with columns: Name, Currency, Assigned Catalogs (or similar)
+[GRID] at least 1 price list row visible
+[DOM] 'Add', 'Delete', 'Export' toolbar buttons present","[API] GET {{BACK_URL}}/api/pricing/pricelists?take=10 → 200 with non-empty array
+[BODY] API price list count matches grid row count (±pagination)","Pricing blade fails to open (404 or Angular crash), grid empty when price lists exist, API returns 500, toolbar buttons absent",none,"Suite 054 (Pricing Logic), Suite 055 (Pricing Management)",Automated
+BSM-013,Admin SPA — Inventory Fulfillment Centers Blade Opens,Backend Smoke > Inventory Admin,Critical,BL-CROSS-002,ECL-2.1,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/inventory
+[WAIT] Inventory module blade loads
+[ASSERT] fulfillment centers list visible","[BLADE] Inventory blade visible with fulfillment centers list
+[GRID] at least 1 fulfillment center row visible
+[GRID] columns include: Name, Code, Address (or similar)
+[DOM] 'Add', 'Delete' toolbar controls present","[API] GET {{BACK_URL}}/api/inventory/fulfillmentcenters → 200 with non-empty array
+[BODY] fulfillment center count in API matches grid row count","Inventory blade fails to open, grid empty when fulfillment centers exist, API returns 500, blade crashes with Angular error on open",none,"Suite 056 (Inventory)",Automated
+BSM-022,Search Indexing — Index Status Check,Backend Smoke > Search Admin,Critical,BL-CROSS-003,ECL-9.1,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>,"[HTTP] GET {{BACK_URL}}/api/search/indexes
+[SETUP] Authorization: Bearer {{bearer_token}}
+[ASSERT] response received","[STATUS] HTTP 200 OK
+[BODY] response contains index entries for core entity types: 'Product', 'Category', 'Member', 'CustomerOrder' (or similar index document types)
+[BODY] each index entry has 'documentType' and status fields
+[BODY] no index entry shows an error or failed state","[ADMIN] navigate to {{BACK_URL}}/ui#/search-index — search index status blade shows same index document types as API response
+[BLADE] no red error indicators on any index entry","HTTP 500 on indexes endpoint, 'Product' or 'Category' index missing (xAPI catalog search would be broken), any index shows 'error' status, Admin blade crashes on search index page",none,"Suite 061 (Search Indexing Admin)",Automated
+BSM-026,Admin SPA — User Account Blade Opens and Lists Users,Backend Smoke > Platform Admin,High,BL-AUTH-005,ECL-4.1,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/security/users
+[WAIT] Users blade loads
+[ASSERT] users list grid renders","[BLADE] Users blade title visible (e.g., 'Users')
+[GRID] grid renders with columns: Login, Email, Account Type, Status
+[GRID] at least 1 user row visible (the admin account itself)
+[DOM] 'New User', 'Delete' toolbar buttons present","[API] GET {{BACK_URL}}/api/platform/security/users?take=10 → 200 with non-empty items array
+[BODY] current admin user appears in items array","Users blade fails to open (404, Angular crash), grid empty when users exist, 'New User' button absent for Administrator role, API returns 403 or 500",none,"Suite 020 (Platform Users), Suite 049 (Platform API)",Automated
+BSM-030,Admin SPA — Create Product (Basic) and Verify in API,Backend Smoke > Catalog Admin,High,"BL-CAT-005, BL-CROSS-001",ECL-1.2,"Admin logged in, at least 1 catalog exists (BSM-005 passed)",back_url={{BACK_URL}}; test_sku=BSM-TEST-{{TIMESTAMP}},"[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row
+[WAIT] catalog detail blade opens
+[ACT] click 'Add Item' or 'New Product' button
+[WAIT] product creation form opens
+[ACT] fill product name: 'BSM Smoke Test Product'
+[ACT] fill SKU/Code: {{test_sku}}
+[ACT] click 'Save' or 'Create'
+[WAIT] product saved (toast notification appears)","[TOAST] success notification displayed
+[BLADE] product detail blade opens for the newly created product
+[DOM] product name 'BSM Smoke Test Product' visible in blade title or header
+[DOM] SKU field shows {{test_sku}}","[API] GET {{BACK_URL}}/api/catalog/products?searchPhrase={{test_sku}} → 200 with items containing the new product
+[BODY] new product 'id' field is non-empty UUID","Product creation form does not open, 'Save' returns validation error on valid input, product not visible in API after save, Angular error on blade open, toast absent after save","DELETE product via API after test — [HTTP] DELETE {{BACK_URL}}/api/catalog/products?ids=<new_product_id>","Suite 051 (Catalog Admin Products)",Automated
+BSM-031,Admin SPA — Category Create and Delete,Backend Smoke > Catalog Admin,Medium,BL-CAT-004,ECL-1.2,"Admin logged in, catalog accessible (BSM-005 passed)",back_url={{BACK_URL}}; test_cat_name=BSM-Cat-{{TIMESTAMP}},"[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row
+[WAIT] catalog detail blade opens
+[ACT] navigate to Categories view
+[ACT] click 'Add Category' button
+[WAIT] category creation form opens
+[ACT] fill Name: {{test_cat_name}}
+[ACT] click 'Save'
+[WAIT] success toast appears
+[ACT] select the newly created category row
+[ACT] click 'Delete' button and confirm deletion","[TOAST] success toast on create
+[GRID] new category row appears in grid after save
+[TOAST] success toast on delete
+[GRID] deleted category no longer appears in grid","[API] GET {{BACK_URL}}/api/catalog/categories?searchPhrase={{test_cat_name}} after create → returns item
+[API] same endpoint after delete → returns empty array","Category form fails to open, save returns 400, deleted category still shows in grid, API returns 500 on category create",none,"Suite 053 (Catalog Admin Categories)",Automated
+BSM-036,Admin SPA — Price List Entry CRUD,Backend Smoke > Pricing Admin,High,"BL-PRICE-001, BL-PRICE-007",ECL-5.2,"Admin logged in, at least 1 price list exists (BSM-012 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/pricing
+[WAIT] Pricing blade loaded
+[ACT] click first price list row
+[WAIT] price list detail blade opens
+[ACT] click 'Add Price' or 'Add Item' button
+[WAIT] product picker or SKU input appears
+[ASSERT] user can select or enter a product SKU","[BLADE] price list detail blade visible with 'Prices' section
+[DOM] 'Add Price' button present and clickable
+[DOM] product picker or SKU input opens on button click
+[DOM] existing price entries visible in grid with List Price, Sale Price, Min Quantity columns","[API] GET {{BACK_URL}}/api/pricing/pricelists/<first_pricelist_id>/prices?take=5 → 200 with items array (may be empty if new list)","Price list detail blade fails to open, 'Add Price' button absent, product picker unresponsive, API returns 500 for price list detail endpoint",none,"Suite 054 (Pricing Logic), Suite 055 (Pricing Management)",Automated
+BSM-037,Platform REST API — Pricing Price List Create and Delete,Backend Smoke > Pricing Admin,High,"BL-PRICE-001, BL-PRICE-006",ECL-5.1,"Admin Bearer token obtained from {{BACK_URL}}/connect/token (suite setup)",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>,"[HTTP] POST {{BACK_URL}}/api/pricing/pricelists
+[SETUP] Authorization: Bearer {{bearer_token}}
+[SETUP] Content-Type: application/json
+[SETUP] body: {""name"": ""BSM-Smoke-PriceList"", ""currency"": ""USD"", ""description"": ""Smoke test price list""}
+[ASSERT] price list created
+[HTTP] DELETE {{BACK_URL}}/api/pricing/pricelists/<new_pricelist_id>","[STATUS] POST returns 200 or 201 with created price list object
+[BODY] created object has 'id', 'name' = 'BSM-Smoke-PriceList', 'currency' = 'USD' fields
+[STATUS] DELETE returns 200 or 204
+[BODY] GET {{BACK_URL}}/api/pricing/pricelists/<new_pricelist_id> after delete → 404","[ADMIN] verify price list appeared in Pricing blade before deletion","POST returns 400 on valid payload, DELETE returns 500, GET after delete still returns 200 (deletion failed silently), id field missing in POST response",none,"Suite 049 (Platform API), Suite 055 (Pricing Management)",Automated
+BSM-038,Admin SPA — Inventory Stock Update,Backend Smoke > Inventory Admin,High,BL-CAT-007,ECL-2.2,"Admin logged in, at least 1 fulfillment center and product with inventory record exists",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/inventory
+[WAIT] Inventory blade loads
+[ASSERT] fulfillment centers list visible
+[ACT] click first fulfillment center row
+[WAIT] FFC detail blade opens with inventory list
+[ASSERT] product inventory entries visible in grid","[BLADE] FFC detail blade shows inventory items grid
+[GRID] columns include: SKU/Product Name, In Stock, Available, Reserved quantities
+[GRID] at least 1 product inventory row present
+[DOM] edit control available on rows to update stock quantity","[API] GET {{BACK_URL}}/api/inventory/products?fulfilmentCenterId=<ffc_id>&take=5 → 200 with non-empty items array
+[BODY] each item has 'sku', 'inStockQuantity', 'reservedQuantity' fields","FFC detail blade fails to open, inventory grid shows 0 rows when stock records exist, API returns 500, edit control absent on inventory rows",none,"Suite 056 (Inventory)",Automated
+BSM-039,Platform REST API — Inventory Stock Update Round-Trip,Backend Smoke > Inventory Admin,Medium,BL-CAT-007,ECL-2.1,"Admin Bearer token obtained from {{BACK_URL}}/connect/token (suite setup), at least 1 FFC and SKU with inventory record exist",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>; test_sku={{TEST_SKU}}; ffc_id={{FFC_ID}},"[HTTP] GET {{BACK_URL}}/api/inventory/products/{{test_sku}}?fulfillmentCenterId={{ffc_id}}
+[SETUP] Authorization: Bearer {{bearer_token}}
+[ASSERT] record found, capture current inStockQuantity as baseline
+[HTTP] POST {{BACK_URL}}/api/inventory/products
+[SETUP] body: [{""sku"": ""{{test_sku}}"", ""fulfillmentCenterId"": ""{{ffc_id}}"", ""inStockQuantity"": <baseline + 1>}]
+[HTTP] GET same endpoint again","[STATUS] initial GET returns 200 with inStockQuantity field
+[STATUS] POST returns 200 or 204
+[BODY] final GET shows inStockQuantity = baseline + 1","[ADMIN] open FFC detail blade in Admin → stock for {{test_sku}} matches API value","POST returns 400 or 403 on valid payload; final GET shows unchanged quantity; stock goes negative unexpectedly; Admin blade shows different value than API","Restore original quantity via POST with baseline value.","Suite 056 (Inventory), Suite 049 (Platform API)",Automated
+BSM-048,Admin SPA — Search Index Rebuild Trigger (UI Check Only),Backend Smoke > Search Admin,High,BL-CROSS-003,ECL-9.1,"Admin logged in as {{ADMIN}} (suite setup), Search module accessible (BSM-022 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/search-index
+[WAIT] Search Index blade loads
+[ASSERT] index list visible
+[ACT] click on 'Product' index entry row
+[WAIT] index detail blade opens","[BLADE] Search Index blade title visible
+[GRID] index entries list shows: Product, Category, Member, CustomerOrder document types
+[BLADE] Product index detail blade opens on click
+[DOM] 'Index All' or 'Rebuild Index' button present in detail blade
+[DOM] last indexed date/count shown","[API] GET {{BACK_URL}}/api/search/indexes/Product → 200 with index detail object
+[BODY] object has 'documentType', 'count' (>= 0), 'lastIndexDate' fields","Search Index blade fails to open, Product index row absent, detail blade fails to open, 'Index All' button absent, API returns 404 for specific index endpoint",none,"Suite 061 (Search Indexing Admin)",Automated
+BSM-059,Admin SPA — Configurable Products Admin Blade Accessible,Backend Smoke > Configurable Products,High,BL-CAT-006,ECL-1.3,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>,"[HTTP] GET {{BACK_URL}}/api/catalog/products?productType=Configurable&take=3
+[SETUP] Authorization: Bearer {{bearer_token}}
+[ADMIN] if results non-empty: open the first configurable product in Admin blade","[STATUS] HTTP 200 OK
+[BODY] response has 'totalCount' >= 0 and 'items' array
+[BODY] if items present: each has 'productType' = 'Configurable'
+[BLADE] if opened in Admin: 'Configuration' or 'Sections' tab visible in product detail
+[DOM] if Sections tab opened: at least 1 section entry with Name and Required flag visible","[ADMIN] product type field in Admin blade matches 'productType' field from API for the same product","API returns 500, productType filter not supported (returns non-configurable products), Sections tab absent on configurable product, API returns 403",none,"Suite 052 (Configurable Products Admin), Suite 072 (Configurable Products UI)",Automated
+BSM-069,Platform REST API — Category Hierarchy Depth Check,Backend Smoke > Catalog Admin,Medium,BL-CAT-004,ECL-1.1,"Admin Bearer token obtained from {{BACK_URL}}/connect/token (suite setup), at least 1 catalog with nested categories",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>,"[HTTP] GET {{BACK_URL}}/api/catalog/categories?take=20&deepSearch=true
+[SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK
+[BODY] response contains categories with 'id', 'name', 'parentCategoryId' (nullable) fields
+[BODY] at least 1 category has non-null 'parentCategoryId' (nested category exists)
+[BODY] no circular parentCategoryId references (parent ≠ self)","[ADMIN] verify category tree in Admin Catalog blade parent-child relationships are consistent with API data","API returns empty array when categories exist, circular reference in parentCategoryId chain, HTTP 500, parentCategoryId field absent from response",none,"Suite 053 (Catalog Admin Categories)",Automated
+BSM-072,Admin SPA — Product Variations List Accessible,Backend Smoke > Catalog Admin,High,"BL-CAT-005, BL-CAT-006",ECL-1.3,"Admin logged in, a product exists in catalog (BSM-006 passed)",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>,"[HTTP] GET {{BACK_URL}}/api/catalog/products?take=3
+[SETUP] Authorization: Bearer {{bearer_token}}
+[ASSERT] capture first product id
+[HTTP] GET {{BACK_URL}}/api/catalog/products/<product_id>/variations","[STATUS] both GETs return 200
+[BODY] variations GET returns array (may be empty for products without variations)
+[BODY] if non-empty: each variation has 'id', 'code', 'mainProductId' equal to parent product id
+[ADMIN] Variations tab accessible in product detail blade without Angular error","[ADMIN] variation count from API matches count shown in Variations tab grid of the same product","Product search returns 500 or empty array, variations endpoint returns 500, Variations tab absent in product detail, mainProductId mismatch between variation and parent product",none,"Suite 051 (Catalog Admin Products)",Automated
+BSM-076,Admin SPA — Edit Product Name and Verify Persistence,Backend Smoke > Edit Workflows,High,"BL-CAT-005, BL-CROSS-001",ECL-1.2,"Admin logged in, at least 1 product exists in catalog (BSM-006 passed)","back_url={{BACK_URL}}; test_product_name_suffix=-Edited-{{TIMESTAMP}}","[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row
+[WAIT] catalog detail blade opens
+[ACT] click first product row in the products grid
+[WAIT] product detail blade opens
+[ASSERT] capture current product name (baseline)
+[ACT] click into the Name field to edit
+[ACT] append {{test_product_name_suffix}} to the product name
+[ACT] click 'Save' button
+[WAIT] success toast appears","[TOAST] success notification displayed after save
+[DOM] product detail blade Name field reflects the updated name (contains {{test_product_name_suffix}})
+[BLADE] no validation error shown
+[STATE] blade remains open on the same product after save","[API] GET {{BACK_URL}}/api/catalog/products/<product_id> → 200 with 'name' field containing {{test_product_name_suffix}}
+[BODY] 'modifiedDate' field updated (not identical to 'createdDate')","Save button non-responsive, toast absent after save, name reverts to old value on blade refresh, API still returns old name 5s after save, Angular error on save, modifiedDate unchanged after edit","Restore original product name via API: PUT {{BACK_URL}}/api/catalog/products with original name.","Suite 051 (Catalog Admin Products)",Automated
+BSM-079,Admin SPA — Edit Price List Entry and Verify Updated Price,Backend Smoke > Edit Workflows,High,"BL-PRICE-001, BL-PRICE-007",ECL-5.2,"Admin logged in, price list with at least 1 price entry exists (BSM-036 passed)","back_url={{BACK_URL}}; new_list_price=9999.00","[NAV] {{BACK_URL}}/ui#/pricing
+[WAIT] Pricing blade loaded
+[ACT] click first price list row
+[WAIT] price list detail blade opens
+[ASSERT] at least 1 price entry visible; capture SKU and current list price
+[ACT] click the price entry row (or its edit icon)
+[WAIT] price edit form opens
+[ACT] clear the 'List Price' field and enter {{new_list_price}}
+[ACT] click 'Save' or confirm inline edit
+[WAIT] success toast or inline confirmation appears","[TOAST] success notification (or inline save confirmation)
+[DOM] price entry row in grid shows {{new_list_price}} after save
+[STATE] price list detail blade remains stable after save","[API] GET {{BACK_URL}}/api/pricing/pricelists/<pricelist_id>/prices?take=20 → 200; find the edited product entry; 'list' field = {{new_list_price}}
+[BODY] entry 'modifiedDate' updated","Save returns 400 for valid price value, price reverts to old value on grid refresh, API still shows old price after save, Angular error during edit, negative price validation error shown on positive input","Restore original price via API: PUT {{BACK_URL}}/api/pricing/pricelists/<pricelist_id>/prices with original list value.","Suite 054 (Pricing Logic), Suite 055 (Pricing Management)",Automated
+BSM-090,Admin SPA — Products Blade Navigate to Category Detail,Backend Smoke > Cross-Blade Navigation,High,"BL-CAT-002, BL-CAT-004",ECL-1.1,"Admin logged in, product with a category assignment exists (BSM-006 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row
+[WAIT] catalog detail blade opens
+[ACT] click first product in the products grid
+[WAIT] product detail blade opens
+[ACT] locate the Category field or breadcrumb link in the product detail blade
+[ACT] click the category link
+[WAIT] Category detail blade opens","[BLADE] category detail blade opens stacked to the right without Angular error
+[DOM] category blade title shows category name matching the product's category assignment
+[DOM] category blade shows subcategories or products section
+[DOM] product detail blade visible to the left (blade stack preserved)","[API] GET {{BACK_URL}}/api/catalog/categories/<category_id> → 200 with 'name' matching the category name shown in the blade","Category field not displayed as a clickable link, clicking category link throws Angular error, category blade fails to open, wrong category blade opens (ID mismatch), blade stack collapses",none,"Suite 051 (Catalog Admin Products), Suite 053 (Catalog Admin Categories)",Automated
+BSM-094,Admin SPA — Catalog Product Variations Tab Opens Variation Detail,Backend Smoke > Cross-Blade Navigation,High,"BL-CAT-005, BL-CAT-006",ECL-1.3,"Admin logged in, product with at least 1 variation exists (BSM-072 passed or API confirms variations)","back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>","[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row; navigate to products grid
+[ACT] click a product known to have variations
+[WAIT] product detail blade opens
+[ACT] click 'Variations' tab within the product detail blade
+[WAIT] variations grid renders
+[ASSERT] at least 1 variation row visible
+[ACT] click first variation row
+[WAIT] variation detail blade opens","[BLADE] variation detail blade opens without Angular error
+[DOM] variation blade shows SKU, properties/attributes (color, size, etc.)
+[DOM] 'Main Product' back-link or parent product name visible in variation blade
+[DOM] product detail blade remains in the blade stack (stack preserved)","[API] GET {{BACK_URL}}/api/catalog/products/<variation_id> → 200; 'mainProductId' field = parent product id","Variations tab absent on product detail, grid empty when variations exist per API, clicking variation row throws Angular error, variation blade title does not identify parent product, blade stack collapses on variation open",none,"Suite 051 (Catalog Admin Products)",Automated
+BSM-095,Admin SPA — Products Blade Search by Name Filters Grid,Backend Smoke > Search and Filter,High,"BL-SRCH-004, BL-CAT-005",ECL-9.1,"Admin logged in, products blade accessible with multiple products (BSM-006 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row; navigate to products grid
+[ASSERT] capture total product count (baseline row count)
+[ACT] click the search/filter input in the products toolbar
+[ACT] type the first word of a known product name (at least 3 characters)
+[WAIT] grid refreshes with filtered results","[GRID] product grid row count decreases (or equals 1) compared to baseline
+[GRID] all visible rows contain the search term in their Name column
+[DOM] search input retains the typed term (not cleared on search trigger)
+[DOM] no Angular error during search","[API] POST {{BACK_URL}}/api/catalog/search/products with body containing 'searchPhrase' = typed term → 200; 'totalCount' matches filtered grid row count","Search input does not trigger filtering, grid count unchanged after typing, non-matching products remain visible, Angular error on search, API totalCount mismatches UI row count",none,"Suite 051 (Catalog Admin Products), Suite 061 (Search Indexing Admin)",Automated
+BSM-096,Admin SPA — Products Blade Search by SKU Returns Exact Match,Backend Smoke > Search and Filter,High,"BL-SRCH-004, BL-CAT-005",ECL-9.1,"Admin logged in, at least 1 product with known SKU exists (BSM-006 passed)","back_url={{BACK_URL}}; known_sku={{TEST_SKU}}","[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row; navigate to products grid
+[ACT] enter {{known_sku}} in the search input
+[WAIT] grid refreshes","[GRID] at most 1–2 product rows visible, all related to {{known_sku}}
+[DOM] SKU column of the returned row shows {{known_sku}} (exact or partial match)
+[GRID] no obviously unrelated rows visible","[API] POST {{BACK_URL}}/api/catalog/search/products body: {""searchPhrase"": ""{{known_sku}}"", ""take"": 5} → 200; 'items' contains entry with 'code' = {{known_sku}}","SKU search returns 0 results for existing SKU, multiple unrelated rows returned, API returns different count from grid, search input ignores SKU-format characters",none,"Suite 051 (Catalog Admin Products)",Automated
+BSM-098,Admin SPA — Orders Blade Filter by Status,Backend Smoke > Search and Filter,High,"BL-ORD-001, BL-ORD-007",ECL-8.2,"Admin logged in, orders blade accessible with at least 2 different order statuses visible","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/orders
+[WAIT] Orders list loaded
+[ASSERT] note total row count (baseline)
+[ACT] locate status filter dropdown or filter panel in Orders blade toolbar
+[ACT] select status = 'New' (or first available status in filter)
+[WAIT] grid refreshes with filtered results","[GRID] grid row count changes (all visible rows show status badge = 'New')
+[DOM] active filter indicator visible (shows the selected status filter)
+[DOM] clear/reset filter button present","[API] POST {{BACK_URL}}/api/order/customerOrders/search body: {""statuses"": [""New""], ""take"": 20} → 200; all returned orders have 'status' = 'New'","Filter dropdown absent, applying filter does not change grid contents, orders with other statuses remain visible, API returns orders with non-matching statuses, Angular error on filter apply",none,"Suite 017 (Orders Management)",Automated
+BSM-101,Admin SPA — Contacts Blade Search by Email,Backend Smoke > Search and Filter,High,"BL-CROSS-006",ECL-6.1,"Admin logged in, contacts blade accessible, at least 1 contact with known email exists","back_url={{BACK_URL}}; known_email={{TEST_USER_EMAIL}}","[NAV] {{BACK_URL}}/ui#/customerDetails
+[WAIT] Customers blade loaded (Contacts view)
+[ACT] enter {{known_email}} in the search input
+[WAIT] grid refreshes","[GRID] at most a small number of rows visible, all associated with {{known_email}}
+[DOM] visible contact row(s) show email matching {{known_email}}","[API] GET {{BACK_URL}}/api/members/search?memberType=Contact&keyword={{known_email}}&take=10 → 200; results contain contact with matching email","Email search returns 0 results for existing email, unrelated contacts returned, search non-functional, API returns different results from UI grid",none,"Suite 026 (Customer Contacts)",Automated
+BSM-102,Admin SPA — Organizations Blade Search by Name,Backend Smoke > Search and Filter,High,"BL-B2B-001, BL-CROSS-006",ECL-6.1,"Admin logged in, organizations blade accessible with multiple orgs (suite setup)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/customerDetails
+[WAIT] Customers blade loaded
+[ACT] switch to Organizations view
+[WAIT] organizations list visible
+[ASSERT] note baseline org row count
+[ACT] enter at least 3 characters of a known organization name into the search input
+[WAIT] grid refreshes","[GRID] grid row count decreases to orgs matching the search term
+[GRID] all visible rows contain the search term in Name column","[API] GET {{BACK_URL}}/api/members/search?memberType=Organization&keyword=<search_term>&take=20 → 200; 'totalCount' matches grid row count","Search has no effect, non-matching orgs visible, Angular error on search, API totalCount mismatch with UI grid",none,"Suite 027 (Customer Orgs & Invites)",Automated
+BSM-103,Admin SPA — Price Lists Blade Search by Name,Backend Smoke > Search and Filter,Medium,"BL-PRICE-001, BL-PRICE-007",ECL-5.1,"Admin logged in, at least 2 price lists exist (BSM-012 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/pricing
+[WAIT] Pricing blade loaded
+[ASSERT] note baseline price list row count
+[ACT] enter at least 3 characters of a known price list name into the search input
+[WAIT] grid refreshes","[GRID] only price lists matching the search term visible
+[GRID] all visible rows contain the search term in Name column","[API] GET {{BACK_URL}}/api/pricing/pricelists?keyword=<search_term>&take=10 → 200; returned items all contain search term in 'name' field","Search non-functional, non-matching price lists remain visible, API returns unfiltered results when keyword provided",none,"Suite 055 (Pricing Management)",Automated
+BSM-104,Admin SPA — Inventory Blade Search Fulfillment Center by Name,Backend Smoke > Search and Filter,Medium,"BL-CAT-007",ECL-2.1,"Admin logged in, inventory blade accessible with at least 1 FFC (BSM-013 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/inventory
+[WAIT] Inventory blade loaded
+[ASSERT] note baseline FFC row count
+[ACT] enter at least 3 characters of the first FFC name into the search input
+[WAIT] grid refreshes","[GRID] only FFCs matching the search term visible
+[GRID] visible row contains the search term in Name column","[API] GET {{BACK_URL}}/api/inventory/fulfillmentcenters?searchPhrase=<search_term>&take=10 → 200; results contain FFCs matching the term","Search non-functional, unrelated FFCs remain, API ignores keyword parameter, Angular error on search",none,"Suite 056 (Inventory)",Automated
+BSM-107,Admin SPA — Users Blade Search by Username,Backend Smoke > Search and Filter,High,"BL-AUTH-005",ECL-4.1,"Admin logged in, users blade accessible (BSM-026 passed)","back_url={{BACK_URL}}; admin_user={{ADMIN}}","[NAV] {{BACK_URL}}/ui#/security/users
+[WAIT] Users blade loaded
+[ASSERT] note baseline user row count
+[ACT] enter {{ADMIN}} (partial or full username) into the users search input
+[WAIT] grid refreshes","[GRID] grid shows the admin user row ({{ADMIN}} visible in Login column)
+[GRID] unrelated users filtered out","[API] GET {{BACK_URL}}/api/platform/security/users?keyword={{ADMIN}}&take=10 → 200; 'items' array contains the admin account","Search non-functional, admin user not found by own username, all users remain after typing, API does not support keyword filter",none,"Suite 020 (Platform Users)",Automated
+BSM-108,Admin SPA — Grid Multi-Select Enables Bulk Delete Action,Backend Smoke > Grid Inline Operations,High,"BL-CROSS-007, BL-CAT-005",ECL-1.2,"Admin logged in, products grid accessible with at least 2 products (BSM-006 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row; navigate to products grid
+[ASSERT] at least 2 product rows visible
+[ACT] click the checkbox on the first product row to select it
+[WAIT] selection state changes (row highlighted)
+[ACT] click the checkbox on the second product row","[DOM] first checkbox changes to checked state after first click
+[DOM] second checkbox also checked after second click
+[DOM] bulk action toolbar appears or Delete button activates when multiple rows selected
+[DOM] selection count indicator shows '2 selected' or equivalent","[NETWORK] no API calls triggered by checkbox selection alone (selection is UI-only until a button is clicked)","Checkbox not present on rows, clicking checkbox does not change selection state, bulk Delete button does not appear or activate when multiple rows selected, selecting one row triggers immediate action without button click",none,"Suite 051 (Catalog Admin Products)",Automated
+BSM-109,Admin SPA — Sort Products Grid by Name Column,Backend Smoke > Grid Inline Operations,Medium,"BL-CAT-005, BL-SRCH-004",ECL-1.1,"Admin logged in, products grid accessible with at least 3 products (BSM-006 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row; navigate to products grid
+[ASSERT] capture first 3 product names in current default order
+[ACT] click the 'Name' column header to sort ascending
+[WAIT] grid re-renders with sorted order
+[ACT] click the 'Name' column header again to sort descending
+[WAIT] grid re-renders","[DOM] Name column header shows sort indicator (up arrow) after first click
+[GRID] product names are in ascending alphabetical order after first click
+[DOM] sort indicator changes to down arrow after second click
+[GRID] product names are in descending alphabetical order after second click","[API] POST {{BACK_URL}}/api/catalog/search/products body: {""sort"": ""name:asc"", ""take"": 10} → 200; returned item names are in ascending order","Column header not clickable, sort indicator absent after click, row order unchanged after clicking header, ascending and descending produce identical order (sort not implemented), Angular error on sort",none,"Suite 051 (Catalog Admin Products)",Automated

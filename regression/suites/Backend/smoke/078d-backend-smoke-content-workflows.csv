@@ -1,0 +1,254 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+BSM-010,Admin SPA — Customers Contacts Blade Opens,Backend Smoke > Customers Admin,Critical,BL-CROSS-006,ECL-6.1,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/customerDetails
+[WAIT] Customers module blade loads
+[ASSERT] contacts list visible","[BLADE] Contacts blade or Members list visible
+[GRID] grid renders with Name, Email, Organization columns
+[GRID] at least 1 contact row visible
+[DOM] search input and 'Add' button present","[API] GET {{BACK_URL}}/api/members/search?memberType=Contact&take=10 → 200 with results.items array
+[BODY] API item count > 0; count matches grid visible row count","Contacts blade shows empty grid when contacts exist, API 500 on member search, blade fails to load (Angular crash), search input non-interactive",none,"Suite 026 (Customer Contacts)",Automated
+BSM-044,Admin SPA — Notification Templates Blade Opens,Backend Smoke > Notifications Admin,High,BL-CROSS-011,ECL-10.3,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/notifications
+[WAIT] Notifications module blade loads
+[ASSERT] notification types/templates list visible","[BLADE] Notifications blade title visible (e.g., 'Notification Templates' or 'Notifications')
+[GRID] list renders with notification type entries (e.g., 'OrderCreateEmailNotification', 'PasswordResetEmailNotification')
+[GRID] at least 3 built-in notification template types present
+[DOM] click on a template entry opens detail blade with Subject and Body fields","[API] GET {{BACK_URL}}/api/notification/templates?take=20 → 200 with non-empty array
+[BODY] entries include 'type', 'kind' (Email/SMS), 'tenantId' fields","Notifications blade fails to open (404 or Angular crash), template list empty, API returns 500, clicking template does not open detail blade",none,"Suite 057 (Notifications Templates)",Automated
+BSM-045,Admin SPA — Notification Logs (Sent History) Accessible,Backend Smoke > Notifications Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/notifications
+[WAIT] Notifications blade loaded
+[ACT] navigate to 'Notification Log' or 'Send History' tab/section
+[WAIT] notification log list renders","[BLADE] Notification Log section visible
+[GRID] list renders with columns: Notification Type, Sent Date, Recipient, Status (Success/Error)
+[DOM] 'Retry' button or action available for failed notifications (if any failed entries)","[API] GET {{BACK_URL}}/api/notification/journal?take=10 → 200 with 'totalCount' >= 0 and 'notifications' array","Notification log section absent, API returns 500 on journal endpoint, log grid throws Angular error, failed entries show no retry option",none,"Suite 057 (Notifications Templates), Suite 058 (Notifications Triggers)",Automated
+BSM-046,Admin SPA — CMS Pages Blade Opens and Lists Pages,Backend Smoke > CMS Admin,High,BL-CROSS-011,ECL-10.3,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/cms
+[WAIT] CMS module blade loads
+[ACT] click 'Pages' section or tab
+[WAIT] pages list renders","[BLADE] CMS blade visible with 'Pages' section accessible
+[GRID] pages list grid renders with columns: Title, URL, Status (Published/Draft)
+[GRID] at least 1 page entry visible
+[DOM] 'Add Page' and 'Delete' toolbar buttons present","[API] GET {{BACK_URL}}/api/cms/pages/search?storeId={{STORE_ID}}&take=5 → 200 with 'totalCount' >= 0 and results array","CMS module fails to open (404 or Angular crash), pages blade not accessible from CMS navigation, API returns 404 (CMS module not installed), grid shows Angular error",none,"Suite 059 (CMS Page Management)",Automated
+BSM-047,Admin SPA — CMS Menus Blade Opens,Backend Smoke > CMS Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in, CMS accessible (BSM-046 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/cms
+[WAIT] CMS module blade loads
+[ACT] click 'Menus' or 'Navigation Menus' section
+[WAIT] menus list renders","[BLADE] Menus section visible
+[GRID] menu list renders (may be empty) with columns: Name, Outline/Path
+[DOM] 'Add Menu' button present
+[DOM] clicking a menu entry opens menu detail with menu items","[API] GET {{BACK_URL}}/api/cms/menu/<store_id> → 200 with array (may be empty)","CMS Menus section not accessible, API returns 404, clicking menu entry causes Angular error, 'Add Menu' button absent",none,"Suite 060 (CMS Design & Content)",Automated
+BSM-053,Admin SPA — Assets Module Blade Opens,Backend Smoke > Assets Admin,High,BL-CROSS-011,ECL-10.3,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/assets
+[WAIT] Assets blade loads
+[ASSERT] assets list or folder tree visible","[BLADE] Assets blade title visible (e.g., 'Assets' or 'File Manager')
+[DOM] folder tree or root folders visible in left panel
+[DOM] file/asset listing in right panel (may be empty for root)
+[DOM] 'Upload', 'New Folder', 'Delete' toolbar controls present","[API] GET {{BACK_URL}}/api/assets?folderUrl=/ → 200 with items array (may be empty for root)
+[BODY] no 500 or 403 errors on root assets endpoint","Assets blade returns 404 (module not installed), blade opens but file list throws Angular error, Upload button absent, API returns 403 on root folder",none,"Suite 064 (Assets)",Automated
+BSM-054,Admin SPA — Asset Upload and List Verification,Backend Smoke > Assets Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in, Assets blade accessible (BSM-053 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/assets
+[WAIT] Assets blade loaded
+[ACT] click 'New Folder' button
+[WAIT] folder name input appears
+[ACT] enter folder name 'bsm-smoke-test'
+[ACT] confirm creation
+[WAIT] new folder appears in tree
+[ACT] click into the new folder
+[ACT] click 'Upload' button and select a small test image file (1x1 pixel PNG)
+[WAIT] upload completes","[TOAST] success notification on folder create
+[DOM] 'bsm-smoke-test' folder visible in assets tree
+[TOAST] upload success notification
+[DOM] uploaded file appears in the folder listing with file name and size","[API] GET {{BACK_URL}}/api/assets?folderUrl=/bsm-smoke-test/ → 200 with uploaded file in items array","Folder creation fails, upload returns 500, file not visible in list after upload, folder absent from tree after creation","DELETE folder and file after test via Assets API.","Suite 064 (Assets)",Automated
+BSM-057,Admin SPA — SEO URL Slugs Visible on Product Detail,Backend Smoke > SEO Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in, product detail accessible",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog, then first product row
+[WAIT] product detail blade opens
+[ACT] click 'SEO' tab within the product detail blade
+[WAIT] SEO section renders","[DOM] SEO tab/section accessible in product detail blade
+[DOM] URL slug field visible and non-empty for the product
+[DOM] SEO title, meta description, and image alt text fields present
+[DOM] per-language SEO entries visible if multi-language store configured","[API] GET {{BACK_URL}}/api/catalog/products/<product_id> → 200 with 'seoInfos' array containing at least 1 entry with 'semanticUrl' field","SEO tab absent from product detail, seoInfos array empty for existing products, slug field empty causing storefront 404, API does not return seoInfos field",none,"Suite 066 (SEO)",Automated
+BSM-058,Platform REST API — Sitemap Schema Endpoint,Backend Smoke > SEO Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin Bearer token obtained from {{BACK_URL}}/connect/token (suite setup), SEO module installed",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>; store_id={{STORE_ID}},"[HTTP] GET {{BACK_URL}}/api/sitemaps/schema?storeId={{STORE_ID}}
+[SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK (or 404 if SEO module not installed — SKIP)
+[BODY] response contains sitemap configuration entries
+[BODY] at least 1 sitemap location defined (products, categories, or custom pages)","[STOREFRONT] GET {{FRONT_URL}}/sitemap.xml returns 200 with valid XML containing <loc> entries","HTTP 500 (module installed but broken), empty schema when store has products, storefront sitemap.xml returns 404 or malformed XML",none,"Suite 066 (SEO)",Automated
+BSM-060,Admin SPA — White Labeling Settings Blade Opens,Backend Smoke > White Labeling Admin,High,"BL-B2B-006, BL-CROSS-011",ECL-10.3,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/white-labeling
+[WAIT] White Labeling blade loads
+[ASSERT] white labeling settings visible","[BLADE] White Labeling blade title visible
+[DOM] settings sections visible: Logo URL, Theme Preset, Primary Color (or similar branding fields)
+[DOM] 'Organization Overrides' section or tab accessible
+[DOM] 'Save Changes' button present","[API] GET {{BACK_URL}}/api/whitelabeling/settings → 200 with settings object containing branding fields
+[BODY] object has at least 'logoUrl' or 'themePreset' fields","White Labeling blade returns 404 (module not installed), blade opens but settings section throws Angular error, API returns 500, 'Save Changes' button absent",none,"Suite 067 (White Labeling Admin), Suite 070 (White Labeling Storefront)",Automated
+BSM-061,Admin SPA — White Labeling Organization Override Section,Backend Smoke > White Labeling Admin,Medium,"BL-B2B-006, BL-CROSS-006",ECL-10.3,"Admin logged in, White Labeling accessible (BSM-060 passed), at least 1 organization exists",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/white-labeling
+[WAIT] White Labeling blade loaded
+[ACT] click 'Organization Overrides' tab or section
+[WAIT] organization overrides list renders
+[ASSERT] ability to add or view per-org overrides visible","[DOM] Organization Overrides section renders without Angular error
+[DOM] list shows any existing org overrides (may be empty)
+[DOM] 'Add Override' or 'Assign Organization' button present","[API] GET {{BACK_URL}}/api/whitelabeling/organizations → 200 with array (may be empty)","Organization Overrides section absent, API returns 500, Angular error on section load, 'Add Override' button absent when white labeling is enabled",none,"Suite 067 (White Labeling Admin)",Automated
+BSM-062,Admin SPA — Push Messages Module Health Check,Backend Smoke > Push Messages,Medium,BL-CROSS-011,ECL-10.3,"Admin logged in as {{ADMIN}} (suite setup)",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>,"[HTTP] GET {{BACK_URL}}/api/push-messages/messages?take=5
+[SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK with valid response structure (or 404 — SKIP if module not installed)
+[BODY] if 200: response has 'totalCount' >= 0 and 'results' array (may be empty)
+[BODY] no 'exception' or internal error fields in 200 response
+[DOM] if 200: Push Messages or Push Notifications item visible in Admin left nav",,"HTTP 500 (module installed but broken), 403 (permissions misconfigured), blade opens but throws Angular error immediately",none,"Suite 075 (Push Messages)",Automated
+BSM-073,Platform REST API — Notification Template Render Check,Backend Smoke > Notifications Admin,Medium,BL-CROSS-011,ECL-10.3,"Admin Bearer token obtained from {{BACK_URL}}/connect/token (suite setup), at least 1 notification template installed",back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>,"[HTTP] GET {{BACK_URL}}/api/notification/templates?take=3
+[SETUP] Authorization: Bearer {{bearer_token}}
+[ASSERT] capture first template 'type' value
+[HTTP] GET {{BACK_URL}}/api/notification/templates/<type>","[STATUS] initial GET returns 200 with at least 1 template
+[STATUS] template detail GET returns 200
+[BODY] template object has 'type', 'kind' (Email/SMS/Sms), 'subject', 'body' fields
+[BODY] 'subject' and 'body' fields non-empty (template has default content)","[ADMIN] notification template detail blade shows same subject as API 'subject' field","GET templates returns empty array, template detail GET returns 500, subject or body field absent or empty (blank template is a configuration issue)",none,"Suite 057 (Notifications Templates)",Automated
+BSM-077,Admin SPA — Edit Contact Name and Phone Verify Persistence,Backend Smoke > Edit Workflows,High,"BL-CROSS-006",ECL-6.2,"Admin logged in, at least 1 contact exists (BSM-010 passed)","back_url={{BACK_URL}}; test_phone=+1-555-{{TIMESTAMP}}","[NAV] {{BACK_URL}}/ui#/customerDetails
+[WAIT] Customers blade loaded (Contacts view)
+[ACT] click first contact row
+[WAIT] contact detail blade opens
+[ASSERT] capture current phone value (may be empty)
+[ACT] locate the Phone field (or 'Phones' section) in the contact form
+[ACT] clear and enter {{test_phone}} in the phone field
+[ACT] click 'Save'
+[WAIT] success toast appears","[TOAST] success notification after save
+[DOM] phone value {{test_phone}} visible in contact detail blade after save
+[STATE] contact detail blade remains open after save without Angular error","[API] GET {{BACK_URL}}/api/members/<contact_id> → 200 with 'phones' array containing {{test_phone}}
+[BODY] contact object 'modifiedDate' updated","Save returns 400 on valid phone input, phone field reverts on blade refresh, API response does not reflect updated phone, Angular error on save, toast absent","Restore original phone value via API: PUT {{BACK_URL}}/api/members with original phone.","Suite 026 (Customer Contacts)",Automated
+BSM-078,Admin SPA — Edit Organization Name and Description,Backend Smoke > Edit Workflows,High,"BL-B2B-001, BL-CROSS-006",ECL-6.1,"Admin logged in, at least 1 organization exists (suite setup)","back_url={{BACK_URL}}; test_org_desc=BSM-Org-Desc-{{TIMESTAMP}}","[NAV] {{BACK_URL}}/ui#/customerDetails
+[WAIT] Customers blade loaded
+[ACT] switch to Organizations view
+[WAIT] organizations list visible
+[ACT] click first organization row
+[WAIT] organization detail blade opens
+[ACT] locate the Description field and enter {{test_org_desc}}
+[ACT] click 'Save'
+[WAIT] success toast appears","[TOAST] success notification after save
+[DOM] Description field in organization detail blade shows {{test_org_desc}} after save
+[STATE] blade does not close or throw Angular error on save","[API] GET {{BACK_URL}}/api/members/<org_id> → 200 with 'description' field = {{test_org_desc}}
+[BODY] 'modifiedDate' updated relative to baseline","Save returns 400 on valid description text, description reverts on blade refresh, API does not reflect new description, toast absent, Angular error thrown on save","Restore original description via API: PUT {{BACK_URL}}/api/members with original description.","Suite 027 (Customer Orgs & Invites)",Automated
+BSM-082,Admin SPA — Edit Notification Template Subject and Verify,Backend Smoke > Edit Workflows,Medium,"BL-NOTIF-002",ECL-10.3,"Admin logged in, at least 1 notification template accessible (BSM-044 passed)","back_url={{BACK_URL}}; test_subject=BSM-Subject-{{TIMESTAMP}}","[NAV] {{BACK_URL}}/ui#/notifications
+[WAIT] Notifications blade loaded
+[ACT] click first notification template entry
+[WAIT] template detail blade opens
+[ASSERT] capture current Subject field value
+[ACT] clear the Subject field and enter {{test_subject}}
+[ACT] click 'Save'
+[WAIT] success toast appears","[TOAST] success notification after save
+[DOM] Subject field in template detail blade shows {{test_subject}} after save
+[STATE] blade remains open after save without Angular error","[API] GET {{BACK_URL}}/api/notification/templates/<type> → 200 with 'subject' field = {{test_subject}}","Save returns 400 on valid subject text, subject reverts on blade refresh, API still returns old subject, Angular error on save, toast absent","Restore original subject via API: PUT {{BACK_URL}}/api/notification/templates with original subject value.","Suite 057 (Notifications Templates)",Automated
+BSM-083,Admin SPA — Edit CMS Page Content and Verify,Backend Smoke > Edit Workflows,Medium,"BL-CROSS-011",ECL-10.3,"Admin logged in, at least 1 CMS page exists (BSM-046 passed)","back_url={{BACK_URL}}; store_id={{STORE_ID}}; test_content_marker=BSM-{{TIMESTAMP}}","[NAV] {{BACK_URL}}/ui#/cms
+[WAIT] CMS blade loaded
+[ACT] click 'Pages' section
+[WAIT] pages list renders
+[ACT] click first page entry
+[WAIT] page detail/editor blade opens
+[ASSERT] page editor or content field visible
+[ACT] append {{test_content_marker}} to the page content body (do not replace entire content)
+[ACT] click 'Save'
+[WAIT] success toast appears","[TOAST] success notification after save
+[DOM] content field in page detail reflects updated content containing {{test_content_marker}}
+[STATE] page detail blade remains stable after save","[API] GET {{BACK_URL}}/api/cms/pages/<store_id>/<page_id> → 200 with content containing {{test_content_marker}}","Save returns 400, content editor non-interactive, content reverts after blade refresh, API does not reflect updated content, Angular error on CMS page save","Restore original page content via API after test.","Suite 059 (CMS Page Management)",Automated
+BSM-085,Admin SPA — Delete Product with Confirmation Dialog,Backend Smoke > Delete Workflows,High,"BL-CROSS-007, BL-CROSS-012",ECL-1.2,"Admin logged in, a disposable test product exists (created via API)","back_url={{BACK_URL}}; test_sku=BSM-DEL-{{TIMESTAMP}}","[SETUP] Create test product via API: POST {{BACK_URL}}/api/catalog/products with name='BSM-Delete-Test' and code={{test_sku}}; capture product_id
+[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row; navigate to products grid
+[ACT] locate the product with SKU {{test_sku}} (use search if needed)
+[ACT] select the product row (checkbox)
+[ACT] click 'Delete' button in the toolbar
+[WAIT] confirmation dialog appears
+[ACT] click 'Confirm' or 'Yes' in the dialog
+[WAIT] 2 seconds for deletion to complete","[DOM] confirmation dialog appears before deletion (not deleted immediately on button click)
+[DOM] dialog text references deletion action
+[DOM] both 'Confirm' and 'Cancel' buttons present in dialog
+[GRID] deleted product row no longer visible after confirmation","[API] before confirmation: GET {{BACK_URL}}/api/catalog/products?searchPhrase={{test_sku}} → 200 with product present
+[API] after confirmation + 2s wait: same GET → 200 with empty items array","Delete button triggers immediate deletion without confirmation dialog, confirmation dialog absent, cancel button does not dismiss dialog, product still present in API after confirm + 2s, Angular error on delete",none,"Suite 051 (Catalog Admin Products)",Automated
+BSM-086,Admin SPA — Delete Contact with Confirmation Dialog,Backend Smoke > Delete Workflows,High,"BL-CROSS-007, BL-CROSS-006",ECL-6.2,"Admin logged in, a disposable test contact created via API","back_url={{BACK_URL}}; test_contact_email=bsm-del-{{TIMESTAMP}}@example.com","[SETUP] Create test contact via API: POST {{BACK_URL}}/api/members with type=Contact, email={{test_contact_email}}; capture contact_id
+[NAV] {{BACK_URL}}/ui#/customerDetails
+[WAIT] Customers blade loaded (Contacts view)
+[ACT] search for contact by email {{test_contact_email}}
+[ACT] select the contact row (checkbox)
+[ACT] click 'Delete' button in toolbar
+[WAIT] confirmation dialog appears
+[ACT] click 'Confirm' in the dialog
+[WAIT] 2 seconds","[DOM] confirmation dialog appears before contact is removed
+[DOM] dialog contains delete confirmation wording
+[DOM] 'Confirm' and 'Cancel' buttons present
+[GRID] contact row no longer visible after confirmation","[API] before confirm: GET {{BACK_URL}}/api/members/search?keyword={{test_contact_email}} → 200 with matching contact
+[API] after confirm + 2s: same GET → 200 with empty results array","Deletion occurs without dialog, dialog absent, cancel does not dismiss dialog, contact still present in API after confirmation, Angular error on delete",none,"Suite 026 (Customer Contacts)",Automated
+BSM-087,Admin SPA — Delete Price List with Confirmation Dialog,Backend Smoke > Delete Workflows,High,"BL-PRICE-006, BL-CROSS-001",ECL-5.1,"Admin logged in, a disposable test price list created for this test","back_url={{BACK_URL}}; bearer_token=<admin token from suite setup>","[SETUP] Create test price list via API: POST {{BACK_URL}}/api/pricing/pricelists with name='BSM-Del-PL-{{TIMESTAMP}}', currency='USD'; capture pricelist_id
+[NAV] {{BACK_URL}}/ui#/pricing
+[WAIT] Pricing blade loaded
+[ACT] locate the new price list 'BSM-Del-PL-{{TIMESTAMP}}' in the grid
+[ACT] select its row (checkbox)
+[ACT] click 'Delete' button
+[WAIT] confirmation dialog appears
+[ACT] click 'Confirm' in the dialog
+[WAIT] 2 seconds","[DOM] confirmation dialog appears before deletion proceeds
+[DOM] dialog references deletion action and warns about the price list
+[DOM] 'Confirm' and 'Cancel' buttons visible
+[GRID] deleted price list row no longer visible after confirmation","[API] before confirm: GET {{BACK_URL}}/api/pricing/pricelists/<pricelist_id> → 200
+[API] after confirm + 2s: same GET → 404 (deleted successfully)
+[BODY] 404 body is a proper error object, not a 500","Delete triggers immediately without dialog, dialog absent, price list still returns 200 after confirm and 2s wait, API returns 500 instead of 404 after delete, Angular error on delete action",none,"Suite 054 (Pricing Logic), Suite 055 (Pricing Management)",Automated
+BSM-088,Admin SPA — Delete Asset with Confirmation Dialog,Backend Smoke > Delete Workflows,Medium,"BL-CROSS-007, BL-CROSS-011",ECL-10.3,"Admin logged in, Assets blade accessible (BSM-053 passed), a disposable test asset/folder exists","back_url={{BACK_URL}}; test_folder=bsm-del-{{TIMESTAMP}}","[SETUP] Create test folder via Assets API: POST {{BACK_URL}}/api/assets?folderUrl={{test_folder}}
+[NAV] {{BACK_URL}}/ui#/assets
+[WAIT] Assets blade loaded
+[ACT] navigate to or locate the {{test_folder}} folder in the assets tree
+[ACT] select the folder (checkbox)
+[ACT] click 'Delete' button in toolbar
+[WAIT] confirmation dialog appears
+[ACT] click 'Delete' confirm button in dialog
+[WAIT] 2 seconds","[DOM] confirmation dialog appears before asset/folder is removed
+[DOM] dialog text warns of irreversible deletion
+[DOM] 'Delete' confirm and 'Cancel' buttons present
+[DOM] folder no longer visible in assets tree after confirmation","[API] before confirm: GET {{BACK_URL}}/api/assets?folderUrl={{test_folder}} → 200
+[API] after confirm + 2s: same GET → 200 with empty items or 404","Delete proceeds without confirmation dialog, dialog absent, cancelled delete still removes asset, folder still present in API after confirmation + 2s, Angular error on delete",none,"Suite 064 (Assets)",Automated
+BSM-092,Admin SPA — Contact Detail Navigate to Organization,Backend Smoke > Cross-Blade Navigation,High,"BL-B2B-001, BL-CROSS-006",ECL-6.1,"Admin logged in, at least 1 contact with an organization assigned exists (BSM-010 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/customerDetails
+[WAIT] Customers blade loaded (Contacts view)
+[ACT] click first contact row that has an organization shown
+[WAIT] contact detail blade opens
+[ASSERT] organization field or link visible in contact detail
+[ACT] click the organization name link
+[WAIT] organization detail blade opens stacked to the right","[BLADE] organization detail blade opens without Angular error
+[DOM] organization blade title shows the organization name matching contact's org field
+[DOM] organization detail shows Members section with member count > 0
+[DOM] contact detail blade remains visible to the left","[API] GET {{BACK_URL}}/api/members/<org_id> → 200; organization name matches org link in contact blade","Organization not shown as a link in contact detail, clicking org link throws Angular error, org blade opens with wrong organization, blade stack collapses to single blade, API org name does not match blade title",none,"Suite 026 (Customer Contacts), Suite 027 (Customer Orgs & Invites)",Automated
+BSM-100,Admin SPA — Contacts Blade Search by Name,Backend Smoke > Search and Filter,High,"BL-CROSS-006",ECL-6.1,"Admin logged in, contacts blade accessible with multiple contacts (BSM-010 passed)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/customerDetails
+[WAIT] Customers blade loaded (Contacts view)
+[ASSERT] note baseline contact row count
+[ACT] enter at least 3 characters of a known contact first or last name into the search input
+[WAIT] grid refreshes with filtered results","[GRID] grid row count decreases to only contacts matching the search term
+[GRID] all visible rows contain the search term in Name column
+[DOM] search input retains typed term","[API] GET {{BACK_URL}}/api/members/search?memberType=Contact&keyword=<search_term>&take=20 → 200; 'totalCount' matches grid row count","Search has no effect on grid, non-matching contacts remain visible, Angular error on search, API totalCount does not match UI grid row count",none,"Suite 026 (Customer Contacts)",Automated
+BSM-106,Admin SPA — CMS Pages Blade Search by Title,Backend Smoke > Search and Filter,Medium,"BL-CROSS-011",ECL-10.3,"Admin logged in, CMS pages blade accessible with at least 1 page (BSM-046 passed)","back_url={{BACK_URL}}; store_id={{STORE_ID}}","[NAV] {{BACK_URL}}/ui#/cms
+[WAIT] CMS blade loaded; navigate to Pages
+[ASSERT] note baseline page row count
+[ACT] enter at least 3 characters of a known page title into the search input
+[WAIT] grid refreshes","[GRID] only pages matching the search term visible in the grid
+[GRID] all visible rows show the search term in the Title column","[API] GET {{BACK_URL}}/api/cms/pages/search?storeId={{STORE_ID}}&keyword=<search_term>&take=10 → 200; results contain pages matching term in 'title' field","Search non-functional, all pages remain visible after typing, API ignores keyword, Angular error on search",none,"Suite 059 (CMS Page Management)",Automated
+BSM-111,Admin SPA — Products Grid Pagination Navigate to Page 2,Backend Smoke > Grid Inline Operations,Medium,"BL-CAT-005, BL-CROSS-001",ECL-1.1,"Admin logged in, products grid accessible with more than 20 products (pagination required)","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui#/catalog
+[WAIT] Catalog blade loaded
+[ACT] click first catalog row; navigate to products grid
+[ASSERT] pagination controls visible; total product count > page size
+[ACT] click 'Next Page' button or page '2' control
+[WAIT] grid refreshes with page 2 products
+[ASSERT] product names differ from page 1 (no duplicates)
+[ACT] click 'Previous Page' or page '1' control
+[WAIT] grid refreshes with original page 1 products","[DOM] pagination controls present (previous/next or page numbers)
+[GRID] page 2 shows different products than page 1 (no duplicates)
+[DOM] active page indicator changes (page 2 highlighted, then page 1 highlighted on return)
+[GRID] returning to page 1 shows original first-page products","[API] POST {{BACK_URL}}/api/catalog/search/products body: {""skip"": 20, ""take"": 20} → 200; items differ from skip=0 results; totalCount consistent across both calls","Pagination controls absent when product count > page size, page 2 shows same products as page 1, Previous button navigates incorrectly, Angular error on pagination, page navigation clears active filters",none,"Suite 051 (Catalog Admin Products)",Automated
+BSM-112,Admin SPA — News Module Blade Opens and Lists Articles,Backend Smoke > News Admin,Critical,BL-CROSS-003,,"Admin logged in as {{ADMIN}} (suite setup); vc-news module installed","admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}","[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[WAIT] vc-news embedded app (iframe) loads
+[ACT] observe article list, sidebar filters and toolbar","[BLADE] 'Articles: All' region visible
+[DOM] sidebar filters present: Drafts, Scheduled, Published, Archived, All
+[DOM] toolbar buttons present: Refresh, Add, Delete
+[GRID] list columns: Name, Store, Is published, Publish date, Is archived, Archive date","[API] POST {{BACK_URL}}/api/news/search body: storeId={{STORE_ID}}, take=5 → 200 with totalCount >= 0 and results array
+[CONSOLE] no console errors (no TypeError/ReferenceError/uncaught) after app load","Embedded app iframe blank or 404, app fails to mount, /api/news/search returns 404 (module not installed), grid renders framework error",none,"Suite 084 (News Articles regression)",Automated
+BSM-113,"Admin SPA — Create News Article, Edit Fields and Verify in API",Backend Smoke > News Admin,High,BL-CROSS-001,ECL-2.1,"Admin logged in; News module open (BSM-112 passed)","admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}}","[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] click 'Add'
+[ACT] fill Name = {{name}}; select Store = {{store}}; select Publish scope = Anonymous
+[ACT] click 'Save'
+[WAIT] save completes (editor expands, unsaved indicator clears)
+[ACT] expand 'Content'; fill Title (en-US) = 'Smoke {{TIMESTAMP}}'; click 'copy from title'; type Content body
+[ACT] expand 'SEO'; fill URL slug = agent-test-news-{{TIMESTAMP}}
+[ACT] click 'Save'","[ALERT] unsaved-changes indicator clears after each Save
+[FIELD] Title in list equals Title after 'copy from title'
+[GRID] {{name}} appears in the article list","[API] POST {{BACK_URL}}/api/news → 200; capture id → NEWS_ID
+[API] GET {{BACK_URL}}/api/news/{{NEWS_ID}} → name={{name}}; localizedContents[0].title='Smoke {{TIMESTAMP}}'; seoInfos[0].semanticUrl=agent-test-news-{{TIMESTAMP}}
+[CONSOLE] no console errors after create and after edit Save","Create or edit Save errors on valid input, edited title/slug absent in API after reload, editor does not expand post-create, console TypeError/ReferenceError on save","[HTTP] DELETE {{BACK_URL}}/api/news?ids={{NEWS_ID}}","Suite 084 NEWS-002/004/005",Automated
+BSM-114,Admin SPA — Archive News Article,Backend Smoke > News Admin,Medium,,,"Admin logged in; a disposable article exists (create inline or via BSM-113)","admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}}","[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create/open article ({{name}}, {{store}}, Anonymous); capture id → NEWS_ID
+[ACT] click 'Archive' in the article toolbar
+[ACT] open 'Archived' filter and search {{name}}","[GRID] article listed under 'Archived' filter
+[GRID] 'Is archived' = true and 'Archive date' is set for the article","[API] GET {{BACK_URL}}/api/news/{{NEWS_ID}} → isArchived=true, archiveDate non-null
+[CONSOLE] no console errors after Archive","Archive button no-op, isArchived stays false in API, article not listed under Archived filter","[HTTP] DELETE {{BACK_URL}}/api/news?ids={{NEWS_ID}}","Suite 084 NEWS-008",Automated

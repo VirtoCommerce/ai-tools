@@ -60,6 +60,7 @@ You can read project files for context. Key knowledge files:
 | `.claude/knowledge/domain/products.md` | Need product types, xAPI fields, test data |
 | `.claude/knowledge/domain/sitemap.md` | Need page URLs for navigation |
 | `.claude/knowledge/domain/store-settings.md` | Need store configuration details |
+| `.claude/knowledge/execution/test-execution-preflight.md` | A case's `Preconditions` carry `[PRE:*]` tags — the 7 primitives + their selectors |
 | `test-data/` | Test users, addresses, payment cards, products |
 
 Read these on-demand, not upfront — saves context for test execution.
@@ -118,7 +119,8 @@ Replace `{{VAR}}` tokens in Steps/Test_Data with Run Configuration values:
 ## Test Execution
 
 ### For EACH test case from the CSV:
-1. Read the Preconditions — ensure state is met
+1. Run the case's `[PRE:*]` preflight (see below), then satisfy any remaining prose
+   preconditions
 2. Replace `{{VAR}}` tokens with Run Configuration values
 3. Execute Steps in order, following step tags (`[NAV]`, `[ACT]`, `[WAIT]`)
 4. After steps: verify Assertions (follow `[DOM]`, `[STATE]`, `[NET]` tags)
@@ -126,6 +128,26 @@ Replace `{{VAR}}` tokens in Steps/Test_Data with Run Configuration values:
 6. On failure: check Failure_Signals, capture screenshot via `browser_take_screenshot`, console via `browser_console_messages`
 7. Execute Cleanup if present
 8. Mark: **PASS**, **FAIL**, **BLOCKED**, or **SKIPPED**
+
+### Preflight — `[PRE:*]` tags are MANDATORY
+
+A row's `Preconditions` cell may carry `[PRE:*]` tags. **Execute them, in the order written,
+before the case's steps.** They are the mechanism that stops one case contaminating the next.
+
+The seven primitives are `[PRE:SIGNOUT]`, `[PRE:SIGNIN_AS <alias>]`, `[PRE:SWITCH_ORG <alias>]`,
+`[PRE:RESET_CART]`, `[PRE:CLEAR_SESSION]`, `[PRE:CLEAR_CACHE]`, `[PRE:VERIFY_AUTH <alias>]`.
+Each is idempotent (it detects current state from the DOM before acting) and each has a
+live-verified selector set. Read `.claude/knowledge/execution/test-execution-preflight.md` on
+demand when a tag is unfamiliar — do not guess a primitive that is not on that list.
+
+**Failure policy:** a `[PRE:*]` failure makes the case **BLOCKED** — never FAIL, and never PASS.
+The one exception is `[PRE:RESET_CART]`, which warns and continues.
+
+**Why this is not optional.** Suite 048b ran 161 cases through an agent and returned 77 PASS /
+36 FAIL / **47 BLOCKED**, and the BLOCKED cases were annotated *"cart contaminated by earlier
+cases in the same session; unmet preconditions"*. 29% of that run was lost to how it was
+executed rather than to the state of the product. Skipping preflight does not save time; it
+converts real coverage into noise a human then has to triage.
 
 ### Critical Path Priority
 

@@ -13,9 +13,12 @@
 // Run: `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseAuditStamp, auditStaleness, DEFAULT_STALE_DAYS } from "../test-cases/lint-test-cases.js";
 import {
-  parseModuleMap, suiteMatchesToken, reposForModule, resolveSuiteSource,
+  parseModuleMap, suiteMatchesToken, reposForModule, resolveSuiteSource, stripForeignParentMenu,
 } from "../test-cases/suite-source-map.js";
 import { buildQueue } from "../test-cases/audit-queue.js";
 import { COLUMNS, type Row } from "../test-cases/append-test-cases-to-suite.js";
@@ -168,6 +171,144 @@ test("reposForModule returns EMPTY rather than inventing a repo name", () => {
   // worse than no anchor (triangulation-criteria.md §2).
   const row2 = { module: "B2B Features", suiteTokens: [], adminSections: "", restPath: "", xapiModule: "" };
   assert.deepEqual(reposForModule(row2, ROUTING), []);
+});
+
+test("reposForModule lets the module NAME outrank a neighbour named in the context cells", () => {
+  // The regression this guards: the Sales Rep row's Admin UI cell ends
+  // "…; store setting `SalesRep.Enabled`", which matched vc-module-store's
+  // `\bstore (setting|management|rounding)\b` rule — so all seven sales-rep suites
+  // (050m, 089-091, 092, 092b, 093) resolved to the STORE module. A confident wrong
+  // repo yields a plausible file:line for unrelated code => a FALSE CONFIRMED,
+  // which triangulation-criteria.md §2 rates worse than no anchor at all.
+  const routing = [
+    { name: "vc-module-sales-rep", match: "\\bsales ?reps?\\b|\\bsalesrep\\b" },
+    { name: "vc-module-store", match: "\\bstore (setting|management|rounding)\\b" },
+  ];
+  const salesRep = {
+    module: "Sales Rep",
+    suiteTokens: ["050m"],
+    adminSections: "Embedded App (`vc-sales-rep`) → Sales Reps; store setting `SalesRep.Enabled`",
+    restPath: "—",
+    xapiModule: "salesRep (scoped `/graphql/sales-rep`)",
+  };
+  assert.deepEqual(reposForModule(salesRep, routing), ["vc-module-sales-rep"]);
+});
+
+test("reposForModule still falls back to the context cells when the name routes to nothing", () => {
+  // Name precedence must not cost resolution: the Cart row's name matches no rule,
+  // so its "— (storefront-only)" cell is what supplies vc-frontend.
+  const [, cart] = parseModuleMap(MAP_FIXTURE);
+  assert.deepEqual(reposForModule(cart, [{ name: "vc-frontend", match: "\\bstorefront\\b" }]), ["vc-frontend"]);
+});
+
+// --- stripForeignParentMenu ----------------------------------------------
+//
+// The Admin UI cell is written `Parent → Child, Child`, where Parent is where the blade
+// LIVES in the menu — frequently another module. Dropping a FOREIGN parent is what stops
+// `Payment` resolving to the Orders module; keeping a parent that is NOT another module
+// is what stops Authentication losing vc-platform. The stop-list is derived from the
+// map's own module names, so a rename in the table changes this with no code edit.
+
+const NAMES = ["Catalog", "Orders", "Marketing", "Store", "Payment", "SEO", "Returns", "Channels"];
+
+test("stripForeignParentMenu drops a parent segment that names ANOTHER module", () => {
+  const row = { module: "Payment", suiteTokens: [], adminSections: "Orders → Payments", restPath: "`/api/payments/`", xapiModule: "—" };
+  assert.equal(stripForeignParentMenu(row, NAMES).trim(), "Payments");
+});
+
+test("stripForeignParentMenu KEEPS a parent that is the row's own name, singular or plural", () => {
+  // "Stores → Configuration, Rounding" — the parent is this module's own menu, so the
+  // token stays. Plural/singular is normalized, not synonym-tabled.
+  const row = { module: "Store", suiteTokens: [], adminSections: "Stores → Configuration, Rounding", restPath: "`/api/stores/`", xapiModule: "—" };
+  assert.equal(stripForeignParentMenu(row, NAMES), "Stores → Configuration, Rounding");
+});
+
+test("stripForeignParentMenu KEEPS a parent that is not a module at all", () => {
+  // "Settings → Security, OAuth" is the ONLY thing anchoring Authentication to
+  // vc-platform. Stripping every parent unconditionally would silently lose it.
+  const row = { module: "Authentication", suiteTokens: [], adminSections: "Settings → Security, OAuth", restPath: "`/connect/token`", xapiModule: "—" };
+  assert.equal(stripForeignParentMenu(row, NAMES), "Settings → Security, OAuth");
+});
+
+test("stripForeignParentMenu leaves a cell with no arrow alone", () => {
+  const row = { module: "Cart", suiteTokens: [], adminSections: "— (storefront-only)", restPath: "—", xapiModule: "xCart" };
+  assert.equal(stripForeignParentMenu(row, NAMES), "— (storefront-only)");
+});
+
+// --- the eight rows fixed alongside Sales Rep -----------------------------
+//
+// One test per row, against the REAL routing rules and the REAL map, because the defect
+// lives in the INTERACTION between the two: a future edit to either side could quietly
+// reintroduce a confident-wrong anchor, and a fixture-only test would not notice.
+// Every repo asserted here was confirmed to exist under org:VirtoCommerce.
+
+function realRow(moduleName: string) {
+  const mapText = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "..", "..", ".claude", "knowledge", "execution", "module-suite-map.md"),
+    "utf-8",
+  );
+  const rows = parseModuleMap(mapText);
+  const row = rows.find((r) => r.module === moduleName);
+  assert.ok(row, `module-suite-map.md has no "${moduleName}" row`);
+  return { row: row!, names: rows.map((r) => r.module) };
+}
+
+const REAL_ROUTING: Array<{ name: string; match: string }> = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "ci", "config", "fix-repos.json"), "utf-8"),
+).routing;
+
+function realRepos(moduleName: string): string[] {
+  const { row, names } = realRow(moduleName);
+  return reposForModule(row, REAL_ROUTING, names);
+}
+
+test("Payment resolves to vc-module-payment, NOT the Orders module", () => {
+  // "Orders → Payments" made all five payment suites (039, 040a-c, 041) anchor on
+  // vc-module-order.
+  assert.deepEqual(realRepos("Payment"), ["vc-module-payment"]);
+});
+
+test("Orders is NOT contaminated in reverse by its own 'Payment Requests' sub-blade", () => {
+  // The mirror image, and the reason the API tier is consulted BEFORE the admin cell:
+  // "Orders → All Orders, Payment Requests" would otherwise add vc-module-payment to
+  // suites 014/017/018/019.
+  assert.deepEqual(realRepos("Orders"), ["vc-module-order"]);
+});
+
+test("SEO resolves to vc-module-seo, NOT the Marketing module", () => {
+  // "Marketing → SEO, Redirects" made suite 066 anchor on vc-module-marketing.
+  assert.deepEqual(realRepos("SEO"), ["vc-module-seo"]);
+});
+
+test("Returns resolves to vc-module-return (singular repo), NOT the Orders module", () => {
+  // "Orders → Returns, RMA" made suite 073 anchor on vc-module-order. The repo is
+  // `vc-module-return` — singular; guessing the plural would be the same defect again.
+  assert.deepEqual(realRepos("Returns"), ["vc-module-return"]);
+});
+
+test("Store resolves to vc-module-store — its own rule used to miss its own row", () => {
+  // The irony that exposed the class: `\bstore (setting|management|rounding)\b` never
+  // matched "Stores → Configuration, Rounding", so suites 034/035 got NOTHING while
+  // the rule fired on Sales Rep instead.
+  assert.deepEqual(realRepos("Store"), ["vc-module-store"]);
+});
+
+test("xMarketing resolves to the x-marketing repo only, not also plain vc-module-marketing", () => {
+  assert.deepEqual(realRepos("xMarketing"), ["vc-module-marketing-experience-api"]);
+});
+
+test("Channels resolves to NOTHING — vc-module-channels does not exist", () => {
+  // "Catalog → Publishing, Data Quality" made suite 076 anchor on vc-module-catalog.
+  // There is no `vc-module-channels` under org:VirtoCommerce (404, and zero search
+  // hits), so the ONLY correct answer is an empty list => the caller scores the source
+  // axis ABSENT/UNGROUNDED. Pointing it at the nearest plausible neighbour
+  // (vc-module-catalog, or vc-module-catalog-publishing) is exactly the banned guess.
+  // NOTE: .claude/agents/ba-system-analyzer.md still documents `vc-module-channels`.
+  assert.deepEqual(realRepos("Channels"), []);
+});
+
+test("Sales Rep still resolves to vc-module-sales-rep under the real rules", () => {
+  assert.deepEqual(realRepos("Sales Rep"), ["vc-module-sales-rep"]);
 });
 
 test("reposForModule survives a malformed routing regex", () => {

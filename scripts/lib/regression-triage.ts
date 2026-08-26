@@ -110,7 +110,7 @@ export interface RunEntry {
   mode?: "ci" | "interactive";
 }
 
-interface TriageEntry {
+export interface TriageEntry {
   /** Per-CASE identity `env|suiteId|caseId` — signature-independent, so a PASS and
    * a FAIL of the same case land in ONE entry and oscillation is detectable. */
   caseKey: string;
@@ -124,7 +124,7 @@ interface TriageEntry {
   outcomes: Record<string, Verdict>; // runId -> PASS|FAIL (both statuses recorded)
 }
 
-interface TriageStore {
+export interface TriageStore {
   version: number;
   updatedAt: string;
   entries: Record<string, TriageEntry>;
@@ -264,16 +264,25 @@ function loadCsvRow(suiteId: string, caseId: string): Record<string, string> | n
 // Reading a completed run
 // ---------------------------------------------------------------------------
 
-interface RawCase {
+export interface RawCase {
   id: string;
   title: string;
   status: Verdict;
   evidence: string;
   consoleErrors: string[];
   trace: string | null;
+  /** The case's own elapsed time, when the writer recorded one. See RawSuite's note. */
+  durationMs?: number;
+  /**
+   * Which lane produced the verdict — `suite-results-merge.ts` stamps every merged row.
+   * Load-bearing for promotion: a PASS on the `manual`/`deprecated` lane is INCOHERENT
+   * evidence (those lanes never dispatch), so `tc:promote` refuses it rather than merely
+   * discounting it.
+   */
+  lane?: string;
 }
 
-interface RawSuite {
+export interface RawSuite {
   suiteId: string;
   suiteName: string;
   environment: string;
@@ -284,6 +293,15 @@ interface RawSuite {
   blocked: number;
   skipped: number;
   cases: RawCase[];
+  /**
+   * Envelope wall-clock. Both the agent contract (test-runner-agent.md Phase 1/5) and the lane
+   * merger already produce these, and dropping them here is why `estimatedMinutes` could not be
+   * recalibrated from 19 real runs: the history rows declared `duration_minutes` and nothing ever
+   * filled it in. The DATA was produced twice over — per case and per envelope — and discarded
+   * on the way into the row.
+   */
+  startedAt?: string;
+  completedAt?: string;
 }
 
 function normalizeSuiteRaw(raw: any, suiteIdFromFileName?: string): RawSuite {
@@ -302,6 +320,10 @@ function normalizeSuiteRaw(raw: any, suiteIdFromFileName?: string): RawSuite {
       evidence: parts.join(" — "),
       consoleErrors: Array.isArray(c.consoleErrors) ? c.consoleErrors.map(String) : [],
       trace: typeof c.trace === "string" && c.trace.trim() ? c.trace : null,
+      ...(Number.isFinite(Number(c.durationMs)) && Number(c.durationMs) >= 0
+        ? { durationMs: Number(c.durationMs) }
+        : {}),
+      ...(typeof c.lane === "string" && c.lane ? { lane: c.lane } : {}),
     });
   }
   const tally = { pass: 0, fail: 0, blocked: 0, skipped: 0 };
@@ -338,10 +360,56 @@ function normalizeSuiteRaw(raw: any, suiteIdFromFileName?: string): RawSuite {
     blocked: recorded > 0 ? tally.blocked : Number(raw.blocked ?? 0),
     skipped: recorded > 0 ? tally.skipped : Number(raw.skipped ?? 0),
     cases,
+    ...(typeof raw.startedAt === "string" && raw.startedAt.trim() ? { startedAt: raw.startedAt } : {}),
+    ...(typeof raw.completedAt === "string" && raw.completedAt.trim() ? { completedAt: raw.completedAt } : {}),
   };
 }
 
 /** Read + de-duplicate the suite result files in a run dir (keep the richest per suite). */
+/**
+ * Fold the per-case append-only JSONL over a still-open envelope.
+ *
+ * The runner agents append one line per case to `suite-{ID}-cases.jsonl` and write the full
+ * `suite-{ID}-results.json` once at the end (the old contract rewrote the whole envelope after
+ * every case, which is O(n²) — suite 050m paid ~7,000 case-entry writes for it).
+ *
+ * That trade has one sharp edge, and this closes it: a run that is KILLED never reaches its final
+ * write, so its envelope is still the pre-seeded all-PENDING version. Without folding, triage on a
+ * killed run would see zero results where the old rewrite-per-case contract left real ones — a
+ * strict regression for exactly the runs most worth triaging. A completed envelope
+ * (`completedAt` set) is authoritative and is left alone.
+ */
+function foldCaseJsonl(raw: any, runDir: string, suiteId: string): void {
+  if (String(raw?.completedAt ?? "").trim() !== "") return;
+  const jsonlPath = join(runDir, `suite-${suiteId}-cases.jsonl`);
+  if (!existsSync(jsonlPath)) return;
+
+  const rows: any[] = [];
+  for (const line of readFileSync(jsonlPath, "utf-8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const row = JSON.parse(line);
+      if (row && typeof row.id === "string") rows.push(row);
+    } catch {
+      /* a torn last line is expected on a hard kill */
+    }
+  }
+  if (rows.length === 0) return;
+
+  const cases: any[] = Array.isArray(raw.testCases) ? raw.testCases : [];
+  const byId = new Map<string, any>();
+  for (const c of cases) if (typeof c?.id === "string") byId.set(c.id, c);
+  for (const row of rows) {
+    const existing = byId.get(row.id);
+    if (existing) Object.assign(existing, row, { title: row.title ?? existing.title });
+    else {
+      cases.push(row);
+      byId.set(row.id, row);
+    }
+  }
+  raw.testCases = cases;
+}
+
 export function readRunSuites(runDir: string): RawSuite[] {
   if (!existsSync(runDir)) return [];
   const files = readdirSync(runDir).filter((f) => /suite-.*results.*\.json$/i.test(f));
@@ -356,6 +424,7 @@ export function readRunSuites(runDir: string): RawSuite[] {
     }
     // `suite-050d-results.json` / `suite-042-trackA-batchB-results.json` → "050d" / "042"
     const fromName = /^suite-([^-]+)-/.exec(f)?.[1];
+    foldCaseJsonl(raw, runDir, String(raw?.suiteId ?? fromName ?? ""));
     const suite = normalizeSuiteRaw(raw, fromName);
     const cases = suite.cases.length;
     const mtime = statSync(full).mtimeMs;
@@ -659,6 +728,35 @@ export function mergeHistoryRows(rows: RunEntry[]): number {
  * from the run's suite-*-results.json (accurate case-level counts). Idempotent
  * per (runId, suiteId).
  */
+/**
+ * `duration_minutes` for a history row — the field that unblocks recalibrating
+ * `estimatedMinutes`, which is a hand-maintained constant this repo's own GOLDEN RULE forbids.
+ *
+ * WALL-CLOCK FIRST, and the distinction is not pedantic. The envelope span
+ * (`startedAt`→`completedAt`) includes setup, waits and the gaps between cases, which is exactly
+ * what `estimatedMinutes` is supposed to predict. The sum of per-case `durationMs` measures only
+ * time inside cases, so it systematically UNDER-states the thing being calibrated — using it
+ * where a span exists would bias every future estimate downward.
+ *
+ * Returns nothing at all when neither source is present. A `0` would read as "this suite ran
+ * instantly" and would then be averaged into the calibration as a real measurement, which is
+ * worse than a gap: an absent field is visibly absent, a zero is a lie that looks like data.
+ */
+export function durationField(s: {
+  startedAt?: string;
+  completedAt?: string;
+  cases: ReadonlyArray<{ durationMs?: number }>;
+}): { duration_minutes?: number } {
+  const start = s.startedAt ? Date.parse(s.startedAt) : NaN;
+  const end = s.completedAt ? Date.parse(s.completedAt) : NaN;
+  if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+    return { duration_minutes: Math.round(((end - start) / 60000) * 100) / 100 };
+  }
+  const summed = s.cases.reduce((n, c) => n + (Number.isFinite(c.durationMs) ? (c.durationMs as number) : 0), 0);
+  if (summed > 0) return { duration_minutes: Math.round((summed / 60000) * 100) / 100 };
+  return {};
+}
+
 export function appendSuiteHistory(runId: string, env: string, runDir: string): number {
   const suites = readRunSuites(runDir);
   // Date from the run id (REG-YYYY-MM-DD-HHMM) so trend ordering is chronological;
@@ -679,6 +777,7 @@ export function appendSuiteHistory(runId: string, env: string, runDir: string): 
       blocked: s.blocked,
       skipped: s.skipped,
       pass_rate: executed ? Math.round((s.passed / executed) * 10000) / 100 : 0,
+      ...durationField(s),
       mode: "interactive",
     };
   });

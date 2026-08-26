@@ -18,6 +18,9 @@ Execute a single regression test suite against Virto Commerce. Run autonomously 
 - `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`
 - `{{SUITE_CSV_PATH}}` — resolved CSV (orchestrator has pre-substituted `@td()` tokens)
 - `{{BROWSER_SERVER}}` — use ONLY this Playwright MCP server
+- `{{LANE_ID}}` — this run's lane index. Selects the credential slot (see Phase 1 step 2) and
+  scopes the lane's own MCP output paths, so two concurrent lanes never share an account, a HAR
+  archive or a screenshot directory.
 - `{{ENVIRONMENT_URL}}` (frontend), `{{BACKEND_URL}}`
 - `{{OUTPUT_FILE}}`
 
@@ -32,82 +35,56 @@ Execute a single regression test suite against Virto Commerce. Run autonomously 
 
 For BL-* / ECL-* IDs, look up the specific ID in `knowledge/oracles/business-logic.md` or `knowledge/oracles/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
 
-## Phase 0: Mode Detection
+## Phase 0: Your CSV already contains only your cases
 
-Before Phase 1, inspect the `Steps` column in `{{SUITE_CSV_PATH}}`. If **every** non-empty Steps cell contains at least one `[GQL-OP ` or `[GQL-EXEC ` tag, this is a **runner-native GraphQL suite** — take the **GraphQL Runner Fast Path** below instead of Phase 1–5. No browser needed.
+`{{SUITE_CSV_PATH}}` has been filtered for you. Before dispatch, the orchestrator ran
+`npm run suites:lanes` — a deterministic per-case classifier — and every row a runner could
+execute was already run by `npm run suites:machine`. What you were handed is the remainder:
+the rows that genuinely need a browser.
 
-Mixed suites (some runner-native, some legacy GraphiQL UI) → use the browser path (Phase 1–5); the runner-native cases execute normally via MCP against `{{BACK_URL}}/ui/graphiql`. Migrate the legacy cases separately.
+So there is **no mode to detect and nothing to skip**. Read `{{SUITE_CSV_PATH}}` and drive every
+row in it through Phase 1-5.
 
-## GraphQL Runner Fast Path (browserless — runner-native GraphQL suites only)
+Three consequences, all of which used to be your job and are not any more:
 
-**Why:** `[GQL-OP]`/`[GQL-EXEC]` cases execute via `scripts/graphql/graphql-runner.ts` (direct `fetch` to `/graphql`), ~10-30× faster than the GraphiQL UI flow. Schema-validate-before-send catches DV-006…DV-011 at lint time, **zero browser slots consumed** — GraphQL suites run in parallel to browser suites without competing for the 3-slot pool.
+- **Do not invoke `graphql-runner.ts`, and do not lint the suite.** The machine lane owns runner
+  execution and its exit-code mapping (`scripts/regression/machine-lane.ts`). That mapping is
+  deterministic, so it lives in code rather than being re-derived from a table each run.
+- **Do not compute suite totals.** Your results file is a FRAGMENT
+  (`suite-{{SUITE_ID}}-results.browser.json`); `npm run suites:merge` recomputes every count from
+  the rows of both lanes and writes the canonical `suite-{{SUITE_ID}}-results.json`. Summing your
+  header with another writer's would double-count exactly what the merge reconciles.
+- **Pre-seed PENDING rows only for the cases in YOUR file.** A row you were not given is not yours
+  to report; the merge step fills it from the plan, and a case nobody reported becomes a visible
+  `BLOCKED` with `lane_lost` rather than an absence.
 
-### GQL-1. Structural lint (DV-019 / S-007)
-
-```bash
-npm run graphql:lint-labels -- {{SUITE_CSV_PATH}}
-```
-
-- Exit 0 → proceed to GQL-2.
-- Exit 1 → **all runner-native rows BLOCKED**. Record the linter output verbatim in suite-level `errors[]`. Skip to Phase 5 (Write Results) and exit.
-
-### GQL-2. Execute each case
-
-For every row with a non-empty `Steps` column (the linter has already confirmed they are structurally valid runner-native cases):
-
-```bash
-npx tsx scripts/graphql/graphql-runner.ts --case {{SUITE_CSV_PATH}}:<CASE_ID> --evidence-dir reports/regression/{{RUN_ID}}/graphql-evidence
-```
-
-The runner handles token acquisition (`[AUTH role=X]` via `TokenCache`), schema validation, `{{VAR}}` + `@td()` substitution, POST to `{{BACKEND_URL}}/graphql`, capture chaining, assertion evaluation, and best-effort cleanup (parses the `Cleanup` column for `[AUTH]` + `[REST METHOD path]` blocks and executes them after the verdict; cleanup failures never alter the verdict). Per-case evidence JSON lands at `reports/regression/{{RUN_ID}}/graphql-evidence/<CASE_ID>-<ts>.json`.
-
-Exit codes:
-
-| Code | Meaning | Map to |
-|------|---------|--------|
-| 0 | All assertions passed | `PASS` |
-| 1 | At least one assertion failed (but ops ran) | `FAIL` — read the evidence JSON, populate `failedAssertion` with the first `assertions[]` entry where `passed=false` |
-| 2 | Structural / parse / usage error | `BLOCKED` — put the stderr into `notes` |
-| 3 | Runtime fatal (network, auth, unexpected) | `BLOCKED` — stderr into `notes` |
-
-Preserve the evidence path in each test case result:
-
-```json
-{
-  "id": "GQL-030",
-  "status": "PASS",
-  "graphqlEvidence": "reports/regression/{{RUN_ID}}/graphql-evidence/GQL-030-<ts>.json"
-}
-```
-
-### GQL-3. Announce + record
-
-For each case: emit the same `▶ Suite…` announce line as Phase 2 (before spawning the runner). Do NOT attempt screenshots on FAIL — GraphQL cases produce JSON evidence, not visual evidence. `consoleErrors` / `networkErrors` are not applicable (no browser).
-
-### GQL-4. Teardown & Results
-
-- Skip Phase 4 browser teardown (no browser was opened).
-- Emit the Phase 5 JSON normally. All GraphQL test-case entries carry `graphqlEvidence` paths instead of screenshot/console/network fields.
-- Cleanup runs inside each `graphql-runner.ts` invocation (best-effort): the runner parses the `Cleanup` column, executes `[AUTH role=…]` token acquisition + `[REST <METHOD> <path>]` blocks against `{{BACKEND_URL}}`, and records each block's outcome under `cleanup.blocks[]` in the evidence JSON (`{kind, method, path, status, ok}` for REST, `{kind, role, ok}` for AUTH, `{kind, ok: false, error}` on exception). A 403/404/timeout is recorded but does **not** change the test verdict. Non-`AUTH`/`REST` blocks inside Cleanup are skipped with a log line.
-
-### GQL-5. Failure handling
-
-| Condition | Handling |
-|-----------|----------|
-| Lint (GQL-1) fails | Suite-level BLOCKED; exit immediately |
-| All 3+ cases BLOCKED with runtime error 3 | Suite-level `errors[]` gets `graphql_runtime_fatal`; continue to Phase 5 with partial results |
-| Schema introspection fails (runner exit 3 with "Introspection HTTP …") | Mark cases BLOCKED; populate `errors[]`: `schema_introspection_failed`. Orchestrator may retry after schema refresh |
-| Token acquisition fails (runner exit 3 with "Token acquisition failed") | Same as browser-path auth failure — all cases BLOCKED, populate `errors[]: ["authentication_failure"]`, exit |
+If a row in your file turns out to be runner-native after all, still drive it through the browser —
+say so in `notes` and let the classifier be fixed. Guessing your way onto the other lane risks two
+writers claiming one case, which the merge step refuses outright.
 
 ## Phase 1: Setup
 
 1. Read `{{SUITE_CSV_PATH}}` once. Parse test cases.
-2. Read `test-data/users/agent-user-pool.csv`, find row where `server_name` = `{{BROWSER_SERVER}}`, store slot credentials.
+2. Read `test-data/users/agent-user-pool.csv` and take the row whose **`slot`** equals `{{LANE_ID}}`
+   (fall back to matching `server_name` = `{{BROWSER_SERVER}}` when the caller passes no lane id).
+   Store that row's credentials.
+
+   **Why `slot` and not `server_name`.** The pool has one row per slot and binds each to a browser
+   only as a convention — `server_name` is advisory. Keying on the browser silently breaks the
+   moment two lanes share one browser (which is exactly the headless CI case: every lane is
+   Chromium), because both lanes would then take the SAME account. Two agents on one account
+   produce cross-contaminated sessions and BLOCKED cascades that read as product failures — the
+   class `scripts/seed-data/validate-credentials.mjs` exists to catch.
+
+   **There are only 3 seeded slots** (plus `personal`). That, not the scheduler, is why
+   concurrency is capped at 3: raising it requires seeding new accounts first
+   (`npm run seed:company-users`) and adding their rows. Never reuse a slot across two
+   concurrent lanes to get more parallelism.
 3. Substitute `{{VAR}}` placeholders in `Test_Data`/`Steps`/`Assertions`/`Cross_Layer_Checks` using slot creds + env vars.
 4. Navigate to `{{ENVIRONMENT_URL}}` on `{{BROWSER_SERVER}}`. Confirm load.
 5. Authenticate using slot credentials (personal or B2B, per suite type). Verify success.
 6. Record `startedAt` (ISO 8601). HAR capture is automatic — never disable.
-7. **Seed the live results file (for the dashboard).** Immediately write `{{OUTPUT_FILE}}` with the full Phase 5 envelope, `completedAt: ""`, and every planned case pre-listed as `{ "id": "<ID>", "title": "<Title>", "status": "PENDING" }`. This is what lets the live HTML dashboard show each case flip PASS/FAIL/BLOCKED **as it happens** (the orchestrator already flags the suite `running` in `test-run-status.json`; this file supplies the per-case detail). See **Live incremental results** below.
+7. **Seed the live results file — ONCE.** Write `{{OUTPUT_FILE}}` with the full Phase 5 envelope, `completedAt: ""`, and every planned case pre-listed as `{ "id": "<ID>", "title": "<Title>", "status": "PENDING" }`. This is the only time you write this file before Phase 5. Per-case updates go to the append-only JSONL instead — see **Live incremental results** below.
 
 If environment unreachable or auth fails → write all tests `BLOCKED`, populate `errors[]`, exit.
 
@@ -131,17 +108,36 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
         - Also record `failedAssertion`, page `url` at failure, and `capturedAt` (ISO).
         - **Redact secrets** before writing: replace any `Authorization` header, bearer token, password, or PAN with `<redacted>` (these traces are gitignored, but the repo is public — never persist a live token).
    - **PASS / BLOCKED / SKIPPED / AMBIGUOUS** → no screenshot, no trace (HAR covers PASS traffic; the others are not real failures).
-9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED — then **rewrite `{{OUTPUT_FILE}}` in place** (update this case's entry from `PENDING` to its verdict + evidence, refresh the `passed`/`failed`/`blocked`/`skipped` counts). Overwrite the whole file each time; it is cheap and idempotent. This drives the live per-case dashboard.
+9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED — then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
+
+   ```
+   {"id":"CART-002","title":"Add to Cart - From Category List","status":"PASS","durationMs":41230,"notes":"","evidence":[],"trace":""}
+   ```
+
+   Append — do **not** rewrite `{{OUTPUT_FILE}}`, and do not buffer to the end. `durationMs` is this case's own elapsed time.
 
 **Do NOT narrate progress between tests beyond the announce line.** No prose summaries — results go to JSON.
 
 ### Live incremental results (for the dashboard)
 
-The live HTML report (`npm run report:regression:watch`) re-reads `{{OUTPUT_FILE}}` on every refresh, so the suite's cases appear one-by-one with live PASS/FAIL/BLOCKED/PENDING badges while the suite is still running — you do **not** wait for suite completion. Rules:
-- **Pre-seed** all planned cases as `PENDING` at Phase 1 step 7 (with `id` + `title`), `completedAt: ""`.
-- **After every case** (Phase 2 step 9) overwrite the file with that case updated and the summary counts recomputed. A case not yet reached stays `PENDING`.
-- Keep the shape identical to Phase 5 (same `testCases[]` envelope) — only `completedAt` being `""` distinguishes an in-flight file from the final one. At Phase 5 you set `completedAt` and write the final version; no separate format.
-- Writing the file is a plain `Write` — it is **not** a browser action and does not trip the real-user hook.
+The live HTML report (`npm run report:regression:watch`) shows each case flipping
+PASS/FAIL/BLOCKED/PENDING while the suite is still running — you do **not** wait for suite
+completion. Rules:
+
+- **Pre-seed once**: at Phase 1 step 7 write `{{OUTPUT_FILE}}` with all planned cases `PENDING`
+  and `completedAt: ""`.
+- **Per case: APPEND one line** to `suite-{{SUITE_ID}}-cases.jsonl` (Phase 2 step 9). Never rewrite
+  the envelope mid-suite.
+- **At Phase 5**: write `{{OUTPUT_FILE}}` once more, complete, with `completedAt` set and the counts
+  recomputed **from the case rows** (not tallied as you went). The reporter folds the JSONL over the
+  pre-seeded envelope while `completedAt` is `""`, so the dashboard is live either way.
+- Both writes are plain `Write`/append — **not** browser actions, so they do not trip the real-user hook.
+
+> **Why append instead of rewriting.** The old contract said to overwrite the whole envelope after
+> every case because it was "cheap and idempotent". Idempotent yes; cheap no — the payload grows
+> with each case, so writing it N times is **O(n²)**. Suite `050m` has 119 cases: ~7,000 case-entry
+> writes for one suite, ≈285k output tokens spent on bookkeeping rather than on testing. Appending
+> is O(n) and the dashboard behaves identically.
 
 ## Phase 3: Bug Entries (preliminary only)
 
@@ -262,4 +258,4 @@ On unrecoverable error: write partial `{{OUTPUT_FILE}}`, populate `errors[]`, cl
 7. BL-* overrides DOM assertions.
 8. Preliminary bugs only (`confirmed: false`).
 9. No prose narration — results go to JSON.
-10. **Phase 0 is mandatory** — never open a browser for a runner-native GraphQL suite; never skip the fast-path lint for a runner-native suite.
+10. **Never invoke `graphql-runner.ts` and never lint the suite.** The machine lane already ran every runner-executable row before you were dispatched (`npm run suites:machine`), and it owns the exit-code mapping. Your file is the browser remainder — drive all of it, compute no suite totals, and pre-seed PENDING only for the rows you were given.

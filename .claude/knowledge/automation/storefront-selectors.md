@@ -9,6 +9,51 @@ applicability_rationale: "vc-frontend stable selectors (data-test-id / role / ar
 **Browser:** `playwright-chrome` (chromium 1920×1080), authenticated as `USER_EMAIL` from `.env`
 **Purpose:** Source of truth for selectors used by layout/shift audits (`/qa-design`, `critical-ui-scope.md` protocols) and other storefront UI tests. Previously also backed suite `048b-layout-stability.csv`, removed 2026-07-25. Every selector below was verified live with `document.querySelectorAll(...).length` returning the documented `matched` count.
 
+> ## ⚠ AUDITED 2026-08-26 — 22 of these selectors no longer exist
+>
+> **Source of truth is now `scripts/lib/storefront-selectors.generated.ts`**, derived from the
+> vc-frontend source by `npm run selectors:sync` and drift-guarded by `npm run selectors:check`.
+> Call `isKnownSelector(name)` before trusting any selector below.
+>
+> Diffed against `vc-frontend@dev` (commit `17c99c7`): of the 78 distinct selectors these
+> knowledge files assert, most match the source exactly, a couple are plausible instantiations of a
+> real template pattern, and a minority match nothing — while over a hundred real selectors are
+> undocumented.
+>
+> **Correction (2026-08-26):** the precise split once published here (54 / 2 / 22) was measured
+> before the generator read the UI-kit **prop** form (`test-id-input=`, `test-id-dropdown=`), so
+> the "matches nothing" count was an over-count by at least six — `sign-up-first-name-input`,
+> `sign-up-email-input`, `sign-up-confirm-password-input`, `global-search-query-input`,
+> `search-keyword-input` and `payment-method-selector` were real all along. Reading both forms took
+> the static surface from 161 to **194**. Trust `isKnownSelector`, not a count in prose.
+>
+> **This is drift, not fabrication.** Every selector here was verified live on its capture date
+> with `querySelectorAll(...).length`, and was correct then. The storefront moved: the account
+> menu went from `main-layout.top-header.account-menu-button` to `account-menu`, and the search
+> query input dropped its test id entirely while the submit button kept `global-search-apply-button`.
+> A hand-verified table is correct exactly once — which is the argument for generating it.
+>
+> The gone ones, for search: `main-layout.top-header.account-menu-button` ·
+> `main-layout.top-header.account-menu.sign-out-button` · `sign-in-page.email-input` ·
+> `sign-in-page.password-input` · `sign-in-page.login-button` · `sign-up-first-name-input` ·
+> `sign-up-last-name-input` · `sign-up-email-input` · `sign-up-password-input` ·
+> `sign-up-confirm-password-input` · `global-search-query-input` · `search-keyword-input` ·
+> `payment-method-selector` · `shipping-method-selector` · `pickup-locations-modal` ·
+> `dark-mode-toggle` · `desktop-main-menu-cart-link` · `category-endless-scroll-loader` ·
+> `vc-line-item-checkbox` · `vc-line-items-head-checkbox` · `filter-price` (a pattern, not a
+> literal) · `main-layout.top-header.account-menu.*`.
+>
+> **`isKnownSelector` returning false means UNVERIFIED, not invalid.** Nineteen bindings in the
+> source are bare expressions (`:data-test-id="item.dataTestId"`) whose runtime value cannot be
+> read statically, and ten UI-kit components take an optional test-id prop, so the real surface is
+> wider than the generated static list.
+>
+> **Not yet done:** the 400-odd rows below are still hand-transcribed and still carry their
+> original `matched` counts. Rewriting them to reference the generated constants (GOLDEN RULE
+> step 5) is authoring, not mechanics — each row needs a live re-check of the non-`data-test-id`
+> layers (`.vc-*`, page-scoped BEM) that the generator cannot see. Until then: trust the generated
+> module for `data-test-id`, and treat everything else here as a lead to verify.
+
 ## Selector Conventions (Apply Globally)
 
 - **Test-attribute name is `data-test-id`** (singular, with hyphen). NOT `data-testid`, NOT `data-test`, NOT `data-cy`, NOT `data-qa`. Confirmed only `data-test-id` is in use.

@@ -7,7 +7,7 @@ applicability_rationale: "Runner contract grammar (tag syntax, predicate shapes,
 
 Canonical reference for writing **runner-native GraphQL test cases** in suite CSVs. Cases written to this spec execute via `scripts/graphql/graphql-runner.ts` (browserless, ~10–30× faster than GraphiQL UI flow), are schema-validated before send, and produce structured JSON evidence.
 
-**Audience:** every QA agent that writes, reviews, or migrates GraphQL test cases — `test-management-specialist`, `qa-backend-expert`, `qa-frontend-expert`, `qa-testing-expert`, `test-runner-agent`, `autonomous-test-runner`, `qa-lead-orchestrator`, plus the `/qa-test-cases-generator` and `/qa-api` skills.
+**Audience:** every QA agent that writes, reviews, or migrates GraphQL test cases — `test-management-specialist`, `qa-backend-expert`, `qa-frontend-expert`, `qa-testing-expert`, `test-runner-agent`, `qa-lead-orchestrator`, plus the `/qa-test-cases-generator` and `/qa-api` skills.
 
 **Source of truth (read these if anything below seems ambiguous — code wins):**
 
