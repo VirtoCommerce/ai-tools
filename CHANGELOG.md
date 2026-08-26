@@ -40,6 +40,12 @@ were already shipped but never made it into their reference tables.
 
 Ships as **plugin `vc-fix` `0.8.7`** + **`vc-perf` `0.2.6`** (marketplace `0.9.4`). Pin to a tagged release for stability; this branch tip is unstable.
 
+### Fixed — `vc-fix` `plugin.json` advertised 8 agents, ships 10 (#238)
+
+The count in the plugin manifest's own `description` was stale — `marketplace.json` and `CLAUDE.md`
+already said 10. `plugin.json` is what the plugin loader reads and what a customer sees before
+installing, so it was the one copy that mattered and the one that was wrong. All three now agree.
+
 ### Fixed — a skill description that YAML could not parse, plus the guard that was missing (VCST-5807, #238)
 
 `plugins/vc-fix/skills/project-init/SKILL.md` carried a ~1020-character **unquoted** `description:`
