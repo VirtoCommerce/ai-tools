@@ -59,6 +59,32 @@ Rationale + the C1–C4 / D1–D3 derivation: `.claude/skills/qa-sbtm/sprint-cha
    - Open the CSV suite(s) for the domain (via [module-suite-map.md](../knowledge/execution/module-suite-map.md) → [`regression/suites/`](../../regression/suites)) — list the scenarios already tested
    - Open [vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md) and read the section(s) for the domain (VC-CHECKOUT-*, VC-CART-*, VC-B2B-*, etc.) — list the known failure patterns
    - These two lists are what NOT to spend session time re-validating. The discovery target is everything *else*.
+
+5a. **Oracles — and they are read in two OPPOSITE directions.** Step 5 reads its two sources to
+   *subtract*; these two are read to *supply*. Conflating the four is how a session either
+   re-validates known ground or calls a real violation a curiosity.
+
+   | Source | Direction | What it gives the session |
+   |---|---|---|
+   | CSV suites | subtract | already asserted — don't re-validate |
+   | [`vc-bug-catalog.md`](../knowledge/oracles/vc-bug-catalog.md) | subtract | already discovered here — don't re-discover |
+   | [`e-commerce-edge-cases-library.md`](../knowledge/oracles/e-commerce-edge-cases-library.md) | **supply** | boundary/failure shapes to go hunting for — **`[THEORETICAL]` first** |
+   | [`business-logic.md`](../knowledge/oracles/business-logic.md) | **supply** | the oracle of expected behaviour: what makes an observation a *bug* rather than a *"huh"* |
+
+   - **ECL — `[THEORETICAL]` is the session's half of the library.** Its 175 `[OBSERVED]` patterns are
+     confirmed on this platform, so they belong to `/qa-checklist` and the suites; its 36
+     `[THEORETICAL]` ones are research-based and never yet seen *here* — which is precisely a
+     discovery target. Cross the domain's `[THEORETICAL]` sections with the coverage map from Step 5:
+     what no suite asserts and the bug catalog has never recorded is the highest-value list this
+     pre-flight can produce. Name 1–2 of them among the charter's candidate scenarios.
+   - **BL — the reason to pursue a "huh" for more than 60 seconds.** Read the domain's `BL-*`
+     invariants so a deviation is recognised on the spot. Without them a session reports "the total
+     looked odd" and moves on; with them it reports "this violates BL-PRICE-001", which is a filed bug.
+   - **Neither oracle bounds the session.** They supply candidates and a correctness reference — a
+     scenario outside both is still exactly what `/qa-exploratory` exists to find, and is the more
+     valuable finding (see the ECL-gap rule in §Output).
+   - Never invent or guess an ID; cite what resolves (`npm run ecl:lint` / `bl:lint`). Neither oracle
+     is edited from a session — a missing pattern is a `/qa-review-oracles` proposal (§Output).
 6. **Pick a discovery technique** — open [scenario-discovery.md](../skills/qa-sbtm/scenario-discovery.md) and select ONE technique appropriate to the situation:
    - New feature in this sprint → User-flow edge enumeration + Surprise-seeking time
    - Two features integrated recently → Feature-pair matrix at their seam (Boundary-of-features hunting)
@@ -80,7 +106,8 @@ For each session, the agent should:
 1. **Define a discovery charter** — Frame the mission around discovery, not coverage:
    - Bad: "Explore checkout to find bugs"
    - Good: "Discover scenarios in checkout that aren't covered by suites 011–013 and aren't in VC-CHECKOUT-* / VC-CART-* catalog entries"
-   - Name 2–3 *candidate scenarios* up front (from coverage-diff, feature-pair matrix, user-flow edges). These are the discovery targets — they may be wrong, but they force a hypothesis.
+   - Name 2–3 *candidate scenarios* up front (from coverage-diff, feature-pair matrix, user-flow edges, or a `[THEORETICAL]` ECL section from Step 5a). These are the discovery targets — they may be wrong, but they force a hypothesis.
+   - Record the charter's `Edge-Case Refs` (the `ECL-<n>.<m>` sections it hunts) and `BL Refs` (the invariants it will judge observations against) — the same two fields the ready-made charters in [`charter-library.md`](../skills/qa-sbtm/charter-library.md) carry.
 2. **Time-box** — 30 minutes (5 min setup + 20 min explore + 5 min document):
    - First 10 min: **Surprise-seeking time** — no goal, just look for "huh, that's weird" (per scenario-discovery.md § 4)
    - Next 10 min: Pursue the most surprising observation OR the chosen discovery technique
@@ -130,11 +157,20 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 **Session type:** [EXP] | [VAL] | [EXP+VAL]
 **Discovery technique:** [which one from scenario-discovery.md]
 **Charter:** Discover scenarios in [area] that aren't covered by [suites] and aren't in [VC-* catalog entries]
+**Edge-Case Refs:** ECL-<n>.<m>, … (hunted) | **BL Refs:** BL-XXX-NNN, … (judged against)
 
 ## Net-New Scenarios Discovered (mandatory for [EXP])
-| # | Scenario | Why uncovered | What we found | Fate | Suggested next charter |
-|---|----------|---------------|---------------|------|------------------------|
-| 1 | [1-line description] | [no suite + no catalog entry] | [observation / bug / question] | PROMOTE → suite NNN \| DECLINE: [reason] | Explore X to discover Y |
+| # | Scenario | Why uncovered | What we found | Oracle ref | Fate | Suggested next charter |
+|---|----------|---------------|---------------|-----------|------|------------------------|
+| 1 | [1-line description] | [no suite + no catalog entry] | [observation / bug / question] | ECL-<n>.<m> \| BL-XXX-NNN \| **NONE** | PROMOTE → suite NNN \| DECLINE: [reason] | Explore X to discover Y |
+
+## Oracle Feedback (the session's other deliverable)
+| Kind | Entry | Evidence | Route |
+|---|---|---|---|
+| `[THEORETICAL]` → `[OBSERVED]` | ECL-<n>.<m> | [what reproduced it here] | `/qa-review-oracles ecl` |
+| Candidate new pattern | (none — `Oracle ref: NONE` above) | [scenario + evidence] | `/qa-review-oracles ecl` |
+| Candidate new invariant | (behaviour no `BL-*` covers) | [observation] | `/qa-review-oracles bl` |
+| Contradicted | BL-XXX-NNN / ECL-<n>.<m> | [live behaviour disagrees with the entry] | `/qa-review-oracles` — **never** edit the oracle from a session |
 
 > If this table is empty, the session is `[VAL]` not `[EXP]`. Update the Session type field.
 > **Every row needs a `Fate`.** `PROMOTE` = author it as a `Draft` case via `/qa-test-cases-generator`
@@ -142,6 +178,19 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 > tagged `from: EXP-NN`. `DECLINE` = one line of why (not reproducible / by-design / needs a fixture
 > we don't have / out of scope). An unexplained blank means the finding was discovered once and lost —
 > which is the whole failure mode this table exists to prevent (`sprint-charter-selection.md` §6).
+>
+> **`Oracle ref` is not a grading of the finding — `NONE` is the best cell in that column.** A scenario
+> the ECL already describes is a hunt that landed; one no `ECL-*` and no `BL-*` covers is a pattern the
+> library does not know, i.e. the thing this command exists to find. Either way the cell must be filled:
+> a ref makes the finding traceable when `/qa-review-oracles` next audits that entry, and a `NONE` is
+> what promotes the scenario into the Oracle Feedback table below.
+>
+> **The ECL asks for this and nothing was doing it.** Its own §Using This Library maintenance rules say
+> to *"add new patterns as you discover them"* and *"mark patterns `[OBSERVED]` if confirmed on your
+> platform"* — an exploratory session is the only surface that produces either. So a session has **two**
+> deliverables: `Draft` cases (via `Fate`) and oracle proposals (via Oracle Feedback). Both are
+> proposals — `ba-system-analyzer` is the sole writer of both oracles, and IDs are a citation contract
+> the suites point at, so a session never edits, renumbers, or adds an entry directly.
 
 ## Bugs Found
 | # | Severity | Title | Evidence | Net-new? |
@@ -166,6 +215,9 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 ## Rules
 - **Discovery first**: every session must end with at least one net-new scenario in the "Net-New Scenarios Discovered" table, OR be re-labeled `[VAL]` re-validation. No bugs found is acceptable; no net-new-scenario consideration is not.
 - The VC bug catalog + existing CSV suites are read FIRST in pre-flight to identify what NOT to spend time on (the discovery target is everything else)
+- **The ECL and `business-logic.md` are read in the opposite direction — to supply, not subtract** (Step 5a). `[THEORETICAL]` ECL sections are candidate scenarios (`[OBSERVED]` ones belong to `/qa-checklist` and the suites); `BL-*` invariants are what turn an odd observation into a filed bug instead of a shrug
+- **Every net-new scenario carries an `Oracle ref` — and `NONE` is a valid, valuable answer**, which routes it to the Oracle Feedback table as a candidate ECL pattern
+- **Oracle changes are proposals, never edits.** A confirmed `[THEORETICAL]`, a missing pattern, a contradicted invariant → `/qa-review-oracles`; `ba-system-analyzer` is the sole writer, and no session renumbers or invents an ID
 - Heuristic packs (CRISP/SFDPOT, Whittaker tours, FAILURE, HICCUPPS-F) are filters, not checklists — they help spot familiar problems faster but are not the primary work
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
@@ -183,5 +235,8 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 - [sprint-charter-selection.md](../skills/qa-sbtm/sprint-charter-selection.md) — how a sprint plan's §3/§5.2 becomes the §5.3 charter set (C1–C4 signals, D1–D3 disqualifiers, budget, lane, capture-back)
 - `/qa-sbtm` skill — Full SBTM methodology: scenario discovery (primary), core framework, charter templates, CRISP/SFDPOT, adversarial heuristics, personas, modern web attack surface, charter library, debrief format
 - [knowledge/oracles/vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md) — VC-specific historical bug patterns (read to AVOID re-discovery)
+- [knowledge/oracles/e-commerce-edge-cases-library.md](../knowledge/oracles/e-commerce-edge-cases-library.md) — 54 `ECL-<n>.<m>` boundary/failure shapes (read to SUPPLY candidates — `[THEORETICAL]` first; a session is also the only source of `[OBSERVED]` promotions and new patterns)
+- [knowledge/oracles/business-logic.md](../knowledge/oracles/business-logic.md) — 204 `BL-*` invariants (read as the correctness oracle, so a deviation is recognised as a bug during the session, not after)
+- `/qa-review-oracles` — where a session's oracle proposals go (`ecl` / `bl` axes); the only writer of either file
 - [knowledge/execution/live-discovery.md](../knowledge/execution/live-discovery.md) — Runtime test-data resolution (`live-discover` / `random-data` / `@td()`); use when a session needs to pick "any product / any address" and when a discovered gap becomes a follow-up test case
 - `/qa-coverage-gap` skill — Programmatic coverage-gap analysis (complementary to manual exploratory discovery)

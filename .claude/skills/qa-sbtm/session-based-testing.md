@@ -41,7 +41,19 @@ Session-Based Test Management (SBTM) structures exploratory testing into time-bo
 - **Time Box:** 30 minutes
 - **Risk Level:** [from /qa-risk assessment]
 - **Environment:** [QA URL]
+- **Edge-Case Refs:** [`ECL-<n>.<m>` sections this charter hunts — `[THEORETICAL]` first]
+- **BL Refs:** [`BL-*` invariants observations are judged against, for the target domain]
 ```
+
+The last two fields are the charter's oracle grounding, and they are not bookkeeping. `Edge-Case Refs`
+is a *floor* of known boundary/failure shapes from
+[`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) — never a
+ceiling, since a finding outside every ref is the better finding. `BL Refs` from
+[`business-logic.md`](../../knowledge/oracles/business-logic.md) is what makes a deviation recognisable
+as a bug *during* the session rather than a "huh" dismissed in 60 seconds. Without the refs a session's
+coverage is unreportable and its ideas silently fork from the oracle they paraphrase — see
+[`charter-library.md`](charter-library.md) §Edge-Case Refs. Both oracles are read-only from a session:
+proposals go to `/qa-review-oracles`.
 
 ### Charter Types
 

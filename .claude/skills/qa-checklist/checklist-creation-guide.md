@@ -22,13 +22,18 @@ Checklist Item                          → Test Cases
 ### Item Format
 Each item follows this pattern:
 ```
-- [ ] [UI Element / Action]: [specific behaviors to verify]
+- [ ] [UI Element / Action]: [specific behaviors to verify] (<oracle ID>)
 ```
+
+The trailing oracle ID is the item's grounding — a `BL-*` when the item asserts an outcome, an
+`ECL-<n>.<m>` when it is an edge case or error path (see Step 2a). Pure UI-presence items may carry
+neither.
 
 Examples:
 - `- [ ] Stepper +/- buttons: increment, decrement, boundary enforcement`
-- `- [ ] Skyflow Visa: card entry → tokenization → payment success → order status "Paid"`
-- `- [ ] Out-of-stock variant: greyed/disabled, "Out of Stock" message, cannot add`
+- `- [ ] Skyflow Visa: card entry → tokenization → payment success → order status "Paid" (BL-PAY-001)`
+- `- [ ] Out-of-stock variant: greyed/disabled, "Out of Stock" message, cannot add (BL-CAT-001)`
+- `- [ ] Duplicate payment submission: double-click "Place Order" → single charge, single order (ECL-1.1)`
 
 ### Sizing Rules
 | Domain Complexity | Item Count | Examples |
@@ -44,7 +49,10 @@ Every checklist for a P0/P1 domain must include:
 1. **Happy path items** — The core user journey steps
 2. **Validation/error items** — Invalid inputs, empty states, boundaries
 3. **Cross-layer verification** — Storefront → API → Admin round-trip
-4. **Edge cases** — Browser refresh mid-flow, back button, concurrent actions
+4. **Edge cases** — derived from the domain's `[OBSERVED]` `ECL-<n>.<m>` sections (Step 2a), each
+   citing its section. Browser refresh mid-flow, back button and concurrent actions are the usual
+   suspects, but which ones apply is a question the library answers — not one to guess per domain
+5. **Business-rule items** — the `BL-*` invariants this domain's surface must preserve, cited by ID
 
 ## Creating a New Checklist — Step by Step
 
@@ -67,6 +75,33 @@ Navigate to the feature in the live environment using Playwright:
 5. **Try boundary values** — min/max quantities, character limits, edge dates
 6. **Check console + network** — note any errors or failed API calls
 7. **Test responsiveness** — if applicable, check mobile/tablet viewpoints
+
+### Step 2a: Read the Oracles (Mandatory)
+
+The UI walk in Step 2 tells you what the build **does**. Two shared oracles tell you what it **must**
+do and how it has **failed before** — a checklist built without them canonises current behaviour as
+the expectation, and then cannot fail on a regression the UI presents confidently.
+
+Read them **before authoring any item**, and ideally before Step 2 itself: an exploration that already
+knows the domain's invariants and its `[OBSERVED]` failure patterns is a check against them, while one
+that doesn't is a transcript of whatever the build happens to do today. (`/qa-checklist` Mode 3 orders
+it that way — oracles, then the walk.)
+
+1. **`knowledge/oracles/business-logic.md`** (204 `BL-*`) — pull every invariant whose surface this
+   domain touches. Each becomes (or is folded into) an outcome item citing its ID. A rule you inferred
+   from the UI and cannot tie to a `BL-*` is a **proposal for `/qa-review-oracles`**, not a checklist
+   item asserted as fact.
+2. **`knowledge/oracles/e-commerce-edge-cases-library.md`** (54 `ECL-<n>.<m>`) — find the sections
+   mapping to this domain (its §Appendix D cross-references ECL → BL, which is the fastest way in).
+   **Only `[OBSERVED]` patterns become checklist items:** they are confirmed on this platform, and the
+   6–15-item budget is a release-time walk, not a research list. A `[THEORETICAL]` pattern goes to
+   `/qa-exploratory` — the session's job is discovery, the checklist's is re-verification.
+3. **Record what you deliberately left out.** Any `[OBSERVED]` section or applicable `BL-*` this
+   checklist does not cover gets one line of reason. An omission and an oversight must not read the
+   same to the next person.
+
+Never invent, renumber, or guess an ID — a dangling citation reads as coverage and is none. Verify with
+`npm run bl:lint` / `npm run ecl:lint`.
 
 ### Step 3: Map Interactions to Checklist Items
 
@@ -106,7 +141,9 @@ Apply these Virto Commerce patterns where relevant:
 - [ ] Real UI labels used (validated by exploration)
 - [ ] Item count within 6-15 range
 - [ ] Cross-layer verification included for data-modifying domains
-- [ ] Edge cases and error paths represented
+- [ ] Edge cases and error paths represented, each derived from an `[OBSERVED]` ECL section and citing it
+- [ ] Every outcome-asserting item cites a `BL-*` that resolves in the oracle (`bl:lint` / `ecl:lint` green)
+- [ ] Uncovered `[OBSERVED]` ECL sections / applicable `BL-*` listed with a reason
 - [ ] Related checklists identified
 
 ## Quality Criteria for Checklist Items
@@ -205,9 +242,12 @@ When creating a new checklist, cross-reference with the E2E scenario catalog (`s
 - [ ] [Happy path item 1]
 - [ ] [Happy path item 2]
 - [ ] [Validation / error item]
-- [ ] [Boundary / edge case item]
+- [ ] [Boundary / edge case item] (ECL-<n>.<m>)
+- [ ] [Business-rule item] (BL-XXX-NNN)
 - [ ] [Cross-layer verification item]
 - [ ] [State transition item (if applicable)]
 - [ ] [B2B-specific item (if applicable)]
 - [ ] [Mobile / responsive item (if applicable)]
 ```
+
+> Not covered, and why: `ECL-<n>.<m>` — [reason] · `BL-XXX-NNN` — [reason]

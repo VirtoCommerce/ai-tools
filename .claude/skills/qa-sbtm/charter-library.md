@@ -4,19 +4,44 @@ Ready-to-use charters for common Virto Commerce exploratory scenarios. Each foll
 
 To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-risk`, replace placeholder env vars with `{{FRONT_URL}}` / `{{BACK_URL}}` from `.env`. Resolve test data per the [live-discovery decision tree](../../knowledge/execution/live-discovery.md) — `@td(ALIAS.field)` for specific assertion targets, `live-discover` for "any product / any address" navigation, `random-data` for unique throwaway inputs. Project-wide policy in [`.claude/rules/test-data.md`](../../rules/test-data.md) — never hardcode IDs/SKUs/prices.
 
-| # | Charter | Domain | Risk | Recommended persona |
-|---|---------|--------|------|---------------------|
-| [A](#charter-a--checkout-edge-cases) | Checkout Edge Cases | Storefront | Critical | Impatient Buyer |
-| [B](#charter-b--b2b-procurement-workflow) | B2B Procurement Workflow | Storefront | High | B2B Procurement Officer |
-| [C](#charter-c--admin-panel-resilience) | Admin Panel Resilience | Admin SPA | High | Session-Corrupted User |
-| [D](#charter-d--api-edge-cases) | API Edge Cases | GraphQL + REST | High | Malicious User |
-| [E](#charter-e--feature-flag-lifecycle) | Feature Flag Lifecycle | Cross-cutting | High | — |
-| [F](#charter-f--performance--resource-stress) | Performance & Resource Stress | Cross-cutting | High | Impatient Buyer |
-| [G](#charter-g--accessibility-exploratory) | Accessibility Exploratory | Storefront | Medium-High | Screen-Reader User |
-| [H](#charter-h--i18n--localization) | i18n / Localization | Storefront | Medium | — |
-| [I](#charter-i--mobile-gesture-specific) | Mobile Gesture-Specific | Storefront | Medium-High | Impatient Buyer |
-| [J](#charter-j--search-relevance--quality) | Search Relevance & Quality | Storefront | High | — |
-| [K](#charter-k--cache--state-drift) | Cache & State Drift | Cross-cutting | High | Session-Corrupted User |
+| # | Charter | Domain | Risk | Recommended persona | Edge-Case Refs |
+|---|---------|--------|------|---------------------|----------------|
+| [A](#charter-a--checkout-edge-cases) | Checkout Edge Cases | Storefront | Critical | Impatient Buyer | ECL-1.1, 1.2, 1.3, 2.3, 6.3, 10.1, 14.6 |
+| [B](#charter-b--b2b-procurement-workflow) | B2B Procurement Workflow | Storefront | High | B2B Procurement Officer | ECL-13.1, 14.3, 14.4 |
+| [C](#charter-c--admin-panel-resilience) | Admin Panel Resilience | Admin SPA | High | Session-Corrupted User | ECL-7.2, 8.1, 10.3, 14.8, 14.10 |
+| [D](#charter-d--api-edge-cases) | API Edge Cases | GraphQL + REST | High | Malicious User | ECL-4.3, 14.1, 14.5 |
+| [E](#charter-e--feature-flag-lifecycle) | Feature Flag Lifecycle | Cross-cutting | High | — | ECL-1.3, 2.3, 14.4 |
+| [F](#charter-f--performance--resource-stress) | Performance & Resource Stress | Cross-cutting | High | Impatient Buyer | ECL-1.4, 7.3, 10.1 |
+| [G](#charter-g--accessibility-exploratory) | Accessibility Exploratory | Storefront | Medium-High | Screen-Reader User | ECL-15.1 |
+| [H](#charter-h--i18n--localization) | i18n / Localization | Storefront | Medium | — | ECL-1.6, 12.1 |
+| [I](#charter-i--mobile-gesture-specific) | Mobile Gesture-Specific | Storefront | Medium-High | Impatient Buyer | ECL-1.6, 1.8, 7.1, 7.4 |
+| [J](#charter-j--search-relevance--quality) | Search Relevance & Quality | Storefront | High | — | ECL-3.1, 3.2, 3.3, 14.2 |
+| [K](#charter-k--cache--state-drift) | Cache & State Drift | Cross-cutting | High | Session-Corrupted User | ECL-7.3, 14.1, 14.8 |
+
+
+## Edge-Case Refs — why every charter carries them
+
+Each charter declares an `Edge-Case Refs` line naming the [`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md)
+sections it hunts. This is not decoration:
+
+- **These charters were already restatements of the library, uncited.** Charter A's test ideas
+  ("duplicate payment click", "expired session mid-payment", "apply expired code") are ECL 1.1 / 1.2 /
+  1.3 in other words. So the ideas silently forked from the oracle: `/qa-review-oracles ecl` can amend
+  a section and nothing here notices, and a session could not report which pattern it had covered.
+- **The refs make a session's coverage reportable.** `/qa-exploratory` carries them into the session
+  report header and its per-scenario `Oracle ref` column, which is what lets an exploratory run
+  contribute to oracle coverage at all rather than being invisible to `ecl:lint`.
+- **They bound nothing.** A charter's mission is discovery; the refs are a *floor* of known shapes to
+  probe, never a ceiling. A finding outside every ref is the better finding — it routes to the session
+  report's Oracle Feedback table as a candidate new pattern.
+- **The split with `/qa-checklist` is deliberate.** `[OBSERVED]` ECL patterns are release-walk
+  checklist items; `[THEORETICAL]` ones are charter material, because they have never been seen on this
+  platform and confirming one is a discovery. When a session confirms a `[THEORETICAL]` pattern, that
+  promotion to `[OBSERVED]` is a `/qa-review-oracles ecl` proposal — never a direct edit, and never a
+  renumber (IDs are a citation contract the suites point at).
+
+`BL Refs` are deliberately **not** pinned per charter: the invariants a session judges against depend on
+the surface it wanders onto, so `/qa-exploratory` Step 5a loads them for the target domain at pre-flight.
 
 ---
 
@@ -35,19 +60,21 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: Critical (revenue path)
 - Environment: {{FRONT_URL}}
+- Edge-Case Refs: ECL-1.1, ECL-1.2, ECL-1.3, ECL-2.3, ECL-6.3, ECL-10.1, ECL-14.6
 ```
 
-**Test ideas:**
-- Expired session mid-payment (let session timeout, then click "Pay")
-- Back button after payment submit (does it double-charge? cross-ref §4.1 in `modern-web-attack-surface.md`)
-- Duplicate payment click (rapid double-click on submit)
-- Network timeout during payment processing (throttle to offline mid-request)
-- Address validation edge cases (PO Box, APO/FPO, very long address lines)
-- Coupon code at boundary (apply max discount, apply expired code, apply code twice)
-- Cart modification during checkout (open second tab, remove item, return to payment)
-- Zero-quantity line item (modify quantity to 0 via URL parameter or API)
-- Switch payment processor mid-flow (CyberSource embedded vs Skyflow redirect vs Datatrans modal — different flows per `feedback_payment_flow_learnings`)
-- Place order with stale cart (sale ended, price changed between cart view and confirm)
+**Test ideas:** (Charter A is the worked example for inline refs — an idea that restates a library
+pattern cites it, an idea the library does not cover is marked `[new]` and is the more valuable target)
+- Expired session mid-payment (let session timeout, then click "Pay") (ECL-1.2)
+- Back button after payment submit (does it double-charge? cross-ref §4.1 in `modern-web-attack-surface.md`) (ECL-1.1)
+- Duplicate payment click (rapid double-click on submit) (ECL-1.1)
+- Network timeout during payment processing (throttle to offline mid-request) (ECL-10.1)
+- Address validation edge cases (PO Box, APO/FPO, very long address lines) (ECL-6.3)
+- Coupon code at boundary (apply max discount, apply expired code, apply code twice) (ECL-1.3)
+- Cart modification during checkout (open second tab, remove item, return to payment) `[new]`
+- Zero-quantity line item (modify quantity to 0 via URL parameter or API) `[new]`
+- Switch payment processor mid-flow (CyberSource embedded vs Skyflow redirect vs Datatrans modal — different flows per `feedback_payment_flow_learnings`) (ECL-14.6)
+- Place order with stale cart (sale ended, price changed between cart view and confirm) (ECL-2.3)
 
 ---
 
@@ -66,6 +93,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: High (core B2B differentiator)
 - Environment: {{FRONT_URL}}
+- Edge-Case Refs: ECL-13.1, ECL-14.3, ECL-14.4
 ```
 
 **Test ideas:**
@@ -97,6 +125,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: High (admin operations affect all customers)
 - Environment: {{BACK_URL}}
+- Edge-Case Refs: ECL-7.2, ECL-8.1, ECL-10.3, ECL-14.8, ECL-14.10
 ```
 
 **Test ideas:**
@@ -128,6 +157,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: High (API serves all frontend clients)
 - Environment: {{FRONT_URL}}/graphql and {{BACK_URL}}/api
+- Edge-Case Refs: ECL-4.3, ECL-14.1, ECL-14.5
 ```
 
 **Test ideas:**
@@ -161,6 +191,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: High (flag misconfiguration silently disables revenue-critical features)
 - Environment: {{BACK_URL}} (Admin SPA) + {{FRONT_URL}} (Storefront)
+- Edge-Case Refs: ECL-1.3, ECL-2.3, ECL-14.4
 ```
 
 **Test ideas — On/Off State:**
@@ -204,6 +235,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: High (performance regressions cause conversion loss)
 - Environment: {{FRONT_URL}}, browser DevTools Performance panel
+- Edge-Case Refs: ECL-1.4, ECL-7.3, ECL-10.1
 ```
 
 **Test ideas:**
@@ -235,6 +267,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: Medium-High (legal/regulatory exposure)
 - Environment: {{FRONT_URL}}, theme=Coffee or Red (the two WCAG-gated themes per `feedback_a11y_gated_themes`)
+- Edge-Case Refs: ECL-15.1
 ```
 
 **Test ideas:**
@@ -265,6 +298,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: Medium (depends on configured locales for the store)
 - Environment: {{FRONT_URL}} with all enabled languages + currencies
+- Edge-Case Refs: ECL-1.6, ECL-12.1
 ```
 
 **Test ideas:**
@@ -296,6 +330,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: Medium-High (mobile revenue share)
 - Environment: {{FRONT_URL}} resized to 375x812 (iPhone 13), then 768x1024 (iPad)
+- Edge-Case Refs: ECL-1.6, ECL-1.8, ECL-7.1, ECL-7.4
 ```
 
 **Test ideas:**
@@ -326,6 +361,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: High (search drives discovery; relevance impacts conversion)
 - Environment: {{FRONT_URL}}, current product catalog
+- Edge-Case Refs: ECL-3.1, ECL-3.2, ECL-3.3, ECL-14.2
 ```
 
 **Test ideas:**
@@ -361,6 +397,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Time Box: 30 minutes
 - Risk Level: High (cache bugs are silent and persistent)
 - Environment: {{FRONT_URL}} + DevTools
+- Edge-Case Refs: ECL-7.3, ECL-14.1, ECL-14.8
 ```
 
 **Test ideas:**
@@ -384,5 +421,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - [personas.md](personas.md) — Personas referenced in each charter
 - [modern-web-attack-surface.md](modern-web-attack-surface.md) — Probe library used by Charters F, G, K
 - [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md) — VC historical bugs; many charters reference specific entries
+- [../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md](../../knowledge/oracles/e-commerce-edge-cases-library.md) — the `ECL-<n>.<m>` sections every charter's `Edge-Case Refs` line points at (§Edge-Case Refs above)
+- [../../../agents/knowledge/oracles/business-logic.md](../../knowledge/oracles/business-logic.md) — the `BL-*` invariants a session judges its observations against; loaded per-domain at `/qa-exploratory` pre-flight Step 5a, not pinned per charter
 - [../../../rules/test-data.md](../../rules/test-data.md) — `@td()` resolver policy; charters must resolve test data, not hardcode
 - [../../../agents/knowledge/execution/live-discovery.md](../../knowledge/execution/live-discovery.md) — Decision tree + JS recipes for `live-discover` / `random-data` / `@td()`; required reading when a charter needs runtime data resolution
