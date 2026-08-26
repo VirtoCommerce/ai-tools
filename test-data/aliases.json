@@ -4472,6 +4472,23 @@
     "notes": "The MASTER/parent half of the INV_VARIATION_STOCKED family (VCST-5546 / INV-047) - the row a variation must appear as DISTINCT from in the per-FFC products grid. Carries the derivable store-relative storefront path (@td(INV_VARIATION_MASTER.url), composed as {{FRONT_URL}}@td(...)); the variation deliberately has none, because inventing a PDP route for it would publish a path that does not exist. Stock 7 at the store main FFC vs the variation's 42. Seeded by scripts/seed-data/inventory/seed-variation-stock.mjs; NO runtime GUID committed - master_id lives in aliases.<env>.json.",
     "_status": "seeded-20260824"
   },
+  "SR_ORDER_ACME_ELEC": {
+    "file": "sales-rep/sales-rep-orders",
+    "filter": {
+      "order_key": "SRO-ACME-ELEC"
+    },
+    "fields": {
+      "number": "order_key",
+      "org": "org",
+      "store": "store",
+      "status": "status",
+      "total": "total",
+      "recencyContract": "recency_contract",
+      "id": "order_id",
+      "createdDate": "created_date"
+    },
+    "notes": "ORG_ACME order on the SECONDARY store (Electronics). Declares recency_contract=newest-in-org: it must be ORG-001s most recent order, which is what makes SR-GQL-013 falsifiable (store-scoped lastOrder differs from the global lastOrder). CustomerOrder.createdDate is SERVER-ASSIGNED and silently ignored on POST/PUT, so this CANNOT be pinned by a date column or by CSV row order - it is enforced per run: seed Phase 4b re-posts this order when a live query shows any newer ORG-001 order attributed to the rep. That is why the earlier prose claim created last was never true - three separate rivals overtook it (SRO-ACME-WIN-NEW, -WIN-PROC, and SRO-TZ-VCST-2104-001, which is not even in the CSV). Contradictions are caught by td:validate:sr-orders check [2b]. .number resolves the order_key, NOT the platform order number - the seeder prefixes it with AGENT-TEST-, so the live number is AGENT-TEST- + @td(...number). .id / .createdDate are runtime and live in aliases.<env>.json only."
+  },
   "SR_ORDER_ACME_WIN_NEW": {
     "file": "sales-rep/sales-rep-orders",
     "filter": {
@@ -4487,7 +4504,7 @@
       "id": "order_id",
       "createdDate": "created_date"
     },
-    "notes": "The NEW-status in-window order. ROLLING-WINDOW order on ORG_ACME (ORG-001), seeded by npm run seed:sales-rep and drift-guarded by npm run td:validate:sr-orders. CustomerOrder.createdDate is SERVER-ASSIGNED and silently ignored on POST/PUT, so a past-dated order is impossible - but the 7-day window INCLUDES NOW, so a freshly created order lands inside it by construction. That also means the order AGES OUT: the seeder adds FRESHNESS as an extra idempotency term (sales-rep-orders-specs.mjs isFresh) and rebuilds the order once it falls outside the window, because the base content-based idempotency happily leaves a correct-but-stale order in place - which is how these cases came to assert against an empty window. NEVER a fixed seed date; the instant comes from the server at seed time. .number resolves the order_key, NOT the platform order number - the seeder prefixes it with AGENT-TEST-, so the live number is 'AGENT-TEST-' + @td(...number). .id / .createdDate are runtime and live in aliases.<env>.json only. Unblocks SR-CP-057 (the 'New orders' stat card counts exactly this kind of order) and SR-HD-048 (flip it to Processing in Admin and the KPI must decrement by 1 and by its total, 131.00 - deliberately distinct from every other rolling row so the decrement is attributable). NOTE the third SR-CP-057 precondition - a New order OLDER than 7 days, proving the window boundary - is satisfied WITHOUT seeding by the pre-existing AGENT-TEST-SRO-ACME-NEW / -KEYWORD / -ELEC orders, which are date-agnostic and have long since aged out."
+    "notes": "The NEW-status in-window order. ROLLING-WINDOW order on ORG_ACME (ORG-001), seeded by npm run seed:sales-rep and drift-guarded by npm run td:validate:sr-orders. CustomerOrder.createdDate is SERVER-ASSIGNED and silently ignored on POST/PUT, so a past-dated order is impossible - but the 7-day window INCLUDES NOW, so a freshly created order lands inside it by construction. That also means the order AGES OUT: the seeder adds FRESHNESS as an extra idempotency term (sales-rep-orders-specs.mjs isFresh) and rebuilds the order once it falls outside the window, because the base content-based idempotency happily leaves a correct-but-stale order in place - which is how these cases came to assert against an empty window. NEVER a fixed seed date; the instant comes from the server at seed time. .number resolves the order_key, NOT the platform order number - the seeder prefixes it with AGENT-TEST-, so the live number is 'AGENT-TEST-' + @td(...number). .id / .createdDate are runtime and live in aliases.<env>.json only. Unblocks SR-CP-057 (the 'New orders' stat card counts exactly this kind of order) and SR-HD-048 (flip it to Processing in Admin and the KPI must decrement by 1 and by its total, 131.00 - deliberately distinct from every other rolling row so the decrement is attributable). NOTE the third SR-CP-057 precondition - a New order OLDER than 7 days, proving the window boundary - is satisfied WITHOUT seeding by the pre-existing AGENT-TEST-SRO-ACME-NEW / -KEYWORD orders, which are date-agnostic and have long since aged out. NOT -ELEC: it now declares recency_contract=newest-in-org, so the seeder re-posts it whenever it loses maximality (sales-rep-orders-specs.mjs validateRecencyContracts, seed Phase 4b) and it is therefore never reliably outside the window."
   },
   "SR_ORDER_ACME_WIN_PROC": {
     "file": "sales-rep/sales-rep-orders",

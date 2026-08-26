@@ -37,6 +37,15 @@ import {
   parseServedOrgs, isDisposableLayoutRep, isLayoutPreference, LAYOUT_PREF_PREFIX, LAYOUT_SCOPES,
   repFixtureStatus,
 } from './sales-rep-layout-specs.mjs';
+// The rolling-window + recency rules for test-data/sales-rep/sales-rep-orders.csv. `windowDaysFor` /
+// `isFresh` / `CSV_KEY` were USED below (the freshness idempotency term, the alias write-back) but
+// never imported, so this module carried three unresolved free variables: any run that reached
+// `ensureOrder` with an existing order threw `ReferenceError: windowDaysFor is not defined`, i.e.
+// every re-seed after the first. Wiring the import is what makes the freshness term actually execute.
+import {
+  CSV_KEY as ORDERS_CSV_KEY, windowDaysFor, isFresh,
+  NEWEST_IN_ORG, newestRows, isStrictlyNewest,
+} from './sales-rep-orders-specs.mjs';
 import { hasStaleLockout } from '../../lib/user-provision.mjs';
 
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
@@ -349,7 +358,14 @@ const SYNTHETIC_PRODUCT_PREFIX = 'agent-test-sr-prod-';
 const isSyntheticItem = (it) =>
   it?.catalogId === SYNTHETIC_CATALOG_ID || String(it?.productId || '').startsWith(SYNTHETIC_PRODUCT_PREFIX);
 
-async function ensureOrder(row, orgs, customerId, products = []) {
+/**
+ * `forceRebuild` adds MAXIMALITY as an idempotency term the content checks cannot express: the caller
+ * (Phase 4b) has established from the live order set that this row is no longer its org's most recent
+ * order, which no property OF the order itself reveals. It is folded into the same conjunction as
+ * `freshOk` so the rebuild reuses this function's proven delete-then-create path — deleting here and
+ * re-entering would make the fresh search race the deletion through the ES index.
+ */
+async function ensureOrder(row, orgs, customerId, products = [], { forceRebuild = false } = {}) {
   const org = orgs[row.org];
   if (!org) { log(`  WARN: order ${row.order_key} — org ${row.org} unknown, skip`); return; }
   const number = `${ORDER_MARK}-${row.order_key}`;
@@ -377,9 +393,9 @@ async function ensureOrder(row, orgs, customerId, products = []) {
     // createdDate is server-assigned, the only way to move an order into the window is to recreate it.
     const windowDays = windowDaysFor(row);
     const freshOk = isFresh(full?.createdDate, windowDays);
-    if (existing.customerId === wantCustomerId && enriched && totalOk && orgOk && statusOk && itemsOk && freshOk) { verbose(`order ${number} exists (attributed + enriched + total + org + status + items${windowDays ? ' + fresh' : ''} ok)`); return; }
+    if (!forceRebuild && existing.customerId === wantCustomerId && enriched && totalOk && orgOk && statusOk && itemsOk && freshOk) { verbose(`order ${number} exists (attributed + enriched + total + org + status + items${windowDays ? ' + fresh' : ''} ok)`); return; }
     await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
-    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, statusOk=${statusOk}, itemsOk=${itemsOk}${windowDays ? `, freshOk=${freshOk} (${windowDays}d window; createdDate=${full?.createdDate})` : ''})`);
+    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, statusOk=${statusOk}, itemsOk=${itemsOk}${windowDays ? `, freshOk=${freshOk} (${windowDays}d window; createdDate=${full?.createdDate})` : ''}${forceRebuild ? ', forceRebuild=true (no longer the org\'s most recent order)' : ''})`);
   }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const total = parseFloat(row.total);
@@ -564,15 +580,60 @@ async function main() {
     else if (!DRY_RUN) log('  WARN: no catalog products discovered — line items keep synthetic placeholders (seed catalog first for reorder/PDP-link cases).');
     for (const row of orders) await ensureOrder(row, orgs, primaryUserId, products);
 
-    // Rolling-window rows write back their server-assigned id AND createdDate. The date is runtime
+    // Phase 4b — MAXIMALITY. A row declaring `recency_contract=newest-in-org` must be its org's most
+    // recent order, because SR-GQL-013 asserts the GLOBAL (no-storeId) `lastOrder` is the one on the
+    // secondary store. `createdDate` is server-assigned, so "newest" can only be produced by POSTing
+    // LAST — and this pass runs after every other order precisely so a rolling-window row rebuilt
+    // moments ago in the loop above cannot outrank it.
+    //
+    // This has to be a per-run RE-ASSERTION, not a one-off ordering: a rolling-window row is deleted
+    // and recreated at the server's `now` whenever it ages out, and a foreign order on the same org
+    // (AGENT-TEST-SRO-TZ-VCST-2104-001, created 2026-08-16 by an unrelated investigation) outranks
+    // the fixture just by existing. Reordering the CSV fixes neither. Measured on vcst 2026-08-26:
+    // ELEC 2026-08-07T13:49:16Z vs WIN-PROC 2026-08-25T14:23:29Z — four consecutive SR-GQL-013 FAILs.
+    //
+    // The comparison set is the org's orders ATTRIBUTED TO THIS REP (customerId == the rep's
+    // ApplicationUser id), which is exactly what `salesRepCustomers.lastOrder` considers — a different
+    // customer's order on the same org is not a rival and must not trigger a pointless rebuild.
+    for (const row of newestRows(orders)) {
+      const org = orgs[row.org];
+      if (!org) { log(`  WARN: ${NEWEST_IN_ORG} row ${row.order_key} — org ${row.org} unknown, skip`); continue; }
+      const number = `${ORDER_MARK}-${row.order_key}`;
+      // The search runs under --dry-run too (it is a read call), so a dry run REPORTS whether the
+      // contract currently holds on this env instead of merely announcing an intention. Only the
+      // DELETE + re-post below is suppressed.
+      // `keyword` alone is NOT enough: it misses same-org orders whose number does not share the
+      // fixture prefix, and those are the ones that silently took the guarantee away.
+      const search = await api('POST', '/api/order/customerOrders/search',
+        { organizationIds: [org.id], take: 200, sort: 'createdDate:desc' });
+      const mine = (search?.results || []).filter((o) => o.customerId === primaryUserId);
+      const self = mine.find((o) => o.number === number);
+      if (!self) { log(`  WARN: ${NEWEST_IN_ORG} row ${number} not found after seeding — cannot assert recency`); continue; }
+      const rivals = mine.filter((o) => o.id !== self.id);
+      if (isStrictlyNewest(self.createdDate, rivals.map((o) => o.createdDate))) {
+        verbose(`order ${number} is already ${row.org}'s most recent (${self.createdDate}) — contract holds`);
+        continue;
+      }
+      const beatenBy = rivals
+        .filter((o) => Date.parse(o.createdDate) >= Date.parse(self.createdDate))
+        .map((o) => `${o.number}@${o.createdDate}`);
+      log(`  order ${number} ${DRY_RUN ? 'WOULD BE re-posted' : 're-posting'} to satisfy ${NEWEST_IN_ORG} (was ${self.createdDate}, outranked by ${beatenBy.join(', ') || '(tie)'})`);
+      if (DRY_RUN) continue;
+      await ensureOrder(row, orgs, primaryUserId, products, { forceRebuild: true });
+    }
+
+    // Date-contract rows write back their server-assigned id AND createdDate. The date is runtime
     // data, not decoration: it is the only way a later run — or td:validate:sr-orders — can tell that
-    // the fixture has aged out of the window SR-CP-057 / SR-HD-048 assert against.
-    for (const row of orders.filter((r) => windowDaysFor(r) !== null)) {
+    // a rolling-window fixture has aged out of the window SR-CP-057 / SR-HD-048 assert against, or
+    // that a `newest-in-org` fixture has been outranked (the SR-GQL-013 premise). A row with no
+    // date contract is date-agnostic, so recording its instant would be noise.
+    const dated = orders.filter((r) => windowDaysFor(r) !== null || newestRows([r]).length > 0);
+    for (const row of dated) {
       const number = `${ORDER_MARK}-${row.order_key}`;
       const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
       const o = (found?.results || [])[0];
       if (o) orderWriteback[row.order_key] = { order_id: o.id, created_date: o.createdDate };
-      else log(`  WARN: rolling-window order ${number} not found after seeding — its @td alias will resolve empty`);
+      else log(`  WARN: date-contract order ${number} not found after seeding — its @td alias will resolve empty`);
     }
   }
 
