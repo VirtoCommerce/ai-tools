@@ -553,7 +553,7 @@ WISH-020,wishlist Query — Cross-User Access Denial,GraphQL > Wishlist > Auth,H
 [GQL-OP cleanup_remove]
   mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
 [GQL-EXEC cleanup_remove]","[DATA label=cross_read] data.wishlist is null — private list not exposed to other users
-[ERRORS label=cleanup_remove] errors[] empty",[EVIDENCE] Either: errors[] non-empty with access-denied message OR data.wishlist is null. Both acceptable (hard-gate or silent-null). No private list data leaked.,USER2 receives private list data (privacy violation); HTTP 500; stack trace,none — inline cleanup,VCST-21; xAPI; graphql-schema.md — Query.wishlist BL-GQL-004,Draft
+[ERRORS label=cleanup_remove] errors[] empty",[EVIDENCE] Either: errors[] non-empty with access-denied message OR data.wishlist is null. Both acceptable (hard-gate or silent-null). No private list data leaked.,USER2 receives private list data (privacy violation); HTTP 500; stack trace,none — inline cleanup,VCST-21; xAPI; graphql-schema.md — Query.wishlist BL-GQL-004 | Promoted: REG-2026-08-26-1600 (2026-08-26),Automated
 WISH-021,createWishlist with scope=Organization — Same-Org Member Access,GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-10.2; ECL-2.1,"Runner-native. TECHFLOW_ADMIN (USR-006) and TECHFLOW_BUYER (USR-007) are two DIFFERENT users in the SAME org (ORG-002 TechFlow); ACME_BUYER (USR-002) is in a DIFFERENT org (ORG-001 Acme). All three are CSV-backed aliases in test-data/aliases.json and resolve for [AUTH role=…] via graphql-auth.ts resolveRole(), which reads each role's own email/password alias fields — no _inline alias and no extra .env var is required. (Do not write a literal resolver token in this prose: td:validate scans every cell and an illustrative one fails to resolve.) Creates an Organization-scope list as the admin and reads it back as the same-org buyer; inline cleanup removes it.",list_name=AGENT-TEST-WL-021-ORG,"[AUTH role=TECHFLOW_ADMIN]
 [GQL-OP admin_me]
   query { me { id contact { organizationId } } }
@@ -706,7 +706,7 @@ WISH-025,Personal Account — Private Wishlist OK But Cannot See Org Lists,Graph
 [ERRORS label=create_personal_list] errors[] empty
 [DATA label=create_personal_list] data.createWishlist.id is non-empty GUID
 [DATA label=personal_reads_org] data.wishlist is null","[EVIDENCE] personal_reads_org: either errors[] with access-denied OR data.wishlist null. Both acceptable.
-[EVIDENCE] personal_me.contact.organizationId confirmed null — USER2 is genuinely unaffiliated",USER2 has org_id set (not a personal account); personal user reads org-scope list successfully (isolation failure),none — inline cleanup,VCST-1416; VCST-21; xAPI; graphql-schema.md BL-AUTH-004,Draft
+[EVIDENCE] personal_me.contact.organizationId confirmed null — USER2 is genuinely unaffiliated",USER2 has org_id set (not a personal account); personal user reads org-scope list successfully (isolation failure),none — inline cleanup,VCST-1416; VCST-21; xAPI; graphql-schema.md BL-AUTH-004 | Promoted: REG-2026-08-26-1600 (2026-08-26),Automated
 WISH-026,Personal Account — Cannot Access Org List by ID,GraphQL > Wishlist > B2B,Critical,BL-B2B-001; BL-AUTH-006,ECL-2.1; ECL-10.2,Runner-native. Shorter variant of WISH-025 — USER2 directly attempts to read an ORG_USER-owned org-scope wishlist by ID.,—,"[AUTH role=ORG_USER]
 [GQL-OP org_me]
   query { me { id } }
@@ -735,7 +735,7 @@ WISH-026,Personal Account — Cannot Access Org List by ID,GraphQL > Wishlist > 
   mutation { removeWishlist(command: { listId: ""{{ORG_LIST_ID}}"" }) }
 [GQL-EXEC cleanup_remove]","[ERRORS label=personal_me] errors[] empty
 [DATA label=personal_me] data.me.contact.organizationId is null
-[DATA label=personal_reads_org] data.wishlist is null","[EVIDENCE] personal_reads_org response: either errors[] non-empty with access-denied OR data.wishlist null. No org-scope data leaked to personal account (BL-B2B-001, BL-AUTH-006).",Personal account reads org-scope list data (isolation failure); organizationId non-null on USER2 (not actually a personal account),none — inline cleanup,VCST-1416; VCST-21; xAPI; graphql-schema.md BL-B2B-001 BL-AUTH-006,Draft
+[DATA label=personal_reads_org] data.wishlist is null","[EVIDENCE] personal_reads_org response: either errors[] non-empty with access-denied OR data.wishlist null. No org-scope data leaked to personal account (BL-B2B-001, BL-AUTH-006).",Personal account reads org-scope list data (isolation failure); organizationId non-null on USER2 (not actually a personal account),none — inline cleanup,VCST-1416; VCST-21; xAPI; graphql-schema.md BL-B2B-001 BL-AUTH-006 | Promoted: REG-2026-08-26-1600 (2026-08-26),Automated
 WISH-027,addWishlistBulkItem — Add To Single List (Bulk-Mutation Shape),GraphQL > Wishlist > Items,Medium,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,Runner-native. addWishlistBulkItem takes listIds [String]! + top-level productId/quantity (different shape than addWishlistItem). Captures real product GUID.,—,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -790,7 +790,7 @@ WISH-028,wishlists Query — Pagination Boundary (first=1) + Sort,GraphQL > Wish
 [GQL-EXEC cleanup_b]","[ERRORS label=page_boundary] errors[] empty {BL}
 [COUNT label=page_boundary] data.wishlists.items.length <= 1 {DOC}
 [COUNT label=page_boundary] data.wishlists.totalCount >= 2 {DOC}
-[DATA label=page_boundary] data.wishlists.items is non-null {DOC}","[ROUNDTRIP label=page_boundary] re-query with first: 100 → same totalCount, items.length reflects both created lists (runner-manual)",errors[] non-empty; items.length > first (boundary not enforced); totalCount does not reflect both created lists; sort argument rejected as an invalid value,none — inline cleanup,"xAPI; graphql-schema.md — Query.wishlists(first, sort); Synced: lifecycle lists/SFL (2026-08-05)",Draft
+[DATA label=page_boundary] data.wishlists.items is non-null {DOC}","[ROUNDTRIP label=page_boundary] re-query with first: 100 → same totalCount, items.length reflects both created lists (runner-manual)",errors[] non-empty; items.length > first (boundary not enforced); totalCount does not reflect both created lists; sort argument rejected as an invalid value,none — inline cleanup,"xAPI; graphql-schema.md — Query.wishlists(first, sort); Synced: lifecycle lists/SFL (2026-08-05) | Promoted: REG-2026-08-26-1600 (2026-08-26)",Automated
 WISH-029,addWishlistItem — Duplicate Product Add Behavior (Discovery Probe),GraphQL > Wishlist > Items,Medium,BL-GQL-001,ECL-10.2,"Runner-native. ORG_USER authenticated. Adds the same product to a wishlist twice via two separate addWishlistItem calls. The server-side duplicate-add contract is UNDOCUMENTED for wishlists — unlike BL-CART-007 (cart merges same-SKU adds into one line), no equivalent invariant exists for wishlists yet. This case is a discovery probe (PROPOSED-BL-LIST-DUP candidate) rather than a settled invariant; see BL audit handoff.",—,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
