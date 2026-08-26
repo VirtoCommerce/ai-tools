@@ -31,6 +31,55 @@
   "newCasesEstimate": "85-100",
   "criticalTickets": ["VCST-5592", "VCST-5647", "VCST-5682", "VCST-5683", "VCST-5684", "VCST-5587", "VCST-5588", "VCST-5590", "VCST-5691", "VCST-5689", "VCST-5659", "VCST-5660", "VCST-5490", "VCST-5335", "VCST-5724", "VCST-5705"],
   "coverageGapCount": 13,
+  "exploratoryCharters": [
+    {"id": "EXP-01", "domain": "Storefront resilience (chunk loads)", "signals": ["C1"], "anchor": "GAP-03",
+     "mission": "Discover failure modes of route-level dynamic-import recovery - no suite covers this domain at all",
+     "candidateScenarios": ["chunk fails once then succeeds - retry recovers or double-mounts", "chunk 404s permanently after deploy - surfaced error or blank route", "navigate away mid-retry under flapping network"],
+     "technique": "User-flow edge enumeration + Saboteur", "lane": "playwright-chrome", "timeboxMin": 30, "owner": "qa-frontend-expert"},
+    {"id": "EXP-02", "domain": "Sales Rep Hub & Customer Profile", "signals": ["C2", "C3"], "anchor": "GAP-11",
+     "mission": "Discover breaks at the seam of eight concurrent changes to one statistics surface",
+     "candidateScenarios": ["one widget data source fails - failure isolation vs dashboard blank", "window boundaries interacting on one rep at a boundary date", "rep serving 2+ orgs switches customer while a widget is mid-load"],
+     "technique": "Feature-pair matrix", "lane": "playwright-edge", "timeboxMin": 30, "owner": "qa-frontend-expert"},
+    {"id": "EXP-03", "domain": "Lists / Wishlist sharing", "signals": ["C2", "C3"], "anchor": "GAP-09",
+     "mission": "Discover where the rep-to-customer sharing chain breaks between links",
+     "candidateScenarios": ["full chain rep shares - push delivered - customer sees flag - customer edits", "cross-store isolation of the storeId-scoped in-wishlist marker at catalog/PDP scale", "share to a customer whose org membership is locked or absent"],
+     "technique": "Soap Opera + Scenario tour", "lane": "playwright-chrome", "timeboxMin": 30, "owner": "qa-frontend-expert"},
+    {"id": "EXP-04", "domain": "Catalog browse & variations resolver", "signals": ["C2"], "anchor": "section-3",
+     "mission": "Discover silent mapping loss after the batched-resolver reshape and AutoMapper removal",
+     "candidateScenarios": ["variations spanning a batch boundary - dropped or duplicated", "field-by-field payload diff for a master with sparse properties", "variations under an active facet/filter on a large category"],
+     "technique": "Boundary-of-features + Obsessive-Compulsive", "lane": "playwright-chrome", "timeboxMin": 30, "owner": "qa-backend-expert"},
+    {"id": "EXP-05", "domain": "Background-jobs migration (Hangfire to RabbitMQ)", "signals": ["C2"], "anchor": "section-3",
+     "mission": "Discover asynchronous late-surfacing failures in the new execution substrate across six modules",
+     "candidateScenarios": ["two long jobs queued together - interleave, starve or double-run", "a failed dispatched job - surfaced in Admin UI or silent", "job triggered across a restart/redeploy - lost or re-delivered"],
+     "technique": "Galumphing + All-Nighter", "lane": "playwright-edge", "timeboxMin": 30, "owner": "qa-backend-expert"}
+  ],
+  "exploratoryRun": {
+    "date": "2026-08-26",
+    "shadow": true,
+    "executed": [
+      {"id": "EXP-01", "type": "EXP", "netNewScenarios": 3, "bugCandidates": 1, "promoted": 3,
+       "report": "reports/exploratory/SBTM-chunk-load-resilience-2026-08-26.md",
+       "untested": "permanent 404 / stale chunk hash - needs request interception, blocked by the enforce-real-user hook"},
+      {"id": "EXP-04", "type": "EXP", "netNewScenarios": 4, "bugCandidates": 1, "promoted": 2,
+       "report": "reports/exploratory/SBTM-catalog-variations-resolver-2026-08-26.md",
+       "untested": "field-by-field diff vs the previous build (no baseline reachable); variations under facet (no multi-variation master on this env)"}
+    ],
+    "blocked": [
+      {"id": "EXP-02", "reason": "sign-in required; SALES_REP_EMAIL is in .env.defaults but .env.local / .env.playwright.local are gitignored and absent from this worktree"},
+      {"id": "EXP-03", "reason": "wishlists are authenticated-only; same credential gap"},
+      {"id": "EXP-05", "reason": "Admin SPA login; same credential gap"}
+    ],
+    "ratioExpVal": "2 EXP / 0 VAL",
+    "_notes": "Shadow run of the sprint-charter-selection rule. 2 of 5 charters executed; the other 3 share one root cause - a git worktree does not carry gitignored env files. Both executed charters produced net-new scenarios no activated suite asserts, so neither was re-validation."
+  },
+  "exploratoryNotChartered": [
+    {"domain": "Pricing & discountPercent (xAPI)", "verdict": "D1 exact oracle", "routedTo": "GAP-12"},
+    {"domain": "Platform Security / Auth API", "verdict": "D1 exact oracle", "routedTo": "GAP-13"},
+    {"domain": "Payment - Skyflow schema endpoint", "verdict": "D1 exact oracle", "routedTo": "GAP-04"},
+    {"domain": "White Labeling", "verdict": "qualifies C4 - cut by the 5-charter cap", "routedTo": "queue for 26-17"},
+    {"domain": "Cart - coupons sidebar (a11y)", "verdict": "qualifies C4 - cut by the 5-charter cap", "routedTo": "suites 028/045/077b"},
+    {"domain": "vc-shell / Vendor Portal", "verdict": "D2 no QA surface in this repo", "routedTo": "none"}
+  ],
   "outOfScopeCount": 93,
   "artifacts": "vc/shared/docs/Sprint plans/",
   "_notes": "JIRA sprint name is 'Sprint 26-16' (with a space) - sprint = \"Sprint26-16\" returns 0 issues. Sprint was still open at plan time (82 of 125 issues not Done); re-run after close to capture the delta. vc-shell / Vendor Portal (26 PRs) is a separate product and is excluded from suite mapping."

@@ -274,6 +274,46 @@ Scored with the 5×5 Likelihood × Impact matrix (`.claude/skills/qa-risk/risk-p
 
 ---
 
+### 5.3 Exploratory Charters — discovery of what the suites cannot assert
+
+> 5 charters × 30 min ≈ 2.5 h against 34 activated suites. Derived from §3 + §5.2 per
+> [`sprint-charter-selection.md`](../../../../.claude/skills/qa-sbtm/sprint-charter-selection.md) —
+> **C1** uncovered surface · **C2** concurrency seam · **C3** cross-layer chain · **C4** latent blast radius.
+> **Lane: chrome/edge only** — `@playwright/mcp` + firefox cannot click this storefront or the Admin SPA
+> (`.claude/rules/agents.md`, confirmed 6×). Run **in series, isolated from the regression pool** (3 lanes total).
+> Run with `/qa-exploratory sprint:26-16`.
+
+| ID | Domain | Signals | Mission — discover what the suites don't assert | Candidate scenarios (hypotheses, may be wrong) | Technique | Lane | Owner |
+|----|--------|---------|--------------------------------------------------|-----------------------------------------------|-----------|------|-------|
+| **EXP-01** | Storefront resilience — chunk loads (VCST-5654) | **C1** (GAP-03: *the domain has no suite today*) | Discover the failure modes of route-level dynamic-`import()` recovery, which **no suite covers at all** and which is only observable under induced network failure | 1. Chunk request fails once then succeeds — does retry recover, or double-mount the route? 2. Chunk 404s permanently (stale hash after a deploy) — surfaced error, or a blank route? 3. Navigate away mid-retry / flapping network — retry loop or orphaned handler? | User-flow edge enumeration + Saboteur | chrome (request blocking via **Chrome DevTools MCP**) | qa-frontend-expert |
+| **EXP-02** | Sales Rep Hub & Customer Profile (5592, 5647, 5682-4, 5587-90) | **C2** (8 tickets / 9 PRs, L=5) + **C3** (GAP-11 spans 091, 093, 050m — 2 layers) | Discover breaks at the *seam* of eight concurrent changes to one statistics surface — time-window logic, value/delta definitions, failure isolation and i18n all moved in one window | 1. One widget's data source fails — does failure isolation hold, or does the dashboard blank? 2. Window boundaries interacting on one rep at a boundary date (Monday-start week vs `prevMonth` vs `lastYear` same-day-span) 3. Rep serving ≥2 orgs switches customer while a widget is mid-load | Feature-pair matrix | edge | qa-frontend-expert |
+| **EXP-03** | Lists / Wishlist sharing (5335, 5724, 5705) | **C2** (3 tickets, L=4) + **C3** (GAP-09 spans 007, 050h, 050l) | Discover where the rep→customer sharing **chain** breaks between links — each suite sees only its own link | 1. Full chain: Rep shares → push delivered → customer sees the "recommended by Rep" flag → customer edits the list (GAP-09) 2. Cross-store isolation of the `storeId`-scoped "in wishlist" marker at catalog/PDP scale (GAP-08) 3. Share to a customer whose org membership is locked / absent | Soap Opera + Scenario tour | chrome | qa-frontend-expert |
+| **EXP-04** | Catalog browse & variations resolver (5689, 5659, 5660) | **C2** (3 tickets, L=4, P0 path) | Discover **silent mapping loss** — the resolver went per-master → batched and AutoMapper was removed from four mapping paths in the same window; a dropped field fails nothing | 1. A product whose variations span a batch boundary — any variation dropped or duplicated? 2. Field-by-field diff of a PDP/PLP payload for a master with sparse properties vs before 3. Variations under an active facet/filter on a large category | Boundary-of-features + Obsessive-Compulsive | chrome | qa-backend-expert |
+| **EXP-05** | Background-jobs migration Hangfire → RabbitMQ (5490) | **C2** (one ticket, **six modules** at once, L=4) | Discover asynchronous, late-surfacing failures in the new execution substrate for indexing, export/import, order processing and sitemap generation | 1. Two long jobs queued together (index rebuild + export) — interleave, starve, or double-run? 2. A failed dispatched job — does it surface in the Admin UI at all, or fail silently? 3. Job triggered across a restart/redeploy — lost or re-delivered? | Galumphing + All-Nighter | edge | qa-backend-expert |
+
+**Not chartered (and why) — mandatory, so a considered exclusion is distinguishable from an omission:**
+
+| Domain | §3 score | Verdict |
+|---|:---:|---|
+| Pricing & `discountPercent` (xAPI) | 20 | **D1 exact oracle** — a rounding rule is one assertable value. → §6 / GAP-12 as a case, which is cheaper *and* permanent |
+| Platform Security / Auth API | 15 | **D1** — the login endpoint's error contract; GAP-13 already words it as a negative case. D1 outranks its C4 |
+| Payment — Skyflow schema endpoint | 10 | **D1** — schema-endpoint presence is assertable. → GAP-04 |
+| White Labeling | 15 | Qualifies (**C4**, `I=5, L=3`, storefront-blank blast radius) — **cut by the 5-charter cap**. First in the queue if a lane frees or for 26-17 |
+| Cart — coupons sidebar (a11y) | 15 | Qualifies (**C4**) — cut by the cap; three suites (028, 045, 077b) already watch this surface |
+| Customer Reviews (PDP) · SEO / structured data · UCP observability | 9 / 9 / 4 | No qualifying signal (single ticket, `L ≤ 3`, `I ≤ 3`) |
+| `vc-shell` / Vendor Portal a11y cluster | — | **D2** — separate product, no QA surface in this repo (§2.4) |
+
+**Capture-back (non-negotiable).** Every net-new scenario a session produces gets a recorded fate:
+`PROMOTE` → a `Draft` case via `/qa-test-cases-generator` into `regression/suites/<layer>/<module>/`
+plus a `GAP-NN` row tagged `from: EXP-NN` in the **26-17** plan's §5.2 — or `DECLINE` with one line of
+why. A session whose findings reach no runner buys a one-off verdict and no regression protection.
+
+**This set is unvalidated.** It is the first application of the rule; treat 26-16 and 26-17 as shadow
+runs and score it on `[EXP]` vs `[VAL]` ratio and on scenarios actually promoted to `Draft`
+(`sprint-charter-selection.md` §7) before relying on it.
+
+---
+
 ## 6. New Test Cases Needed (Per Ticket)
 
 Counts and mapping only — the cases themselves are authored later via `/qa-test-cases-generator VCST-XXXX`, which resolves all `@td()` / `{{VAR}}` bindings at authoring time per `.claude/rules/test-data.md`.
