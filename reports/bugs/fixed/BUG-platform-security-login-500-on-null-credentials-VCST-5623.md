@@ -96,3 +96,16 @@ Clean.
 - **Component / module:** Platform Security — `SecurityController.Login`
 - **RCA anchor:** `src/VirtoCommerce.Platform.Web/Controllers/Api/SecurityController.cs:139` and `:163`
 - **Routing confidence:** HIGH — single repo, exact anchors confirmed via `search_code` + live repro + App Insights corroboration
+
+## Resolution
+- **Fixed in:** Platform `3.1061.0` (live on vcst-qa at verification time). Tracker **VCST-5623 → Done** (2026-08-18).
+- **Verified:** 2026-08-26, backlog-triage re-verification (REST probe, no browser). `POST /api/platform/security/login` now returns **400** for all three malformed-credential shapes that previously returned 500:
+
+  | Body | Was | Now |
+  |---|---|---|
+  | `{"userName":null,"password":null}` | 500 | **400** |
+  | `{}` | 500 | **400** |
+  | `{"userName":"x"}` (no password) | 500 | **400** |
+
+- **Method:** unauthenticated `curl` against `{{BACK_URL}}/api/platform/security/login`; status codes only, no body assertions.
+- **Note:** this is a status-code confirmation, not a full `/qa-verify-fix` pass — the RED→GREEN evidence page and tracker transition were not produced. The tracker item was already Done independently.

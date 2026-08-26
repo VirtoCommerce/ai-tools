@@ -1,0 +1,250 @@
+{
+  "ticket": "VCST-5600",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "fast",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-08-25",
+  "environment": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+  "routing_note": "Type is Task, not Bug, so ticket-routing.md sends this to feature-test (FAST: Medium, single-layer), NOT verify-fix like the other vc-shell tickets this sprint. Tension surfaced rather than resolved silently: the SUBSTANCE is a fix verification (3 PRs, a prior REOPEN, an explicit dev re-test list), and vc-shell has no regression suites to author into. Resolved by running FAST feature-test with the dev re-test list plus the ticket ACs as the checklist, and skipping suite authoring as inapplicable.",
+  "build": {
+    "platform": "n/a - vc-shell Vendor Portal, not the VC storefront/platform",
+    "theme": "n/a",
+    "relevant_modules": {
+      "@vc-shell/framework": "2.5.0 (build stamp 2026-08-19T10:23:58.321Z, 2964ccbe3)",
+      "vendor-portal bundle": "22260 (index last-modified 2026-08-24 09:58 GMT)"
+    }
+  },
+  "agents_dispatched": [
+    "qa-backend-expert"
+  ],
+  "product_scope_note": "vc-shell is a SEPARATE PRODUCT from the Virto storefront. BL-UI-*, critical-ui-scope.md, storefront-selectors.md and the 123 regression suites cover the storefront only and none cover vc-shell. Substituted: framework vitest suites, a live keyboard walk with read-only DOM/attribute inspection, and non-manglable bundle marker checks.",
+  "the_fix": {
+    "pr_272": "Original keyboard move/resize (tabindex=0, Enter picks up, arrows move, Shift+arrow resizes, Escape cancels, aria-live announcements). Shipped in 2.4.0.",
+    "pr_283": "c607552f6 - widget SIZE was not part of dashboard state at all, so NO resize ever persisted, keyboard OR mouse. Size is now read back from what gridstack actually applied.",
+    "pr_303": "761e2ac35 - 'Closes VCST-5600 remainder'. The keydown handler preventDefault-ed Enter/Space unconditionally, so EVERY control inside a widget was dead to the keyboard: a 2.5.7 fix had broken 2.1.1. Also fixed a second-pickup bug that overwrote the first widget's saved origin. NOT MENTIONED IN ANY TICKET COMMENT - the dev 08-12 re-test list predates it, so a pass following only that list would have missed the half that repaired a regression the fix itself introduced."
+  },
+  "deploy_gate": {
+    "status": "CLEARED - and proven positively, which the 2026-08-06 pass could not do",
+    "ancestry": "c607552f6 and 761e2ac35 both in v2.5.0 (324cd9b09), neither in v2.4.0",
+    "discriminating_marker": "The cancel announcement literal: v2.4.0 = 'returned to its original position.' vs v2.5.0 = 'returned to its original position and size.' Served vc-shell-vendors22260.js carries the v2.5.0 form x1 and the v2.4.0 form x0.",
+    "facade_note": "vc-shell-framework22260.js (113 KB) carries 0 of all six markers; vc-shell-vendors22260.js (771 KB) carries all six. The -framework chunk is a re-export facade - grepping it reads as 'fix absent' and manufactures a false REOPEN.",
+    "why_08_06_was_blocked": "That pass could only argue from build/commit ordering plus sibling-PR #282 markers, because recordPlacementFromNode is module-local (name-mangled) and DashboardWidgetPlacement is a TS type (erased). The announcement literal is the marker it lacked.",
+    "pr_303_marker": "NONE - #303's change is a bare expression (event.target !== event.currentTarget) with no string literal. Established by ancestry and verified BEHAVIOURALLY live (section B)."
+  },
+  "unit": {
+    "green": "101 passed (101), 4 files, scope shell/dashboard/draggable-dashboard, cwd=framework/",
+    "guard_probe": "Reverted ONLY GridstackDashboard.vue:342 (the #303 guard) -> 4 failed / 97 passed. The guard IS genuinely pinned - a change from VCST-5664/5680/5667 this session, where the guard or seam had no coverage at all.",
+    "test_quality_finding_1_vacuous": "2 of the 7 it.each rows are VACUOUS: select/ArrowDown and textarea/ArrowLeft PASS with the fix reverted, because arrow keys are already inert while the widget is not grabbed. They assert nothing about the guard they appear to cover.",
+    "test_quality_finding_2_grouping_dependent": "Of the 5 rows that detect the bug in isolation, only 3 fail when run as a group, and WHICH 3 changes: whole file -> button/input/tabindex; the 7 rows alone -> button/input/link. Effective detection strength as CI runs it is 3 rows, not the 7 the table implies. Still catches the regression, so a test-quality issue rather than a shipping risk. MECHANISM UNDETERMINED - the inner-control mocks ARE mockClear-ed in beforeEach, so mock accumulation is ruled out; deliberately not over-claimed.",
+    "worktree": "restored; git diff --quiet origin/main -- framework/ clean; re-run 101/101"
+  },
+  "ac_analysis": {
+    "story_acs": 4,
+    "weak_acs": 0,
+    "gap_acs_added": 0,
+    "impl_coverage": {
+      "satisfied": 4,
+      "drift": 0,
+      "contradicts": 0,
+      "not_found": 0
+    },
+    "conditions_total": 16,
+    "conditions_with_evidence": 15,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 93.8,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "per_ac": [
+      "AC1 widgets reachable by Tab, reordered AND resized without a pointer - MET (A1-A6, C1: 5/5 Tab-reachable at tab indices 20/23/28/34/42 of 45)",
+      "AC2 position and size changes announced to AT - MET, but with defects: Bug 2 (a refused MOVE is announced) and Bug 5 (spurious announcement on load); announcements are hardcoded English (Bug 7)",
+      "AC3 layout persists after a keyboard-driven change, same as after a drag - MET (A4, A5, C3; localStorage key vc-dashboard-layout now carries w/h, the #283 change)",
+      "AC4 axe wcag22aa reports no 2.5.7 violation - MET, with the caveat that SC 2.5.7 has NO automated axe rule, so a clean scan is not evidence; the keyboard walk is"
+    ]
+  },
+  "total_cases": 16,
+  "passed": 15,
+  "failed": 0,
+  "blocked": 0,
+  "partial": 1,
+  "checklist_results": {
+    "A_resize_and_persistence_pr283": {
+      "A1": "PASS - Shift+ArrowRight x3: gs-w 6->7->8->9 (px 832->971->1109->1248). No sticking at 7. Neighbour pushed orders (6,0)->(6,6).",
+      "A2": "PASS - from 9x6, Shift+ArrowDown -> 9x7. Width held at 9, no snap-back to 6. Axes independent.",
+      "A3": "PASS - clamped at 2x2. Refused resize is SILENT on both axes (width: 2 further presses produced no announcement; height: 5 presses yielded only 4 announcements).",
+      "A4": "PASS - keyboard-resized to 2x2, dropped, full reload -> still 2x2 (px 277x160).",
+      "A5": "PASS - mouse drag of .ui-resizable-se: 2x2 -> 2x3, localStorage h:3, survived full reload. THIS IS THE PATH THAT NEVER WORKED BEFORE #283.",
+      "A6": "PASS - (0,0) 6x6 -> (2,0) 8x7 -> Escape -> back to (0,0) 6x6, neighbours reverted, localStorage unchanged."
+    },
+    "B_inner_control_access_pr303": {
+      "B1": "PASS - Enter on the 7D button inside orders: aria-pressed flipped 30D=true -> 7D=true, widget NOT grabbed, position unchanged. The 2.1.1 regression is fixed.",
+      "B2": "PASS - Space on role=button 'Show/Hide Columns' inside rating-reviews opened the column panel; widget not grabbed.",
+      "B3": "PASS - widget grabbed, focus moved to an inner button, ArrowLeft -> gs-x stayed 6, no announcement, widget still grabbed. The agent used ArrowLeft not ArrowRight because at x=6 w=6 in a 12-col grid ArrowRight has no room and would have been a vacuous test.",
+      "B4": "PASS - A picked up at (6,6), moved to (5,6), then B picked up WITHOUT Escape -> A restored to (6,6), B grabbed. The overwritten-origin bug is fixed."
+    },
+    "C_original_acs": {
+      "C1": "PASS - 5/5 Tab-reachable, all tabindex=0 + role=listitem + descriptive label, visible focus ring.",
+      "C2": "PASS - announcements report the LANDED row. Strongest case: quotes at y=9, ArrowUp requested y=8 but it SWAPPED to y=3, announced 'row 4' (= landed 3 + 1).",
+      "C3": "PASS - key vc-dashboard-layout, one entry per widget WITH w/h present; same shape on the mouse path.",
+      "C4": "PASS with pre-existing findings - axe-core 4.12.1 incl. wcag22aa: 1 violation, color-contrast (serious, 4 nodes: .vc-environment-banner__label 2.79:1, .vc-user-info__role 2.41:1, 2x dashboard-stat-item__value--success 4.13:1) + 30 incomplete. ZERO keyboard/ARIA/focus/name-role-value violations."
+    },
+    "D_dev_flagged_gaps": {
+      "D1": "PARTIAL - keyboard arm PASS (offers (0,3)+ArrowUp -> (0,0) pushing products to (0,6); quotes (0,9)+ArrowUp -> (0,3) swapping offers to (0,9); widening products 6->9 pushed orders and rating). Mouse arm BLOCKED by tooling: Playwright dragTo produced no layout change because gridstack needs many incremental mousemove events dragTo does not send. NOT a product defect - the A5 resize drag worked because a single delta suffices there.",
+      "D2": "PASS - full announcement string set captured via MutationObserver (text auto-clears ~1000ms, so a naive read-after-keypress returns empty). Structural only; no NVDA/JAWS available."
+    }
+  },
+  "announcement_strings_observed": [
+    "Last products picked up. Use arrow keys to move, Shift and arrow keys to resize, Enter to drop, Escape to cancel.",
+    "Last products moved to column 3, row 1.",
+    "Last products resized to 8 by 7 cells.",
+    "Last products dropped at column 1, row 1.",
+    "Move cancelled. Last products returned to its original position and size.",
+    "Widget positions updated.  (fires on page load, no user action - Bug 5)"
+  ],
+  "bugs_found_pending_confirmation": [
+    {
+      "id": "Bug 1",
+      "severity": "Medium",
+      "provenance": "IN-SCOPE",
+      "title": "Escape does not visually revert a move that displaced a neighbour",
+      "detail": "Single pickup: offers (0,3) -> Enter -> ArrowUp -> offers (0,0), products pushed to (0,6) -> Escape. The announcement claims 'Move cancelled. Offers returned to its original position and size.' but the DOM stays at offers (0,0) / products (0,6). localStorage still holds the pre-pickup layout, so nothing is corrupted and a reload repairs the view - the user is simply told the cancel worked when the screen shows otherwise. THIS REFUTES #303's STATED RATIONALE for not snapshotting the layout ('real gridstack compaction is reversible ... verified live across five widgets'). A6 passes because its horizontal move+resize happens to revert cleanly.",
+      "evidence": "12-BUG-escape-did-not-revert-swap.png"
+    },
+    {
+      "id": "Bug 2",
+      "severity": "Low-Medium",
+      "provenance": "IN-SCOPE",
+      "title": "A refused MOVE is announced (a refused RESIZE is correctly silent)",
+      "detail": "products at (0,0), ArrowDown refused by gravity, gs-x/gs-y unchanged, yet 'Last products moved to column 1, row 1.' fired - twice. Same on offers. But ArrowLeft at x=0 was silent. The 'did anything change?' guard compares the CLAMPED REQUEST rather than the actual before/after. This is exactly the principle A3 requires, simply not applied to the move path. A screen-reader user pressing into a boundary hears a move that never happened."
+    },
+    {
+      "id": "Bug 3",
+      "severity": "Medium-Low",
+      "provenance": "IN-SCOPE",
+      "title": "A widget stays 'Picked up' after focus leaves it",
+      "detail": "Pick up a widget, Tab out until activeElement is body; the widget keeps the --grabbed class and the 'Picked up...' aria-label. Escape from outside does nothing; recovery needs Shift+Tab back to that exact grid item. This is the logical consequence of #303's correct 'only act when the grid item owns the event' guard, with no focusout cancel to pair with it.",
+      "evidence": "09-BUG-stuck-grabbed-after-focus-left.png"
+    },
+    {
+      "id": "Bug 4",
+      "severity": "Medium",
+      "provenance": "OUT-OF-SCOPE incidental",
+      "title": "Focus drops to body when a dashboard range toggle is activated (WCAG 2.4.3)",
+      "detail": "Keyboard: Enter on 7D sets 7D=true but activeElement becomes body. Mouse: same on 3M. The toggle group re-renders and the focused node is replaced with no focus restoration, so the next Tab restarts from the top of the document. Compounded by gridstack's item-level mousedown preventDefault suppressing focus (expected for drag support). Adjacent to this fix, not caused by it."
+    },
+    {
+      "id": "Bug 5",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "title": "Spurious 'Widget positions updated' announcement on page load",
+      "detail": "Fires on first load with no user action, when the persisted layout needs normalising on init (the save triggers the announcement). Later loads whose stored layout already matched were silent."
+    },
+    {
+      "id": "Bug 6",
+      "severity": "Medium",
+      "provenance": "IN-SCOPE",
+      "title": "The public wrapper still ships the misleading grid aria-label, and a test pins it",
+      "detail": "Live grid container: aria-label='Dashboard widgets. Drag widgets to rearrange.' - the pointer-only wording #272 explicitly claimed to have removed. Only the INNER component default was updated (GridstackDashboard.vue:193); DraggableDashboard.vue:40, the PUBLIC wrapper consumers render, is unchanged across v2.3.0/v2.4.0/v2.5.0. Both strings ship in the bundle and neither app chunk carries the old one, so this is a framework default, not a Vendor Portal override. It survived three PRs because DraggableDashboard.test.ts:67 PINS the stale string. So the first thing a screen-reader user hears on reaching the grid is still an instruction to do the one thing they cannot do."
+    },
+    {
+      "id": "Bug 7",
+      "severity": "Low-Medium",
+      "provenance": "IN-SCOPE",
+      "title": "Every dashboard announcement and label is hardcoded English - no i18n",
+      "detail": "GridstackDashboard.vue imports no i18n at all (no useI18n, no $t, no t-call). All 8 announcement/label strings are bare literals. The framework ships locales/en.json AND locales/de.json (399 leaf keys), and it is not house style - vc-blade-navigation-new.vue does use $t for its aria-label. NOT covered by the VCST-5668 sweep, which is scoped to ui/ components plus SchedulerMonthView and SidebarHeader. Bears on AC2: changes are announced, but not in the user's language. Live localization was NOT verified (no language switch performed); the source read is decisive on its own."
+    }
+  ],
+  "not_bugs_verified_before_reporting": [
+    "The localStorage/DOM mismatch after a keyboard drop (displaced neighbours written late) SELF-HEALS on reload and the visible layout is identical before and after - no user-visible defect.",
+    "The 7D/30D/90D and 3M/6M/12M toggles being disabled on first paint is the data-loading state; they enable once data arrives.",
+    "An inert Shift+arrow would have been CORRECT under resizable=false (the prop defaults to false and is set by the Vendor Portal, a different repo). Resize turned out to be enabled, so A1-A6 ran; the agent was instructed mid-run to report BLOCKED rather than FAIL had it not been."
+  ],
+  "corrections_issued_this_run": [
+    "RETRACTED my own source finding that 'the resize affordance is undiscoverable'. The pickup announcement DOES say 'Shift and arrow keys to resize' (GridstackDashboard.vue:281-283, a multi-line backtick template literal my single-line grep pattern never matched). The live capture caught it. What survives is far weaker: the grabbed-state aria-label omits resize while the announcement includes it - a cosmetic inconsistency, not filed.",
+    "SHARPENED my check of #303's 'a test ... has been removed' claim. No it-block is removed in either merged commit and no test in history mentions 'displaced'; a squash-merge could hide intra-branch churn, so the fair conclusion is that no coverage was lost relative to what shipped before. The substantive issue is the RATIONALE, which Bug 1 refutes."
+  ],
+  "evidence_integrity_note": "The 2026-08-04 REOPEN comment cites reports/tickets/Sprint26-15/VCST-5412/screenshots/VCST-5600-*.png. Those files are NOT recoverable: git log --all --name-only over that path returns no file matching 5600, and the VCST-5412 folder was deleted by commit cf3fa3c2. Retention does not explain it (tracked ticket folders prune at 30 days; 08-04 to 08-25 is 21). Nothing about the REOPEN is invalidated - the developer reproduced and fixed the defect independently, which is stronger corroboration than a screenshot - but the tracker carries a dangling citation.",
+  "regression": {
+    "suites": [],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": "vc-shell / Vendor Portal is a separate product with NO regression suites in this repo - none of the 123 suites covers it. Substituted: the framework's own vitest suites (101/101 in scope) plus the live keyboard walk."
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_id": null,
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-5804",
+      "relationship": "sub-task",
+      "parent_or_linked_ticket": "VCST-5600",
+      "title": "Escape does not visually revert a keyboard move that displaced a neighbour",
+      "severity": "Medium"
+    },
+    {
+      "key": "VCST-5805",
+      "relationship": "sub-task",
+      "parent_or_linked_ticket": "VCST-5600",
+      "title": "DraggableDashboard still defaults to the misleading grid label, and a test pins it",
+      "severity": "Medium"
+    },
+    {
+      "key": "VCST-5806",
+      "relationship": "standalone",
+      "parent_or_linked_ticket": "VCST-5600",
+      "title": "Activating a dashboard widget range toggle loses focus to the page body (WCAG 2.4.3)",
+      "severity": "Medium",
+      "link": "Relates to VCST-5600"
+    }
+  ],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A - BL-UI-*/critical-ui-scope/storefront-selectors cover the storefront only; none cover vc-shell.",
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": [],
+    "skipped_reason": "No App Insights resource is configured for the Marketplace/Vendor Portal deployment - only APPINSIGHTS_*_BACKEND and _STOREFRONT (vcst-qa) exist. Correlation unavailable for this product."
+  },
+  "console": {
+    "in_window": "0 errors, 2 warnings on every navigation within the 15:13:02Z-16:24Z run window. The 2 warnings are the framework version banner and '[ai-agent-context] Cannot set context data: no blade id available'.",
+    "stale_history_excluded": "signalR 401s, /api/vcmp/security/seller/users 500s and sign-in failures timestamped 12:35-12:36Z and 14:56Z - ALL before the 15:13:02Z start, so leftover history from earlier sessions in the same profile, not live failures. Same stale-console effect settled on VCST-5673."
+  },
+  "teardown": "Dashboard fully restored to the run-start baseline and verified after a reload (products (0,0) 6x6 / orders (6,0) 6x6 / offers (0,6) 6x6 / quotes (0,12) 6x6 / rating-reviews (6,6) 6x6). Restored BY KEYBOARD - this dashboard has NO 'reset to defaults' affordance; the agent enumerated every control in main outside the widgets and found none. Screenshot 14-restored-original-layout.png.",
+  "coverage_limits": [
+    "D1 mouse arm BLOCKED by Playwright dragTo vs gridstack's incremental drag. A human mouse comparison is still needed to close it.",
+    "Screen-reader AUDIO not verified - no NVDA/JAWS. All D2 evidence is structural (live-region text + ARIA).",
+    "SC 2.5.7 has NO automated axe rule, so the clean axe result is not evidence for it; the section A/B keyboard walk is, and on that basis 2.5.7 is satisfied.",
+    "Announcement localization not verified LIVE (no language switch). The source read is decisive on its own - the component imports no i18n at all.",
+    "Cmd+I / macOS chords not applicable; Windows host."
+  ],
+  "jira_transition": "Ready for test -> Testing (done, transition id 4, matched on to.name). TESTED pending user confirmation.",
+  "screenshots": "reports/tickets/Sprint26-17/VCST-5600/screenshots/",
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5600/",
+  "counts_note": "16 checklist items: A1-A6, B1-B4, C1-C4, D2 all PASS (15); D1 PARTIAL - its keyboard arm PASSES, its mouse-comparison arm is BLOCKED by a Playwright/gridstack tooling limit, not a product defect.",
+  "findings_recorded_as_notes_not_filed": [
+    "Bug 2 (Low-Medium) a refused MOVE is announced while a refused resize is correctly silent",
+    "Bug 3 (Medium-Low) a widget stays Picked up after focus leaves it; Escape from outside does nothing",
+    "Bug 5 (Low) spurious Widget positions updated announcement on page load",
+    "Bug 7 (Low-Medium) every dashboard announcement and label is hardcoded English, no i18n import at all — candidate to join the VCST-5668 aria-label sweep, which does not currently cover shell/dashboard/"
+  ]
+}

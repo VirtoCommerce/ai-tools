@@ -54,3 +54,26 @@ Price integrity on the revenue path. A shopper can check out at a price the merc
 ## Note on the failing cases
 
 Independently of this defect, all six cases name **no product** (`[ACT] add product to cart`, no `@td()`) and carry hardcoded before/after prices that contradict each other across cases ($10→$15, $20→$15, $25→$18) — the runner had to pick WH-001 itself. They also mutate a shared fixture from a suite the runner batches 3-wide. Fixing the product bug will not make them deterministic; they need `@td()` fixtures and serialisation. Route: `/qa-review-tests suite 029 --fix`.
+
+## Re-verification attempt 2026-08-26 — NOT re-verified (price-write path unresolved)
+
+Backlog triage. The STR needs an admin price change, and the pricing write path could not be established on
+Platform `3.1061.0` within this pass:
+
+| Probe | Result |
+|---|---|
+| `GET /api/products/{id}/prices` (fixture `CF-001`, live price **$49.99**) | `200 []` — no rows, though the product is priced |
+| `POST /api/pricing/prices/search` (`productIds` / `ProductIds` / no filter) | **404** |
+| `POST /api/pricing/pricelists/search` | **405** |
+
+So the product's effective price is served from a pricelist this pass could not locate or write through.
+The repo's own seeders use `PUT /api/products/prices` with a `{productId, prices:[{pricelistId, …}]}` shape,
+which needs the owning `pricelistId` — and that is what the failing lookups were for.
+
+**Nothing was changed on the environment** — no price was written, so no restore was needed.
+
+**Status: still open, re-verification outstanding.** Neither re-confirmed nor cleared. This one is worth
+finishing: it is P1 on the revenue path, both price directions were confirmed originally, and the draft's
+isolating detail (catalog read path current while only the cached cart line is stale) makes it a narrow,
+checkable claim once a price can be written. Resolve the pricelist lookup first — likely
+`GET /api/pricing/pricelists` (the seeders use the `GET …?keyword=` form, not a `search` POST).

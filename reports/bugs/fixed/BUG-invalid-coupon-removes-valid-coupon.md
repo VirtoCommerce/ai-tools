@@ -29,3 +29,9 @@ The storefront coupon-apply flow is implemented as remove-then-add: it optimisti
 ## Fix Routing
 - **Repo:** `vc-frontend` — storefront coupon apply flow (cart coupon composable/component that sequences `RemoveCoupon`/`ValidateCoupon`/`AddCoupon`).
 - **Layer:** frontend. Reproduce as a vitest test on the coupon-apply logic (validate-first ordering; no removal on invalid); a green fix keeps the prior coupon applied when the new code is invalid. Preserve BL-CART-003.
+
+## Resolution
+- **Fixed in:** `vc-frontend` `useCoupon.ts` › `applyCoupon()` — now **validate-first**. Live on vcst-qa at Theme **`2.56.0-pr-2451-8ba8-8ba8bd04`** (draft reproduced on Theme `2.53.0-pr-2368`). Tracker **VCST-5518 → Done** (2026-08-12).
+- **Same fix as its consolidation target** — this draft was `CONSOLIDATED → VCST-5518`, and both discovery paths (typed invalid code here; available-coupon card there) funnel through the one `applyCoupon()` root cause. Full evidence in the sibling: `reports/bugs/fixed/BUG-coupon-invalid-replacement-drops-working-coupon-VCST-5518.md`.
+- **Verified live:** 2026-08-26, backlog triage, playwright-chrome, `/cart` signed in. With a valid coupon applied (Discount −$2.25), submitting a fresh invalid code left the valid coupon **applied** and the discount **unchanged**, showing only an inline "This code is not valid". Network fired **only `ValidateCoupon`** — the `RemoveCoupon`-before-`ValidateCoupon` sequence this draft recorded (req 131 before 132) no longer occurs.
+- **Follow-up:** suite case **CART-015** (suite `028`) was written against this defect — re-run it to confirm the case itself is not now stale.

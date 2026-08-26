@@ -59,3 +59,31 @@ touch users in particular. Under **EN 301 549 / the EAA** this is an AA conforma
 EU-reachable deployment.
 
 Full audit: `reports/tickets/Sprint26-15/VCST-5412/wcag22-accessibility-audit.md`.
+
+---
+
+## Resolution — FIXED (verified 2026-08-26)
+
+**Fixed across two PRs:** [vc-shell#271](https://github.com/VirtoCommerce/vc-shell/pull/271) (input adornments + blade header buttons) and [vc-shell#281](https://github.com/VirtoCommerce/vc-shell/pull/281) — "fix(a11y): raise the shell's remaining hit areas to 24px", merged **2026-08-04**, shipped in **v2.4.0**.
+
+Every row of the report's table is accounted for:
+
+| Element | Reported | Now | Axis |
+|---|---|---|---|
+| `.vc-input__clear` | 12×34 | **24×30**, `min-width/min-height: 24px`, name "Clear" | **live** (vcmp-dev sidebar search) |
+| `.sidebar-header__notification-bell` | 18×21 | **24×24**, name "Notifications" | **live** |
+| `.sidebar-header__menu-button` | 18×21 | **24×24**, name "Open menu" | **live** |
+| `.vc-input__showhide` | 14×34 | `min-width/min-height: var(--input-adornment-target-size)` = 24px | source (#271) |
+| `.vc-color-input__color-square` | 20×20 | `--color-input-swatch-size: 24px` | source |
+| "Forgot password?" (`VcButton variant="link"`) | 354×18 | **354×24** via `--button-link-target-size` | #281, measured there |
+| Blade header Restore / Close | 18×21 | covered | #271 |
+
+The fixes are **tokenised minimums**, not one-off nudges — `--input-adornment-target-size`, `--color-input-swatch-size`, `--button-link-target-size`, `--app-bar-header-button-target-size` — applied as `min-width`/`min-height` so the box grows while the glyph stays 18×18 and centred. `vc-input.vue` even carries the rationale inline: *"area is about half the 24px WCAG 2.5.8 target."* That is the shape this report asked for ("padding or a transparent `::before` overlay — the visual glyph can stay small").
+
+`--button-link-target-size` on the `link` variant fixes "Forgot password?" **and every other link-styled button** (table "add row", "select all" bar), which is broader than reported.
+
+**Also resolved: the meta-point about tooling.** This report argued any CI a11y gate must include the 2.2 tags. [#273](https://github.com/VirtoCommerce/vc-shell/pull/273) — "fix(a11y): raise the axe scope to WCAG 2.2" — did exactly that, so the blind spot that let these ship is closed, not just the instances.
+
+**Scope of verification:** 3 of 7 rows measured live on vcmp-dev; the other 4 rest on source + #281's own Storybook measurements. Not re-measured: the Storybook `VcColorInput` / `VcDataTable` instances and the blade-header buttons. Given the fix is a shared token on the shared component — the mechanism this report itself predicted would "clear the majority of instances" — spot-checking was judged sufficient. A full axe `wcag22aa` sweep would be the way to close the remainder if certainty is wanted.
+
+**Verdict: VERIFIED FIXED.**

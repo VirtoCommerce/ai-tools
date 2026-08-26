@@ -55,3 +55,35 @@ Suite `043-google-analytics.csv` → **GA-033** asserts correct post-mutation va
 - **Component / module:** google-analytics module (`client-app/modules/google-analytics/events.ts`) + cart page payment-section mount logic (`client-app/pages/cart.vue`)
 - **RCA anchor:** `cart.vue` payment watcher — `watch([isValidPayment, paymentGatewayCode], …)` guarded by `analyticsLastSentPaymentCode`; watch sources omit `cart.total`/`selectedLineItems`, so cart mutations never re-trigger, and the code-only dedup short-circuits re-emits (see VCST-5198 comment for the snippet). Emitter `events.ts → addPaymentInfo` reads cart at call-time — correct; the defect is purely *when* it's called. `addShippingInfo`/`begin_checkout` share the pattern.
 - **Routing confidence:** HIGH
+
+---
+
+## Re-verification 2026-08-26 — STILL REPRODUCES (source axis)
+
+`client-app/pages/cart.vue@dev` — the payment watcher is byte-unchanged from the draft's RCA anchor:
+
+```js
+watch(
+  [() => isValidPayment.value, () => payment.value?.paymentGatewayCode],
+  () => {
+    ...
+    if (code && code !== analyticsLastSentPaymentCode.value) {
+      analytics("addPaymentInfo", { ...cart.value, items: selectedLineItems.value }, {}, code);
+      analyticsLastSentPaymentCode.value = code;
+    }
+  },
+  { immediate: true },
+);
+```
+
+Watch sources still omit any cart-total / line-item source, and the `code !== analyticsLastSentPaymentCode` dedup still short-circuits re-emits. `analyticsLastSentPaymentCode` is reset only on `cart.value?.id` change (a different cart), never on a mutation within the same cart.
+
+**One adjacent change worth noting — it does NOT fix this.** The sibling *shipping* watcher has since gained a third source and guard (`isCartUpdating`):
+```js
+watch([() => isValidShipment.value, () => shipment.value?.shipmentMethodOption, isCartUpdating], ...)
+```
+That only suppresses emitting *mid-update*; on completion the `option !== analyticsLastSentShippingOption` dedup still blocks the re-emit. So it confirms the dedup — not the watch sources — is the real blocker, and it is the half that must change. The payment watcher did not even receive that guard, so it is strictly behind its shipping twin.
+
+**Tracker:** VCST-5198 is **Draft / To Do, unresolved** (Low, last updated 2026-07-13). Never picked up.
+
+**Verdict: still open, P3-analytics.** Suite `043` GA-033 stays red.

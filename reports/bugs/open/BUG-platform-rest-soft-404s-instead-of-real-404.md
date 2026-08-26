@@ -3,6 +3,7 @@
 ## Status: CONFIRMED
 
 **Env:** vcst-qa @ Platform `3.1053.0-pr-3093-e27a-vcst-5618-e27ac905`
+**Re-confirmed:** 2026-08-26 on Platform `3.1061.0` (backlog triage, REST probe) — **still reproduces, unchanged**. `GET /api/order/customerOrders/{missing}` → `200` + `null` (4 B) · `GET /api/organizations/{missing}` → `200` + `null` · `GET /api/members/{missing}` → `200` + **0 bytes**. The `DELETE /api/carts` raw-SQL manifestations also still reproduce (see the related draft). Not filed to the tracker.
 
 ## Summary
 

@@ -87,3 +87,41 @@ whole menu as one accessible name.
 - A maximized blade leaves the ~100 controls it covers tabbable with no `aria-hidden` (WCAG 2.4.3).
 
 Full detail: `reports/tickets/Sprint26-15/VCST-5412/shell-a11y-report.md`.
+
+---
+
+## Resolution — FIXED (verified 2026-08-26)
+
+**Fixed by [vc-shell#267](https://github.com/VirtoCommerce/vc-shell/pull/267) — "fix(a11y): make menu items and settings triggers keyboard operable"**, merged **2026-07-30**, i.e. two days after this was written. Shipped in **v2.4.0** (2026-08-04); vcmp-dev is now past that.
+
+Verified on three independent axes.
+
+**1. Source (`vc-shell@main`).** `framework/ui/components/molecules/vc-menu/vc-menu-item.vue` now renders a real control:
+```html
+<button type="button" class="vc-menu-item__content"
+        :aria-current="active ? 'page' : undefined"
+        :aria-label="menuExpanded ? undefined : title" @click="$emit('click')">
+```
+`settings-menu-item.vue` (Theme / Language / Change password / **Log Out**) computes its tag — `s = computed(() => !slots.trigger ? "button" : "div")` — so it is a `<button>` unless a consumer supplies its own focusable trigger.
+
+**2. Deployed artifact.** The bundle actually served by vcmp-dev (`/apps/vendor-portal/vc-shell-vendors22260.js`) contains `_("button",{type:"button",class:Q(["vc-menu-item__content"…` — the fix is in the shipped build, not just on `main`.
+
+**3. Live measurement — the exact inverse of this report's table.** Signed in as `admin`, all 14 items measured:
+
+| item | tag | computed `tabIndex` |
+|---|---|---|
+| Home, Orders, Quote requests, Products, Marketplace Products, My Products, Offers, Import, Rating & Reviews, Communication, My Store, Profile, People, Fulfillment Centers | **`button`** | **0** |
+
+`buttonsInNav: 17`, `focusableInNav: 19` (was: 0 anchors, nothing focusable). A real backwards tab-walk lands on `Fulfillment Centers` — `tag: button`, `isMenuItem: true`, `outline: 2px solid` — and on the account trigger `admin Administrator` (246×54). Focus reaches the menu and is visible.
+
+**The secondary complaint is also addressed.** The scroll viewport keeps `tabindex="0"`, but that is now *correct*, not a defect: it gained real `@keydown.up/down → scrollByKey` handlers, making it a legitimately keyboard-scrollable region (axe's `scrollable-region-focusable`). It no longer swallows the menu as one accessible name — it exposes `region "Scrollable content"`.
+
+**Related findings from the same run — status:**
+- `<html lang="">` empty → **FIXED** ([#274](https://github.com/VirtoCommerce/vc-shell/pull/274)); the served `index.html` is now `<html lang="en">`.
+- Focus dumped to `<body>` on state change → addressed by [#284](https://github.com/VirtoCommerce/vc-shell/pull/284), [#286](https://github.com/VirtoCommerce/vc-shell/pull/286), [#301](https://github.com/VirtoCommerce/vc-shell/pull/301), [#306](https://github.com/VirtoCommerce/vc-shell/pull/306) — **not independently re-verified here.**
+- Maximized blade leaving covered controls tabbable → [#284](https://github.com/VirtoCommerce/vc-shell/pull/284) ("isolate a maximized blade") — **not re-verified.**
+- Breadcrumb back button `button-name` → [#282](https://github.com/VirtoCommerce/vc-shell/pull/282) — **not re-verified.**
+
+The four related items are carried forward as unverified rather than closed with this file; they were never this report's subject and each deserves its own check.
+
+**Verdict: VERIFIED FIXED** for the reported defect (WCAG 2.1.1 / 4.1.2 primary navigation).

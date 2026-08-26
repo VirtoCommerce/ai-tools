@@ -53,3 +53,33 @@ is the lighter one in dark mode and the darker one in light mode.
 - Not reproducible via Lighthouse on this page — the Chrome DevTools MCP browser has no `--secrets`
   support and so cannot sign in to reach `/company/dashboard`; the ratios above were computed from
   captured pixels instead, which measures what a real user actually sees.
+
+---
+
+## Re-verification 2026-08-26 — STILL REPRODUCES, and the root cause is NOT "a single token choice"
+
+Re-measured live on **vcst-qa @ Theme 2.56.0-pr-2451** (this report used vcptcore-qa @ 2.55.0-pr-2400), signed in as a Sales Rep, `/company/dashboard` → **Edit layout**, light mode.
+
+**Independently reproduced, to within rounding of the original numbers:**
+
+| | This report | Re-measured 2026-08-26 |
+|---|---|---|
+| Light, vs stripe A | 1.75:1 | **1.79:1** |
+| Light, vs stripe B | 1.80:1 | **1.73:1** |
+
+Computed from live `getComputedStyle` values rather than sampled pixels, which is why they land a hair apart — the conclusion is identical, and it independently corroborates the original pixel sampling.
+
+**The mechanism is two-part, and this report attributes it to only one.** From the live DOM:
+- hint text token: `rgb(163,163,163)`, `font-size: 14px` (so the 4.5:1 normal-text threshold applies)
+- hatch stripes: `rgb(250,250,250)` / `rgb(245,245,245)`
+- **and the container carries `opacity: 0.7`** — `layout-stats.vue`: `&__parked-zone { @apply opacity-70; … }`
+
+Because the opacity applies to the *whole zone*, text and background are composited toward the page white **together**, which compresses the contrast between them. Effective rendered values are `rgb(191)` text on `rgb(252)`/`rgb(248)` stripes — and `rgb(189,189,189)` is exactly what this report sampled, confirming the mechanism.
+
+**Why this matters for the fix:** this report concludes *"this is a single token choice, not a theme-inversion bug"* and implies re-picking the text token is sufficient. It is not. Removing the opacity alone yields **2.42:1 / 2.31:1** — still failing both 4.5:1 and the 3:1 large-text floor. The token alone, under `opacity-70`, cannot reach 4.5:1 without going nearly black. **Both must change**: darken the hint token *and* stop applying `opacity-70` to a container holding load-bearing instructional text (apply it to the hatch background instead, e.g. via a `::before` layer, so the text is not dimmed with it).
+
+That reframing also answers the report's own observation that the hint is "load-bearing instructional text, not decoration" — the `opacity-70` is a decorative treatment applied to a non-decorative element.
+
+Dark mode not re-measured (this run was light-only); the source is shared, and light was already the worse of the two.
+
+**Verdict: still open, Medium — root cause enlarged.** VCST-5367 / vc-frontend PR #2400.

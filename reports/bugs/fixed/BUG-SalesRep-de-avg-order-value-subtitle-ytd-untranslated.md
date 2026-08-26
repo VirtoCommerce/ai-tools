@@ -27,3 +27,32 @@ Evidence: `reports/tickets/Sprint26-15/VCST-5586/screenshots/SR-CP-056-de-locali
 
 ## Fix Routing
 `vc-frontend` — `client-app/modules/sales-rep/locales/de.json`, the *Average order value* subtitle. Worth sweeping the other 12 locales for the same untranslated `YTD` / `MTD` acronyms, which appear in several statistics labels (`mtd_of_ytd` renders `"% of YTD"` in the same widget family).
+
+## Resolution
+- **Fixed in:** `vc-frontend` — `client-app/modules/sales-rep/locales/de.json`, `sales_rep.customer_profile.stats.per_order`. Tracker **VCST-5684 → Done** (2026-08-18).
+- **Verified:** 2026-08-26, backlog triage — **source axis** (`vc-frontend@dev`). The German subtitle now reads exactly the wording this draft proposed:
+
+  ```
+  was:  "Durchschnitt pro Bestellung (YTD)"
+  now:  "Durchschnitt pro Bestellung (seit Jahresbeginn)"
+  ```
+
+- **The 12-locale sweep this draft recommended was done.** A scan for a bare `YTD`/`MTD` token across all 13 locale files returns a hit in **`en.json` only** — which is correct, since those are English acronyms:
+
+  | Locale | `per_order` subtitle |
+  |---|---|
+  | de | Durchschnitt pro Bestellung (seit Jahresbeginn) |
+  | fr | Moyenne par commande (année en cours) |
+  | es | Promedio por pedido (año en curso) |
+  | it | Media per ordine (anno in corso) |
+  | pt | Média por pedido (ano atual) |
+  | pl | Średnio na zamówienie (od początku roku) |
+  | ru | Среднее за заказ (за год) |
+  | fi | Keskim. per tilaus (tänä vuonna) |
+  | no | Gjennomsnitt per ordre (hittil i år) |
+  | sv | Genomsnitt per order (hittills) |
+  | ja | 平均注文単価 (今年度) |
+  | zh | 平均每笔订单 (今年迄今) |
+
+- **`mtd_of_ytd` was fixed too** — the sibling this draft named as rendering `"% of YTD"` in the same widget family now reads `"{percent}% des Jahres"` in German, and the dashboard widget labels lost their acronyms as well (`orders_placed_ytd` → `"Bestellungen seit Jahresbeginn"`, `purchased_mtd` → `"Umsatz seit Monatsbeginn"`).
+- **Not re-checked live** — same reasoning as the sibling pluralization draft: the defect and the fix are both the locale string itself. Draft env was **vcptcore-qa**.

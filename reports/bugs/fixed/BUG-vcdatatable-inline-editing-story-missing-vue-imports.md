@@ -86,3 +86,27 @@ For completeness, 10 other stories log errors that are **not** defects:
   `BUG-vc-video-sandbox-blocks-youtube-playback.md`
 - 6 × `Layout/VcApp` — SignalR hub negotiation 404s because static Storybook has no platform backend;
   environmental, stories render fine (8–33 KB). Worth mocking to reduce noise, but not a defect.
+
+---
+
+## Resolution — FIXED (verified 2026-08-26)
+
+**Fixed by [vc-shell#269](https://github.com/VirtoCommerce/vc-shell/pull/269) — "fix(vc-data-table): import the lifecycle hooks the inline-editing story uses"**, merged **2026-07-30**, ten days after the PR #255 split that introduced it.
+
+**Source (`main`)** — line 2 now imports all three:
+```ts
+import { ref, onMounted, onUnmounted } from "vue";
+```
+
+**Live on the hosted Storybook** — the same URL from the STR now renders the demo:
+
+| Probe | Reported | Now |
+|---|---|---|
+| story root markup | **94 chars** (empty shell) | **9,346 chars** |
+| rendered content | none | `"Inline Editing with Validation / View mode - click Edit to start / Edit / Product Name / Price / Stock / Product A / $99.99 / 50 …"` |
+| product rows | 0 | **3** |
+| console errors | `ReferenceError: onMounted is not defined` + cascade | **0** |
+
+The 3-row product table with Edit controls is exactly the expected render described in this report.
+
+**Verdict: VERIFIED FIXED.**

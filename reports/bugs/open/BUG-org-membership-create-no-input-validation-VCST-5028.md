@@ -84,6 +84,29 @@ public async Task<ActionResult<OrganizationMembership>> Create([FromBody] Organi
 - Related but distinct: `BUG-org-scoped-maintainer-perms-not-honored-VCST-5028.md` (BUG-A) — that one is now code-fixed on `pr-135-402e`; this REST-validation defect is separate and still present.
 - Adjacent API gap (not this bug): `OrganizationMembershipSearchCriteria` has no `organizationId` filter (search is `userId`-only) — track separately as an enhancement, not a defect.
 
+
+## Re-verification 2026-08-26 — still reproduces, and is WORSE than recorded
+
+Backlog triage, Platform `3.1061.0`, admin token, org resolved live via `POST /api/members/search {memberType:"Organization"}`.
+
+| Input | Result |
+|---|---|
+| `userId` key **omitted** | **500** — leaks DB/table/column: `Cannot insert the value NULL into column 'UserId', table 'vcst-qa-platform_restored.dbo.CustomerOrganizationMembership'; column does not allow nulls.` |
+| `userId: ""` (empty) | **200 Created** — a membership row is persisted with `userId:""`, `organizationId:""`, `organizationName:null`, `status:null` |
+
+**New finding — the invalid row cannot be deleted.** `DELETE /api/customer/organization-memberships?ids=<id>` returns
+`500 {"message":"The value cannot be an empty string. (Parameter 'subject')"}`. So the missing input validation does not
+merely accept junk, it creates **permanently undeletable** rows: the same empty-string that passed the create path fails the
+delete path's own guard. That raises the severity case — this is data corruption, not just a lax 200.
+
+**Pre-existing evidence of the same:** a scoped search (`{userIds:[""]}`) returns `totalCount: 2` — one row is
+`f53d111ca6994c8a92b4362fe6ed0f8f` (attached to org `6fb516c1-07f3-4af4-be5e-35961e3f7993`, predating this session,
+presumably from the original 2026-06 investigation on `3.1037.0`), the other is `26e1bf58-5bdc-4fdc-961a-36aa243e1f4b`
+(created by this re-verification). **Both are undeletable via the API** and remain on vcst-qa; clearing them needs a DB-level
+fix or a platform-side change. Flagged rather than silently left.
+
+**Note on the tracker:** `VCST-5314` is still in **Draft** status — never picked up.
+
 ## Fix Routing (→ /qa-fix)
 
 - **Owning layer:** Layer 4 — REST

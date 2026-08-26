@@ -47,3 +47,36 @@ Contrast: the **max-stock** cap (CART-037) and **pack-size** (CART-055) paths bo
 ## References
 - REG-2026-06-11-1423 suite 028 CART-036 (now CART-036/CART-066) — evidence `screenshots/cart-036-invalid-input.png`
 - The generic toast here is the same non-actionable "something went wrong" pattern seen in over-stock/EUR summary states — track whether a shared client error-handler change addresses both.
+
+---
+
+## Re-verification 2026-08-26 — STILL REPRODUCES (source axis), and the RCA anchor is now exact
+
+The draft's anchor said "search vc-frontend for the line-item quantity stepper". It is pinned now, and the gap is **deliberate**, not missing:
+
+**1. The cart explicitly opts out of validation.** `client-app/shared/cart/components/cart-line-items.vue@dev` passes `disable-validation` to the quantity control:
+```
+<QuantityControl
+  :mode="$cfg.product_quantity_control"
+  :min-quantity="item.minQuantity"  :max-quantity="item.maxQuantity"  :pack-size="item.packSize"
+  hide-button  :model-value="item.quantity"  :name="item.id"
+  disable-validation
+  @update:model-value="$emit('change:itemQuantity', { itemId: item.id, quantity: $event })"
+/>
+```
+The min/max/pack-size props are supplied but validation is switched off, so the typed value is emitted straight up.
+
+**2. The stepper only normalizes *empty* and *zero*, never a decimal or a negative.** `client-app/ui-kit/components/organisms/quantity-stepper/vc-quantity-stepper.vue@dev`:
+```js
+function normalize() {
+  if (model.value === undefined && lastNonEmptyValue.value !== undefined) { update(lastNonEmptyValue.value); }
+  if (model.value === 0 && vcInputRef.value?.inputElement) { vcInputRef.value.inputElement.value = "0"; }
+}
+```
+`min` / `step` / `max` are consulted only by `checkIfOperationIsAllowed` / `calculateStepper`, i.e. **only on the +/− buttons**. The typed-input path bypasses them entirely — which is exactly why the field keeps `1.5`: nothing ever writes a valid value back over it.
+
+**3. Nothing guards it downstream either.** `useCart.ts@dev` `changeItemQuantityBatched(lineItemId, quantity)` forwards the raw number to the mutation and only `Logger.error`s the rejection — the generic toast.
+
+This also explains the contrast the draft noted: max-stock and pack-size produce clean inline messages because those arrive as **server** `validationErrors` rendered per line, whereas a decimal/negative is a hard mutation rejection with no `validationErrors` payload to render.
+
+**Verdict: still open, Medium.** No tracker item found. Anchor for the fix: remove `disable-validation` in `cart-line-items.vue`, or extend `normalize()` to clamp to `min`/integer/`step` on blur.

@@ -170,7 +170,14 @@ function substituteVars(s: string, vars: Record<string, string>): string {
 // so numeric (`>=`/`<=`), equality (`=`), and regex (`matches /…/`) predicates don't
 // choke on trailing `{...}` text. Single-brace, so it can't collide with `{{VAR}}`
 // substitution above.
-const PROVENANCE_SUFFIX_RE = /\s*\{(?:SPEC|BL|DOC|OBSERVED|HYPOTHESIS)\}\s*$/;
+// The tag is very often followed by a parenthetical justification note —
+// `... = "Rejected" {SPEC} (REST cross-layer confirmation ...)`. Anchoring on `{TAG}$`
+// alone left that note (AND the closing quote of the expected value) inside the
+// operand, so the predicate compared against `Rejected" {SPEC} (…)` and failed against
+// a correct actual of `Rejected`. 126 assertion lines across 12 suites mis-compared
+// this way. The optional trailing `(...)` group is therefore part of the suffix.
+const PROVENANCE_SUFFIX_RE =
+  /\s*\{(?:SPEC|BL|DOC|OBSERVED|HYPOTHESIS)\}(?:\s*\([\s\S]*\))?\s*$/;
 
 function stripProvenance(s: string): string {
   return s.replace(PROVENANCE_SUFFIX_RE, "").trim();

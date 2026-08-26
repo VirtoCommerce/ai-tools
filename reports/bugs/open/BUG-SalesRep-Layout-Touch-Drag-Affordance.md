@@ -72,3 +72,30 @@ tooling rule puts out of scope.
   since that is the part that is both decidable and currently failing.
 - The 32×32 controls are a separate, already-accepted observation (WCAG 2.2 AA 2.5.8 passes at 24×24;
   below this repo's stricter 44×44 heuristic; `VcButton xs` is the deliberate design spec) — not re-filed.
+
+---
+
+## Re-verification 2026-08-26 — STILL REPRODUCES (source axis)
+
+Both halves are unchanged in `vc-frontend@dev`.
+
+**The Sortable config** (`layout-region.vue`, lines 125–129) — including the comment explaining why the delay is deliberate:
+```js
+// SortableJS defaults to `delay: 0` and preventDefaults every touchmove once a tap registers, so
+// a swipe starting on a card drags instead of scrolling. `delayOnTouchOnly` exempts the mouse.
+delay: 200,
+delayOnTouchOnly: true,
+touchStartThreshold: 5,
+```
+
+**The instruction string** (`modules/sales-rep/locales/en.json`) still documents only the mouse gesture:
+```
+sales_rep.hub.layout.hint = "— drag a block by its handle to reorder it, or hide it with ✕."
+```
+No press-and-hold wording, and no separate touch variant anywhere in the file. Confirmed against the live edit bar, which renders: *"Keyboard: press space on a block to pick it up, arrow keys to move it, space to drop, escape to cancel."* — keyboard documented, touch not.
+
+The sibling placeholder strings share the problem: `empty_visible` / `empty_hidden` both say *"Drag a stat here to …"*, so the parked-zone affordance is mouse-worded too.
+
+**The report's own open question stays open.** Whether a real finger hold of 200 ms starts a drag is still unverifiable with the bound toolset, for the reason it gave: no touch/tap tool exists on any Playwright MCP server, and `browser_drag` is atomic and mouse-derived. That limitation has not changed, so this remains a hardware-manual check. The *decidable* half — that the instruction never mentions the hold — is re-confirmed from source and live DOM.
+
+**Verdict: still open, Medium (UX/discoverability).** VCST-5367 / vc-frontend PR #2400.

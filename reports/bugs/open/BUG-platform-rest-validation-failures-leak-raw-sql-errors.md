@@ -3,6 +3,7 @@
 ## Status: CONFIRMED
 
 **Env:** vcst-qa @ Platform `3.1053.0-pr-3093-e27a-vcst-5618-e27ac905`
+**Re-confirmed:** 2026-08-26 on Platform `3.1061.0` (backlog triage) — **still reproduces, unchanged**. `DELETE /api/carts?cartId=<guid>` → `500 {"message":"Incorrect syntax near ')'."}`; `DELETE /api/carts?ids=` → `500` still leaking the parameterized `UPDATE "Cart" SET "IsDeleted"='1' WHERE "Id"` statement. **New manifestation found the same day** — `POST /api/customer/organization-memberships` with `userId` omitted returns `500` leaking the DB name, table and column: `Cannot insert the value NULL into column 'UserId', table 'vcst-qa-platform_restored.dbo.CustomerOrganizationMembership'`. Not filed to the tracker.
 
 ## Summary
 
@@ -83,3 +84,22 @@ N/A (API-only, no UI).
 - **Component / module:** Pricing `POST /api/pricing/pricelists`; Catalog `POST /api/catalog/products`; Cart `DELETE /api/carts` (related)
 - **RCA anchor:** not pinned — needs source lookup for the shared exception-handling middleware (if any) vs per-controller validation
 - **Routing confidence:** LOW — multi-module; related to already-filed VCST-5314, recommend the same assignee/team triage both together
+
+## Additional manifestations (appended 2026-08-25)
+
+Two more endpoints in the same family, found incidentally while verifying unrelated defects. Neither is
+in the repro table above; both return **500 where 400 belongs**, so a regression test written against
+the listed endpoints alone would miss them.
+
+| Endpoint | Malformed input | Actual |
+|---|---|---|
+| `POST /api/platform/dynamic/properties` | body the handler cannot bind | **500** `"Cannot pass a null model to Validate/ValidateAsync. The root model must be non-null."` |
+| `DELETE /api/push-message?ids=<id>` | ids as a query param instead of the expected JSON body array | **500** (the correct body-array form returns `204`) |
+
+The push-message case is the cleaner illustration: the *same* delete succeeds as `204` when the ids
+travel in the body, so the 500 is purely an unvalidated-binding path, not a failing operation. The
+dynamic-properties message additionally names an internal validation contract in the response text.
+
+These widen the owning-layer question — the family now spans Pricing, Catalog, Cart, Platform
+dynamic-properties and Push-message, which strengthens the "shared exception-handling filter"
+hypothesis in Fix Routing over per-module handling.

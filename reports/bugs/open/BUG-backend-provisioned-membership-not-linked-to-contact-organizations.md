@@ -36,6 +36,35 @@ of the back-fill limitation already noted in `COMP-E2E-023`'s preconditions (pre
 without a membership row show `count=0` in the Admin widget) — here a membership row exists but the
 contact-side link doesn't.
 
+
+## Re-verification 2026-08-26 — still reproduces, unchanged
+
+Backlog triage, Platform `3.1061.0`, **`VirtoCommerce.Customer` 3.1022.0** — the draft reproduced on the
+pre-release `3.1021.0-pr-312-2257`, so the branch has since shipped as a release and the defect survived it.
+
+Re-run of the exact STR with a throwaway fixture (admin token, TechFlow org, all steps via REST):
+
+| Step | Result |
+|---|---|
+| `POST /api/members` (contact) | `200` — contact `f8425913-…` |
+| `POST /api/platform/security/users/create` (linked via `memberId`) | `200 {"succeeded":true}` |
+| `POST /api/customer/organization-memberships` (`org-employee`) | `200` — row returned |
+| `POST /api/customer/organization-memberships/search {userIds:[…]}` | `200`, **`totalCount: 1`** — the row exists |
+| **`GET /api/members/{contactId}`** | **`organizations: []`, `currentOrganizationId: null`** |
+
+That is the draft's assertion verbatim: the membership row is created and searchable, but the contact side
+is never linked, so the storefront — which resolves org context from `contact.organizations` /
+`currentOrganizationId` rather than the membership table — still sees a personal account.
+
+**Storefront half not re-checked.** This pass re-confirmed the API-layer root cause only; the downstream UI
+symptoms the draft lists (no org in header, no Corporate sidebar, `/company/members` redirecting to
+`/account/dashboard`) follow from `organizations: []` and were not re-walked in a browser.
+
+**Fixture hygiene:** the throwaway contact, security user and membership were all torn down
+(`204` / `succeeded:true` / `204`) — nothing left on the environment.
+
+**Still not filed to the tracker.**
+
 ## Test-case note (not filed separately)
 
 If the intent is to test the REST contract in isolation, the case should add an explicit

@@ -57,3 +57,83 @@ VCST-5600 — SOURCE-SIDE FINDINGS (verified in vc-shell main @ 324cd9b09)
   deletion is the mockUpdateWidgetPosition factory being refactored into a named
   applyMockWidgetPosition helper and re-wrapped. No assertion coverage was
   silently dropped; the change is additive (+89 lines of new tests).
+
+[5] THE 2026-08-04 REOPEN'S CITED EVIDENCE IS NOT RECOVERABLE
+  That comment ends: "Evidence: reports/tickets/Sprint26-15/VCST-5412/
+  screenshots/VCST-5600-*.png". Those files cannot be retrieved:
+    - `git log --all --name-only -- reports/tickets/Sprint26-15/VCST-5412`
+      returns NO file whose name matches 5600 -- so the VCST-5600-*.png
+      screenshots specifically were never committed.
+    - The VCST-5412 folder itself did exist and was deleted by commit cf3fa3c2
+      ("Sprint26-16"); Sprint26-15 and Sprint26-16 are both absent from the
+      working tree today (only Sprint26-17 remains).
+  Nothing about the REOPEN is invalidated -- its substance was independently
+  reproduced and fixed by the developer (PR #283), which is far stronger
+  corroboration than a screenshot. But the tracker now carries a dangling
+  evidence citation, and this run should not repeat that: all evidence for
+  THIS pass lives under reports/tickets/Sprint26-17/VCST-5600/.
+  Note the retention rule (.claude/rules/reports.md section 9): tracked ticket
+  folders age out via `reports:prune --target=tracked` at 30 days with the
+  current sprint skipped -- 08-04 to 08-25 is 21 days, inside that window, so
+  ordinary pruning does not explain the loss.
+
+===================================================================
+CORRECTIONS — issued after the live run returned contradicting evidence
+===================================================================
+
+[3] IS RETRACTED — "the resize affordance is undiscoverable" was WRONG.
+  The live run captured the pickup announcement:
+    "Last products picked up. Use arrow keys to move, Shift and arrow keys to
+     resize, Enter to drop, Escape to cancel."
+  Source confirms it at GridstackDashboard.vue:281-283 -- a multi-line BACKTICK
+  template literal. My grep pattern '"[^"]{15,}"' matched only single-line
+  double-quoted strings, so it never saw that string and I concluded resize was
+  announced nowhere. It IS announced, at exactly the moment it becomes usable.
+  What survives, much weaker: the grabbed-state ARIA-LABEL (:381) still reads
+  "Picked up. Arrow keys move, Enter drops, Escape cancels." -- omitting resize,
+  so the label and the announcement disagree. A cosmetic inconsistency, not a
+  discoverability failure. Not worth filing on its own.
+
+[4] IS SHARPENED — no test was removed, and the rationale for not adding one
+    is refuted by live evidence.
+  #303's message says "A test that asserted otherwise [Escape restoring
+  displaced neighbours] was modelling its own one-way mock and has been
+  removed." Checked: `git show` on both merged commits (c607552f6, 761e2ac35)
+  removes NO `it(`, and `git log --all -S displaced` over the dashboard tree
+  returns nothing. A squash-merge could hide churn within the branch, so the
+  fair conclusion is that NO COVERAGE WAS LOST relative to what shipped before.
+  The important part is the RATIONALE, which live testing refutes. #303 states:
+    "Escape restoring displaced neighbours [not changed]. Real gridstack
+     compaction is reversible -- moving a widget back pulls the others with it,
+     verified live across five widgets -- so no extra layout snapshot is
+     needed."
+  Live run, single pickup: offers (0,3) -> Enter -> ArrowUp -> offers (0,0) with
+  products pushed to (0,6) -> Escape -> DOM STAYS at offers (0,0) / products
+  (0,6), while the live region announces "Move cancelled. Offers returned to
+  its original position and size." Compaction is NOT reversible here. The
+  decision not to snapshot the layout rests on a premise that does not hold.
+  (localStorage still holds the pre-pickup layout, so nothing is corrupted and
+  a reload repairs the view -- this is a correctness-of-feedback bug, not data
+  loss.) => Bug 1 in the report.
+
+[6] NEW -- THE PUBLIC WRAPPER STILL SHIPS THE MISLEADING GRID LABEL, AND A TEST
+    PINS IT.
+  Live-observed grid container label: role="list",
+    aria-label="Dashboard widgets. Drag widgets to rearrange."
+  That is the pointer-only wording #272 explicitly claimed to have removed:
+    "The aria-labels were actively misleading. Both said 'Drag to reorder' /
+     'Drag widgets to rearrange' ... They now describe the keyboard route."
+  Only the INNER component's default was updated:
+    GridstackDashboard.vue:193 "Dashboard widgets. Drag a widget, or focus one
+      and press Enter to rearrange with the arrow keys."   <- fixed
+    DraggableDashboard.vue:40  "Dashboard widgets. Drag widgets to rearrange."
+                                                            <- STILL STALE
+  DraggableDashboard is the PUBLIC wrapper consumers render, so its default is
+  what reaches users -- confirmed live. Unchanged across v2.3.0 / v2.4.0 /
+  v2.5.0. Both strings are present in the served bundle (each x1), and neither
+  app chunk contains the old string, so this is a framework default, NOT a
+  Vendor Portal override.
+  It survived three PRs because DraggableDashboard.test.ts:67 PINS it:
+    expect(gs.props("ariaLabel")).toBe("Dashboard widgets. Drag widgets to rearrange.");
+  So the first thing a screen-reader user hears on reaching the dashboard grid
+  is still an instruction to do the one thing they cannot do.

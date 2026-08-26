@@ -61,3 +61,37 @@ Every `@vc-shell/framework` consumer with a draggable dashboard. Under **EN 301 
 an AA conformance failure for any EU-reachable deployment.
 
 Full audit: `reports/tickets/Sprint26-15/VCST-5412/wcag22-accessibility-audit.md`.
+
+---
+
+## Resolution — FIXED (verified 2026-08-26), with one residual split out
+
+**Fixed by [vc-shell#272](https://github.com/VirtoCommerce/vc-shell/pull/272) — "feat(a11y): rearrange dashboard widgets from the keyboard"**, merged **2026-07-30** (two days after this report), plus follow-ups [#283](https://github.com/VirtoCommerce/vc-shell/pull/283) (widget size as live state so keyboard resize accumulates) and [#303](https://github.com/VirtoCommerce/vc-shell/pull/303) (let keyboard events reach controls inside a widget). Shipped in **v2.4.0**. Tracked as VCST-5600.
+
+The implemented key map is exactly the "shell-level control surface" this report said gridstack could not provide:
+
+| Key | Action |
+|---|---|
+| `Tab` | focus between widgets |
+| `Enter` / `Space` | pick up, and drop |
+| Arrows | move one grid cell while picked up |
+| `Shift`+arrow | resize one cell |
+| `Escape` | cancel, restore original position |
+
+Arrow keys stay inert until a widget is explicitly picked up, so interactive content inside widgets keeps working — the design problem this report flagged when it noted widgets contain their own action buttons.
+
+**Live measurement on vcmp-dev — the inverse of this report's probe table:**
+
+| Probe | Reported | Now |
+|---|---|---|
+| `.grid-stack-item` `tabIndex` | **-1** on every item | **0** on every item |
+| item role | none | **`listitem`** (container `role="list"`) |
+| item accessible name | none | `"Last products, widget 1 of 5. Press Enter to pick up and rearrange with the arrow keys."` |
+
+Five widgets, all focusable and self-describing. Moves are clamped at grid edges and at the declared 2×2 `gs-min-w`/`gs-min-h`; each step is announced through the pre-existing `aria-live` region, and the picked-up widget is outlined so sighted keyboard users see the state too. #272 ships 8 unit tests (tab order, arrows inert before pick-up, one-cell move, no negative coordinates, Shift-resize, Escape restores, grabbed class lifecycle, layout persisted on drop).
+
+**Not verified here** — and #272 says so itself: its unit tests mock `useGridstack`, so they prove the key handling and the calls made, not that gridstack repositions the element. Collision behaviour on moving into an occupied cell still wants one manual pass. I did not perform it: it mutates the shared vcmp-dev dashboard layout, and `Escape` only restores within a single pick-up. The focusability and affordance claims above are measured; the *movement* claim rests on #272's tests.
+
+**One residual, split out rather than closed here.** #272's body states both aria-labels were rewritten. Only one was: the live container still announces `"Dashboard widgets. Drag widgets to rearrange."` — the exact "tells screen-reader users to do the one thing they cannot" wording the PR set out to remove. Filed as `BUG-vc-shell-dashboard-container-arialabel-still-says-drag-only.md`. It does not reopen this report: the *functionality* exists and the per-widget labels teach it.
+
+**Verdict: VERIFIED FIXED** (WCAG 2.5.7 — a non-drag alternative now exists and is reachable).

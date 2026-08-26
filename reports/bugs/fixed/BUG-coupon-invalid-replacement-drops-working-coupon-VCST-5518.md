@@ -87,3 +87,26 @@ Byte-identical on `dev` and the fix branch, so **pre-existing** — but newly lo
 - Found during VCST-5233 exploratory Save-for-Later testing (2026-06-12); confirmed with a dedicated single-scenario repro. Filed as **VCST-5518** (2026-07-21).
 - **Consolidates** `reports/bugs/BUG-invalid-coupon-removes-valid-coupon.md` (regression case CART-015 / suite 028, typed-`FAKECODE`-over-`FIXED5` path). Same defect, same `applyCoupon()` root cause — one ticket (VCST-5518) covers both discovery paths.
 - Related UX observation (separate, lower priority): while a coupon is applied, the single "Custom code" text input is `readonly` — a new *custom* code can't be typed until the current coupon is removed (available-coupon cards still apply/replace independently).
+
+## Resolution
+- **Fixed in:** `vc-frontend` — `client-app/shared/cart/composables/useCoupon.ts` › `applyCoupon()` was re-ordered to **validate-first** (fix option (a) proposed in this draft). Live on vcst-qa at Theme **`2.56.0-pr-2451-8ba8-8ba8bd04`** (draft reproduced on XCart `3.1020.0-pr-123-f160` / Theme `2.53.0`). Tracker **VCST-5518 → Done** (2026-08-12).
+- **Source confirmation** (`vc-frontend@dev`, same file the RCA named), now carrying an explicit regression comment:
+
+  ```ts
+  // The new coupon is validated BEFORE the applied one is removed, so an invalid code can't
+  // silently drop a working coupon (VCST-5518).
+  const isValid = await validateCartCoupon(trimmed);
+  if (!isValid) { setError({ code: trimmed, type: "invalid" }); return false; }
+  if (appliedCouponCode.value && !isSameCouponCode(appliedCouponCode.value, trimmed)) {
+    await removeCartCoupon(appliedCouponCode.value);
+  }
+  await addCartCoupon(trimmed);
+  ```
+
+- **Verified live:** 2026-08-26, backlog triage, playwright-chrome, signed in as `USER_EMAIL` on `/cart`.
+  1. Cart with 1 × Coca Cola Cherry Can — subtotal **$45.00**.
+  2. Applied valid coupon `@td(COUPON_LC_CASEFIDELITY.code)` (`agenttestlc062`, 5% off) → **Discount −$2.25**, Total **$51.30**, card flips to "Remove coupon".
+  3. **Without removing it**, applied a never-before-tried invalid code `FAKECODE99`.
+  - **Result:** `agenttestlc062` **still applied**, Discount **still −$2.25**, Total **still $51.30**; `FAKECODE99` shows inline "This code is not valid".
+- **Network — the smoking gun is gone.** The draft's evidence was `RemoveCoupon` firing *before* `ValidateCoupon`. The invalid apply now fires **exactly one request** — `ValidateCoupon(coupon:"FAKECODE99")` — and **no `RemoveCoupon` at all**. The preceding valid apply fired `ValidateCoupon(agenttestlc062)` → `addCoupon(...)` → `coupons:[{code:"agenttestlc062", isAppliedSuccessfully:true}]`, i.e. validate-then-mutate in both paths.
+- **Note:** confirmed at the UI **and** network layers, but this was a targeted re-verification, not a full `/qa-verify-fix` (no evidence.html, no tracker transition — VCST-5518 was already Done).

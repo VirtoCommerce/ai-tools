@@ -276,6 +276,13 @@ export const env = {
     EUR_USER_EMAIL: getEnvVar('EUR_USER_EMAIL', ''),
     EUR_USER_PASSWORD: getEnvVar('EUR_USER_PASSWORD', ''),
     ORG_USER_EMAIL: getEnvVar('ORG_USER_EMAIL', ''),
+    // Pairs with ORG_USER_EMAIL. Was missing while its EMAIL was exported, so every consumer
+    // reading env.ORG_USER_PASSWORD got undefined and authenticated with an EMPTY password —
+    // repeated calls then locked the shared TechFlow org-maintainer fixture out of the store
+    // (observed 2026-08-26). The grant fails as an opaque `user_cannot_login_in_store`, which
+    // reads as a store-access problem rather than a missing secret, so the real cause is easy
+    // to miss. Keep the *_EMAIL / *_PASSWORD exports symmetric.
+    ORG_USER_PASSWORD: getEnvVar('ORG_USER_PASSWORD', ''),
 
     // --- Deployment profile (written by /project-init; see scripts/lib/project-profile.mjs).
     // Tells every skill WHICH infrastructure this checkout targets. When

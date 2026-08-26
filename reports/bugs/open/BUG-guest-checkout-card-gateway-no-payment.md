@@ -40,3 +40,33 @@ The authenticated path keeps "Place order" gated until the bank-card form is val
 
 ## Cleanup note
 Guest order **CO260722-00003** remains on vcst-qa (guest email `agent-test-guest-5100@test.com`); no account/org/contact created. Cancel/delete via Admin SPA if desired.
+
+---
+
+## Re-verification 2026-08-26 — STILL REPRODUCES (source axis; root cause enlarged)
+
+Re-checked against `vc-frontend@dev` (env has moved to Theme `2.56.0-pr-2451`, Platform `3.1061.0` since the draft). **Both halves of the defect are byte-unchanged.** No live re-run was performed — deliberately: proving it live requires clicking "Place order", which creates a second unpaid ghost order, and the source contrast is conclusive.
+
+**The draft named only half the root cause.** There are *two* symmetric `isAuthenticated.value &&` prefixes, and the bug lives in the gap between them:
+
+1. `client-app/shared/checkout/components/billing-details-section.vue` — `paymentCardVisible`:
+   ```
+   return isAuthenticated.value && props.cart && canPayFromCart.value && currentPaymentMethod.value;
+   ```
+   → the card form is **never rendered** for a guest, so `registerPaymentProcessor()` is never called.
+
+2. `client-app/shared/checkout/components/place-order.vue` — `isDisabled` (as drafted, unchanged):
+   ```
+   (isAuthenticated.value && canPayFromCart.value && !isCanFinalizePayment.value)
+   ```
+   → the card-valid gate is **skipped** for a guest, so the button enables anyway.
+
+Confirmed in `usePayment.ts` (unchanged): `isCanFinalizePayment = isValidCardData && paymentProcessorInternal !== null`. With no form mounted the processor stays `null`, so `isCanFinalizePayment` is `false` — the gate would fire correctly, if only it were reachable. `finalizePayment` then uses optional chaining (`paymentProcessorInternal.value?.(order)`), so it **silently no-ops** instead of throwing — which is exactly why the original network trace showed zero requests to any Authorize.Net host rather than an error.
+
+**Why this is a hole, not a policy:** hiding the cart card form from guests looks intentional (guests would normally be routed to the post-order `/checkout/payment` step). But `canPayFromCart` is true for an `allowCartPayment` method, so no redirect step is scheduled either. The guest therefore gets **neither** payment surface and lands straight on `/checkout/completed`. The method selector still offers `allowCartPayment` gateways to guests, which is the upstream decision that opens the gap.
+
+**Fix shape (both must be considered together — fixing only `place-order.vue` leaves guests with an unreachable-but-enabled state):** either render the card form for guests too (drop prefix 1) *and* apply the gate to guests (drop prefix 2); or exclude `allowCartPayment` methods from the guest method selector so guests take the redirect/post-order path. Do not fix one prefix alone.
+
+Server-side rejection was **not** re-verified (would require creating the order). Treat "`createOrderFromCart` does not reject the missing authorization" as carried over from the original run, not re-confirmed.
+
+**Verdict: still open, still P0.** No tracker item found.

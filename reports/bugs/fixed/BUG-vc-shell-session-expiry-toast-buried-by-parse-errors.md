@@ -38,3 +38,24 @@ The login-page response was **fault-injected**: this platform cannot produce the
 ## Notes
 
 vc-shell / Vendor Portal is a **separate product** from the storefront — storefront `BL-*` / `BL-UI-*` invariants and regression suites do not apply. Oracle here is the ticket ACs plus WCAG 2.1/2.2 A/AA.
+
+## Resolution
+- **Fixed in:** `vc-shell` — `framework/core/interceptors/index.ts` (branch `main`), the exact file and function this draft's root-cause section named. Tracker **VCST-5688 → Done** (2026-08-25 — it went Done the day *after* the backlog audit that queued this draft).
+- **Verified:** 2026-08-26, backlog triage — **source axis**. The short-circuit this draft proposed is present, and its code comment cites the ticket by number:
+
+  ```ts
+  // A 200 that is really the login page must not reach the caller — it would be parsed
+  // as data. On a concurrent burst every request then raised its own
+  // "Unexpected token '<', "<!DOCTYPE "..." on a page already redirecting to login,
+  // burying the one message that says what happened (VCST-5688). Failing the request is
+  // the honest answer: it returned no data. All of them fail with the same error, so a
+  // consumer that does surface it shows one message, not one per request.
+  if (isLoginPageResponse && isSessionExpired()) {
+    throw new SessionExpiredError();
+  }
+  ```
+
+- **Matches suggested fix option 1** — "reject them with a recognisable *session expired* error the callers can swallow". A dedicated `SessionExpiredError` type now exists in `@core/utilities/sessionExpiration` alongside `isSessionExpired`/`markSessionExpired`, so callers can identify and swallow it rather than string-matching a parse failure.
+- **The pre-auth regression risk was handled.** The throw is gated on `isSessionExpired()`, which only the first response of the burst sets: *"while nobody is signed in a login page is an expected answer, not a session death, and failing those requests would break the pre-auth flow."* A `401` is still returned unchanged, since its body is not a document.
+- **Deployment not confirmed.** This is a source verdict on `main`; the draft reproduced against the deployed Vendor Portal at `@vc-shell/framework 2.4.0`, build-id `64804`. The framework cannot be A/B rebuilt (it needs `hotkey` ≥ 2.3.0 — see `reference_vc_shell_vendor_portal_testing`), so confirming the deployed bundle means measuring `dist/framework.js` on vcmp-dev. Worth doing if a live confirmation is wanted; it cannot change the source verdict.
+- **Reminder:** vc-shell / Vendor Portal is a **separate product** — storefront `BL-*`/`BL-UI-*` invariants and regression suites do not apply here.

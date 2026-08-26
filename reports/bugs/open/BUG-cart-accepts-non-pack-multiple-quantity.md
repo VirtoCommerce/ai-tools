@@ -32,6 +32,29 @@ Data-integrity / fulfillment defect: orders can be placed for quantities the pro
 ## Root cause (hypothesis)
 `changeCartItemQuantity` does not consult the product's pack-size / MOQ metadata when validating the requested quantity; the pack-multiple constraint is not enforced (nor rounded) server-side. The handler should reject or round the quantity to a valid pack multiple before persisting.
 
+
+## Re-verification 2026-08-26 — still reproduces, identical numbers
+
+Backlog triage, Platform `3.1061.0` (draft: `3.1043.0`). Pack product resolved live by code
+(`QA-PACK-001` — `packSize 6`, `minQuantity 6`, $9.99), no hardcoded id.
+
+```
+addItem quantity:6                    -> 200, quantity 6, extendedPrice 59.94, validationErrors []
+changeCartItemQuantity quantity:7     -> 200, quantity 7, extendedPrice 69.93, validationErrors []
+```
+
+Quantity **7** is still stored verbatim against a `packSize 6` product — not rejected, not rounded to 12,
+with **no** `validationErrors` and no soft warning. `extendedPrice 69.93` = 9.99 × 7 confirms the
+non-multiple quantity is fully priced through, exactly the figures this draft recorded. BL-CART-006 still
+unenforced at the xAPI write boundary. Test cart cleared afterwards.
+
+**The test-data note in this draft is now OBSOLETE — the defect is not.** It flagged
+`@td(PROD_PACK_SIZE)` as resolving to a stale GUID `49567c47…`; that alias has since been cleaned up and
+now resolves by **business key** (`product_id: PROD-103` → SKU `QA-PACK-001`) with no runtime GUID pinned in
+the committed base, per the all-envs-own-aliases rule. No cleanup action remains from this draft.
+
+**Still not filed to the tracker.**
+
 ## Test-data note (not part of the defect)
 `@td(PROD_PACK_SIZE)` resolves to a stale product GUID `49567c47…`; the live pack product during verification was `de380f81…` (QA-PACK-001, packSize 6, unit 9.99). Flag as a `test-data/aliases.<env>.json` cleanup for the pack alias — independent of this bug.
 

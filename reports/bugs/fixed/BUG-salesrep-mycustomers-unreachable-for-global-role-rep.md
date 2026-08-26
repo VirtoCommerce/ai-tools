@@ -32,3 +32,33 @@ Make the My Customers route reachable for any `sales-rep:access` holder regardle
 ## Notes
 - Only affects reps with **zero** org memberships. A rep who is also an org member reaches the page normally, so this is an edge of the provisioning model, not a general regression.
 - Related: suite `089-sales-rep-my-customers-storefront.csv` **SR-FE-013** (this case) and **SR-FE-021** (badge correctly hidden at count 0 — passes). Backend contract is fine (050m SR-GQL-009). Parent ticket: VCST-5469.
+
+---
+
+## Resolution — FIXED (verified live 2026-08-26)
+
+Fixed in `vc-frontend` shortly after this was written, and **exactly the way this report recommended** — the preferred option of the two it offered.
+
+**Source (`client-app/modules/sales-rep/routes.ts@dev`)** now carries the override plus a comment restating this report's own argument:
+```ts
+// `requiresOrganization: true`. But a sales rep serves organizations they don't belong to — their
+// … gate here lets them through (child meta overrides parent meta in vue-router); the `beforeEnter`
+const repRouteMeta = { requiresOrganization: false };
+```
+`repRouteMeta` is applied to `myCustomersRoute`, the hub `dashboardRoute`, and the customer-profile route, and a `guardSalesRep()` `beforeEnter` redirects to `Dashboard` only when the rep lacks `sales-rep:access`. So org membership no longer gates the route; the permission does — which is the correct axis, per this report's point that *serving* customers is independent of *being* a corporate member.
+
+**Live verification — the exact STR, with the exact fixture.** Signed in to vcst-qa as `agent-test-sr-nocustomers@example.com` ("Nora None", `SR_REP_NOCUSTOMERS`, zero org memberships) and navigated directly to `/company/my-customers`:
+
+| Probe | Reported | Now |
+|---|---|---|
+| final URL | `/account/dashboard` (redirected) | **`/company/my-customers`** — no redirect |
+| `<h1>` | never mounted | **"My customers"** |
+| empty view | unreachable | **present** |
+
+The "No customers found" empty state this report noted the code already shipped is now actually reachable for the accounts that need it.
+
+**Note on which build fixed it:** this was reported against theme `2.54.0-pr-2380` — i.e. PR #2380, the My Customers page itself. `routes.ts` was subsequently touched by #2383 (customer profile, 07-17) and #2388 (hub Dashboard, 07-24); I did not bisect which added `repRouteMeta`, only that `dev` has it and vcst-qa @ `2.56.0-pr-2451` serves the fixed behaviour.
+
+Suite `089` **SR-FE-013** should now pass and is worth re-running to pin it.
+
+**Verdict: VERIFIED FIXED.**

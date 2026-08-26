@@ -31,3 +31,19 @@ where previously no choice index was passed at all. The plumbing is in place; on
 
 ## Fix Routing
 `vc-frontend` — `client-app/modules/sales-rep/locales/*.json`, key `sales_rep.my_customers.table.orders_count` (and a sweep for sibling `{count} …` messages with the same shape, e.g. `new_customers`, `placed_today`, `new_this_week`). No component change needed.
+
+## Resolution
+- **Fixed in:** `vc-frontend` — `client-app/modules/sales-rep/locales/*.json`, key `sales_rep.my_customers.table.orders_count`. Tracker **VCST-5683 → Done** (2026-08-20).
+- **Verified:** 2026-08-26, backlog triage — **source axis** (`vc-frontend@dev`), the same axis that established the defect (the draft's root cause was "the message carries no `|`-separated plural forms", confirmed byte-identical on `dev` and the feature branch).
+- **All 13 locale files now carry plural forms**, with per-language form counts that match each language's actual plural rules — not a blanket 2-form copy-paste:
+
+  | Forms | Locales | Correct for the language? |
+  |---:|---|---|
+  | 1 | `ja`, `zh` | ✅ no grammatical plural |
+  | 2 | `de`, `en`, `es`, `fi`, `it`, `no`, `sv` | ✅ singular/plural |
+  | 3 | `fr`, `pt` | ✅ vue-i18n zero/one/many |
+  | 4 | `pl`, `ru` | ✅ Slavic zero/one/few/many |
+
+  `en` reads `"{count} order \| {count} orders"`; `ru` reads `"{count} заказов \| {count} заказ \| {count} заказа \| {count} заказов"` — the multi-category case this draft called out specifically.
+- **The sibling sweep this draft asked for was done too:** `new_customers` and `items_this_week` now carry plural forms in `en.json` alongside `orders_count`.
+- **Not re-checked live.** The defect was a locale-string shape, the fix is in that same string, and the call site was already passing the plural-choice index (PR #2408) — so source is the authoritative axis here. A live check would add confidence about the deployed bundle but cannot change the source verdict. The draft's env was **vcptcore-qa**, not the vcst-qa env used elsewhere in this triage pass.

@@ -73,3 +73,18 @@ without restoring.
 `reports/tickets/VCST-5367/screenshots/SR-CP-036-rail-unmounted-edit-mode-light.png` (edit-mode chrome,
 same build). No console errors accompany the failure — the state change is silent, which is what makes it
 hard to notice.
+
+---
+
+## Re-verification 2026-08-26 — STILL REPRODUCES (source axis); the "likely" root cause is CONFIRMED
+
+`client-app/modules/sales-rep/components/layout-region.vue@dev` line 133 is unchanged:
+```js
+onChoose: () => release(),
+```
+
+This report hedged its root cause as "likely". It is correct: `release()` clears `grabbedId`/`originIndex` without calling `onReorder(id, originIndex)`, unlike `cancel()`. `onChoose` fires on mousedown — before the handle's `blur` — so `onBlur` then sees `isGrabbed === false` and the restoring path never runs. The suggested remedy (call `cancel()`, or cancel before releasing) still applies verbatim.
+
+Not re-verified live: the failure is a state transition inside this one composable with no server involvement, and the source is identical, so a live re-run could not distinguish "still broken" from "broken again".
+
+**Verdict: still open, Medium.** VCST-5367 / vc-frontend PR #2400.

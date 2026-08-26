@@ -1,0 +1,134 @@
+{
+  "ticket": "VCST-5666",
+  "ticket_type": "TechDebt (canonical: Technical task)",
+  "flow": "feature-test",
+  "path": "fast",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-08-25",
+  "environment": "n/a - no deployed surface. This is a framework API-surface/DX ticket; the deliverable is a published library export, not user-facing behaviour.",
+  "routing_note": "TechDebt maps to the canonical Technical task, so ticket-routing.md sends it to feature-test FAST (Medium, single-layer). Zero comments and no attachments on the ticket, so the implementing change had to be recovered from vc-shell main - the same process gap as the other vc-shell tickets this sprint.",
+  "instrument_note": "NO live browser axis was run, deliberately - and this is a right-instrument call, not a skipped check. The deliverable is a composable exported from an npm package; it has no user-facing surface to drive. A bundle grep would also have been the WRONG instrument: nothing imports the primitive yet, so tree-shaking would drop it from any app bundle and its absence there would prove nothing. Instruments actually used: source inspection, the primitive's own unit tests, an export-chain trace to the public entry, npm publication check, and consumer-status check.",
+  "build": {
+    "platform": "n/a",
+    "theme": "n/a",
+    "relevant_modules": {
+      "@vc-shell/framework": "2.5.0 - PUBLISHED to npm and is the current `latest` dist-tag"
+    }
+  },
+  "agents_dispatched": [],
+  "product_scope_note": "vc-shell is a SEPARATE PRODUCT from the Virto storefront. BL-UI-*, critical-ui-scope.md, storefront-selectors.md and the 123 regression suites cover the storefront only and none cover vc-shell.",
+  "the_implementation": {
+    "commit": "c1de96972 - feat(composables): add useLatestRequest for latest-wins sequencing (#300), 2026-08-13 17:22 +0300",
+    "ancestry": "in v2.5.0, NOT in v2.4.0 (the version the ticket was filed against)",
+    "files": [
+      "framework/core/composables/useLatestRequest/index.ts (implementation)",
+      "framework/core/composables/useLatestRequest/index.test.ts (8 tests)",
+      "framework/core/composables/useLatestRequest/useLatestRequest.docs.md (149 lines)",
+      "framework/core/composables/index.ts:9 (barrel export)"
+    ],
+    "api": "begin() -> { isCurrent(), complete() }; invalidate(); dispose(); pending (readonly Ref<boolean>). Auto-dispose via onScopeDispose when created inside a scope."
+  },
+  "conditions": {
+    "total": 10,
+    "with_evidence": 10,
+    "detail": [
+      "C1 a latest-wins primitive exists in @core/composables - MET (useLatestRequest)",
+      "C2 reachable on the PUBLIC surface so modules can consume it - MET: framework/index.ts:356 `export * from \"@core/composables\"` -> core/composables/index.ts:9 `export * from \"@core/composables/useLatestRequest\"`",
+      "C3 provides the proposed operations begin/isCurrent/complete - MET, exact match to the ticket's sketch",
+      "C4 provides invalidate() for the selection-change case - MET",
+      "C5 provides dispose() for scope teardown - MET, plus AUTOMATIC onScopeDispose registration",
+      "C6 covers motivating scenario 1 (slow search response must not win) - MET, unit test 'lets the caller drop a slow response that a newer one superseded'",
+      "C7 covers motivating scenario 2 (row A then row B) - MET, unit test 'invalidate supersedes the in-flight request and clears pending'",
+      "C8 covers motivating scenario 3 (response after blade closed) - MET, unit tests 'keeps every request non-current after dispose' + 'disposes itself when the owning scope is stopped'",
+      "C9 documented - MET, 149-line docs page with when-to-use, an explicit when-NOT-to-use, and an honest 'discards, does not cancel' admonition",
+      "C10 shipped in a release modules can actually consume - MET, @vc-shell/framework@2.5.0 published to npm as `latest`"
+    ]
+  },
+  "ac_coverage_pct": 100,
+  "unit": {
+    "result": "8 passed (8), 1 file - core/composables/useLatestRequest, cwd=framework/",
+    "tests": [
+      "treats only the newest request as current",
+      "lets the caller drop a slow response that a newer one superseded",
+      "is pending while the newest request is in flight",
+      "stays pending when a superseded request completes before the newest one",
+      "ignores a repeated complete",
+      "invalidate supersedes the in-flight request and clears pending",
+      "keeps every request non-current after dispose",
+      "disposes itself when the owning scope is stopped"
+    ],
+    "coverage_note": "The 8 tests map 1:1 onto the ticket's three stated failure modes, plus the two subtle state rules the implementation comments call out (a superseded request completing must NOT clear `pending`; complete() is idempotent). That is unusually tight test-to-requirement traceability."
+  },
+  "notes": [
+    {
+      "id": "Note 1",
+      "severity": "informational - deliberate, rationale VERIFIED",
+      "title": "AbortSignal support is not implemented, and the stated reason is correct",
+      "detail": "The ticket offered an alternative shape 'with AbortSignal support so the in-flight request can actually be cancelled rather than just discarded'. The implementation declines it, documenting: 'the generated API clients build their own RequestInit and take no AbortSignal, so there is nothing to cancel through.' I VERIFIED that claim rather than accepting it: in core/api/platform.ts the generated methods take only domain parameters (e.g. signIn(authenticationType?, returnUrl?, storeId?, ...)) with no per-call options argument, each builds `let options_: RequestInit = { method, headers }` locally, and the file's single 'signal' occurrence (line 794) is an unrelated doc comment. The two extension points that do exist - the protected transformOptions(options) hook and the injectable http.fetch in the constructor - are both PER-CLIENT, not per-call, so neither could cancel an individual request. The rationale holds fully. Discarding rather than aborting is the correct call for this client generation."
+    },
+    {
+      "id": "Note 2",
+      "severity": "informational - deviation from the proposal, an improvement",
+      "title": "pending is exposed as a readonly Ref, not the proposed callback",
+      "detail": "The ticket sketched `useLatestRequest((pending) => { loading.value = pending; })` - a callback parameter. The implementation instead exposes `pending: Readonly<Ref<boolean>>`. This is more Vue-idiomatic (composes with watch/computed, no wiring boilerplate) and the ticket said 'roughly', so it is a sound deviation rather than a miss. Worth recording only so nobody reads the ticket later and thinks the callback form is missing."
+    },
+    {
+      "id": "Note 3",
+      "severity": "Low - observation, not a defect",
+      "title": "The primitive has ZERO consumers in the framework itself",
+      "detail": "grep across the whole vc-shell repo finds `useLatestRequest` only in the barrel export line and two CHANGELOG entries - no framework component or composable uses it. So its behaviour is exercised only by its own unit tests; there is no integration evidence in-tree. This is NOT an AC failure - the ticket asked for a primitive so MODULES stop reimplementing it, not for internal adoption. Recording it because the framework does contain blades of exactly the shape the ticket describes (search + pagination + details), so a follow-up audit for latent races in-framework may be worthwhile. I did not attempt to find such a race and am not claiming one exists.",
+      "correction_note": "My own first pass read this wrong: an initial grep for 'LatestRequest|latest-wins|latestRequest|isCurrent' matched useTableSelectionV2.ts and VcScheduler.vue and I briefly took that as dogfooding. Those matches were `isCurrentlySelected` and `isCurrentPeriod` - unrelated. Corrected before the verdict."
+    },
+    {
+      "id": "Note 4",
+      "severity": "Medium value - actionable, and time-sensitive",
+      "title": "The one motivating consumer (PR #159) is still OPEN and has not migrated - a window to PREVENT the duplication",
+      "detail": "The ticket's evidence base is vc-module-pagebuilder's own src/utilities/latestRequest.ts ('4 call sites across two modules', 'fixed a real pre-existing stale-response race in its asset library'). That file does NOT exist on vc-module-pagebuilder@dev: the shell app's src/ has no utilities/ directory, and two code searches returned zero. The reason is that PR #159 (feat(VCST-4933): add Page Builder Shared Components) is still OPEN - created 2026-07-31, merged_at null, last updated 2026-08-13 10:08. The framework primitive landed 2026-08-13 17:22, about seven hours AFTER #159 was last touched, and #159 has not moved since. So the duplication this TechDebt describes has never actually shipped - it is still prospective, sitting on an unmerged branch. That is the useful part: rather than paying the debt down later, #159 can be migrated to the framework's useLatestRequest BEFORE it merges, and the duplicate helper never enters the codebase. The reviewer already assigned to #159 is the same developer who wrote the primitive."
+    }
+  ],
+  "not_claimed": [
+    "No live browser run - see instrument_note. Not a skipped check; there is no user-facing surface for this ticket.",
+    "No bundle marker check - it would be the wrong instrument here (nothing imports the primitive, so tree-shaking removes it from app bundles; its absence would prove nothing). npm publication is the correct consumability gate and it passes.",
+    "I did NOT audit the framework for latent stale-response races (Note 3) - I only observed that the primitive has no in-framework consumers.",
+    "I did NOT verify the ticket's claim that the pagebuilder helper 'fixed a real pre-existing stale-response race in its asset library', because that code lives on an unmerged branch and is out of this ticket's scope."
+  ],
+  "regression": {
+    "suites": [],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": "vc-shell / Vendor Portal is a separate product with NO regression suites in this repo - none of the 123 suites covers it. Substituted: the primitive's own 8 unit tests plus the export-chain and publication checks."
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_id": null,
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "business_rules_note": "N/A - BL-UI-*/critical-ui-scope/storefront-selectors cover the storefront only; none cover vc-shell.",
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": [],
+    "skipped_reason": "Not applicable - no runtime execution took place, so there is no test window to correlate. (Separately, no App Insights resource is configured for the Marketplace/Vendor Portal deployment at all.)"
+  },
+  "jira_transition": "In-testing hop SKIPPED - no transition to an in-testing status exists for this issue type. Available transitions from Ready for test: To do, Cancelled, On hold, Need fixes (-> Reopen), Finish test (-> Tested). `Finish test` is reachable directly, so 5f has no in-testing precondition here. Discovered live; nothing hardcoded.",
+  "screenshots": "none - no live axis (see instrument_note)",
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5666/"
+}

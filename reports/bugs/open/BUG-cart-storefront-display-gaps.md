@@ -24,3 +24,24 @@
 
 ## Fix Routing
 - **Repo:** `vc-frontend` · **Layer:** storefront (frontend) · **Components:** saved-for-later/wishlist item (request `configurationItems`); coupon-widget link label; pack-size PDP messaging. Three small independent changes — split into separate PRs if preferred.
+
+## Re-verification 2026-08-26 — sub-finding 2 (CART-057) is FIXED; 1 and 3 not re-checked
+
+Backlog triage, Theme `2.56.0-pr-2451-8ba8-8ba8bd04` (draft: `3.1043.0` era), playwright-chrome on `/cart`.
+
+**2. Coupon-widget link has no accessible name — ✅ FIXED.** The link now exposes a proper accessible name;
+the a11y tree renders it as `link "View all coupons & promotions" → /account/coupons`, not the bare
+`link` + `/url` the draft recorded. WCAG 2.4.4 / 4.1.2 satisfied for this element. (Observed while
+verifying the cart-coupons a11y draft in the same session.)
+
+**1. Saved-for-later loses configuration detail — not re-checked** (needs a configured item moved to
+saved-for-later). Note the related memory `project_saved_for_later_config_display_not_implemented`: the
+configuration display on saved-for-later was never implemented, so this may be a **missing feature rather
+than a regression** — worth settling before filing.
+
+**3. No pack-size messaging on PDP — not re-checked.** Independent note from the same session: the PDP for a
+normal product rendered **no quantity stepper at all** in the price sidebar, so the PDP add-to-cart surface
+may have changed shape since this draft; re-check 3 against the current PDP rather than the draft's screenshot.
+
+This draft bundles three unrelated findings, which is why only one could be cleared. **Consider splitting it**
+— finding 2 is done, finding 1 may be by-design, finding 3 needs a fresh look.

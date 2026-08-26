@@ -1,6 +1,7 @@
 # Cart xAPI accepts a negative line quantity `[P1]` `[BL-CART-001]`
 
 **Env:** vcst-qa @ Platform 3.1043.0, Theme 2.53.0-pr-2368
+**Re-confirmed:** 2026-08-26 on Platform `3.1061.0` (backlog triage, xAPI probe) — **still reproduces**. `changeCartItemQuantity(quantity: -1)` returns `200` with the line item echoed at **`quantity: -1`** and only a soft `validationErrors[{errorCode:"PRODUCT_MIN_QTY", errorMessage:"Product quantity -1 is less than minimum 0"}]` — the mutation is *not* rejected. Caveat: this probe ran on the **anonymous** cart path (the token resolved `me.userName: "Anonymous"`), so the authenticated path in the original STR was not re-exercised. Not filed to the tracker.
 **Case:** CART-036 (suite 028) — split from the former combined CART-036 into CART-036/CART-065/CART-066 (one invalid-input class each); this defect is carried by the negative-quantity case, CART-036 (renumbered from CART-036a to keep lineage with this trace/report)
 
 ## Summary

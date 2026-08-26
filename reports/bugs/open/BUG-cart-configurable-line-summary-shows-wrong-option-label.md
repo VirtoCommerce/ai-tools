@@ -44,3 +44,29 @@ On `/cart`, a configurable product line's **summary header** shows the wrong sel
 
 ## References
 - REG-2026-06-11-1423 suite 030 CART-114, CART-116 (renumbered 2026-07-25 from CART-071, CART-073 — cases predating the rename, incl. historical `REG-*` artifacts, keep the old IDs) — evidence `screenshots/CART-071-FAIL-config-summary-label-mismatch.png`, `CART-073-FAIL-config-summary-label-mismatch.png`
+
+---
+
+## Re-verification 2026-08-26 — STILL REPRODUCES (source axis), and the root cause is NOT what the draft assumed
+
+The draft hypothesised "a shared/first-config value or a wrong index". Source says otherwise, and the correction matters because it changes the fix.
+
+**There is no indexing bug. The summary header is not rendering the configuration at all.**
+
+`client-app/shared/cart/components/cart-line-items.vue@dev` passes `with-properties` to `VcLineItems`, and those properties come from `client-app/core/utilities/line-items/index.ts@dev` `prepareLineItem`:
+```js
+const properties = Object.values(getPropertiesGroupedByName(item.product?.properties ?? []));
+...
+properties: properties.filter((p) => p.name !== PRODUCT_VARIATIONS_LAYOUT_PROPERTY_NAME).slice(0, 3),
+```
+That reads **`item.product.properties`** — the base configurable product's own catalog properties. Every line for the same configurable product shares the same `product`, so the header is **identical on every line by construction**. Meanwhile `configurationItems` is mapped per line (`"configurationItems" in item ? item.configurationItems : undefined`) and rendered separately by `<ConfigurationItems :configuration-items="item.configurationItems" :line-item-id="item.id">` — which is why the expandable Components list is correct.
+
+So "Color: Emerald green / Size: S" is not a stale or mis-indexed selection — it is the **base product's** static property values, truncated to the first 3 by `.slice(0, 3)`. The observable ("both lines show the same wrong value") is a perfect fit and needs no bug in the config path to explain it.
+
+**Consequence for the fix:** do not go looking for an index. Either suppress `with-properties` for `isConfigurable` lines, or render a configuration summary in that slot instead. A per-line "wrong value" fix would find nothing to correct.
+
+**Severity unchanged (Medium)** — data and totals remain correct — but note the mislead is systematic rather than intermittent: it will show base-product properties on *every* configurable cart line, in every cart, not just when two variants are present. The two-variant STR is what makes it *visible*, not what causes it.
+
+`VcLineItems`, `ConfigurationItems` and `prepareLineItem` are all unchanged on `dev` relative to the draft. No live re-run (source is decisive here and the render path is deterministic).
+
+**Verdict: still open, Medium, root cause corrected.** No tracker item found.

@@ -759,7 +759,7 @@ mutation {
 [DATA label=accept_invite] data.acceptOrganizationInvite.statusInOrganization = ""Approved"" {BL}","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""{{ORG_USER_ID}}""} confirms the throwaway org's membership row now reads status=Approved, and that ORG_USER's ORIGINAL org membership is unaffected (still present, unchanged)","errors[] non-empty (mutation rejected — regression on a new xAPI-only mutation); statusInOrganization remains ""Invited"" after a succeeded-looking response (accept had no effect); acceptOrganizationInvite succeeds for an organizationId the caller was never invited to (should error instead); ORG_USER's ORIGINAL org membership is altered by this case (setup/cleanup isolation failure)","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009","Draft"
-PRF-GQL-072,"[VCST-5281] xProfile — rejectOrganizationInvite Happy Path (Self-Service Reject)","GraphQL > xProfile > OrganizationMembership > Invite","Critical","BL-B2B-009","ECL-2.1; ECL-10.2","Runner-native. Same ORG_USER + throwaway-org pattern as PRF-GQL-071 (self-service mutations can only be exercised via a predefined [AUTH role=] alias). Status oracle: Rejected is a BlockingStatus and is in ReinvitableStatuses (a fresh inviteUser can re-invite this user later — see PRF-GQL-073 for the distinct Invited-is-NOT-reinvitable case).","org_id=@td(ORG_TECHFLOW.platform_id); password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+PRF-GQL-072,"[VCST-5281] xProfile — rejectOrganizationInvite Happy Path (Self-Service Reject)","GraphQL > xProfile > OrganizationMembership > Invite","Critical","BL-B2B-012","ECL-2.1; ECL-10.2","Runner-native. Same ORG_USER + throwaway-org pattern as PRF-GQL-071 (self-service mutations can only be exercised via a predefined [AUTH role=] alias). Status oracle: Rejected is a BlockingStatus and is in ReinvitableStatuses (a fresh inviteUser can re-invite this user later — see PRF-GQL-073 for the distinct Invited-is-NOT-reinvitable case).","org_id=@td(ORG_TECHFLOW.platform_id); password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
 [GQL-OP create_org]
 mutation CreateOrganization($input: InputCreateOrganizationType!) {
   createOrganization(command: $input) { id name }
@@ -794,8 +794,8 @@ Content-Type: application/json
 Body: {""userId"": ""{{ORG_USER_ID}}""}
 [REST-EXEC verify_rejected]","[ERRORS label=create_org] errors[] empty {OBSERVED}
 [ERRORS label=reject_invite] errors[] empty {SPEC} (vc-module-profile-experience-api#141 rejectOrganizationInvite(command: InputAcceptRejectOrganizationInviteType!): ContactType)
-[DATA label=reject_invite] data.rejectOrganizationInvite.statusInOrganization = ""Rejected"" {BL}
-[DATA label=verify_rejected] body.results[?organizationId={{ORG_ID}}].status = ""Rejected"" {SPEC} (REST cross-layer confirmation of the xAPI mutation's effect)","[REST] verify_rejected above IS the cross-layer check — REST search confirms the GraphQL mutation's write is visible outside the GraphQL layer, and that ORG_USER's ORIGINAL org membership is unaffected","errors[] non-empty (mutation rejected); statusInOrganization stays ""Invited"" (reject had no effect — masks as success but doesn't block org access); verify_rejected shows a status other than Rejected (xAPI/REST inconsistency); ORG_USER's ORIGINAL org membership is altered by this case","[AUTH role=ADMIN_DEFAULT]
+[DATA label=reject_invite] data.rejectOrganizationInvite.id is non-null {SPEC} (the mutation returns the caller ContactType. statusInOrganization is deliberately NOT asserted: it is a contact-scoped String on ContactType with NO organization argument (live introspection 2026-08-26), so it cannot express a per-membership status. The membership status is the real contract and is asserted by verify_rejected below.)
+[DATA label=verify_rejected] body.results[?organizationId={{ORG_ID}}].status = ""Rejected"" {SPEC} (REST cross-layer confirmation of the xAPI mutation's effect)","[REST] verify_rejected above IS the cross-layer check — REST search confirms the GraphQL mutation's write is visible outside the GraphQL layer, and that ORG_USER's ORIGINAL org membership is unaffected","errors[] non-empty (mutation rejected); the membership row stays ""Invited"" after the mutation (reject had no effect — masks as success but does not block org access); verify_rejected shows a status other than Rejected (xAPI/REST inconsistency); ORG_USER's ORIGINAL org membership is altered by this case","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009; checklist item 13/15","Draft"
 PRF-GQL-073,"[VCST-5281] xProfile — An Invited Membership Is NOT Reinvitable; resendOrganizationInvite Is the Only Path (State-Transition Boundary)","GraphQL > xProfile > OrganizationMembership > Invite","High","BL-B2B-009","ECL-2.1","Runner-native. Same ORG_USER + throwaway-org pattern. Status oracle: ReinvitableStatuses = {Rejected, Deleted} — an already-Invited membership is deliberately excluded. Establishes a fresh Invited membership, attempts a SECOND inviteUser for the same email+org (should be refused/no-op since Invited is not reinvitable), then confirms resendOrganizationInvite (the correct action for an Invited membership) succeeds instead. NOTE: InputInviteUserType has NO cultureName field (schema: storeId!, organizationId, urlSuffix, emails!, message, roleIds, customerOrderId) — omitted here after a schema-validation catch during authoring.","org_id=@td(ORG_TECHFLOW.platform_id)","[AUTH role=ADMIN_DEFAULT]
@@ -924,7 +924,7 @@ Body: {""userId"": ""{{USER_ID}}""}
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql075@yopmail.com]
 [REST DELETE /api/members?ids={{MEMBER_ID}}]","VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009; testing-checklist.md item 11","Draft"
-PRF-GQL-076,"[VCST-5281] xProfile — A REJECTED Caller Must NOT Enumerate Other Members PII via Organization.contacts","GraphQL > xProfile > OrganizationMembership > Authorization","Critical","BL-B2B-001; BL-B2B-009","ECL-10.2; ECL-3.1","Runner-native. Uses the SAME throwaway-org pattern as PRF-GQL-072. It must NEVER create a membership in a canonical org the actor already belongs to: POSTing organization-memberships for an existing (userId, organizationId) pair UPSERTS that row, silently overwriting BOTH its status and its roles, and Cleanup cannot put them back.
+PRF-GQL-076,"[VCST-5281] xProfile — A REJECTED Caller Must NOT Enumerate Other Members PII via Organization.contacts","GraphQL > xProfile > OrganizationMembership > Authorization","Critical","BL-B2B-001; BL-B2B-012","ECL-10.2; ECL-3.1","Runner-native. Uses the SAME throwaway-org pattern as PRF-GQL-072. It must NEVER create a membership in a canonical org the actor already belongs to: POSTing organization-memberships for an existing (userId, organizationId) pair UPSERTS that row, silently overwriting BOTH its status and its roles, and Cleanup cannot put them back.
 The org is created fresh and seeded with a SECOND contact — the victim whose PII must not leak. Without another member present, ""no PII returned"" would pass trivially against an empty org.
 Status oracle: Rejected is a BlockingStatus, so the caller must lose read access to that org entirely.","victim_email=AGENT-TEST-prfgql076-victim@yopmail.com; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
 [GQL-OP create_org]
@@ -968,13 +968,20 @@ query {
     }
   }
 }
-[GQL-EXEC enumerate_members_as_rejected]","[ERRORS label=create_org] errors[] empty {OBSERVED}
-[DATA label=reject_own_invite] data.rejectOrganizationInvite.statusInOrganization = ""Rejected"" {BL}
+[GQL-EXEC enumerate_members_as_rejected]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP verify_membership_rejected]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"": ""{{ORG_USER_ID}}""}
+[REST-EXEC verify_membership_rejected]","[ERRORS label=create_org] errors[] empty {OBSERVED}
+[DATA label=reject_own_invite] data.rejectOrganizationInvite.id is non-null {SPEC} (contact-scoped field, not per-membership — see verify_membership_rejected)
+[DATA label=verify_membership_rejected] body.results[?organizationId={{ORG_ID}}].status = ""Rejected"" {SPEC} (the membership row is the authoritative record of a rejected invite, per BL-B2B-012)
 [ERRORS label=enumerate_members_as_rejected] errors[] non-empty — a caller whose effective status in the queried org is a BlockingStatus MUST be refused {SPEC} (vc-module-profile-experience-api#141 PR review: neither ContactType.organizations nor OrganizationType.contacts performs any authorization, and neither reject nor revoke removes the org from contact.Organizations)
 [NULL label=enumerate_members_as_rejected] data.organization.contacts.items is null {SPEC} (no member collection returned to a rejected caller)","[REST] the membership row for {{ORG_USER_ID}} in {{ORG_ID}} reads status ""Rejected"" after the mutation, confirming the GraphQL write landed
 [REST] this case operates ONLY on {{ORG_ID}} — the actor canonical org membership (status and roles) must be untouched","items[] returns the victim firstName/lastName/emails to a Rejected caller — EXPECTED TO FAIL TODAY: this is the open P0 data-exposure defect, not a test bug
 errors[] empty AND items populated (no authorization performed at all)
-statusInOrganization stays ""Invited"" (reject had no effect)
+the membership row stays ""Invited"" after the mutation (reject had no effect)
 the actor canonical org membership status or roles change as a side effect (throwaway-org isolation regressed)","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/members?ids={{VICTIM_ID}}]

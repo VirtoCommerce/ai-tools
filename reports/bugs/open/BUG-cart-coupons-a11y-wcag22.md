@@ -36,6 +36,41 @@ Coupon widget passes the automated axe scan (no Critical/Serious violations insi
 3. Associate the visible "Custom code" label (`<label for>` or `aria-labelledby`); keep placeholder as hint only.
 4. Raise focus-outline alpha to ≥1.0 (opaque brown `#996C5A` gives ~2.9:1 border; pair with a light-offset ring) so the indicator clears 3:1.
 
+
+## Re-verification 2026-08-26 — 3 of 4 findings FIXED, finding 4 still open
+
+Backlog triage on Theme **`2.56.0-pr-2451-8ba8-8ba8bd04`** (draft measured `2.54.0-pr-2382-f17b`), playwright-chrome,
+signed in as `USER_EMAIL`, `/cart` with 1 line item. Tracker **VCST-5533 → Done** (2026-08-14) — but Done covered
+only part of what this draft recorded, so the draft **stays open, narrowed to finding 4**.
+
+| # | WCAG | Verdict | Evidence measured today |
+|---|---|---|---|
+| 1 | 4.1.3 Status Messages | ✅ **FIXED** | Applying a coupon now announces: **"Coupon agenttestlc062 applied. Discount $2.25, new total $51.30."** The live region is populated with code + discount + new total — exactly suggested fix 1. |
+| 2 | 3.3.1 Error ID / 1.3.1 | ✅ **FIXED** | On a failed apply the custom-code input carries `aria-invalid="true"` and `aria-describedby="v-6-2-2"` → **"This code is not valid"**. Both were `null` in the draft. |
+| 3 | 3.3.2 Labels / 1.3.1 | ✅ **FIXED** | The input's accessible name is now **"Custom code"** via `aria-labelledby="v-6-2-1"` (placeholder demoted to hint). The 4 readonly presets each carry a 2-id `aria-labelledby` (promo heading + description). |
+| 4 | 2.4.7 Focus Visible / 1.4.11 | ❌ **NOT FIXED** | Outline changed brown→red but stays low-alpha, so it still fails the 3:1 gate. |
+
+### Finding 4 — measured, still failing
+
+| Element | Outline (computed, `:focus-visible`) | Contrast vs white | Gate |
+|---|---|---|---|
+| "View all coupons & promotions" link | `srgb(0.898 0.129 0.129 / 0.4)`, 2px | **1.93:1** | ≥3:1 → FAIL |
+| preset "Apply coupon FREE" button | `srgb(0.898 0.129 0.129 / 0.3)`, 3px | **1.68:1** | ≥3:1 → FAIL |
+| *(draft's original brown `srgb(0.6 0.42 0.35 / 0.3–0.4)`)* | *for comparison* | *1.46–1.68:1* | *FAIL* |
+
+Ratios computed from the composited color (WCAG relative luminance), not eyeballed. The change from brown to red moved
+the link from ~1.68:1 to 1.93:1 — a real improvement, but **~35% short of the 3:1 requirement**, and the preset buttons
+did not move at all. Suggested fix 4 stands: raise alpha to 1.0 (an opaque outline) rather than re-tinting a
+transparent one — alpha is what caps the ratio here, not hue.
+
+**Timing gotcha for anyone re-testing finding 2:** the coupon error auto-clears after `COUPON_ERROR_TIMEOUT = 7000` ms,
+taking `aria-invalid`/`aria-describedby` with it. A measurement taken >7 s after the failed apply reads `null` for both
+and looks like the bug is still present. Measure immediately.
+
+**Not re-checked today** (unchanged from the draft, no reason to expect drift): the PASS-measured contrast/target-size/keyboard
+set, and the incidental out-of-scope `/cart` bugs (`aria-allowed-attr`, `image-alt`, `nested-interactive`) — those were
+never part of VCST-5533 and are still unfiled.
+
 ![Invalid-coupon error state](../tickets/VCST-4896/screenshots/coupon-widget-invalid-error.png)
 
 **PASS (measured, no action):** contrast — headings/codes 19.8:1, "Expires" 7.81:1, Apply icon 4.52:1, Remove icon 4.21:1, "View all" 6.41:1, error text 4.58:1; target size 26×26 ≥24 (2.5.8 AA); keyboard reachable/ordered/no-trap; color not sole channel (1.4.1). Lighthouse a11y (page) 90.

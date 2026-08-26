@@ -54,3 +54,42 @@ The `total`/`average` money fields format via a **culture supplied by the reques
 - Screenshot (UI renders € correctly): `reports/regression/REG-2026-07-28-1355/screenshots/EUR-bug-UI-renders-euro-correctly.png`
 - GraphQL evidence JSON: `reports/regression/REG-2026-07-28-1355/graphql-evidence/SR-GQL-062-*.json`, `SR-GQL-095-*.json`
 - Evidence package: `reports/tickets/SR-EUR-FMT/evidence-2026-07-28-1622/`
+
+---
+
+## Re-verification 2026-08-26 — STILL REPRODUCES (source axis)
+
+`vc-module-sales-rep@dev` is **byte-unchanged** along the entire path this report traced.
+
+`Schemas/StatisticsFieldHelper.cs` — no culture fallback was added:
+```csharp
+public static async Task<object> ToMoneyAsync(ICurrencyService currencyService, string currencyCode, string cultureName, decimal amount)
+{
+    var currencies = await currencyService.GetAllCurrenciesAsync();
+    var currency = currencies.GetCurrencyForLanguage(currencyCode, cultureName);
+    return new Money(amount, currency);
+}
+```
+
+`Schemas/CustomerOrderStatisticsPeriodType.cs` — both callers still hand it the raw request culture:
+```csharp
+.ResolveAsync(context => StatisticsFieldHelper.ToMoneyAsync(currencyService, context.Source.CurrencyCode, context.GetCultureName(), context.Source.Total));
+.ResolveAsync(context => StatisticsFieldHelper.ToMoneyAsync(currencyService, context.Source.CurrencyCode, context.GetCultureName(), context.Source.Average));
+```
+
+So a caller that omits `cultureName` still lands on Invariant, whose `CurrencySymbol` is `¤`.
+
+**Blast radius is wider than this report recorded.** `ToMoneyAsync` now has **six** call sites, not two:
+`StatisticsFieldHelper.cs`, `SalesRepTopSellerType.cs`, `CustomerCartStatisticsPeriodType.cs`,
+`CustomerOrderStatisticsPeriodType.cs`, `CustomerCartStatisticsComparisonType.cs`,
+`CustomerOrderStatisticsComparisonType.cs`. The report names the period types and `euroStats`; the two
+**comparison** types and `SalesRepTopSellerType` are also affected. That strengthens the recommended
+fix site — putting the fallback inside `ToMoneyAsync` fixes all six at once, whereas patching callers
+would now mean six edits.
+
+**Not re-verified live.** The API repro needs a `SALES_REP` password-grant token, and the source path is
+unchanged in full, so a live call could only confirm what the code already determines. Recorded as
+source-confirmed rather than claimed as an end-to-end re-run.
+
+**Verdict: still open, Low–Medium, API-only** (the storefront always sends `cultureName`, so the UI
+remains unaffected — that scoping still holds).

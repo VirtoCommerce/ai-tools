@@ -50,3 +50,50 @@ fixed on `pr-135-402e`.
   source diff to confirm — recommend `/qa-verify-fix` re-running the original VCST-5028 BUG-A repro on this
   exact build as the fastest confirmation.
 - Do NOT auto-merge — human review required.
+
+## Re-verification attempt 2026-08-26 — BLOCKED on the fixture, not yet re-verified
+
+**Module has moved:** `VirtoCommerce.ProfileExperienceApiModule` is now **3.1016.0** on vcst-qa; the draft
+reproduced on the pre-release `3.1015.0-pr-141-d7d8`. So the branch under test has been superseded by a
+released build and this draft genuinely needs a fresh run — it may well be fixed.
+
+**Why it could not be run:** the repro needs an **org-scoped org-maintainer token** for `TECHFLOW_ADMIN`
+(`test-emily.johnson-20260310@test-agent.com`, `@td(ORG_TECHFLOW.platform_id)`), and that grant could not be
+obtained. Root cause was in **this repo's own tooling, now fixed**: `config.js` exported `ORG_USER_EMAIL`
+but **not** its matching `ORG_USER_PASSWORD` (the value is present in `.env.local` and in `process.env` —
+it simply was not surfaced on the `env` object). Consumers reading `env.ORG_USER_PASSWORD` therefore
+authenticated with an **empty password**.
+
+The platform reports that as `400 {"code":"user_cannot_login_in_store","description":"Access denied. You
+cannot sign in to the current store"}` — which reads as a store-permission problem, not a missing secret,
+so it is easy to misdiagnose as the very `Forbidden`/access defect under test. **Do not mistake this for a
+reproduction of the bug.**
+
+> **Fixture impact, self-inflicted:** the repeated empty-password attempts **locked the shared account out**
+> (`lockoutEnd 2026-08-26T09:27:49Z`, `accessFailedCount` reset to 0 on lock). The lockout is temporary and
+> has since expired, but while it held, any concurrent suite using `ORG_USER` would have failed. Flagged
+> rather than left silent. `config.js` now exports the pair symmetrically, so this cannot recur the same way.
+
+**Status: still open, re-verification outstanding.** Not re-confirmed and not cleared.
+
+### CORRECTION (same day) — the lockout was NOT the whole story
+
+Retried **after** the lockout window expired (`lockoutEnd 09:27:49Z`) and **with a correctly resolved
+password** (`env.ORG_USER_PASSWORD` now exported): the grant **still fails identically** —
+`400 user_cannot_login_in_store`.
+
+So the empty-password bug and the lockout it caused were real, but they were **not** the reason this fixture
+is unusable. `TECHFLOW_ADMIN` (`test-emily.johnson-20260310@test-agent.com`) genuinely cannot obtain a
+token for `B2B-store` on vcst-qa right now, with valid credentials and no lockout in force. The account
+itself reads healthy from the admin API — `status: Approved`, `storeId: B2B-store`,
+`lockoutEnabled: true` with the window passed, `roles: []` (expected — org permissions come from
+`OrganizationMembership`, not the security account, per VCST-5028).
+
+**That is a fixture/environment problem in its own right**, and it blocks any org-scoped suite using
+`ORG_USER`, not just these two drafts. It is plausibly the same family as
+`project_org_default_org_not_status_validated` (VCST-5281 — a store-scoped grant refused because the
+contact is pinned to an org whose status blocks sign-in). Worth running `td:reconcile` against this env and
+checking the contact's org memberships/status before assuming these two drafts are stale.
+
+**Do not read `user_cannot_login_in_store` as a reproduction of the `Forbidden` defect under test** — it
+happens before any GraphQL call.

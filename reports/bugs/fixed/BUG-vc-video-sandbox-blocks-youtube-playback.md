@@ -103,3 +103,30 @@ Whichever is chosen, `vc-video.docs.md` and `vc-video.test.ts` need to change wi
 
 Any consuming app embedding video via `vc-video` — the shipped `@vc-shell/framework` 2.2.0 and 2.3.0.
 Silent: no user-facing error, just a black box.
+
+---
+
+## Resolution — FIXED (verified 2026-08-26)
+
+**Fixed by [vc-shell#266](https://github.com/VirtoCommerce/vc-shell/pull/266) — "fix(vc-video): restore playback on trusted embed hosts"**, merged **2026-07-30**, ten days after the PR #255 hardening that broke it.
+
+**The fix keeps the security intent rather than reverting it** — `allow-same-origin` is restored only for known video hosts, via an allowlist in `vc-video.vue@main`:
+```js
+const TRUSTED_EMBED_HOSTS = ["youtube.com", "youtube-nocookie.com", "youtu.be", "vimeo.com"];
+```
+with the reasoning recorded in the component:
+> *Embed hosts that need their own origin to bootstrap a player. Cross-origin by definition, so `allow-same-origin` cannot be used to reach the parent frame: the Same-Origin Policy blocks that. It only lets the framed page use its own storage, which YouTube requires before it can build the player.*
+
+That is the correct distinction, and it is the one this report was pointing at: a same-origin iframe granted `allow-same-origin` can escape its own sandbox and touch the parent DOM; a **cross-origin** one cannot, so the token buys the embed its storage and nothing more. The prop docs now warn explicitly against adding `allow-same-origin` by hand for user-supplied URLs on the app's own origin — so the hardening PR #255 aimed for survives for untrusted sources.
+
+**Live on the hosted Storybook** (`data-display-vcvideo--default`, the URL from STR A):
+```json
+{ "sandbox": "allow-scripts allow-presentation allow-same-origin",
+  "src": "https://www.youtube.com/embed/PeXX-V-dwpA",
+  "title": "Introduction Video" }
+```
+Console is clean apart from a `favicon.ico` 404. **All three signatures this report captured are gone**: no `writeEmbed is not defined`, no `UnhandledWindowReferenceError`, and no *"Failed to read the 'caches' property … context is sandboxed and lacks the 'allow-same-origin' flag."*
+
+**Not re-verified:** STR B, the live Vendor Portal Product → Videos → Add video → Preview path, and actual frame playback (cross-origin, so the player's internals aren't readable from the parent). The sandbox attribute is the documented root cause and the error signatures it produced are absent, which is what this report used as its own evidence.
+
+**Verdict: VERIFIED FIXED.**
