@@ -50,7 +50,7 @@
 [STATE] Selecting the store-default option (isDefault=true) results in a clean URL with no ?sort param
 [NAV] URL contains ?sort=<code> for non-default selections; URL has no ?sort for the default selection","[NETWORK] no 4xx/5xx on sort change
 [NETWORK] POST /graphql (SearchProducts) includes sort parameter matching selected code
-[CONSOLE] no TypeError or JS errors","Sort dropdown combobox accessible name not updating on selection; native select-option action failing (VcSelect is not a native select); {first_id_asc} == {first_id_desc} (sort direction not applied); URL not updating with sort code; default sort leaving ?sort in URL; console TypeError","none","VCST-5177; regression-qa-theme-26.csv; Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","synced"
+[CONSOLE] no TypeError or JS errors","Sort dropdown combobox accessible name not updating on selection; native select-option action failing (VcSelect is not a native select); {first_id_asc} == {first_id_desc} (sort direction not applied); URL not updating with sort code; default sort leaving ?sort in URL; console TypeError","none","VCST-5177; regression-qa-theme-26.csv; Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","Automated"
 "SRCH-008","Search - History","Search > History","Low","BL-SRCH-002","","Previous searches performed in this session","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches exist in session)
 [ACT] Click search bar
 [ASSERT] Verify recent search history is displayed
@@ -60,7 +60,7 @@
 [STATE] Clicking a history item executes the search
 [STATE] History can be cleared on request","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 on history item click
 [CONSOLE] no TypeError or JS errors","History not showing prior searches; history item click not executing search; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-NEW-001","Search Bar - Click Opens Dropdown Empty State","Search > Dropdown","Critical","BL-SRCH-002","","Storefront open at homepage; search input has no text","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-001","Search Bar - Click Opens Dropdown Empty State","Search > Dropdown","Critical","","","Storefront open at homepage; search input has no text","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ASSERT] Locate the search input labeled 'Search' in main navigation
 [ACT] Click the search input
 [WAIT] Wait for dropdown to appear","[DOM] Dropdown opens below the search input
@@ -69,9 +69,10 @@
 [DOM] 'Start typing to search' text or prompt visible
 [DOM] 'Check all products' link visible pointing to /catalog
 [STATE] No product results in dropdown yet (empty query)","[NETWORK] no failed API calls triggered on input focus
-[CONSOLE] no TypeError or JS errors","Dropdown not opening on click; Hints section absent; 'Check all products' link missing; console TypeError on focus","none","E2E-SEARCH-005","Manual"
-"SRCH-NEW-002","Search Bar - Autocomplete Shows Product Previews While Typing","Search > Autocomplete","Critical","BL-SRCH-002","ECL-14.2","Storefront open; products matching 'hoodie' exist in catalog","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
+[CONSOLE] no TypeError or JS errors","Dropdown not opening on click; Hints section absent; 'Check all products' link missing; console TypeError on focus","none","E2E-SEARCH-005","Automated"
+"SRCH-NEW-002","Search Bar - Autocomplete Shows Product Previews While Typing","Search > Autocomplete","Critical","","ECL-14.2","Storefront open; products matching 'hoodie' exist in catalog","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
+[WAIT] Wait for dropdown to open
 [ACT] fill 'Search': 'hoodie' (type one character at a time)
 [WAIT] Wait for dropdown to update after each character
 [ASSERT] Observe final dropdown state with all 6 characters typed","[DOM] 'Products' section appears in dropdown
@@ -79,9 +80,22 @@
 [DOM] At least 1 product preview is shown, with preview count equal to min(total matching products for the query, autocomplete cap) — not an assumed fixed count
 [DOM] 'Hints' section remains visible above Products section
 [DOM] Clear (X) button appears in input when text is present","[NETWORK] POST /graphql (searchProducts) fires with keyword: 'hoodie'; capture response totalCount to cross-check preview count = min(totalCount, autocomplete cap)
-[CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; preview count does not equal min(total matches, autocomplete cap); Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002","Manual"
-"SRCH-NEW-003","Search Bar - Hints Section Shows Prior Searches on Focus","Search > Hints","High","BL-SRCH-002","","At least 2 prior searches exist in session history (e.g. 'laptop' and 'hoodie' visible as hints)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches 'laptop' and 'hoodie' in session)
+[CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; preview count does not equal min(total matches, autocomplete cap); Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002","Automated"
+"SRCH-NEW-003","Search Bar - Hints Section Shows Prior Searches on Focus","Search > Hints","High","","","Storefront accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
+[WAIT] Wait for dropdown to open
+[ACT] fill 'Search': 'laptop'
+[KEY] press [Enter]
+[WAIT] Wait for search results page to load
+[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[WAIT] Wait for dropdown to open
+[ACT] fill 'Search': 'hoodie'
+[KEY] press [Enter]
+[WAIT] Wait for search results page to load
+[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[WAIT] Wait for dropdown to open
 [ASSERT] Observe 'Hints' section label and hint items
 [ASSERT] Verify each hint is a button with search icon and query text
 [ACT] Click the hint button labeled 'laptop'
@@ -89,9 +103,10 @@
 [DOM] Each hint is a button with a search icon and query text
 [NAV] Clicking 'laptop' hint populates input with 'laptop' and navigates to /search?q=laptop
 [DOM] Search results for 'laptop' displayed","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for 'laptop'
-[CONSOLE] no TypeError or JS errors","Hints section absent when prior searches exist; hint buttons not clickable; clicking hint not navigating; console TypeError","N/A","E2E-SEARCH-003, SRCH-008","Manual"
-"SRCH-NEW-004","Search Bar - Clear Button Resets Input to Empty","Search > Input Controls","High","BL-SRCH-002","","Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[CONSOLE] no TypeError or JS errors","Hints section absent when prior searches exist; hint buttons not clickable; clicking hint not navigating; console TypeError","N/A","E2E-SEARCH-003, SRCH-008","Automated"
+"SRCH-NEW-004","Search Bar - Clear Button Resets Input to Empty","Search > Input Controls","High","","","Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
+[WAIT] Wait for dropdown to open
 [ACT] fill 'Search': 'hoodie'
 [WAIT] Wait for clear (X) button to appear
 [ASSERT] Verify clear button is visible and input contains 'hoodie'
@@ -101,9 +116,10 @@
 [STATE] After clicking clear: input is empty
 [STATE] Dropdown returns to 'Hints' state (prior searches) after clearing
 [DOM] Clear button disappears when input is empty
-[STATE] User stays on same page (no navigation)","[CONSOLE] no TypeError or JS errors","Clear button not appearing after typing; clear button not emptying input; dropdown not reverting to Hints state; navigation triggered by clear; console TypeError","none","","Manual"
-"SRCH-NEW-005","Search Bar - Clicking Autocomplete Product Navigates to PDP","Search > Autocomplete","Critical","BL-SRCH-002","","Storefront open at homepage; at least 1 product matches @td(SEARCH_CLOTHING.query) in the active store/catalog","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
+[STATE] User stays on same page (no navigation)","[CONSOLE] no TypeError or JS errors","Clear button not appearing after typing; clear button not emptying input; dropdown not reverting to Hints state; navigation triggered by clear; console TypeError","none","","Automated"
+"SRCH-NEW-005","Search Bar - Clicking Autocomplete Product Navigates to PDP","Search > Autocomplete","Critical","","","Storefront open at homepage; at least 1 product matches @td(SEARCH_CLOTHING.query) in the active store/catalog","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
+[WAIT] Wait for dropdown to open
 [ACT] fill 'Search': @td(SEARCH_CLOTHING.query)
 [WAIT] Wait for autocomplete product results in dropdown
 [ASSERT] Verify at least 1 product entry visible in dropdown 'Products' section
@@ -114,7 +130,7 @@
 [DOM] PDP page heading text contains {picked_pdp_name}
 [STATE] Search dropdown closes after product click
 [DOM] PDP renders product image, price, and primary action (qty stepper or Add-to-Cart) — no broken placeholders","[NETWORK] GET product PDP returns HTTP 200
-[CONSOLE] no TypeError or JS errors","PDP not loading after clicking autocomplete result; PDP heading does not contain captured name; dropdown not closing; console TypeError","none","E2E-SEARCH-005; live-discovery.md Recipe 2","Manual"
+[CONSOLE] no TypeError or JS errors","PDP not loading after clicking autocomplete result; PDP heading does not contain captured name; dropdown not closing; console TypeError","none","E2E-SEARCH-005; live-discovery.md Recipe 2","Automated"
 "SRCH-NEW-006","Search Bar - Check All Products Link Goes to Catalog","Search > Dropdown","Low","BL-CAT-001","","Storefront open at homepage","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input (do not type anything)
 [WAIT] Wait for dropdown to open
@@ -123,9 +139,10 @@
 [WAIT] Wait for catalog page to load","[NAV] Browser navigates to /catalog
 [DOM] Full product catalog page loads
 [STATE] Search dropdown closes after link click","[NETWORK] GET /catalog returns HTTP 200
-[CONSOLE] no TypeError or JS errors","'Check all products' link absent from dropdown; link navigating to wrong page; catalog page returning 4xx; console TypeError","none","","Manual"
+[CONSOLE] no TypeError or JS errors","'Check all products' link absent from dropdown; link navigating to wrong page; catalog page returning 4xx; console TypeError","none","","Automated"
 "SRCH-NEW-007","Search - Submit via Enter Key","Search > Submission","Critical","BL-SRCH-001, BL-SRCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
+[WAIT] Wait for dropdown to open
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
 [WAIT] Wait for results page to load
@@ -133,21 +150,24 @@
 [DOM] Results page heading shows result count with 'hoodie' bold/emphasized
 [STATE] Search input retains 'hoodie' on results page
 [DOM] Products displayed in grid view by default","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Results page not loading on Enter; wrong URL (not /search?q=hoodie); heading not showing result count; products not in grid view; console TypeError","none","E2E-SEARCH-001, SRCH-001","Manual"
+[CONSOLE] no TypeError or JS errors","Results page not loading on Enter; wrong URL (not /search?q=hoodie); heading not showing result count; products not in grid view; console TypeError","none","E2E-SEARCH-001, SRCH-001","Automated"
 "SRCH-NEW-008","Search - Submit via Search Button (Magnifier Icon)","Search > Submission","Critical","BL-SRCH-001, BL-SRCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
+[WAIT] Wait for dropdown to open
 [ACT] fill 'Search': 'hoodie'
 [ACT] Click the 'Search' button (magnifier icon)
 [WAIT] Wait for results page to load
-[ASSERT] Verify results page identical to Enter key submission","[NAV] Browser navigates to /search?q=hoodie
-[DOM] Results page loads with same products and count as SRCH-NEW-007","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Magnifier button not clickable; different results from Enter key; console TypeError","none","","Manual"
+[ASSERT] Verify results page content","[NAV] Browser navigates to /search?q=hoodie
+[DOM] Results page heading shows result count with 'hoodie' bold/emphasized
+[STATE] Search input retains 'hoodie' on results page
+[DOM] Products displayed in grid view by default","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Magnifier button not clickable; results page not loading; wrong URL (not /search?q=hoodie); heading not showing result count; products not in grid view; console TypeError","none","","Automated"
 "SRCH-NEW-009","Search Results - Result Count in Heading Is Accurate","Search > Results Page","High","BL-SRCH-001","","Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page to fully render
 [ASSERT] Read the h1 page heading
 [ASSERT] Count the product cards rendered in the grid","[DOM] h1 heading shows a result count number
 [MATH] Count in heading matches actual number of visible product cards","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Heading count mismatches visible card count; heading missing count; console TypeError","none","","Manual"
+[CONSOLE] no TypeError or JS errors","Heading count mismatches visible card count; heading missing count; console TypeError","none","","Automated"
 "SRCH-NEW-010","Search Results - Grid and List View Toggle","Search > Results Page > Layout","High","BL-CAT-001","","Navigate to /search?q=hoodie; 4+ results expected","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results
 [ASSERT] Confirm default grid layout (multi-column)
@@ -159,7 +179,7 @@
 [ASSERT] Verify grid layout returns","[STATE] Default view is grid (multi-column)
 [DOM] List view: single-column format with products stacked
 [DOM] Grid view: multi-column layout
-[MATH] Product count consistent across view switches","[CONSOLE] no TypeError or JS errors during switching","Products lost on view switch; count changing between views; JS error on toggle; console TypeError","none","","Manual"
+[MATH] Product count consistent across view switches","[CONSOLE] no TypeError or JS errors during switching","Products lost on view switch; count changing between views; JS error on toggle; console TypeError","none","","Automated"
 "SRCH-NEW-011","Search Results - Sort Options Change Product Order (API-driven sortings)","Search > Sorting","High","BL-CAT-005, BL-SRCH-001","","Navigate to /search?q=hoodie; multiple results with varying prices; storefront uses vc-frontend theme 2.52+ which builds sort dropdown from API sortings","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results and sort dropdown to render
 [ASSERT] Snapshot the sort dropdown and capture all visible option labels (live-discover from DOM — do NOT assume any fixed label or that 'Featured' is the default)
@@ -193,8 +213,9 @@
 [STATE] URL returns to clean (no ?sort) when default option selected
 [DOM] Drop-down renders blank during initial load before first API response (expected behavior per VCST-5177 design)","[NETWORK] no 4xx/5xx on sort change
 [NETWORK] POST /graphql (SearchProducts) response includes sortings[] with isDefault and selected flags
-[CONSOLE] no TypeError or JS errors","Sort combobox accessible name not updating on selection; native select-option failing (VcSelect is not a native select); product order unchanged after sort selection; {first_id_asc} == {first_id_desc} (sort direction not applied); URL not updating with sort code; URL not clearing on default selection; console TypeError; dropdown rendering blank permanently (not just during load)","none","VCST-5177; SRCH-007; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","synced"
-"SRCH-NEW-023","Search - Direct URL Navigation with Query Parameter","Search > URL Navigation","High","BL-SRCH-001","","Storefront is accessible","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open a new tab and navigate directly to {{FRONT_URL}}/search?q=hoodie (no prior homepage visit)
+[CONSOLE] no TypeError or JS errors","Sort combobox accessible name not updating on selection; native select-option failing (VcSelect is not a native select); product order unchanged after sort selection; {first_id_asc} == {first_id_desc} (sort direction not applied); URL not updating with sort code; URL not clearing on default selection; console TypeError; dropdown rendering blank permanently (not just during load)","none","VCST-5177; SRCH-007; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","Automated"
+"SRCH-NEW-023","Search - Direct URL Navigation with Query Parameter","Search > URL Navigation","High","BL-SRCH-001","","Storefront is accessible","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open a new browser tab
+[NAV] Navigate directly to {{FRONT_URL}}/search?q=hoodie (no prior homepage visit in this tab)
 [WAIT] Wait for results page to load
 [ASSERT] Verify results page loaded correctly
 [ASSERT] Verify search input is pre-populated with 'hoodie'
@@ -202,12 +223,12 @@
 [STATE] Search input pre-populated with 'hoodie' from URL parameter
 [DOM] Correct products and count displayed
 [DOM] Filters and sort controls functional","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Page not loading from direct URL; search input not pre-populated; products not showing; console TypeError","none","E2E-SEARCH-001","Manual"
+[CONSOLE] no TypeError or JS errors","Page not loading from direct URL; search input not pre-populated; products not showing; console TypeError","none","E2E-SEARCH-001","Automated"
 "SRCH-NEW-024","Search - Empty Query Parameter Loads Catalog","Search > URL Navigation","Medium","BL-SRCH-003","","Storefront is accessible","url={{FRONT_URL}}/search?q=","[NAV] Navigate to {{FRONT_URL}}/search?q= (empty q parameter)
 [WAIT] Wait for page to load","[NAV] Page loads without JavaScript or server error
 [DOM] Products displayed (catalog-style browse or empty search state)
 [STATE] Search input is empty","[NETWORK] page returns HTTP 200 (not 4xx/5xx)
-[CONSOLE] no TypeError or JS errors","Page returning 4xx/5xx for empty q param; JS error on empty query; console TypeError","none","","Manual"
+[CONSOLE] no TypeError or JS errors","Page returning 4xx/5xx for empty q param; JS error on empty query; console TypeError","none","","Automated"
 "SRCH-NEW-036","Search - Browser Back Returns to Results Page","Search > Navigation","High","BL-SRCH-001","","User navigated from search results to a PDP","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page
 [ACT] Click a product card to open its PDP
@@ -217,7 +238,7 @@
 [DOM] Same result set displayed as before navigating to PDP
 [STATE] Search input still shows 'hoodie'
 [DOM] Product cards visible","[NETWORK] no 4xx/5xx on back navigation
-[CONSOLE] no TypeError or JS errors","Browser Back going to homepage instead of search results; search input cleared; products not re-rendering; console TypeError","none","E2E-SEARCH-001","Manual"
+[CONSOLE] no TypeError or JS errors","Browser Back going to homepage instead of search results; search input cleared; products not re-rendering; console TypeError","none","E2E-SEARCH-001","Automated"
 "SRCH-NEW-037","Search Typo Tolerance - Misspelled Query Returns Fuzzy-Matched Products","Search > Fuzzy Matching","High","BL-SRCH-002","ECL-3.1","DEPRECATED 2026-05-22: vcst-qa search engine does NOT perform fuzzy/typo matching. Verified via mini-run: 'laptp' and 'hoddie' return 0 results, no Did-you-mean prompt. The zero-result behavior is already covered by SRCH-NEW-016 (No Results State UI). Reactivate this case (flip Automation_Status to Generated) only if fuzzy matching is enabled in the search engine configuration. Until then the test cannot produce useful signal.","url={{FRONT_URL}}","[DEPRECATED] Steps preserved for re-activation. Original flow: type 'laptp' → assert >=1 laptop-related result; repeat with 'hoddie'.","[DEPRECATED] Original assertions preserved for re-activation.","[DEPRECATED]","[DEPRECATED]","none","E2E-SEARCH-004, GAP-CS-07; deprecated when fuzzy-match OFF confirmed on vcst-qa 2026-05-22 (mini-run REG-2026-05-22-MINI follow-up)","Deprecated"
 "SRCH-NEW-038","Search Partial Word Match - Short Query Returns Relevant Products","Search > Fuzzy Matching","High","BL-SRCH-002","ECL-3.1","Catalog has products with 'hoodie' in their name","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
@@ -231,7 +252,7 @@
 [DOM] Search results page displays products matching the partial term
 [MATH] Result count > 0 for partial query
 [STATE] Products in results contain 'hoo' in name or are relevance-matched","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with results
-[CONSOLE] no TypeError or JS errors","Partial query 'hoo' returning 0 results; autocomplete not showing matches; results page empty for valid partial match; console TypeError","none","E2E-SEARCH-004, GAP-CS-07","Generated"
+[CONSOLE] no TypeError or JS errors","Partial query 'hoo' returning 0 results; autocomplete not showing matches; results page empty for valid partial match; console TypeError","none","E2E-SEARCH-004, GAP-CS-07","Automated"
 "SRCH-NEW-044","Search Results Load More Products via Infinite Scroll for Large Result Sets","Search > Infinite Scroll","High","BL-SRCH-001","","Search query returns 100+ products across multiple scroll-loaded batches; storefront /search uses infinite scroll by design (no numbered pager, no ?page param — see SRCH-NEW-049)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and search for a broad term returning 100+ products (e.g. 'laptop')
 [KEY] press [Enter]
 [WAIT] Wait for search results page to load
@@ -247,25 +268,26 @@
 [NAV] URL query params (q, sort, facets) unchanged after scroll-triggered load
 [STATE] Total rendered card count increases monotonically as scrolling continues","[NETWORK] POST /graphql (searchProducts) fires on scroll with an after-cursor param (not a page/skip param)
 [NETWORK] no 4xx/5xx on scroll-triggered requests
-[CONSOLE] no TypeError or JS errors","Scrolling to the bottom does not load additional products; appended batch duplicates the initial batch; URL params reset/cleared after scroll-load; console TypeError","none","Coverage Gap Analysis; GAP-CS-18; re-authored from numbered-pager assumption per REG-2026-07-01-1430 (see SRCH-NEW-049)","Generated"
-"SRCH-NEW-045","Search Results Pagination Preserves Search Term and Active Filters","Search > Pagination","High","BL-SRCH-001","","Multiple products matching a search term with at least one applicable facet filter; results span 2+ pages","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search that returns 2+ pages of results
+[CONSOLE] no TypeError or JS errors","Scrolling to the bottom does not load additional products; appended batch duplicates the initial batch; URL params reset/cleared after scroll-load; console TypeError","none","Coverage Gap Analysis; GAP-CS-18; re-authored from numbered-pager assumption per REG-2026-07-01-1430 (see SRCH-NEW-049)","Automated"
+"SRCH-NEW-045","Search Term and Active Filters Persist After Infinite-Scroll Load-More","Search > Infinite Scroll","High","BL-SRCH-001","","Multiple products matching a search term with at least one applicable facet filter; results span 2+ scroll-loaded batches; storefront /search uses infinite scroll by design (no numbered pager, no ?page param — see SRCH-NEW-049)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a broad search that returns enough products for 2+ scroll-loaded batches (e.g. 'a')
 [KEY] press [Enter]
 [WAIT] Wait for search results page
-[ASSERT] Verify results are shown with pagination
+[ASSERT] Verify no numbered pager or Next/Previous controls are rendered (infinite scroll is the only mechanism)
 [ACT] Apply a facet filter from the sidebar (e.g., select a Brand)
-[WAIT] Wait for filtered and paginated results
+[WAIT] Wait for filtered results to load
 [ASSERT] Verify search term is still in the search input
-[ASSERT] Note result count for filtered page 1
-[ACT] Click page 2 or 'Next' in pagination
-[WAIT] Wait for page 2 of filtered results
+[ASSERT] Capture the initial batch of product cards and the active filter chip state
+[ACT] Scroll to the bottom of the results grid to trigger infinite-scroll load-more
+[WAIT] Wait for the next batch of filtered results to append (network: searchProducts with after-cursor and the filter still applied)
 [ASSERT] Verify search input still contains the original search term
 [ASSERT] Verify the applied facet filter chip is still active (not cleared)
-[ASSERT] Verify the URL contains both the search term and the filter parameter","[STATE] Search term persists in search input across pagination pages
-[STATE] Applied facet filter remains active when navigating to page 2
-[DOM] Filter chip visible in the active-filters bar on page 2
-[NAV] URL contains both search query param and filter param on page 2
-[STATE] Products on page 2 are consistent with the active search and filter combination","[NETWORK] POST /graphql (searchProducts) on page 2 includes both keyword and filter parameters
-[CONSOLE] no TypeError or JS errors","Search term cleared when navigating to page 2; filter chips removed on pagination; URL losing filter params; page 2 showing unfiltered results; console TypeError","none","Coverage Gap Analysis; GAP-CS-18","Generated"
+[ASSERT] Verify the URL contains both the search term and the filter parameter
+[ASSERT] Verify the appended batch is a distinct set of products from the initial batch, and all match the active filter","[STATE] Search term persists in search input across scroll-triggered load-more
+[STATE] Applied facet filter remains active after scroll-load (not cleared)
+[DOM] Filter chip visible in the active-filters bar after scroll-load
+[NAV] URL contains both search query param and filter param after scroll-load
+[STATE] Appended batch products are consistent with the active search and filter combination, and distinct from the initial batch","[NETWORK] POST /graphql (searchProducts) on scroll-load includes both keyword and filter parameters, with an after-cursor (not a page/offset param)
+[CONSOLE] no TypeError or JS errors","Search term cleared when scroll-load fires; filter chips removed after scroll-load; URL losing filter params; appended batch showing unfiltered results; scroll-load using a page/offset param instead of after-cursor; console TypeError","none","Coverage Gap Analysis; GAP-CS-18; re-authored from numbered-pager assumption (confirmed BLOCKED in REG-2026-08-27-0952 and REG-2026-08-27-1134; see SRCH-NEW-049)","Automated"
 "SRCH-NEW-046","Search by Exact SKU Returns Correct Product","Search > SKU Search","High","BL-SRCH-001","ECL-14.2","Product with known SKU exists in catalog; SKU resolved from @td(PROD_DEFAULT.sku)","url={{FRONT_URL}}; sku=@td(PROD_DEFAULT.sku); product_name=@td(PROD_DEFAULT.name)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': @td(PROD_DEFAULT.sku)
@@ -280,7 +302,7 @@
 [DOM] Product name in results equals @td(PROD_DEFAULT.name)
 [NAV] PDP for the SKU-matched product loads correctly
 [STATE] SKU identifier visible on the PDP matches the searched SKU","[NETWORK] POST /graphql (searchProducts) with SKU query returns HTTP 200 with product data
-[CONSOLE] no TypeError or JS errors","SKU search returning 0 results for a valid in-catalog SKU; wrong product returned for SKU search; PDP not loading after clicking SKU search result; console TypeError","none","Coverage Gap Analysis; GAP-CS-19; ECL-14.2","Generated"
+[CONSOLE] no TypeError or JS errors","SKU search returning 0 results for a valid in-catalog SKU; wrong product returned for SKU search; PDP not loading after clicking SKU search result; console TypeError","none","Coverage Gap Analysis; GAP-CS-19; ECL-14.2","Automated"
 "SRCH-NEW-047","Partial Numeric Search Returns Relevant Products or Graceful Empty State","Search > SKU Search","High","BL-SRCH-001","ECL-14.2","Products with numeric characters in their name or SKU exist in catalog; at least one product has a numeric SKU segment","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': a 4-6 digit numeric string that is a substring of a known product SKU (e.g., '6460')
@@ -294,7 +316,7 @@
 [DOM] Results or empty state shown with no error page or 5xx for numeric query
 [STATE] Numeric-only query handled gracefully by the search engine","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for numeric query
 [NETWORK] no 5xx server errors for numeric-only search
-[CONSOLE] no TypeError or JS errors","Numeric query causing 500 error; autocomplete crashing on numeric input; search results page blank for numeric query; console TypeError on numeric input","none","Coverage Gap Analysis; GAP-CS-19; ECL-14.2","Generated"
+[CONSOLE] no TypeError or JS errors","Numeric query causing 500 error; autocomplete crashing on numeric input; search results page blank for numeric query; console TypeError on numeric input","none","Coverage Gap Analysis; GAP-CS-19; ECL-14.2","Automated"
 "SRCH-NEW-048","Search Results Scroll Position and Batch Continuity Across Repeated Infinite-Scroll Loads","Search > Infinite Scroll","High","BL-SRCH-001, BL-CAT-005","","Search returns enough products for 2+ scroll-loaded batches; storefront /search uses infinite scroll by design (no Previous/Next controls — see SRCH-NEW-049)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a broad search returning many products (e.g. 'a')
 [KEY] press [Enter]
 [WAIT] Wait for search results page
@@ -313,7 +335,7 @@
 [STATE] Scrolling back to the top preserves previously loaded batches (no reset/reload)
 [STATE] Total rendered card count only grows across scroll-load cycles, never shrinks","[NETWORK] POST /graphql (searchProducts) fires on each scroll-load with an incrementing after-cursor (not a page/offset param)
 [NETWORK] no 4xx/5xx on scroll-triggered requests
-[CONSOLE] no TypeError or JS errors","Duplicate products appear across scroll-loaded batches; scrolling back to top clears earlier batches; scroll-load stops firing after the second batch; console TypeError","none","Coverage Gap Analysis; GAP-CS-22; re-authored from Previous/Next-pager assumption per REG-2026-07-01-1430 (see SRCH-NEW-049)","Generated"
+[CONSOLE] no TypeError or JS errors","Duplicate products appear across scroll-loaded batches; scrolling back to top clears earlier batches; scroll-load stops firing after the second batch; console TypeError","none","Coverage Gap Analysis; GAP-CS-22; re-authored from Previous/Next-pager assumption per REG-2026-07-01-1430 (see SRCH-NEW-049)","Automated"
 "SRCH-NEW-049","Sort Persists After Infinite-Scroll Load-More (API-driven sortings)","Search > Infinite Scroll","High","BL-SRCH-001, BL-CAT-005","","Search returns enough products to trigger infinite scroll (broad term); sort options available; storefront uses vc-frontend theme 2.52+ with API-driven sortings. NOTE: storefront uses infinite scroll on /search — there is NO numbered pager and NO ?page URL param.","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a search returning many products (use a broad term like 'a')
 [KEY] press [Enter]
 [WAIT] Wait for search results page
@@ -333,7 +355,7 @@
 [STATE] Sort selection persists (combobox accessible name unchanged) after infinite-scroll load-more fires
 [NETWORK] Scroll-triggered SearchProducts uses after-cursor continuation with the same sort code
 [STATE] Sort label used for selection is live-discovered from the dropdown — guards against label drift between store environments","[NETWORK] POST /graphql (searchProducts) fires on scroll with withFacets:false and sort=price-ascending and after-cursor
-[CONSOLE] no TypeError or JS errors","Sort dropdown combobox accessible name resetting to default after scroll-load; ?sort param dropped from URL on scroll; scroll not triggering a new SearchProducts request; next batch not appending (stuck spinner); console TypeError; native select-option action failing on VcSelect combobox","none","VCST-5177; Coverage Gap Analysis; GAP-CS-22; Synced: VCST-5177 (2026-06-26); Corrected: infinite scroll model (2026-06-26)","synced"
+[CONSOLE] no TypeError or JS errors","Sort dropdown combobox accessible name resetting to default after scroll-load; ?sort param dropped from URL on scroll; scroll not triggering a new SearchProducts request; next batch not appending (stuck spinner); console TypeError; native select-option action failing on VcSelect combobox","none","VCST-5177; Coverage Gap Analysis; GAP-CS-22; Synced: VCST-5177 (2026-06-26); Corrected: infinite scroll model (2026-06-26)","Automated"
 "SRCH-NEW-050","Search - Data-Driven Bulk Query Validation (Top Amazon)","Search > Data-Driven","Medium","BL-SRCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries_file=test-data/search-queries/top-50-amazon.csv; url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [LOOP] For each row in test-data/search-queries/top-50-amazon.csv:
   [ACT] Click search input → clear → type the search_query value
@@ -395,18 +417,26 @@ search_query: any non-empty text (e.g. 'ring')","[NAV] Resize browser viewport t
 [STATE] Input text cleared after tap on clear button
 [STATE] Focus remains in search input after clear","[CONSOLE] No JS errors on clear action
 [NETWORK] No unnecessary search request fired on clear","Clear button not visible at 375px; clear button hidden behind keyboard; text not cleared on tap; focus lost after clear; JS error on clear","Restore viewport to default 1280px","VCST-2285","Reviewed"
-"SRCH-NEW-054","Mobile Search - Keyboard Shows Without Blocking Search Results","Search > Mobile > Keyboard","Medium","BL-CAT-001","ECL-6.1","[PRE:CLEAR_SESSION]
-- Browser viewport at 375px
-- Test on mobile emulation or real mobile device","viewport_width: 375
-search_query: 'ring'","[NAV] Resize to 375px viewport
+"SRCH-NEW-054","Mobile Search - Input Remains Usable When Viewport Shrinks (Keyboard-Open Simulation)","Search > Mobile > Keyboard","Medium","BL-CAT-001","ECL-6.1","[PRE:CLEAR_SESSION]
+- Browser viewport at 375px width
+- NOTE: Playwright/CDP mobile emulation renders no OS on-screen keyboard, so a real keyboard cannot be observed via browser MCP tools (confirmed BLOCKED in REG-2026-08-27-0952 and REG-2026-08-27-1134). This case simulates keyboard-open by shrinking the viewport height, the same visualViewport height reduction a real on-screen keyboard produces","viewport_width: 375
+viewport_height_full: 812
+viewport_height_keyboard_open: 400
+search_query: 'ring'","[NAV] Resize browser viewport to 375x812
 [NAV] Navigate to {{FRONT_URL}}
-[ACT] Tap the search input to open mobile keyboard
-[ASSERT] Verify search input is scrolled/adjusted into view above the keyboard
-[ACT] Type 'ring' into mobile search
-[ASSERT] Verify at least one suggestion or the search input itself remains visible above the keyboard
-[ASSERT] Verify the submit/search button (or Enter key) is accessible while keyboard is open","[DOM] Search input visible above mobile keyboard when keyboard open
-[DOM] At least one result or suggestion visible above keyboard
-[DOM] Submit affordance (Enter key or search button) accessible","[CONSOLE] No JS errors during mobile keyboard interaction","Input hidden behind keyboard; no results visible while keyboard is open; user cannot submit search without closing keyboard","Restore viewport to default 1280px","VCST-2284","Reviewed"
+[ACT] Click the search input
+[WAIT] Wait for dropdown to open
+[ACT] fill 'Search': 'ring'
+[WAIT] Wait for autocomplete dropdown to update
+[ASSERT] Verify search input and at least one suggestion/product entry are visible at full viewport height (812px)
+[NAV] Resize browser viewport to 375x400 (simulates the visualViewport height reduction a real on-screen keyboard produces)
+[WAIT] Wait for layout to settle at the reduced viewport height
+[ASSERT] Verify the search input remains visible and is not clipped/pushed off-screen at the reduced viewport height
+[ASSERT] Verify at least one suggestion or the search input itself remains within the visible (reduced) viewport
+[ASSERT] Verify the submit/search button (or Enter key) remains reachable at the reduced viewport height","[DOM] Search input visible within the viewport at both full (812px) and reduced (400px, keyboard-open-simulated) heights
+[DOM] At least one suggestion/result entry visible within the reduced viewport
+[DOM] Submit affordance (Enter key or search button) reachable at the reduced viewport height
+[STATE] No layout break (overflow/clipping) introduced by the viewport height reduction","[CONSOLE] No JS errors during viewport-height reduction or search interaction","Search input clipped or pushed off-screen at reduced viewport height; no suggestion/result visible within reduced viewport; submit affordance unreachable at reduced viewport height; console TypeError","Restore viewport to default 1280px","VCST-2284; re-authored to a viewport-height-reduction proxy — Playwright/CDP renders no on-screen keyboard, oracle unobservable as originally authored (confirmed BLOCKED in REG-2026-08-27-0952 and REG-2026-08-27-1134)","Automated"
 "SRCH-NEW-055","Mobile Search - Results Page Layout Correct at 375px","Search > Mobile > Results","Medium","BL-CAT-001","ECL-6.1","[PRE:CLEAR_SESSION]
 - Viewport at 375px
 - Search returns at least 3 results","viewport_width: 375
@@ -474,7 +504,7 @@ search_query: @td(SEARCH_QUERY.q)","[NAV] Resize browser to 375px width
 [NAV] URL retains the ?sort=agent-test-nonexistent-sort-xyz parameter
 [STATE] No guessed default applied — the unknown code must not cause the combobox to show the first option's label","[NETWORK] searchProducts fires with the unknown sort code (not rewritten by client)
 [NETWORK] sortings[] in response has no entry with selected=true
-[CONSOLE] no TypeError — blank-state rendering must be handled without JS errors","Sort dropdown selecting the first option (incorrect default applied to unknown code); 500 error on unknown sort code; JS TypeError on blank-state render; URL rewritten by client to remove the unknown code; sort dropdown completely hidden (should still render blank, not hidden)","none — read-only","VCST-5177; BL-CAT-005; error-guessing; ECL-10.2","Draft"
+[CONSOLE] no TypeError — blank-state rendering must be handled without JS errors","Sort dropdown selecting the first option (incorrect default applied to unknown code); 500 error on unknown sort code; JS TypeError on blank-state render; URL rewritten by client to remove the unknown code; sort dropdown completely hidden (should still render blank, not hidden)","none — read-only",VCST-5177; BL-CAT-005; error-guessing; ECL-10.2 | Promoted: VCST-5729 (2026-08-27),Automated
 "SRCH-JRNY-001","Buyer Journey - Progressive Autocomplete to PDP via Product Preview","Search > Buyer Journey > Autocomplete","Critical","BL-SRCH-002","ECL-3.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront accessible; product-preview-in-dropdown feature is ENABLED (Did-you-mean OFF is fine — this case asserts on product previews, not text suggestions); B2B buyer-query pool seeded at test-data/search-queries/b2b-buyer-queries.csv","url={{FRONT_URL}}; query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Navigate to {{FRONT_URL}}
 [SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=broad-noun, pick a random row → {picked_query}; record its query_id → {picked_query_id}
@@ -547,3 +577,49 @@ Storefront accessible; B2B buyer-query pool seeded with compound-descriptive row
 [STATE] Compound query does not degrade silently to single-noun search (descriptor token has weight)
 [DOM] Result count in heading > 0","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with {picked_query}
 [CONSOLE] no TypeError or JS errors","0 results for a valid compound query; top 3 cards have only the noun token (descriptor was dropped); console TypeError","none","Buyer-journey extension 2026-05-22; b2b-buyer-queries.csv compound-descriptive subset","Manual"
+SRCH-011,Search Bar - Only One Category-Scope Indicator During Category Navigation,Search > Scoped,Medium,BL-SRCH-004,,Storefront accessible; catalog nav has a top-level category with at least one visible subcategory (live-discover — do not assume a fixed category name),url={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open the main catalog navigation menu
+[ASSERT] browser_snapshot the nav; pick a top-level category link that has visible subcategories → click it → store its name as {parent_category_name}
+[WAIT] Category page loads and search bar scope indicator settles
+[ASSERT] browser_snapshot the category page (sidebar or sub-nav); pick a child/subcategory link → click it → store its name as {child_category_name}
+[WAIT] Child category page loads; search bar scope chip settles naming {child_category_name}
+[SETUP] `browser_evaluate` (read-only DOM instrumentation, installed BEFORE the breadcrumb click so the ~161-381ms transient loading window is never missed — a MutationObserver queues every DOM/attribute change in order regardless of main-thread load; an earlier requestAnimationFrame sampler was tried and discarded because it starves exactly when the route change happens, so it can report zero violations without ever having observed the loading state): const c=document.querySelector('.search-bar .vc-input__decorator'); const inp=document.querySelector('[data-test-id=global-search-query-input]'); window.__srchTimeline=[]; const snap=()=>{ const chips=c?Array.from(c.querySelectorAll('[data-search-scope]')):[]; const loadingCount=c?Array.from(c.children).filter(el=>!el.matches('[data-search-scope]')).length:0; window.__srchTimeline.push({t:performance.now(), loadingCount, chipCount:chips.length, chipLabels:chips.map(el=>(el.querySelector('.vc-button__slot')?.textContent||el.getAttribute('data-search-scope')||'').trim()), placeholder:inp?inp.getAttribute('placeholder'):null, neighborX:inp?inp.getBoundingClientRect().left:null}); }; snap(); const mo1=new MutationObserver(snap); if(c) mo1.observe(c,{childList:true,subtree:true,characterData:true}); const mo2=new MutationObserver(snap); if(inp) mo2.observe(inp,{attributes:true,attributeFilter:['placeholder']}); window.__srchObservers=[mo1,mo2]; return {installed:true, baseline:window.__srchTimeline[0]}; — confirm installed===true
+[LOG] write {parent_category_name, child_category_name} to evidence
+[ACT] Click the breadcrumb link labeled ""{parent_category_name}"" in the breadcrumb trail
+[WAIT] Wait for the parent category page and scope indicator to fully settle (a real user click, not a reload — the observers installed above persist across this SPA route change)
+[SETUP] `browser_evaluate` (read-only replay of the recorded timeline now that the transition has settled — disconnect the observers first so the array is frozen): window.__srchObservers?.forEach(o=>o.disconnect()); const tl=window.__srchTimeline||[]; const inp=document.querySelector('[data-test-id=global-search-query-input]'); const finalNeighborX=inp?inp.getBoundingClientRect().left:null; const baselineX=tl[0]?tl[0].neighborX:null; const maxSimultaneous=tl.reduce((m,e)=>Math.max(m,(e.loadingCount>=1&&e.chipCount>=1)?(e.loadingCount+e.chipCount):0),0); const maxNeighborDelta=baselineX==null?null:tl.reduce((m,e)=>Math.max(m,Math.abs((e.neighborX??baselineX)-baselineX)),0); const settled=tl[tl.length-1]||{}; return {timeline:tl, maxSimultaneous, maxNeighborDelta, finalNeighborX, settledLoadingCount:settled.loadingCount, settledChipCount:settled.chipCount, settledChipLabels:settled.chipLabels}; — store maxSimultaneous as {max_simultaneous}, maxNeighborDelta as {max_neighbor_delta}, settledLoadingCount as {settled_loading_count}, settledChipCount as {settled_chip_count}, settledChipLabels as {settled_chip_labels}, and the full timeline as {scope_timeline} (evidence only)","[DOM] {max_simultaneous} === 0 — across every recorded mutation in {scope_timeline}, the loading indicator and a scope chip were never present together in the scope-indicator slot {SPEC}
+[DOM] {settled_chip_count} === 1 AND {settled_loading_count} === 0 AND {settled_chip_labels} contains {parent_category_name} — exactly one scope chip visible at settle, naming {parent_category_name}, with no loading indicator present {SPEC}
+[STATE] No loading indicator remains once the scope chip for {parent_category_name} has settled — the last entry recorded in {scope_timeline} has loadingCount 0 {SPEC}","[CONSOLE] no TypeError or JS errors during the category-to-category transition
+[NETWORK] no 4xx/5xx on the category fetch triggered by the breadcrumb click",{max_simultaneous} >= 1 (a loading indicator and a scope chip recorded together in {scope_timeline}); {settled_chip_labels} still names {child_category_name} instead of {parent_category_name}; {max_neighbor_delta} > 2 (neighbor control shifted beyond tolerance at some recorded instant); console TypeError,none — read-only,VCST-5729,Automated
+SRCH-012,Search Bar - Placeholder Does Not Name the Stale Category While Scope Is Loading,Search > Scoped,Medium,BL-SRCH-004,,Storefront accessible; catalog nav has a top-level category with at least one visible subcategory (live-discover — do not assume a fixed category name),url={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open the main catalog navigation menu
+[ASSERT] browser_snapshot the nav; pick a top-level category link that has visible subcategories → click it → store its name as {parent_category_name}
+[WAIT] Category page loads
+[ASSERT] browser_snapshot the category page; pick a child/subcategory link → click it → store its name as {child_category_name}
+[WAIT] Child category page loads; search input placeholder settles
+[ASSERT] Read the search input's placeholder text/attribute after settle → store as {baseline_placeholder}
+[LOG] write {parent_category_name, child_category_name, baseline_placeholder} to evidence
+[SETUP] `browser_evaluate` (read-only DOM instrumentation, installed BEFORE the breadcrumb click so the transient loading window — previously unobservable because browser_click only returns after Playwright settles the navigation — is never missed — a MutationObserver queues every DOM/attribute change in order regardless of main-thread load; an earlier requestAnimationFrame sampler was tried and discarded because it starves exactly when the route change happens, so it can report zero violations without ever having observed the loading state): const c=document.querySelector('.search-bar .vc-input__decorator'); const inp=document.querySelector('[data-test-id=global-search-query-input]'); window.__srchTimeline=[]; const snap=()=>{ const chips=c?Array.from(c.querySelectorAll('[data-search-scope]')):[]; const loadingCount=c?Array.from(c.children).filter(el=>!el.matches('[data-search-scope]')).length:0; window.__srchTimeline.push({t:performance.now(), loadingCount, chipCount:chips.length, chipLabels:chips.map(el=>(el.querySelector('.vc-button__slot')?.textContent||el.getAttribute('data-search-scope')||'').trim()), placeholder:inp?inp.getAttribute('placeholder'):null, neighborX:inp?inp.getBoundingClientRect().left:null}); }; snap(); const mo1=new MutationObserver(snap); if(c) mo1.observe(c,{childList:true,subtree:true,characterData:true}); const mo2=new MutationObserver(snap); if(inp) mo2.observe(inp,{attributes:true,attributeFilter:['placeholder']}); window.__srchObservers=[mo1,mo2]; return {installed:true, baseline:window.__srchTimeline[0]}; — confirm installed===true
+[ACT] Click the breadcrumb link labeled ""{parent_category_name}"" in the breadcrumb trail
+[WAIT] Wait for the parent category page and scope state to fully settle (a real user click, not a reload — the observers installed above persist across this SPA route change)
+[SETUP] `browser_evaluate` (read-only replay of the recorded timeline now that the transition has settled — disconnect the observers first so the array is frozen; substitute the real captured child-category text for staleName before calling the tool): window.__srchObservers?.forEach(o=>o.disconnect()); const tl=window.__srchTimeline||[]; const inp=document.querySelector('[data-test-id=global-search-query-input]'); const finalNeighborX=inp?inp.getBoundingClientRect().left:null; const staleName='{child_category_name}'; const loadingEntries=tl.filter(e=>e.loadingCount>=1); const staleLeakCount=loadingEntries.filter(e=>(e.placeholder||'').includes(staleName)).length; const nonGenericDuringLoadCount=loadingEntries.filter(e=>(e.placeholder||'')!=='Search').length; const settled=tl[tl.length-1]||{}; return {timeline:tl, loadingEntryCount:loadingEntries.length, staleLeakCount, nonGenericDuringLoadCount, loadingPlaceholders:loadingEntries.map(e=>e.placeholder), settledPlaceholder:settled.placeholder, finalNeighborX}; — store loadingEntryCount as {loading_entry_count}, staleLeakCount as {stale_leak_count}, nonGenericDuringLoadCount as {non_generic_during_load_count}, settledPlaceholder as {settled_placeholder}, and the full timeline as {scope_timeline} (evidence only)","[DOM] {baseline_placeholder} contains '{child_category_name}' (sanity check — scoped placeholder works on the initial settled state) {SPEC}
+[DOM] {stale_leak_count} === 0 — no recorded state where a loading indicator was present ever showed the placeholder containing the stale (previous) category name {SPEC}
+[DOM] {non_generic_during_load_count} === 0 — every recorded state where a loading indicator was present shows the generic 'Search' placeholder, never a category name {SPEC}
+[DOM] {settled_placeholder} contains '{parent_category_name}' — the placeholder names the NEW settled category, not the stale one and not the generic text {SPEC}
+[STATE] The placeholder only ever names a category once the scope has settled — {loading_entry_count} === 0 OR {non_generic_during_load_count} === 0 confirms every loading-window entry stayed on the generic placeholder {SPEC}","[CONSOLE] no TypeError or JS errors during the category-to-category transition
+[NETWORK] no 4xx/5xx on the category fetch triggered by the breadcrumb click",{stale_leak_count} >= 1 (stale category name survived into the loading window per {scope_timeline}); {non_generic_during_load_count} >= 1 (a non-generic non-Search placeholder appeared while loading); {settled_placeholder} still contains {child_category_name} instead of {parent_category_name}; console TypeError,none — read-only,VCST-5729 | Promoted: VCST-5729 (2026-08-27),Automated
+SRCH-013,Search Bar - Category Scope Chip Stays Removable After Category Navigation,Search > Scoped,Medium,BL-SRCH-004,,Storefront accessible; catalog nav has a top-level category with at least one visible subcategory (live-discover — do not assume a fixed category name),url={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open the main catalog navigation menu
+[ASSERT] browser_snapshot the nav; pick a top-level category link that has visible subcategories → click it → store its name as {parent_category_name}
+[WAIT] Category page loads
+[ASSERT] browser_snapshot the category page; pick a child/subcategory link → click it → store its name as {child_category_name}
+[WAIT] Child category page loads; search bar scope chip settles naming {child_category_name}
+[ACT] Click the breadcrumb link labeled ""{parent_category_name}"" in the breadcrumb trail
+[WAIT] Wait for the parent category page and scope indicator to fully settle (chip names {parent_category_name}, no loading indicator remains)
+[ASSERT] browser_snapshot the settled scope chip; verify a remove/clear control (e.g. an 'x' icon) is present on it
+[ACT] Click the remove/clear control on the scope chip
+[WAIT] Wait for the scope to clear","[DOM] After the category-to-category navigation settles, the scope chip for {parent_category_name} exposes a remove/clear control that is visible and clickable {SPEC}
+[STATE] Clicking the remove control clears the category scope — the chip is removed from the search bar {SPEC}
+[DOM] After the scope clears, no category name is present in the search input placeholder — it returns to the generic keyword-entry text {SPEC}
+[STATE] The remove control is never permanently unreachable after a category-to-category navigation — i.e. the loading-state flag governing the chip's v-else branch always resolves back to false, even after a prior navigation {SPEC}","[CONSOLE] no TypeError or JS errors during navigation, remove-click, or scope-clear
+[NETWORK] no 4xx/5xx on the category fetch or scope-clear action",Remove/clear control absent or non-interactive on the settled chip after navigation; clicking remove does not clear the scope; chip persists after the remove click; placeholder still names a category after clear; console TypeError,none — read-only,VCST-5729 | Promoted: VCST-5729 (2026-08-27),Automated

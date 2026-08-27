@@ -1,35 +1,24 @@
 {
-  "runId": "REG-2026-08-26-1631",
+  "runId": "REG-2026-08-27-1134",
+  "selection": "004",
+  "startedAt": "2026-08-27T11:34:00.000Z",
+  "finishedAt": "2026-08-27T10:17:22.000Z",
+  "env": "vcst",
   "status": "completed",
-  "environment": "https://vcst-qa.govirto.com",
-  "selection": "050m",
-  "startedAt": "2026-08-26T14:31:02.678Z",
-  "finishedAt": "2026-08-26T14:33:48.842Z",
-  "notes": "119/119 machine lane (runner-native GraphQL, scoped /graphql/sales-rep) — no browser lane. 111 pass / 8 fail, single attempt, no lane disagreements. 6 of 8 failures are test artifacts: lastCartDate does not exist on CustomerCartStatisticsPeriod (064, 067); the 'is non-empty GUID' predicate rejects the platform's unhyphenated N-form id (076, 084); sendCustomerCommunication returns a result object not a Boolean (053); SR-GQL-013's fixture order dates contradict its own stated precondition and its 'STORE_ID_SECONDARY unset' note is stale. 2 need review: SR-GQL-063 (unfiltered period excludes the status-only Cancelled order, 8+1=9) and SR-GQL-071 (salesRepCustomerCounts returns null, not a zero-filled object, for a zero-served rep).",
-  "deployState": {
-    "platform": "3.1061.0",
-    "theme": "2.56.0"
-  },
-  "suites": {
-    "050m": {
+  "notes": "Suite 004 only (Search Core). Purpose: promotion evidence for SRCH-011/SRCH-012 (VCST-5729) using rewritten MutationObserver-based steps; re-validated 42 other cases after CSV edits. SRCH-012 evidence supports promotion; SRCH-011 BLOCKED on an assertion-authoring defect (baseline mismeasured), not an instrumentation failure - needs re-authoring before promotion.",
+  "suites": [
+    {
+      "id": "004",
+      "name": "Search Core",
       "status": "done",
-      "name": "GraphQL xAPI — Sales Rep (scoped /graphql/sales-rep)",
-      "agent": "machine-lane (graphql-runner)",
-      "lane": "machine",
-      "browser": "n/a — 119 machine / 0 browser / 0 manual",
-      "testCount": 119,
-      "attempts": 1,
-      "passed": 111,
-      "failed": 8,
-      "blocked": 0,
-      "skipped": 0,
-      "passRate": "93.3%"
+      "browser": "playwright-chrome",
+      "agent": "qa-frontend-expert",
+      "testCount": 44,
+      "pass": 22,
+      "fail": 0,
+      "blocked": 3,
+      "skipped": 19,
+      "lane": "browser"
     }
-  },
-  "windowStart": "2026-08-26T14:31:02.678Z",
-  "appInsights": {
-    "backend": "165 req / 5 failed / 5 exceptions / 1766 dependencies (0 failed)",
-    "correlatedSignals": 0,
-    "detail": "All 5 exceptions are the suite's own negative-path assertions: 3x AuthorizationError 'Anonymous access denied' + 2x SendCustomerCommunication ValidateRequest length limits. No unattributed backend error."
-  }
+  ]
 }
