@@ -2070,6 +2070,31 @@
       "customerApplicability": "reference"
     },
     {
+      "id": "064b",
+      "name": "CSV Export — File Name Template (VCST-5745)",
+      "file": "regression/suites/Backend/import-export/064b-csv-export-filename.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 9,
+      "estimatedMinutes": 12,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "csv",
+        "export",
+        "filename",
+        "settings",
+        "security",
+        "sprint"
+      ],
+      "requiresModules": [
+        "import-export"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
       "id": "065",
       "name": "Shipping",
       "file": "regression/suites/Backend/shipping/065-shipping.csv",
