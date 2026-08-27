@@ -205,16 +205,29 @@ it here, and do not treat a green `ecl:lint` as evidence the citations are corre
 Same purpose and the same code as `bl-audit-criteria.md` §6 (`scripts/knowledge/oracle-significance.ts`,
 via `npm run oracles:rank -- --axis=ecl`), with the signals a pattern row actually carries.
 
-**Business value — what a violation costs — comes ONLY from the `BL Invariant` column.** A pattern
-that maps to a `P0-revenue` invariant costs what that invariant costs: a real cross-reference into
-the normative oracle rather than a second opinion about the same behavior. A section that links none
-is `unknown`, and `unknown` never promotes.
+**Business value — what a violation costs — comes ONLY from a declared `BL-*` link:** the section's
+own `BL Invariant` column where it has one, else its **Appendix D** row. A pattern that maps to a
+`P0-revenue` invariant costs what that invariant costs: a real cross-reference into the normative
+oracle rather than a second opinion about the same behavior. A section that links none is `unknown`,
+and `unknown` never promotes.
 
 That is a deliberate, load-bearing consequence: **adding a NEW section means naming the invariant the
 pattern endangers.** The library already practises this in prose — several rows read
-`— (gap; see bl_proposals)` — and Appendix D's whole ECL↔BL cross-reference exists to keep it
-coherent. Measured today, **9 of 54 sections link an invariant**; the other 45 are `undeclared`,
-which is a finding about the library, not a verdict on those sections (see below).
+`— (gap; see bl_proposals)` — and Appendix D's whole ECL↔BL cross-reference exists to keep it coherent.
+
+> **The Appendix D fallback was added 2026-08-27, and the reason is worth keeping.** The model
+> originally read the `BL Invariant` column and nothing else — but only chapter 14's table *has* that
+> column, so **45 of 54 sections scored `unknown` and were ineligible for growth by construction**,
+> while Appendix D already declared a real invariant for **34** of them. The audit of 2026-08-27
+> demonstrated it rather than argued it: correcting Appendix D's `ECL-15.1` row from `— (gap; no
+> BL-A11Y domain yet)` to `BL-A11Y-001, BL-A11Y-002, BL-A11Y-004` left its label at `undeclared`,
+> because the reducer could not see the table whose entire purpose is that cross-reference. Two guards
+> came with the fix: the refs are read from the Appendix D row's **last cell only** (a BL cell may also
+> name a sibling section — `ECL-14.9`'s reads `BL-LOY-008 (partial); ECL-10.2` — and 10.2 must not
+> inherit it), and a cell opening with an **em dash declares nothing** even when its parenthetical
+> names an invariant the section merely *overlaps* (`— (no single BL invariant; overlaps
+> BL-CROSS-011)`), because declining to declare is itself a claim. Do not quote a count of declared
+> sections here — run `npm run oracles:rank -- --axis=ecl` and read the header.
 
 **Product value — how much of the tested product is exposed — is demand plus two one-level bumps:**
 `[OBSERVED]` share ≥75% lifts it (a predominantly-confirmed section is release-walk material for

@@ -43,7 +43,7 @@ Omitting the axis means `all`. **`/qa-review-bl` is a retained alias** for `/qa-
 | Dangling-citation rule | **BLC-002** | **ECLC-001** |
 | Uncovered-entry rule | **BLC-004** | **ECLC-002** |
 | Unparsable-suite rule | **BLC-005** | **ECLC-003** |
-| Business value (what a violation costs) | the entry's own **severity tag** (`P0-*` high · `P1-*` medium · `P2-ux` low · absent unknown) | the severity of the **`BL-*` invariant its rows link to**; links none ⇒ `unknown` (never proxied from prose or `Frequency`) |
+| Business value (what a violation costs) | the entry's own **severity tag** (`P0-*` high · `P1-*` medium · `P2-ux` low · absent unknown) | the severity of the **`BL-*` invariant the section declares** — its own `BL Invariant` column where it has one (chapter 14 only), else its **Appendix D** row; declares none ⇒ `unknown` (never proxied from prose or `Frequency`, and an Appendix D cell opening with an em dash declares nothing) |
 | Product value (what leans on it) | citing-case demand + a `BL-CROSS` level | citing-case demand + `[OBSERVED]` share + a High-`Frequency` level (exposure, not cost) |
 | Promotion queue | `npm run oracles:rank -- --axis=bl` | `npm run oracles:rank -- --axis=ecl` |
 | Proposals file | `reports/ba/bl-proposals-<date>.md` | `reports/ba/ecl-proposals-<date>.md` |

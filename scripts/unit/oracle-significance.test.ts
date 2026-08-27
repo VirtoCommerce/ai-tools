@@ -318,3 +318,91 @@ test("parseLibrary: a table above the first section defines nothing", () => {
   const md = ["| Pattern | Description | Frequency | Impact | Status |", "|---|---|---|---|---|", "| x | y | Low | z | [OBSERVED] |"].join("\n");
   assert.deepEqual(parseLibrary(md).sections, []);
 });
+
+// ---------------------------------------------------------------------------
+// Fenced code blocks are illustration, not definitions (regression, 2026-08-27)
+// ---------------------------------------------------------------------------
+
+test("parseLibrary: a fenced template's table row is NOT a pattern of the preceding section", () => {
+  // Appendix A sits between §13.3 and chapter 14 and its fenced template carries a header,
+  // a separator and a placeholder row. That row was being attributed to §13.3, which then
+  // scored 4 rows for its 3 and gained a phantom `[OBSERVED]` in its status share.
+  const md = [
+    "### 13.3 Loyalty & Points Edge Cases",
+    "| Pattern | Description | Frequency | Impact | Status |",
+    "|---|---|---|---|---|",
+    "| **Points not credited** | never appear | Low-Medium | support | [OBSERVED] |",
+    "",
+    "## Appendix A: How to Add Patterns",
+    "```markdown",
+    "### [Category] [Specific Issue]",
+    "| Pattern | Description | Frequency | Impact | Status |",
+    "|---|---|---|---|---|",
+    "| **Pattern Name** | What happens | Low/Medium/High | impact | [OBSERVED] or [THEORETICAL] |",
+    "```",
+  ].join("\n");
+  const { sections } = parseLibrary(md);
+  assert.equal(sections.length, 1);
+  assert.deepEqual(
+    sections[0].rows.map((r) => r.frequency),
+    ["Low-Medium"],
+    "the fenced placeholder row must not be counted",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Appendix D supplies the business axis for the 5-column chapters (2026-08-27)
+// ---------------------------------------------------------------------------
+
+test("parseLibrary: Appendix D declares BL refs per section, from the row's LAST cell", () => {
+  const md = [
+    "## Appendix D: ECL → Business Logic Invariant Cross-Reference",
+    "| ECL Section | Description | BL Invariants |",
+    "|---|---|---|",
+    "| ECL-15.1 Screen Reader Patterns | unlabeled controls | BL-A11Y-001, BL-A11Y-004 |",
+    "| ECL-14.9 Validator Fault Isolation | nulls the aggregate | BL-LOY-008 (partial); ECL-10.2 |",
+    "| ECL-4.1 Email & Identity | typos | — (no BL invariant governs this) |",
+    "| ECL-7.1 Browser & Device | stale cache | — (no single BL invariant; overlaps BL-CROSS-011) |",
+  ].join("\n");
+  const { appendixBlRefs } = parseLibrary(md);
+
+  assert.deepEqual(appendixBlRefs["ECL-15.1"], ["BL-A11Y-001", "BL-A11Y-004"]);
+  // A BL cell may also name a sibling SECTION; that sibling must not inherit the invariant.
+  assert.deepEqual(appendixBlRefs["ECL-14.9"], ["BL-LOY-008"]);
+  assert.equal(appendixBlRefs["ECL-10.2"], undefined, "a section named inside another row's BL cell declares nothing");
+  // An em dash is the library's own "not declared" marker.
+  assert.equal(appendixBlRefs["ECL-4.1"], undefined);
+  // ...and it still declines even when the parenthetical names an invariant it OVERLAPS.
+  assert.equal(appendixBlRefs["ECL-7.1"], undefined, "a hedge must not be silently upgraded to a declaration");
+});
+
+test("eclBusinessValue: falls back to Appendix D only when the section's own rows declare none", () => {
+  const sev = (id: string) => ({ "BL-CART-001": "P0-revenue", "BL-A11Y-001": "P1-data" })[id];
+  const noOwnLink = [{ frequency: "High", status: "[OBSERVED]", blRefs: [] }];
+
+  // Without the fallback the 5-column shape can never reach the business axis at all.
+  assert.equal(eclBusinessValue(noOwnLink, sev).value, "unknown");
+  const viaAppendix = eclBusinessValue(noOwnLink, sev, ["BL-A11Y-001"]);
+  assert.equal(viaAppendix.value, "medium");
+  assert.match(viaAppendix.note, /via Appendix D/, "the note must say where the declaration came from");
+
+  // The section's own column wins, and is not diluted by a weaker appendix link.
+  const ownLink = [{ frequency: "High", status: "[OBSERVED]", blRefs: ["BL-CART-001"] }];
+  const own = eclBusinessValue(ownLink, sev, ["BL-A11Y-001"]);
+  assert.equal(own.value, "high");
+  assert.doesNotMatch(own.note, /Appendix D/);
+});
+
+test("scoreEcl: an Appendix D link earns the bl-linked signal, and says so", () => {
+  const sev = (id: string) => (id === "BL-A11Y-001" ? "P1-data" : undefined);
+  const rows = [{ frequency: "High", status: "[OBSERVED]", blRefs: [] }];
+
+  const without = scoreEcl({ id: "ECL-15.1", citingCases: 11, rows, blSeverityOf: sev });
+  assert.equal(without.contributions.find((c) => c.signal === "bl-linked"), undefined);
+
+  const withAppendix = scoreEcl({ id: "ECL-15.1", citingCases: 11, rows, blSeverityOf: sev, appendixBlRefs: ["BL-A11Y-001"] });
+  const signal = withAppendix.contributions.find((c) => c.signal === "bl-linked");
+  assert.equal(signal?.points, 8, "the signal is 'normatively testable', which an Appendix D link satisfies too");
+  assert.match(signal!.note, /Appendix D/);
+  assert.equal(withAppendix.score, without.score + 8);
+});

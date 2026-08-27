@@ -81,7 +81,7 @@ BSM-031,Admin SPA — Category Create and Delete,Backend Smoke > Catalog Admin,M
 [TOAST] success toast on delete
 [GRID] deleted category no longer appears in grid","[API] GET {{BACK_URL}}/api/catalog/categories?searchPhrase={{test_cat_name}} after create → returns item
 [API] same endpoint after delete → returns empty array","Category form fails to open, save returns 400, deleted category still shows in grid, API returns 500 on category create",none,"Suite 053 (Catalog Admin Categories)",Automated
-BSM-036,Admin SPA — Price List Entry CRUD,Backend Smoke > Pricing Admin,High,"BL-PRICE-001, BL-PRICE-007",ECL-5.2,"Admin logged in, at least 1 price list exists (BSM-012 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/pricing
+BSM-036,Admin SPA — Price List Entry CRUD,Backend Smoke > Pricing Admin,High,"BL-PRICE-001, BL-PRICE-007",ECL-14.4,"Admin logged in, at least 1 price list exists (BSM-012 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/pricing
 [WAIT] Pricing blade loaded
 [ACT] click first price list row
 [WAIT] price list detail blade opens
@@ -162,7 +162,7 @@ BSM-076,Admin SPA — Edit Product Name and Verify Persistence,Backend Smoke > E
 [BLADE] no validation error shown
 [STATE] blade remains open on the same product after save","[API] GET {{BACK_URL}}/api/catalog/products/<product_id> → 200 with 'name' field containing {{test_product_name_suffix}}
 [BODY] 'modifiedDate' field updated (not identical to 'createdDate')","Save button non-responsive, toast absent after save, name reverts to old value on blade refresh, API still returns old name 5s after save, Angular error on save, modifiedDate unchanged after edit","Restore original product name via API: PUT {{BACK_URL}}/api/catalog/products with original name.","Suite 051 (Catalog Admin Products)",Automated
-BSM-079,Admin SPA — Edit Price List Entry and Verify Updated Price,Backend Smoke > Edit Workflows,High,"BL-PRICE-001, BL-PRICE-007",ECL-5.2,"Admin logged in, price list with at least 1 price entry exists (BSM-036 passed)","back_url={{BACK_URL}}; new_list_price=9999.00","[NAV] {{BACK_URL}}/ui#/pricing
+BSM-079,Admin SPA — Edit Price List Entry and Verify Updated Price,Backend Smoke > Edit Workflows,High,"BL-PRICE-001, BL-PRICE-007",ECL-14.4,"Admin logged in, price list with at least 1 price entry exists (BSM-036 passed)","back_url={{BACK_URL}}; new_list_price=9999.00","[NAV] {{BACK_URL}}/ui#/pricing
 [WAIT] Pricing blade loaded
 [ACT] click first price list row
 [WAIT] price list detail blade opens

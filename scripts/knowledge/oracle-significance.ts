@@ -309,17 +309,34 @@ export interface EclInput {
    * Omitted ⇒ the frequency proxy below is used.
    */
   blSeverityOf?: (id: string) => string | undefined;
+  /**
+   * BL ids Appendix D declares for this section, used ONLY when the section's own rows
+   * declare none. Only chapter 14 carries a `BL Invariant` column, so without this the
+   * business axis is unreachable for the 5-column chapters — 45 of 54 sections scored
+   * `unknown` (and so could never promote) while Appendix D already named a real
+   * invariant for 34 of them. Measured 2026-08-27: correcting Appendix D's 15.1 row to
+   * `BL-A11Y-001/002/004` did not move its label, which is what surfaced this.
+   */
+  appendixBlRefs?: string[];
 }
 
 /**
- * Business value of an ECL section — read ONLY from the `BL Invariant` column.
+ * Business value of an ECL section — read from the `BL Invariant` column, falling back to
+ * the section's Appendix D row.
  *
  * A pattern that maps to a `P0-revenue` invariant costs what that invariant costs: a real
  * cross-reference into the normative oracle, not a second opinion about the same behavior.
  * A section that links none stays `unknown`, and `unknown` never promotes — so adding a NEW
  * pattern means naming the invariant it endangers, which is the discipline the library
- * already practises in prose (several rows read `— (gap; see bl_proposals)`) and which
- * Appendix D's whole ECL↔BL cross-reference exists to keep coherent.
+ * already practises in prose (several rows read `— (gap; see bl_proposals)`).
+ *
+ * **The Appendix D fallback is not a loosening of that rule; it is what makes the rule
+ * reachable at all.** Only chapter 14's table carries a `BL Invariant` column, so reading
+ * that column alone left the other 45 sections permanently `unknown` — ineligible for
+ * growth by construction, not by any judgement about them — while Appendix D, whose entire
+ * purpose is this cross-reference, already declared a real invariant for 34. A declaration
+ * is a declaration wherever the library makes it; an Appendix D cell that opens with an em
+ * dash still declares nothing (see `parseLibrary`).
  *
  * `Frequency` deliberately does NOT feed this axis. It answers "how often does this bite",
  * which is exposure, not cost — it belongs to the product axis, and treating a
@@ -329,10 +346,15 @@ export interface EclInput {
 export function eclBusinessValue(
   rows: EclRow[],
   blSeverityOf?: (id: string) => string | undefined,
+  appendixBlRefs: string[] = [],
 ): { value: BusinessValue; note: string } {
-  const linked = rows.flatMap((r) => r.blRefs);
+  const own = rows.flatMap((r) => r.blRefs);
+  const linked = own.length ? own : appendixBlRefs;
+  // Where the declaration was found. Kept in the note so a derived link is never mistaken
+  // for one the section's own table declares — the reader can tell which file to edit.
+  const source = own.length ? "" : " (via Appendix D)";
   if (!linked.length) return { value: "unknown", note: "no BL invariant linked — business value undeclared (name the invariant this pattern endangers)" };
-  if (!blSeverityOf) return { value: "unknown", note: `links ${linked.length} BL invariant(s) but no severity resolver was supplied` };
+  if (!blSeverityOf) return { value: "unknown", note: `links ${linked.length} BL invariant(s)${source} but no severity resolver was supplied` };
 
   let best: BusinessValue = "unknown";
   let via = "";
@@ -344,8 +366,8 @@ export function eclBusinessValue(
     }
   }
   return best === "unknown"
-    ? { value: "unknown", note: `links ${linked.join(", ")}, none of which carries a severity tag in the BL oracle` }
-    : { value: best, note: `via ${via} (${blSeverityOf(via)})` };
+    ? { value: "unknown", note: `links ${linked.join(", ")}${source}, none of which carries a severity tag in the BL oracle` }
+    : { value: best, note: `via ${via} (${blSeverityOf(via)})${source}` };
 }
 
 export function scoreEcl(input: EclInput): Score {
@@ -391,11 +413,16 @@ export function scoreEcl(input: EclInput): Score {
       : { signal: "frequency", points: 0, note: "no readable Frequency cell — contributes nothing" },
   );
 
-  if (input.rows.some((r) => r.blRefs.length > 0)) {
+  // Same fallback as the business axis, and for the same reason: the signal is "this
+  // pattern is normatively testable", which is equally true of a link Appendix D declares.
+  // Scoring it only for chapter 14 would have made this an artefact of table shape.
+  const ownBlLink = input.rows.some((r) => r.blRefs.length > 0);
+  const appendixBlLink = !ownBlLink && (input.appendixBlRefs?.length ?? 0) > 0;
+  if (ownBlLink || appendixBlLink) {
     contributions.push({
       signal: "bl-linked",
       points: 8,
-      note: "at least one row maps to a BL-* invariant — the pattern is normatively testable",
+      note: `at least one row maps to a BL-* invariant — the pattern is normatively testable${appendixBlLink ? " (declared in Appendix D)" : ""}`,
     });
   }
 
@@ -404,7 +431,7 @@ export function scoreEcl(input: EclInput): Score {
   }
 
   const score = contributions.reduce((n, c) => n + c.points, 0);
-  const business = eclBusinessValue(input.rows, input.blSeverityOf);
+  const business = eclBusinessValue(input.rows, input.blSeverityOf, input.appendixBlRefs);
   // Product value = how much of the tested product is exposed to the pattern. A
   // predominantly-confirmed section is worth one more level than its raw citation count says;
   // a purely theoretical one, one less — it describes a risk nobody has seen here yet, which

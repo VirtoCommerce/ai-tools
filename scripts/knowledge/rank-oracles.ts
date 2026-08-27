@@ -80,9 +80,11 @@ function collectBl(repoRoot: string): Ranked<Row>[] {
 
 function collectEcl(repoRoot: string): Ranked<Row>[] {
   const library = join(repoRoot, ".claude", "knowledge", "oracles", "e-commerce-edge-cases-library.md");
-  const { sections } = parseLibrary(readFileSync(library, "utf-8"));
-  // An ECL section's BUSINESS value is read from the BL invariants its rows link to, so the
-  // normative oracle is the source rather than the library's own prose.
+  const { sections, appendixBlRefs } = parseLibrary(readFileSync(library, "utf-8"));
+  // An ECL section's BUSINESS value is read from the BL invariants it links to, so the
+  // normative oracle is the source rather than the library's own prose. `appendixBlRefs`
+  // supplies that link for the 5-column chapters, which have no `BL Invariant` column of
+  // their own — without it the business axis is unreachable for 45 of 54 sections.
   const blSeverity = new Map(
     parseOracle(readFileSync(join(repoRoot, ".claude", "knowledge", "oracles", "business-logic.md"), "utf-8")).map((i) => [i.id, i.severity]),
   );
@@ -93,7 +95,10 @@ function collectEcl(repoRoot: string): Ranked<Row>[] {
   const rows: Ranked<Row>[] = sections.map((s) => {
     const citingCases = (citations.byEcl.get(s.id) ?? []).length;
     const item: Row = { id: s.id, axis: "ecl", kind: "entry", label: s.title, severity: "", citingCases };
-    return { item, score: scoreEcl({ id: s.id, citingCases, rows: s.rows, blSeverityOf }) };
+    return {
+      item,
+      score: scoreEcl({ id: s.id, citingCases, rows: s.rows, blSeverityOf, appendixBlRefs: appendixBlRefs[s.id] }),
+    };
   });
 
   for (const [id, cases] of citations.byEcl) {

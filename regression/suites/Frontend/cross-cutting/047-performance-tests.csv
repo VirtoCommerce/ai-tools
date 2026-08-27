@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"PERF-LOAD-001","Modal Open Time - Few Locations","Performance > Load","Medium","","ECL-12.1","- 1-5 pickup locations configured
+"PERF-LOAD-001","Modal Open Time - Few Locations","Performance > Load","Medium","","ECL-10.1","- 1-5 pickup locations configured
 - DevTools Performance tab open","url={{FRONT_URL}}","[ACT] Open DevTools Performance tab
 [ACT] Start performance recording
 [ACT] Click BOPIS/pickup trigger to open modal
@@ -10,7 +10,7 @@
 [STATE] Location list is populated (≥1 item visible)
 [STATE] Animation completes without frame drops","[NETWORK] No more than 1 API call fired to load location data
 [CONSOLE] No JavaScript errors during modal open","spinner visible >500ms; modal open time ≥500ms; console errors present","none","VCST-4499 TC-011 | Oracle: .claude/knowledge/execution/performance-thresholds.md","Manual"
-"PERF-LOAD-002","Modal Open Time - Many Locations","Performance > Load","Medium","","ECL-12.1","- 10-50 pickup locations configured
+"PERF-LOAD-002","Modal Open Time - Many Locations","Performance > Load","Medium","","ECL-10.1","- 10-50 pickup locations configured
 - DevTools Performance tab open","url={{FRONT_URL}}","[ACT] Start performance recording in DevTools
 [ACT] Click BOPIS/pickup trigger to open modal
 [WAIT] Wait for location list and map to fully render
@@ -20,7 +20,7 @@
 [DOM] Map component rendered and interactive
 [STATE] No loading spinner remaining after 1s","[NETWORK] API response received within 800ms
 [CONSOLE] No JavaScript errors or warnings","spinner visible >1s; map tiles blank after 1s; modal open time ≥1000ms","none","VCST-4499 TC-011 | Oracle: .claude/knowledge/execution/performance-thresholds.md","Manual"
-"PERF-LOAD-003","Modal Open Time - High Volume","Performance > Load","Medium","","ECL-12.1, ECL-12.2","- 50-100 pickup locations configured
+"PERF-LOAD-003","Modal Open Time - High Volume","Performance > Load","Medium","","ECL-10.1","- 50-100 pickup locations configured
 - DevTools Performance tab open","url={{FRONT_URL}}","[ACT] Start performance recording in DevTools
 [ACT] Click BOPIS/pickup trigger to open modal
 [WAIT] Wait for modal to reach interactive state
@@ -31,7 +31,7 @@
 [STATE] List is navigable and usable within the 2s threshold
 [STATE] No blank or broken UI state","[NETWORK] Verify API request uses limit/offset params or returns clustered data
 [CONSOLE] No errors; warn if single unbounded request returns 50-100 items without pagination","modal open time ≥2s; no pagination or clustering when >50 locations; console errors present","none","VCST-4499 TC-011 | Oracle: .claude/knowledge/execution/performance-thresholds.md","Manual"
-"PERF-SEARCH-001","Search Response Time","Performance > Search","Medium","","ECL-12.1","- Pickup modal open and location list visible
+"PERF-SEARCH-001","Search Response Time","Performance > Search","Medium","","ECL-10.1","- Pickup modal open and location list visible
 - DevTools Network tab open to monitor API calls","url={{FRONT_URL}}","[ACT] Focus the search/filter input inside the pickup modal
 [ACT] Type a search query character by character (use browser_type with delay)
 [WAIT] Wait for filtered results to appear
@@ -42,7 +42,7 @@
 [STATE] No lag or freeze during typing
 [NETWORK] Debouncing: ≤1 API call per distinct query (not per keystroke)","[NETWORK] Monitor /api calls; confirm debounce delay ~300ms between last keystroke and API fire
 [CONSOLE] No errors during search interaction","results delay >500ms; multiple API calls per keystroke (debounce not working); console errors","none","VCST-4499 TC-011 | Oracle: .claude/knowledge/execution/performance-thresholds.md","Manual"
-"PERF-FILTER-001","Filter Response Time","Performance > Filter","Medium","","ECL-12.1","- Pickup modal open
+"PERF-FILTER-001","Filter Response Time","Performance > Filter","Medium","","ECL-10.1","- Pickup modal open
 - Multiple filter options visible (e.g., distance, availability)
 - DevTools Performance tab open","url={{FRONT_URL}}","[ACT] Start performance recording
 [ACT] Apply a filter option (e.g., select a distance or availability filter)

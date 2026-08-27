@@ -63,9 +63,13 @@ This is a structured reference for:
 | **Gift card + coupon invalid combo** | System doesn't allow combining gift card with percentage discount | Low | Confusing error, user navigates away | [THEORETICAL] |
 | **Bulk discount not applying** | User adds 10 items for bulk discount, but system counts them separately by variant | Medium | Wrong price calculation | [OBSERVED] |
 | **Free shipping threshold crossed** | User adds item that triggers free shipping; price changes mid-flow | Low-Medium | User expects one total, sees another | [OBSERVED] |
-| **Coupon case sensitivity** | System requires exact case but user enters lowercase | Low | Coupon rejected unnecessarily | [OBSERVED] |
+| **Coupon code case normalization** | Coupon codes are matched **case-insensitively server-side**, and the storefront sends the code as typed (trimmed only) — it folds case solely to compare the applied code against the entered one. So a code registered in one case applies when entered in any case. The naive expectation is inverted: the presentation layer force-UPPERCASES the code in the account coupon list and in the clipboard copy, which is functionally harmless for a collision-free code precisely because validation ignores case. The real harm is a **collision**, not a rejection — where an uppercase twin exists as a DISTINCT coupon, the uppercased entry resolves to that other coupon and best-reward selection takes the larger discount. Residual risk: case folding reintroduced on the wire, or a backend lookup that becomes case-sensitive | Low | The user sees and copies a code in the wrong case; where an uppercase twin exists, a different coupon is applied than the one acted on | [OBSERVED] |
 | **Coupon for product no longer in cart** | User applies coupon, then removes the coupon-eligible product | Low-Medium | Coupon error or unexpected discount | [THEORETICAL] |
 | **First-time buyer coupon on second cart** | User has multiple sessions; second session still applies first-time discount | Low | Revenue loss | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Row 5** previously read `**Coupon case sensitivity** | System requires exact case but user enters lowercase`, which inverts the mechanism on this platform and sends an agent hunting a rejection that does not occur. Matching is case-insensitive **server-side**; the defect is presentation-layer (the code is force-uppercased in the account coupon list and in the clipboard copy), and its real consequence is a wrong-coupon **collision** where an uppercase twin exists as a separate coupon, not an invalid code. **Source:** the storefront cart's coupon utility folds case only to compare the applied code against the entered one, with an in-file note that the backend matches case-insensitively; the apply path sends the trimmed code as typed and validates before removing the previously applied one. **Live:** a lowercase-registered, collision-free coupon entered in all uppercase applied successfully, discounted the cart by its declared percentage, and flipped the matching promotion card to its remove state — confirming case-insensitive server-side matching on the deployed build. **Not asserted:** whether the presentation-layer defect is now fixed — that lives on the account coupon list, which this run did not observe, so no claim is made either way. Other rows unchanged.
+
+---
 
 ### 1.4 Layout Shift & Hover-Induced Displacement
 
@@ -92,7 +96,11 @@ This is a structured reference for:
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
 | **Horizontal scroll at narrow viewports** | A fixed-width element or unwrapped content forces `documentElement.scrollWidth` beyond the viewport at mobile widths | Medium | Broken mobile layout, content clipped or requiring sideways scroll | [OBSERVED] |
-| **Overflow only in the fluid band between fixed breakpoints** | A layout that passes at common fixed widths (375/768/1024/1280/1920) overflows only in an untested intermediate width, because a content block's own breakpoint doesn't align with the test's sampled widths | Low-Medium | Real users on in-between viewport widths see a bug the standard breakpoint sweep misses | [OBSERVED] |
+| **Overflow only in the fluid band between fixed breakpoints** | A layout that passes at a handful of hand-picked "common" widths overflows only in an untested intermediate width, because a content block's own breakpoint doesn't align with the sampled widths. Sweep the DERIVED viewport set (`AUDIT_VIEWPORTS_PX` — every real ui-kit breakpoint edge, just below it, and the fluid midpoints), never a transcribed list: the design system declares breakpoint edges a naive five-width sweep omits outright, so a transcribed list samples around the very band this pattern lives in | Low-Medium | Real users on in-between viewport widths see a bug the standard breakpoint sweep misses | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Row 2** only: the transcribed width list was replaced by a pointer to the derived viewport set. The row's *claim* was never wrong — this is the GOLDEN-RULE drift, where a transcribed constant in an oracle rots exactly as one in a script does, and this one was already provably incomplete. **Source:** the ui-kit's breakpoint constants declare edges the transcribed list omitted outright, and its largest breakpoint is not the Tailwind default, so a reader following the old list would build precisely the sweep that misses this pattern. Derived mirror: `AUDIT_VIEWPORTS_PX` in `scripts/lib/design-tokens.generated.ts` (regenerated by `npm run tokens:sync`, drift-gated by `npm run tokens:check`). **Docs:** the storefront developer guide states the responsive contract the row measures against; the failure mechanics themselves are undocumented (§1a class 1). **Live:** no horizontal document overflow at the sampled mobile and desktop widths, so the condition remains constructible rather than removed. Row 1 re-confirmed unchanged.
+
+---
 
 ### 1.7 Alignment in Horizontal Groups
 
@@ -136,7 +144,7 @@ This is a structured reference for:
 ### 2.3 Pricing Timing Issues
 
 | Pattern | Description | Frequency | Impact | Status |
-|---------|=========|-----------|--------|--------|
+|---------|-------------|-----------|--------|--------|
 | **Price changes between cart and checkout** | Sale ends, price tiers shift, inventory moves user into different pricing | Medium | User sees $20, charged $25 | [OBSERVED] |
 | **Flash sale conflict** | Item on flash sale; user adds to cart right at sale end | Low-Medium | Charged non-sale price | [OBSERVED] |
 | **Dynamic pricing not recalculated** | Cart shows old price, checkout shows new price without warning | Low-Medium | User surprises at final price | [OBSERVED] |
@@ -150,20 +158,28 @@ This is a structured reference for:
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
-| **Typo returns zero results** | User searches "dres" instead of "dress"; system returns nothing | High | User leaves, doesn't see alternatives | [OBSERVED] |
+| **Typo returns zero results when fuzzy matching is off** | A one-character misspelling of a high-yield term returns zero results. Fuzzy matching is a per-request parameter the storefront's search query already declares and forwards, so the outcome depends on whether the store's configuration sets it — do not assume either state; establish it, then assert against it | High | User leaves, doesn't see alternatives | [OBSERVED] |
 | **Overly specific filter combo** | User filters: "Size 28W x 34L AND Color Plaid AND Organic Cotton" → 0 results exist | Medium | Dead-end, user frustrated | [OBSERVED] |
-| **"No results" page has no guidance** | User hits dead search, no "did you mean" or category suggestions | High | Abandonment | [OBSERVED] |
+| **"No results" page loses its recovery action** | The zero-result page must render an intact empty state with a working reset control that clears the keyword and filters. Spelling suggestions and a category fallback are deliberately not implemented, so their absence is not a finding — the failure is a blank grid, a broken layout, or a reset control that is missing or does not clear state | High | Abandonment | [OBSERVED] |
 | **Search pagination broken on last page** | User clicks page 2, sees products, page 3 shows "no results" but page 3 exists | Low-Medium | Confusing UX, lost products | [THEORETICAL] |
 | **Category exclusions too aggressive** | Filtering by "vegetarian" excludes items that mention "may contain traces of..." | Low-Medium | User misses relevant products | [THEORETICAL] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Rows 1 and 3** changed. Row 1 asserted an unconditional outcome: the storefront's own search query declares and forwards fuzzy-matching parameters, and the platform documents fuzzy matching with configurable levels, so a typo returning nothing is a *configuration state* to establish rather than a platform fact — a case that assumes it is vacuous wherever fuzzy is on. Row 3 was stale in the direction that manufactures false bugs: it named the absence of "did you mean" and category suggestions as the defect, while the recovery affordance the guides describe (clear all applied filters in a single click and restore the full product list) is present and live, and `BL-SRCH-002` records that spelling suggestions and a popular-products fallback are explicitly **not** implemented and must not be asserted. Rewritten to name the real failure — a lost or non-clearing reset. **Source:** the storefront search query's fuzzy variables; the shared search/category renderer that owns the single empty state. **Live:** a nonsense query and a one-character typo both rendered the intact empty state with a working reset control and no suggestion of any kind.
+
+---
 
 ### 3.2 Filter & Sort Edge Cases
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
-| **Sort order resets on filter** | User sorts by "price: low to high", applies color filter, sort resets to default | Medium | Frustration, poor UX | [OBSERVED] |
+| **Sort selection lost when the result set is re-queried** | The sort code and the facet expression are independent URL parameters and applying a filter resets only the page, so the selection should survive. The residual risk is the *option list*: available sort codes are store-defined and re-derived from each faceted response, so a selected code the new result set no longer offers falls back to the default | Medium | Frustration, poor UX | [OBSERVED] |
 | **Price range filter boundaries** | User filters $10-$20, but item at exactly $20.00 is excluded | Low | Edge case precision issue | [OBSERVED] |
 | **Multi-select filter AND vs OR confusion** | User selects "Color: Red OR Blue" but system interprets as "Color: Red AND Blue" (impossible) | Low | No results, user confusion | [THEORETICAL] |
-| **Filter persists incorrectly** | User applies filter, navigates to product detail, back to search—filter changed | Low-Medium | Unexpected product list | [OBSERVED] |
+| **Filter persistence is asymmetric between control and facet filters** | The availability, branch and purchased-before controls persist in browser storage — surviving navigation, a new tab and a new session, with availability defaulting to on for a first-time visitor — while facet filters live only in the URL and vanish on navigation. Returning to a result list can therefore show a different product set than the one left, in either direction | Low-Medium | Unexpected product list | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Rows 1 and 4** changed. Row 1 named a mechanism the implementation contradicts: the sort code and the facet expression are separate route query parameters and the filter-apply path resets only the page, so a filter cannot clear the sort — rewritten to the risk that survives, a server-derived sort option list re-read per response. Row 4 was correct but mechanism-free, and the mechanism turns out to be an asymmetry worth stating: three control filters persist in browser storage (availability defaulting to on) while facet filters are URL-only. **Source:** the products composable's two independent query params, its filter-apply path, its three storage-backed controls, and the per-response sortings assignment; the storefront search query's sortings selection. **Live:** the facet sidebar, the sort dropdown, the three checkbox controls with availability pre-checked, and an active-filter chip row with a reset control, all on a keyword result page. **Note on the live axis:** the filter-apply then sort-persistence sequence was not executed live (the assigned lane cannot click), so row 1 rests on docs + source with live supplying reachability of both controls.
+
+---
 
 ### 3.3 Search Quality Issues
 
@@ -183,20 +199,28 @@ This is a structured reference for:
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
 | **Gmail dot notation** | User creates account with `john.doe@gmail.com`, later logs in with `johndoe@gmail.com` | Low-Medium | Duplicate accounts, support burden | [OBSERVED] |
-| **Email case sensitivity** | System stores email as lowercase but user's provider treats as case-sensitive | Low | Login failures, confusion | [THEORETICAL] |
-| **Plus-addressing ignored** | User signs up with `john+shop@gmail.com`, system strips the `+shop` part | Low | Unintended account merge | [THEORETICAL] |
+| **Email case sensitivity** | Identity lookup runs against a case-normalized form of the address, so a differently-cased spelling of an existing address resolves to the same account — registration is refused as already-taken and sign-in succeeds. The residual risk is inconsistent casing in the stored profile and in outbound notifications, not a login failure | Low | Inconsistent casing in stored profile and outbound notifications | [OBSERVED] |
+| **Plus-addressing not canonicalized** | A user registers with a `+tag` sub-address of an address that already has an account; the platform compares the literal normalized address, so the sub-address is accepted as a separate account rather than recognized as the same mailbox | Low | Unlimited alias accounts from one mailbox — duplicate-account support burden, per-account promo/coupon abuse | [OBSERVED] |
 | **Temporary email address** | User signs up with temp email, confirms, then email expires; can't reset password | Low | Account locked out | [OBSERVED] |
 | **Email domain typo at signup** | User types `gmai.com` instead of `gmail.com`, can't receive confirmation | Low | Account never activated | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Rows 2 and 3** were **DRIFT**, and row 3 described the exact inverse of the behaviour. Row 2 claimed login failures caused by case differences; identity lookup is case-normalized, so a differently-cased spelling resolves to the same account and the residual risk is display/notification casing (`[THEORETICAL]` → `[OBSERVED]`). Row 3 claimed the platform STRIPS a `+tag` and merges accounts; it does the opposite — the literal normalized address is compared, so a sub-address registers as a **separate** account, which inverts the impact from an account merge to alias-account proliferation (`[THEORETICAL]` → `[OBSERVED]`). Rows 1, 4 and 5 CONFIRMED unchanged. **Source:** the platform's identity options require a unique email, enforced on the case-folded normalized address with no local-part canonicalization anywhere in the chain; the storefront registration schema trims and format-checks the address and runs a debounced uniqueness test, and does no dot- or plus-handling. **Docs:** the storefront guide's create-account page confirms the flow; the normalization mechanics are undocumented (§1a class 1). **Live:** on the registration form a dot-removed variant and a `+tag` variant of an existing address both passed the uniqueness check, while the exact address and its all-uppercase spelling were both refused — a paired positive/negative control in a single pass.
+
+---
 
 ### 4.2 Password & Authentication Edge Cases
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
 | **Brute force password attempts** | Attacker attempts 100+ login tries in 1 minute | Low-High | Security breach risk | [OBSERVED] |
-| **Password with leading/trailing spaces** | User enters `password ` with space; system trims; later login fails | Low | Locked out, support needed | [OBSERVED] |
+| **Password with leading/trailing spaces** | The email field is trimmed on both the sign-in and the registration form, but the password field is not — surrounding whitespace is retained and becomes part of the stored credential, so a user who set a padded password and later types the unpadded one is rejected | Low | Locked out, support needed | [OBSERVED] |
 | **Unicode/special character password** | User's password has emoji or non-ASCII; system doesn't validate encoding | Low | Login failures | [THEORETICAL] |
 | **Credential stuffing** | Attacker uses leaked password list across your platform | Medium | Account takeover risk | [OBSERVED] |
-| **Account lockout mechanism too strict** | User locked out after 3 failed attempts; no unlock option visible | Low | Support tickets | [OBSERVED] |
+| **Account lockout mechanism too strict** | Lockout fires after a configurable number of consecutive failed attempts and expires after a configurable interval — read the deployment's identity lockout options rather than assuming a fixed count (see `BL-AUTH-003`). The storefront renders a contact-administrator affordance on a lockout error, so the pattern is perceived-dead-end friction, not an absent unlock path. Org-scoped lockout is a **distinct** mechanism (`BL-AUTH-012`/`BL-AUTH-013`), not this one | Low | Support tickets | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27) — §4.2. **Rows 2 and 5** were **DRIFT**. Row 2 attributed the lock-out to the system TRIMMING the password; nothing trims it — the email field is trimmed on both the sign-in and the registration form while the password field is not, so surrounding whitespace is retained and becomes part of the credential. Row 5 transcribed a fixed "3 failed attempts" and claimed no unlock path: the attempt count and the lockout interval are both configurable platform identity options (the documented default is higher than the number the row carried), and the storefront renders a contact-administrator affordance on a lockout error — so the row now points at the setting instead of a number, which is the same GOLDEN-RULE correction applied to the viewport list in §1.6 and §7.4. Rows 1, 3 and 4 CONFIRMED unchanged, at the reachability ceiling only — no lockout or brute-force sequence was run. **Source:** the storefront sign-in form trims the email model and not the password model, and branches on a lockout error code to render a contact-administrator link; the registration schema likewise trims only the address; the platform's identity lockout options carry both the maximum failed-attempt count and the lockout timespan. **Docs:** the storefront guide's sign-in page documents the blocked-account screen and directs the user to the administrator, and its password-management page documents the self-service reset. **Live:** a single failed sign-in against a non-existent address returned a generic failure with no account-existence disclosure, and the password field retained the whitespace it was given.
+
+---
 
 ### 4.3 Account Takeover & Impersonation
 
@@ -247,7 +271,11 @@ This is a structured reference for:
 | **Wishlist churn** | User adds/removes same item 50+ times over days | Low | Window shopper, price monitoring | [OBSERVED] |
 | **Price comparison pattern** | User adds identical products from different vendors to cart | Low | Comparison shopping | [OBSERVED] |
 | **Rapid category browsing** | User clicks through 20 categories in 2 minutes without viewing products | Low-Medium | Bot scraping OR confused user | [OBSERVED] |
-| **Cart manipulation** | User sets quantity to negative number or absurdly large number (999999) | Low | Input validation issue | [OBSERVED] |
+| **Cart manipulation** | User enters a negative, non-numeric, decimal or absurdly large quantity. The two entry surfaces differ BY DESIGN (`BL-CART-001`): the product page blocks the commit client-side with an inline allowed-range message and adds no line, while an existing cart line accepts and PERSISTS the out-of-range value — line total and cart totals recompute from it, surviving a reload — and blocks order completion with a per-line advisory instead | Low | Alarming but non-committal totals; the real defect would be a silent cap to available stock, or Place-order becoming enabled | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27) — §5.3. **Row 5** was **DRIFT**: its Impact read "Input validation issue", which invites an agent to file the recomputed out-of-range cart total as a bug — but `BL-CART-001` records that behaviour as INTENDED, and names the opposite as its violation signal (a silent cap to available stock, or Place-order becoming enabled). The row now distinguishes the two entry surfaces and states what a real violation would look like. This row is the worked example of a drift detector used repeatedly in this audit: **the cited invariant was materially more precise than the row citing it**, and a five-word Impact cell was pointing the wrong way. Rows 1–3 CONFIRMED unchanged; **row 4 was NOT confirmed** (rapid category browsing / bot scraping — no code path exists to anchor a source axis) and is recorded in `reports/ba/ecl-proposals-2026-08-27.md`. **Source:** the cart line-item validator's min/max quantity rule attaches a per-line failure rather than blocking, and the add/change-quantity command handlers save unconditionally with no branch on the validator outcome. **Docs:** the storefront guide's checkout page documents changing a cart line's quantity. **Live:** on the product page an out-of-range quantity was refused pre-commit with an inline allowed-range message and no line added; on an existing cart line the same value was persisted, all totals recomputed from it, and order completion stayed disabled behind a per-line advisory.
+
+---
 
 ### 5.4 Return & Refund Abuse
 
@@ -283,10 +311,14 @@ This is a structured reference for:
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
-| **Autocomplete returns wrong address** | User types "Main St, Springfield" and autocomplete suggests wrong state's Main St | Low-Medium | Misdelivery | [OBSERVED] |
-| **Validation rejects valid addresses** | Apartment addresses with "/" or "#" rejected by strict regex | Low-Medium | User can't complete order | [OBSERVED] |
+| **Browser autofill silently overwrites address fields** | The address form declares no `autocomplete` attribute on its text inputs and integrates no address-suggest/geocoding service, so the browser's own autofill populates them by its heuristics — filling a stale or wrong saved address that the shopper does not re-read | Low-Medium | Misdelivery | [OBSERVED] |
+| **Address rejected or silently truncated rather than validated** | Client-side address validation is length-and-required only (no character-class regex), and a dedicated apartment/suite field exists — so punctuation-heavy or long addresses are not rejected up front but are silently cut at the field's max length, and any real rejection arrives later from the server-side address-validation provider with its own message | Low-Medium | User can't complete order, or a truncated address ships | [OBSERVED] |
 | **Zip code mismatch with city** | User enters real address but zip code doesn't match city; validation fails | Low | Checkout blocked | [OBSERVED] |
 | **International address breaks system** | Address format for Japan/UK doesn't fit US form fields | Low-Medium | Can't ship internationally | [THEORETICAL] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Rows 1 and 2** rewrote their *mechanism*, not their risk. Row 1 named a third-party address-suggest service: the storefront integrates none (its map composable resolves only markers, and the sole in-form suggestion list filters a fixed server-supplied country list), so the reachable mechanism is the browser's own autofill on inputs that declare no `autocomplete` attribute. Row 2 named a "strict regex": the UI-kit input carries no `pattern` and the form's field rules are trim/max-length/required only, a separate apartment/suite field exists, and an address containing `#`, `/`, an apostrophe and an umlaut was accepted verbatim live — so the reachable failure shape is max-length truncation plus server-side provider rejection. Rows 3 and 4 confirmed unchanged: postal code is free text with no client-side city cross-check, and the field set is fixed while only the region select adapts to the selected country (it stays disabled and non-required for a country with no region data). **Note:** row 1's corrected mechanism now overlaps §7.1 row 2; that was flagged rather than merged, because a DUPLICATE merge would move citations between a section with single-digit demand and one with several hundred.
+
+---
 
 ### 6.4 File Upload & Import Validation Errors
 
@@ -307,18 +339,26 @@ This is a structured reference for:
 |---------|-------------|-----------|--------|--------|
 | **Mobile viewport checkout misalignment** | Payment button hidden below fold; user thinks button doesn't exist | Low-Medium | Abandonment | [OBSERVED] |
 | **Autocomplete overwrites form fields** | Browser autocomplete fills in wrong address; user doesn't notice | Low-Medium | Wrong shipping address | [OBSERVED] |
-| **JavaScript disabled** | User has JS disabled; form submits but nothing happens | Low | 404 or confusing error | [OBSERVED] |
+| **JavaScript disabled** | The storefront is a single-page application whose entry document ships an empty mount element and a module script with no `noscript` fallback, so with JS disabled or blocked the page renders nothing at all — there is no form to submit and no message explaining why | Low | Blank page, no diagnosable error | [OBSERVED] |
 | **Cached page stale data** | User back-buttons to checkout page; sees old prices/inventory | Low-Medium | Checkout with stale state | [OBSERVED] |
 | **Third-party script blocking** | Ad blocker or privacy tool blocks payment script | Low-Medium | Silent payment failure | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27) — §7.1. **Row 3** only: the old description ("form submits but nothing happens", "404 or confusing error") is a server-rendered-form symptom that cannot arise on this platform. The storefront entry document mounts an empty element and loads a module script with no `noscript` fallback, and the served HTML confirms no `noscript` element is present, so the JS-disabled symptom is a blank page rather than a broken submit. Rows 1, 2, 4 and 5 confirmed unchanged; note that row 1 is mitigated for the checkout CTA specifically by a sticky bottom bar that duplicates the order button at narrow widths, and that row 2's mechanism is anchored in the address form declaring no `autocomplete` attribute on its text inputs.
+
+---
 
 ### 7.2 Form Input Edge Cases
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
 | **Paste into form field triggers validation twice** | Paste + change event fires validation before user expects | Low | Confusing error states | [OBSERVED] |
-| **Special characters in name field** | User's name "O'Brien" or "Müller" rejected by regex | Low | User can't complete order | [OBSERVED] |
+| **Special characters silently truncated rather than rejected** | Name and address fields validate on length only — no character-class regex exists — so apostrophes, hyphens and diacritics are accepted verbatim, and the real risk is a long name being cut at the field's max length with no warning that the stored value differs from what was typed | Low | Wrong name on the order/shipment | [OBSERVED] |
 | **Numeric field accepts leading zeros** | User types "01234" for house number; system treats as octal | Low | Address validation issue | [THEORETICAL] |
 | **Required field validation off-screen** | Error message for required field not visible; user thinks form is complete | Low-Medium | Stuck on checkout | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27) — §7.2. **Row 2** only: "rejected by regex" has no code path — the shared UI-kit input declares no `pattern` attribute and every form field rule is length-and-required only, and a name containing both an apostrophe and a diacritic was accepted verbatim live. The reachable failure shape is silent max-length truncation, so the description and Impact were rewritten to name it. Rows 3 and 4 confirmed unchanged (numeric coercion applies only to explicitly numeric inputs, so a leading zero in a postal code is preserved as text; required fields are marked and gate submission, which is what makes an off-screen error reachable on a long form at narrow widths). **Row 1 was NOT confirmed** and is recorded in `reports/ba/ecl-proposals-2026-08-27.md`: its described double-validation-on-paste has no code path here, but absence of a mechanism is not evidence the pattern never occurred, so its `[OBSERVED]` marker is a status question for a human rather than an auto-apply.
+
+---
 
 ### 7.3 Loading States & Race Conditions
 
@@ -332,11 +372,15 @@ This is a structured reference for:
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
-| **Above-the-fold element hidden at narrow widths** | A logo, CTA, or nav control that renders correctly on desktop is clipped, overlapped, or pushed off-screen at common mobile widths (e.g. 375px) | Medium | Branding/functional element invisible to mobile users | [OBSERVED] |
+| **Above-the-fold element hidden at narrow widths** | A logo, CTA, or nav control that renders correctly on desktop is clipped, overlapped, or pushed off-screen at or below the narrowest declared breakpoint in the storefront's breakpoint scale (`BREAKPOINTS.xs` in the UI-kit constants — do not transcribe the value, read it from there; common device widths sit below it). Some flows mitigate this with a sticky bar that re-pins the primary CTA, so a test must confirm the specific control, not the page | Medium | Branding/functional element invisible to mobile users | [OBSERVED] |
 | **Hamburger menu content not fully enumerated by testing** | The mobile nav collapses into a hamburger menu whose contents differ from the desktop mega-menu (fewer/reordered items), and a test pass that only checks the desktop nav misses regressions in the collapsed version | Medium | Broken/incomplete mobile navigation ships undetected | [OBSERVED] |
 | **Cross-browser rendering divergence on mobile** | The same responsive layout renders correctly in one mobile browser engine (e.g. Safari iOS) but breaks in another (e.g. Chrome Android) — vendor-prefixed CSS, viewport unit handling, or safe-area-inset differences | Low-Medium | Browser-specific mobile bugs missed by a single-engine test pass | [OBSERVED] |
 | **Orientation change loses in-progress state** | Rotating the device between portrait and landscape mid-flow (e.g. mid-checkout form fill) resets scroll position, collapses an expanded section, or drops unsaved input | Low | Frustration, potential data loss on a long form | [THEORETICAL] |
 | **Touch/hover-only interaction has no mobile equivalent** | A desktop interaction that depends on `:hover` (a tooltip, a reveal-on-hover swatch) has no tap-triggered equivalent on touch devices, making the information or control unreachable on mobile | Low-Medium | Feature effectively missing on mobile despite existing in the DOM | [OBSERVED] |
+
+---
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27) — §7.4. **Row 1** only, on two counts. It hardcoded a pixel width, which the repo's GOLDEN RULE forbids in a file other skills read — the storefront declares its breakpoint scale in the UI-kit constants (narrowest `xs`), and a transcribed number goes stale silently at the next redesign; the row now points at that source instead. It also omitted that the checkout CTA specifically is re-pinned by a sticky bar at narrow widths, which was observed live and which makes a page-level "is it visible" assertion pass while a control-level regression hides. Rows 2, 4 and 5 confirmed unchanged: the mobile navigation is a separate component tree with its own menu set (observed to differ materially from the desktop header), the layout re-flows on viewport change, and the collapsed nav provides tap-expandable equivalents for the desktop hover mega-menu. **Row 3 was NOT confirmed** — an engine-divergence claim is impossible to observe from a single-engine lane, and WebKit is unsupported on this platform's harness at all, so it is recorded in the proposals file with a recommendation that it be marked as covered by manual/device-cloud verification rather than left looking unaudited.
 
 ---
 
@@ -355,9 +399,13 @@ This is a structured reference for:
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
-| **Hidden variant SKU** | Product listing shows "Blue" as only option; system has Blue-Small, Blue-Large but hides Large | Low-Medium | User thinks size unavailable | [OBSERVED] |
-| **Variant price not updating** | Main product price changes; variant prices cached incorrectly | Low | Price inconsistency | [OBSERVED] |
+| **Variant present but not visible** | The variations widget is a filtered, sorted and paginated projection, and the availability control that feeds it defaults to on and persists per browser — so a real variant can be off the current page, excluded by an active variation filter, or hidden as out of stock. Establish which projection is in effect before calling a variant missing; the defect is a variant absent from an unfiltered, unpaginated, availability-off view | Low-Medium | User thinks size unavailable | [OBSERVED] |
+| **Listing price and variant price disagree** | A listing card shows the parent's minimum-variation price while the detail page shows the selected variation's own price — two distinct fields on the same response. Until a variant is selected the detail page shows no price at all and the add-to-cart control is disabled, so the comparison is only meaningful once a selection resolves | Low | Price inconsistency | [OBSERVED] |
 | **Incorrect variant grouped** | Variant "Blue S" shown under wrong parent product | Low | Wrong item ordered | [OBSERVED] |
+
+---
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27) — §8.2. **Rows 1 and 2** changed. Row 1 attributed the symptom to the system "hiding" a variant, which named none of the three orthogonal reasons a variant is legitimately not on screen — pagination, an active variation filter, or the storage-backed availability control that defaults to on — so a case written from it reports the widget working as a bug. Row 2 asserted a caching cause the evidence does not support; the real, checkable shape is that the listing reads the parent's minimum-variation price while the detail page reads the variation's own price, and that no price exists at all before a selection resolves. **Source:** the variations widget's list/table, filter, sort and pagination surface plus its empty view; the products composable's availability default; the storefront search query selecting both the per-variation price and the parent's minimum-variation price. **Live:** a grid card advertising multiple variations with a "from" price, and its detail page rendering per-axis option groups with no price and a disabled add-to-cart control labelled "select options to proceed".
 
 ---
 
@@ -368,17 +416,25 @@ This is a structured reference for:
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
 | **Coordinated fake positive reviews** | Suspicious cluster of 5-star reviews within same hour from new accounts | Low-Medium | Trust erosion | [OBSERVED] |
-| **Revenge negative reviews** | User leaves 1-star without purchasing (proof: no order linked) | Low-Medium | Unfair rating | [OBSERVED] |
+| **Revenge negative reviews** | User leaves a 1-star review without having purchased. The stored review record carries no order reference and no verified-purchase flag, so "no order linked" is the state of EVERY review and cannot be used as the proof — moderation status is the only discriminator | Low-Medium | Unfair rating | [OBSERVED] |
 | **Review from competitor account** | Review text contains competitor product name promoting alternative | Low | Trust issue | [OBSERVED] |
 | **Incentivized reviews not disclosed** | Seller sends coupon code post-purchase with implicit expectation of 5-star review | Low-Medium | Fake review violation | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Row 2** was **DRIFT**: it named "proof: no order linked" as the detection signal, but the review entity has no order reference or verified-purchase field of any kind, so that predicate is true of every review on the platform and an agent asserting on it would flag 100% of records. The pattern itself is unchanged and reachable; only its stated proof mechanism was wrong. Rows 1, 3 and 4 were CONFIRMED unchanged. **Docs:** the storefront guide documents review authoring as entered from a completed order, so the *authoring path* is purchase-gated while the *record* retains no evidence of it. **Source:** the review entity exposes only title/body/rating/user/entity/store/status/images; no order or verified-purchase field exists anywhere in the module's core model set, and the review search criteria offer no such filter. **Live:** review cards on a product page render stars, author and body with no verified-purchase indicator; review moderation status is the only server-side discriminator exposed.
+
+---
 
 ### 9.2 Review Display Issues
 
 | Pattern | Description | Frequency | Impact | Status |
-|---------|=========|-----------|--------|--------|
-| **Low rating hides high reviews** | Product sorted by "Helpful" but negative reviews show first | Low-Medium | Biased perception | [OBSERVED] |
+|---------|-------------|-----------|--------|--------|
+| **Review ordering biases perception** | The review list exposes a single ordering (by date) with no relevance or helpfulness ranking, so whichever reviews happen to be most recent dominate the first page regardless of rating distribution | Low-Medium | Biased perception | [OBSERVED] |
 | **Review count doesn't match displayed reviews** | Product says "47 reviews" but only 12 are visible | Low | User sees fewer reviews than exist | [OBSERVED] |
-| **Helpful vote manipulation** | Single reviewer marks all 1-star reviews as "Helpful" (voting attack) | Low-Medium | Skewed perception | [OBSERVED] |
+| **Helpful vote manipulation** | A reviewer up-votes all negative reviews to push them up the list (voting attack). No native review-helpfulness or voting capability exists — the stored review carries no vote field and the list exposes no vote control — so this applies only to a deployment that adds one | Low-Medium | Skewed perception | [THEORETICAL] |
+
+---
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27) — §9.2. **Rows 1 and 3** were **DRIFT**: both named a review-helpfulness feature — a "Helpful" sort and per-review votes — that does not exist on this platform, so an agent following either row would look for a control that is never rendered. Row 1 was rewritten to the real ordering risk; row 3 keeps the generic attack shape, records that it needs a deployment-added capability, and drops to `[THEORETICAL]` because the surface it attacks is absent. Row 2 was CONFIRMED unchanged — it is the reachable one, and moderation status is its mechanism. **Docs:** the storefront guide documents the review list as config-gated product-page content and describes no helpfulness, ranking or voting behaviour. **Source:** neither the review entity nor the list DTO the storefront renders carries any vote or helpfulness field, and the review search criteria offer no such sort; review status is the only visibility gate. **Live:** the review widget exposes one ordering control, by date, and no vote affordance on any card; the aggregate review count is rendered separately from the list body. Note the deliberate consequence: dropping row 3 to `[THEORETICAL]` lowers this section's `[OBSERVED]` share and therefore its product-value bump — that is the evidence being followed, not a reason to leave the row wrong.
 
 ---
 
@@ -407,8 +463,12 @@ This is a structured reference for:
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
 | **Blade fails to open silently instead of a clear error** | An Admin SPA module blade (Notifications, CMS, Assets, SEO, White Labeling, Push Messages, Loyalty, Returns, …) throws an unhandled error or shows a blank panel when its data source is unavailable, instead of a labeled "unavailable" state | Medium | Operator sees a broken screen with no actionable message; hard to distinguish "not installed" from "genuinely broken" | [OBSERVED] |
-| **Underlying REST endpoint returns 500 instead of a documented empty/degraded response** | A module's backing API returns an unhandled 500 (rather than an empty result set or a typed error) when its module is disabled, misconfigured, or has zero records | Medium | Blade/grid throws instead of showing an empty state; masks the real cause | [OBSERVED] |
+| **Underlying REST endpoint returns 500 instead of a documented empty/degraded response** | A module's backing API returns an unhandled 500 (rather than an empty result set or a typed error) when it is misconfigured, has zero records, or its own dependency is unavailable. A **disabled** module is the separate, correct case — `BL-CROSS-003` specifies 404 there and names 500 as the violation — so a 404 is not this pattern; the trap is that a 404 alone cannot tell an operator "module disabled" from "route wrong" | Medium | Blade/grid throws instead of showing an empty state; masks the real cause | [OBSERVED] |
 | **Grid shows stale/cached content with no "data may be out of date" signal when its source is degraded** | A list blade continues rendering a previous successful response when the live call is failing, giving no indication the displayed data may not be current | Low | Operator acts on stale information without warning | [THEORETICAL] |
+
+---
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Row 2** was **DRIFT**: it listed "its module is disabled" among the triggers for an unhandled 500, but the invariant this section declares itself governed by, `BL-CROSS-003`, specifies **404** as the *correct* response for a disabled module and names 500 as the violation. The row therefore folded the desired behaviour into the anti-pattern, and an agent reading it could file a correct 404 as a defect. Rows 1 and 3 were CONFIRMED unchanged. **Source:** the Admin SPA's global HTTP-error handler routes a failure to the blade error state only when a blade is currently open and the event was not already default-prevented, so an error outside those conditions surfaces nowhere; a separate handler clears the blade's error on *any* subsequent successful request, independently of whether the blade's rendered content was refreshed. **Docs:** an Admin SPA section is registered by its own module at runtime, with no platform-side placeholder when the module is absent. **Live:** requesting an unresolvable blade route fell through to the default workspace with no error of any kind, while the target module's menu entry was present and the module reported installed.
 
 ---
 
@@ -430,14 +490,18 @@ This is a structured reference for:
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
-| **Currency conversion timing** | User adds item at $50, checkout converts at different exchange rate (now $52) | Low-Medium | Unexpected charge | [OBSERVED] |
+| **Cart amount changes on currency switch — re-resolution, not conversion** | The amount for an item already in the cart can differ from what the shopper saw when adding it, because the selected currency is a stored preference (local storage → contact preference → store default, applied via a full reload) and changing it re-resolves every line against that currency's own price list. The platform does NOT convert by exchange rate (`BL-PRICE-005`), so there is no FX-drift bug to hunt; a currency with no covering price list yields no price at all rather than a converted one | Low-Medium | Unexpected amount, or no price at all | [OBSERVED] |
 | **Language doesn't match locale** | User in France sees English site; address validation expects English format | Low | UX friction | [OBSERVED] |
 | **Missing currency symbol** | Price displays as "50" without "$"; user in another currency confused | Low | Confusion | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Row 1** was **DRIFT**, and of a kind worth naming: it described an exchange-rate conversion between add-to-cart and checkout, a mechanism this platform does not implement — and in doing so it contradicted `BL-PRICE-005`, the very invariant Appendix D maps this section to, whose Rule states prices are NOT converted by exchange rate and whose *violation signal* is precisely "prices appear to be exchange-rate conversions". The oracle was therefore describing a violation as the expected pattern, and disagreeing with itself across two files. Rewritten to the real mechanism: currency is a stored shopper preference applied via a reload, and changing an existing cart's currency re-resolves each line against that currency's own price list. The pattern **name** had to change too, since "conversion timing" is what an agent reads. Rows 2 and 3 CONFIRMED unchanged. **Source:** a price entity carries a price-list id and a currency with no rate field; the storefront currency composable resolves saved-preference → contact → store default and reloads; a dedicated cart-currency mutation returns the whole re-resolved cart; the language composable reads a pinned locale, a URL segment or the store default, with no browser-language or geo detection. **Live:** the header offers several currencies each with its own symbol and 15+ languages with the store default active. **Not evidence either way:** the tested environment has no product price list for one of the offered currencies, which is a seed-data gap and the documented correct behaviour for an uncovered currency.
+
+---
 
 ### 12.2 International Shipping & Taxes
 
 | Pattern | Description | Frequency | Impact | Status |
-|---------|=========|-----------|--------|--------|
+|---------|-------------|-----------|--------|--------|
 | **Shipping to restricted country** | User ships to country under trade sanctions; order placed but can't ship | Low-High | Legal issue | [THEORETICAL] |
 | **VAT/GST calculation error** | International order charged wrong tax percentage | Low | Audit issue | [OBSERVED] |
 | **Customs duty not disclosed** | User shocked by duty fee upon delivery | Low-Medium | Customer complaints | [THEORETICAL] |
@@ -449,7 +513,7 @@ This is a structured reference for:
 ### 13.1 Order Fulfillment Issues
 
 | Pattern | Description | Frequency | Impact | Status |
-|---------|=========|-----------|--------|--------|
+|---------|-------------|-----------|--------|--------|
 | **Partial order fulfillment not communicated** | User ordered 5 items; 3 ship today, 2 ship later; user unaware | Low-Medium | Support tickets, confusion | [OBSERVED] |
 | **Backorder handling unclear** | System accepts backorder but shipping date estimate is wrong | Low-Medium | Customer frustration | [OBSERVED] |
 | **Order cancellation after partial ship** | User cancels order; one unit already shipped; system in inconsistent state | Low | Logistics chaos | [OBSERVED] |
@@ -457,7 +521,7 @@ This is a structured reference for:
 ### 13.2 Subscription & Recurring Billing
 
 | Pattern | Description | Frequency | Impact | Status |
-|---------|=========|-----------|--------|--------|
+|---------|-------------|-----------|--------|--------|
 | **Subscription renewal fails silently** | Card declines at renewal; user not notified; account suspended without warning | Medium | Service interruption, support burden | [OBSERVED] |
 | **Cancel subscription still charges** | User cancels but next billing date still occurs | Low-Medium | Refund needed | [OBSERVED] |
 | **Proration calculation wrong** | User cancels mid-month; proration calculation doesn't match what user expects | Low | Billing dispute | [OBSERVED] |
@@ -465,10 +529,14 @@ This is a structured reference for:
 ### 13.3 Loyalty & Points Edge Cases
 
 | Pattern | Description | Frequency | Impact | Status |
-|---------|=========|-----------|--------|--------|
+|---------|-------------|-----------|--------|--------|
 | **Points not credited after purchase** | User completes purchase; loyalty points never appear | Low-Medium | Support tickets | [OBSERVED] |
-| **Expired points still redeemable** | User tries to redeem points that expired; system allows it | Low | Policy violation | [OBSERVED] |
-| **Double-counting bonus points** | Bonus points for referral AND for purchase both applied on same order | Low | System error | [OBSERVED] |
+| **Points never expire — there is no expiry mechanism** | Points are a running balance carried on each operation-log row (Earned / Redeemed only): no per-point validity date, no expired operation type, no expiry sweep, and the balance read applies no date filter. A program's own activation period bounds the PROGRAM, not the points it already awarded. So any expiry policy stated in terms and conditions is unenforceable by the platform and the balance accrues without bound. Do not test for "redeeming an expired point" — that state is unrepresentable | Low | Stated expiry policy unenforceable; unbounded points liability | [OBSERVED] |
+| **Double-counting bonus points** | Two accrual paths can post against one order: more than one active program matching it, and a retried background job re-processing it. Dedup is keyed on (object type, object id, operation type), so an Earned and a Redeemed legitimately coexist on one order while a second Earned must not. Referral bonuses are not modelled by the platform — reward rules are fixed points or a percentage of order value — so the real vectors are concurrent programs and job retries (see `BL-LOY-007`) | Low | System error | [OBSERVED] |
+
+---
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27) — §13.3. **Row 2** was **DRIFT** and is the sharper of the two: it asserted, as `[OBSERVED]`, that expired points can still be redeemed — but this platform has no point-expiry mechanism of any kind, so "an expired point" is not a representable state and the stated failure mode cannot occur. The reachable risk is the inverse and is now what the row says: points never lapse, so a stated expiry policy is unenforceable and the balance is an unbounded liability. This is a DRIFT and **not** a RETIRE: the exposure underneath is real and the section number is a citation contract, so retiring would delete a live risk and orphan the citations, while leaving it sent testers after a redemption-gate bug that cannot exist. **Row 3** was DRIFT in its example only: referral bonuses are not modelled here (reward rules are fixed points or a percentage of order value), and the row was materially less precise than `BL-LOY-007`, the invariant it depends on — restated to the platform's two real double-accrual vectors, concurrent matching programs and background-job retries. Row 1 CONFIRMED unchanged. **Source:** the loyalty operation log carries only user, program, object, operation type (earned/redeemed), amount and balance — no validity date and no expired type; the balance read returns the running balance from the latest row with no date filter; a program's start/end dates bound the program, not awarded points; no expiry service exists in the module's service set; and the accrual dedup gate is keyed on object type, object id and operation type. **Docs:** the loyalty guide describes accrual, redemption, balance and a pay-with-points method, and is silent on expiry and on referral rewards. **Live:** the points-history surface exposes operation, type, date, amount and a balance with no expiry column, and earns more than a month old still count toward the balance. No points were spent, reset or manipulated to establish this.
 
 ---
 
@@ -480,7 +548,7 @@ This is a structured reference for:
 ### [Category] [Specific Issue]
 
 | Pattern | Description | Frequency | Impact | Status |
-|---------|=========|-----------|--------|--------|
+|---------|-------------|-----------|--------|--------|
 | **Pattern Name** | What exactly happens | Low/Medium/High | Business/User impact | [OBSERVED] or [THEORETICAL] |
 ```
 
@@ -586,7 +654,9 @@ VC-specific patterns observed on the platform. Each entry maps to a business log
 | **Out-of-stock item still shown** | Inventory depleted, but search results still show item as available for 30-60s | Medium | Add-to-cart fails unexpectedly | BL-CROSS-002 | ECL-2.1 | [OBSERVED] |
 | **Facet count stale** | Filter shows "Color: Blue (12)" but actual result count differs after price/stock changes | Low-Medium | Misleading filter, zero results on click | BL-SRCH-001 | ECL-3.2 | [OBSERVED] |
 
-**Agent rule:** After any catalog/price/inventory change in admin, wait 60s before asserting storefront reflects the change.
+**Agent rule:** After any catalog/price/inventory change in admin, **poll** the storefront for the expected value rather than waiting a fixed interval, and treat a timeout as index lag rather than a product failure. A 60s wait is not a safe bound: incremental indexing is a queued background job whose latency comes from configuration and queue depth, not from a constant — event-based indexing fires on the change itself, time-based incremental indexing is a separate recurring job that is disabled by default and runs on a configurable interval when enabled, and an indexing pass that cannot take the cluster-wide indexation lock is skipped entirely rather than merely delayed (ECL-14.7 row 2 already records lag exceeding a minute under load).
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). The four pattern rows are CONFIRMED unchanged; the **section-level Agent rule** was DRIFT — it prescribed an unconditional 60-second wait, which is not a bound the platform offers and which contradicts ECL-14.7 row 2 in this same chapter. **Docs:** the Platform Developer Guide's incremental-indexing article distinguishes event-based indexing (triggered when a product changes) from time-based incremental indexing — a separate recurring background job, disabled by default, on a configurable interval whose documented default is several minutes. **Source:** the Search module's indexing background-job class enqueues per-document indexing onto prioritised Hangfire queues and wraps each indexing run in a cluster-wide distributed indexation lock, reporting "already in progress" and skipping the pass when the lock cannot be taken — so latency is governed by configuration and queue depth, not a constant. **Live:** the storefront search surface returns the price, stock-quantity and facet-count fields all four rows concern, so every row's subject is reachable on the deployed build.
 
 ### 14.3 B2B Organization Context
 
@@ -611,31 +681,43 @@ VC-specific patterns observed on the platform. Each entry maps to a business log
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
-| **Add to Cart enabled before selection** | B2C variation product: 'Add to Cart' clickable before user selects any option — adds parent SKU | Medium | Wrong item in cart | BL-CAT-006 | ECL-8.2 | [OBSERVED] |
+| **Add-to-cart is gated until every variant option resolves — a disabled control here is the guard working** | On a variation or configurable PDP the add-to-cart control is not clickable until the selection resolves to a single purchasable variant: it renders disabled with a "select options" affordance and no price, and on a variation product the quantity/add control appears only once the last option is picked. Reporting that disabled state as a missing capability is a false bug (REAL-USER rule); the real risk is the inverse — a build in which the control becomes clickable while a required option or section is unset, which orders the parent SKU. The non-UI path is covered by the API-layer row below | Low | False-positive bug reports; a regression here orders the parent instead of the variant | BL-CAT-006 | ECL-8.2 | [OBSERVED] |
 | **VirtoFrontend_UI_Layout property absent** | B2C layout not shown because property missing from product — shows B2B table instead | Low-Medium | Wrong layout in test | BL-CAT-006 | ECL-8.1 | [OBSERVED] |
 | **Image not switching on variant select** | Variant image URL present in API response but main PDP image doesn't update on option click | Low | Visual confusion, wrong variant ordered | BL-CAT-006 | ECL-8.2 | [OBSERVED] |
 | **Unavailable combo not blocked** | Two options selected forming an out-of-stock combination — 'Add to Cart' stays enabled, error only at API | Low-Medium | Order for unavailable variant | BL-CAT-006 | ECL-2.1 | [OBSERVED] |
 | **Required configuration section omitted at the API layer** | A direct GraphQL `addItem` call submits only some of a configurable product's sections, omitting a required one — the mutation must reject it (non-empty `errors[]` or zero items added), not silently accept a partially-configured line, even though the storefront UI already blocks this via the disabled Add-to-Cart button | Low | Incomplete configuration reaches an order via a non-UI client | BL-CAT-006 | ECL-2.1 | [OBSERVED] |
 | **Saved-for-Later loses configuration on a bulk, mixed-type move** | Moving several configurable line items (of different configuration shapes) to Saved-for-Later in one bulk call must preserve each item's own `configurationItems` count and type identity — not average, drop, or cross-contaminate them | Low | Configuration silently lost on an item a user expects to restore later | BL-CART-015 | ECL-2.1 | [OBSERVED] |
 
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Row 1** was **DRIFT**: it claimed the add-to-cart control is clickable before any option is selected. The storefront gates it explicitly — on a variation PDP the control renders disabled with a "select options" affordance and no price, and is replaced by the quantity/add control only once the final option resolves the variant; on a configurable-sections PDP it renders disabled until the sections are configured. The row was steering agents to file the working guard as a defect, and its pattern name asserted the opposite of the shipped behaviour; the residual risk it was protecting against now lives at the non-UI layer, which the required-configuration-section row already covers. **Source:** the cart validation pipeline in the xAPI cart module, plus `BL-CAT-006`. **Docs:** the storefront user guide's product-variation and product-configuration pages describe a selection-driven flow in which required options must be chosen and unavailable combinations are visibly disabled. **Live:** on both a variation PDP and a configurable-sections PDP the add-to-cart control was observed disabled before selection, with no price. **Rows 2, 4 and 6 were NOT confirmed this run** and are recorded in `reports/ba/ecl-proposals-2026-08-27.md`: row 2 is UNGROUNDED on all three axes, row 4 is CONTRADICTORY against the documented behaviour, and row 6 claims a bulk scope that its own cited invariant explicitly disclaims.
+
+---
+
 ### 14.6 Payment Processor Differences (VC-specific)
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
-| **CyberSource on cart page** | CyberSource payment form renders directly on `/cart` — NOT on `/checkout/payment`. Agent that navigates to `/checkout/payment` first will miss the form | High | Test never reaches payment | BL-PAY-004 | ECL-1.1 | [OBSERVED] |
-| **Datatrans is the only redirect processor** | Datatrans has no inline cart-payment component (`allowCartPayment=false`) — selecting it and clicking 'Place Order' redirects to `/checkout/payment` for card entry. CyberSource, Skyflow **and** Authorize.Net all render inline on `/cart` (as the row above), so an agent that still expects Skyflow or Authorize.Net to redirect will navigate away from the form it needs | High | Agent tries wrong page / misses the inline form | BL-PAY-004 | ECL-1.1 | [OBSERVED] |
+| **Inline cart payment is single-step checkout ONLY — the multistep setting moves the card form to the payment page** | Where single-page checkout is configured, a processor that allows cart payment renders its card form directly in the cart page's own payment section rather than on the dedicated payment route, so an agent that navigates to the payment route first misses the form entirely. Where multistep checkout is enabled the gate inverts: the storefront computes cart payability as "multistep is OFF **and** the method allows cart payment", so no processor renders inline on the cart and card entry belongs to the dedicated payment step reached after Place order. Read the store's multistep-checkout setting before deciding which page holds the card form | High | Test never reaches payment — in either direction, depending on which flow the store is configured for | BL-PAY-004 | ECL-1.1 | [OBSERVED] |
+| **Datatrans is the only redirect processor — in single-step checkout** | In single-page checkout Datatrans has no inline cart-payment component, so selecting it and clicking Place order routes to the dedicated payment page for card entry, while CyberSource, Skyflow **and** Authorize.Net all render inline on the cart page (the row above) — the storefront's shared payment component branches on the payment type across exactly those three and still carries an explicit TODO for Datatrans cart payments. Under multistep checkout the distinction disappears: every method defers card entry to the payment step, so "only Datatrans redirects" holds for single-step configurations only | High | Agent tries wrong page / misses the inline form | BL-PAY-004 | ECL-1.1 | [OBSERVED] |
 | **Payment iframe blocked by ad-blocker** | Payment script (CyberSource/Skyflow) blocked silently — form appears blank, no error shown | Low-Medium | Silent payment failure | BL-PAY-001 | ECL-7.1 | [OBSERVED] |
 | **Double-click Place Order** | Slow connection: user/agent clicks 'Place Order' twice — two orders created | Medium | Duplicate order | BL-CHK-002 | ECL-7.3 | [OBSERVED] |
 
 **Amended:** 2026-08-06 (auto-applied, triangulated — ECL-AUDIT-2026-08-06). Row 2 was **DRIFT**: it claimed Skyflow, Authorize.Net and "DataTrance" all redirect after Place Order. Skyflow and Authorize.Net have since moved to `allowCartPayment=true` and render inline on the cart like CyberSource, leaving Datatrans as the only redirect processor — the row was steering agents to the wrong page for two of the three processors it named. **Source:** the storefront's shared payment component renders the CyberSource, Skyflow and Authorize.Net processors inline, keyed on the payment type, with an explicit `TODO` noting Datatrans cart payments are not yet supported; the checkout composable's `canPayFromCart` gates on the payment method's `allowCartPayment` flag generically, not on a processor allowlist. **Live:** selecting Authorize.Net on the cart kept the page on `/cart` with no redirect.
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Rows 1 and 2** were **DRIFT** for one shared reason: both stated the inline-on-cart behaviour unconditionally, omitting the multistep-checkout gate. The storefront computes cart payability as "multistep checkout is OFF **and** the method allows cart payment", so on a store configured for multistep no processor renders inline on the cart and every method — not only Datatrans — defers card entry to the dedicated payment step. As written, row 1 sent an agent to the cart looking for a form that is not there on a multistep store, and row 2's "only Datatrans redirects" was false in that configuration. The 2026-08-06 processor list above was **re-verified unchanged** this run: the shared payment component still renders exactly the CyberSource, Skyflow and Authorize.Net processors inline and still carries its TODO for Datatrans. Note that `BL-PAY-004` already carried this multistep caveat in full — the ECL rows had drifted away from their own cited invariant, which is a cheap drift detector worth reusing. **Source:** the checkout composable's cart-payability computed value and its post-place-order route decision; the shared payment component's payment-type branch. **Docs:** the storefront developer guide documents the multistep toggle as a theme setting and documents the multistep funnel's separate payment step that single-step checkout does not have. **Live:** on a single-step-configured store, selecting a card processor on the cart rendered the hosted card fields inline on the cart page with no navigation away from it.
+
+---
 
 ### 14.7 Background Job Timing (Hangfire)
 
 | Pattern | Description | Frequency | Impact | BL Invariant | ECL Ref | Status |
 |---------|-------------|-----------|--------|-------------|---------|--------|
 | **Order confirmation email delay** | Email sent via Hangfire — may arrive 5-30s after order confirmation page shown | High | Email assertion fails if checked immediately | BL-NOTIF-001 | ECL-10.1 | [OBSERVED] |
-| **Search reindex job queued** | Reindex triggered by catalog change but job queued behind other jobs — lag exceeds 60s under load | Low-Medium | Price/product not visible longer than expected | BL-SRCH-003 | ECL-2.3 | [OBSERVED] |
+| **Reindex after a catalog change is not a timed queue — it can be abandoned, or never scheduled at all** | Incremental reindexing has two independent mechanisms and "queued behind other jobs, lag exceeds 60s" describes neither. **Event-based** indexing enqueues per-document jobs onto one of three prioritized background queues, so lag tracks the priority the calling module chose, not queue depth alone. Any indexation pass first takes a cluster-wide distributed lock with a **zero** timeout and, if another indexation already holds it, **gives up immediately** rather than waiting — the pass is abandoned, not delayed. **Time-based** incremental indexing is a separate recurring job that is **disabled by default** and is frequently absent from a deployment's registered recurring jobs, so nothing later picks up a change whose event-based enqueue was lost; that job also runs with zero automatic retries. Background jobs may additionally be processed by a different platform instance than the one serving the request. Check the job dashboard for what is actually registered instead of assuming a documented cadence | Low-Medium | Lag is unbounded rather than bounded at ~60s: a change can stay unindexed indefinitely, and a fixed "wait 60s then assert" step then produces a spurious failure that reads as a catalog or search defect | BL-SRCH-003 | ECL-2.3 | [OBSERVED] |
 | **Inventory sync job** | Inventory decrement happens via background job — brief window where item shows as in-stock post-purchase | Low | Oversell window | BL-CROSS-009 | ECL-2.1 | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Row 2** was **DRIFT**: it described reindex lag as a queue-depth delay bounded at roughly a minute. Both halves are wrong in the direction that costs a run. The indexation pass takes a cluster-wide lock with a zero timeout and abandons itself on contention rather than queuing behind the holder; per-document indexing rides three prioritized queues; and the time-based incremental job that would otherwise act as a safety net is disabled by default, runs with no automatic retries, and was observed **absent** from the registered recurring jobs on the environment — so the worst case is not a longer wait, it is no reindex at all. This is the same evidence that corrected `ECL-14.2`'s section-level agent rule in this run; the two sections must not be applied apart. **Source:** the search module's indexing background-job class — its conditional recurring-job registration, its zero-timeout distributed lock with an "already in progress" bail, its per-priority queue attributes, and its zero-retry attribute on the changes job. **Docs:** the platform developer guide's incremental-index-updates section states the time-based type re-indexes every few minutes by default and is disabled by default, and its scalability guidance recommends processing background jobs on a separate platform instance. **Live:** the job dashboard listed eight registered recurring jobs across two servers, none of them the index-changes job.
+
+---
 
 ### 14.8 Environment / Module Version-Schema Drift
 
@@ -645,8 +727,10 @@ Triggered by VCST-5651: a "Loyalty missions" pre-release build (vc-module-loyalt
 |---------|-------------|-----------|--------|---------------|---------|--------|
 | **Module downgraded after a forward schema migration** | A newer build's migration renames/drops a column that an older, already-released module build still queries by its old name. The module binary is reverted to the older release without a matching down-migration, so the running code queries a column the live schema no longer has (`Invalid column name`) — the query throws instead of returning data, for every user who exercises that code path, not just one row | Low (non-prod/QA envs where pre-release builds get installed then reverted) | Whole query fails; entire parent object (e.g. `cart`) resolves to `null` rather than a scoped error | — (gap) | — | [OBSERVED] |
 | **Module upgraded before its migration has actually run** | The inverse direction: the module binary is bumped to a newer release (or a pre-release that adds/renames columns) but the target database's migration was never applied — the newer code queries/writes a column or table that does not exist yet. Same `Invalid column/object name` signature as the row above, opposite cause | Low | Same as above | — (gap) | — | [THEORETICAL] |
-| **Dependent modules rolled back independently** | Two modules share a data contract (e.g. an evaluation-context field, a cross-module event payload). One module is reverted to an older release while a dependent module stays on the newer build that assumes the new shape — reads/writes between them desync even though each module individually reports healthy on its own health check | Low | Silent cross-module data corruption or intermittent query failures, hard to attribute to either module in isolation | — (gap) | — | [THEORETICAL] |
+| **One side of a shared version contract rolled back independently** | Two modules share a data contract (e.g. an evaluation-context field, a cross-module event payload), **or the storefront frontend declares a minimum version for a module it consumes**. One side is reverted to — or simply left on — an older release while the other stays on the build that assumes the new shape, so reads/writes between them desync. The platform's modules health check is a **load** check (it reports only modules that failed to load) and per-module `errors`/`validationErrors` stay empty, so a version-contract violation leaves the whole backend reporting Healthy; the storefront's own startup check is the only surface that names the mismatch, and it degrades to a log warning if that check itself throws | Low | Silent cross-module data corruption or intermittent query failures, hard to attribute to either module in isolation; the consumer warns only that features "may be unavailable, degraded, or unstable" without naming which | — (gap) | — | [OBSERVED] |
 | **Pre-release install pollutes a shared non-prod schema for unrelated test runs** | A pre-release artifact is installed on a shared QA/dev environment to validate one ticket, then the module is reverted to the released version once that ticket is closed — but the migration it ran is never rolled back. A later, functionally unrelated regression run against the same environment can hit the identical schema/code mismatch with zero connection to the feature it is actually testing, and reads as a flaky/unrelated failure | Low | Wastes triage time; a real environment-integrity defect masquerades as test flakiness in an unrelated suite | — (gap) | — | [OBSERVED] |
+
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). **Row 3** was **DRIFT** in three ways: it scoped the pattern to two *modules*, when the storefront frontend also declares a minimum version per module it consumes and is the only surface that reports a violation; it left the row `[THEORETICAL]` although the condition is directly observable without any destructive action; and it asserted the per-module health check stays green without saying *why*, which is what makes the pattern undetectable rather than merely unnoticed. The pattern name was widened accordingly, since "dependent modules" is what an agent reads and it excluded the case actually seen. **Source:** the platform's modules health checker derives its verdict solely from the set of modules that failed to *load* and otherwise returns "All modules are loaded", never inspecting a schema or a version contract; the storefront's app runner computes an outdated-module set at startup and renders one `<moduleId> <expectedVersion> >= <backendVersion>` line per violation, inside a try/catch whose only failure path is a log warning. **Docs:** the deployment guide warns that a module version incompatible with the Platform may surface only as a "Degraded" status to be chased through logs; the platform developer guide's database-model tutorial confirms forward migrations are applied automatically in a module's `PostInitialize()` while the `Down()` direction is a developer-console operation the platform never runs. **Live:** on the environment a module was installed one minor version below its consumer's declared minimum, with empty `errors`/`validationErrors`, every module reporting no errors and the platform health endpoint reporting all modules loaded — while the storefront simultaneously warned the backend was incompatible.
 
 **Agent rule:** After any admin-driven module version change (install a pre-release build, then revert it) on a shared environment, treat every suite touching that module's data as suspect until a schema sanity check (e.g. a query that reads the affected entity) is re-run — do not assume "downgraded" means "back to the previous behavior."
 
@@ -676,7 +760,7 @@ Admin SPA order-detail patterns where an editing action must not disturb state i
 
 ## 15. Accessibility Edge Cases
 
-Screen-reader and assistive-technology interaction patterns surfaced by manual/automated WCAG 2.2 AA audits. **Note:** `business-logic.md` does not currently carry a `BL-A11Y` domain; this chapter's `Status` column stands on its own [OBSERVED]/[THEORETICAL] evidence rather than a BL citation (proposed as a BL gap in this audit's cover report).
+Screen-reader and assistive-technology interaction patterns surfaced by manual/automated WCAG 2.2 AA audits. **Note:** `business-logic.md` carries Domain 21 **Accessibility (`BL-A11Y`)** — `BL-A11Y-001` keyboard operability and focus management, `BL-A11Y-002` accessible naming and label association, `BL-A11Y-003` colour contrast and non-colour status differentiation, `BL-A11Y-004` programmatic status/state/role correctness — all `[P1-data]`, and all grounded in the external WCAG 2.1/2.2 success criteria rather than in Virto documentation, which states no conformance target. Cite the invariant a row endangers; the `Status` column records the evidence, not the exposure. **Still uncovered by any invariant:** structural semantics (WCAG 1.3.1) — a list-like structure exposing no `list`/`listitem` roles violates no `BL-A11Y-*` rule as written; see `bl_proposals`.
 
 ### 15.1 Screen Reader Interaction Patterns
 
@@ -690,22 +774,26 @@ Screen-reader and assistive-technology interaction patterns surfaced by manual/a
 
 ---
 
+**Amended:** 2026-08-27 (auto-applied, triangulated — ECL-AUDIT-2026-08-27). No pattern row changed. The **chapter-15 intro note** was **DRIFT**: it stated that `business-logic.md` carries no `BL-A11Y` domain and that this chapter therefore stands without a BL citation. That domain exists as Domain 21 — `BL-A11Y-001` … `-004`, all `[P1-data]`; `BL-A11Y-004`'s own severity rationale already quotes this section by name, and the covering suite's cases already cite `BL-A11Y-002`/`-004`. The cross-reference was live in one direction and denied in the other. Appendix D's row was corrected in the same edit, and the one genuinely uncovered area — structural semantics under WCAG 1.3.1, which row 2 concerns and which no `BL-A11Y-*` rule states — is now named as a gap rather than hidden inside a blanket denial. **Source:** the UI kit's dialog component renders its root as a plain container with a focus-trap keydown handler and no dialog role, `aria-modal` or accessible name; the input component, by contrast, wires both label association and `aria-describedby` correctly, so rows 3–4 are consumer-side risks rather than kit defects. **Live:** on the storefront the product grid exposed no list semantics, and field-level validation errors appeared as elements carrying no alert role.
+
+---
+
 ## Appendix D: ECL → Business Logic Invariant Cross-Reference
 
 Quick lookup: which ECL sections map to which BL-* invariants in `business-logic.md`.
 
 | ECL Section | Description | BL Invariants |
 |-------------|-------------|---------------|
-| ECL-1.1 Payment Methods | Payment form location, processor differences | BL-PAY-001 |
+| ECL-1.1 Payment Methods | Card expiry mid-transaction, duplicate submission, settlement/fraud mismatch, 3DS/SCA, split payment, retry | BL-PAY-001, BL-CHK-002 |
 | ECL-1.2 Session & Timeout | Session expiry during checkout | BL-AUTH-001 |
-| ECL-1.3 Coupon & Discount | Stacking, expiry, case sensitivity | BL-PRICE-001, BL-PRICE-006 |
+| ECL-1.3 Coupon & Discount | Stacking, expiry, case normalization | BL-PRICE-001, BL-CART-003, BL-CART-009 |
 | ECL-1.4 Layout Shift & Hover Displacement | Hover/state-change layout shift | BL-UI-003 |
 | ECL-1.5 Spacing & Design-Token Compliance | Off-grid spacing, stale audit grid | BL-UI-002 |
 | ECL-1.6 Overflow & Viewport Scroll | Horizontal scroll, fluid-band overflow | BL-UI-004 |
 | ECL-1.7 Alignment in Horizontal Groups | Row height parity | BL-UI-005 |
 | ECL-1.8 Touch Target Sizing | Sub-AA touch targets, no spacing buffer | BL-UI-006 |
-| ECL-2.1 Race Conditions | Overselling, last-item conflict | BL-CART-001 |
-| ECL-2.2 Stock Depletion Notifications | "Only 1 left" nagware, stale inventory cache | BL-CART-001 |
+| ECL-2.1 Race Conditions | Overselling, last-item conflict | BL-CART-002, BL-CAT-001 |
+| ECL-2.2 Stock Depletion Notifications | "Only 1 left" nagware, stale inventory cache | BL-CART-002, BL-CAT-001, BL-CAT-007, BL-BOPIS-003 |
 | ECL-2.3 Pricing Timing | Stale cart totals, flash sale conflict | BL-PRICE-001, BL-PRICE-004 |
 | ECL-3.1 No Results | Dead-end search, zero results | BL-SRCH-002 |
 | ECL-3.2 Filter & Sort | Sort reset, filter persistence | BL-SRCH-001 |
@@ -737,9 +825,9 @@ Quick lookup: which ECL sections map to which BL-* invariants in `business-logic
 | ECL-12.1 Currency | No price list → unavailable | BL-PRICE-005 |
 | ECL-12.2 International Shipping & Taxes | VAT/GST error, undisclosed customs duty | BL-PRICE-002 |
 | ECL-13.1 Order Fulfillment Issues | Partial fulfillment, backorder, cancel-after-ship | BL-ORD-002, BL-ORD-003 |
-| ECL-13.2 Subscription & Recurring Billing | Silent renewal failure, proration | — (no native VC subscription/recurring-billing module; applies only to deployments with a custom extension) |
+| ECL-13.2 Subscription & Recurring Billing | Silent renewal failure, proration | — (gap; a native subscription/recurring-billing module exists, is documented and is enabled on the tested deployment, but no BL invariant governs renewal notification, cancellation-vs-open-order, or proration — see `bl_proposals`) |
 | ECL-13.3 Loyalty & Points | Points not credited, double-counting | BL-LOY-007, BL-LOY-008 |
-| ECL-14.1 GraphQL xAPI Error Patterns | Silent `errors[]`, missing context params | BL-CART-001, BL-ORD-001, BL-PRICE-005, BL-CAT-006 |
+| ECL-14.1 GraphQL xAPI Error Patterns | Silent `errors[]`, missing context params | BL-CART-001, BL-CART-002, BL-ORD-001, BL-PRICE-005, BL-CAT-006 |
 | ECL-14.2 Search Index Lag | Price/product/facet staleness after admin change | BL-CROSS-002, BL-SRCH-001, BL-SRCH-003 |
 | ECL-14.3 B2B Organization Context | Cart isolation loss, role not applied | BL-B2B-001, BL-B2B-005 |
 | ECL-14.4 Price List & Currency Edge Cases | Currency unavailable, tier boundary, stale mini-cart price | BL-PRICE-002, BL-PRICE-004, BL-PRICE-005, BL-CROSS-002 |
@@ -749,6 +837,6 @@ Quick lookup: which ECL sections map to which BL-* invariants in `business-logic
 | ECL-14.8 Environment/Schema Drift | Module downgrade without DB rollback; upgrade before migration runs | — (gap; VCST-5651) |
 | ECL-14.9 Validator Fault Isolation | Unhandled validator exception nulls the whole cart/order object | BL-LOY-008 (partial); ECL-10.2 |
 | ECL-14.10 Admin Order-Edit UI Guards | Cancel-during-refund guard, status preservation on edit | BL-ORD-003, BL-ORD-004 |
-| ECL-15.1 Screen Reader Interaction Patterns | Unannounced modals/errors, unlabeled controls | — (gap; no `BL-A11Y` domain yet — see `bl_proposals`) |
+| ECL-15.1 Screen Reader Interaction Patterns | Unannounced modals/errors, unlabeled controls | BL-A11Y-001, BL-A11Y-002, BL-A11Y-004 |
 
 **End of Library**
