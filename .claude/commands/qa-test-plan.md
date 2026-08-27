@@ -170,7 +170,7 @@ Critical-level domains drive priority of suite execution and dictate whether `qa
 
 ### Step 6 — Generate Plan Sections
 
-Delegate Sections 5.2 (Coverage Gaps) and 6 (New Test Cases per Ticket) to `test-management-specialist`. The orchestrator (you) writes Sections 1, 2, 3, 4, 7-13 and integrates the specialist's output.
+Delegate Sections 5.2 (Coverage Gaps), **5.3 (Exploratory Charters)** and 6 (New Test Cases per Ticket) to `test-management-specialist`. The orchestrator (you) writes Sections 1, 2, 3, 4, 7-13 and integrates the specialist's output. 5.3 is delegated with 5.2 deliberately: the two share an input (the checklist gap-diff, Step 6c) and splitting them across writers is how a gap ends up in neither.
 
 #### 6a. Orchestrator-written sections
 
@@ -211,6 +211,9 @@ References (read these):
   - skills/qa-coverage-gap/feature-domain-map.md
   - skills/qa-test-cases-generator/test-case-template.md
   - skills/qa-test-design/test-design-techniques.md
+  - .claude/skills/qa-checklist/domain-checklists.md + backend-admin-checklists.md + graphql-checklist.md
+  - .claude/skills/qa-sbtm/sprint-charter-selection.md   (the §5.3 derivation rule — read before writing charters)
+  - reports/exploratory/  (last 24h of SBTM-* sessions — disqualifier D3)
 
 Context7: query `/virtocommerce/vc-docs` per primary domain (tokens: 8000)
 
@@ -223,11 +226,56 @@ Output:
     # (NOT by JIRA component). Note the loyalty split: 083/083b storefront = Frontend; 075/075b/075c = Backend.
     # Preserve suite order within each sub-table; keep module/sprintTrigger/priority columns unchanged.
   - section_5_2_coverage_gaps: [{gapId: GAP-NN, ticket, description, targetSuites, owner}]
+  - section_5_3_exploratory_charters: [{charterId: EXP-NN, domain, signals: ["C1".."C4"], mission,
+      candidateScenarios: [2-3 strings], technique, persona?, lane: "playwright-chrome"|"playwright-edge",
+      timeboxMin: 30, owner}]
   - section_6_new_cases: [{ticket, layers, caseType, suggestedCount, targetSuite, technique}]
   - estimatedTotalNewCases: int (range OK, e.g., "63-72")
 
 Do NOT generate the actual CSV test cases here — only counts, suite mapping, and technique recommendation. Case generation happens later via /qa-test-cases-generator per ticket.
 ```
+
+#### 6c. Checklist gap-diff → feeds BOTH §5.2 and §5.3
+
+For each **Critical / High** domain in Section 3 (only those — a full 738-item sweep is not the job),
+retrieve that domain's `/qa-checklist` list and diff it against the case titles of the domain's §5.1
+suites. Route every uncovered item to exactly one destination:
+
+| Uncovered item is… | Goes to | Becomes |
+|---|---|---|
+| Specific and assertable ("PDP shows tier price at qty ≥ MOQ") | §5.2 as a `GAP-NN` row | a `Draft` case → permanent coverage |
+| State-shaped / interaction-shaped / "depends on…" | §5.3 as a charter **candidate scenario** | a 30-min probe this sprint |
+
+This is what makes the checklist pay for itself: drawn once per domain, feeding both outputs. Do **not**
+schedule a separate checklist *run* — a checklist walk produces no fingerprint, no `history.json` row,
+no flakiness signal and no promotion path, so its findings do not compound.
+
+#### 6d. Section 5.3 — Exploratory charters (derived, capped at 5)
+
+Apply `.claude/skills/qa-sbtm/sprint-charter-selection.md` to Sections 3 + 5.2. Qualify a domain on any
+of **C1** uncovered surface (a §5.2 gap with `Target suite(s) = none`) · **C2** concurrency seam (≥3
+tickets at `L ≥ 4`) · **C3** cross-layer chain (a gap naming ≥3 suites across ≥2 layers) · **C4** latent
+blast radius (`I = 5`, `L ≤ 3`). Disqualify on **D1** exact oracle (one assertable value/contract → it is
+a test case, §6, not a charter — this applies however high the risk score) · **D2** no QA surface in this
+repo (§2.4) · **D3** already charted in the last 24 h. Rank by signal count, then §3 score; keep ≤5.
+
+Write the section as:
+
+```markdown
+### 5.3 Exploratory Charters (discovery — what the suites cannot assert)
+
+> N charters × 30 min. Lane: chrome/edge only — firefox cannot click this storefront
+> (`.claude/rules/agents.md`). Run isolated from the regression pool (3 lanes total).
+
+| ID | Domain | Signals | Mission (discover X that suites Y don't cover) | Candidate scenarios | Technique | Owner |
+|----|--------|---------|-----------------------------------------------|---------------------|-----------|-------|
+| EXP-01 | ... | C2, C3 | ... | 1. … 2. … 3. … | Feature-pair matrix | qa-testing-expert |
+
+**Not chartered (and why):** `<domain>` — D1 exact oracle → §6 case instead; `<domain>` — D2 separate product.
+```
+
+The "Not chartered" line is mandatory: a silently omitted Critical domain is indistinguishable from one
+that was considered and correctly ruled out.
 
 ---
 
@@ -235,7 +283,7 @@ Do NOT generate the actual CSV test cases here — only counts, suite mapping, a
 
 Output path: `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md`
 
-Use the **exact structure** of `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md`. Do not invent new section numbers; do not omit sections. If a section has no content for this sprint (e.g., no analytics changes), keep the section heading and write `_None in this sprint._`
+Use the **exact structure** of `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md`, **plus Section 5.3 Exploratory Charters** (added 2026-08-26 — see Step 6d; the 26-08…26-16 plans predate it and have no 5.3). Do not invent any other new section numbers; do not omit sections. If a section has no content for this sprint (e.g., no analytics changes), keep the section heading and write `_None in this sprint._` — for 5.3 that means writing the "Not chartered (and why)" line, never an empty section.
 
 **Header block:**
 ```markdown
@@ -263,6 +311,11 @@ Use the **exact structure** of `vc/shared/docs/Sprint plans/sprint-26-08-test-pl
   "domains": [{"name": "...", "score": 0, "level": "Critical|High|Medium|Low"}],
   "suitesActivated": ["042", "044", ...],
   "newCasesEstimate": "63-72",
+  "exploratoryCharters": [
+    {"id": "EXP-01", "domain": "...", "signals": ["C2", "C3"], "mission": "...",
+     "candidateScenarios": ["...", "..."], "technique": "Feature-pair matrix",
+     "lane": "playwright-chrome", "timeboxMin": 30}
+  ],
   "criticalTickets": ["VCST-..."],
   "outOfScopeCount": 0,
   "artifacts": "vc/shared/docs/Sprint plans/"
@@ -283,6 +336,7 @@ Done items in scope: {N} ({S} Stories, {B} Bugs)
 Merged PRs: {P} in vc-frontend, {M} in modules
 Critical-risk domains: [...]
 Coverage gaps identified: {GAP_COUNT}
+Exploratory charters: {EXP_COUNT} (§5.3)
 New test cases estimated: {RANGE}
 
 Plan: vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md
@@ -293,6 +347,7 @@ Next: review the plan, then either:
   - /qa-test VCST-XXXX                  (test a specific ticket, prefilled from Section 11 row)
   - /qa-regression sprint               (auto-resolves vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json → suitesActivated[])
   - /qa-regression sprint:{XX-YY}       (pin to this exact sprint plan; useful when re-running a past sprint)
+  - /qa-exploratory sprint              (run this plan's §5.3 charters — reads exploratoryCharters[] from the summary.json)
 ```
 
 ---
@@ -308,6 +363,10 @@ Next: review the plan, then either:
 - **Never assert exact prices, IDs, SKUs, order numbers** in the plan — refer to test data files / `@td(ALIAS.field)` resolver per `feedback_flexible_test_cases.md`.
 - **Read URLs from `config.js` / `.env`** — never hardcode `vcst-qa.virtocommerce.com` in the plan body; use `{FRONT_URL}` / `{BACK_URL}`.
 - **No fabricated suite IDs.** Every suite in Section 5.1 must exist in `config/test-suites.json`. If a domain has no existing suite, list it in 5.2 (Coverage Gap) and propose a target suite.
+- **Charters are DERIVED, never invented.** Section 5.3 is a filter over Sections 3 + 5.2 per `.claude/skills/qa-sbtm/sprint-charter-selection.md` — never a domain absent from §3, never a suite absent from §5.1. Same discipline as the no-fabricated-suite-IDs rule above, and for the same reason: an agent asked to name plausible things names plausible things.
+- **High risk is not the charter qualifier — oracle fuzziness is.** A domain can score 20 in §3 and still be a pure D1 (one assertable value or contract). Route it to §6 as a test case: a precise oracle makes a case cheaper *and* permanent, whereas a charter buys a one-off verdict.
+- **Cap Section 5.3 at 5 charters** and always write the "Not chartered (and why)" line. A charter nobody runs makes the plan look covered; a silently dropped Critical domain is indistinguishable from one correctly ruled out.
+- **Never schedule a charter on `playwright-firefox`.** Exploration is click-driven by definition and `@playwright/mcp` + firefox cannot click this storefront or the Admin SPA (`.claude/rules/agents.md`, confirmed 6×). chrome or edge only.
 - **Split Section 5.1 by layer.** Section 5.1 (Suites Activated) is written as two sub-tables — `5.1.1 Frontend Suites` (`regression/suites/Frontend/`) and `5.1.2 Backend Suites` (`regression/suites/Backend/`) — classifying each suite by the layer directory its CSV lives under in `config/test-suites.json`, not by JIRA component. Watch the loyalty split (083/083b storefront → Frontend; 075/075b/075c → Backend) and any admin/GraphQL suites (050*, 0XX admin) → Backend. Preserve suite order within each sub-table and keep the module/sprint-trigger/priority columns unchanged.
 - **Honor the BL knowledge file** — when describing test approach for a ticket, reference applicable `BL-*` IDs from `business-logic.md` (read; do not edit). If a ticket implies a new invariant, note it as a candidate for the Phase 4c BL audit in a follow-up `/qa-test-lifecycle` run (or a standalone `/qa-review-bl`), not in this plan.
 - **Document status defaults to Draft.** Promote to "Approved" only after user review (manual edit).

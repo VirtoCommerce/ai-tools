@@ -1,0 +1,137 @@
+{
+  "ticket": "VCST-5670",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "fast",
+  "verdict": "FAIL",
+  "date": "2026-08-26",
+  "environment": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+  "build": {
+    "platform": "n/a - vc-shell Marketplace Vendor Portal, not the storefront or Platform Admin SPA",
+    "theme": "Light (Vendor Portal ships Light/Dark/Green; no Coffee theme exists here)",
+    "relevant_modules": {
+      "@vc-shell/framework": "2.5.0 (2026-08-19T10:23:58Z, 2964ccbe3)",
+      "vendor-portal-build-id": "16355 (served bundle, last-modified 2026-08-26T13:31:42Z)"
+    },
+    "deploy_gate": {
+      "verdict": "PASS",
+      "fix_pr": "VirtoCommerce/vc-shell#286",
+      "fix_commit": "6427af7b0fc9ecbe2d66918321ba08325046a3f5",
+      "merged_at": "2026-08-12T11:05:02Z",
+      "ancestor_of_release": "v2.5.0 (behind_by 0)",
+      "marker_grep": "data-blade-expand-control x3 in vc-shell-vendors16355.js; x0 in vc-shell-framework16355.js (re-export facade, expected)",
+      "note": "The ticket comment 'waiting for release' (2026-08-13) was stale - v2.5.0 shipped 2026-08-19."
+    }
+  },
+  "agents_dispatched": ["ui-ux-expert"],
+  "epic": {
+    "parent": null,
+    "siblings": { "done": [], "in_progress": [], "blocked_dependency": [] },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 3,
+    "weak_acs": 0,
+    "gap_acs_added": 1,
+    "impl_coverage": { "satisfied": 7, "drift": 0, "contradicts": 1, "not_found": 0 },
+    "conditions_total": 9,
+    "conditions_with_evidence": 9,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 100,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "conditions": [
+      { "id": 1, "condition": "Sign-in -> defined element, never body", "verdict": "PASS", "focus_target": "main workspace region (.vc-app__workspace)", "attempts": "3/3" },
+      { "id": 2, "condition": "Blade open by row click -> defined element, never body", "verdict": "PASS", "focus_target": "the clicked row (documented decline path; Tab resumed at the row)", "attempts": "3/3" },
+      { "id": 3, "condition": "Maximize via header button -> replacement control", "verdict": "PASS", "focus_target": "button Restore", "attempts": "3/3" },
+      { "id": 4, "condition": "Restore via header button -> replacement control", "verdict": "PASS", "focus_target": "button Maximize", "attempts": "3/3" },
+      { "id": 5, "condition": "Maximize/Restore via Ctrl+backslash with focus on the expand control", "verdict": "FAIL", "focus_target": "body - no [active] node in the a11y tree", "attempts": "3/3 both directions", "filed_as": "VCST-5812" },
+      { "id": 6, "condition": "Save -> defined element, never body", "verdict": "PASS", "focus_target": "remounted blade region", "attempts": "2/2", "note": "Passes via vc-blade onMounted(focusIfLoose) because save remounts the blade - emergent, not a deliberate target; would regress silently if the blade stopped remounting." },
+      { "id": 7, "condition": "Chosen target documented per transition", "verdict": "PARTIAL", "focus_target": "4 named transitions documented in dev comment + code comments; shortcut path undocumented", "attempts": "n/a" },
+      { "id": 8, "condition": "Verified by measurement in a running app, not only unit tests", "verdict": "PASS", "focus_target": "this run", "attempts": "n/a" },
+      { "id": 9, "condition": "[gap AC] Maximize control Tab-reachable and Enter/Space operable", "verdict": "PASS", "focus_target": "reachable via blade region -> breadcrumbs -> Maximize; Enter and Space both operate", "attempts": "n/a" }
+    ]
+  },
+  "total_cases": 9,
+  "passed": 7,
+  "failed": 1,
+  "blocked": 0,
+  "iterations": { "enabled": false, "rounds": 1, "max_rounds": 2, "outcome": "bailed" },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": [],
+    "skipped_reason": "No regression suite in config/test-suites.json covers vc-shell / the Marketplace Vendor Portal. Authoring cases into a storefront-scoped corpus would produce rows the runner cannot execute against FRONT_URL, so Artifact A was deliberately not authored and 5g did not run."
+  },
+  "regression": {
+    "suites": [],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": "No vc-shell / Vendor Portal coverage exists in the suite manifest (separate product). Artifact C is empty by construction, not by omission."
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_id": null,
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "bugs_filed": [
+    { "key": "VCST-5812", "relationship": "sub-task", "parent_or_linked_ticket": "VCST-5670", "severity": "Low", "title": "Ctrl+backslash maximize/restore drops focus to body when focus is on the header expand control" },
+    { "key": "VCST-5813", "relationship": "related", "parent_or_linked_ticket": "VCST-5670", "severity": "Low", "title": "Log Out drops focus to body - next Tab restarts at the top of the document" }
+  ],
+  "business_rules_verified": [],
+  "standards_verified": ["WCAG 2.4.3 Focus Order (AA)", "WCAG 2.1.1 / 4.1.2 (role=button keyboard operability, condition 9)"],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": [],
+    "skipped_reason": "No Application Insights component is configured for vcmp-dev; only vcst and vcptcore backend/storefront resources exist in the env layers."
+  },
+  "measurement_method": {
+    "instrument": "Playwright MCP accessibility snapshot [active] marker + mandatory Tab-continuation discriminator",
+    "why": "The repo hook .claude/hooks/enforce-real-user.mjs blocks browser_evaluate/evaluate_script and carries no allowlist pattern for document.activeElement. The @allow-eval sentinel is scoped to UI-fix/debug work, explicitly not test runs, so it was not used. The snapshot marker plus Tab-once is the ticket's own stated equivalent assertion and is fully real-user.",
+    "instrument_validated": "Confirmed [active] appears on the Password field pre-sign-in, and that genuine body focus (post-logout) sends Tab to the first document element - so the loose-focus signature is distinguishable, not inferred.",
+    "hook_gap_noted": "A read-only document.activeElement probe is the same class as the axe / getComputedStyle / getBoundingClientRect exceptions the hook already allows. Adding a pattern for it would let a future focus-order run assert the ticket's literal criterion directly. Not changed here - out of scope for a QA run."
+  },
+  "storefront_rules_substituted": [
+    "storefront-selectors.md / data-test-id catalogue -> ARIA role + accessible name",
+    "BL-UI-001..006 and critical-ui-scope.md -> WCAG 2.4.3 plus the PR's own stated contract (focusIfLoose repairs; keepFocusOnExpandControl hands off)",
+    "Coffee/Red a11y-gated themes -> Light (Vendor Portal ships Light/Dark/Green)",
+    "config/test-suites.json regression selection -> none exists for vc-shell"
+  ],
+  "data_touched": {
+    "entity": "Product 'Product Level 4' (code PLV4, id f68d7e2d-def4-49b3-99c1-0f49dd103be0), Draft/Inactive",
+    "change": "name -> 'Product Level 4 ' (one trailing space), saved via Save as draft, then reverted and saved again",
+    "published": false,
+    "final_state_verified": true
+  },
+  "repo_findings": [
+    {
+      "finding": ".gitignore:68 blanket-ignores *.png and re-included only reports/bugs/screenshots/**, so per-ticket QA evidence was silently untracked despite reports.md section 5 listing it as tracked. git ls-files 'reports/tickets/**/*.png' returned 0 against 24 tracked bug screenshots.",
+      "impact": "Explains a prior vc-shell run whose reported screenshots were absent from disk; git status stayed clean so it went unnoticed. Evidence for 13 further Sprint26-17 tickets was also never committed.",
+      "action": "Fixed on branch fix/track-per-ticket-qa-evidence (commit fdbbdd4e). Backfilling the 13 tickets' binaries is deliberately left as a separate human call."
+    }
+  ],
+  "incidental_findings_not_filed": [
+    "tiptap duplicate extension names ['link','underline'] x3 in the description editor",
+    "VcDataTable column width crisis: sum(minPx) exceeds availableWidth (1800/778, 3280/1640, 2440/1054)",
+    "ai-agent-context 'Cannot set context data: no blade id available' x5 (already noted in the VCST-5680 run)",
+    "Five image 404s from legacy relative asset paths (catalog/<file>.jpg resolved against the SPA base); vc-image logs 'Invalid URL' and requests it anyway. Not filed - needs a back-office check of the product asset record to tell bad data from a normalisation gap.",
+    "One Shift+Tab stop in the product form produced no [active] node, recovering next press. Low confidence - the instrument cannot separate 'focusable element with no accessible name' from body focus. Flagged, not claimed."
+  ],
+  "screenshots": "reports/tickets/Sprint26-17/VCST-5670/screenshots/"
+}

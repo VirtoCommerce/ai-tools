@@ -3,12 +3,12 @@
 **Location:** `regression/suites/`
 **Updated:** 2026-08-24
 **Format:** Enriched Agent-Native CSV (15-column)
-**Manifest:** [`config/test-suites.json`](../../config/test-suites.json) — single source of truth for orchestration (`_meta.totalSuites: 123`)
+**Manifest:** [`config/test-suites.json`](../../config/test-suites.json) — single source of truth for orchestration (`_meta.totalSuites: 126`)
 
 Suites are organized into **module-aligned subdirectories** under `Frontend/` and `Backend/`. IDs are
 zero-padded and may carry letter suffixes for split suites (e.g. `040a`, `050b1`, `072c`).
 
-**Totals:** 123 CSV suites (registered in the manifest) · 4,123 test cases · 56 Frontend (17 modules) + 67 Backend (33 modules).
+**Totals:** 126 CSV suites (registered in the manifest) · 4,155 test cases · 56 Frontend (17 modules) + 70 Backend (33 modules).
 
 > `Backend/import-export/096-backup-restore.csv` exists on disk but has **no manifest entry** — it is
 > not counted above, does not run under any selection, and is invisible to `suites:lint`. See the
@@ -87,10 +87,10 @@ Authoritative definitions live in the manifest's `selections` block. Regenerate 
 
 | Selection | Suites | CI Command |
 |-----------|--------|------------|
-| `smoke` | 042, 078 | `npm run ci:smoke` |
-| `critical` | 042, 078, 039, 044, 049 | `npm run ci:critical` |
+| `smoke` | 042, 078, 078b, 078c, 078d | `npm run ci:smoke` |
+| `critical` | 042, 078, 078b, 078c, 078d, 039, 044, 049 | `npm run ci:critical` |
 | `sprint` | Plan-driven via `vc/shared/docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1) | — |
-| `full` | All 123 | `npm run ci:full` |
+| `full` | All 119 (126 minus 7 excludes) | `npm run ci:full` |
 
 ### By Layer
 

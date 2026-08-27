@@ -82,8 +82,9 @@ After synthesis and before writing the final report:
 1. Collect `bl_proposals.new[]` and `bl_proposals.stale[]` from `ba-system-analyzer`'s output.
 2. **Deduplicate against `business-logic.md`:** drop any `new` proposal whose Rule is substantively identical to an existing invariant (word overlap + same verify target).
 3. **Validate sources:** every remaining proposal MUST have a non-empty `source` field. Drop any unsourced entry and log the drop in the terminal summary.
-4. If any proposals remain after steps 2–3, write `reports/ba/bl-proposals-{date}.md` using the template below. If both arrays are empty, skip the file.
-5. **`/ba-analyze` itself never writes to `knowledge/oracles/business-logic.md`.** Its BL candidates come from opportunistic, often single-axis observation during analysis — that is by definition **not confirmed**, so it only ever stages drafts to `bl-proposals-{date}.md`. Do not bulk-promote, do not promote "all approved," do not infer approval from silence from a `/ba-analyze` run. **Auto-apply to the oracle happens only through `/qa-review-bl`** — the dedicated triangulation flow that confirms each candidate against **docs + live + source** (all three) before a body-only edit, and routes anything unconfirmed back to this same `bl-proposals-{date}.md`. So: `/ba-analyze` → drafts; `/qa-review-bl` → confirmed auto-apply + drafts for the rest. To act on this run's drafts, hand them to `/qa-review-bl` (or promote a specific approved entry by hand).
+4. **Score each surviving proposal on both value axes** and fill the mandatory Value Summary table — derived, never estimated: `npm run oracles:rank -- --explain=<ID> --severity=<the tag you are proposing>` prints business value, product value and the promotion decision verbatim. A proposal that comes back `low` or `undeclared` still gets written down (it is evidence someone considered it), but it is filed under that label, not mixed in with the ones that clear both axes.
+5. If any proposals remain after steps 2–4, write `reports/ba/bl-proposals-{date}.md` using the template below, **ordered by value, highest first**. If both arrays are empty, skip the file.
+6. **`/ba-analyze` itself never writes to `knowledge/oracles/business-logic.md`.** Its BL candidates come from opportunistic, often single-axis observation during analysis — that is by definition **not confirmed**, so it only ever stages drafts to `bl-proposals-{date}.md`. Do not bulk-promote, do not promote "all approved," do not infer approval from silence from a `/ba-analyze` run. **Auto-apply to the oracle happens only through `/qa-review-bl`** — the dedicated triangulation flow that confirms each candidate against **docs + live + source** (all three) before a body-only edit, and routes anything unconfirmed back to this same `bl-proposals-{date}.md`. So: `/ba-analyze` → drafts; `/qa-review-bl` → confirmed auto-apply + drafts for the rest. To act on this run's drafts, hand them to `/qa-review-bl` (or promote a specific approved entry by hand).
 
 **`bl-proposals-{date}.md` template** (identical to the format `/qa-test-lifecycle` Phase 4c and `/qa-review-bl` use for unconfirmed items, so a human sees a consistent shape regardless of source):
 
@@ -99,10 +100,41 @@ After synthesis and before writing the final report:
 
 ---
 
+## Value Summary
+
+| Proposal | Business | Product | **Value** | Would promote? |
+|---|---|---|---|---|
+| PROPOSED-BL-<DOMAIN>-<NNN> | high (P0-revenue) | medium (4 citing cases) | **high** | yes — clears both axes |
+| PROPOSED-BL-<DOMAIN>-<NNN> | low (P2-ux) | high (31 citing cases) | **low** | no — demand cannot buy a low-cost rule in |
+| PROPOSED-BL-<DOMAIN>-<NNN> | unknown (no tag) | medium (5 citing cases) | **undeclared** | no — declare what a violation costs first |
+
+**This table is mandatory and comes first**, because a reader who cannot see which proposals
+matter reads them all at equal weight — which is how an oracle grows evenly instead of by value.
+Derive it, never estimate it:
+
+```
+npm run oracles:rank -- --explain=<ID> --severity=<tag>     # per proposal: both axes + the gate verbatim
+npm run oracles:rank -- --axis=bl --candidates              # every cited-but-absent id, ranked
+```
+
+`Business` is what a violation costs (the severity tag you are proposing; for ECL, the severity
+of the `BL-*` invariant the pattern endangers). `Product` is how much of the tested product leans
+on it (citing cases, cross-domain reach, `[OBSERVED]` share). **Value** is the conjunction, and it
+is the promotion rule: `high` business promotes at any demand; `medium` needs `medium`+ product;
+`low` and `undeclared` do not promote at all. Order the sections below by it, highest first.
+
+The value column is **derived, never stored in the oracle** — product value moves with every suite
+edit, so a number transcribed into `business-logic.md` would be wrong by the next commit and wrong
+silently (`.claude/rules/test-data.md` §GOLDEN RULE). The proposals file is a snapshot of one
+decision at one date, which is exactly the artifact a computed column belongs in.
+
+---
+
 ## New Invariants Proposed
 
 ### PROPOSED-BL-<DOMAIN>-<NNN>: <short title> `[P0-revenue | P1-data | P2-ux]`
 
+- **Value:** business <high|medium|low|unknown> (<tag>) · product <high|medium|low|none> (<N citing cases>) → **<high|qualified|low|undeclared>**
 - **Rule:** ...
 - **Verify:**
   - ...
@@ -126,10 +158,11 @@ After synthesis and before writing the final report:
 
 ## Application Notes
 
-1. Assign final IDs by reading `knowledge/oracles/business-logic.md` for the next available `BL-<DOMAIN>-NNN` sequence.
-2. Replace `PROPOSED-` prefix with final ID.
-3. Paste the edited entry into the correct domain section of `business-logic.md`.
-4. After the entry lands, re-run any related `/qa-review-tests suite <ID> --verify` so test cases gain their `Business_Rule` mapping.
+1. **Promote by value, highest first — and only what clears both axes.** A `low` or `undeclared` proposal is not a queue item for later; it is a proposal that does not belong in the oracle as written. Either raise it (declare the severity, or show the product leans on it) or leave it here.
+2. Assign final IDs by reading `knowledge/oracles/business-logic.md` for the next available `BL-<DOMAIN>-NNN` sequence.
+3. Replace `PROPOSED-` prefix with final ID.
+4. Paste the edited entry into the correct domain section of `business-logic.md`.
+5. After the entry lands, re-run any related `/qa-review-tests suite <ID> --verify` so test cases gain their `Business_Rule` mapping.
 ```
 
 ---

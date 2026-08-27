@@ -68,8 +68,18 @@ const SECTION_RE = /^###\s+(\d+)\.(\d+)\s+(.*?)\s*$/;
 const CHAPTER_RE = /^##\s+(\d+)\.\s+(.*?)\s*$/;
 /** A citation token as it appears in a CSV cell or Appendix D row. */
 const ECL_TOKEN_RE = /\bECL-(\d+)\.(\d+)\b/g;
+/** Non-global twin: a /g regex carries `lastIndex` across `exec` calls, so a shared one
+ *  silently skips matches when used for a single lookup inside a loop. */
+const ECL_TOKEN_RE_ONCE = /\bECL-(\d+)\.(\d+)\b/;
 /** Appendix D starts here; rows below are cross-reference claims, not definitions. */
 const APPENDIX_RE = /^##\s+Appendix\s+D\b/i;
+/** A fenced code block. Its contents are ILLUSTRATION, never definitions — Appendix A's
+ *  template carries a header row, a separator and a placeholder data row, and because
+ *  Appendix A sits between §13.3 and chapter 14 that row was counted as a real pattern
+ *  of §13.3 (4 rows read for its 3, and a phantom `[OBSERVED]` in its status share). */
+const FENCE_RE = /^\s*```/;
+/** The library's own "no invariant declared" marker, opening a BL cell in Appendix D. */
+const NOT_DECLARED = "—";
 
 interface Section {
   id: string; // "ECL-13.3"
@@ -79,6 +89,22 @@ interface Section {
   chapterTitle: string;
   line: number;
   referencedByCases: string[];
+  /** The section's pattern rows, read by COLUMN NAME (two header shapes exist in the
+   *  library: the 5-column generic one and the 7-column VC-specific one, which puts
+   *  `Frequency` at a different index — so positional parsing silently reads the wrong
+   *  cell). Consumed by `oracle-significance.ts`; unreadable cells stay raw and are
+   *  resolved (or refused) there, never guessed here. */
+  rows: PatternRow[];
+}
+
+/** One pattern row of a section's table, cells verbatim as written. */
+export interface PatternRow {
+  pattern: string;
+  frequency: string;
+  impact: string;
+  status: string;
+  /** BL ids named by the row's `BL Invariant` column (7-column shape only). */
+  blRefs: string[];
 }
 
 interface Finding {
@@ -94,33 +120,82 @@ function truncate(s: string, n = 80): string {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
 }
 
+/** Split a markdown table line into trimmed cells (leading/trailing pipe dropped). */
+function splitRow(line: string): string[] {
+  const cells = line.split("|").map((c) => c.trim());
+  if (cells.length && cells[0] === "") cells.shift();
+  if (cells.length && cells[cells.length - 1] === "") cells.pop();
+  return cells;
+}
+
+const SEPARATOR_RE = /^\|[\s:|-]+\|?\s*$/;
+
+/** A header row iff it names both anchor columns. Returns name→index, else null. */
+function headerIndex(cells: string[]): Record<string, number> | null {
+  const idx: Record<string, number> = {};
+  cells.forEach((c, i) => (idx[c.toLowerCase()] = i));
+  return "pattern" in idx && "frequency" in idx ? idx : null;
+}
+
 /**
  * Parse the library body into sections. Stops collecting definitions at Appendix D:
  * appendix rows CITE sections, they do not define them, so counting them as
  * definitions would make every dangling appendix row self-validating.
  */
-export function parseLibrary(text: string): { sections: Section[]; appendixIds: string[] } {
+export function parseLibrary(text: string): {
+  sections: Section[];
+  appendixIds: string[];
+  /** Appendix D row → the BL ids it declares for that section, read from the row's LAST
+   *  cell only. Two reasons this is not a whole-line scan: a BL cell may also name a
+   *  sibling section (14.9's reads `BL-LOY-008 (partial); ECL-10.2`), which would let
+   *  10.2 inherit 14.9's invariant; and a Description cell may mention an id in passing.
+   *  A cell opening with an em dash is the file's own "not declared" marker and yields
+   *  nothing — even when its parenthetical names an invariant the section merely
+   *  *overlaps* (`— (no single BL invariant; overlaps BL-CROSS-011)`), because declining
+   *  to declare is a claim in itself and must not be silently upgraded. */
+  appendixBlRefs: Record<string, string[]>;
+} {
   const sections: Section[] = [];
   const appendixIds: string[] = [];
+  const appendixBlRefs: Record<string, string[]> = {};
   let chapterTitle = "";
   let inAppendix = false;
+  let header: Record<string, number> | null = null;
+  let inFence = false;
 
   text.split(/\r?\n/).forEach((line, i) => {
+    if (FENCE_RE.test(line)) {
+      inFence = !inFence;
+      return;
+    }
+    if (inFence) return;
     if (APPENDIX_RE.test(line)) {
       inAppendix = true;
       return;
     }
     if (inAppendix) {
       for (const m of line.matchAll(ECL_TOKEN_RE)) appendixIds.push(`ECL-${m[1]}.${m[2]}`);
+      if (line.trimStart().startsWith("|") && !SEPARATOR_RE.test(line)) {
+        const cells = splitRow(line);
+        const subject = ECL_TOKEN_RE_ONCE.exec(cells[0] ?? "");
+        const declared = (cells[cells.length - 1] ?? "").trim();
+        if (subject && cells.length > 1 && !declared.startsWith(NOT_DECLARED)) {
+          appendixBlRefs[`ECL-${subject[1]}.${subject[2]}`] = [
+            ...declared.matchAll(/\bBL-[A-Z0-9]+-\d+[A-Z]?\b/g),
+          ].map((m) => m[0]);
+        }
+      }
       return;
     }
     const chap = CHAPTER_RE.exec(line);
     if (chap) {
       chapterTitle = chap[2];
+      header = null;
       return;
     }
     const sec = SECTION_RE.exec(line);
     if (sec) {
+      header = null; // a new section starts a new table context
       sections.push({
         id: `ECL-${sec[1]}.${sec[2]}`,
         chapter: Number(sec[1]),
@@ -129,11 +204,33 @@ export function parseLibrary(text: string): { sections: Section[]; appendixIds: 
         chapterTitle,
         line: i + 1,
         referencedByCases: [],
+        rows: [],
       });
+      return;
     }
+
+    if (!line.trimStart().startsWith("|")) return;
+    const cells = splitRow(line);
+    const asHeader = headerIndex(cells);
+    if (asHeader) {
+      header = asHeader;
+      return;
+    }
+    if (SEPARATOR_RE.test(line) || !header) return;
+    const current = sections[sections.length - 1];
+    if (!current) return; // a table above the first section defines nothing
+    const at = (name: string) => (header![name] === undefined ? "" : (cells[header![name]] ?? ""));
+    const blCell = at("bl invariant") || at("bl invariants");
+    current.rows.push({
+      pattern: at("pattern"),
+      frequency: at("frequency"),
+      impact: at("impact"),
+      status: at("status"),
+      blRefs: [...blCell.matchAll(/\bBL-[A-Z0-9]+-\d+[A-Z]?\b/g)].map((m) => m[0]),
+    });
   });
 
-  return { sections, appendixIds };
+  return { sections, appendixIds, appendixBlRefs };
 }
 
 /** Recursively collect *.csv under a directory (Node-version-agnostic walker). */

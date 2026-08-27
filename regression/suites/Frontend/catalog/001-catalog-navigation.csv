@@ -55,7 +55,7 @@
 [DOM] Brand list or grid displayed
 [DOM] Each brand entry shows brand name (and logo/image if configured)
 [DOM] Page title or heading confirms Brands context","[NETWORK] GET /Brands returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Brands page returns 4xx/5xx; brand list empty when brands exist; brand images failing to load; console TypeError","none","Coverage Gap Analysis","Draft"
+[CONSOLE] no TypeError or JS errors","Brands page returns 4xx/5xx; brand list empty when brands exist; brand images failing to load; console TypeError","none",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 "CAT-036","Brand Navigation","Catalog > Brands","Medium","BL-CAT-001",,"Brands page loaded; at least one brand with products exists","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
 [ASSERT] Verify at least one brand entry is visible
 [ACT] Click on a brand entry
@@ -66,7 +66,7 @@
 [STATE] All displayed products associated with the selected brand
 [DOM] Facet filters available on brand result page
 [STATE] URL reflects brand filter context","[NETWORK] GET brand listing page returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Brand entry not clickable; brand listing page returns 4xx; non-brand products appearing in brand listing; console TypeError","none","Coverage Gap Analysis","Draft"
+[CONSOLE] no TypeError or JS errors","Brand entry not clickable; brand listing page returns 4xx; non-brand products appearing in brand listing; console TypeError","none",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 "CAT-037","Brand Link Navigates to Filtered Product Listing","Catalog > Brands","Medium","BL-CAT-001",,"Brands page loaded; at least one brand entry is visible","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
 [ASSERT] Locate a brand link in the A-Z brand name index
 [ACT] Click on that brand link
@@ -152,7 +152,7 @@
 [DOM] Each category item has a non-empty href pointing to a category URL path
 [STATE] Dropdown does not show blank or placeholder items","[NETWORK] GET {{FRONT_URL}} returns HTTP 200
 [NETWORK] no 4xx/5xx on menu data request
-[CONSOLE] no TypeError or JS errors","Dropdown not opening; dropdown empty with no categories; category items with empty or # href; console TypeError on hover","none","Coverage Gap Analysis; GAP-CS-13","Draft"
+[CONSOLE] no TypeError or JS errors","Dropdown not opening; dropdown empty with no categories; category items with empty or # href; console TypeError on hover","none",Coverage Gap Analysis; GAP-CS-13 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 "CAT-048","All Products Dropdown - Category Link Navigates to Correct Category Page","Catalog > Navigation","High","BL-CAT-001",,"Storefront populated; at least one top-level category accessible from 'All Products' dropdown","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Hover over or click 'All Products' in the main navigation to open the dropdown
 [WAIT] Wait for dropdown to appear
@@ -166,7 +166,7 @@
 [DOM] Breadcrumbs show: Home > [Category Name]
 [DOM] Product grid or product listing is rendered on the category page
 [STATE] Active/highlighted state on the category in navigation (if applicable)","[NETWORK] GET category page returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Category page returning 404; URL slug not matching the dropdown label; page heading mismatching clicked category; breadcrumbs absent; console TypeError","none","Coverage Gap Analysis; GAP-CS-13","Draft"
+[CONSOLE] no TypeError or JS errors","Category page returning 404; URL slug not matching the dropdown label; page heading mismatching clicked category; breadcrumbs absent; console TypeError","none",Coverage Gap Analysis; GAP-CS-13 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 "CAT-049","Category SEO Slug URL Resolves Correctly","Catalog > Navigation","Medium","BL-CAT-001",,"A category with a configured SEO-friendly slug exists in the catalog","url={{FRONT_URL}}","[NAV] Navigate to any category page using its SEO slug URL (resolve a category slug at runtime from the navigation menu)
 [WAIT] Wait for the page to fully load
 [ASSERT] Verify page loads with HTTP 200 (no redirect to an error page)
@@ -193,7 +193,7 @@
 [DOM] Facet/filter controls accessible (not off-screen)
 [DOM] Pagination controls visible and not overlapping content
 [STATE] No horizontal scroll bar visible at 768px width","[NETWORK] no 4xx/5xx on category page at tablet viewport
-[CONSOLE] no TypeError or JS errors","Product grid overflowing at 768px; product cards clipped or inaccessible; navigation menu not accessible; horizontal scrollbar visible; pagination hidden off-screen; console TypeError","none","Coverage Gap Analysis; GAP-CS-20","Draft"
+[CONSOLE] no TypeError or JS errors","Product grid overflowing at 768px; product cards clipped or inaccessible; navigation menu not accessible; horizontal scrollbar visible; pagination hidden off-screen; console TypeError","none",Coverage Gap Analysis; GAP-CS-20 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 "CAT-059","Breadcrumb Resets When Navigating from Subcategory Back to Parent via Main Menu","Catalog > Navigation > Breadcrumb State","High","BL-CAT-001","ECL-14.1","Category hierarchy exists with at least 2 levels; user can navigate subcategory then return to parent via main menu","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click on a top-level category in the main navigation menu
 [WAIT] Wait for top-level category page to load
@@ -271,7 +271,7 @@
 [DOM] Product images loaded (at least one <img> with non-empty src)
 [STATE] Total price dynamically updates when options are selected","[NETWORK] POST /graphql (productConfiguration) returns HTTP 200
 [NETWORK] All image requests return HTTP 200
-[CONSOLE] no TypeError or JS errors","Configuration sections not rendering; price showing $0; required sections not marked; options not loading; total price not updating; console TypeError","none","E2E-CAT-005, GAP-CS-05","Draft"
+[CONSOLE] no TypeError or JS errors","Configuration sections not rendering; price showing $0; required sections not marked; options not loading; total price not updating; console TypeError","none","E2E-CAT-005, GAP-CS-05 | Promoted: REG-2026-08-25-1128 (2026-08-26)",Automated
 "CAT-045","Configurable Product - Variation Selection Updates Price and SKU","Catalog > Configurable Product","High","BL-CAT-006",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 A configurable product with a Variation section exists in the B2B virtual catalog; the product has at least 2 variation options; resolve the product slug at runtime via xAPI products query with filter='productType:Configurable' and hasVariations:true","url={{FRONT_URL}}","[NAV] Resolve a configurable product with variations at runtime: query xAPI products(storeId,filter='productType:Configurable') — pick a result that has hasVariations=true; navigate to its PDP on {{FRONT_URL}}
@@ -293,7 +293,7 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [DOM] Cart line item shows configured product with non-empty variation details
 [STATE] Cart total > 0 and reflects the configured product's price","[NETWORK] POST /graphql (productConfiguration) returns correct variation data
 [NETWORK] POST add-to-cart returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Variation section not showing options; price not updating on selection (stays at $0); wrong or empty SKU displayed; cart showing base product instead of configured variant; console TypeError","Remove configured product from cart after test","E2E-CAT-005, VCST-4765, GAP-CS-05","Draft"
+[CONSOLE] no TypeError or JS errors","Variation section not showing options; price not updating on selection (stays at $0); wrong or empty SKU displayed; cart showing base product instead of configured variant; console TypeError","Remove configured product from cart after test","E2E-CAT-005, VCST-4765, GAP-CS-05 | Promoted: REG-2026-08-25-1128 (2026-08-26)",Automated
 "CAT-064","Sort Reorder in Admin → Storefront Dropdown Order + DEFAULT Badge Shifts (VCST-5177)","Catalog > Sorting > Admin Cross-Layer","High","BL-CAT-005","ECL-2.1","[ADMIN_BROWSER_BLOCKED: Admin SPA storageState gap — automation blocked; run as Manual. API verification via GraphQL remains automated.] Admin access to Stores > Search configuration > Sorting blade for {{STORE_ID}}. At least 2 visible sort options configured. Storefront uses vc-frontend 2.52+ theme. xCatalog VCST-5177 build deployed.","store_id={{STORE_ID}}; back_url={{BACK_URL}}; front_url={{FRONT_URL}}","--- LAYER: Admin (Manual — storageState blocked) ---
 [MANUAL] Sign in to {{BACK_URL}}/ui as admin
 [MANUAL] Navigate to Stores > {{STORE_ID}} > Search configuration > Sorting
@@ -412,7 +412,7 @@ Storefront accessible at {{FRONT_URL}}; at least one top-level category visible 
 [DOM] Category name heading is visible and non-empty
 [DOM] Page is not a 404 — no 'page not found' heading or error content
 [STATE] SLUG_EN captured is the full unmodified path segment (starts with '/', no language prefix)","[NETWORK] GET {{FRONT_URL}}<SLUG_EN> returns HTTP 200 (no 404/301 to error page)
-[CONSOLE] no TypeError or JS errors on category page load","Category page returns 404; SLUG_EN is empty; URL redirected to /catalog or homepage unexpectedly; console TypeError on page load","none — read-only navigation; no state change","VCST-5144","Draft"
+[CONSOLE] no TypeError or JS errors on category page load","Category page returns 404; SLUG_EN is empty; URL redirected to /catalog or homepage unexpectedly; console TypeError on page load","none — read-only navigation; no state change",VCST-5144 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 CAT-079,In-Wishlist Marker Isolated to Current Store — Catalog Listing (Cross-Store Wishlist Regression),Catalog > Navigation > Wishlist Marker,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:WISH_TWO_STORE_CUSTOMER]
 Customer holds a wishlist in the CURRENT store ({{STORE_ID}}) containing @td(WISH_TWO_STORE_CUSTOMER.storeAProductSku), AND a SEPARATE wishlist in a second configured store (see STORE_B2C / {{STORE_ID_SECONDARY}}) containing a DIFFERENT product @td(WISH_TWO_STORE_CUSTOMER.storeBProductSku) that is NOT on the current store's wishlist. This two-store wishlist fixture (WISH_TWO_STORE_CUSTOMER) does not exist yet in test-data/aliases.json as of authoring — see the handoff report; it must be seeded before this case is runnable. VACUOUS ON A SINGLE-STORE DEPLOYMENT: if the environment serves only one store, record this case SKIPPED with that reason, never PASS. Regression target: VCST-5705 (FindWishlistsByProductsAsync accepted storeId but never applied it, returning wishlist ids from every store the customer had a wishlist in).","front_url={{FRONT_URL}}, email=@td(WISH_TWO_STORE_CUSTOMER.email), password=@td(WISH_TWO_STORE_CUSTOMER.password), store_a_sku=@td(WISH_TWO_STORE_CUSTOMER.storeAProductSku), store_b_sku=@td(WISH_TWO_STORE_CUSTOMER.storeBProductSku)","1. [NAV] {{FRONT_URL}}/catalog

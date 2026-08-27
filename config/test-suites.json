@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-08-26",
-    "totalSuites": 123,
+    "totalSuites": 127,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -27,7 +27,8 @@
       "non-functional",
       "api",
       "admin"
-    ]
+    ],
+    "classifierVersion": "1.2.0"
   },
   "defaults": {
     "preferredBrowser": "playwright-chrome",
@@ -86,7 +87,8 @@
         "categories",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "002",
@@ -105,7 +107,8 @@
         "product-detail",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "003",
@@ -125,7 +128,8 @@
         "range-facets",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "004",
@@ -144,7 +148,8 @@
         "results",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "005",
@@ -163,7 +168,8 @@
         "advanced",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "006",
@@ -186,7 +192,8 @@
         "b2b",
         "hybrid"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "007",
@@ -205,7 +212,8 @@
         "shared-lists",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "008",
@@ -230,7 +238,8 @@
         "b2b",
         "hybrid"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "009",
@@ -249,7 +258,8 @@
         "configurations",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "010",
@@ -273,7 +283,8 @@
         "b2b",
         "hybrid"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "011",
@@ -293,7 +304,8 @@
         "sprint"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "011b",
@@ -317,7 +329,8 @@
         "b2b",
         "hybrid"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "012",
@@ -340,7 +353,8 @@
         "b2c",
         "hybrid"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "013",
@@ -363,7 +377,8 @@
         "b2b"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "014",
@@ -384,7 +399,8 @@
         "sprint"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "015",
@@ -404,7 +420,8 @@
         "sprint"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "017",
@@ -428,7 +445,8 @@
         "orders"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "018",
@@ -495,7 +513,8 @@
         "sprint"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "021",
@@ -514,7 +533,8 @@
         "sprint"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "023",
@@ -633,7 +653,13 @@
         "customer"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 1,
+        "browser": 70,
+        "manual": 0
+      }
     },
     {
       "id": "027b",
@@ -661,7 +687,13 @@
         "customer"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 9,
+        "browser": 9,
+        "manual": 0
+      }
     },
     {
       "id": "028",
@@ -682,7 +714,8 @@
         "revenue-critical",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "029",
@@ -701,7 +734,8 @@
         "persistence",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "030",
@@ -720,7 +754,8 @@
         "anonymous",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "031",
@@ -739,7 +774,8 @@
         "register",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "032",
@@ -759,7 +795,8 @@
         "permissions",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "033",
@@ -778,7 +815,8 @@
         "account-menu",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "034",
@@ -802,7 +840,8 @@
         "store"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "035",
@@ -826,7 +865,8 @@
         "store"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "036",
@@ -845,7 +885,8 @@
         "pickup",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "037",
@@ -864,7 +905,8 @@
         "pickup",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "038",
@@ -883,7 +925,8 @@
         "pickup",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "039",
@@ -908,7 +951,8 @@
         "cybersource"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "040a",
@@ -933,7 +977,8 @@
       "customerApplicability": "universal",
       "references": [
         "VCST-5009"
-      ]
+      ],
+      "clickDriven": true
     },
     {
       "id": "040b",
@@ -958,7 +1003,8 @@
       "customerApplicability": "universal",
       "references": [
         "VCST-5162"
-      ]
+      ],
+      "clickDriven": true
     },
     {
       "id": "040c",
@@ -981,7 +1027,8 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "universal",
-      "notes": "Datatrans is the only redirect processor. Redirect to /checkout/payment is the DESIGNED flow — never mark cases BLOCKED on the redirect."
+      "notes": "Datatrans is the only redirect processor. Redirect to /checkout/payment is the DESIGNED flow — never mark cases BLOCKED on the redirect.",
+      "clickDriven": true
     },
     {
       "id": "041",
@@ -1009,7 +1056,8 @@
         "datatrans"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "042",
@@ -1034,7 +1082,8 @@
         "security",
         "regression"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "043",
@@ -1052,7 +1101,8 @@
         "ga4",
         "tracking"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "044",
@@ -1072,7 +1122,8 @@
         "csrf",
         "daily"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "045",
@@ -1090,7 +1141,8 @@
         "wcag",
         "a11y"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "046",
@@ -1108,7 +1160,8 @@
         "localization",
         "languages"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "047",
@@ -1126,7 +1179,8 @@
         "core-web-vitals",
         "load-time"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "048",
@@ -1143,7 +1197,8 @@
         "cross-browser",
         "compatibility"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "048c",
@@ -1193,7 +1248,8 @@
         "homepage",
         "cross-cutting"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "049",
@@ -1234,7 +1290,12 @@
         "price-filter-bva",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 56,
+        "browser": 1,
+        "manual": 0
+      }
     },
     {
       "id": "050b1",
@@ -1254,7 +1315,13 @@
         "cart-quantity",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 19,
+        "browser": 1,
+        "manual": 0,
+        "deprecated": 1
+      }
     },
     {
       "id": "050b2",
@@ -1274,7 +1341,12 @@
         "coupons",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 14,
+        "browser": 2,
+        "manual": 0
+      }
     },
     {
       "id": "050b3",
@@ -1294,7 +1366,12 @@
         "checkout",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 22,
+        "browser": 1,
+        "manual": 0
+      }
     },
     {
       "id": "050b4",
@@ -1315,7 +1392,12 @@
         "schema-coverage",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 23,
+        "browser": 8,
+        "manual": 0
+      }
     },
     {
       "id": "050b5",
@@ -1336,7 +1418,12 @@
         "regression-guard",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 12,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050c",
@@ -1355,7 +1442,12 @@
         "xorder",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 7,
+        "browser": 1,
+        "manual": 0
+      }
     },
     {
       "id": "050d",
@@ -1375,7 +1467,12 @@
         "registration",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 46,
+        "browser": 3,
+        "manual": 0
+      }
     },
     {
       "id": "050e",
@@ -1395,7 +1492,12 @@
         "page-context",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 10,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050f",
@@ -1414,7 +1516,12 @@
         "xcms",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 19,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050g",
@@ -1433,7 +1540,12 @@
         "cross-cutting",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 4,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050h",
@@ -1452,7 +1564,13 @@
         "wishlist",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 33,
+        "browser": 0,
+        "manual": 1
+      }
     },
     {
       "id": "050i",
@@ -1472,7 +1590,12 @@
         "configurations",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 60,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050j",
@@ -1493,7 +1616,12 @@
         "marketing",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 19,
+        "browser": 1,
+        "manual": 0
+      }
     },
     {
       "id": "050k",
@@ -1514,7 +1642,12 @@
         "bopis",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 11,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050l",
@@ -1536,7 +1669,12 @@
       "requiresModules": [
         "push-messages"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 18,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050m",
@@ -1559,7 +1697,13 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 116,
+        "browser": 0,
+        "manual": 0,
+        "deprecated": 3
+      }
     },
     {
       "id": "050n",
@@ -1579,7 +1723,12 @@
         "asset-url",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 9,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "051",
@@ -1603,7 +1752,8 @@
         "catalog"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "052",
@@ -1626,7 +1776,8 @@
         "catalog"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "053",
@@ -1650,7 +1801,8 @@
         "catalog"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "054",
@@ -1673,7 +1825,8 @@
         "pricing"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "055",
@@ -1697,7 +1850,8 @@
         "pricing"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "056",
@@ -1720,7 +1874,8 @@
         "inventory"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "057",
@@ -1743,7 +1898,8 @@
         "notifications"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "058",
@@ -1766,7 +1922,8 @@
         "notifications"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "059",
@@ -1790,7 +1947,8 @@
         "cms"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "060",
@@ -1814,7 +1972,8 @@
         "cms"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "061",
@@ -2004,7 +2163,8 @@
         "whitelabeling"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "068",
@@ -2026,7 +2186,8 @@
         "push-messages"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "069",
@@ -2069,7 +2230,8 @@
         "responsive",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "071",
@@ -2089,7 +2251,8 @@
         "favicon",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "072",
@@ -2109,7 +2272,8 @@
         "widget",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "072b",
@@ -2128,7 +2292,8 @@
         "admin-to-storefront",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "072c",
@@ -2148,7 +2313,8 @@
         "security",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "072d",
@@ -2168,7 +2334,8 @@
         "validation",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "073",
@@ -2239,7 +2406,8 @@
         "loyalty"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "075b",
@@ -2264,7 +2432,13 @@
         "loyalty"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 9,
+        "browser": 4,
+        "manual": 0
+      }
     },
     {
       "id": "075c",
@@ -2288,7 +2462,12 @@
         "loyalty"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 10,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "076",
@@ -2331,7 +2510,8 @@
         "sprint"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "077b",
@@ -2351,18 +2531,19 @@
         "storefront",
         "VCST-4896"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "078",
-      "name": "Backend Smoke Tests",
+      "name": "Backend Smoke — Platform, API & GraphQL",
       "file": "regression/suites/Backend/smoke/078-backend-smoke-tests.csv",
       "domain": "cross-cutting",
       "layer": "backend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 115,
-      "estimatedMinutes": 83,
+      "testCount": 27,
+      "estimatedMinutes": 20,
       "agent": "qa-backend-expert",
       "tags": [
         "smoke",
@@ -2372,14 +2553,78 @@
         "admin",
         "api",
         "graphql",
-        "orders",
-        "catalog",
-        "pricing",
-        "inventory",
         "auth",
         "regression"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "078b",
+      "name": "Backend Smoke — Catalog, Search & Pricing Admin",
+      "file": "regression/suites/Backend/smoke/078b-backend-smoke-catalog-pricing.csv",
+      "domain": "cross-cutting",
+      "layer": "backend",
+      "concern": "functional",
+      "priority": "P0",
+      "testCount": 31,
+      "estimatedMinutes": 22,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "smoke",
+        "daily",
+        "pre-deploy",
+        "admin",
+        "catalog",
+        "pricing",
+        "inventory",
+        "regression"
+      ],
+      "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "078c",
+      "name": "Backend Smoke — Orders, Customers & Marketing Admin",
+      "file": "regression/suites/Backend/smoke/078c-backend-smoke-commerce.csv",
+      "domain": "cross-cutting",
+      "layer": "backend",
+      "concern": "functional",
+      "priority": "P0",
+      "testCount": 29,
+      "estimatedMinutes": 21,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "smoke",
+        "daily",
+        "pre-deploy",
+        "admin",
+        "orders",
+        "regression"
+      ],
+      "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "078d",
+      "name": "Backend Smoke — Content & Admin Workflows",
+      "file": "regression/suites/Backend/smoke/078d-backend-smoke-content-workflows.csv",
+      "domain": "cross-cutting",
+      "layer": "backend",
+      "concern": "functional",
+      "priority": "P0",
+      "testCount": 28,
+      "estimatedMinutes": 20,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "smoke",
+        "daily",
+        "pre-deploy",
+        "admin",
+        "regression"
+      ],
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "079",
@@ -2405,7 +2650,8 @@
         "marketing"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "081",
@@ -2429,7 +2675,8 @@
         "PR-129",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "082",
@@ -2449,7 +2696,8 @@
         "security",
         "sprint"
       ],
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "083",
@@ -2469,7 +2717,8 @@
         "currency-override",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "083b",
@@ -2489,7 +2738,8 @@
         "multi-currency",
         "sprint"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "084",
@@ -2508,7 +2758,8 @@
         "cms",
         "admin",
         "sprint"
-      ]
+      ],
+      "clickDriven": true
     },
     {
       "id": "085",
@@ -2530,7 +2781,8 @@
       "requiresModules": [
         "task-management"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "086",
@@ -2552,7 +2804,12 @@
         "customer-reviews"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "lanes": {
+        "machine": 16,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "087",
@@ -2574,7 +2831,13 @@
         "customer-reviews"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 12,
+        "browser": 0,
+        "manual": 3
+      }
     },
     {
       "id": "088",
@@ -2596,7 +2859,8 @@
         "customer-reviews"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "clickDriven": true
     },
     {
       "id": "089",
@@ -2619,7 +2883,8 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "090",
@@ -2642,7 +2907,8 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "091",
@@ -2665,7 +2931,8 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "092",
@@ -2688,7 +2955,8 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "092b",
@@ -2712,7 +2980,8 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "093",
@@ -2736,7 +3005,8 @@
       "requiresModules": [
         "sales-rep"
       ],
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "094",
@@ -2790,6 +3060,28 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "notes": "VCST-5490. _COVERAGE-GAP (2026-08-17): RefundChangedJobHandler and CancelPaymentJobHandler have REGISTRATION + SECURITY-GATE coverage only (BGJ-006 flags both triggerable=false; BGJ-009 enqueue-refused for CancelPaymentJobHandler; BGJ-010 enqueue-refused for RefundChangedJobHandler) — their BUSINESS OUTCOME is NOT covered on any environment. Two cases (former BGJ-030 CancelPaymentJobHandler trigger path, former BGJ-031 RefundChangedJobHandler via Return resolution) were authored, evidence-checked live, and REMOVED rather than left permanently BLOCKED. Why: (1) no void/cancel REST route exists at all — only capture/refund; (2) neither payment gateway on this env supports refund — DefaultManualPaymentMethod returns 200 {succeeded:false, errorCode:\"PAYMENT_FAILED\"} (a leaked EF DbUpdateException), SkyflowPaymentMethod returns 200 {succeeded:false, errorCode:\"INVALID_REQUEST_ERROR\", errorMessage:\"Payment method does not support refund\"}; (3) seeded fixtures carry 0 payment transactions (paymentStatus=Paid was set directly by the seeder, nothing to refund against); (4) the only other candidate trigger — VirtoCommerce.Return's resolution field — does NOT create a payment refund: `resolution` is a free-text nullable string (not an enum), all 4 pre-existing returns with resolution=\"refund\" have orders with refunds=0 (two still payment-status New), and neither Return creation nor Return approval (New->Approved) raises an order event (confirmed live: modifiedDate/changelog/all Hangfire queues unchanged). There is no reachable path to either handler's business outcome on any environment available to this suite. What a future environment would need to re-add these cases: a refund-capable payment gateway (neither DefaultManualPaymentMethod nor Skyflow qualifies) PLUS an order whose payment carries a real captured transaction (not a directly-seeded PaymentStatus=Paid with no transaction history) — that precondition should gate re-authoring, not just re-running. IDs BGJ-030/BGJ-031 are retired, not reused."
+    },
+    {
+      "id": "096",
+      "name": "Backup Restore — PR Verification Log",
+      "file": "regression/suites/Backend/import-export/096-backup-restore.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 75,
+      "estimatedMinutes": 38,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "verification",
+        "api",
+        "rest",
+        "platform",
+        "import",
+        "export"
+      ],
+      "customerApplicability": "universal",
+      "envRiskGate": "staging"
     }
   ],
   "selections": {
@@ -2797,13 +3089,19 @@
     "smoke": {
       "include": [
         "042",
-        "078"
+        "078",
+        "078b",
+        "078c",
+        "078d"
       ]
     },
     "critical": {
       "include": [
         "042",
         "078",
+        "078b",
+        "078c",
+        "078d",
         "039",
         "044",
         "049"
@@ -2951,7 +3249,8 @@
         "091",
         "092",
         "092b",
-        "093"
+        "093",
+        "096"
       ]
     },
     "sales-rep": {

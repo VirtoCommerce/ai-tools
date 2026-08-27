@@ -53,12 +53,8 @@ const CLASSIFICATIONS: Classification[] = [
     rationale: "Storybook (vc-frontend specific) + critical-ui-scope (vcst coverage matrix). Customer with a different storefront codebase clones for their Storybook." },
   { path: ".claude/agents/regression-orchestrator.md", category: "agent-qa", applicability: "universal",
     rationale: "Parallel execution + retry logic + browser fallback. Pure orchestration mechanism." },
-  { path: ".claude/agents/autonomous-regression-orchestrator.md", category: "agent-qa", applicability: "universal",
-    rationale: "Agent Teams variant of regression-orchestrator. Token-bucket + failure recovery. Mechanism, not domain." },
   { path: ".claude/agents/test-runner-agent.md", category: "agent-qa", applicability: "universal",
     rationale: "Parameterized template ({{SUITE_ID}}, {{BROWSER_SERVER}}, etc.). Template is itself the contract; customer-runnable." },
-  { path: ".claude/agents/autonomous-test-runner.md", category: "agent-qa", applicability: "universal",
-    rationale: "Autonomous variant of test-runner-agent. Same parameterized template pattern." },
 
   // Shared instructions (3) — one per team
   { path: ".claude/knowledge/agents/qa/shared-instructions.md", category: "agent-shared", applicability: "reference",

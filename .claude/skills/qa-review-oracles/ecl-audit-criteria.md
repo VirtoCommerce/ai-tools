@@ -199,3 +199,58 @@ Points"), and every gate passed. That semantic call belongs to `/qa-review-tests
 — the same split as GRD-001 (a provenance tag is present) vs Dimension 11 (the tag is true).
 When an audit notices a semantically wrong citation, **report it for Dimension 6**; do not fix
 it here, and do not treat a green `ecl:lint` as evidence the citations are correct.
+
+## 9. Value — which sections are worth the audit budget, and what a new one must declare
+
+Same purpose and the same code as `bl-audit-criteria.md` §6 (`scripts/knowledge/oracle-significance.ts`,
+via `npm run oracles:rank -- --axis=ecl`), with the signals a pattern row actually carries.
+
+**Business value — what a violation costs — comes ONLY from a declared `BL-*` link:** the section's
+own `BL Invariant` column where it has one, else its **Appendix D** row. A pattern that maps to a
+`P0-revenue` invariant costs what that invariant costs: a real cross-reference into the normative
+oracle rather than a second opinion about the same behavior. A section that links none is `unknown`,
+and `unknown` never promotes.
+
+That is a deliberate, load-bearing consequence: **adding a NEW section means naming the invariant the
+pattern endangers.** The library already practises this in prose — several rows read
+`— (gap; see bl_proposals)` — and Appendix D's whole ECL↔BL cross-reference exists to keep it coherent.
+
+> **The Appendix D fallback was added 2026-08-27, and the reason is worth keeping.** The model
+> originally read the `BL Invariant` column and nothing else — but only chapter 14's table *has* that
+> column, so **45 of 54 sections scored `unknown` and were ineligible for growth by construction**,
+> while Appendix D already declared a real invariant for **34** of them. The audit of 2026-08-27
+> demonstrated it rather than argued it: correcting Appendix D's `ECL-15.1` row from `— (gap; no
+> BL-A11Y domain yet)` to `BL-A11Y-001, BL-A11Y-002, BL-A11Y-004` left its label at `undeclared`,
+> because the reducer could not see the table whose entire purpose is that cross-reference. Two guards
+> came with the fix: the refs are read from the Appendix D row's **last cell only** (a BL cell may also
+> name a sibling section — `ECL-14.9`'s reads `BL-LOY-008 (partial); ECL-10.2` — and 10.2 must not
+> inherit it), and a cell opening with an **em dash declares nothing** even when its parenthetical
+> names an invariant the section merely *overlaps* (`— (no single BL invariant; overlaps
+> BL-CROSS-011)`), because declining to declare is itself a claim. Do not quote a count of declared
+> sections here — run `npm run oracles:rank -- --axis=ecl` and read the header.
+
+**Product value — how much of the tested product is exposed — is demand plus two one-level bumps:**
+`[OBSERVED]` share ≥75% lifts it (a predominantly-confirmed section is release-walk material for
+`/qa-checklist`), `[THEORETICAL]`-only drops it (charter material for `/qa-exploratory`), and a
+`High` / `Low-High` max `Frequency` lifts it.
+
+**`Frequency` scores the PRODUCT axis, never the business one.** It answers "how often does this
+bite" — exposure, not cost. An earlier draft of this model used it as a business proxy and produced
+exactly the inference this file refuses everywhere else: a frequent-but-cheap pattern reading as
+business-critical. **`Impact` is unscored entirely** — it is free prose ("Double charge, order
+duplication"), and scoring it would mean a regex judging severity. A `Frequency` cell outside the
+closed vocabulary (`Low/Medium/High`) resolves to `null` **with a reason**, contributes zero, and is
+reported as unresolved; it is never guessed from its first token. A section whose table cannot be
+read at all is capped at the bottom tier — unassessable, not significant.
+
+The promotion rule is §6b's, unchanged: business `high` promotes at any demand, `medium` needs
+product `medium`+, `low` and `unknown` do not promote — and it applies to **new sections only**. A
+DRIFT correction to an existing section applies whatever its value.
+
+**Read the ECL numbers as an ORDER and a to-do, not as a prune list.** The library is small (54
+sections) and densely cited: only two sections are uncited, and the one section that lands at the
+very bottom of the queue is `ECL-14.8` (module version/schema drift) — which §6b above had already
+reasoned to the same place by hand, as legitimately never suite-coverable. The 45 `undeclared`
+sections are not low-value; they are sections whose business exposure nobody has written down yet,
+and the fix is to link the invariant (or file the `bl_proposals` gap), not to delete anything. §0's
+deletion bar is untouched.

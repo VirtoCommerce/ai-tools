@@ -38,7 +38,39 @@ Checklist items are written to be testable; they assume readers will resolve tes
 | [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) + [`test-data/aliases.json`](../../../test-data/aliases.json) | Any checklist item that mentions a specific entity (product, org, address, coupon, card, store) — resolve via `@td(ALIAS.field)` instead of inventing values |
 | [`../../../agents/knowledge/api/graphql-schema.md`](../../knowledge/api/graphql-schema.md) | Any GraphQL query/mutation/field name in a checklist item — verify it exists in the live schema before deriving a test case |
 | [`../../../agents/knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | Authoring runner-native GraphQL test cases derived from `graphql-checklist.md` items (CSV format, `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]` grammar) |
-| [`../../../agents/knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) | Cross-link checklist items to `BL-*` invariants in the `Business_Rule` column of derived test cases |
+| [`../../../agents/knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) | **Mandatory input, not a cross-link** — see §Oracle Grounding below. A checklist item that states an expected outcome must cite the `BL-*` it restates |
+| [`../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) | **Mandatory input** — the `ECL-<n>.<m>` sections are where the domain's edge-case items come FROM (§Oracle Grounding). The library names checklists as one of its own consumers (§Using This Library) |
+
+## Oracle Grounding (mandatory)
+
+A checklist is the release-time walk of a domain, so it has exactly two jobs the two shared oracles
+already answer, and it must read them rather than re-derive them from the UI:
+
+| Oracle | Answers | How it lands in a checklist |
+|---|---|---|
+| [`business-logic.md`](../../knowledge/oracles/business-logic.md) (204 `BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
+| [`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) (54 `ECL-<n>.<m>`) | *which boundary/failure shapes exist for this domain* | Edge-case and error-path items are derived FROM a section and cite it: `- [ ] … (ECL-1.3)` |
+
+**Why this is mandatory and not advisory.** An item written only from UI exploration encodes what the
+build currently does; an item grounded in a `BL-*` encodes what it is supposed to do — only the second
+can fail on a regression the UI presents confidently. And an un-cited edge-case item is invisible to
+`ecl:lint` / `bl:lint`, so a checklist can neither be credited for oracle coverage nor be repaired when
+`/qa-review-oracles` amends the entry it was silently paraphrasing. Charter A of
+[`../qa-sbtm/charter-library.md`](../qa-sbtm/charter-library.md) was a verbatim un-cited restatement of
+ECL 1.1/1.2/1.3 for exactly this reason.
+
+**`[OBSERVED]` → checklist, `[THEORETICAL]` → exploratory.** The ECL marks every pattern (175
+`[OBSERVED]`, 36 `[THEORETICAL]`). A checklist is walked on every release under the 6–15-item budget, so
+only `[OBSERVED]` patterns — confirmed on this platform — earn a slot; a `[THEORETICAL]` pattern has no
+failure history here and belongs to `/qa-exploratory`, whose job is discovery. This mirrors
+`/qa-test-cases-generator` §Do not add edge cases speculatively, and it is the division of labour
+between the two surfaces: the checklist re-verifies what has bitten us, the session hunts what hasn't yet.
+
+**IDs are a citation contract.** Cite an ID that exists; never invent, renumber, or guess one — a
+dangling ref reads as coverage and is none — the `ecl:lint` ECLC-001 class, whose first run found 20 of them across ~65 cases, one citing a section (`13.4`) that has never existed. Verify with
+`npm run bl:lint` / `npm run ecl:lint`. Neither oracle is edited from here: an item that needs an
+invariant or a pattern the oracle lacks is a proposal for `/qa-review-oracles`, whose sole writer is
+`ba-system-analyzer`.
 
 ## 63 Built-in Domain Checklists
 
@@ -139,6 +171,12 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 2. Read the checklist from `domain-checklists.md`, `backend-admin-checklists.md`, or `graphql-checklist.md`
 3. Present the checklist with markdown checkboxes
 4. Suggest related checklists (e.g., storefront "Cart/Checkout" pairs with admin "Orders Admin" and "Pricing Admin"; storefront "Search" pairs with admin "Search & Indexing")
+5. **Report oracle coverage** — list the `BL-*` / `ECL-<n>.<m>` the retrieved items cite, then name the
+   domain's `[OBSERVED]` ECL sections that NO item covers, and any outcome-asserting item carrying no
+   `BL-*`. These are back-annotation candidates: offer to add the citations (and any missing
+   `[OBSERVED]` item) to the stored checklist file, confirm before writing. Most items predate
+   §Oracle Grounding, so this is how the corpus is burned down a domain at a time rather than in one
+   unreviewable pass — never silently present an un-grounded checklist as complete.
 
 ### Mode 2: Generate Checklist for JIRA Ticket
 
@@ -146,22 +184,39 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 2. Map the ticket to affected domains (a ticket may touch 2-4 domains)
 3. Merge relevant checklist items from each domain into a combined checklist
 4. If the ticket involves API/GraphQL changes, also pull items from `graphql-checklist.md` — include the "New Query/Mutation Verification" section for any new or modified queries/mutations
-5. Add ticket-specific items derived from acceptance criteria not covered by existing checklists
-6. Output a single unified checklist with domain section headers
+5. **Load the oracles for those domains** (§Oracle Grounding) — read `business-logic.md` for the
+   `BL-*` invariants the ticket's surface touches, and `e-commerce-edge-cases-library.md` for the
+   `ECL-<n>.<m>` sections that map to it. Do this BEFORE step 6: an AC states what the ticket
+   promises, a `BL-*` states what the surrounding system already guarantees, and the second is where
+   the regression risk lives — a ticket's own AC will never mention the invariant it breaks.
+6. Add ticket-specific items derived from acceptance criteria not covered by existing checklists
+7. Add the oracle-derived items step 5 surfaced that steps 3–6 left uncovered — each cited: an
+   outcome item carries its `BL-*`, an edge-case item carries its `ECL-<n>.<m>` (`[OBSERVED]` only)
+8. Output a single unified checklist with domain section headers, and state which `BL-*` / `ECL-*` the
+   ticket's surface touches that this checklist deliberately does NOT cover, with the reason — an
+   omission and an oversight must not look the same to the reader
 
 ### Mode 3: Create New Checklist (`new` keyword)
 
 1. Read `checklist-creation-guide.md` for methodology
 2. Identify the domain scope from the user's argument
-3. **Explore the UI** (mandatory) — navigate to the feature in the storefront or admin using Playwright to discover real labels, interactions, states
-4. Apply the checklist creation methodology:
+3. **Load the oracles for the domain** (§Oracle Grounding) — the `BL-*` invariants and the
+   `ECL-<n>.<m>` sections covering this surface. **Before** the UI walk, not after: exploration shows
+   what the build does, the oracles say what it must do, and a checklist authored from the first alone
+   canonises current behaviour as the expectation. Read first and the walk becomes a check of the
+   invariants and `[OBSERVED]` patterns against the live build, rather than a transcript of it.
+4. **Explore the UI** (mandatory) — navigate to the feature in the storefront or admin using Playwright to discover real labels, interactions, states
+5. Apply the checklist creation methodology:
    - Map all user-visible interactions (inputs, buttons, selectors, navigation)
-   - Identify state transitions and business rules
+   - Identify state transitions and business rules — **from `business-logic.md`, cited by ID**; a rule
+     you inferred from the UI and cannot tie to a `BL-*` is a proposal for `/qa-review-oracles`, not a
+     checklist item stated as fact
    - Add cross-layer verification items (storefront → API → admin)
-   - Add error/edge case items
+   - Add error/edge case items — **derived from the domain's `[OBSERVED]` ECL sections, each citing
+     `ECL-<n>.<m>`**; `[THEORETICAL]` patterns go to `/qa-exploratory` instead
    - Add boundary value items
-5. Structure with markdown checkboxes, 6-15 items per domain
-6. **Propose adding** the new checklist to `domain-checklists.md` (UI domains) or as a separate file (API/backend domains) — ask user for confirmation
+6. Structure with markdown checkboxes, 6-15 items per domain
+7. **Propose adding** the new checklist to `domain-checklists.md` (UI domains) or as a separate file (API/backend domains) — ask user for confirmation
 
 ### Mode 4: List All (`all` keyword)
 
@@ -176,9 +231,11 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 
 > X items | Related suites: XX, XX | Priority: P0/P1
 
-- [ ] Item description (specific, actionable, uses real UI labels)
-- [ ] Item description
+- [ ] Item description (specific, actionable, uses real UI labels) (BL-XXX-NNN)
+- [ ] Edge case derived from the library (ECL-<n>.<m>)
 - ...
+
+**Oracle coverage:** BL-* cited: … | ECL-* cited: … | `[OBSERVED]` ECL sections in this domain not covered: … (reason)
 
 **Cross-layer checks:**
 - [ ] Storefront UI reflects expected state
@@ -191,6 +248,9 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 ## Rules
 
 - Every checklist item must be specific enough to derive at least one test case from it
+- **Every outcome-asserting item cites its `BL-*`; every edge-case/error-path item cites its `ECL-<n>.<m>`** (§Oracle Grounding). Pure UI-presence items may omit both — that is the same carve-out `/qa-test-cases-generator` gives the `Business_Rule` column
+- **Only `[OBSERVED]` ECL patterns become checklist items.** A `[THEORETICAL]` pattern is an exploratory candidate — route it to `/qa-exploratory`, do not spend a release-walk slot on it
+- **Never invent, renumber, or guess an oracle ID.** A citation must resolve in the oracle as written; verify with `npm run bl:lint` / `npm run ecl:lint`. Both oracles are read-only from here — gaps become `/qa-review-oracles` proposals
 - Use REAL UI labels discovered from exploration (not generic terms)
 - Keep items actionable — start with a verb or UI element name
 - 6-15 items per domain (fewer = incomplete, more = too granular)
@@ -206,6 +266,7 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 | `/qa-plan` | Checklists feed into test plan creation — ensures no domain is missed |
 | `/qa-test-design` | Checklist items can be expanded using EP, BVA, decision tables |
 | `/qa-risk` | High-risk domains get more granular checklist items |
-| `/qa-sbtm` | Checklists serve as starting point for exploratory session charters |
+| `/qa-sbtm` | Checklists serve as starting point for exploratory session charters. **The ECL splits between them:** `[OBSERVED]` patterns are checklist items here, `[THEORETICAL]` ones are charter material there |
+| `/qa-review-oracles` | The audit that keeps the cited `BL-*`/`ECL-*` true. An item needing an invariant or pattern the oracle lacks is a proposal for that command — this skill never edits either oracle |
 | `/qa-api` | GraphQL xAPI checklist aligns with xAPI test execution and case generation |
 | `knowledge/domain/sitemap.md` | Sitemap provides URLs and product types for UI exploration |

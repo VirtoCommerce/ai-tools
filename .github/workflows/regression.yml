@@ -75,16 +75,22 @@ jobs:
           github.event_name == 'workflow_dispatch' && inputs.environment ||
           'qa'
         }}
+      # Caps are DERIVED per suite from the manifest (ci/lib/suite-caps.ts) unless a
+      # workflow_dispatch input forces them. The former scheduled defaults were
+      # arithmetically unable to run the corpus:
+      #   MAX_BUDGET_USD=80 vs `full`'s ~$144 need  -> `full` truncated 55-70% of its
+      #     suites every single run and had never once finished
+      #   MAX_TURNS=100 vs suite 078's 115 cases    -> truncated at ~16 cases, then
+      #     reported as "not a real failure" (exit 2)
+      #   SUITE_TIMEOUT_MS=600000 vs 078's 83 min   -> killed at 12% of its estimate
+      # An empty value means "derive it"; run-regression.ts treats these as overrides.
       MAX_BUDGET_USD: >-
         ${{
-          github.event_name == 'workflow_dispatch' && inputs.max_budget ||
-          github.event.schedule == '0 2 * * 0' && '80.0' ||
-          '5.0'
+          github.event_name == 'workflow_dispatch' && inputs.max_budget || ''
         }}
       MAX_TURNS: >-
         ${{
-          github.event_name == 'workflow_dispatch' && inputs.max_turns ||
-          '100'
+          github.event_name == 'workflow_dispatch' && inputs.max_turns || ''
         }}
       MODEL: >-
         ${{
@@ -98,8 +104,7 @@ jobs:
         }}
       SUITE_TIMEOUT_MS: >-
         ${{
-          github.event_name == 'workflow_dispatch' && inputs.suite_timeout_ms ||
-          '600000'
+          github.event_name == 'workflow_dispatch' && inputs.suite_timeout_ms || ''
         }}
 
     steps:
@@ -121,11 +126,49 @@ jobs:
           echo "Trigger: ${{ github.event_name }}"
           echo "Suite Selection: ${{ env.SUITE_SELECTION }}"
           echo "Environment: ${{ env.TEST_ENVIRONMENT }}"
-          echo "Max Budget: \$${{ env.MAX_BUDGET_USD }}"
-          echo "Max Turns: ${{ env.MAX_TURNS }}"
+          echo "Max Budget: ${{ env.MAX_BUDGET_USD == '' && 'derived from manifest' || format('${0}', env.MAX_BUDGET_USD) }}"
+          echo "Max Turns: ${{ env.MAX_TURNS == '' && 'derived per suite' || env.MAX_TURNS }}"
           echo "Model: ${{ env.MODEL }}"
           echo "Max Parallel: ${{ env.MAX_PARALLEL }}"
-          echo "Suite Timeout: ${{ env.SUITE_TIMEOUT_MS }}ms"
+          echo "Suite Timeout: ${{ env.SUITE_TIMEOUT_MS == '' && 'derived per suite' || format('{0}ms', env.SUITE_TIMEOUT_MS) }}"
+
+      # Deterministic, <40s, and it replaces the failure mode where suite 050m spent 245
+      # minutes producing 105 BLOCKED verdicts because one account was declared with two
+      # different password vars. validate-credentials.mjs was written for exactly that
+      # incident (its header cites the 2026-07-29 sales-rep audit); td:reconcile adds live
+      # catalog-root / role-account / overlay-GUID liveness.
+      - name: Preflight — credential + test-data drift
+        run: |
+          set -o pipefail
+          if ! npm run td:validate:credentials; then
+            echo "::error title=Preflight failed::A credential declaration conflict was found. This is a CONFIG problem, not a test failure — nothing was run. Fix the declaration before re-triggering."
+            exit 1
+          fi
+          if ! npm run td:reconcile; then
+            echo "::error title=Preflight failed::Live test-data reconciliation failed (missing role account, stale overlay GUID, or unreachable env). This is a CONFIG/ENV problem, not a test failure — nothing was run."
+            exit 1
+          fi
+        env:
+          TEST_ENV: ${{ secrets.TEST_ENV || 'vcst' }}
+          FRONT_URL: ${{ secrets.FRONT_URL }}
+          BACK_URL: ${{ secrets.BACK_URL }}
+          ADMIN: ${{ secrets.ADMIN }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
+      # The CI container is ephemeral, so history.json only accumulates if we carry it
+      # across runs. Without this, compute-metrics.ts's flaky rule (n >= 4 && crossings >= 3)
+      # can never fire — it needs 4 runs of the same suite to compare.
+      # mergeHistoryRows() is idempotent per (runId, suiteId) and 90-day windowed, so a
+      # restore -> merge -> commit cycle is safe and needs no new logic.
+      - name: Restore regression history
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            reports/regression/history.json
+            reports/regression/history-ci-runs.json
+          key: regression-history-${{ github.run_id }}
+          restore-keys: |
+            regression-history-
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
@@ -182,9 +225,15 @@ jobs:
             vc-regression
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
-          # Exit 0 = all passed, 1 = real failures, 2 = budget/turn limits only
+          # 0 = every suite ran and passed | 1 = real failure | 2 = truncated or never
+          # attempted | 3 = infrastructure blocked.
+          # Exit 2 used to be annotated "no real failures", which is how a suite that
+          # covered 14% of its cases read as fine. Truncation means the coverage is
+          # INCOMPLETE — that is a run to redo, not a run to wave through.
           if [ $EXIT_CODE -eq 2 ]; then
-            echo "::warning::Some suites hit budget/turn limits but no real failures"
+            echo "::error::COVERAGE INCOMPLETE — suites were cut off by a cap or never attempted. This run does not clear a green gate; see summary.json coverageComplete."
+          elif [ $EXIT_CODE -eq 3 ]; then
+            echo "::error::Infrastructure blocked one or more suites (env/data/credentials), so they tested nothing."
           fi
           exit $EXIT_CODE
 
@@ -199,6 +248,11 @@ jobs:
             PASSED=$(jq -r '.passed // 0' "$SUMMARY_FILE")
             FAILED=$(jq -r '.failed // 0' "$SUMMARY_FILE")
             BLOCKED=$(jq -r '.blocked // 0' "$SUMMARY_FILE")
+            TRUNCATED=$(jq -r '.truncated // 0' "$SUMMARY_FILE")
+            DEFERRED=$(jq -r '.deferred // 0' "$SUMMARY_FILE")
+            COMPLETE=$(jq -r '.coverageComplete // "unknown"' "$SUMMARY_FILE")
+            PREDICTED=$(jq -r '.predictedMakespanMinutes // 0' "$SUMMARY_FILE")
+            ACTUAL=$(jq -r '.actualWallClockMinutes // 0' "$SUMMARY_FILE")
             echo "pass_rate=$PASS_RATE" >> $GITHUB_OUTPUT
             echo "total_cost=$TOTAL_COST" >> $GITHUB_OUTPUT
             echo "passed=$PASSED" >> $GITHUB_OUTPUT
@@ -212,10 +266,30 @@ jobs:
             echo "| Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
             echo "| Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
             echo "| Blocked | $BLOCKED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Truncated (cut off by a cap) | $TRUNCATED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Deferred (never attempted) | $DEFERRED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Coverage complete | $COMPLETE |" >> $GITHUB_STEP_SUMMARY
+            echo "| Wall clock | ${ACTUAL} min (predicted ${PREDICTED}) |" >> $GITHUB_STEP_SUMMARY
             echo "| Cost | \$${TOTAL_COST} |" >> $GITHUB_STEP_SUMMARY
+            if [ "$COMPLETE" != "true" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "> **Coverage is incomplete.** Suites were cut off or never attempted, so a low failure count does NOT mean the corpus passed." >> $GITHUB_STEP_SUMMARY
+            fi
           else
             echo "::warning::No summary.json found"
           fi
+
+      # Save the accumulated history so the NEXT run can restore it. Keyed by run_id with a
+      # `regression-history-` restore prefix, so each run reads the newest previous cache and
+      # writes its own — an append-only chain rather than a mutable key.
+      - name: Save regression history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            reports/regression/history.json
+            reports/regression/history-ci-runs.json
+          key: regression-history-${{ github.run_id }}
 
       - name: Upload test artifacts
         if: always()

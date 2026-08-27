@@ -11,7 +11,6 @@ Quick decision tree for commands, skills, and agents. New here? Start with `/qa-
 | **See QA dashboard** | `/qa-status [run\|jira\|env]` | Command |
 | **Run smoke tests** | `/qa-smoke [storefront\|admin]` | Command |
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|IDs] [--no-plan]` | Command |
-| **Run autonomous regression** | `/qa-regression [scope] --autonomous` | Command |
 | **Test a JIRA ticket/feature/PR** | `/qa-test VCST-XXXX \| feature \| PR #N` | Command |
 | **Run exploratory testing session** | `/qa-exploratory [checkout\|catalog\|B2B\|mobile\|new]` | Command |
 | **File or investigate a bug** | `/qa-bug description \| VCST-XXXX \| screenshot` | Command |
@@ -43,7 +42,7 @@ Quick decision tree for commands, skills, and agents. New here? Start with `/qa-
 ### Run Tests (Commands — execute immediately)
 - `/qa-smoke` — Daily smoke (12 P0 tests, GO/NO-GO)
 - `/qa-test` — Test a ticket, feature, or PR
-- `/qa-regression` — Run regression suites in parallel (add `--autonomous` for Agent Teams mode with failure recovery + JIRA). `sprint` resolves the most recent sprint plan → `suitesActivated[]`
+- `/qa-regression` — Run regression suites in parallel. `sprint` resolves the most recent sprint plan → `suitesActivated[]`
 - `/qa-exploratory` — Guided exploratory session
 - `/qa-bug` — Reproduce and document bugs
 - `/qa-fix` — Autonomous fix of an already-filed bug: triage (G0) → single-repo route (G1) → reproduce-as-test → minimal fix → self-review → PR → STOP for human review (never auto-merges). Interactive twin of `ci/run-fix-cycle.ts`; delegates to the `developers/` team by repo kind. Gate ladder: `.claude/rules/quality-gates.md`
@@ -104,8 +103,6 @@ Quick decision tree for commands, skills, and agents. New here? Start with `/qa-
 - `test-management-specialist` — Test planning, case writing, coverage
 - `ui-ux-expert` — Storybook, accessibility, design system
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
-- `autonomous-regression-orchestrator` — Agent Teams regression: token bucket, failure recovery, JIRA
-- `autonomous-test-runner` — Parameterized suite runner for Agent Teams mode
 - `test-runner-agent` — Parameterized suite runner (used by regression-orchestrator)
 
 **BA Team (4 agents + shared-instructions):**

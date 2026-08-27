@@ -1,0 +1,149 @@
+{
+  "ticket": "VCST-5632",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "full",
+  "verdict": "FAIL",
+  "date": "2026-08-26",
+  "environment": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+  "build": {
+    "platform": "n/a - vc-shell Marketplace Vendor Portal, a separate product from the storefront and the Platform Admin SPA",
+    "theme": "Light (Vendor Portal ships Light/Dark/Green; no Coffee theme exists here)",
+    "relevant_modules": {
+      "@vc-shell/framework": "2.5.0 (2026-08-19T10:23:58Z, 2964ccbe3)",
+      "vendor-portal-build-id": "16355 (served bundle, last-modified 2026-08-26T13:31:42Z)"
+    },
+    "deploy_gate": {
+      "verdict": "PASS",
+      "note": "v2.5.0 bundles THREE PRs against this ticket, not one. The task framing named only #284; the CHANGELOG and source analysis found #306 closed gaps #284 left, one week later in the same release.",
+      "prs_in_release": [
+        { "pr": 284, "commit": "b98221b23", "merged": "2026-08-12T10:39:38Z", "scope": "popup close returns focus to opener; inert on maximized-blade background" },
+        { "pr": 286, "commit": "6427af7b0", "merged": "2026-08-12T11:05:02Z", "scope": "VCST-5670 focus repair (split ticket)" },
+        { "pr": 306, "commit": "3cd2761", "merged": "2026-08-19T07:19:57Z", "scope": "popup reopen lifecycle; inert on two secondary roots (AI agent panel, mobile sidebar)" }
+      ],
+      "release_published": "2026-08-19T10:25:08Z",
+      "ancestry": "all three behind_by 0 vs v2.5.0; #284 is the immediate parent of #286 (ahead 1)",
+      "marker_grep": "data-blade-expand-control x3 (#286), inertNavigation x5 + vc-ai-agent-panel x3 (#306), inert x32, opener x4, finalize x7 - all in vc-shell-vendors16355.js"
+    }
+  },
+  "agents_dispatched": ["ba-system-analyzer", "ba-story-writer", "ui-ux-expert"],
+  "epic": {
+    "parent": null,
+    "siblings": { "done": [], "in_progress": [], "blocked_dependency": [] },
+    "roll_up": { "is_epic_run": false, "stories_tested_in_order": [], "cross_story_e2e": "not-run", "halted_at": null, "verdict": "n/a" }
+  },
+  "ac_analysis": {
+    "story_acs": 4,
+    "weak_acs": 3,
+    "gap_acs_added": 6,
+    "impl_coverage": { "satisfied": 11, "drift": 0, "contradicts": 3, "not_found": 0 },
+    "conditions_total": 17,
+    "conditions_with_evidence": 15,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 88,
+      "ac_coverage_note": "15 of 17 conditions measured. 2 BLOCKED with stated reasons and deliberately NOT counted as passes.",
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "conditions": [
+      { "id": "AC-1", "condition": "Focus never <body> after 5 state changes", "verdict": "NOT-IN-THIS-TICKET", "detail": "Split to VCST-5670, which was verified and REOPENED the same day (VCST-5812). Leaving it as an AC here makes VCST-5632 unclosable." },
+      { "id": "C2.1", "condition": "Modal closed with Escape returns focus to opener", "verdict": "PASS", "focus_target": "button 'Delete selected'", "attempts": "3/3" },
+      { "id": "C2.2", "condition": "Modal closed with close (X) returns focus to opener", "verdict": "PASS", "focus_target": "button 'Delete selected'", "attempts": "3/3" },
+      { "id": "C2.3", "condition": "Modal closed by backdrop click returns focus to opener", "verdict": "BLOCKED", "reason": "Backdrop centre is covered by the dialog panel; the only ancestor whose centre lies off-panel has a zero-height box. Not measured and not claimed. Source suggests it routes through the same HeadlessUI onClose handler as Escape, but that is inference." },
+      { "id": "C2.5", "condition": "Do not yank focus back when the user moved it (focusWasLost guard)", "verdict": "NOT-EXERCISABLE", "reason": "The modal is a focus trap, so a user cannot place focus outside it while open. The reachable variant (Tab to Cancel inside the dialog, then Escape) restored correctly. The guard behaves correctly in every state a user can reach." },
+      { "id": "C2.6", "condition": "Opener removed from DOM while modal open (isConnected guard)", "verdict": "PASS", "detail": "No exception, no focus on a detached node - both stated criteria met. Caveat: no fallback, so focus ends on <body>, the same end state as C2.7.", "attempts": "1" },
+      { "id": "C2.7", "condition": "Popup opened while focus was already loose on <body>", "verdict": "FAIL", "focus_target": "<body> - no [active] node anywhere", "attempts": "3/3", "filed_as": "VCST-5814", "evidence_strength": "Isolating A/B control: identical dialog, identical Escape trigger and dismissal, but with focus first on a textbox, restored correctly. The only difference is document.activeElement at open time - which rules out 'Escape-opened dialogs never restore' as an alternative explanation." },
+      { "id": "C3a.1", "condition": "Nothing behind a maximized blade is Tab-reachable", "verdict": "PASS", "detail": "Complete boundary proof rather than a 30-Tab sample: from <body>, Tab reaches the maximized blade's first control and Shift+Tab reaches its last, and DOM order places every background region before it. Pointer side confirmed - sidebar clicks are intercepted by the layout spacer." },
+      { "id": "C3a.2", "condition": "A VcPopover open before maximizing is covered by inert", "verdict": "FAIL", "detail": "Exposure axis proven: axe scoped to .vc-popover finds applicable rules and a violation while .vc-app-menu is fully inapplicable. Tab axis NOT disproven, merely not constructible - this deployment has no notifications so the popover holds no focusable content.", "filed_as": "VCST-5815" },
+      { "id": "C3a.3", "condition": "AI agent panel is inert under a maximized blade (#306)", "verdict": "PASS", "detail": "All four axe rules inapplicable, identical to the sidebar. Tab ring endpoint unchanged - the panel's Maximize/Close and its iframe are outside it." },
+      { "id": "C3a.4", "condition": "Mobile slide-out sidebar is inert under a maximized blade (#306)", "verdict": "BLOCKED", "reason": "At 390x844 an open detail blade replaces the app bar entirely, with no Maximize control and no sidebar trigger. Maximizing on desktop then resizing also removed the app bar. The state 'sidebar open + blade maximized' is unreachable on this build." },
+      { "id": "C3b.1", "condition": "Covered content is not exposed to the accessibility tree", "verdict": "PASS", "detail": "Measured by scoped axe A/B'd against the restored state: .vc-app-menu and nav rules inapplicable while maximized, applicable again after restore. One named exception - the teleported popover (C3a.2)." },
+      { "id": "C3b.2", "condition": "axe scan in the maximized state", "verdict": "PASS (corroboration)", "detail": "1 color-contrast violation (5 nodes: environment-banner label, disabled 'Save as draft' label, en-US badge). Axe does not directly assert 'hidden content is not exposed', so C3b.1 is the primary evidence." },
+      { "id": "C3c.1", "condition": "[gap AC] Restoring a maximized blade removes inert again", "verdict": "PASS", "detail": "Sidebar search box clickable and focusable, Shift+Tab reaches 'Open menu', axe re-applicable for nav and .vc-app-menu. No one-way inert regression. No AC covered this." },
+      { "id": "C4.1", "condition": "A modal traps focus (Tab cycles within it)", "verdict": "PASS", "detail": "Tab from Cancel wraps to the dialog's close control; Shift+Tab reverses. Trap works both directions (HeadlessUI)." },
+      { "id": "C4.2", "condition": "A maximized blade traps focus (Tab cycles within it)", "verdict": "CONTRADICTS-BY-DESIGN", "detail": "Measured: focus leaves the document toward browser chrome rather than cycling back. The implementer built this deliberately, arguing a non-modal region must not trap Tab (2.1.2) and that inert already satisfies 2.4.3/4.1.2. Recorded, not adjudicated - needs a decision from the accessibility-conformance owner. Nothing filed." }
+    ]
+  },
+  "total_cases": 17,
+  "passed": 11,
+  "failed": 2,
+  "blocked": 2,
+  "not_applicable": 2,
+  "iterations": { "enabled": false, "rounds": 1, "max_rounds": 2, "outcome": "bailed" },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": [],
+    "skipped_reason": "No regression suite in config/test-suites.json covers vc-shell / the Marketplace Vendor Portal. Authoring into a storefront-scoped corpus would produce rows the runner cannot execute against FRONT_URL, so Artifact A was not authored and 5g did not run."
+  },
+  "regression": {
+    "suites": [],
+    "run_id": null,
+    "pass_rate": null,
+    "skipped_reason": "No vc-shell / Vendor Portal coverage exists in the suite manifest (separate product). Artifact C is empty by construction, not by omission."
+  },
+  "regression_triage": { "invoked": false, "run_id": null, "confirmed_bugs": [], "test_fixes_applied": [], "dismissed": [], "report_path": null },
+  "bugs_filed": [
+    { "key": "VCST-5814", "relationship": "sub-task", "parent_or_linked_ticket": "VCST-5632", "severity": "Low", "title": "Popup close does not restore focus when the opener was never captured - silent no-op, no fallback" },
+    { "key": "VCST-5815", "relationship": "sub-task", "parent_or_linked_ticket": "VCST-5632", "severity": "Low", "title": "A teleported VcPopover escapes the maximized-blade inert and stays exposed to the accessibility tree" },
+    { "key": "VCST-5816", "relationship": "related", "parent_or_linked_ticket": "VCST-5632", "severity": "Medium", "title": "GET /api/vcmp/message/unreadcount returns HTTP 500 on every poll" }
+  ],
+  "pre_existing_not_filed": [
+    { "owner": "VCST-5795", "status": "In progress", "finding": "Settings popover: 65 Tab presses from trigger to first menu item (page-content-dependent; the 2026-08-04 note said 46-47 - the structural fact, items teleported to the end of the tab ring, is the stable one). ArrowDown does not enter the menu. Escape closes it leaving focus on <body> with no return to the trigger." },
+    { "owner": "VCST-5653", "status": "To do", "finding": "User-dropdown trigger has no visible focus ring under keyboard focus. Served stylesheet has only a :hover rule for .vc-user-dropdown-button while 57 other :focus selectors exist in the same file." }
+  ],
+  "record_corrections": [
+    { "claim": "2026-08-04 comment: the menu toggle's aria-label never updates from 'Open menu', and SidebarHeader.vue:76 hardcodes it in English.", "finding": "STALE - no longer true of this build. Live, the accessible name cycles Open menu -> Close menu (aria-expanded tracking) -> Open menu, and current source binds a reactive i18n ternary over OPEN_MENU/CLOSE_MENU. Both source analysis and live measurement agree. Treated as closed." },
+    { "claim": "Ticket description: 'there is no focus-management code at all' (grep-based).", "finding": "Already corrected by the implementer before this run: vc-popup is a HeadlessUI Dialog, so trap/restore/inert came from the library and never appeared as our own code. Recorded here because the description still carries the wrong premise." }
+  ],
+  "business_rules_verified": [],
+  "standards_verified": ["WCAG 2.4.3 Focus Order (AA)", "WCAG 4.1.2 Name/Role/Value", "WCAG 2.1.2 No Keyboard Trap (C4.2, measured not adjudicated)", "WCAG 1.4.3 Contrast (incidental)"],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": [],
+    "skipped_reason": "No Application Insights component is configured for vcmp-dev; only vcst and vcptcore backend/storefront resources exist in the env layers."
+  },
+  "measurement_method": {
+    "instrument": "Playwright MCP accessibility snapshot [active] marker + Tab-continuation discriminator for focus; scoped axe.run(selector) A/B'd against the restored state for accessibility-tree exposure",
+    "instrument_correction": "The orchestrator's brief specified testing a11y-tree exposure by checking that inert content is ABSENT from the Playwright ARIA snapshot. That is wrong - the snapshot does not model inert: with a blade maximized the sidebar still appears with full accessible names while having zero tab stops. The executing agent caught this and substituted scoped axe.run(selector), calibrated by A/B against the restored state (all rules inapplicable for a subtree = that subtree contributes nothing). This substitution is what upgrades AC-3b past the implementer's 'structural, not by listening' claim.",
+    "why_no_eval": "The repo hook .claude/hooks/enforce-real-user.mjs blocks browser_evaluate/evaluate_script and has no allowlist pattern for document.activeElement. The @allow-eval sentinel is scoped to UI-fix/debug work, explicitly not test runs, so it was not used. axe.run() IS allowlisted, which is what made the scoped-axe substitution available."
+  },
+  "storefront_rules_substituted": [
+    "storefront-selectors.md / data-test-id catalogue -> ARIA role + accessible name; .vc-* BEM only as Playwright targets",
+    "BL-UI-001..006 and critical-ui-scope.md -> WCAG 2.2 AA criteria directly (2.4.3, 2.4.7, 2.1.2, 4.1.2, 1.4.3)",
+    "Coffee/Red a11y-gated themes -> Light (Vendor Portal ships Light/Dark/Green)",
+    "config/test-suites.json regression selection -> none exists for vc-shell"
+  ],
+  "data_touched": {
+    "entity": "Product blades on vcmp-dev (Dynastar SPEED 400 LTD, and a Products list selection)",
+    "change": "One blade edit (Materials field) typed and then DISCARDED via the unsaved-changes dialog to construct the detached-opener case. A delete confirmation was opened and dismissed several times, never confirmed.",
+    "published": false,
+    "final_state_verified": "466 products unchanged; 'Product Level 4' still present; no draft saved"
+  },
+  "open_decision_required": {
+    "item": "AC-4 - 'a blade or modal traps focus while open'",
+    "state": "The implementation deliberately contradicts the AC for a maximized blade. Measured: modal traps; maximized blade lets focus leave toward browser chrome.",
+    "argument": "A maximized blade is not a modal; trapping Tab in a non-modal region prevents reaching browser chrome (arguably a worse 2.1.2 violation), and inert on everything behind it already delivers what 2.4.3/4.1.2 require.",
+    "needed": "An explicit ruling from the accessibility-conformance owner. If accepted, rewrite AC-4 to the outcome ('a maximized blade does not trap Tab; everything it covers stays inert') rather than leaving a contradicted line in a ticket under test. Nothing filed."
+  },
+  "incidental_findings_not_filed": [
+    "Mobile slide-out sidebar renders as a dialog with no accessible name (4.1.2)",
+    "Mobile blade breadcrumb renders a button nested inside a button, neither with an accessible name (4.1.2 / nested-interactive)",
+    "color-contrast violation inside the notifications popover text (1.4.3) - surfaced by the same probe that proved C3a.2",
+    "Console warnings, not defects on their own: ai-agent-context 'no blade id available'; VcDataTable 'Column width crisis: sum(minPx)=1800px > availableWidth=778px'; tiptap 'Duplicate extension names found: [link, underline]' x3"
+  ],
+  "coverage_limits": [
+    "C2.3 (backdrop close) BLOCKED by tooling - not measured, not claimed as a pass",
+    "C3a.4 (mobile sidebar inert) BLOCKED - state not constructible on this build",
+    "C3a.2's Tab axis not disproven, only not constructible (no notifications exist on this deployment); re-check once the notification list is non-empty",
+    "AppHubPopover has no distinct desktop trigger (it is a tab inside the mobile slide-out), so it could not be tested separately. It shares VcPopover's rendering position and missing prop, so it is likely affected - inference, not measurement.",
+    "No screen-reader (AT) pass was run; AC-3b rests on scoped-axe applicability, which is stronger than the structural claim it replaces but is still not a listening test."
+  ],
+  "screenshots": "reports/tickets/Sprint26-17/VCST-5632/screenshots/"
+}

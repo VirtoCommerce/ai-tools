@@ -23,6 +23,7 @@ Provides the structured methodology framework for exploratory testing sessions. 
 /qa-sbtm personas          # Persona-driven exploration (Impatient Buyer, Screen-Reader User, Malicious User, etc.)
 /qa-sbtm attack-surface    # Modern web attack surface — DevTools, multi-tab, cache, history, browser features
 /qa-sbtm charters          # Ready-to-use charter library (11 charters) — starting points to be galumphed/hostile-interviewed
+/qa-sbtm sprint            # Sprint-charter selection — which domains of a sprint plan earn a 30-min charter
 ```
 
 ## Supporting Files
@@ -32,11 +33,12 @@ Provides the structured methodology framework for exploratory testing sessions. 
 - **adversarial-heuristics.md** — Heuristics for breaking the app: Whittaker's 10 tours (Garbage Collector, Bad Neighborhood, Couch Potato, Antagonistic, Saboteur, Obsessive-Compulsive, Supermodel, Lonely Businessman, All-Nighter, Tourist), FAILURE mnemonic, Soap Opera Testing template + 2 VC examples, HICCUPPS-F oracles, combination guide
 - **personas.md** — Persona-driven exploration: 6 personas (Impatient Buyer, Screen-Reader User, Malicious User, Slow-Network User, B2B Procurement Officer, Session-Corrupted User) with mindset, test ideas, what they typically find, and recommended heuristic pairings
 - **modern-web-attack-surface.md** — Browser-specific probes: DevTools-as-attack-tool, multi-tab state collisions, storage/cache drift (incl. ServiceWorker), history/router races, browser-feature attack surface (autofill, dark mode, zoom, print, reduced-motion), network-layer probes, performance/memory probes. Each probe linked to Chrome DevTools MCP or Playwright MCP execution
-- **charter-library.md** — 11 ready-to-use charters: Checkout Edge Cases, B2B Procurement, Admin Resilience, API Edge Cases, Feature Flag Lifecycle, Performance & Resource Stress, Accessibility Exploratory, i18n/Localization, Mobile Gesture-Specific, Search Relevance, Cache & State Drift
+- **sprint-charter-selection.md** — **The scheduling rule.** Given a written sprint test plan, derives which §3 risk domains earn a charter (C1 uncovered surface / C2 concurrency seam / C3 cross-layer chain / C4 latent blast radius), which are disqualified as plain test cases (D1 exact oracle / D2 no QA surface / D3 already charted), the 5-charter budget, the non-firefox lane rule, and the capture-back contract that turns a net-new scenario into a permanent `Draft` case. Consumed by `/qa-test-plan` §5.3 and `/qa-exploratory sprint`.
+- **charter-library.md** — 11 ready-to-use charters, each declaring the `ECL-<n>.<m>` sections it hunts (§Edge-Case Refs — they were uncited restatements of the library until then): Checkout Edge Cases, B2B Procurement, Admin Resilience, API Edge Cases, Feature Flag Lifecycle, Performance & Resource Stress, Accessibility Exploratory, i18n/Localization, Mobile Gesture-Specific, Search Relevance, Cache & State Drift
 
 ## Execution
 
-1. **Read the methodology references:** Load `scenario-discovery.md` FIRST — it defines the primary lens (finding scenarios we don't cover). Then `session-based-testing.md` for the core SBTM framework. Consult `../../agents/knowledge/oracles/vc-bug-catalog.md` BEFORE the session to learn what NOT to re-discover. For Risk and Edge-Case charters, also load `adversarial-heuristics.md` (apply as filters / familiar-problems oracle, not as a checklist). Pick a persona from `personas.md` when the session benefits from a specific user lens. Reach for `modern-web-attack-surface.md` when probing cache, multi-tab, or browser-feature surfaces.
+1. **Read the methodology references:** Load `scenario-discovery.md` FIRST — it defines the primary lens (finding scenarios we don't cover). Then `session-based-testing.md` for the core SBTM framework. Consult `../../agents/knowledge/oracles/vc-bug-catalog.md` BEFORE the session to learn what NOT to re-discover, and the two SUPPLY-side oracles — `e-commerce-edge-cases-library.md` for candidate boundary/failure shapes (**`[THEORETICAL]` sections first**: `[OBSERVED]` ones are already `/qa-checklist`'s and the suites' job) and `business-logic.md` for the `BL-*` a deviation is judged against. The three are read in two opposite directions — the catalog and the suites to SUBTRACT known ground, the ECL and BL to SUPPLY targets and a correctness reference; the table is at `/qa-exploratory` Step 5a. For Risk and Edge-Case charters, also load `adversarial-heuristics.md` (apply as filters / familiar-problems oracle, not as a checklist). Pick a persona from `personas.md` when the session benefits from a specific user lens. Reach for `modern-web-attack-surface.md` when probing cache, multi-tab, or browser-feature surfaces.
 
 2. **Before a session — Charter creation:**
    - Define the mission (what area to explore and why)
@@ -63,6 +65,7 @@ Provides the structured methodology framework for exploratory testing sessions. 
    - Pattern observed → add to error guessing heuristics (see `/qa-test-design`)
 
 ## Integration with Other Skills
+- `/qa-test-plan` §5.3 is the scheduler — it derives a sprint's charters via `sprint-charter-selection.md`; `/qa-exploratory sprint` runs them
 - `/qa-risk` determines which areas need exploratory attention (High/Critical risk items)
 - `/qa-test-design` provides error guessing heuristics that supplement exploration
 - `/qa-evidence` defines how to capture and format session evidence
@@ -81,3 +84,5 @@ Discovery sessions hit live data that drifts. Resolve at runtime via the decisio
 - Debrief is not optional — every session ends with a findings review AND a net-new-scenario answer
 - Coverage tracking matrix must be updated after each session, with `[EXP]/[VAL]` marker
 - At least 2 exploratory sessions required before any full release (per quality-gates.md)
+- **A sprint charter is scheduled, not improvised**: the charter set is derived from the plan's own §3 / §5.2 per `sprint-charter-selection.md` — never a domain absent from §3, never a suite absent from §5.1
+- **Every net-new scenario has a recorded fate** — promoted to a `Draft` case, or declined with a one-line reason (`sprint-charter-selection.md` §6). An unexplained absence means the finding was discovered once and lost

@@ -28,9 +28,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `shared-instructions.md` | **A** | Four-layer architecture, PASS/FAIL/AMBIGUOUS classifier, evidence rules. Promote to `vc-qa-core/methodology/shared-instructions.md` as v1.0 contract. |
 | `qa-lead-orchestrator.md` | **A** | Orchestration role is product-agnostic. Examples are storefront — sanitize. |
 | `regression-orchestrator.md` | **B** | Already template-shaped with `{{SUITE_ID}}`, `{{BROWSER_SERVER}}` substitution. |
-| `autonomous-regression-orchestrator.md` | **B** | Agent Teams token-bucket logic is generic. |
 | `test-runner-agent.md` | **B** | Parameterized template; the canonical example of how Tier B should look. |
-| `autonomous-test-runner.md` | **B** | Same. |
 | `test-management-specialist.md` | **B** | Test planning skill set is generic; examples are storefront. |
 | `qa-frontend-expert.md` | **C** | LAYER 1 hardcodes BL-CHK-003, BL-PRICE-001, BL-CROSS-002. LAYER 2 is Vue.js + storefront payment iframes. **Becomes the template** for per-product `qa-{product}-expert.md`. |
 | `qa-backend-expert.md` | **C** | Same coupling pattern. Storefront xAPI, Admin SPA hardcoded. |

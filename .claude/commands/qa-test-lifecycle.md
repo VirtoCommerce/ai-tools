@@ -616,6 +616,13 @@ The `Automation_Status` flip `Draft → Reviewed` happens **in the rows being ap
 promotion. Stamp `References` with `Promoted: VCST-XXXX → <suite id> (YYYY-MM-DD)`, appending; never
 clobber an existing `Synced:` / `Audited:` / `Corrected:` stamp.
 
+> **6P promotes to `Reviewed`, and that is a different claim from `Automated` — do not reach for
+> `tc:promote` here.** `Reviewed` says a human/`qa-lead` approved the case; `Automated` says a runner
+> executed it green, which only a completed run can evidence. `npm run tc:promote`
+> (`.claude/rules/regression.md` §Post-Run Promotion) derives `Draft → Automated` from a run's own
+> `suite-*-results.json` and writes nothing else — so it is the tool for a case already in a suite that
+> a regression run has since proven, **after** 6P, not instead of it.
+
 **5 — Re-sync the manifest and re-gate.**
 
 ```bash

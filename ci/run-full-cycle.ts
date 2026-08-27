@@ -1,6 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
+import { selectAffectedSuites } from "./lib/affected-suites.js";
 
 /**
  * Full Test Cycle CI Pipeline
@@ -109,12 +110,38 @@ AFFECTED_SUITES: <comma-separated suite IDs or "none">`,
     budgetLeft -= sync.costUsd;
     writeFileSync(join(outputDir, "phase1-sync.txt"), sync.result);
 
-    // Parse affected suites from output
-    const match = sync.result.match(/AFFECTED_SUITES:\s*(.+)/);
-    if (match && match[1].trim() !== "none") {
-      affectedSuites = match[1].trim();
+    // Affected suites: the DETERMINISTIC selector decides, and the agent's own claim is only a
+    // cross-check.
+    //
+    // This used to parse `AFFECTED_SUITES:` straight out of the agent's text, and that has
+    // hallucinated: the REG-2026-08-24-1806 notes carry 32 claimed new-case IDs that do not
+    // exist, each exactly the next sequential number after a real suite's maximum. A model
+    // asked to name ids will name plausible ones. `select-suites` cannot — every id it prints
+    // came out of config/test-suites.json.
+    //
+    // The agent line is still read, but only to LOG a disagreement. It is never allowed to add
+    // a suite: an id the selector did not choose is either a hallucination or a mapping gap, and
+    // both are things to look at rather than to run on.
+    const claimed = sync.result.match(/AFFECTED_SUITES:\s*(.+)/);
+    const claimedIds = claimed && claimed[1].trim() !== "none"
+      ? claimed[1].trim().split(",").map((x) => x.trim()).filter(Boolean)
+      : [];
+
+    const selected = selectAffectedSuites(CHANGE_SOURCE);
+    if (selected) {
+      affectedSuites = selected.ids.join(",");
+      log(`Affected suites (deterministic): ${affectedSuites || "none"} — ${selected.note}`);
+      const invented = claimedIds.filter((id) => !selected.ids.includes(id));
+      if (invented.length > 0) {
+        log(`NOTE: the agent additionally claimed ${invented.join(",")} — not run. Verify the mapping or the claim.`);
+      }
+    } else {
+      // The selector could not place the change (no repo could be inferred from CHANGE_SOURCE).
+      // Fall back to the configured selection, NOT to the agent's list: an unplaceable change is
+      // exactly when a hallucinated id is least likely to be noticed.
+      log(`Affected suites: selector could not place "${CHANGE_SOURCE}" — keeping SUITE_SELECTION="${affectedSuites}"`);
+      if (claimedIds.length > 0) log(`NOTE: the agent claimed ${claimedIds.join(",")} — not used.`);
     }
-    log(`Affected suites: ${affectedSuites || "none"}`);
   }
 
   // --- Phase 2: /qa-test-lifecycle (review-only — ONLY when Phase 1 didn't run) ---

@@ -1,27 +1,35 @@
 {
-  "runId": "REG-2026-08-26-1312",
+  "runId": "REG-2026-08-26-1631",
   "status": "completed",
-  "environment": "https://vcst-qa-storefront.govirto.com",
-  "selection": "011b subset: 6 FAIL + 2 BLOCKED",
-  "startedAt": "2026-08-26T11:13:47.426Z",
-  "finishedAt": "2026-08-26T12:45:11.456Z",
-  "notes": "Re-run of the 8 non-passing cases after todays test-case fixes. Sequential single chrome lane (shared TechFlow/MULTI_ORG_TF_BR state). COMP-E2E-007 and 022 are expected to FAIL again on open product defects (cart dual-resolution P0; membership referential validation P1) - those are NOT test defects and are not promotable. | RESUMED after the first runner was killed mid-run by a spend limit (006 completed FAIL, 7 left PENDING). 006 CSV defect found by that run was fixed (contact organizations[] + USER_ID resolution via /users/search) and 006 is re-tested in this pass.",
+  "environment": "https://vcst-qa.govirto.com",
+  "selection": "050m",
+  "startedAt": "2026-08-26T14:31:02.678Z",
+  "finishedAt": "2026-08-26T14:33:48.842Z",
+  "notes": "119/119 machine lane (runner-native GraphQL, scoped /graphql/sales-rep) — no browser lane. 111 pass / 8 fail, single attempt, no lane disagreements. 6 of 8 failures are test artifacts: lastCartDate does not exist on CustomerCartStatisticsPeriod (064, 067); the 'is non-empty GUID' predicate rejects the platform's unhyphenated N-form id (076, 084); sendCustomerCommunication returns a result object not a Boolean (053); SR-GQL-013's fixture order dates contradict its own stated precondition and its 'STORE_ID_SECONDARY unset' note is stale. 2 need review: SR-GQL-063 (unfiltered period excludes the status-only Cancelled order, 8+1=9) and SR-GQL-071 (salesRepCustomerCounts returns null, not a zero-filled object, for a zero-served rep).",
   "deployState": {
     "platform": "3.1061.0",
-    "theme": "2.56.0-pr-2451"
+    "theme": "2.56.0"
   },
   "suites": {
-    "011b": {
+    "050m": {
       "status": "done",
-      "name": "B2B Company E2E (subset)",
-      "agent": "qa-frontend-expert",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "testCount": 8,
-      "attempts": 0,
-      "passed": 6,
-      "failed": 3,
-      "passRate": "66.7%"
+      "name": "GraphQL xAPI — Sales Rep (scoped /graphql/sales-rep)",
+      "agent": "machine-lane (graphql-runner)",
+      "lane": "machine",
+      "browser": "n/a — 119 machine / 0 browser / 0 manual",
+      "testCount": 119,
+      "attempts": 1,
+      "passed": 111,
+      "failed": 8,
+      "blocked": 0,
+      "skipped": 0,
+      "passRate": "93.3%"
     }
+  },
+  "windowStart": "2026-08-26T14:31:02.678Z",
+  "appInsights": {
+    "backend": "165 req / 5 failed / 5 exceptions / 1766 dependencies (0 failed)",
+    "correlatedSignals": 0,
+    "detail": "All 5 exceptions are the suite's own negative-path assertions: 3x AuthorizationError 'Anonymous access denied' + 2x SendCustomerCommunication ValidateRequest length limits. No unattributed backend error."
   }
 }

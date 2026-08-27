@@ -169,7 +169,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] compare expected subtotal to displayed subtotal
 [ACT] change one item quantity
 [WAIT] wait for totals to recalculate","[MATH] each line total = unit price × quantity (2 decimal places) for USD-currency lines
-[MATH] displayed subtotal = sum of all USD-currency line totals (2 decimal places) — PTS lines NOT included in USD subtotal
+[MATH] the VENDOR-GROUP subtotal = sum of all USD-currency line totals (2 decimal places) — PTS lines NOT included; note the OrderSummary ""Subtotal"" is deliberately the PRE-discount list subtotal and legitimately differs whenever a line carries a sale, so assert against the vendor-group figure (or against OrderSummary only after adding back the itemised discount)
 [MATH] subtotal updates immediately after quantity change = sum of (unit price × quantity) for all included line items (2 decimal places)
 [FORMAT] all amounts formatted as currency with 2 decimal places
 [STATE] subtotal recalculated to reflect the changed quantity (matches sum of updated line totals)","[CONSOLE] no JS errors
@@ -673,7 +673,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [WAIT] wait for card response — capture the error state IMMEDIATELY within this wait, before any further step (it auto-clears unattended after an interval set by COUPON_ERROR_TIMEOUT in vc-frontend useCoupon.ts; VCST-5518)","[API] on an invalid/nonexistent code: validateCoupon returns false and NO addCoupon is sent; the discount stays $0.00 and the cart total is unchanged (always-true invariant — live-verified on theme 2.55.0-pr-2417, 2026-08-06)
 [DOM] no discount line item in OrderSummary — element absent from DOM
 [STATE] cart total unchanged from before apply attempt
-[DOM] error UI is BUILD-GATED (VCST-5518 / vc-frontend PR #2422): on theme >= 2.55.0-pr-2422 the Custom code card transitions to the error state (dashed border, red receipt-tax icon, 'This code is not valid' text below input mapping to t('common.messages.invalid_coupon'), apply button disabled) auto-clearing after COUPON_ERROR_TIMEOUT=7000ms; on the deployed pr-2417 build the invalid code fails SILENTLY with no error UI","[API] validateCoupon returns false for the invalid code and NO addCoupon mutation is sent (validate-before-add order per VCST-5518 / vc-frontend PR #2422); cart.coupons[] is unchanged
+[DOM] the Custom code card transitions to the error state (dashed border, red receipt-tax icon, 'This code is not valid' text below input mapping to t('common.messages.invalid_coupon'), apply button disabled) auto-clearing after COUPON_ERROR_TIMEOUT=7000ms — the former VCST-5518 / PR #2422 build gate is RESOLVED (deployed theme is >= 2.55.0-pr-2422), so this is the single expected behaviour and a silent failure is now a FAIL, not a build variance","[API] validateCoupon returns false for the invalid code and NO addCoupon mutation is sent (validate-before-add order per VCST-5518 / vc-frontend PR #2422); cart.coupons[] is unchanged
 [API] cart.totals.discountTotal.amount = 0
 [CONSOLE] no TypeError — error state rendered gracefully
 [NETWORK] no 5xx","error text not displayed (no feedback to user), wrong error message shown (not 'This code is not valid'), cart total changed after invalid code, console TypeError, 'BOGUS123' somehow applied",none — no coupon was applied,"VCST-4896 AC#4, AC#6, AC#8; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend PR #2422 (VCST-5518) useCoupon.ts (COUPON_ERROR_TIMEOUT=7000; setError on validateCartCoupon()===false) + coupons-section.vue:82. LIVE 2026-08-06 (theme 2.55.0-pr-2417, #2422 NOT deployed): invalid code = validateCoupon->false, NO addCoupon, discount unchanged; error message + 7s auto-clear are #2422-gated (silent on pr-2417); Docs: N/A — implementation-detail. Cross-ref: the VCST-5518 core invariant (an INVALID apply while a working coupon is applied leaves that coupon applied) is guarded by CPN-063 in suite 077 (regression/suites/Frontend/marketing/077-coupons-promotions-storefront.csv) — do not duplicate it in this suite.",Reviewed
@@ -716,7 +716,7 @@ coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [ACT] click the trash (outline-trash) icon on the applied '@td(COUPON_10PCT.promo_name)' card
 [WAIT] wait for removeCoupon mutation and UI update","[DOM] card returns to default state: dashed border, receipt-tax icon, arrow-right apply button (not trash icon) — element absent from DOM
 [DOM] JIRA AC#5 compliance: the card is still present in the widget after removal (code display NOT cleared); users can re-apply
-[DOM] Discount line in OrderSummary disappears or shows ""$0.00""
+[DOM] the coupon's contribution to the OrderSummary Discount row is removed — the row reads $0.00 when no other discount applies, or falls by exactly the coupon's former amount when an item-level sale is also present (do NOT assert the row is absent or unconditionally zero)
 [MATH] cart total after removal = pre-coupon subtotal + shipping + tax (discount fully removed)
 [STATE] cart.coupons[] no longer contains @td(COUPON_10PCT.code) (or isAppliedSuccessfully=false)
 [STATE] card returns to default state
@@ -792,7 +792,7 @@ Ring configurable product (CFG_RING) accessible at {{FRONT_URL}}@td(CFG_RING.url
 [WAIT] configuration section with Text input visible
 [ACT] fill Text input field with 'AGENT-TEST-SFL-RING-001'
 [WAIT] text value 'AGENT-TEST-SFL-RING-001' confirmed in input
-[ACT] click '+' (Increase quantity) to add item to cart
+[ACT] click 'Add to cart' (the configurable PDP renders an Add-to-cart button, not the quantity stepper)
 [WAIT] cart badge increments to 1
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loaded with 1 line item
@@ -807,7 +807,7 @@ Ring configurable product (CFG_RING) accessible at {{FRONT_URL}}@td(CFG_RING.url
 [STATE] cart has 1 Ring item after Move to cart
 [DOM] restored Ring item has non-blank configuration detail (visible)
 [STATE] cart has 1 Ring line item after restore","[API] moveToSavedForLater mutation errors[] empty
-[API] getSavedForLater configurationItems non-empty for saved Ring item
+[API] the line item restored by moveFromSavedForLater carries non-empty configurationItems (do NOT assert this on getSavedForLater — that query's fragment does not select configurationItems, so it can never score; the saved-card display itself is unimplemented by design)
 [API] moveFromSavedForLater mutation errors[] empty
 [CONSOLE] no JS errors during save + restore flow
 [NETWORK] no 4xx/5xx on cart API requests",Save for later click does nothing or shows error; Move to cart restores item with empty/default configuration; Spinner visible >10s; errors[] non-empty on moveToSavedForLater; cart badge stays at 1 after Save,Remove Ring item from cart or Saved for later if test leaves items behind,"VCST-4205; Re-scoped 2026-07-27 — rendering configurationItems on the Saved-for-later card is confirmed NOT IMPLEMENTED (withdrawn as a defect finding, previously misread as a VCST-4205 repro); that display assertion is deferred and will be restored when the card ships configuration rendering. This case's active, testable scope is the round-trip config-preservation invariant: configuration visible in the active cart before Save for later, and intact again in the active cart after Move to cart. Synced: lifecycle lists/SFL (2026-08-05) — added BL-CART-015 (this case is its direct test); Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/cart (Save-for-later round trip; configurationItems card display not-implemented, re-verified absent); Docs: StorefrontUserGuide - Save for later",Draft
@@ -965,12 +965,12 @@ coupon_code=@td(COUPON_THRESH50.code)","[NAV] navigate to {{FRONT_URL}}
 [ASSERT] verify the below-threshold apply attempt is rejected
 [ACT] increase quantity (or add another unit) so the subtotal reaches or exceeds $50
 [WAIT] wait for totals to recalculate
-[ACT] reload the cart page (a rejected code's Apply button stays disabled for the same string — re-entering it does not re-enable it)
+[ACT] reload the cart page (a determinism guard that clears residual error state — NOT a prerequisite: the 'Apply coupon' button also re-enables on its own once COUPON_ERROR_TIMEOUT elapses)
 [WAIT] wait for the cart page to reload
 [ACT] enter @td(COUPON_THRESH50.code) in the Custom code card's 'Enter custom code' input again
 [ACT] click the 'Apply coupon @td(COUPON_THRESH50.code)' button on the Custom code card
 [WAIT] wait for the coupon mutation to settle and card/discount state to update","[API] below $50: validateCoupon returns false and NO addCoupon is sent — the discount stays $0.00 and the cart total is unchanged (live-verified on theme 2.55.0-pr-2417, 2026-08-06) {OBSERVED}
-[DOM] below $50 error UI is BUILD-GATED (VCST-5518 / vc-frontend PR #2422): on theme >= 2.55.0-pr-2422 the Custom code card shows the ""This code is not valid"" error (red icon + text) auto-clearing after COUPON_ERROR_TIMEOUT=7000ms — capture it immediately; on the deployed pr-2417 build the invalid code fails SILENTLY with no error UI; the card border stays dashed (DEFAULT state, not an error signal) {SPEC}
+[DOM] below $50 the Custom code card shows the ""This code is not valid"" error (red icon + text) auto-clearing after COUPON_ERROR_TIMEOUT=7000ms — capture it immediately; the former VCST-5518 / PR #2422 build gate is RESOLVED (deployed theme is >= 2.55.0-pr-2422), so the error UI is the single expected behaviour and a dashed border with no error text is a FAIL, not a build variance {SPEC}
 [DOM] below $50: the Discount row in order summary remains at $0.00 — it is always rendered, it is not absent {OBSERVED}
 [DOM] at/above $50: the Custom code card transitions to a solid green border, green check icon, and 'Remove coupon' trash icon {OBSERVED}
 [MATH] at/above $50: discount = 10% of the subtotal (e.g. subtotal $59.96 → discount −$6.00); order total = subtotal − discount + shipping + tax, tax computed on the discounted base (e.g. 59.96 − 6.00 + 0.00 + 10.79 = 64.75), per BL-CHK-006 {OBSERVED}","[API] addCoupon mutation below threshold: cart.coupons[].isAppliedSuccessfully = false OR errors[] non-empty with a threshold-not-met reason

@@ -65,8 +65,6 @@
 | **ui-ux-expert** | Sonnet | DevTools | Storybook (55 components), WCAG 2.1 AA |
 | **test-management-specialist** | Sonnet | — | Test planning, case writing, coverage tracking |
 | **regression-orchestrator** | Sonnet | — | Parallel regression, quality gates |
-| **autonomous-regression-orchestrator** | Sonnet | — | Agent Teams regression, failure recovery, JIRA |
-| **autonomous-test-runner** | — | assigned | Parameterized template for Agent Teams suite execution |
 | **test-runner-agent** | — | assigned | Parameterized template for standard suite execution |
 | **ba-system-analyzer** | Sonnet | — | Architecture, module inventory, user flows |
 | **ba-api-specialist** | Sonnet | — | API surface via Postman/Swagger |

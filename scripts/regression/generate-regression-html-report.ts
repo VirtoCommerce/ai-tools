@@ -598,6 +598,58 @@ function normalizeSuite(raw: any, allShots: string[], runId: string, runDir: str
   };
 }
 
+/**
+ * Fold the per-case append-only JSONL over a pre-seeded envelope.
+ *
+ * The runner agents now APPEND one line per case to `suite-{ID}-cases.jsonl` instead of
+ * rewriting the whole `suite-{ID}-results.json` after every case. That change exists because
+ * rewriting a growing envelope N times is O(n²) — suite 050m has 119 cases, so the old contract
+ * spent roughly 7,000 case-entry writes (~285k output tokens) on bookkeeping alone.
+ *
+ * The dashboard has to keep working during a run, so this reader does the folding the writer no
+ * longer does: while `completedAt` is empty, JSONL rows are merged over the PENDING placeholders
+ * by case id. A row for a case the envelope never listed is appended rather than dropped — a case
+ * that ran is more trustworthy than a plan that did not mention it.
+ *
+ * A torn final line is expected (the process can be killed mid-append) and is skipped.
+ */
+export function applyCaseJsonl(raw: Record<string, unknown>, runDir: string, suiteId: string): void {
+  // A completed envelope is authoritative; only an in-flight one needs the overlay.
+  if (String(raw.completedAt ?? "").trim() !== "") return;
+
+  const jsonlPath = join(runDir, `suite-${suiteId}-cases.jsonl`);
+  if (!existsSync(jsonlPath)) return;
+
+  const rows: Array<Record<string, unknown>> = [];
+  for (const line of readFileSync(jsonlPath, "utf-8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const row = JSON.parse(line) as Record<string, unknown>;
+      if (row && typeof row.id === "string") rows.push(row);
+    } catch {
+      /* torn last line on a hard kill — skip it, do not fail the whole report */
+    }
+  }
+  if (rows.length === 0) return;
+
+  const cases = Array.isArray(raw.testCases) ? (raw.testCases as Array<Record<string, unknown>>) : [];
+  const byId = new Map<string, Record<string, unknown>>();
+  for (const c of cases) if (typeof c.id === "string") byId.set(c.id, c);
+
+  for (const row of rows) {
+    const id = row.id as string;
+    const existing = byId.get(id);
+    if (existing) {
+      // Later lines win: a case can legitimately be re-reported after a retry.
+      Object.assign(existing, row, { title: row.title ?? existing.title });
+    } else {
+      cases.push(row);
+      byId.set(id, row);
+    }
+  }
+  raw.testCases = cases;
+}
+
 function loadAllSuites(runDir: string): NormSuite[] {
   const allShots = listAllShots(runDir);
   const runId = runDir.replace(/[\\/]+$/, "").split(/[\\/]/).pop() ?? "";
@@ -610,7 +662,11 @@ function loadAllSuites(runDir: string): NormSuite[] {
   const bySuite = new Map<string, { suite: NormSuite; cases: number; mtime: number }>();
   for (const f of files) {
     const full = join(runDir, f);
-    const suite = normalizeSuite(JSON.parse(readFileSync(full, "utf-8")), allShots, runId, runDir);
+    const raw = JSON.parse(readFileSync(full, "utf-8")) as Record<string, unknown>;
+    // Overlay the append-only per-case JSONL BEFORE normalizing, so the existing count
+    // recomputation covers the folded rows instead of needing its own copy.
+    applyCaseJsonl(raw, runDir, String(raw.suiteId ?? f.replace(/^suite-|-results.*$/g, "")));
+    const suite = normalizeSuite(raw, allShots, runId, runDir);
     const cases = suite.cases.length;
     const mtime = statSync(full).mtimeMs;
     const prev = bySuite.get(suite.suiteId);

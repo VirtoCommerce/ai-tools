@@ -921,5 +921,9 @@
     "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
     "categoryId": "05db57be-7c71-4bc4-a8c7-acb3f214e8e9",
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
+  },
+  "SR_ORDER_ACME_ELEC": {
+    "id": "cc3ff3c8-8e02-4b4a-be63-ccb632537b68",
+    "createdDate": "2026-08-26T15:56:48.9650491Z"
   }
 }

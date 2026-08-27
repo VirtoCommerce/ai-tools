@@ -206,7 +206,7 @@ export function extractReferencedBlIds(cell: string): string[] {
  * completeness claim, so an unreadable input has to be surfaced rather than
  * quietly reducing the denominator.
  */
-function buildCoverage(suitesRoot: string): {
+export function buildCoverage(suitesRoot: string): {
   byBl: Map<string, string[]>;
   referenced: Set<string>;
   unparsed: string[];

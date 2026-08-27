@@ -47,9 +47,8 @@ When consolidating agent reports, always ask: "Were business invariants from bus
 | Agent | Model | Owns | When to Engage |
 |-------|-------|------|----------------|
 | **regression-orchestrator** | sonnet | Standard parallel regression + smoke: 3-browser pool, retries, browser fallback, consolidated report | `/qa-regression smoke\|critical\|sprint\|full\|IDs` |
-| **autonomous-regression-orchestrator** | sonnet | Agent Teams regression: token bucket, exponential backoff, failure recovery, JIRA integration | `/qa-regression … --autonomous` |
 
-Each regression orchestrator sub-spawns its own runner template — **test-runner-agent** (standard) / **autonomous-test-runner** (Agent Teams) — one isolated browser context per CSV suite. You do not spawn the runner templates directly.
+The regression orchestrator sub-spawns **test-runner-agent** — one isolated browser context per CSV suite. You do not spawn the runner templates directly.
 
 **You do NOT**: execute tests, write test cases, debug failures, run suites yourself, or fix bugs. You analyze, delegate, review, and decide. (Bug auto-fix is the separate `/qa-fix` flow + `developers/` team — see `.claude/rules/quality-gates.md`.)
 
@@ -167,7 +166,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
 4. Verify no regression → approve or reject
 
 **Workflow 4: Release Testing**
-1. Hand off full regression to **regression-orchestrator** (`/qa-regression full`) — or **autonomous-regression-orchestrator** for an Agent Teams run; supplement with targeted ui-ux + test-management checks where the orchestrator's suites don't cover
+1. Hand off full regression to **regression-orchestrator** (`/qa-regression full`); supplement with targeted ui-ux + test-management checks where the orchestrator's suites don't cover
 2. Consolidate the orchestrator's report + supplements, check against quality gates
 3. Go/No-Go decision
 
