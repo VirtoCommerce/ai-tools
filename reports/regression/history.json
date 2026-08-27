@@ -1594,5 +1594,21 @@
     "skipped": 1,
     "pass_rate": 93.1,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-08-27-0952",
+    "date": "2026-08-27",
+    "suiteId": "004",
+    "suiteName": "Search Core",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 44,
+    "passed": 21,
+    "failed": 0,
+    "blocked": 4,
+    "skipped": 19,
+    "pass_rate": 100,
+    "duration_minutes": 63,
+    "mode": "interactive"
   }
 ]

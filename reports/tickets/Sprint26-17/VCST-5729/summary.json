@@ -1,0 +1,94 @@
+{
+  "ticket": "VCST-5729",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "fast",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-08-27",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": null,
+    "theme": "vc-theme-b2b-vue-2.57.0-pr-2436-f3bf-f3bffc67",
+    "relevant_modules": {}
+  },
+  "agents_dispatched": ["qa-frontend-expert", "test-management-specialist", "regression-orchestrator"],
+  "epic": {
+    "parent": null,
+    "siblings": { "done": [], "in_progress": [], "blocked_dependency": [] },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "_note": "Ticket is a Review task whose description is only the PR link — zero ticket-authored ACs. The 8 atomic conditions were derived from the PR #2436 description.",
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 8,
+    "impl_coverage": { "satisfied": 7, "drift": 0, "contradicts": 0, "not_found": 1 },
+    "conditions_total": 8,
+    "conditions_with_evidence": 7,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 87.5,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    }
+  },
+  "total_cases": 44,
+  "passed": 21,
+  "failed": 0,
+  "blocked": 4,
+  "iterations": { "enabled": false, "rounds": 1, "max_rounds": 2, "outcome": "passed" },
+  "new_cases_authored": 3,
+  "promotion": {
+    "automated": ["SRCH-013", "SRCH-NEW-059"],
+    "reviewed": [],
+    "blocked": [
+      { "case": "SRCH-011", "reason": "PR-003 run verdict BLOCKED — the ~161-381ms scope-loading window is not observable by a standard runner (browser_click returns only after Playwright settles). Steps reworked to embed a MutationObserver replay; stays Draft until a green run." },
+      { "case": "SRCH-012", "reason": "PR-003 run verdict BLOCKED — same unobservable-transient cause as SRCH-011. Steps reworked; stays Draft until a green run." }
+    ],
+    "reverted": []
+  },
+  "regression": {
+    "suites": ["004"],
+    "run_id": "REG-2026-08-27-0952",
+    "pass_rate": 100,
+    "_pass_rate_note": "100% by the deterministic gate core (compute-metrics: PASS/(PASS+FAIL), excludes blocked/skipped). 84.0% of the 25 cases actually executed. 21 PASS / 0 FAIL / 4 BLOCKED / 19 SKIPPED of 44 planned.",
+    "skipped_reason": null
+  },
+  "regression_triage": {
+    "_note": "Deterministic collect + fingerprint record + history feed ran. Full /qa-triage-results agent pass not required: 0 FAILs, and all 4 BLOCKED arrived self-classified with reasons.",
+    "invoked": false,
+    "run_id": "REG-2026-08-27-0952",
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [
+      { "case": "SRCH-NEW-045", "class": "STALE_TEST", "reason": "asserts a numbered pager; storefront uses infinite scroll. Routes to /qa-review-tests 004 --fix." },
+      { "case": "SRCH-NEW-054", "class": "TEST_STEPS_DEFECT", "reason": "asserts against a mobile on-screen keyboard desktop Chromium never renders. Routes to /qa-review-tests 004 --fix." },
+      { "case": "SRCH-011", "class": "TEST_STEPS_DEFECT", "reason": "transient window unobservable with runner tooling; steps reworked." },
+      { "case": "SRCH-012", "class": "TEST_STEPS_DEFECT", "reason": "transient window unobservable with runner tooling; steps reworked." }
+    ],
+    "report_path": null
+  },
+  "bugs_filed": [
+    { "key": "VCST-5817", "relationship": "related", "parent_or_linked_ticket": "VCST-5729", "_note": "Pre-existing BL-UI-003 violation: search input shifts 45-74px horizontally on the scope skeleton->chip swap. Does not fail this ticket." }
+  ],
+  "bugs_found_not_filed": [
+    { "summary": "mobile-search-bar.vue:8 binds aria-label=$t('common.labels.close'); that key does not exist, so the dismiss control's accessible name is the raw key. WCAG 4.1.2. Correct key is common.buttons.close. Source-verified.", "severity": "P2", "provenance": "out-of-scope", "reason_not_filed": "operator elected not to file" },
+    { "summary": "GA4 view_item_list reported as double-firing with item_list_id=category_undefined_page_1", "severity": "unconfirmed", "provenance": "out-of-scope", "reason_not_filed": "DISPROVED on re-verification: cold load and SPA navigation each produced exactly 1 view_item_list with a well-formed item_list_id and no 'undefined'. Not filed as a defect." }
+  ],
+  "business_rules_verified": ["BL-SRCH-004", "BL-UI-003"],
+  "appinsights": {
+    "checked": true,
+    "layers": ["backend"],
+    "window_minutes": 85,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 4 },
+    "correlated_failures": [],
+    "_note": "Backend (vcst-qa): 0 exceptions; 4 failed requests, all unrelated (2x /ucp/mcp 405 before the window start, 1x /api/platform/modules 401 unauthenticated probe, 1x page-builder logo-only.svg 404). Query path sanity-checked at 4116 requests/4 failed, so the zero is real. Storefront component (vcst-qa-storefront) returned 0 telemetry rows for the window — that layer's correlation is INCONCLUSIVE, not clean."
+  },
+  "screenshots": "reports/tickets/Sprint26-17/VCST-5729/screenshots/"
+}
