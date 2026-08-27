@@ -56,7 +56,7 @@ test("known selections resolve to a non-empty set", () => {
 
 test("full resolves to the manifest minus its exclude list", () => {
   const { ids } = resolveSelection(manifest, "full");
-  assert.equal(ids.length, 119, "manifest drift: full's suite count changed");
+  assert.equal(ids.length, 120, "manifest drift: full's suite count changed");
   const excluded = (manifest.selections.full as { exclude?: string[] }).exclude ?? [];
   for (const id of excluded) assert.ok(!ids.includes(id), `${id} is excluded from full but resolved`);
 });
