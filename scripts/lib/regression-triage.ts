@@ -108,6 +108,20 @@ export interface RunEntry {
    * 1-unit-per-suite (SDK CI runner). compute-metrics drops "ci" rows from a suite's
    * trend when richer rows exist, so binary CI rows don't create false crossings. */
   mode?: "ci" | "interactive";
+  /**
+   * Row SCOPE — set only by a `--cases`-filtered run. Same reasoning as `mode` above: two rows
+   * that are not measuring the same thing must not be silently comparable.
+   *
+   * `total` on a scoped row is the count that RAN, so `passed/total` is still the honest pass rate
+   * for that slice. `suite_total` is the suite's real size. Without the pair,
+   * `estimate-calibration` sees casesReported/totalCases = 1.0 on a 6-of-44 run, its 95% truncation
+   * guard never fires, and `regression:recalibrate` proposes an `estimatedMinutes` for a 44-case
+   * suite from a six-case run — corrupting the input that the 40-minute `--target` window is
+   * supposed to be calibrated from.
+   */
+  scoped?: boolean;
+  /** The suite's unfiltered case count. Present only when `scoped` is true. */
+  suite_total?: number;
 }
 
 export interface TriageEntry {

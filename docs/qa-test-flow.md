@@ -13,12 +13,26 @@ feature-test pipeline below does not run; a hotfix-status Bug points to `/qa-hot
 inherits its parent's type; everything else (Story / Task / Technical task / Epic, and a not-yet-fixed Bug)
 is a **`feature-test`** and runs the pipeline below.
 
-**Fast vs full path (feature-test only).** A bug fix / copy-tweak / config / Technical task that is P2–P3,
-single-layer and single-domain takes the **FAST** path — it skips the `1c` BA-context and `1d` story-review
-agents, authors minimal cases, runs one execution agent, and self-checks inline (no independent verifier). A
-new feature / Story / Epic, anything P0–P1, cross-layer, ≥2 domains, a critical-revenue flow, or an unclear
-surface takes the **FULL** path — `1c ‖ 1d` concurrently, full authoring, and the two hard-STOP independent
-verifiers. **When in doubt → FULL.**
+**Fast vs full path (feature-test only).** The two paths differ sharply in cost.
+
+- **FAST — a checklist, and nothing else.** A bug fix / copy-tweak / config / Technical task that is
+  P2–P3, single-layer and single-domain runs `1a`+`1b` → the Artifact B checklist (written to the ticket
+  folder) → one execution agent plus the critical-case regression → `5a`–`5f`. It builds **no Test
+  Model**, runs **no** archetype/UIP/`VC-*` sweeps, authors **no** test cases, and skips `5g` promotion
+  and every independent verifier. Two consequences are deliberate: a FAST run adds no regression
+  coverage (use `/qa-test-lifecycle` for that), and the checklist is therefore the run's **only** durable
+  record — which is why it is a committed file rather than terminal output.
+- **FULL — the whole pipeline.** A new feature / Story / Epic, anything P0–P1, cross-layer, ≥2 domains, a
+  critical-revenue flow, or an unclear surface runs `1c ‖ 1d` concurrently, **the Test Model (required —
+  it is what makes the ticket's context understandable and its documentation adequate)**, full authoring,
+  the three hard-STOP independent verifiers, and `5g` promotion.
+
+**When in doubt → FULL.**
+
+**Regression is case-scoped and time-boxed.** Step 4 runs
+`/qa-regression <ids> --cases critical --also-ids <new Draft cases>` against a suite list bounded by
+`regression:select --target 40`. Critical is ~22% of the corpus, which is what fits the 40-minute window;
+`--also-ids` is how the run's own new cases execute regardless of their priority.
 
 ### Diagram 1 — the `/qa-test` run (Steps 1–5)
 
@@ -45,7 +59,7 @@ sequenceDiagram
 
     note over Orch,BA1: Step 1 · sub-parts 1a-1e (each consumes the prior)
     note over Orch: 1a · Fetch, classify TYPE×STATUS, ROUTE flow then fast/full
-    Orch->>TR: Fetch ticket (type, STATUS, priority, ACs, PR diff) + COMMENTS + ATTACHMENTS + parent EPIC & siblings (both paths)
+    Orch->>TR: Fetch ticket (type, STATUS, priority, ACs, PR diff) + COMMENTS + ATTACHMENTS (both paths); parent EPIC siblings = FULL only
     Orch->>Orch: Route FLOW per ticket-routing.md (fix-ready Bug → /qa-verify-fix inline; hotfix → /qa-hotfix-check; else feature-test), then TYPE + PATH (fast = P2/P3 single-layer bug/tweak/tech-task; else full)
     note over Orch: 1b · Pre-flight, resolve SPRINT, dedup (all sprints)
     alt FULL path
@@ -57,41 +71,41 @@ sequenceDiagram
             Orch->>BA2: Review ACs vs PR diff (no writes)
             BA2-->>Orch: AC scorecard, gap-ACs, AC-vs-impl
         end
+        Orch->>Orch: 1e · Build TEST MODEL — REQUIRED, written to reports/ba/test-models/
+        note over Orch: Gate 1 = inline self-check (no verifier dispatch)
+        note over Orch: Step 2 · enrich the model (BL, ECL, E2E, VC-* probes, archetype + UIP sweeps)
     else FAST path
-        Orch->>Orch: Gather context inline; skip story review (note it)
+        Orch->>Orch: Gather context inline; skip story review, skip 1e ENTIRELY (note it)
+        note over Orch: Step 2 · load the domains' BL-* only — no sweeps, no VC-* triage
     end
-    Orch->>Orch: 1e · Build TEST MODEL (AC table + test scenarios + user-flow diagram)
-    note over Orch: Gate 1 = inline self-check (no verifier dispatch)
-
-    note over Orch: Step 2 · Plan — enrich the model (BL, ECL, E2E, docs), route agents
-    Orch->>Orch: Load BL/ECL/E2E (+ VirtoOZ docs if inline)
 
     note over Orch,TDE: Step 3 · Write, Review, Provision (reuse lifecycle skills)
-    Orch->>TMS: Hand off Test Model (scenarios + user-flow diagram)
-    alt New feature / Story
-        TMS->>TMS: Author new cases (A) from scenarios/diagram
-    else Bug / enhancement
-        TMS->>TMS: Map existing + gap-author (A)
+    alt FULL path
+        Orch->>TMS: Hand off Test Model (scenarios + user-flow diagram)
+        TMS->>TMS: Author new cases (A) — new feature: from scenarios; bug/enhancement: map existing + gap-author
+        TMS->>TMS: Append to regression/suites as Draft
+        TMS->>RT: Review + auto-fix new cases (--fix)
+        RT-->>TMS: Fixed cases (or flag unshippable)
+    else FAST path
+        note over Orch,TMS: NO Artifact A — a FAST run authors no cases
     end
-    TMS->>TMS: Append new cases to regression/suites as Draft; Checklist (B) + regression selection (C)
-    TMS->>RT: Review + auto-fix new cases (--fix)
-    RT-->>TMS: Fixed cases (or flag unshippable)
-    opt Cases need un-fixtured data
+    TMS->>TMS: Checklist (B) → reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md; regression scope (C)
+    opt Cases/checklist need un-fixtured data
         TMS->>TDE: generate + seed data
         TDE-->>TMS: seeded, green td:validate
     end
-    TMS-->>Orch: Draft cases in suite + Artifacts B + C + aliases
+    TMS-->>Orch: Artifact B file + C scope (+ Draft cases in suite, FULL only)
     alt FULL path
         Orch->>V: GATE 3 · re-run suites:review + td:validate (hard STOP)
         V-->>Orch: APPROVE (REJECT: uncovered condition or blocker to fix, 1 round)
     else FAST path
-        Orch->>Orch: inline self-check (same two cores)
+        Orch->>Orch: inline self-check — checklist covers every condition + td:validate green
     end
 
-    note over Orch,REG: Step 4 · Execute — checklist first, THEN scoped regression (one 3-browser budget, no exploratory)
+    note over Orch,REG: Step 4 · Execute — checklist first, THEN case-scoped regression (one 3-browser budget, no exploratory)
     Orch->>TR: Transition to in-testing (Jira, unconfirmed - precondition)
     Orch->>EX: Checklist + ticket cases + data (NO suite IDs)
-    Orch->>REG: Artifact C as its own run (runs the new Draft cases too - the "latest test")
+    Orch->>REG: /qa-regression <ids> --cases critical --also-ids <new Draft cases> · suites bounded by --target 40
     EX-->>Orch: Pass/fail, evidence, bugs
     REG-->>Orch: RUN_ID + pass rate (feeds the release gate)
     note over Orch: Gate 4 = inline self-check (every PASS has an artifact); independent re-check happens at the Step-5 verdict gate
@@ -124,11 +138,12 @@ sequenceDiagram
     Orch->>V: feed + ratify Feature Release Gate (compute-metrics --gate feature)
     V-->>Orch: ratify or downgrade
     Orch->>TR: post QA comment
-    Orch->>Orch: persist summary.json + output chat report
+    Orch->>Orch: persist summary.json (incl. timing) + update testing-checklist.md with verdicts + chat report
 
     note over Orch,TR: Step 5f · Change status (strictly after the report is posted)
     Orch->>TR: TESTED (pass) / REOPEN (fail)
     Orch-->>User: Verdict + report + next steps
+    note over Orch: FAST path ENDS here — 5g promotes cases a FAST run never authored
 ```
 
 ### Diagram 2 — after the verdict (Steps 5e / 5g)
@@ -257,7 +272,8 @@ sequenceDiagram
 - **Close-out loop (pointer, not auto-trigger — the default)** — FAIL/REOPEN → `/qa-fix` → human
   merge/deploy → `/qa-verify-fix` (RED→GREEN re-test) → TESTED/DONE; BLOCKED → resolve → re-run `/qa-test`.
   `/qa-test` states the next command and stops; it never fixes. `5g` (promotion) still runs after, whichever
-  branch fires, if Step 3 authored new cases — it never blocks or delays the close-out above.
+  branch fires, **if Step 3 authored new cases — i.e. on the FULL path only** (a FAST run authors none, so
+  its close-out ends at 5f). It never blocks or delays the close-out above.
 - **`--iterate` — the bounded test → fix → re-test loop (opt-in, Step 5k)** — with `--iterate` (default
   `--max-rounds 2`) a FAIL is *driven*, not pointed: per round `/qa-test` runs `/qa-fix` for each IN-SCOPE
   fixable bug (G0–G7, **never merges**; a G0 BAIL STOPs to a human) → `/qa-deploy-pr` deploys the fix's

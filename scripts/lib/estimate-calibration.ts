@@ -43,6 +43,18 @@ export interface DurationObservation {
   /** Cases that actually reported. A truncated run must not calibrate a full suite. */
   readonly casesReported?: number;
   readonly totalCases?: number;
+  /**
+   * The run deliberately executed only a SLICE of the suite (`/qa-regression --cases <tier>`).
+   *
+   * Distinct from truncation, and it needs its own flag rather than leaning on the coverage ratio
+   * below: on a scoped run `casesReported` and `totalCases` are BOTH the filtered count, so
+   * coverage computes to 1.0 and the truncation guard cannot see anything wrong. A 6-of-44
+   * Critical-only run would otherwise calibrate `estimatedMinutes` for the whole 44-case suite
+   * from a sixth of its work — and that number feeds `suite-selection.ts`'s `--target`, i.e. the
+   * time budget the scoping exists to satisfy. A measurement must not calibrate the instrument
+   * that produced it.
+   */
+  readonly scoped?: boolean;
 }
 
 export interface CalibratableSuite {
@@ -93,6 +105,17 @@ function median(xs: readonly number[]): number {
 export function isUsableObservation(o: DurationObservation): { usable: boolean; reason?: string } {
   if (!Number.isFinite(o.durationMinutes) || o.durationMinutes <= 0) {
     return { usable: false, reason: "no positive duration" };
+  }
+  // Checked BEFORE the coverage ratio, because on a scoped run that ratio is 1.0 by construction
+  // and would wave the observation straight through.
+  if (o.scoped) {
+    return {
+      usable: false,
+      reason:
+        o.totalCases !== undefined
+          ? `scoped run — only ${o.casesReported ?? o.totalCases} case(s) of the suite were in scope`
+          : "scoped run — a --cases slice cannot calibrate the whole suite",
+    };
   }
   if (o.totalCases !== undefined && o.casesReported !== undefined) {
     if (o.totalCases <= 0) return { usable: false, reason: "suite reports zero cases" };

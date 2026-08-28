@@ -1,6 +1,6 @@
 ---
 description: "Run regression test suites in parallel. Supports scope selection: smoke, critical, sprint, full, frontend, backend, or comma-separated suite IDs. Correlates App Insights logs for the run window. Optional --seed=<profile> pre-seeds test data; --teardown removes AGENT-TEST-* entities after run."
-argument-hint: "[smoke|critical|sprint|sprint:XX-YY|full|frontend|backend|001,004,006] [--seed=...] [--teardown] [--no-plan] [--frontend|--backend]"
+argument-hint: "[smoke|critical|sprint|sprint:XX-YY|full|frontend|backend|001,004,006] [--cases <tier>] [--also-ids <ids>] [--seed=...] [--teardown] [--no-plan] [--frontend|--backend]"
 disable-model-invocation: true
 ---
 
@@ -26,7 +26,26 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression b2b --seed=b2b              # Seed B2B data before b2b suites
 /qa-regression purchase-flow --seed=full --teardown   # Seed full, run, then teardown
 /qa-regression marketing --seed=pricing    # Seed price lists before marketing suites
+/qa-regression 004,028 --cases critical    # Only the Critical cases of those suites (change-scoped)
+/qa-regression 004 --cases critical --also-ids SRCH-060,SRCH-061   # ...plus named cases, any priority
 ```
+
+### `--cases <tier>` — run a slice of each suite, not the whole suite
+
+Opt-in, and **off by default**: without it a selection runs every case, exactly as before. With it,
+each suite's resolved CSV is narrowed by `npm run suites:filter` *before* `suites:lanes` classifies it
+(`regression-orchestrator` Step 3a), so lanes / machine lane / merge / triage / promotion are unchanged.
+
+- **Tiers:** `critical` · `high` · `medium` · `low`, or a comma list. `P0`/`P1`/`P2`/`P3` are accepted
+  as spellings of the same four tiers — the alias table `append-test-cases-to-suite.ts` already uses.
+- **`--also-ids <ids>`** keeps named cases whatever their priority. This is how `/qa-test` runs its own
+  newly authored `Draft` cases alongside the Critical slice — they are in scope by construction.
+- **Why:** `Critical` is 883 of the 3,969 canonical-header cases (~22%) and ~23% of the estimated
+  minutes, which is what puts a change-scoped run inside a 40-minute window. Pair it with
+  `npm run regression:select -- --target 40` to bound the suite list as well as the case list.
+- **Nothing is dropped silently.** The run report gains a **Scope Exclusions** section naming every
+  suite that contributed zero cases, every unreadable `Priority`, every legacy-header refusal, and any
+  `--also-ids` that matched nothing.
 
 > **Which suites a selection expands to, and how many, is NOT documented here.**
 > `config/test-suites.json` `selections` is the source of truth, and

@@ -1,0 +1,7 @@
+Test Models written by /qa-test Step 1e (FULL path only) — reports.md category 3.
+One file per ticket: <TICKET>-<YYYY-MM-DD>.md, 60-140 lines, cap 200.
+
+This directory is tracked so the path both reports.md and qa-test.md name actually exists;
+before this it did not, and the one hand-authored model in the repo landed under
+reports/ba/Organization roles/ instead. Standalone hand-authored models may still live in a
+domain subfolder — this path is for the ones /qa-test generates.

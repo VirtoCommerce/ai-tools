@@ -131,6 +131,7 @@
     "suites:lanes:all": "npx tsx scripts/regression/plan-lanes.ts --all",
     "suites:machine": "npx tsx scripts/regression/machine-lane.ts",
     "suites:merge": "npx tsx scripts/regression/merge-suite-lanes.ts",
+    "suites:filter": "npx tsx scripts/regression/filter-cases.ts",
     "suites:executability": "npx tsx scripts/test-cases/report-executability.ts",
     "suites:executability:check": "npx tsx scripts/test-cases/report-executability.ts --check",
     "td:check:pagesize": "node scripts/seed-data/b2b/check-address-page-size.mjs",

@@ -231,11 +231,51 @@ Three commands, run in this order by `regression-orchestrator` Step 3:
 
 | Command | Does |
 |---|---|
+| `npm run suites:filter -- <resolved.csv> --priority <tier> [--also-ids <ids>] --out <p>` | narrow a resolved CSV to a priority tier (+ named cases) **before** lanes sees it |
 | `npm run suites:lanes -- <ID> --run-id <R> [--csv <resolved>]` | classify every case → `suite-{ID}-lanes.json` + `suite-{ID}-resolved.browser.csv` |
 | `npm run suites:machine -- <ID> --run-id <R>` | run the machine rows via `graphql-runner.ts --case` → `suite-{ID}-results.machine.json` |
 | `npm run suites:merge -- <ID> --run-id <R>` | fold the fragments → the canonical `suite-{ID}-results.json` |
 
 `npm run suites:lanes:all` surveys the corpus and writes nothing.
+
+### The case filter — a suite is no longer the unit of SCOPE either
+
+Per-case *routing* (above) decided **where** a case runs. `suites:filter` decides **whether** it runs at
+all in a change-scoped context, and it is the mechanism behind `/qa-regression --cases <tier>` and
+`/qa-test`'s Artifact C. Selecting whole suites is what made a search-change run plan all 44 cases of
+suite `004` — 6 of them Critical, 19 skipped outright.
+
+Measured on the 117 canonical-header suites: **Critical 883 · High 1899 · Medium 1088 · Low 64 · P1 18 ·
+P2 17**, and **no `P0` row exists**. Corpus-wide Critical is 918 of 4,243 (21.6%) and ~23.2% of the
+estimated minutes — which is what makes a 40-minute window reachable for a single-module change.
+
+Four rules, and three of them are the same discipline the lane classifier already follows:
+
+- **It plugs into an existing hop, not a new one.** `regression-orchestrator` Step 3 already writes a
+  per-suite `suite-{ID}-resolved.csv` before calling `suites:lanes`; the filter rewrites that file
+  (Step 3a). Lanes, the machine lane, the merge, the results envelope, triage and promotion are
+  untouched — they see a smaller suite, not a new mechanism.
+- **A legacy 11-column header is REFUSED (exit 2), never filtered.** Same reason `plan-lanes.ts` refuses
+  it: `parseSuite` maps positionally, so on those 11 suites `Priority` is not `Priority`, and filtering
+  would drop real cases with total confidence.
+- **`P0`–`P3` are spellings, not a second vocabulary.** The alias table is `append-test-cases-to-suite.ts`'s
+  own (`PRIORITIES` / `HIGH_PRIORITIES` already pair `Critical` with `P0`), read out loud rather than
+  re-decided. A parallel table that drifted would silently change what "critical" means.
+- **Exclusion fails OPEN, and is always REPORTED.** This is the one place the discipline *inverts*
+  relative to `case-classifier.ts`: there, doubt routes to the browser lane, because a wrongly-machined
+  case manufactures a BLOCKED that reads as a product failure. Here the expensive direction is the
+  other way — a case that quietly leaves the run is a coverage hole with no error anywhere. So an
+  unreadable `Priority` does not run (it is not provably Critical) but **is named**, and a suite that
+  contributes zero cases is stated in the run report's **Scope Exclusions** section. 11 of 128 suites
+  hold no Critical case at all; a suite that vanishes without a line is indistinguishable from one that
+  passed.
+
+**Pair it with a time budget, not instead of one.** `npm run regression:select -- --target <min>` bounds
+the *suite* list by predicted makespan across the three lanes and never trims the risk floor (P0 +
+`critical-ui-scope`); `--cases critical` bounds the *case* list within each surviving suite. Note the
+standing caveat: `estimatedMinutes` is documented in `suite-selection.ts` as wrong by ×18–×88 for
+runner-native suites, so a `--target` run must **state its prediction and its exclusions** until
+`npm run regression:recalibrate` has real observations to correct it.
 
 **The classifier delegates to the executor's own parser.** `scripts/lib/case-classifier.ts` calls
 `parseSteps`/`validateStepBlocks` (the modules `graphql-runner.ts` itself uses) and

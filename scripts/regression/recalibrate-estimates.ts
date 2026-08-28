@@ -57,6 +57,9 @@ function fromHistory(): DurationObservation[] {
       durationMinutes: d,
       casesReported: passed + failed + blocked + skipped,
       totalCases: Number(r.total ?? 0),
+      // A `--cases`-scoped row measured a slice; `isUsableObservation` rejects it outright. Its
+      // own `total` is the slice size, so coverage would compute to 1.0 and look complete.
+      ...(r.scoped === true ? { scoped: true } : {}),
     });
   }
   return out;

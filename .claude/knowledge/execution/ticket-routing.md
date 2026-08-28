@@ -76,14 +76,24 @@ Resolve via the 16-status map in `skills/qa-defect/defect-lifecycle-workflow.md`
 
 ## 5. The EFFORT axis (FAST vs FULL — `feature-test` only)
 
-Once FLOW = `feature-test`, pick the path per `commands/qa-test.md` §Pipeline:
+Once FLOW = `feature-test`, pick the path per `commands/qa-test.md` §Pipeline. The two paths differ
+**sharply** in cost, so the "What runs" column is stated here rather than left implicit — a routing file
+that hides the consequence of its own decision is half a routing file:
 
-| Path | When |
-|---|---|
-| **FAST** | Bug fix / copy-tweak / config / Technical task; **P2–P3**, single-layer, single-domain, obvious surface. |
-| **FULL** | New feature / Story / Epic; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface. |
+| Path | When | What runs |
+|---|---|---|
+| **FAST** | Bug fix / copy-tweak / config / Technical task; **P2–P3**, single-layer, single-domain, obvious surface. | **A checklist, and nothing else.** `1a`+`1b` → Artifact B checklist (written to the ticket folder) → one execution agent + the critical-case regression → `5a`–`5f`. **No** `1c`/`1d` agents, **no** Test Model, **no** archetype/UIP/`VC-*` sweeps, **no** case authoring, **no** `5g` promotion, **no** independent verifier. |
+| **FULL** | New feature / Story / Epic; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface. | The whole pipeline: `1c` ‖ `1d` → **Test Model (required)** → case authoring → three hard-STOP verifier gates → `5g` promotion. |
 
 **When in doubt → FULL.**
+
+Two consequences of the FAST cut, stated so they are chosen rather than discovered:
+
+- **A FAST run authors no test cases**, so a bug fix stops contributing regression coverage through
+  `/qa-test`. `/qa-test-lifecycle` remains the way to add cases. A fix that genuinely needs durable
+  regression protection is itself a reason to route FULL.
+- **The Test Model is mandatory on FULL** — it is what makes a story's context understandable and its
+  documentation adequate, which is a need a P2 config tweak does not have.
 
 ---
 

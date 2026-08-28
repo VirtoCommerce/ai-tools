@@ -6,6 +6,15 @@
   "path": "fast|full",
   "verdict": "PASS|PASS_WITH_NOTES|FAIL|BLOCKED",
   "date": "YYYY-MM-DD",
+  "timing": {
+    "$comment": "Wall-clock for THIS /qa-test run. Per-suite durations are a different record and already live in reports/regression/history.json (durationField() in scripts/lib/regression-triage.ts derives them from the runner envelope) — do not duplicate them here. This block exists because the 40-minute regression window and the FAST/FULL split are both claims about cost, and before it the schema carried 78 keys and not one duration, so neither claim could be checked. regression_predicted_minutes is the makespan `regression:select --target` predicted; regression_actual_minutes is what the run took. An order-of-magnitude gap between them is the known ×18-×88 estimatedMinutes defect surfacing (see scripts/lib/suite-selection.ts) — record it, don't reconcile it away.",
+    "started_at": "<ISO>",
+    "finished_at": "<ISO>",
+    "steps": { "step1": 0, "step2": 0, "step3": 0, "step4": 0, "step5": 0 },
+    "agent_dispatches": 0,
+    "regression_predicted_minutes": null,
+    "regression_actual_minutes": null
+  },
   "environment": "{FRONT_URL}",
   "build": {
     "platform": "{PlatformVersion}",

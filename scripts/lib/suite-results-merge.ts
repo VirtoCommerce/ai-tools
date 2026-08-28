@@ -70,6 +70,24 @@ export interface MergeInput {
   /** From the lanes file: every case the run intended to execute, and where. */
   planned: ReadonlyArray<{ id: string; lane: CaseLane }>;
   fragments: ReadonlyArray<Fragment>;
+  /**
+   * Present only on a `--cases`-scoped run (`suites:filter`'s sidecar). It records that `planned`
+   * is a SLICE of the suite, not the suite.
+   *
+   * Without it the envelope is indistinguishable from a full run: `totalCases` below is derived
+   * from `planned`, so a 6-of-44 scoped run reports 6/6 and every downstream consumer —
+   * `history.json`, the flakiness trend, and above all `estimate-calibration`'s 95%-coverage
+   * guard — reads it as complete. `estimatedMinutes` would then be recalibrated from a fifth of
+   * a suite while believing it saw all of it.
+   *
+   * `totalCases` stays the PLANNED count on purpose: the pass rate must be over what the run
+   * actually intended to execute. The unfiltered size travels separately, as `unfilteredTotal`.
+   */
+  caseFilter?: {
+    readonly tiers: readonly string[];
+    readonly keptCases: number;
+    readonly sourceCases: number;
+  };
 }
 
 export interface MergeResult {
@@ -182,6 +200,15 @@ export function mergeSuiteResults(input: MergeInput): MergeResult {
     startedAt: earliest(input.fragments, "startedAt"),
     completedAt: latest(input.fragments, "completedAt"),
     totalCases: total,
+    // Scope provenance — absent on a normal run, so a full envelope is byte-identical to before.
+    ...(input.caseFilter
+      ? {
+          scoped: true,
+          caseFilter: input.caseFilter,
+          /** The suite's real size before filtering — the denominator calibration must use. */
+          unfilteredTotal: input.caseFilter.sourceCases,
+        }
+      : {}),
     passed: tally.PASS,
     failed: tally.FAIL,
     blocked: tally.BLOCKED,

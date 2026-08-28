@@ -64,6 +64,27 @@ function main(): void {
     planned: Array<{ id: string; lane: CaseLane }>;
   };
 
+  // Scope sidecar, written by `suites:filter` on a `--cases` run. Absent on a normal run, and its
+  // absence is not an error — but when it IS present the envelope must say so, or a slice of a
+  // suite lands in history looking exactly like the whole suite. Read defensively: a malformed
+  // sidecar must not fail the merge, but it must not silently vanish either.
+  const scopePath = join(runDir, `suite-${suiteId}-filter.json`);
+  let caseFilter: { tiers: string[]; keptCases: number; sourceCases: number } | undefined;
+  if (existsSync(scopePath)) {
+    try {
+      const s = JSON.parse(readFileSync(scopePath, "utf-8")) as Record<string, unknown>;
+      const sourceCases = Number(s.sourceCases);
+      const keptCases = Number(s.keptCases);
+      if (Number.isFinite(sourceCases) && Number.isFinite(keptCases) && sourceCases > 0) {
+        caseFilter = { tiers: (s.tiers as string[]) ?? [], keptCases, sourceCases };
+      } else {
+        console.warn(`[suites:merge] WARN ${scopePath} has no usable sourceCases — the run will record as UNSCOPED.`);
+      }
+    } catch (e) {
+      console.warn(`[suites:merge] WARN ${scopePath} is not valid JSON (${(e as Error).message}) — recording as UNSCOPED.`);
+    }
+  }
+
   const fragments: Fragment[] = [];
   for (const lane of LANES) {
     const path = join(runDir, `suite-${suiteId}-results.${lane}.json`);
@@ -83,6 +104,7 @@ function main(): void {
     runId,
     planned: lanes.planned,
     fragments,
+    ...(caseFilter ? { caseFilter } : {}),
   });
 
   for (const w of warnings) console.warn(`[suites:merge] WARN ${w}`);
