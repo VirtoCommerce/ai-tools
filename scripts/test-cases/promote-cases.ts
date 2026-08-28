@@ -474,11 +474,23 @@ export function planSuite(input: SuitePlanInput): SuiteDecision {
  * Append `Promoted: <label> (<date>)`, never clobbering the sibling `Synced:` / `Audited:`
  * stamps the same free-text cell already carries.
  */
-export function stampReferences(references: string, label: string, date: string): string {
-  const stamp = `Promoted: ${label} (${date})`;
-  if (references.includes(stamp)) return references;
-  const trimmed = references.trim();
+/**
+ * Append an idempotent `Verb: label (date)` stamp to the free-text References
+ * cell, preserving whatever stamps are already there.
+ *
+ * Parameterized on the verb because `demote-cases.ts` needs the identical
+ * rule and had grown a byte-for-byte copy differing only in that word. Two
+ * copies of an idempotent-append rule is how one of them stops being idempotent.
+ */
+export function appendStamp(references: string, verb: string, label: string, date: string, note = ""): string {
+  const stamp = `${verb}: ${label} (${date})${note ? ` ${note}` : ""}`;
+  if ((references ?? "").includes(stamp)) return references ?? "";
+  const trimmed = (references ?? "").trim();
   return trimmed ? `${trimmed} | ${stamp}` : stamp;
+}
+
+export function stampReferences(references: string, label: string, date: string): string {
+  return appendStamp(references, "Promoted", label, date);
 }
 
 // ---------------------------------------------------------------------------

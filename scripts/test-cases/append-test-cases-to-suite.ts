@@ -43,6 +43,7 @@ import { join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { parse as parseCsv } from "csv-parse/sync";
 import { stringify as stringifyCsv } from "csv-stringify/sync";
+import { hasDiscriminatingAssertion, isUnclassified } from "./lint-test-cases.js";
 
 export const COLUMNS = [
   "ID",
@@ -252,6 +253,218 @@ export function validateRows(
   return { errors, warnings };
 }
 
+/* ------------------------------------------------------------------ *
+ * Design stamps — Archetype + Technique (the /qa-test Step 1e contract)
+ * ------------------------------------------------------------------ */
+
+/**
+ * A test case is only as good as the defect it was designed to catch. The
+ * `/qa-test` Step 1e Test Model now carries that decision per scenario row
+ * (defect hypothesis · archetype · technique · oracle), but the model is
+ * TERMINAL-ONLY — nothing is written to disk, so no linter can ever read it.
+ *
+ * This appender is the single door into `regression/suites/`, and it sees only
+ * NEW rows. That makes it the one place a deterministic gate can enforce the
+ * design decision without lighting up the 4,000+ legacy cases (which carry no
+ * stamp and are deliberately untouched) and without a `--warn-only` escape
+ * hatch that would quietly retire the rule.
+ *
+ * Both vocabularies are READ AT RUN TIME from the markdown that owns them,
+ * never duplicated here: a hardcoded `Set` is exactly the transcribed constant
+ * `.claude/rules/test-data.md` §GOLDEN RULE forbids — it would go stale the
+ * first time someone adds an archetype and would fail silently, by rejecting a
+ * legitimate token. Unreadable source ⇒ non-zero exit, never a silent pass
+ * (same discipline as `tokens:check`).
+ */
+export interface DesignVocabulary {
+  /** Probeable failure shapes — the only archetypes a test case may claim. */
+  archetypes: Set<string>;
+  /** BY-DESIGN / CONVENTION: catalog-only false-positive guards, not probes. */
+  nonDefectArchetypes: Set<string>;
+  techniques: Set<string>;
+}
+
+const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../..");
+const CATALOG_MD = "/.claude/knowledge/oracles/vc-bug-catalog.md";
+const TECHNIQUES_MD = "/.claude/skills/qa-test-design/test-design-techniques.md";
+
+/** First readable candidate: repo-root-relative (cwd-independent), then cwd. */
+function readVocabFile(relPath: string): string {
+  for (const base of [REPO_ROOT, process.cwd()]) {
+    const full = join(base, relPath);
+    if (existsSync(full)) return readFileSync(full, "utf-8");
+  }
+  fail(
+    `Cannot read the vocabulary source ${relPath} (looked in ${REPO_ROOT} and ${process.cwd()}). ` +
+      `Refusing to append: without it, a bad Archetype/Technique token cannot be told from a good one.`,
+  );
+}
+
+/** Tokens in the leading `| \`X\` |` cell of every row of a markdown table. */
+function tableTokens(section: string): Set<string> {
+  const out = new Set<string>();
+  for (const line of section.split("\n")) {
+    const m = /^\|\s*`([A-Z][A-Z0-9-]*)`\s*\|/.exec(line.trim());
+    if (m) out.add(m[1]);
+  }
+  return out;
+}
+
+/** Parse both vocabularies from the markdown files that own them. */
+export function loadDesignVocabulary(): DesignVocabulary {
+  const catalog = readVocabFile(CATALOG_MD);
+  const start = catalog.indexOf("### Defect archetypes");
+  if (start < 0)
+    fail(`${CATALOG_MD} has no "### Defect archetypes" section — cannot validate Archetype stamps.`);
+  // The section runs to the next `## ` domain heading.
+  const rest = catalog.slice(start);
+  const end = rest.search(/\n## [^#]/);
+  const section = end < 0 ? rest : rest.slice(0, end);
+
+  const split = section.indexOf("**Non-defect entries**");
+  const defectPart = split < 0 ? section : section.slice(0, split);
+  const nonDefectPart = split < 0 ? "" : section.slice(split);
+
+  const archetypes = tableTokens(defectPart);
+  const nonDefectArchetypes = tableTokens(nonDefectPart);
+  // Section-scoped, like the archetypes above. Scanning the whole file made
+  // every table in it a candidate vocabulary source: harmless today (it yields
+  // exactly the seven §0 tokens) but any future table with a backticked
+  // ALL-CAPS first cell would silently widen what the gate accepts.
+  const techMd = readVocabFile(TECHNIQUES_MD);
+  const techStart = techMd.indexOf("## 0. Technique tokens");
+  if (techStart < 0)
+    fail(`${TECHNIQUES_MD} has no "## 0. Technique tokens" section — cannot validate Technique stamps.`);
+  const techRest = techMd.slice(techStart);
+  const techEnd = techRest.search(/\n## [^#]/);
+  const techniques = tableTokens(techEnd < 0 ? techRest : techRest.slice(0, techEnd));
+
+  if (archetypes.size === 0)
+    fail(`Parsed 0 defect archetypes from ${CATALOG_MD} — the table shape changed; fix the parser.`);
+  if (techniques.size === 0)
+    fail(`Parsed 0 technique tokens from ${TECHNIQUES_MD} — expected the "§0 Technique tokens" table.`);
+
+  return { archetypes, nonDefectArchetypes, techniques };
+}
+
+export const ARCHETYPE_STAMP_RE = /\bArchetype:\s*([A-Za-z][A-Za-z0-9-]*)/;
+const TECHNIQUE_STAMP_RE = /\bTechnique:\s*([A-Za-z][A-Za-z0-9-]*)/;
+const PROBE_STAMP_RE = /\bProbe:\s*(VC-[A-Z0-9]+-\d+)/g;
+
+/**
+ * Enforce the design stamps on incoming rows. Pure — takes the vocabulary, so
+ * the unit tests exercise it without touching the filesystem.
+ *
+ * `catalogProbeIds` is optional: when supplied, a `Probe:VC-*` stamp must name a
+ * real catalog entry (a stamp pointing at nothing is worse than no stamp — it
+ * reads as traceability that was never checked).
+ */
+export function validateDesignStamps(
+  newRows: Row[],
+  vocab: DesignVocabulary,
+  catalogProbeIds?: Set<string>,
+): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  newRows.forEach((row, i) => {
+    const where = `new row ${i + 1} (${row.ID || "<no ID>"})`;
+    const refs = row.References ?? "";
+
+    const a = ARCHETYPE_STAMP_RE.exec(refs);
+    if (!a) {
+      errors.push(
+        `${where}: References must carry an "Archetype:<TOKEN>" stamp — the defect shape this case ` +
+          `probes (vocabulary: .claude/knowledge/oracles/vc-bug-catalog.md § Defect archetypes)`,
+      );
+    } else if (vocab.nonDefectArchetypes.has(a[1])) {
+      errors.push(
+        `${where}: Archetype "${a[1]}" is a catalog-only false-positive guard, not a probeable ` +
+          `failure shape — a test case cannot claim it`,
+      );
+    } else if (!vocab.archetypes.has(a[1])) {
+      errors.push(
+        `${where}: Archetype "${a[1]}" is not in the vocabulary ` +
+          `(${[...vocab.archetypes].sort().join(", ")})`,
+      );
+    }
+
+    const t = TECHNIQUE_STAMP_RE.exec(refs);
+    if (!t) {
+      errors.push(
+        `${where}: References must carry a "Technique:<TOKEN>" stamp ` +
+          `(vocabulary: .claude/skills/qa-test-design/test-design-techniques.md §0)`,
+      );
+    } else if (!vocab.techniques.has(t[1])) {
+      errors.push(
+        `${where}: Technique "${t[1]}" is not in the vocabulary ` +
+          `(${[...vocab.techniques].sort().join(", ")})`,
+      );
+    }
+
+    // Assertion STRENGTH (T-006) — the hard gate, new rows only.
+    //
+    // Corpus-wide this is an Informational tally in lint-test-cases.ts, because
+    // ~1,900 existing cases would fail it and a red corpus gets routed around.
+    // Here it is an error: the appender is the single door into
+    // regression/suites/, so a NEW presence-only case simply never lands.
+    //
+    // A presence assertion cannot distinguish correct content from incorrect —
+    // it fails only when the element is absent, the rarest failure mode. The
+    // strong classes (INV/REL/DER/SHAPE) are all literal-free, so this does not
+    // conflict with GRD-002 / DV-016; it is the third path out of them.
+    const assertionLines = (row.Assertions ?? "")
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    // Zero assertions is strictly worse than presence-only, and the `&&` guard
+    // used to let it straight through: `validateRows` never requires Assertions
+    // either, so the single door into regression/suites/ admitted a case that
+    // checks nothing at all.
+    if (!assertionLines.length) {
+      errors.push(
+        `${where}: no assertions — the case checks nothing. Every case needs at least one ` +
+          `INV/REL/DER/NEG/SHAPE assertion. See test-case-template.md §Assertion STRENGTH`,
+      );
+    } else if (isUnclassified(assertionLines)) {
+      // The classifier could not read ANY line. That is a gap in its vocabulary,
+      // not proof the case is weak — so it is a warning, never a rejection.
+      warnings.push(
+        `${where}: the strength classifier recognises none of these assertion forms — the row is ` +
+          `allowed through, but check it carries a real expected value, and consider extending ` +
+          `classifyAssertionStrength() in lint-test-cases.ts`,
+      );
+    } else if (!hasDiscriminatingAssertion(assertionLines)) {
+      errors.push(
+        `${where}: every assertion is presence-only (visible/shown/present) — the case cannot fail ` +
+          `on a wrong value. Add at least one INV/REL/DER/NEG/SHAPE assertion (a measured invariant, a ` +
+          `relation between two observations, a comparison against an @td()-derived value, an ` +
+          `assertion that something specific did NOT happen, or a format/order/count check). ` +
+          `See test-case-template.md §Assertion STRENGTH`,
+      );
+    }
+
+    if (catalogProbeIds) {
+      for (const m of refs.matchAll(PROBE_STAMP_RE)) {
+        if (!catalogProbeIds.has(m[1]))
+          errors.push(`${where}: Probe stamp "${m[1]}" names no entry in vc-bug-catalog.md`);
+      }
+    }
+  });
+
+  return { errors, warnings };
+}
+
+/** Every `### VC-*` entry id in the catalog, for Probe-stamp validation. */
+export function loadCatalogProbeIds(): Set<string> {
+  const out = new Set<string>();
+  for (const line of readVocabFile(CATALOG_MD).split("\n")) {
+    const m = /^###\s+(VC-[A-Z0-9]+-\d+)/.exec(line);
+    if (m) out.add(m[1]);
+  }
+  return out;
+}
+
 /** Serialise rows to a CSV body (no header), correctly quoted. */
 export function serialiseRows(rows: Row[]): string {
   const matrix = rows.map((r) => COLUMNS.map((c) => r[c] ?? ""));
@@ -390,6 +603,12 @@ function main(): void {
     );
 
   const { errors, warnings } = validateRows(newRows!, existingIds, existingTitleSection);
+
+  // Design stamps: the deterministic half of the /qa-test Step 1e contract.
+  // Applied to incoming rows only, so the legacy corpus is untouched.
+  const stamps = validateDesignStamps(newRows!, loadDesignVocabulary(), loadCatalogProbeIds());
+  errors.push(...stamps.errors);
+  warnings.push(...stamps.warnings);
 
   // Cross-suite ID collision check (opt-in): the in-suite check above cannot see
   // an ID that already lives in a DIFFERENT suite, which is the collision that

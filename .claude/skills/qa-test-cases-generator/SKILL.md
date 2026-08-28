@@ -39,6 +39,12 @@ Load these references during generation:
 - **e-commerce-edge-cases-library.md** — `ECL-*` IDs to populate `Edge_Case_Refs` column
 - **catalog.md**, **store-settings.md** — Product types, store config for realistic test data
 - **platform-patterns.md** — Common platform behaviors to inform assertions
+- **For any Storefront/UI case — these were previously invisible to this skill and are what make a UI assertion strong:**
+  - **business-logic.md Domain 15 (`BL-UI-*`)** — the measurable UI invariants (CLS, spacing grid, state-induced shift, content boundary, alignment, touch target, keyboard operability), each with its own `Verify` recipe. Assert them with the measurable tags, never in prose.
+  - **oracles/critical-ui-scope.md** — 36 components × applicable `BL-UI-*`, each with a per-component audit protocol and **real selectors**. Use it as the scope list: which components this change touches, and which invariants apply to each.
+  - **skills/qa-design/SKILL.md §State-Stress Pass** — the seven states every UI surface must survive (loading · empty · error/disabled · overflow · validation-error · anonymous · dark theme). This is a ready-made case matrix; sweep it rather than inventing states.
+  - **automation/storefront-selectors.md** + `scripts/lib/storefront-selectors.generated.ts` — real `data-test-id` values. Prefer a test id over a label (a label is an i18n key, so a label-based locator is locale-dependent — and the language selector is itself under test).
+  - **skills/qa-sbtm/modern-web-attack-surface.md** — the `UIP-*` probe catalog (§Unexpected-action sweep below).
 
 ## Execution
 
@@ -205,7 +211,7 @@ ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test
 - [ ] **Preconditions** — Human-readable state requirements, use `{{VAR}}` for env values. Express as **state**, never as "after running <ID>" (ISTQB independence rule). If setup duplicates another case's first ≥70% of steps, use `Preconditions: state from <ID> (state summary)` instead of restating the flow (avoid-repetition rule).
 - [ ] **Test_Data** — Only `key={{VAR}}` bindings, comma-separated
 - [ ] **Steps** — Every step tagged: `[NAV]`, `[ACT]`, `[WAIT]`, `[SCROLL]`, `[KEY]`. One action per line. WAIT after every state-changing ACT
-- [ ] **Assertions** — Tagged: `[DOM]`, `[STATE]`, `[MATH]`, `[FORMAT]`, `[NAV]`. Explicit predicates, no vague language
+- [ ] **Assertions** — Tagged: `[DOM]`, `[STATE]`, `[MATH]`, `[FORMAT]`, `[NAV]`. Explicit predicates, no vague language. **≥1 assertion of class `INV`/`REL`/`DER`/`SHAPE`** — a case whose assertions are all `PRES` (visible / shown / present / renders) is rejected by `T-006`. For a Storefront layout/geometry case prefer the measurable tags (`[SHIFT]` `[TOUCH]` `[SPACING]` `[ALIGN]` `[OVERFLOW]` `[CLS]`) over prose inside `[DOM]`. See `test-case-template.md` §Assertion STRENGTH + §Measurable UI vocabulary
 - [ ] **Cross_Layer_Checks** — Tagged: `[API]`, `[CONSOLE]`, `[NETWORK]`, `[ADMIN]`, `[EMAIL]`. Every mutation MUST check `errors[]` is empty
 - [ ] **Failure_Signals** — At least 2: one timeout signal + one API/console signal
 - [ ] **Cleanup** — State restoration or `none`
@@ -358,7 +364,12 @@ Generated test cases route to the correct executing agent by layer:
   - **Never pad to hit a number** — cull duplicates first (Step 3 §6), then split only when the *legitimate* case count outgrows one session. Smoke aggregators (042/078) are deliberate exceptions.
   - **Counts live only in `config/test-suites.json`** (`testCount` per suite) — never restate them in the CSV, the suites README, or here. Regenerate/verify with `npm run suites:sync` / `npm run suites:lint`.
 - **Format is non-negotiable** — every case MUST use all 15 columns from `test-case-template.md`
-- **No vague assertions** — "page loads correctly" is not an assertion. Use `[DOM] product title visible` or `[NAV] URL matches /product/*`
+- **No vague assertions** — "page loads correctly" is not an assertion.
+- **No presence-only cases.** Every case needs ≥1 assertion of class `INV`/`REL`/`DER`/`SHAPE`
+  (`test-case-template.md` §Assertion STRENGTH). `[DOM] product title visible` is class `PRES` — legal
+  as a *guard*, never as the case's only check: it passes when the title renders the wrong product.
+  The strong forms are `[REL] PDP title == listing title for the same SKU`,
+  `[DOM] title equals @td(PROD_CFG_BIKE.name)`, or `[SHIFT] topDelta == 0` for a layout case.
 - **No compound steps** — one action per `[ACT]` line. Wrong: `click Add to Cart and verify badge`. Right: separate `[ACT]` and `[ASSERT]`. This rule still applies inside journey cases — each action is one `[ACT]`; the journey is built from many sequential `[ACT]`/`[ASSERT]` rounds, not from compound lines
 - **Frontend journeys are exceptions to atomicity** — for Storefront UI flows where behavior depends on cross-screen state (checkout, cart→order, login+purchase, BOPIS end-to-end, address/org switch mid-journey), write one journey case with `--- SCREEN: <name> ---` dividers in `Steps`, `[JOURNEY]` tag in `Section`, and an `[ASSERT]` at every screen boundary. Do NOT shard into atomic per-screen cases. See `agents/test-management-specialist.md` → Frontend Journey Exception for full criteria
 - **Always resolve test data, never hardcode** — URLs and credentials use `{{VAR}}` (env-backed). Entity-specific values — IDs, SKUs, prices, emails, addresses, coupon codes, test-card numbers, order numbers, virtual-catalog roots, URL path segments — use `@td(ALIAS.field)` resolved against [`test-data/aliases.json`](../../../test-data/aliases.json). Hardcoded fixtures rot when catalogs are reseeded or orgs are recreated. See `../testing/qa-postman/test-data-fixtures.md` for the full resolver contract and patterns. Validate with `npx tsx scripts/test-data/validate-td-refs.ts`

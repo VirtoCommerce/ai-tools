@@ -212,8 +212,9 @@ sequenceDiagram
   halting the chain, then a **cross-story E2E** — and rolls the per-story Feature Release Gates into one
   **Epic verdict** (all GO + E2E clean + 0 open P0 across the Epic → releasable). Every per-story gate still
   fires; merge/release stay human.
-- **Step 1e Test Model** — carries the AC table **plus the enumerated test scenarios and a Mermaid
-  user-flow diagram**; those two are the artifact `test-management-specialist` authors cases from in Step 3.
+- **Step 1e Test Model** — carries the AC table **plus a condition space, an explicit reduction
+  rationale, a defect-hypothesis scenario matrix (cell · hypothesis · archetype · technique · oracle) and a Mermaid
+  user-flow diagram**; that matrix is the artifact `test-management-specialist` authors cases from in Step 3.
 - **Step 2 docs gate** — the VirtoOZ docs query is skipped when the BA already returned docs grounding.
 - **Step 3 test-quality gate** — newly authored cases pass `/qa-review-tests --fix` (11 dimensions) and are
   **appended into `regression/suites/` as `Draft`**; test data is seeded (green `td:validate`) before

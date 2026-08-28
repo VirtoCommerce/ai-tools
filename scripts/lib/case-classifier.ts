@@ -131,6 +131,20 @@ const RUNNER_OP_KINDS = new Set<StepBlock["kind"]>([
  * which is the safe direction. `lint-test-cases.ts` S-006 + the `suites:lint` case-variant
  * ratchet are what keep the column to the canonical spellings in the first place.
  */
+/**
+ * Statuses whose cases are executed by NOBODY — EX-200 (`manual`, a person runs
+ * it) and EX-201 (`deprecated`, nobody does). Exported because "does this case
+ * consume regression time?" is now asked in three places, and a second copy is
+ * how two enforcers come to disagree: `rank-cases` and `demote-cases` each grew
+ * their own literal, matched case-SENSITIVELY, and immediately disagreed with
+ * this module about `"manual"`.
+ */
+export const NON_EXECUTING_STATUSES: ReadonlySet<string> = new Set(["manual", "deprecated"]);
+
+export function isNonExecutingStatus(status: string | undefined): boolean {
+  return NON_EXECUTING_STATUSES.has((status ?? "").trim().toLowerCase());
+}
+
 function statusOptOut(row: ClassifiableRow): "manual" | "deprecated" | null {
   const v = (row.Automation_Status ?? "").trim().toLowerCase();
   if (v === "manual") return "manual";

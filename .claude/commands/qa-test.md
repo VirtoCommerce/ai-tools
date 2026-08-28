@@ -199,8 +199,19 @@ they are the spine for Step 3 and Step 5b.
 
 #### 1e — Build the Test Model (the Step 1 output)
 
-Distill `1c` context + `1d` story analysis + `1a` scope/domains into one structured model — the coverage
-spine Step 3 consumes. Keep it in working context (terminal-only, no file):
+Distill `1c` context + `1d` story analysis + `1a` scope/domains into one structured model — the **fault
+model** Step 3 authors cases from. It answers *"how can this feature be wrong, and what would catch each
+way?"*, not *"is every acceptance criterion represented?"* — coverage is necessary but it is not the goal,
+and a model that only traces ACs produces a suite that confirms the feature instead of attacking it. Keep
+**Write it to `reports/ba/test-models/<TICKET>-<date>.md`** — a durable artifact, not a terminal
+dump. Three reasons it has to be a file: a model nobody can re-open cannot be *argued with*, which
+is the whole point of having one; the parameter model for a surface (cart, checkout, org roles) does
+not change per ticket, so as a file it is **reused** and as terminal output it dies with the session;
+and a file can be linted (`npm run model:lint`), so the five parts and the resolved sweeps are
+checkable rather than asserted. It is `reports.md` **category 3** — the same durable BA test-design
+model the rules already provide for. Keep the *other* Step-1 artifacts terminal-only as before.
+
+Shape:
 ```
 TEST MODEL — <ticket-key>
 Ticket:      <ticket-key> | Type: Bug/Story/Task/Technical task/Sub-task/Epic | Status role: fix-ready/not-fixed/testable | Flow: feature-test | Priority: P0/P1/P2 | Path: FAST/FULL | Changed: Backend / Frontend / Both
@@ -213,7 +224,13 @@ Flows & boundaries: [cart ↔ checkout, ...]
 Risk areas:  [VC-* pain points / historical failures]
 AC traceability: [N atomic conditions — story ACs + gap-ACs, each w/ Impl verdict]   (from 1d)
 DoD (optional — only when the ticket declares one): [Definition-of-Done items, each marked confirmed-now / confirm-at-5b]   (from 1d)
-Test scenarios: [enumerated positive / negative / edge scenarios for this feature]   ← authored from in Step 3
+Condition space: [factor → value classes, one line per factor; + constraints (infeasible combos); raw cells = N]
+Reduction:       [technique + WHAT was collapsed and WHY — name the dropped factor and what subsumes it; N → M]
+Test scenarios (M rows — one per surviving cell)   ← authored from in Step 3
+  | # | Cell (factor values) | Defect hypothesis — what breaks here, and why it plausibly would | Archetype | Technique | Oracle | P |
+Probes carried in: [vc-bug-catalog VC-*-NNN whose Detection probe hits this surface → scenario # | N/A + reason]   (filled in Step 2)
+Archetype sweep:  [archetypes in scope for these domains → covered by # | WAIVED + reason]                        (filled in Step 2)
+UIP sweep (UI only): [UIP-BACK/DEEP/REFRESH/TABS/EXPIRE/STORAGE/NET/INPUT/VIEW/DATA → covered by # | WAIVED + reason]  (filled in Step 2)
 User-flow diagram: [Mermaid flowchart of the primary + alternate user paths]         ← authored from in Step 3
 Business Rules: [BL-CART-001, BL-PAY-003, ...]   (filled in Step 2)
 Edge cases:  [ECL-* patterns]                    (filled in Step 2)
@@ -221,15 +238,59 @@ Docs grounding: [VirtoOZ / VC-doc refs]
 Agents to dispatch: [list]
 ```
 **`Test scenarios` + `User-flow diagram` are the artifact `test-management-specialist` authors test cases
-from in Step 3** — enumerate the scenarios that cover the feature's condition space, and draw the user flow
-as a Mermaid `flowchart` (primary path + the alternate/error branches a test must exercise). On the FAST
-path the scenario list is short and the diagram may be omitted for a single-surface tweak.
+from in Step 3.** Draw the user flow as a Mermaid `flowchart` (primary path + the alternate/error branches
+a test must exercise). The scenario table is not a list of things to try — it is a **fault model**: each
+row names a way this feature can be *wrong*, and the case authored from it is the thing that would catch
+that. Five rules make it that rather than a relabelled walkthrough:
 
-**Gate (inline self-check):** ticket **flow + type + path** set (flow = `feature-test` — a `verify-fix` /
-`hotfix-verify` route never reaches 1e); ACs decomposed to **atomic conditions**;
-scenarios enumerated; **BL/ECL/domains** and **risk areas** present. On the full path, if the model is
-missing an atomic condition or a `ba-system-analyzer` risk area, add it before moving on. (No fresh-`qa-lead`
-dispatch here — this is the doer's own completeness check.)
+- **A row without a defect hypothesis is not written.** The bar is
+  `.claude/skills/qa-test-cases-generator/SKILL.md` §Step 3 — *"what real bug would this catch and why
+  would it occur?"* — plus its §6 cull rule (drop a row that duplicates another row's hypothesis, tests
+  infrastructure, or would only fail if the framework itself were broken). **Cite it; do not restate it.**
+  This is the gap the table exists to close: the generator has always demanded a bug hypothesis, and the
+  model used to hand it a flat scenario list with nowhere to put one.
+- **The oracle comes from the specification, never from the implementation or the running system.**
+  `{BL-…}` / `{SPEC}` / `{DOC}` are oracles; **`{OBSERVED}` is a baseline, not an oracle** — writing down
+  what the live app currently does turns a bug into the expected result, and it also suppresses the
+  bug-exposing case that would have caught it. Same provenance grammar `lint-test-cases.ts` GRD-001
+  already enforces on `Assertions`, so the row pre-grounds the case.
+- **Technique follows the hypothesis, not house style** — which technique wins is fault-type dependent, so
+  a table produced entirely by one technique is blind to whatever that technique cannot detect. Tokens and
+  selection rules: `/qa-test-design` (`SKILL.md` §3 + `test-design-techniques.md` §0 tokens / §6 interaction
+  rule — cite it, never restate it); **`t=2` by default, `t=3` ceiling, `t=4` revenue-critical only.**
+- **Archetype is one token** from the Defect archetypes table in `knowledge/oracles/vc-bug-catalog.md`.
+  It is what makes a blind spot visible *at design time* rather than in a later audit.
+- **`Reduction` is the anti-vanity field.** Without it, "M scenarios" is unfalsifiable; with it a reader
+  can attack the reduction ("do status and lock actually not interact?"), which is where real coverage
+  arguments live. Name the dropped factor and what subsumes it — not just the arithmetic.
+
+Worked reference for the whole shape (condition space → explicit reduction rationale → cells with oracle
+provenance): `reports/ba/Organization roles/test-model-VCST-5281-2026-08-03.md`.
+
+**FAST path.** Counts may be trivial (`1 factor × 3 classes, 3 → 3`), the diagram may be omitted for a
+single-surface tweak, and `Probes carried in` may be one line. **The hypothesis column is never optional,
+and neither is one archetype token per row** — two tokens and a clause is not a FAST-path burden, and
+dropping them is how FAST becomes the loophole that swallows the whole change.
+
+**Gate (inline self-check) — every clause must be contradictable by a reader.** "Scenarios enumerated"
+was the old bar and it cannot be wrong; these can:
+
+1. Ticket **flow + type + path** set (flow = `feature-test` — a `verify-fix` / `hotfix-verify` route never
+   reaches 1e); ACs decomposed to **atomic conditions**; **BL/ECL/domains** and **risk areas** present.
+2. `Condition space` states the factors, their value classes, the constraints, and **raw cell count N**.
+3. `Reduction` states `N → M` **and names the factors it dropped and what subsumes them**. An unstated
+   reduction is the finding — a scenario count nobody can attack is not a coverage argument.
+4. **Every** scenario row carries all five: cell · defect hypothesis · archetype · technique · oracle.
+   No blanks, no "TBD", no hypothesis that merely restates the step ("check that X works").
+5. Every oracle is `{BL-…}`/`{SPEC}`/`{DOC}` — or, if `{OBSERVED}`/`{HYPOTHESIS}`, the row says what
+   would make it a real oracle. An expected value read off the live system is not an oracle.
+6. `Archetype sweep` resolved: every archetype in scope for these domains is either covered by a row
+   or **WAIVED with a reason**. Silence is not a waiver.
+
+On the full path, a missing atomic condition or `ba-system-analyzer` risk area is added before moving on.
+(No fresh-`qa-lead` dispatch here — this is the doer's own completeness check. The deterministic gate is
+one step downstream, at Step 3's appender, because the Test Model is terminal-only and no script can
+read it.)
 
 ---
 
@@ -244,6 +305,23 @@ dispatch here — this is the doer's own completeness check.)
 - **e-commerce-edge-cases-library.md** — the `ECL-*` patterns.
 - **domain-checklists.md** / **backend-admin-checklists.md** / **graphql-checklist.md** (via `/qa-checklist`) — checklist items for the domains.
 - **`.claude/skills/qa-plan/e2e-scenario-catalog.md`** — map to the `E2E-*` scenario(s) and inherit their pre-mapped regression suites (the suite-traceability backbone for Step 3's Artifact C).
+- **oracles/vc-bug-catalog.md** — the `VC-*` entries for these domains. **Each entry's `Detection probe`
+  is a ready-made scenario**: carry it into the model's `Test scenarios` as its own row (archetype = the
+  entry's `Archetype:`, oracle = `{OBSERVED} VC-…`), or record it in `Probes carried in` as `N/A + reason`.
+  **Silence is not an answer** — a domain's entries are triaged, not skimmed. Skip `BY-DESIGN` and
+  `CONVENTION` entries as scenario candidates: those are false-positive guards, and the right use is to
+  *avoid filing* the behaviour they describe. Then fill `Archetype sweep`: for each archetype in scope for
+  these domains, name the covering row or waive it with a reason.
+- **For a UI/storefront surface — the oracles that make a UI assertion strong** (previously unreachable
+  from authoring): `business-logic.md` **Domain 15 `BL-UI-*`** (measurable invariants + their `Verify`
+  recipes), `oracles/critical-ui-scope.md` (36 components × applicable invariants, with real
+  selectors), `skills/qa-design/SKILL.md` **§State-Stress Pass** (the seven states a surface must
+  survive), and `automation/storefront-selectors.md`. Assert these with the **measurable tags**
+  (`[SHIFT] [TOUCH] [SPACING] [ALIGN] [OVERFLOW] [CLS]`), never as prose inside `[DOM]`.
+- **`skills/qa-sbtm/modern-web-attack-surface.md` §The `UIP-*` sweep** — resolve all ten probes for a
+  UI flow: each covered by a scenario row or waived with a reason. These are the cases a real user
+  produces (Back, refresh, two tabs, expired session, deep link) and the corpus has almost none of
+  them: 8 · 5 · 11 · 5 · 5 out of 1 961 Frontend cases.
 
 **VirtoOZ docs query** (via `/vc-docs`) — **skip when `1c` delegated to `ba-system-analyzer`** (reuse its
 docs grounding; top up specific gaps only). Otherwise query the affected domain against the topic-scoped
@@ -264,8 +342,11 @@ points alongside the `BL-*` rules.
 both in parallel; UI/component → add `ui-ux-expert`; P0 or critical-revenue → add `qa-testing-expert`.
 **FAST path → one execution agent** (the single owning specialist).
 
-**Gate (inline self-check):** every affected domain has its `BL-*`/`ECL-*`/`E2E-*` loaded and an agent
-routed. (Verified as part of Step 3's gate on the full path — no standalone verifier pass here.)
+**Gate (inline self-check):** every affected domain has its `BL-*`/`ECL-*`/`E2E-*`/`VC-*` loaded and an
+agent routed; **every in-domain defect-shaped `VC-*` entry is either a scenario row or an explicit N/A**;
+the `Archetype sweep` is resolved (covered or waived); **for a UI surface the `UIP sweep` is resolved
+too**, and the UI oracles above are loaded. (Verified as part of Step 3's gate on the full path
+— no standalone verifier pass here.)
 
 ---
 
@@ -279,6 +360,7 @@ of truth; neither command restates them. Read them; do not re-derive them here:*
 
 | Concern | Owner (read it) |
 |---|---|
+| Technique selection + condition-space reduction | `/qa-test-design` (`SKILL.md` §3 selection guide + `test-design-techniques.md` §0 tokens, §6 interaction rule) |
 | Case authoring contract, 15-column schema, `Automation_Status` enum | `/qa-test-cases-generator` + `.claude/skills/qa-test-cases-generator/test-case-template.md` |
 | Review dimensions, check codes, severities, auto-fix matrix | `.claude/skills/qa-review-tests/SKILL.md` + `review-criteria.md` |
 | Behavior-rewrite evidence bar (docs + live + source) | `.claude/skills/qa-review-tests/triangulation-criteria.md` |
@@ -292,6 +374,12 @@ scenarios + user-flow diagram + `1d` AC conditions (story + gap-ACs) + `E2E-*` s
 + domain checklists.
 - **New feature / Story** → **author new** enriched-CSV cases.
 - **Bug fix / enhancement with existing coverage** → **map to existing** suite cases (start from the Step-2 `E2E-*` → suite mappings); author **only the gaps**.
+- **Carry the model's design decision into the row.** Each authored case stamps its scenario row's
+  archetype and technique into the free-text `References` column: `Archetype:<TOKEN> · Technique:<TOKEN>`
+  (+ `Probe:VC-*-NNN` when the row came from a `vc-bug-catalog` Detection probe). The appender
+  **rejects a row without them** — this is the deterministic gate for the whole change, and it exists here
+  because the Test Model is terminal-only. No new CSV column: these join the `Synced:` / `Audited:` /
+  `Promoted:` stamps `References` already carries.
 - **Append into the target `regression/suites/<layer>/<module>/*.csv` as `Automation_Status = Draft`**, using the deterministic appender (never a hand-rolled append):
   `npx tsx scripts/test-cases/append-test-cases-to-suite.ts <target-suite.csv> --rows <new-rows.csv> --check-global-ids --dry-run` (drop `--dry-run` on a clean pass). Existing-suite sync/review edits happen in place. `--check-global-ids` rejects an ID already used anywhere under `regression/suites/`.
 - **`Draft` is required, not a placeholder.** These cases are grounded and promotable only after Step 4 executes them live; 5g (last, non-blocking) does the `Draft → Automated` flip (a deliberate `{HYPOTHESIS}` — a genuinely unknown expected value phrased as a question — is legal **only** at `Draft`). The runner does not skip `Draft`, so Step 4's scoped regression *will* run them (that is the point).

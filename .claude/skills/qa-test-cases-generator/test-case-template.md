@@ -167,16 +167,99 @@ Explicit, checkable predicates. Each on its own line, prefixed with assertion ta
 | `[FORMAT]` | Display format (2 decimal places, date format, etc.) |
 | `[NAV]` | Current URL matches expected path |
 
+**Assertion STRENGTH — the ranked classes (this is what decides whether the case can catch a bug).**
+
+The target tag above says *where* you look. The strength class says *whether the check can fail on a
+wrong value*. They are independent: `[DOM]` can be the strongest or the weakest assertion in the
+suite depending on its class.
+
+| Class | What it compares | Example |
+|---|---|---|
+| **INV** | a measured invariant — a number or an identity that must hold | `[SHIFT] before vs after topDelta == 0` · `[TOUCH] belowAA == 0` · `[MATH] line total = unit price × quantity` |
+| **REL** | **two observations of the system against each other** — no expected value needed | `[REL] PDP price == listing price for the same SKU, both non-zero` · `[REL] cart total after add-then-remove == total before` · `[REL] end state reached by keyboard == end state reached by mouse` |
+| **DER** | an observation against an independently *derived* value | `[DOM] img src host equals @td(STORE_ASSET_TEST_URL.host)` · `[COUNT] rows == @td(ORG_TF.memberCount)` |
+| **SHAPE** | form, order, or count — falsifiable without any literal | `[FORMAT] price matches /^\$\d+\.\d{2}$/` · `[DOM] rows sorted ascending by name` · `[COUNT] exactly 3 facets` |
+| **PRES** | presence / visibility / existence | `[DOM] cart badge visible` |
+
+**THE RULE: every case MUST carry at least one assertion of class INV, REL, DER or SHAPE.
+`PRES` is legal only as a *guard* for a stronger assertion — never as a case's only assertion.**
+Enforced as `T-006` (`.claude/skills/qa-review-tests/review-criteria.md` Dimension 4).
+
+**Why this rule exists, measured on this corpus.** 53% of Frontend cases (1 044 of 1 961) carry
+*only* `PRES` assertions. A presence check cannot distinguish correct from incorrect content — it
+fails only when the element is absent entirely, which is the rarest failure mode. Real bugs render
+*something*: `BUG-non-usd-price-zero-display` renders a literal `£0.00`, so "price is visible"
+passes. `BUG-cart-configurable-line-summary-shows-wrong-option-label` renders a label, just the
+wrong one. Across Frontend assertions the presence-to-value verb ratio is 5:1.
+
+**REL is the class this repo is missing entirely, and it is the cheapest one to write.** It needs
+no fixture and no expected value — it compares the system to itself, so it is immune to test-data
+drift and works on any environment. That also makes it the way *out* of the squeeze the next two
+rules create: the Literal-text rule forbids inventing a string and DV-016 forbids asserting a
+literal value, which leaves `PRES` as the only remaining option unless you reach for `INV`, `REL`
+or `SHAPE` — all three of which are literal-free by construction. **When you find yourself about to
+write a `PRES` assertion because you cannot legally state the expected value, that is the signal to
+write a `REL` assertion instead.**
+
+High-yield `REL` shapes for this product (each one is a real bug class from `reports/bugs/`):
+
+| Shape | Catches |
+|---|---|
+| same value on two surfaces (PDP vs listing vs cart vs admin) | one surface diverging — the `PARITY` archetype |
+| do X then undo X → state equals the original | drift, leaked state, stale totals |
+| reorder two independent actions → same end state | order-dependent rule application |
+| same query paginated vs unpaginated → same set | pagination/filter defects |
+| switch currency/culture and back → identical rendering | the `MONEY` archetype |
+| keyboard path vs pointer path → same end state | a11y regressions, hidden handlers |
+| a second org / second user repeats the read → sees only its own | the `SCOPE` archetype |
+
 Examples:
 ```
-[DOM] 'Add to Cart' button disabled before any option selected
-[DOM] success notification contains 'added' or 'cart' text
-[DOM] cart badge increments by exactly 1
-[STATE] product SKU appears in cart items
-[MATH] line total = unit price × quantity (2 decimal places)
-[FORMAT] all prices display with exactly 2 decimal places
-[NAV] URL is /order/confirmation after Place Order
+[DOM] 'Add to Cart' button disabled before any option selected      <- PRES (guard)
+[DOM] cart badge increments by exactly 1                            <- INV
+[REL] cart subtotal after removing the added line == subtotal before <- REL
+[MATH] line total = unit price × quantity (2 decimal places)         <- INV
+[FORMAT] all prices display with exactly 2 decimal places           <- SHAPE
+[NAV] URL is /order/confirmation after Place Order                   <- SHAPE
 ```
+
+### Measurable UI vocabulary (`INV` class for Storefront cases)
+
+These step and assertion tags are **executed and scored deterministically** — they are the strongest
+assertions available to a UI case, and until now they were reachable only from one suite. Thresholds
+are *derived* (`npm run tokens:sync`, gated by `tokens:check`), never hand-listed, and the false
+positives are already fixed (see `BL-UI-002`'s off-grid rule and `BL-UI-006`'s AA-vs-AAA split).
+
+**Steps:**
+
+| Step tag | Does |
+|---|---|
+| `[VIEWPORT] 375` / `1280x900` | sets the viewport — a declared step, so a case can never measure the wrong one |
+| `[THROTTLE] slow3g` / `fast3g` / `none` | CDP throttling — makes skeleton / slow-network cases runnable |
+| `[REFLOW]` | forces reflow to surface lazy shifts |
+| `[SNAP] before = <selector>` | named rect snapshot |
+| `[PROBE:CLS]` · `[PROBE:SPACING] <sel>` · `[PROBE:ALIGN] <sel>` · `[PROBE:OVERFLOW]` · `[PROBE:TOUCH] <scope>` · `[PROBE:IMAGES] <sel>` · `[PROBE:IMGDIMS] <sel>` | runs the corresponding audit |
+
+**Assertions:**
+
+| Assertion tag | Example | Invariant |
+|---|---|---|
+| `[CLS]` | `[CLS] value <= 0.1` | BL-UI-001 |
+| `[SPACING]` | `[SPACING] offGrid == 0` | BL-UI-002 |
+| `[SHIFT]` | `[SHIFT] before vs after topDelta == 0` | BL-UI-003 |
+| `[OVERFLOW]` | `[OVERFLOW] horizontal == false` | BL-UI-004 |
+| `[ALIGN]` | `[ALIGN] heightDrift <= 1` | BL-UI-005 |
+| `[TOUCH]` | `[TOUCH] belowAA == 0` | BL-UI-006 |
+| `[IMGDIMS]` | `[IMGDIMS] missingDims == 0` | BL-UI-001 root cause |
+
+**Never hand-roll one of these in prose.** `[DOM] paddingBottom is a multiple of 4 px` is a real
+example from the corpus and it is wrong — `10px`/`6px`/`14px` are legitimate scale steps, so the
+hand-rolled rule manufactures false failures. Write `[SPACING] offGrid == 0` and let the derived
+grid decide. Same for touch targets: a flat `44px` rule marked 13 of 36 controls broken in
+`REG-2026-07-24-2121`; `[TOUCH] belowAA == 0` encodes the AA/AAA distinction correctly.
+
+Gold-standard case to copy: `regression/suites/Frontend/cross-cutting/048c-layout-stability.csv`
+`LAYOUT-SHIFT-001` — zero prose, fully machine-scored.
 
 **Provenance suffix (grounding — MANDATORY).** Every assertion line ends with a `{...}` provenance
 tag naming *where the expected behavior comes from*. This stops agents asserting behavior that is
@@ -202,8 +285,15 @@ pass is what upgrades a `{HYPOTHESIS}`/unconfirmed-`{SPEC}` line to `{OBSERVED}`
 unless it is grounded by `{DOC}` (found in source/i18n) or `{OBSERVED}` (seen live). Otherwise assert
 the **semantic**, not the invented string. This is the behavioral twin of DV-016.
 - ❌ `[DOM] error reads 'Please enter a valid card number' {SPEC}` (string invented; not in the AC)
-- ✅ `[DOM] error indicating an invalid card number {SPEC}` (semantic, grounded in the AC)
 - ✅ `[DOM] error reads 'Card number is invalid' {DOC}` (exact string only because it was found in the i18n file)
+- ✅ `[DOM] an inline error is bound to the card-number field, and the field is marked invalid {SPEC}` (semantic, grounded in the AC)
+
+**Softening the literal must not soften the CLASS.** The semantic form above is still checkable —
+it names *which* field carries the error and asserts the invalid state. What is forbidden is
+retreating to `[DOM] error message visible {SPEC}`, which passes when the error names the wrong
+field, appears on the wrong control, or fires on a valid card. When the literal is unavailable,
+add a `REL` or `SHAPE` assertion alongside the semantic one (`[REL] no error is bound to any other
+field`, `[COUNT] exactly one field marked invalid`) rather than letting the case degrade to `PRES`.
 
 Provenance-tagged examples:
 ```

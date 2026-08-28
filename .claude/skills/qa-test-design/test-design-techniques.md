@@ -5,6 +5,28 @@
 
 ---
 
+## 0. Technique tokens — the closed vocabulary
+
+Every technique reference in a Test Model scenario row, and every `Technique:` stamp in a suite
+row's `References`, uses one of these tokens. This table is the single source of truth: the
+`/qa-test` Step 1e model reads it, and `append-test-cases-to-suite.ts` validates against it at
+run time (never against a hardcoded list).
+
+| Token | Technique | Section |
+|---|---|---|
+| `EP` | Equivalence Partitioning | §2 |
+| `BVA` | Boundary Value Analysis | §3 |
+| `DT` | Decision Table | §4 |
+| `ST` | State Transition | §5 |
+| `PW` | Pairwise / t-way combinatorial | §6 |
+| `CT` | Classification Tree | `examples/classification-tree-products.md` |
+| `EG` | Error Guessing | §7 |
+
+Adding a token means adding a section here first. 34 suite rows already carry organic
+`Technique:` stamps — this formalizes that convention rather than inventing one.
+
+---
+
 ## 1. Technique Selection Guide
 
 Use this table to pick the right technique(s) for the feature under test. Most features benefit from combining two or more techniques.
@@ -226,9 +248,40 @@ Use this table to pick the right technique(s) for the feature under test. Most f
 
 ## 6. Pairwise / Combinatorial Testing
 
-**Concept:** Most defects are triggered by the interaction of at most 2 parameters (pairwise interaction). Instead of testing all possible combinations (full Cartesian product), generate a reduced set that covers every pair of parameter values at least once. Typically reduces test count by 80-90%.
+**Concept:** Instead of testing all possible combinations (full Cartesian product), generate a reduced set that covers every pair of parameter values at least once. Typically reduces test count by 80-90%.
 
-**When to use:** Cross-browser testing matrices, configuration testing, any scenario with 4+ parameters where full coverage is infeasible.
+### Why pairs are the right unit — the interaction rule
+
+The reduction is not a budget compromise; it rests on a measured property of software faults.
+Across six independent fault datasets (medical-device recall software, NASA distributed database,
+browser, HTTP server, NASA GSFC), the number of parameters that must interact to trigger a failure
+is small, and the detection curve saturates fast: **one parameter accounts for roughly two-thirds
+of failures, and two parameters for the large majority**; no failure in those datasets required
+more than 4–6 interacting parameters.
+
+*Source: Kuhn, Wallace & Gallo, "Software Fault Interactions and Implications for Software
+Testing", IEEE TSE 30(6), 2004; NIST SP 800-142 "Practical Combinatorial Testing". Read the
+primary sources before quoting a specific percentage — the figures vary per dataset and this
+file deliberately does not pin one.*
+
+Three consequences that bind when you author:
+
+1. **Spend the marginal test on a new PAIR, not a new single value.** The question when adding a
+   case is "which 2-way combination is currently uncovered?", never "which value have I not tried?"
+   A scenario that varies one factor at a time (`t=1`) leaves most of the available failures
+   on the table by construction.
+2. **`t=2` is the default; `t=3` is the ceiling; `t=4` only for revenue-critical surfaces.**
+   Beyond that the evidence says you are buying nothing. This is the defensible cap on
+   combinatorial explosion in checkout / pricing / promotion / permission matrices.
+3. **The parameter model is the artifact that matters, not the case list.** The interaction rule
+   is a statement about parameters, their value classes, and the constraints that make some
+   combinations infeasible. If the model is wrong, `t`-way coverage over it means nothing — so
+   review the model first, then generate. This is why `/qa-test` Step 1e requires a
+   `Condition space` line before it will accept a scenario table.
+
+**When to use:** Cross-browser testing matrices, configuration testing, permission matrices
+(`role x organization x object-owner x operation x object-state`), any scenario with 4+ parameters
+where full coverage is infeasible.
 
 ### VC Example: Cross-Browser Testing Matrix
 

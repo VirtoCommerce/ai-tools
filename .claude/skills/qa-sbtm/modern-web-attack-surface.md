@@ -8,6 +8,43 @@ Use this as a **probe library**. Pick 3–5 probes per session that match your c
 
 ---
 
+## The `UIP-*` sweep — the closed probe set a UI test model must resolve
+
+This file was exploratory-only: nothing in the case-authoring path referenced it, and the result is
+measurable. Across 1 961 Frontend regression cases, "back button" appears in **8**, double-submit in
+**9**, deep-link in **5**, and mid-flow session expiry in **5** — while `reports/bugs/open/` holds a
+duplicate-order-on-back bug, a blank page after the session user is deleted, and a token not
+invalidated on impersonation revert. The probes were written; they just never became cases.
+
+So the ten probes below are a **closed vocabulary with stable ids**, swept by `/qa-test` Step 2 the
+same way archetypes are: for a UI flow each probe is either covered by a scenario row or **waived
+with a reason**. Silence is not a waiver. The `§N.M` sections remain the source of detail — the ids
+point at them, they do not restate them (`.claude/rules/test-data.md` §GOLDEN RULE).
+
+| id | Probe | Detail | Typical bug |
+|---|---|---|---|
+| `UIP-BACK` | browser Back after a completed submit / payment | §4.1 | duplicate order; resurrected cart |
+| `UIP-DEEP` | deep-link straight to a step that needs prior state | §4.2 | blank page, JS crash, or access without the guard |
+| `UIP-REFRESH` | refresh mid-flow / during a redirect | §4.4 | half-submitted state, lost form, double effect |
+| `UIP-TABS` | two tabs on the same entity; sign-out or sign-in in one | §2.1 · §2.2 · §2.3 | the other tab acts as the wrong user, or 401s silently |
+| `UIP-EXPIRE` | session / token expires mid-flow | §6.4 | unhandled 401, blank screen, silent data loss |
+| `UIP-STORAGE` | corrupted or stale client storage / cache | §3.2 · §3.3 | white screen on reload; stale data after mutation |
+| `UIP-NET` | a dependency is blocked, slow, 500, or returns malformed JSON | §6.1 · §6.2 · §6.3 · §6.5 | whole-page crash instead of a scoped error; infinite spinner |
+| `UIP-INPUT` | autofill / password manager / paste populates the form | §5.1 · §5.2 | validation skipped because only `onChange` was wired |
+| `UIP-VIEW` | zoom 200–400%, reduced motion, dark mode, print | §5.3 · §5.4 · §5.5 | clipped or unreachable controls at zoom |
+| `UIP-DATA` | data state: empty · exactly one · many · overflowing | `qa-design` §State-Stress Pass | empty state missing; overflow clipped; grid breaks at N=1 |
+
+**Two rules keep the sweep honest.** A probe is *covered* only when a scenario row asserts an
+outcome for it — noting "we should test back button" is not coverage. And a waiver names the reason
+(`UIP-VIEW waived — this change has no visual surface`), because an unexplained waiver is
+indistinguishable from an omission.
+
+**These probes are also where `REL` assertions pay off most.** Almost every one of them is naturally
+a relation: state after Back == state before, tab B's user == tab A's user, rendering at 200% zoom
+still contains every control that existed at 100%. None needs an expected literal.
+
+---
+
 ## How to execute these probes
 
 All probes run via the MCP servers already wired into this repo:

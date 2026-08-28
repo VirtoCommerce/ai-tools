@@ -40,7 +40,10 @@ Apply formal test design techniques to systematically derive test cases with max
    - Assign priority (P0-P3) based on risk (see `/qa-risk` for risk framework)
 
 5. **Output structured test cases:**
-   - Format: ID, Title, Precondition, Steps, Expected Result, Priority, Technique Used
+   - **Authoring contract is `.claude/skills/qa-test-cases-generator/test-case-template.md`** (the
+     15-column enriched CSV) — do not invent a column set here. The technique travels as a
+     `Technique:<TOKEN>` stamp in the free-text `References` column, tokens per
+     `test-design-techniques.md` §0.
    - Group by technique applied
    - Flag any gaps discovered (untested partitions, missing transitions, uncovered pairs)
 
@@ -54,7 +57,14 @@ Apply formal test design techniques to systematically derive test cases with max
 - Feeds into `/qa-plan` for test suite composition
 
 ## Rules
-- Always apply at least EP + BVA as baseline — they catch ~60% of defects
+- Always apply at least EP + BVA as baseline. Not because of any headline percentage — a boundary
+  is simply *where a decision changes*, and the decision table is what tells you where the
+  boundaries are, so the two techniques compound
+- Pick the technique from the **fault hypothesis**, not from house style: which technique wins is
+  fault-type dependent (Basili & Selby, IEEE TSE 1987, and its replications), so a suite where
+  every case came from one technique is blind to whatever that technique does not detect
+- Cover **pairs, not single values**; `t=2` default, `t=3` ceiling, `t=4` revenue-critical only
+  (`test-design-techniques.md` §6 — the interaction rule)
 - Decision tables are mandatory for features with 3+ business rule conditions
 - State transition testing is mandatory for any feature with a lifecycle (orders, quotes, returns)
 - Document which technique was applied to each test case for traceability

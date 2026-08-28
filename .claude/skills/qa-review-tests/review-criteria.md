@@ -139,7 +139,7 @@ Ensures the test case has all information an agent needs to execute independentl
 
 ---
 
-## Dimension 4: Testability
+## Dimension 4: Testability & Assertion Strength
 
 Ensures assertions can be objectively evaluated as PASS or FAIL with no human judgment.
 
@@ -175,6 +175,43 @@ Ensures assertions can be objectively evaluated as PASS or FAIL with no human ju
 - **Bad:** `[DATA label=q] data.org.myStatus = "Approved" (BL-B2B-009: …)` — the trailing parenthetical trips the arithmetic branch, which compares numbers and can never match a string.
 - **Good:** `[DATA label=q] data.pushMessages.totalCount > 0 {HYPOTHESIS}` (+ the prose rationale moved to `Cross_Layer_Checks`)
 - **Fine:** `[ERRORS label=q] errors[] empty — every Product field must resolve` (the evaluator is prefix-anchored; a trailing rationale is not read)
+
+---
+
+### T-006: Assertion is presence-only — cannot fail on a wrong value `[Informational file-level / Blocker at the appender]`
+
+**The rule.** Every case must carry ≥1 assertion of class `INV`, `REL`, `DER` or `SHAPE`. `PRES`
+(visible / shown / present / renders / exists) is legal only as a *guard*, never as the case's only
+check. Classes are defined in `qa-test-cases-generator/test-case-template.md` §Assertion STRENGTH;
+the classifier is `classifyAssertionStrength()` in `scripts/test-cases/lint-test-cases.ts`.
+
+**Detection:** every non-empty assertion line classifies as `PRES` (or `UNKNOWN`).
+
+- **Bad:** `[DOM] Thumbnail strip visible with multiple images` + `[STATE] Clicking thumbnail updates the main image` — real case `CAT-011`. Passes with two broken images and with the *wrong* image loaded.
+- **Good:** `[REL] main image src == the clicked thumbnail's full-size src` + `[COUNT] thumbnails == @td(PROD_CFG_BIKE.imageCount)`.
+
+**Why this dimension exists, and why T-002 does not cover it.** T-002's bar is *name an element* —
+`[DOM] cart badge is visible` names one and passes. T-001 rejects adverbs. Neither asks the only
+question that matters: **would this assertion still pass if the feature were broken?** Measured when
+the rule was added: 1 044 of 1 961 Frontend cases (53%) were presence-only, verb ratio 5:1 in favour
+of presence. The bug corpus confirms the consequence — `non-usd-price-zero-display` renders a literal
+`£0.00`, so "price is visible" passes.
+
+**This dimension is also the escape hatch from Dim 5 and Dim 10.** GRD-002 forbids an invented
+literal and DV-016 forbids a hardcoded value; together they left `PRES` as the only legal form.
+`INV`, `REL` and `SHAPE` are all literal-free, so they satisfy both rules *and* discriminate. When an
+author cannot legally state the expected value, the answer is a `REL` assertion (compare the system
+to itself), not a retreat to `PRES`.
+
+**Two severities on purpose:**
+- **Corpus-wide** it is one **Informational** file-level tally, same shape and same reason as GRD-001's
+  legacy tally and TRI-000: ~1 900 per-case Highs on day one would turn every suite red and push
+  everyone to `--warn-only`, killing the signal permanently.
+- **At the appender** (`append-test-cases-to-suite.ts`) it is a hard error, because that path sees
+  only NEW rows — so the legacy corpus is untouched and a new weak case simply never lands.
+
+**Auto-fixable:** No. Strengthening an assertion requires knowing what the correct value is.
+Hand off to `/qa-test-cases-generator` with the case as input.
 
 ---
 

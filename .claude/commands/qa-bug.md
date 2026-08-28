@@ -206,6 +206,28 @@ Valid statuses:
 - `FIXED` — fix verified (move file to `fixed/`)
 - `CLOSED` — won't fix / cannot reproduce / false positive / duplicate (move file to `closed/`)
 
+### Provenance Convention (line 4)
+
+Immediately after the status line, every bug report MUST carry a provenance line. It is what makes
+"did a test case catch this?" answerable — today ~8 of 128 reports name a case, in free text, and
+nothing can read them.
+
+```markdown
+**Found by:** <RUN_ID | exploratory | monitoring | manual> · suite <ID> (<CASE-ID>[, <CASE-ID>…]) · <triage verdict>
+**Archetype:** <TOKEN>
+```
+
+- The `Found by:` shape is **what `/qa-triage-results` already emits** — this codifies it, it does
+  not invent it. Example:
+  `**Found by:** REG-2026-07-30-1040 · suite 027 (CUST-090) · triaged REAL_BUG`
+- **`— none (not case-attributable)` is the explicit answer when no case found it.** A bug found by
+  always-on monitoring or by exploration is real signal about where cases *aren't* — record it as
+  unattributed, never omit the line.
+- `Archetype:` is one token from the **Defect archetypes** table in
+  [`knowledge/oracles/vc-bug-catalog.md`](../knowledge/oracles/vc-bug-catalog.md) — the shape of the
+  failure, not its domain or root cause. It is what lets the gap between "where bugs are" and
+  "where cases are" be recomputed instead of re-argued.
+
 When moving to `fixed/`, add a Resolution block below the status:
 
 ```markdown
