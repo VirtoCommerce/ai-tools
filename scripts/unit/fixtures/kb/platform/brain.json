@@ -1,0 +1,7 @@
+{
+  "name": "vc-knowledge",
+  "scope": "platform",
+  "readOnly": true,
+  "version": 1,
+  "note": "Pinned read-only cache of the platform brain. readOnly:true is what makes 'a client context never writes to a platform brain' a property of the data."
+}

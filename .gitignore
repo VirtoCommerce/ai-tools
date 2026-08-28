@@ -97,6 +97,12 @@ test-data/aliases.localhost.json
 # survive plugin updates (perf-loadtest RESULTS_DIR)
 .vc-perf/
 
+# Knowledge brains (VCST-5818/5820) — `.knowledge/platform` is a pinned READ-ONLY cache of
+# VirtoCommerce/vc-knowledge and `.knowledge/client` is a working copy of the client's own
+# brain repo. Both are checkouts of repos that live elsewhere; committing either would
+# recreate the bundled-duplicate drift the two-brain split exists to kill.
+.knowledge/
+
 # Auto-fix pipeline — cloned product-repo source is transient working state
 .fix-workspace/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)

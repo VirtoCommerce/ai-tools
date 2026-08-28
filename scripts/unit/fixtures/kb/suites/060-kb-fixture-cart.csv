@@ -1,0 +1,6 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+KBF-001,Cart hides tax before an address,Cart,P0,BL-CART-010,,Empty cart,{{FRONT_URL}},Add a product; open the cart,Tax row reads 0.00,,,,,Automated
+KBF-002,"Totals recompute after MOQ change, then settle",Cart,P1,"BL-CART-010, BL-CART-012",,Seeded MOQ product,{{FRONT_URL}},Raise the quantity,Grand total matches the line sum,,,,,Automated
+KBF-003,Lockout after repeated failures,Auth,P0,BL-AUTH-004,FLOW-CHECKOUT-001,Known account,{{FRONT_URL}},Fail sign-in repeatedly,Account is locked,,,,,Automated
+KBF-004,Add to cart from the product page,PDP,P1,LOC-PDP-002,,Seeded product,{{FRONT_URL}},Click the add-to-cart control,Line appears in the cart,,,,,Automated
+KBF-005,Citation that points at nothing,Cart,P2,BL-NOPE-999,ECL-NOPE-1.1,None,,Do nothing,Nothing,,,,,Draft

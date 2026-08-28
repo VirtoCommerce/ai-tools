@@ -1,0 +1,7 @@
+{
+  "name": "acme-qa-knowledge",
+  "scope": "client",
+  "readOnly": false,
+  "version": 1,
+  "pin": "0000000000000000000000000000000000000000"
+}

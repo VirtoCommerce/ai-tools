@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "_doc": "Human-owned ground truth. The machine must never grade its own misses (VCST-5776 §D5: the human owns the goldens), so nothing in this toolchain writes this file. `expect` names the entry that ANSWERS the question; `must` is a verbatim marker that entry must still contain, which is what makes the set catch its own staleness under `--check`.",
+  "goldens": [
+    {
+      "id": "g-cart-tax",
+      "q": "does the cart show tax before a shipping address is entered",
+      "expect": "BL-CART-010",
+      "must": "excludes tax"
+    },
+    {
+      "id": "g-auth-lockout",
+      "q": "how many failed sign-in attempts lock an account",
+      "expect": "BL-AUTH-004",
+      "must": "five consecutive failed"
+    },
+    {
+      "id": "g-pdp-locator",
+      "q": "which control adds a product to the cart on the product detail page",
+      "expect": "LOC-PDP-002",
+      "must": "Add to Cart"
+    },
+    {
+      "id": "g-moq",
+      "q": "when is a minimum order quantity violation reported",
+      "expect": "BL-CART-012",
+      "must": "validation error"
+    }
+  ]
+}

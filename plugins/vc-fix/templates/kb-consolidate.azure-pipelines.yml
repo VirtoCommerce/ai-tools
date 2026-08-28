@@ -1,0 +1,125 @@
+# kb consolidation — Azure Pipelines template for a KNOWLEDGE BRAIN repo on Azure Repos.
+#
+# The Azure Repos twin of kb-consolidate.github.yml, for a client whose code host is Azure
+# rather than GitHub (the same client/platform host split /qa-fix already routes on).
+# Scaffolded into a client brain repo as azure-pipelines.yml by /project-init (VCST-5820),
+# which also registers the pipeline through the ADO REST API with the same PAT.
+#
+# Same three deliberate properties as the GitHub template:
+#   NO PULL REQUEST — consolidation commits straight to main; the mechanical gates in
+#     consolidate.mjs are the review, and a batch that lowers retrieval quality reverts itself.
+#   NO DEPENDENCIES, NO MODEL, NO ENVIRONMENT — no npm install, no API key, no storefront.
+#     Evidence was attached at capture time; this job only checks it.
+#   THRESHOLD PLUS CRON — nightly, plus any push that lands drafts, skipped below the
+#     draft threshold. A manual run always proceeds.
+#
+# Azure specifics worth knowing before editing:
+#   - "Allow scripts to access the OAuth token" must be on for the push to work; that is what
+#     persistCredentials + System.AccessToken below rely on.
+#   - The build service identity needs Contribute on this repo, and the branch policy on main
+#     must not require a PR — this pipeline is the writer.
+#   - The scheduled trigger only fires when `always: true` is set; otherwise Azure skips a
+#     cron run when nothing changed, which is precisely the run this job exists for.
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - drafts/*
+
+pr: none
+
+schedules:
+  - cron: "17 2 * * *"
+    displayName: Nightly kb consolidation
+    branches:
+      include:
+        - main
+    always: true
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  # The plugin repo carrying skills/kb/. Pin TOOLCHAIN_REF to a tag for a reproducible run.
+  TOOLCHAIN_REPO: https://github.com/VirtoCommerce/vc-mcp-testing-module.git
+  TOOLCHAIN_REF: main
+  # Minimum drafts before a scheduled/push run bothers to commit. Manual runs ignore it.
+  MIN_DRAFTS: 1
+
+steps:
+  - checkout: self
+    # A shallow clone cannot `git revert`, and the exam gate's auto-revert is the whole
+    # safety story of this job.
+    fetchDepth: 0
+    persistCredentials: true
+
+  - task: NodeTool@0
+    inputs:
+      versionSpec: "20.x"
+    displayName: Use Node 20
+
+  - script: |
+      set -e
+      git clone --depth 1 --branch "$(TOOLCHAIN_REF)" "$(TOOLCHAIN_REPO)" .kb-toolchain
+    displayName: Check out the kb toolchain
+
+  - script: |
+      set -e
+      count=$(find drafts -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+      echo "pending drafts: $count"
+      if [ "$(Build.Reason)" = "Manual" ] || [ "$count" -ge "$(MIN_DRAFTS)" ]; then
+        echo "##vso[task.setvariable variable=RUN_CONSOLIDATE]yes"
+      else
+        echo "fewer than $(MIN_DRAFTS) drafts — nothing to consolidate"
+        echo "##vso[task.setvariable variable=RUN_CONSOLIDATE]no"
+      fi
+    displayName: Count pending drafts
+
+  - script: |
+      set +e
+      git config user.name "kb consolidate"
+      git config user.email "kb-consolidate@virtocommerce.com"
+      node .kb-toolchain/plugins/vc-fix/skills/kb/consolidate.mjs \
+        --root . \
+        --run-id "kb-$(Build.BuildId)" \
+        --json | tee kb-digest.json
+      # A non-zero exit means quarantined, layer-guard aborted, or exam-gate reverted.
+      # None of those is a broken job: the pipeline did what it exists to do, and the
+      # digest below says which. Never fail the build on it.
+      exit 0
+    displayName: Consolidate
+    condition: eq(variables['RUN_CONSOLIDATE'], 'yes')
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: kb-digest.json
+      artifact: kb-digest
+    displayName: Publish the digest
+    condition: and(succeeded(), eq(variables['RUN_CONSOLIDATE'], 'yes'))
+
+  - script: |
+      set -e
+      # The batch commit (and a revert commit, when the exam gate fired) are already in
+      # local history; pushing is all that is left. Nothing else is committed here.
+      git push origin HEAD:$(Build.SourceBranchName)
+    displayName: Push the batch
+    condition: eq(variables['RUN_CONSOLIDATE'], 'yes')
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  - script: |
+      node -e '
+        const d = JSON.parse(require("fs").readFileSync("kb-digest.json","utf8"));
+        const c = d.counts || {};
+        console.log("kb consolidate " + d.runId);
+        console.log("applied " + c.applied + ", superseded " + c.superseded + ", rejected " + c.rejected + ", held " + c.held + " (drafts seen " + c.drafts + ")");
+        if (d.quarantined && d.quarantined.triggered) console.log("QUARANTINED — " + d.quarantined.reason);
+        if (d.layerGuard && !d.layerGuard.ok) console.log("LAYER GUARD — " + d.layerGuard.reason);
+        if (d.exam && d.exam.reverted) console.log("REVERTED by the exam gate — " + (d.exam.reasons || []).join("; "));
+        for (const h of d.held || []) console.log("held " + h.fingerprint + ": " + (h.reasons || []).join("; "));
+      '
+    displayName: Summarize
+    condition: eq(variables['RUN_CONSOLIDATE'], 'yes')

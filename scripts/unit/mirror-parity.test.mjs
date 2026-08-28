@@ -24,6 +24,25 @@ const MIRRORED = [
   "hooks/session-telemetry.mjs",
   "skills/vc-self-check/deliver.mjs",
   "skills/vc-self-check/upstream-reduce.mjs",
+  // The kb knowledge-brain toolchain (VCST-5818). Mirrored for the same reason as the
+  // self-diagnostics core: the client-precedence resolver and the containment refusals
+  // (`assertWritable`, `assertPlatformSafe`) are the §2a boundary in this subsystem, so a
+  // drift on ONE surface would reopen the leak class there while the other stayed fixed.
+  // The modules also import each other by relative path, so a partial mirror is a runtime
+  // break rather than a documentation gap. SKILL.md is deliberately written without links
+  // that cross repo levels so that it, too, can be byte-identical.
+  "skills/kb/kb-paths.mjs",
+  "skills/kb/entry.mjs",
+  "skills/kb/fingerprint.mjs",
+  "skills/kb/gen-index.mjs",
+  "skills/kb/resolve.mjs",
+  "skills/kb/exam.mjs",
+  "skills/kb/capture.mjs",
+  "skills/kb/consolidate.mjs",
+  "skills/kb/drift-check.mjs",
+  "skills/kb/SKILL.md",
+  "hooks/kb-sync.mjs",
+  "hooks/kb-guard.mjs",
 ];
 
 for (const rel of MIRRORED) {

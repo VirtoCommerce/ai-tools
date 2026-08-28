@@ -1,0 +1,3 @@
+# Keeps the capture layer present in a fresh clone. Git does not track empty directories,
+# and a test that reads drafts/ before anything has been captured would otherwise fail with
+# ENOENT on a clean checkout while passing on the machine that authored the fixture.

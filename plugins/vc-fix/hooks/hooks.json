@@ -6,6 +6,10 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-telemetry.mjs\" init"
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kb-sync.mjs\""
           }
         ]
       }
@@ -37,6 +41,15 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/enforce-real-user.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "^(Grep|Glob|Read|Bash)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kb-guard.mjs\""
           }
         ]
       }

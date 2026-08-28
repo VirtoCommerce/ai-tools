@@ -1,0 +1,152 @@
+# kb consolidation — GitHub Actions template for a KNOWLEDGE BRAIN repo.
+#
+# Scaffolded into a brain repo (VirtoCommerce/vc-knowledge, or a client's <org>/qa-knowledge)
+# as .github/workflows/kb-consolidate.yml. It runs the consolidation pipeline INSIDE the
+# brain repo itself: drafts/ -> confirmed/, in one batch commit, behind the evidence bar,
+# the layer guard, the quarantine threshold and the exam gate.
+#
+# Three properties are deliberate and should survive any edit:
+#
+#   NO PULL REQUEST. Consolidation commits to main. The review this replaces is the set of
+#   mechanical gates in consolidate.mjs, and a batch that lowers retrieval quality reverts
+#   itself. A PR here would reintroduce the human bottleneck the design removed.
+#
+#   NO DEPENDENCIES, NO MODEL, NO ENVIRONMENT. `npm ci` is never run, no API key is needed,
+#   no storefront is reached. The evidence was attached when each observation was captured,
+#   by an agent that had a live browser at the time; this job only checks it.
+#
+#   THRESHOLD PLUS CRON. Nightly, and on any push that lands drafts — but the threshold step
+#   skips a run with too few drafts to be worth a commit. `workflow_dispatch` always runs.
+#
+# The toolchain itself is not vendored into the brain repo: it is checked out from the
+# plugin repo at a pinned ref, so a brain repo carries knowledge and nothing else.
+
+name: kb consolidate
+
+on:
+  schedule:
+    # 02:17 UTC — off the hour, so it does not queue behind everyone else's midnight cron.
+    - cron: "17 2 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "drafts/**"
+  workflow_dispatch:
+    inputs:
+      threshold:
+        description: "Quarantine threshold (changes in one run above which nothing is applied)"
+        required: false
+        default: "20"
+
+concurrency:
+  # Two consolidations racing on one brain would fight over the same batch commit.
+  group: kb-consolidate-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  # The plugin repo carrying skills/kb/. Pin TOOLCHAIN_REF to a tag for a reproducible run.
+  TOOLCHAIN_REPO: VirtoCommerce/vc-mcp-testing-module
+  TOOLCHAIN_REF: main
+  # Minimum drafts before a scheduled/push run bothers to commit. Manual runs ignore it.
+  MIN_DRAFTS: "1"
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the brain
+        uses: actions/checkout@v4
+        with:
+          # A shallow clone cannot `git revert`, and the exam gate's auto-revert is the
+          # whole safety story of this job.
+          fetch-depth: 0
+
+      - name: Check out the kb toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TOOLCHAIN_REPO }}
+          ref: ${{ env.TOOLCHAIN_REF }}
+          path: .kb-toolchain
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Count pending drafts
+        id: drafts
+        shell: bash
+        run: |
+          count=$(find drafts -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "pending drafts: $count"
+
+      - name: Skip below threshold
+        id: gate
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=yes" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.drafts.outputs.count }}" -ge "${MIN_DRAFTS}" ]; then
+            echo "run=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=no" >> "$GITHUB_OUTPUT"
+            echo "fewer than ${MIN_DRAFTS} drafts — nothing to consolidate"
+          fi
+
+      - name: Consolidate
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          git config user.name "kb consolidate"
+          git config user.email "kb-consolidate@virtocommerce.com"
+          node .kb-toolchain/plugins/vc-fix/skills/kb/consolidate.mjs \
+            --root . \
+            --run-id "kb-${GITHUB_RUN_ID}" \
+            --threshold "${{ github.event.inputs.threshold || 20 }}" \
+            --json | tee kb-digest.json
+        # A non-zero exit means quarantined, layer-guard aborted, or exam-gate reverted.
+        # None of those is a broken job: the pipeline did exactly what it exists to do and
+        # the digest says which. The step below reads the digest and decides.
+        continue-on-error: true
+
+      - name: Publish the digest
+        if: steps.gate.outputs.run == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kb-digest
+          path: kb-digest.json
+          if-no-files-found: warn
+
+      - name: Push the batch
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          # The batch commit (and a revert commit, when the exam gate fired) are already
+          # in local history; pushing is all that is left. Nothing else is committed here.
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Summarize
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          node -e '
+            const d = JSON.parse(require("fs").readFileSync("kb-digest.json","utf8"));
+            const c = d.counts || {};
+            const lines = [
+              "## kb consolidate " + d.runId,
+              "",
+              "| applied | superseded | rejected | held | drafts seen |",
+              "|---|---|---|---|---|",
+              "| " + c.applied + " | " + c.superseded + " | " + c.rejected + " | " + c.held + " | " + c.drafts + " |",
+              "",
+            ];
+            if (d.quarantined && d.quarantined.triggered) lines.push("**QUARANTINED** — " + d.quarantined.reason);
+            if (d.layerGuard && !d.layerGuard.ok) lines.push("**LAYER GUARD** — " + d.layerGuard.reason);
+            if (d.exam && d.exam.reverted) lines.push("**REVERTED by the exam gate** — " + (d.exam.reasons || []).join("; "));
+            if (d.exam && d.exam.before && d.exam.after) lines.push("exam hit@1 " + d.exam.before.hitAt1 + " -> " + d.exam.after.hitAt1 + ", MRR " + d.exam.before.mrr + " -> " + d.exam.after.mrr);
+            for (const h of d.held || []) lines.push("- held `" + h.fingerprint + "`: " + (h.reasons || []).join("; "));
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+          '
