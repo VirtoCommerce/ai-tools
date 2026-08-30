@@ -114,6 +114,8 @@ var currentByKey = IndexByKey(current, "current");
 // ---------------- machine comparison (time is not comparable across hosts) ----------------
 var crossMachine = !SameHost(baseline.HostEnvironmentInfo, current.HostEnvironmentInfo);
 
+var hostsKnown = baseline.HostEnvironmentInfo is not null && current.HostEnvironmentInfo is not null;
+
 // ---------------- time-axis reliability ----------------
 // Min Statistics.N across every matched case in BOTH reports: the time axis is only as trustworthy as
 // the thinnest sample on either side.
@@ -133,10 +135,11 @@ if (minSamples == int.MaxValue)
 var declaredMeasured = jobKind == "measured";
 var declaredUnreliable = jobKind is "short" or "dry";
 var inferredMeasured = minSamples >= ReliableMinSamples;
-var timeReliable = !crossMachine && (declaredMeasured || (!declaredUnreliable && inferredMeasured));
+var timeReliable = hostsKnown && !crossMachine && (declaredMeasured || (!declaredUnreliable && inferredMeasured));
 
 var timeReason = crossMachine
     ? "different host — time not comparable across machines"
+    : !hostsKnown ? "host environment missing from a report — same-host cannot be established"
     : declaredMeasured ? "declared measured"
     : declaredUnreliable ? $"declared {jobKind} — time excluded from verdict"
     : inferredMeasured ? $"inferred measured (min Statistics.N={minSamples})"
@@ -154,8 +157,8 @@ foreach (var (key, cur) in currentByKey)
         continue;
     }
 
-    var (allocRatio, allocDelta, allocStatus) = Axis(bse.Memory?.BytesAllocatedPerOperation, cur.Memory?.BytesAllocatedPerOperation, allocPct);
-    var (meanRatio, meanDelta, meanStatusRaw) = Axis(bse.Statistics?.Mean, cur.Statistics?.Mean, timePct);
+    var (allocRatio, allocDelta, allocStatus) = Axis(bse.Memory?.BytesAllocatedPerOperation, cur.Memory?.BytesAllocatedPerOperation, allocPct, zeroBaselineIsComparable: true);
+    var (meanRatio, meanDelta, meanStatusRaw) = Axis(bse.Statistics?.Mean, cur.Statistics?.Mean, timePct, zeroBaselineIsComparable: false);
     var meanStatus = timeReliable ? meanStatusRaw : "unreliable";
 
     rows.Add(new BenchVerdict(
@@ -214,14 +217,18 @@ var result = new Verdict(
     new TimeAxis(timeReliable, timeReason, crossMachine, minSamples),
     new Hosts(HostOf(baseline.HostEnvironmentInfo), HostOf(current.HostEnvironmentInfo)),
     new Summary(rows.Count, added.OrderBy(x => x).ToList(), removed, allocRegressed, allocImproved, meanRegressed, meanImproved),
-    rows.OrderByDescending(x => x.AllocDeltaPct ?? double.MinValue).ToList());
+    // Worst allocation first, as SKILL.md promises agents. A 0 -> N row carries no delta percent (there
+    // is no ratio from zero) yet is the worst case there is, so it must not fall to the null bucket.
+    rows.OrderByDescending(x => x.AllocDeltaPct ?? (x.AllocStatus == "regressed" ? double.MaxValue : double.MinValue))
+        .ThenByDescending(x => x.AllocCurrent ?? 0)
+        .ToList());
 
 Console.WriteLine(JsonSerializer.Serialize(result, OutputCtx.Default.Verdict));
 
 // one-line human summary on stderr
 var timeNote = timeReliable
     ? $"time {meanRegressed}↑/{meanImproved}↓"
-    : $"time n/a ({(crossMachine ? "cross-machine" : "unreliable job")})";
+    : $"time n/a ({(crossMachine ? "cross-machine" : hostsKnown ? "unreliable job" : "host unknown")})";
 Console.Error.WriteLine(
     $"[{verdict.ToUpperInvariant()}] {rows.Count} cases · alloc {allocRegressed}↑/{allocImproved}↓ · {timeNote}"
     + (added.Count > 0 ? $" · +{added.Count} added" : "")
@@ -268,12 +275,29 @@ string? Key(Bench b) => matchMode == "method"
     : (string.IsNullOrEmpty(b.FullName) ? null : b.FullName);
 
 // Returns (ratio, deltaPercent, status). status ∈ regressed | improved | neutral | n/a.
-// n/a when a baseline value is missing or zero (no meaningful ratio).
-(double?, double?, string) Axis(double? baseVal, double? curVal, double thresholdPct)
+// n/a when a side is absent, or when a zero baseline is not a real measurement on this axis.
+// `zeroBaselineIsComparable` differs per axis: a zero allocation genuinely means "did not allocate",
+// while BenchmarkDotNet clamps any Mean below 0.1 ns to 0, so a zero Mean means "under the floor" and
+// a move off it is noise, not a regression.
+(double?, double?, string) Axis(double? baseVal, double? curVal, double thresholdPct, bool zeroBaselineIsComparable)
 {
-    if (baseVal is not > 0 || curVal is null)
+    if (baseVal is null || curVal is null)
     {
         return (null, null, "n/a");
+    }
+
+    // A zero baseline admits no ratio, but where it is a real measurement it must still reach the
+    // verdict: the rollup counts statuses, so "n/a" drops a code path that did not allocate and now
+    // does, leaving it `neutral` at exit 0. No finite threshold bounds an infinite ratio, so
+    // `thresholdPct` is deliberately not consulted.
+    if (baseVal.Value is not > 0)
+    {
+        if (!zeroBaselineIsComparable)
+        {
+            return (null, null, "n/a");
+        }
+
+        return (null, null, curVal.Value > 0 ? "regressed" : "neutral");
     }
 
     var ratio = curVal.Value / baseVal.Value;
@@ -342,11 +366,16 @@ Report LoadOne(string path)
     }
 }
 
+// Answers "are the hosts known to DIFFER?" — it does NOT decide whether the time axis is trustworthy;
+// `hostsKnown` at the call site does. Do not make this return false on an absent section: `crossMachine`
+// is emitted in the verdict JSON, and that would relabel a same-machine rerun whose report merely lost
+// its host section. Absence is all this handles — two hosts with null or placeholder fields still
+// compare equal here.
 static bool SameHost(HostInfo? a, HostInfo? b)
 {
     if (a is null || b is null)
     {
-        return true; // can't tell — don't penalize
+        return true;
     }
 
     return a.ProcessorName == b.ProcessorName

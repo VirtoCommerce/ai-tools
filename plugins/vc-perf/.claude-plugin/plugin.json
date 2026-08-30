@@ -1,7 +1,7 @@
 {
   "name": "vc-perf",
   "description": "Three-layer performance loop for Virto Commerce — BenchmarkDotNet A/B (L1) → k6 load harness (L2) → dotnet-trace allocation/CPU/DB attribution (L3), a machine-readable perf-verdict, and optimization PRs. Depends on vc-fix: it REUSES vc-fix's onboarding (/project-init, project-profile.json), fix routing (qa-fix-routing), the backend developer/reviewer agents, and dotnet-fix — and ships ONLY the perf-specific measurement delta (no duplication of vc-fix machinery). Advisory only, never a CI gate.",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "displayName": "Virto Commerce Performance Loop",
   "author": {
     "name": "Virto Commerce",

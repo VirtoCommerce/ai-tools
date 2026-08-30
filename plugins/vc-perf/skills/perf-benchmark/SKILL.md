@@ -126,7 +126,12 @@ Verdict JSON shape (`schema: "perf-verdict/1"`):
 ```
 
 Reading it as an agent: branch on `regressed` (or the exit code). When `time.reliable` is false, ignore
-the `mean*` fields for decisions and rely on `allocStatus`. `benchmarks[]` is sorted worst-allocation-first.
+the `mean*` fields for decisions and rely on `allocStatus`. `benchmarks[]` is sorted worst-allocation-first;
+a case whose baseline allocated nothing **and now allocates** sorts at the top with
+`allocStatus: "regressed"` but carries **no** `allocRatio` / `allocDeltaPct` — there is no ratio from zero
+— so size it from `allocBaseline` / `allocCurrent`. `time.reliable` is also false when either side is
+missing from `hosts` (`hosts.baseline` / `hosts.current`): same-host cannot be established, and the time
+axis is excluded rather than assumed.
 
 ## Comparison scenarios
 

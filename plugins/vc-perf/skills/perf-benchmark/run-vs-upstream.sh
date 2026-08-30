@@ -104,6 +104,11 @@ fi
 
 # Job → run flags + compare-reports.cs --job-kind. Both domains' runners take native BenchmarkDotNet
 # --job (Decision A dropped the cart-only --smoke/--short aliases), so there is no dialect split.
+# Every array VALUE expansion in this file is guarded as `${arr[@]+"${arr[@]}"}` (and `[*]` likewise),
+# never bare: each of these arrays is empty on some invocation, and under `set -u` bash < 4.4 —
+# stock macOS /bin/bash is 3.2 — aborts on an empty one. The two forms are indistinguishable on
+# bash 5, so undoing a guard is invisible to anyone likely to review it. (`${#arr[@]}` is a length,
+# safe bare; the `"${CATEGORIES[@]}"` beside it runs only when the array is non-empty.)
 case "$JOB" in
     dry)    JOB_FLAGS=(--job Dry);   JOB_KIND=dry ;;
     short)  JOB_FLAGS=(--job Short); JOB_KIND=short ;;
@@ -124,17 +129,17 @@ run_one() { # $1 = runner dir, $2 = label
     (
         cd "$dir"
         rm -rf BenchmarkDotNet.Artifacts
-        dotnet run -c Release -- "${JOB_FLAGS[@]}" --filter "$FILTER" "${CAT_FLAGS[@]}" --exporters json
+        dotnet run -c Release -- ${JOB_FLAGS[@]+"${JOB_FLAGS[@]}"} --filter "$FILTER" ${CAT_FLAGS[@]+"${CAT_FLAGS[@]}"} --exporters json
     ) >&2
 }
 
-echo "[vs-upstream] domain=$DOMAIN job=$JOB filter='$FILTER' categories='${CATEGORIES[*]}'" >&2
+echo "[vs-upstream] domain=$DOMAIN job=$JOB filter='$FILTER' categories='${CATEGORIES[*]+"${CATEGORIES[*]}"}'" >&2
 run_one "$UP_DIR" "upstream (baseline)"
 run_one "$OWN_DIR" "own (current)"
 
 # compare-reports.cs exit 1 = regression (this module's overhead exceeds threshold) — a valid verdict.
 set +e
-dotnet run "$SCRIPT_DIR/compare-reports.cs" -- "$UP_RESULTS" "$OWN_RESULTS" --match method --job-kind "$JOB_KIND" "${COMPARE_EXTRA[@]}"
+dotnet run "$SCRIPT_DIR/compare-reports.cs" -- "$UP_RESULTS" "$OWN_RESULTS" --match method --job-kind "$JOB_KIND" ${COMPARE_EXTRA[@]+"${COMPARE_EXTRA[@]}"}
 rc=$?
 set -e
 exit "$rc"

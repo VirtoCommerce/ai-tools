@@ -80,6 +80,11 @@ RUNNER_DIR="${!runner_dir_var:-benchmarks/${BENCH_PREFIX}.Benchmark.$(printf '%s
 # Job → (run flags, compare-reports.cs --job-kind). Both runners take native BenchmarkDotNet --job
 # (Decision A dropped the cart-only --smoke/--short aliases from the shared BenchmarkProgram), so there
 # is no per-domain dialect split to hide anymore.
+# Every array VALUE expansion in this file is guarded as `${arr[@]+"${arr[@]}"}` (and `[*]` likewise),
+# never bare: each of these arrays is empty on some invocation, and under `set -u` bash < 4.4 —
+# stock macOS /bin/bash is 3.2 — aborts on an empty one. The two forms are indistinguishable on
+# bash 5, so undoing a guard is invisible to anyone likely to review it. (`${#arr[@]}` is a length,
+# safe bare; the `"${CATEGORIES[@]}"` beside it runs only when the array is non-empty.)
 case "$JOB" in
     dry)    JOB_FLAGS=(--job Dry);   JOB_KIND=dry ;;
     short)  JOB_FLAGS=(--job Short); JOB_KIND=short ;;
@@ -115,7 +120,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "[own-before-after] baseline=$BASELINE_REF runner=$RUNNER job=$JOB filter='$FILTER' categories='${CATEGORIES[*]}'" >&2
+echo "[own-before-after] baseline=$BASELINE_REF runner=$RUNNER job=$JOB filter='$FILTER' categories='${CATEGORIES[*]+"${CATEGORIES[*]}"}'" >&2
 git -C "$REPO" worktree add --detach "$WORKTREE" "$BASELINE_REF" >&2
 
 # Carry any gitignored nuget.config under benchmarks/ into the worktree. Generic: copy whatever
@@ -134,7 +139,7 @@ run_one() { # $1 = tree root, $2 = label
     (
         cd "$root/$RUNNER_DIR"
         rm -rf BenchmarkDotNet.Artifacts
-        dotnet run -c Release -- "${JOB_FLAGS[@]}" --filter "$FILTER" "${CAT_FLAGS[@]}" --exporters json
+        dotnet run -c Release -- ${JOB_FLAGS[@]+"${JOB_FLAGS[@]}"} --filter "$FILTER" ${CAT_FLAGS[@]+"${CAT_FLAGS[@]}"} --exporters json
     ) >&2
 }
 
@@ -143,7 +148,7 @@ run_one "$REPO" "current (working tree)"
 
 # compare-reports.cs exit 1 = regression (a valid verdict) — don't let `set -e` abort on it.
 set +e
-dotnet run "$SCRIPT_DIR/compare-reports.cs" -- "$BASE_RESULTS" "$CUR_RESULTS" --job-kind "$JOB_KIND" "${COMPARE_EXTRA[@]}"
+dotnet run "$SCRIPT_DIR/compare-reports.cs" -- "$BASE_RESULTS" "$CUR_RESULTS" --job-kind "$JOB_KIND" ${COMPARE_EXTRA[@]+"${COMPARE_EXTRA[@]}"}
 rc=$?
 set -e
 exit "$rc"
