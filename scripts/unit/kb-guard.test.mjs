@@ -130,11 +130,11 @@ test("a named agent on the configured bash-less list is exempt even without a si
 
 test("the env opt-out short-circuits everything", () => {
   const state = { version: 1, sessions: { s1: { count: 99, at: "now" } } };
-  const decision = classify(grep(), CONFIG, state, { VC_FIX_KB_GUARD: "off" });
+  const decision = classify(grep(), CONFIG, state, { VC_KB_GUARD: "off" });
   assert.equal(decision.action, "allow");
   assert.equal(decision.exemption, "env-opt-out");
   assert.equal(decision.counted, false);
-  assert.equal(classify(grep(), CONFIG, state, { VC_FIX_KB_GUARD: "OFF" }).action, "allow");
+  assert.equal(classify(grep(), CONFIG, state, { VC_KB_GUARD: "OFF" }).action, "allow");
 });
 
 test("the config opt-out disables the guard for a whole project", () => {
@@ -153,7 +153,7 @@ test("the rendered payloads match the PreToolUse contract", () => {
   const deny = JSON.parse(renderDecision({ action: "deny" }));
   assert.equal(deny.decision, "block");
   assert.match(deny.reason, /ask the brain first/);
-  assert.match(deny.reason, /VC_FIX_KB_GUARD=off/, "a blocked caller is told how to opt out");
+  assert.match(deny.reason, /VC_KB_GUARD=off/, "a blocked caller is told how to opt out");
 });
 
 test("state survives a round trip and is bounded", async () => {

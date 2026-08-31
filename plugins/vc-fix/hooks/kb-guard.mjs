@@ -30,7 +30,13 @@
  * FAIL-OPEN IS ABSOLUTE. Every path is wrapped; a malformed event, an unreadable state
  * file, a missing config or an outright bug all end in "allow" and exit 0. A hook that
  * can break a session is worse than no hook, and this one guards a convenience, not a
- * security boundary. Opt out entirely with VC_FIX_KB_GUARD=off.
+ * security boundary. Opt out entirely with VC_KB_GUARD=off.
+ *
+ * The env prefix is VC_KB_, not VC_FIX_KB_, deliberately: nothing in the kb toolchain is
+ * bug-lifecycle specific, so a second plugin (or a shared knowledge-engine package) would
+ * inherit these switches. Renaming an env var costs nothing today and costs a compatibility
+ * migration once operators have it in their configs. VC_FIX_HOME keeps its prefix — that is
+ * the plugin's own pre-existing output-root contract, not something kb invented.
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -203,7 +209,7 @@ const DENY = [
   "",
   "Exempt by contract: reads of brain.json / knowledge-index.json / goldens.json and of",
   "any directory listed in project-profile.json -> knowledge.guard.exemptDirs.",
-  "Opt out for this machine: VC_FIX_KB_GUARD=off",
+  "Opt out for this machine: VC_KB_GUARD=off",
 ].join("\n");
 
 /**
@@ -212,8 +218,8 @@ const DENY = [
  */
 export function classify(event, config, state, env) {
   const e = env || process.env;
-  if (String(e.VC_FIX_KB_GUARD || "").toLowerCase() === "off") {
-    return { action: "allow", counted: false, count: 0, reason: "VC_FIX_KB_GUARD=off", exemption: "env-opt-out" };
+  if (String(e.VC_KB_GUARD || "").toLowerCase() === "off") {
+    return { action: "allow", counted: false, count: 0, reason: "VC_KB_GUARD=off", exemption: "env-opt-out" };
   }
   if (!config.enabled) {
     return { action: "allow", counted: false, count: 0, reason: "guard disabled in project-profile.json", exemption: "config-opt-out" };

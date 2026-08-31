@@ -29,7 +29,13 @@
  * FAIL-OPEN IS ABSOLUTE. No network, no git, no profile, a corrupt cache, an outright
  * bug — every path ends in exit 0 with at most a stderr note. A session must never fail
  * to start because the knowledge cache could not be refreshed. Opt out with
- * VC_FIX_KB_SYNC=off.
+ * VC_KB_SYNC=off.
+ *
+ * The env prefix is VC_KB_, not VC_FIX_KB_, deliberately: nothing in the kb toolchain is
+ * bug-lifecycle specific, so a second plugin (or a shared knowledge-engine package) would
+ * inherit these switches. Renaming an env var costs nothing today and costs a compatibility
+ * migration once operators have it in their configs. VC_FIX_HOME keeps its prefix — that is
+ * the plugin's own pre-existing output-root contract, not something kb invented.
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -204,7 +210,7 @@ function emit(line) {
 
 function main() {
   try {
-    if (String(process.env.VC_FIX_KB_SYNC || "").toLowerCase() === "off") return 0;
+    if (String(process.env.VC_KB_SYNC || "").toLowerCase() === "off") return 0;
     const root = outputRoot();
     const cfg = loadKnowledgeConfig(root);
     if (!cfg.enabled) return 0;

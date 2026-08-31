@@ -130,7 +130,7 @@ test("the hook exits 0 and stays silent with no project, no cache and no remote"
       input: JSON.stringify({ session_id: "s1", cwd: dir }),
     });
     assert.equal(run({}), "", "nothing onboarded yet — say nothing");
-    assert.equal(run({ VC_FIX_KB_SYNC: "off" }), "", "and the env opt-out is silent too");
+    assert.equal(run({ VC_KB_SYNC: "off" }), "", "and the env opt-out is silent too");
 
     // A knowledge root that exists but has no git remote: still silent, still exit 0.
     mkdirSync(join(dir, ".knowledge", "platform"), { recursive: true });
