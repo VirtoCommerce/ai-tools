@@ -766,3 +766,276 @@ Content persists after Save and reload","[CONSOLE] no JS errors while using the 
 [ASSERT] System shows a clear error message (e.g. 'Store not found', 'Invalid store', or a recognizable error state) — NOT a blank/frozen page
 [ACT] Attempt to open Asset Library picker (click 'Choose from Asset Library' if accessible)
 [ASSERT] Any attempt to open Asset Library also shows a clear error, not a silent failure or infinite spinner","[DOM] clear error message shown for invalid store context; [DOM] no blank/frozen/unresponsive UI state; [DOM] any Asset Library action also surfaces the error clearly; [CONSOLE] error logged for invalid store (acceptable — expected failure path)","[NETWORK] API request for invalid store returns 4xx (expected); [CONSOLE] error for invalid store context is acceptable here (it IS the expected failure)","Blank page with no error message; infinite spinner; crash (unhandled exception); arbitrary data loaded for wrong store","none","VCST-4932","Draft"
+"CMS-159","Rich text link dialog offers anchors from OTHER sections on the page","Field Types","High","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json) IMPORTANT: the anchor picker belongs to the CKEditor rich-text control, i.e. a field whose schema type is 'text'. On the B2B theme only two declare it: the Subscribe form section field 'Checkbox label' and the Text BLOCK field 'Content'. The section NAMED 'Text' uses a markdown editor (Markdown Guide toolbar) and has no Link dialog - do not use it.","","[NAV] Open the designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)
+[WAIT] pages grid rendered
+[ACT] click the page row of a page with two or more visible sections
+[WAIT] designer editor opened with the section list visible
+[ACT] click the SECOND section in the section list
+[WAIT] section edit panel opened
+[ACT] fill 'Anchor': Specifications
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] click the FIRST section in the section list
+[WAIT] section edit panel opened
+[ACT] click into the 'Rich Text' field
+[WAIT] rich text editor toolbar rendered
+[ACT] select a word of the existing rich text content
+[ACT] click 'Link' in the rich text toolbar
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[ACT] click the 'By Anchor Name' dropdown
+[WAIT] anchor option list expanded","[DOM] the 'By Anchor Name' dropdown is present and enabled, listing at least one option {OBSERVED}
+[DOM] an option for the SECOND section anchor 'specifications' is present, i.e. an anchor defined outside the rich-text field the dialog was opened from {OBSERVED}
+[DOM] at least one selectable anchor option is present, so cross-section navigation is selectable from the UI {SPEC}
+[STATE] after selecting that option the stored link href reads '#specifications' {DOC}","[CONSOLE] no JS errors while opening the Link dialog or the anchor picker; [NETWORK] no 4xx/5xx on page load or save","Anchor dropdown empty or disabled; only anchors of the current field listed; the other section's anchor absent; Link dialog throws in console","Remove the test link; clear the 'Anchor' value; do not publish the page","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160; Promoted: VCST-5704 (2026-08-26); Verified: manual, vcptcore-qa1, PageBuilderModule 3.1022.0-pr-160-df89","Reviewed"
+"CMS-160","Anchor picker labels entries as item name plus anchor, in page order, without duplicates","Field Types","Medium","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json) IMPORTANT: the anchor picker belongs to the CKEditor rich-text control, i.e. a field whose schema type is 'text'. On the B2B theme only two declare it: the Subscribe form section field 'Checkbox label' and the Text BLOCK field 'Content'. The section NAMED 'Text' uses a markdown editor (Markdown Guide toolbar) and has no Link dialog - do not use it.","","[NAV] Open the designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)
+[WAIT] pages grid rendered
+[ACT] click the page row of a page with two or more visible sections
+[WAIT] designer editor opened with the section list visible
+[ACT] click the SECOND section in the section list
+[WAIT] section edit panel opened
+[ACT] fill 'Anchor': Specifications
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] click the THIRD section in the section list
+[WAIT] section edit panel opened
+[ACT] fill 'Anchor': Downloads
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] click the FIRST section in the section list
+[WAIT] section edit panel opened
+[ACT] click into the 'Rich Text' field
+[WAIT] rich text editor toolbar rendered
+[ACT] select a word of the existing rich text content
+[ACT] click 'Link' in the rich text toolbar
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[ACT] click the 'By Anchor Name' dropdown
+[WAIT] anchor option list expanded","[DOM] each option text renders the owning item name followed by its anchor in parentheses, of the shape 'Name (anchor)', rather than a bare generated id {OBSERVED}
+[DOM] the option for 'specifications' is present above the option for 'downloads', matching page order {OBSERVED}
+[DOM] no duplicate anchor value is present — each listed value appears exactly once {OBSERVED}","[CONSOLE] no JS errors; [NETWORK] no 4xx/5xx on save","Options show bare ids with no item name; option order unrelated to page order; a duplicate anchor value listed twice","Clear both 'Anchor' values","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160; Promoted: VCST-5704 (2026-08-26); Verified: manual, vcptcore-qa1, PageBuilderModule 3.1022.0-pr-160-df89","Reviewed"
+"CMS-161","Anchor setting is slugified; a value with nothing left after normalization falls back to the item id","Edge Cases","Medium","","ECL-12.1","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json)","","[NAV] Open the designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)
+[WAIT] pages grid rendered
+[ACT] click the page row of a page with two or more visible sections
+[WAIT] designer editor opened with the section list visible
+[ACT] click the SECOND section in the section list
+[WAIT] section edit panel opened
+[ACT] fill 'Anchor': My Section Title
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] click the FIRST section in the section list
+[WAIT] section edit panel opened
+[ACT] click into the 'Rich Text' field
+[WAIT] rich text editor toolbar rendered
+[ACT] select a word of the existing rich text content
+[ACT] click 'Link' in the rich text toolbar
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[ACT] click the 'By Anchor Name' dropdown
+[WAIT] anchor option list expanded
+[ACT] read the option offered for the SECOND section
+[ACT] close the 'Link' dialog
+[WAIT] dialog closed
+[ACT] click the SECOND section in the section list
+[WAIT] section edit panel opened
+[ACT] fill 'Anchor': Раздел
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] reopen the 'Link' dialog anchor list from the FIRST section rich text field
+[WAIT] anchor option list expanded","[DOM] the mixed-case spaced value is offered normalized to the slug 'my-section-title', lowercased with spaces turned into dashes {DOC}
+[DOM] with a value that has nothing left after normalization, an option for that section is still present, carrying its generated item id instead {DOC}
+[DOM] no option with an empty anchor value is present in the list {DOC}
+[DOM] the SECOND section is never absent from the list purely because its anchor normalized away {DOC}","[CONSOLE] no JS errors during save or dropdown open; [NETWORK] no 4xx/5xx on save","Section absent from the list after a non-latin anchor value; an empty-valued option offered; the raw unslugified value offered","Clear the 'Anchor' value","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160","Draft"
+"CMS-162","In-text anchors and Source-view element ids are offered as page anchors","Field Types","Medium","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json) IMPORTANT: the anchor picker belongs to the CKEditor rich-text control, i.e. a field whose schema type is 'text'. On the B2B theme only two declare it: the Subscribe form section field 'Checkbox label' and the Text BLOCK field 'Content'. The section NAMED 'Text' uses a markdown editor (Markdown Guide toolbar) and has no Link dialog - do not use it.","","[NAV] Open the designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)
+[WAIT] pages grid rendered
+[ACT] click the page row of a page with two or more visible sections
+[WAIT] designer editor opened with the section list visible
+[ACT] click the FIRST section in the section list
+[WAIT] section edit panel opened
+[ACT] click into the 'Rich Text' field
+[WAIT] rich text editor toolbar rendered
+[ACT] click 'Anchor' in the rich text toolbar
+[WAIT] 'Anchor' dialog opened
+[ACT] fill 'Anchor Name': top
+[ACT] click 'OK'
+[WAIT] 'Anchor' dialog closed
+[ACT] click 'Source' in the rich text toolbar
+[WAIT] source view textarea rendered
+[ACT] add an id attribute of details to one element in the source markup
+[WAIT] source markup updated in the textarea
+[ACT] click 'Source' in the rich text toolbar
+[WAIT] rich text editor toolbar rendered
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] open the 'Link' dialog anchor list from the SECOND section rich text field
+[WAIT] anchor option list expanded","[DOM] an option for the in-text anchor 'top' created with the 'Anchor' toolbar button is present {DOC}
+[DOM] an option for the element id 'details' authored through 'Source' view is present {DOC}
+[DOM] both options are present in a dialog opened from the OTHER section field, not only from the field that defined them {SPEC}","[CONSOLE] no JS errors; [NETWORK] no 4xx/5xx on save","In-text anchor absent from the list; Source-view id absent; anchors present only within their own field","Remove the inserted anchor; remove the id attribute","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160","Draft"
+"CMS-163","Hidden sections and blocks are excluded from the anchor picker","Edge Cases","Medium","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json) IMPORTANT: the anchor picker belongs to the CKEditor rich-text control, i.e. a field whose schema type is 'text'. On the B2B theme only two declare it: the Subscribe form section field 'Checkbox label' and the Text BLOCK field 'Content'. The section NAMED 'Text' uses a markdown editor (Markdown Guide toolbar) and has no Link dialog - do not use it.","","[NAV] Continue from the state of CMS-159: the designer is open on the page with the SECOND section 'Anchor' set to Specifications
+[WAIT] designer editor opened with the section list visible
+[ACT] open the 'Link' dialog from the FIRST section 'Rich Text' field
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[ACT] click the 'By Anchor Name' dropdown
+[WAIT] anchor option list expanded
+[ACT] close the 'Link' dialog
+[WAIT] dialog closed
+[ACT] click the visibility toggle of the SECOND section in the section list
+[WAIT] section marked hidden in the section list
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] reopen the 'Link' dialog anchor list from the FIRST section rich text field
+[WAIT] anchor option list expanded","[DOM] the option for the hidden section anchor 'specifications' is absent, because the storefront does not render a hidden item {DOC}
+[DOM] options for the still-visible sections remain present {DOC}
+[STATE] after unhiding the section its option is present in the list again {DOC}","[CONSOLE] no JS errors; [NETWORK] no 4xx/5xx on save","Hidden section still offered as a link target; unhiding does not restore the option; the list empties entirely once one section is hidden","Unhide the SECOND section; clear the 'Anchor' value","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160","Draft"
+"CMS-164","Reopening an existing cross-section anchor link resolves it instead of reporting it missing","Field Types","High","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json) IMPORTANT: the anchor picker belongs to the CKEditor rich-text control, i.e. a field whose schema type is 'text'. On the B2B theme only two declare it: the Subscribe form section field 'Checkbox label' and the Text BLOCK field 'Content'. The section NAMED 'Text' uses a markdown editor (Markdown Guide toolbar) and has no Link dialog - do not use it.","","[NAV] Continue from the state of CMS-159: the designer is open on the page with the SECOND section 'Anchor' set to Specifications
+[WAIT] designer editor opened with the section list visible
+[ACT] open the 'Link' dialog from the FIRST section 'Rich Text' field
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[ACT] click the 'specifications' option in the 'By Anchor Name' dropdown
+[WAIT] option selected in the dropdown
+[ACT] click 'OK'
+[WAIT] 'Link' dialog closed
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] select the linked text in the FIRST section rich text field
+[ACT] click 'Link' in the rich text toolbar
+[WAIT] 'Link' dialog opened","[DOM] the reopened dialog shows the 'Link to anchor in the text' type selected, with 'specifications' selected in the 'By Anchor Name' dropdown {DOC}
+[DOM] no message reporting that the anchor cannot be found is present {OBSERVED}
+[STATE] after confirming the reopened dialog with 'OK' and saving, the stored href still reads '#specifications' — the link is not silently cleared {DOC}","[CONSOLE] no JS errors on reopen; [NETWORK] no 4xx/5xx on save","Reopened dialog reports the anchor as not found; dropdown resets to the empty option; href lost after confirming the reopened dialog","Remove the test link; clear the 'Anchor' value","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160; Promoted: VCST-5704 (2026-08-26); Verified: manual, vcptcore-qa1, PageBuilderModule 3.1022.0-pr-160-df89","Reviewed"
+"CMS-165","An anchor no longer on the page stays selected and does not clear the link","Edge Cases","High","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json) IMPORTANT: the anchor picker belongs to the CKEditor rich-text control, i.e. a field whose schema type is 'text'. On the B2B theme only two declare it: the Subscribe form section field 'Checkbox label' and the Text BLOCK field 'Content'. The section NAMED 'Text' uses a markdown editor (Markdown Guide toolbar) and has no Link dialog - do not use it.","","[NAV] Continue from the state of CMS-159: the designer is open on the page with the SECOND section 'Anchor' set to Specifications
+[WAIT] designer editor opened with the section list visible
+[ACT] open the 'Link' dialog from the FIRST section 'Rich Text' field
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[ACT] click the 'specifications' option in the 'By Anchor Name' dropdown
+[WAIT] option selected in the dropdown
+[ACT] click 'OK'
+[WAIT] 'Link' dialog closed
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] click the SECOND section in the section list
+[WAIT] section edit panel opened
+[ACT] fill 'Anchor': Renamed
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] select the linked text in the FIRST section rich text field
+[ACT] click 'Link' in the rich text toolbar
+[WAIT] 'Link' dialog opened
+[ACT] click 'OK'
+[WAIT] 'Link' dialog closed
+[ACT] click 'Save'
+[WAIT] save confirmation shown","[DOM] on reopen the now-missing value 'specifications' is still selected in the 'By Anchor Name' dropdown rather than reset to the empty option {DOC}
+[STATE] after confirming and saving, the original href '#specifications' is preserved — the link is not silently lost {DOC}
+[DOM] an option for the renamed anchor 'renamed' that DOES exist on the page is also present in the list {DOC}","[CONSOLE] no JS errors; [NETWORK] no 4xx/5xx on save","Selection resets to the empty option on reopen; href stripped after save; the whole link removed","Remove the test link; clear the 'Anchor' value","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160","Draft"
+"CMS-166","By Element Id list is hidden while page anchors exist","Field Types","Low","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json) IMPORTANT: the anchor picker belongs to the CKEditor rich-text control, i.e. a field whose schema type is 'text'. On the B2B theme only two declare it: the Subscribe form section field 'Checkbox label' and the Text BLOCK field 'Content'. The section NAMED 'Text' uses a markdown editor (Markdown Guide toolbar) and has no Link dialog - do not use it.","","[NAV] Continue from the state of CMS-159: the designer is open on the page with the SECOND section 'Anchor' set to Specifications
+[WAIT] designer editor opened with the section list visible
+[ACT] open the 'Link' dialog from the FIRST section 'Rich Text' field
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[ACT] inspect the anchor selection row for the two stock CKEditor lists 'By Anchor Name' plus 'By Element Id'","[DOM] the 'By Anchor Name' dropdown is visible {DOC}
+[DOM] the redundant 'By Element Id' dropdown is hidden while page anchors exist {OBSERVED}
+[DOM] no empty or orphaned second dropdown is visible in the anchor selection row {OBSERVED}
+[DOM] the remaining 'By Anchor Name' dropdown occupies the full dialog row with no blank cell beside it {DOC}","[CONSOLE] no JS errors; [NETWORK] no 4xx/5xx","Both dropdowns shown; an empty 'By Element Id' dropdown left visible; dialog row renders a blank cell","Clear the 'Anchor' value","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160; Promoted: VCST-5704 (2026-08-26); Verified: manual, vcptcore-qa1, PageBuilderModule 3.1022.0-pr-160-df89","Reviewed"
+"CMS-167","Leaving the page editor drops the page anchors — no stale anchors in another CKEditor context","Designer Core","High","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json); the designer also exposes a rich text CKEditor field outside the page editor route, for example under Themes IMPORTANT: the anchor picker belongs to the CKEditor rich-text control, i.e. a field whose schema type is 'text'. On the B2B theme only two declare it: the Subscribe form section field 'Checkbox label' and the Text BLOCK field 'Content'. The section NAMED 'Text' uses a markdown editor (Markdown Guide toolbar) and has no Link dialog - do not use it.","","[NAV] Continue from the state of CMS-159: the designer is open on the page with the SECOND section 'Anchor' set to Specifications
+[WAIT] designer editor opened with the section list visible
+[ACT] open the 'Link' dialog from the FIRST section 'Rich Text' field
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[ACT] click the 'By Anchor Name' dropdown
+[WAIT] anchor option list expanded
+[ACT] close the 'Link' dialog
+[WAIT] dialog closed
+[NAV] leave the page editor route for another designer area holding a rich text CKEditor field
+[WAIT] the other area rendered with its rich text field
+[ACT] click 'Link' in that area rich text toolbar
+[WAIT] 'Link' dialog opened
+[ACT] click the 'Link to anchor in the text' link type
+[WAIT] anchor selection area rendered
+[NAV] return to the page editor route
+[WAIT] designer editor opened with the section list visible
+[ACT] open the 'Link' dialog anchor list from the FIRST section rich text field
+[WAIT] anchor option list expanded","[DOM] outside the page editor, an option for 'specifications' from the previously opened page is absent {DOC}
+[DOM] outside the page editor the 'By Element Id' dropdown is visible again, showing the dialog fell back to its own field-local behaviour {DOC}
+[DOM] back inside the page editor the option for 'specifications' is present again, so the registration survives a route round trip {SPEC}
+[STATE] covers the reviewer-flagged lifecycle risk that the anchors registration is tied to the editor route component, so leaving the route takes the anchors down with it {SPEC}","[CONSOLE] no JS errors on route change or dialog open; [NETWORK] no 4xx/5xx","Anchors of the previously opened page listed in another designer area; list empty after returning to the editor; anchors of a different page shown after opening a second page","Clear the 'Anchor' value","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160","Draft"
+"CMS-168","Section edit panel shows the Anchor value with a working copy button","Section Settings","Medium","","","Admin logged in to Backend; PageBuilderModule with VCST-5704 page-anchor support deployed; a Page Builder page exists with AT LEAST TWO visible sections, the theme declares the well-known anchor setting on sections/blocks (usually in shared/_sections.json)","","[NAV] Continue from the state of CMS-159: the designer is open on the page with the SECOND section 'Anchor' set to Specifications
+[WAIT] designer editor opened with the section list visible
+[ACT] click the SECOND section in the section list
+[WAIT] section edit panel opened
+[ACT] read the anchor value shown in the section edit panel
+[ACT] click the copy control beside the 'Anchor' value
+[WAIT] copy confirmation shown
+[ACT] click into the 'Rich Text' field of the FIRST section
+[WAIT] rich text editor toolbar rendered
+[ACT] paste the copied value into the 'URL' field of the 'Link' dialog
+[WAIT] pasted value rendered in the 'URL' field","[DOM] the section edit panel shows the anchor to link to with a leading hash, reading '#specifications' {DOC}
+[DOM] a copy control is present beside the 'Anchor' value {OBSERVED}
+[STATE] the pasted value equals the '#specifications' anchor the 'By Anchor Name' dropdown offers for the same section {DOC}
+[DOM] a block edit panel likewise shows its own anchor value with a copy control present {DOC}","[CONSOLE] no JS errors; [NETWORK] no 4xx/5xx","No anchor shown in the edit panel; copy control absent; copied value empty or not matching the dropdown option","Clear the 'Anchor' value","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160; Promoted: VCST-5704 (2026-08-26); Verified: manual, vcptcore-qa1, PageBuilderModule 3.1022.0-pr-160-df89","Reviewed"
+"CMS-169","Storefront renders the section element id from the Anchor setting, matching the designer value","Storefront Verification","High","","","Admin logged in to Backend; BOTH halves of VCST-5704 deployed — the PageBuilder module AND the storefront theme (the designer offers the anchors, the theme renders the matching element ids); a PUBLISHED Page Builder page with two or more visible sections exists, its permalink is known","","[NAV] Open the designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)
+[WAIT] pages grid rendered
+[ACT] click the page row of the published page with two or more visible sections
+[WAIT] designer editor opened with the section list visible
+[ACT] click the SECOND section in the section list
+[WAIT] section edit panel opened
+[ACT] fill 'Anchor': My Section Title
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] click 'Publish'
+[WAIT] publish confirmation shown
+[NAV] Navigate to ${FRONT_URL}/<permalink of the published page>
+[WAIT] page content blocks rendered
+[ACT] inspect the rendered markup of the SECOND section for its id attribute","[DOM] the SECOND section element carries the id attribute 'my-section-title', the authored value normalized to a slug {DOC}
+[DOM] that rendered id is identical to the value the designer 'By Anchor Name' dropdown offers for the same section {DOC}
+[DOM] an empty id attribute is absent from every rendered section {DOC}","API: GET /api/page-builder-pages/grouped/{groupId}/content confirms the saved anchor setting value; Admin: the designer By Anchor Name dropdown offers the same value","Section rendered with no id attribute; rendered id differs from the value offered in the designer dropdown; rendered id keeps the raw unslugified value","Clear the 'Anchor' value; republish the page to its prior state","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160 PR VirtoCommerce/vc-frontend#2441","Draft"
+"CMS-170","A deep link with a hash scrolls to the target section on page load","Storefront Verification","High","","","Admin logged in to Backend; BOTH halves of VCST-5704 deployed — the PageBuilder module AND the storefront theme (the designer offers the anchors, the theme renders the matching element ids); a PUBLISHED Page Builder page with two or more visible sections exists, its permalink is known; the SECOND section of the published page carries the anchor my-section-title (state from CMS-169)","","[NAV] Navigate to ${FRONT_URL}/<permalink of the published page>#my-section-title
+[WAIT] page content blocks rendered
+[ACT] read the vertical scroll offset of the document
+[ACT] read the bounding position of the element with id 'my-section-title'","[DOM] the element with id 'my-section-title' is present in the rendered page {DOC}
+[STATE] the document vertical scroll offset is greater than zero, so the browser did not stay at the top of the page {DOC}
+[DOM] the element with id 'my-section-title' is scrolled into the viewport {DOC}
+[STATE] the scroll still lands on target even though page content mounts after the route resolves, which is what the polling in the theme anchors module covers {DOC}","[CONSOLE] no JS errors during load or scroll; [NETWORK] page responds 200 with no 4xx/5xx","Page stays at the top with the hash present; target element absent from the DOM; scroll lands on the wrong section","none — read-only navigation","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160 PR VirtoCommerce/vc-frontend#2441","Draft"
+"CMS-171","A designer-authored in-page anchor link scrolls to its target section","Storefront Verification","High","","","Admin logged in to Backend; BOTH halves of VCST-5704 deployed — the PageBuilder module AND the storefront theme (the designer offers the anchors, the theme renders the matching element ids); a PUBLISHED Page Builder page with two or more visible sections exists, its permalink is known; the FIRST section rich text field contains a link with href #specifications pointing at the SECOND section (state from CMS-164), and the page is published","","[NAV] Navigate to ${FRONT_URL}/<permalink of the published page>
+[WAIT] page content blocks rendered
+[ACT] click the rich text link labelled with the linked text of the FIRST section
+[WAIT] scroll settled on the target section","[NAV] the address bar hash becomes '#specifications' {DOC}
+[DOM] the element with id 'specifications' is scrolled into the viewport {DOC}
+[DOM] a 404 page is absent and no full document reload occurs — the hash change is handled in the client {DOC}
+[STATE] the link authored through the designer anchor picker resolves to a real element, closing the VP-9266 complaint that hash links had to be written as absolute URLs {SPEC}","[CONSOLE] no JS errors on hash navigation; [NETWORK] no document request beyond the initial page load","Clicking the link does nothing; hash appears but the page does not scroll; a 404 page is rendered; the whole document reloads","none — read-only navigation","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160 PR VirtoCommerce/vc-frontend#2441","Draft"
+"CMS-172","An anchor that normalizes away falls back to the generated item id on BOTH the designer and the storefront","Edge Cases","Medium","","ECL-12.1","Admin logged in to Backend; BOTH halves of VCST-5704 deployed — the PageBuilder module AND the storefront theme (the designer offers the anchors, the theme renders the matching element ids); a PUBLISHED Page Builder page with two or more visible sections exists, its permalink is known","","[NAV] Open the designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)
+[WAIT] pages grid rendered
+[ACT] click the page row of the published page with two or more visible sections
+[WAIT] designer editor opened with the section list visible
+[ACT] click the SECOND section in the section list
+[WAIT] section edit panel opened
+[ACT] fill 'Anchor': Раздел
+[ACT] click 'Save'
+[WAIT] save confirmation shown
+[ACT] read the option the 'By Anchor Name' dropdown offers for the SECOND section
+[ACT] click 'Publish'
+[WAIT] publish confirmation shown
+[NAV] Navigate to ${FRONT_URL}/<permalink of the published page>
+[WAIT] page content blocks rendered
+[ACT] inspect the rendered markup of the SECOND section for its id attribute","[DOM] the 'By Anchor Name' dropdown offers the generated item id for that section, because the authored value has nothing left after normalization {DOC}
+[DOM] the SECOND section renders with an id attribute present and equal to that same generated item id {DOC}
+[DOM] the raw non-latin value is absent from the rendered id attribute {DOC}
+[STATE] a link built from the offered value resolves — the target element is present in the rendered page {DOC}","API: GET /api/page-builder-pages/grouped/{groupId}/content confirms the saved anchor setting value; Admin: the designer By Anchor Name dropdown offers the same value","Designer and storefront derive different values; storefront renders an empty id; the raw non-latin value rendered as an id; the link resolves to nothing","Clear the 'Anchor' value; republish the page to its prior state","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160 PR VirtoCommerce/vc-frontend#2441","Draft"
+"CMS-173","Anchor scrolling yields to a user scroll and does not replay a stale navigation","Edge Cases","Low","","","Admin logged in to Backend; BOTH halves of VCST-5704 deployed — the PageBuilder module AND the storefront theme (the designer offers the anchors, the theme renders the matching element ids); a PUBLISHED Page Builder page with two or more visible sections exists, its permalink is known; the SECOND section carries the anchor my-section-title (state from CMS-169)","","[NAV] Navigate to ${FRONT_URL}/<permalink of the published page>#my-section-title
+[ACT] scroll the document manually while the page content is still mounting
+[WAIT] scroll position settled
+[ACT] read the vertical scroll offset of the document
+[NAV] Navigate to another storefront page carrying no hash
+[WAIT] the other page content rendered
+[ACT] read the vertical scroll offset of the document","[STATE] after the manual scroll the document stays where the user left it, so the anchor scroll backs off instead of fighting the user {DOC}
+[STATE] on the page carrying no hash the document vertical scroll offset is zero — the pending scroll from the previous route is cancelled {DOC}
+[DOM] the element with id 'my-section-title' is absent from the second page, confirming no stale target is chased {DOC}","[CONSOLE] no JS errors and no unhandled promise rejection on route change; [NETWORK] no 4xx/5xx","The page jumps back to the anchor after the user scrolls; the newly opened page is scrolled by the previous route pending scroll; console shows an unhandled rejection on route change","none — read-only navigation","VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160 PR VirtoCommerce/vc-frontend#2441","Draft"
