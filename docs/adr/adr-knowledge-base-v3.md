@@ -229,7 +229,19 @@ CI has), a property graph (our relation density is low: supersedes/extends/base 
 edge types; a graph store buys nothing at 10²–10⁴ entries), JSONL-only (loses
 per-entry files = loses meaningful git diffs and the folder write-boundary). Agents are
 the only readers/writers, but git-reviewability is still load-bearing — it is the audit
-surface (§2 Q25) and the revert mechanism (§6.5).
+surface (§2 Q25) and the revert mechanism (§6.5). The shape is also the convergent one:
+Anthropic's three shipping memory surfaces and Beads (git-tracked line-text as the sync
+source, a derived DB gitignored) arrive at it independently ([R§4]).
+
+**The honest costs, budgeted rather than argued away** ([R§4]): frontmatter must stay a
+JSON-safe subset with a lint (no free YAML); schema evolution needs explicit migration
+scripts (there is no `ALTER TABLE`); referential integrity — a dangling `supersedes`,
+a `leads` link to a retired id — needs a lint gate a database would have given for free
+(it is part of the index `--check`); concurrent writers need one-writer-per-entry
+ownership, with file-level conflicts as the *visible* failure mode; and at the top of
+the range (10⁴ entries) the layout needs directory sharding plus a few hundred
+milliseconds of index build in CI. JSONL is kept for exactly one job — the append-only
+capture/usage queues, where line-per-record merges well and no one reviews prose.
 
 ---
 
@@ -289,6 +301,14 @@ flags, permission constants, storefront routes, component/operation maps.
 
 ## 6. D3 — Lifecycle: statuses, weighted evidence, transitions
 
+Why a lifecycle is not optional: measured under drift, an append-only memory and a
+last-write-wins memory both scored **0.210** while **having no memory at all scored
+0.309** — and a keyed-revocation design scored **0.950** (TEPA, [R§2]). Past the point
+where the underlying system changes, a knowledge base without invalidation mechanics is
+not a weaker asset; it is a net liability. Everything in this section exists to make
+that outcome unrepresentable, and the same paper's second result is the reassurance:
+revocation costs nothing when nothing has drifted.
+
 ### 6.1 Statuses and overlays
 
 ```
@@ -312,8 +332,14 @@ capture against it still records confirmations/disputes for the digest.
 
 **Rejected**: `approved` as the top-status name (implies an approver; `confirmed`
 states the actual basis — evidence); a sixth `disputed` status (loses lifecycle
-position — v2's overlay argument stands); numeric trust exposed to consumers (models
-demonstrably ignore in-context numeric confidence — [R§2]; categorical labels bind).
+position — v2's overlay argument stands); numeric trust exposed to consumers — the
+measured finding is harsher than v2 assumed: a **passive** tag (numeric *or*
+categorical) is largely inert, while a blunt "do not trust this" instruction
+over-corrects; what models act on is the **wording of the entry itself** plus
+redundant sourcing ([R§2], *Manufactured Confidence*). Hence categorical labels **plus**
+the supersession banner (§6.6), never a `confidence: 0.6` field expected to do
+behavioral work. (v2 cited a "numeric-score inversion" RAG study for this; that study
+could not be located — [R§2] flags it as unverifiable, and v3 does not rely on it.)
 
 ### 6.2 The weighted evidence model (internal arithmetic, categorical outside)
 
@@ -344,8 +370,9 @@ label: `confirmed` + no flags → **high** (silent); `confirmed` + `verification
 before load-bearing use"); `draft` → **low** ("a lead, not an answer"); any +
 `disputed` → **none** (symmetric ban both ways). The score itself appears only in the
 digest and the index, for the pipeline's own decisions. Rationale: the in-context
-numeric-confidence null result [R§2]; and a number invites arithmetic nobody can
-defend.
+evidence that in-context confidence *metadata* — numeric or passive-categorical — is
+largely inert while phrasing is not ([R§2]); and a number invites arithmetic nobody can
+defend. The label is therefore paired with §6.6's wording rules, not trusted alone.
 
 ### 6.3 Transition table
 
@@ -391,6 +418,34 @@ old one — the id contract survives every path (unchanged).
 
 The consuming-agent duty (dispute-or-confirm what you touched) is part of the
 consumption protocol (§9.5), inherited from v2 R8.
+
+### 6.6 Invalidation must live in the words, not only in the metadata
+
+Two measured results force this ([R§2]): **STALE** — the best model scored **55.2%** at
+judging which of two retrieved states is current, *with the updated evidence already in
+its context in 77.5% of cases* — and **Manufactured Confidence**, which found a passive
+"unverified" tag ignored while the **phrasing** of the claim drove behavior. A KB that
+serves an old and a new claim side by side, trusting a `status:` field to sort them out,
+is betting against a measured ~45% failure rate. Three rules follow:
+
+1. **One adjudicated current state per key in the default view.** A superseded entry is
+   excluded from default `lookup` results (it remains resolvable by id, and is reachable
+   as history), so a consuming agent is never handed two rival current answers. Status
+   weights damp; the default view *excludes*.
+2. **The supersession banner.** When the machine supersedes an entry it prepends a
+   deterministic template line to that entry's body — *"SUPERSEDED on `<date>` by
+   `@kb(<id>)`: the claim below no longer describes current behavior."* — and prepends a
+   `supersedes` line to the successor's body naming what it replaces. The original text
+   stays underneath, unedited (git holds every version). This is Graphiti's past-tense
+   rewrite applied to files, and it is what arms an agent against a stale-premise
+   question (STALE's premise-resistance dimension).
+3. **Never rewrite hedges into assertions.** Consolidation copies a capture's claim
+   verbatim; the epistemic register of the observation is part of the evidence. An entry
+   may be *promoted* by accumulating events (§6.2) but its wording is not "cleaned up"
+   into a flatter, more confident sentence.
+
+The `disputed` overlay carries the same discipline: the reason text travels in the
+served body, not only as a field.
 
 ---
 
@@ -457,32 +512,68 @@ golden confirmation, retirement decisions) is machine-owned in v3 under §6/§7
 mechanics. This is the §1.1 reversal, stated once more so the ratifying meeting sees
 it in the section where it bites.
 
+**Measured against KCS** ([R§4]) — the industry standard for knowledge lifecycles — v3
+is *more* orthodox than v2 was, not less: KCS's own economics say "reviewing every
+article that is created is a huge waste of time and money", and its confidence states
+are earned by **use** (*reuse is review*), not by a reviewer. Its structure maps onto
+v3 almost field for field: content standard → the closed schema + lint gates; WIP /
+Not Validated / Validated / Archived → `draft` / `candidate` / `confirmed` /
+`superseded`-`retired` (with archive as a visibility change, never deletion); *flag it
+or fix it* → flagging is permissionless (dispute, drift) while fixing is gated
+(consolidation); earned-and-revocable license levels → capability tiers (capture-only →
+consolidate-behind-gates → promote-upstream), earned by exam track record and revoked
+by quarantine. KCS names three functions that must survive in some form — the
+**standard-setter**, the **independent grader** (the Coach, who must never be the
+writer), and the **outcome owner**. v3 keeps the first and third human (§8's digest and
+the thresholds file) and is the only place it diverges knowingly on the second: the
+grader is **mechanized** by grounding golden verification outside the corpus (§7.3)
+rather than by requiring a person. That divergence, not autonomy in general, is the
+thing to argue about at ratification.
+
 ---
 
 ## 9. D6 — Retrieval and surfaces
 
 ### 9.1 Engine
 
-**Vendored MiniSearch** (single-file, zero-dependency BM25-family scoring with field
-boosting) replaces both v1's hand-rolled overlap scorer and v2's planned hand-written
-BM25 — the task statement names that NIH as error #7. Verified characteristics and the
-comparison against Orama / FlexSearch / lunr / hand-rolled: [R§4].
+**Vendored MiniSearch 7.2.0** replaces both v1's hand-rolled overlap scorer and v2's
+planned hand-written BM25 — the task statement names that NIH as error #7. The choice
+is measured, not assumed ([R§4], from the shipped tarballs): it is the only candidate
+that is simultaneously **true BM25+ in the shipped code** (k=1.2, b=0.7, δ=0.5 — the
+README says only "modern ranking algorithm"), **MIT**, **genuinely zero-dependency**,
+**one self-contained ES file** (78 KB raw / 18 KB gz, no imports — so "vendor a single
+file" is literal), **language-neutral by default** (Unicode tokenizer + lowercase, no
+stemmer, no stopwords ⇒ nothing mis-fires on mixed EN/RU, and Cyrillic tokenizes
+correctly), and free of internal randomness (**no `Math.random`/`Date.now`** in the
+module).
 
 - Fields and boosts: `subject`, `aliases`, `title`, `question` (top), `tags` (mid),
   `body` (low, length-damped). Exact `@kb(id)` in a query short-circuits to
   `resolveId`.
-- **Version-pinning discipline**: the library is vendored at an exact version; its file
-  hash is recorded in the index meta; exam baselines are valid only against that hash
-  (a scoring change in a library update would silently shift baselines — the same
-  class as Cortex's fastembed pooling incident, caught the same way: a passport).
+- **Version-pinning discipline** (the sourced form): vendor the exact file, record
+  `minisearch@7.2.0` + its **sha256** in the index meta, and never consume it through
+  an npm range. An upgrade is a deliberate **two-commit migration** that swaps the file
+  and regenerates the exam baselines in the same reviewed change. Precedent for why:
+  Lucene changed its *default* similarity to BM25 at 6.0 (Elasticsearch inherited it at
+  5.0) and MiniSearch itself swapped scoring at v5.0.0 — engines do move relevance at
+  majors. Same class as Cortex's fastembed pooling incident, caught the same way.
+- **Byte-stability rules for the index**: entries are sorted by id before indexing (so
+  filesystem enumeration order cannot leak in), the index is written with a canonical
+  serializer (RFC 8785-shaped: sorted keys, fixed number formatting), and volatile
+  fields are stripped from anything snapshotted — Orama's wall-clock `elapsed` field is
+  the cautionary example.
 - Curated `synonyms.json` per root (domain vocabulary: "PLP" ⇢ "product listing page",
   RU⇢EN bridges for the team's query language), identity until populated.
 - Same normalization pipeline (`claimTokens`) for queries and corpus fields.
 
-**Rejected**: hand-rolled BM25 (NIH; calibration burden); embeddings now (breaks the
-zero-dep client-CI invariant, needs passport+canary, and the measured wins at this
-corpus scale are marginal — [R§4]); Orama (heavier, plugin-oriented; MiniSearch is the
-smaller vendorable unit — detail in [R§4]).
+**Rejected**: hand-rolled BM25 — a legitimate *maximum-determinism* fallback (~100 lines;
+scores could then change only by our own commit) but it forfeits fuzzy/prefix matching
+and the calibration burden lands on us; embeddings now (breaks the zero-dep client-CI
+invariant, needs passport+canary, marginal measured wins at this scale); **Orama**
+(47 shipped files ⇒ needs a bundling step, a wall-clock field in results, a shipped
+language-map bug, and a company whose flagship moved to AGPL Rust); **FlexSearch**
+(contextual/proximity scoring, **not BM25, no IDF**); **lunr** (no release since
+2020-08); **wink-bm25-text-search** (four runtime dependencies).
 
 ### 9.2 Resolution semantics
 
@@ -543,16 +634,38 @@ themselves); contract by-name reads exempt. Fail-open absolute.
 
 ### 10.1 The novelty protocol (mandatory before any write — §2 Q11)
 
+0. **Canonicalize** (before anything is hashed or scored): Unicode NFC, lowercase, the
+   Russian **ё→е** fold, and the root's committed alias map. Deliberately **no stemming
+   and no stopword stripping** — stemming is language-specific and lossy for Russian,
+   and stripping function words from a short claim can erase a negation ("must" vs
+   "must not") and merge a claim with its converse ([R§4]; this is also why the
+   fingerprint's stopword list is short and keeps `no/not/never`).
 1. **Ask as a reader**: `lookup` with the writer's own words. A hit on the same claim →
    no write; record a `confirmation` event on the hit (+ observation phrasing).
 2. **Fingerprint**: `sha256(kind ␟ scope ␟ subjectSlug ␟ claimBag)` — v1 D5-F kept
    verbatim (phrasing-insensitive, deterministic, versioned). Match → confirmation.
-3. **Near-duplicate scan**: top-k MiniSearch over same-`subject` candidates with a
-   score threshold θ. Three outcomes: same subject, different aspect → new draft with a
-   `leads` link to the neighbor; contradiction (the claim negates a confirmed entry) →
-   a **dispute capture** against it, not a new entry; nothing → genuinely new draft.
+   This is an **I-Match-shaped** key (Chowdhury et al., 2002 — hash of the
+   order-insensitive term set), and its documented brittleness (one token flips the
+   digest) is precisely why step 3 exists.
+3. **Near-duplicate scan**: top-k (k≈10–20) MiniSearch over same-`subject` candidates as
+   a **candidate generator only** — rank is the signal, **never the BM25 score**, which
+   drifts with IDF as the corpus grows. Each candidate is then verified with
+   corpus-independent measures: **Jaccard** *and* **containment** (`|A∩B| / min(|A|,|B|)`,
+   which catches a short claim embedded in a longer one, where Jaccard under-fires).
+   Bands, committed as config: **≥0.90 duplicate** → confirmation; **0.70–0.90
+   near-duplicate** → the aspect/contradiction decision below; **<0.70 novel** → new
+   draft. Outcomes: same subject, different aspect → new draft with a `leads` link to
+   the neighbor; contradiction (the claim negates a confirmed entry) → a **dispute
+   capture** against it, not a new entry; nothing → genuinely new draft.
 
-The deterministic steps (1-index, 2, 3-scoring) are engine code; the *classification*
+**Threshold discipline.** The bands are calibrated once against a labeled sample of our
+own entries and live in `brain.json`; a threshold change is a scoring change and must
+regenerate the exam baselines **in the same reviewed commit**, never drift silently
+(same rule as the vendored-library hash, §9.1). MinHash/SimHash/LSH is deliberately
+**not** used: below ~10⁵ entries it buys sub-linearity we do not need at the price of
+probabilistic error and a tuning surface ([R§4]).
+
+The deterministic steps (0, 1-index, 2, 3-scoring) are engine code; the *classification*
 of step 3's outcome is made by the capturing agent in-session (it has a model), against
 a rubric shipped in the skill — recorded in the draft so consolidation can audit it.
 
@@ -611,14 +724,18 @@ GitHub account at their choice — the form carries no client fields).
 
 ### 11.1 Extractors (deterministic, zero-LLM)
 
-| Fact class | Source | Method |
-|---|---|---|
-| Module map + dependency graph | `vc-module-*/module.manifest` | XML parse |
-| REST surface | controllers' attribute routes | Roslyn-free regex/AST pass over `[Route]`/`[Http*]` attributes (deterministic subset; anything ambiguous is skipped, never guessed) |
-| GraphQL schema | xAPI schema build or live introspection at a pinned platform version | normalized SDL snapshot + structural diff |
-| Settings & permissions | `ModuleConstants`-style declarations | pattern-anchored extraction |
-| Storefront routes/flags/operations | `vc-frontend` router + config + GraphQL documents | TS-AST/regex pass |
-| Client delta | client repos vs platform at `upstreamRef` | same extractors + set difference (custom modules, fork-divergent files, non-native installed modules) |
+| Fact class | Source | Method | Build vs reuse ([R§3]) |
+|---|---|---|---|
+| Module map + dependency graph, declared settings + defaults, permissions | `vc-module-*/module.manifest` | XML parse | reimplement (trivial; it is Virto's own declared contract) |
+| Settings & permission constant ids/values | `ModuleConstants`-style declarations | **Roslyn** symbol walk + constant-value evaluation — never regex, so concatenated constants resolve correctly | Roslyn as a library |
+| REST surface — per-module, static | controllers' `[Route]`/`[Http*]` attributes | AST pass; route-token replacement and inherited prefixes are the reimplementation risk, so these records are labeled **`derived-static`** | reimplement on Roslyn |
+| REST surface — authoritative | ApiExplorer / build-time OpenAPI against a composed platform host | full framework semantics applied; labeled **`derived-hosted`** | reuse as-is |
+| REST drift classification | two OpenAPI snapshots | **oasdiff** — ERR / WARN / INFO with `--fail-on` | reuse as-is |
+| GraphQL schema | xAPI introspection at a pinned platform version | normalized, **sorted** SDL snapshot (sorting is what makes the diff stable) | reuse as-is |
+| GraphQL drift + storefront coupling | SDL pair; storefront GraphQL documents | **graphql-inspector** `diff` (breaking / dangerous / safe) and `validate` (documents against the SDL) | reuse as-is |
+| Storefront routes / config flags | `vc-frontend` router + config | **ts-morph** walk of the config literals | reimplement (thin) |
+| Component contracts (props/events/slots) | `.vue` SFCs | static AST extraction | **vue-docgen-api** reuse as-is |
+| Client delta | client repos vs platform at `upstreamRef` | same extractors + set difference (custom modules, fork-divergent files, non-native installed modules) | — |
 
 Outputs: `derived/**` tables (JSON/markdown, generated headers) + aggregate `structure`
 /`contract` entries (one per module / schema area / settings group) that cite the
@@ -627,9 +744,20 @@ generate from the source, gate on drift, exit non-zero on an unreachable source.
 Extraction runs in the brain repo's CI (once for all consumers) and locally only by
 explicit command — never in hooks (§11.2).
 
+**Severity is the re-check priority.** The three tools above already classify each fact
+change; v3 reuses their vocabulary rather than inventing one: a **breaking** diff forces
+re-verification of every lifecycle entry whose `anchors[]` touch the affected coordinate
+*before* the next consolidation batch; **dangerous/WARN** enqueues it at normal priority;
+**safe/INFO** merely re-stamps the anchors as still-valid. The anchor format follows
+GraphQL Hive's **schema coordinate** idea (`Type.field`, `Module.Setting`, route+verb),
+which is what lets a diff mechanically select what to re-check instead of re-checking
+everything ([R§3]).
+
 An extractor that cannot parse a construct **skips it and reports the skip** (an
 `unresolved[]` list in the table header) — a guessed fact fails every correct consumer;
-an announced gap is honest (the design-spec extractor lesson from this repo).
+an announced gap is honest (the design-spec extractor lesson from this repo). And where
+`derived-static` and `derived-hosted` disagree about the same endpoint, that
+disagreement is itself a reported finding, never a tie broken silently.
 
 ### 11.2 Sync (SessionStart) — light by contract
 
@@ -771,7 +899,7 @@ edge, per mandate error #1.
 | 6 | **Retrieval silently degrades** (library update shifts scoring) | Vendored MiniSearch pinned + hashed into the index meta; exam baselines bound to that hash; exam gate on every batch |
 | 7 | **Duplicate sprawl** (same fact, many phrasings) | Three-step novelty protocol; fingerprint dedup; near-dup scan; restatements become confirmations, not entries |
 | 8 | **Client data leaks into the platform brain** | §2a by construction: separate repos, readOnly pin cache, `assertWritable`, containment errors by type, promotion via issue-form with client-side identifier lint + platform-side draft-only ingest + platform-evidence requirement to confirm |
-| 9 | **An agent trusts a stale/disputed entry blindly** | Trust labels travel in-band (categorical — numeric is ignored by models); relay obligations; `/vc-self-check`-style oracle expectation: citing a disputed/stale entry as fact in an external artifact is a finding |
+| 9 | **An agent trusts a stale/disputed entry blindly** (STALE: 55.2% even with the update retrieved) | The default view serves **one adjudicated current state per key**; invalidation is written into the body as the supersession banner, not only into a field (§6.6); trust labels travel in-band; relay obligations; `/vc-self-check`-style oracle expectation: citing a disputed/stale entry as fact in an external artifact is a finding |
 | 10 | **Empty-brain death spiral** (every query MISSes → agents stop asking) | Deterministic bootstrap seeds hundreds of derived facts + aggregates day one, client delta included; MISS-with-leads keeps partial value flowing; MISS share is a watched metric |
 | 11 | **Verification-due backlog starves** (nobody re-checks) | Queue is bounded and prioritized (due → citedBy → age); on-read flags put the work where the users are; the digest reports queue depth; a starving queue is visible, not silent |
 | 12 | **Fingerprint collision merges converse claims** ("A blocks B"/"B blocks A") | Accepted trade-off, unchanged from v1 D5-F: merge target is always a draft; phrasings kept; consolidation reads the claim, not the hash |
@@ -792,7 +920,7 @@ mechanisms in [R§5]; every incident class has a named v3 answer or an explicit
 - **Embeddings-first retrieval** — breaks client CI, adds a silently-mutating dependency; deferred behind a measured ceiling (§9.3).
 - **A knowledge MCP server / local service** — impossible on client installs; scripts + hooks suffice (v1 D4 stands).
 - **SQLite / property-graph storage** — loses git reviewability and the folder trust boundary; nothing at this scale needs them (§4.4, [R§4]).
-- **Numeric confidence exposed to agents** — ignored by models; categorical labels bind [R§2].
+- **Confidence metadata expected to do the work alone** — numeric scores and passive tags alike are largely inert in context; what moves a model is the entry's wording and redundant sourcing, hence categorical labels **plus** the §6.6 banner rules [R§2]. (v2's "numeric-inversion study" could not be verified; v3 does not rely on it.)
 - **Recency-wins conflict resolution** — the documented agent-memory failure class; evidence + re-check decide (§10.3).
 - **Per-entry PRs / branch ceremony** — the v1 argument stands: a human bottleneck on the highest-volume lowest-stakes path.
 - **Calendar lifetimes** (v2 staleness table) — contradicts the mandate; replaced by supersession + anchor drift (§6.4).
