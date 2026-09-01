@@ -204,7 +204,8 @@ New in v3:
 
 | Field | What | Why |
 |---|---|---|
-| `anchors[]` | Machine-checkable pointers into sources: `{repo, ref: <commit>, path, symbol?, hash}` — the hash is of the normalized anchored fragment | The drift sensor for experiential/derived-adjacent knowledge: when regeneration diffs touch an anchor, the entry is flagged for re-check (§6.4). Optional but strongly encouraged at capture |
+| `anchors[]` | Machine-checkable pointers into sources: `{repo, ref: <commit>, path, symbol?, hash}` — the hash is of the normalized anchored fragment | The drift sensor for experiential/derived-adjacent knowledge: when regeneration diffs touch an anchor, the entry is flagged for re-check (§6.4). In TMS terms this is the entry's **justification** ([R§1]) — optional only where `refutableBy` names a non-anchor channel |
+| `refutableBy` | Closed vocabulary: `derivation` · `anchor` · `observation` · `artifact` · `practice` | The admission rule (§5.4): an entry that can name no automated way to be proved wrong is refused at capture |
 | `provenance` | For normative kinds: `{kind: adr\|pr-discussion\|tracker\|config\|readme, ref, at}` | The birth credential of a decision/convention/process (§5.3) |
 | `evidence[]` | An append-only list of typed evidence **events** (was: a single audited stamp) | The weighted trust model needs the event history, not just the latest stamp (§6.2) |
 | `confirmations` | `{count, lastAt}` (machine-written) | Reuse-is-review made mechanical (v2 R2, kept) |
@@ -298,6 +299,44 @@ flags, permission constants, storefront routes, component/operation maps.
   normative entries — but the only demotion it can produce is "the provenance artifact
   is gone/changed" (e.g., the ADR file was replaced), which is anchor drift, not age.
 
+### 5.4 The admission rule: every entry names what could refute it
+
+This rule comes out of the one measurement in the literature that argues against this
+whole design, so it is stated where it bites rather than buried in the risk register.
+**NELL** — the only autonomous knowledge base that has run for years — required
+**85,088 human negative labels, ~1,467 per month, ~2.4 per predicate per month, sustained
+across its first 802 iterations**, and holds high confidence in ~3% of its beliefs
+([R§1]). The often-quoted "10–15 minutes a day" is a design allowance its own paragraph
+disclaims, not an operating cost. Nobody has run one of these without continuous human
+*negative* feedback.
+
+The honest reading is not that autonomy is impossible, but that the human's function
+there was **almost entirely negative — saying "this is wrong"** — and that near-zero
+human involvement is reachable only by *replacing that function*, never by deleting it.
+So v3 requires every entry to declare its refutation channel, in a closed vocabulary:
+
+| `refutableBy` | The automated "no" | Typical kinds |
+|---|---|---|
+| `derivation` | an extractor re-run disagrees with the claim | contract, structure |
+| `anchor` | the anchored source fragment changed (hash mismatch) | behavior, pitfall, contract |
+| `observation` | a live re-check of the stated condition fails | behavior, pitfall |
+| `artifact` | a newer authoritative artifact states otherwise | decision, convention, process |
+| `practice` | the rule is repeatedly observed *not* followed | convention, process |
+
+**An entry that can name none of these is not admitted.** Not "admitted at low trust" —
+refused at capture, with that reason. A claim no mechanism could ever contradict has no
+drift defence at all, and a corpus of such claims is the failure mode this section
+exists to prevent. The field is machine-checked (the validator refuses an empty or
+unrecognized value) and is what the re-check planner (§6.5) dispatches on: it is the
+list of oracles that stand in for NELL's 1,467 monthly human corrections.
+
+The second consequence of the same evidence: **coupling is the only documented defence
+against semantic drift** ([R§1]). NELL's answer was never better extraction — it was
+constraints that let one belief mechanically refute another. That is why entries are
+typed, scoped and subject-keyed rather than free prose: two entries that share a subject
+and contradict each other must be able to *collide*, and the novelty protocol (§10.1) is
+what makes them collide.
+
 ---
 
 ## 6. D3 — Lifecycle: statuses, weighted evidence, transitions
@@ -358,7 +397,36 @@ an entry is the capped sum:
 | `usage` — a window of retrievals with zero disputes (e.g., ≥5 reads / 30 days) | 1 per window | 2 | **The weakest class, by decision** — absence of refutation is not confirmation |
 
 Demotion events subtract: `dispute-upheld` −∞ (supersede path), `recheck-failed` −3,
-`anchor-drift` sets `verification-due` (no score change until a re-check fails).
+`anchor-drift` sets `verification-due` (no score change until a re-check fails). Every
+demotion carries a machine-readable reason from a closed enum — `anchor_moved`,
+`contradicted_by_observation`, `superseded_by_entry`, `source_retracted`, `duplicate_of`
+— because a demotion without one is unauditable and cannot be reversed on evidence
+(Wikidata's `reason for deprecated rank`, [R§1]).
+
+Three rules keep the arithmetic from lying:
+
+- **Only *uncorrelated* sources corroborate.** Two runs of the same model over the same
+  source are **one** observation, not two — NELL's "components that make uncorrelated
+  errors" is the whole reason its corroboration count means anything ([R§1]). The
+  `observation` class therefore counts distinct *evidence kinds and sessions*, and the
+  engine deduplicates by (kind, source, agent-run) before scoring.
+- **Entrenchment is discounted by anchor staleness.** A many-times-confirmed entry
+  resists revision — but an entry whose anchors have all moved is dangerous *precisely
+  because* it is entrenched. So the effective score is damped once `verification-due` is
+  set. Without this, curing drift produces **calcification**, which is a distinct failure
+  and the one AGM-style entrenchment would push us into ([R§1], risk 16).
+- **A per-run promotion budget with a floor.** Consolidation promotes at most N entries
+  per domain per run (default 20, in `brain.json`) above the score threshold — NELL's
+  "30 new beliefs per predicate per iteration, minimum posterior 0.75" is the precedent,
+  and it is the cheapest deterministic brake on runaway self-promotion there is. Excess
+  candidates wait for the next run; the digest says how many waited.
+
+**Where the negative labels come from without a human.** Knowledge Vault's **Local
+Closed World Assumption** ([R§1]) is directly applicable and costs a set-membership
+test: where the corpus already covers an anchor, a new claim contradicting the covered
+values about *that anchor* is a labelled negative; where the corpus covers nothing, the
+engine produces **no** label rather than a fabricated one. That asymmetry is what lets
+the pipeline learn from its own corpus without the corpus becoming its own evidence.
 
 **Thresholds** (defaults; per-root tunable in `brain.json`, and recorded in the digest
 whenever tuned): `candidate → confirmed` at **score ≥ 6** AND the per-plane floor —
@@ -402,6 +470,19 @@ old one — the id contract survives every path (unchanged).
 - Unanchored experiential facts are covered by the rotation sweep — where **age orders
   the re-check queue** (oldest-confirmed first) but never lowers trust by itself.
 - Ranking may apply a mild age damp only between otherwise-equal results (§2 Q15).
+
+**The vocabulary here is deliberately borrowed** ([R§1]), because a source anchor *is* a
+justification and the mechanism has a fifty-year-old name. A `justification` is the
+evidence block, lint-checkable; **IN / OUT** names the property this design cares about
+most — trust is *recomputed from currently-valid justifications*, never a number someone
+wrote down once, so a re-verification pass is a relabelling; **dependency-directed
+backtracking** names the propagation rule (flag the dependents of the anchor that moved,
+never the whole domain — which is also why the anchor→entry index is a first-class
+generated artifact); and a **nogood** is our tombstone, the thing that stops the corpus
+oscillating when an agent re-derives a refuted claim next month. What we decline is
+equally deliberate: no ATMS multi-environment labelling (we have two contexts and they
+are a `scope` field), no conditional proofs, no global consistency fixpoint — NELL's
+**limited-radius** propagation is the realistic engineering answer at our scale.
 
 ### 6.5 Re-verification — three initiating layers (§2 Q9)
 
@@ -455,16 +536,22 @@ served body, not only as a field.
 The central risk of autonomy (problem 3.2 of the task statement): a system that grades
 its own answers converges on confidently finding what it already knows. NELL — the
 longest-running autonomous-KB precedent — documented exactly this as semantic drift
-from self-training [R§1]. v2's answer was a human meeting; v3 removes it, so the
-replacement must be structural. Five mechanisms, each anchored **outside the corpus**:
+from self-training, and paid for the defence with ~1,467 human negative labels a month
+for years ([R§1]). v2's answer was a human meeting; v3 removes it, so the replacement
+must be structural **and must cover the same function** — the automated oracles named in
+§5.4's `refutableBy` are what say "this is wrong" when no person does. Five mechanisms,
+each anchored **outside the corpus**:
 
 1. **An external ground truth exists and is wired in.** Every trust-raising event
    class in §6.2 references an oracle that is not the corpus: `derivation` re-runs
    extractors against the *source code*; `axis`/`observation` evidence points at the
    *live system*, *docs*, or *source*; `provenance` points at *human-authored
    artifacts*. The corpus cannot cite itself as evidence — an evidence `ref` into a
-   knowledge root is rejected by the validator. This is the difference from NELL
-   (whose beliefs bootstrapped later beliefs) and the reason near-zero-human is
+   knowledge root is rejected by the validator. This is Wikidata's rule that "imported
+   from" is **not** a source, and it is the single most important line for an autonomous
+   corpus: provenance must be *recorded* and must never *raise* trust, or the base
+   bootstraps confidence from its own output ([R§1]). It is also the difference from
+   NELL, whose beliefs bootstrapped later beliefs, and the reason near-zero-human is
    defensible in this domain at all.
 2. **Deterministic retrieval, no learned components.** Ranking has no feedback loop to
    drift (the Cortex reranker lesson: +0.007 MRR, switched off as overfitting). The
@@ -666,6 +753,17 @@ regenerate the exam baselines **in the same reviewed commit**, never drift silen
 **not** used: below ~10⁵ entries it buys sub-linearity we do not need at the price of
 probabilistic error and a tuning surface ([R§4]).
 
+The three bands are **Fellegi–Sunter's three regions** (1969) rather than an invention:
+match, a middle band that is *escalated instead of guessed*, and non-match. That
+framework also derives why token rarity must be weighted — an agreement on a rare token
+carries far more weight than on a common one — instead of us assuming it ([R§1]). And
+the costly error is named: string-similarity duplicate detection fails by
+**over-splitting**, silently keeping two entries about one subject; measured on the
+OpenIE benchmarks it keeps the best cluster-count score while its pairwise agreement
+collapses. So the corpus alarm is not "how many entries" but **entry count rising while
+distinct-subject count stays flat** (§12) — and the anchor, not the string, is the
+primary duplicate key wherever an entry has one.
+
 The deterministic steps (0, 1-index, 2, 3-scoring) are engine code; the *classification*
 of step 3's outcome is made by the capturing agent in-session (it has a model), against
 a rubric shipped in the skill — recorded in the draft so consolidation can audit it.
@@ -694,6 +792,15 @@ sources/live with fresh evidence:
   labeled with dates + provenance — "the knowledge is contested" is itself the honest
   answer. Never recency-wins (one hallucinated session must not erase a year of
   confirmations — the mem0-class failure, [R§2]).
+
+**Stated as a rejection, because the standard theory says the opposite.** AGM belief
+revision's *Success* postulate requires that a new input always end up believed. v3's
+revision is deliberately **non-prioritized**: a contradicting claim with weaker evidence
+becomes a dispute, never a replacement. Honouring Success in a corpus with agent writers
+is precisely the drift mechanism — one confidently-wrong output rewriting a
+well-corroborated entry ([R§1]). What v3 does take from AGM is narrower: **contraction
+as a first-class operation** (most designs only ever add) and **minimal change** — a
+revision should be reviewable as a small diff.
 
 ### 10.4 Client → platform promotion (designed now, implemented post-core)
 
@@ -795,11 +902,25 @@ gitignored; aggregated counts only in the digest — no question prose leaves th
 | **Dispute rate** (disputes per 100 served answers) | correctness in the field | ↓ good |
 | Confirmation velocity (evidence events/week) | the flywheel is turning | context |
 | Median time from draft → confirmed | pipeline latency | context |
+| **Entry count vs distinct-subject count** | entries rising while subjects stay flat = the corpus is **over-splitting** into duplicate rival entries ([R§1]) | must track together |
 | Exam hit@k/MRR | retrieval regression **gate only** | must not fall |
 
 The first three are the success definition ("прирост производительности" proxies);
 task-time A/B measurements are explicitly out of scope as the primary signal (noisy,
 expensive) and may be run as spot checks later.
+
+**Two reporting rules, both from measured precedent** ([R§1]):
+
+- **Per domain, never one number.** NELL's per-predicate precision spans >0.95 to well
+  below 0.6 inside one system; a single "KB health: 87%" hides exactly the domain that is
+  rotting. Every metric above is reported per `domain`, with the corpus figure as a
+  footnote rather than the headline.
+- **Expect most entries to sit below the bar, and say so.** NELL holds high confidence in
+  ~3% of its beliefs — that ratio is what "promote your own beliefs" yields at
+  equilibrium. The design stays useful by making low-trust entries *visibly* low-trust
+  (§6.2's labels, §9.2's leads block), not by pretending the corpus is clean. A rising
+  confirmed-share is a good sign; a confirmed-share near 100% is a sign the gates are not
+  gating.
 
 ---
 
@@ -907,6 +1028,9 @@ edge, per mandate error #1.
 | 13 | **The digest becomes noise nobody reads** | Digest carries only deltas + escalations; nothing requires reading it (it is observability, not a gate); the loud paths (quarantine, revert-escalation, vetoed-claim re-observation) are few by design |
 | 14 | **Normative knowledge fossilizes** (a dead convention nobody supersedes) | Practice confirmations stop accruing → surfaces in rotation as "no practice evidence since N"; force-dispute is one command; supersession requires only a newer authoritative artifact, which agents mine from ADR/PR streams |
 | 15 | **Two brains diverge in engine versions** (client CI runs old engine) | The brain repo CI checks out the engine **pinned to a plugin tag**; `brain.json` records the minimum engine version; resolver refuses a root demanding a newer engine (loud, not wrong) |
+| 16 | **Calcification** — the mirror image of drift: a heavily-confirmed entry resists correction precisely because it is entrenched, and the base ossifies around a fact the platform has since changed | Entrenchment is **damped by anchor staleness** (§6.2), so accumulated confirmations stop protecting an entry whose sources moved; anchor drift raises `verification-due` regardless of score; a single fresh `derivation` outweighs a long tail of `usage` windows by design |
+| 17 | **Corroboration counted from correlated sources** — the same model, re-run, agreeing with itself | Evidence events deduplicate by (kind, source, agent-run); the `axis` premium requires *distinct* kinds; NELL's uncorrelated-errors principle is the stated basis ([R§1]) |
+| 18 | **An unfalsifiable entry** — a claim no oracle could ever contradict, accumulating trust from usage alone | §5.4 admission rule: `refutableBy` is mandatory and machine-checked; `usage` is capped at 2 and cannot promote anything on its own |
 
 The Cortex incident checklist (≈50 recorded incidents) is mapped against these
 mechanisms in [R§5]; every incident class has a named v3 answer or an explicit
@@ -929,12 +1053,16 @@ mechanisms in [R§5]; every incident class has a named v3 answer or an explicit
 - **Roadmap in the KB** — the tracker owns it; a second copy rots by construction (§2 Q1).
 - **Locators in the KB** — test-asset lifecycle, not platform knowledge (§4.1).
 - **Free-text client→platform promotion with scrubbing** — deny-list scrubbing is the defect class §2a replaced with closed schemas; the issue-form + draft-only ingest + platform-evidence-to-confirm design (§10.4) is the by-construction version.
+- **A full ATMS (assumption-based, multi-environment labelling)** — exponential in the worst case, and it buys reasoning across many hypothetical worlds. We have two contexts, platform and client deployment, and they are a `scope` field. The JTMS vocabulary is borrowed (§6.4); the machinery is declined [R§1].
+- **Implementing AGM belief revision as an algorithm** — AGM revises *once*, from a *consistent* belief set, and its own literature records iterated revision as unsolved. We revise continuously from a set that is never fully consistent. Taken: contraction as a first-class operation, minimal change, entrenchment as a named ordering. Rejected outright: the **Success** postulate (§10.3).
+- **A global consistency fixpoint on every change** — NELL's limited-radius propagation is the realistic engineering answer at any real scale; second-order effects surface on later runs [R§1].
+- **A per-fact probability as the output** — Knowledge Vault produced the best-calibrated fact confidences ever published and, by the available record, shipped nothing: a number nobody knows how to act on has no consumer. Trust must say what it licenses (§6.2) [R§1].
 
 ---
 
 ## 17. Ratification checklist for the team meeting
 
-1. The §1.1 reversal: full autonomy with veto instruments, replacing the meeting model the review asked for. *(the load-bearing vote)*
+1. The §1.1 reversal: full autonomy with veto instruments, replacing the meeting model the review asked for — **with §5.4's admission rule as its price**: every entry must name an automated oracle that could contradict it, because the one long-running precedent bought its drift defence with ~1,467 human negative labels a month. *(the load-bearing vote)*
 2. The kind vocabulary (§4.1) and `locator`'s exit from the KB.
 3. Machine-reachable top status `confirmed` + the weighted evidence defaults (§6.2).
 4. The three-plane evidence model, incl. provenance-based proof for normative knowledge (§5).

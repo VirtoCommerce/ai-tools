@@ -33,7 +33,328 @@ main thing the ratifying meeting must consciously vote on.
 
 ## §1 — Autonomous KB construction & truth maintenance
 
-*(pending — research agent A)*
+*Verification note: Knowledge Vault (KDD'14), NELL (AAAI'10 and CACM'18) and CESI (WWW'18)
+were read as primary PDFs. §1.4 (TMS) rests on a secondary source for the concept
+definitions — Doyle 1979 and de Kleer 1986 were not read directly. NELL's end date is
+**unverified** — do not assert one.*
+
+### 1.1 Google Knowledge Vault (Dong et al., KDD 2014)
+
+**FACTS.** 1.6B triples, of which **271M above 0.9 confidence** ("confident facts"),
+4,469 relation types; about a third of the confident triples were not in Freebase
+([dl.acm.org/doi/10.1145/2623330.2623623](https://dl.acm.org/doi/10.1145/2623330.2623623)).
+Two error classes are modeled **separately**: an *extraction* error (entity/co-reference
+resolution) and a *source* error ("an erroneous statement on a spammy Web site").
+
+The mechanism that matters most to us is how supervision was obtained **without human
+labels** — the **Local Closed World Assumption**. Closing the world over Freebase "would
+be rather dangerous, since we know that Freebase is very incomplete", so: for a
+subject–predicate pair Freebase already covers, values outside the known set count as
+negatives; for a pair it does not cover at all, **no label is produced**. LCWA was itself
+validated against a human-labelled set, with performance "lower, although not by that
+much, indirectly justifying our use of the LCWA".
+
+Four extractors were measured separately and fused (AUC: web tables 0.856, human
+annotations 0.920, free text 0.867, DOM trees 0.928; fused 0.927) — per-predicate
+classifiers exist precisely to "model their different reliabilities". Confidence was
+**calibrated** (Platt scaling on a held-out set) to a checkable property: "if we collect
+all the triples that have a predicted probability of 0.9, then we find that about 90% of
+them are indeed true". Graph priors alone reached AUC 0.884; **priors plus extractors
+took confident facts from ~100M to ~271M**.
+
+**Outcome:** trade press reported it as not an active product
+([Search Engine Land, 2014-08-25](https://searchengineland.com/google-builds-next-gen-knowledge-graph-future-201640)).
+No primary Google statement was found — treat "never shipped" as trade-press level.
+
+**ASSESSMENT.** Three things transfer, one warning.
+- **LCWA is our situation exactly**, and it is a set-membership test, not a model: where
+  the KB already covers an anchor, a contradicting claim about that anchor is a labelled
+  negative; where it covers nothing, produce **no** signal rather than a fake one.
+- **Reliability is per evidence *kind*, not per writer.** The measured spread across four
+  extractors (0.856–0.928 AUC; confident fractions 0.002–0.08) is the argument against
+  pooling. Our four "extractors" are: a deterministic anchor re-derivation, a live
+  observation, a doc read, a provenance artifact.
+- **Calibration is a testable property**, and a confidence number that has never been
+  calibration-plotted is decoration. (v3 avoids the issue by not exposing numbers at all —
+  but the internal score should still be plotted against outcomes once usage data exists.)
+- **The warning is the outcome.** The most sophisticated calibrated-fusion KB ever built
+  appears not to have shipped. Reading: a KB whose only output is a per-fact probability
+  has **no consumer** — nobody knows what to do with 0.61. Trust must be *actionable*
+  (which state licenses which use), which is what §1.6's rank model gets right.
+
+### 1.2 NELL — the closest precedent, and the strongest challenge to v3
+
+**FACTS (AAAI 2010,
+[ojs.aaai.org](https://ojs.aaai.org/index.php/AAAI/article/download/7519/7380)).** First
+run: 123 categories, 55 relations, 67 days, 242,453 new facts at ~74% estimated
+precision over 2B sentences. **Semantic drift is named as the core hazard**: "Bootstrap
+learning approaches can often suffer from 'semantic drift,' where labeling errors in the
+learning process can accumulate", mitigated by *coupling* — mutually exclusive classes
+provide negative examples for one another. Promotion mechanics: a Knowledge Integrator
+promotes "the most strongly supported" candidates, capped at "up to 30 new beliefs per
+predicate per iteration, with a minimum posterior probability of 0.75"; a candidate's
+probability is the closed form `1 − 0.5^c` over the count of independent corroborating
+patterns. Three stated design principles: components that make **uncorrelated** errors;
+**distinguish beliefs from candidates and retain source justifications**; one uniform
+representation for both.
+
+**The "10–15 minutes a day" figure is verified — and it does not mean what it is quoted
+to mean.** The sentence is: *"we will allow the system to interact with a human for 10–15
+minutes each day… However, in the work reported here, we make limited use of human
+input."* It is a **stated design allowance in the future tense, disclaimed in the same
+paragraph** — not a measured operating cost.
+
+**FACTS (CACM 61(5), May 2018,
+[dl.acm.org/doi/10.1145/3191513](https://dl.acm.org/doi/10.1145/3191513); full text read
+from [wwcohen.github.io](https://wwcohen.github.io/postscript/cacm-2017.pdf)).** Running
+since January 2010; 1,064 iterations to July 2017; **over 100M beliefs of which 3.81M are
+high-confidence** — where "high confidence" means a module assigned ≥0.9 **or multiple
+modules independently proposed the belief**. The measured human cost: *"This feedback is
+nearly all negative feedback identifying NELL's incorrect beliefs… Over its first 802
+iterations, NELL received on average **2.4 negative feedback labels per predicate, per
+month, for a total of 85,088 items of negative feedback (an average of 1,467 per
+month)**."* Consistency is enforced **limited-radius** per iteration (only directly
+coupled beliefs), with influence propagating across iterations rather than by a global
+fixpoint. Per-predicate precision variance is extreme (">0.95 for 'river', 'body part',
+'physiological condition'" vs "well below" for 'machine learning author'). Of the four
+lessons the authors give for any never-ending learner, **the fourth — curriculum, i.e.
+deciding what to learn next — was performed by humans**: "we have evolved the system by
+manually introducing new types of learning tasks over time". A known representational
+gap: "NELL does not currently deal with temporal scope in its beliefs", so facts that
+"were once true but are not currently… were considered to be correct for this
+evaluation".
+
+**Secondary** ([Wikipedia](https://en.wikipedia.org/wiki/Never-Ending_Language_Learning)):
+Stuart Russell (2019) notes confidence in only ~3% of beliefs and reliance on "human
+experts to clean out false or meaningless beliefs on a regular basis"; documented drift
+examples include "Nepal is a country also known as United States" and internet cookies
+classified as baked goods.
+
+**ASSESSMENT — this is the section that should change a design, not decorate it.**
+- **Coupling is the only documented drift defence.** NELL's answer to drift was never
+  better extraction; it was constraints that let one belief *refute* another. A corpus of
+  independent free-text paragraphs has **zero** drift resistance by construction, because
+  nothing any entry says can contradict anything else. Typed, scoped, anchored entries
+  that share keys are what make refutation mechanically possible.
+- **Corroboration must be counted across *uncorrelated* sources.** "Components that make
+  uncorrelated errors" plus "multiple modules independently propose" — **two runs of the
+  same model over the same source are one observation, not two.** Our count must be by
+  evidence kind, never by agent invocation.
+- **A per-run promotion budget with a floor is a cheap, deterministic brake** on runaway
+  self-promotion — 30 per predicate per iteration, min 0.75, in NELL's case.
+- **Limited-radius propagation is the right cost model**: on an anchor change, flag direct
+  dependents now and let second-order effects surface later. Do not attempt a global
+  fixpoint.
+- **Report precision per domain, never as one number.** A 2× spread inside one system
+  means a single "KB health: 87%" hides exactly the domain that is rotting.
+- **Expect most entries to sit below the bar.** 3.81M of ~117M is what "promote your own
+  beliefs" yields at equilibrium; the design must stay useful anyway, by making low-trust
+  entries visibly low-trust rather than by pretending the corpus is clean.
+- **And the hard one:** nobody has run one of these without continuous human *negative*
+  feedback — 1,467 labels a month, for years, on a system whose explicit goal was
+  autonomy. The honest reading is not "autonomy is impossible" but: **near-zero human
+  involvement is reachable only by replacing the human's *function*, which in NELL was
+  almost entirely negative — saying "this is wrong".** Our substitutes must therefore be
+  automated negative oracles: the compiler, the test suite, the live API, the source
+  anchor, a newer authoritative artifact. Which yields an admission rule v3 adopts
+  directly (ADR §5.4): **an entry that no automated check could ever contradict has no
+  drift defence and should not be admitted.**
+- The one thing NELL could not automate was **curriculum** — deciding what to learn next.
+  In v3 that is the demand signal (what agents actually ask) plus the human's scope-level
+  say, not a per-entry gate.
+
+### 1.3 OpenIE canonicalization and record linkage
+
+**FACTS.** CESI (WWW 2018,
+[malllabiisc.github.io](https://malllabiisc.github.io/publications/papers/cesi_www18.pdf))
+canonicalizes noun and relation phrases jointly, using five side-information sources
+(entity linking — available for ~30% of NPs; PPDB paraphrases; WordNet with sense
+disambiguation; **IDF token overlap**; morphological normalization) as soft constraints on
+learned embeddings, then clusters with hierarchical agglomerative clustering. It reports
+that in the prior non-embedding work (Galárraga et al., CIKM 2014) **"IDF token overlap
+was found to be the most effective feature for canonicalization"**.
+
+The measured comparison is the load-bearing part. On the **Base** dataset (290 noun
+phrases — *our* order of magnitude), Galárraga-IDF reaches **94.8 macro-F1 against CESI's
+98.2**, and plain GloVe embeddings do not dominate it. The embedding advantage only opens
+at ReVerb45K scale (15.5K NPs). **But the failure mode inverts**: on ReVerb45K,
+Galárraga-IDF still has the *highest macro F1* (71.6) while its **pairwise F1 collapses to
+0.5** — string similarity fails by **over-splitting**, silently keeping two entries about
+the same thing.
+
+**Fellegi & Sunter, "A Theory for Record Linkage"** (*JASA* 64(328), 1969): per-field
+weights `log₂(m/u)` on agreement and `log₂((1−m)/(1−u))` on disagreement, summed to a
+pair score, with **two thresholds producing three regions — match, possible-match
+(escalated for review), non-match**. The m and u probabilities can be estimated from prior
+knowledge, from labelled pairs, or iteratively without labels.
+
+**ASSESSMENT.** At 10²–10⁴ short entries, IDF-weighted token overlap is **defensible on
+the measurements**, not merely excused — the embedding gap at our scale is a few F1
+points. Three refinements v3 takes:
+- **Anchor first, string second.** CESI's strongest non-embedding signal is linking to a
+  canonical id, available for only ~30% of its noun phrases. We are in a *better* position:
+  a source-code anchor or a contract id is unambiguous, and two claims sharing an anchor
+  are candidate duplicates by construction. String similarity is only for the anchor-less
+  residue.
+- **The costly error is over-splitting, and it must be measured as such.** Cluster-count
+  metrics reward it; pairwise agreement punishes it. So the corpus alarm is *entry count
+  rising while distinct-subject count stays flat* — two contradictory entries about one
+  subject is worse than none.
+- **Fellegi–Sunter's three regions are exactly our three bands.** ≥0.90 merge, 0.70–0.90
+  escalate to the aspect/contradiction decision, <0.70 distinct — and F–S also *derives*
+  why token rarity matters (an agreement on a rare token carries more weight), rather than
+  our assuming it.
+
+### 1.4 Truth maintenance systems
+
+**FACTS** (concept definitions via
+[Wikipedia: Reason maintenance](https://en.wikipedia.org/wiki/Reason_maintenance);
+primary papers not read this session). Doyle, "A Truth Maintenance System", *AI*
+12(3):251–272, 1979 — a single-context system representing "both beliefs and their
+dependencies"; nodes carry **justifications** (support lists), and **IN/OUT labels**
+indicate whether a node currently has a valid justification. **Dependency-directed
+backtracking** identifies the statement(s) actually responsible for a contradiction rather
+than undoing work chronologically. **Nogoods** record incompatible assumptions so a
+contradiction is never re-derived. de Kleer, "An assumption-based TMS", *AI* 28:127–162,
+1986 — multi-context: each node carries the set of minimal *environments* under which it
+holds, letting mutually inconsistent contexts coexist.
+
+**ASSESSMENT.** The mapping is unusually clean, because **a source-code anchor *is* a
+justification**. An entry supported by `{file+symbol+sha, doc+retrieval date, test+run id}`
+is a JTMS node with a support list; when an anchor's hash changes it loses support and
+must be **relabelled**, which is what our re-verification pass is. Four terms are worth
+borrowing by name (ADR §6.4/§6.5): **justification** (the mandatory evidence block —
+lint-checkable), **IN/OUT** (trust is *derived from currently-valid justifications*,
+recomputed, never a number someone wrote down once), **dependency-directed backtracking**
+(flag the dependents of the anchor that moved, not the whole domain — and hence the
+anchor→entry index must be a first-class generated artifact), and **nogood** (the tombstone
+that stops an autonomous KB from oscillating: without it, an agent re-derives the same
+wrong claim next month and it gets re-promoted forever).
+
+**Explicitly declined as overkill**: full ATMS multi-environment labelling (exponential in
+the worst case; we have two contexts — platform and client deployment — and represent them
+as a `scope` field), conditional proofs / non-monotonic justification semantics (our
+justifications are monotone "evidence exists" statements), and global consistency
+restoration (NELL's limited-radius compromise is the realistic engineering answer).
+
+### 1.5 AGM belief revision
+
+**FACTS** ([SEP, "Logic of Belief Revision"](https://plato.stanford.edu/entries/logic-belief-revision/),
+rev. 2026-07-29; Alchourrón, Gärdenfors & Makinson 1985). Three operations — *expansion*
+(add without removing), *contraction* (remove), *revision* (add while removing conflicts).
+Postulates include **Success** ("the new belief p must be in the revised set"),
+*Consistency*, and *minimal change / informational economy*. **Epistemic entrenchment**
+(Gärdenfors & Makinson 1988) orders beliefs by importance: "beliefs with the lowest
+entrenchment should be ones most readily given up". Documented critiques: logical
+omniscience is "clearly an unrealistic idealization"; the Recovery postulate is contested;
+**iterated revision** "struggles with repeated changes; solutions remain contested"; and
+for logically inconsistent input "no satisfactory treatment exists".
+
+**ASSESSMENT.**
+- **Reject the Success postulate, deliberately and out loud.** If a new input is always
+  believed, one confidently-wrong agent output rewrites a well-corroborated entry — the
+  drift mechanism of §1.2 in its purest form. v3's revision must be **non-prioritized**: a
+  contradicting claim with weaker evidence becomes a *dispute*, not a replacement.
+- **Entrenchment maps onto evidence weight only if discounted by anchor staleness.** AGM
+  says resist revising the entrenched belief; ground truth says an entry whose anchors have
+  all moved is *dangerous precisely because* it is entrenched. So entrenchment = corroboration
+  breadth × diversity, **discounted by anchor drift** — otherwise the design cures drift by
+  causing **calcification**, which is a distinct failure and the one AGM would push us into.
+- **AGM is vocabulary and one good ordering idea, not an algorithm.** It revises once, from
+  a consistent set; we revise continuously from a set that is never fully consistent. Worth
+  saying in the ADR to pre-empt "why not just implement AGM". What we do take: contraction
+  as a first-class operation (most designs only ever add) and minimal change (a revision
+  should be reviewable as a small diff).
+
+### 1.6 Provenance and trust state in live fact bases
+
+**FACTS — W3C PROV-O** (Recommendation, 2013-04-30,
+[w3.org/TR/prov-o](https://www.w3.org/TR/prov-o/)): `Entity` / `Activity` / `Agent` plus
+`wasGeneratedBy`, `wasDerivedFrom`, `wasAttributedTo`, `wasAssociatedWith`, `used`,
+`startedAtTime`/`endedAtTime`; the *qualification pattern* turns a relation into an object
+so it can carry a time, a role, a plan. PROV supplies **no trust, quality or confidence
+semantics** — it is descriptive, not evaluative.
+
+**FACTS — Wikidata** ([Help:Ranking](https://www.wikidata.org/wiki/Help:Ranking),
+[Help:Sources](https://www.wikidata.org/wiki/Help:Sources),
+[Help:Qualifiers](https://www.wikidata.org/wiki/Help:Qualifiers), all read 2026-09-01).
+Three **ranks**: *normal* (default, "no judgement"), *preferred* ("the most current
+statement or statements that best represent consensus"), *deprecated* ("known to include
+errors… or outdated knowledge"). **Best-rank read semantics**: "per default preferred
+statement(s) for a property will be used if they exist, otherwise normal statement(s)";
+deprecated statements "will never be used unless that is specifically requested".
+Deprecated statements are **kept, not deleted**, for three stated reasons — the first being
+*"It allows other users to know not to re-add the value"*. Crucially, deprecation is for
+**wrong**, not for **no longer current**: correct historical values keep normal rank and
+are annotated with `start time (P580)` / `end time (P582)` qualifiers. Demotions carry a
+machine-readable reason (`reason for deprecated rank (P2241)`). Even deprecated statements
+must be sourced. And: `imported from Wikimedia project (P143)` is explicitly **not** a
+source — "Statements that are only supported by this are not considered sourced statements".
+
+**ASSESSMENT.** Wikidata is the most directly copyable design in this report, because it is
+a live, multi-writer, mostly-bot-written fact base that solved these problems with data-model
+features rather than judgement:
+- **Ranks are trust made actionable** — decidable, greppable, diffable — where Knowledge
+  Vault's 0.61 was not. v3's statuses plus the *default view serves one current state per
+  key* rule is the same mechanism; the Wikidata precedent is the argument that it works at
+  scale with bot writers.
+- **"Deprecated is kept and served, never deleted"** and its stated reason — *so nobody
+  re-adds it* — is Wikidata independently arriving at the TMS **nogood**. Two traditions
+  converging on "record your refutations" is strong design evidence, and it is exactly what
+  v3's tombstones do.
+- **The wrong-vs-outdated split fixes NELL's temporal gap**: `retired` for a claim that was
+  never true or whose subject is dead, `superseded` + a version anchor for one that was
+  correct for its time. For a platform whose behavior changes per release, an entry without
+  a validity anchor is not a fact.
+- **Reason codes on every demotion** (`P2241`'s analogue): a closed enum —
+  `anchor_moved`, `contradicted_by_observation`, `superseded_by_entry`, `source_retracted`,
+  `duplicate_of`.
+- **"Imported from is not a source" is the single most important line for an autonomous KB.**
+  Provenance must be recorded and must **not** raise trust; otherwise the corpus bootstraps
+  confidence from its own output. v3 states this as: an evidence reference into a knowledge
+  root is rejected by the validator (ADR §7 item 1).
+- **PROV-O supplies the shape, not the semantics.** Take the field names so the evidence
+  block means something outside our repo; take the qualification pattern as the argument for
+  evidence being a structured object rather than a URL string; decline RDF/OWL entirely.
+
+### 1.7 What the literature says an autonomous KB must have
+
+Consolidated, each with its precedent. Items 1–8 the research pass calls non-negotiable.
+
+1. **Candidate and belief share one shape and differ by an explicit state** — NELL's
+   "distinguish high-confidence beliefs from lower-confidence candidates… use a uniform KB
+   representation". Without it there is nowhere to put an unsure claim except the KB.
+2. **Every entry carries a justification; one without it is inadmissible** — JTMS
+   justifications; NELL "retain source justifications"; Wikidata's sourcing rule.
+3. **Trust is recomputed from currently-valid justifications, never stored as an opinion** —
+   JTMS IN/OUT relabelling + dependency-directed backtracking.
+4. **Corroboration counted across *uncorrelated* kinds; provenance never counts as evidence**
+   — NELL's uncorrelated-errors principle; KV's four separately-measured extractors;
+   Wikidata's P143 rule.
+5. **Coupling constraints — entries in one scope must be able to contradict each other
+   mechanically** — NELL; the only documented defence against semantic drift.
+6. **Label-free negative evidence derived from the corpus itself** — Knowledge Vault's LCWA.
+7. **Refutations recorded and served, never deleted** — TMS nogoods and Wikidata's
+   deprecated rank, with a closed-vocabulary reason code.
+8. **Three trust states with best-rank read semantics** so contradictions coexist without
+   poisoning readers — Wikidata Help:Ranking.
+9. **Validity scope on every entry, and a hard wrong-vs-outdated distinction** — Wikidata
+   qualifiers; the negative precedent is NELL's missing temporal scope.
+10. **A bounded promotion budget with a floor, per run** — NELL's 30-per-predicate cap.
+11. **Non-prioritized revision: reject AGM's Success postulate** — AGM 1985; entrenchment
+    (Gärdenfors & Makinson 1988) discounted by anchor staleness.
+12. **Duplicate detection scored by pairwise agreement, with a three-region decision and an
+    escalation band** — Fellegi–Sunter 1969; feature choice per Galárraga et al. 2014, whose
+    over-splitting collapse at scale is the alarm to instrument.
+
+**And the measured expectation to write down rather than discover later:** NELL required
+**85,088 human negative labels — ~1,467 per month, ~2.4 per predicate per month — sustained
+across its first 802 iterations**, holding high confidence in ~3% of its beliefs. The
+"10–15 minutes a day" line is a design allowance its own paragraph disclaims. Near-zero
+human involvement is therefore reachable only by **replacing the human's function**, which
+was almost entirely negative. In v3 that function is played by the compiler, the test
+suite, the live API, the source anchor and the newer authoritative artifact — and an entry
+for which none of those could ever return "no" is an entry with no drift defence.
 
 ---
 
@@ -698,5 +1019,3 @@ the code mostly does not. **ASSESSMENT:** this matches our disposition: v3 borro
 Cortex's mechanisms as design patterns and inherits code only from our own #252 donor.
 
 ---
-
-*§1–§4 are appended below as the research agents report.*
