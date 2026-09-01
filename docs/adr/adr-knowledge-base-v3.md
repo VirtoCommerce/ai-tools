@@ -8,6 +8,7 @@
 | **Supersedes** | `adr-knowledge-brain.md` (v1 — the "Accepted" in its header is document bookkeeping, not an acting mandate: the PR #252 team review rejected part of it) and `adr-knowledge-brain-v2.md` (written as the review response, **never ratified**, partially inapplicable after the task re-scope) |
 | **Fate of PR #252** | Closed unmerged. Its branch remains the **code donor** (disposition table in §14) — a fresh PR sequence into `plugins/vc-kb/` reviews cleaner than a diff-on-diff |
 | **Companion** | `adr-knowledge-base-v3-research.md` — the research digest with sources; facts and assessments separated. Cited here as **[R§n]** |
+| **Meeting packet** | https://claude.ai/code/artifact/fc025b53-edad-46e7-9f6e-ddf1133d9534 — the same decisions in a form a meeting can read end to end; this file stays the record |
 | **Fixed inputs** | The operator questionnaire of 2026-09-01 — 31 answers covering the 27 mandatory themes (§2) |
 
 ## 1. Context — how we got to v3, and what changed
@@ -526,7 +527,7 @@ by quarantine. KCS names three functions that must survive in some form — the
 **standard-setter**, the **independent grader** (the Coach, who must never be the
 writer), and the **outcome owner**. v3 keeps the first and third human (§8's digest and
 the thresholds file) and is the only place it diverges knowingly on the second: the
-grader is **mechanized** by grounding golden verification outside the corpus (§7.3)
+grader is **mechanized** by grounding golden verification outside the corpus (§7 item 3)
 rather than by requiring a person. That divergence, not autonomy in general, is the
 thing to argue about at ratification.
 
@@ -777,7 +778,7 @@ same extractors over client repos + the delta vs platform, writes a machine-deri
 `project-overview` structure entry ("what this deployment is, how it differs") — **no
 operator interview** (v2 R6's interview is dropped with the human→0 mandate; what the
 interview used to seed now comes from the delta computation and normal capture).
-Regression goldens are auto-seeded from aggregates' `question` fields (§7.3) so the
+Regression goldens are auto-seeded from aggregates' `question` fields (§7 item 3) so the
 exam gate is armed from day 0; truth goldens grow from usage.
 
 ---
@@ -938,7 +939,7 @@ mechanisms in [R§5]; every incident class has a named v3 answer or an explicit
 3. Machine-reachable top status `confirmed` + the weighted evidence defaults (§6.2).
 4. The three-plane evidence model, incl. provenance-based proof for normative knowledge (§5).
 5. Staleness = supersession + anchor drift; age only orders the re-check queue (§6.4).
-6. Goldens: regression goldens auto-seeded; truth goldens auto-frozen after source-grounded verification with a digest veto window (§7.3).
+6. Goldens: regression goldens auto-seeded; truth goldens auto-frozen after source-grounded verification with a digest veto window (§7 item 3).
 7. Vendored MiniSearch + pinning discipline (§9.1).
 8. The promotion channel design (issue form → draft-only ingest → platform-evidence to confirm) and its post-core timing (§10.4).
 9. `vc-kb` packaging and the delivery phases (§13).
