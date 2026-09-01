@@ -183,6 +183,9 @@ absorbed once in the base row. Record the base→variant lineage in each alias's
 | **Reuse before authoring.** Live-discover / existing aliases first; author only true gaps. | Minimizes new seed load and keeps the fixture surface small (your answer: reuse-first). |
 | **Realistic, domain-correct values** — believable names/brands/prices, valid state↔ZIP, alphanumeric coupon codes (`^[a-zA-Z0-9]+$`). | Fixtures are read by humans and drive real assertions. |
 | **Assert shape, not volatile values** (prices, catalog-dependent titles drift). | `feedback_env_resilience`. |
+| **Every fixture must make its link's question DECIDABLE** — for each link of the feature's value chain, if that link were implemented wrong, would this data make the case fail? | `.claude/rules/test-data.md` §SECOND RULE. Missions seeded flat \$30 orders with no shipping/tax/discount, so *"is the goal measured against `order.Total` or merchandise value?"* had the same answer under both implementations — 127 cases could not settle it and the defect was found by reading source. |
+| **Values on both sides of a distinction under test must DIVERGE** — quantities, rankings, ALL vs ANY, target vs remaining. | Equal values make the case vacuous: it passes whichever way the code goes. Same reasoning as `td:validate:variation-stock` and `td:validate:sales-rep-stats`; ship the guard that fails when divergence collapses. |
+| **Constrain `live-discover` on every dimension the feature reads** (currency, price shape, stock, catalog scope). | It selects on availability, not suitability. Unconstrained PerSku discovery handed missions a €455 row and a \$25 row, producing a mixed-currency bug that was filed and then rejected — reviewer time spent on a fixture artefact. |
 
 ---
 

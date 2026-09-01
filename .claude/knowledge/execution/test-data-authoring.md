@@ -102,6 +102,43 @@ Every new seeder ships a STATIC validator (no network) that fails CI on drift. P
 For JSON fixtures, validate the body against the module's **OpenAPI schema** (reuse the
 `validate-graphql-fixtures.ts` + `zod` precedent). Wire it as `td:validate:<domain>` in `package.json`.
 
+## 5a. Making a seeded product VISIBLE — two traps, both measured live (2026-09-01)
+
+A seeded product the storefront cannot see is a fixture that looks provisioned and renders
+nothing. Both of the following return success while doing nothing.
+
+**The search index has no `CatalogProduct` document type.** `GET /api/search/indexes` on this
+platform registers exactly `Product`, `Category`, `ContentFile`, `Member`, `PickupLocation`,
+`Pages`, `CustomerOrder`. `POST /api/search/indexes/index [{ documentType: 'CatalogProduct' }]`
+is **accepted, returns a real jobId, and indexes nothing** — measured: still unindexed after
+120 s with `rebuild:false`, still unindexed after 60 s with document ids; the same call with
+`documentType: 'Product'` + `documentIds` indexed in **under 6 s**. Eight call sites across six
+seeders carried the inert type and were re-pointed on 2026-09-01. Note `CatalogProduct` is
+still a valid **object** type elsewhere (dynamic properties, associations) — only the search
+documentType is wrong.
+
+**The field is `documentIds`, not `ids`.** A call passing `ids:` is not rejected; it degrades to
+a bare incremental over the whole type, so a targeted reindex silently becomes a slow global one
+that may not cover the document you cared about.
+
+**`GET /api/search/indexes/tasks` 404s on this deployment**, so job polling is not a confirmation
+path. **Probe for the document itself** — poll the storefront/search read path until the product
+resolves, with a timeout, and treat the timeout as a failure rather than a pause.
+
+**A seeder that starts FAILING after the 2026-09-01 re-point was failing before — silently.**
+Those six seeders now genuinely trigger a reindex where they previously no-opped, so a run that used
+to complete quickly may now wait, and one that inherits a document-probe guard may now fail outright.
+That is the first honest report those seeders have ever produced, not a regression introduced by the
+fix. Do not "restore" the old behaviour by reverting the document type: the old behaviour was a
+success message over an unindexed product. Diagnose the timeout instead — it is telling you the
+fixture never reached the storefront's read path.
+
+**`POST /api/catalog/listentries { keyword, take }` pages categories AND products through ONE
+window, categories first.** A `take:10` lookup for a heavily-matched code returned **0 products**
+because 21 categories consumed the window, while the same lookup for a code with 8 hits resolved
+fine. It is self-amplifying: every abandoned run leaves another category and widens the window.
+Use an exact `code:` criterion, and **treat a truncated response as UNKNOWN, never as absence.**
+
 ## 6. Teardown symmetry
 
 A reverse `--teardown` deletes **only** `AGENT-TEST-` entities and ends with a `verifyRemoved`

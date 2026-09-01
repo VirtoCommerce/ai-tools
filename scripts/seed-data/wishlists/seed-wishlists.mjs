@@ -439,7 +439,7 @@ async function main() {
   }
 
   if (!DRY_RUN) {
-    await api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', rebuild: false }], { expectStatus: [200, 204] })
+    await api('POST', '/api/search/indexes/index', [{ documentType: 'Product', rebuild: false }], { expectStatus: [200, 204] })
       .catch((e) => log(`⚠ reindex: ${e.message.slice(0, 100)}`));
 
     // Runtime values → aliases.<env>.json ONLY. store_a_id/store_b_id ride along because they are

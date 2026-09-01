@@ -1,86 +1,87 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-08-24T14:14:18.380Z
+**Validated at:** 2026-08-27T12:22:37.239Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 73 fixtures — 73 passed, 0 failed
+**Total:** 74 fixtures — 74 passed, 0 failed
 
-## ✅ Passed Fixtures (73)
+## ✅ Passed Fixtures (74)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
-| addBulkItemsCart | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewBulkItemType) | 2026-07-13 | 1 noted |
-| addConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| addConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| addCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-07-13 | 1 noted |
-| addItem | mutation | ORG_USER (or PUBLIC anon cart — userId may be anon guid) | cart | STORE_ID (String), USER_ID (String), PRODUCT_ID (String), QUANTITY (Int — via GraphQL $qty variable) | 2026-07-13 | 1 noted |
-| addItemsCart | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewCartItemType) | 2026-07-13 | 1 noted |
-| addOrUpdateCartPayment | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
-| addOrUpdateCartShipment | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
-| addWishlistItem | mutation | ORG_USER | wishlist | LIST_ID (String), PRODUCT_ID (String) | 2026-07-13 | 1 noted |
-| brand | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), BRAND_ID (String) | 2026-07-13 | 1 noted |
-| brands | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-07-13 | 1 noted |
-| cart | query | ORG_USER (authenticated) or PUBLIC (anonymous cart) | cart | STORE_ID (String), CURRENCY_CODE (String) | 2026-07-13 | 1 noted |
-| cartPickupLocations | query | ORG_USER | pickup | CART_ID (String), STORE_ID (String) | 2026-07-13 | 2 noted |
-| carts | query | ORG_USER | cart | (none) | 2026-07-13 | 1 noted |
-| categories | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-07-13 | 1 noted |
-| category | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), CATEGORY_ID (String) | 2026-07-13 | 1 noted |
-| changeCartConfigurationItemSelected | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| changeCartConfiguredItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| changeCartItemQuantity | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String), QUANTITY via $qty variable (Int) | 2026-07-13 | 1 noted |
-| clearCart | mutation | ORG_USER (or PUBLIC anon cart) | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
-| configurationItems | query | ORG_USER | configurable-products | STORE_ID (String), CURRENCY_CODE (String, e.g. "USD"), LINE_ITEM_ID (String — capture from cart line item) | 2026-07-13 | 1 noted |
-| contact | query | ORG_USER | profile | CONTACT_ID (String — memberId from me query) | 2026-08-03 | 1 noted |
-| createCartFromWishlist | mutation | ORG_USER | wishlist | LIST_ID (String — capture from wishlists query) | 2026-07-13 | 1 noted |
-| createConfiguredLineItem | mutation | PUBLIC or ORG_USER | configurable-products | STORE_ID (String — passed inline in command), CONFIGURABLE_PRODUCT_ID (String) | 2026-07-13 | 1 noted |
-| createOrderFromCart | mutation | ORG_USER | order | CART_ID (String — capture from earlier cart query/mutation) | 2026-07-13 | 1 noted |
-| createOrganization | mutation | ORG_USER or higher (any authenticated user per observed behavior) | organization | ORG_NAME (String) | 2026-07-13 | 1 noted |
-| createWishlist | mutation | ORG_USER | wishlist | STORE_ID (String), USER_ID (String), LIST_NAME (String) | 2026-07-13 | 1 noted |
-| currentCustomerAddresses | query | ORG_USER | profile | (none) | 2026-07-13 | 1 noted |
-| currentOrganizationAddresses | query | ORG_USER | profile | (none) | 2026-07-13 | 1 noted |
-| customerSalesReps | query | ORG_USER | sales-rep | (none) | 2026-07-17 | 1 noted |
-| deleteMemberAddresses | mutation | ORG_USER | profile | MEMBER_ID (String), CITY, COUNTRY_CODE, LINE1, POSTAL_CODE (of the address to delete) | 2026-07-13 | 1 noted |
-| getSavedForLater | query | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
-| initializeApplication | query | PUBLIC | store | (none — pass one of `domain` or `storeId` via gql-vars to resolve the store) | 2026-07-13 | 1 noted |
-| me | query | ORG_USER | profile | (none) | 2026-07-13 | 1 noted |
-| moveFromSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-07-13 | 1 noted |
-| moveToSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-07-13 | 1 noted |
-| order-detail | query | ORG_USER | orders | ORDER_NUMBER (String) | 2026-07-13 | 1 noted |
-| order-detail-full | query | ORG_USER | orders | ORDER_NUMBER (String) | 2026-07-13 | 3 noted |
-| orders-list | query | ORG_USER | orders | (none) | 2026-07-13 | 1 noted |
-| organization | query | ORG_USER | profile | ORG_ID (String) | 2026-07-13 | 1 noted |
-| pageContext | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-08-03 | 1 noted |
-| pages | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-07-13 | 1 noted |
-| pickupLocations | query | PUBLIC | pickup | (none) | 2026-07-13 | 1 noted |
-| product | query | PUBLIC or ORG_USER | catalog | PRODUCT_ID (String), STORE_ID (String) | 2026-07-13 | 1 noted |
-| productConfiguration | query | PUBLIC or ORG_USER | configurable-products | STORE_ID (String, e.g. "B2B-store"), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72) | 2026-07-13 | 2 noted |
-| productPickupLocations | query | PUBLIC | pickup | PRODUCT_ID (String), STORE_ID (String) | 2026-07-13 | 1 noted |
-| products | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), CATALOG_SUBTREE_ID (String — typically "fc596540-..." root of B2B virtual catalog) | 2026-07-13 | 1 noted |
-| promotionCoupons | query | ORG_USER | marketing | (none) | 2026-07-13 | 1 noted |
-| removeCart | mutation | ORG_USER | cart | USER_ID (String), CART_ID (String — capture from earlier cart query) | 2026-07-13 | 1 noted |
-| removeCartItem | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| removeConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| removeConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| removeCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-07-13 | 1 noted |
-| removeWishlist | mutation | ORG_USER (owner) | wishlist | LIST_ID (String) | 2026-07-13 | 1 noted |
-| salesRepCustomer | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-07-17 | 1 noted |
-| salesRepCustomers | query | SALES_REP | sales-rep | (none) | 2026-07-17 | 1 noted |
-| salesRepOrderFilterRules | query | SALES_REP | sales-rep | (none) | 2026-08-24 | 1 noted |
-| salesRepOrders | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-07-17 | 1 noted |
-| selectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 2 noted |
-| selectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
-| selectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| selectCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
-| slugInfo | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-07-13 | 1 noted |
-| unSelectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 2 noted |
-| unSelectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
-| unSelectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| unSelectCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-07-13 | 1 noted |
-| updateConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| updateConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-07-13 | 1 noted |
-| updateContact | mutation | ORG_USER | profile | CONTACT_ID (String), FIRST_NAME (String), LAST_NAME (String) | 2026-07-13 | 2 noted |
-| updateMemberAddresses | mutation | ORG_USER (the member being updated, or admin) | profile | MEMBER_ID (String), CITY (String), COUNTRY_CODE (String), LINE1 (String), POSTAL_CODE (String) | 2026-07-13 | 2 noted |
-| wishlist | query | ORG_USER | wishlist | LIST_ID (String) | 2026-07-13 | 1 noted |
-| wishlists | query | ORG_USER | wishlist | (none) | 2026-07-13 | 1 noted |
+| addBulkItemsCart | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewBulkItemType) | 2026-08-27 | 1 noted |
+| addConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| addConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| addCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-08-27 | 1 noted |
+| addItem | mutation | ORG_USER (or PUBLIC anon cart — userId may be anon guid) | cart | STORE_ID (String), USER_ID (String), PRODUCT_ID (String), QUANTITY (Int — via GraphQL $qty variable) | 2026-08-27 | 1 noted |
+| addItemsCart | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewCartItemType) | 2026-08-27 | 1 noted |
+| addOrUpdateCartPayment | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
+| addOrUpdateCartShipment | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
+| addWishlistItem | mutation | ORG_USER | wishlist | LIST_ID (String), PRODUCT_ID (String) | 2026-08-27 | 1 noted |
+| brand | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), BRAND_ID (String) | 2026-08-27 | 1 noted |
+| brands | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-08-27 | 1 noted |
+| cart | query | ORG_USER (authenticated) or PUBLIC (anonymous cart) | cart | STORE_ID (String), CURRENCY_CODE (String) | 2026-08-27 | 1 noted |
+| cartPickupLocations | query | ORG_USER | pickup | CART_ID (String), STORE_ID (String) | 2026-08-27 | 2 noted |
+| carts | query | ORG_USER | cart | (none) | 2026-08-27 | 1 noted |
+| categories | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-08-27 | 1 noted |
+| category | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), CATEGORY_ID (String) | 2026-08-27 | 1 noted |
+| changeCartConfigurationItemSelected | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| changeCartConfiguredItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| changeCartItemQuantity | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String), QUANTITY via $qty variable (Int) | 2026-08-27 | 1 noted |
+| clearCart | mutation | ORG_USER (or PUBLIC anon cart) | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
+| configurationItems | query | ORG_USER | configurable-products | STORE_ID (String), CURRENCY_CODE (String, e.g. "USD"), LINE_ITEM_ID (String — capture from cart line item) | 2026-08-27 | 1 noted |
+| contact | query | ORG_USER | profile | CONTACT_ID (String — memberId from me query) | 2026-08-27 | 1 noted |
+| createCartFromWishlist | mutation | ORG_USER | wishlist | LIST_ID (String — capture from wishlists query) | 2026-08-27 | 1 noted |
+| createConfiguredLineItem | mutation | PUBLIC or ORG_USER | configurable-products | STORE_ID (String — passed inline in command), CONFIGURABLE_PRODUCT_ID (String) | 2026-08-27 | 1 noted |
+| createOrderFromCart | mutation | ORG_USER | order | CART_ID (String — capture from earlier cart query/mutation) | 2026-08-27 | 1 noted |
+| createOrganization | mutation | ORG_USER or higher (any authenticated user per observed behavior) | organization | ORG_NAME (String) | 2026-08-27 | 1 noted |
+| createWishlist | mutation | ORG_USER | wishlist | STORE_ID (String), USER_ID (String), LIST_NAME (String) | 2026-08-27 | 1 noted |
+| currentCustomerAddresses | query | ORG_USER | profile | (none) | 2026-08-27 | 1 noted |
+| currentOrganizationAddresses | query | ORG_USER | profile | (none) | 2026-08-27 | 1 noted |
+| customerSalesReps | query | ORG_USER | sales-rep | (none) | 2026-08-27 | 1 noted |
+| deleteMemberAddresses | mutation | ORG_USER | profile | MEMBER_ID (String), CITY, COUNTRY_CODE, LINE1, POSTAL_CODE (of the address to delete) | 2026-08-27 | 1 noted |
+| getSavedForLater | query | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
+| initializeApplication | query | PUBLIC | store | (none — pass one of `domain` or `storeId` via gql-vars to resolve the store) | 2026-08-27 | 1 noted |
+| loyaltyMissionProgress | query | ORG_USER | loyalty | STORE_ID (String) | 2026-08-27 | 2 noted |
+| me | query | ORG_USER | profile | (none) | 2026-08-27 | 1 noted |
+| moveFromSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-08-27 | 1 noted |
+| moveToSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-08-27 | 1 noted |
+| order-detail | query | ORG_USER | orders | ORDER_NUMBER (String) | 2026-08-27 | 1 noted |
+| order-detail-full | query | ORG_USER | orders | ORDER_NUMBER (String) | 2026-08-27 | 3 noted |
+| orders-list | query | ORG_USER | orders | (none) | 2026-08-27 | 1 noted |
+| organization | query | ORG_USER | profile | ORG_ID (String) | 2026-08-27 | 1 noted |
+| pageContext | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-08-27 | 1 noted |
+| pages | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-08-27 | 1 noted |
+| pickupLocations | query | PUBLIC | pickup | (none) | 2026-08-27 | 1 noted |
+| product | query | PUBLIC or ORG_USER | catalog | PRODUCT_ID (String), STORE_ID (String) | 2026-08-27 | 1 noted |
+| productConfiguration | query | PUBLIC or ORG_USER | configurable-products | STORE_ID (String, e.g. "B2B-store"), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72) | 2026-08-27 | 2 noted |
+| productPickupLocations | query | PUBLIC | pickup | PRODUCT_ID (String), STORE_ID (String) | 2026-08-27 | 1 noted |
+| products | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), CATALOG_SUBTREE_ID (String — typically "fc596540-..." root of B2B virtual catalog) | 2026-08-27 | 1 noted |
+| promotionCoupons | query | ORG_USER | marketing | (none) | 2026-08-27 | 1 noted |
+| removeCart | mutation | ORG_USER | cart | USER_ID (String), CART_ID (String — capture from earlier cart query) | 2026-08-27 | 1 noted |
+| removeCartItem | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| removeConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| removeConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| removeCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-08-27 | 1 noted |
+| removeWishlist | mutation | ORG_USER (owner) | wishlist | LIST_ID (String) | 2026-08-27 | 1 noted |
+| salesRepCustomer | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-08-27 | 1 noted |
+| salesRepCustomers | query | SALES_REP | sales-rep | (none) | 2026-08-27 | 1 noted |
+| salesRepOrderFilterRules | query | SALES_REP | sales-rep | (none) | 2026-08-27 | 1 noted |
+| salesRepOrders | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-08-27 | 1 noted |
+| selectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 2 noted |
+| selectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
+| selectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| selectCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
+| slugInfo | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-08-27 | 1 noted |
+| unSelectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 2 noted |
+| unSelectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
+| unSelectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| unSelectCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
+| updateConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| updateConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
+| updateContact | mutation | ORG_USER | profile | CONTACT_ID (String), FIRST_NAME (String), LAST_NAME (String) | 2026-08-27 | 2 noted |
+| updateMemberAddresses | mutation | ORG_USER (the member being updated, or admin) | profile | MEMBER_ID (String), CITY (String), COUNTRY_CODE (String), LINE1 (String), POSTAL_CODE (String) | 2026-08-27 | 2 noted |
+| wishlist | query | ORG_USER | wishlist | LIST_ID (String) | 2026-08-27 | 1 noted |
+| wishlists | query | ORG_USER | wishlist | (none) | 2026-08-27 | 1 noted |
 
 ## Known-Issues Summary
 
@@ -183,6 +184,10 @@
 
 **initializeApplication**:
 - resolving by `domain` returns `modules[]` list versus resolving by `storeId` (~79 entries with populated `version`). Anonymous/storefront context likely narrows the response — verify against the env you're testing.
+
+**loyaltyMissionProgress**:
+- `status` and `statuses` are plain String on the schema, not an enum, so a typo is accepted by validation and silently returns an empty page — assert totalCount, never just a non-error response.
+- currentValue/targetValue/percentage are Decimal; currentMoneyValue/targetMoneyValue are MoneyType. A mission counting units populates the Decimal pair, a mission counting spend populates the MoneyType pair — do not assume both are set on one mission.
 
 **me**:
 - (none)

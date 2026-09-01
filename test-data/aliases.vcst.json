@@ -858,9 +858,9 @@
     "name": "AGENT-TEST-SR-CART-WEST"
   },
   "LOYALTY_ZERO_USER": {
-    "memberId": "",
-    "securityAccountId": "",
-    "email": ""
+    "memberId": "6b4dbc9a-7087-4590-af5c-869e88f16650",
+    "securityAccountId": "db4bb2f3-144d-45e4-bccc-deccde86adfb",
+    "email": "AGENT-TEST-loyzero-20260901211001-2d4f@test-agent.com"
   },
   "REV_VAR_MATRIX": {
     "id": "08c33cfc9f664426a52fac8882da2df0",
@@ -925,5 +925,450 @@
   "SR_ORDER_ACME_ELEC": {
     "id": "cc3ff3c8-8e02-4b4a-be63-ccb632537b68",
     "createdDate": "2026-08-26T15:56:48.9650491Z"
+  },
+  "MSN_ORDERVALUE": {
+    "id": "c126f0dd-50d4-45e3-804a-8faabd8b6e8b",
+    "goal_currency": "USD",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
+    "accrued_value_at_seed": "116.5",
+    "progress_status_at_seed": "Completed",
+    "progress_percent_at_seed": "100"
+  },
+  "MSN_ORDERVALUE_ALTCURRENCY": {
+    "id": "861afd8e-476b-4b9a-921a-acc26b0dcc8b",
+    "goal_currency": "AUD",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
+    "accrued_value_at_seed": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": ""
+  },
+  "MSN_ORDERCOUNT": {
+    "id": "c61b0ca5-b6db-4c68-9aa6-bdf4e7d20e08",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_PERSKU_ALL": {
+    "id": "d60c97b0-652c-4a4f-94e9-7fa8b1af9ee0",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg",
+    "locale_default": "en-US"
+  },
+  "MSN_PERSKU_ANY": {
+    "id": "30aa72ac-3f49-4fde-9a6c-d5316d621783",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
+  },
+  "MSN_PUBLISHED_PRIVATE": {
+    "id": "8f28b44b-fb18-419c-9ae1-93122ec5bf0c",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_ZEROTARGET": {
+    "id": "05982235-1bf1-4f35-ba85-229d95032c4c",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_ZEROREWARD": {
+    "id": "82404e53-2633-404c-839b-5996fef26469",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_LOCALIZED": {
+    "id": "dfb6bc11-81b6-40a9-987d-5397e12a4941",
+    "locale_default": "en-US",
+    "locale_alternate": "de-DE",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_DRAFT": {
+    "id": "3780a78e-9539-473a-8a4a-0f6595745c63",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_PERSKU_PRODUCT_A": {
+    "productId": "7bd305cb-55ef-440a-8488-1aa9b777c70a",
+    "sku": "201482",
+    "name": "PEPSI COLA REGULAR CRATE 28X0.20L",
+    "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
+    "currency": "USD"
+  },
+  "MSN_PERSKU_PRODUCT_B": {
+    "productId": "e908c979-d79e-4cea-ad8b-57907b1c4f37",
+    "sku": "55557702",
+    "name": "Xerox WorkCentre 3335DNI Mono Laser Multifunction Printer/Copier/Scanner/Fax Machine",
+    "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
+    "currency": "USD"
+  },
+  "MSN_STORE_SETTINGS": {
+    "missions_enabled": "true",
+    "base_loyalty_enabled": "true",
+    "store_id": "B2B-store"
+  },
+  "MSN_EXPIRED": {
+    "id": "4f10444b-69d6-499b-b5d4-0129dba75077",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_ENDING_SOON": {
+    "id": "4ecf51a6-02ac-4e4e-9878-f0c73b7fedce",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_PROGRESS_PARTIAL": {
+    "id": "f7ff46cf-1207-43f2-8e6e-fedf34557089",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
+  },
+  "MSN_PROGRESS_COMPLETED": {
+    "id": "46630cdf-e67e-4a83-a4ef-dae2736c4761",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
+  },
+  "MSN_PROGRESS_ORDER": {
+    "id": "414a0a11-17d0-43c0-8071-59cd0aebb781",
+    "user_id": "f194c370-b7b0-4b88-8fc5-edc9ca80ee1c",
+    "user_email": "mutykovaelena@gmail.com",
+    "store_id": "B2B-store",
+    "currency": "USD",
+    "observed_sub_total": "102.5",
+    "observed_discount_total": "10.5",
+    "observed_shipping_total": "24.5",
+    "observed_tax_total": "0",
+    "observed_total": "116.5"
+  },
+  "MSN_GROUP_VIP": {
+    "id": "f754b32d-09eb-43e4-b9bd-0160c6026919",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_GROUP_AUDIENCE": {
+    "member_email": "AGENT-TEST-vip@test.virtocommerce.com",
+    "member_user_id": "95a30901-9b99-4269-a855-109607378479",
+    "member_groups": "VIP",
+    "nonmember_email": "AGENT-TEST-wholesale@test.virtocommerce.com",
+    "nonmember_user_id": "fa360b8f-aab2-43eb-828e-9edb9c451d15",
+    "nonmember_groups": "Wholesale"
+  },
+  "MSN_GROUP_VIP_PRIVATE": {
+    "id": "9937e85c-dd46-41d2-b5e3-1df10c3c1a26",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_OPEN_ENDED": {
+    "id": "ff1752ec-276b-4516-975e-f739e5659691",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
+  },
+  "MSN_PERSKU_OOS": {
+    "id": "d5bc2463-9a17-43f5-879c-009b49a15f1e",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
+  },
+  "MSN_ZEROSTOCK_PRODUCT": {
+    "productId": "0491db2b-6041-4ec0-9766-2570ae42bc4b",
+    "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
+    "currency": "USD"
+  },
+  "MSN_E2E_RUN": {
+    "run_id": "20260901211005-4474",
+    "seeded_at": "2026-09-01T21:10:05.315Z",
+    "store_id": "B2B-store",
+    "catalog_id": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "category_id": "cf70eb40-a6ac-4d37-81ad-04ca44bdb9db"
+  },
+  "MSN_E2E_REWARD_USER": {
+    "email": "AGENT-TEST-loyzero-20260901211001-2d4f@test-agent.com",
+    "user_id": "db4bb2f3-144d-45e4-bccc-deccde86adfb",
+    "member_id": "6b4dbc9a-7087-4590-af5c-869e88f16650",
+    "balance_at_seed": "0"
+  },
+  "MSN_E2E_ORDERVALUE": {
+    "id": "d3f3b90a-100e-46e8-9f8f-5e1cf4755110",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-ORDERVALUE",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "USD",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0"
+  },
+  "MSN_E2E_ORDERCOUNT": {
+    "id": "82b930e8-a021-4a9a-8cd4-1fe197edde42",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-ORDERCOUNT",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0",
+    "order_shipping_max": "unbounded",
+    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
+    "measured_subtotal": "15",
+    "measured_discount": "0",
+    "measured_tax": "3",
+    "measured_shipping": "0",
+    "measured_total": "18",
+    "reading_values": "netMerchandise=15; grossMerchandise=15; orderTotal=18; totalPlusPoints=18",
+    "order1_co_missions": "AGENT-TEST-MSN-E2E-20260901211005-4474-ORDERVALUE-008=508; AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
+    "order1_expected_delta": "1058",
+    "co_completing_missions": "AGENT-TEST-MSN-E2E-20260901211005-4474-ORDERVALUE-006=506; AGENT-TEST-MSN-ORDERCOUNT=300",
+    "reward_expected_total": "1307"
+  },
+  "MSN_E2E_PERSKU": {
+    "id": "a8560b51-0626-4966-9888-d426e3806195",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-PERSKU",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0"
+  },
+  "MSN_E2E_PERSKU_PTS": {
+    "id": "e939406e-a543-46c8-a9f2-24c7369dbf21",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-PERSKU-PTS",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0"
+  },
+  "MSN_E2E_ORDERVALUE_003": {
+    "id": "879cc3f3-0793-4e4c-8af7-f5cae39af309",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-ORDERVALUE-003",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "USD",
+    "goal_target": "49.5",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0",
+    "order_shipping_max": "unbounded",
+    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
+    "measured_subtotal": "45",
+    "measured_discount": "0",
+    "measured_tax": "9",
+    "measured_shipping": "0",
+    "measured_total": "54",
+    "measured_total_undiscounted": "",
+    "reading_values": "netMerchandise=45; grossMerchandise=45; orderTotal=54; totalPlusPoints=54",
+    "separates_below": "45",
+    "separates_above": "54",
+    "separation_margin": "4.5",
+    "co_completing_missions": "",
+    "reward_expected_total": ""
+  },
+  "MSN_E2E_USER_003": {
+    "email": "AGENT-TEST-msne2e-20260901211028-c362@test-agent.com",
+    "user_id": "5328ac03-382e-40c9-a5c0-f871cb9c4606",
+    "member_id": "e490329e-82eb-4caa-a543-277fd4e0cb49",
+    "handle": "AGENT-TEST-msne2e-20260901211028-c362",
+    "balance_at_seed": "0",
+    "groups_at_seed": ""
+  },
+  "MSN_E2E_ORDERVALUE_005": {
+    "id": "5a67c097-b277-4a67-8b6c-cd645eeb4ea1",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-ORDERVALUE-005",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "USD",
+    "goal_target": "54",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0",
+    "order_shipping_max": "5",
+    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
+    "measured_subtotal": "50",
+    "measured_discount": "10",
+    "measured_tax": "8",
+    "measured_shipping": "0",
+    "measured_total": "48",
+    "measured_total_undiscounted": "60",
+    "reading_values": "netMerchandise=40; grossMerchandise=50; orderTotal=48; totalPlusPoints=48",
+    "separates_below": "48",
+    "separates_above": "60",
+    "separation_margin": "6",
+    "co_completing_missions": "",
+    "reward_expected_total": ""
+  },
+  "MSN_E2E_USER_005": {
+    "email": "AGENT-TEST-msne2e-20260901211031-5ebc@test-agent.com",
+    "user_id": "635ba640-f8e6-40d9-8ff2-eb47ac901f05",
+    "member_id": "a5222b78-916b-49ce-8547-fa2d6eeecd7e",
+    "handle": "AGENT-TEST-msne2e-20260901211031-5ebc",
+    "balance_at_seed": "0",
+    "groups_at_seed": ""
+  },
+  "MSN_E2E_ORDERVALUE_006": {
+    "id": "78bbf1f4-4b41-4cf1-8edf-2b04244d9c9c",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-ORDERVALUE-006",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "USD",
+    "goal_target": "36",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0",
+    "order_shipping_max": "unbounded",
+    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
+    "measured_subtotal": "60",
+    "measured_discount": "0",
+    "measured_tax": "12",
+    "measured_shipping": "0",
+    "measured_total": "72",
+    "measured_total_undiscounted": "",
+    "reading_values": "netMerchandise=60; grossMerchandise=60; orderTotal=72; totalPlusPoints=72",
+    "separates_below": "0",
+    "separates_above": "60",
+    "separation_margin": "24",
+    "co_completing_missions": "",
+    "reward_expected_total": ""
+  },
+  "MSN_E2E_USER_006": {
+    "email": "AGENT-TEST-msne2e-20260901211034-bb42@test-agent.com",
+    "user_id": "5c2dc743-cdcc-4e63-b965-f03de8cb704d",
+    "member_id": "9629d55e-3ee9-4daf-b12c-df297238175f",
+    "handle": "AGENT-TEST-msne2e-20260901211034-bb42",
+    "balance_at_seed": "0",
+    "groups_at_seed": ""
+  },
+  "MSN_E2E_ORDERVALUE_008": {
+    "id": "92829cb3-66c2-4a7d-9434-ee5a9f09c217",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-ORDERVALUE-008",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "USD",
+    "goal_target": "12",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0",
+    "order_shipping_max": "10",
+    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
+    "measured_subtotal": "20",
+    "measured_discount": "0",
+    "measured_tax": "4",
+    "measured_shipping": "0",
+    "measured_total": "24",
+    "measured_total_undiscounted": "",
+    "reading_values": "netMerchandise=20; grossMerchandise=20; orderTotal=24; totalPlusPoints=24",
+    "separates_below": "0",
+    "separates_above": "20",
+    "separation_margin": "8",
+    "co_completing_missions": "AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
+    "reward_expected_total": "1058"
+  },
+  "MSN_E2E_USER_008": {
+    "email": "AGENT-TEST-msne2e-20260901211037-3257@test-agent.com",
+    "user_id": "d6af9b9b-613a-449c-b5cc-80ad255177ca",
+    "member_id": "d35e613d-07b6-4a48-84d2-777bd0a7ca1b",
+    "handle": "AGENT-TEST-msne2e-20260901211037-3257",
+    "balance_at_seed": "0",
+    "groups_at_seed": ""
+  },
+  "MSN_E2E_PRODUCT_UNIT": {
+    "productId": "be3db87e-70f4-4611-80fe-10b5e2ea0bab",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "currency": "USD",
+    "slug": "seed-loyalty-missions-e2e/agent-test-msn-e2e-unit",
+    "url": "/seed-loyalty-missions-e2e/agent-test-msn-e2e-unit"
+  },
+  "MSN_E2E_PRODUCT_A": {
+    "productId": "79e2f941-764e-4821-b4e9-61351eb581a5",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "currency": "USD",
+    "slug": "seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-a",
+    "url": "/seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-a"
+  },
+  "MSN_E2E_PRODUCT_B": {
+    "productId": "0f78d4c4-b283-4d01-8dab-783882c0a679",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "currency": "USD",
+    "slug": "seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-b",
+    "url": "/seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-b"
+  },
+  "MSN_E2E_PRODUCT_PTS": {
+    "productId": "9d5f6ce6-aaad-4ad8-ad13-5cb8f0e913f4",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "currency": "PTS",
+    "slug": "seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-pts",
+    "url": "/seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-pts"
+  },
+  "MSN_E2E_TGT_CONTROL": {
+    "id": "464327a3-a7d7-47a5-b3dc-f5464ef5e6be",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-TGT-CONTROL",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "USD",
+    "goal_target": "7200",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0",
+    "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=visible"
+  },
+  "MSN_E2E_TGT_GROUP": {
+    "id": "3d16b7cb-c94f-415b-9799-210e2fdef826",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-TGT-GROUP",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "USD",
+    "goal_target": "7200",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0",
+    "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=absent"
+  },
+  "MSN_E2E_TGT_PRIVATE": {
+    "id": "6f80d7ef-077f-4377-ba46-7e2dbd8bcf2d",
+    "name": "AGENT-TEST-MSN-E2E-20260901211005-4474-TGT-PRIVATE",
+    "run_id": "20260901211005-4474",
+    "goal_currency": "USD",
+    "goal_target": "7200",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "0",
+    "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=visible"
+  },
+  "MSN_E2E_USER_001": {
+    "email": "AGENT-TEST-msne2e-20260901211022-74ce@test-agent.com",
+    "user_id": "367e4837-e9cd-4634-a0df-0e5257cc1091",
+    "member_id": "ba8ce977-01dc-42ba-a872-2e9f67ac276e",
+    "handle": "AGENT-TEST-msne2e-20260901211022-74ce",
+    "balance_at_seed": "0",
+    "groups_at_seed": ""
+  },
+  "MSN_E2E_USER_TGTMEMBER": {
+    "email": "AGENT-TEST-msne2e-20260901211039-6d98@test-agent.com",
+    "user_id": "e1ca8289-0bfb-4fe6-8be4-856321e61dcc",
+    "member_id": "56bb4468-c29c-41cd-a200-2c48730adc33",
+    "handle": "AGENT-TEST-msne2e-20260901211039-6d98",
+    "balance_at_seed": "0",
+    "groups_at_seed": "VIP"
+  },
+  "MSN_E2E_USER_TGTOUTSIDER": {
+    "email": "AGENT-TEST-msne2e-20260901211042-11ee@test-agent.com",
+    "user_id": "a9153cda-e720-4314-a954-c4c617d5a2a0",
+    "member_id": "b897e551-0d85-4c58-bf03-25c8c2841129",
+    "handle": "AGENT-TEST-msne2e-20260901211042-11ee",
+    "balance_at_seed": "0",
+    "groups_at_seed": ""
+  },
+  "MSN_E2E_USER_PTSSPEND": {
+    "email": "AGENT-TEST-msne2e-20260901211025-f745@test-agent.com",
+    "user_id": "5a1c091d-ac19-4a3d-836b-01b0dfdf97a2",
+    "member_id": "445d9552-a216-46b6-acd8-536ffdf25e22",
+    "handle": "AGENT-TEST-msne2e-20260901211025-f745",
+    "balance_at_seed": "31350",
+    "groups_at_seed": "",
+    "pts_line_cost": "1",
+    "funding_program": "AGENT-TEST PP Single-SKU Laptop (pri 80, factor 500 × 60)",
+    "funding_order": "CO260901-00056",
+    "funding_points_per_unit": "30000",
+    "pts_progress_status_at_seed": "InProgress",
+    "pts_is_started_at_seed": "false",
+    "pts_current_quantity_at_seed": "0"
+  },
+  "MSN_POINTS_ORDER": {
+    "id": "4761ea6a-d462-4584-be59-808bc8aa6a4f",
+    "user_id": "f194c370-b7b0-4b88-8fc5-edc9ca80ee1c",
+    "store_id": "B2B-store",
+    "currency": "PTS",
+    "observed_line_value": "500",
+    "observed_total": "500"
+  },
+  "MSN_REWARD_SPEND": {
+    "reward": "500",
+    "unit_price": "1",
+    "currency": "PTS",
+    "reward_buys_units": "500"
+  },
+  "MSN_POINTS_PRODUCT": {
+    "productId": "9ecf8fed-1ec0-440b-9db1-5a06c0f6a988",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "sku": "AGENT-TEST-PTS-UNIT-001",
+    "currency": "PTS"
+  },
+  "MSN_ORDERVALUE_NET": {
+    "id": "d374557c-e4e2-449e-8ea3-2498f6203925",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
+    "goal_currency": "USD",
+    "accrued_value_at_seed": "116.5",
+    "progress_status_at_seed": "Completed",
+    "progress_percent_at_seed": "100"
+  },
+  "MSN_ORDERVALUE_POINTS": {
+    "id": "46ed9af0-64ae-47c4-ae76-75c83b30b55e",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
+    "goal_currency": "USD",
+    "accrued_value_at_seed": "116.5",
+    "progress_status_at_seed": "InProgress",
+    "progress_percent_at_seed": "31.7872"
+  },
+  "MSN_PERSKU_PTS": {
+    "id": "3e486de8-8e72-46ab-974a-76ee7a5d70ba",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   }
 }

@@ -75,3 +75,36 @@ test("every grounding tag spelling is handled", () => {
     assert.equal(r.passed, true, `tag {${tag}} was not stripped`);
   }
 });
+
+// 2026-09-01 — the same defect, second spelling: a rationale introduced by a DASH
+// instead of parentheses. Measured against the live evaluator before the fix, only
+// [DATA] EQUALITY broke; COUNT comparisons and `is null` were tolerant. So the same
+// assertion passed one way and failed the other, and the failure was a permanent
+// silent FAIL that reads exactly like a product defect.
+
+test("tag followed by an EM-DASH rationale is stripped — the 2026-09-01 regression case", () => {
+  const a = dataAssertion('data.count = 34 {SPEC} \u2014 narrowed from the whole-history total, which co-completing missions move');
+  const r = evaluateAssertion(a, respond({ count: 34 }), {});
+  assert.equal(r.passed, true, `expected PASS, got: expected=${r.expected} actual=${r.actual}`);
+  assert.ok(!r.expected.includes("{SPEC}"), "provenance tag leaked into the expected operand");
+  assert.ok(!r.expected.includes("narrowed"), "dash-led rationale leaked into the expected operand");
+});
+
+test("en-dash and double-hyphen rationales strip too", () => {
+  for (const dash of ["\u2013", "--"]) {
+    const r = evaluateAssertion(dataAssertion(`data.status = "Completed" {BL} ${dash} per the reward-grant path`), respond({ status: "Completed" }), {});
+    assert.equal(r.passed, true, `dash ${JSON.stringify(dash)} did not strip: expected=${r.expected}`);
+  }
+});
+
+test("a quoted value survives a dash-led rationale", () => {
+  const r = evaluateAssertion(dataAssertion('data.status = "Rejected" {DOC} \u2014 the note must not eat the closing quote'), respond({ status: "Rejected" }), {});
+  assert.equal(r.passed, true, `expected PASS, got expected=${r.expected} actual=${r.actual}`);
+});
+
+test("a NON-dash, NON-parenthesised tail is left in place and fails loudly", () => {
+  // Deliberate: that shape is a malformed assertion, not a rationale. A loud failure is
+  // the correct outcome — the point of this fix is that a wrong answer must not arrive quietly.
+  const r = evaluateAssertion(dataAssertion('data.count = 34 {SPEC} and also something else'), respond({ count: 34 }), {});
+  assert.equal(r.passed, false, "a malformed tail must not be silently swallowed");
+});

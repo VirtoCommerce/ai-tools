@@ -44,6 +44,7 @@ import {
 } from '../lib/seed-common.mjs';
 import { resolveAllRoles, roleByKey } from '../lib/user-roles.mjs';
 import { selectProbeTargets } from './overlay-specs.mjs';
+import { runStoreDefaultsCheck } from './store/check-store-defaults.mjs';
 import { parse } from 'csv-parse/sync';
 import { REP_ONLY_ORG } from './sales-rep/rep-only-org-specs.mjs';
 
@@ -635,6 +636,37 @@ async function checkSalesRepServedOrgs() {
   if (!checked) warn('no rep had a resolvable declared serve-list to verify');
 }
 
+/**
+ * [13] STORE REQUIRED DEFAULTS — the store the fixtures LIVE IN, not the fixtures themselves.
+ *
+ * Every other check here probes an entity the test-data points at. None of them could see the
+ * container: on 2026-08-27 a partial `PUT /api/stores` (which REPLACES rather than patches)
+ * nulled `defaultCurrency`, `defaultLanguage` and `url` on B2B-store TWICE — 14:29:56Z and
+ * 16:48:29Z — and the second one took the storefront down. Nothing in this repo detected it, so
+ * the null sat there for hours and every suite on the env failed for a reason unrelated to what
+ * it asserted. A store missing those fields is a BROKEN STOREFRONT, not a feature bug.
+ *
+ * The logic is in store/store-defaults-specs.mjs (side-effect-free, unit-tested) and is shared
+ * verbatim with the cheap pre-flight `npm run td:reconcile:store` — one source of truth, two
+ * entry points. Detection is unconditional; a repair VALUE is only ever derived from live
+ * evidence (the store's own orders, its own single-entry list field, FRONT_URL for the env's own
+ * store) and is reported as null when the evidence is ambiguous. Nothing here writes.
+ */
+async function checkStoreDefaults() {
+  console.log('\n[13] Store required defaults (defaultCurrency + defaultLanguage + url)');
+  try {
+    const { summary, hardFail } = await runStoreDefaultsCheck({ log: (m) => console.log(m) });
+    for (const m of hardFail) fail(m);
+    for (const f of summary.failures) problems.push(f.message);   // already printed by the runner
+    for (const w of summary.warnings) notes.push(w.message);
+    if (!summary.failures.length && !hardFail.length) {
+      ok(`all ${summary.storesAudited} live store(s) carry their required defaults`);
+    }
+  } catch (e) {
+    fail(`store-defaults probe failed: ${String(e.message).slice(0, 140)}`);
+  }
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -652,6 +684,7 @@ async function checkSalesRepServedOrgs() {
   await checkAuthDrift();
   await checkOverlayGuidLiveness();
   await checkSalesRepServedOrgs();
+  await checkStoreDefaults();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);

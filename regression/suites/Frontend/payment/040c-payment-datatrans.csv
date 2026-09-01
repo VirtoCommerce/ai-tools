@@ -15,7 +15,7 @@
 [NAV] After completing Datatrans flow user is redirected back to storefront order confirmation
 [DOM] Order confirmation shows order number and summary","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order appears in admin with Datatrans payment method
-[NETWORK] Datatrans redirect handled correctly — no redirect loop","No redirect to /checkout/payment after placing order; Datatrans form does not load; return redirect to storefront fails; order not created","Cancel order via admin","VCST-4893","Manual"
+[NETWORK] Datatrans redirect handled correctly — no redirect loop","No redirect to /checkout/payment after placing order; Datatrans form does not load; return redirect to storefront fails; order not created","Cancel order via admin","VCST-4893","Automated"
 "PAY-DT-002","Datatrans - OTP Authentication Flow","Datatrans","High","BL-ORD-006","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -34,7 +34,7 @@
 [DOM] OTP input field is visible and accepts input
 [NAV] After valid OTP submission user returns to storefront confirmation page
 [DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
-[ADMIN] Order appears in admin with Datatrans payment method and status reflecting OTP-authenticated payment","OTP prompt does not appear; valid OTP rejected; return redirect to storefront fails; order confirmation not reached","Cancel order via admin","VCST-4893","Manual"
+[ADMIN] Order appears in admin with Datatrans payment method and status reflecting OTP-authenticated payment","OTP prompt does not appear; valid OTP rejected; return redirect to storefront fails; order confirmation not reached","Cancel order via admin","VCST-4893","Automated"
 "PAY-DT-003","Datatrans - Invalid OTP Recovery","Datatrans","High","BL-CHK-004; BL-CROSS-010","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -57,7 +57,7 @@
 [STATE] Retry mechanism available after invalid OTP (field not permanently locked)
 [NAV] Correct OTP leads to successful return to storefront
 [STATE] Only one order created — no duplicate from the failed first OTP attempt","[API] createOrderFromCart GraphQL mutation errors[] is empty on final successful submission
-[ADMIN] Single order in admin — no duplicate orders from retry scenario","No error shown for incorrect OTP; OTP field locked without retry option; duplicate orders created from retry; correct OTP rejected after previous incorrect attempt","Cancel order via admin","VCST-4893","Manual"
+[ADMIN] Single order in admin — no duplicate orders from retry scenario","No error shown for incorrect OTP; OTP field locked without retry option; duplicate orders created from retry; correct OTP rejected after previous incorrect attempt","Cancel order via admin","VCST-4893","Automated"
 "PAY-DT-004","Datatrans - Card Number Validation","Datatrans","High","","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -70,7 +70,7 @@
 [ASSERT] Payment cannot proceed with invalid card number","[DOM] Card number validation error displayed
 [STATE] Datatrans form blocks progression with invalid card
 [NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No unhandled JS exceptions","Invalid card number accepted; Datatrans form submits with Luhn-failing card; no error shown on card field","none — no order created","Coverage Gap Analysis; BL gap: no client-validation invariant exists in business-logic.md (ex-BL-PAY-003 unpromoted) — PROPOSED-BL backlog","Manual"
+[CONSOLE] No unhandled JS exceptions","Invalid card number accepted; Datatrans form submits with Luhn-failing card; no error shown on card field","none — no order created","Coverage Gap Analysis; BL gap: no client-validation invariant exists in business-logic.md (ex-BL-PAY-003 unpromoted) — PROPOSED-BL backlog","Automated"
 "PAY-DT-005","Datatrans - Return to Store After Payment Completion","Datatrans","Critical","BL-CROSS-005; BL-ORD-006","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -89,7 +89,7 @@
 [DOM] Order confirmation page shows order number, line items, totals, shipping address
 [MATH] Totals on confirmation match original cart totals
 [NAV] Order visible in account order history","[API] createOrderFromCart GraphQL mutation errors[] is empty
-[ADMIN] Order in admin with correct total and Datatrans payment method","No automatic redirect — user stranded on Datatrans page; order confirmation page missing order number; cart contents not reflected on confirmation; order absent from account history","Cancel order via admin","Coverage Gap Analysis","Manual"
+[ADMIN] Order in admin with correct total and Datatrans payment method","No automatic redirect — user stranded on Datatrans page; order confirmation page missing order number; cart contents not reflected on confirmation; order absent from account history","Cancel order via admin","Coverage Gap Analysis","Automated"
 "PAY-DT-006","Datatrans Lightbox - French locale renders French labels","Datatrans > Localization","High","","ECL-7.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -107,7 +107,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and switch language t
 [DOM] Datatrans lightbox labels are French (not English)
 [DOM] No English label leakage inside lightbox
 [STATE] storefront locale is fr","[NETWORK] POST /graphql (initializeCartPayment) request includes cultureName: 'fr'
-[CONSOLE] No JS errors during lightbox load","Pay Now button still in English; lightbox shows English labels; cultureName not sent in API call","Close tab; restore locale to English","VCST-4893","Reviewed"
+[CONSOLE] No JS errors during lightbox load","Pay Now button still in English; lightbox shows English labels; cultureName not sent in API call","Close tab; restore locale to English","VCST-4893","Automated"
 "PAY-DT-007","Datatrans Lightbox - German locale renders German labels","Datatrans > Localization","High","","ECL-7.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -124,7 +124,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and switch language t
 [ASSERT] Verify no English labels appear inside lightbox","[DOM] German 'Jetzt bezahlen' or equivalent visible on Pay Now button
 [DOM] Datatrans lightbox labels are German
 [STATE] storefront locale is de","[NETWORK] POST /graphql (initializeCartPayment) request includes cultureName: 'de'
-[CONSOLE] No JS errors during lightbox load","Pay Now button in English; lightbox in English; cultureName missing from API call","Close tab; restore locale to English","VCST-4893","Reviewed"
+[CONSOLE] No JS errors during lightbox load","Pay Now button in English; lightbox in English; cultureName missing from API call","Close tab; restore locale to English","VCST-4893","Automated"
 "PAY-DT-008","Datatrans Lightbox - English locale (default) renders English labels","Datatrans > Localization","Medium","","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -140,4 +140,4 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English 
 [DOM] Datatrans lightbox labels are English
 [DOM] No raw i18n key strings visible
 [STATE] storefront locale is en","[NETWORK] POST /graphql (initializeCartPayment) includes cultureName: 'en' or omits it (defaults to en)
-[CONSOLE] No JS errors","Raw i18n key strings visible; wrong language displayed for en locale; console errors during lightbox load","Close tab","VCST-4893","Reviewed"
+[CONSOLE] No JS errors","Raw i18n key strings visible; wrong language displayed for en locale; console errors during lightbox load","Close tab","VCST-4893","Automated"

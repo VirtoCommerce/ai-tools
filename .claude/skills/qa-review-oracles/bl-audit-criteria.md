@@ -17,6 +17,18 @@ concrete artifact, not an opinion:
 | **Source** | A `file:line` anchor in an `org:VirtoCommerce` repo whose code implements the behavior | GitHub MCP `search_code` / `get_file_contents` (read-only; QA never clones) |
 | **Live** | An `{OBSERVED}` result (screenshot / captured API response) confirming the behavior on the deployed build | `qa-testing-expert` (playwright-firefox), real UI/API only |
 
+**The Live axis must be RE-DERIVABLE, not merely reported.** An `{OBSERVED}` result taken on a
+disposable per-run fixture expires the moment that fixture is re-minted — silently, with every guard
+still green. So a live observation is admissible only when the auditor can see the state themselves,
+or when it carries the identifiers that let them: the fixture generation/run handle, the account and
+entity ids, the order numbers, or a durable run artifact. A relayed number whose state no longer
+exists is **UNGROUNDED**, however coherent it looks and however much the source is trusted —
+otherwise the oracle's strongest entries come to rest on something nobody can re-derive, which is
+precisely what the three-axis bar exists to prevent. Measured 2026-09-01: three `P0-revenue`
+candidates were held for exactly this reason after the fixtures behind them had been re-seeded.
+**Check the instrument before doubting the data** — establish that your read path agrees with a
+known-good control first, so a contradiction is evidence rather than suspicion.
+
 If any axis produces **no** evidence → **UNGROUNDED**. If the axes **disagree**
 (docs say X, live shows Y) → **CONTRADICTORY**. Neither is confirmed; both route to
 `reports/ba/bl-proposals-<date>.md` for a human.

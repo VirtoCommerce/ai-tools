@@ -31,6 +31,10 @@ import {
   ROOT, BACK_URL, STORE_ID, DRY_RUN, VERBOSE, TEARDOWN,
   log, verbose, assertSafeTarget, auth, api, loadAliases, loadCsv,
 } from '../../lib/seed-common.mjs';
+import {
+  resolveWinningEarning, placeEarnOrder, pollBalanceChange, qtyForTarget, pointsPerUnit,
+  EARN_LINE_ITEM_LIMIT,
+} from './loyalty-earn.mjs';
 
 const argv = process.argv.slice(2);
 const argVal = (flag, dflt = null) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : dflt);
@@ -38,7 +42,7 @@ const USER_ARG = argVal('--user', 'LOYALTY_VIP_USER');
 const TARGET_POINTS = argVal('--points') != null ? Number(argVal('--points')) : null;
 const TARGET_ORDERS = argVal('--orders') != null ? Number(argVal('--orders')) : null;
 const MAX_ORDERS = Number(argVal('--max-orders', '25'));
-const LINE_ITEM_LIMIT = 999999;   // qty ≥ 1,000,000 is rejected by the store LINE_ITEM_LIMIT validator
+const LINE_ITEM_LIMIT = EARN_LINE_ITEM_LIMIT;   // shared with loyalty-earn.mjs: qty >= 1,000,000 is rejected by the store validator
 
 if (TARGET_POINTS == null && TARGET_ORDERS == null) {
   console.error('ABORT: pass a target — either --points <N> or --orders <N>.');
@@ -70,28 +74,6 @@ async function getUserGroups(email) {
   return contact?.groups || [];
 }
 
-/** Collect a program's group gate from its condition tree — walk SELECTED `children` only (not availableChildren). */
-function programGroupGate(program) {
-  let all = false; const groups = new Set();
-  const walk = (node) => {
-    if (!node || typeof node !== 'object') return;
-    if (node.id === 'AnyUserGroupCondition') all = true;
-    if (node.id === 'UserGroupIsCondition') (node.groups || []).forEach((g) => groups.add(g));
-    (node.children || []).forEach(walk);
-  };
-  walk(program.dynamicExpression);
-  return { all, groups };
-}
-
-/** Is this a ProductPoints program that WINS for the user right now: active + in-window + group-eligible. */
-function isCandidate(p, userGroups, now = new Date()) {
-  if (p.programType !== 'ProductPoints' || !p.isActive) return false;
-  if (p.startDate && new Date(p.startDate) > now) return false;
-  if (p.endDate && new Date(p.endDate) < now) return false;
-  const gate = programGroupGate(p);
-  return gate.all || userGroups.some((g) => gate.groups.has(g));
-}
-
 /** xAPI buyability/price/stock for a product as the user (also proves catalog linkage). null if not buyable/priced. */
 async function productEarnInfo(userToken, productId) {
   const d = await gql(userToken, `query { product(id: "${productId}" storeId: "${STORE_ID}") { code availabilityData { isBuyable isAvailable availableQuantity } price { actual { amount } } } }`, 'earn_product').catch(() => null);
@@ -101,28 +83,18 @@ async function productEarnInfo(userToken, productId) {
 }
 
 /**
- * Resolve the SKU that actually EARNS for THIS user: the buyable factor SKU of the winning ProductPoints
- * program (highest-priority eligible+active+in-window). Only the single global winner earns its factor, so
- * we take candidates in priority order and use the FIRST whose factor SKU is buyable+priced for the user
- * (that also proves it is linked into the user's virtual catalog). Returns null when nothing resolves — the
- * caller then falls back to the CSV heuristic. unitPrice + stock are included because
- * points = factor × unit price × qty (NOT factor × qty) and qty must respect available inventory.
+ * Resolve the SKU that actually EARNS for THIS user. The selection rule itself lives in
+ * `loyalty-earn.mjs` (shared with seed-missions-e2e.mjs, unit-tested there) — this wrapper only binds
+ * it to this script's transport and logging. Returns null when nothing resolves; the caller then falls
+ * back to the CSV heuristic.
  */
-async function resolveWinningEarning(userToken, userGroups) {
-  const progs = (await api('POST', '/api/loyalty-programs/search', { take: 500 }, { expectStatus: [200, 201] }))?.results || [];
-  const candidates = progs.filter((p) => isCandidate(p, userGroups)).sort((a, b) => (b.priority || 0) - (a.priority || 0));
-  if (!candidates.length) return null;
-  const allFactors = (await api('POST', '/api/loyalty-program-product-factors/search', { take: 1000 }, { expectStatus: [200, 201] }))?.results || [];
-  for (const prog of candidates) {
-    for (const f of allFactors.filter((x) => x.loyaltyProgramId === prog.id && Number(x.factor) > 0)) {
-      const info = await productEarnInfo(userToken, f.productId);
-      if (info) {
-        if (prog !== candidates[0]) log(`⚠ top winner "${candidates[0].name}" has no buyable factor SKU — using eligible program "${prog.name}" (pri ${prog.priority}).`);
-        return { programName: prog.name, priority: prog.priority, factor: Number(f.factor), ...info };
-      }
-    }
-  }
-  return null;
+async function resolveWinningEarningFor(userToken, userGroups) {
+  return resolveWinningEarning({
+    api,
+    earnInfo: (productId) => productEarnInfo(userToken, productId),
+    userGroups,
+    onFallback: (top, used) => log(`⚠ top winner "${top.name}" has no buyable factor SKU — using eligible program "${used.name}" (pri ${used.priority}).`),
+  });
 }
 
 /**
@@ -175,19 +147,10 @@ async function readBalance(userId) {
   return Number(r?.balance ?? r?.points ?? r?.amount ?? 0) || 0;
 }
 
-/** One earn order for the user. Returns the created order number. */
-async function placeEarnOrder(token, userId, productId, qty) {
-  await gql(token, `mutation { addItem(command: { cartName: "default" storeId: "${STORE_ID}" userId: "${userId}" productId: "${productId}" quantity: ${qty} }) { id } }`, 'addItem');
-  const cartData = await gql(token, `query { cart(cartName: "default" storeId: "${STORE_ID}" userId: "${userId}" currencyCode: "USD" cultureName: "en-US") { id availableShippingMethods { code optionName price { amount } } availablePaymentMethods { code } } }`, 'get_cart');
-  const cart = cartData?.cart;
-  if (!cart?.id) throw new Error('cart not resolved after addItem');
-  const ship = (cart.availableShippingMethods || []).find((m) => m.code === 'FixedRate') || cart.availableShippingMethods?.[0];
-  if (!ship) throw new Error('no available shipping method');
-  await gql(token, `mutation { addOrUpdateCartShipment(command: { storeId: "${STORE_ID}" userId: "${userId}" currencyCode: "USD" cultureName: "en-US" shipment: { shipmentMethodCode: "${ship.code}" shipmentMethodOption: "${ship.optionName}" price: ${ship.price?.amount ?? 0} deliveryAddress: { firstName: "Seed" lastName: "Agent" line1: "100 Main St" city: "New York" countryCode: "US" countryName: "United States" postalCode: "10001" regionId: "US-NY" regionName: "New York" } } }) { id } }`, 'set_shipment');
-  await gql(token, `mutation { addOrUpdateCartPayment(command: { storeId: "${STORE_ID}" userId: "${userId}" currencyCode: "USD" cultureName: "en-US" payment: { paymentGatewayCode: "DefaultManualPaymentMethod" } }) { id } }`, 'set_payment');
-  const order = await gql(token, `mutation { createOrderFromCart(command: { cartId: "${cart.id}" }) { id number } }`, 'place_order');
-  return order?.createOrderFromCart?.number || '(unknown)';
-}
+/** One earn order for the user. The order-placing sequence itself lives in `loyalty-earn.mjs`. */
+const placeEarnOrderAs = (token, userId, productId, qty) => placeEarnOrder({
+  gql: (query, label) => gql(token, query, label), storeId: STORE_ID, userId, productId, qty,
+});
 
 /** Live storefront availability for a product as the user (stock decrements per order). */
 async function currentAvailability(token, productId) {
@@ -208,12 +171,12 @@ async function run() {
   const userId = (await gql(token, `query { me { id } }`, 'me'))?.me?.id || balanceUserId;
   if (!userId) throw new Error('could not resolve userId (me.id) for the target user');
   const userGroups = await getUserGroups(email);
-  let earn = await resolveWinningEarning(token, userGroups);
+  let earn = await resolveWinningEarningFor(token, userGroups);
   if (!earn) {
     log(`⚠ no winning ProductPoints program resolved for groups [${userGroups.join(', ')}] — falling back to the program-factors.csv highest-factor heuristic (⚠ points may reflect the DEFAULT factor, not a program factor).`);
     earn = await resolveHeuristicEarning(token);
   }
-  const perUnit = earn.factor * earn.unitPrice;   // points = factor × unit price × qty (measured, not factor × qty)
+  const perUnit = pointsPerUnit(earn.factor, earn.unitPrice);   // points = factor × unit price × qty (measured, not factor × qty)
   log(`User groups: [${userGroups.join(', ')}]`);
   log(`Winning program: "${earn.programName}" (pri ${earn.priority}) → earn SKU ${earn.sku} (factor ${earn.factor} × $${earn.unitPrice} = ${perUnit} PTS/unit, stock ${earn.availableQuantity})`);
   if (perUnit <= 0) throw new Error(`winning SKU ${earn.sku} earns 0 PTS/unit (factor ${earn.factor} × price ${earn.unitPrice}) — cannot reach a points target`);
@@ -226,7 +189,7 @@ async function run() {
 
   // Per-order qty approaches the remaining target, bounded by the line-item limit AND live inventory.
   const remaining = target != null ? Math.max(0, target - startBalance) : perUnit * 100;
-  const qtyFor = (avail) => Math.max(1, Math.min(LINE_ITEM_LIMIT, avail || LINE_ITEM_LIMIT, Math.ceil(remaining / perUnit)));
+  const qtyFor = (avail) => qtyForTarget({ remaining, perUnit, available: avail, lineItemLimit: LINE_ITEM_LIMIT });
 
   if (DRY_RUN) {
     const q = qtyFor(earn.availableQuantity);
@@ -245,10 +208,10 @@ async function run() {
     const avail = await currentAvailability(token, earn.productId);   // re-read: stock decrements as we buy
     if (avail <= 0) { log(`⚠ ${earn.sku} out of stock (availableQuantity ${avail}) — stopping after ${placed} order(s).`); break; }
     const qty = qtyFor(avail);
-    const num = await placeEarnOrder(token, userId, earn.productId, qty);
+    const num = await placeEarnOrderAs(token, userId, earn.productId, qty);
     placed++;
     // Earn settles asynchronously (ProcessOrdersAsync Hangfire ~10s) — poll before re-reading.
-    for (let i = 0; i < 8; i++) { await sleep(5000); const b = await readBalance(userId); if (b !== balance) { balance = b; break; } balance = b; }
+    balance = await pollBalanceChange({ readBalance, userId, from: balance, sleep });
     log(`  order ${placed}: ${num} (${earn.sku} ×${qty}) → balance ${balance} PTS`);
   }
   if (target != null && balance < target) log(`⚠ stopped at ${balance}/${target} PTS after ${placed} order(s) (hit --max-orders ${MAX_ORDERS} or stock). Re-run to continue, or lower the target.`);

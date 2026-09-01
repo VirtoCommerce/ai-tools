@@ -137,11 +137,11 @@ async function seed() {
   // Storefront/cart price comes from the search index, so a pricing change is invisible
   // to the cart until CatalogProduct is reindexed (mirrors seed-test-data.js triggerReindex).
   // NOTE: a scoped (ids) reindex may be insufficient on some envs — a full rebuild
-  // (POST /api/search/indexes/index [{documentType:"CatalogProduct", rebuild:true}]) may be
+  // (POST /api/search/indexes/index [{documentType: "Product", rebuild:true}]) may be
   // required, and it is async (Hangfire). Verify buyability after the job completes.
   try {
     const idsToIndex = products.map((p) => p.id);
-    await api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', ids: idsToIndex }], { expectStatus: [200, 201, 202, 204] });
+    await api('POST', '/api/search/indexes/index', [{ documentType: 'Product', documentIds: idsToIndex }], { expectStatus: [200, 201, 202, 204] });
     log(`Queued CatalogProduct reindex for ${idsToIndex.length} product(s) — async; allow time before cart use`);
   } catch (e) {
     log(`⚠ reindex trigger failed (${String(e.message).slice(0, 100)}) — run a CatalogProduct reindex manually before cart tests`);

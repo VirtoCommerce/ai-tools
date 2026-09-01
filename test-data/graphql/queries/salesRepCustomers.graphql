@@ -4,7 +4,7 @@
 # purpose: Rep-side list of organizations the caller serves, with last-order summary
 # required-vars: (none)
 # optional-vars: CULTURE_NAME
-# last-validated: 2026-07-17
+# last-validated: 2026-08-27
 # known-issues: (none)
 # used-by: SR-GQL-009, SR-GQL-011, SR-GQL-013
 

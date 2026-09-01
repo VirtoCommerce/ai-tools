@@ -6,7 +6,21 @@ disable-model-invocation: true
 
 # /qa-test — Test a Tracker Ticket or Feature
 
-Analyze scope, dispatch specialist agents, collect results, and produce a verdict. You run this orchestration inline — do NOT delegate to another orchestrator agent.
+Analyze scope, dispatch specialist agents, collect results, and produce a verdict. **You run this
+orchestration inline — do NOT delegate to another orchestrator agent.**
+
+This command is the orchestration shell: what runs, in what order, and the gate each step must clear. **The
+methodology — why each rule exists and what it was measured against — lives in the
+[`/qa-test` skill](../skills/qa-test/SKILL.md).** Read the skill file for the step you are in when you hit
+a judgment call a gate does not settle, or when you are about to change how a step works.
+
+| Need | Read |
+|---|---|
+| Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
+| Steps 2–3 — oracles, the three artifacts, scaffold + fan-out | [`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md) |
+| Step 5 — triage, verdict, filing, report, promotion | [`skills/qa-test/close-out.md`](../skills/qa-test/close-out.md) |
+| `--epic` · `--iterate` | [`skills/qa-test/modes.md`](../skills/qa-test/modes.md) |
+| Verifier mode · agent routing · the agent prompt contract · what persists | [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) |
 
 ## Usage
 ```
@@ -15,112 +29,144 @@ Analyze scope, dispatch specialist agents, collect results, and produce a verdic
 /qa-test checkout flow                   # Test a feature area by name
 /qa-test PR #789                         # Test changes in a GitHub PR
 /qa-test <ticket-key> --iterate          # Bounded test→fix→re-test loop (default 2 rounds; --max-rounds N)
-/qa-test --epic VCST-100                  # Test a parent Epic's child stories in series (ordered, state carried, cross-story E2E)
+/qa-test --epic VCST-100                 # Test a parent Epic's child stories in series
 ```
+
+**Argument normalization — there is no argv parser, so state what you resolved.** This command is a prompt,
+not a script: an ambiguous spelling is resolved by *reading*, so resolve it explicitly and say so in one
+line before Step 1, rather than acting on a guess.
+
+| Written | Read as | Note |
+|---|---|---|
+| `--iterate` | `--iterate --max-rounds 2` | 2 is the default |
+| `--iterate N` / `--iterate=N` | `--iterate --max-rounds N` | the obvious intent; accept it, don't refuse |
+| `--max-rounds N` with no `--iterate` | **`--iterate --max-rounds N`** | a round cap is meaningless without the loop |
+| a second bare token that is not a ticket key, `PR #N`, or a flag | **STOP and ask** | never silently fold it into the target or a flag value |
+
+`--iterate` and `--epic` **compose** (the loop tries to fix a failing child story before the chain
+continues). Neither flag changes the FAST/FULL routing — that comes only from ticket type × status at `1a`.
 
 ---
 
-## Pipeline: Context · Story · Test Model → Plan → Write·Review·Provision → Execute → Report
+## Routing — two axes, decided at 1a
 
-Step `1a` routes on **two axes** — first **FLOW** (which pipeline), then, only within the `feature-test`
-flow, **EFFORT** (FAST vs FULL, how much of Steps 1/3/5 runs). Both are decided by the ticket's
-**type × status** per the single source of truth,
-[`.claude/knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md) — cite it,
-never restate its matrix here:
+Single source of truth for both matrices:
+[`.claude/knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md). **Cite it,
+never restate it here.**
 
-1. **FLOW** — `verify-fix` · `hotfix-verify` · `feature-test`. A fix-ready **Bug** is a *verification*,
-   not a feature test — it runs `/qa-verify-fix` inline (§1a); a hotfix-status Bug points to
-   `/qa-hotfix-check`; a Sub-task inherits its parent; everything else is a `feature-test` and continues
-   through the five steps below.
-2. **EFFORT** — the FAST/FULL table below, which applies **only** to the `feature-test` flow.
+1. **FLOW** — which pipeline runs at all: `verify-fix` · `hotfix-verify` · `feature-test`.
+2. **EFFORT** — FAST or FULL. Applies **only** within `feature-test`.
 
-| Path (feature-test only) | When | What runs |
+| Flow | Ticket | Action |
 |---|---|---|
-| **FAST — a checklist, and nothing else** | Bug fix / copy-tweak / config / Technical task; **P2–P3**, single-layer, single-domain, obvious surface | `1a` + `1b` → **Artifact B checklist only** → one execution agent + the critical-case regression → `5a` triage → `5b` reconcile → `5c` verdict → `5d` file → `5e` report → `5f` status. **No `1c`/`1d` agents · no `1e` Test Model · no archetype/UIP/`VC-*` sweeps · no Artifact A authoring · no `5g` promotion · no independent verifier** |
-| **FULL** | New feature / Story / Epic; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface | `1c` ‖ `1d` (concurrent) → full Test Model → full authoring → the three hard-STOP independent verifier gates → `5g` promotion |
+| `verify-fix` | a **fix-ready** Bug | **Run `/qa-verify-fix` inline** (§1a). Steps 2–5 do not run. |
+| `hotfix-verify` | a **hotfix-ready** Bug | **STOP** with a one-line pointer: `Run /qa-hotfix-check <ticket-key>`. File nothing; transition nothing. |
+| `feature-test` | Story / Task / Technical task / Epic, and a **not-fixed** Bug | The five steps below, at the resolved effort. |
+| — | a **Sub-task** | Resolve the parent and re-enter this classification as the **parent's** type × status. |
 
-**When in doubt, take the FULL path** (fail-safe: a real regression is worse missed than a fast run saved).
+A `not-fixed` Bug runs FAST to reproduce and characterize the defect live with fresh evidence — there is no
+fix to *verify* yet; state that the next step is `/qa-fix <ticket-key>`.
 
-**Why the line sits there.** FAST used to drop only the two `1` agents and the verifiers while keeping
-the Test Model, both sweeps, the whole Step-2 oracle load, case authoring and all seven phases of
-Step 5 — everything expensive was marked *"both paths, always."* Four of five recorded runs took FAST,
-so that is the path most of the cost sat on. Two consequences are deliberate and worth stating rather
-than discovering:
+**Effort:** FULL for a new feature / Story / Epic, P0–P1, cross-layer, ≥2 domains, a critical-revenue flow,
+or an unclear surface. FAST for a bug fix / copy-tweak / config / Technical task that is P2–P3, single-layer,
+single-domain, obvious surface. **When in doubt, take FULL** — a real regression is worse missed than a fast
+run saved. Why the line sits there, and the two deliberate consequences: [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Effort routing.
 
-- **A FAST run authors no test cases**, so a bug fix no longer contributes regression coverage through
-  `/qa-test`. That is the price of the cut; the route back in is `/qa-test-lifecycle`, unchanged. If a
-  fix genuinely needs a durable regression case, that is itself a signal to take FULL.
-- **The checklist is therefore the run's only durable record** of what was checked — which is why it is
-  now written to the ticket folder (Step 3, Artifact B) instead of scrolling past in the terminal.
+---
 
-## Quality-gate model
+## The FAST path, in full
 
-The full path runs a **fresh `qa-lead-orchestrator` instance in §Verifier Mode**
-(`.claude/agents/qa-lead-orchestrator.md`) at **three hard-STOP gates only** — Step 3 (artifacts + data),
-Step 5b (AC & DoD vs implementation, incl. the quantified estimate), and Step 5g (promotion). It re-derives
-evidence from source (re-runs the deterministic core, re-opens evidence, or delegates a live re-check on a
-**different browser lane**), never APPROVEs on the doer's summary, and biases **when-in-doubt-REJECT**. It
-is **never** the inline orchestrator running this pipeline and **never the step's own doer** — dispatching
-it is a scoped single-gate check, not handing off the orchestration.
+Stated once, completely. **Everything after this section is the FULL path.**
 
-- **Loop = 1 round:** `REJECT → REASONS + FIX → the step's doer fixes → re-verify once`. Still not
-  APPROVE → **STOP** for a human (a persistent REJECT never silently proceeds).
-- **Every other step, and the entire FAST path, self-checks inline** — no separate verifier dispatch.
-- Diagram + role/hand-off detail: `docs/qa-test-flow.md`.
+```
+1a  route + fetch (comments + attachments, always)   → name the parent Epic in one line, no sibling analysis
+1b  pre-flight, sprint, duplicate check
+2   load the affected domains' BL-* rule TEXT; route ONE execution agent. Stop there.
+3   Artifact B checklist (conditions from 1a's ACs) + Artifact C scope + test data (3a) if needed
+4   one execution agent runs the checklist; then the change-scoped regression (no --also-ids)
+5a  triage · 5b reconcile AC/DoD · 5c verdict · 5d file (severity floor) · 5e report · 5f status
+```
 
-## Epic mode (`--epic <EPIC-KEY>`) — a series of sibling stories
+**Not run on FAST:** `1c` / `1d` agents · the `1e` Test Model and `1e-plan` · the archetype / UIP / `VC-*`
+sweeps · Artifact A authoring (so **no new test cases and no new regression coverage** — the route back in is
+`/qa-test-lifecycle`) · `5g` promotion · every independent verifier dispatch (each gate is an inline
+self-check).
 
-`--epic` wraps the per-story pipeline to test a whole Epic's child stories **in series**, because a story is
-usually one slice whose value only appears in the A→B→C chain. It is a thin orchestration over the same
-five steps — it does not change any step's internals.
+**Still run on FAST, and load-bearing:** the `BL-*` rule text (the correctness oracle the checklist asserts
+against — dropping it makes a FAST verdict ungrounded rather than merely cheap) · the ticket comments and
+attachments · `5b` (it produces the verdict) · the committed `testing-checklist.md`, which is the run's
+**only** durable record.
 
-1. **Resolve + order.** Fetch the Epic and its child stories (`getJiraIssue` on the Epic → children).
-   Test only the **testable** ones (Done / Ready-for-test / in the deploy under test); note the rest as
-   not-yet-testable. **Order by dependency** — the Epic's flow (A creates → B approves → C converts), read
-   from the story order / links / the `1a` Epic-context analysis. State the order chosen.
-2. **Run each story through the normal pipeline, in order** (each keeps its own fast/full routing + gates),
-   and **carry state forward**: story N's seeded exit state is story N+1's entry precondition — the quote
-   `A` created is the one `B` approves. Seed once, cumulatively; don't reset between siblings. A story that
-   FAILs or is BLOCKED **halts the chain at that point** (a downstream story that depends on it can't be
-   trusted) — report where it stopped; `--iterate` may be combined to try fixing the failing story before
-   continuing.
-3. **Cross-story E2E.** After the last story, run the **full Epic journey end-to-end** (A→B→C in one flow)
-   as the integration proof — the thing no single-story run covers.
-4. **Roll up (5e).** Per-story verdicts **plus an Epic verdict**: all child stories GO + the cross-story
-   E2E clean + 0 open P0 across the Epic → the Epic's feature is releasable. Recommendation only; a human
-   ships. Persist a per-story `summary.json` each, plus an Epic roll-up (`summary.json.epic`).
+**`--iterate` is valid on FAST, and this is where it earns most.** 5k needs a filed bug and a
+change-scoped regression, and FAST produces both — it just has no authored cases to re-run, so round N+1
+re-runs the **failed checklist items** plus the regression. FAST is the bug-fix / tweak path, so it is the
+likelier place to want a fix-and-retest loop at all. What stays off on FAST inside the loop: the verifier
+re-ratification in 5k step 3, exactly as at every other FAST gate.
 
-Human gates are unchanged — every per-story gate still fires, and merge/release stay the human's. Without
-`--epic`, a single ticket still gets its **Epic context** (Step 1a) and integration coverage vs Done
-siblings, just not the serial multi-story chain.
+**Gate (FAST, inline):** the checklist covers every atomic condition; `npm run td:validate` is green. No
+`suites:review` — nothing was authored.
 
-### Step 1 — Gather Context, Story & Test Model
+---
 
-Five ordered sub-parts (each consumes the one before it, so don't reorder): `1a` fetch, classify & route
-→ `1b` pre-flight → `1c` context (FULL) → `1d` story review (FULL) → `1e` Test Model. Story analysis is
-**part of this step**: its AC table is a field of the Test Model, the single hand-off to
-`test-management-specialist` (Step 3).
+## Quality gates — FULL path
 
-#### 1a — Fetch the scope, classify the type × status, route the flow & path
+A step passes its gate or **STOPS**. Three are hard-STOP gates verified by a **fresh
+`qa-lead-orchestrator` in §Verifier Mode**; every other gate, and the whole FAST path, self-checks inline.
+
+| Gate | Where | Verified by |
+|---|---|---|
+| Model complete | 1e (9 clauses) | inline (doer's own check) |
+| **Artifacts reviewed + data seeded** | Step 3 | **fresh `qa-lead` verifier — hard STOP** |
+| Execution evidenced | Step 4 | inline |
+| **Triage + AC/DoD sound** | 5b | **fresh `qa-lead` verifier — hard STOP** |
+| Filing sound | 5d | inline |
+| Feature Release Gate ratified | 5e | fresh `qa-lead` verifier |
+| **Promotion sound** | 5g | **fresh `qa-lead` verifier — hard STOP**, non-blocking on the close-out |
+
+**Loop = 1 round:** `REJECT → REASONS + FIX → the step's doer fixes → re-verify once`. Still not APPROVE →
+**STOP** for a human. What makes the verifier independent, and why it is never the step's own doer:
+[`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §The verifier. Diagram: `docs/qa-test-flow.md`.
+
+---
+
+## Step 1 — Gather Context, Story & Test Model
+
+Five ordered sub-parts; each consumes the one before it, so don't reorder. Story analysis is **part of this
+step**: its AC table is a field of the Test Model, the single hand-off to `test-management-specialist`.
+
+### 1a — Fetch the scope, classify type × status, route
 
 **Fetch first** — every later sub-part depends on these fields.
 
-- **JIRA tickets** — Atlassian MCP `getJiraIssue` (summary, Type, Priority, Status, Components, ACs). If not configured, ask the user to paste the details. Linked PR → GitHub MCP `get_pull_request` + `get_pull_request_files`. Confirm the ticket is in a testable status.
-- **Read the ticket comments (both paths, always).** The description is the plan; the **comments are what actually happened** — the real repro, PO/dev clarifications, scope changes, "fixed in build X" / "reopened because…" notes, and prior QA findings the description never carries. Fetch them (Atlassian MCP `getJiraIssue` with the comment field, or `mcp__atlassian__getJiraIssue`/`fetch`; for a PR, `get_pull_request_comments` + review comments). Fold the load-bearing facts into the Test Model `Ticket signals` field (1e) — a comment that narrows the repro or moves the goalposts changes what you test. On a PR, review threads flag the reviewer's own risk areas.
-- **Analyze the attachments (both paths, always).** Screenshots, mockups, logs, HAR, and short videos attached to the ticket are primary evidence — don't just note they exist, **open them.** A screenshot usually shows the exact **expected-vs-actual** (seeds the 5b reconciliation and each case's assertion); a **design mockup** is the visual oracle (feeds a `/qa-design`/Figma comparison in execution); a **log/HAR/stack trace** narrows the repro and the affected layer. Download each attachment (its content URL) and `Read` it (images render; parse text logs). Reference the concrete finding, not the filename. If an attachment can't be fetched, note the gap — don't silently skip it.
-- **Resolve the parent Epic (when the ticket has one).** A Story is usually one slice of an Epic, not a standalone unit. If `getJiraIssue` returns a parent/epic link, fetch the **Epic** (summary + Epic-level ACs) and its **child-story list with statuses**, and classify the siblings: **Done** = the integration surface this story plugs into (its seams must still work → fold into the checklist + regression selection); **In-progress / blocked** = dependencies (a hard one this story needs may force a BLOCKED verdict or a stubbed boundary — say which); **this story** = the slice under test. Place the story in the Epic's end-to-end flow (what comes before it, what consumes its output). This lands in the Test Model `Epic context` field (1e). **FULL path only** — the sibling classification is what feeds integration coverage and the `1e` model, and a FAST run builds neither; on FAST, name the parent Epic in one line and move on. No parent Epic ⇒ skip with a one-line note.
-- **A PR** — GitHub MCP `get_pull_request` + `get_pull_request_files`; map extensions: `.cs`/`.csproj` → Backend, `.vue`/`.ts`/`.tsx`/`.jsx` → Frontend, `.css`/`.scss` → Styling.
-- **A feature name** — use it to determine which areas are affected.
+- **Tracker ticket** — Atlassian MCP `getJiraIssue` (summary, Type, Priority, Status, Components, ACs). Not
+  configured → ask the user to paste the details. Linked PR → GitHub MCP `get_pull_request` +
+  `get_pull_request_files`. Confirm the ticket is in a testable status.
+- **Read the ticket comments (both paths, always).** The description is the plan; the **comments are what
+  actually happened** — the real repro, PO/dev clarifications, scope changes, "fixed in build X" /
+  "reopened because…" notes, and prior QA findings the description never carries. Fold the load-bearing
+  facts into the Test Model's `Ticket signals`; a comment that narrows the repro or moves the goalposts
+  changes what you test. On a PR, review threads flag the reviewer's own risk areas.
+- **Analyze the attachments (both paths, always).** Screenshots, mockups, logs, HAR and short videos are
+  primary evidence — **open them**, don't just note they exist. A screenshot usually shows the exact
+  expected-vs-actual (seeds 5b and each case's assertion); a design mockup is the visual oracle; a
+  log/HAR/stack trace narrows the repro and the affected layer. Download each attachment and `Read` it.
+  Reference the concrete finding, not the filename. An attachment that can't be fetched is a **noted gap**,
+  never a silent skip.
+- **Resolve the parent Epic** (FULL only; on FAST name it in one line). Fetch the Epic (summary +
+  Epic-level ACs) and its child-story list with statuses, then classify the siblings: **Done** = the
+  integration surface this story plugs into (its seams must still work → fold into the checklist +
+  regression selection); **In-progress / blocked** = dependencies (a hard one may force a BLOCKED verdict or
+  a stubbed boundary — say which); **this story** = the slice under test. Place the story in the Epic's
+  end-to-end flow. Lands in the model's `Epic context`. No parent Epic ⇒ skip with a one-line note.
+- **A PR** — map extensions: `.cs`/`.csproj` → Backend, `.vue`/`.ts`/`.tsx`/`.jsx` → Frontend,
+  `.css`/`.scss` → Styling. **A feature name** — use it to determine the affected areas.
 - **Identify applicable domain(s)** — map to the 63 `/qa-checklist` domains.
 
-**Classify the type × status, then route the FLOW — per
-[`.claude/knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md)** (the single
-source of truth for the routing matrix; do **not** restate it here):
+**Then classify and route** — per `ticket-routing.md`, which owns the matrix:
 
-1. **Normalize the type** — resolve the JIRA `Type` (`fields.issuetype.name`) / Azure `System.WorkItemType`
-   per `tracker-ops.md` §5a, then map to a canonical type (`Story` / `Bug` / `Task` / `Technical task` /
-   `Sub-task` / `Epic`) through the profile's `workItemTypes` map. For a PR / bare feature, infer from diff
-   size + surface.
+1. **Normalize the type** — JIRA `fields.issuetype.name` / Azure `System.WorkItemType` per `tracker-ops.md`
+   §5a, mapped to a canonical type through the profile's `workItemTypes` map. For a PR / bare feature, infer
+   from diff size + surface.
 2. **Normalize the status to a role** — `fix-ready` / `hotfix-ready` / `not-fixed` / `testable`, resolved
    live (`defect-lifecycle-workflow.md` §2 + `tracker-ops.md` §Live transition discovery). Never hardcode a
    status name.
@@ -182,669 +228,222 @@ returns:
 - **Known pain points / historical failures** — cross-referenced to `vc-bug-catalog.md` (`VC-*`) + prior bugs.
 - **Docs grounding** — VirtoOZ/VC-doc references for how the feature is *supposed* to behave.
 
-On `ba-system-analyzer` internal error, fall back to gathering context inline (from the `1a` fields +
-`get_pull_request_files` diff + `.claude/knowledge/`) rather than retrying. The `1e` Test Model carries the
-same fields either way. (On the FAST path this whole sub-part is skipped — note it in one line.)
+On internal error, gather context inline (from the `1a` fields + the diff + `.claude/knowledge/`) rather than
+retrying the delegation. The `1e` model carries the same fields either way.
 
-#### 1d — Review the story (FULL path only)
+### 1d — Review the story (FULL only)
 
-A strong run starts from strong ACs. **Advisory, never blocking.** Runs for a tracker ticket/story **with
-ACs**; skip (one-line note) for a bare feature name or a PR with no governing story.
+**Advisory, never blocking.** Runs for a ticket/story **with ACs**; skip with a one-line note for a bare
+feature name or a PR with no governing story.
 
-Dispatch `ba-story-writer` in review mode (Mode B) — analyze only, no new story, no JIRA writes. Pass
+Dispatch `ba-story-writer` in review mode (Mode B) — analyze only, no new story, no tracker writes. Pass
 `existing_story` (summary + description + ACs from `1a`), any **AC-affecting clarifications from the `1a`
 comments** (a comment that redefines expected behavior overrides the stale description), `jira_ref` +
-`domains`, and `implementation: { pr_diff }` (the linked PR's changed files — this is the **static** AC↔code
-check; the **live** one is Step 5b). It returns:
-- **AC Quality Scorecard** — per AC: testable? / clarity / smells / KEEP·REWRITE·SPLIT.
-- **Weak sides** — rewrites for ambiguous / non-falsifiable / happy-path-only ACs.
-- **AC ↔ Implementation coverage** — per AC: SATISFIED / DRIFT / NOT-FOUND / CONTRADICTS vs the diff, plus unspecified implementation.
-- **Gap analysis** — missing ACs (error paths, boundaries, guest/B2B, NFRs, integration seams), each mapped to a `BL-*`/`ECL-*` and phrased as a gap-AC.
-- **AC → Test traceability seed** — merged table of atomic testable conditions (story ACs + gap-ACs), each with its `Impl verdict`.
-- **DoD checklist** — each item from the story's Definition of Done (when the ticket has one), marked from
-  what's staticaly inferable now (e.g. a linked PR existing/reviewed, tests present in the diff) vs. flagged
-  **"confirm at Step 5b"** for anything that can only be known after execution (e.g. "tests pass",
-  "no regressions", "accessibility checked"). Skip with a one-line note when there's no governing story or
-  no DoD section — same skip condition as the rest of `1d`.
+`domains`, and `implementation: { pr_diff }` — this is the **static** AC↔code check; the **live** one is 5b.
+It returns: an **AC Quality Scorecard** (per AC: testable? / clarity / smells / KEEP·REWRITE·SPLIT) ·
+**weak sides** with rewrites · **AC ↔ Implementation coverage** (SATISFIED / DRIFT / NOT-FOUND / CONTRADICTS
+vs the diff, plus unspecified implementation) · **gap analysis** (missing ACs for error paths, boundaries,
+guest/B2B, NFRs, integration seams — each mapped to a `BL-*`/`ECL-*` and phrased as a gap-AC) · an **AC →
+Test traceability seed** (atomic testable conditions, story ACs + gap-ACs, each with its `Impl verdict`) ·
+the **DoD checklist** (each item marked from what is statically inferable now vs flagged **"confirm at
+5b"**; skip with a note when there is no DoD section).
 
-**Surface inline** the weak ACs, DRIFT/CONTRADICTS/scope-creep findings, and gap-ACs, then **proceed** —
-fold gap-ACs into scope and carry every DRIFT/NOT-FOUND/CONTRADICTS into execution as a thing to verify
-**live** (a static-diff finding is a suspicion, not a defect). The AC traceability table and the DoD
-checklist stay in working context (terminal-only per `.claude/rules/reports.md` §1, no `ac-analysis.md`);
-they are the spine for Step 3 and Step 5b.
+**Surface inline** the weak ACs, DRIFT/CONTRADICTS/scope-creep findings and gap-ACs, then **proceed** — fold
+gap-ACs into scope and carry every DRIFT/NOT-FOUND/CONTRADICTS into execution as a thing to verify **live**
+(a static-diff finding is a suspicion, not a defect). The AC traceability table and the DoD checklist stay in
+working context (terminal-only, `.claude/rules/reports.md` §1); they are the spine for Step 3 and 5b.
 
-#### 1e — Build the Test Model (the Step 1 output) — **FULL path only**
+### 1e — Build the Test Model (FULL only)
 
-**Required for every Story, Epic and substantial feature; not built on the FAST path at all.** The model
-is what makes the ticket's context understandable and its documentation adequate — that is its job, and
-it is a job a P2 config tweak does not have. A FAST run states in one line that no model was built and
-proceeds to the Artifact B checklist.
+Distil `1c` + `1d` + `1a` into the **fault model** Step 3 authors cases from, written to
+`reports/ba/test-models/<TICKET>-<date>.md`. **Part 0 — the value chain — is derived FIRST** and drawn in
+Mermaid; the condition space is built per link on top of it.
 
-Distill `1c` context + `1d` story analysis + `1a` scope/domains into one structured model — the **fault
-model** Step 3 authors cases from. It answers *"how can this feature be wrong, and what would catch each
-way?"*, not *"is every acceptance criterion represented?"* — coverage is necessary but it is not the goal,
-and a model that only traces ACs produces a suite that confirms the feature instead of attacking it. Keep
-**Write it to `reports/ba/test-models/<TICKET>-<date>.md`** — a durable artifact, not a terminal
-dump. Three reasons it has to be a file: a model nobody can re-open cannot be *argued with*, which
-is the whole point of having one; the parameter model for a surface (cart, checkout, org roles) does
-not change per ticket, so as a file it is **reused** and as terminal output it dies with the session;
-and a file is *lintable in principle*, so the five parts and the resolved sweeps could be checked
-rather than asserted — **`npm run model:lint` is not implemented yet**, so today that third reason is
-an intention, not a gate. Do not cite it as though a script were enforcing it. It is `reports.md`
-**category 3** — the same durable BA test-design model the rules already provide for. The AC table and
-DoD checklist stay terminal-only; the Artifact B checklist is written to the ticket folder (Step 3).
+**Shape:** [`.claude/templates/test-model.md`](../templates/test-model.md). **Methodology, the eight rules
+the scenario table must satisfy, the nine-clause gate and the worked references:**
+[`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md). Read the latter before writing the model —
+the gate below is only its checklist.
 
-Shape:
+**Gate (inline, 9 clauses — every one contradictable):** flow/type/path set + atomic conditions + BL/ECL/
+domains/risk areas · `Value chain` complete **with the `flowchart` in the file** · `Mechanism coverage
+matrix` with **no blank cells** + `Reverse edges` resolved · first scenario row is the `Technique:FLOW`
+journey · `Condition space` states factors, classes, constraints and raw N · `Reduction` states `N → M` **and
+names what it dropped** · every row carries all five (cell · defect hypothesis · archetype · technique ·
+oracle) · every oracle is `{BL}`/`{SPEC}`/`{DOC}` or says what would make it one · `Archetype sweep`
+resolved (covered or **WAIVED with a reason** — silence is not a waiver).
+
+### 1e-plan — emit the scenario matrix as an authoring plan
+
+The model is prose and nothing lints it; its scenario **rows** are structured. Write them out as one
+**authoring plan JSON per target suite** (scratchpad, not `reports/`) and run the gate:
+
+```bash
+npm run tc:scaffold -- --plan <scratchpad>/plan-<layer>.json --check
 ```
-TEST MODEL — <ticket-key>
-Ticket:      <ticket-key> | Type: Bug/Story/Task/Technical task/Sub-task/Epic | Status role: fix-ready/not-fixed/testable | Flow: feature-test | Priority: P0/P1/P2 | Path: FULL | Changed: Backend / Frontend / Both
-Context:     [FULL: ba-system-analyzer | FAST/inline]
-Affected surface: [module(s)/repo(s), layer(s), code sites]
-Ticket signals: [load-bearing facts from COMMENTS + ATTACHMENTS — real repro, PO/dev clarifications, "fixed in build X"/reopen notes, prior QA findings; screenshot expected-vs-actual, design mockup ref, log/HAR repro]   (from 1a)
-Epic context: [parent Epic + goal; this story's position in the E2E flow; Done siblings = integration seams to cover; In-progress siblings = dependencies/blockers]   (from 1a; "none" if no parent)
-Domains:     [Cart, Payment, ...]
-Flows & boundaries: [cart ↔ checkout, ...]
-Risk areas:  [VC-* pain points / historical failures]
-AC traceability: [N atomic conditions — story ACs + gap-ACs, each w/ Impl verdict]   (from 1d)
-DoD (optional — only when the ticket declares one): [Definition-of-Done items, each marked confirmed-now / confirm-at-5b]   (from 1d)
-Condition space: [factor → value classes, one line per factor; + constraints (infeasible combos); raw cells = N]
-Reduction:       [technique + WHAT was collapsed and WHY — name the dropped factor and what subsumes it; N → M]
-Test scenarios (M rows — one per surviving cell)   ← authored from in Step 3
-  | # | Cell (factor values) | Defect hypothesis — what breaks here, and why it plausibly would | Archetype | Technique | Oracle | P |
-Probes carried in: [vc-bug-catalog VC-*-NNN whose Detection probe hits this surface → scenario # | N/A + reason]   (filled in Step 2)
-Archetype sweep:  [archetypes in scope for these domains → covered by # | WAIVED + reason]                        (filled in Step 2)
-UIP sweep (UI only): [UIP-BACK/DEEP/REFRESH/TABS/EXPIRE/STORAGE/NET/INPUT/VIEW/DATA → covered by # | WAIVED + reason]  (filled in Step 2)
-User-flow diagram: [Mermaid flowchart of the primary + alternate user paths]         ← authored from in Step 3
-Business Rules: [BL-CART-001, BL-PAY-003, ...]   (filled in Step 2)
-Edge cases:  [ECL-* patterns]                    (filled in Step 2)
-Docs grounding: [VirtoOZ / VC-doc refs]
-Agents to dispatch: [list]
-```
-**`Test scenarios` + `User-flow diagram` are the artifact `test-management-specialist` authors test cases
-from in Step 3.** Draw the user flow as a Mermaid `flowchart` (primary path + the alternate/error branches
-a test must exercise). The scenario table is not a list of things to try — it is a **fault model**: each
-row names a way this feature can be *wrong*, and the case authored from it is the thing that would catch
-that. Five rules make it that rather than a relabelled walkthrough:
 
-- **A row without a defect hypothesis is not written.** The bar is
-  `.claude/skills/qa-test-cases-generator/SKILL.md` §Step 3 — *"what real bug would this catch and why
-  would it occur?"* — plus its §6 cull rule (drop a row that duplicates another row's hypothesis, tests
-  infrastructure, or would only fail if the framework itself were broken). **Cite it; do not restate it.**
-  This is the gap the table exists to close: the generator has always demanded a bug hypothesis, and the
-  model used to hand it a flat scenario list with nowhere to put one.
-- **The oracle comes from the specification, never from the implementation or the running system.**
-  `{BL-…}` / `{SPEC}` / `{DOC}` are oracles; **`{OBSERVED}` is a baseline, not an oracle** — writing down
-  what the live app currently does turns a bug into the expected result, and it also suppresses the
-  bug-exposing case that would have caught it. Same provenance grammar `lint-test-cases.ts` GRD-001
-  already enforces on `Assertions`, so the row pre-grounds the case.
-- **Technique follows the hypothesis, not house style** — which technique wins is fault-type dependent, so
-  a table produced entirely by one technique is blind to whatever that technique cannot detect. Tokens and
-  selection rules: `/qa-test-design` (`SKILL.md` §3 + `test-design-techniques.md` §0 tokens / §6 interaction
-  rule — cite it, never restate it); **`t=2` by default, `t=3` ceiling, `t=4` revenue-critical only.**
-- **Archetype is one token** from the Defect archetypes table in `knowledge/oracles/vc-bug-catalog.md`.
-  It is what makes a blind spot visible *at design time* rather than in a later audit.
-- **`Reduction` is the anti-vanity field.** Without it, "M scenarios" is unfalsifiable; with it a reader
-  can attack the reduction ("do status and lock actually not interact?"), which is where real coverage
-  arguments live. Name the dropped factor and what subsumes it — not just the arithmetic.
-
-Worked reference for the whole shape (condition space → explicit reduction rationale → cells with oracle
-provenance): `reports/ba/Organization roles/test-model-VCST-5281-2026-08-03.md`.
-
-**Gate (inline self-check) — every clause must be contradictable by a reader.** "Scenarios enumerated"
-was the old bar and it cannot be wrong; these can:
-
-1. Ticket **flow + type + path** set (flow = `feature-test` — a `verify-fix` / `hotfix-verify` route never
-   reaches 1e); ACs decomposed to **atomic conditions**; **BL/ECL/domains** and **risk areas** present.
-2. `Condition space` states the factors, their value classes, the constraints, and **raw cell count N**.
-3. `Reduction` states `N → M` **and names the factors it dropped and what subsumes them**. An unstated
-   reduction is the finding — a scenario count nobody can attack is not a coverage argument.
-4. **Every** scenario row carries all five: cell · defect hypothesis · archetype · technique · oracle.
-   No blanks, no "TBD", no hypothesis that merely restates the step ("check that X works").
-5. Every oracle is `{BL-…}`/`{SPEC}`/`{DOC}` — or, if `{OBSERVED}`/`{HYPOTHESIS}`, the row says what
-   would make it a real oracle. An expected value read off the live system is not an oracle.
-6. `Archetype sweep` resolved: every archetype in scope for these domains is either covered by a row
-   or **WAIVED with a reason**. Silence is not a waiver.
-
-A missing atomic condition or `ba-system-analyzer` risk area is added before moving on. (No fresh-`qa-lead`
-dispatch here — this is the doer's own completeness check. The deterministic gate is one step downstream,
-at Step 3's appender: the model is a file now, but nothing lints it yet, and the appender is the one door
-into `regression/suites/` that a script already guards.)
+It refuses any row that cannot answer the three KEEP questions — `observable` (what value it READS),
+`defect` (what a CUSTOMER would see, no null-hypothesis phrasing), `plausible` (a `VC-*` entry, a filed bug,
+or `mechanism: …`). **This is `/qa-test-cases-generator` §6d's cull, moved to before the case is written.**
+The plan also carries the sweeps. Field-by-field rules:
+[`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md) §The KEEP gate.
 
 ---
 
-### Step 2 — Plan
+## Step 2 — Plan
 
-**Enrich the Step 1 Test Model** with the knowledge/docs it doesn't already carry, then route agents. This
-*completes* the model — it does not re-derive what Step 1 populated. Skip anything `1c` already returned.
+Enrich the Step-1 model with the knowledge it doesn't carry, then route agents. This *completes* the model;
+it does not re-derive what Step 1 populated. Skip anything `1c` already returned.
 
-> **FAST path — load the affected domains' `BL-*` rule text and route the one agent. Stop there.**
-> There is no Test Model to enrich, so the sweeps below have nothing to fill: `Probes carried in`, the
-> `Archetype sweep`, the `UIP sweep` and the generative `VC-*` triage are **FULL-path only**. The
-> `BL-*` invariants still load on both paths — they are the correctness oracle the checklist asserts
-> against, and dropping them would make a FAST verdict ungrounded rather than merely cheap.
+Load, for the identified domains, the **actual rule text and patterns** (not just IDs): `business-logic.md`
+`BL-*` · `e-commerce-edge-cases-library.md` `ECL-*` · the domain checklists via `/qa-checklist` ·
+`skills/qa-plan/e2e-scenario-catalog.md` `E2E-*` (the suite-traceability backbone for Artifact C) ·
+`oracles/vc-bug-catalog.md` `VC-*` (each entry's `Detection probe` is a ready-made scenario) · for a UI
+surface, the `BL-UI-*` invariants + `critical-ui-scope.md` + `qa-design` §State-Stress + the generated
+selectors · `modern-web-attack-surface.md` §`UIP-*`. Then query VirtoOZ docs via `/vc-docs` — **skip when
+`1c` delegated to `ba-system-analyzer`**, topping up specific gaps only.
 
-**Load knowledge files** for the identified domains (from `.claude/knowledge/`) — fill the model's
-`Business Rules` / `Edge cases` with the actual rule text + patterns, not just IDs:
-- **business-logic.md** — the `BL-*` invariants for the domains (mandatory verification points).
-- **e-commerce-edge-cases-library.md** — the `ECL-*` patterns.
-- **domain-checklists.md** / **backend-admin-checklists.md** / **graphql-checklist.md** (via `/qa-checklist`) — checklist items for the domains.
-- **`.claude/skills/qa-plan/e2e-scenario-catalog.md`** — map to the `E2E-*` scenario(s) and inherit their pre-mapped regression suites (the suite-traceability backbone for Step 3's Artifact C).
-- **oracles/vc-bug-catalog.md** — the `VC-*` entries for these domains. **Each entry's `Detection probe`
-  is a ready-made scenario**: carry it into the model's `Test scenarios` as its own row (archetype = the
-  entry's `Archetype:`, oracle = `{OBSERVED} VC-…`), or record it in `Probes carried in` as `N/A + reason`.
-  **Silence is not an answer** — a domain's entries are triaged, not skimmed. Skip `BY-DESIGN` and
-  `CONVENTION` entries as scenario candidates: those are false-positive guards, and the right use is to
-  *avoid filing* the behaviour they describe. Then fill `Archetype sweep`: for each archetype in scope for
-  these domains, name the covering row or waive it with a reason.
-- **For a UI/storefront surface — the oracles that make a UI assertion strong** (previously unreachable
-  from authoring): `business-logic.md` **Domain 15 `BL-UI-*`** (measurable invariants + their `Verify`
-  recipes), `oracles/critical-ui-scope.md` (36 components × applicable invariants, with real
-  selectors), `skills/qa-design/SKILL.md` **§State-Stress Pass** (the seven states a surface must
-  survive), and `automation/storefront-selectors.md`. Assert these with the **measurable tags**
-  (`[SHIFT] [TOUCH] [SPACING] [ALIGN] [OVERFLOW] [CLS]`), never as prose inside `[DOM]`.
-- **`skills/qa-sbtm/modern-web-attack-surface.md` §The `UIP-*` sweep** — resolve all ten probes for a
-  UI flow: each covered by a scenario row or waived with a reason. These are the cases a real user
-  produces (Back, refresh, two tabs, expired session, deep link) and the corpus has almost none of
-  them: 8 · 5 · 11 · 5 · 5 out of 1 961 Frontend cases.
+Per-source detail and the sweep-resolution rules:
+[`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md) §Step 2. Agent routing table:
+[`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch.
 
-**VirtoOZ docs query** (via `/vc-docs`) — **skip when `1c` delegated to `ba-system-analyzer`** (reuse its
-docs grounding; top up specific gaps only). Otherwise query the affected domain against the topic-scoped
-VirtoOZ tool that fits; fall back to Context7 (`/virtocommerce/vc-docs`, `tokens: 8000`) only if VirtoOZ
-returns nothing. **Fold in `ba-system-analyzer` risk areas** (when delegated) as mandatory verification
-points alongside the `BL-*` rules.
-
-**Agent routing table:**
-
-| Affected Area | Agent | Browser |
-|---|---|---|
-| Storefront UI, checkout, cart, search, mobile | `qa-frontend-expert` | `playwright-chrome` |
-| Admin SPA, APIs, modules, GraphQL, backend | `qa-backend-expert` | `playwright-edge` |
-| Storybook components, accessibility, design system | `ui-ux-expert` | Chrome DevTools MCP |
-| Cross-browser, Figma comparison, debugging | `qa-testing-expert` | `playwright-firefox` |
-
-**Minimum dispatch:** backend-only → `qa-backend-expert`; frontend-only → `qa-frontend-expert`; both →
-both in parallel; UI/component → add `ui-ux-expert`; P0 or critical-revenue → add `qa-testing-expert`.
-**FAST path → one execution agent** (the single owning specialist).
-
-**Gate (inline self-check) — FULL path:** every affected domain has its `BL-*`/`ECL-*`/`E2E-*`/`VC-*`
-loaded and an agent routed; **every in-domain defect-shaped `VC-*` entry is either a scenario row or an
-explicit N/A**; the `Archetype sweep` is resolved (covered or waived); **for a UI surface the `UIP sweep`
-is resolved too**, and the UI oracles above are loaded. (Verified as part of Step 3's gate — no
-standalone verifier pass here.)
-
-**Gate (inline self-check) — FAST path:** the affected domains' `BL-*` rule text is loaded and one
-execution agent is routed. Nothing else.
+**Gate (inline):** every affected domain has its `BL-*`/`ECL-*`/`E2E-*`/`VC-*` loaded and an agent routed;
+**every in-domain defect-shaped `VC-*` entry is either a scenario row or an explicit N/A**; the `Archetype
+sweep` is resolved; for a UI surface the `UIP sweep` is resolved and the UI oracles are loaded. (Verified as
+part of Step 3's gate — no standalone verifier pass here.)
 
 ---
 
-### Step 3 — Write, Review & Provision (test-management-specialist)
+## Step 3 — Write, Review & Provision
 
-Dispatch `test-management-specialist` to author the test artifacts from the **Test Model's scenarios +
-user-flow diagram**, review/auto-fix them, and provision any test data — before Step 4.
+Three artifacts, in this order. **3a runs first**, dispatched by the orchestrator, because cases are authored
+against fixtures that already resolve.
 
-> **FAST path — Artifact B and test data only.** No Artifact A: a FAST run authors **no** test cases,
-> so there is nothing to append, review or promote. Artifact C is still derived (Step 4 needs a suite
-> list), but as a *case-scoped* run per below. The specialist may be skipped entirely for a
-> single-surface tweak whose checklist the orchestrator can write inline — say which you did.
+| | Artifact | Owner | Lands |
+|---|---|---|---|
+| **3a** | Test data | **orchestrator dispatches `test-data-engineer`** (`/qa-generate-data` → `/qa-seed-data`) — never sub-delegated by the specialist | seeded env, green `td:validate` |
+| **A** | Test cases (FULL only) | `test-management-specialist` | `regression/suites/<layer>/<module>/*.csv` as `Draft` |
+| **B** | Testing checklist (both paths) | `test-management-specialist`, or the orchestrator inline for a single-surface tweak | `reports/tickets/{SPRINT}/<ticket-key>/testing-checklist.md` |
+| **C** | Regression scope | orchestrator | the `/qa-regression` invocation Step 4 runs |
 
-**This reuses the same skills `/qa-test-lifecycle` Phases 3–4 use — the owning skills are the single source
-of truth; neither command restates them. Read them; do not re-derive them here:**
+**Artifact A in three moves** — full rules in
+[`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md):
 
-| Concern | Owner (read it) |
-|---|---|
-| Technique selection + condition-space reduction | `/qa-test-design` (`SKILL.md` §3 selection guide + `test-design-techniques.md` §0 tokens, §6 interaction rule) |
-| Case authoring contract, 15-column schema, `Automation_Status` enum | `/qa-test-cases-generator` + `.claude/skills/qa-test-cases-generator/test-case-template.md` |
-| Review dimensions, check codes, severities, auto-fix matrix | `.claude/skills/qa-review-tests/SKILL.md` + `review-criteria.md` |
-| Behavior-rewrite evidence bar (docs + live + source) | `.claude/skills/qa-review-tests/triangulation-criteria.md` |
-| Test-data design + provisioning | `/qa-generate-data` → `/qa-seed-data` (`test-data-engineer`) |
-| Write-scope ceiling + revert-on-regression | `.claude/commands/qa-test-lifecycle.md` §Phase 4b |
+1. **Split the targets by EXECUTION SURFACE and name every target suite up front.** The surface decides the
+   lane, the agent and the browser, so a feature spanning API/GraphQL + an Admin blade + the storefront needs
+   one suite per surface (admin twin takes an `A` suffix: `CAT-`/`CATA-`). Symptom of getting this wrong:
+   after `suites:sync`, a change that touched a blade shows `lanes: {browser: 0}`.
+2. **Scaffold, don't hand-type.** `npm run tc:alloc` once, then `npm run tc:scaffold -- --plan … --id-block
+   … --out <staged>.csv` derives ten of the fifteen columns and leaves `Preconditions`/`Steps`/`Assertions`
+   for the author; `npm run suites:review -- <staged>.csv` names each unfilled one. With ≥2 target suites,
+   fan authoring out **one batch per surface** (§3b in the skill — batches are file-disjoint, IDs are
+   pre-allocated, the orchestrator owns the `[JOURNEY]` case and appends serially).
+3. **Append as `Draft`** via `append-test-cases-to-suite.ts … --check-global-ids` (never a hand-rolled
+   append). Each row stamps `Archetype:<TOKEN> · Technique:<TOKEN>` in `References` — the appender rejects a
+   row without them. `Draft` is required, not a placeholder; the runner does not skip it, so Step 4 executes
+   these cases and 5g promotes them.
 
-The specialist produces **three hand-off artifacts**, then reviews/auto-fixes them and provisions data:
+**Artifact C — case-scoped, not suite-scoped, inside a 40-minute window.** `npm run regression:select --
+--repo <repo> --changed-files <file> --target 40 --json` for the suites (it refuses to trim the P0 +
+`critical-ui-scope` risk floor), then `--cases critical --also-ids <new Draft case IDs>` for the cases.
+**State the predicted makespan and every suite `--target` excluded** — the cost model is documented as wrong
+by ×18–×88 for runner-native suites, so the number is a hint, not a fact.
 
-**Artifact A — Test cases (authored into the durable suites). FULL path only.** Derive cases from the Test Model's
-scenarios + user-flow diagram + `1d` AC conditions (story + gap-ACs) + `E2E-*` scenarios + `BL-*` / `ECL-*`
-+ domain checklists.
-- **New feature / Story** → **author new** enriched-CSV cases.
-- **Bug fix / enhancement with existing coverage** → **map to existing** suite cases (start from the Step-2 `E2E-*` → suite mappings); author **only the gaps**.
-- **Carry the model's design decision into the row.** Each authored case stamps its scenario row's
-  archetype and technique into the free-text `References` column: `Archetype:<TOKEN> · Technique:<TOKEN>`
-  (+ `Probe:VC-*-NNN` when the row came from a `vc-bug-catalog` Detection probe). The appender
-  **rejects a row without them** — this is the deterministic gate for the whole change, and it exists here
-  because nothing lints the Test Model yet and the appender is the one door into `regression/suites/` a script already guards. No new CSV column: these join the `Synced:` / `Audited:` /
-  `Promoted:` stamps `References` already carries.
-- **Append into the target `regression/suites/<layer>/<module>/*.csv` as `Automation_Status = Draft`**, using the deterministic appender (never a hand-rolled append):
-  `npx tsx scripts/test-cases/append-test-cases-to-suite.ts <target-suite.csv> --rows <new-rows.csv> --check-global-ids --dry-run` (drop `--dry-run` on a clean pass). Existing-suite sync/review edits happen in place. `--check-global-ids` rejects an ID already used anywhere under `regression/suites/`.
-- **`Draft` is required, not a placeholder.** These cases are grounded and promotable only after Step 4 executes them live; 5g (last, non-blocking) does the `Draft → Automated` flip (a deliberate `{HYPOTHESIS}` — a genuinely unknown expected value phrased as a question — is legal **only** at `Draft`). The runner does not skip `Draft`, so Step 4's scoped regression *will* run them (that is the point).
+**Review & auto-fix (FULL only):** every newly authored case through `/qa-review-tests file <target-suite>
+--fix`, deterministic core first, under Phase 4b's write-scope ceiling + revert-on-regression. A case that
+can't pass review is flagged, not shipped.
 
-**Artifact B — Testing checklist (always; written to
-`reports/tickets/{SPRINT}/<ticket-key>/testing-checklist.md`).** Map **each atomic condition** to a case
-(new or existing); fold in the matching `E2E-*` scenario(s); add items for `BL-*`, `ECL-*`, and each
-`ba-system-analyzer` risk area; flag any condition with no covering case. Conditions flagged
-DRIFT/NOT-FOUND/CONTRADICTS get an explicit item to verify live. **When the Test Model has `Epic context`,
-add an integration item for each seam with a Done sibling** (this story consumes/produces state a sibling
-owns — verify the boundary works end-to-end, not just the story in isolation). On FAST the conditions come
-from `1a`'s ACs directly, since there is no `1d` table.
-
-**It is a file now, and that is load-bearing on FAST** (`.claude/rules/reports.md` §1, category 6; 30–60
-lines, cap 120). A FAST run authors no cases and writes no Test Model, so the checklist is the **only**
-durable record of what was actually checked — terminal-only would leave the run unauditable the moment
-the session ends. Update it in place at Step 5 with the per-item verdict, so the committed file is the
-executed checklist and not merely the planned one.
-
-**Artifact C — Regression scope: critical cases + this run's new cases, inside a 40-minute window.**
-
-The scope is **case-level, not suite-level**. Selecting whole suites is what made a search-change run
-plan all 44 cases of suite `004` — 6 of them Critical, 19 skipped outright.
-
-1. **Suites** — start deterministic, not from judgement:
-   ```bash
-   npm run regression:select -- --repo <repo> --changed-files <file> --target 40 --json
-   ```
-   `--target` trims against the predicted **makespan across the three lanes** (real wall-clock, not a
-   sum of suite minutes) and **refuses to trim the risk floor** (P0 + `critical-ui-scope`), so a tight
-   budget can never quietly delete the P0 gate. Add the suites covering the Done Epic siblings this
-   story integrates with, and the target suite(s) that received new `Draft` cases (FULL only).
-2. **Cases** — `--cases critical` plus `--also-ids <the new Draft case IDs>`. Critical is ~22% of the
-   corpus by count and ~23% by estimated minutes, which is what puts the run inside the window; the
-   `--also-ids` list is how this run's own new cases execute regardless of their priority.
-3. **State the budget, don't just trust it.** Report the predicted makespan and **every suite `--target`
-   excluded**. `scripts/lib/suite-selection.ts` documents its own cost model as wrong by **×18–×88** for
-   runner-native suites (`050m` declares 245 min, ran in 2.77), so until `npm run regression:recalibrate`
-   has real observations the number is a hint, not a fact. A suite dropped for being "expensive" may be
-   the cheapest one in the run — which is exactly why the exclusions are named rather than implied.
-
-**Worked example — and it shows why both knobs are needed.** A `vc-frontend` checkout-path change with
-`--target 40` selects 14 suites and predicts **71 minutes**, over budget: 13 of the 14 are **risk floor**
-(P0 + `critical-ui-scope`), which `--target` refuses to trim, so it reports the overrun instead of cheating
-it. `--target` alone therefore cannot deliver the window. Those 14 suites hold 369 cases / 232 predicted
-minutes, of which **120 are Critical → ~79 lane-minutes → ~26 minutes across the three lanes.** The case
-filter is what cuts *inside* a floor suite, which is the only place left to cut. One suite in that set
-(`048c`) has **no Critical case at all** and contributes nothing — name it in the report; a suite that
-disappears silently reads exactly like a suite that passed.
-
-Output the concrete suite ID list with a one-line rationale each (`config/test-suites.json` is the source
-of truth for what a selection expands to; don't restate counts here). Step 4 runs it as its own
-`/qa-regression <ids> --cases critical --also-ids <ids>` run; **never fold suite IDs into a ticket agent's
-prompt** (`feedback_long_runner_sessions_unreliable`).
-
-**Review & auto-fix (FULL path — there are no new cases on FAST).** Any **newly authored** case runs through `/qa-review-tests file <target-suite> --fix`
-— start with the deterministic core (`npm run suites:review -- <csv>`, plus `npm run graphql:lint-labels
--- <csv>` for GraphQL) and spend LLM effort only on the judgment rules. Confirmed fixes apply under
-`/qa-test-lifecycle` §Phase 4b's write-scope ceiling + **revert-on-regression** (re-run `suites:review --
-<csv> --fail-on=High` + `npm run td:validate`; an auto-fix introducing a new Blocker/Critical is reverted).
-A case that can't pass review is flagged, not shipped.
-
-**Provision test data (only if needed).** If cases assert against entities not covered by an existing
-`@td()` fixture, delegate to `test-data-engineer`: `/qa-generate-data <feature>` → `/qa-seed-data <domain>`,
-ending on a green `td:validate`. Reuse existing fixtures where they cover a case; skip with a one-line note
-when every case resolves against existing `@td()`/`{{VAR}}` data. Must complete before hand-off.
-
-**Gate (Artifacts reviewed + data seeded — hard STOP before Step 4).**
-- **FULL path:** new cases pass the `/qa-review-tests` dimensions (0 blocker / 0 critical); **every
-  atomic condition + risk area maps to a case or checklist item**; required data seeded to a **green
-  `td:validate`**. **Independent verification (1 round):** a fresh `qa-lead` verifier **re-runs `npm run
-  suites:review`** on the touched suite and **re-runs `npm run td:validate`** (not the author's word), then
-  re-reads the Test Model and confirms each atomic condition has a covering case. REJECT on any
-  blocker/critical or uncovered condition/risk area → REASONS + FIX → doer (+ `test-data-engineer`) fixes →
-  re-verify once → STOP.
-- **FAST path — inline self-check, two clauses only:** the checklist covers every atomic condition, and
-  `npm run td:validate` is green. No `suites:review` (nothing was authored), no verifier dispatch.
+**Gate (Artifacts reviewed + data seeded — hard STOP):** new cases pass the review dimensions (0 blocker /
+0 critical); **every atomic condition + risk area maps to a case or checklist item**; required data seeded to
+a green `td:validate`. **Independent verification (1 round):** a fresh `qa-lead` verifier **re-runs
+`suites:review`** on the touched suite and **re-runs `td:validate`** — not the author's word — then re-reads
+the Test Model and confirms each atomic condition has a covering case. REJECT on any blocker/critical or
+uncovered condition → REASONS + FIX → doer (+ `test-data-engineer`) fixes → re-verify once → STOP.
 
 ---
 
-### Step 4 — Execute
+## Step 4 — Execute
 
 Read env URLs from `config.js` (`FRONT_URL`, `BACK_URL`). **Record the test-window start timestamp** — the
 interval until agents return is the App Insights correlation window (5a).
 
 **Move the ticket to the in-testing status (JIRA only, no confirmation).** It is the direct, reversible
 consequence of invoking `/qa-test`, changes no content, and is a hard Jira precondition for closing the
-ticket at 5f. Discover the transition **live** — never hardcode (`.claude/knowledge/execution/tracker-ops.md`
-§live transition discovery); match on the transition's `to.name` (in-testing), not its own `name` (VC-internal
-VCST: `On QA` → `Testing`). Skip (one-line note) when the tracker MCP isn't configured, the ticket is already
-in-testing, or no in-testing transition is available; never route through `Cancelled`/`On hold`; a bare feature
-name / PR has nothing to transition. **`tracker.kind = azure`: skip** — Azure Boards sets `System.State`
-directly (`stateMap`), so 5f has no reachability precondition.
+ticket at 5f. Discover the transition **live** (`tracker-ops.md` §live transition discovery); match on the
+transition's `to.name` (in-testing), not its own `name` (VC-internal VCST: `On QA` → `Testing`). Skip with a
+one-line note when the tracker MCP isn't configured, the ticket is already in-testing, or no in-testing
+transition exists; **never** route through `Cancelled`/`On hold`; a bare feature name / PR has nothing to
+transition. **`tracker.kind = azure`: skip** — Azure Boards sets `System.State` directly, so 5f has no
+reachability precondition.
 
 **Execute in order — checklist first, then the scoped regression:**
 
-1. **Checklist + ticket cases** — launch the applicable specialist agent(s) **in a single message** (prompt
-   contract below) to run Artifact B's checklist and the Artifact-A cases. **FAST path = one agent, and
-   the checklist only** — there are no Artifact-A cases to run.
-2. **Change-scoped regression (Artifact C)** — run it as its own
-   **`/qa-regression <ids> --cases critical --also-ids <new Draft case IDs>`** run (it owns suite→agent
-   assignment, the browser pool, retries, and the run report). `--cases` narrows each suite to its
-   Critical slice; `--also-ids` carries this run's own new cases in whatever their priority — and because
-   the runner does not skip `Draft`, that is how the Step-3 cases execute: the "latest test." On FAST
-   there are no new cases, so `--also-ids` is omitted.
-   Capture its `RUN_ID` (5e records it; the release-gate feed inside 5e keys "change-scoped regression ≥95%"
-   off it) **and its wall-clock** (5e records that too — the 40-minute window is a claim about time, and
-   an unrecorded one cannot be checked). **Step 5a triages this run's own FAILs via `/qa-triage-results
-   <RUN_ID> --fix`** — not ad hoc.
-   **Carry the run's Scope Exclusions into the Step-5 report.** A scoped run's silence is unreadable
-   otherwise: a suite that contributed zero Critical cases and a suite that passed look identical.
+1. **Checklist + ticket cases** — launch the applicable specialist agent(s) **in a single message** to run
+   Artifact B's checklist and the Artifact-A cases. **FAST = one agent, checklist only.** Prompt contract:
+   [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch.
+2. **Change-scoped regression (Artifact C)** — as its own **`/qa-regression <ids> --cases critical
+   --also-ids <new Draft case IDs>`** run (it owns suite→agent assignment, the browser pool, retries and the
+   run report). Capture its **`RUN_ID`** (5e records it; the release-gate feed keys "≥95%" off it) **and its
+   wall-clock** — the 40-minute window is a claim about time, and an unrecorded one cannot be checked.
+   **Carry the run's Scope Exclusions into the Step-5 report**: a suite that contributed zero Critical cases
+   and a suite that passed look identical otherwise.
 
 **Both draw on the same max-3-concurrent-browser cap.** If the checklist agents + regression lanes exceed 3,
-run the checklist track first and regression after (ticket verdict is priority). State the order chosen.
+run the checklist track first and regression after (ticket verdict is priority). **State the order chosen.**
 
-Each ticket-agent prompt must include: the ticket ID; **Artifact A** (path to the target suite + the rows);
-**Artifact B** checklist; **test data** (`@td()`/`{{VAR}}` the cases use, confirmed seeded — never hardcode
-IDs, `.claude/rules/test-data.md`); **`BL-*`** rule text + **`ECL-*`** patterns from Step 2; the browser
-server (Step 2 routing table); env URLs; screenshot path `reports/tickets/{SPRINT}/<ticket-key>/screenshots/`;
-and the evidence-capture policy (`.claude/skills/qa-evidence/evidence-capture-policy.md`). **Artifact C is
-NOT in the agent prompt** — it goes to `/qa-regression`.
-
-```
-Test <ticket-key> on the [backend/frontend].
-
-Context: [what changed]
-Environment: {FRONT_URL} / {BACK_URL}   Browser: {BROWSER_SERVER}
-Screenshot output: reports/tickets/{SPRINT}/<ticket-key>/screenshots/
-
-Test cases (Artifact A): <target-suite.csv> — rows [IDs]
-Testing checklist (Artifact B): [from Step 3]
-Test data: [the @td()/{{VAR}} the cases use — confirmed seeded; resolve at runtime, never hardcode]
-
-Scope: run ONLY the cases + checklist above. Do NOT run regression suites in this session.
-
-Business Rules (must verify): BL-CART-001: [text]; BL-PAY-003: [text]
-Edge cases to cover: ECL-1.1: [pattern]
-
-Evidence policy: .claude/skills/qa-evidence/evidence-capture-policy.md — screenshots on failures + final
-state of critical flows; console errors only; network 4xx/5xx + >2s; HAR always.
-
-Always-on bug detection (shared-instructions §Always-On Bug Detection): the checklist is the floor, not
-the ceiling. Hunt across EVERY layer (UI/visual, functional, console, network, GraphQL errors[] inside
-200, a11y, perf); file any incidental defect (out-of-scope-bug rule). Verify before filing (disabled
-control / API-only / by-design are not bugs).
-
-Return results (pass/fail per case, evidence refs, bugs found) in your final response — per
-.claude/rules/reports.md §1 do NOT write a report file; the orchestrator folds them into the Step 5 report.
-```
-
-**Gate (Execution evidenced — inline self-check):** every atomic condition carries **PASS or FAIL
-evidence** (screenshots for critical flows, console/network/trace for failures); the `/qa-regression` track
-produced a **RUN_ID + pass rate**. Reject any "PASS" with no artifact ("all passed" without evidence is not
-a pass) and re-capture before moving to Step 5. (No fresh-`qa-lead` dispatch — the independent re-check
-happens at the Step-5 verdict gate.)
+**Gate (Execution evidenced — inline):** every atomic condition carries **PASS or FAIL evidence**
+(screenshots for critical flows, console/network/trace for failures); the regression track produced a
+**RUN_ID + pass rate**. Reject any "PASS" with no artifact — "all passed" without evidence is not a pass —
+and re-capture before Step 5.
 
 ---
 
-### Step 5 — Report
+## Step 5 — Report
 
-Seven ordered phases: **Triage → Compare AC & DoD vs implementation → Verdict → File bugs → Report →
-Change status → Promote the new cases** (last, non-blocking).
+Seven ordered phases. **5a before 5b before 5c is load-bearing:** the verdict is expressed in terms of a
+finding's provenance (5a) and the reconciled AC/DoD state (5b). Full methodology:
+[`skills/qa-test/close-out.md`](../skills/qa-test/close-out.md).
 
-> **FAST path runs 5a → 5f and stops.** `5g` is skipped — it promotes cases a FAST run never authored.
-> `5b` still runs: the AC/DoD reconciliation is what produces the verdict, and dropping it would leave
-> `5c` deciding on nothing. Every FAST gate is an inline self-check; no verifier is dispatched.
+| | Phase | In one line | Gate |
+|---|---|---|---|
+| **5a** | Triage | Triage the Artifact-C run via **`/qa-triage-results <RUN_ID> --fix`** (never from scratch), correlate App Insights for the window, validate evidence quality, then classify → provenance → severity → dedup every remaining finding | — |
+| **5b** | Reconcile AC & DoD **live** | Close `1d`'s static hypothesis against what the agents observed; resolve every DoD item; compute both percentages **from the actual counts** | **hard STOP** + verifier |
+| **5c** | Verdict | PASS / PASS WITH NOTES / FAIL / BLOCKED, derived from 5a + 5b — **no new judgment** | — |
+| **5d** | File bugs | **Ask first.** **Severity floor: `Critical`/`High`/`Medium` only** — a `Low` keeps its `reports/bugs/open/` draft, is named in the 5e comment and `summary.json.bugs_not_filed`, and gets no tracker item, in either shape. Relationship by provenance: IN-SCOPE → Sub-task · PRE-EXISTING → link only · OUT-OF-SCOPE → standalone + related | inline |
+| **5e** | Report | Feed + independently ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |
+| **5f** | Change status | **After** the report. PASS → TESTED · FAIL → REOPEN with failures + bug links. **TESTED is the terminal state this command may reach — never Done or Cancelled** | — |
+| **5g** | Promote (FULL only) | Harvest `{OBSERVED}` via `--verify --fix`, re-derive G10, then flip `Draft → Automated` via **`npm run tc:promote`** — never by hand-editing the cell. Runs **last and non-blocking**: the close-out is already delivered | **hard STOP** + verifier |
 
-**5a before 5b before 5c is load-bearing:**
-the verdict is expressed in terms of a finding's **provenance** (from 5a) and the reconciled AC/DoD state
-(from 5b), so neither can be skipped or reordered ahead of the verdict.
-
-**5a. Triage (correlate → validate evidence → classify → provenance → severity → dedup).** Everything the
-run can surface a finding from — the Artifact-C regression run's own FAILs, checklist-track agent-reported
-bugs, correlated App-Insights signals — is triaged **before** anything is filed.
-
-0. **Triage the Artifact-C regression run through `/qa-triage-results`, not from scratch.** The
-   change-scoped run (Step 4.2) already has a `RUN_ID` with evidence bundles
-   (`traces/*-FAIL-trace.json`, screenshots, HAR). Invoke **`/qa-triage-results <RUN_ID> --fix`**
-   (`.claude/commands/qa-triage-results.md`) instead of re-deriving the taxonomy ad hoc: it collects
-   deterministically (`triage:collect`), classifies per-batch via `ci/agents/regression-triage-agent.md`,
-   live-verifies HIGH-confidence `REAL_BUG`s, **auto-applies confirmed test-case fixes** via
-   `/qa-review-tests --fix` for the *existing* Artifact-C suites (Step 3's own `--fix` pass only covers the
-   newly-authored rows), and drafts confirmed-bug files to `reports/bugs/` (never a tracker ticket — 5d
-   still owns filing). As a side effect it feeds the cross-run **flakiness history**
-   (`triage:history` → `reports/regression/history.json`) and the fingerprint dedup store — a benefit
-   `/qa-test` gets nowhere else. Fold its `triage-report.md` tables (confirmed bugs / test-case fixes /
-   dismissed) directly into this phase's finding list — **do not reclassify a finding it already resolved.**
-   Skip with a one-line note if Artifact C itself was skipped/deferred (no RUN_ID).
-1. **Correlate App Insights logs (test window)** — catch backend errors the UI test *triggered but didn't
-   surface*: 5xx, failed dependencies, exceptions, GraphQL `errors[]` inside a 200. `/qa-monitoring`
-   machinery scoped to the window: **query → dedup → triage**, no separate live-repro (the agents were
-   already live). Pre-flight App Insights access (Azure MCP `applicationinsights`, or `APPINSIGHTS_APP_ID_*`
-   + `APPINSIGHTS_API_KEY_*`); if neither is configured → **skip with a one-line note**, never block the
-   verdict. Query each affected layer with the `ci/monitoring/queries/` probes scoped to the window (+2 min
-   buffer). Dedup **labels** novelty against `reports/monitoring/.seen-fingerprints.json` (read-only) — it
-   does **not** filter: a SEEN-stable error that fired in the window still surfaces. Delegate interpretation
-   to `qa-backend-expert` via `ci/agents/monitor-triage-agent.md` → each signal `REAL_BUG | KNOWN_ISSUE |
-   NOISE | CONFIG_GATED | THIRD_PARTY | TRANSIENT` + severity + confidence (ambiguous → NEEDS_REVIEW). A
-   HIGH-confidence `REAL_BUG` enters this phase's finding list with evidence attached (signature + portal
-   link; don't draft a separate `BUG-AI-*`).
-2. **Validate evidence quality:**
-
-   | Check | Action if missing |
-   |---|---|
-   | Agent claims PASS but no screenshots for critical flows | Request re-verification with evidence |
-   | Agent claims FAIL but no screenshot/console evidence | Get evidence before it enters the finding list |
-   | Critical revenue flow (checkout, payment, cart) not explicitly tested | Flag as incomplete coverage |
-   | A bug candidate has no reproducible evidence bundle | Get it, or carry in as LOW-confidence — never file unevidenced in 5d |
-   | `BL-*` listed in prompt but not mentioned in results | Flag as untested — request verification |
-   | HIGH-confidence `REAL_BUG` in the App-Insights window not reflected in agent results | Surface it — the UI test missed a backend error; carry into the finding list |
-
-3. **Classify** findings that have **no RUN_ID** (item 0 already classified the regression run's own FAILs)
-   — failed ACs (confirmed in 5b, folded back here), checklist-track agent-reported bugs, App-Insights
-   signals — with the same taxonomy `/qa-triage-results` uses: real product bug vs test-defect
-   (`TEST_STEPS_DEFECT` / `ASSERTION_DEFECT` / `TEST_DATA_DEFECT` / `STALE_TEST`) vs `BY_DESIGN` / `ENV` /
-   `KNOWN_ISSUE`. Ambiguous → real bug / LOW (never relabel a real bug as a test-defect). A test-defect
-   routes to `/qa-review-tests <suite> --fix`, not a ticket.
-4. **Provenance** — per *real bug*, from either source above: **PRE-EXISTING** (dedup match or reproduces
-   pre-change → link, don't re-file, don't fail this ticket) · **IN-SCOPE** (in what this ticket changed →
-   fails this ticket; files as a tracker **Sub-task** at 5d) · **OUT-OF-SCOPE incidental** (unrelated defect
-   found opportunistically → files as its own standalone ticket at 5d, doesn't fail this ticket unless a P0
-   revenue-flow break; linked *related*). Unclear → treat IN-SCOPE (fail-safe).
-5. **Severity + priority** — per `.claude/skills/qa-defect/` (P0…P3).
-6. **Dedup** — applies to every finding regardless of source: glob `reports/bugs/**` + all
-   `reports/tickets/Sprint*/` and search the tracker (per `feedback_duplicate_check_across_all_sprints`). A
-   match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug still needs this tracker-wide check before 5d
-   can file it.
-
-Output: every finding carrying `class` + `provenance` + `severity` + `duplicate-of?`.
-
-**5b. Compare AC & DoD vs implementation.** `1d` compared each AC to the *diff* — a hypothesis; this phase
-closes it against what the agents observed **live** (the authoritative AC↔implementation check), and adds
-the DoD confirmation the `1e` Test Model deferred.
-
-> **Where the conditions come from, per path.** This phase runs on BOTH paths — it is what produces
-> the verdict, so 5c has nothing to decide without it. But FAST builds neither a `1d` AC table nor a
-> `1e` Test Model, so read every "`1d`"/"`1e`" reference below as:
-> - **FULL** — the `1d` AC table (story ACs + gap-ACs) and the `1e` Test Model's `DoD:` field.
-> - **FAST** — the atomic conditions taken straight from `1a`'s ticket ACs, which are the same
->   conditions Artifact B's checklist was built from; the **executed checklist is the condition
->   inventory**, and its per-item verdicts are the evidence. DoD comes from the ticket if it declares
->   one, else `none stated` → `dod_pct: null`.
->
-> Do not invent a Test Model table to reconcile against on FAST, and do not skip the reconciliation
-> for want of one — either would silently degrade the AC-coverage percentage the Feature Release Gate
-> consumes.
-
-- **AC reconciliation** — for each condition in the `1d` AC table (working context, no `ac-analysis.md`):
-  **SATISFIED live** (confirmed) · **DRIFT / CONTRADICTS confirmed live** (filing-grade; feeds 5a item 3 as
-  an IN-SCOPE candidate and a 5c FAIL — CONTRADICTS-live is highest priority, surface it explicitly) ·
-  **NOT-FOUND** (no such behavior observed → mark untested and flag) · **static suspicion cleared** (a `1d`
-  DRIFT/NOT-FOUND observed working → resolved, the diff was stale). A diff-only finding is never a verdict
-  input until confirmed (or cleared) here.
-- **DoD confirmation** *(when `1e`'s `DoD:` field is populated)* — resolve each item flagged
-  "confirm at 5b" against what actually happened this run (e.g. "tests pass" → the Artifact-C pass rate;
-  "no regressions" → the change-scoped regression result; "accessibility checked" → a `ui-ux-expert`
-  finding if dispatched). Mark each MET / NOT-MET / N-A.
-- **Quantified estimate** — compute, don't just eyeball: **AC-coverage %** =
-  `conditions_with_evidence / conditions_total`; **DoD-completion %** = `dod_met / dod_total` (when a DoD
-  exists). `scripts/regression/compute-metrics.ts` (the `qa-metrics` deterministic core) does not expose an
-  AC/DoD-shaped metric today — it aggregates regression run entries, not per-condition/per-checklist-item
-  counts — so this ratio is computed inline from the condition inventory named in the box above (the
-  `1e` Test Model's tables on FULL; the executed Artifact-B checklist on FAST), in the same style
-  `qa-metrics`' catalog uses for its other percentages (`.claude/skills/qa-metrics/quality-metrics-catalog.md`),
-  not invented ad hoc.
-
-**Gate (Triage + AC/DoD sound — hard STOP before 5c, the Step-5 hard-STOP gate):** every AC condition
-reconciled; every DoD item resolved MET/NOT-MET/N-A; the two percentages computed from the actual
-condition/checklist counts, not asserted; **and** 5a's finding list is sound — every finding classified,
-provenanced, severed, deduped. **Independent verification (FULL path, 1 round):** a fresh `qa-lead` verifier
-re-derives the AC/DoD table + both percentages from the Step-4 evidence directly (does not take the doer's
-numbers), **re-classifies a sample of 5a's findings** — confirming each IN-SCOPE call via a live repro on a
-**different browser lane**, re-running one critical/revenue case, confirming the RUN_ID pass rate against
-`compute-metrics.ts`, and confirming the dedup. REJECT on a mislabeled condition, a DoD item resolved
-without evidence, an unsupported percentage, a real bug mislabeled a test-defect, or an in-scope P0/P1
-under-graded → REASONS + FIX → re-verify once → STOP. FAST path: inline self-check, same computations.
-
-**5c. Decide verdict:**
-
-| Decision | Criteria |
-|---|---|
-| **PASS** | Every atomic condition carries PASS evidence, all reconciled SATISFIED-live (5b), all DoD items MET/N-A, all `BL-*` verified, **no IN-SCOPE P0/P1 bug** (5a), no correlated HIGH-confidence `REAL_BUG` in the window (5a) |
-| **PASS WITH NOTES** | All conditions met & reconciled; only minor P2/P3 or **OUT-OF-SCOPE incidental** bugs tracked separately; only NEEDS_REVIEW/NOISE/KNOWN_ISSUE in the log window |
-| **FAIL** | Any AC not met, any AC confirmed DRIFT/CONTRADICTS live (5b), any DoD item NOT-MET, any `BL-*` violated, an **IN-SCOPE P0/P1 bug** (5a), or a HIGH-confidence `REAL_BUG` correlated to the window (5a). *A PRE-EXISTING / OUT-OF-SCOPE incidental bug does not fail this ticket — except an out-of-scope **P0 revenue-flow break**, surfaced for a human call.* |
-| **BLOCKED** | Environment down, missing test data, unresolved dependency |
-
-The verdict follows directly from 5a's triage output + 5b's reconciliation and percentages — no new
-judgment is introduced here.
-
-**5d. File bugs (with confirmation).** File the confirmed, non-duplicate real bugs from 5a, each carrying a
-`## Fix Routing` hint. **Ask before filing.** Relationship to the ticket is set by 5a's provenance
-(mechanics: `.claude/knowledge/execution/tracker-ops.md` §5b):
-
-| Provenance | Relationship |
-|---|---|
-| **IN-SCOPE** | File as a tracker **Sub-task of `<ticket-key>`** — `/qa-bug … sub-task-of:<ticket-key>` |
-| **PRE-EXISTING** | **Link only, no new ticket** — `/qa-bug … link-only:<existing-bug-key>`, linked to `<ticket-key>`, never re-filed |
-| **OUT-OF-SCOPE incidental** | File as its **own standalone ticket** *(unchanged)* + a *related* link back to `<ticket-key>` |
-
-A bug already drafted by 5a's `/qa-triage-results --fix` pass is filed here the same way — pass its draft as
-the basis, don't re-investigate. A test-defect still routes to `/qa-review-tests <suite> --fix`, never
-filed to the tracker.
-
-**Gate (Filing sound — inline self-check):** every IN-SCOPE bug is a Sub-task of the ticket, every
-PRE-EXISTING match is linked (not re-filed), no real bug was downgraded to a test-defect — the 5b gate
-already ratified the underlying provenance/severity calls, so this is a mechanical filing check, not a
-second verifier dispatch. Fix and re-file before moving to 5e.
-
-**5e. Report.** In order:
-
-1. **Feed + independently ratify the Feature Release Gate (team go/no-go).** The 5c verdict is the primary
-   input to the **Feature Release Gate** (`.claude/skills/qa-metrics/quality-gates.md` §1a), owned by
-   `qa-lead-orchestrator`. `/qa-test` does not decide release. A PASS/PASS-WITH-NOTES run **feeds a GO** only
-   if the team-level criteria also hold (0 open P0, P1s deferred-with-acceptance, change-scoped regression
-   ≥95% — this phase's own `regression.pass_rate`, NFRs clean, smoke PASS); a FAIL/BLOCKED is an automatic
-   NO-GO. If the Artifact-C run was deferred/skipped, say so — the gate can't be evaluated on a null pass
-   rate. **Independent verification (FULL path):** a fresh `qa-lead` verifier **re-evaluates §1a from the
-   raw inputs** — the 5c verdict, the `reports/bugs/` open-P0/P1 ledger (now current, since 5d already
-   filed), the regression pass rate via
-   `npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id <regression.run_id> --p0-bugs N --p1-bugs N`
-   (`--run-id` **required**; `--suites <ids>` is the fallback), and the smoke result — and ratifies or
-   **downgrades**. Recommendation only; a human decides release.
-
-   **Epic roll-up (`--epic` runs only).** After the last story, combine the per-story gates into one
-   **Epic-level** recommendation: **all** child stories GO/CONDITIONAL GO + the **cross-story E2E** clean +
-   **0 open P0 across the whole Epic** → the Epic's feature is releasable. Any child at NO-GO, a broken
-   cross-story seam, or an open P0 anywhere in the Epic → the Epic is NO-GO (name the blocking story). Still
-   a recommendation only; record it in `summary.json.epic`.
-
-2. **Post the tracker comment** (before the status transition — that's 5f). Markdown, never wiki markup;
-   outcome-first, evidence referenced not inlined (`.claude/knowledge/execution/tracker-ops.md` §5a):
-   ```
-   QA Complete — [X] cases, [Y] passed, [Z] failed.
-   AC review: [N] story ACs ([weak]/[ok]), [M] gap-ACs; AC↔impl: [satisfied]/[drift]/[contradicts]/[not-found]. AC coverage: [pct]%.
-   DoD: [met]/[total] ([pct]%), or "none stated".
-   Change-scoped regression: [suite IDs] — [pass rate] ([RUN_ID]).
-   Regression triage: [N] confirmed bugs, [M] test-case fixes applied, [K] dismissed.
-   App Insights (test window): [N] correlated — [confirmed/needs-review/none].
-   Business rules verified: [BL-* list]. Bugs: [list, with relationship — sub-task/linked/standalone — or None].
-   Release gate: [GO/CONDITIONAL GO/NO-GO recommendation]. Decision: [verdict].
-   Evidence: reports/tickets/{SPRINT}/<ticket-key>/screenshots/
-   ```
-3. **Persist `summary.json`.** Per `.claude/rules/reports.md` §1, `summary.json` + evidence screenshots are
-   **plus the `testing-checklist.md` written at Step 3** — the artifacts this command persists (new test
-   cases live in `regression/suites/`, category 2 — not a
-   ticket CSV). Write `reports/tickets/{SPRINT}/<ticket-key>/summary.json` per the schema at
-   `.claude/templates/qa-test-summary.schema.json` (carry `path`, the AC-analysis + `ac_dod_estimate` block,
-   counts, `regression` block, `regression_triage` block, `bugs_filed` with relationship, the
-   `promotion` block for 5g, and the **`timing`** block), and **update `testing-checklist.md` in place with
-   each item's verdict**, so the committed file is the checklist that ran and not the one that was planned.
-
-   **`timing` is not bookkeeping.** The 40-minute window and the FAST/FULL split are both claims about
-   cost, and until a run records its own they stay unfalsifiable — the schema carried 78 keys and not one
-   duration. Record `started_at`/`finished_at`, per-step minutes, `agent_dispatches`, and the regression
-   run's **predicted vs actual** minutes. That last pair is what will let `npm run regression:recalibrate`
-   eventually be trusted: an order-of-magnitude gap is the ×18–×88 `estimatedMinutes` defect surfacing,
-   and it belongs in the report rather than being inferred months later.
-4. **Output the full chat report** (this IS the report): verdict, reconciled AC/DoD table + percentages,
-   checklist results, change-scoped regression result + triage summary, business rules verified, bugs found
-   (with provenance + relationship), release-gate recommendation, and the screenshot folder path.
-
-**5f. Change status (with confirmation, skip if Atlassian MCP unconfigured).** Strictly after the report is
-posted:
-
-| Outcome | Transition |
-|---|---|
-| PASS / PASS WITH NOTES | `Finish test` → TESTED |
-| FAIL | `Need fixes` → REOPEN with a comment listing failures + filed bug links |
-
-On Jira both closing transitions require the in-testing status (the Step 4 move); if skipped, do the
-in-testing hop first (discover live). On Azure Boards set `System.State` directly. **TESTED is the terminal
-state this command may reach — never Done or Cancelled.**
+**Severity is graded at 5a and never re-graded at 5d** to move a finding across the floor. Filing and
+failing stay separate decisions: a `Medium` files without failing the ticket.
 
 **Close the loop.** By default `/qa-test` verifies and reports; it never fixes — it states the next command
-and stops (pointers, not auto-triggers). This close-out is the `feature-test` flow's; the `verify-fix`
-flow already ended at its own VERIFIED/REOPEN verdict (§1a), and `hotfix-verify` handed off to
-`/qa-hotfix-check` before Step 1b:
-- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate (5e). Done — 5g still runs
-  (non-blocking) if new cases were authored.
-- **FAIL → REOPEN** → `/qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge + deploy → `/qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human, resuming at `/qa-verify-fix`. (Once the fix is deployed, a re-run of `/qa-test <ticket-key>` now auto-routes the Bug to the `verify-fix` flow, since its status is `fix-ready` — §1a.)
-- **BLOCKED** → resolve the blocker (env/data/dependency) and **re-run `/qa-test <ticket-key>`** from the top; no partial credit.
-
-**5g. Promote the new cases (FULL path only — a FAST run authors none) — runs last, non-blocking.** The
-verdict/report/status close-out above (5a–5f) is already complete and delivered to the user before this
-phase starts; a slow or REJECTed promotion never delays TESTED/REOPEN. The cases are in the suite as
-`Draft`, grounded and promotable only now that Step 4 executed them live via the automated runner.
-1. Harvest: `/qa-review-tests file <target-suite.csv> --verify --fix` — every assertion this run observed live is rewritten `{HYPOTHESIS}` / unconfirmed-`{SPEC}` → `{OBSERVED}`; a **refuted** behavior surfaces as ENV-008, never `{OBSERVED}`.
-2. Resolve each remaining `{HYPOTHESIS}` with the observed value; one that stayed genuinely unknown is reworded as a question and keeps its case at `Draft` — never invent a value.
-3. Re-derive eligibility (the same G10 the promoter uses): 0 GRD-001 Blocker/High, 0 ENV-008, green `td:validate`, every assertion grounded, executed with evidence.
-4. **Ask to promote, then flip in place — via the deterministic promoter, never by hand-editing the cell.** `npm run tc:promote -- <RUN_ID> --suite <ID> --stamp <ticket-key>` prints the per-case decision, then `tc:promote:apply` writes it (`.claude/rules/regression.md` §Post-Run Promotion; core `scripts/test-cases/promote-cases.ts`). It re-derives the same G10 as step 3 by linting each row **at its target status**, refuses a flaky or non-PASS case with a `PR-*` reason code, and edits only the changed fields — the hand path renormalised quoting and could promote on a PASS nobody could re-derive. It writes `Automated` only; a case verified via the **manual checklist** (no automated-runner verdict) is still `Reviewed`/`Manual` by hand. **Revert (remove) a non-promotable row** so the durable suite doesn't carry an ungrounded case that would keep running — **except** a case that failed on a real IN-SCOPE bug, which stays `Draft` with a documented reason (valid coverage flagging the open defect). The `Promoted: <ticket-key> (YYYY-MM-DD)` `References` stamp is applied by the promoter (appended; never clobbering a `Synced:`/`Audited:` stamp). Then `npm run suites:sync && npm run suites:lint`; re-run `suites:review -- <target-suite.csv> --fail-on=High` (an append that introduced a new Blocker/Critical is reverted).
-5. Record the split in `summary.json.promotion` (`automated`/`reviewed`/`blocked`/`reverted`).
-
-**Gate (Promotion sound — FULL path, 1 round):** every `Automated`/`Reviewed` upgrade traces to a real
-artifact from this run; every surviving `{HYPOTHESIS}` is resolved or reworded; `suites:lint` green. A fresh
-`qa-lead` verifier **re-runs `suites:review`** on the target suite and, for a sample of upgraded assertions,
-**re-opens the Step-4 evidence** grounding each `{OBSERVED}`. REJECT any `{OBSERVED}` with no traceable
-artifact, any `{HYPOTHESIS}` cleared by an invented value, any case promoted while still carrying a
-Blocker/Critical → revert the append (`git checkout` target CSV + manifest) → fix → re-verify once → STOP.
-An ungrounded `{OBSERVED}` is worse than a `Draft` case: it puts a fabricated expectation into permanent
-coverage. The author never self-certifies this — only `qa-lead-orchestrator` or the user promotes.
-
-**5k. `--iterate` — the bounded test → fix → re-test loop (opt-in).** With `--iterate` (default
-`--max-rounds 2`), a FAIL doesn't stop at the pointer — `/qa-test` drives the fix-and-retest cycle itself,
-up to the cap, then hands to a human. The initial run is **round 1**. Per round, once the 5c verdict is in:
-1. **PASS / PASS WITH NOTES** → exit the loop → Feature Release Gate (5e) → GO/NO-GO recommendation →
-   **STOP for the human to merge + release** (never automated). Done.
-2. **BLOCKED** → **STOP** — a fix can't clear an env/data/dependency blocker.
-3. **FAIL** → **Fix (auto):** for each **IN-SCOPE** bug 5a judged fixable, run `/qa-fix <ticket-key>`
-   (autonomous triage→fix→PR, G0–G7, **never merges**). A bug that G0 BAILs (not-auto-fixable / too-complex
-   / multi-repo) → **STOP**, hand that bug to a human; the loop cannot fix it. If no in-scope fixable bug
-   remains, fall back to the pointer close-out above.
-   - **Deploy the prerelease (confirm):** `/qa-deploy-pr <ticket-key>` deploys the fix PR's **prerelease**
-     build to the test env — **ask before deploying** (it opens its own gated deploy PR). No merge happens:
-     the loop always re-tests an **unmerged prerelease**, so the §2 never-auto-merge triple guard is never
-     touched.
-   - **Re-test (round N+1):** re-run **only the previously-FAILED cases (RED→GREEN) + the change-scoped
-     regression (Artifact C)** against the redeployed env — Step 4 re-scoped, then Steps 5a–5c again (the
-     full verdict gate; on the full path the independent verifier re-ratifies, 1 round).
-4. **Cap reached** — still FAIL after `--max-rounds` rounds → **STOP** with a per-round summary (what each
-   round fixed, what still fails) and hand to a human. **STOP at the cap is a success, not a failure.**
-
-The loop's brakes are a hard **round cap**, a **confirm on every prerelease deploy**, a **G0 BAIL → STOP**,
-and the invariant that **merge + release are always the human's**. `/qa-test` still never merges, never
-ships. Record the outcome in `summary.json.iterations` (`rounds`, `max_rounds`, `outcome`). **Without
-`--iterate`, none of 5k runs** — the pointer close-out above is the whole story.
+and stops. PASS → TESTED, hand to the Feature Release Gate. FAIL → REOPEN → `/qa-fix <ticket-key>` → human
+review + merge + deploy → `/qa-verify-fix <ticket-key>`. BLOCKED → resolve the blocker and re-run from the
+top; no partial credit. With **`--iterate`**, 5k drives that loop itself, bounded
+([`skills/qa-test/modes.md`](../skills/qa-test/modes.md)).
 
 ---
 
 ## Constraints
 
-- Reference every in-repo file by its **real path from the repo root** (`.claude/skills/…`, `.claude/knowledge/…`, `.claude/rules/…`, `.claude/agents/…`, `ci/…`) — the bare `skills/…` form does not resolve, especially inside a sub-agent prompt.
-- Never use WebKit (unsupported on Windows). Never assign two agents to the same browser server simultaneously. Fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry). **Max 3 concurrent browser agents — counted across checklist agents and regression lanes.**
-- Read all URLs from `config.js` / `.env` — never hardcode. Always load `business-logic.md` for the affected domains.
-- If an agent fails with an internal error, fall back to working directly rather than retrying the same delegation. If Atlassian MCP is unavailable, skip JIRA transitions and ask the user for ticket details.
-- **What persists** (`.claude/rules/reports.md` §1): `summary.json`, **`testing-checklist.md`** (Artifact B — on FAST it is the run's only durable record of what was checked) and evidence screenshots, all under `reports/tickets/{SPRINT}/<ticket-key>/`; the FULL-path Test Model to `reports/ba/test-models/<TICKET>-<date>.md` (category 3); new test cases to `regression/suites/` (category 2). Steps 1d/4 still never write `ac-analysis.md` / `test-execution-report.md` — the AC table lives in working context and every other finding is delivered once, in the Step 5 chat report.
-- App Insights correlation (5a) reuses `/qa-monitoring`'s query + dedup + triage machinery scoped to the window (no separate live-repro); resolve resources from `APPINSIGHTS_*`, skip gracefully when unconfigured; a correlated error gets no separate `BUG-AI-*` draft (5f's `/qa-bug` owns it).
+- Reference every in-repo file by its **real path from the repo root** (`.claude/skills/…`,
+  `.claude/knowledge/…`, `.claude/rules/…`, `.claude/agents/…`, `ci/…`) — the bare `skills/…` form does not
+  resolve, especially inside a sub-agent prompt.
+- Never use WebKit (unsupported on Windows). Never assign two agents to the same browser server
+  simultaneously. Fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry). **Max 3 concurrent
+  browser agents — counted across checklist agents and regression lanes.**
+- Read all URLs from `config.js` / `.env` — never hardcode. Always load `business-logic.md` for the affected
+  domains.
+- If an agent fails with an internal error, fall back to working directly rather than retrying the same
+  delegation. If the tracker MCP is unavailable, skip transitions and ask the user for ticket details.
+- **What persists:** `summary.json` + `testing-checklist.md` + evidence screenshots under
+  `reports/tickets/{SPRINT}/<ticket-key>/`; the FULL-path Test Model to `reports/ba/test-models/`; new test
+  cases to `regression/suites/`. `ac-analysis.md` and `test-execution-report.md` are **never written** — the
+  AC table lives in working context and every finding is delivered once, in the Step-5 chat report. Full
+  table: [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §What persists.
+- **Severity floor on filing (5d): `Critical`/`High`/`Medium` only.** A `Low` is dropped from the tracker,
+  never from the run, and never re-graded to move it across the line. It is also outside `--iterate`:
+  `/qa-fix` needs a filed ticket, so 5k only fixes what 5d filed.
+- App Insights correlation (5a) reuses `/qa-monitoring`'s query + dedup + triage machinery scoped to the
+  window (no separate live-repro); resolve resources from `APPINSIGHTS_*`, skip gracefully when
+  unconfigured; a correlated error gets no separate `BUG-AI-*` draft (5d's `/qa-bug` owns it).

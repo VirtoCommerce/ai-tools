@@ -408,7 +408,7 @@ async function main() {
   if (!DRY_RUN) {
     try {
       await api('POST', '/api/search/indexes/index', [
-        { documentType: 'CatalogProduct', rebuild: false },
+        { documentType: 'Product', rebuild: false },
       ], { expectStatus: [200, 204] });
       console.log(`\n  ✓ reindex triggered`);
     } catch (e) {

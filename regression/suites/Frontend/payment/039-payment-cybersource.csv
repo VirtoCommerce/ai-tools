@@ -19,7 +19,7 @@
 [NAV] After successful submission user is navigated to order confirmation page
 [DOM] Order confirmation page displays order number","[API] Verify createOrderFromCart GraphQL mutation response has no errors[] entries
 [NETWORK] Confirm payment token (not raw card number) sent in request payload
-[ADMIN] Confirm order appears in admin Orders list with status reflecting payment attempt","Order confirmation page not reached; inline validation error appears unexpectedly; network request contains raw card number","Cancel order via admin if order was created","VCST-3387 TC-POS-001","Manual"
+[ADMIN] Confirm order appears in admin Orders list with status reflecting payment attempt","Order confirmation page not reached; inline validation error appears unexpectedly; network request contains raw card number","Cancel order via admin if order was created","VCST-3387 TC-POS-001","Automated"
 "PAY-CS-002","CyberSource - Special Characters in Cardholder Name","CyberSource > Positive","Medium","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -37,7 +37,7 @@
 [ACT] Click 'Place Order' with final name value","[DOM] Cardholder Name field accepts hyphen, apostrophe, accented chars, periods without stripping or error
 [STATE] No validation error triggered for any of the tested name formats
 [NAV] Order submission proceeds after valid name entry","[API] createOrderFromCart GraphQL mutation errors[] is empty
-[NETWORK] Cardholder name transmitted correctly in tokenization request","Name field strips special characters silently; validation error fires on valid international name characters; form refuses to submit with accented characters","Cancel order via admin if order was created","VCST-3387 TC-POS-004","Manual"
+[NETWORK] Cardholder name transmitted correctly in tokenization request","Name field strips special characters silently; validation error fires on valid international name characters; form refuses to submit with accented characters","Cancel order via admin if order was created","VCST-3387 TC-POS-004","Automated"
 "PAY-CS-003","CyberSource - Expiry Date Format Variations","CyberSource > Positive","Medium","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -52,7 +52,7 @@
 [ASSERT] Field normalizes to '@td(CYBERSOURCE_VISA.expiry)' or accepts padded format
 [ASSERT] All three input styles display as MM/YYYY","[FORMAT] Expiry date field displays value as MM/YYYY regardless of input style
 [DOM] No validation error shown for any accepted format variant
-[STATE] Form is submittable after each valid format entry","[API] createOrderFromCart GraphQL mutation errors[] is empty on submission","Field rejects valid expiry formats; auto-formatting breaks cursor position causing incorrect value; MM/YYYY display not achieved","Cancel order via admin if order was created","VCST-3387 TC-POS-005","Manual"
+[STATE] Form is submittable after each valid format entry","[API] createOrderFromCart GraphQL mutation errors[] is empty on submission","Field rejects valid expiry formats; auto-formatting breaks cursor position causing incorrect value; MM/YYYY display not achieved","Cancel order via admin if order was created","VCST-3387 TC-POS-005","Automated"
 "PAY-CS-004","CyberSource - Invalid Card Number Rejected","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -66,7 +66,7 @@
 [ASSERT] Form does not submit; user remains on cart page","[DOM] Validation error message visible adjacent to 'Card Number' field
 [STATE] 'Place Order' button does not trigger order creation
 [NAV] User remains on {{FRONT_URL}}/cart — no navigation to confirmation","[API] No createOrderFromCart GraphQL mutation is fired
-[CONSOLE] No unhandled JS exceptions from iframe communication","No error shown for clearly invalid card; form submits with Luhn-failing card number; user is navigated away from cart page","none — no order created","VCST-3387 TC-NEG-001","Manual"
+[CONSOLE] No unhandled JS exceptions from iframe communication","No error shown for clearly invalid card; form submits with Luhn-failing card number; user is navigated away from cart page","none — no order created","VCST-3387 TC-NEG-001","Automated"
 "PAY-CS-005","CyberSource - Empty Card Number Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -80,7 +80,7 @@
 [ASSERT] Form does not submit","[DOM] 'Card Number' field shows required-field error message
 [STATE] Form submission blocked; no spinner or loading state triggered
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No JS errors from iframe","No error message for blank card; form submits and order created without card number; error message missing but field highlighted only","none — no order created","VCST-3387 TC-NEG-002","Manual"
+[CONSOLE] No JS errors from iframe","No error message for blank card; form submits and order created without card number; error message missing but field highlighted only","none — no order created","VCST-3387 TC-NEG-002","Automated"
 "PAY-CS-006","CyberSource - Empty Cardholder Name Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -95,7 +95,7 @@
 [KEY] NOTE: Known bug — form may submit without name; document actual behavior and compare against expected","[DOM] 'Cardholder Name' field shows required validation error
 [STATE] Form blocked from submission when name is empty
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired if validation blocks submission; if bug present and mutation fires — check errors[]
-[CONSOLE] No unhandled exceptions","Form submits successfully without cardholder name (known bug — document if still present); no error message displayed; field not highlighted","Cancel order via admin if order was placed despite empty name (known bug path)","VCST-3387 TC-NEG-003","Manual"
+[CONSOLE] No unhandled exceptions","Form submits successfully without cardholder name (known bug — document if still present); no error message displayed; field not highlighted","Cancel order via admin if order was placed despite empty name (known bug path)","VCST-3387 TC-NEG-003","Automated"
 "PAY-CS-007","CyberSource - Expired Card Rejected","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -108,7 +108,7 @@
 [ASSERT] Form does not submit","[DOM] 'Expiry Date' field shows expiry validation error message
 [STATE] Submission blocked; no order processing initiated
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No JS errors","Expired date accepted without error; form submits with past expiry; error message missing or generic","none — no order created","VCST-3387 TC-NEG-004","Manual"
+[CONSOLE] No JS errors","Expired date accepted without error; form submits with past expiry; error message missing or generic","none — no order created","VCST-3387 TC-NEG-004","Automated"
 "PAY-CS-008","CyberSource - Empty Expiry Date Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -121,7 +121,7 @@
 [ASSERT] Form does not submit","[DOM] 'Expiry Date' field shows required-field error
 [STATE] Form submission blocked
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No JS errors from iframe","No error for blank expiry; form submits without expiry date; field highlighted but no readable error text","none — no order created","VCST-3387 TC-NEG-005","Manual"
+[CONSOLE] No JS errors from iframe","No error for blank expiry; form submits without expiry date; field highlighted but no readable error text","none — no order created","VCST-3387 TC-NEG-005","Automated"
 "PAY-CS-009","CyberSource - Invalid Expiry Month Rejected","CyberSource > Negative","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -137,7 +137,7 @@
 [ASSERT] Month 99 rejected with clear error message","[DOM] 'Expiry Date' field shows validation error for each out-of-range month value
 [STATE] Form blocked for all three invalid month inputs
 [NAV] User remains on {{FRONT_URL}}/cart for all attempts","[API] No createOrderFromCart GraphQL mutation fired for any invalid expiry
-[CONSOLE] No unhandled errors","Any invalid month value accepted; field only validates on one boundary but not others; error message absent or unclear","none — no order created","VCST-3387 TC-NEG-006","Manual"
+[CONSOLE] No unhandled errors","Any invalid month value accepted; field only validates on one boundary but not others; error message absent or unclear","none — no order created","VCST-3387 TC-NEG-006","Automated"
 "PAY-CS-010","CyberSource - Invalid CVV Length Rejected","CyberSource > Negative","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -150,7 +150,7 @@
 [ASSERT] CVV field enforces max length — either rejects entry beyond 4 chars or shows error","[DOM] CVV field shows length validation error for both too-short and too-long inputs
 [STATE] Form blocked for invalid CVV lengths
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No unhandled iframe errors","CVV shorter than 3 digits accepted silently; field allows more than 4 characters; length error not shown to user","none — no order created","VCST-3387 TC-NEG-007","Manual"
+[CONSOLE] No unhandled iframe errors","CVV shorter than 3 digits accepted silently; field allows more than 4 characters; length error not shown to user","none — no order created","VCST-3387 TC-NEG-007","Automated"
 "PAY-CS-011","CyberSource - Empty CVV Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -163,7 +163,7 @@
 [ASSERT] Form does not submit","[DOM] 'CVV' field shows required-field error message
 [STATE] Submission blocked; no order processing spinner appears
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No JS errors","No error shown for empty CVV; form submits and reaches payment processor without CVV; error present but field not focused","none — no order created","VCST-3387 TC-NEG-008","Manual"
+[CONSOLE] No JS errors","No error shown for empty CVV; form submits and reaches payment processor without CVV; error present but field not focused","none — no order created","VCST-3387 TC-NEG-008","Automated"
 "PAY-CS-012","CyberSource - Non-numeric CVV Rejected","CyberSource > Negative","Medium","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -178,7 +178,7 @@
 [ASSERT] Validation error or rejection prevents submission","[DOM] CVV iframe field rejects alphabetic characters at input level
 [STATE] Field contains only numeric content after attempted non-numeric input
 [NAV] Form does not submit with non-numeric CVV","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No unhandled iframe communication errors","Letters accepted in CVV field; alpha characters appear in masked display; form submits with non-numeric CVV","none — no order created","VCST-3387 TC-NEG-009","Manual"
+[CONSOLE] No unhandled iframe communication errors","Letters accepted in CVV field; alpha characters appear in masked display; form submits with non-numeric CVV","none — no order created","VCST-3387 TC-NEG-009","Automated"
 "PAY-CS-013","CyberSource - Card Number Auto-Formatting","CyberSource > Validation","Medium","BL-PAY-001","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -189,7 +189,7 @@
 [ASSERT] Field auto-inserts spaces to display as '4622 9431 2701 3705'
 [ASSERT] Cursor position maintained correctly after auto-formatting (can continue typing naturally)","[FORMAT] Card Number field displays 16-digit number in '#### #### #### ####' format automatically
 [DOM] No validation error triggered by auto-formatting
-[STATE] Field value usable for further interaction after formatting applied","[CONSOLE] No JS errors from iframe auto-format logic","Card number displayed without spaces after typing; spaces inserted but cursor jumps to wrong position making continued typing impossible; formatting applied inconsistently","none — no order placed","VCST-3387 TC-VAL-003","Manual"
+[STATE] Field value usable for further interaction after formatting applied","[CONSOLE] No JS errors from iframe auto-format logic","Card number displayed without spaces after typing; spaces inserted but cursor jumps to wrong position making continued typing impossible; formatting applied inconsistently","none — no order placed","VCST-3387 TC-VAL-003","Automated"
 "PAY-SEC-001","CyberSource - Card Number Field in Secure Iframe","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -205,7 +205,7 @@
 [ASSERT] JavaScript from parent page cannot read 'Card Number' field value","[DOM] 'Card Number' field contained within <iframe> whose src points to cybersource.com domain
 [STATE] Cross-origin iframe policy enforced — parent JS cannot access iframe content
 [FORMAT] iframe sandbox attributes present if applicable","[NETWORK] No request from parent page origin reads card number value
-[CONSOLE] Cross-origin error thrown on attempted iframe content access (expected/correct behavior)","Card Number field found directly in parent page DOM without iframe; iframe src on same origin as storefront; no cross-origin error thrown on console access attempt","none — no order placed","VCST-3387 TC-SEC-001","Manual"
+[CONSOLE] Cross-origin error thrown on attempted iframe content access (expected/correct behavior)","Card Number field found directly in parent page DOM without iframe; iframe src on same origin as storefront; no cross-origin error thrown on console access attempt","none — no order placed","VCST-3387 TC-SEC-001","Automated"
 "PAY-SEC-002","CyberSource - CVV Field in Secure Iframe","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -219,7 +219,7 @@
 [ASSERT] Access denied — cross-origin security error thrown","[DOM] 'CVV' field contained within cross-origin <iframe>
 [STATE] iframe sandboxing prevents parent page from accessing CVV field content
 [FORMAT] Separate iframe used for CVV (may be same or different iframe from card number)","[NETWORK] No request carries raw CVV value
-[CONSOLE] Cross-origin error is thrown (expected) when parent attempts to access CVV iframe","CVV field found directly in parent DOM; single iframe serving both card and CVV but from same-origin domain; no error thrown on cross-origin access attempt","none — no order placed","VCST-3387 TC-SEC-002","Manual"
+[CONSOLE] Cross-origin error is thrown (expected) when parent attempts to access CVV iframe","CVV field found directly in parent DOM; single iframe serving both card and CVV but from same-origin domain; no error thrown on cross-origin access attempt","none — no order placed","VCST-3387 TC-SEC-002","Automated"
 "PAY-SEC-003","CyberSource - No Raw Card Data in Network Requests","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -236,7 +236,7 @@
 [ACT] Check all POST request bodies for any card-related plaintext","[NETWORK] Card number '@td(CYBERSOURCE_VISA.number)' absent from all request payloads
 [NETWORK] CVV '@td(CYBERSOURCE_VISA.cvv)' absent from all request payloads
 [STATE] Only tokenized references or encrypted data present in payment-related requests","[NETWORK] All payment-related requests use HTTPS (check protocol column)
-[CONSOLE] No JS errors indicating tokenization failure","Raw card number found in any network request body; CVV found in any request payload; requests made over HTTP rather than HTTPS","Cancel order via admin if order was created","VCST-3387 TC-SEC-004","Manual"
+[CONSOLE] No JS errors indicating tokenization failure","Raw card number found in any network request body; CVV found in any request payload; requests made over HTTP rather than HTTPS","Cancel order via admin if order was created","VCST-3387 TC-SEC-004","Automated"
 "PAY-SEC-005","CyberSource - All Payment Pages Served Over HTTPS","CyberSource > Security","Critical","BL-PAY-006","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -253,7 +253,7 @@
 [DOM] All iframe src attributes use 'https://'
 [NETWORK] No HTTP requests in Network tab for payment-related resources
 [CONSOLE] No mixed-content warnings in browser console","[NETWORK] Certificate valid — no SSL errors in DevTools
-[CONSOLE] No security policy violation errors","Any page, iframe, or API request uses HTTP instead of HTTPS; mixed-content browser warning appears; SSL certificate error shown","none — no order placed","VCST-3387 TC-SEC-006","Manual"
+[CONSOLE] No security policy violation errors","Any page, iframe, or API request uses HTTP instead of HTTPS; mixed-content browser warning appears; SSL certificate error shown","none — no order placed","VCST-3387 TC-SEC-006","Automated"
 "PAY-SEC-006","CyberSource - JWT Token Authentication in Iframe","CyberSource > Security","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -268,4 +268,4 @@
 [ASSERT] JWT token value is different from the previous session token (dynamic per session)","[FORMAT] JWT token in iframe src has exactly three dot-separated base64url-encoded segments
 [STATE] JWT is unique per page load — not reused across sessions
 [DOM] Token present in iframe src attribute before any user interaction","[NETWORK] JWT token sent in authorization-related requests
-[CONSOLE] No JWT decode errors in console","JWT token absent from iframe src; token present but reused across multiple sessions (static value); token format incorrect (fewer or more than three segments)","none — no order placed","VCST-3387 TC-INT-002","Manual"
+[CONSOLE] No JWT decode errors in console","JWT token absent from iframe src; token present but reused across multiple sessions (static value); token format incorrect (fewer or more than three segments)","none — no order placed","VCST-3387 TC-INT-002","Automated"

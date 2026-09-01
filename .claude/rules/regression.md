@@ -129,6 +129,108 @@ came to be documented for weeks after its CSV was deleted.
   - **Renumber into a free range** when both suites legitimately share one domain namespace and only the numbers clashed — no new prefix: `035` STORE-052…055 → 066…069, `032` AUTH-066/067 → 074/075, `003` CAT-030…040 → 068…078, plus `CFG-TEXT`/`CFG-VAR` singles.
 - **Critical UI scope**: `knowledge/oracles/critical-ui-scope.md` defines the checklist of 36 components and 16 pages with applicable BL-UI invariants per cell. **Currently UNCOVERED** — its sole covering suite `048b-layout-stability.csv` (selection `layout-stability`) was removed on 2026-07-25, so all 197 applicable cells are marked `GAP`. The file is retained as the scope definition + audit-protocol reference for `/qa-design`. `npm run scope:validate` still hard-fails if a cell points at a *missing* test ID and warns on the GAP count; `--strict` makes GAPs fatal again once a replacement suite lands.
 
+### WORKING IN A SHARED TREE — the git prohibition, then the one-author rule
+
+**FIRST AND STRONGEST: never run a git command that changes repository or working-tree state.**
+No `stash` (push/pop/apply/drop), no `checkout` / `restore` / `switch` on paths or branches, no
+`reset`, `clean`, `revert`, `rebase`, `merge`, `commit` — by any agent, in any session, for any reason,
+including "recovery". Read-only git is always fine (`status`, `diff`, `log`, `show HEAD:<path>`);
+for a baseline, copy the file to the scratchpad or read `git show HEAD:<path>`.
+
+This is stated **before** the one-author rule below because it is the stronger of the two, and the
+2026-08-28 loss proves it: one author's `git checkout --theirs -- .` reached files it had no interest
+in and reverted **every tracked file** to HEAD, destroying a completed 161-insertion suite
+re-pointing and 14 rule edits belonging to other sessions. Single authorship would not have
+prevented that — the command was run by the file's own author, and its blast radius was the whole
+tree. Several sessions hold uncommitted work here at any time, and a tree-wide git operation is
+unrecoverable for all of them. A `git stash` that "failed silently" is the signal to stop and
+report, never to escalate to a broader command.
+
+**A commit is not exempt just because it is not destructive: `git add -A` in a shared tree commits
+OTHER sessions' uncommitted work.** The risk is the opposite of the git prohibition above — nothing
+is lost, but someone else's unfinished work is **published under your commit message**, attributed to
+your change, and pushed where others will build on it. So a tree-wide commit needs the same *ping
+first* discipline as a destructive operation: say what you are about to sweep up, and let the other
+authors say whether their half is in a committable state.
+
+Measured 2026-08-28: one session's user authorised `commit all`, and the commit carried a second
+session's fixture work, suite fix, aliases and bug reports — without that session's user being asked.
+It landed cleanly only because that half happened to be gate-green at that minute; a patched assertion
+had landed moments earlier and the same command could as easily have caught the file mid-edit. Treat
+the good outcome as luck, not as evidence the practice is safe.
+
+**Calibrate what this rule is about, or it becomes "never run `git add -A`" and gets ignored.** The
+failure is **publishing another session's unfinished WORK** — half-written source, a suite mid-edit, a
+fixture that has not been verified — under your commit message and your name. It is **not** every file
+you did not personally author. Sweeping up an already-tracked transient artifact — a run-status file, a
+generated report — is untidiness, not the failure: it was in git before you touched it and the next
+commit records its final state. Measured 2026-09-01: `reports/regression/test-run-status.json` was
+committed mid-run and read as a repeat of this mistake, until checking showed it has been tracked for
+100+ commits and matches no ignore rule, so every commit touching that path has always recorded
+whatever state it was in. Keep the distinction sharp; a rule that flags everything flags nothing.
+
+**And once it is pushed, it stays.** Do not offer to rewrite history to fix attribution on a shared
+branch: a force-push breaks the branch for every session that has pulled it, which is a real loss
+traded for a cosmetic one. Attribution lives in the reports, the code comments and the audit trail —
+which is where anyone actually looks.
+
+**SECOND: a suite CSV has exactly one author for the duration of a change.** Not one author per file
+forever — one author per *change*: whoever is restructuring, culling or re-pointing a suite owns
+every row in it until they hand it back. A second writer on the same CSV is forbidden even when the
+two are editing "different rows", and even when both are careful.
+
+This is the same discipline `/qa-review-oracles` already applies to `business-logic.md` and
+`e-commerce-edge-cases-library.md` — triangulation fans out, the **apply is single-writer** — and it
+exists here for the same reason plus two that are specific to suites:
+
+- **A CSV is not mergeable in practice.** Rows are multi-line, quoted, and the safe writers
+  (`suites:append`, the surgical byte-level edit `promote-cases.ts` uses) all read-modify-write the
+  whole file. Two such writes interleave into a file that parses but is wrong — and `suites:lint`
+  cannot tell you which half was intended.
+- **The disposition is the artifact, not the diff.** A restructure is a set of coupled decisions —
+  this case is culled *because* that journey now crosses its link, these two merge *because* they
+  test one rule. Splitting the file between two authors splits the reasoning, and the second author
+  cannot see why the first kept what they kept.
+- **Concurrency here has a measured cost.** 2026-08-28: two `test-management-specialist` agents in
+  two sessions were given the same suite (`083d`) minutes apart; earlier the same day a subagent's
+  `git checkout --theirs -- .` — reached for as "recovery" after a stash collision in the shared
+  tree — reverted every tracked file to HEAD and destroyed a completed 161-insertion re-pointing of
+  that same suite plus 14 rule edits. Neither loss was a merge conflict; both were two writers where
+  the tree assumed one.
+
+**How to work concurrently anyway** — the fan-out is fine, the *write* is what serialises:
+
+| Want | Do |
+|---|---|
+| Two people analysing one suite | Both analyse; **one** applies. The other hands over a staged rows CSV + a disposition table |
+| Two suites, two authors | Fine — ownership is per file, and `config/test-suites.json` is written by `suites:sync`, not by hand. **It is shared state**: agree who runs sync, or exchange the per-suite delta and let one side apply it |
+| Handing a suite over mid-change | Say so explicitly and stop writing. The successor re-reads the file from disk before their first edit |
+| You find a suite already modified in the tree | **Do not overwrite and do not revert.** Someone else is mid-change; report the conflict and wait |
+
+**A mid-write invalid CSV blocks every concurrent author, not just you.** `suites:sync` and
+`suites:lint` hard-fail on a parse error anywhere in the corpus, so a suite left transiently
+unparsable — a half-written quoted field, an unbalanced closing quote — takes the manifest gate down
+for everyone in the tree until it is fixed. Measured 2026-08-28: a `CSV_INVALID_CLOSING_QUOTE` at
+line 871 of one suite blocked both sessions' gates for ~15 minutes, and the author who caused it did
+not know it was blocking anything — it looked like a local parse failure. So the
+surgical-edit discipline (`promote-cases.ts`: locate the record by its own raw text, replace only the
+changed bytes, **re-parse and compare field-by-field**) is not merely about diff hygiene during a
+shared-tree window — re-parse after EVERY write, not once at the end.
+
+**A fact relayed to another session's SUBAGENT does not arrive — it is lost silently.** Cross-session
+messages land in a subagent's context as system-reminder blocks and (correctly) trip the harness's
+prompt-injection handling: the receiving agent treats them as untrusted, declines to act, and may
+refuse to open files the message points at. Measured 2026-08-28: two coordination messages carrying
+load-bearing environment facts were dropped this way, and neither side saw a rejection. **The relay
+path that works is session → session → the receiving session RE-ISSUES the fact, in its own words, in
+the subagent's dispatch brief.** That re-statement is also what makes the fact reviewable, so it is
+the right shape independent of the transport. Never assume a forwarded fact landed; if it matters,
+it belongs in the brief.
+
+**A suite conflict is never resolved with git** — see the prohibition at the head of this section.
+Hand the conflict to a human or to the other author; there is no git command that makes two writers
+safe, and every one of them makes the loss bigger.
+
 ### Selection Groups
 
 | Selection | Suites | Use Case |
@@ -563,6 +665,60 @@ A regression run tells you *which* tests failed; **`/qa-triage-results [RUN_ID|l
 - **Flakiness feed:** `npm run triage:history` writes per-suite rows into `reports/regression/history.json` in the shape `scripts/regression/compute-metrics.ts` expects (previously the flaky/trend detector was starved — the CI runner wrote a run-level shape it couldn't read; that run-level cost log now lives in `history-ci-runs.json`).
 
 Full methodology: the `/qa-triage-results` skill (`triage-taxonomy.md` + `routing-and-fix.md`). Interactive-first; a headless `ci/run-triage-results.ts` twin is a documented follow-up.
+
+## Pre-Authoring Scaffold — the plan is the gate, and the boilerplate is derived
+
+Promotion (below) made the *end* of a case's life checkable. This is the other end. Authoring was
+entirely manual: an agent read the Test Model, decided which rows were worth writing, and hand-typed all
+fifteen columns. Both halves of that were expensive in a way nothing measured.
+
+| Command | Does |
+|---|---|
+| `npm run tc:alloc -- --prefix <P> --block <name>=<n> [--block …]` | ONE corpus scan → **disjoint ID blocks**, one per batch |
+| `npm run tc:scaffold -- --plan <plan>.json --out <staged>.csv [--id-block <P-NNN..P-NNN>] [--check] [--json]` | authoring plan → staged CSV + `.design.md` sidecar |
+
+Core `scripts/test-cases/scaffold-rows.ts` + `scripts/test-cases/alloc-case-ids.ts`; unit tests
+`scripts/unit/scaffold-rows.test.ts`, `scripts/unit/alloc-case-ids.test.ts`.
+
+Five decisions, each of which was a live fork:
+
+- **The three KEEP questions became fields.** `/qa-test-cases-generator` §3 step 6d requires a case to
+  name the observable it reads, the customer-visible defect it catches, and why that defect is plausible
+  *here* — and asked all three of prose no script could read, at a point where the case was already
+  written. They are now required plan fields with a machine check: a length floor, a **null-hypothesis
+  denylist** (`could fail to render`, `might not work`, …) applied to `defect`, and a closed set of three
+  admissible grounds for `plausible` — a `VC-*` catalog entry, a filed bug (`VCST-*` / `reports/bugs/…`),
+  or `mechanism: <what in this code makes it likely>`. Exactly the three §6d names; encoding exactly
+  those is what stops the field decaying into "software has bugs".
+- **Ten of fifteen columns are derived, not typed.** ID, Section, Priority, Business_Rule,
+  Edge_Case_Refs, Test_Data, Cross_Layer_Checks, Failure_Signals, Cleanup, References (with the
+  `Archetype:`/`Technique:`/`Probe:` stamps the appender demands), Automation_Status=`Draft` all fall out
+  of `(layer, priority, archetype, technique, ticket)`. Only **Preconditions / Steps / Assertions** are
+  authored, and they are left EMPTY on purpose — `npm run suites:review -- <staged>.csv` then names each
+  one as `S-006`/`C-001`/`C-003`, so the remaining work is a linter-issued checklist rather than a
+  convention. Derived cross-layer/failure-signal lines are deliberately generic: one naming a specific
+  operation would be an invented literal (`GRD-002`).
+- **Sweeps are read at run time, never transcribed.** `state-stress` (qa-design §State-Stress Pass, 7
+  states) · `uip` (modern-web-attack-surface §`UIP-*`, 10 probes) · `toggle` · `date-range` (generator
+  §3.5) each expand into rows whose defect hypothesis the owning document already wrote — so they pass
+  the KEEP gate by construction and cost no judgment. A hardcoded copy of any of those tables would be
+  correct once and then fail silently (`.claude/rules/test-data.md` §GOLDEN RULE), so a missing heading
+  or a reshaped table is **exit 2**, never a sweep that quietly expands to nothing. `UIP-*` is not one
+  failure shape, so it carries a per-probe archetype map and a probe with **no** mapping is a hard error
+  rather than a wrong default. Waiving a swept item requires a reason.
+- **It never writes into `regression/suites/`.** The output is a staged CSV in the scratchpad; the append
+  stays with `append-test-cases-to-suite.ts`, run serially by the orchestrator. That is what makes
+  concurrent per-surface authoring batches compatible with the one-author-per-CSV rule above — and it
+  keeps a half-written file out of a corpus whose `suites:lint`/`suites:sync` hard-fail on a parse error
+  anywhere, blocking every other author in the tree.
+- **ID allocation moved BEFORE the fan-out.** `--check-global-ids` reads the corpus at *append* time, so
+  two concurrent batches both pass it and then both write; the collision surfaces later as one run's
+  evidence overwriting another's. `tc:alloc` scans once and hands out disjoint blocks, and `tc:scaffold`
+  refuses to spill past the block it was given. Scope, stated honestly: this is deterministic within one
+  planning step, **not a lock** — two sessions allocating against the same tree get the same block, which
+  is the shared-tree problem and is answered by agreeing who authors, not by a lockfile.
+
+Consumed by `/qa-test` Step 1e-plan (the gate) and Step 3/3b (scaffold + per-surface fan-out).
 
 ## Post-Run Promotion — `Draft → Automated`, derived from the run
 

@@ -4,7 +4,7 @@
 # purpose: Rep-side orders for a served organization (customer profile Orders section contract)
 # required-vars: ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId)
 # optional-vars: STATUSES, CULTURE_NAME
-# last-validated: 2026-07-17
+# last-validated: 2026-08-27
 # known-issues: (none)
 # used-by: SR-GQL-022, SR-GQL-031, SR-GQL-037
 

@@ -1,24 +1,24 @@
 {
-  "runId": "REG-2026-08-27-1134",
-  "selection": "004",
-  "startedAt": "2026-08-27T11:34:00.000Z",
-  "finishedAt": "2026-08-27T10:17:22.000Z",
-  "env": "vcst",
+  "runId": "REG-2026-09-01-2316",
   "status": "completed",
-  "notes": "Suite 004 only (Search Core). Purpose: promotion evidence for SRCH-011/SRCH-012 (VCST-5729) using rewritten MutationObserver-based steps; re-validated 42 other cases after CSV edits. SRCH-012 evidence supports promotion; SRCH-011 BLOCKED on an assertion-authoring defect (baseline mismeasured), not an instrumentation failure - needs re-authoring before promotion.",
+  "startedAt": "2026-09-01T21:16:43.544Z",
+  "finishedAt": "2026-09-01T21:22:07.790Z",
+  "selection": "075d",
+  "environment": "vcst",
   "suites": [
     {
-      "id": "004",
-      "name": "Search Core",
+      "id": "075d",
+      "name": "Loyalty Missions",
       "status": "done",
-      "browser": "playwright-chrome",
-      "agent": "qa-frontend-expert",
-      "testCount": 44,
-      "pass": 22,
-      "fail": 0,
-      "blocked": 3,
-      "skipped": 19,
-      "lane": "browser"
+      "lane": "fastpath",
+      "totalCases": 34,
+      "passed": 22,
+      "failed": 8,
+      "blocked": 0,
+      "skipped": 4,
+      "file": "regression/suites/Backend/loyalty/075d-loyalty-missions.csv",
+      "finishedAt": "2026-09-01T21:22:07.790Z"
     }
-  ]
+  ],
+  "seedGeneration": "20260901211005-4474"
 }

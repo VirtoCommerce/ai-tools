@@ -197,7 +197,7 @@ async function ensureProduct(catalogId, categoryId, body) {
       // The row exists in the DB but the CatalogProduct search index lagged (findProductByCode is
       // index-based). Poll won't resolve on its own without a reindex, so TRIGGER one, then poll —
       // re-triggering periodically until the index shows the row (recovers a partial prior run).
-      const reindex = () => api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', rebuild: false }], { expectStatus: [200, 204] }).catch(() => {});
+      const reindex = () => api('POST', '/api/search/indexes/index', [{ documentType: 'Product', rebuild: false }], { expectStatus: [200, 204] }).catch(() => {});
       await reindex();
       for (let i = 0; i < 12; i++) {
         await sleep(5000);
@@ -485,7 +485,7 @@ async function main() {
   }
 
   if (!DRY_RUN) {
-    try { await api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', rebuild: false }], { expectStatus: [200, 204] }); log(`\n✓ reindex triggered`); }
+    try { await api('POST', '/api/search/indexes/index', [{ documentType: 'Product', rebuild: false }], { expectStatus: [200, 204] }); log(`\n✓ reindex triggered`); }
     catch (e) { log(`⚠ reindex: ${e.message.slice(0, 100)}`); }
 
     // Persist runtime GUIDs to aliases.<env>.json for EVERY env incl. vcst: product_id_guid,

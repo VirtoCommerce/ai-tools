@@ -7,7 +7,7 @@
 #                USER_ID (String), CULTURE_NAME (String), CURRENCY_CODE (String),
 #                FACET (String — space-separated facet field names to compute; drives term_facets), SELECTED_ADDRESS_ID (String),
 #                PRESERVE_USER_QUERY (Boolean), PREVIOUS_OUTLINE (String)
-# last-validated: 2026-07-13
+# last-validated: 2026-08-27
 # known-issues:
 #   - Without category.subtree filter, results are empty even though products exist (BL feedback)
 # used-by: (future) catalog suites

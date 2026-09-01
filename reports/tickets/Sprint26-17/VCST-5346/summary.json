@@ -1,0 +1,281 @@
+{
+  "ticket": "VCST-5346",
+  "title": "[Missions][Frontend] Missions & Challenges",
+  "flow": "feature-test",
+  "ticket_type": "Story",
+  "path": "FULL",
+  "date": "2026-08-27",
+  "sprint": "Sprint26-17",
+  "environment": {
+    "name": "vcst-qa",
+    "front_url": "https://vcst-qa-storefront.govirto.com",
+    "platform": "3.1061.0",
+    "modules": {
+      "VirtoCommerce.Loyalty": "3.1006.0-pr-14-1be7"
+    },
+    "theme": "2.57.0-pr-2396-5924-59243682",
+    "browser": "playwright-chrome",
+    "store_null_windows": [
+      {
+        "nulled": "2026-08-27T14:29:56Z",
+        "fields": [
+          "defaultCurrency",
+          "defaultLanguage"
+        ],
+        "repaired": "~16:00Z"
+      },
+      {
+        "nulled": "2026-08-27T16:48:29Z",
+        "fields": [
+          "defaultCurrency",
+          "defaultLanguage",
+          "url"
+        ],
+        "repaired": "2026-08-27T17:02:56Z"
+      }
+    ],
+    "run_windows": [
+      "16:41:46Z-16:46:36Z (between the two null windows)",
+      "17:05:25Z-17:05:40Z (after the second repair)"
+    ]
+  },
+  "verdict": "FAIL",
+  "verdict_reason": "IN-SCOPE P1 confirmed live on the repaired store: the SKU mission modal renders product prices in a currency other than the session currency (EUR in a USD session) and disagrees with the PDP price for the same SKU.",
+  "completeness": {
+    "status": "EXECUTED",
+    "executed": "High-value subset driven inline by the orchestrator in a single chrome session",
+    "not_executed": [
+      "Change-scoped regression 002,028,029,075d,083b (blast radius of the shared quantity-control change)",
+      "Step 3 independent verification, judgment half (verifier killed by spend limit)",
+      "Step 5a App Insights correlation (APPINSIGHTS_API_KEY_* empty)",
+      "/qa-review-tests --verify harvest ({SPEC} to {OBSERVED}) before promotion"
+    ],
+    "blocker": "Account spend limit (HTTP 429) reset 18:40 Europe/Budapest — infrastructure, not a product finding",
+    "env_caveat": "B2B-store defaults were nulled twice today by admin. Both of this run’s windows sit OUTSIDE the null windows, and the P1 was re-observed after the second repair, so no finding here rests on a null-window observation."
+  },
+  "test_cases": {
+    "suite": "regression/suites/Frontend/loyalty/083c-loyalty-missions-storefront.csv",
+    "authored": 68,
+    "id_range": "MSNF-001..MSNF-068",
+    "automation_status": {
+      "Draft": 67,
+      "Manual": 1
+    },
+    "lanes": {
+      "machine": 0,
+      "browser": 67,
+      "manual": 1
+    },
+    "gates": {
+      "suites_review": "0 Blocker / 0 Critical; 1 Medium (BL-001 MSNF-018), 1 Informational (TRI-000)",
+      "suites_lint": "OK (130 suites, 37 selections)",
+      "td_validate": "clean",
+      "global_id_uniqueness": "no MSNF- collisions; confined to 083c"
+    },
+    "promoted": 0,
+    "promotion_note": "37 of 67 Draft cases are promotable on this run (tc:promote dry run). HELD pending confirmation - 5g requires ratification, and MSNF-059 still carries a {HYPOTHESIS} needing --verify.",
+    "executed": 67,
+    "promotable": 37
+  },
+  "ac_dod_estimate": {
+    "story_conditions": 10,
+    "gap_conditions": 27,
+    "ac_coverage_pct": 70,
+    "ac_coverage_basis": "7 of 10 story conditions carry live evidence this run; AC-1 (x2) unimplementable, AC-2 description only partially observable",
+    "dod": "none declared on the ticket"
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "P1",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE_x3",
+      "title": "SKU mission modal renders prices in the wrong currency and disagrees with the PDP",
+      "evidence": "USD session; modal SKU #55557702 = EUR 455.00 while its PDP = USD 349.00; SKU #201482 = USD 25.00 in the same modal",
+      "root_cause": "loyaltyMissionProgress exposes no currencyCode argument, so the embedded product loader has no currency context",
+      "bl": [
+        "BL-PRICE-005",
+        "BL-LOY-002"
+      ],
+      "screenshots": [
+        "screenshots/MSNF-028-FAIL-modal-mixed-currency-EUR-USD.png",
+        "screenshots/MSNF-028-FAIL-pdp-same-sku-usd-349.png",
+        "screenshots/MSNF-028-FAIL-modal-mixed-currency-post-repair-1705Z.png"
+      ],
+      "note": "Observed 3x. (1) first seen while B2B-store defaultCurrency was null (14:29:56Z window) - discounted as possibly environmental. (2) re-observed 16:43-16:45Z on the repaired store, ~2 min before a SECOND null window opened at 16:48:29Z. (3) re-observed 17:05Z after the second repair at 17:02:56Z. Identical every time, so it is NOT an artifact of either null window."
+    },
+    {
+      "id": "F2",
+      "severity": "P2",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "Anonymous deep link to /account/missions returns 404 instead of the sign-in redirect",
+      "evidence": "Logged out: /account/missions => 404 Page not found; control /account/orders => /sign-in?returnUrl=/account/orders",
+      "bl": [
+        "BL-GQL-004"
+      ]
+    },
+    {
+      "id": "F3",
+      "severity": "P3",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "Two designed CTAs ship as dead locale keys",
+      "evidence": "redeem_products and redeem_banner.catalog exist in 13 locale files, referenced by zero .vue files; live: redeem banner has no Catalog link, order modal has only Close"
+    },
+    {
+      "id": "F4",
+      "severity": "P3",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "Zero-target mission renders the nonsensical progress label '1 of 0 orders' at 0%",
+      "evidence": "AGENT-TEST-MSN-ZEROTARGET card: note '1 of 0 orders', percent 0%, bar width 0%"
+    },
+    {
+      "id": "F5",
+      "severity": "P3",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "SKU modal Cart subtotal renders as a bare unformatted 0 with no currency",
+      "evidence": "Cart subtotal definition = '0' while every other money field is formatted"
+    },
+    {
+      "id": "F6",
+      "severity": "N/A",
+      "provenance": "SCOPE_DECISION",
+      "status": "NOT_IMPLEMENTED",
+      "title": "AC-1 (notify about new and completed missions) has no implementation",
+      "evidence": "Backend emits no notification of any kind (0 hits for PushMessage/INotification/SendAsync/templates across 234 files; manifest declares no notification dependency, confirmed live via /api/platform/modules); frontend PR adds no notification surface. The design specifies it precisely (Frames 4, 5, 8).",
+      "route": "PO / product owner - not a frontend defect"
+    },
+    {
+      "id": "F7",
+      "severity": "LOW",
+      "provenance": "PRE-EXISTING",
+      "status": "LINK_ONLY",
+      "title": "Published mission with public=false is visible to customers and pays out points",
+      "evidence": "AGENT-TEST-MSN-PUBLISHED-PRIVATE renders Completed/100% and granted its reward",
+      "existing_draft": "reports/bugs/open/BUG-loyalty-mission-public-flag-has-no-effect.md",
+      "note": "Owned by the parallel VCST-5319 backend session. Linked, not re-filed. Does not fail this ticket."
+    },
+    {
+      "id": "F8",
+      "severity": "P2",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "Card and modal disagree on progress: the modal Targets met counter seeds from backend progress, not from an empty cart",
+      "cases": [
+        "MSNF-025",
+        "MSNF-030"
+      ],
+      "note": "Exactly the two-sources-of-progress ambiguity the story review predicted (PROPOSED-BL-LOY-MISSION-001)."
+    },
+    {
+      "id": "F9",
+      "severity": "P2",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "Order-value card shows only the amount spent, never its target - the AC-2 numeric-goal drift",
+      "cases": [
+        "MSNF-024"
+      ]
+    },
+    {
+      "id": "F10",
+      "severity": "P2",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "Accessibility: every Open mission control shares one generic accessible name; modal background is not hidden from assistive tech",
+      "cases": [
+        "MSNF-046",
+        "MSNF-047"
+      ],
+      "bl": [
+        "BL-A11Y-002"
+      ],
+      "note": "Focus trap PASSES (MSNF-048) and the dialog role IS present, so the ECL-15.1 prediction was only partly borne out."
+    },
+    {
+      "id": "F11",
+      "severity": "P3",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "Danger date badge is distinguished by dot colour alone - no text, icon or shape",
+      "cases": [
+        "MSNF-017"
+      ],
+      "bl": [
+        "BL-A11Y-003"
+      ]
+    },
+    {
+      "id": "F12",
+      "severity": "P3",
+      "provenance": "IN-SCOPE",
+      "status": "CONFIRMED_LIVE",
+      "title": "Untranslated locale falls back to the raw internal mission name and drops the description entirely",
+      "cases": [
+        "MSNF-068"
+      ]
+    },
+    {
+      "id": "F13",
+      "severity": "LOW",
+      "provenance": "NEEDS_PRODUCT_INPUT",
+      "status": "OBSERVED",
+      "title": "Modal product link opens a new tab, so the modal never closes",
+      "cases": [
+        "MSNF-031"
+      ],
+      "note": "I independently observed this and judged it correct (useBrowserTarget). But useCloseModalOnRouteChange was written for a same-tab click from inside the modal, so as shipped that composable is dead on its stated path. Design intent question, not a confirmed defect - verify intent before filing (feedback_verify_design_intent_before_bug)."
+    }
+  ],
+  "design_drift": [
+    "Order modal has no banner image (design Frame 2 specifies 170px) and no Redeem products primary button",
+    "Card banner 144px (h-36) vs 150px in the design",
+    "Mobile is a paginated grid vs the design's carousel with dots",
+    "Days-left severity threshold: code danger at <10 days; design renders 8 days as warning"
+  ],
+  "positive_observations": [
+    "ECL-14.8 schema sanity check PASSES: balance banner reads 16,630, no data.cart:null, 0 console errors",
+    "Both modals expose a dialog role, contradicting the ECL-15.1 near-certain a11y failure",
+    "All three seeded progress states render correctly (5 days/25% danger, 75% partial, Completed 100%)",
+    "Pagination works: 13 missions across 2 pages, no duplicates across the boundary",
+    "Expired and Draft missions correctly withheld",
+    "OrderValue money fields render in the correct currency ($30.00 spent, $0.00 spent) - the currency defect is confined to items[].product.price",
+    "Disabled Add-to-cart and Decrease at qty 0 is validation working, not a defect"
+  ],
+  "regression": {
+    "run_id": "REG-2026-08-27-1731",
+    "suite": "083c",
+    "total": 68,
+    "pass": 38,
+    "fail": 14,
+    "blocked": 15,
+    "skipped": 1,
+    "pass_rate": "55.9%",
+    "lane": "playwright-chrome",
+    "note": "The suite is authored so a case FAILS while its defect exists, so a low pass rate here is the suite working, not a regression. 15 BLOCKED = 7 declared data gaps + 6 MCP tooling gaps (no route-blocking / perf-trace in this lane) + MSNF-005 refused by the command classifier before any store mutation (store verified intact after)."
+  },
+  "regression_triage": {
+    "collected": 30,
+    "by_status": {
+      "FAIL": 14,
+      "BLOCKED": 15,
+      "SKIPPED": 1
+    },
+    "batches": 3,
+    "flaky": 0,
+    "confirmed_bugs": 14,
+    "test_case_fixes": 0,
+    "dismissed": 0
+  },
+  "bugs_filed": [],
+  "release_gate": "NO-GO (recommendation) - an in-scope P1 is open and the change-scoped regression has not run",
+  "next_steps": [
+    "Confirm filing: F1-F5 + F8-F12 as Sub-tasks of VCST-5346; F13 needs design intent first; AC-1 (F6) to the PO; F7 linked to the sibling draft",
+    "Confirm the tracker comment and the FAIL to REOPEN transition",
+    "Confirm 5g promotion of the 37 promotable cases (run /qa-review-tests --verify first to harvest {SPEC} to {OBSERVED} and resolve MSNF-059)",
+    "Run the change-scoped regression 002,028,029,075d,083b for the shared quantity-control blast radius"
+  ]
+}

@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-08-27",
-    "totalSuites": 127,
+    "generated": "2026-09-01",
+    "totalSuites": 132,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2435,9 +2435,9 @@
       "customerApplicability": "reference",
       "clickDriven": true,
       "lanes": {
-        "machine": 9,
+        "machine": 8,
         "browser": 4,
-        "manual": 0
+        "manual": 1
       }
     },
     {
@@ -2468,6 +2468,61 @@
         "browser": 0,
         "manual": 0
       }
+    },
+    {
+      "id": "075d",
+      "name": "Loyalty Missions",
+      "file": "regression/suites/Backend/loyalty/075d-loyalty-missions.csv",
+      "domain": "customer-b2b",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 34,
+      "estimatedMinutes": 12,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "loyalty",
+        "missions",
+        "graphql",
+        "api",
+        "sprint"
+      ],
+      "requiresModules": [
+        "loyalty"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 29,
+        "browser": 0,
+        "manual": 4,
+        "deprecated": 1
+      }
+    },
+    {
+      "id": "075e",
+      "name": "Loyalty Missions Admin",
+      "file": "regression/suites/Backend/loyalty/075e-loyalty-missions-admin.csv",
+      "domain": "customer-b2b",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 23,
+      "estimatedMinutes": 20,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "loyalty",
+        "missions",
+        "admin",
+        "admin-spa",
+        "sprint"
+      ],
+      "requiresModules": [
+        "loyalty"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "076",
@@ -2737,6 +2792,56 @@
         "checkout",
         "multi-currency",
         "sprint"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "083c",
+      "name": "Loyalty Missions Storefront",
+      "file": "regression/suites/Frontend/loyalty/083c-loyalty-missions-storefront.csv",
+      "domain": "customer-b2b",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 68,
+      "estimatedMinutes": 75,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "loyalty",
+        "missions",
+        "account",
+        "modal",
+        "a11y",
+        "sprint"
+      ],
+      "requiresModules": [
+        "loyalty"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "083d",
+      "name": "Loyalty Missions E2E",
+      "file": "regression/suites/Frontend/loyalty/083d-loyalty-missions-e2e.csv",
+      "domain": "customer-b2b",
+      "layer": "frontend",
+      "concern": "e2e",
+      "priority": "P1",
+      "testCount": 8,
+      "estimatedMinutes": 40,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "loyalty",
+        "missions",
+        "e2e",
+        "checkout",
+        "mixed-cart",
+        "sprint"
+      ],
+      "requiresModules": [
+        "loyalty"
       ],
       "customerApplicability": "reference",
       "clickDriven": true
@@ -3346,7 +3451,9 @@
         "075b",
         "075c",
         "083",
-        "083b"
+        "083b",
+        "083c",
+        "083d"
       ]
     },
     "customer-reviews": {

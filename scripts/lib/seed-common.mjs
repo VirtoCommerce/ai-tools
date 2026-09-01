@@ -166,7 +166,16 @@ export async function auth() {
 }
 
 // A read call is safe to run in --dry-run (GET, or POST to a /search endpoint).
-const isReadCall = (method, path) => method === 'GET' || (method === 'POST' && path.includes('/search'));
+//
+// `POST /api/catalog/listentries` is a SEARCH that simply has no "search" in its path — it is the
+// catalog browse/lookup endpoint, and its sibling `/listentries/delete` is the write. Stubbing it in
+// dry-run made every dry-run catalog lookup return a fake row with no `code`, so a
+// `--teardown --dry-run` reported "nothing to delete" while real orphan products sat in the
+// database. A preview that under-reports residue is the same false-clean the residue guard exists to
+// stop, so the predicate names it explicitly. The trailing-segment test keeps `/listentries/delete`
+// (and `/listentrylinks*`) on the write side, where they belong.
+const isReadCall = (method, path) => method === 'GET'
+  || (method === 'POST' && (path.includes('/search') || /\/listentries(\?|$)/.test(path)));
 
 /**
  * REST wrapper. In --dry-run, writes are skipped and return a fake { _dryRun, id }.

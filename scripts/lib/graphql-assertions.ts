@@ -176,8 +176,24 @@ function substituteVars(s: string, vars: Record<string, string>): string {
 // operand, so the predicate compared against `Rejected" {SPEC} (…)` and failed against
 // a correct actual of `Rejected`. 126 assertion lines across 12 suites mis-compared
 // this way. The optional trailing `(...)` group is therefore part of the suffix.
+//
+// 2026-09-01 — the SAME defect, second spelling. A rationale introduced by a DASH
+// rather than parentheses — `... = 34 {SPEC} — narrowed from the whole-history total` —
+// still glued the prose to the operand. Measured against the live evaluator: only
+// `[DATA]` EQUALITY breaks (`COUNT … = N`, `COUNT … > N` and `DATA … is null` are
+// tolerant), so the same assertion passes one way and fails the other, and the failure
+// is a PERMANENT SILENT FAIL that reads exactly like a product defect. `T-005` catches
+// only the sub-case where stray punctuation derails the comparison-branch detector; a
+// clean dash-led sentence sails through the linter. Corpus scan at the time: 649
+// `[DATA]` equality assertions, one carrier suite (`075d`, 15 lines, since parenthesised).
+//
+// The contract is that the tag is appended to the END of the line, so anything after it
+// is rationale by construction. The suffix therefore consumes a parenthetical OR a
+// dash-led tail (em dash, en dash, or `--`). A tail that is NEITHER is deliberately left
+// in place: that is a malformed assertion, and failing loudly on it is correct — the
+// whole point of this fix is that a wrong answer must not arrive quietly.
 const PROVENANCE_SUFFIX_RE =
-  /\s*\{(?:SPEC|BL|DOC|OBSERVED|HYPOTHESIS)\}(?:\s*\([\s\S]*\))?\s*$/;
+  /\s*\{(?:SPEC|BL|DOC|OBSERVED|HYPOTHESIS)\}(?:\s*(?:\([\s\S]*\)|(?:\u2014|\u2013|--)[\s\S]*))?\s*$/;
 
 function stripProvenance(s: string): string {
   return s.replace(PROVENANCE_SUFFIX_RE, "").trim();

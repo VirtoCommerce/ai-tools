@@ -1,0 +1,952 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+MSNF-001,Account sidebar exposes 'Missions & challenges' under Marketing and it opens the missions page,Loyalty > Missions > Access & Routing,Critical,BL-CROSS-006,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.",front_url={{FRONT_URL}}; store_id=@td(MSN_STORE_SETTINGS.store_id); missions_flag=@td(MSN_STORE_SETTINGS.setting_name),"[NAV] {{FRONT_URL}}/account
+[WAIT] the account dashboard and its left sidebar navigation have rendered
+[ACT] read the sidebar group headings
+[ACT] click the sidebar entry labelled 'Missions & challenges'
+[WAIT] the missions page has rendered its heading and its card grid","[DOM] a sidebar group labelled 'Marketing' is present and contains an entry labelled 'Missions & challenges' {OBSERVED}
+[NAV] activating that entry lands on {{FRONT_URL}}/account/missions {OBSERVED}
+[DOM] the sidebar entry is present in its active state once the missions page is open {OBSERVED}
+[DOM] an h1 heading naming the missions feature is visible, and no dotted translation key is present in it {OBSERVED}
+[DOM] a page-level description paragraph below the heading is visible {OBSERVED}","[API] exactly one loyaltyMissionProgress query fires on page load and its errors[] is empty
+[CONSOLE] no unhandled JS errors or Vue warnings during navigation",Sidebar entry missing while the flag is on; entry routes to a not-found page; entry rendered outside the Marketing group; heading shows a raw translation key,None — read-only navigation,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-002,"Anonymous deep link to the missions page redirects to sign-in with returnUrl, matching the orders route control",Loyalty > Missions > Access & Routing,Critical,PROPOSED-BL-AUTH-019,,"[PRE:CLEAR_SESSION]
+No storefront session exists — no auth cookie and no bearer token in browser storage.
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] navigation settles on its final URL
+[ACT] record the final URL
+[ACT] record the identity of the rendered page
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] navigation settles on its final URL
+[ACT] record the final URL for the control route","[NAV] the anonymous request for /account/missions ends on the sign-in route rather than a not-found page {BL}
+[NAV] the resulting sign-in URL carries a returnUrl parameter that resolves back to /account/missions {BL}
+[DOM] the sign-in form is visible, and the missions heading, card grid and empty-state are all absent {BL}
+[NAV] the control route /account/orders redirects to the same sign-in route with its own returnUrl {OBSERVED}
+[STATE] both protected account routes therefore behave identically for an anonymous visitor {BL}","[API] no loyaltyMissionProgress query and no loyalty balance query is issued while unauthenticated, so no errors[] can be raised
+[NETWORK] no 401 or 403 GraphQL call is fired before the redirect",The missions route renders a 404 page while the orders route redirects — the asymmetry that proves the missions route has no auth guard; returnUrl absent; returnUrl points at the account dashboard instead of the requested route,None — no session was created,VCST-5346,Draft
+MSNF-003,Signing in from the missions redirect returns the visitor to the missions page,Loyalty > Missions > Access & Routing,High,PROPOSED-BL-AUTH-019,,"[PRE:CLEAR_SESSION]
+No storefront session exists. Requesting {{FRONT_URL}}/account/missions while anonymous is expected to land on the sign-in page carrying a returnUrl for that route.
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.",front_url={{FRONT_URL}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}},"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the sign-in form has rendered with a returnUrl parameter in the address bar
+[ACT] type {{USER_EMAIL}} into the sign-in email input
+[ACT] type {{USER_PASSWORD}} into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes and the browser settles on its post-login route","[NAV] the post-login route is {{FRONT_URL}}/account/missions rather than the generic account dashboard {BL}
+[DOM] the mission card grid is visible after the redirect, with no second manual navigation {SPEC}
+[STATE] the session is authenticated as the account bound to {{USER_EMAIL}} {BL}","[API] loyaltyMissionProgress fires after authentication and returns a non-empty items collection with an empty errors[]
+[CONSOLE] no unhandled JS errors during the redirect",Post-login lands on the account dashboard and discards returnUrl; the missions page renders its empty state because the query fired before the token was attached; the returnUrl is dropped on a validation retry,Sign out through the account-menu popup in the top header,VCST-5346,Draft
+MSNF-004,Missions feature flag off removes the sidebar entry and the route renders no missions,Loyalty > Missions > Access & Routing,Critical,BL-CROSS-006,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+REQUIRES AN ADMIN TOGGLE. Before execution, set @td(MSN_STORE_SETTINGS.setting_name) to false for store @td(MSN_STORE_SETTINGS.store_id) in the Admin store settings under the @td(MSN_STORE_SETTINGS.setting_group) group, leaving @td(MSN_STORE_SETTINGS.base_setting_name) true. The observed live value of the flag is @td(MSN_STORE_SETTINGS.missions_enabled), and the platform default is @td(MSN_STORE_SETTINGS.platform_default). The toggle MUST be restored in Cleanup or every other case in this suite is invalidated.",front_url={{FRONT_URL}}; store_id=@td(MSN_STORE_SETTINGS.store_id); missions_flag=@td(MSN_STORE_SETTINGS.setting_name); platform_default=@td(MSN_STORE_SETTINGS.platform_default),"[NAV] {{FRONT_URL}}/account
+[WAIT] the account dashboard and its sidebar have rendered
+[ACT] read every entry in the account sidebar
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] navigation settles on its final URL","[DOM] no entry labelled 'Missions & challenges' is present anywhere in the account sidebar {BL}
+[DOM] the missions heading, the card grid, the balance banner and the redeem banner are all absent on the direct navigation {BL}
+[NAV] the direct navigation resolves to a not-found page or redirects away, and never renders a partially built missions page {BL}","[API] no loyaltyMissionProgress query is issued on either navigation, so no errors[] can be raised behind a disabled gate
+[CONSOLE] no unhandled JS errors from a component mounted behind a disabled flag","Sidebar entry still present with the flag off; the route renders an empty missions page instead of not rendering, which is a guard bypass; a mission query fires despite the gate",MANDATORY — restore @td(MSN_STORE_SETTINGS.setting_name) to true for store @td(MSN_STORE_SETTINGS.store_id) and confirm the missions page renders again before releasing the lane,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-005,Base loyalty switch off — does it also gate the missions page?,Loyalty > Missions > Access & Routing,Medium,BL-CROSS-006,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+HARD PRECONDITION — ISOLATION, NOT SCHEDULING: this case toggles the store-wide @td(MSN_STORE_SETTINGS.base_setting_name) setting. It MUST NOT run against a shared multi-tenant environment (e.g. vcst-qa) — 'schedule this case last' does not prevent a concurrent suite/session on the same store from observing the mid-run false state. Run only against an isolated environment (/qa-local-env) or a dedicated, non-shared store, with the toggle-off and restore-to-true performed by that environment's seeder/teardown rather than mid-suite. The live observed values on the shared env were base=@td(MSN_STORE_SETTINGS.base_loyalty_enabled) and missions=@td(MSN_STORE_SETTINGS.missions_enabled); the safety refusal to mutate them there was correct.",front_url={{FRONT_URL}}; store_id=@td(MSN_STORE_SETTINGS.store_id); base_flag=@td(MSN_STORE_SETTINGS.base_setting_name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] navigation settles and the page reaches a stable rendered state
+[ACT] record which page regions have rendered","[DOM] is the mission card grid visible at all when the parent loyalty switch is off while the missions switch is on? {HYPOTHESIS}
+[DOM] if the page renders, is the points-balance banner still visible with a balance, or is it suppressed with the base feature disabled? {HYPOTHESIS}
+[DOM] exactly one of these holds: the mission card grid is visible in full, OR the route resolves to a not-found page or redirects away — a partially built page with a missing region is absent {BL}
+[DOM] whichever way it resolves, no raw error text, stack trace or permanently spinning banner is visible to the customer {BL}","[API] whatever loyalty query is issued returns an empty errors[] rather than an unhandled server fault
+[NETWORK] no 5xx on the GraphQL endpoint",An unhandled error is surfaced to the customer; the balance banner spins forever; the page renders half a layout with a missing region,"On the isolated environment: MANDATORY — the environment's own seeder/teardown restores @td(MSN_STORE_SETTINGS.base_setting_name) and @td(MSN_STORE_SETTINGS.setting_name) to true; confirm the missions page renders normally before releasing the environment. Never run this case, or leave the toggle flipped, on a shared environment.",VCST-5346,Draft
+MSNF-006,Mission query failure renders the error view and 'Try again' refetches and recovers,Loyalty > Missions > Page States,Critical,BL-CROSS-011; BL-GQL-001,ECL-14.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+BLOCKED ON TOOLING: this case needs a network-fault-injection primitive equivalent to Playwright's page.route(url).abort() (fail the first loyaltyMissionProgress request only, then restore) — none exists on the assigned browser-agent regression lane today (the MCP surface exposes only request/response inspection via browser_network_request(s), not interception; browser_run_code_unsafe is excluded per the real-user-interaction rule). Do not execute until such a probe ships (candidate: extend layout-runner.ts's CDP session, which already intercepts for [THROTTLE], with a [PROBE:NETFAULT] primitive).",front_url={{FRONT_URL}},"[ACT] arrange for the first loyaltyMissionProgress request from this page to fail
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the page settles out of its loading state
+[ACT] record the rendered failure surface
+[ACT] restore normal network conditions for the lane
+[ACT] click 'Try again' in the failure surface
+[WAIT] the page settles out of its loading state a second time","[DOM] on failure an error empty-view containing a 'Try again' control is visible {SPEC}
+[DOM] the visible error copy communicates a failure and is textually distinct from the no-missions empty state {BL}
+[DOM] mission cards and the pager are absent while the error state is shown {SPEC}
+[DOM] after 'Try again' the error empty-view is absent and the mission card grid is visible {SPEC}
+[STATE] the recovered grid holds the same missions the account resolves normally, so the retry is a real refetch rather than a cached empty render {BL}","[API] exactly one additional loyaltyMissionProgress request is issued per 'Try again' click, and the successful one returns an empty errors[]
+[CONSOLE] the failure is handled — no unhandled promise rejection is logged",Blank page or an endless skeleton instead of an error view; 'Try again' is inert and issues no new request; the error view is byte-identical to the empty state so a real outage reads as no missions,Restore normal network conditions for the lane,VCST-5346,Draft
+MSNF-007,No missions available renders a dedicated empty state distinct from the error state,Loyalty > Missions > Page States,High,BL-CROSS-011,ECL-3.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+BLOCKED ON DATA — no fixture yields an account for which loyaltyMissionProgress returns zero items. The seeded missions are published and public, so every signed-in customer on store @td(MSN_STORE_SETTINGS.store_id) resolves roughly 14 of them. Reaching this state needs a store with the missions flag on and no published public missions, or a customer scoped to such a store. Report BLOCKED with this reason unless that fixture exists at execution time.",front_url={{FRONT_URL}}; store_id=@td(MSN_STORE_SETTINGS.store_id),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the page settles out of its loading state
+[ACT] record the rendered empty surface for comparison against the failure surface of the error-state case in this suite","[DOM] an empty-view stating that there are no missions is visible, with mission cards and the pager absent {SPEC}
+[DOM] the visible empty-view copy differs from the query-failure copy, so an outage cannot be mistaken for an empty catalogue {BL}
+[DOM] no 'Try again' control is present, because nothing failed {SPEC}
+[DOM] the points-balance banner and the redeem banner are still visible above the empty-view {SPEC}","[API] loyaltyMissionProgress returns HTTP 200 with an empty items collection and an empty errors[]
+[CONSOLE] no unhandled JS errors",Empty state and error state render identical copy; the whole page including the balance banner disappears when there are no missions; a 'Try again' control appears on a successful empty response,None — read-only,VCST-5346,Draft
+MSNF-008,Balance-banner failure degrades gracefully and the mission list still renders,Loyalty > Missions > Page States,High,BL-CROSS-011,ECL-14.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+BLOCKED ON TOOLING: this case needs a network-fault-injection primitive (fail only the points-balance request, leave mission-progress healthy) — none exists on the assigned browser-agent regression lane today; see MSNF-006's precondition for the same named gap and candidate fix.",front_url={{FRONT_URL}},"[ACT] arrange for the loyalty points-balance request to fail while leaving the mission-progress request healthy
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the page settles out of its loading state","[DOM] the mission card grid is fully visible despite the balance failure {BL}
+[DOM] the balance banner is either hidden or shows a contained fallback, and no permanently spinning skeleton is visible {BL}
+[DOM] no raw error text, GraphQL message or stack frame is visible anywhere on the page {BL}
+[DOM] the page-level error empty-view is absent — one failed side query must not blank the whole page {SPEC}","[API] the loyaltyMissionProgress request still returns HTTP 200 with an empty errors[]
+[CONSOLE] the balance failure is caught — no unhandled promise rejection",The whole page falls into the error state because a secondary query failed; the balance banner is stuck on a skeleton; raw GraphQL error text is rendered in the banner,Restore normal network conditions for the lane,VCST-5346,Draft
+MSNF-009,Points-balance banner shows the balance and its points-history control navigates,Loyalty > Missions > Page States,Medium,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the balance value rendered in the banner
+[ACT] click the points-history control in the balance banner
+[WAIT] the points-history destination has rendered","[DOM] a numeric points balance is visible in the banner, with no dotted translation key and no 'NaN' present {OBSERVED}
+[MATH] the balance rendered in the banner = the balance the loyalty points query returned for this account {BL}
+[NAV] the points-history control navigates to the points-history route and that page renders {OBSERVED}","[API] the loyalty balance query returns HTTP 200 with an empty errors[]
+[CONSOLE] no unhandled JS errors","Banner renders 'NaN', a blank value or a raw key; the history control is inert; the history route resolves to a not-found page",Navigate back to {{FRONT_URL}}/account/missions,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-010,Redeem banner offers an actionable call to action that reaches the redeem catalogue,Loyalty > Missions > Page States,High,PROPOSED-BL-LOY-016,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Design reference: the missions page frame specifies a redeem banner whose call to action takes the customer to the redeem catalogue. The storefront locale bundles carry a redeem-banner catalogue key in every shipped language.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the static redeem banner rendered above the card grid
+[ACT] click the redeem banner's call-to-action control
+[WAIT] navigation settles on its destination","[DOM] an actionable call-to-action control is present in the redeem banner, rather than banner copy alone {SPEC}
+[NAV] activating it navigates to the redeem catalogue route and that page renders its product grid {SPEC}
+[DOM] the control's label is resolved copy, and no dotted translation key is present in it {SPEC}","[NETWORK] no 4xx or 5xx on the destination route, and any GraphQL call it makes returns an empty errors[]
+[CONSOLE] no unhandled JS errors on activation","The redeem banner renders as inert decoration with no clickable call to action, so a translation key that ships in every locale bundle is referenced by no component and the designed action is unreachable; the control is present but navigates nowhere",Navigate back to {{FRONT_URL}}/account/missions,VCST-5346,Draft
+MSNF-011,Card title uses the localized mission name and falls back to the stored name,Loyalty > Missions > Mission Card,High,PROPOSED-BL-CAT-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The localized mission fixture is seeded with a localized name in the alternate locale as well as its default name.",front_url={{FRONT_URL}}; localized_default=@td(MSN_LOCALIZED.name_default); plain_mission=@td(MSN_ORDERCOUNT.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the card title rendered for the localized mission fixture
+[ACT] read the card title rendered for a mission that carries no localized name","[DOM] the localized mission's card title is visible and reads @td(MSN_LOCALIZED.name_default) in the default storefront locale {OBSERVED}
+[DOM] a mission with no localized name falls back to its stored name, and the title @td(MSN_ORDERCOUNT.name) is visible {OBSERVED}
+[DOM] no card has an empty title, and the literal 'null' is absent from every card title {BL}","[API] loyaltyMissionProgress returns both fixtures with the expected name and localizedName shape and an empty errors[]
+[CONSOLE] no unhandled JS errors",The card shows the raw stored name while a localized name exists; an empty title where the localized name is null; 'undefined' rendered as a title,None — read-only,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-012,Card reward chip equals the mission reward across three fixtures,Loyalty > Missions > Mission Card,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.",front_url={{FRONT_URL}}; ordervalue_reward=@td(MSN_ORDERVALUE.reward); persku_reward=@td(MSN_PERSKU_ALL.reward); completed_reward=@td(MSN_PROGRESS_COMPLETED.reward),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the points chip on the card for @td(MSN_ORDERVALUE.name)
+[ACT] read the points chip on the card for @td(MSN_PERSKU_ALL.name)
+[ACT] read the points chip on the card for @td(MSN_PROGRESS_COMPLETED.name)","[MATH] the points chip on the card for @td(MSN_ORDERVALUE.name) = @td(MSN_ORDERVALUE.reward) {OBSERVED}
+[MATH] the points chip on the card for @td(MSN_PERSKU_ALL.name) = @td(MSN_PERSKU_ALL.reward) {OBSERVED}
+[MATH] the points chip on the card for @td(MSN_PROGRESS_COMPLETED.name) = @td(MSN_PROGRESS_COMPLETED.reward) {OBSERVED}
+[FORMAT] each chip pairs its number with a resolved points unit label, not a bare integer and not a dotted key {OBSERVED}","[API] the reward value on each card matches the reward field the query returned for that mission, and errors[] is empty
+[CONSOLE] no unhandled JS errors",Chip absent; chip shows the goal target instead of the reward; the number renders with no unit; the value disagrees with the API payload,None — read-only,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-013,Card type label is correct for each of the four goal types and never leaks a raw enum,Loyalty > Missions > Mission Card,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+All four goal-type fixtures are seeded and visible to this account at zero progress.",front_url={{FRONT_URL}}; ordervalue=@td(MSN_ORDERVALUE.name); ordercount=@td(MSN_ORDERCOUNT.name); persku_all=@td(MSN_PERSKU_ALL.name); persku_any=@td(MSN_PERSKU_ANY.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] page through the grid until all four goal-type fixture cards have been seen
+[ACT] read the type label on each of the four cards","[DOM] the type label 'Order value' is visible on the card for @td(MSN_ORDERVALUE.name) {OBSERVED}
+[DOM] the type label 'Order count' is visible on the card for @td(MSN_ORDERCOUNT.name) {OBSERVED}
+[DOM] the type label 'Featured SKUs' is visible on the card for @td(MSN_PERSKU_ALL.name) {OBSERVED}
+[DOM] the same 'Featured SKUs' label is visible on the card for @td(MSN_PERSKU_ANY.name), because both featured-SKU variants share one label {OBSERVED}
+[DOM] the raw enums 'OrderValueGoal', 'OrderCountGoal', 'PerSkuAll' and 'PerSkuAny' are absent from every card {BL}","[API] each fixture's goal type in the response matches its seeded goal type, and errors[] is empty
+[CONSOLE] no unhandled JS errors",A raw enum leaks into the label; two goal types collapse to one label; the label is absent for a type the mapper does not recognise,None — read-only,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-014,"Card progress note is correct per goal type, including the featured-SKU-any form that carries no current value",Loyalty > Missions > Mission Card,Critical,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The four goal-type fixtures plus the partial-progress featured-SKU fixture are seeded and visible to this account.","front_url={{FRONT_URL}}; partial=@td(MSN_PROGRESS_PARTIAL.name); persku_any_slot_count=the number of featured-SKU rows the mission returns (the alias goal_target holds the goal-type flag, not a count); ordervalue_target=@td(MSN_ORDERVALUE.goal_target); ordercount_target=@td(MSN_ORDERCOUNT.goal_target)","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the progress note under the progress bar on the partial-progress featured-SKU card
+[ACT] read the progress note on the featured-SKU-any card
+[ACT] read the progress note on the order-value card
+[ACT] read the progress note on the order-count card","[DOM] the featured-SKU-all note is visible as a count of met SKU slots out of the target, in the form 'N of M SKUs' {OBSERVED}
+[MATH] on @td(MSN_PROGRESS_PARTIAL.name) the met count in that note = the number of item rows in the RESPONSE whose currentQuantity has reached its targetQuantity, and is not the number of rows present {OBSERVED}
+[DOM] the featured-SKU-any note is visible as 'at least 1 of M SKUs', where M is the mission's SKU-slot count and NOT the raw goal-type flag, and it deliberately carries no current value {OBSERVED}
+[DOM] the order-value note is visible as an amount spent, in the form 'X spent' {OBSERVED}
+[DOM] the order-count note is visible as 'N of M orders' {OBSERVED}
+[DOM] the literals 'undefined', 'null' and 'NaN' are absent from every progress note, including where the backend returns a null money value {BL}","[API] the item rows behind the featured-SKU note match the items collection the query returned for that mission, and errors[] is empty
+[CONSOLE] no unhandled JS errors",The featured-SKU-any note shows a fabricated current value; the featured-SKU-all note counts rows instead of met rows; the order-value note renders a raw null money value as 'null spent',None — read-only,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-015,"Progress bar and percent match the backend percentage at 25, 75 and 100 percent",Loyalty > Missions > Mission Card,Critical,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The three progress fixtures are seeded and their aliases record the values captured at seed time (a per-account runtime value that a later order can move, so it is read from the response at run time and the alias figures are the intended spread, not a pinned expectation): ending-soon at @td(MSN_ENDING_SOON.progress_percentage), partial at @td(MSN_PROGRESS_PARTIAL.progress_percentage) and completed at @td(MSN_PROGRESS_COMPLETED.progress_percentage).",front_url={{FRONT_URL}}; ending_soon_pct=@td(MSN_ENDING_SOON.progress_percentage); partial_pct=@td(MSN_PROGRESS_PARTIAL.progress_percentage); completed_pct=@td(MSN_PROGRESS_COMPLETED.progress_percentage),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the percent label on the card for @td(MSN_ENDING_SOON.name)
+[ACT] measure the progress-bar fill width on the card for @td(MSN_ENDING_SOON.name)
+[ACT] read the percent label on the card for @td(MSN_PROGRESS_PARTIAL.name)
+[ACT] measure the progress-bar fill width on the card for @td(MSN_PROGRESS_PARTIAL.name)
+[ACT] read the percent label on the card for @td(MSN_PROGRESS_COMPLETED.name)
+[ACT] measure the progress-bar fill width on the card for @td(MSN_PROGRESS_COMPLETED.name)","[MATH] the percent on the card for @td(MSN_ENDING_SOON.name) = the percentage field the response returned for that mission {BL}
+[MATH] the percent on the card for @td(MSN_PROGRESS_PARTIAL.name) = the percentage field the response returned for that mission {BL}
+[MATH] the percent on the card for @td(MSN_PROGRESS_COMPLETED.name) = the percentage field the response returned for that mission {BL}
+[STATE] at fixture capture those three read @td(MSN_ENDING_SOON.progress_percentage), @td(MSN_PROGRESS_PARTIAL.progress_percentage) and @td(MSN_PROGRESS_COMPLETED.progress_percentage) percent respectively, which is the intended low, partial, complete spread — a run where all three now read the same value means the fixtures have drifted, not that the UI is wrong {OBSERVED}
+[MATH] each rendered percent = the backend percentage rounded to at most one decimal place {OBSERVED}
+[MATH] each progress-bar fill width as a fraction of its track = the rendered percent, within 1 percentage point {OBSERVED}
+[DOM] no progress bar overflows its track, and no percent below zero or above 100 is present {OBSERVED}","[API] the percentage field for each of the three missions equals the value rendered, and errors[] is empty
+[CONSOLE] no unhandled JS errors",Percent and bar disagree; the bar renders full at 25 percent; the percent shows many decimal places; a value above 100 renders as an overflowing bar,None — read-only,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+"MSNF-016","Featured-SKU-any progress is binary — the card never shows an intermediate percentage","Loyalty > Missions > Mission Card","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. @td(MSN_PERSKU_ANY.name) visible on the missions page.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the percent on the card for @td(MSN_PERSKU_ANY.name)
+[ACT] read the progress-bar fill state on that same card","[MATH] the percent on the featured-SKU-any card = 0 or = 100, and never a value between them {DOC} source: LoyaltyMissionLogicService.cs:~442-443 — PerSkuAny's Percentage is computed as a binary completed?100:0, never a proportional value; CONFIRMED from source 2026-08-28, not a live suspicion (revises the prior {OBSERVED} tag, which certified only the current build's behavior, not the mechanism)
+[DOM] with no SKU slot satisfied the card shows zero percent and an empty progress bar is visible {OBSERVED}
+[DOM] the progress note is still visible as 'at least 1 of M SKUs' at zero percent, with no current value interpolated {OBSERVED}",,"An intermediate percentage (0 < x < 100) is rendered on a featured-SKU-any card (would mean the binary short-circuit in LoyaltyMissionLogicService no longer holds — a real regression, not a test-case correction)","none — read-only","VCST-5346 | Promoted: VCST-5346 (2026-08-27) | Grounding upgraded 2026-08-28 (TCA) — {OBSERVED} to {DOC}, source LoyaltyMissionLogicService.cs:~442-443, per Test Model reports/ba/test-models/VCST-5346-2026-08-28.md","Automated"
+MSNF-017,Days-left label and danger date badge on the ending-soon mission,Loyalty > Missions > Mission Card,High,BL-A11Y-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The ending-soon fixture is seeded with a short remaining window — @td(MSN_ENDING_SOON.window_intent). Its remaining days DECAY one per day, so this case asserts the label's form against the live daysRemaining value and never against a transcribed integer.","front_url={{FRONT_URL}}; ending_soon=@td(MSN_ENDING_SOON.name); window_intent=@td(MSN_ENDING_SOON.window_intent) (days remaining are read live from the response, never transcribed)","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the date badge severity on the card for @td(MSN_ENDING_SOON.name)
+[ACT] read the days-left label on that same card","[DOM] a days-left label matching the form 'N days left' is visible on the card {SPEC}
+[MATH] the number in that label = the daysRemaining value the response returned for this mission {BL}
+[DOM] the date badge on this card carries the danger severity styling, and the default warning styling is absent {SPEC}
+[DOM] the severity is not conveyed by colour alone — the 'N days left' label text on this same card already carries the differentiator, satisfying BL-A11Y-003 / WCAG 1.4.1 without requiring a separate icon or shape {BL}","[API] daysRemaining for this mission is 5 in the response, and errors[] is empty
+[CONSOLE] no unhandled JS errors",Days-left label absent; the label shows a raw date instead of a countdown; the badge renders warning severity at 5 days; severity conveyed by colour alone,None — read-only,VCST-5346,Draft
+MSNF-019,"Completed mission card shows the success chip, the completion label and success severity",Loyalty > Missions > Mission Card,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The completed fixture is seeded and its live progress status is @td(MSN_PROGRESS_COMPLETED.progress_status) at @td(MSN_PROGRESS_COMPLETED.progress_percentage) percent, with a completion date recorded.",front_url={{FRONT_URL}}; completed=@td(MSN_PROGRESS_COMPLETED.name); completed_pct=@td(MSN_PROGRESS_COMPLETED.progress_percentage); completed_reward=@td(MSN_PROGRESS_COMPLETED.reward),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read every chip on the card for @td(MSN_PROGRESS_COMPLETED.name)
+[ACT] read the date label on that same card
+[ACT] read the date-badge severity on that same card","[DOM] a 'Completed' success chip is visible on the card {OBSERVED}
+[DOM] the date label 'Mission completed' is visible, and a days-left countdown is absent {OBSERVED}
+[DOM] the date badge carries the success severity, and warning and danger styling are absent {OBSERVED}
+[MATH] the progress bar renders at @td(MSN_PROGRESS_COMPLETED.progress_percentage) percent = 100 {OBSERVED}
+[MATH] the points chip is still visible and = @td(MSN_PROGRESS_COMPLETED.reward), so the customer can see what the completion was worth {OBSERVED}","[API] the mission's status in the response is Completed with a non-null completedDate, and errors[] is empty
+[CONSOLE] no unhandled JS errors",The completed card still counts down days; the success chip is absent; the badge renders danger because the countdown branch was taken,None — read-only,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-020,Mission with no end date renders no countdown and no empty badge shell,Loyalty > Missions > Mission Card,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+No seeded mission currently carries a null end date. @td(MSN_ORDERCOUNT.name) was previously assumed to be window-less but is NOT — its spec declares window:'active' (+180d), confirmed live: endDate 2027-02-23, daysRemaining 180. Until a genuinely open-ended (endDate: null) mission fixture is seeded (test-data gap, see triage REG-2026-08-27-1731 §4), report this case BLOCKED ON DATA — do not substitute @td(MSN_ORDERCOUNT.name) or any other windowed mission.","front_url={{FRONT_URL}}; no_window_mission=PENDING — no fixture with endDate:null exists yet (test-data gap, triage REG-2026-08-27-1731 §4); @td(MSN_ORDERCOUNT.name) is NOT a substitute (it carries an active +180d window)","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the date region of a card whose mission returned a null days-remaining value","[DOM] a days-left countdown is absent for a mission with no end date {SPEC}
+[DOM] the strings 'null days left' and 'NaN days left' are absent, and no empty badge shell is visible {BL}
+[DOM] exactly one of these holds in place of the countdown: the date region is absent entirely, OR it holds a resolved open-ended label — a date region that is present but empty is absent {HYPOTHESIS}
+[DOM] the title, points chip, type label, progress bar and open-mission control on that card are all visible {SPEC}","[API] daysRemaining for that mission is null in the response, and errors[] is empty
+[CONSOLE] no unhandled JS errors",'null days left' or 'NaN days left' rendered; an empty badge outline occupies space; the card fails to render at all when the date is missing,None — read-only,VCST-5346,Draft
+MSNF-021,"Card with no description renders cleanly, which is the common case not the exotic one",Loyalty > Missions > Mission Card,Medium,,ECL-1.7,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Most seeded missions carry no description, so the null-description card is the dominant path on this page.",front_url={{FRONT_URL}}; no_desc_mission=@td(MSN_ORDERCOUNT.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the cards whose missions returned a null description
+[ACT] measure the rendered height of each card in the first grid row","[DOM] on a card whose mission has no description, an empty paragraph, a placeholder dash and a collapsed gap are all absent {OBSERVED}
+[DOM] the literals 'null' and 'undefined' are absent from every card {BL}
+[MATH] the height of a null-description card = the height of its siblings in the same grid row, within 2 CSS pixels, so the grid does not become ragged {BL}","[API] the description field is null for the inspected missions, and errors[] is empty
+[CONSOLE] no unhandled JS errors",'null' rendered as description text; a reserved empty block leaves a visible hole; cards in one row have mismatched heights because only some carry a description,None — read-only,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-022,Card banner image renders with an overlay and a broken image causes no layout shift,Loyalty > Missions > Mission Card,Medium,BL-UI-001; BL-A11Y-002,ECL-1.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+At least one seeded mission carries a banner image reference. BLOCKED ON TOOLING (image half): simulating a broken asset needs a network-fault-injection primitive (block one image request) — none exists on the assigned browser-agent lane today; see MSNF-006's precondition for the same named gap. Separately, the height-parity [MATH] assertion below is exactly what scripts/layout/layout-runner.ts's [SNAP]/[SHIFT] grammar already measures deterministically — a suite-owner should migrate that one assertion to a layout-runner-native case (e.g. 048c-layout-stability.csv) rather than re-derive it here.",front_url={{FRONT_URL}}; banner_url=@td(MSN_ORDERVALUE.banner_url),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] measure the bounding box of a card that renders a banner image
+[ACT] block that card's banner image request
+[ACT] reload {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered again
+[ACT] measure the bounding box of the same card with its image broken","[DOM] a banner image with a readable overlay above it is visible, and the overlay does not hide the title or the points chip {SPEC}
+[DOM] the banner image element carries a non-empty alt attribute, or an explicit empty alt marking it decorative, and a missing alt attribute is absent {BL}
+[MATH] the card height with the image broken = the card height with the image loaded, within 2 CSS pixels {BL}
+[DOM] no browser broken-image glyph and no raw image URL is visible inside the card {BL}","[NETWORK] the blocked image request does not push the page into its error state, and the mission query still returns an empty errors[]
+[CONSOLE] the image failure produces no unhandled JS error",The card collapses when the banner fails to load; a broken-image glyph and file name are shown to the customer; the alt attribute is missing,Restore normal network conditions for the lane,VCST-5346,Draft
+"MSNF-024","Card exposes the numeric mission goal for order-count and featured-SKU types — the order-value card's own gap (SBTM #8) is CUT from this case, no oracle, tracked as a finding only","Loyalty > Missions > Mission Card","Medium",,,"@td(MSN_ORDERCOUNT.name) and @td(MSN_PERSKU_ALL.name) visible on the missions page. REVISED 2026-08-28: the round-2 version of this case asserted the order-value card's numeric target is ABSENT, inverting a false {SPEC} into a true-but-worthless {OBSERVED} — the same defect in the other direction (turning a bug into the spec). Correct disposition per SBTM finding #8 (Oracle ref: NONE — no design source declares the order-value card must show its target): (c) CUT the order-value claim entirely; it is a finding for a bug report, not a suite assertion either way. The order-count and featured-SKU assertions below are UNCHANGED from the original case and are not implicated — no live evidence contradicts them.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read every text element on the card for @td(MSN_ORDERCOUNT.name)
+[ACT] read every text element on the card for @td(MSN_PERSKU_ALL.name)","[DOM] the order-count card's numeric target is visible on the card {SPEC}
+[DOM] the featured-SKU card's SKU-slot target is visible on the card as a number, and a bare 'Featured SKUs' type label with no target is absent {SPEC}
+[DOM] the raw goal-type flag 'PerSkuAll' is absent from wherever that target renders {BL}
+[DOM] the goal is visible as a target and is visually distinct from the progress note describing what has been achieved {SPEC}",,"Either target is absent from its card (a genuine regression on a property this case DOES assert); the order-value card DOES now show a numeric target (would mean SBTM finding #8 was fixed — report as a confirmed fix, do not treat as a failure of this case)","none — read-only","VCST-5346; the order-value target-visibility question (SBTM finding #8, Oracle ref: NONE) is deliberately NOT asserted here in either direction — see SBTM-loyalty-missions-2026-08-28 and BA report Theme C for the finding as a bug-report-track item; Archetype:PARITY Technique:EG","Draft"
+MSNF-025,"Modal targets-met mirrors the card's progress note and the API at open, then increments only as row targets are reached",Loyalty > Missions > Progress Semantics,Critical,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The partial-progress featured-SKU fixture is seeded: its live progress is @td(MSN_PROGRESS_PARTIAL.progress_percentage) percent, whose returned item rows are read live — one row has met its target quantity and one has not; the per-row CURRENT quantities are not carried by any alias, so they are taken from the response rather than transcribed. The cart is empty at the start; the modal's targets-met counter is NOT cart-derived — it mirrors the mission's fulfilment progress already reflected on the card and returned by the API, so it need not read zero with an empty cart (confirmed live, REG-2026-08-27-1731).",front_url={{FRONT_URL}}; partial=@td(MSN_PROGRESS_PARTIAL.name); partial_pct=@td(MSN_PROGRESS_PARTIAL.progress_percentage); target_a=@td(MSN_PROGRESS_PARTIAL.target_qty_a); target_b=@td(MSN_PROGRESS_PARTIAL.target_qty_b),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the progress note on the card for @td(MSN_PROGRESS_PARTIAL.name)
+[ACT] read the percent on that same card
+[ACT] click the open-mission control on that card
+[WAIT] the featured-SKU modal has rendered its product rows and its summary block
+[ACT] read the targets-met value in the modal summary block","[MATH] at modal open, before any stepper is touched, the modal's targets-met value = the card's progress note value for the same mission {OBSERVED}
+[MATH] the modal's targets-met value at open = the mission's live API progress (loyaltyMissionProgress), and is not necessarily zero with an empty cart {OBSERVED}
+[MATH] after raising one row's stepper to its target quantity, targets-met = its value-at-open + 1 {SPEC}
+[DOM] the modal's targets-met counter and the card's progress note use consistent labelling for the same underlying measurement, so the customer is never shown two counters that appear to disagree {OBSERVED}","[API] the mission's percentage is unchanged by opening the modal, and errors[] is empty
+[CONSOLE] no unhandled JS errors",The modal's targets-met reads 0 at open while the card shows nonzero progress for the same mission; the two counters disagree despite sharing one label; the counter fails to increment when a row's stepper reaches its target,Close the modal and empty the cart,"VCST-5346; Business_Rule corrected 2026-08-28 (TCA) — PROPOSED-BL-LOY-015 was dangling (that id names 'published-mission immutability + zero-reward completion' per reports/ba/Loyalty&Mixed cart/test-model-VCST-5320-2026-08-27.md, unrelated to this case); no grounding BL-* invariant exists for modal/card/API progress-counter parity — reported as a candidate for /qa-review-oracles",Draft
+MSNF-027,Featured-SKU modal opens from the card and renders each product row in full,Loyalty > Missions > Featured SKU Modal,Critical,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The featured-SKU fixture and its two products are seeded and in stock.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku); product_a_qty=@td(MSN_PERSKU_PRODUCT_A.quantity); product_b_sku=@td(MSN_PERSKU_PRODUCT_B.sku); product_b_qty=@td(MSN_PERSKU_PRODUCT_B.quantity),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows and its summary block","[MATH] the number of product rows in the modal = the number of featured SKUs on the mission {OBSERVED}
+[DOM] on each row a product image, a product title, the SKU code, a price, a 'Buy at least' target chip, a quantity stepper, an in-stock indicator and a count-in-cart indicator are all visible {OBSERVED}
+[MATH] the 'Buy at least' chip on the row for @td(MSN_PERSKU_PRODUCT_A.sku) = @td(MSN_PERSKU_PRODUCT_A.quantity) {OBSERVED}
+[MATH] the 'Buy at least' chip on the row for @td(MSN_PERSKU_PRODUCT_B.sku) = @td(MSN_PERSKU_PRODUCT_B.quantity) {OBSERVED}
+[MATH] with an empty cart every row's count-in-cart indicator = 0 {OBSERVED}
+[DOM] a summary block with total units, a targets-met counter and a cart subtotal is visible, together with a reward line, a Close control and an 'Add to cart' control {OBSERVED}","[API] opening the modal issues no cart mutation, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors on open",The modal opens empty because the mission's SKU rows were not fetched; a row is missing its stepper or its target chip; the SKU code is rendered as an internal product id,Close the modal,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-028,Every price in the featured-SKU modal is in the session currency and equals the product detail page price,Loyalty > Missions > Featured SKU Modal,Critical,BL-PRICE-005,ECL-14.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The session currency is the store default for @td(MSN_STORE_SETTINGS.store_id) and has not been switched during this case. The featured-SKU fixture's two products are seeded and priced in that currency on the storefront.",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku); product_b_sku=@td(MSN_PERSKU_PRODUCT_B.sku),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] record the currency symbol on every product row
+[ACT] record the price amount on every product row
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] open the product detail page for @td(MSN_PERSKU_PRODUCT_A.sku) by clicking through from the catalogue
+[WAIT] the product detail page has rendered its price
+[ACT] record the displayed price with its currency symbol
+[ACT] open the product detail page for @td(MSN_PERSKU_PRODUCT_B.sku) by clicking through from the catalogue
+[WAIT] the product detail page has rendered its price
+[ACT] record the displayed price with its currency symbol","[FORMAT] every price in the modal uses one and the same currency, and a second currency symbol is absent from the modal {BL}
+[FORMAT] that currency = the currency the storefront is rendering the session in, as shown by the cart and the catalogue {BL}
+[MATH] the modal row price for @td(MSN_PERSKU_PRODUCT_A.sku) = that product's detail-page price in the same session currency {BL}
+[MATH] the modal row price for @td(MSN_PERSKU_PRODUCT_B.sku) = that product's detail-page price in the same session currency {BL}
+[FORMAT] each price renders with exactly two decimal places and a currency symbol {BL}","[API] the prices the modal renders are resolved for the session currency rather than an arbitrary price list, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors","Two different currency symbols appear on adjacent rows of one modal; a row price differs from the same product's detail-page price in the same session, because the mission progress query exposes no currency argument and the backend returns whichever price list it resolves first",Navigate back to {{FRONT_URL}}/account/missions and close any open modal,VCST-5346,Draft
+MSNF-029,Modal cart subtotal is a single-currency sum of row price and quantity,Loyalty > Missions > Featured SKU Modal,Critical,BL-PRICE-005; BL-PRICE-008,ECL-14.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The featured-SKU fixture's products are seeded and priced in the session currency.",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; persku_all=@td(MSN_PERSKU_ALL.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows and its summary block
+[ACT] set the first product row's stepper to 2
+[WAIT] the summary block's cart subtotal has updated
+[ACT] set the second product row's stepper to 1
+[WAIT] the summary block's cart subtotal has updated
+[ACT] record each row's unit price
+[ACT] record each row's stepper value
+[ACT] record the cart subtotal in the summary block","[MATH] the cart subtotal = the sum over rows of unit price multiplied by stepper quantity, to two decimal places {BL}
+[FORMAT] the subtotal renders in the session currency {{CURRENCY_CODE}}, the same currency as every row price {BL}
+[MATH] the subtotal = a single-currency sum, so a subtotal greater than the sum of the visible session-currency amounts is a currency-mixing failure {BL}
+[MATH] the total-units figure in the summary = the sum of the stepper values {SPEC}","[NETWORK] adjusting a stepper issues no cart write before 'Add to cart' is pressed, so no errors[] can be raised at this stage
+[CONSOLE] no unhandled JS errors while the steppers change",The subtotal carries a currency symbol that no row carries; the subtotal is numerically the sum of amounts in two different currencies; the subtotal does not react to a stepper change,Close the modal and empty the cart,VCST-5346,Draft
+MSNF-030,"Modal summary reports total units, targets met and subtotal, and the reward line matches the mission",Loyalty > Missions > Featured SKU Modal,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The featured-SKU fixture is seeded with two SKU slots.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); persku_all_reward=@td(MSN_PERSKU_ALL.reward); product_a_qty=@td(MSN_PERSKU_PRODUCT_A.quantity),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its summary block
+[ACT] record total units, targets met, cart subtotal with every stepper at zero
+[ACT] raise the first row's stepper to its target quantity
+[WAIT] the summary block has recomputed
+[ACT] record total units, targets met, cart subtotal a second time","[DOM] the open modal's title/heading identifies @td(MSN_PERSKU_ALL.name) before any summary value below is read as evidence about that mission {SPEC}
+[MATH] with every stepper at zero, total units = 0 and the cart subtotal = 0; targets met = the mission's progress value at open (mirroring the card's N of M note), which is not necessarily zero {OBSERVED}
+[MATH] after raising exactly one row to its target, targets met = its previous value + 1 {SPEC}
+[MATH] the targets-met counter = the number of rows whose stepper value has reached that row's target quantity, not the number of rows with any non-zero quantity {SPEC}
+[MATH] the reward line = @td(MSN_PERSKU_ALL.reward) {SPEC}
+[MATH] the targets-met denominator = the mission's SKU target {SPEC}","[NETWORK] the summary recomputes client-side and issues no cart write, so no errors[] can be raised at this stage
+[CONSOLE] no unhandled JS errors while the summary recomputes","The modal opened for a different mission than the one named in Steps, invalidating every reward/denominator check read against the wrong fixture; targets met increments on any non-zero quantity; the denominator shows the row count rather than the mission target; the reward line shows the goal target instead of the reward",Close the modal and empty the cart,VCST-5346,Draft
+MSNF-031,"Product title in the modal opens the product detail page in a new tab, announced as such, and the original tab's modal stays intact",Loyalty > Missions > Featured SKU Modal,High,BL-A11Y-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The featured-SKU fixture's products are seeded and reachable on the storefront.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku); product_a_name=@td(MSN_PERSKU_PRODUCT_A.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] read the product title link for @td(MSN_PERSKU_PRODUCT_A.sku) before activating it
+[ACT] click the product title on the row for @td(MSN_PERSKU_PRODUCT_A.sku)
+[WAIT] a new browser tab opens and its destination page has rendered
+[ACT] switch focus to the original tab","[DOM] the product title link's accessible name, or adjacent visually-hidden text, announces that activating it opens a new tab (WCAG 3.2.5) {BL}
+[NAV] the new tab's destination is the product detail page for @td(MSN_PERSKU_PRODUCT_A.sku), where the product name @td(MSN_PERSKU_PRODUCT_A.name) is visible {SPEC}
+[DOM] on the original tab, the mission modal's dialog element and backdrop are still present in the DOM, and Tab from the dialog's last focusable control cycles back to its first {SPEC}
+[KEY] on the original tab, pressing Escape still closes the modal {SPEC}","[NETWORK] no 4xx or 5xx on the new tab's product detail route, and its GraphQL calls return an empty errors[]
+[CONSOLE] no unhandled JS errors on either tab",The link gives no indication it opens a new tab; the original tab's modal is closed or its focus trap is broken by the click; Escape on the original tab no longer closes the modal; the new tab 404s or resolves to the wrong product,Close the new tab and return focus to the original tab at {{FRONT_URL}}/account/missions,VCST-5346,Draft
+MSNF-032,Add to cart sets an absolute quantity per changed row and leaves untouched rows alone,Loyalty > Missions > Featured SKU Modal,Critical,BL-CART-001; BL-CART-007 (no-duplicate-line half only),,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The cart is empty. The featured-SKU fixture's products are seeded and in stock with enough quantity for the steppers used below.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku); product_b_sku=@td(MSN_PERSKU_PRODUCT_B.sku),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] set the row for @td(MSN_PERSKU_PRODUCT_A.sku) to quantity 3
+[WAIT] the summary block has recomputed
+[ACT] click 'Add to cart'
+[WAIT] the operation completes and a result notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items","[MATH] the cart holds exactly 1 line, for @td(MSN_PERSKU_PRODUCT_A.sku), at quantity = 3 {BL}
+[STATE] no line was created for @td(MSN_PERSKU_PRODUCT_B.sku), whose stepper was never changed {OBSERVED}
+[DOM] a success notification is visible after the add, and it does not name the untouched product {OBSERVED}
+[MATH] the line total for the added product = its unit price multiplied by 3 {BL}","[API] exactly one cart-quantity mutation is issued — one per changed row, not one per rendered row — and its errors[] is empty
+[CONSOLE] no unhandled JS errors",A zero-quantity line is created for the untouched product; one mutation fires per rendered row regardless of change; the added quantity is zero rather than three,Empty the cart,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-033,Add to cart with the SKU already in the cart sets the quantity absolutely rather than adding to it,Loyalty > Missions > Featured SKU Modal,Critical,PROPOSED-BL-CART-016; BL-CART-007 (no-duplicate-line half only),ECL-14.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The cart already holds exactly one line for @td(MSN_PERSKU_PRODUCT_A.sku) at quantity 2, put there from the catalogue as part of this case's own setup. The featured-SKU fixture is seeded.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] record the pre-existing cart line quantity for @td(MSN_PERSKU_PRODUCT_A.sku)
+[ACT] record the stepper value at open, to establish whether it pre-fills from the existing cart line
+[ACT] read the count-in-cart indicator on the row for @td(MSN_PERSKU_PRODUCT_A.sku)
+[ACT] read the stepper's initial value on that same row
+[ACT] set that row's stepper to 5
+[WAIT] the summary block has recomputed
+[ACT] click 'Add to cart'
+[WAIT] the operation completes and a result notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items","[MATH] on open the count-in-cart indicator for @td(MSN_PERSKU_PRODUCT_A.sku) = 2, reflecting the existing cart line {OBSERVED}
+[MATH] after the add the cart holds a single line for @td(MSN_PERSKU_PRODUCT_A.sku) at quantity = 5, the absolute stepper value, not 7 {BL}
+[MATH] the number of cart lines for that product = 1, with no duplicate line present {BL}
+[MATH] the cart line total = unit price multiplied by 5 {BL}","[API] the issued mutation sets an absolute quantity rather than incrementing, and its errors[] is empty
+[CONSOLE] no unhandled JS errors","The cart shows quantity 7, which is additive, or two separate lines for one product; the stepper opened at zero while the cart already held two, so an absolute set silently discards existing quantity with no warning",Empty the cart,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-034,Requesting more than available stock is validated and never reports a false success,Loyalty > Missions > Featured SKU Modal,High,BL-CAT-001; BL-CART-001,ECL-14.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The featured-SKU fixture is seeded and at least one of its products has a finite tracked stock quantity that the modal shows in its in-stock indicator.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] read the in-stock quantity shown on the row for @td(MSN_PERSKU_PRODUCT_A.sku)
+[ACT] set that row's stepper above the shown in-stock quantity
+[WAIT] the summary block has recomputed
+[ACT] record the summary block's total units after the over-stock entry
+[ACT] look for an inline availability warning on that row
+[ACT] click 'Add to cart'
+[WAIT] the operation completes and a result notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items","[DOM] an inline availability warning or an error notification is visible, telling the customer the requested quantity exceeds availability {BL}
+[DOM] a silent cap to available stock with NO message is absent — the platform never caps silently, it persists the entered value and attaches an advisory validation message {BL}
+[DOM] a bare success notification, with no accompanying validation message, is absent {BL}
+[STATE] if the over-range quantity is persisted, the inline validation message is visible against that line and checkout stays blocked until it is corrected {BL}
+[STATE] the cart is never left holding an over-range quantity with no visible signal at all {BL}","[API] any issued mutation returns a validation entry in errors[] rather than a silent success with a clamped value
+[CONSOLE] no unhandled JS errors","A success notification with no accompanying validation message; the quantity is silently capped to stock with nothing shown, which BL-CART-001 forbids; the over-range quantity persists with no inline message and checkout stays enabled",Empty the cart,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-035,An out-of-stock featured SKU cannot be added and the modal says so,Loyalty > Missions > Featured SKU Modal,High,BL-CAT-001,ECL-14.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+BLOCKED ON DATA unless a featured-SKU mission has a product at zero available stock at execution time. The two seeded featured-SKU products are stocked. Report BLOCKED with this reason rather than inventing the condition — do not drop a product's inventory to zero on a shared environment while other suites are running.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on a featured-SKU mission that includes an out-of-stock product
+[WAIT] the modal has rendered its product rows
+[ACT] read the in-stock indicator, the stepper state, the row styling for the out-of-stock product
+[ACT] raise the out-of-stock row's stepper above zero
+[WAIT] the summary block has settled
+[ACT] click 'Add to cart'
+[WAIT] the operation completes and any notification is visible","[DOM] an out-of-stock indicator is visible on that row and a stock count is absent {BL}
+[DOM] that row's stepper is disabled or capped at zero, so an unavailable unit cannot be requested {BL}
+[DOM] a success notification naming the out-of-stock product is absent {BL}
+[STATE] the cart holds no line for the out-of-stock product afterwards {BL}
+[DOM] the other in-stock rows in the same modal remain enabled, so one unavailable SKU does not disable the whole modal {SPEC}","[API] no cart mutation is issued for the out-of-stock product, or the one issued returns a validation entry in errors[]
+[CONSOLE] no unhandled JS errors",The stepper accepts a quantity for a zero-stock product and the add reports success; the whole modal's add control is disabled because one row is unavailable,Empty the cart,VCST-5346,Draft
+MSNF-036,"Double-clicking Add to cart issues one write, not two",Loyalty > Missions > Featured SKU Modal,High,BL-CART-001; BL-CROSS-010,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The cart is empty and the featured-SKU fixture's products are in stock.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] set the row for @td(MSN_PERSKU_PRODUCT_A.sku) to quantity 2
+[WAIT] the summary block has recomputed
+[ACT] click 'Add to cart' twice in rapid succession, faster than the first request can complete
+[WAIT] all in-flight requests have settled and any notifications are visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items","[MATH] the cart holds 1 line for @td(MSN_PERSKU_PRODUCT_A.sku) at quantity = 2, so the second click neither doubled it nor created a second line {BL}
+[DOM] the 'Add to cart' control is disabled or shows a busy state while the first request is in flight {OBSERVED}
+[MATH] the number of success notifications shown for the pair of clicks = 1 or fewer {OBSERVED}","[API] exactly one cart-quantity mutation per changed row reaches the server across both clicks, and its errors[] is empty
+[CONSOLE] no unhandled JS errors and no aborted-request rejections",Two mutation batches on the wire; cart quantity four instead of two; two success notifications stacked; the control stays enabled throughout the request,Empty the cart,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-037,Multiple changed rows are written concurrently to one cart with no lost update,Loyalty > Missions > Featured SKU Modal,Critical,BL-CART-001; BL-CART-007 (no-duplicate-line half only),ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The cart is empty. The featured-SKU fixture's products are seeded and in stock. The modal issues its per-row cart writes concurrently, so this case exercises a genuine race against one cart aggregate.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku); product_b_sku=@td(MSN_PERSKU_PRODUCT_B.sku),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] set the row for @td(MSN_PERSKU_PRODUCT_A.sku) to quantity 3
+[WAIT] the summary block has recomputed
+[ACT] set the row for @td(MSN_PERSKU_PRODUCT_B.sku) to quantity 2
+[WAIT] the summary block has recomputed
+[ACT] begin recording network activity so the concurrent write batch can be counted
+[ACT] click 'Add to cart'
+[WAIT] all in-flight cart requests have settled and a result notification is visible
+[ACT] count the concurrent cart write requests captured in the network recording
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items","[MATH] the cart holds a line for @td(MSN_PERSKU_PRODUCT_A.sku) at quantity = 3 {BL}
+[MATH] the cart holds a line for @td(MSN_PERSKU_PRODUCT_B.sku) at quantity = 2 {BL}
+[STATE] both writes survive, and neither row's quantity is missing or reset to zero by the other's concurrent write {BL}
+[MATH] the cart item count = 5 units across exactly 2 lines {BL}
+[MATH] the number of success notifications for the batch = 1, not one per row {OBSERVED}","[API] every issued cart mutation returns an empty errors[]
+[API] the final cart query reflects both quantities and returns an empty errors[]
+[CONSOLE] no unhandled JS errors and no unhandled promise rejections from the concurrent batch","Only the last row's quantity survives, which is a lost update from concurrent writes against one cart aggregate; one mutation returns a concurrency error the UI hides behind a success notification",Empty the cart,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-038,Header cart count and the cart page reflect the modal write,Loyalty > Missions > Featured SKU Modal,Critical,BL-CART-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The cart is empty and the header cart indicator reads zero before the case begins.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] record the header cart indicator value
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] set the row for @td(MSN_PERSKU_PRODUCT_A.sku) to quantity 2
+[WAIT] the summary block has recomputed
+[ACT] click 'Add to cart'
+[WAIT] the operation completes and the header cart indicator settles
+[ACT] record the header cart indicator value again
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items","[MATH] the header cart indicator = 2 after the add, having read 0 before it, with no manual page reload {BL}
+[STATE] the indicator updates reactively within a few seconds of the write settling — this is a client-side reactive badge, not an eventually-consistent reindex {OBSERVED}
+[MATH] the cart page shows 1 line for @td(MSN_PERSKU_PRODUCT_A.sku) at quantity = 2 {BL}
+[MATH] the header indicator value = the total unit count on the cart page {BL}
+[MATH] the modal's own count-in-cart indicator for that row = 2 after the write {OBSERVED}","[API] the cart query issued after the mutation returns the updated line with an empty errors[]
+[CONSOLE] no unhandled JS errors",The header badge stays at zero until a manual reload; the header badge and the cart page disagree; the modal's count-in-cart indicator stays stale after its own write,Empty the cart,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-039,A failed add surfaces an error notification and never a success notification,Loyalty > Missions > Featured SKU Modal,High,BL-CART-001; BL-GQL-001,ECL-14.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+BLOCKED ON TOOLING: this case needs a network-fault-injection primitive (fail the cart-quantity write for this one operation only) — none exists on the assigned browser-agent regression lane today; see MSNF-006's precondition for the same named gap and candidate fix.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); product_a_sku=@td(MSN_PERSKU_PRODUCT_A.sku),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] set the row for @td(MSN_PERSKU_PRODUCT_A.sku) to quantity 2
+[WAIT] the summary block has recomputed
+[ACT] arrange for the cart-quantity write to fail
+[ACT] click 'Add to cart'
+[WAIT] the operation settles and a notification is visible
+[ACT] restore normal network conditions for the lane
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered","[DOM] an error notification is visible and a success notification is absent {BL}
+[DOM] the error copy is customer-readable, with no raw GraphQL message, HTTP status object or stack frame present {BL}
+[STATE] the cart holds no line for @td(MSN_PERSKU_PRODUCT_A.sku) {BL}
+[DOM] the modal is still visible with the customer's stepper values intact, so the add can be retried without re-entering them {SPEC}","[API] the failed write reports its failure in errors[] or as a transport error, and is not silently retried in a loop
+[CONSOLE] the failure is caught — no unhandled promise rejection from the concurrent write batch","A success notification on a failed write, because the concurrent batch resolves optimistically; the modal closes and discards the customer's entered quantities; a raw error object is rendered in the notification",Restore normal network conditions and empty the cart,VCST-5346,Draft
+MSNF-040,Completed featured-SKU mission opens a read-only modal with no steppers and no add control,Loyalty > Missions > Featured SKU Modal,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The completed featured-SKU fixture is seeded and its live progress status is @td(MSN_PROGRESS_COMPLETED.progress_status).",front_url={{FRONT_URL}}; completed=@td(MSN_PROGRESS_COMPLETED.name); completed_reward=@td(MSN_PROGRESS_COMPLETED.reward),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PROGRESS_COMPLETED.name)
+[WAIT] the modal has rendered its product rows and its summary block
+[ACT] enumerate every control rendered in the completed mission's modal footer
+[ACT] attempt to locate a quantity stepper on each product row
+[ACT] record whether the read-only branch also hides row content beyond the controls","[DOM] a quantity stepper is absent from every product row {OBSERVED}
+[DOM] an 'Add to cart' control is absent from the whole modal {OBSERVED}
+[DOM] each product row still shows a visible image, title, SKU code and price, so the modal remains informative {OBSERVED}
+[DOM] a Close control is present and is the only available action {OBSERVED}
+[MATH] the reward line = @td(MSN_PROGRESS_COMPLETED.reward) {OBSERVED}","[API] opening the completed mission's modal issues no cart mutation, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors","Steppers are rendered but inert on a completed mission; an add control is present and clickable, letting a customer act on a finished mission; the read-only branch hides the whole row content rather than just the controls",Close the modal,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-042,"Order-value mission modal states its target as a spend amount with points, date and progress",Loyalty > Missions > Order Goal Modal,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The order-value fixture is seeded with a numeric target and a currency, since the backend requires a currency code on an order-value goal.",front_url={{FRONT_URL}}; ordervalue=@td(MSN_ORDERVALUE.name); ordervalue_target=@td(MSN_ORDERVALUE.goal_target); ordervalue_reward=@td(MSN_ORDERVALUE.reward),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered","[DOM] the modal title is visible and reads @td(MSN_ORDERVALUE.name) {OBSERVED}
+[MATH] the points chip in the modal = @td(MSN_ORDERVALUE.reward) {OBSERVED}
+[DOM] a 'Mission target' block is visible stating the goal as a spend amount in qualifying orders, incorporating @td(MSN_ORDERVALUE.goal_target) {OBSERVED}
+[FORMAT] the target amount renders with its currency rather than as a bare number {OBSERVED}
+[DOM] a progress bar and a percent are visible {OBSERVED}
+[DOM] a quantity stepper and an 'Add to cart' control are absent, because this goal type has no SKU rows {OBSERVED}","[API] the mission's goal target and currency in the response match the seeded fixture, and errors[] is empty
+[CONSOLE] no unhandled JS errors",The target renders as a bare number with no currency; the featured-SKU modal opens for an order-value goal; the raw enum 'OrderValueGoal' is shown in the target block,Close the modal,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-043,Order-count mission modal states its target as a count of separate orders,Loyalty > Missions > Order Goal Modal,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The order-count fixture is seeded with a numeric target.",front_url={{FRONT_URL}}; ordercount=@td(MSN_ORDERCOUNT.name); ordercount_target=@td(MSN_ORDERCOUNT.goal_target); ordercount_reward=@td(MSN_ORDERCOUNT.reward),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_ORDERCOUNT.name)
+[WAIT] the order-goal modal has rendered
+[ACT] read the mission target block wording verbatim
+[ACT] look for a currency symbol anywhere in the target block","[DOM] a 'Mission target' block is visible stating the goal as placing @td(MSN_ORDERCOUNT.goal_target) separate orders {OBSERVED}
+[DOM] the visible wording distinguishes a count of orders from an amount spent, so the two order goal types are not confusable {OBSERVED}
+[MATH] the points chip in the modal = @td(MSN_ORDERCOUNT.reward) {OBSERVED}
+[DOM] a progress bar and a percent are visible, and a Close control is present {OBSERVED}
+[FORMAT] a currency symbol is absent from the order-count target {OBSERVED}","[API] the mission's goal target in the response matches the seeded fixture, and errors[] is empty
+[CONSOLE] no unhandled JS errors",The order-count target renders with a currency symbol; both order goal types render identical target copy; a raw enum is shown,Close the modal,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+"MSNF-044","Order-goal modal offers the Redeem-products action the design specifies (Frames 1/2) — RED BY DESIGN: the locale key is confirmed dead (filed bug F3), held at Draft, never promoted until the CTA is wired","Loyalty > Missions > Order Goal Modal","Medium",,,"@td(MSN_ORDERVALUE.name) visible on the missions page. REVISED 2026-08-28: the round-2 version of this case asserted the Redeem-products action is CURRENTLY ABSENT, inverting a real defect into the spec (Step 1e's own rule: an OBSERVED baseline is not an oracle). Correct disposition: (a) — the Claude Design project ('E-commerce missions feature' — see reports/bugs/open/BUG-loyalty-missions-design-drift-three-surfaces.md for its id, not repeated here per DV-013), Frames 1 and 2, IS the oracle; it explicitly declares this action (per the design-drift bug's own note that Frames 1/2 declare both the Redeem-products CTA and the Catalog link). The case therefore asserts the DESIGNED behavior, is EXPECTED TO FAIL on the current build (F3: the redeem_products locale key ships in all 13 locales, referenced by zero .vue files), stays at Draft, and is never promoted until the CTA ships.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered its action row
+[ACT] read every action control in the modal footer
+[ACT] click the redeem-products action in the modal footer
+[WAIT] navigation settles on its destination","[DOM] a primary 'Redeem products' action is present in the modal footer alongside Close {DOC} Claude Design project 'E-commerce missions feature' Frames 1/2 (id in the filed bug, not repeated here per DV-013) — EXPECTED TO FAIL today (F3: dead locale key, zero .vue references); do not silently correct this assertion to match the current absence
+[NAV] activating it navigates to the redeem catalogue where earned points can be spent {DOC} same design source
+[DOM] the action's label is resolved copy, and no dotted translation key is present in it {SPEC}",,"This case is EXPECTED to fail on the current build (F3) — that FAIL is not itself news. What WOULD be news: the action IS now present (report as a confirmed fix, promote this case), or the modal throws an error when the (currently nonexistent) action is sought (a different, more severe defect)","none — read-only unless the CTA is present, in which case: none, no mutation performed","VCST-5346; reports/bugs/open/BUG-loyalty-missions-design-drift-three-surfaces.md F3; Claude Design project 'E-commerce missions feature' Frames 1/2 (oracle, id in the filed bug per DV-013); held at Draft, RED BY DESIGN, never promote until F3 ships; Archetype:FALLBACK Technique:EG","Draft"
+MSNF-045,Mission description renders in the order-goal modal,Loyalty > Missions > Order Goal Modal,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The localized order-goal fixture is seeded with a description. The card itself carries no description, so the modal is the only surface where a description can reach the customer. (The featured-SKU modal's description is covered independently by MSNF-069, split out because no featured-SKU mission currently declares a description — a data gap, not a reason to block this half.)",front_url={{FRONT_URL}}; localized=@td(MSN_LOCALIZED.name_default); localized_desc=@td(MSN_LOCALIZED.description_default),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for the localized order-goal fixture
+[WAIT] the order-goal modal has rendered
+[ACT] read the description region of the order-goal modal","[DOM] the order-goal modal shows the visible mission description @td(MSN_LOCALIZED.description_default) {SPEC}
+[DOM] where the order-goal modal's mission has no description, an empty block, a placeholder dash and the literal 'null' are all absent {BL}
+[DOM] the description renders as text, so any markup in the stored value is visible as escaped characters rather than executed {BL}","[API] the description field in the response matches what is rendered, and errors[] is empty
+[CONSOLE] no unhandled JS errors","Stored markup is executed rather than escaped; an empty block, placeholder dash, or literal 'null' appears where a description should be",Close the modal,"VCST-5346; Split 2026-08-28 (TCA) — featured-SKU modal half moved to MSNF-069 (was BLOCKED, entangled with this passing half)",Draft
+MSNF-046,Icon-only open-mission control exposes a real accessible name,Loyalty > Missions > Accessibility,High,BL-A11Y-002,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Run this case on the Coffee theme and repeat it on the Red theme; other themes are visually checked only. Use an accessibility-tree snapshot plus an automated rule scan of the missions page and of each open modal.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); ordervalue=@td(MSN_ORDERVALUE.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] capture the accessibility tree for the card grid
+[ACT] read the accessible name of the open-mission control on each card
+[ACT] traverse the grid using only the Tab key
+[ACT] record the focus indicator on each control as it receives focus","[DOM] every card's open-mission control exposes a non-empty accessible name, and an empty name is absent {BL}
+[DOM] a distinct accessible name is present on each control, identifying which mission it opens, so a screen-reader user hearing a list of controls can tell them apart rather than hearing one generic label repeated {BL}
+[DOM] the control is reachable by keyboard alone and a visible focus indicator is present when it is focused {BL}
+[DOM] the name is resolved copy in the active locale, and a dotted translation key or an icon file name is absent from it {BL}","[API] the automated accessibility rule scan reports no button-name violation on this page, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors during keyboard traversal",The control exposes an empty name or is announced only as a button; every card's control announces identically so the mission cannot be identified; no visible focus ring,None — read-only,VCST-5346,Draft
+MSNF-047,"Both mission modals expose a dialog role, a modal flag and an accessible name",Loyalty > Missions > Accessibility,High,BL-A11Y-002; BL-A11Y-004,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Run this case on the Coffee theme and repeat it on the Red theme; other themes are visually checked only. Use an accessibility-tree snapshot plus an automated rule scan of the missions page and of each open modal.
+Known-positive risk (confirmed live, REG-2026-08-27-1731): the shared UI-kit dialog root renders with NO accessible name, and background content (banner/main/contentinfo) remains present in the accessibility tree — i.e. is NOT marked inert. Both defects are expected on both modals; this case is expected to expose them, not confirm compliance.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); ordervalue=@td(MSN_ORDERVALUE.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the featured-SKU modal has rendered
+[ACT] capture the accessibility tree for the open modal
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] click the open-mission control on the card for @td(MSN_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered
+[ACT] capture the accessibility tree for the open modal","[DOM] the featured-SKU modal root exposes a dialog role to assistive technology, and a generic container role is absent {BL}
+[DOM] the featured-SKU modal root is marked as modal, so the content behind it is absent from the accessibility tree {BL}
+[DOM] the featured-SKU modal exposes a non-empty accessible name derived from its visible heading {BL}
+[DOM] the order-goal modal root satisfies the same three conditions: dialog role present, modal flag present, accessible name present {BL}
+[DOM] content behind an open modal is absent from the accessibility tree and is not reachable by Tab {BL}","[API] the automated accessibility rule scan reports no dialog-name or aria-required-attr violation while a modal is open, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors",The modal root renders as a generic container with no role; a screen reader continues to read the page behind the modal; the modal is announced with no name,Close the modal,VCST-5346,Draft
+MSNF-048,"Modal traps focus, closes on Escape and returns focus to the control that opened it",Loyalty > Missions > Accessibility,High,BL-A11Y-001,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Run this case on the Coffee theme and repeat it on the Red theme; other themes are visually checked only. Use an accessibility-tree snapshot plus an automated rule scan of the missions page and of each open modal.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] move focus to the open-mission control on the card for @td(MSN_PERSKU_ALL.name) using the Tab key
+[ACT] press Enter to activate the focused control
+[WAIT] the featured-SKU modal has rendered
+[ACT] press Tab repeatedly until focus has cycled through every focusable control in the modal
+[ACT] press Tab once more from the last focusable control
+[ACT] press Shift+Tab from the first focusable control
+[ACT] press Escape
+[WAIT] the modal has been dismissed","[DOM] on open, focus is present inside the modal rather than on the page behind it {BL}
+[DOM] Tab cycles only within the modal, wrapping from the last focusable control back to the first, and focus on the page behind is absent {BL}
+[DOM] Shift+Tab from the first control wraps to the last, and focus on the page behind is absent {BL}
+[DOM] Escape dismisses the modal, after which the modal is absent {BL}
+[DOM] after dismissal focus is present on the open-mission control that opened it, not on the document body {BL}","[API] no mutation is issued by keyboard traversal, so no errors[] can be raised
+[CONSOLE] no unhandled JS errors during keyboard traversal",Tab escapes to the header or to the cards behind the modal; Escape does nothing; focus lands on the body after close so a keyboard user restarts from the top of the page,Close the modal,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-049,Progress bars expose their value to assistive technology,Loyalty > Missions > Accessibility,High,BL-A11Y-004,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Run this case on the Coffee theme and repeat it on the Red theme; other themes are visually checked only. Use an accessibility-tree snapshot plus an automated rule scan of the missions page and of each open modal.",front_url={{FRONT_URL}}; ending_soon_pct=@td(MSN_ENDING_SOON.progress_percentage); partial_pct=@td(MSN_PROGRESS_PARTIAL.progress_percentage); persku_all=@td(MSN_PERSKU_ALL.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] capture the accessibility tree for the card grid
+[ACT] read how each card's progress bar is exposed
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered
+[ACT] capture the accessibility tree for the modal's progress bar","[DOM] each card's progress bar is exposed with a progress role and a current value, or the percent is present to assistive technology as adjacent text {BL}
+[MATH] the exposed value = the visible percent, which on the ending-soon card = @td(MSN_ENDING_SOON.progress_percentage) {BL}
+[DOM] progress is never conveyed by bar width alone, so a textual or programmatic equivalent is always present {BL}
+[DOM] the modal's progress bar satisfies the same conditions {BL}","[API] the automated accessibility rule scan reports no progressbar-name or aria-valid-attr-value violation, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors","The progress bar is a bare decorated container with no role, no value and no adjacent percent text, so a screen-reader user learns nothing about mission progress; the exposed value disagrees with the visible percent",Close the modal,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-050,Date-badge severity and completion state are not conveyed by colour alone,Loyalty > Missions > Accessibility,High,BL-A11Y-003,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Run this case on the Coffee theme and repeat it on the Red theme; other themes are visually checked only. Use an accessibility-tree snapshot plus an automated rule scan of the missions page and of each open modal.",front_url={{FRONT_URL}}; ending_soon=@td(MSN_ENDING_SOON.name); completed=@td(MSN_PROGRESS_COMPLETED.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the date badge on the danger-severity card for @td(MSN_ENDING_SOON.name)
+[ACT] read the date badge on the success-severity card for @td(MSN_PROGRESS_COMPLETED.name)
+[ACT] render the page with hue removed
+[ACT] compare the two badges with hue removed","[DOM] the urgent badge and the completed badge remain distinguishable with colour removed, because differing text, an icon or a shape is present {BL}
+[DOM] each badge's own text states its condition — a countdown for an urgent mission and a completion label for a finished one — so badge colour is not the only signal {BL}
+[MATH] the badge text contrast ratio against its badge background >= 4.5:1, or >= 3:1 where the badge text qualifies as large text under WCAG 1.4.3 — state which threshold applies — on the Coffee theme and on the Red theme {BL}","[API] the automated accessibility rule scan reports no colour-contrast violation on the badge text, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors",Two badges carry identical text and differ only in fill colour; the badge text fails contrast on one of the two gated themes,Restore normal rendering,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-051,No raw translation key and no raw backend enum appears on the page or in either modal,Loyalty > Missions > Internationalisation,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+All fixture goal types and both progress states are visible to this account, so every rendering branch is exercised on one page.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name); ordervalue=@td(MSN_ORDERVALUE.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] page through every page of the mission grid
+[ACT] scan all rendered text for dotted translation keys
+[ACT] scan all rendered text for raw backend enum values
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the featured-SKU modal has rendered
+[ACT] scan the featured-SKU modal text
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] click the open-mission control on the card for @td(MSN_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered
+[ACT] scan the order-goal modal text","[DOM] a dotted translation-key pattern is absent from all rendered text, on the page and in both modals {BL}
+[DOM] the raw enums 'PerSkuAll', 'PerSkuAny', 'OrderValueGoal' and 'OrderCountGoal' are absent from all rendered text {BL}
+[DOM] the raw status enum 'InProgress' is absent from all rendered text {BL}
+[DOM] the visible label for the completed state comes from the translation layer rather than being echoed from the status field, so it changes with the active locale {BL}
+[DOM] the literals 'undefined', 'null' and 'NaN' are absent from all rendered text {BL}","[CONSOLE] no missing-translation warnings are logged for the missions namespace
+[API] the mission query returns an empty errors[] on every page of the grid",A type label or status chip falls through to the raw backend enum for a value the mapper does not recognise; a dotted key renders where a translation is missing,Close the modal,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-052,Localized mission name and description follow the active storefront language,Loyalty > Missions > Internationalisation,High,PROPOSED-BL-CAT-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The localized fixture is seeded with a name and a description in both the default and the alternate locale. Both locales are enabled on store @td(MSN_STORE_SETTINGS.store_id).",front_url={{FRONT_URL}}; localized_default=@td(MSN_LOCALIZED.name_default); localized_alternate=@td(MSN_LOCALIZED.name_alternate); desc_alternate=@td(MSN_LOCALIZED.description_alternate),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the card title for the localized fixture in the default storefront language
+[ACT] switch the storefront language to the alternate locale using the language selector
+[WAIT] the missions page has re-rendered in the alternate language
+[ACT] read the card title for the same mission
+[ACT] click the open-mission control on that card
+[WAIT] the modal has rendered
+[ACT] read the modal description","[DOM] in the default language the card title @td(MSN_LOCALIZED.name_default) is visible {OBSERVED}
+[DOM] in the alternate language the card title @td(MSN_LOCALIZED.name_alternate) is visible {OBSERVED}
+[DOM] in the alternate language the modal description @td(MSN_LOCALIZED.description_alternate) is visible {OBSERVED}
+[DOM] missions with no translation for the alternate locale fall back to their stored default name, and a blank title is absent {BL}
+[DOM] the surrounding chrome — type labels, chips, controls and empty-state copy — is also translated, and default-language copy is absent from it {OBSERVED}","[API] the localizedName and description fields returned change with the requested culture, and errors[] is empty
+[CONSOLE] no missing-translation warnings for the missions namespace in the alternate locale",The card title stays in the default language after the switch; untranslated missions render blank instead of falling back; only mission names translate while every label stays in the default language,Switch the storefront language back to the default locale,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+"MSNF-053","Days-left label pluralises correctly — merged BVA pair: plural (more than 1 day) and the singular boundary (exactly 1 day) in one case, replacing the separately-filed MSNF-070","Loyalty > Missions > Internationalisation","Medium",,,"State from MSNF-017 (danger-badge case) — @td(MSN_ENDING_SOON.name) card visible (5 days, plural branch). A second read on a mission ending in exactly 1 day (singular boundary) — same fixture family as MSNF-056's ends-today case, one day further out. Merge of the prior MSNF-053 (plural) and MSNF-070 (singular=1): both tested the SAME pluralisation rule at two points on the same rendering path; kept as one case with the boundary as the discriminating value, per the coordinator's redistribution review 2026-08-28.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the days-left label on the card for @td(MSN_ENDING_SOON.name)
+[ACT] read the days-left label on a mission ending in exactly 1 day","[MATH] on @td(MSN_ENDING_SOON.name) (daysRemaining greater than 1) the label uses the plural form, and the number in it = the daysRemaining the response returned {SPEC}
+[DOM] with exactly 1 day remaining the singular label '1 day left' is visible, and '1 days left' is absent {SPEC}
+[DOM] the plural/singular form comes from the translation layer's pluralisation rules, not a hardcoded string concatenation, so switching language keeps both forms grammatical {SPEC}",,"Plural and singular forms read identically (would mean pluralisation is not wired at all — the more severe version of the finding this case exists to catch); the days-left label is absent entirely on either fixture (a rendering regression unrelated to pluralisation)","none — read-only","VCST-5346; merges the prior MSNF-053 + MSNF-070 (same rule, two boundary points) per coordinator review 2026-08-28; Archetype:RENDER Technique:BVA","Draft"
+"MSNF-054","Zero-target mission renders without a divide-by-zero artefact — card AND order-goal modal, plus the reward-line fixture-crosstalk guard absorbed from MSNF-066","Loyalty > Missions > Boundaries & Pagination","High",,,"@td(MSN_ZEROTARGET.name) seeded, Published, OrderCountGoal target=0. Merge of the prior MSNF-054 (card+modal div-by-zero) and MSNF-066 (order-goal-modal div-by-zero, same fixture, same modal, near-total assertion overlap) — kept as one case; MSNF-066's one distinct property (the reward line reads THIS fixture's own reward, not the zero-REWARD fixture's) is folded in as a fixture-crosstalk guard.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the percent, the progress note, the progress bar on the card for @td(MSN_ZEROTARGET.name)
+[ACT] click the open-mission control on that card
+[WAIT] the order-goal modal has rendered its target block
+[ACT] read the modal's target block wording verbatim
+[ACT] read the modal's progress bar fill
+[ACT] read the modal's percent label
+[ACT] read the modal's reward line","[MATH] the percent on the card = 0 {OBSERVED}
+[DOM] the literals 'NaN', 'Infinity' and 'undefined' are absent everywhere a computed value appears — card percent, progress note, modal target block, modal percent {BL}
+[DOM] the progress bar fill (card and modal) is fully visible inside its track and does not overflow it, even though the current value is above the target {BL}
+[DOM] a 'Completed' chip is absent on the card, because the backend keeps this mission in progress {OBSERVED}
+[MATH] the modal reward line = @td(MSN_ZEROTARGET.reward), the zero-TARGET fixture's own reward, and NOT the zero-REWARD fixture's — a fixture-crosstalk guard {OBSERVED}",,"A division artefact (NaN/Infinity/undefined) appears anywhere; the modal fails to open; the reward line reads the wrong fixture's value (fixture-selector bug, not a zero-math bug)","none — read-only","VCST-5346; merges the prior MSNF-054 + MSNF-066 (same fixture, same modal, near-total overlap) per coordinator review 2026-08-28; Archetype:BOUNDARY Technique:BVA","Draft"
+MSNF-055,Zero-reward mission renders its reward as zero rather than hiding the chip,Loyalty > Missions > Boundaries & Pagination,Medium,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The zero-reward fixture is seeded with a reward of @td(MSN_ZEROREWARD.reward).",front_url={{FRONT_URL}}; zeroreward=@td(MSN_ZEROREWARD.name); zeroreward_reward=@td(MSN_ZEROREWARD.reward),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the points chip on the card for @td(MSN_ZEROREWARD.name)
+[ACT] click the open-mission control on that card
+[WAIT] the modal has rendered
+[ACT] read the modal's reward line","[MATH] the points chip on the card is visible and = @td(MSN_ZEROREWARD.reward) {OBSERVED}
+[DOM] the chip is present rather than hidden by a falsy check that treats zero as absent {BL}
+[MATH] the modal's reward line = @td(MSN_ZEROREWARD.reward) {OBSERVED}
+[DOM] the literal 'undefined' and an empty unit label are absent beside the zero {BL}","[API] the reward field for this mission is 0 in the response, and errors[] is empty
+[CONSOLE] no unhandled JS errors","The points chip disappears entirely at reward zero because zero is treated as falsy, so the card looks structurally different from its siblings; the modal reward line renders blank",Close the modal,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-056,A mission ending today must not read as zero days left,Loyalty > Missions > Boundaries & Pagination,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+BLOCKED ON DATA — no seeded mission is both in progress and ending within the current day. The expired fixture is excluded from the storefront by design, because the page requests only in-progress and completed missions, so it cannot supply this boundary either. Reaching it needs a published mission whose end date falls inside the next 24 hours. Report BLOCKED with this reason.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the date badge on a card whose mission has zero whole days remaining
+[ACT] read the date label on that same card","[DOM] the literal '0 days left' is absent from the card {SPEC}
+[DOM] a last-day form such as an ends-today or final-day label is visible instead {SPEC}
+[DOM] the date badge carries danger severity on the final day, and warning severity is absent {SPEC}
+[DOM] the mission is still actionable — its open-mission control is enabled and its modal opens {SPEC}","[API] daysRemaining for the mission is 0 with an in-progress status, and errors[] is empty
+[CONSOLE] no unhandled JS errors",'0 days left' shown to a customer who still has hours to act; the mission renders as expired while the backend still reports it in progress,None — read-only,VCST-5346,Draft
+MSNF-057,Pagination appears only above one page and pages at twelve missions per page,Loyalty > Missions > Boundaries & Pagination,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The seeded fixture set puts this account above one page of missions, so the pager renders. Record the total mission count the query reports before asserting.",front_url={{FRONT_URL}}; page_size=12,"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] count the cards rendered on page one
+[ACT] record the total mission count the query reported
+[ACT] count the page controls offered by the pager","[MATH] the number of cards on page one = 12 or fewer {OBSERVED}
+[DOM] a pager is visible if and only if the total mission count the query reported is greater than 12 {OBSERVED}
+[DOM] on the seeded fixture set that total exceeds 12, so a pager is present {OBSERVED}
+[MATH] the number of page controls = the total mission count divided by 12, rounded up {OBSERVED}
+[DOM] the page-one control is present in its current-page state, and a second control marked as current is absent {OBSERVED}","[API] the mission query requests a page size of 12, returns a total count above 12, and returns an empty errors[]
+[CONSOLE] no unhandled JS errors",All missions render on one page with no pager; a pager renders with a single page control; the page size disagrees with the number of cards rendered,None — read-only,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-058,Paging across the twelve-per-page boundary loses no mission and duplicates none,Loyalty > Missions > Boundaries & Pagination,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The account resolves more than twelve missions, so at least two pages exist.",front_url={{FRONT_URL}}; page_size=12,"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] record the mission title of every card on page one, in order
+[ACT] click the page-two control in the pager
+[WAIT] the grid has re-rendered with page two's cards
+[ACT] record the mission title of every card on page two, in order
+[ACT] click the page-one control in the pager
+[WAIT] the grid has re-rendered with page one's cards
+[ACT] record page one's titles a second time","[STATE] no mission title appears on both page one and page two {BL}
+[MATH] the count of distinct titles across both pages = the total mission count the query reported {BL}
+[STATE] returning to page one yields the same set of titles as the first visit, in the same order {BL}
+[DOM] the page-two control is present in its current-page state after the first transition, and the page-one control is present in that state after returning {OBSERVED}
+[DOM] at least one mission card is visible on every page the pager reports as existing {BL}","[API] the page-two request uses an offset consistent with a twelve-item page and returns an empty errors[]
+[CONSOLE] no unhandled JS errors on page transitions","A mission appears on both pages or vanishes between them, which is an off-by-one in the paging offset; page two renders empty; returning to page one reshuffles the order so a customer cannot find a mission again",Return to page one,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-059,Expired and draft missions are withheld from the storefront list; the non-public flag is an open question,Loyalty > Missions > Boundaries & Pagination,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+The expired, draft and non-public fixtures are seeded. The storefront requests only in-progress and completed missions, so the expired one is excluded by design rather than by a bug. The non-public flag has no known server-side visibility gate on this build and its intended meaning is undocumented, so this case RECORDS its behaviour rather than asserting exclusion — see the open question filed against the loyalty module.",front_url={{FRONT_URL}}; expired=@td(MSN_EXPIRED.name); draft=@td(MSN_DRAFT.name); private=@td(MSN_PUBLISHED_PRIVATE.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] page through every page of the mission grid
+[ACT] search the collected mission titles for the expired, draft, non-public fixtures","[STATE] @td(MSN_EXPIRED.name) appears on no page, because the storefront requests only in-progress and completed missions {SPEC}
+[STATE] @td(MSN_DRAFT.name) appears on no page, because an unpublished mission is not customer-facing {SPEC}
+[STATE] does @td(MSN_PUBLISHED_PRIVATE.name) appear on any page? The meaning of the non-public flag is an undocumented open question on this build, and no server code path is known to apply it as a visibility gate, so record what happens rather than assuming exclusion {HYPOTHESIS}
+[DOM] their absence is silent — no placeholder card, no error and no visible gap in the grid {SPEC}","[API] the mission query's status filter requests only in-progress and completed, the total count excludes the three withheld fixtures, and errors[] is empty
+[CONSOLE] no unhandled JS errors",An expired or draft mission renders as an actionable card; the grid leaves a blank slot where a withheld mission would have been; the non-public result contradicts whatever the product owner confirms the flag is meant to do,None — read-only,VCST-5346,Draft
+MSNF-060,Banner geometry matches the design spec on the card and in the modal,Loyalty > Missions > Design Verification,Low,BL-UI-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Advisory design check. Precedence is invariant first, then design spec, then heuristic — a design match never rescues an invariant failure, and a design mismatch alone is a drift report rather than a defect. The design specifies a mission banner of 150 CSS pixels on the card and 170 CSS pixels in the modal, while the implementation applies a fixed utility height of 144 CSS pixels.",front_url={{FRONT_URL}}; design_card_banner_px=150; design_modal_banner_px=170; impl_banner_px=144; persku_all=@td(MSN_PERSKU_ALL.name),"[ACT] set the viewport to 1440 by 900
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] measure the rendered height of a card's banner region in CSS pixels
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered
+[ACT] measure the rendered height of the modal's banner region in CSS pixels","[MATH] the card banner rendered height = 150 CSS pixels, within a 2 pixel tolerance {OBSERVED}
+[MATH] the modal banner rendered height = 170 CSS pixels, within a 2 pixel tolerance {OBSERVED}
+[DOM] the banner region is visible at a stable reserved height, so the grid does not reflow as banner images load {BL}","[API] no additional query is issued by measurement, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors","A height mismatch against the design spec is DRIFT and is reported as drift, never filed as a defect — the implementation's fixed utility height is the recorded authoring-time value in Test_Data; the banner height varies between cards in the same row; the grid reflows as images load; the measured height differs from the spec by more than the recorded drift",Close the modal and restore the viewport to 1920 by 1080,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-061,Mobile presentation and card-footer count differ from the design — record the drift,Loyalty > Missions > Design Verification,Low,BL-UI-004,ECL-7.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Advisory design check with the same precedence rule as the banner-geometry case. The design specifies a swipeable mobile carousel with position dots and a current-of-total indicator, plus a card-footer mission count, while the implementation ships a paginated single-column grid with a pager and no footer count.",front_url={{FRONT_URL}},"[ACT] set the viewport to 375 by 812
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] record the mission presentation form at mobile width
+[ACT] record whether a mission count is rendered in the card footer region
+[ACT] attempt a horizontal swipe gesture across the card region","[DOM] record which mobile presentation is visible: a swipeable carousel with position dots and a current-of-total indicator as the design specifies, or the paginated single-column grid the implementation ships — a mismatch is DRIFT, reported, never filed {OBSERVED}
+[DOM] record whether a mission count is visible in the card footer region as the design specifies, or a pager is present in its place — again DRIFT, reported, never filed {OBSERVED}
+[STATE] whichever presentation ships, every mission remains reachable at mobile width and none is stranded behind an unusable control {BL}
+[MATH] the content width = the viewport width or less, so no horizontal scrollbar is present {BL}","[API] no additional query is issued at mobile width beyond normal paging, and errors[] is empty
+[CONSOLE] no unhandled JS errors at mobile width","A paginated grid ships where a carousel was designed and its pager control is too small to hit on a touch target, which makes the drift a usability problem rather than a cosmetic one; missions on later pages are unreachable at mobile width",Restore the viewport to 1920 by 1080,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-062,Mobile touch targets on the missions page meet the minimum size and spacing,Loyalty > Missions > Mobile & Layout Stability,High,BL-UI-006,ECL-1.8,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Measure against the shipped UI-kit control sizes before reporting a failure: a control matching the kit's own standard button size is a design-system question rather than a page defect.",front_url={{FRONT_URL}}; min_target_px=24; min_gap_px=8; persku_all=@td(MSN_PERSKU_ALL.name),"[ACT] set the viewport to 375 by 812
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] measure the rendered size of every interactive control on the page
+[ACT] measure the gap between each pair of adjacent interactive controls
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered
+[ACT] measure the stepper increment control in the modal
+[ACT] measure the stepper decrement control in the modal
+[ACT] measure the modal Close control
+[ACT] measure the modal primary action control","[MATH] for every interactive control on the page, width >= 24 CSS pixels and height >= 24 CSS pixels — except a control whose measured size = the shipped UI-kit standard for its control type, which is a design-system question and is reported separately {BL}
+[MATH] the gap between each pair of adjacent interactive controls >= 8 CSS pixels {BL}
+[MATH] for the modal's stepper increment and decrement controls, width >= 24 CSS pixels, height >= 24 CSS pixels and mutual gap >= 8 CSS pixels, since they are the most repeatedly tapped controls in the feature {BL}
+[DOM] no control is clipped or pushed outside the viewport at 375 pixels, and every control remains visible {BL}","[API] no additional query is issued by measurement, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors at mobile width",Stepper increment and decrement controls sit closer than eight pixels apart so a tap hits the wrong one; the pager controls fall below the minimum size; the Close control is clipped by the viewport edge,Close the modal and restore the viewport to 1920 by 1080,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+MSNF-063,Missions page loads without visible layout shift,Loyalty > Missions > Mobile & Layout Stability,High,BL-UI-001,ECL-1.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Measure on a cold load with the cache cleared, so banner images and the balance query resolve after first paint, which are the conditions under which a shift actually occurs.
+MIGRATION NOTE: the [CLS]<=0.1 assertion below is exactly what scripts/layout/layout-runner.ts implements deterministically via [PROBE:CLS] (installs its observer before first paint, which an MCP-driven browser agent cannot do). Steps below are written in the runner-native grammar as an interim measure; a suite-owner should physically migrate this case into a layout-runner-executed suite (e.g. Backend/cross-cutting/048c-layout-stability.csv) — out of scope for this 083c-only fix pass. Until migrated, do not execute the [PROBE:CLS]/[CLS] portion via the qa-frontend-expert browser-agent lane; the three [DOM] assertions remain browser-executable.",front_url={{FRONT_URL}}; cls_budget=0.1,"[VIEWPORT] 1280x900
+[PRE:CLEAR_CACHE]
+[NAV] {{FRONT_URL}}/account/missions
+[PROBE:CLS]
+[WAIT] the card grid, the balance banner and every banner image have finished loading and the page is visually stable","[CLS] <= 0.1 {BL}
+[DOM] the balance banner is visible at its reserved height before its value resolves, so the card grid does not jump downward when the balance arrives {BL}
+[DOM] each card's banner region is visible at its reserved height before its image loads {BL}
+[DOM] the pager is already present in the layout when the grid paints, so it does not appear later and push content downward {BL}","[NETWORK] no 4xx or 5xx during the traced load, and the mission query returns an empty errors[]
+[CONSOLE] no unhandled JS errors during the traced load",The grid jumps when the balance banner resolves; cards resize as banner images arrive; the pager appearing late shifts the whole grid,None — read-only,VCST-5346,Draft
+MSNF-064,Mission notification surface — record that none is implemented on this build,Loyalty > Missions > Notifications,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+SCOPE RECORD, NOT A DEFECT CASE. The design frames specify mission notification popups and the story carries a notification acceptance criterion, but the loyalty module on this build emits no notification of any kind for missions and declares no notification dependency. Whether that criterion is in scope for this release is a product decision rather than a frontend defect, so this case records the absence for the product owner and is deliberately kept manual.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] inspect the missions page for any mission-related notification, popup, unread badge
+[ACT] inspect the account notification surfaces for the same three artefacts
+[ACT] compare what is present against the two notification frames in the design","[DOM] record which mission-related notification surfaces are present in the storefront — a start popup, a completion popup, an unread badge, or an entry in the account notification list {OBSERVED}
+[DOM] record which of the two designed notification frames, if either, has a shipped counterpart present {SPEC}","[API] confirm no notification-related operation is issued by the missions page, and the mission query's errors[] is empty",Not applicable as a pass or fail — this case records a scope gap; escalate to the product owner if the notification criterion is confirmed in scope for this release; re-scope the case into real assertions once a notification surface ships,None — read-only. Report the finding to the product owner as a scope question against the notification acceptance criterion; do not file it as a frontend defect.,VCST-5346,Manual
+MSNF-065,Two order-value missions with the same target in different currencies each persist and return their own goal currency code,Loyalty > Missions > Order Goal Modal,High,BL-PRICE-005; BL-GQL-003,ECL-14.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Both order-value fixtures are seeded and visible to this account: @td(MSN_ORDERVALUE.name) with goal currency intent @td(MSN_ORDERVALUE.goal_currency_intent), and @td(MSN_ORDERVALUE_ALTCURRENCY.name) with intent @td(MSN_ORDERVALUE_ALTCURRENCY.goal_currency_intent). They carry the same numeric target and the same reward, differing only in currency, which is what makes the pair discriminating: with only one of them on the page, a modal that renders the SESSION currency symbol against the GOAL amount passes.",front_url={{FRONT_URL}}; ordervalue=@td(MSN_ORDERVALUE.name); ordervalue_currency=@td(MSN_ORDERVALUE.goal_currency); alt=@td(MSN_ORDERVALUE_ALTCURRENCY.name); alt_currency=@td(MSN_ORDERVALUE_ALTCURRENCY.goal_currency); target=@td(MSN_ORDERVALUE.goal_target); alt_target=@td(MSN_ORDERVALUE_ALTCURRENCY.goal_target),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] read the card for @td(MSN_ORDERVALUE.name)
+[ACT] read the card for @td(MSN_ORDERVALUE_ALTCURRENCY.name)
+[ACT] click the open-mission control on the card for @td(MSN_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered its target block
+[ACT] record the currency symbol rendered against the target amount
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] click the open-mission control on the card for @td(MSN_ORDERVALUE_ALTCURRENCY.name)
+[WAIT] the order-goal modal has rendered its target block
+[ACT] record the currency symbol rendered against the target amount","[MATH] the API response for @td(MSN_ORDERVALUE.name) returns currency.code = @td(MSN_ORDERVALUE.goal_currency) {BL}
+[MATH] the API response for @td(MSN_ORDERVALUE_ALTCURRENCY.name) returns currency.code = @td(MSN_ORDERVALUE_ALTCURRENCY.goal_currency), a DIFFERENT code from the first mission's {BL}
+[FORMAT] each modal renders the target amount using the currency symbol configured for that mission's own currency.code on this store {SPEC}
+[MATH] the target number in the first modal = the target number in the second modal, so only the currency differs and any divergence in the number is itself a defect {SPEC}","[API] both missions return their own goal currency code in the response, and errors[] is empty
+[CONSOLE] no unhandled JS errors","Either mission's response returns the session currency code instead of its own goal currency code; a modal renders a bare number with no symbol; the alternate-currency mission is missing from the grid entirely. (Two currencies sharing the same configured symbol on this store — e.g. AUD and USD both render '$' — is NOT a failure signal; assert currency.code, never the rendered symbol.)",Close the modal,"VCST-5346; MSNF-065 rewritten 2026-08-28 (TCA) — prior version asserted two different rendered SYMBOLS, impossible when AUD and USD share '$' on this store; disproved live in REG-2026-08-27-1731",Draft
+MSNF-067,Mission query failure and recovery are announced to assistive technology,Loyalty > Missions > Accessibility,High,BL-A11Y-004,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+Run this case on the Coffee theme and repeat it on the Red theme. BLOCKED ON TOOLING: this case needs a network-fault-injection primitive (fail the loyaltyMissionProgress request for one attempt only) — none exists on the assigned browser-agent regression lane today; see MSNF-006's precondition for the same named gap and candidate fix. (The no-missions empty-state half of this scenario was split out to MSNF-071, which is separately BLOCKED ON DATA.)",front_url={{FRONT_URL}},"[ACT] arrange for the first loyaltyMissionProgress request from this page to fail
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the page settles out of its loading state
+[ACT] capture the accessibility tree for the failure surface
+[ACT] read how the failure is announced to assistive technology
+[ACT] restore normal network conditions for the lane
+[ACT] click 'Try again' in the failure surface
+[WAIT] the page settles out of its loading state a second time
+[ACT] capture the accessibility tree for the recovered grid","[DOM] a live region or an alert role is present on the error surface, so its arrival is announced to assistive technology rather than only painted {BL}
+[DOM] the 'Try again' control exposes a non-empty accessible name and is reachable by keyboard alone {BL}
+[DOM] focus is present on the error surface once it replaces the grid, so a keyboard user is not left focused on a removed element {BL}
+[DOM] after recovery the arrival of the mission grid is likewise announced, and a silent swap with no live region present is absent {BL}","[API] the automated accessibility rule scan reports no aria-valid-attr or region violation on the failure surface, and the recovered query returns an empty errors[]
+[CONSOLE] the failure is handled — no unhandled promise rejection","The error surface replaces the grid with no announcement, so a screen-reader user hears nothing and believes the page is still loading; focus is dropped to the document body when the grid is removed.",Restore normal network conditions for the lane,VCST-5346,Draft
+MSNF-068,A locale with no mission translation falls back to the stored default without a blank title,Loyalty > Missions > Internationalisation,Medium,PROPOSED-BL-CAT-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+At least one storefront locale is enabled on store @td(MSN_STORE_SETTINGS.store_id) for which the seeded missions carry NO translation. The localized fixture declares translations only for its default and alternate locales, so any third enabled locale exercises the fallback. If the store enables exactly the two locales the fixture covers, report BLOCKED with that reason rather than enabling a locale on a shared environment.",front_url={{FRONT_URL}}; localized_default=@td(MSN_LOCALIZED.name_default); localized_alternate=@td(MSN_LOCALIZED.name_alternate),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] switch the storefront language to a locale for which the missions carry no translation
+[WAIT] the missions page has re-rendered in that locale
+[ACT] read every card title in the grid
+[ACT] click the open-mission control on the card for the localized fixture
+[WAIT] the modal has rendered
+[ACT] read the modal title
+[ACT] read the modal description","[DOM] every card title is visible and non-empty in the untranslated locale {BL}
+[DOM] the localized fixture falls back to @td(MSN_LOCALIZED.name_default), and a blank title, the literal 'null' and a dotted translation key are all absent {BL}
+[DOM] the modal title and description fall back the same way, and an empty title region or empty description region is absent {BL}
+[DOM] the surrounding chrome falls back to the storefront default language, and a raw dotted key is absent from every visible label {BL}","[API] the mission query for the untranslated culture returns a non-null name and an empty errors[]
+[CONSOLE] no unhandled JS errors and no missing-translation crash in the untranslated locale",Mission titles render blank in an untranslated locale; the modal renders an empty description region; a dotted translation key is shown to the customer,Switch the storefront language back to the default locale,VCST-5346,Draft
+MSNF-069,Mission description renders in the featured-SKU modal,Loyalty > Missions > Featured SKU Modal,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
+PENDING TEST DATA — no seeded featured-SKU mission currently declares a description field (test-data gap, see triage REG-2026-08-27-1731 §4 — ""one line, do this first""). Report this case BLOCKED WITH THIS REASON until a featured-SKU mission with a description is seeded; do not substitute @td(MSN_PERSKU_ALL.name) or any other description-less mission.",front_url={{FRONT_URL}}; persku_all=@td(MSN_PERSKU_ALL.name),"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
+[ACT] click the open-mission control on a featured-SKU mission that carries a description
+[WAIT] the featured-SKU modal has rendered
+[ACT] read the description region of the featured-SKU modal","[DOM] the featured-SKU modal shows its mission's visible description text {SPEC}
+[DOM] where a featured-SKU mission has no description, an empty block, a placeholder dash and the literal 'null' are all absent {BL}
+[DOM] the description renders as text, so any markup in the stored value is visible as escaped characters rather than executed {BL}","[API] the description field in the response matches what is rendered, and errors[] is empty
+[CONSOLE] no unhandled JS errors","The featured-SKU modal has no description region at all, so a featured-SKU mission's description is unreachable anywhere in the UI because the card carries none either; stored markup is executed rather than escaped",Close the modal,VCST-5346; Split from MSNF-045 (TCA-2026-08-28) — was entangled with a passing order-goal-modal half; independently BLOCKED ON DATA (see Preconditions),Draft
+MSNF-071,"The no-missions empty state is announced to assistive technology, distinctly from a failure",Loyalty > Missions > Accessibility,High,BL-A11Y-004,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Run this case on the Coffee theme and repeat it on the Red theme.
+PENDING TEST DATA — no account currently resolves zero missions (test-data gap, see triage REG-2026-08-27-1731 §4, ""007 zero-mission account, needs a second store, not a spec row""). Report this case BLOCKED WITH THIS REASON until such an account/store exists.",front_url={{FRONT_URL}},"[ACT] sign in as an account that resolves zero missions (fixture pending — see Preconditions)
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the page settles out of its loading state
+[ACT] capture the accessibility tree for the no-missions empty state","[DOM] a live region or an alert role is present on the no-missions empty state, so its arrival is announced to assistive technology rather than only painted {BL}
+[DOM] the empty state's announced text is distinguishable from the failure-state announcement by wording alone {BL}","[API] the mission query returns zero missions with an empty errors[]
+[CONSOLE] no unhandled JS errors","The empty state has no live region and is announced identically (or not at all) compared with the failure state, so a screen-reader user cannot tell ""no missions"" from ""something broke""",None — read-only,VCST-5346; Split from MSNF-067 (TCA-2026-08-28) — was entangled with a passing failure/recovery half; independently BLOCKED ON DATA (see Preconditions),Draft
+MSNF-UIP-BACK-001,"Browser Back after closing a featured-SKU modal that wrote to the cart — the modal is not a route (MSNF-041's own finding), so Back navigates the underlying page history while the cart mutation already committed",Loyalty > Missions > Interaction Probes,Medium,,ECL-14.7,"[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+@td(MSN_PERSKU_ALL.name) visible. Came from account dashboard (so Back has a real prior page to return to, not the browser's own history boundary).",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the featured-SKU modal has rendered
+[ACT] set one product row's stepper to its target quantity and click 'Add to cart'
+[WAIT] the write completes and a result notification is visible
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] press the browser Back button
+[WAIT] navigation settles on its destination","[NAV] Back lands on {{FRONT_URL}}/account (the page visited before missions), not a broken or blank intermediate state {SPEC}
+[STATE] the cart still holds the line written by the modal — the committed mutation is not rolled back by a client-side history navigation {BL}
+[NAV] navigating forward again from {{FRONT_URL}}/account back to /account/missions renders the page fresh, with no resurrected stale modal open {SPEC}",[CONSOLE] no unhandled JS errors on Back navigation,Back lands on a blank page or throws a router error; the cart line is missing after Back (would mean a client-side navigation is rolling back a server-committed write); the modal resurrects itself open on the destination page,Remove the added cart line; sign out,"VCST-5320; UIP-BACK (modern-web-attack-surface.md); the modal is explicitly not a route per MSNF-041's own finding, so Back's target is the underlying page, not modal state — the untested seam; Archetype:STALE Technique:EG",Draft
+MSNF-UIP-EXPIRE-001,"Session expires while the missions page is open — a polled, revisit-heavy surface (L6 crossed twice per journey) is more exposed to sit-idle-then-expire than a typical transactional page",Loyalty > Missions > Interaction Probes,Medium,,,"[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+Session/token TTL can be forced to expire (via a short-TTL test session or a manually revoked token) without reloading the page.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card
+[ACT] force the session token to expire or be revoked, without reloading the page
+[ACT] click the open-mission control on any card, triggering a fresh authenticated request
+[WAIT] the page settles into its response to the failed request","[DOM] a graceful re-authentication prompt or a redirect to sign-in is visible, and the raw unhandled 401, a blank white page, and a permanently spinning modal are all absent {BL}
+[DOM] no raw GraphQL error object, stack frame or HTTP status code is visible to the customer {BL}
+[NAV] after re-authenticating, the customer lands back on /account/missions rather than a generic dashboard, matching MSNF-003's established returnUrl contract for this route {SPEC}",[CONSOLE] no unhandled JS errors on the expired request,The page white-screens or throws an unhandled promise rejection on the expired request; the re-auth flow does not return the customer to /account/missions,"Sign out (in a fresh session, since the tested one is expired)","VCST-5320; UIP-EXPIRE (modern-web-attack-surface.md); this page's own defining hazard is a long-lived, revisited, polled surface, raising its exposure to exactly this probe relative to a one-shot transactional page; Archetype:LIFECYCLE Technique:EG",Draft
+MSNF-UIP-STORAGE-001,Corrupted cart-cache in browser storage while loading the missions page and using the featured-SKU modal's custom multi-row cart write,Loyalty > Missions > Interaction Probes,Medium,,,"[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+@td(MSN_PERSKU_ALL.name) visible. The featured-SKU modal writes multiple cart lines via its OWN batch mutation path (confirmed distinct from the storefront's standard single addItem flow, per MSNF-037's concurrency case) — a corrupted client-side cart cache interacting with that non-standard write path is a more specific risk here than on a page using only the standard add-to-cart flow.",front_url={{FRONT_URL}},"[ACT] before navigating, corrupt the storefront's client-side cart-cache storage entry with malformed JSON
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the page settles out of its loading state
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal settles into whatever state the corrupted cache produces
+[ACT] if the modal opens, set one row's stepper and click 'Add to cart'
+[WAIT] the operation settles","[DOM] the missions page's own heading and its mission card grid are both visible despite the corrupted cart cache, and the points-balance banner (a separate, cart-independent data source) is also visible — a cart-storage fault must not blank an unrelated page region {BL}
+[DOM] the modal either opens cleanly (self-healing by refetching cart state from the server rather than trusting the corrupted cache) or fails with a scoped, customer-readable error — a full white screen or an unhandled exception is absent in either case {BL}
+[STATE] if the add-to-cart write is attempted, it either succeeds and the cart-cache is repaired to a valid state, or it fails visibly — a write that silently succeeds server-side while the client cache stays corrupted, so the header count is now wrong, is the specific failure this case exists to catch {HYPOTHESIS}
+[REL] if the add-to-cart write is attempted and succeeds, the header cart indicator value = the cart page's own total unit count afterward — a self-consistency check that the corrupted cache did not leave the client showing a stale count while the server holds a different one {BL}",[CONSOLE] no unhandled JS errors attributable to the corrupted cache,"The whole missions page white-screens due to an unrelated cart-cache read; the modal's custom write path throws an unhandled exception the standard add-to-cart flow would not, which would be evidence the batch-write path skips the same defensive parsing",Clear the corrupted storage entry; remove any leftover cart items; sign out,"VCST-5320; UIP-STORAGE (modern-web-attack-surface.md); targets the modal's confirmed-distinct batch cart-write path (MSNF-037), not the generic single addItem flow already covered elsewhere; Archetype:FALLBACK Technique:EG",Draft

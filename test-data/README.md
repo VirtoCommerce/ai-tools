@@ -110,6 +110,10 @@ test-data/
 │   ├── *.pdf, *.xlsx               # Document files
 │   ├── *.mp4                       # Video files
 │   └── *.svg, *.avif               # Other formats
+├── graphql/                         # Curated xAPI GraphQL fixture library — see graphql/README.md
+│   ├── index.json                  # Registry: path, category, role, requiredVars, gqlVars, usedBy
+│   ├── queries/                    # Schema-validated query bodies (copy into [GQL-OP] cells)
+│   └── mutations/                  # Schema-validated mutation bodies
 ├── cms/                             # CMS PageBuilder test data
 │   └── pagebuilder-pages.md        # 5 test pages with block structures, access matrices, scheduling
 └── white-labeling/                  # White labeling test data (VCST-4637)
@@ -244,6 +248,31 @@ Marketing promotions and coupon codes for VCST-4590 testing. Covers 4 reward typ
 
 ### 14. Variation stock (inventory/variation-stock.csv)
 A master product plus a genuine **variation** child (`mainProductId`), with **divergent** non-zero stock at the store's **main** fulfillment center (VCST-5546 / INV-047). Equal quantities would make "the variation row shows its own inventory, not the master's aggregate" unfalsifiable, so the guard requires them to differ. Seed: `npm run seed:variation-stock`; guard: `npm run td:validate:variation-stock`. Aliases: `INV_VARIATION_STOCKED`, `INV_VARIATION_MASTER`. This seeder also writes `FC_EAST`'s runtime GUID to the overlay — before it, `@td(FC_EAST.id)` resolved to the bare CSV business key `FFC-001`, which is not a platform id on any env.
+
+### 15. Loyalty missions (no CSV — `scripts/seed-data/loyalty/missions-specs.mjs`)
+The VCST-5319 mission fixtures have **no committed data file**: the side-effect-free spec module IS the
+source of truth, and everything runtime (mission GUIDs, the resolved currency/locale codes, the banner
+asset URLs) lives in `aliases.<env>.json`. Fourteen `MSN_*` mission aliases plus `MSN_STORE_SETTINGS`
+(the `Loyalty.Missions.Enable` gate), the two live-discovered `MSN_PERSKU_PRODUCT_*` targets and
+`MSN_PROGRESS_ORDER`. Three things
+worth knowing before editing them: **`MSN_EXPIRED` is the one fixture deliberately OUTSIDE its date
+window** (window intent `expired`, offsets `-365`/`-30`) — it is the only fixture that can show
+`OnlyActive` is never applied, so the seeder reuses a closed window instead of treating it as drift;
+and **every mission carries a banner**, chosen by goal type from `test-data/uploads/msn-banner-*.svg`
+and uploaded to platform asset storage under a FIXED file name (the URL is part of the drift signature,
+so a churning one would recreate every mission on every seed); and **three fixtures declare a
+storefront PROGRESS state** (VCST-5346) — `MSN_ENDING_SOON` (danger date badge, window intent
+`endingSoon`), `MSN_PROGRESS_PARTIAL` (75%, one SKU row met and one not) and `MSN_PROGRESS_COMPLETED`
+(100% PerSku, which is what makes the read-only SKU modal reachable). Progress has **no write API** on
+this build, so the seeder provisions all three with ONE order (`MSN_PROGRESS_ORDER`, `AGENT-TEST-MSN-ORDER`)
+placed for the `USER` role's **security-account** id — not its contact id, which would write a row the
+storefront can never see, silently. A progress row cannot be reset or deleted, and one order contributes
+to one mission exactly once, so when the live state does not match the declaration the seeder recreates
+the WHOLE mission set and places a fresh order; when it does match it changes nothing. Teardown removes
+the order but **cannot remove the progress rows it produced** (search+get API only) — they are left
+orphaned and unreachable, which is reported rather than swallowed. Seed:
+`npm run seed:loyalty-missions`; guard: `npm run td:validate:missions`; artwork edited →
+`npm run seed:loyalty-missions -- --reupload-banners`.
 ---
 
 ## Usage Guidelines

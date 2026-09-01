@@ -277,7 +277,7 @@ async function main() {
 
   if (DRY_RUN) { console.log('\n✅ dry run complete (no writes).'); return; }
 
-  await api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', rebuild: false }], { expectStatus: [200, 204] })
+  await api('POST', '/api/search/indexes/index', [{ documentType: 'Product', rebuild: false }], { expectStatus: [200, 204] })
     .catch((e) => log(`⚠ reindex: ${e.message.slice(0, 100)}`));
 
   log('');

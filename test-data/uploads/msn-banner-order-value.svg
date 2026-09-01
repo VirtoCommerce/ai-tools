@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480">
+  <!--
+    Loyalty mission banner — ORDER VALUE goal (money / hit-the-target).
+    Palette is the VCST-5346 brand-palette.css tokens ONLY: primary-500 #f99e24, primary-600 #b46b0f,
+    primary-50 #fff8eb, secondary-900 #0d1013, secondary-800 #242b34, accent-400 #25a6d5.
+    Composition rule: the storefront draws a points pill (top-left), a type label (bottom-left) and a
+    "Completed" badge (top-right) OVER this image, and lays a dark gradient over the lower half. So the
+    subject sits centre-right above y=380 and those three corners are left as plain ground.
+  -->
+  <defs>
+    <linearGradient id="ov-ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1013"/>
+      <stop offset="0.62" stop-color="#242b34"/>
+      <stop offset="1" stop-color="#0d1013"/>
+    </linearGradient>
+    <radialGradient id="ov-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f99e24" stop-opacity="0.42"/>
+      <stop offset="0.55" stop-color="#b46b0f" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#b46b0f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ov-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f99e24"/>
+      <stop offset="1" stop-color="#b46b0f"/>
+    </linearGradient>
+    <linearGradient id="ov-core" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff8eb"/>
+      <stop offset="1" stop-color="#f99e24"/>
+    </linearGradient>
+    <linearGradient id="ov-coin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f99e24" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#b46b0f" stop-opacity="0.55"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="480" fill="url(#ov-ground)"/>
+  <circle cx="830" cy="205" r="330" fill="url(#ov-glow)"/>
+
+  <!-- concentric target, centre-right and above the darkened band -->
+  <g fill="none" stroke="url(#ov-ring)" stroke-width="3">
+    <circle cx="830" cy="205" r="212" opacity="0.22"/>
+    <circle cx="830" cy="205" r="163" opacity="0.34"/>
+    <circle cx="830" cy="205" r="114" opacity="0.55"/>
+    <circle cx="830" cy="205" r="66" opacity="0.8"/>
+  </g>
+  <circle cx="830" cy="205" r="30" fill="url(#ov-core)"/>
+  <circle cx="830" cy="205" r="30" fill="none" stroke="#fff8eb" stroke-opacity="0.35" stroke-width="2"/>
+
+  <!-- teal cross-hairs: a second accent so the target does not read as a single flat ring stack -->
+  <g stroke="#25a6d5" stroke-width="2" stroke-linecap="round" opacity="0.5">
+    <line x1="830" y1="-42" x2="830" y2="46"/>
+    <line x1="1057" y1="205" x2="1112" y2="205"/>
+    <line x1="548" y1="205" x2="603" y2="205"/>
+  </g>
+
+  <!-- value tokens rising toward the target -->
+  <g opacity="0.85">
+    <ellipse cx="486" cy="172" rx="46" ry="18" fill="url(#ov-coin)"/>
+    <ellipse cx="486" cy="160" rx="46" ry="18" fill="#f99e24" opacity="0.55"/>
+    <ellipse cx="580" cy="286" rx="34" ry="13" fill="url(#ov-coin)" opacity="0.7"/>
+    <ellipse cx="1076" cy="118" rx="26" ry="10" fill="#25a6d5" opacity="0.35"/>
+  </g>
+
+  <!-- faint diagonal weave, kept off the three reserved corners -->
+  <g stroke="#fff8eb" stroke-opacity="0.05" stroke-width="1.5">
+    <line x1="430" y1="480" x2="760" y2="0"/>
+    <line x1="500" y1="480" x2="830" y2="0"/>
+    <line x1="570" y1="480" x2="900" y2="0"/>
+  </g>
+</svg>

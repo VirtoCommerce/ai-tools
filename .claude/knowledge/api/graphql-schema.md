@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-08-24)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-08-28)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -23,6 +23,64 @@
 9. **Order addresses/payments**: `addresses[]` and `inPayments[]` (not `shippingAddress` or `payment`)
 10. **All cart mutations require `userId`**: `addItem`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `clearCart` — get from `me { id }`
 11. **`addOrUpdateCartShipment` requires `price`**: `CartShipmentValidator` rejects if price doesn't match available shipping rate. Query `availableShippingMethods` first.
+12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
+    Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
+    the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
+    message to notice. Measured on this schema (106 queries, derived at refresh):
+
+    | Context arg | Queries accepting it | Required | Optional |
+    |---|---|---|---|
+    | `cultureName` | 59 (56%) | 3 | 56 |
+    | `storeId` | 62 (58%) | 32 | 30 |
+    | `userId` | 31 (29%) | 2 | 29 |
+    | `organizationId` | 13 (12%) | 2 | 11 |
+
+    **82 of 106 queries (77%) accept at least one; 72 (68%) accept one OPTIONALLY** —
+    that last figure is the exposure, because those are the calls that can quietly answer for a context you
+    never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
+
+    **Worked example.** `loyaltyMissionProgress.description` returns `null` for *every* item when `cultureName`
+    is omitted — the resolver throws `ARGUMENT_NULL` internally and the field comes back empty, while sibling
+    `name` resolves either way. A test case that omitted the culture therefore asserted an absence **it had
+    caused itself**, and would have been filed as a product defect. Found in REG-2026-08-27-1731 triage.
+
+    **The more dangerous neighbour: an argument that IS honoured, but means something else.** The trap above
+    is an ignored/absent context producing an empty answer. The worse one is an argument that does something
+    real, plausible, and different from what the caller assumed — because the result is stable, non-null, and
+    *differs from the unscoped read*, so it looks like the argument worked.
+
+    **Worked example — `loyaltyBalance(userId, orderId)`.** The `orderId` argument reads like per-order
+    attribution ("what did this order contribute?"). It is not. Resolved from source at `1be73b4`:
+    `GetLoyaltyBalanceQueryBuilder.BeforeMediatorSend` uses `orderId` **only to authorize** (it loads the order and
+    runs `CanAccessLoyaltyAuthorizationRequirement` against it); the handler's entire remaining effect is
+    `CurrentBalance = ResultBalance = GetUserBalanceAsync(userId)`, then, if an order was loaded,
+    `ResultBalance = CurrentBalance − order.Total`. So `currentBalance` is **always the full user balance**, and
+    `resultBalance` is a **pay-with-points affordability preview** — *what your balance would be if you settled
+    THIS order with points* — not this order's effect on it. That is also why the two fields exist: `resultBalance`
+    is not a variant of the balance, it answers a different question.
+
+    A case reading `resultBalance` as "this order's contribution" gets `full_balance − order_total`: a confident
+    wrong number that passes a naive sanity check (on the VIP fixture account it reads as roughly
+    964,192,343 − 240). **An argument that is honoured but misread is worse than one that is silently ignored**,
+    because the ignored one at least returns the same value as the unscoped call and eventually looks suspicious.
+    Audited 2026-08-28: no suite case asserts on `resultBalance` — `075b` `MCO-GQL-004` names it only in
+    precondition prose and `075c` `LOY-038` correctly asserts on `currentBalance` — but both **select** it, so the
+    field is one edit away from a future author. **Assert on `currentBalance` unless the case is specifically
+    testing pay-with-points affordability.**
+
+    **There is no per-mission attribution on the points ledger at all.** `LoyaltyOperationLogObject` exposes only
+    `type` / `orderId` / `orderNumber` (verified by live introspection, 2026-08-28), and `LoyaltyMissionTransaction`
+    — which *does* carry `MissionId`, `ObjectId`, `UserId` with a composite index, and is how the accrual dedup
+    works — is **not exposed through GraphQL in any form**. One order settles every mission applicable to its
+    user (measured: four missions at `+250 / +200 / +100 / +0` on one order), so **a balance total, a history
+    length, or any other aggregate is not an oracle for one mission's contribution**. The maximum attribution
+    the API permits is amount + `orderId` on the ledger entry — pin both, and never assert positionally on
+    `items.0` when several rows can land from one event.
+
+    **Consequences for authoring:** never conclude a field is empty, missing, or broken until the call carries
+    its full context; a differential result between two callers is a context difference until proven otherwise;
+    and never hardcode these values — resolve them (`{{STORE_ID}}`, `me { id }`, `@td(...)`) per
+    `.claude/rules/test-data.md`.
 
 ---
 
@@ -62,6 +120,7 @@ productSuggestions(storeId: String!, query: String, size: Int)
 brands(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, sort: String, keyword: String)
 products(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, query: String, previousOutline: String, filter: String, preserveUserQuery: Boolean, facet: String, fuzzy: Boolean, fuzzyLevel: Int, sort: String, productIds: [String], selectedAddressId: String, selectedAddress: String, custom: String)
 productConfiguration(configurableProductId: String!, storeId: String!, userId: String, cultureName: String, currencyCode: String)
+salesRepDocumentCategories(keyword: String)
 ```
 
 ### CMS
@@ -74,6 +133,8 @@ page(storeId: String!, cultureName: String, id: String!)
 pages(after: String, first: Int, storeId: String!, keyword: String!, cultureName: String)
 pageDocument(id: String!)
 pageDocuments(after: String, first: Int, storeId: String!, keyword: String!, cultureName: String)
+salesRepDocument(id: String!)
+salesRepDocuments(after: String, first: Int, keyword: String, sort: String, category: String, pinned: Boolean)
 pageContext(domain: String, cultureName: String, permalink: String, organizationId: String, userId: String, storeId: String)
 ```
 
@@ -119,6 +180,7 @@ recommendations(storeId: String!, userId: String, cultureName: String, currencyC
 searchHistory(storeId: String!, maxCount: Int!)
 loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
 loyaltyBalance(userId: String, orderId: String)
+loyaltyMissionProgress(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], completedStartDate: DateTime, completedEndDate: DateTime, cultureName: String, currencyCode: String, isStarted: Boolean, userId: String)
 customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
 salesRepCustomerFilterRules(storeId: String, cultureName: String)
 salesRepCustomer(organizationId: String!)

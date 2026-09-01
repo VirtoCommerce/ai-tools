@@ -178,6 +178,49 @@ Ensures assertions can be objectively evaluated as PASS or FAIL with no human ju
 
 ---
 
+### FLOW-001: Nothing in this suite crosses the value chain end to end `[Informational, file-level, Frontend suites]`
+
+**The rule.** A Frontend suite carries at least one case marked `[JOURNEY]` (in `Title` or `Section`)
+or stamped `Technique:FLOW` in `References` — a case that traverses the feature's whole value chain in
+one run, on the surface a customer actually uses. Chain and technique: `/qa-test-design`
+`test-design-techniques.md` §1a; the model field it comes from is `/qa-test` Step 1e Part 0.
+
+**Detection:** the suite path is under `Frontend/`, it has ≥1 case, and no case carries either marker.
+
+**Why it is a separate dimension from T-006, and why neither replaces the other.** T-006 asks whether
+an assertion **can fail**; FLOW-001 asks whether anyone **cares if it does**. The two are independent,
+and a suite can be excellent on the first and empty on the second — which is not hypothetical:
+`083c-loyalty-missions-storefront` scores 41 `INV` assertions and 58 `KEEP` under `npm run tc:rank`,
+and it placed **zero orders**, with 54 of its 71 cases never leaving one page. The mission feature's
+actual mechanism — an order advances progress, completion grants points, the points are spendable —
+was covered by 11% of 127 cases, and its last link by one case written on the final day. A strongly
+asserted check on something nobody's money depends on is precisely a garbage case, and T-006 rates it
+green.
+
+**A link is crossed only by an observation on the far side of it.** Proving the API moves a number and
+proving the page renders a number it was handed are two observations of ONE link; the join between them
+— where integration defects live — is covered only by a case that causes the effect and then observes
+it on the other surface.
+
+**Scoped to Frontend on purpose.** "The customer's own surface" is the whole point of the rule, and a
+Backend contract suite legitimately has no journey — firing on all 74 of them would be noise, and noise
+is how a rule gets `--warn-only`'d into silence.
+
+**Informational and file-level on purpose**, same shape and same reason as T-006 and TRI-000: the
+measured baseline on 2026-08-28 was **8 of 58** Frontend suites carrying a journey case (**0 of 74**
+Backend), with 37 Frontend suites of ≥20 cases and no journey — including `011-checkout-flow` (71) and
+`014-orders-frontend` (98). A High would turn the corpus red on day one. It is a burn-down signal, not
+a gate.
+
+**The marker is authored, never inferred.** Guessing "is this case end-to-end?" from step text would
+manufacture a verdict the author never made — the same discipline that keeps `UNKNOWN` separate from
+`PRES` in T-006.
+
+**Action under `--fix`:** do **not** synthesise a journey case from existing rows, and never satisfy the
+rule by inverting an assertion so a case matches current behaviour. Report the gap and route it to
+`/qa-test-design` §1a → `/qa-test-cases-generator` Step 3 §1, where the chain is modelled first and the
+journey authored from it.
+
 ### T-006: Assertion is presence-only — cannot fail on a wrong value `[Informational file-level / Blocker at the appender]`
 
 **The rule.** Every case must carry ≥1 assertion of class `INV`, `REL`, `DER` or `SHAPE`. `PRES`

@@ -1,0 +1,161 @@
+{
+  "ticket": "VCST-5319",
+  "title": "[Missions][Backend] Implement initial missions backend",
+  "type": "Story",
+  "flow": "feature-test",
+  "path": "FULL",
+  "epic": "VCST-5320",
+  "sprint": "Sprint26-17",
+  "date": "2026-09-01",
+  "environment": "vcst-qa",
+  "build": {
+    "platform": "3.1061.0",
+    "loyaltyModule": "VirtoCommerce.Loyalty_3.1006.0-pr-14-da8a",
+    "sha": "da8abc6",
+    "note": "Three commits ahead of 1be73b4, which earlier sprint analysis was read at. All three are currency work (916b9dc, bcbb401, da8abc6) and are read-side only; ApplyContribution is unchanged."
+  },
+  "verdict": "FAIL",
+  "verdictReason": "Two IN-SCOPE product defects confirmed live: OrderValueGoal accrues order.Total rather than merchandise value (now BL-LOY-016, VIOLATED), and the backend accepts a negative reward. A third defect (End-before-Start accepted) is PRE-EXISTING and linked, not re-filed.",
+  "testModel": "reports/ba/test-models/VCST-5319-2026-08-28.md",
+  "checklist": "reports/tickets/Sprint26-17/VCST-5319/testing-checklist.md",
+  "ac_dod_estimate": {
+    "conditions_total": 24,
+    "conditions_with_evidence": 19,
+    "ac_coverage_pct": 79,
+    "dod_total": null,
+    "dod_met": null,
+    "dod_pct": null,
+    "dod_note": "No Definition of Done is declared on this ticket. Reported as null, not 0."
+  },
+  "cases": {
+    "authored": 9,
+    "suites": [
+      "075d",
+      "075e"
+    ],
+    "ids": [
+      "MSN-027",
+      "MSN-028",
+      "MSN-029",
+      "MSN-030",
+      "MSN-031",
+      "MSN-032",
+      "MSN-033",
+      "MSN-034",
+      "MSNA-023"
+    ]
+  },
+  "regression": [
+    {
+      "run_id": "REG-2026-09-01-1750",
+      "selection": "loyalty + P0 floor --cases critical",
+      "status": "stalled",
+      "note": "Orchestrator rate-limited, resumed, then stood down after a collision. Recovered by re-running suites:merge across every suite with fragments. Not usable for promotion (PR-013)."
+    },
+    {
+      "run_id": "REG-2026-09-01-2050",
+      "selection": "083d --cases critical",
+      "status": "completed",
+      "passed": 2,
+      "failed": 1,
+      "skipped": 5,
+      "seedGeneration": "20260901184812-7332"
+    }
+  ],
+  "regression_triage": {
+    "real_bugs_in_scope": 2,
+    "real_bugs_pre_existing": 1,
+    "real_bugs_out_of_scope": 1,
+    "test_defects": 2,
+    "env": 3,
+    "env_note": "MSN-027/029/033 failed on the machine lane and passed under hand execution on the same build. Root cause: the fixture generation they asserted against (20260901153647-7b25) was destroyed by a mid-run re-seed. Settle-and-retry demonstrably ran (progress_o1 polled twice), so the machine lane is NOT suspect."
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-5854",
+      "severity": "High",
+      "relationship": "standalone Bug, Relates to VCST-5319",
+      "summary": "OrderValueGoal accrues order.Total, not merchandise value",
+      "report": "reports/bugs/open/BUG-mission-ordervaluegoal-accrues-order-total-not-merchandise.md"
+    },
+    {
+      "key": "VCST-5855",
+      "severity": "Medium",
+      "relationship": "standalone Bug, Relates to VCST-5319",
+      "summary": "Save-validation accepts a negative reward (amount -1, HTTP 200)",
+      "report": "reports/bugs/open/BUG-mission-save-validation-accepts-negative-reward.md"
+    }
+  ],
+  "bugs_linked_not_refiled": [
+    {
+      "existing": "MSN-007",
+      "summary": "StartDate after EndDate accepted silently — already documented, PRE-EXISTING"
+    }
+  ],
+  "bugs_out_of_scope_filed": [
+    "reports/bugs/open/BUG-cart-mutations-target-shadow-cart-not-rendered-cart.md"
+  ],
+  "promotion": {
+    "run_id": "REG-2026-09-01-2050",
+    "suite": "083d",
+    "automated": [
+      "MSN-E2E-001",
+      "MSN-E2E-002"
+    ],
+    "reviewed": [],
+    "blocked": [
+      "MSN-E2E-003",
+      "MSN-E2E-004",
+      "MSN-E2E-005",
+      "MSN-E2E-006",
+      "MSN-E2E-007",
+      "MSN-E2E-008"
+    ],
+    "reverted": [],
+    "note": "075d/075e promotion REFUSED by PR-013 — REG-2026-09-01-1750 never completed. Those nine cases stay Draft until a completed run."
+  },
+  "oracle_outcome": {
+    "invariants_before": 0,
+    "invariants_after": 5,
+    "applied": [
+      "BL-LOY-015 attribution",
+      "BL-LOY-016 accrual basis",
+      "BL-LOY-017 currency exclusion",
+      "BL-LOY-018 at-most-once (SATISFIED)",
+      "BL-LOY-019 reversal"
+    ],
+    "held_on_value_gate": [
+      "order-status gate (P1-data, no demand)",
+      "public=false (P2-ux, product intent unresolved)"
+    ]
+  },
+  "findings_needing_no_execution": [
+    "CustomerIDs targeting does not exist — zero hits in models, search criteria or the condition tree",
+    "Customer Mission Summary: six of nine AC fields renamed, reshaped or absent",
+    "Periodicity is decorative — accepted, never branched on",
+    "Mission.Public is inert — declared, never set by any server path",
+    "No organization dimension — a PO question, not a test"
+  ],
+  "epic_rollup": {
+    "status": "not reachable",
+    "reason": "Sibling story VCST-5346 is In progress and not in a testable state, so an Epic verdict would be a single-story verdict relabelled."
+  },
+  "next": [
+    "Confirm filing of the two IN-SCOPE bugs as sub-tasks of VCST-5319",
+    "Transition VCST-5319 to REOPEN (Need fixes) after the tracker comment",
+    "Fix MSN-E2E-004's spend checkpoint to a ledger reconciliation",
+    "Correct MSN-E2E-001's stale [PRE:SIGNIN_AS:LOYALTY_VIP_USER] precondition",
+    "Re-run 075d on a completed run to make its nine cases promotable"
+  ],
+  "final_status": "Tested",
+  "transition": {
+    "applied": "Finish test (id 8) -> Tested",
+    "at": "2026-09-01T20:11:19.520Z"
+  },
+  "deviation_from_gate": {
+    "gate_verdict": "FAIL",
+    "human_decision": "TESTED",
+    "rationale": "Tester directed the two in-scope defects be filed as STANDALONE bugs rather than sub-tasks, treating them as defects of the feature rather than blockers of this ticket. Recorded as a deliberate human call, not a gate pass.",
+    "recorded_in_tracker_comment": true
+  }
+}

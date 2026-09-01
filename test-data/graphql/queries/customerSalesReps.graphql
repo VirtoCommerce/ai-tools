@@ -4,7 +4,7 @@
 # purpose: Buyer-side list of sales reps serving the caller's organization (org scoped from claims, no id arg)
 # required-vars: (none)
 # optional-vars: (none)
-# last-validated: 2026-07-17
+# last-validated: 2026-08-27
 # known-issues: (none)
 # used-by: SR-GQL-001, SR-GQL-003, SR-GQL-007
 

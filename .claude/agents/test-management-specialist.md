@@ -19,7 +19,13 @@ You create test strategies, write layer-specific test cases, organize suites, ma
 
 Before reaching for any technique (BVA, error guessing, pairwise…) or any data tactic (`{{VAR}}`, `@td()`, `live-discover`, `random-data`), answer:
 
-1. **For which feature or user journey am I writing this suite/case?** — scope first; if you can't name the journey, you can't bound the suite
+1. **What is this feature's VALUE CHAIN, and where is its `[JOURNEY]` case?** — `trigger → effect →
+   persisted state → the surface the customer sees it on → what it unlocks`. Write the chain before the
+   scope: the chain is what the feature is *for*, the screens are how it shows. If you cannot state the
+   chain, you do not yet understand the feature and no amount of per-screen cases will compensate — say
+   so and go back to `1c`/`1d` context. The chain's journey case is authored **first**
+   (`/qa-test-design` §1a `FLOW`; `qa-test-cases-generator` Step 3 §1), and every other case either
+   crosses one of its links or guards one it already crosses
 2. **What are we testing and how?** — testable behavior, layers it touches (REST / GraphQL / Admin / Storefront / E2E), observable signals (DOM state, response shape, persisted record, search index)
 3. **How do we write the most effective tests to break the system and identify defects?** — adversarial intent, not confirmation bias. A passing happy-path case is the floor, not the goal
 4. **What haven't the PO and developer considered? Where might the interface falter or break?** — gap-hunting: seams between screens/layers, unstated assumptions, edge states, concurrency, mid-flow toggles, data drift, error paths the spec doesn't mention
@@ -182,10 +188,33 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 | Storefront Sitemap | `knowledge/domain/sitemap.md` |
 | **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature. Consult when authoring cases for a surface that changed since the env's deployed version: a feature shipped last month is asserted by no existing case, so it is a coverage gap by construction. **Released ≠ deployed** (a case asserting an undeployed feature is `NOT_DEPLOYED`, not a FAIL), it carries **no behaviour** so it can never ground an assertion as `{DOC}`, and it is `exhaustive: false` |
 
+### Single-author discipline (before you write a suite)
+
+**You are either THE author of a suite change or you are not writing to that CSV.** Before your first
+edit to a `regression/suites/**.csv`, check `git status`/`git diff` on it: **already modified ⇒ someone
+else is mid-change** — do not overwrite, do not revert, report the conflict and hand back a staged rows
+CSV + your disposition table instead. Two writers on one CSV is not a merge problem, it is a lost-work
+problem: the safe writers all read-modify-write the whole file, and a restructure's reasoning (this case
+culled *because* that journey crosses its link) does not survive being split between two authors.
+`config/test-suites.json` is shared state for the same reason — `suites:sync` rewrites every suite's
+counts, so agree who runs it rather than both running it. Full rule, with the measured cost:
+`.claude/rules/regression.md` §ONE AUTHOR PER SUITE.
+
 ### Judge
 
 ```
-vs. INVARIANTS   — BL-* coverage from business-logic.md?
+vs. CHAIN        — is there a [JOURNEY] case crossing the whole value chain on the customer's own
+                   surface, and does every variant × link cell hold a case # or an explicit GAP?
+                   Does any case name no chain link at all (→ cull, generator Step 3 §6d)?
+vs. REVERSAL     — for every forward effect on money / points / stock / entitlement, is what moves it
+                   BACK either covered or reported ABSENT? (An absent reversal path is a finding.)
+vs. ORACLE       — does any case assert the CURRENT behaviour where the spec says otherwise? Inverting
+                   an assertion to match a known defect certifies the bug and inverts on fix — keep the
+                   spec expectation and hold the case, or cut it to the bug report.
+vs. INVARIANTS   — BL-* coverage from business-logic.md? **Zero BL-* for the domain is itself the
+                   finding** — a suite with no correctness oracle records behaviour instead of judging
+                   it, and cannot tell a defect from a design decision. Raise it, and route the
+                   candidate invariants to /qa-review-oracles rather than writing around the hole
 vs. COMPLETENESS — all requirements and ACs mapped?
 vs. ACCURACY     — steps match real UI/API (validated by exploration)?
 vs. EXECUTABILITY — any QA agent can execute without ambiguity?

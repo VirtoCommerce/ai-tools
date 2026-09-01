@@ -98,7 +98,10 @@
     "report_path": null
   },
   "bugs_filed": [
-    { "$comment": "One entry per confirmed bug filed at 5d.", "key": "<tracker-key>", "relationship": "sub-task|related|standalone", "parent_or_linked_ticket": "<ticket-key or existing-bug-key>" }
+    { "$comment": "One entry per confirmed bug filed at 5d. `severity` is recorded so the 5d severity floor is auditable from this artifact rather than only from the comment.", "key": "<tracker-key>", "severity": "Critical|High|Medium", "relationship": "sub-task|related|standalone", "parent_or_linked_ticket": "<ticket-key or existing-bug-key>" }
+  ],
+  "bugs_not_filed": [
+    { "$comment": "One entry per confirmed real bug held BELOW the 5d severity floor (Low/P3). Present and empty when there are none — an absent array is indistinguishable from a run that found none. `report` is the durable record; the floor drops a finding from the tracker, never from the run.", "severity": "Low", "provenance": "in-scope|pre-existing|out-of-scope", "summary": "<one line>", "report": "reports/bugs/open/<file>.md" }
   ],
   "business_rules_verified": ["BL-CART-001"],
   "appinsights": {

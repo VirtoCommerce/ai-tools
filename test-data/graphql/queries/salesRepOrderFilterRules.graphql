@@ -4,7 +4,7 @@
 # purpose: Store's configured order filter rules with localized labels, for the Orders section status-filter chips (consumed as salesRepOrders(filter:))
 # required-vars: (none)
 # optional-vars: (none)
-# last-validated: 2026-08-24
+# last-validated: 2026-08-27
 # known-issues: (none)
 # used-by: SR-GQL-033, SR-GQL-034, SR-CP-009
 # note: replaces the removed `salesRepOrderStatuses` query (dropped from the live schema 2026-07-28, BREAKING)

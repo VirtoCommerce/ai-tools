@@ -79,6 +79,105 @@ function formatField(f) {
   return f.name;
 }
 
+// The four ambient-context args. Order is the order a caller should think in:
+// WHO is asking (user, org), WHERE (store), and in WHICH language (culture).
+const CONTEXT_ARGS = ['cultureName', 'storeId', 'userId', 'organizationId'];
+
+// Rule 12 is DERIVED from the live introspection, never transcribed — the whole
+// point is that a caller can re-run `schema:refresh` and see whether the shape
+// still holds, instead of trusting a number someone typed once. See
+// `.claude/rules/test-data.md` §GOLDEN RULE.
+//
+// Why the rule needs stating at all: these args are overwhelmingly OPTIONAL, so
+// omitting one is not an error. The server silently substitutes a default and
+// returns HTTP 200 with data that is wrong, empty, or null — the single hardest
+// failure mode to notice, because nothing anywhere says anything went wrong.
+function renderContextArgRule(queries) {
+  const isRequired = (t) => t && t.kind === 'NON_NULL';
+  const findArg = (q, name) => (q.args || []).find((a) => a.name === name);
+
+  const stats = CONTEXT_ARGS.map((name) => {
+    let req = 0;
+    let opt = 0;
+    for (const q of queries) {
+      const a = findArg(q, name);
+      if (!a) continue;
+      if (isRequired(a.type)) req++;
+      else opt++;
+    }
+    return { name, req, opt, total: req + opt };
+  });
+
+  // The population that actually bites: accepts at least one context arg, and at
+  // least one of them is optional ⇒ the caller can silently get a server default.
+  const silentDefault = queries.filter((q) =>
+    CONTEXT_ARGS.some((name) => {
+      const a = findArg(q, name);
+      return a && !isRequired(a.type);
+    })
+  ).length;
+
+  const accepting = queries.filter((q) => CONTEXT_ARGS.some((name) => findArg(q, name))).length;
+  const pct = (n) => ((n / queries.length) * 100).toFixed(0);
+
+  let s = '';
+  s += `12. **Pass the ambient context — \`cultureName\`, \`storeId\`, \`userId\`, \`organizationId\` — on almost every query and mutation.**\n`;
+  s += `    Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:\n`;
+  s += `    the server substitutes a default and returns \`200\` with data that is wrong, empty, or \`null\`. There is no\n`;
+  s += `    message to notice. Measured on this schema (${queries.length} queries, derived at refresh):\n\n`;
+  s += `    | Context arg | Queries accepting it | Required | Optional |\n`;
+  s += `    |---|---|---|---|\n`;
+  for (const st of stats) {
+    s += `    | \`${st.name}\` | ${st.total} (${pct(st.total)}%) | ${st.req} | ${st.opt} |\n`;
+  }
+  s += `\n`;
+  s += `    **${accepting} of ${queries.length} queries (${pct(accepting)}%) accept at least one; ${silentDefault} (${pct(silentDefault)}%) accept one OPTIONALLY** —\n`;
+  s += `    that last figure is the exposure, because those are the calls that can quietly answer for a context you\n`;
+  s += `    never chose. Mutations take the same fields inside the \`command:\` wrapper (see Rule 1), so the same rule applies.\n\n`;
+  s += `    **Worked example.** \`loyaltyMissionProgress.description\` returns \`null\` for *every* item when \`cultureName\`\n`;
+  s += `    is omitted — the resolver throws \`ARGUMENT_NULL\` internally and the field comes back empty, while sibling\n`;
+  s += `    \`name\` resolves either way. A test case that omitted the culture therefore asserted an absence **it had\n`;
+  s += `    caused itself**, and would have been filed as a product defect. Found in REG-2026-08-27-1731 triage.\n\n`;
+  s += `    **The more dangerous neighbour: an argument that IS honoured, but means something else.** The trap above\n`;
+  s += `    is an ignored/absent context producing an empty answer. The worse one is an argument that does something\n`;
+  s += `    real, plausible, and different from what the caller assumed — because the result is stable, non-null, and\n`;
+  s += `    *differs from the unscoped read*, so it looks like the argument worked.\n`;
+  s += `\n`;
+  s += `    **Worked example — \`loyaltyBalance(userId, orderId)\`.** The \`orderId\` argument reads like per-order\n`;
+  s += `    attribution ("what did this order contribute?"). It is not. Resolved from source at \`1be73b4\`:\n`;
+  s += `    \`GetLoyaltyBalanceQueryBuilder.BeforeMediatorSend\` uses \`orderId\` **only to authorize** (it loads the order and\n`;
+  s += `    runs \`CanAccessLoyaltyAuthorizationRequirement\` against it); the handler's entire remaining effect is\n`;
+  s += `    \`CurrentBalance = ResultBalance = GetUserBalanceAsync(userId)\`, then, if an order was loaded,\n`;
+  s += `    \`ResultBalance = CurrentBalance − order.Total\`. So \`currentBalance\` is **always the full user balance**, and\n`;
+  s += `    \`resultBalance\` is a **pay-with-points affordability preview** — *what your balance would be if you settled\n`;
+  s += `    THIS order with points* — not this order's effect on it. That is also why the two fields exist: \`resultBalance\`\n`;
+  s += `    is not a variant of the balance, it answers a different question.\n`;
+  s += `\n`;
+  s += `    A case reading \`resultBalance\` as "this order's contribution" gets \`full_balance − order_total\`: a confident\n`;
+  s += `    wrong number that passes a naive sanity check (on the VIP fixture account it reads as roughly\n`;
+  s += `    964,192,343 − 240). **An argument that is honoured but misread is worse than one that is silently ignored**,\n`;
+  s += `    because the ignored one at least returns the same value as the unscoped call and eventually looks suspicious.\n`;
+  s += `    Audited 2026-08-28: no suite case asserts on \`resultBalance\` — \`075b\` \`MCO-GQL-004\` names it only in\n`;
+  s += `    precondition prose and \`075c\` \`LOY-038\` correctly asserts on \`currentBalance\` — but both **select** it, so the\n`;
+  s += `    field is one edit away from a future author. **Assert on \`currentBalance\` unless the case is specifically\n`;
+  s += `    testing pay-with-points affordability.**\n`;
+  s += `\n`;
+  s += `    **There is no per-mission attribution on the points ledger at all.** \`LoyaltyOperationLogObject\` exposes only\n`;
+  s += `    \`type\` / \`orderId\` / \`orderNumber\` (verified by live introspection, 2026-08-28), and \`LoyaltyMissionTransaction\`\n`;
+  s += `    — which *does* carry \`MissionId\`, \`ObjectId\`, \`UserId\` with a composite index, and is how the accrual dedup\n`;
+  s += `    works — is **not exposed through GraphQL in any form**. One order settles every mission applicable to its\n`;
+  s += `    user (measured: four missions at \`+250 / +200 / +100 / +0\` on one order), so **a balance total, a history\n`;
+  s += `    length, or any other aggregate is not an oracle for one mission's contribution**. The maximum attribution\n`;
+  s += `    the API permits is amount + \`orderId\` on the ledger entry — pin both, and never assert positionally on\n`;
+  s += `    \`items.0\` when several rows can land from one event.\n`;
+  s += `\n`;
+  s += `    **Consequences for authoring:** never conclude a field is empty, missing, or broken until the call carries\n`;
+  s += `    its full context; a differential result between two callers is a context difference until proven otherwise;\n`;
+  s += `    and never hardcode these values — resolve them (\`{{STORE_ID}}\`, \`me { id }\`, \`@td(...)\`) per\n`;
+  s += `    \`.claude/rules/test-data.md\`.\n`;
+  return s;
+}
+
 // Render a GraphQL type reference to standard notation, unwrapping NON_NULL (`!`)
 // and LIST (`[...]`) so e.g. emails: [String!]! renders faithfully (not `String`).
 function renderType(t) {
@@ -253,7 +352,9 @@ async function main() {
   md += `8. **Variations**: \`availabilityData\` (not \`availability\`)\n`;
   md += `9. **Order addresses/payments**: \`addresses[]\` and \`inPayments[]\` (not \`shippingAddress\` or \`payment\`)\n`;
   md += `10. **All cart mutations require \`userId\`**: \`addItem\`, \`addOrUpdateCartShipment\`, \`addOrUpdateCartPayment\`, \`clearCart\` — get from \`me { id }\`\n`;
-  md += `11. **\`addOrUpdateCartShipment\` requires \`price\`**: \`CartShipmentValidator\` rejects if price doesn't match available shipping rate. Query \`availableShippingMethods\` first.\n\n`;
+  md += `11. **\`addOrUpdateCartShipment\` requires \`price\`**: \`CartShipmentValidator\` rejects if price doesn't match available shipping rate. Query \`availableShippingMethods\` first.\n`;
+  md += renderContextArgRule(queries);
+  md += `\n`;
 
   md += `---\n\n`;
 

@@ -672,7 +672,7 @@ async function triggerReindex() {
   log('Triggering search reindex...');
 
   await api('POST', '/api/search/indexes/index', [
-    { documentType: 'CatalogProduct', rebuild: true },
+    { documentType: 'Product', rebuild: true },
     { documentType: 'Category', rebuild: true },
   ], { expectStatus: [200, 204] });
 

@@ -53,6 +53,9 @@ const TEARDOWN_STEPS = [
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
   { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', args: ['--teardown'] },
+  // Missions before programs: a mission's SKU targets are children of the mission, and the reverse
+  // order would leave them orphaned behind a deleted parent.
+  { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', args: ['--teardown'] },
   { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', args: ['--teardown'] },
   { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', args: ['--teardown'] },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', args: ['--teardown'] },
@@ -122,6 +125,12 @@ const STEPS = [
   // seed-loyalty-balance.mjs, which is manual-only and NOT wired here because it places real orders).
   { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', required: false, priority: 118 },
   { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', required: false, priority: 120 },
+  // VCST-5319 Loyalty Missions. OPTIONAL and after the programs: the missions endpoints only exist on
+  // a build that ships the feature, and the PerSku goals resolve their two target products by live
+  // catalog discovery, so the products phase (40) must already have run. It turns ONLY
+  // `Loyalty.Missions.Enable` on and never touches the base `Loyalty.Enable` that suites 075/075b/075c
+  // read through LOYALTY_SETTINGS.
+  { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', required: false, priority: 122 },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', required: false, priority: 130 },
   // Restricted back-office (Manager) RBAC account for CMS-123/124 — read-only Page Builder, no
   // builder:update. Independent of the catalog/user graph (own role + account); optional.

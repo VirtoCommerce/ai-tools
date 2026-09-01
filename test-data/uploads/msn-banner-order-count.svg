@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480">
+  <!--
+    Loyalty mission banner — ORDER COUNT goal (repeat orders / a rising run of parcels).
+    Palette is the VCST-5346 brand-palette.css tokens ONLY: primary-500 #f99e24, primary-600 #b46b0f,
+    primary-50 #fff8eb, secondary-900 #0d1013, secondary-800 #242b34, accent-400 #25a6d5.
+    The three reserved corners (top-left points pill, bottom-left type label, top-right completed badge)
+    are left as plain ground, and the subject sits above the darkened lower band.
+  -->
+  <defs>
+    <linearGradient id="oc-ground" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0d1013"/>
+      <stop offset="0.7" stop-color="#242b34"/>
+      <stop offset="1" stop-color="#1a2027"/>
+    </linearGradient>
+    <radialGradient id="oc-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f99e24" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#f99e24" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="oc-box" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f99e24"/>
+      <stop offset="1" stop-color="#b46b0f"/>
+    </linearGradient>
+    <linearGradient id="oc-lid" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff8eb" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#f99e24" stop-opacity="0.6"/>
+    </linearGradient>
+    <pattern id="oc-chevrons" width="56" height="56" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+      <path d="M0 40 L28 16 L56 40" fill="none" stroke="#fff8eb" stroke-opacity="0.06" stroke-width="2"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="480" fill="url(#oc-ground)"/>
+  <rect x="430" y="0" width="770" height="480" fill="url(#oc-chevrons)"/>
+  <circle cx="880" cy="230" r="300" fill="url(#oc-glow)"/>
+
+  <!-- four parcels on a shared baseline, each taller than the last: the count rising -->
+  <g>
+    <g opacity="0.42">
+      <rect x="520" y="256" width="112" height="74" rx="10" fill="none" stroke="#f99e24" stroke-width="3"/>
+      <line x1="576" y1="256" x2="576" y2="330" stroke="#f99e24" stroke-width="3" opacity="0.6"/>
+    </g>
+    <g opacity="0.62">
+      <rect x="662" y="222" width="112" height="108" rx="10" fill="none" stroke="#f99e24" stroke-width="3"/>
+      <line x1="718" y1="222" x2="718" y2="330" stroke="#f99e24" stroke-width="3" opacity="0.6"/>
+    </g>
+    <g opacity="0.82">
+      <rect x="804" y="186" width="112" height="144" rx="10" fill="none" stroke="#f99e24" stroke-width="3"/>
+      <line x1="860" y1="186" x2="860" y2="330" stroke="#f99e24" stroke-width="3" opacity="0.6"/>
+    </g>
+    <!-- the completed one: filled, and the only element carrying the light wash -->
+    <g>
+      <rect x="946" y="150" width="112" height="180" rx="10" fill="url(#oc-box)"/>
+      <rect x="946" y="150" width="112" height="26" rx="10" fill="url(#oc-lid)"/>
+      <line x1="1002" y1="176" x2="1002" y2="330" stroke="#0d1013" stroke-opacity="0.35" stroke-width="4"/>
+    </g>
+  </g>
+
+  <!-- teal progress rail under the run -->
+  <g stroke-linecap="round">
+    <line x1="500" y1="356" x2="1078" y2="356" stroke="#25a6d5" stroke-opacity="0.22" stroke-width="6"/>
+    <line x1="500" y1="356" x2="1002" y2="356" stroke="#25a6d5" stroke-opacity="0.7" stroke-width="6"/>
+  </g>
+  <circle cx="1002" cy="356" r="9" fill="#25a6d5"/>
+</svg>

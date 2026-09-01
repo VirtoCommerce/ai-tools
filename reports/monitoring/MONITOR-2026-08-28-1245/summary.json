@@ -1,0 +1,83 @@
+{
+  "runId": "MONITOR-2026-08-28-1245",
+  "date": "2026-08-28",
+  "configured": true,
+  "mode": "interactive",
+  "env": "vcst",
+  "layers": [
+    "backend",
+    "frontend"
+  ],
+  "window": "PT24H",
+  "windowEndUtc": "2026-08-28T12:40:00Z",
+  "platformVersion": "3.1061.0",
+  "telemetryVolume": {
+    "backend": 245255,
+    "frontend": 12968
+  },
+  "signaturesSeen": 26,
+  "new": 19,
+  "spiking": 0,
+  "triaged": 19,
+  "capped": 0,
+  "confirmed": 2,
+  "needsReview": 2,
+  "dismissed": 15,
+  "teamsNotified": false,
+  "teamsSkipReason": "TEAMS_WEBHOOK_URL not configured",
+  "fingerprintStoreUpdated": true,
+  "outcomes": [
+    {
+      "layer": "backend",
+      "probe": "backend-exceptions",
+      "signature": "System.ArgumentNullException at VirtoCommerce.Loyalty.ExperienceApi.Schemas.LoyaltyUserMissionType+<>c.<.ctor>b__0_2|_3",
+      "count": 5,
+      "class": "REAL_BUG",
+      "severity": "MEDIUM",
+      "reproResult": "CONFIRMED",
+      "reproMethod": "paired positive/negative control against {BACK_URL}/graphql",
+      "repo": "VirtoCommerce/vc-module-loyalty",
+      "repoKind": "module",
+      "rcaAnchor": "src/VirtoCommerce.Loyalty.ExperienceApi/Schemas/LoyaltyUserMissionType.cs:39",
+      "draft": "reports/bugs/open/BUG-AI-loyalty-mission-localizedname-null-culturename.md"
+    },
+    {
+      "layer": "backend",
+      "probe": "backend-exceptions",
+      "signature": "System.InvalidOperationException at VirtoCommerce.MarketingModule.Data.Services.EvaluationPolicies.PromotionPolicyBase+<>c__DisplayClass3_0+<<EvaluatePromotionAsync>b__0>d.MoveNext",
+      "count": 10,
+      "lastSeen": "2026-08-28T11:42:00Z",
+      "class": "REAL_BUG",
+      "severity": "HIGH",
+      "reproResult": "CONFIRMED",
+      "reproNote": "reproduced 3/3 in the browser at /account/missions (2026-08-28 13:52-14:00Z); a storeId-scoped API token does NOT reproduce it, which is why the first pass read as not-reproducible",
+      "repo": "VirtoCommerce/vc-module-marketing",
+      "repoKind": "module",
+      "rcaAnchor": "src/VirtoCommerce.MarketingModule.Data/Services/EvaluationPolicies/PromotionPolicyBase.cs:30",
+      "draft": "reports/bugs/open/BUG-missions-page-dead-product-resolver-throws-on-missing-currency.md"
+    },
+    {
+      "layer": "backend",
+      "probe": "backend-exceptions",
+      "signature": "System.InvalidOperationException at VirtoCommerce.StoreModule.Data.Services.StoreCurrencyResolver+<GetStoreCurrencyAsync>d__5.MoveNext",
+      "count": 16,
+      "firstSeen": "2026-08-27T14:36:02Z",
+      "lastSeen": "2026-08-27T17:02:56Z",
+      "class": "CONFIG_GATED",
+      "severity": "MEDIUM",
+      "reproResult": "NOT_REPRODUCED",
+      "reproNote": "env-state incident, self-healed; td:reconcile:store now green for B2B-store (USD / en-US / url set)",
+      "relatedOracle": "reference_store_required_defaults_null_breaks_frontend"
+    },
+    {
+      "layer": "backend",
+      "probe": "backend-failed-requests",
+      "signature": "500 PUT LoyaltyMission/Update",
+      "count": 2,
+      "class": "NEEDS_REVIEW",
+      "severity": "LOW",
+      "reproResult": "NOT_ATTEMPTED",
+      "reproNote": "no correlated exception or failed dependency row — insufficient evidence to classify"
+    }
+  ]
+}

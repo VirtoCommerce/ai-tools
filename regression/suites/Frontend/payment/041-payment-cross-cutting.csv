@@ -10,7 +10,7 @@
 [ASSERT] Required fields are marked with asterisk (*) or equivalent required indicator
 [ASSERT] Placeholder text, if present, is descriptive rather than generic (informational only — absence of a placeholder is not a failure)","[DOM] All four payment fields have visible labels
 [DOM] Required field indicator (* or 'required') present on mandatory fields
-[DOM] Placeholder text, where present, is descriptive (e.g., not '...' only) — optional/informational, not required for PASS","[CONSOLE] No rendering errors for payment section labels","Any field missing a visible label; required indicator absent on mandatory fields","none — no order placed","VCST-3387 TC-UX-001","Manual"
+[DOM] Placeholder text, where present, is descriptive (e.g., not '...' only) — optional/informational, not required for PASS","[CONSOLE] No rendering errors for payment section labels","Any field missing a visible label; required indicator absent on mandatory fields","none — no order placed","VCST-3387 TC-UX-001","Automated"
 "PAY-UX-002","Payment Form - Keyboard Tab Order","UX","Medium","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -24,7 +24,7 @@
 [KEY] Verify Tab exits iframe fields correctly (focus leaves iframe to next storefront element)
 [ASSERT] No tab trap encountered — Tab always advances focus","[STATE] Tab order follows logical sequence: Card Number → Cardholder Name → Expiry Date → CVV
 [STATE] Focus enters and exits iframe fields without becoming trapped
-[DOM] Focus indicator visible on each field when focused via keyboard","[CONSOLE] No JS errors from iframe focus handling","Tab order illogical (e.g., skips fields or jumps out of order); tab trap occurs inside iframe (cannot escape with Tab); focus indicator not visible on focused field","none — no order placed","VCST-3387 TC-UX-004","Manual"
+[DOM] Focus indicator visible on each field when focused via keyboard","[CONSOLE] No JS errors from iframe focus handling","Tab order illogical (e.g., skips fields or jumps out of order); tab trap occurs inside iframe (cannot escape with Tab); focus indicator not visible on focused field","none — no order placed","VCST-3387 TC-UX-004","Automated"
 "PAY-PERF-001","Payment Form - Load Time Under 2 Seconds","Performance","Medium","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -38,7 +38,7 @@
 [ACT] Open DevTools Network tab; review iframe resource load times","[STATE] CyberSource payment form fields interactive within 2 seconds of cart page load
 [DOM] All payment iframe(s) initialized — fields accept clicks and input
 [NETWORK] Iframe resources load without excessive blocking time","[NETWORK] No failed resource loads for cybersource.com iframe scripts
-[CONSOLE] No timeout errors for iframe initialization","Payment form remains in loading state beyond 2 seconds; iframe fails to initialize requiring page refresh; form fields unresponsive after iframes load","none — no order placed","VCST-3387 TC-PERF-001","Manual"
+[CONSOLE] No timeout errors for iframe initialization","Payment form remains in loading state beyond 2 seconds; iframe fails to initialize requiring page refresh; form fields unresponsive after iframes load","none — no order placed","VCST-3387 TC-PERF-001","Automated"
 "PAY-EDGE-001","Double-Click Place Order Prevention","Edge Cases","High","BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -53,7 +53,7 @@
 [NAV] Navigate to account order history and verify only one new order appears","[STATE] 'Place Order' button disabled after first click — subsequent clicks have no effect
 [STATE] Only one order created — no duplicate in account order history
 [NETWORK] Only one createOrderFromCart mutation request in DevTools Network","[API] createOrderFromCart GraphQL mutation called exactly once
-[ADMIN] Single new order in admin — no duplicate orders with same cart contents and timestamp","Button remains active after first click (not disabled); two or more createOrderFromCart mutations sent; duplicate order appears in account history or admin","Cancel order(s) via admin — ensure duplicate orders also cancelled if created","VCST-3387 TC-EDGE-020","Manual"
+[ADMIN] Single new order in admin — no duplicate orders with same cart contents and timestamp","Button remains active after first click (not disabled); two or more createOrderFromCart mutations sent; duplicate order appears in account history or admin","Cancel order(s) via admin — ensure duplicate orders also cancelled if created","VCST-3387 TC-EDGE-020","Automated"
 "PAY-DECLINE-001","Declined Card - Error Message Displayed","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -72,7 +72,7 @@
 [STATE] Payment form fields retain entered values after decline — not cleared
 [NAV] User remains on payment step after decline
 [STATE] No order created — order history unchanged","[API] createOrderFromCart GraphQL mutation errors[] contains decline-related error OR mutation is not called if processor blocks before order creation
-[ADMIN] No new order in admin for this session","No error message shown after decline; generic 'something went wrong' message without explanation; form cleared requiring full re-entry; order created despite decline (BL-PAY-005 violation)","none — no order created","Coverage Gap Analysis","Manual"
+[ADMIN] No new order in admin for this session","No error message shown after decline; generic 'something went wrong' message without explanation; form cleared requiring full re-entry; order created despite decline (BL-PAY-005 violation)","none — no order created","Coverage Gap Analysis","Automated"
 "PAY-DECLINE-002","Declined Card - Retry with Different Card Succeeds","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Logged in as registered user
 - Cart has at least one item
@@ -89,7 +89,7 @@
 [DOM] Order confirmation displays order number
 [STATE] Only one order created — no duplicate from failed first attempt
 [MATH] Order total matches original cart total","[API] createOrderFromCart GraphQL mutation errors[] is empty on successful retry
-[ADMIN] Single new order in admin — no duplicate entry for this session","Retry attempt triggers page reload losing cart state; second valid card also declined; two orders created (one from declined attempt — BL-PAY-005 violation); form not accepting input after decline","Cancel order via admin","Coverage Gap Analysis","Manual"
+[ADMIN] Single new order in admin — no duplicate entry for this session","Retry attempt triggers page reload losing cart state; second valid card also declined; two orders created (one from declined attempt — BL-PAY-005 violation); form not accepting input after decline","Cancel order via admin","Coverage Gap Analysis","Automated"
 "PAY-DECLINE-003","Declined Card - Network Timeout Recovery","Declined Cards","High","BL-PAY-003, BL-PAY-005","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Logged in as registered user
 - Cart has at least one item
@@ -109,7 +109,7 @@
 [NAV] Successful retry after network restored reaches order confirmation
 [STATE] Only one order in history and admin — no duplicate from timeout","[API] Only one createOrderFromCart GraphQL mutation per user action — no automatic retries that could cause duplicates
 [CONSOLE] No internal server error details leaked to console or UI
-[ADMIN] Single order in admin after successful retry","Internal server error message exposed to user; form inaccessible after timeout requiring page refresh; duplicate order created from timeout + retry scenario; timeout produces no user feedback","Cancel order via admin; ensure no duplicate orders","Coverage Gap Analysis","Manual"
+[ADMIN] Single order in admin after successful retry","Internal server error message exposed to user; form inaccessible after timeout requiring page refresh; duplicate order created from timeout + retry scenario; timeout produces no user feedback","Cancel order via admin; ensure no duplicate orders","Coverage Gap Analysis","Automated"
 "PAY-DECLINE-004","Declined Card - Double-Click Prevention After Error","Declined Cards","High","BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Logged in as registered user
 - Cart has at least one item
@@ -123,7 +123,7 @@
 [ASSERT] No additional orders created beyond what the single payment request would produce","[STATE] 'Place Order' button disabled immediately after first click even following a decline
 [NETWORK] Only one payment/order request per click sequence — no duplicate requests
 [STATE] Button re-enables after response (enabling intentional retry)","[API] Only one createOrderFromCart GraphQL mutation per click sequence visible in DevTools
-[ADMIN] No duplicate orders created from rapid clicking after decline","Button not disabled after click following decline — multiple payment requests sent; multiple duplicate auth requests in Network tab; button requires page reload to re-enable after decline","none — verify no spurious orders; cancel any created via admin","Coverage Gap Analysis","Manual"
+[ADMIN] No duplicate orders created from rapid clicking after decline","Button not disabled after click following decline — multiple payment requests sent; multiple duplicate auth requests in Network tab; button requires page reload to re-enable after decline","none — verify no spurious orders; cancel any created via admin","Coverage Gap Analysis","Automated"
 "PAY-DECLINE-005","Declined Card - Cart and Checkout State Preserved","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -142,7 +142,7 @@
 [STATE] Shipping address preserved after payment decline — user need not re-enter
 [STATE] Shipping method selection preserved after payment decline
 [DOM] Checkout progress indicator shows user still in payment step (not reset to start)","[API] createOrderFromCart GraphQL mutation errors[] confirms no order created
-[ADMIN] No new order in admin for this cart session","Cart cleared after decline — items lost requiring re-add; shipping address reset requiring re-entry; shipping method cleared requiring re-selection; user navigated back to checkout start","none — no order created; verify cart state is clean for next test","Coverage Gap Analysis","Manual"
+[ADMIN] No new order in admin for this cart session","Cart cleared after decline — items lost requiring re-add; shipping address reset requiring re-entry; shipping method cleared requiring re-selection; user navigated back to checkout start","none — no order created; verify cart state is clean for next test","Coverage Gap Analysis","Automated"
 "PAY-GUEST-001","Guest Checkout - CyberSource Payment Completes Without Account","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - User is NOT logged in (anonymous / guest session)
@@ -163,7 +163,7 @@
 [DOM] Order confirmation page shows order number and ordered items
 [STATE] No account registration required to complete payment","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
 [NETWORK] Payment token (not raw card number) sent in request payload for guest session
-[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05, REG-2026-06-05-1752 dismissed BUG_041_001) — expectation wrong; rewrite to assert guest-available payment methods; do NOT file 'form missing for guest' as a bug","Manual"
+[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05, REG-2026-06-05-1752 dismissed BUG_041_001) — expectation wrong; rewrite to assert guest-available payment methods; do NOT file 'form missing for guest' as a bug","Automated"
 "PAY-GUEST-002","Guest Checkout - Payment Validation Same as Authenticated User","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - User is NOT logged in (anonymous / guest session)
@@ -182,7 +182,7 @@
 [ASSERT] Validation error for missing cardholder name (or form submits — document behavior)","[DOM] Each validation error appears at field level for guest users — not a single generic error
 [STATE] Form does not submit with any invalid guest payment input
 [NAV] Guest user remains on cart page after each validation failure","[API] No createOrderFromCart GraphQL mutation fired for any invalid payment attempt
-[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05) — validation-parity premise invalid for CyberSource; rewrite against guest-available payment methods","Manual"
+[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05) — validation-parity premise invalid for CyberSource; rewrite against guest-available payment methods","Automated"
 "PAY-XLAY-001","Cross-Layer - Order Total at Checkout Matches Gateway Charge Amount","Cross-Layer Verification","Medium","BL-CHK-006, BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -203,7 +203,7 @@
 [MATH] Order confirmation total equals cart total — no rounding or truncation
 [MATH] Admin order total equals confirmation total — consistent across all three surfaces","[NETWORK] CyberSource payment request 'amount' field value matches storefront displayed total
 [API] createOrderFromCart GraphQL mutation totalPrice equals displayed cart total
-[ADMIN] Order total in admin details matches storefront and network payload amounts","Amount in network request differs from displayed total (overcharge or undercharge — BL-CHK-006 violation); confirmation total differs from cart total; admin order total differs from payment amount; rounding inconsistency causes 1-cent discrepancy","Cancel order via admin","ECL-14.6; BL-CHK-006; BL-PAY-003","Manual"
+[ADMIN] Order total in admin details matches storefront and network payload amounts","Amount in network request differs from displayed total (overcharge or undercharge — BL-CHK-006 violation); confirmation total differs from cart total; admin order total differs from payment amount; rounding inconsistency causes 1-cent discrepancy","Cancel order via admin","ECL-14.6; BL-CHK-006; BL-PAY-003","Automated"
 "PAY-DECLINE-006","Declined Card Recovery - CyberSource Error Then Retry With Valid Card","Payment > Decline > Recovery","Critical","BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; items in cart; at checkout payment step; CyberSource payment processor active","url={{FRONT_URL}}
@@ -227,7 +227,7 @@ valid_card={{TEST_CARD_NUMBER}}","[NAV] navigate to {{FRONT_URL}}/cart and compl
 [NAV] order confirmation reached on retry","[API] first payment attempt returns decline error
 [API] second payment attempt succeeds
 [CONSOLE] no unhandled JS errors during decline or retry
-[NETWORK] no 5xx errors","cart emptied after decline; shipping address lost; payment form unresponsive after decline; cannot re-enter card details; second attempt also fails despite valid card","Cancel test order via admin","Coverage Gap Analysis","Manual"
+[NETWORK] no 5xx errors","cart emptied after decline; shipping address lost; payment form unresponsive after decline; cannot re-enter card details; second attempt also fails despite valid card","Cancel test order via admin","Coverage Gap Analysis","Automated"
 "PAY-DECLINE-007","Multiple Consecutive Declines Preserve Checkout State","Payment > Decline > Multiple","High","BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; at checkout payment step; multiple declined test cards available","url={{FRONT_URL}}
@@ -247,7 +247,7 @@ declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to paym
 [STATE] billing address preserved if entered separately
 [DOM] decline error messages shown for each attempt","[API] multiple decline responses received without state corruption
 [CONSOLE] no JS errors accumulating across retries
-[NETWORK] no 5xx","addresses cleared after second decline; cart modified; checkout session invalidated; error messages accumulate and overlap; form becomes unresponsive","Cancel any test orders via admin","Coverage Gap Analysis","Manual"
+[NETWORK] no 5xx","addresses cleared after second decline; cart modified; checkout session invalidated; error messages accumulate and overlap; form becomes unresponsive","Cancel any test orders via admin","Coverage Gap Analysis","Automated"
 "PAY-SWITCH-001","Payment Method Switch - Form Resets and Processor Unregisters When Switching","Payment Method Switching","Medium","BL-PAY-004","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -279,7 +279,7 @@ declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to paym
 [DOM] After Skyflow→CS switch: CyberSource form renders; Skyflow form absent; no stale Skyflow data
 [STATE] After Skyflow→CS switch: 'Place order' button disabled until CS fields filled (onUnmounted cleanup fired)","[CONSOLE] No JS errors during either switch direction — no 'processor already registered' errors
 [NETWORK] No payment tokenization request fired when switching payment methods
-[CONSOLE] No TypeError on stale processor reference after unmount","Stale card data persists in DOM after switching away; 'Place order' button stays enabled after switch (onUnmounted setCardDataInvalid not called — processor cleanup regression); JS error on switch; wrong payment form shown for selected method","[PRE:RESET_CART]","ECL-7.1; BL-PAY-004; Moved from 040 to 041 (cross-cutting: covers CS↔Skyflow switch; PAY-SKY-011 covers Skyflow↔CS specific teardown; PAY-AN-011 covers AN→manual guard); Synced: VCST-5009 PR#2308+PR#23 (2026-06-04)","Reviewed"
+[CONSOLE] No TypeError on stale processor reference after unmount","Stale card data persists in DOM after switching away; 'Place order' button stays enabled after switch (onUnmounted setCardDataInvalid not called — processor cleanup regression); JS error on switch; wrong payment form shown for selected method","[PRE:RESET_CART]","ECL-7.1; BL-PAY-004; Moved from 040 to 041 (cross-cutting: covers CS↔Skyflow switch; PAY-SKY-011 covers Skyflow↔CS specific teardown; PAY-AN-011 covers AN→manual guard); Synced: VCST-5009 PR#2308+PR#23 (2026-06-04)","Automated"
 "PAY-MANUAL-001","Manual Payment - Purchase Order Placed with Pending Payment Status","Manual Payments","Medium","BL-PAY-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered B2B user (organization member with PO payment permission)
@@ -301,7 +301,7 @@ declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to paym
 [NAV] Order confirmation page reached after selecting manual payment and clicking 'Place Order'
 [DOM] Order confirmation indicates pending/offline payment status — not shown as 'Paid'
 [ADMIN] Order in admin with payment status 'Pending' or 'New' (not 'Paid')","[API] createOrderFromCart GraphQL mutation errors[] is empty for manual payment flow
-[ADMIN] Order payment method recorded as Purchase Order / Wire Transfer in admin order details","Manual payment option not shown to B2B user; form incorrectly shows card input fields for manual payment; order placed but shows 'Paid' status immediately (BL-PAY-003 violation); order not visible in admin after placement","Cancel order via admin","Checklist #9 item 11; BL-PAY-003; Moved from 040 to 041 (cross-cutting: provider-agnostic manual/PO flow, no card processor involved)","Manual"
+[ADMIN] Order payment method recorded as Purchase Order / Wire Transfer in admin order details","Manual payment option not shown to B2B user; form incorrectly shows card input fields for manual payment; order placed but shows 'Paid' status immediately (BL-PAY-003 violation); order not visible in admin after placement","Cancel order via admin","Checklist #9 item 11; BL-PAY-003; Moved from 040 to 041 (cross-cutting: provider-agnostic manual/PO flow, no card processor involved)","Automated"
 "PAY-DECLINE-008","After Decline User Can Switch Payment Method Entirely","Payment > Decline > Method Switch","High","BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; at checkout; multiple payment methods available; first attempt declined","url={{FRONT_URL}}
@@ -320,4 +320,4 @@ declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to paym
 [DOM] new payment form rendered for alternative method
 [STATE] checkout state preserved during method switch","[API] new payment method used in final order creation
 [CONSOLE] no JS errors during method switch
-[NETWORK] no 5xx","payment method selector locked after decline; cannot switch methods; previous method form persists; checkout state lost during switch","Cancel test order via admin","Coverage Gap Analysis; Moved from 040 to 041 (cross-cutting: decline→method-switch covers any processor combination, not provider-specific)","Manual"
+[NETWORK] no 5xx","payment method selector locked after decline; cannot switch methods; previous method form persists; checkout state lost during switch","Cancel test order via admin","Coverage Gap Analysis; Moved from 040 to 041 (cross-cutting: decline→method-switch covers any processor combination, not provider-specific)","Automated"

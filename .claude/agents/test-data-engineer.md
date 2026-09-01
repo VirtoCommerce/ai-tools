@@ -165,6 +165,26 @@ under per-domain subfolders of `scripts/seed-data/`.
 
 ### Safety invariants
 
+**NEVER run a git command that changes repository or working-tree state.** Forbidden outright:
+`git stash` (push/pop/apply/drop), `git checkout` / `git restore` / `git switch` on paths or branches,
+`git reset`, `git clean`, `git revert`, `git rebase`, `git merge`, `git commit`. Read-only inspection is
+fine (`git status`, `git diff`, `git log`, `git show`).
+
+This is not a style rule. **The working tree is shared** — other sessions and other agents hold
+uncommitted work in it at the same time you do (`feedback_parallel_sessions_share_working_tree`), and a
+tree-wide git operation destroys all of it with no undo. Measured, 2026-08-28: a `git stash push -- <paths>`
+that failed silently, followed by a `git stash pop` that picked up **another session's** pre-existing
+stash, followed by `git checkout --theirs -- .` as "recovery", reverted **every tracked file** to HEAD.
+That erased 14 rule/skill/agent edits from the parent session and a parallel session's suite fix that had
+re-pointed a journey suite off a permanently-consumed fixture — work that had to be replayed by hand, and
+in one case could not be recovered at all.
+
+**If you need a clean baseline, do not create one by moving other people's work.** Copy the file you are
+about to change into the scratchpad and diff against that, or read the committed version with
+`git show HEAD:<path>` — both are read-only and neither touches the tree. A `git stash` that "failed
+silently" is itself the signal to stop and report, never to escalate to a broader command.
+
+
 - `assertSafeTarget()` blocks `ENV_RISK=production`; seed only dev/test/staging/customer envs.
 - Runtime GUIDs → `aliases.<env>.json`; business keys → committed CSV/JSON. **Never** commit a runtime
   GUID (a suite run against another env would then resolve the wrong entity).
@@ -175,6 +195,14 @@ under per-domain subfolders of `scripts/seed-data/`.
 
 A lightweight in-agent analogue of the developers team's Gate-4 reviewer. All must hold:
 
+- [ ] **Decidable per link**: for every link of the feature's value chain this data serves, would the case
+      FAIL if that link were implemented wrong? Equal values on both sides of a distinction under test are
+      a data defect (`.claude/rules/test-data.md` §SECOND RULE). A fixture set can be immaculate by every
+      other box here and still test nothing — that is exactly what happened to the missions fixtures.
+- [ ] **Divergence is guarded, not just seeded** — the `td:validate:<domain>` guard FAILS when the
+      discriminating gap collapses (quantities equalise, rankings agree, a delta goes to zero).
+- [ ] `live-discover` is constrained on every dimension the feature reads (currency, price shape, stock,
+      catalog scope) — unconstrained discovery manufactures findings that get filed and rejected.
 - [ ] No hardcoded IDs/SKUs/prices/GUIDs — all via `{{VAR}}` / `@td()` / `live-discover` (DV-013 clean).
 - [ ] No runtime GUID in a committed CSV/JSON — it writes to `aliases.<env>.json` only.
 - [ ] Idempotent find-or-create; `TEST_ENV`-aware; `ENV_RISK`/prod guard honored; `AGENT-TEST-` prefix.

@@ -122,7 +122,16 @@ Each layer produces its own test case block with layer-appropriate tags from `te
 
 For each requirement/checklist item/BDD scenario:
 
-1. **Identify the happy path** — generate **1** test case for the primary success flow. This is the baseline; do not generate variations of it.
+1. **Author the `[JOURNEY]` case FIRST, from the model's value chain** (`/qa-test` Step 1e Part 0 →
+   `/qa-test-design` `test-design-techniques.md` §1a). It traverses the WHOLE chain in one run — trigger →
+   effect → persisted state → the surface the customer sees it on → what it unlocks — through the UI a
+   customer actually uses, with data that makes every link's outcome decidable. Stamp it
+   `Technique:FLOW` and title it `[JOURNEY]`. **This, not a single screen's happy path, is the baseline
+   the rest of the suite refines.** A feature that changes state and ships no journey case has not been
+   tested, however many per-screen cases surround it: on Loyalty Missions the biggest storefront suite
+   (71 cases) placed zero orders, so nothing in it could observe whether a mission ever advanced.
+   Then generate **1** case for the primary success flow of each additional screen the journey passes
+   through — the baseline; do not generate variations of it.
 2. **Apply test design techniques selectively** — only where there is a real risk of failure:
    - Boundary values: only for inputs where off-by-one or threshold errors are plausible in the implementation (e.g., quantity limits, price tier thresholds, discount caps)
    - Equivalence partitions: only when the system has genuinely distinct code paths per partition
@@ -131,7 +140,9 @@ For each requirement/checklist item/BDD scenario:
 3. **Add negative cases** — at minimum 1 per happy path: the most likely real-world failure (invalid input, expired token, missing required field, unauthorized role). Do not generate negative cases for every possible invalid input — pick the one most likely to slip through.
 4. **Add edge cases** — only from `ECL-*` patterns with documented failure history for this domain. Do not add edge cases speculatively.
 5. **Add cross-domain cases** — only when the interaction point between domains is a known source of bugs (e.g., cart + coupon discount stacking, checkout + inventory reservation race).
-6. **Cull before finalizing** — review the full candidate list and remove any case that: (a) duplicates the failure hypothesis of another case, (b) tests infrastructure rather than logic, or (c) would only fail if the framework itself is broken.
+6. **Cull before finalizing** — review the full candidate list and remove any case that: (a) duplicates the failure hypothesis of another case, (b) tests infrastructure rather than logic, (c) would only fail if the framework itself is broken, or (d) **names no chain link** — it neither crosses a link of the value chain nor guards one the journey already crosses. (d) is the cull that catches the expensive kind of waste: a strongly-asserted, well-formed check on something nobody's money depends on. `npm run tc:rank` cannot see it — it scores assertion *strength*, and it scored the missions storefront suite as strong while 54 of its 71 cases never left one page.
+   **A KEEP must survive three questions, and "it guards the UI" answers none of them:** name the *observable* it reads, the *defect* it would catch stated as a customer-visible failure, and *why that defect is plausible here* — a mechanism in this code, a bug in `reports/bugs/**`, or a `vc-bug-catalog` entry. "Any element could fail to render" is the null hypothesis and justifies infinite cases.
+   **Never invert an assertion to match a known defect.** A case whose correct expectation is currently unmet keeps the spec-derived expectation and links the bug (held at `Draft`, never promoted), or is marked `Manual`/`Deprecated` with the reason, or is cut so the finding lives only in the bug report. Flipping it to assert the broken behaviour makes the case green today, unfalsifiable forever, and RED on the day the bug is fixed.
 
 ### Step 3.5: VC-Specific State Patterns (check on every applicable feature)
 
@@ -192,9 +203,48 @@ matrix and the suite stay traceable. The combination matrix it returns is your i
 `Test_Data` column. Skip only for cases that touch no seeded entities (pure UI/copy/validation).
 This composes with — does not replace — the no-hardcode rule enforced in Step 5.
 
+### Step 3.9: Scaffold the rows — do not hand-type the boilerplate
+
+**The three KEEP questions in step 6 above are now machine-checked, one step earlier.** Write the surviving
+candidates out as an **authoring plan JSON** (one per target suite) and run:
+
+```bash
+npm run tc:alloc    -- --prefix <PREFIX> --block <layer>=<n> [--block ...]   # once, before any fan-out
+npm run tc:scaffold -- --plan <plan>.json --id-block <PREFIX-NNN..PREFIX-NNN> --out <staged>.csv
+```
+
+`scripts/test-cases/scaffold-rows.ts` **rejects a planned row that cannot name** its `observable` (the
+value it reads), its `defect` (the failure a CUSTOMER would see — null-hypothesis phrasings like *"could
+fail to render"* are refused by name), and its `plausible` (one of the three grounds step 6 lists: a
+`VC-*` catalog entry, a filed bug, or `mechanism: <what in this code makes it likely>`). A row that
+cannot justify itself never becomes a CSV row, so it is never authored, reviewed, executed or maintained
+— which is the cull step 6 asks for, moved to where it is cheap.
+
+What it emits:
+
+- A **staged CSV** (canonical header, in the scratchpad — never `regression/suites/`) with ten columns
+  already derived from `(layer, priority, archetype, technique, ticket)`: ID, Section, Priority,
+  Business_Rule, Edge_Case_Refs, Test_Data, Cross_Layer_Checks, Failure_Signals, Cleanup, References,
+  Automation_Status=`Draft`. Only **Preconditions / Steps / Assertions** are left blank — Step 4 below
+  authors exactly those, and `npm run suites:review -- <staged>.csv` names each unfilled one.
+- A **`.design.md` sidecar** — the per-row KEEP answers, i.e. the record of *why each case exists*.
+
+**Sweeps expand mechanically**, with their bug hypothesis already written by the document that owns them
+(read at run time, never transcribed): `state-stress` (qa-design §State-Stress Pass) · `uip`
+(modern-web-attack-surface §`UIP-*`) · `toggle` and `date-range` (§3.5 above). Declare them in the plan's
+`sweeps[]` with the surface being swept; waiving an item needs a reason, because a silent omission is
+what makes a sweep unreportable. This is the cheapest coverage in the pipeline and it is where the corpus
+is measurably thinnest (8 · 5 · 11 · 5 · 5 `UIP-*` cases across 1,961 Frontend cases).
+
+`--id-block` comes from `tc:alloc`, which scans the corpus **once**; the scaffolder refuses to spill past
+the block it was given. That is what makes concurrent per-surface batches safe — see `/qa-test` Step 3b.
+
 ### Step 4: Write Each Test Case
 
-For every test case, populate all 15 columns following the template:
+Fill `Preconditions` / `Steps` / `Assertions` on the scaffolded rows. The remaining columns are already
+populated by Step 3.9 — do not retype them; if one is wrong, fix the plan and re-scaffold, so the plan
+stays the source of truth. When scaffolding is skipped (a one-off single row), populate all 15 columns
+following the template:
 
 ```
 ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status
@@ -356,6 +406,51 @@ Generated test cases route to the correct executing agent by layer:
 
 - **Ground before you assert** — every assertion carries a provenance tag; anything not traceable to `{SPEC}`/`{BL}`/`{DOC}` is a `{HYPOTHESIS}` phrased as a question, and no `{HYPOTHESIS}`/untagged case reaches `Reviewed`. For a new feature (no doc/source), the mandatory `--verify` live pass upgrades hypotheses to `{OBSERVED}`. Never invent literal message strings — assert the semantic (literal-text rule).
 - **Bug hypothesis first** — every case must answer: "what real bug does this catch?" If you cannot answer, do not generate the case. Coverage numbers are vanity metrics.
+- **Chain link, or it does not ship** — every case either **crosses** a link of the feature's value chain or **guards** one the `[JOURNEY]` case already crosses; a case that does neither is decoration and is culled (Step 3 §6d). A link is crossed only by an observation on the *far side* of it: reading a value from the API and reading the same value off the page are two observations of one link, never coverage of the join between them.
+- **One `[JOURNEY]` case per state-changing feature, authored first** (Step 3 §1), `Technique:FLOW`. It is the case that answers "does this feature work at all?" — the one everybody assumes someone else wrote.
+- **A filtered read must be PROVED to filter.** Run the query once WITHOUT the filter and confirm the
+  results differ before any conclusion rests on the filtered figure. An ignored parameter does not error
+  — it returns a plausible number for a wider population, and a comparison between two such numbers is a
+  comparison of the whole dataset with itself. Measured 2026-09-01 on
+  `POST /api/loyalty-program-operation-log/search`: `{userIds:[uid]}` (plural) and an **unfiltered**
+  query return byte-identical results, `totalCount 990` across 4 distinct users, while `{userId: uid}`
+  (singular) returns `19` for one — so a per-user claim was being made from a global count. This is the
+  same "check the instrument against a known-good control" move that catches a wrong auth context,
+  applied to a query parameter; see also `.claude/knowledge/api/graphql-schema.md` on optional arguments
+  that are accepted and answer for a context you never chose.
+- **A verification that reports on a RECORDED SNAPSHOT is not checking the thing it names.** Same
+  family as the one below, one step removed: the check does not share the action's implementation, it
+  shares the action's *memory*. Measured 2026-09-01: `td:validate:missions-e2e` reported the fixture
+  set **clean** while three of its five fixtures were consumed — two terminal `Completed`, one
+  half-spent — because it validates the seed-time baselines recorded in the overlay rather than the
+  current state of the entities. It therefore certifies a fixture set that cannot run, and it does so
+  with a green exit code. A guard over live state must READ live state; a guard over a recorded
+  baseline is a guard over the record, and must say so in its own output.
+- **A verification that shares its implementation with the thing it verifies cannot detect that
+  implementation's failure — and it fails CLEAN.** This is the strongest form of false pass we have
+  measured, because the check passes *because* the action failed the same way. Worked example
+  (2026-09-01): a teardown reported `deleted 3 fixture product(s) ✓ zero residue verified` while a
+  fourth product survived — the residue check called the same lookup helper the delete had used, and
+  that helper's window had truncated identically both times. Not a narrower set: **the same blind spot
+  asked twice.** So a verification step must reach the state by a *different path* than the action did
+  — a different endpoint, a different index, a different reader — or it is a restatement of the
+  action's own belief about itself.
+- **A clean negative is the most dangerous result in the suite — prove the mechanism fired.** An
+  assertion of the form "X did not happen" passes identically when X correctly did not happen and when
+  nothing ran at all, or when the field you read cannot express X in the first place. Three instances
+  measured on 2026-08-28, all of which read as a confident PASS: a `0%` progress card that is
+  byte-identical whether nothing accrued or the settlement job never started (the API fabricates a
+  transient zero in memory); an assertion that "no ledger row references this order" on a subsystem
+  whose mission rows carry `object === null`, so **no** row ever references an order and the check
+  could not fail; and a role's credentials read as empty because they were resolved off a curated
+  export that omits the key, which returns `undefined` exactly like a genuinely unset variable. Every
+  negative assertion therefore needs a **positive control in the same event** — a second observation
+  that MUST move if the mechanism ran — and *neither moving is not a pass*.
+- **When the attribution ceiling drops, assertions that depended on the higher one go VACUOUS, not
+  red.** If you discover that a field you were pinning on does not exist, is always null, or means
+  something else, re-audit every assertion that leaned on it: they will keep passing, which is why
+  nobody notices. Re-check the whole file, not the one case that prompted the discovery.
+- **No case may certify a defect** — the expected result comes from the specification, never from the current build (Step 3 §6). A suite tuned to the implementation is unfalsifiable by construction and inverts the day the bug is fixed.
 - **Minimum effective set** — a smaller suite of targeted cases is better than a large suite of shallow ones. Prefer 5 focused cases over 20 that repeat the same failure mode.
 - **Suite sizing & packing (one suite = one runnable unit)** — pack cases so each CSV is a single feature/module area that **one isolated agent reads and runs in one session** (`/qa-regression` dispatches exactly one QA-expert agent per CSV, batched 3 at a time — the browser pool):
   - **Target ~20–40 cases per CSV** (repo median is 28). ≤20 is fine for a small feature; treat **>40 as a signal to split**, not a target to fill.

@@ -9,6 +9,9 @@
  *   Dim 1 Structure      S-001..S-007
  *   Dim 2 Determinism    D-001..D-006
  *   Dim 3 Completeness   C-001..C-008
+ *   FLOW-001             Frontend suite with no [JOURNEY] / Technique:FLOW case —
+ *                        nothing in it crosses the value chain end to end (file-level,
+ *                        Informational; baseline 2026-08-28: 8/58 Frontend suites had one)
  *   Dim 4 Testability    T-001..T-003 T-005 T-006
  *                        T-006 = assertion STRENGTH class (file-level tally here;
  *                        the hard per-row gate is in the appender, new rows only)
@@ -489,8 +492,15 @@ function capturedVars(row: Row): Set<string> {
   return out;
 }
 
+// A row is "runner-native" (parsed by graphql-case-parser.ts, not the UI/Admin D-001
+// single-tag-per-line grammar) when it uses EITHER GQL-OP or REST-OP — a pure-REST
+// runner-native case (only [AUTH]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE], no GraphQL at
+// all) is just as legitimate as a GQL one, and its multi-line REST-OP body (method+path,
+// headers, `Body: {...}` on their own lines — see graphql-test-cases-runner.md §3.7) is
+// NOT single-tag-per-line, so judging it against STEP_TAG_RE manufactured a false D-001
+// on every continuation line (found authoring VCST-5319 suite 075d, e.g. MSN-001/002/006).
 function isRunnerGraphql(row: Row): boolean {
-  return /\[GQL-OP\b/i.test(row.Steps);
+  return /\[GQL-OP\b|\[REST-OP\b/i.test(row.Steps);
 }
 
 export function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[] {
@@ -738,8 +748,8 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return inter / (a.size + b.size - inter);
 }
 
-/** Dim 7 (DUP-001 / DUP-004) + Dim 9 (TC-001) + Dim 11 (TRI-000) operate across rows. */
-function lintCrossRow(rows: Row[], now = new Date(), staleDays = DEFAULT_STALE_DAYS): Finding[] {
+/** Dim 7 (DUP-001 / DUP-004) + Dim 9 (TC-001) + Dim 11 (TRI-000) + FLOW-001 operate across rows. */
+function lintCrossRow(rows: Row[], now = new Date(), staleDays = DEFAULT_STALE_DAYS, file = ""): Finding[] {
   const f: Finding[] = [];
   const tokenSets = rows.map((r) => stepTokens(r.Steps));
   // DUP-001/004 target UI login/add-to-cart repetition. Runner-native GraphQL
@@ -804,6 +814,35 @@ function lintCrossRow(rows: Row[], now = new Date(), staleDays = DEFAULT_STALE_D
     f.push(find("T-006", "Informational", unclassified[0].ID || "<file>",
       `${unclassified.length} case(s) use assertion forms the strength classifier cannot read — not evidence they are weak; extend the classifier or rephrase`));
 
+  // FLOW-001 — does anything in this suite traverse the feature's value chain END TO
+  // END, on the surface a customer actually uses? A suite can be full of strongly
+  // asserted cases and still never answer "does this feature work?": on Loyalty
+  // Missions the 71-case storefront suite placed ZERO orders and 54 of its cases never
+  // left one page, while tc:rank scored it strong (41 INV, 58 KEEP). Assertion strength
+  // says whether a check CAN fail; this says whether anything checks the mechanism.
+  //
+  // Scoped to Frontend suites on purpose. "The customer's own surface" is the whole
+  // point of the rule, and a Backend contract suite legitimately has no journey — firing
+  // on all 74 of them would be noise, and noise is how a rule gets --warn-only'd into
+  // silence. Informational + file-level for the same reason as the T-006 and GRD-001
+  // tallies above: measured baseline on 2026-08-28 was 8 of 58 Frontend suites carrying
+  // a [JOURNEY] case (0 of 74 Backend), so a per-case or High finding would turn the
+  // corpus red on day one. It is a burn-down signal, not a gate.
+  //
+  // The marker is the [JOURNEY] title/Section tag the generator already mandates, or a
+  // Technique:FLOW stamp in References — both are authored, neither is inferred, because
+  // guessing "is this case end-to-end?" from step text would manufacture verdicts the
+  // author never made.
+  if (rows.length && /[\\/]Frontend[\\/]/.test(file)) {
+    const hasJourney = rows.some(
+      (r) => /\[JOURNEY\]/i.test(`${r.Title} ${r.Section}`) || /\bTechnique:\s*FLOW\b/i.test(r.References),
+    );
+    if (!hasJourney)
+      f.push(find("FLOW-001", "Informational", rows[0].ID || "<file>",
+        `${rows.length} case(s), none marked [JOURNEY] / Technique:FLOW — nothing here crosses the ` +
+          `feature's value chain end to end on the customer's surface; see /qa-test-design §1a (FLOW)`));
+  }
+
   // Dim 11 (TRI-000) staleness tally — one file-level signal, same shape as the
   // GRD-001 tally above and for the same reason: a per-case finding would emit
   // ~3,960 rows across the repo on day one. Informational keeps it below the
@@ -865,7 +904,7 @@ function main(): void {
 
   const seenIds = new Map<string, number>();
   rows.forEach((r, i) => findings.push(...lintRow(r, i, seenIds)));
-  findings.push(...lintCrossRow(rows, new Date(), staleDays));
+  findings.push(...lintCrossRow(rows, new Date(), staleDays, file));
 
   report(findings, file, json, failOn);
 }

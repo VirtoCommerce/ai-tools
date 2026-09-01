@@ -1,0 +1,58 @@
+# name: loyaltyMissionProgress
+# category: loyalty
+# role: ORG_USER
+# purpose: Per-user progress across loyalty missions — status, current-vs-target progress (quantity and money), reward points, and the per-product breakdown
+# required-vars: STORE_ID (String)
+# optional-vars: CULTURE_NAME (String), USER_ID (String — omit to use the authenticated caller), FIRST (Int — via $first), STATUSES ([String] — via $statuses), IS_STARTED (Boolean — via $isStarted), COMPLETED_START_DATE (DateTime — via $completedStartDate), COMPLETED_END_DATE (DateTime — via $completedEndDate)
+# last-validated: 2026-08-27
+# known-issues:
+#   - `status` and `statuses` are plain String on the schema, not an enum, so a typo is accepted by validation and silently returns an empty page — assert totalCount, never just a non-error response.
+#   - currentValue/targetValue/percentage are Decimal; currentMoneyValue/targetMoneyValue are MoneyType. A mission counting units populates the Decimal pair, a mission counting spend populates the MoneyType pair — do not assume both are set on one mission.
+# used-by: (none yet — authored alongside the loyalty-missions seeder)
+# runner-note: first/statuses/isStarted/completed*Date CANNOT be {{}}-substituted (Int, [String], Boolean, DateTime) — pass them via [GQL-VARS label] JSON, e.g. {"first": 10, "statuses": ["Completed"], "isStarted": true}
+
+query LoyaltyMissionProgress(
+  $first: Int
+  $statuses: [String]
+  $isStarted: Boolean
+  $completedStartDate: DateTime
+  $completedEndDate: DateTime
+) {
+  loyaltyMissionProgress(
+    storeId: "{{STORE_ID}}"
+    cultureName: "{{CULTURE_NAME}}"
+    first: $first
+    statuses: $statuses
+    isStarted: $isStarted
+    completedStartDate: $completedStartDate
+    completedEndDate: $completedEndDate
+  ) {
+    totalCount
+    items {
+      missionId
+      name
+      localizedName
+      missionType
+      status
+      isStarted
+      startDate
+      endDate
+      daysRemaining
+      currentValue
+      targetValue
+      percentage
+      currentMoneyValue { amount currency { code } }
+      targetMoneyValue { amount currency { code } }
+      rewardPoints { amount currency { code } }
+      completedDate
+      periodStart
+      periodEnd
+      items {
+        productId
+        currentQuantity
+        targetQuantity
+        product { id name code }
+      }
+    }
+  }
+}

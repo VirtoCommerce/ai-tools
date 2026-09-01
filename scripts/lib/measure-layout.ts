@@ -171,6 +171,12 @@ export interface SpacingAuditResult {
     value: number;
     cssText: string;
   }>;
+  /** Margins SPECIFIED as `auto` (detected via Typed OM), excluded because their used
+   *  value is a centring offset — not an authored spacing choice. */
+  autoMarginsExcluded?: number;
+  /** Elements where Typed OM was unavailable, so a specified `auto` could not be seen.
+   *  Non-zero means the off-grid list may still contain centring offsets. */
+  typedOmMissing?: number;
 }
 
 export interface AlignmentAuditResult {
@@ -251,6 +257,9 @@ export interface ContrastAuditResult {
     isLargeText: boolean;
     requiredRatio: number;
   }>;
+  /** Colours the parser could not decode. Recorded, never silently dropped: a skipped
+   *  probe is missing coverage, and reporting it as a pass is the failure mode. */
+  unparsed?: Array<{ tag: string; prop: string; value: string }>;
 }
 
 export interface FocusIndicatorAuditResult {
@@ -289,6 +298,9 @@ export interface NonTextContrastAuditResult {
   }>;
   /** Skipped because the nearest interactive ancestor is disabled (WCAG 1.4.11 exempts inactive components). */
   exempt: number;
+  /** Colours the parser could not decode. Recorded, never silently dropped: a skipped
+   *  probe is missing coverage, and reporting it as a pass is the failure mode. */
+  unparsed?: Array<{ tag: string; prop: string; value: string }>;
 }
 
 export interface SizedControlAuditResult {
@@ -606,20 +618,142 @@ export const LAYOUT_SNIPPETS = {
  *
  * Example: spacingAuditSnippet('.product-card, .product-card *')
  */
+/**
+ * Shared colour maths for every contrast auditor, emitted as JS source into each browser
+ * snippet. ONE implementation on purpose: `contrastAuditSnippet` and
+ * `nonTextContrastAuditSnippet` each carried a private copy, so a parser gap
+ * fixed in one silently survived in the other — which is exactly how `color(srgb …)`
+ * went undecoded in BOTH while only one was ever inspected (8 of 14 probes silently
+ * skipped in the VCST-5346 audit, including every muted grey).
+ *
+ * Deliberately DOM-free so scripts/unit/measure-layout-color.test.ts can evaluate it in
+ * Node via `new Function` — a browser-only snippet is a snippet nothing can test.
+ */
+export const COLOR_MATH_JS = String.raw`
+function parseColor(s) {
+  if (!s) return null;
+  const str = String(s).trim();
+  if (str === 'transparent') return [0, 0, 0, 0];
+  // rgb()/rgba() — legacy comma syntax AND modern space syntax ('rgb(0 0 0 / 50%)').
+  const rgbM = str.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgbM) {
+    const parts = rgbM[1].replace(/\//g, ' ').split(/[,\s]+/).filter(Boolean);
+    if (parts.length >= 3) {
+      const n = parts.slice(0, 3).map(p => p.endsWith('%') ? parseFloat(p) * 2.55 : parseFloat(p));
+      const a = parts.length > 3 ? (parts[3].endsWith('%') ? parseFloat(parts[3]) / 100 : parseFloat(parts[3])) : 1;
+      if (n.every(v => !Number.isNaN(v)) && !Number.isNaN(a)) return [n[0], n[1], n[2], a];
+    }
+    return null;
+  }
+  // color(srgb r g b [/ a]) — vc-frontend emits this widely. Components are 0..1.
+  // ONLY srgb is decoded: another colour space needs a real conversion, and a guessed
+  // one silently mis-measures, so anything else is reported unparsed instead.
+  const fnM = str.match(/^color\(\s*([a-z0-9-]+)\s+([^)]+)\)$/i);
+  if (fnM) {
+    if (fnM[1].toLowerCase() !== 'srgb') return null;
+    const parts = fnM[2].replace(/\//g, ' ').split(/[,\s]+/).filter(Boolean);
+    if (parts.length >= 3) {
+      const n = parts.slice(0, 3).map(p => (p.endsWith('%') ? parseFloat(p) / 100 : parseFloat(p)) * 255);
+      const a = parts.length > 3 ? (parts[3].endsWith('%') ? parseFloat(parts[3]) / 100 : parseFloat(parts[3])) : 1;
+      if (n.every(v => !Number.isNaN(v)) && !Number.isNaN(a)) return [n[0], n[1], n[2], a];
+    }
+    return null;
+  }
+  const hexM = str.match(/^#([0-9a-fA-F]{3,8})$/);
+  if (hexM) {
+    let h = hexM[1];
+    if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+    if (h.length !== 6 && h.length !== 8) return null;
+    const a = h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16), a];
+  }
+  return null;
+}
+function lum(rgb) {
+  const [r, g, b] = rgb.slice(0, 3).map(v => {
+    const c = Math.min(255, Math.max(0, v)) / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function ratio(a, b) {
+  const la = lum(a), lb = lum(b);
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+// Source-over composite of a translucent 'top' onto 'bottom'. Without it a 30%-alpha
+// layer was measured at its RAW rgb, i.e. as though fully opaque.
+function compositeOver(top, bottom) {
+  const a = top[3] == null ? 1 : top[3];
+  if (a >= 1) return [top[0], top[1], top[2], 1];
+  const ba = bottom[3] == null ? 1 : bottom[3];
+  const outA = a + ba * (1 - a);
+  if (outA <= 0) return [0, 0, 0, 0];
+  const mix = i => (top[i] * a + bottom[i] * ba * (1 - a)) / outA;
+  return [mix(0), mix(1), mix(2), outA];
+}
+`;
+
+/**
+ * Effective background resolution, as JS source. Needs a DOM, so it is kept apart from
+ * COLOR_MATH_JS.
+ *
+ * Replaces two defects. The walk stopped BEFORE `document.documentElement` and then fell
+ * back to `parseColor(htmlBg) || [255,255,255,1]` — but a normally-transparent `html`
+ * parses to `[0,0,0,0]`, which is TRUTHY, so the white fallback never fired and every
+ * text node was measured against BLACK (13 phantom 1.06:1 failures on text that is
+ * actually 19.8:1, VCST-5346). And a translucent layer was taken at face value instead
+ * of being composited onto what sits beneath it.
+ */
+export const EFFECTIVE_BG_JS = String.raw`
+function effectiveBg(el) {
+  const layers = [];
+  let cur = el;
+  while (cur) {
+    const bg = parseColor(getComputedStyle(cur).backgroundColor);
+    if (bg && bg[3] > 0) {
+      if (bg[3] >= 1) return layers.reduceRight((acc, l) => compositeOver(l, acc), bg);
+      layers.push(bg);
+    }
+    cur = cur.parentElement;
+  }
+  // Nothing opaque anywhere. A fully transparent html/body is the NORMAL case, and the
+  // canvas underneath it is white — never black.
+  return layers.reduceRight((acc, l) => compositeOver(l, acc), [255, 255, 255, 1]);
+}
+`;
+
 export function spacingAuditSnippet(selector: string): string {
   const grid = SPACING_GRID.join(",");
   return `
 (() => {
   const GRID = new Set([${grid}]);
   const PROPS = ['paddingTop','paddingRight','paddingBottom','paddingLeft','marginTop','marginRight','marginBottom','marginLeft','gap','rowGap','columnGap'];
+  const KEBAB = { marginTop: 'margin-top', marginRight: 'margin-right', marginBottom: 'margin-bottom', marginLeft: 'margin-left' };
   const els = document.querySelectorAll(${JSON.stringify(selector)});
   const offGrid = [];
-  let index = 0;
+  let index = 0, autoMarginsExcluded = 0, typedOmMissing = 0;
   for (const el of els) {
     const cs = getComputedStyle(el);
+    // 'margin: auto' RESOLVES to a used px value — a centring offset like 85.125px — so
+    // the resolved string never reads 'auto' and every centred block scored as off-grid.
+    // The Typed OM exposes the SPECIFIED value, which does.
+    let autoProps = null;
+    if (typeof el.computedStyleMap === 'function') {
+      try {
+        const csm = el.computedStyleMap();
+        autoProps = new Set();
+        for (const k in KEBAB) {
+          const v = csm.get(KEBAB[k]);
+          if (v && String(v).trim() === 'auto') autoProps.add(k);
+        }
+      } catch (e) { autoProps = null; }
+    }
+    if (!autoProps) typedOmMissing++;
     for (const prop of PROPS) {
       const raw = cs[prop];
       if (!raw || raw === 'normal' || raw === 'auto') continue;
+      if (autoProps && autoProps.has(prop)) { autoMarginsExcluded++; continue; }
       // Handles "16px", "16px 8px", etc — only single-value scalars here (PROPS list is scalar)
       const num = parseFloat(raw);
       if (Number.isNaN(num)) continue;
@@ -639,7 +773,7 @@ export function spacingAuditSnippet(selector: string): string {
     index++;
     if (offGrid.length >= 100) break;
   }
-  return { selector: ${JSON.stringify(selector)}, matched: els.length, offGrid };
+  return { selector: ${JSON.stringify(selector)}, matched: els.length, offGrid, autoMarginsExcluded, typedOmMissing };
 })()
 `.trim();
 }
@@ -880,42 +1014,8 @@ export function contrastAuditSnippet(selector: string = 'body *'): string {
   return `
 (() => {
   const SEL = ${JSON.stringify(selector)};
-  // Parse a CSS color string into [r, g, b] (0-255). Returns null for unparseable.
-  function parseColor(s) {
-    if (!s) return null;
-    const m = s.match(/rgba?\\(([^)]+)\\)/i);
-    if (m) {
-      const parts = m[1].split(',').map(x => parseFloat(x.trim()));
-      if (parts.length >= 3) return [parts[0], parts[1], parts[2], parts[3] == null ? 1 : parts[3]];
-    }
-    return null;
-  }
-  // Relative luminance per WCAG 2.x.
-  function lum(rgb) {
-    const [r, g, b] = rgb.slice(0, 3).map(v => {
-      const c = v / 255;
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  }
-  function ratio(a, b) {
-    const la = lum(a), lb = lum(b);
-    const [hi, lo] = la > lb ? [la, lb] : [lb, la];
-    return (hi + 0.05) / (lo + 0.05);
-  }
-  // Find first non-transparent ancestor background.
-  function effectiveBg(el) {
-    let cur = el;
-    while (cur && cur !== document.documentElement) {
-      const cs = getComputedStyle(cur);
-      const bg = parseColor(cs.backgroundColor);
-      if (bg && bg[3] > 0) return bg;
-      cur = cur.parentElement;
-    }
-    // Fallback: html element bg or white
-    const htmlCs = getComputedStyle(document.documentElement);
-    return parseColor(htmlCs.backgroundColor) || [255, 255, 255, 1];
-  }
+  ${COLOR_MATH_JS}
+  ${EFFECTIVE_BG_JS}
   const els = Array.from(document.querySelectorAll(SEL)).filter(el => {
     // Only leaf text nodes — has direct text content but no element children with text.
     if (!el.textContent || !el.textContent.trim()) return false;
@@ -928,13 +1028,19 @@ export function contrastAuditSnippet(selector: string = 'body *'): string {
     return ownText;
   });
   const violations = [];
+  const unparsed = [];
   let evaluated = 0;
   for (const el of els) {
     evaluated++;
     const cs = getComputedStyle(el);
     const fg = parseColor(cs.color);
+    if (!fg) {
+      // A colour we cannot decode is a GAP, not a pass — record it so the classifier
+      // can downgrade to WARN instead of reporting partial coverage as complete.
+      if (unparsed.length < 20) unparsed.push({ tag: el.tagName.toLowerCase(), prop: 'color', value: String(cs.color) });
+      continue;
+    }
     const bg = effectiveBg(el);
-    if (!fg) continue;
     const fontSizePx = parseFloat(cs.fontSize) || 16;
     const fontWeight = parseInt(cs.fontWeight, 10) || 400;
     const isLargeText = fontSizePx >= 24 || (fontSizePx >= 18.66 && fontWeight >= 700);
@@ -953,7 +1059,7 @@ export function contrastAuditSnippet(selector: string = 'body *'): string {
       if (violations.length >= 50) break;
     }
   }
-  return { selector: SEL, evaluated, violations };
+  return { selector: SEL, evaluated, violations, unparsed };
 })()
 `.trim();
 }
@@ -1120,29 +1226,8 @@ export function nonTextContrastAuditSnippet(
 (() => {
   const SEL = ${JSON.stringify(selector)};
   const REQUIRED = ${NON_TEXT_CONTRAST_RATIO};
-  function parseColor(s) {
-    if (!s) return null;
-    const m = s.match(/rgba?\\(([^)]+)\\)/i);
-    if (m) {
-      const p = m[1].split(',').map(x => parseFloat(x.trim()));
-      if (p.length >= 3) return [p[0], p[1], p[2], p[3] == null ? 1 : p[3]];
-    }
-    return null;
-  }
-  function lum(rgb) {
-    const [r, g, b] = rgb.slice(0, 3).map(v => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  }
-  function ratio(a, b) { const la = lum(a), lb = lum(b); const [hi, lo] = la > lb ? [la, lb] : [lb, la]; return (hi + 0.05) / (lo + 0.05); }
-  function effectiveBg(el) {
-    let cur = el;
-    while (cur && cur !== document.documentElement) {
-      const bg = parseColor(getComputedStyle(cur).backgroundColor);
-      if (bg && bg[3] > 0) return bg;
-      cur = cur.parentElement;
-    }
-    return parseColor(getComputedStyle(document.documentElement).backgroundColor) || [255, 255, 255, 1];
-  }
+  ${COLOR_MATH_JS}
+  ${EFFECTIVE_BG_JS}
   // Resolve the glyph's painted color: prefer a real stroke (outline icons), then fill (solid), then CSS color.
   function glyphColor(el, cs) {
     const stroke = parseColor(cs.stroke);
@@ -1159,6 +1244,7 @@ export function nonTextContrastAuditSnippet(
     return true;
   });
   const violations = [];
+  const unparsed = [];
   let evaluated = 0, exempt = 0;
   for (const el of els) {
     // WCAG 1.4.11 exempts inactive components.
@@ -1166,7 +1252,10 @@ export function nonTextContrastAuditSnippet(
     if (host && (host.disabled === true || host.getAttribute('aria-disabled') === 'true')) { exempt++; continue; }
     const cs = getComputedStyle(el);
     const fg = glyphColor(el, cs);
-    if (!fg) continue;
+    if (!fg) {
+      if (unparsed.length < 20) unparsed.push({ tag: el.tagName.toLowerCase(), prop: 'stroke/fill/color', value: [cs.stroke, cs.fill, cs.color].join(' | ') });
+      continue;
+    }
     evaluated++;
     const bg = effectiveBg(el);
     const r = ratio(fg, bg);
@@ -1182,7 +1271,7 @@ export function nonTextContrastAuditSnippet(
       if (violations.length >= 50) break;
     }
   }
-  return { selector: SEL, evaluated, violations, exempt };
+  return { selector: SEL, evaluated, violations, exempt, unparsed };
 })()
 `.trim();
 }
@@ -1464,18 +1553,24 @@ export function classifyCls(result: ClsResult): LayoutFinding {
 }
 
 export function classifySpacing(result: SpacingAuditResult): LayoutFinding {
+  const auto = result.autoMarginsExcluded ?? 0;
+  const blind = result.typedOmMissing ?? 0;
+  const autoNote = auto > 0 ? `; ${auto} \`margin:auto\` centring offset(s) excluded` : "";
+  // Typed OM unavailable ⇒ a centring offset can still be sitting in offGrid, so say so
+  // rather than presenting the list as clean authored spacing.
+  const blindNote = blind > 0 ? `; ${blind} element(s) without Typed OM — \`margin:auto\` undetectable there` : "";
   if (result.offGrid.length === 0) {
     return {
       invariant: "BL-UI-002",
       severity: "PASS",
-      message: `All spacing on grid (${result.matched} elements audited)`,
+      message: `All spacing on grid (${result.matched} elements audited${autoNote}${blindNote})`,
       evidence: result,
     };
   }
   return {
     invariant: "BL-UI-002",
     severity: "FAIL",
-    message: `${result.offGrid.length} off-grid spacing values (e.g. ${result.offGrid[0].cssText})`,
+    message: `${result.offGrid.length} off-grid spacing values (e.g. ${result.offGrid[0].cssText})${autoNote}${blindNote}`,
     evidence: result,
   };
 }
@@ -1608,11 +1703,18 @@ export function classifyOcclusion(result: OcclusionAuditResult): LayoutFinding {
 }
 
 export function classifyContrast(result: ContrastAuditResult): LayoutFinding {
+  const skipped = result.unparsed?.length ?? 0;
+  const skipNote =
+    skipped > 0
+      ? ` (${skipped} skipped — undecodable colour, e.g. "${result.unparsed![0].value}"; coverage INCOMPLETE)`
+      : "";
   if (result.violations.length === 0) {
+    // Same discipline as classifyFocusIndicator's indeterminate branch: partial coverage
+    // reported as a pass is how 8 of 14 probes went missing unnoticed (VCST-5346).
     return {
       invariant: "BL-UI-008",
-      severity: "PASS",
-      message: `All ${result.evaluated} text nodes meet WCAG 1.4.3 contrast`,
+      severity: skipped > 0 ? "WARN" : "PASS",
+      message: `${result.evaluated} text nodes evaluated, 0 WCAG 1.4.3 violations${skipNote}`,
       evidence: result,
     };
   }
@@ -1620,7 +1722,7 @@ export function classifyContrast(result: ContrastAuditResult): LayoutFinding {
   return {
     invariant: "BL-UI-008",
     severity: "FAIL",
-    message: `${result.violations.length} contrast violation(s); worst: ${worst.ratio}:1 (needs ${worst.requiredRatio}:1) on "${worst.text}"`,
+    message: `${result.violations.length} contrast violation(s); worst: ${worst.ratio}:1 (needs ${worst.requiredRatio}:1) on "${worst.text}"${skipNote}`,
     evidence: result,
   };
 }
@@ -1651,11 +1753,16 @@ export function classifyFocusIndicator(
 export function classifyNonTextContrast(
   result: NonTextContrastAuditResult,
 ): LayoutFinding {
+  const skipped = result.unparsed?.length ?? 0;
+  const skipNote =
+    skipped > 0
+      ? ` (${skipped} skipped — undecodable glyph colour, e.g. "${result.unparsed![0].value}"; coverage INCOMPLETE)`
+      : "";
   if (result.violations.length === 0) {
     return {
       invariant: "BL-UI-008-NONTEXT",
-      severity: "PASS",
-      message: `All ${result.evaluated} enabled glyphs meet WCAG 1.4.11 (${NON_TEXT_CONTRAST_RATIO}:1); ${result.exempt} exempt (disabled)`,
+      severity: skipped > 0 ? "WARN" : "PASS",
+      message: `All ${result.evaluated} enabled glyphs meet WCAG 1.4.11 (${NON_TEXT_CONTRAST_RATIO}:1); ${result.exempt} exempt (disabled)${skipNote}`,
       evidence: result,
     };
   }

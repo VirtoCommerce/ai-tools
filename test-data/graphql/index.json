@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-07-17",
+  "lastValidated": "2026-08-27",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 73,
+  "totalFixtures": 74,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -382,6 +382,26 @@
       "role": "SALES_REP",
       "requiredVars": [],
       "usedBy": ["SR-GQL-033", "SR-GQL-034", "SR-CP-009"]
+    },
+    "loyaltyMissionProgress": {
+      "path": "queries/loyaltyMissionProgress.graphql",
+      "category": "loyalty",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID"],
+      "gqlVars": {
+        "first": "Int",
+        "statuses": "[String]",
+        "isStarted": "Boolean",
+        "completedStartDate": "DateTime",
+        "completedEndDate": "DateTime"
+      },
+      "runnerNote": "Pass first/statuses/isStarted/completed*Date via [GQL-VARS label] JSON — Int, [String], Boolean and DateTime cannot be {{}}-substituted.",
+      "exampleVars": {
+        "first": 10,
+        "statuses": ["Completed"],
+        "isStarted": true
+      },
+      "semantics": "Per-user loyalty mission progress. status/statuses are plain String (not an enum), so an unknown value validates and returns an empty page — assert totalCount. A units mission fills currentValue/targetValue (Decimal); a spend mission fills currentMoneyValue/targetMoneyValue (MoneyType)."
     }
   },
   "mutations": {

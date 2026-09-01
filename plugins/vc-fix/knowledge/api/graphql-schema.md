@@ -1,10 +1,14 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-01)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-08-27)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
-> **Refresh**: this snapshot is refreshed manually via live introspection when the schema changes
-> (`scripts/refresh-graphql-schema.mjs` is full `vc-qa` plugin only, not shipped here — introspect
-> `{{BACK_URL}}/graphql` directly, e.g. via GraphiQL, to check for drift).
+> **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
+> **SCOPE — read this before concluding a field does not exist.** The query and mutation
+> lists below are the COMPLETE live set, but the type sections are a **curated allowlist**
+> (`keyTypes`/`keyInputTypes` in `scripts/graphql/refresh-graphql-schema.mjs`), not every type
+> in the schema. **A field's absence here is NOT evidence it does not exist** — if the type
+> you need is not listed, introspect it live (`{__type(name:"X"){fields{name args{name}}}}`)
+> and add it to the allowlist. Absence was misread as nonexistence once already.
 
 ## Critical Rules
 
@@ -35,6 +39,8 @@ pricesSum(cartId: String!, storeId: String!, currencyCode: String!, cultureName:
 getSavedForLater(storeId: String!, userId: String!, organizationId: String, currencyCode: String, cultureName: String)
 pickupLocations(after: String, first: Int, keyword: String, sort: String, storeId: String)
 carts(after: String, first: Int, sort: String, storeId: String, userId: String, currencyCode: String, cultureName: String, cartType: String, filter: String)
+salesRepCartFilterRules(storeId: String, cultureName: String)
+salesRepCustomerCartStatistics(organizationId: String, storeId: String, currencyCode: String, cultureName: String)
 ```
 
 ### Catalog
@@ -56,6 +62,7 @@ productSuggestions(storeId: String!, query: String, size: Int)
 brands(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, sort: String, keyword: String)
 products(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, query: String, previousOutline: String, filter: String, preserveUserQuery: Boolean, facet: String, fuzzy: Boolean, fuzzyLevel: Int, sort: String, productIds: [String], selectedAddressId: String, selectedAddress: String, custom: String)
 productConfiguration(configurableProductId: String!, storeId: String!, userId: String, cultureName: String, currencyCode: String)
+salesRepDocumentCategories(keyword: String)
 ```
 
 ### CMS
@@ -68,12 +75,18 @@ page(storeId: String!, cultureName: String, id: String!)
 pages(after: String, first: Int, storeId: String!, keyword: String!, cultureName: String)
 pageDocument(id: String!)
 pageDocuments(after: String, first: Int, storeId: String!, keyword: String!, cultureName: String)
+salesRepDocument(id: String!)
+salesRepDocuments(after: String, first: Int, keyword: String, sort: String, category: String, pinned: Boolean)
 pageContext(domain: String, cultureName: String, permalink: String, organizationId: String, userId: String, storeId: String)
 ```
 
 ### Orders
 
 ```
+salesRepOrderFilterRules(storeId: String, cultureName: String, organizationId: String, period: SalesRepStatisticsPeriodInput)
+salesRepOrderSortRules(storeId: String, cultureName: String)
+salesRepOrders(after: String, first: Int, keyword: String, sort: String, organizationId: String, storeId: String, filter: String, period: SalesRepStatisticsPeriodInput, cultureName: String)
+salesRepCustomerOrderStatistics(organizationId: String, storeId: String, currencyCode: String, cultureName: String)
 order(id: String, number: String, cultureName: String)
 payments(facet: String, filter: String, sort: String, cultureName: String, userId: String, after: String, first: Int)
 orderLineItemStatuses(cultureName: String)
@@ -109,6 +122,17 @@ recommendations(storeId: String!, userId: String, cultureName: String, currencyC
 searchHistory(storeId: String!, maxCount: Int!)
 loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
 loyaltyBalance(userId: String, orderId: String)
+loyaltyMissionProgress(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], completedStartDate: DateTime, completedEndDate: DateTime, cultureName: String, isStarted: Boolean, userId: String)
+customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
+salesRepCustomerFilterRules(storeId: String, cultureName: String)
+salesRepCustomer(organizationId: String!)
+salesRepCustomerSortRules(storeId: String, cultureName: String)
+salesRepCustomers(after: String, first: Int, keyword: String, sort: String, storeId: String, filter: String, cultureName: String)
+salesRepLayout(scope: String!, storeId: String)
+salesRepTopSellerFilterRules(storeId: String, cultureName: String, organizationId: String, period: SalesRepStatisticsPeriodInput)
+salesRepTopSellerSortRules(storeId: String, cultureName: String)
+salesRepTopSellers(organizationId: String, storeId: String, filter: String, sort: String, period: SalesRepStatisticsPeriodInput, take: Int, currencyCode: String, cultureName: String)
+salesRepCustomerCounts(organizationId: String, storeId: String)
 checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
 currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])
 canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
@@ -275,6 +299,8 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `activateBackInStockSubscription` | `ActivateBackInStockSubscriptionCommandType` |
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
 | `saveSearchQuery` | `InputSaveSearchQueryType` |
+| `saveSalesRepLayout` | `InputSalesRepLayout` |
+| `sendCustomerCommunication` | `InputSendCustomerCommunicationType` |
 | `registerByInvitation` | `InputRegisterByInvitationType` |
 
 ### Payment
@@ -306,6 +332,10 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `lockOrganizationContact` | `InputLockUnlockOrganizationContactType` |
 | `unlockOrganizationContact` | `InputLockUnlockOrganizationContactType` |
 | `inviteUser` | `InputInviteUserType` |
+| `acceptOrganizationInvite` | `InputAcceptRejectOrganizationInviteType` |
+| `rejectOrganizationInvite` | `InputAcceptRejectOrganizationInviteType` |
+| `revokeOrganizationInvite` | `InputRevokeOrganizationInviteType` |
+| `resendOrganizationInvite` | `InputResendOrganizationInviteType` |
 | `createUser` | `InputCreateUserType` |
 | `updateUser` | `InputUpdateUserType` |
 | `changeOrganizationContactRole` | `InputChangeOrganizationContactRoleType` |
@@ -351,7 +381,7 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 ### CartType
 
-Fields: `id`, `name`, `status`, `storeId`, `channelId`, `hasPhysicalProducts`, `isAnonymous`, `customerId`, `customerName`, `organizationId`, `organizationName`, `isRecuring`, `comment`, `purchaseOrderNumber`, `checkoutId`, `volumetricWeight`, `weightUnit`, `weight`, `total`, `subTotal`, `subTotalWithTax`, `extendedPriceTotal`, `extendedPriceTotalWithTax`, `currency`, `taxTotal`, `taxPercentRate`, `taxType`, `taxDetails`, `fee`, `feeWithTax`, `feeTotal`, `feeTotalWithTax`, `shippingPrice`, `shippingPriceWithTax`, `shippingTotal`, `shippingTotalWithTax`, `shipments`, `availableShippingMethods`, `paymentPrice`, `paymentPriceWithTax`, `paymentTotal`, `paymentTotalWithTax`, `payments`, `availablePaymentMethods`, `handlingTotal`, `handlingTotalWithTax`, `discountTotal`, `discountTotalWithTax`, `subTotalDiscount`, `subTotalDiscountWithTax`, `discounts`, `addresses`, `gifts`, `availableGifts`, `items`, `itemsCount`, `itemsQuantity`, `coupons`, `dynamicProperties`, `validationErrors`, `type`, `warnings`, `cartTotals`, `loyaltyPoints`
+Fields: `id`, `name`, `status`, `storeId`, `channelId`, `hasPhysicalProducts`, `isAnonymous`, `customerId`, `customerName`, `organizationId`, `organizationName`, `isRecuring`, `comment`, `purchaseOrderNumber`, `checkoutId`, `volumetricWeight`, `weightUnit`, `weight`, `total`, `subTotal`, `subTotalWithTax`, `extendedPriceTotal`, `extendedPriceTotalWithTax`, `currency`, `taxTotal`, `taxPercentRate`, `taxType`, `taxDetails`, `fee`, `feeWithTax`, `feeTotal`, `feeTotalWithTax`, `shippingPrice`, `shippingPriceWithTax`, `shippingTotal`, `shippingTotalWithTax`, `shipments`, `availableShippingMethods`, `paymentPrice`, `paymentPriceWithTax`, `paymentTotal`, `paymentTotalWithTax`, `payments`, `availablePaymentMethods`, `handlingTotal`, `handlingTotalWithTax`, `discountTotal`, `discountTotalWithTax`, `subTotalDiscount`, `subTotalDiscountWithTax`, `discounts`, `addresses`, `gifts`, `availableGifts`, `items`, `itemsCount`, `itemsQuantity`, `coupons`, `dynamicProperties`, `validationErrors(ruleSet: String)`, `type`, `warnings`, `cartTotals`, `loyaltyPoints`
 
 ### LineItemType
 
@@ -359,15 +389,15 @@ Fields: `product`, `inStockQuantity`, `warehouseLocation`, `isValid`, `validatio
 
 ### CustomerOrderType
 
-Fields: `id`, `operationType`, `parentOperationId`, `number`, `isApproved`, `status`, `statusDisplayValue`, `comment`, `outerId`, `isCancelled`, `cancelledDate`, `cancelReason`, `objectType`, `customerId`, `customerName`, `channelId`, `storeId`, `storeName`, `organizationId`, `organizationName`, `employeeId`, `employeeName`, `shoppingCartId`, `isPrototype`, `subscriptionNumber`, `subscriptionId`, `purchaseOrderNumber`, `taxType`, `taxPercentRate`, `languageCode`, `createdDate`, `createdBy`, `modifiedDate`, `modifiedBy`, `currency`, `total`, `taxTotal`, `discountAmount`, `subTotal`, `subTotalWithTax`, `subTotalDiscount`, `subTotalDiscountWithTax`, `subTotalTaxTotal`, `shippingTotal`, `shippingTotalWithTax`, `shippingSubTotal`, `shippingSubTotalWithTax`, `shippingDiscountTotal`, `shippingDiscountTotalWithTax`, `shippingTaxTotal`, `paymentTotal`, `paymentTotalWithTax`, `paymentSubTotal`, `paymentSubTotalWithTax`, `paymentDiscountTotal`, `paymentDiscountTotalWithTax`, `paymentTaxTotal`, `discountTotal`, `discountTotalWithTax`, `fee`, `feeWithTax`, `feeTotal`, `feeTotalWithTax`, `addresses`, `items`, `inPayments`, `shipments`, `taxDetails`, `dynamicProperties`, `coupons`, `discounts`, `availablePaymentMethods`, `orderTotals`
+Fields: `id`, `operationType`, `parentOperationId`, `number`, `isApproved`, `status`, `statusDisplayValue`, `comment`, `outerId`, `isCancelled`, `cancelledDate`, `cancelReason`, `objectType`, `customerId`, `customerName`, `channelId`, `storeId`, `storeName`, `organizationId`, `organizationName`, `employeeId`, `employeeName`, `shoppingCartId`, `isPrototype`, `subscriptionNumber`, `subscriptionId`, `purchaseOrderNumber`, `taxType`, `taxPercentRate`, `languageCode`, `createdDate`, `createdBy`, `modifiedDate`, `modifiedBy`, `currency`, `total`, `taxTotal`, `discountAmount`, `subTotal`, `subTotalWithTax`, `subTotalDiscount`, `subTotalDiscountWithTax`, `subTotalTaxTotal`, `shippingTotal`, `shippingTotalWithTax`, `shippingSubTotal`, `shippingSubTotalWithTax`, `shippingDiscountTotal`, `shippingDiscountTotalWithTax`, `shippingTaxTotal`, `paymentTotal`, `paymentTotalWithTax`, `paymentSubTotal`, `paymentSubTotalWithTax`, `paymentDiscountTotal`, `paymentDiscountTotalWithTax`, `paymentTaxTotal`, `discountTotal`, `discountTotalWithTax`, `fee`, `feeWithTax`, `feeTotal`, `feeTotalWithTax`, `addresses`, `items`, `inPayments(after: Int, first: Int, sort: String)`, `shipments`, `taxDetails`, `dynamicProperties`, `coupons`, `discounts`, `availablePaymentMethods`, `orderTotals`
 
 ### Product
 
-Fields: `id`, `code`, `catalogId`, `productType`, `minQuantity`, `maxQuantity`, `packSize`, `relevanceScore`, `isConfigurable`, `outline`, `slug`, `name`, `seoInfo`, `descriptions`, `description`, `category`, `imgSrc`, `outerId`, `gtin`, `manufacturerPartNumber`, `weightUnit`, `weight`, `measureUnit`, `height`, `width`, `length`, `brandName`, `brand`, `masterVariation`, `variations`, `hasVariations`, `availabilityData`, `images`, `price`, `prices`, `minVariationPrice`, `properties`, `keyProperties`, `assets`, `outlines`, `breadcrumbs`, `vendor`, `rating`, `inWishlist`, `wishlistIds`, `isPurchased`, `associations`, `videos`, `loyaltyPoints`
+Fields: `id`, `code`, `catalogId`, `productType`, `minQuantity`, `maxQuantity`, `packSize`, `relevanceScore`, `isConfigurable`, `outline`, `slug`, `name`, `seoInfo`, `descriptions(type: String)`, `description(type: String)`, `category`, `imgSrc`, `outerId`, `gtin`, `manufacturerPartNumber`, `weightUnit`, `weight`, `measureUnit`, `height`, `width`, `length`, `brandName`, `brand`, `masterVariation`, `variations`, `hasVariations`, `availabilityData`, `images`, `price`, `prices`, `minVariationPrice`, `properties(names: [String])`, `keyProperties(take: Int)`, `assets`, `outlines`, `breadcrumbs`, `vendor`, `rating`, `inWishlist`, `wishlistIds`, `isPurchased`, `associations(after: String, first: Int, query: String, group: String)`, `videos(after: String, first: Int)`, `loyaltyPoints`
 
 ### VariationType
 
-Fields: `id`, `name`, `code`, `productType`, `minQuantity`, `maxQuantity`, `packSize`, `availabilityData`, `images`, `price`, `prices`, `properties`, `assets`, `outlines`, `slug`, `vendor`, `rating`
+Fields: `id`, `name`, `code`, `productType`, `minQuantity`, `maxQuantity`, `packSize`, `availabilityData`, `images`, `price`, `prices`, `properties`, `assets`, `outlines`, `slug`, `vendor`, `rating`, `associations(after: String, first: Int, query: String, group: String)`
 
 ### CouponType
 
@@ -440,6 +470,14 @@ Fields: `isSuccess`, `errorMessage`
 ### KeyValueType
 
 Fields: `key`, `value`
+
+### Organization
+
+Fields: `id`, `outerId`, `memberType`, `name`, `status`, `phones`, `emails`, `groups`, `seoObjectType`, `seoInfo(storeId: String!, cultureName: String!)`, `defaultBillingAddress`, `defaultShippingAddress`, `addresses(after: String, first: Int, sort: String)`, `dynamicProperties`, `description`, `businessCategory`, `ownerId`, `parentId`, `myStatusInOrganization`, `contacts(after: String, first: Int, searchPhrase: String, sort: String, roleIds: [String], statuses: [String])`
+
+### ContactType
+
+Fields: `id`, `outerId`, `memberType`, `name`, `status`, `phones`, `emails`, `groups`, `seoObjectType`, `seoInfo(storeId: String!, cultureName: String!)`, `defaultBillingAddress`, `defaultShippingAddress`, `addresses(after: String, first: Int, sort: String)`, `dynamicProperties`, `isLockedInOrganization`, `rolesInOrganization`, `statusInOrganization`, `firstName`, `lastName`, `middleName`, `fullName`, `about`, `defaultLanguage`, `currencyCode`, `birthDate`, `securityAccounts`, `organizationId`, `organization`, `selectedAddressId`, `organizationsIds`, `organizations(after: String, first: Int, searchPhrase: String, sort: String, statuses: [String])`
 
 ---
 
@@ -548,6 +586,18 @@ Fields: `memberId: String!`, `roleIds: [String!]`
 ### InputLockUnlockOrganizationContactType
 
 Fields: `memberId: String!`
+
+### InputAcceptRejectOrganizationInviteType
+
+Fields: `organizationId: String!`
+
+### InputRevokeOrganizationInviteType
+
+Fields: `memberId: String!`
+
+### InputResendOrganizationInviteType
+
+Fields: `memberId: String!`, `urlSuffix: String`, `message: String`
 
 ---
 

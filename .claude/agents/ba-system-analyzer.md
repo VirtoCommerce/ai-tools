@@ -230,6 +230,43 @@ Combine code analysis, GitHub module research, and live UI exploration to recons
 - Pricing & promotions
 - Content management
 
+### 5a. Feature Value-Chain Reconstruction (the `/qa-test` 1e Part 0 deliverable)
+
+§5 above reconstructs the product's **standing** journeys. This one reconstructs **the mechanism of the
+feature under analysis**, end to end, and it is what `/qa-test` Step 1e Part 0 consumes. An inventory of
+screens is not a substitute: it tells the test designer what the feature *renders*, never what it *does*,
+and a suite built from it can pass in full while the feature does not work.
+
+Produce, for the feature under analysis:
+
+1. **The chain, one line per link, in the user's words** —
+   `trigger → computed effect → persisted state → the surface the user sees it on → what it unlocks`.
+   Trace it in the source rather than inferring it: entry point / mutation → handler or logic service →
+   what it writes → the query that reads it back → the component that renders it.
+2. **The async hop, named.** Which link is deferred to a job/queue/webhook/settlement, and what the user
+   sees in the window before it lands. This is where "it worked when I checked" and "it never worked"
+   are indistinguishable without being told.
+3. **The variants** — the kinds of the thing (goal types, processors, product kinds, role kinds) — with
+   the code path each takes through the same link. Two variants sharing a link but not a code path are
+   two rows, never one.
+4. **The reverse edges, or their absence.** For every forward effect on money, points, stock or
+   entitlement: what cancels, refunds, expires or revokes it? Search the module for the reverse
+   operation (`cancel`/`revert`/`refund`/`rollback`/`unearn`/`deduct`) and for a status gate on the
+   forward path. **"No reversal path exists" is a first-class finding**, worth more than any number of
+   render observations — and it is invisible unless someone asks. On Loyalty Missions this was found by
+   an exploratory session run *after* 119 cases had been written, not by the 119 cases.
+5. **The guard the sibling path has and this one does not.** When a module gains a second path that does
+   the same class of work as an existing one (a second accrual path, a second pricing path, a second
+   permission check), diff them: a guard present in one and absent in the other is a defect hypothesis
+   with a citation, and it is the highest-yield thing this analysis produces.
+6. **The diagrams** — Mermaid, handed back inline so 1e can paste them into the model: a `flowchart` of
+   the journey always; a `sequenceDiagram` when the chain crosses layers or is async; a
+   `stateDiagram-v2` when the entity has a lifecycle or an effect is expected to reverse.
+
+**Do not skip a link because it is "obvious".** The obvious links are the ones nobody covers: on Loyalty
+Missions the two ends — *an order actually advances progress* and *the granted points are spendable* —
+were exactly the untested ones, while the middle rendered fine in 71 cases.
+
 ### 6. Pain Point Detection
 Look for these anti-patterns — from **both** code analysis AND live UI exploration:
 
